@@ -24,6 +24,18 @@ To encourage as many contributions as possible we aren't saying "write in Python
 For details on how scripts should be written and how they should run see scripts/README.rst.
 For details on how data should be stored see data/README.rst.
 
+Usage (proposed)
+----------------
+
+The vision is that the flow will look something like this::
+
+    $ ./scripts/nc/get_legislation *options*
+        ...updates data/nc/legislation_index.csv
+    $ ./scripts/download_legislation
+        ...downloads all legislation that is missing to data/nc/raw_legislation/*chamber/session/bill_id.html*
+
+    (details on legislators and votes coming soon)
+
 Contributing
 ============
 
