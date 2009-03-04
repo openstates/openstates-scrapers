@@ -22,8 +22,7 @@ def scrape_legislation(chamber,year):
     elif chamber == 'lower':
         min = 1
         max = 5000
-        local_filename = ''
-        
+s        
     for i in range(min,max+1):
         #obtain html
         index_file ='http://cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill&bill_num=%d&which_year=%s'\
