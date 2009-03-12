@@ -10,8 +10,6 @@ sys.path.append('.')
 from pyutils.legislation import run_legislation_scraper
 
 def scrape_session(chamber, year, session=0):
-    # Grabs data for 2-year period because it's easier and more efficient
-
     if chamber == 'upper':
         bill_abbr = 'S'
     elif chamber == 'lower':
@@ -25,8 +23,8 @@ def scrape_session(chamber, year, session=0):
         y1 = year
         y2 = str(int(year) + 1)
     else:
-        y1 = str(int(year) - 1)
-        y2 = year
+        # If second year of session just ignore
+        return
     
     url = 'http://www.legis.state.pa.us/cfdocs/legis/bi/BillIndx.cfm?sYear=%s&sIndex=%i&bod=%s' % (y1, session, bill_abbr)
     print url

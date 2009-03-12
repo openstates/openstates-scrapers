@@ -10,9 +10,6 @@ sys.path.append('.')
 from pyutils.legislation import run_legislation_scraper
 
 def scrape_legislation(chamber, year):
-    # This function gets legislation from the entire 2-year session that year
-    # is a part of because it's much more efficient than going year by year.
-    
     if chamber == 'upper':
         chamber_name = 'senate'
         bill_abbr = 'SB'
@@ -30,8 +27,8 @@ def scrape_legislation(chamber, year):
         else:
             y2 = '%02d' % (int(year[2:]) + 1)
     else:
-        y1 = '%02d' % (int(year[2:]) - 1)
-        y2 = year[2:]
+        # If second year of session just ignore
+        return
     
     url = "http://www.leginfo.ca.gov/pub/%s-%s/bill/index_%s_author_bill_topic" % (y1, y2, chamber_name)
     print url
