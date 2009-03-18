@@ -61,7 +61,7 @@ def parse_senate(year):
         if bill_id_cell != None:
             bill_id = bill_id_cell.b.font.string
 
-            bill_desc_cell = bill_table.find(id=re.compile("BriefDesc"))
+        bill_desc_cell = bill_table.find(id=re.compile("BriefDesc"))
         if bill_desc_cell != None:
             bill_desc = bill_desc_cell.font.string
 
@@ -116,10 +116,10 @@ def parse_house(year):
         # find the first center tag, take the text after 'House of Representatives'
         # and before 'Bills and Joint Resolutions' as the session
         header_tag = soup.find('center')
-	print str(header_tag)
+        print str(header_tag)
         m = re.search("House of Representatives(.*?)Bills and Joint Resolutions", str(header_tag), re.I | re.DOTALL) 
         session = m.group(1)
-        session = re.sub("<.*?>", '', session).strip
+        session = re.sub("<.*?>", '', session).strip()
 
         #get bills
         bills = soup.findAll('b')
@@ -128,13 +128,25 @@ def parse_house(year):
             bill_link = bill.find(href = re.compile("HB\d*?\.HTM", re.I))
             if bill_link != None:
                 bill_url = page_root + bill_link['href']
-                print bill_url
-                
-                bill_sponsor = bill_link.nextSibling.string
-                print bill_sponsor
 
-                bill_desc = bill_link.nextSibling.nextSibling.string
-                print bill_desc
+		# bill id is inside the link
+                bill_id = bill_link.string.strip()
+                
+		# sponsor is in the next link
+                bill_sponsor = bill_link.nextSibling.next.string.strip()
+
+		# info is outside of the <b> tag we used to find the bill
+                bill_info = str(bill.nextSibling.next.next).strip()
+		bill_info = re.sub(r"(\r|\n|\s)+", " ", bill_info)
+
+		# parse out the description and the LR number
+		m = re.match("(.*?)\(LR# (\d.*?)\)", bill_info, re.DOTALL)
+		bill_desc = m.group(1)
+		bill_lr = m.group(2)
+
+                yield {'state':'M0','chamber':'lower','session':year,
+                       'bill_id':bill_id,'remote_url':bill_url,
+                       'name':bill_desc,'bill_sponsor':bill_sponsor}
 
 if __name__ == '__main__':
     run_legislation_scraper(scrape_legislation)
