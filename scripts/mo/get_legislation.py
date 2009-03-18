@@ -71,9 +71,6 @@ def scrape_legislation(chamber,year):
                    'bill_id':bill_id,'remote_url':bill_url,
                    'name':bill_desc,'bill_sponsor':bill_sponsor}
 
-
-
-
     elif chamber == 'lower':
         chamber_abbr='s'
 
@@ -99,8 +96,8 @@ def scrape_legislation(chamber,year):
         }
     
         for session_code in sessions[int(year)]:
-            page_root = 'http://www.house.mo.gov/'
-            bill_page = page_root + 'billtracking/' + session_code + '/billist.htm'
+            page_root = 'http://www.house.mo.gov'
+            bill_page = page_root + '/billtracking/' + session_code + '/billist.htm'
     
             # get the file, parse it with BeautifulSoup
             req = urllib2.Request(bill_page)
@@ -111,7 +108,6 @@ def scrape_legislation(chamber,year):
             # find the first center tag, take the text after 'House of Representatives'
             # and before 'Bills and Joint Resolutions' as the session
             header_tag = soup.find('center')
-            print str(header_tag)
             m = re.search("House of Representatives(.*?)Bills and Joint Resolutions", str(header_tag), re.I | re.DOTALL) 
             session = m.group(1)
             session = re.sub("<.*?>", '', session).strip()
@@ -139,10 +135,11 @@ def scrape_legislation(chamber,year):
 		    bill_desc = m.group(1)
 		    bill_lr = m.group(2)
     
-                    yield {'state':'M0','chamber':'lower','session':year,
+                    yield {'state':'M0','chamber':'lower','session':session,
                            'bill_id':bill_id,'remote_url':bill_url,
-                           'name':bill_desc,'bill_sponsor':bill_sponsor}
-    
+                           'name':bill_desc,'bill_sponsor':bill_sponsor,
+                           'lr':bill_lr
+    }
 
     else:
         #TODO print to stderr
