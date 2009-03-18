@@ -16,95 +16,125 @@ from pyutils.legislation import run_legislation_scraper
 def scrape_legislation(chamber,year):
     if chamber == 'upper':
         chamber_abbr='h'
+	yield parse_senate(year)
     elif chamber == 'lower':
         chamber_abbr='s'
+	yield parse_house(year)
     else:
         #TODO print to stderr
         print "Need to pick a chamber"
         
 
+def parse_senate(year):
     #we only have data from 2005-2009
     assert int(year) >=2005
     assert int(year) <= 2009
 
     year2 = "%02d" % (int(year) % 100)
 
+    # year is mixed in to the directory.  set a root_url, since
+    # we'll use it later
+    root_url ='http://www.senate.mo.gov/'+year2+'info/BTS_Web/'
+    index_file = root_url + 'BillList.aspx?SessionType=R'
 
-    if chamber == 'upper':
+    # get the file, parse it with BeautifulSoup
+    req = urllib2.Request(index_file)
+    response = urllib2.urlopen(req)
+    doc = response.read()
+    soup = BeautifulSoup(doc)#this gives us an index page
 
-        root_url ='http://www.senate.mo.gov/'+year2+'info/BTS_Web/'
-        index_file = root_url + 'BillList.aspx?SessionType=R'
-	print index_file
 
-        req = urllib2.Request(index_file)
-        response = urllib2.urlopen(req)
-        doc = response.read()
-	print "downloaded"
-        soup = BeautifulSoup(doc)#this gives us an index page
-	
-    
-        #scraping tables to find 
-        bill_tables = soup.findAll(id="Table2")
+    # each bill is in it's own table (nested in a larger table)
+    bill_tables = soup.findAll(id="Table2")
 
-        if bill_tables == None:
-            yield 
+    if bill_tables == None:
+        yield 
 
-        for bill_table in bill_tables:
+    for bill_table in bill_tables:
 
-            bill_id      = ''
-            bill_desc    = ''
-            bill_url     = ''
-            bill_sponsor = ''
+        bill_id      = ''
+        bill_desc    = ''
+        bill_url     = ''
+        bill_sponsor = ''
 
-            bill_id_cell = bill_table.find(id=re.compile("BillNum"))
-            if bill_id_cell != None:
-                bill_id = bill_id_cell.b.font.string
-            print 'bill_id: '+bill_id
+        bill_id_cell = bill_table.find(id=re.compile("BillNum"))
+        if bill_id_cell != None:
+            bill_id = bill_id_cell.b.font.string
 
             bill_desc_cell = bill_table.find(id=re.compile("BriefDesc"))
-            if bill_desc_cell != None:
-                bill_desc = bill_desc_cell.font.string
-            print 'bill_desc: '+bill_desc
+        if bill_desc_cell != None:
+            bill_desc = bill_desc_cell.font.string
 
-            bill_desc_cell = bill_table.find(id=re.compile("Sponsor"))
-            if bill_sponsor != None:
-                bill_sponsor = bill_desc_cell.b.font.string
-            print 'bill_sponsor: '+bill_sponsor
+        bill_desc_cell = bill_table.find(id=re.compile("Sponsor"))
+        if bill_sponsor != None:
+            bill_sponsor = bill_desc_cell.b.font.string
 
-            m = re.search(r"BillID=(\d*)", str(bill_table))
-            if m != None:
-                bill_web_id = m.group(1)
-                bill_url= root_url + 'Bill.aspx?SessionType=R&BillID='+bill_web_id
-            print 'bill_url: '+bill_url
+        # here we just search the whole table string to get 
+        # the BillID that the MO senate site uses
+        m = re.search(r"BillID=(\d*)", str(bill_table))
+        if m != None:
+            bill_web_id = m.group(1)
+            bill_url= root_url + 'Bill.aspx?SessionType=R&BillID='+bill_web_id
 
-            yield {'state':'M0','chamber':chamber,'session':year,
-                   'bill_id':bill_id,'remote_url':bill_url}
+        yield {'state':'M0','chamber':'upper','session':year,
+               'bill_id':bill_id,'remote_url':bill_url,
+               'name':bill_desc,'bill_sponsor':bill_sponsor}
 
-
-#calculate the url for the full text
-def calculate_bill_url(chamber,bill_no,session):
-    url = "http://www.mass.gov/legis/bills/%s" %chamber
-    #dir num is the same as the first two digits of the bill number
-    dir_num = re.compile("^(\d\d)").search(bill_no).group(1)
-
-    if chamber =="house":
-        url = "%s/%d/ht%spdf/ht%s.pdf" %(url,session,dir_num,bill_no)
-    elif chamber == "senate": 
-        if  session == 184:#not so good at their bill organization
-            #these don't come in pdf, but some don't come in html. 
-            #but some only come in pdf. lose-lose
-            url = "%s/st%s/st%s.htm" %(url,dir_num,bill_no)
-        else:
-            url = "%s/%d/st%spdf/st%s.pdf" %(url,session,dir_num,bill_no)
-    else: 
-        return ""
-    return url
+def parse_house(year):
     
-#calcualtes the session number given the year
-#def session_number(year):
-#    if (year % 2) == 0:
-#        year = year - 1
-#    return int((year*.5) - 818.5)
+    #we only have data from 1998-2009
+    assert int(year) >= 1998
+    assert int(year) <= 2009
+
+    year2 = "%02d" % (int(year) % 100)
+
+    sessions = {
+        1998: ['bills98'],
+        1999: ['bills99'],
+        2000: ['bills00'],
+        2001: ['bills01','spec01'],
+        2002: ['bills02'],
+        2003: ['bills03','bills033','bills034'],
+        2004: ['bills041'],
+        2005: ['bills051','bills053'],
+        2006: ['bills061'],
+        2007: ['bills071','bills073'],
+        2008: ['bills081'],
+        2009: ['bills091']
+    }
+
+    for session_code in sessions[int(year)]:
+        page_root = 'http://www.house.mo.gov/'
+        bill_page = page_root + 'billtracking/' + session_code + '/billist.htm'
+
+        # get the file, parse it with BeautifulSoup
+        req = urllib2.Request(bill_page)
+        response = urllib2.urlopen(req)
+        doc = response.read()
+        soup = BeautifulSoup(doc)#this gives us an index page
+
+        # find the first center tag, take the text after 'House of Representatives'
+        # and before 'Bills and Joint Resolutions' as the session
+        header_tag = soup.find('center')
+	print str(header_tag)
+        m = re.search("House of Representatives(.*?)Bills and Joint Resolutions", str(header_tag), re.I | re.DOTALL) 
+        session = m.group(1)
+        session = re.sub("<.*?>", '', session).strip
+
+        #get bills
+        bills = soup.findAll('b')
+
+        for bill in bills:
+            bill_link = bill.find(href = re.compile("HB\d*?\.HTM", re.I))
+            if bill_link != None:
+                bill_url = page_root + bill_link['href']
+                print bill_url
+                
+                bill_sponsor = bill_link.nextSibling.string
+                print bill_sponsor
+
+                bill_desc = bill_link.nextSibling.nextSibling.string
+                print bill_desc
 
 if __name__ == '__main__':
     run_legislation_scraper(scrape_legislation)

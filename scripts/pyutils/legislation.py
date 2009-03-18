@@ -22,7 +22,10 @@ def run_legislation_scraper(get_bills_func):
         chambers.append('lower')
     download = options.download
     fields = ('state', 'chamber', 'session', 'bill_id', 'remote_url')
-    output = csv.DictWriter(open('output.csv', 'w'), fields)
+
+    # setup dictionary writer with blanks for missing values, and 
+    # ignoring extra values in dictionary
+    output = csv.DictWriter(open('output.csv', 'w'), fields, '', 'ignore')
 
     #all_funcs = chain(*[get_bills_func(chamber, year)
     #                    for year in years for chamber in chambers])
