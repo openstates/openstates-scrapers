@@ -124,10 +124,14 @@ def scrape_legislation(chamber,year):
                     bill_id = bill_link.string.strip()
                     
 		    # sponsor is in the next link
-                    bill_sponsor = bill_link.nextSibling.next.string.strip()
-    
 		    # info is outside of the <b> tag we used to find the bill
-                    bill_info = str(bill.nextSibling.next.next).strip()
+                    if int(year) >= 2000:
+                        bill_sponsor = bill_link.nextSibling.next.string.strip()
+                        bill_info = str(bill.nextSibling.next.next).strip()
+                    else:
+                        bill_sponsor = bill_link.nextSibling.next.next.string.strip()
+                        bill_info = str(bill.nextSibling.next.next.next).strip()
+    
 		    bill_info = re.sub(r"(\r|\n|\s)+", " ", bill_info)
     
 		    # parse out the description and the LR number
@@ -138,13 +142,10 @@ def scrape_legislation(chamber,year):
                     yield {'state':'M0','chamber':'lower','session':session,
                            'bill_id':bill_id,'remote_url':bill_url,
                            'name':bill_desc,'bill_sponsor':bill_sponsor,
-                           'lr':bill_lr
-    }
+                           'lr':bill_lr }
 
     else:
-        #TODO print to stderr
-        print "Need to pick a chamber"
-        
+        print >> sys.stder, "Need to pick a chamber"
 
 
 if __name__ == '__main__':
