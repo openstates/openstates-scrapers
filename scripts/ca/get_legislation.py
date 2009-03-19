@@ -58,6 +58,15 @@ def scrape_legislation(chamber, year):
         text_re = '%s_%s_bill\w*\.html' % (bill_abbr.lower(), bill_id[2:])
         links = details.findAll(href=re.compile(text_re))
         bill_url = "http://www.leginfo.ca.gov%s" % links[-1]['href']
+
+        # Get the history page (following a link from the details page).
+        hist_link = details.find(href=re.compile("_history.html"))
+        hist_url = 'http://www.leginfo.ca.gov%s' % hist_link['href']
+        history = BeautifulSoup(urllib2.urlopen(hist_url).read())
+
+        # Find sponsor and title
+        bill_sponsor = history.find('meta', attrs={'name':'AUTHOR'})['content'].strip()
+        bill_name = history.find('meta', attrs={'name':'TOPIC'})['content'].strip()
         
         yield {'state':'CA', 'chamber':chamber, 'session':'%s-%s' % (y1, y2),
                'bill_id':bill_id, 'remote_url':bill_url}
