@@ -6,7 +6,7 @@
 from BeautifulSoup import BeautifulSoup
 import re
 import urllib,urllib2
-import time
+import datetime
 
 # ugly hack
 import sys
@@ -19,8 +19,8 @@ def scrape_legislation(chamber,year):
         chamber_abbr='h'
 
         #we only have data from 2005-2009
-        assert int(year) >=2005
-        assert int(year) <= 2009
+        assert int(year) >= 2005, "no upper chamber data from before 2005"
+        assert int(year) <= datetime.date.today().year, "no future data"
     
         year2 = "%02d" % (int(year) % 100)
     
@@ -76,8 +76,8 @@ def scrape_legislation(chamber,year):
         chamber_abbr='s'
 
         #we only have data from 1998-2009
-        assert int(year) >= 1998
-        assert int(year) <= 2009
+        assert int(year) >= 1998, "no lower chamber data from before 1998"
+        assert int(year) <= 2009, "no future data"
     
         year2 = "%02d" % (int(year) % 100)
     
