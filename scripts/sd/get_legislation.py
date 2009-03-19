@@ -33,7 +33,8 @@ def new_scraper(chamber, year):
 
     # Format of bill link contents
     bill_re = re.compile('%s&nbsp;(\d+)' % bill_abbr)
-
+    date_re = re.compile('\d{2}/\d{2}/\d{4}')
+    
     for bill_link in bill_list.findAll('a'):
         if not bill_link.string:
             # Empty link
@@ -57,6 +58,27 @@ def new_scraper(chamber, year):
         # Should be sorted by date, so we grab the first one
         version_table = history.find(id='ctl00_contentMain_ctl00_tblBillVersions')
         bill_url = session_url + version_table.find('a')['href']
+
+        # Get actions
+        act_table = history.find('table')
+        for act_row in act_table.findAll('td'):
+            if not act_row.findChild(0) or not act_row.findChild(0).string:
+                continue
+
+            # Get the date (if can't find one then this isn't an action)
+            date_match = date_re.match(act_row.findChild(0).string)
+            if not date_match:
+                continue
+            act_date = date_match.group(0)
+
+            # Get the action string
+            action = ""
+            for node in act_row.findChild(0).findNext().contents:
+                if node.string:
+                    action += node.string
+                else:
+                    action += node
+            action = action.strip()
         
         yield {'state':'SD', 'chamber':chamber, 'session':year,
                'bill_id':bill_id, 'remote_url':bill_url}
