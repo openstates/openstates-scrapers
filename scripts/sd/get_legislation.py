@@ -86,6 +86,7 @@ def old_scraper(chamber, year):
     # Bill and text link formats
     bill_re = re.compile('%s (\d+)' % bill_abbr)
     text_re = re.compile('/sessions/%s/bills/%s.*\.htm' % (year, bill_abbr), re.IGNORECASE)
+    date_re = re.compile('\d{2}/\d{2}/\d{4}')
 
     for bill_link in bill_list.findAll('a'):
         if not bill_link.string:
@@ -109,6 +110,27 @@ def old_scraper(chamber, year):
         # Get URL of latest verion of bill (should be listed last)
         bill_url = history.findAll('a', href=text_re)[-1]['href']
         bill_url = 'http://legis.state.sd.us%s' % bill_url
+
+        # Get actions
+        act_table = history.find('table')
+        for act_row in act_table.findAll('td'):
+            if not act_row.findChild(0) or not act_row.findChild(0).string:
+                continue
+
+            # Get the date (if can't find one then this isn't an action)
+            date_match = date_re.match(act_row.findChild(0).string)
+            if not date_match:
+                continue
+            act_date = date_match.group(0)
+
+            # Get the action string
+            action = ""
+            for node in act_row.findChild(0).findNext().contents:
+                if node.string:
+                    action += node.string
+                else:
+                    action += node
+            action = action.strip()
 
         yield {'state':'SD', 'chamber':chamber, 'session':year,
                'bill_id':bill_id, 'remote_url':bill_url}
