@@ -44,9 +44,10 @@ def new_scraper(chamber, year):
             # Not a bill link
             continue
 
-        # Parse bill ID
+        # Parse bill ID and name
         bill_id = bill_link.string.replace('&nbsp;', ' ')
-        print "Getting %s" % bill_id
+        bill_name = bill_link.findNext().string
+        print "Getting %s: %s" % (bill_id, bill_name)
 
         # Download history page
         hist_url = session_url + bill_link['href']
@@ -98,8 +99,10 @@ def old_scraper(chamber, year):
             # Not bill link
             continue
 
+        # Get the bill ID and name
         bill_id = bill_link.string
-        print "Getting %s" % bill_id
+        bill_name = bill_link.findNext().string
+        print "Getting %s: %s" % (bill_id, bill_name)
 
         # Get history page (replacing malformed tag)
         hist_url = session_url + bill_link['href']
