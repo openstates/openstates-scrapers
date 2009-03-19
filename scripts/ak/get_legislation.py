@@ -23,21 +23,23 @@ def scrape_legislation(chamber, year):
 
     # Sessions last 2 years, 1993-1994 was the 18th
     session = 18 + ((int(year) - 1993) / 2)
-    
+
+    # Full calendar year
     date1 = '0101' + year[2:]
     date2 = '1231' + year[2:]
 
-    url = 'http://www.legis.state.ak.us/basis/range_multi.asp?session=%i&date1=%s&date2=%s' % (session, date1, date2)
-    req = urllib2.Request(url)
-    response = urllib2.urlopen(req)
-    doc = response.read()
-    soup = BeautifulSoup(doc)
+    # Get bill list
+    bill_list_url = 'http://www.legis.state.ak.us/basis/range_multi.asp?session=%i&date1=%s&date2=%s' % (session, date1, date2)
+    print bill_list_url
+    bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
 
+    # Find bill links
     re_str = "bill=%s\d+" % bill_abbr
-    links = soup.findAll(href=re.compile(re_str))
+    links = bill_list.findAll(href=re.compile(re_str))
 
     for link in links:
         bill_id = link.contents[0].replace(' ', '')
+        print "Getting %s" % bill_id
 
         # This is the URL for the bill as it was introduced.
         # How should revisions be handled?
