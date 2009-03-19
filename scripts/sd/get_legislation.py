@@ -80,12 +80,12 @@ def old_scraper(chamber, year):
     bill_list_url = session_url + 'billlist.htm'
     print bill_list_url
     bill_list_raw = urllib2.urlopen(bill_list_url).read()
-    bill_list_raw = bill_list_raw.replace('BORDER= ', '')
+    bill_list_raw = bill_list_raw.replace('BORDER= ', '').replace('"</A>', '"></A>')
     bill_list = BeautifulSoup(bill_list_raw)
     
     # Bill and text link formats
     bill_re = re.compile('%s (\d+)' % bill_abbr)
-    text_re = re.compile('<a href="(/sessions/%s/Bills/%s\w+\.htm)"' % (year, bill_abbr))
+    text_re = re.compile('/sessions/%s/bills/%s.*\.htm' % (year, bill_abbr), re.IGNORECASE)
 
     for bill_link in bill_list.findAll('a'):
         if not bill_link.string:
@@ -100,15 +100,15 @@ def old_scraper(chamber, year):
         bill_id = bill_link.string
         print "Getting %s" % bill_id
 
-        # Get history page
+        # Get history page (replacing malformed tag)
         hist_url = session_url + bill_link['href']
-        history = urllib2.urlopen(hist_url).read()
-        print hist_url
+        history_raw = urllib2.urlopen(hist_url).read()
+        history_raw = history_raw.replace('BORDER=>', '>')
+        history = BeautifulSoup(history_raw)
 
-        # Latest version of BeautifulSoup has trouble with the second half
-        # of this document, so for now we'll just use a regex
-        hist_match = text_re.search(history)
-        bill_url = 'http://legis.state.sd.us' + hist_match.group(1)
+        # Get URL of latest verion of bill (should be listed last)
+        bill_url = history.findAll('a', href=text_re)[-1]['href']
+        bill_url = 'http://legis.state.sd.us%s' % bill_url
 
         yield {'state':'SD', 'chamber':chamber, 'session':year,
                'bill_id':bill_id, 'remote_url':bill_url}
