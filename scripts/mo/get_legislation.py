@@ -14,6 +14,7 @@ sys.path.append('.')
 from pyutils.legislation import run_legislation_scraper
 
 def scrape_legislation(chamber,year):
+    print "chamber: %s, year: %s" % (chamber, year)
     if chamber == 'upper':
         chamber_abbr='h'
 
@@ -106,9 +107,9 @@ def scrape_legislation(chamber,year):
             soup = BeautifulSoup(doc)#this gives us an index page
     
             # find the first center tag, take the text after 'House of Representatives'
-            # and before 'Bills and Joint Resolutions' as the session
+            # and before 'Bills' as the session
             header_tag = soup.find('center')
-            m = re.search("House of Representatives(.*?)Bills and Joint Resolutions", str(header_tag), re.I | re.DOTALL) 
+            m = re.search("House of Representatives(.*?)Bills", str(header_tag), re.I | re.DOTALL) 
             session = m.group(1)
             session = re.sub("<.*?>", '', session).strip()
     
