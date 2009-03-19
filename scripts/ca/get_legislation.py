@@ -37,8 +37,8 @@ def scrape_legislation(chamber, year):
     bill_re = re.compile('\s+(%s\s+\d+)(.*(\n\s{31}.*){0,})' % bill_abbr,
                          re.MULTILINE)
 
-    for match in bill_re.finditer(bill_list):
-        bill_id = match.group(1).replace(' ', '')
+    for bill_match in bill_re.finditer(bill_list):
+        bill_id = bill_match.group(1).replace(' ', '')
         print "Getting %s" % bill_id
         
         # The URL for the text of the bill contains a date which we
@@ -60,14 +60,30 @@ def scrape_legislation(chamber, year):
         bill_url = "http://www.leginfo.ca.gov%s" % links[-1]['href']
 
         # Get the history page (following a link from the details page).
+        # Once again, there's a tag that BeautifulSoup chokes on.
         hist_link = details.find(href=re.compile("_history.html"))
         hist_url = 'http://www.leginfo.ca.gov%s' % hist_link['href']
-        history = BeautifulSoup(urllib2.urlopen(hist_url).read())
+        history_raw = urllib2.urlopen(hist_url).read()
+        history_raw = history_raw.replace('<! ****** document data starts here ******>', '')
+        history = BeautifulSoup(history_raw)
 
         # Find sponsor and title
         bill_sponsor = history.find('meta', attrs={'name':'AUTHOR'})['content'].strip()
         bill_name = history.find('meta', attrs={'name':'TOPIC'})['content'].strip()
-        
+
+        # Get bill actions
+        action_re = re.compile('(\d{4})|([\w.]{4,6}\s+\d{1,2})\s+(.*(\n\s+.*){0,})', re.MULTILINE)
+        act_year = None
+        for act_match in action_re.finditer(history.find('pre').contents[0]):
+            # If we didn't match group 2 then this must be a year change
+            if act_match.group(2) == None:
+                act_year = act_match.group(1)
+                continue
+
+            # Must be an action
+            act_date = act_match.group(2)
+            action = act_match.group(3).replace('\n', '').replace('  ', ' ').replace('\t', ' ')
+
         yield {'state':'CA', 'chamber':chamber, 'session':'%s-%s' % (y1, y2),
                'bill_id':bill_id, 'remote_url':bill_url}
         
