@@ -50,6 +50,13 @@ def scrape_session(chamber, year, session=0):
         text_link = pn_table.find('a', href=re.compile('pn=\d{4}'))
         bill_url = 'http://www.legis.state.pa.us%s' % text_link['href']
 
+        # Get bill history page
+        history_url = 'http://www.legis.state.pa.us/cfdocs/billinfo/bill_history.cfm?syear=%s&sind=%i&body=%s&type=B&BN=%s' % (y1, session, bill_abbr, bill_number)
+        history = BeautifulSoup(urllib2.urlopen(history_url).read())
+
+        # Get sponsors
+        sponsors = history.find(text='Sponsors:').parent.findNext('td').find('td').string.strip().split(', ')
+
         yield {'state':'PA', 'chamber':chamber, 'session':'%s-%s' % (y1, y2),
                'bill_id':bill_id, 'remote_url':bill_url}
 
