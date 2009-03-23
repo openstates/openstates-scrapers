@@ -11,16 +11,23 @@ import datetime
 # ugly hack
 import sys
 sys.path.append('.')
-from pyutils.legislation import run_legislation_scraper
+from pyutils.legislation import LegislationScraper, NoDataForYear
 
-def scrape_legislation(chamber,year):
-    print "chamber: %s, year: %s" % (chamber, year)
-    if chamber == 'upper':
-        chamber_abbr='h'
+class MOLegislationScraper(LegislationScraper):
+    def scrape_bills(self,chamber,year):
+        print "chamber: %s, year: %s" % (chamber, year)
+        if chamber == 'upper':
+            self.scrape_senate(year)
+        elif chamber == 'lower':
+            self.scrape_house(year)
+        else:
+            print >> sys.stder, "Need to pick a chamber"
 
+    def scrape_senate(self,year)
+    
         #we only have data from 2005-2009
-        assert int(year) >= 2005, "no upper chamber data from before 2005"
-        assert int(year) <= datetime.date.today().year, "no future data"
+        assert int(year) >= 2005, NoDataForYear(year)
+        assert int(year) <= datetime.date.today().year, NoDataForYear(year)
     
         year2 = "%02d" % (int(year) % 100)
     
@@ -69,10 +76,11 @@ def scrape_legislation(chamber,year):
                 bill_url= root_url + 'Bill.aspx?SessionType=R&BillID='+bill_web_id
     
             yield {'state':'M0','chamber':'upper','session':year,
-                   'bill_id':bill_id,'remote_url':bill_url,
-                   'name':bill_desc,'bill_sponsor':bill_sponsor}
+                'bill_id':bill_id,'remote_url':bill_url,
+                'name':bill_desc,'bill_sponsor':bill_sponsor}
 
-    elif chamber == 'lower':
+
+    def scrape_house(year):
         chamber_abbr='s'
 
         #we only have data from 1998-2009
@@ -121,11 +129,11 @@ def scrape_legislation(chamber,year):
                 if bill_link != None:
                     bill_url = page_root + bill_link['href']
     
-		    # bill id is inside the link
+      # bill id is inside the link
                     bill_id = bill_link.string.strip()
                     
-		    # sponsor is in the next link
-		    # info is outside of the <b> tag we used to find the bill
+      # sponsor is in the next link
+      # info is outside of the <b> tag we used to find the bill
                     if int(year) >= 2000:
                         bill_sponsor = bill_link.nextSibling.next.string.strip()
                         bill_info = str(bill.nextSibling.next.next).strip()
@@ -133,21 +141,19 @@ def scrape_legislation(chamber,year):
                         bill_sponsor = bill_link.nextSibling.next.next.string.strip()
                         bill_info = str(bill.nextSibling.next.next.next).strip()
     
-		    bill_info = re.sub(r"(\r|\n|\s)+", " ", bill_info)
+      bill_info = re.sub(r"(\r|\n|\s)+", " ", bill_info)
     
-		    # parse out the description and the LR number
-		    m = re.match("(.*?)\(LR# (\d.*?)\)", bill_info, re.DOTALL)
-		    bill_desc = m.group(1)
-		    bill_lr = m.group(2)
+      # parse out the description and the LR number
+      m = re.match("(.*?)\(LR# (\d.*?)\)", bill_info, re.DOTALL)
+      bill_desc = m.group(1)
+      bill_lr = m.group(2)
     
                     yield {'state':'M0','chamber':'lower','session':session,
-                           'bill_id':bill_id,'remote_url':bill_url,
-                           'name':bill_desc,'bill_sponsor':bill_sponsor,
-                           'lr':bill_lr }
+                        'bill_id':bill_id,'remote_url':bill_url,
+                        'name':bill_desc,'bill_sponsor':bill_sponsor,
+                        'lr':bill_lr }
 
-    else:
-        print >> sys.stder, "Need to pick a chamber"
-
-
+    
+    
 if __name__ == '__main__':
-    run_legislation_scraper(scrape_legislation)
+    MOLegislationScraper().run()
