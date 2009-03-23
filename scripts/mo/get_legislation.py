@@ -86,33 +86,37 @@ class MOLegislationScraper(LegislationScraper):
         soup = soup_web(bill_url)
 
         # get all the info needed to record the bill
-        bill_id   = soup.find(id="lblBillNum").string
-	print bill_id
-        bill_name = soup.find(id="lblBillTitle").string
-        bill_desc = soup.find(id="lblBriefDesc").string
-        bill_lr   = soup.find(id="lblLRNum").string
+        bill_id   = soup.find(id="lblBillNum").b.font.string
+        print bill_id
+        bill_name = soup.find(id="lblBillTitle").font.string
+        print bill_name
+        bill_desc = soup.find(id="lblBriefDesc").font.string
+        print bill_desc
+        bill_lr   = soup.find(id="lblLRNum").font.string
+        print bill_lr
 
 #        added_info = {'LR': bill_lr, 'desc':bill_desc}
-        self.add_bill('upper',year, bill_id, bill_name, bill_url,added_info, 'bill_lr'=bill_lr, 'bill_desc'=bill_desc)
+        self.add_bill('upper',year, bill_id, bill_name, bill_url, bill_lr=bill_lr, bill_desc=bill_desc)
 
 
         # get the sponsors and cosponsors
-        bill_sponsor = soup.find(id="hlSponsor").string
+        bill_sponsor = soup.find(id="hlSponsor").i.font.string
+        print bill_sponsor
         bill_sponsor_link = soup.find(id="hlSponsor").href
 
 #        added_info = {'sponsor_link':bill_sponsor_link}
-        self.add_sponsorship('upper',year,bill_id,'primary',bill_sponsor,'sponsor_link'=bill_sponsor_link)
+        self.add_sponsorship('upper',year,bill_id,'primary',bill_sponsor,sponsor_link=bill_sponsor_link)
 
         cosponsor_tag = soup.find(id="hlCoSponsors")
         if cosponsor_tag != None:
-            self.read_senate_cosponsors(cosponsor_url.href, bill_id, year)
+            self.read_senate_cosponsors(cosponsor_tag.href, bill_id, year)
 
         # get the actions
         action_url = soup.find(id="hlAllActions").href
         #TODO: parse senate actions
         
 
-    def read_senate_cosponsors(url, bill_id, year):
+    def read_senate_cosponsors(self, url, bill_id, year):
 	print bill_id + ": sponsors"
         soup = soup_web(url)
         cosponsor_table = soup.find(id="dgCoSponsors")
@@ -122,10 +126,11 @@ class MOLegislationScraper(LegislationScraper):
             cosponsor_string = cosponsor_row.font.string
             m = re.search("(.*),",cosponsor_string)
             cosponsor = m.group(1)
+            print cosponsor
 
             cosponsor_url = cosponsor_row.a.href
             #added_info = {'sponsor_link':cosponsor_url}
-            self.add_sponsorship('upper',year,bill_id,'cosponsor',cosponsor,'sponsor_link'=cosponsor_url)
+            self.add_sponsorship('upper',year,bill_id,'cosponsor',cosponsor,sponsor_link=cosponsor_url)
         
     
 
