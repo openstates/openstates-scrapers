@@ -20,22 +20,25 @@ class NCLegislationScraper(LegislationScraper):
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?Session=%s&BillID=%s' % (session, bill_id)
 
         # parse the bill data page, finding the latest html text
-        bill_data = urllib.urlopen(bill_detail_url).read()
-        bill_soup = BeautifulSoup(bill_data)
-        links = bill_soup.findAll('a')
-        best_url = None
-        for link in links:
-            if link.has_key('href') and link['href'].startswith('/Sessions'):
-                if not best_url or link['href'].endswith('.html'):
-                    best_url = link['href']
-        best_url = 'http://www.ncga.state.nc.us' + best_url
-
         if bill_id[0] == 'H':
             chamber = 'lower'
         else:
             chamber = 'upper'
 
-        self.add_bill(chamber, session, bill_id, '-title-fix-me-', best_url)
+        bill_data = urllib.urlopen(bill_detail_url).read()
+        bill_soup = BeautifulSoup(bill_data)
+
+        bill_title = bill_soup.findAll('div', style="text-align: center; font: bold 20px Arial; margin-top: 15px; margin-bottom: 8px;")[0].contents[0]
+
+        self.add_bill(chamber, session, bill_id, bill_title)
+
+        # get all versions
+        links = bill_soup.findAll('a')
+        for link in links:
+            if link.has_key('href') and link['href'].startswith('/Sessions') and link['href'].endswith('.html'):
+                version_name = link.parent.previousSibling.previousSibling.contents[0].replace('&nbsp;', ' ')
+                version_url = 'http://www.ncga.state.nc.us' + link['href']
+                self.add_bill_version(chamber, session, bill_id, version_name, version_url)
 
         # grab primary and cosponsors from table[6]
         tables = bill_soup.findAll('table')
@@ -67,8 +70,6 @@ class NCLegislationScraper(LegislationScraper):
     def scrape_session(self, chamber, session):
         url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (session, chamber)
         data = urllib.urlopen(url).read()
-        print url
-        print data
         soup = BeautifulSoup(data)
 
         rows = soup.findAll('table')[5].findAll('tr')[1:]
@@ -79,17 +80,17 @@ class NCLegislationScraper(LegislationScraper):
 
     def scrape_bills(self, chamber, year):
         year_mapping = {
-            #'1985': ('1985',),
-            #'1986': ('1985E1',),
-            #'1987': ('1987',),
-            #'1988': (),
-            #'1989': ('1989', '1989E1'),
-            #'1990': ('1989E2',),
-            #'1991': ('1991E1', '1991'),
-            #'1992': (),
-            #'1993': ('1993',),
-            #'1994': ('1993E1',),
-            #'1995': ('1995',),
+            '1985': ('1985',),
+            '1986': ('1985E1',),
+            '1987': ('1987',),
+            '1988': (),
+            '1989': ('1989', '1989E1'),
+            '1990': ('1989E2',),
+            '1991': ('1991E1', '1991'),
+            '1992': (),
+            '1993': ('1993',),
+            '1994': ('1993E1',),
+            '1995': ('1995',),
             '1996': ('1995E1', '1995E2'),
             '1997': ('1997',),
             '1998': ('1997E1',),
