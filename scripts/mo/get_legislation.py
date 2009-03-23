@@ -36,7 +36,7 @@ class MOLegislationScraper(LegislationScraper):
     def scrape_senate(self,year):
     
         #we only have data from 2005-2009
-	if int(year) >= 2005 or int(year) <= datetime.date.today().year:
+	if int(year) < 2005 or int(year) > datetime.date.today().year:
             raise NoDataForYear(year)
     
         year2 = "%02d" % (int(year) % 100)
@@ -46,6 +46,7 @@ class MOLegislationScraper(LegislationScraper):
         root_url ='http://www.senate.mo.gov/'+year2+'info/BTS_Web/'
         index_file = root_url + 'BillList.aspx?SessionType=R'
     
+	print index_file
         soup = soup_web(index_file)
     
         # each bill is in it's own table (nested in a larger table)
@@ -94,7 +95,7 @@ class MOLegislationScraper(LegislationScraper):
         bill_lr   = soup.find(id="lblLRNum").font.string
 
 #        added_info = {'LR': bill_lr, 'desc':bill_desc}
-        self.add_bill('upper',year, bill_id, bill_name, bill_url, bill_lr=bill_lr, bill_desc=bill_desc)
+        self.add_bill('upper',year, bill_id, bill_name, bill_url=bill_url, bill_lr=bill_lr, bill_desc=bill_desc)
 
 
         # get the sponsors and cosponsors
