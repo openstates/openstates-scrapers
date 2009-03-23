@@ -60,7 +60,9 @@ class SDLegislationScraper(LegislationScraper):
             bill_url = session_url + version_table.find('a')['href']
 
             # Add bill
-            self.add_bill(chamber, year, bill_id, bill_name, bill_url)
+            self.add_bill(chamber, year, bill_id, bill_name)
+            self.add_bill_version(chamber, year, bill_id, 'latest',
+                                  bill_url)
 
             # Get actions
             act_table = history.find('table')
@@ -137,7 +139,9 @@ class SDLegislationScraper(LegislationScraper):
             bill_url = 'http://legis.state.sd.us%s' % bill_url
 
             # Add bill
-            self.add_bill(chamber, year, bill_id, bill_name, bill_url)
+            self.add_bill(chamber, year, bill_id, bill_name)
+            self.add_bill_version(chamber, year, bill_id, 'latest',
+                                  bill_url)
 
             # Get actions
             act_table = history.find('table')

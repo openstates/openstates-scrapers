@@ -58,8 +58,9 @@ class FLLegislationScraper(LegislationScraper):
 
                     bill_url = 'http://www.flsenate.gov/cgi-bin/view_page.pl?File=%s&Directory=session/%s/%s/bills/billtext/html/' % (bill_file, session, chamber_name)
 
-                    self.add_bill(chamber, session, bill_id,
-                                  bill_name, bill_url)
+                    self.add_bill(chamber, session, bill_id, bill_name)
+                    self.add_bill_version(chamber, session, bill_id,
+                                          'latest', bill_url)
 
     def scrape_bills(self, chamber, year):
         # Data available for 1998 on

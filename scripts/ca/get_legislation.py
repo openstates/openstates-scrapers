@@ -46,7 +46,8 @@ class CALegislationScraper(LegislationScraper):
         # Will fix later.
         bill_sponsor = history.find('meta', attrs={'name':'AUTHOR'})['content'].strip()
         bill_name = history.find('meta', attrs={'name':'TOPIC'})['content'].strip()
-        self.add_bill(chamber, session, bill_id, bill_name, bill_url)
+        self.add_bill(chamber, session, bill_id, bill_name)
+        self.add_bill_version(chamber, session, bill_id, 'latest', bill_url)
         self.add_sponsorship(chamber, session, bill_id, 'primary', bill_sponsor)
 
         # Get bill actions

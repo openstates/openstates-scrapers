@@ -54,7 +54,9 @@ class PALegislationScraper(LegislationScraper):
             bill_title = title_label.findNext().string
 
             # Add bill
-            self.add_bill(chamber, session, bill_id, bill_title, bill_url)
+            self.add_bill(chamber, session, bill_id, bill_title)
+            self.add_bill_version(chamber, session, bill_id, 'latest',
+                                  bill_url)
 
             # Get bill history page
             history_url = 'http://www.legis.state.pa.us/cfdocs/billinfo/bill_history.cfm?syear=%s&sind=%i&body=%s&type=B&BN=%s' % (y1, session_num, bill_abbr, bill_number)

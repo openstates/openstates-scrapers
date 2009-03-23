@@ -46,7 +46,9 @@ class AKLegislationScraper(LegislationScraper):
             # How should revisions be handled?
             bill_url = 'http://www.legis.state.ak.us/basis/get_bill_text.asp?hsid=%s%04dA&session=%i' % (bill_abbr, int(bill_id[2:]), session)
 
-            self.add_bill(chamber, session, bill_id, bill_name.strip(), bill_url)
+            self.add_bill(chamber, session, bill_id, bill_name.strip())
+            self.add_bill_version(chamber, session, bill_id, 'latest',
+                                  bill_url)
 
     def scrape_bills(self, chamber, year):
         # Data available for 1993 on
