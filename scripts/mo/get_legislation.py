@@ -36,7 +36,7 @@ class MOLegislationScraper(LegislationScraper):
     def scrape_senate(self,year):
     
         #we only have data from 2005-2009
-	if int(year) >= 2005 or int(year) <= datetime.date.today().year
+	if int(year) >= 2005 or int(year) <= datetime.date.today().year:
             raise NoDataForYear(year)
     
         year2 = "%02d" % (int(year) % 100)
