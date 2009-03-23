@@ -62,7 +62,8 @@ class LegislationScraper(object):
                     help='scrape lower chamber'),
     )
     common_fields = ('bill_state', 'bill_chamber', 'bill_session', 'bill_id')
-    bill_fields = common_fields + ('bill_name', 'bill_url')
+    bill_fields = common_fields + ('bill_name',)
+    bill_version_fields = common_fields + ('version_name', 'version_url')
     sponsor_fields = common_fields + ('sponsor_type', 'sponsor_name')
     action_fields = common_fields + ('action_chamber', 'action_text', 'action_date')
 
@@ -73,21 +74,35 @@ class LegislationScraper(object):
         bill_filename = 'data/%s/legislation.csv' % self.state
         self.bill_csv = csv.DictWriter(open(bill_filename, 'w'), 
                                        self.bill_fields, extrasaction='ignore')
+
+        bill_version_filename = 'data/%s/bill_versions.csv' % self.state
+        self.version_csv = csv.DictWriter(open(bill_version_filename, 'w'),
+                                          self.bill_version_fields,
+                                          extrasaction='ignore')
+
         sponsor_filename = 'data/%s/sponsorships.csv' % self.state
         self.sponsor_csv = csv.DictWriter(open(sponsor_filename, 'w'),
                                           self.sponsor_fields, 
                                           extrasaction='ignore')
+
         action_filename = 'data/%s/actions.csv' % self.state
         self.action_csv = csv.DictWriter(open(action_filename, 'w'),
                                          self.action_fields,
                                          extrasaction='ignore')
 
-    def add_bill(self, bill_chamber, bill_session, bill_id, bill_name, bill_url, **kwargs):
+    def add_bill(self, bill_chamber, bill_session, bill_id, bill_name, **kwargs):
         row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
                'bill_session': bill_session, 'bill_id': bill_id,
-               'bill_name': bill_name, 'bill_url': bill_url}
+               'bill_name': bill_name}
         row.update(kwargs)
         self.bill_csv.writerow(row)
+
+    def add_bill_version(self, bill_chamber, bill_session, bill_id, version_name, version_url, **kwargs):
+        row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
+               'bill_session': bill_session, 'bill_id': bill_id,
+               'version_name': version_name, 'version_url': version_url}
+        row.update(kwargs)
+        self.version_csv.writerow(row)
 
     def add_sponsorship(self, bill_chamber, bill_session, bill_id, sponsor_type, sponsor_name, **kwargs):
         row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
