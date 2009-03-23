@@ -64,7 +64,7 @@ class CALegislationScraper(LegislationScraper):
             self.add_action(chamber, session, bill_id, chamber,
                             action, act_date)
 
-    def scrape_session(self, chamber, year):
+    def scrape_session(self, chamber, session):
         if chamber == 'upper':
             chamber_name = 'senate'
             bill_abbr = 'SB'
@@ -72,22 +72,9 @@ class CALegislationScraper(LegislationScraper):
             chamber_name = 'assembly'
             bill_abbr = 'AB'
 
-        # leginfo.ca.gov has data from 1993 on
-        assert int(year) >= 1993, "no data available before 1993"
-        assert int(year) <= dt.date.today().year, "can't look into the future"
-
-        if int(year) % 2 == 1:
-            # Turn the first year of a session into year1, year2 pair
-            y1 = year[2:]
-            y2 = str(int(year) + 1)[2:]
-            session = '%s-%s' % (y1, y2)
-        else:
-            # If second year of session just ignore
-            return
-
         # Get the list of all chamber bills for the given session
         # (text format, sorted by author)
-        url = "http://www.leginfo.ca.gov/pub/%s-%s/bill/index_%s_author_bill_topic" % (y1, y2, chamber_name)
+        url = "http://www.leginfo.ca.gov/pub/%s/bill/index_%s_author_bill_topic" % (session, chamber_name)
         print "Getting: %s" % url
         bill_list = urllib2.urlopen(url).read()
         bill_re = re.compile('\s+(%s\s+\d+)(.*(\n\s{31}.*){0,})' % bill_abbr,
@@ -98,10 +85,19 @@ class CALegislationScraper(LegislationScraper):
             self.get_bill_info(chamber, session, bill_id)
 
     def scrape_bills(self, chamber, year):
+        # CA makes data available from 1993 on
+        if int(year) < 1993 or int(year) > dt.date.today().year:
+            raise NoDataForYear(year)
+
+        # We expect the first year of a session (odd)
         if int(year) % 2 != 1:
             raise NoDataForYear(year)
 
-        self.scrape_session(chamber, year)
+        year1 = year[2:]
+        year2 = str((int(year) + 1))[2:]
+        session = "%s-%s" % (year1, year2)
+
+        self.scrape_session(chamber, session)
 
 if __name__ == '__main__':
     CALegislationScraper().run()
