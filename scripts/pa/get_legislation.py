@@ -61,12 +61,21 @@ class PALegislationScraper(LegislationScraper):
             history = BeautifulSoup(urllib2.urlopen(history_url).read())
 
             # Get sponsors
-            sponsors = history.find(text='Sponsors:').parent.findNext('td').find('td').string.strip().replace(' and', ',').split(', ')
-            self.add_sponsorship(chamber, session, bill_id, 'primary',
+            # (format changed in 2009)
+            if int(year) < 2009:
+                sponsors = history.find(text='Sponsors:').parent.findNext('td').find('td').string.strip().replace(' and', ',').split(', ')
+                self.add_sponsorship(chamber, session, bill_id, 'primary',
                                  sponsors[0])
-            for sponsor in sponsors[1:]:
-                self.add_sponsorship(chamber, session, bill_id, 'cosponsor',
-                                     sponsor)
+                for sponsor in sponsors[1:]:
+                    self.add_sponsorship(chamber, session, bill_id, 'cosponsor',
+                                         sponsor)
+            else:
+                sponsors = history.find(text='Sponsors:').parent.findNext().findAll('a')
+                self.add_sponsorship(chamber, session, bill_id, 'primary',
+                                     sponsors[0].string)
+                for sponsor in sponsors[1:]:
+                    self.add_sponsorship(chamber, session, bill_id, 'cosponsor',
+                                         sponsor.string)
 
     def scrape_bills(self, chamber, year):
         # Data available from 1969 on
