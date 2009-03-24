@@ -26,21 +26,25 @@ class CALegislationScraper(LegislationScraper):
         details = BeautifulSoup(details_raw)
 
         # Get the history page (following a link from the details page).
-        # Once again, there's a tag that BeautifulSoup chokes on.
+        # Once again, we remove tags that BeautifulSoup chokes on
+        # (including all meta tags, because bills with quotation marks
+        # in the title come to us w/ malformed meta tags)
         hist_link = details.find(href=re.compile("_history.html"))
         hist_url = 'http://www.leginfo.ca.gov%s' % hist_link['href']
         history_raw = urllib2.urlopen(hist_url).read()
         history_raw = history_raw.replace('<! ****** document data starts here ******>', '')
+        rem_meta = re.compile('</title>.*</head>', re.MULTILINE | re.DOTALL)
+        history_raw = rem_meta.sub('</title></head>', history_raw)
         history = BeautifulSoup(history_raw)
 
         # Find title and add bill
-        # Note: this fails on a few bills that have quotation marks in their
-        # titles because CA's site outputs malformed meta tags for them.
-        # (see 07-08 AB528 @ http://www.leginfo.ca.gov/pub/07-08/bill/asm/ab_0501-0550/ab_528_bill_20080201_history.html
-        # Will fix later.
-        bill_sponsor = history.find('meta', attrs={'name':'AUTHOR'})['content'].strip()
-        bill_name = history.find('meta', attrs={'name':'TOPIC'})['content'].strip()
-        self.add_bill(chamber, session, bill_id, bill_name)
+        title_match = re.search('TOPIC\t:\s(\w.+\n(\t\w.*\n){0,})', history_raw, re.MULTILINE)
+        bill_title = title_match.group(1).replace('\n', '').replace('\t', ' ')
+        self.add_bill(chamber, session, bill_id, bill_title)
+
+        # Find author (primary sponsor)
+        sponsor_match = re.search('^AUTHOR\t:\s(.*)$', history_raw, re.MULTILINE)
+        bill_sponsor = sponsor_match.group(1)
         self.add_sponsorship(chamber, session, bill_id, 'primary', bill_sponsor)
 
         # Get all versions of the bill
