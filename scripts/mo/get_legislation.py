@@ -160,53 +160,87 @@ class MOLegislationScraper(LegislationScraper):
         for session_code in sessions[int(year)]:
             page_root = 'http://www.house.mo.gov'
             bill_page = page_root + '/billtracking/' + session_code + '/billist.htm'
+            self.read_house_billpage(bill_page,year)
+
+    def read_house_billpage(self,url,year):
+        soup = soup_web(url) #this gives us an index page
     
-            # get the file, parse it with BeautifulSoup
-            req = urllib2.Request(bill_page)
+        # find the first center tag, take the text after 'House of Representatives'
+        # and before 'Bills' as the session
+        header_tag = soup.find('center')
+        m = re.search("House of Representatives(.*?)Bills", str(header_tag), re.I | re.DOTALL) 
+        session = m.group(1)
+        session = re.sub("<.*?>", '', session).strip()
+
+        #get bills
+        bills = soup.findAll('b')
+
+        for bill in bills:
+            bill_link = bill.find(href = re.compile("HB\d*?\.HTM", re.I))
+            if bill_link != None:
+                bill_url = page_root + bill_link['href']
+                self.read_house_bill(bill_url,session)
+
+    def read_house_bill(self,url,session):
+        soup = soup_web(url)
+
+        header_table = soup.table
+        # get all the info needed to record the bill
+        bill_id   = header_table.b.string
+        print bill_id
+        #TODO: this seems to miss some
+        bill_desc = header_table.td.nextSibling.string
+
+        bill_details_tbl = soup.table.nextSibling
+        lr_label_tag = bill_details_tbl.find(text = re.compile("LR"))
+        bill_lr      = lr_label_tag.next.string
+
+        self.add_bill('lower',session, bill_id, bill_name, bill_url=bill_url, bill_lr=bill_lr, bill_desc=bill_desc)
+
+
+        # get the sponsors and cosponsors
+        sponsor_dirty = bill_details_table.em.string
+        m = re.search("(.*)\(.*\)",sponsor_dirty)
+        bill_sponsor = m.group(1)
+        print bill_sponsor
+
+        bill_sponsor_link = bill_details_table.a['href']
+
+#        added_info = {'sponsor_link':bill_sponsor_link}
+        self.add_sponsorship('lower',session,bill_id,'primary',bill_sponsor,sponsor_link=bill_sponsor_link)
+        
+        # check for cosponsors
+        cosponsor_cell = bill_details_table.find(text = re.compile("Sponsor")).next
+        if cosponsor_cell.a != None:
+            self.read_house_cosponsors(cosponsor_cell,session,bill_id)
+
+
+    def read_house_cosponsors(self,cell,session,bill_id)
+        cosponsor_dirty = cell.a.string
+        m = re.search(r"(.*)\(.*\)", cosponsor_dirty)
+        cosponsor = m.group(1)
+        self.add_sponsorship('lower',session,bill_id,'cosponsor',
+                             cosponsor,sponsor_link = cell.a['href'])
+
+        if cell.a.nextSibling != None:
+            bill_text = cell.a.nextSibling['href']
+            #don't need to parse bill in to soup
+            req = urllib2.Request(url)
             response = urllib2.urlopen(req)
             doc = response.read()
-            soup = BeautifulSoup(doc)#this gives us an index page
-    
-            # find the first center tag, take the text after 'House of Representatives'
-            # and before 'Bills' as the session
-            header_tag = soup.find('center')
-            m = re.search("House of Representatives(.*?)Bills", str(header_tag), re.I | re.DOTALL) 
-            session = m.group(1)
-            session = re.sub("<.*?>", '', session).strip()
-    
-            #get bills
-            bills = soup.findAll('b')
-    
-            for bill in bills:
-                bill_link = bill.find(href = re.compile("HB\d*?\.HTM", re.I))
-                if bill_link != None:
-                    bill_url = page_root + bill_link['href']
-    
-      # bill id is inside the link
-                    bill_id = bill_link.string.strip()
-                    
-      # sponsor is in the next link
-      # info is outside of the <b> tag we used to find the bill
-                    if int(year) >= 2000:
-                        bill_sponsor = bill_link.nextSibling.next.string.strip()
-                        bill_info = str(bill.nextSibling.next.next).strip()
-                    else:
-                        bill_sponsor = bill_link.nextSibling.next.next.string.strip()
-                        bill_info = str(bill.nextSibling.next.next.next).strip()
-    
-                bill_info = re.sub(r"(\r|\n|\s)+", " ", bill_info)
-    
-                # parse out the description and the LR number
-                m = re.match("(.*?)\(LR# (\d.*?)\)", bill_info, re.DOTALL)
-                bill_desc = m.group(1)
-                bill_lr = m.group(2)
-    
-                yield {'state':'M0','chamber':'lower','session':session,
-                        'bill_id':bill_id,'remote_url':bill_url,
-                        'name':bill_desc,'bill_sponsor':bill_sponsor,
-                        'lr':bill_lr }
+            
+            m = re.match(r"\(Sponsor\),(.*)\(Co-sponsor\)",doc) 
+            cosponsor_list = re.split("(,|AND)",m.group(1))
+            for cosponsor_dirty in cosponsor_list:
+                m = re.match("(.*)\(.*\)",cosponsor_dirty)
+                if m != None:
+                    cosponsor = m.group(1)
+                else:
+                    cosponsor = cosponsor_dirty
+                self.add_sponsorship('lower',session,bill_id,
+                                     'cosponsor',cosponsor)
 
-    
+
     
 if __name__ == '__main__':
     MOLegislationScraper().run()
