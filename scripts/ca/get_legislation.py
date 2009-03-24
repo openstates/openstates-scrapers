@@ -25,12 +25,6 @@ class CALegislationScraper(LegislationScraper):
         details_raw = details_raw.replace('<P ALIGN=CENTER">', '')
         details = BeautifulSoup(details_raw)
 
-        # Get the URL of the text of the most recent version of this bill
-        # (it should be the last link with the given target format).
-        text_re = '%s_%s_bill\w*\.html' % (bill_id[:2].lower(), bill_id[2:])
-        links = details.findAll(href=re.compile(text_re))
-        bill_url = "http://www.leginfo.ca.gov%s" % links[-1]['href']
-
         # Get the history page (following a link from the details page).
         # Once again, there's a tag that BeautifulSoup chokes on.
         hist_link = details.find(href=re.compile("_history.html"))
@@ -47,8 +41,20 @@ class CALegislationScraper(LegislationScraper):
         bill_sponsor = history.find('meta', attrs={'name':'AUTHOR'})['content'].strip()
         bill_name = history.find('meta', attrs={'name':'TOPIC'})['content'].strip()
         self.add_bill(chamber, session, bill_id, bill_name)
-        self.add_bill_version(chamber, session, bill_id, 'latest', bill_url)
         self.add_sponsorship(chamber, session, bill_id, 'primary', bill_sponsor)
+
+        # Get all versions of the bill
+        text_re = '%s_%s_bill\w*\.html' % (bill_id[:2].lower(), bill_id[2:])
+        links = details.find(text='Bill Text').parent.findAllNext(href=re.compile(text_re))
+        for link in links:
+            version_url = "http://www.leginfo.ca.gov%s" % link['href']
+
+            # This name is not necessarily unique (for example, there may
+            # be many versions called simply "Amended"). Perhaps we should
+            # add a date or something to make it unique?
+            version_name = link.parent.previousSibling.previousSibling.b.font.string
+            self.add_bill_version(chamber, session, bill_id,
+                                  version_name, version_url)
 
         # Get bill actions
         action_re = re.compile('(\d{4})|([\w.]{4,6}\s+\d{1,2})\s+(.*(\n\s+.*){0,})', re.MULTILINE)
