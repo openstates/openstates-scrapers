@@ -79,6 +79,27 @@ class PALegislationScraper(LegislationScraper):
                     self.add_sponsorship(chamber, session, bill_id, 'cosponsor',
                                          sponsor.string)
 
+            # Get actions
+            act_table = history.find(text="Actions:").parent.findNextSibling()
+            act_chamber = chamber
+            for row in act_table.findAll('tr'):
+                act_raw = row.td.div.string.replace('&#160;', ' ')
+                act_match = re.match('(.*),\s+((\w+\.?) (\d+), (\d{4}))', act_raw)
+                if act_match:
+                    self.add_action(chamber, session, bill_id, act_chamber,
+                                    act_match.group(1),
+                                    act_match.group(2).strip())
+                else:
+                    # Handle actions from the other chamber
+                    # ("In the (House|Senate)" row followed by actions that
+                    # took place in that chamber)
+                    cham_match = re.match('In the (House|Senate)', act_raw)
+                    if cham_match.group(1) == 'House':
+                        act_chamber = 'lower'
+                    else:
+                        act_chamber = 'upper'
+
+
     def scrape_bills(self, chamber, year):
         # Data available from 1969 on
         if int(year) < 1969 or int(year) > dt.date.today().year:
