@@ -43,11 +43,6 @@ class PALegislationScraper(LegislationScraper):
             # Get info page
             info_url = 'http://www.legis.state.pa.us/cfdocs/billinfo/billinfo.cfm?syear=%s&sind=%i&body=%s&type=B&BN=%s' % (y1, session_num, bill_abbr, bill_number)
             info_page = BeautifulSoup(urllib2.urlopen(info_url).read())
-            pn_table = info_page.find('div', {"class": 'pn_table'})
-
-            # Latest printing should be listed first
-            text_link = pn_table.find('a', href=re.compile('pn=\d{4}'))
-            bill_url = 'http://www.legis.state.pa.us%s' % text_link['href']
 
             # Get bill title
             title_label = info_page.find(text='Short Title:')
@@ -55,8 +50,15 @@ class PALegislationScraper(LegislationScraper):
 
             # Add bill
             self.add_bill(chamber, session, bill_id, bill_title)
-            self.add_bill_version(chamber, session, bill_id, 'latest',
-                                  bill_url)
+
+            # Get bill versions
+            pn_table = info_page.find('div', {"class": 'pn_table'})
+            text_rows = pn_table.findAll('tr')[1:]
+            for tr in text_rows:
+                text_link = tr.td.a
+                text_url = 'http://www.legis.state.pa.us%s' % text_link['href']
+                self.add_bill_version(chamber, session, bill_id,
+                                      text_link.string, text_url)
 
             # Get bill history page
             history_url = 'http://www.legis.state.pa.us/cfdocs/billinfo/bill_history.cfm?syear=%s&sind=%i&body=%s&type=B&BN=%s' % (y1, session_num, bill_abbr, bill_number)
@@ -94,6 +96,10 @@ class PALegislationScraper(LegislationScraper):
                     # ("In the (House|Senate)" row followed by actions that
                     # took place in that chamber)
                     cham_match = re.match('In the (House|Senate)', act_raw)
+                    if not cham_match:
+                        # Ignore?
+                        continue
+
                     if cham_match.group(1) == 'House':
                         act_chamber = 'lower'
                     else:
