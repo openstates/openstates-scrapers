@@ -65,6 +65,24 @@ class FLLegislationScraper(LegislationScraper):
                         self.add_bill_version(chamber, session, bill_id,
                                               version_name, version_url)
 
+                    # Get actions
+                    act_table = info_page.find('pre', "billhistory")
+                    act_str = ""
+                    for line in act_table.findAll(text=True):
+                        act_str += line + "\n"
+                    act_str = act_str.replace('&nbsp;', ' ')
+                    act_re = re.compile('^  (\d\d/\d\d/\d\d) (SENATE|HOUSE) (.*\n(\s{16,16}.*\n){0,})', re.MULTILINE)
+                    for act_match in act_re.finditer(act_str):
+                        action = act_match.group(3).replace('\n', ' ')
+                        action = re.sub('\s+', ' ', action)
+                        if act_match.group(2) == 'SENATE':
+                            act_chamber = 'upper'
+                        else:
+                            act_chamber = 'lower'
+                        self.add_action(chamber, session, bill_id,
+                                        act_chamber, action,
+                                        act_match.group(1))
+
     def scrape_bills(self, chamber, year):
         # Data available for 1998 on
         if int(year) < 1998 or int(year) > dt.date.today().year:
