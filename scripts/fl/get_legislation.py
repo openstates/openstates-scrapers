@@ -45,22 +45,25 @@ class FLLegislationScraper(LegislationScraper):
                     bill_id = match.group(0)
                     bill_number = match.group(1)
 
-                    # Get bill name
-                    bill_name = b.parent.findNext('td').find('a').string.strip()
+                    # Get bill name and info url
+                    bill_link = b.parent.findNext('td').a
+                    bill_name = bill_link.string.strip()
+                    info_url = "http://www.flsenate.gov/Session/%s" % bill_link['href']
                     print "Getting %s: %s" % (bill_id, bill_name)
 
-                    # Generate bill text url
-                    if chamber == 'upper':
-                        bill_file = "sb%s.html" % bill_number
-                    else:
-                        # House bills have two extra 0's at end
-                        bill_file = "hb%s00.html" % bill_number
-
-                    bill_url = 'http://www.flsenate.gov/cgi-bin/view_page.pl?File=%s&Directory=session/%s/%s/bills/billtext/html/' % (bill_file, session, chamber_name)
-
+                    # Add bill
                     self.add_bill(chamber, session, bill_id, bill_name)
-                    self.add_bill_version(chamber, session, bill_id,
-                                          'latest', bill_url)
+
+                    # Get bill info page
+                    info_page = BeautifulSoup(urllib2.urlopen(info_url).read())
+
+                    # Get all bill versions
+                    bill_table = info_page.find('a', attrs={'name':'BillText'}).parent.parent.findNext('tr').td.table
+                    for tr in bill_table.findAll('tr')[1:]:
+                        version_name = tr.td.string
+                        version_url = "http://www.flsenate.gov%s" % tr.a['href']
+                        self.add_bill_version(chamber, session, bill_id,
+                                              version_name, version_url)
 
     def scrape_bills(self, chamber, year):
         # Data available for 1998 on
