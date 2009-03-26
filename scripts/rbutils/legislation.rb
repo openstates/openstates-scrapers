@@ -5,8 +5,33 @@ require 'optparse'
 require 'fileutils'
 require 'open-uri'
 require 'time'
-require 'pp'
 
+# Include this module in your scraper and implement a scrape_bills method that
+# takes a chamber and a year and a state method that returns the state abbr.  
+# at the bottom of your file call the run method.  
+#  
+# Your script doesn't need to worry about creating and managing csv files or state 
+# directories.  This script handles all of that.
+#
+# Example
+#
+#  module MyState
+#    include Scrapable
+#
+#   def self.state
+#     "ms"
+#   end
+#
+#   def self.scrap_bills(chamber, year)
+#      bills = your_fetch_bills_method
+#      bills.each do |bill|
+#       add_bill(bill.to_hash)
+#      end
+#    end
+#  end
+#
+#  MyState.run
+#
 module Scrapable
   include FileUtils
   class NoDataForYearError < ::StandardError 
@@ -26,22 +51,28 @@ module Scrapable
     }
   end
   
+  # Add a bill to the legislation.csv file
   def add_bill(bill_hash)
     @legislation_csv << bill_hash
   end
   
+  # Add a bill version to the bill_versions.csv file
   def add_bill_version(version_hash)
     @bill_versions_csv << version_hash
   end
   
+  # Add a sponsorship to the sponsorship.csv file
   def add_sponsorship(sponsorship_hash)
     @sponsorships_csv << sponsorship_hash
   end
   
+  # Add an action to the actions.csv file
   def add_action(action_hash)
     @actions_csv << action_hash
   end
-    
+  
+  # Run your parser, calling its scrape_bills method automatically passing in 
+  # the chamber and years provided in the command line args.
   def run
     opts = OptionParser.new do |o|
       o.on("-y", "--years [YEARS]", "Years to parse") {|opt| options[:years] = opt}
