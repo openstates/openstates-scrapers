@@ -32,6 +32,15 @@ def clean_text(text):
     else:
         return m.group(1)
 
+def get_chamber_from_action(text):
+    m = re.search(r"\((H|S)\)",text)
+    if m == None:
+        return None
+    abbrev = m.group(1)
+    if abbrev == 'S':
+        return 'upper'
+    return 'lower'
+
 class MOLegislationScraper(LegislationScraper):
     state = 'mo'
     house_root = 'http://www.house.mo.gov'
@@ -49,7 +58,7 @@ class MOLegislationScraper(LegislationScraper):
     def scrape_senate(self,year):
     
         #we only have data from 2005-2009
-	    if int(year) < 2005 or int(year) > datetime.date.today().year:
+        if int(year) < 2005 or int(year) > datetime.date.today().year:
             raise NoDataForYear(year)
     
         year2 = "%02d" % (int(year) % 100)
@@ -181,25 +190,21 @@ class MOLegislationScraper(LegislationScraper):
     def read_house_bill(self,url,session):
         url = re.sub("content","print",url)
         soup = soup_web(url)
-	print url
 
         header_table = soup.table
         # get all the info needed to record the bill
         bill_id = header_table.b.string
         bill_id = clean_text(bill_id)
-        print bill_id
 
         #TODO: this seems to miss some
         bill_desc = header_table.td.td.string
         bill_desc = clean_text(bill_desc)
-        print bill_desc
         bill_name = None
 
         bill_details_tbl = soup.table.nextSibling.nextSibling
 
         lr_label_tag = soup.find(text = re.compile("LR"))
         bill_lr      = lr_label_tag.next.string.strip()
-        print bill_lr
 
         self.add_bill('lower',session, bill_id, bill_name, bill_url=url, bill_lr=bill_lr, bill_desc=bill_desc)
 
@@ -210,7 +215,6 @@ class MOLegislationScraper(LegislationScraper):
             bill_sponsor = m.group(1)
         else:
             bill_sponsor = sponsor_dirty
-        print bill_sponsor
 
         bill_sponsor_link = None
         if bill_details_tbl.a != None:
@@ -224,7 +228,39 @@ class MOLegislationScraper(LegislationScraper):
         if cosponsor_cell.a != None:
             self.read_house_cosponsors(cosponsor_cell,session,bill_id)
 
+        actions_link_tag = soup.find('a',text='ACTIONS').previous.previous
+        
+        actions_link = self.house_root + actions_link_tag['href']
+        actions_link = re.sub("content","print",actions_link)
+        self.read_house_actions(actions_link,bill_id,session)
 
+    def read_house_actions(self,url,bill,session):
+        soup = soup_web(url)
+        rows = soup.findAll('tr')
+
+        # start with index 0 because the table doesn't have an opening <tr>
+        first_row = rows[0]
+        date = first_row.td.string
+        action = first_row.td.nextSibling.nextSibling.string
+        
+        for row in rows[1:]:
+            # new actions are represented by having dates in the first td
+            # otherwise, it's a continuation of the description from the 
+            # previous action
+            if row.td != None:
+                if row.td.string != None and row.td.string != ' ':
+                    action_chamber = get_chamber_from_action(action)
+                    self.add_action('lower',session,bill,action_chamber,action, date)
+                    print "%s\t%s\t%s" % (date, action_chamber, action)
+                    date = row.td.string
+                    action = row.td.nextSibling.nextSibling.string
+                else:
+                    action += ' ' + row.td.nextSibling.nextSibling.string
+
+        action_chamber = get_chamber_from_action(action)
+        self.add_action('lower',session,bill,action_chamber,action, date)
+        
+        
     def read_house_cosponsors(self,cell,session,bill_id):
 
         # if there's only one sponsor, we don't have to worry about this.
@@ -235,7 +271,6 @@ class MOLegislationScraper(LegislationScraper):
             cosponsor_dirty = cell.a.em.string
             cosponsor = clean_text(cosponsor_dirty)
 
-            print cosponsor
             self.add_sponsorship('lower',session,bill_id,'cosponsor',
                                  cosponsor,sponsor_link = cell.a['href'])
 
@@ -255,7 +290,6 @@ class MOLegislationScraper(LegislationScraper):
                     cosponsor = m.group(1)
                 else:
                     cosponsor = cosponsor_dirty
-                print cosponsor
                 self.add_sponsorship('lower',session,bill_id,
                                      'cosponsor',cosponsor)
 
