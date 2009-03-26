@@ -32,7 +32,7 @@ def clean_text(text):
     else:
         return m.group(1)
 
-def get_chamber_from_action(text):
+def house_get_chamber_from_action(text):
     m = re.search(r"\((H|S)\)",text)
     if m == None:
         return None
@@ -40,6 +40,19 @@ def get_chamber_from_action(text):
     if abbrev == 'S':
         return 'upper'
     return 'lower'
+
+def senate_get_chamber_from_action(text):
+    if re.search("Prefiled",text):
+        return 'upper'
+    m = re.search(r"^(H|S)",text)
+    if m == None:
+        m = re.search(r" (H|S) ",text)
+    if m != None:
+        if m.group(1) == 'S':
+            return 'upper'
+        else:
+            return 'lower'
+    return None
 
 class MOLegislationScraper(LegislationScraper):
     state = 'mo'
@@ -68,7 +81,7 @@ class MOLegislationScraper(LegislationScraper):
         root_url = self.senate_root+'/'+year2+'info/BTS_Web/'
         index_file = root_url + 'BillList.aspx?SessionType=R'
     
-	print index_file
+    	print index_file
         soup = soup_web(index_file)
     
         # each bill is in it's own table (nested in a larger table)
@@ -85,7 +98,7 @@ class MOLegislationScraper(LegislationScraper):
             m = re.search(r"BillID=(\d*)", str(bill_table))
             if m != None:
                 bill_web_id = m.group(1)
-                bill_url= self.senate_root + '/Bill.aspx?SessionType=R&BillID='+bill_web_id
+                bill_url= root_url + '/Bill.aspx?SessionType=R&BillID='+bill_web_id
                 self.read_senate_billpage(bill_url, year)
 
 
@@ -94,8 +107,6 @@ class MOLegislationScraper(LegislationScraper):
 
         # get all the info needed to record the bill
         bill_id   = soup.find(id="lblBillNum").b.font.string
-        print bill_id
-        #TODO: this seems to miss some
         bill_name = soup.find(id="lblBillTitle").font.string
         bill_desc = soup.find(id="lblBriefDesc").font.string
         bill_lr   = soup.find(id="lblLRNum").font.string
@@ -105,7 +116,6 @@ class MOLegislationScraper(LegislationScraper):
 
         # get the sponsors and cosponsors
         bill_sponsor = soup.find(id="hlSponsor").i.font.string
-        print bill_sponsor
         bill_sponsor_link = soup.find(id="hlSponsor").href
 
         self.add_sponsorship('upper',year,bill_id,'primary',bill_sponsor,sponsor_link=bill_sponsor_link)
@@ -115,12 +125,21 @@ class MOLegislationScraper(LegislationScraper):
             self.read_senate_cosponsors(cosponsor_tag['href'], bill_id, year)
 
         # get the actions
-        action_url = soup.find(id="hlAllActions").href
-        #TODO: parse senate actions
+        action_url = soup.find(id="hlAllActions")['href']
+        self.read_senate_actions(action_url,bill_id,year)
         
+    def read_senate_actions(self,url,bill,session):
+        soup = soup_web(url)
+        bigtable = soup.find(id='Table5')
+        actionrow = bigtable.next.next.nextSibling.next.nextSibling.nextSibling
+        actiontable = actionrow.td.div.table
+        for row in actiontable.findAll('tr'):
+            date = row.td.string
+            action = row.td.nextSibling.nextSibling.string
+            action_chamber = senate_get_chamber_from_action(action)
+            self.add_action('upper',session,bill,action_chamber,action,date)
 
     def read_senate_cosponsors(self, url, bill_id, year):
-	print bill_id + ": sponsors"
         soup = soup_web(url)
         cosponsor_table = soup.find(id="dgCoSponsors")
         cosponsors = cosponsor_table.findAll("tr")
@@ -129,7 +148,6 @@ class MOLegislationScraper(LegislationScraper):
             cosponsor_string = cosponsor_row.font.string
             m = re.search("(.*),",cosponsor_string)
             cosponsor = m.group(1)
-            print cosponsor
 
             cosponsor_url = cosponsor_row.a.href
             #added_info = {'sponsor_link':cosponsor_url}
@@ -249,9 +267,8 @@ class MOLegislationScraper(LegislationScraper):
             # previous action
             if row.td != None:
                 if row.td.string != None and row.td.string != ' ':
-                    action_chamber = get_chamber_from_action(action)
+                    action_chamber = house_get_chamber_from_action(action)
                     self.add_action('lower',session,bill,action_chamber,action, date)
-                    print "%s\t%s\t%s" % (date, action_chamber, action)
                     date = row.td.string
                     action = row.td.nextSibling.nextSibling.string
                 else:
