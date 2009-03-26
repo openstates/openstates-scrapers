@@ -49,7 +49,7 @@ class MOLegislationScraper(LegislationScraper):
     def scrape_senate(self,year):
     
         #we only have data from 2005-2009
-	if int(year) < 2005 or int(year) > datetime.date.today().year:
+	    if int(year) < 2005 or int(year) > datetime.date.today().year:
             raise NoDataForYear(year)
     
         year2 = "%02d" % (int(year) % 100)
@@ -70,23 +70,7 @@ class MOLegislationScraper(LegislationScraper):
     
         for bill_table in bill_tables:
     
-#            bill_id      = ''
-#            bill_desc    = ''
             bill_url     = ''
-#            bill_sponsor = ''
-    
-#            bill_id_cell = bill_table.find(id=re.compile("BillNum"))
-#            if bill_id_cell != None:
-#                bill_id = bill_id_cell.b.font.string
-#    
-#            bill_desc_cell = bill_table.find(id=re.compile("BriefDesc"))
-#            if bill_desc_cell != None:
-#                bill_desc = bill_desc_cell.font.string
-#    
-#            bill_desc_cell = bill_table.find(id=re.compile("Sponsor"))
-#            if bill_sponsor != None:
-#                bill_sponsor = bill_desc_cell.b.font.string
-#    
             # here we just search the whole table string to get 
             # the BillID that the MO senate site uses
             m = re.search(r"BillID=(\d*)", str(bill_table))
@@ -107,7 +91,6 @@ class MOLegislationScraper(LegislationScraper):
         bill_desc = soup.find(id="lblBriefDesc").font.string
         bill_lr   = soup.find(id="lblLRNum").font.string
 
-#        added_info = {'LR': bill_lr, 'desc':bill_desc}
         self.add_bill('upper',year, bill_id, bill_name, bill_url=bill_url, bill_lr=bill_lr, bill_desc=bill_desc)
 
 
@@ -116,7 +99,6 @@ class MOLegislationScraper(LegislationScraper):
         print bill_sponsor
         bill_sponsor_link = soup.find(id="hlSponsor").href
 
-#        added_info = {'sponsor_link':bill_sponsor_link}
         self.add_sponsorship('upper',year,bill_id,'primary',bill_sponsor,sponsor_link=bill_sponsor_link)
 
         cosponsor_tag = soup.find(id="hlCoSponsors")
