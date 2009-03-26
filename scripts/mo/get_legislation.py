@@ -250,7 +250,7 @@ class MOLegislationScraper(LegislationScraper):
            cell.a.nextSibling.nextSibling == None or \
            not cell.a.nextSibling.nextSibling.has_key('href'):
 
-            cosponsor_dirty = cell.a.string
+            cosponsor_dirty = cell.a.em.string
             cosponsor = clean_text(cosponsor_dirty)
 
             print cosponsor
