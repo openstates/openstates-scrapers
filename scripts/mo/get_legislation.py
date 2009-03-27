@@ -135,6 +135,21 @@ class MOLegislationScraper(LegislationScraper):
         # get the actions
         action_url = soup.find(id="hlAllActions")['href']
         self.read_senate_actions(action_url,bill_id,year)
+
+        # stored on a separate page
+        versions_url=soup.find(id="hlFullBillText")
+        if versions_url != None:
+            self.read_senate_bill_versions(versions_url['href'],year,bill_id)
+
+    # add all the available versions
+    def read_senate_bill_versions(self, url,year,bill_id):
+        soup = soup_web(url)
+        version_tags = soup.findAll('li')
+        if version_tags != None:
+            for version_tag in version_tags:
+                pdf_url = version_tag.font.a['href']
+                version = version_tag.font.a.string
+                self.add_bill_version('upper',year,bill_id,version,pdf_url,pdf_url=pdf_url,txt_url=None)
         
     # parse through a senate actions page. calls add_action
     def read_senate_actions(self,url,bill,session):
@@ -218,8 +233,8 @@ class MOLegislationScraper(LegislationScraper):
                 bill_url = url_root + bill_link['href']
                 self.read_house_bill(bill_url,session)
 
-    # parse out a bill.  calls add_bill, add_sponsorship.  helper
-    # functions for cosponsors and actions
+    # parse out a bill. calls add_bill, add_sponsorship,
+    # add_bill_version. helper functions for cosponsors and actions
     def read_house_bill(self,url,session):
         url = re.sub("content","print",url)
         soup = soup_web(url)
@@ -271,6 +286,15 @@ class MOLegislationScraper(LegislationScraper):
         actions_link = re.sub("content","print",actions_link)
         self.read_house_actions(actions_link,bill_id,session)
 
+        # get bill versions
+        version_tags = soup.findAll(href=re.compile("biltxt"))
+        if version_tags != None:
+            for version_tag in version_tags:
+                version  = clean_text(version_tag.b.string)
+                text_url = self.house_root + version_tag['href']
+                pdf_url  = self.house_root + version_tag.previousSibling.previousSibling['href']
+                self.add_bill_version('lower',session,bill_id,version,text_url,pdf_url=pdf_url,txt_url=text_url)
+
     # parses the house action table
     def read_house_actions(self,url,bill,session):
         soup = soup_web(url)
@@ -295,7 +319,7 @@ class MOLegislationScraper(LegislationScraper):
                     action += ' ' + row.td.nextSibling.nextSibling.string
 
         # add that last action
-        action_chamber = get_chamber_from_action(action)
+        action_chamber = house_get_chamber_from_action(action)
         self.add_action('lower',session,bill,action_chamber,action, date)
         
         
