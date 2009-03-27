@@ -32,6 +32,8 @@ def clean_text(text):
     else:
         return m.group(1)
 
+# look in the action to try to parse out the chamber
+# that took the action
 def house_get_chamber_from_action(text):
     m = re.search(r"\((H|S)\)",text)
     if m == None:
@@ -41,6 +43,8 @@ def house_get_chamber_from_action(text):
         return 'upper'
     return 'lower'
 
+# look in the action to try to parse out the chamber
+# that took the action
 def senate_get_chamber_from_action(text):
     if re.search("Prefiled",text):
         return 'upper'
@@ -59,6 +63,8 @@ class MOLegislationScraper(LegislationScraper):
     house_root = 'http://www.house.mo.gov'
     senate_root = 'http://www.senate.mo.gov'
 
+    # wrapper to call senate or house scraper.  No year check
+    # here, since house and senate have different backdates
     def scrape_bills(self,chamber,year):
         print "chamber: %s, year: %s" % (chamber, year)
         if chamber == 'upper':
@@ -78,10 +84,9 @@ class MOLegislationScraper(LegislationScraper):
     
         # year is mixed in to the directory.  set a root_url, since
         # we'll use it later
-        root_url = self.senate_root+'/'+year2+'info/BTS_Web/'
-        index_file = root_url + 'BillList.aspx?SessionType=R'
+        bill_root = self.senate_root+'/'+year2+'info/BTS_Web/'
+        index_file = bill_root + 'BillList.aspx?SessionType=R'
     
-    	print index_file
         soup = soup_web(index_file)
     
         # each bill is in it's own table (nested in a larger table)
@@ -92,16 +97,18 @@ class MOLegislationScraper(LegislationScraper):
     
         for bill_table in bill_tables:
     
-            bill_url     = ''
             # here we just search the whole table string to get 
             # the BillID that the MO senate site uses
             m = re.search(r"BillID=(\d*)", str(bill_table))
             if m != None:
                 bill_web_id = m.group(1)
-                bill_url= root_url + '/Bill.aspx?SessionType=R&BillID='+bill_web_id
+                bill_url= bill_root + '/Bill.aspx?SessionType=R&BillID='+bill_web_id
                 self.read_senate_billpage(bill_url, year)
 
-
+    # parse through a senate bill from its page. year
+    # is passed in, since it's not obvious how to retrieve
+    # it from the page. calls add_bill, and add_sponsorship. 
+    # also calls methods to parse actions and cosponsors.
     def read_senate_billpage(self, bill_url, year):
         soup = soup_web(bill_url)
 
@@ -114,12 +121,13 @@ class MOLegislationScraper(LegislationScraper):
         self.add_bill('upper',year, bill_id, bill_name, bill_url=bill_url, bill_lr=bill_lr, bill_desc=bill_desc)
 
 
-        # get the sponsors and cosponsors
+        # get the sponsor
         bill_sponsor = soup.find(id="hlSponsor").i.font.string
         bill_sponsor_link = soup.find(id="hlSponsor").href
 
         self.add_sponsorship('upper',year,bill_id,'primary',bill_sponsor,sponsor_link=bill_sponsor_link)
 
+        # cosponsors show up on their own page, if they exist
         cosponsor_tag = soup.find(id="hlCoSponsors")
         if cosponsor_tag != None and cosponsor_tag.has_key('href'):
             self.read_senate_cosponsors(cosponsor_tag['href'], bill_id, year)
@@ -128,6 +136,7 @@ class MOLegislationScraper(LegislationScraper):
         action_url = soup.find(id="hlAllActions")['href']
         self.read_senate_actions(action_url,bill_id,year)
         
+    # parse through a senate actions page. calls add_action
     def read_senate_actions(self,url,bill,session):
         soup = soup_web(url)
         bigtable = soup.find(id='Table5')
@@ -139,30 +148,33 @@ class MOLegislationScraper(LegislationScraper):
             action_chamber = senate_get_chamber_from_action(action)
             self.add_action('upper',session,bill,action_chamber,action,date)
 
+    # parse through a senate cosponsors page. calls add_sponsorship
     def read_senate_cosponsors(self, url, bill_id, year):
         soup = soup_web(url)
+
+        #cosponsors are all in a table
         cosponsor_table = soup.find(id="dgCoSponsors")
         cosponsors = cosponsor_table.findAll("tr")
+
         for cosponsor_row in cosponsors:
             #cosponsors include district, so parse that out
             cosponsor_string = cosponsor_row.font.string
-            m = re.search("(.*),",cosponsor_string)
-            cosponsor = m.group(1)
+            cosponsor = clean_text(cosponsor_string)
 
+            # they give us a link to the congressperson, so we might
+            # as well keep it.
             cosponsor_url = cosponsor_row.a.href
-            #added_info = {'sponsor_link':cosponsor_url}
-            self.add_sponsorship('upper',year,bill_id,'cosponsor',cosponsor,sponsor_link=cosponsor_url)
+
+            self.add_sponsorship('upper',year,bill_id,'cosponsor',
+                                 cosponsor,sponsor_link=cosponsor_url)
         
     
-
+    # parse out the house data
     def scrape_house(self,year):
-        chamber_abbr='s'
 
         #we only have data from 1998-2009
         assert int(year) >= 1998, "no lower chamber data from before 1998"
         assert int(year) <= 2009, "no future data"
-    
-        year2 = "%02d" % (int(year) % 100)
     
         sessions = {
             1998: ['bills98'],
@@ -183,14 +195,15 @@ class MOLegislationScraper(LegislationScraper):
             bill_page = self.house_root + '/billtracking/' + session_code + '/billist.htm'
             self.read_house_billpage(bill_page,year)
 
+    # get the list of bills off an index page, call a function
+    # to parse each of them
     def read_house_billpage(self,url,year):
 
         url_root = re.match("(.*//.*?/)",url).group(1)
-
         soup = soup_web(url) 
     
         # find the first center tag, take the text after 'House of Representatives'
-        # and before 'Bills' as the session
+        # and before 'Bills' as the session name
         header_tag = soup.find('center')
         m = re.search("House of Representatives(.*?)Bills", str(header_tag), re.I | re.DOTALL) 
         session = m.group(1)
@@ -205,25 +218,28 @@ class MOLegislationScraper(LegislationScraper):
                 bill_url = url_root + bill_link['href']
                 self.read_house_bill(bill_url,session)
 
+    # parse out a bill.  calls add_bill, add_sponsorship.  helper
+    # functions for cosponsors and actions
     def read_house_bill(self,url,session):
         url = re.sub("content","print",url)
         soup = soup_web(url)
 
         header_table = soup.table
+
         # get all the info needed to record the bill
         bill_id = header_table.b.string
         bill_id = clean_text(bill_id)
 
-        #TODO: this seems to miss some
         bill_desc = header_table.td.td.string
         bill_desc = clean_text(bill_desc)
-        bill_name = None
 
-        bill_details_tbl = soup.table.nextSibling.nextSibling
+        # no bill name is provided, just a description
+        bill_name = None
 
         lr_label_tag = soup.find(text = re.compile("LR"))
         bill_lr      = lr_label_tag.next.string.strip()
 
+        # could substitute the description for the name, but keeping it separate for now.
         self.add_bill('lower',session, bill_id, bill_name, bill_url=url, bill_lr=bill_lr, bill_desc=bill_desc)
 
         # get the sponsors and cosponsors
@@ -234,11 +250,13 @@ class MOLegislationScraper(LegislationScraper):
         else:
             bill_sponsor = sponsor_dirty
 
+        # find the table with bill details...it'll be useful later     
+        bill_details_tbl = soup.table.nextSibling.nextSibling
+
         bill_sponsor_link = None
         if bill_details_tbl.a != None:
             bill_sponsor_link = bill_details_tbl.a['href']
 
-#        added_info = {'sponsor_link':bill_sponsor_link}
         self.add_sponsorship('lower',session,bill_id,'primary',bill_sponsor,sponsor_link=bill_sponsor_link)
         
         # check for cosponsors
@@ -246,12 +264,14 @@ class MOLegislationScraper(LegislationScraper):
         if cosponsor_cell.a != None:
             self.read_house_cosponsors(cosponsor_cell,session,bill_id)
 
+        # parse out all the actions
         actions_link_tag = soup.find('a',text='ACTIONS').previous.previous
         
         actions_link = self.house_root + actions_link_tag['href']
         actions_link = re.sub("content","print",actions_link)
         self.read_house_actions(actions_link,bill_id,session)
 
+    # parses the house action table
     def read_house_actions(self,url,bill,session):
         soup = soup_web(url)
         rows = soup.findAll('tr')
@@ -274,10 +294,13 @@ class MOLegislationScraper(LegislationScraper):
                 else:
                     action += ' ' + row.td.nextSibling.nextSibling.string
 
+        # add that last action
         action_chamber = get_chamber_from_action(action)
         self.add_action('lower',session,bill,action_chamber,action, date)
         
         
+    # parse out lists of house cosponsors from the bill page
+    # loads the text of the bill in cases of more than one cosponsor
     def read_house_cosponsors(self,cell,session,bill_id):
 
         # if there's only one sponsor, we don't have to worry about this.
@@ -298,15 +321,13 @@ class MOLegislationScraper(LegislationScraper):
             response = urllib2.urlopen(req)
             doc = response.read()
             
+            # people between (Sponsor) and (Co-Sponsor) are the cosponsors
             m = re.search(r"\(Sponsor\),(.*)\(Co", doc, re.DOTALL) 
             cosponsor_list = clean_text(m.group(1))
             cosponsor_list = re.split(" ?(?:,| AND ) ?",cosponsor_list)
+
             for cosponsor_dirty in cosponsor_list:
-                m = re.match("(.*)\(.*\)",cosponsor_dirty)
-                if m != None:
-                    cosponsor = m.group(1)
-                else:
-                    cosponsor = cosponsor_dirty
+                cosponsor = clean_text(cosponsor_dirty)
                 self.add_sponsorship('lower',session,bill_id,
                                      'cosponsor',cosponsor)
 
