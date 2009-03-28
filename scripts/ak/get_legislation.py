@@ -79,6 +79,16 @@ class AKLegislationScraper(LegislationScraper):
                 self.add_action(chamber, session, bill_id, act_chamber,
                                 action, act_date)
 
+            # Get versions
+            text_list_url = "http://www.legis.state.ak.us/basis/get_fulltext.asp?session=%s&bill=%s" % (session, bill_id)
+            text_list = BeautifulSoup(urllib2.urlopen(text_list_url).read())
+            text_link_re = re.compile('^get_bill_text?')
+            for text_link in text_list.findAll('a', href=text_link_re):
+                text_name = text_link.parent.previousSibling.string
+                text_url = "http://www.legis.state.ak.us/basis/%s" % text_link['href']
+                self.add_bill_version(chamber, session, bill_id,
+                                      text_name, text_url)
+
     def scrape_bills(self, chamber, year):
         # Data available for 1993 on
         if int(year) < 1993 or int(year) > dt.date.today().year:
