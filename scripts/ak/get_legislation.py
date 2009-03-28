@@ -61,6 +61,24 @@ class AKLegislationScraper(LegislationScraper):
                 self.add_sponsorship(chamber, session, bill_id, 'cosponsor',
                                      sponsor.strip())
 
+            # Get actions
+            act_rows = info_page.find(text="Jrn-Date").parent.parent.parent.findAll('tr')[1:]
+            for row in act_rows:
+                cols = row.findAll('td')
+                act_date = cols[0].font.string
+
+                if cols[2].font.string == "(H)":
+                    act_chamber = "lower"
+                elif cols[2].font.string == "(S)":
+                    act_chamber = "upper"
+                else:
+                    act_chamber = "N/A"
+
+                action = cols[3].font.string
+
+                self.add_action(chamber, session, bill_id, act_chamber,
+                                action, act_date)
+
     def scrape_bills(self, chamber, year):
         # Data available for 1993 on
         if int(year) < 1993 or int(year) > dt.date.today().year:
