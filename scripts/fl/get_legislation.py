@@ -48,7 +48,7 @@ class FLLegislationScraper(LegislationScraper):
                     # Get bill name and info url
                     bill_link = b.parent.findNext('td').a
                     bill_name = bill_link.string.strip()
-                    info_url = "http://www.flsenate.gov/Session/%s" % bill_link['href']
+                    info_url = "http://www.flsenate.gov/Session/%s&Year=%s" % (bill_link['href'], year)
                     print "Getting %s: %s" % (bill_id, bill_name)
 
                     # Add bill
