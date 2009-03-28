@@ -40,15 +40,26 @@ class AKLegislationScraper(LegislationScraper):
         for link in links:
             bill_id = link.contents[0].replace(' ', '')
             bill_name = link.parent.parent.findNext('td').find('font').string
+            self.add_bill(chamber, session, bill_id, bill_name.strip())
             print "Getting %s: %s" % (bill_id, bill_name)
 
-            # This is the URL for the bill as it was introduced.
-            # How should revisions be handled?
-            bill_url = 'http://www.legis.state.ak.us/basis/get_bill_text.asp?hsid=%s%04dA&session=%i' % (bill_abbr, int(bill_id[2:]), session)
+            # Get the bill info page and strip malformed t
+            info_url = "http://www.legis.state.ak.us/basis/%s" % link['href']
+            info_raw = urllib2.urlopen(info_url).read()
+            info_raw = re.sub('<input type="button".*/>', '', info_raw)
+            info_page = BeautifulSoup(info_raw)
 
-            self.add_bill(chamber, session, bill_id, bill_name.strip())
-            self.add_bill_version(chamber, session, bill_id, 'latest',
-                                  bill_url)
+            # Get sponsors
+            spons_str = info_page.find(
+                text="SPONSOR(s):").parent.parent.contents[1]
+            sponsors = re.match(
+                ' (SENATOR|REPRESENTATIVE)\([Ss]\) ([^,]+(,[^,]+){0,})',
+                spons_str).group(2).split(',')
+            self.add_sponsorship(chamber, session, bill_id, 'primary',
+                                 sponsors[0].strip())
+            for sponsor in sponsors[1:]:
+                self.add_sponsorship(chamber, session, bill_id, 'cosponsor',
+                                     sponsor.strip())
 
     def scrape_bills(self, chamber, year):
         # Data available for 1993 on
