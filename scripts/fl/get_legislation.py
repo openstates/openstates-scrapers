@@ -66,13 +66,13 @@ class FLLegislationScraper(LegislationScraper):
                                               version_name, version_url)
 
                     # Get actions
-                    act_table = info_page.find('pre', "billhistory")
-                    act_str = ""
-                    for line in act_table.findAll(text=True):
-                        act_str += line + "\n"
-                    act_str = act_str.replace('&nbsp;', ' ')
+                    hist_table = info_page.find('pre', "billhistory")
+                    hist = ""
+                    for line in hist_table.findAll(text=True):
+                        hist += line + "\n"
+                    hist = hist.replace('&nbsp;', ' ')
                     act_re = re.compile('^  (\d\d/\d\d/\d\d) (SENATE|HOUSE) (.*\n(\s{16,16}.*\n){0,})', re.MULTILINE)
-                    for act_match in act_re.finditer(act_str):
+                    for act_match in act_re.finditer(hist):
                         action = act_match.group(3).replace('\n', ' ')
                         action = re.sub('\s+', ' ', action)
                         if act_match.group(2) == 'SENATE':
@@ -82,6 +82,26 @@ class FLLegislationScraper(LegislationScraper):
                         self.add_action(chamber, session, bill_id,
                                         act_chamber, action,
                                         act_match.group(1))
+
+
+                    # Get primary sponsor
+                    # Right now we just list the committee as the primary sponsor
+                    # for committee substituts. In the future, consider listing
+                    # committee separately and listing the original human
+                    # sponsors as primary
+                    spon_re = re.compile('by ([^;(\n]+;?|\w+)')
+                    sponsor = spon_re.search(hist).group(1).strip(';')
+                    self.add_sponsorship(chamber, session, bill_id,
+                                              'primary', sponsor)
+
+                    # Get co-sponsors
+                    cospon_re = re.compile('\((CO-SPONSORS|CO-AUTHORS)\) ([\w .]+(;[\w .\n]+){0,})', re.MULTILINE)
+                    cospon_match = cospon_re.search(hist)
+                    if cospon_match:
+                        for cosponsor in cospon_match.group(2).split(';'):
+                            cosponsor = cosponsor.replace('\n', '').strip()
+                            self.add_sponsorship(chamber, session, bill_id,
+                                                 'cosponsor', cosponsor)
 
     def scrape_bills(self, chamber, year):
         # Data available for 1998 on
