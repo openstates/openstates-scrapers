@@ -59,11 +59,12 @@ class FLLegislationScraper(LegislationScraper):
 
                     # Get all bill versions
                     bill_table = info_page.find('a', attrs={'name':'BillText'}).parent.parent.findNext('tr').td.table
-                    for tr in bill_table.findAll('tr')[1:]:
-                        version_name = tr.td.string
-                        version_url = "http://www.flsenate.gov%s" % tr.a['href']
-                        self.add_bill_version(chamber, session, bill_id,
-                                              version_name, version_url)
+                    if bill_table:
+                        for tr in bill_table.findAll('tr')[1:]:
+                            version_name = tr.td.string
+                            version_url = "http://www.flsenate.gov%s" % tr.a['href']
+                            self.add_bill_version(chamber, session, bill_id,
+                                                  version_name, version_url)
 
                     # Get actions
                     hist_table = info_page.find('pre', "billhistory")
