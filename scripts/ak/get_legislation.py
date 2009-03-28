@@ -52,14 +52,20 @@ class AKLegislationScraper(LegislationScraper):
             # Get sponsors
             spons_str = info_page.find(
                 text="SPONSOR(s):").parent.parent.contents[1]
-            sponsors = re.match(
+            sponsors_match = re.match(
                 ' (SENATOR|REPRESENTATIVE)\([Ss]\) ([^,]+(,[^,]+){0,})',
-                spons_str).group(2).split(',')
-            self.add_sponsorship(chamber, session, bill_id, 'primary',
-                                 sponsors[0].strip())
-            for sponsor in sponsors[1:]:
-                self.add_sponsorship(chamber, session, bill_id, 'cosponsor',
-                                     sponsor.strip())
+                spons_str)
+            if sponsors_match:
+                sponsors = sponsors_match.group(2).split(',')
+                self.add_sponsorship(chamber, session, bill_id, 'primary',
+                                     sponsors[0].strip())
+                for sponsor in sponsors[1:]:
+                    self.add_sponsorship(chamber, session, bill_id, 'cosponsor',
+                                         sponsor.strip())
+            else:
+                # Committee sponsorship
+                self.add_sponsorship(chamber, session, bill_id, 'primary',
+                                     spons_str.strip())
 
             # Get actions
             act_rows = info_page.find(text="Jrn-Date").parent.parent.parent.findAll('tr')[1:]
