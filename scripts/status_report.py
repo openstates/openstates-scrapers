@@ -18,7 +18,7 @@ attr_names = ('bills', 'bill_versions', 'sponsors', 'actions',
 def get_state_data():
     all_files = glob.glob('./*/STATUS')
     config = ConfigParser.ConfigParser()
-    config.read(*all_files)
+    config.read(all_files)
     states = config.sections()
     state_data = {}
 
