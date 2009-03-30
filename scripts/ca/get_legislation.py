@@ -61,7 +61,7 @@ class CALegislationScraper(LegislationScraper):
                                   version_name, version_url)
 
         # Get bill actions
-        action_re = re.compile('(\d{4})|([\w.]{4,6}\s+\d{1,2})\s+(.*(\n\s+.*){0,})', re.MULTILINE)
+        action_re = re.compile('^(\d{4})|^([\w.]{4,6}\s+\d{1,2})\s+(.*(\n\s+.*){0,})', re.MULTILINE)
         act_year = None
         for act_match in action_re.finditer(history.find('pre').contents[0]):
             # If we didn't match group 2 then this must be a year change
