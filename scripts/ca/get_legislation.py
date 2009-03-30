@@ -73,7 +73,7 @@ class CALegislationScraper(LegislationScraper):
             act_date = act_match.group(2)
             action = act_match.group(3).replace('\n', '').replace('  ', ' ').replace('\t', ' ')
             self.add_action(chamber, session, bill_id, chamber,
-                            action, act_date)
+                            action, "%s, %s" % (act_date, act_year))
 
     def scrape_session(self, chamber, session):
         if chamber == 'upper':
