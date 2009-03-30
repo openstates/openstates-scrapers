@@ -21,7 +21,13 @@ class UTLegislationScraper(LegislationScraper):
 
         bill_list_url = "http://www.le.state.ut.us/~%s/bills.htm" % year
         print bill_list_url
-        base_bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
+
+        try:
+            base_bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
+        except:
+            # this session doesn't exist for this year
+            return
+
         bill_list_link_re = re.compile('.*%s\d+ht.htm$' % bill_abbr)
 
         for link in base_bill_list.findAll('a', href=bill_list_link_re):
@@ -70,7 +76,7 @@ class UTLegislationScraper(LegislationScraper):
         if int(year) < 1997 or int(year) > dt.date.today().year:
             raise NoDataForYear(year)
 
-        for special in ["", "S1", "S2", "S3", "S4", "S5"]:
+        for special in ["", "S1", "S2", "S3", "S4", "S5", "S6"]:
             self.scrape_session(chamber, year + special)
 
 if __name__ == '__main__':
