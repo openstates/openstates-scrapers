@@ -3,6 +3,7 @@ import urllib2
 import re
 import datetime as dt
 from BeautifulSoup import BeautifulSoup
+import csv
 
 # ugly hack
 import sys
@@ -12,6 +13,24 @@ from pyutils.legislation import LegislationScraper, NoDataForYear
 class AKLegislationScraper(LegislationScraper):
 
     state = 'ak'
+
+    def __init__(self):
+        super(AKLegislationScraper, self).__init__()
+
+        self.bill_subject_fields = ('bill_state', 'bill_chamber', 'bill_session',
+                                    'bill_id', 'bill_subject')
+        bill_subject_filename = 'data/%s/subjects.csv' % self.state
+        self.subject_csv = csv.DictWriter(open(bill_subject_filename, 'w'),
+                                          self.bill_subject_fields,
+                                          extrasaction='ignore')
+
+    def add_subject(self, bill_chamber, bill_session, bill_id, bill_subject,
+                    **kwargs):
+        row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
+               'bill_session': bill_session,
+               'bill_id': bill_id, 'bill_subject': bill_subject}
+        row.update(kwargs)
+        self.subject_csv.writerow(row)
 
     def scrape_session(self, chamber, year):
         # What about joint resolutions, etc.? Just ignoring them for now.
@@ -84,6 +103,12 @@ class AKLegislationScraper(LegislationScraper):
 
                 self.add_action(chamber, session, bill_id, act_chamber,
                                 action, act_date)
+
+            # Get subjects
+            subject_link_re = re.compile('.*subject=\w+$')
+            for subject_link in info_page.findAll('a', href=subject_link_re):
+                subject = subject_link.string.strip()
+                self.add_subject(chamber, session, bill_id, subject)
 
             # Get versions
             text_list_url = "http://www.legis.state.ak.us/basis/get_fulltext.asp?session=%s&bill=%s" % (session, bill_id)
