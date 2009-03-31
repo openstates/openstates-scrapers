@@ -99,6 +99,16 @@ The following are functions that you can call on to store your data. The **kwarg
                 bill_versions.append(bill_version)
         return bill_versions
 
+    def extract_bill_sponsors(self, soup):
+        '''Extract the primary and cosponsors for a given bill.'''
+        bill_sponsors = list()
+        sponsors_table = soup.find('table', attrs={'summary' : 'Show Authors'})
+        # Sponsors' names are links within the sponsors_table table.
+        sponsors_links = sponsors_table.findAll('a')
+        for link in sponsors_links:
+            sponsor_name = link.contents[0]
+            bill_sponsors.append(sponsor_name)
+        return bill_sponsors
 
     def get_bill_info(self, chamber, session, bill_detail_url):
         bill_detail_url_base='https://www.revisor.leg.state.mn.us/revisor/pages/search_status/'
@@ -136,13 +146,18 @@ The following are functions that you can call on to store your data. The **kwarg
             self.add_bill_version(chamber, session, bill_id, version_name, version_url)
 
         # grab primary and cosponsors 
-        sponsors = clean_legislators(sponsor_rows[1].td.contents[0])
-        for leg in sponsors:
-            self.add_sponsorship(chamber, session, bill_id, 'primary', leg)
-        cosponsors = clean_legislators(sponsor_rows[2].td.contents[0])
+        # MN uses "Primary Author" to name a bill's primary sponsor.
+        # Everyone else listed will be added as a 'cosponsor'.
+        sponsors = self.extract_sponsors(bill_soup)
+        primary_sponsor = sponsors[0]
+        cosponsors = sponsors[1:]
+        self.add_sponsorship(chamber, session, bill_id, 'primary', primary_sponsor)
         for leg in cosponsors:
             self.add_sponsorship(chamber, session, bill_id, 'cosponsor', leg)
 
+        # Add Actions performed on the bill.
+        bill_actions = self.extract_bill_actions(bill_soup)
+        for action in bill_actions:
             self.add_action(chamber, session, bill_id, action_chamber, action, date)
 
     def scrape_session(self, chamber, session, session_year, session_number, legislative_session):
