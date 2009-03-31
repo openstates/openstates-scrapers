@@ -70,7 +70,7 @@ class GALegislationScraper(LegislationScraper):
                     scraper( url, year, chamberName, session, number )
                 except IOError:
                     break
-                number += 100
+                number += 1
     
     def scrape1995(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/1995_96/leg/sum/sb1.htm"
