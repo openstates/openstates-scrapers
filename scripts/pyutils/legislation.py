@@ -2,7 +2,13 @@ from optparse import make_option, OptionParser
 import datetime
 import csv
 
-class NoDataForYear(Exception):
+class ScrapeError(Exception):
+    """
+    Base class for scrape errors.
+    """
+    pass
+
+class NoDataForYear(ScrapeError):
     """ exception to be raised when no data exists for a given year """
 
     def __init__(self, year):
@@ -10,6 +16,11 @@ class NoDataForYear(Exception):
 
     def __str__(self):
         return 'No data exists for %s' % year
+
+class UnsupportedFormat(ScrapeError):
+    """
+    The requested processing covers an unsupported file format.
+    """
 
 def run_legislation_scraper(get_bills_func):
     option_list = (
@@ -49,6 +60,10 @@ def run_legislation_scraper(get_bills_func):
                 else:
                     raise
 
+def be_verbose(msg):
+    if isinstance(msg, unicode):
+        msg = msg.encode('utf-8')
+    print msg
 
 class LegislationScraper(object):
     option_list = (
@@ -60,6 +75,8 @@ class LegislationScraper(object):
                     help='scrape upper chamber'),
         make_option('--lower', action='store_true', dest='lower', default=False,
                     help='scrape lower chamber'),
+        make_option('-v', '--verbose', action='store_true', dest='verbose',
+                    default=False, help="be verbose")
     )
     common_fields = ('bill_state', 'bill_chamber', 'bill_session', 'bill_id')
     bill_fields = common_fields + ('bill_name',)
@@ -68,6 +85,7 @@ class LegislationScraper(object):
     action_fields = common_fields + ('action_chamber', 'action_text', 'action_date')
 
     def __init__(self):
+        self.verbose = False
         if not hasattr(self, 'state'):
             raise Exception('LegislationScrapers must have a state attribute')
 
@@ -95,6 +113,10 @@ class LegislationScraper(object):
                'bill_session': bill_session, 'bill_id': bill_id,
                'bill_name': bill_name}
         row.update(kwargs)
+        if self.verbose:
+            be_verbose("add_bill %s %s: %s" % (row['bill_chamber'],
+                                                row['bill_session'],
+                                                row['bill_id']))
         self.bill_csv.writerow(row)
 
     def add_bill_version(self, bill_chamber, bill_session, bill_id, version_name, version_url, **kwargs):
@@ -102,6 +124,11 @@ class LegislationScraper(object):
                'bill_session': bill_session, 'bill_id': bill_id,
                'version_name': version_name, 'version_url': version_url}
         row.update(kwargs)
+        if self.verbose:
+            be_verbose("add_bill_version %s %s: %s.%s" % (row['bill_chamber'],
+                                                    row['bill_session'],
+                                                    row['bill_id'],
+                                                    row['version_name']))
         self.version_csv.writerow(row)
 
     def add_sponsorship(self, bill_chamber, bill_session, bill_id, sponsor_type, sponsor_name, **kwargs):
@@ -109,6 +136,12 @@ class LegislationScraper(object):
                'bill_session': bill_session, 'bill_id': bill_id,
                'sponsor_type': sponsor_type, 'sponsor_name': sponsor_name}
         row.update(kwargs)
+        if self.verbose:
+            be_verbose("add_sponsorship %s %s: %s sponsors (%s) %s" % (row['bill_chamber'],
+                                                    row['bill_session'],
+                                                    row['bill_id'],
+                                                    row['sponsor_type'],
+                                                    row['sponsor_name']))
         self.sponsor_csv.writerow(row)
 
     def add_action(self, bill_chamber, bill_session, bill_id, action_chamber, action_text, action_date, **kwargs):
@@ -117,6 +150,12 @@ class LegislationScraper(object):
                'action_chamber': action_chamber, 'action_text': action_text,
                'action_date': action_date}
         row.update(kwargs)
+        if self.verbose:
+            be_verbose("add_action %s %s: %s action '%s...' in %s" % (row['bill_chamber'],
+                                                    row['bill_session'],
+                                                    row['bill_id'],
+                                                    row['action_text'][:50],
+                                                    row['action_chamber']))
         self.action_csv.writerow(row)
 
     def scrape_bills(self, chamber, year):
@@ -124,6 +163,7 @@ class LegislationScraper(object):
 
     def run(self):
         options, spares = OptionParser(option_list=self.option_list).parse_args()
+        self.verbose = options.verbose
         years = options.years
         if options.all_years:
             years = [str(y) for y in range(1969, datetime.datetime.now().year+1)]
@@ -134,7 +174,6 @@ class LegislationScraper(object):
             chambers.append('lower')
         if not chambers:
             chambers = ['upper', 'lower']
-
         for chamber in chambers:
             for year in years:
                 try:
