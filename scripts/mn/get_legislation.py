@@ -4,6 +4,9 @@ import urllib
 import urlparse
 from BeautifulSoup import BeautifulSoup
 from mechanize import Browser
+import logging
+
+logger = logging.getLogger()
 
 # ugly hack
 import sys
@@ -15,34 +18,34 @@ def clean_legislators(s):
     return [l.strip() for l in s.split(';') if l]
 
 class MNLegislationScraper(LegislationScraper):
-'''
-The following are functions that you can call on to store your data. The **kwargs argument is options but it allows you to define your own fields to populate.
+    '''
+    The following are functions that you can call on to store your data. The **kwargs argument is options but it allows you to define your own fields to populate.
 
-    * add_bill(bill_chamber,bill_session,bill_id,bill_name, **kwargs)
-          * bill_chamber: Whichever chamber the bill game from, either "upper" or "lower". [What do we do when there is only one chamber?]
-          * bill_session: Session number bill came from, as defined by the state, be that 2007, or 196, or Whatever.
-          * 'bill_id: However the state identifies the bill. For example: S-102,H42.
-          * bill_name: The English name the stage gave the bill 
-    * add_bill_version(bill_chamber,bill_session,bill_id,version_name, version_url, **kwargs)
-          * bill_chamber same as in add_bill
-          * bill_session same as in add_bill
-          * bill_id same as in add_bill
-          * version_name Name of version, whatever the state named it. This could be "Committee Draft", "Proposed Version". If there is only one version of the bill, you can just say "Full Text".
-          * version_url Full url to full text of bill (HTML and plan text preferred, but get whatever type of document you can) 
-    * add_sponsorship(self, bill_chamber, bill_session, bill_id, sponsor_type, sponsor_name, **kwargs)
-          * bill_chamber same as in add_bill
-          * bill_session same as in add_bill
-          * bill_id same as in add_bill
-          * sponsor_type The type of the sponsorship "primary", "secondary", etc.
-          * sponsor_name The name of the entity that is sponsoring the bill, be that a person or a committee, or something else. 
-    * add_action(bill_chamber, bill_session, bill_id, action_chamber, action_text, action_date, **kwargs)
-          * bill_chamber same as in add_bill
-          * bill_session same as in add_bill
-          * bill_id same as in add_bill
-          * action_chamber Chamber in which action happened. [What if it happened outside of either chamber?]
-          * action_text Whatever the state called the action
-          * action_date date/time action happened [Should we standardize the format?] 
-'''
+        * add_bill(bill_chamber,bill_session,bill_id,bill_name, **kwargs)
+              * bill_chamber: Whichever chamber the bill game from, either "upper" or "lower". [What do we do when there is only one chamber?]
+              * bill_session: Session number bill came from, as defined by the state, be that 2007, or 196, or Whatever.
+              * 'bill_id: However the state identifies the bill. For example: S-102,H42.
+              * bill_name: The English name the stage gave the bill 
+        * add_bill_version(bill_chamber,bill_session,bill_id,version_name, version_url, **kwargs)
+              * bill_chamber same as in add_bill
+              * bill_session same as in add_bill
+              * bill_id same as in add_bill
+              * version_name Name of version, whatever the state named it. This could be "Committee Draft", "Proposed Version". If there is only one version of the bill, you can just say "Full Text".
+              * version_url Full url to full text of bill (HTML and plan text preferred, but get whatever type of document you can) 
+        * add_sponsorship(self, bill_chamber, bill_session, bill_id, sponsor_type, sponsor_name, **kwargs)
+              * bill_chamber same as in add_bill
+              * bill_session same as in add_bill
+              * bill_id same as in add_bill
+              * sponsor_type The type of the sponsorship "primary", "secondary", etc.
+              * sponsor_name The name of the entity that is sponsoring the bill, be that a person or a committee, or something else. 
+        * add_action(bill_chamber, bill_session, bill_id, action_chamber, action_text, action_date, **kwargs)
+              * bill_chamber same as in add_bill
+              * bill_session same as in add_bill
+              * bill_id same as in add_bill
+              * action_chamber Chamber in which action happened. [What if it happened outside of either chamber?]
+              * action_text Whatever the state called the action
+              * action_date date/time action happened [Should we standardize the format?] 
+    '''
 
     state = 'mn'
 
@@ -55,15 +58,15 @@ The following are functions that you can call on to store your data. The **kwarg
         bill_id = re.search(r'Bill Name:\s+\d+', bill_name_raw).groups()[0]
         return bill_id
 
-    def extract_bill_id(self, soup):
+    def extract_bill_title(self, soup):
         '''Extract the title of a bill from a Bill Status page.'''
         # The bill title is in a table that has an attribute 'summary'
         # with a value of 'Short Description'.
         short_summary_table = soup.find('table', attrs={"summary" : "Show Doc Names"})
         # The 'Short Summary' table has only one <td> which contains the 
         # bill id inside a <font> element.
-        bill_id = short_summary_table.td.font.contents[0]
-        return bill_id 
+        bill_title = short_summary_table.td.font.contents[0]
+        return bill_title
 
     def extract_bill_version_link(self, soup):
         '''Extract the link which points to the version information for a 
@@ -110,12 +113,66 @@ The following are functions that you can call on to store your data. The **kwarg
             bill_sponsors.append(sponsor_name)
         return bill_sponsors
 
+    def cleanup_text(self, text):
+        '''Remove junk from text that MN puts in for formatting.
+        Removes surrounding whitespace, and any '&nbsp;' chars.
+        '''
+        cleaned_text = text.replace('&nbsp;', '').strip()
+        return cleaned_text
+
+    def extract_bill_actions(self, soup, current_chamber):
+        '''Extract the actions taken on a bill.
+        A bill can have actions taken from either chamber.  The current
+        chamber's actions will be the first table of actions. The other
+        chamber's actions will be in the second table.
+
+        Returns a list of bill actions. Each bill action is a dict with keys:
+            action_chamber = 'upper|lower'
+            action = string
+            date = MM/DD/YYYY
+        '''
+        bill_actions = list()
+        action_tables = soup.findAll('table', attrs={'summary' : 'Actions'})
+        # First, process the actions taken by the current chamber.
+        current_chamber_action_table = action_tables[0]
+        current_chamber_action_rows = current_chamber_action_table.findAll('tr')
+        for row in current_chamber_action_rows[1:]:
+            bill_action = dict()
+            cols = row.findAll('td')
+            action_date = self.cleanup_text(cols[0].contents[0])
+            action_text = self.cleanup_text(cols[1].contents[0])
+            bill_action['action_date'] = action_date
+            bill_action['action_text'] = action_text
+            bill_action['action_chamber'] = current_chamber
+            bill_actions.append(bill_action)
+
+        # if there are more than one action_table, then the other chamber has
+        # taken action on the bill.
+        # Toggle the current chamber
+        if current_chamber == 'upper':
+            current_chamber = 'lower'
+        else:
+            current_chamber = 'upper'
+        if len(action_tables) > 1:
+            current_chamber_action_table = action_tables[1]
+            current_chamber_action_rows = current_chamber_action_table.findAll('tr')
+            for row in current_chamber_action_rows[1:]:
+                bill_action = dict()
+                cols = row.findAll('td')
+                action_date = self.cleanup_text(cols[0].contents[0])
+                action_text = self.cleanup_text(cols[1].contents[0])
+                bill_action['action_date'] = action_date
+                bill_action['action_text'] = action_text
+                bill_action['action_chamber'] = current_chamber
+                bill_actions.append(bill_action)
+        return bill_actions
+
     def get_bill_info(self, chamber, session, bill_detail_url):
         bill_detail_url_base='https://www.revisor.leg.state.mn.us/revisor/pages/search_status/'
         bill_detail_url = urlparse.urljoin(bill_detail_url_base, bill_detail_url)
 
         # parse the bill data page, finding the latest html text
-        if chamber = "House":
+        if chamber == "House":
             chamber = 'lower'
         else:
             chamber = 'upper'
@@ -156,9 +213,12 @@ The following are functions that you can call on to store your data. The **kwarg
             self.add_sponsorship(chamber, session, bill_id, 'cosponsor', leg)
 
         # Add Actions performed on the bill.
-        bill_actions = self.extract_bill_actions(bill_soup)
+        bill_actions = self.extract_bill_actions(bill_soup, chamber)
         for action in bill_actions:
-            self.add_action(chamber, session, bill_id, action_chamber, action, date)
+            action_chamber = action['action_chamber']
+            action_date = action['action_date']
+            action_text = action['action_text']
+            self.add_action(chamber, session, bill_id, action_chamber, action_text, action_date)
 
     def scrape_session(self, chamber, session, session_year, session_number, legislative_session):
 
@@ -170,6 +230,7 @@ The following are functions that you can call on to store your data. The **kwarg
         for max in search_range[1:]:
             # The search form accepts number ranges for bill numbers.
             # Range Format: start-end
+            # Query Param: 'bill='
             url = 'https://www.revisor.leg.state.mn.us/revisor/pages/search_status/status_results.php?body=%s&search=basic&session=%s&bill=%s-%s&bill_type=bill&submit_bill=GO&keyword_type=all=1&keyword_field_long=1&keyword_field_title=1&titleword=' % (chamber, session, min, max-1)
             data = urllib.urlopen(url).read()
             soup = BeautifulSoup(data)
@@ -234,6 +295,6 @@ The following are functions that you can call on to store your data. The **kwarg
             self.scrape_session(chamber, session, session_year, session_number, legislative_session)
 
 if __name__ == '__main__':
-#    MNLegislationScraper().run()
+    MNLegislationScraper().run()
 #chamber, session, session_year, session_number, legislative_session
-    MNLegislationScraper().scrape_session('House', '0862009', '2009', '0', '86' )
+#    MNLegislationScraper().scrape_session('House', '0862009', '2009', '0', '86' )
