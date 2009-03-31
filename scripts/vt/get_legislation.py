@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import urllib2
+import urllib2, urllib
 import re
 from BeautifulSoup import BeautifulSoup
 import datetime as dt
@@ -13,7 +13,7 @@ class VTLegislationScraper(LegislationScraper):
 
     state = 'vt'
 
-    def scrape_session(self, chamber, year):
+    def scrape_session_new(self, chamber, year):
         if chamber == "lower":
             bill_abbr = "H."
         else:
@@ -59,22 +59,75 @@ class VTLegislationScraper(LegislationScraper):
                 self.add_action(chamber, session, bill_id, act_chamber,
                                 action, act_date)
 
-                sponsors = info_page.find(
-                    text='Sponsor(s):').parent.parent.findAll('b')
-                self.add_sponsorship(chamber, session, bill_id, 'primary',
-                                     sponsors[0].string)
-                for sponsor in sponsors[1:]:
-                    self.add_sponsorship(chamber, session, bill_id,
-                                         'cosponsor', sponsor.string)
+            sponsors = info_page.find(
+                text='Sponsor(s):').parent.parent.findAll('b')
+            self.add_sponsorship(chamber, session, bill_id, 'primary',
+                                 sponsors[0].string)
+            for sponsor in sponsors[1:]:
+                self.add_sponsorship(chamber, session, bill_id,
+                                     'cosponsor', sponsor.string)
+
+    def scrape_session_old(self, chamber, year):
+        if chamber == "lower":
+            bill_abbr = "H."
+        else:
+            bill_abbr = "S."
+
+        session = "%s-%d" % (year, int(year) + 1)
+
+        start_date = '1/1/%s' % year
+        data = urllib.urlencode({'Date': start_date,
+                                 'Body': bill_abbr[0],
+                                 'Session': str(int(year) + 1)})
+        bill_list_url = "http://www.leg.state.vt.us/database/rintro/results.cfm"
+        bill_list = BeautifulSoup(urllib2.urlopen(
+                bill_list_url, data).read())
+
+        bill_link_re = re.compile('.*?Bill=%s.\d+.*' % bill_abbr[0])
+        for bill_link in bill_list.findAll('a', href=bill_link_re):
+            bill_id = bill_link.string
+            bill_title = bill_link.parent.parent.findAll('td')[1].string
+            print "Getting %s: %s" % (bill_id, bill_title)
+            self.add_bill(chamber, session, bill_id, bill_title)
+
+            info_page = BeautifulSoup(urllib2.urlopen(
+                    "http://www.leg.state.vt.us" + bill_link['href']))
+
+            text_links = info_page.findAll('blockquote')[-1].findAll('a')
+            for text_link in text_links:
+                self.add_bill_version(chamber, session, bill_id,
+                                      text_link.string,
+                                      "http://www.leg.state.vt.us" +
+                                      text_link['href'])
+
+            sponsors = info_page.find(
+                text='Sponsor(s):').parent.findNext('td').findAll('b')
+            self.add_sponsorship(chamber, session, bill_id, 'primary',
+                                 sponsors[0].string)
+            for sponsor in sponsors[1:]:
+                self.add_sponsorship(chamber, session, bill_id,
+                                     'cosponsor', sponsor.string)
+
+            act_table = info_page.findAll('blockquote')[1].table
+            for row in act_table.findAll('tr')[3:]:
+                action = row.td.string.replace('&nbsp;', '').strip(':')
+
+                act_date = row.findAll('td')[1].b.string.replace('&nbsp;', '')
+                if act_date != "":
+                    self.add_action(chamber, session, bill_id, chamber,
+                                    action, act_date)
 
     def scrape_bills(self, chamber, year):
-        if int(year) < 2009 or int(year) > dt.date.today().year:
+        if int(year) < 1987 or int(year) > dt.date.today().year:
             raise NoDataForYear(year)
 
         if int(year) % 2 == 0:
             raise NoDataForYear(year)
 
-        self.scrape_session(chamber, year)
+        if int(year) >= 2009:
+            self.scrape_session_new(chamber, year)
+        else:
+            self.scrape_session_old(chamber, year)
 
 if __name__ == '__main__':
     VTLegislationScraper().run()
