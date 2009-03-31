@@ -117,11 +117,13 @@ class VTLegislationScraper(LegislationScraper):
             act_table = info_page.find(
                 text='%s Status:' % chamber_name).findNext('table')
             for row in act_table.findAll('tr')[3:]:
-                print "Debug: " + str(row.td)
                 action = row.td.string.replace('&nbsp;', '').strip(':')
 
                 act_date = row.findAll('td')[1].b.string.replace('&nbsp;', '')
                 if act_date != "":
+                    detail = row.findAll('td')[2].b
+                    if detail and detail.string != "":
+                        action += ": %s" % detail.string.replace('&nbsp;', '')
                     self.add_action(chamber, session, bill_id, chamber,
                                     action, act_date)
 
@@ -138,6 +140,9 @@ class VTLegislationScraper(LegislationScraper):
 
                     act_date = row.findAll('td')[1].b.string.replace('&nbsp;', '')
                     if act_date != "":
+                        detail = row.findAll('td')[2].b
+                        if detail and detail.string != "":
+                            action += ": %s" % detail.string.replace('&nbsp;', '')
                         self.add_action(chamber, session, bill_id, act_chamber,
                                         action, act_date)
 
