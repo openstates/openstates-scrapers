@@ -3,6 +3,7 @@ import urllib2, urllib
 import re
 from BeautifulSoup import BeautifulSoup
 import datetime as dt
+import time
 
 # ugly hack
 import sys
@@ -70,8 +71,12 @@ class VTLegislationScraper(LegislationScraper):
     def scrape_session_old(self, chamber, year):
         if chamber == "lower":
             bill_abbr = "H."
+            chamber_name = "House"
+            other_chamber = "Senate"
         else:
             bill_abbr = "S."
+            chamber_name = "Senate"
+            other_chamber = "House"
 
         session = "%s-%d" % (year, int(year) + 1)
 
@@ -108,14 +113,33 @@ class VTLegislationScraper(LegislationScraper):
                 self.add_sponsorship(chamber, session, bill_id,
                                      'cosponsor', sponsor.string)
 
-            act_table = info_page.findAll('blockquote')[1].table
+            # Grab actions from the originating chamber
+            act_table = info_page.find(
+                text='%s Status:' % chamber_name).findNext('table')
             for row in act_table.findAll('tr')[3:]:
+                print "Debug: " + str(row.td)
                 action = row.td.string.replace('&nbsp;', '').strip(':')
 
                 act_date = row.findAll('td')[1].b.string.replace('&nbsp;', '')
                 if act_date != "":
                     self.add_action(chamber, session, bill_id, chamber,
                                     action, act_date)
+
+            # Grab actions from the other chamber
+            act_table = info_page.find(
+                text='%s Status:' % other_chamber).findNext('table')
+            if act_table:
+                if chamber == 'upper':
+                    act_chamber = 'lower'
+                else:
+                    act_chamber = 'upper'
+                for row in act_table.findAll('tr')[3:]:
+                    action = row.td.string.replace('&nbsp;', '').strip(':')
+
+                    act_date = row.findAll('td')[1].b.string.replace('&nbsp;', '')
+                    if act_date != "":
+                        self.add_action(chamber, session, bill_id, act_chamber,
+                                        action, act_date)
 
     def scrape_bills(self, chamber, year):
         if int(year) < 1987 or int(year) > dt.date.today().year:
