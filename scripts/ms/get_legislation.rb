@@ -1,3 +1,5 @@
+#!/usr/bin/ruby
+
 require File.join(File.dirname(__FILE__), '..', 'rbutils', 'legislation')
 
 module Mississippi  
