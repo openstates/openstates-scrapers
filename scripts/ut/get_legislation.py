@@ -11,7 +11,7 @@ from pyutils.legislation import LegislationScraper, NoDataForYear
 
 class UTLegislationScraper(LegislationScraper):
 
-    state = 'UT'
+    state = 'ut'
 
     def scrape_session(self, chamber, year):
         if chamber == "lower":
@@ -35,7 +35,7 @@ class UTLegislationScraper(LegislationScraper):
             bill_link_re = re.compile('.*billhtm/%s.*.htm' % bill_abbr)
 
             for bill_link in bill_list.findAll('a', href=bill_link_re):
-                bill_id = bill_link.string
+                bill_id = bill_link.string.strip()
 
                 bill_info = BeautifulSoup(urllib2.urlopen(
                         bill_link['href']).read())

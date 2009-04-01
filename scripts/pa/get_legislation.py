@@ -57,7 +57,7 @@ class PALegislationScraper(LegislationScraper):
                 text_link = tr.td.a
                 text_url = 'http://www.legis.state.pa.us%s' % text_link['href']
                 self.add_bill_version(chamber, session, bill_id,
-                                      text_link.string, text_url)
+                                      text_link.string.strip(), text_url)
 
             # Get bill history page
             history_url = 'http://www.legis.state.pa.us/cfdocs/billinfo/bill_history.cfm?syear=%s&sind=%i&body=%s&type=B&BN=%s' % (y1, session_num, bill_abbr, bill_number)
