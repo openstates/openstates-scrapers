@@ -14,8 +14,6 @@ class CALegislationScraper(LegislationScraper):
     state = 'ca'
 
     def get_bill_info(self, chamber, session, bill_id):
-        print 'Getting %s %s' % (session, bill_id)
-
         detail_url = 'http://www.leginfo.ca.gov/cgi-bin/postquery?bill_number=%s_%s&sess=%s' % (bill_id[:2].lower(), bill_id[2:], session.replace('-', ''))
 
         # Get the details page and parse it with BeautifulSoup. These
@@ -86,7 +84,7 @@ class CALegislationScraper(LegislationScraper):
         # Get the list of all chamber bills for the given session
         # (text format, sorted by author)
         url = "http://www.leginfo.ca.gov/pub/%s/bill/index_%s_author_bill_topic" % (session, chamber_name)
-        print "Getting: %s" % url
+        self.be_verbose("Getting bill list for %s %s" % (chamber, session))
         bill_list = urllib2.urlopen(url).read()
         bill_re = re.compile('\s+(%s\s+\d+)(.*(\n\s{31}.*){0,})' % bill_abbr,
                              re.MULTILINE)

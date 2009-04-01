@@ -6,7 +6,7 @@ from BeautifulSoup import BeautifulSoup
 # ugly hack
 import sys
 sys.path.append('./scripts')
-from pyutils.legislation import LegislationScraper, NoDataForYear, be_verbose
+from pyutils.legislation import LegislationScraper, NoDataForYear
 
 def clean_legislators(s):
     s = s.replace('&nbsp;', ' ').strip()
@@ -70,8 +70,7 @@ class NCLegislationScraper(LegislationScraper):
     def scrape_session(self, chamber, session):
         url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (session, chamber)
 
-        if self.verbose:
-            be_verbose("Downloading %s" % url)
+        self.be_verbose("Downloading %s" % url)
         data = urllib.urlopen(url).read()
         soup = BeautifulSoup(data)
 

@@ -31,7 +31,7 @@ class FLLegislationScraper(LegislationScraper):
         # Go through all sorted bill list pages
         for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
             bill_list_url = base_url % (letter, session, chamber_name)
-            print bill_list_url
+            self.be_verbose("Getting bill list for %s %s, section %s" % (chamber, year, letter))
             bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
             
             # Bill ID's are bold
@@ -49,7 +49,6 @@ class FLLegislationScraper(LegislationScraper):
                     bill_link = b.parent.findNext('td').a
                     bill_name = bill_link.string.strip()
                     info_url = "http://www.flsenate.gov/Session/%s&Year=%s" % (bill_link['href'], year)
-                    print "Getting %s: %s" % (bill_id, bill_name)
 
                     # Add bill
                     self.add_bill(chamber, session, bill_id, bill_name)

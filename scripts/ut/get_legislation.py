@@ -20,7 +20,7 @@ class UTLegislationScraper(LegislationScraper):
             bill_abbr = "SB"
 
         bill_list_url = "http://www.le.state.ut.us/~%s/bills.htm" % year
-        print bill_list_url
+        self.be_verbose("Getting bill list for %s, %s" % (year, chamber))
 
         try:
             base_bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
@@ -36,7 +36,6 @@ class UTLegislationScraper(LegislationScraper):
 
             for bill_link in bill_list.findAll('a', href=bill_link_re):
                 bill_id = bill_link.string
-                print "Getting %s" % bill_id
 
                 bill_info = BeautifulSoup(urllib2.urlopen(
                         bill_link['href']).read())

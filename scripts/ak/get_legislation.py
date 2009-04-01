@@ -49,7 +49,7 @@ class AKLegislationScraper(LegislationScraper):
 
         # Get bill list
         bill_list_url = 'http://www.legis.state.ak.us/basis/range_multi.asp?session=%i&date1=%s&date2=%s' % (session, date1, date2)
-        print bill_list_url
+        self.be_verbose("Getting bill list for %s %s (this may take a long time)." % (chamber, session))
         bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
 
         # Find bill links
@@ -60,7 +60,6 @@ class AKLegislationScraper(LegislationScraper):
             bill_id = link.contents[0].replace(' ', '')
             bill_name = link.parent.parent.findNext('td').find('font').string
             self.add_bill(chamber, session, bill_id, bill_name.strip())
-            print "Getting %s: %s" % (bill_id, bill_name)
 
             # Get the bill info page and strip malformed t
             info_url = "http://www.legis.state.ak.us/basis/%s" % link['href']

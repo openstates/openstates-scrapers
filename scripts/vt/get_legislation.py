@@ -22,13 +22,13 @@ class VTLegislationScraper(LegislationScraper):
 
         session = "%d-%d" % (int(year), int(year) + 1)
         bill_list_url = "http://www.leg.state.vt.us/docs/bills.cfm?Session=%d&Body=%s" % (int(year) + 1, bill_abbr[0])
+        self.be_verbose("Getting bill list for %s %s" % (chamber, year))
         bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
 
         bill_link_re = re.compile('.*?Bill=%s\.\d+.*' % bill_abbr[0])
         for bill_link in bill_list.findAll('a', href=bill_link_re):
             bill_id = bill_link.string
             bill_title = bill_link.parent.findNext('b').string
-            print "Getting %s: %s" % (bill_id, bill_title)
             self.add_bill(chamber, session, bill_id, bill_title)
 
             bill_info_url = "http://www.leg.state.vt.us" + bill_link['href']
@@ -85,6 +85,7 @@ class VTLegislationScraper(LegislationScraper):
                                  'Body': bill_abbr[0],
                                  'Session': str(int(year) + 1)})
         bill_list_url = "http://www.leg.state.vt.us/database/rintro/results.cfm"
+        self.be_verbose("Getting bill list for %s %s" % (chamber, year))
         bill_list = BeautifulSoup(urllib2.urlopen(
                 bill_list_url, data).read())
 
@@ -92,7 +93,6 @@ class VTLegislationScraper(LegislationScraper):
         for bill_link in bill_list.findAll('a', href=bill_link_re):
             bill_id = bill_link.string
             bill_title = bill_link.parent.parent.findAll('td')[1].string
-            print "Getting %s: %s" % (bill_id, bill_title)
             self.add_bill(chamber, session, bill_id, bill_title)
 
             info_page = BeautifulSoup(urllib2.urlopen(
