@@ -54,15 +54,19 @@ class SDLegislationScraper(LegislationScraper):
             hist_url = session_url + bill_link['href']
             history = BeautifulSoup(urllib2.urlopen(hist_url).read())
 
-            # The version table contains links to all available bill texts
-            # Should be sorted by date, so we grab the first one
-            version_table = history.find(id='ctl00_contentMain_ctl00_tblBillVersions')
-            bill_url = session_url + version_table.find('a')['href']
-
             # Add bill
             self.add_bill(chamber, year, bill_id, bill_name)
-            self.add_bill_version(chamber, year, bill_id, 'latest',
-                                  bill_url)
+
+            # Get all bill versions
+            text_table = history.findAll('table')[1]
+            for row in text_table.findAll('tr')[2:]:
+                version_date = row.find('td').string
+                version_url = row.findAll('td')[1].a['href']
+                version_name = row.findAll('td')[1].a.string.strip()
+                self.add_bill_version(chamber, year, bill_id,
+                                      version_name,
+                                      "http://legis.state.sd.us/sessions/%s/%s"
+                                      % (year, version_url))
 
             # Get actions
             act_table = history.find('table')
@@ -140,8 +144,16 @@ class SDLegislationScraper(LegislationScraper):
 
             # Add bill
             self.add_bill(chamber, year, bill_id, bill_name)
-            self.add_bill_version(chamber, year, bill_id, 'latest',
-                                  bill_url)
+
+            # Get bill versions
+            text_table = history.findAll('table')[1]
+            for row in text_table.findAll('tr')[2:]:
+                version_date = row.find('td').string
+                version_url = row.findAll('td')[1].a['href']
+                version_name = row.findAll('td')[1].a.string.strip()
+                self.add_bill_version(chamber, year, bill_id,
+                                      version_name,
+                                      "http://legis.state.sd.us" + version_url)
 
             # Get actions
             act_table = history.find('table')
