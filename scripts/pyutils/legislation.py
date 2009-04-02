@@ -1,7 +1,9 @@
 from optparse import make_option, OptionParser
 import datetime
 import csv
-import os.path
+import os
+import urllib2
+from hashlib import md5
 
 class ScrapeError(Exception):
     """
@@ -80,6 +82,7 @@ class LegislationScraper(object):
                     help='output directory'),
     )
 
+    cache_dir = 'cache'
     common_fields = ['bill_state', 'bill_chamber', 'bill_session', 'bill_id']
     bill_fields = common_fields + ['bill_name']
     bill_version_fields = common_fields + ['version_name', 'version_url']
@@ -91,6 +94,14 @@ class LegislationScraper(object):
         if not hasattr(self, 'state'):
             raise Exception('LegislationScrapers must have a state attribute')
     
+    def urlopen(self, url):
+        url_cache = os.path.join(self.cache_dir, md5(url).hexdigest()+'.html')
+        if os.path.exists(url_cache):
+            return open(url_cache).read()
+        data = urllib2.urlopen(url).read()
+        open(url_cache, 'w').write(data)
+        return data
+
     def add_bill(self, bill_chamber, bill_session, bill_id, bill_name, **kwargs):
         row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
                'bill_session': bill_session, 'bill_id': bill_id,

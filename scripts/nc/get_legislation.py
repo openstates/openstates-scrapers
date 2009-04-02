@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-
-import urllib
-from BeautifulSoup import BeautifulSoup
+import html5lib
 
 # ugly hack
 import sys
@@ -15,18 +12,18 @@ def clean_legislators(s):
 class NCLegislationScraper(LegislationScraper):
 
     state = 'nc'
+    soup_parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
     def get_bill_info(self, session, bill_id):
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?Session=%s&BillID=%s' % (session, bill_id)
-
         # parse the bill data page, finding the latest html text
         if bill_id[0] == 'H':
             chamber = 'lower'
         else:
             chamber = 'upper'
 
-        bill_data = urllib.urlopen(bill_detail_url).read()
-        bill_soup = BeautifulSoup(bill_data)
+        bill_data = self.urlopen(bill_detail_url)
+        bill_soup = self.soup_parser(bill_data)
 
         bill_title = bill_soup.findAll('div', style="text-align: center; font: bold 20px Arial; margin-top: 15px; margin-bottom: 8px;")[0].contents[0]
 
@@ -52,8 +49,8 @@ class NCLegislationScraper(LegislationScraper):
 
         # easier to read actions from the rss.. but perhaps favor less HTTP requests?
         rss_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?Session=%s&BillID=%s&view=history_rss' % (session, bill_id)
-        rss_data = urllib.urlopen(rss_url).read()
-        rss_soup = BeautifulSoup(rss_data)
+        rss_data = self.urlopen(rss_url)
+        rss_soup = self.soup_parser(rss_data)
         # title looks like 'House Chamber: action'
         for item in rss_soup.findAll('item'):
             action = item.title.contents[0]
@@ -71,8 +68,8 @@ class NCLegislationScraper(LegislationScraper):
         url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (session, chamber)
 
         self.be_verbose("Downloading %s" % url)
-        data = urllib.urlopen(url).read()
-        soup = BeautifulSoup(data)
+        data = self.urlopen(url)
+        soup = self.soup_parser(data)
 
         rows = soup.findAll('table')[5].findAll('tr')[1:]
         for row in rows:
