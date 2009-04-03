@@ -1,7 +1,7 @@
 [Texas]
 start_year: 2009
 bills: yes
-bill_versions: no
+bill_versions: yes
 sponsors: yes
 actions: yes
 votes: no

@@ -42,7 +42,7 @@ class TXLegislationScraper(LegislationScraper):
                                      cosponsor)
         
     def scrape_session(self, chamber, session):
-        self.be_verbose("Scraping %s." % session)
+        self.be_verbose("Getting session %s." % session)
 
         if chamber == 'upper':
             chamber_name = 'senate'
@@ -53,18 +53,30 @@ class TXLegislationScraper(LegislationScraper):
                      (session, chamber_name))
 
         for dir in self.ftp.nlst():
+             self.ftp.cwd(dir)
+
+             for bill in self.ftp.nlst():
+                 txt = []
+                 self.ftp.retrlines("RETR " + bill, lambda x: txt.append(x))
+                 txt = ''.join(txt)
+                 self.parse_bill_xml(chamber, session, txt)
+             self.ftp.cwd('..')
+
+        # Grab versions
+        self.ftp.cwd('/bills/%s/billtext/html/%s_bills/' %
+                     (session, chamber_name))
+        for dir in self.ftp.nlst():
             self.ftp.cwd(dir)
 
-            for bill in self.ftp.nlst():
-                txt = []
-                self.ftp.retrlines("RETR " + bill, lambda x: txt.append(x))
-                txt = ''.join(txt)
-                self.parse_bill_xml(chamber, session, txt)
-
+            for text in self.ftp.nlst():
+                bill_id = "%s %d" % (text[0:2], int(text[2:7]))
+                url = "ftp://ftp.legis.state.tx.us/bills/%s/billtext/html/%s_bills/%s/%s" % (session, chamber_name, dir, text)
+                self.add_bill_version(chamber, session, bill_id,
+                                      text[0:7], url)
             self.ftp.cwd('..')
     
     def scrape_bills(self, chamber, year):
-        if int(year) < 1989 or int(year) > dt.date.today().year:
+        if int(year) < 2009 or int(year) > dt.date.today().year:
             raise NoDataForYear(year)
 
         # Expect the first year of a session
