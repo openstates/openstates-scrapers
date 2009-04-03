@@ -72,7 +72,7 @@ class TXLegislationScraper(LegislationScraper):
                 bill_id = "%s %d" % (text[0:2], int(text[2:7]))
                 url = "ftp://ftp.legis.state.tx.us/bills/%s/billtext/html/%s_bills/%s/%s" % (session, chamber_name, dir, text)
                 self.add_bill_version(chamber, session, bill_id,
-                                      text[0:7], url)
+                                      text[:-4], url)
             self.ftp.cwd('..')
     
     def scrape_bills(self, chamber, year):
