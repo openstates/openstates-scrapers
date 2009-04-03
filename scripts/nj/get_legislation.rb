@@ -78,13 +78,11 @@ module NewJersey
       actions_version = action_rows[0].inner_html().to_s().split("<br />")
       actions_version.each do |element|
         if(element.include?("<a href"))
-           puts "== Element =="
-           #puts element.to_s.scan(/[\w]*/)
-           e = element.to_s.gsub(/<\/?[^>]*>/, "")
-           puts e.gsub(/HTML Format/,"")
-           #puts e.gsub(/[HTMLFormat] | [PDFFormat]/,"")
+          version =  element.slice(0..(element.index(/<a href/) - 1)).strip
+          link =  Hpricot(element).search('a').last[:href]
+          bill.add_versions(version,link)
         elsif (element.include?("<font") || element.empty? )
-          # 
+          # Do Nothing
         else
           date = element.strip.slice(0..9).strip
           action = element.gsub(/#{date}/," ").strip
@@ -142,7 +140,7 @@ module NewJersey
       #pp bill
   #  end
    
-  njs.fetch_bill("A13",2006,:lower)
+   pp njs.fetch_bill("A13",2006,:lower)
   end
 end
 
