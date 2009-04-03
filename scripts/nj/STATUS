@@ -1,0 +1,9 @@
+[New Jersey]
+start_year: 1996
+bills: yes
+bill_versions: yes
+sponsors: yes
+actions: yes
+votes: no
+contributors: Greg Osuri
+notes: Bill Versions are documents related to the bill, e.g., Introduction, Statement, Rewrite, Fiscals etc.,
