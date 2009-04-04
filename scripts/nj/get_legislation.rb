@@ -4,7 +4,7 @@ module NewJersey
   include Scrapable
   
   class Bill
-    attr_reader :bill_id, :year, :chamber, :actions, :versions, :sponsors
+    attr_reader :bill_id, :year, :chamber, :actions, :versions, :sponsors, :session
     attr_writer :legislation
     
     def initialize(bill_id, year, chamber)
@@ -14,13 +14,18 @@ module NewJersey
       @versions = []
       @sponsors = []
       @actions = []
+      session
+    end
+    
+    def session
+      @session = "#{year} to #{year.to_i+1} Legislative Session"
     end
     
     def add_versions(version,link)
-      @versions << {:version => version,:link => link} 
+      @versions << {:version => version,:link => "http://www.njleg.state.nj.us/Bills/#{link}"} 
     end
     
-    def add_sponsers(sponsor, type)
+    def add_sponsor(sponsor, type)
       @sponsors << {:sponsor => sponsor,:type => type}
     end
     
@@ -42,7 +47,7 @@ module NewJersey
       bp = fetch_bill_page(year) #This page is used for getting total no. of pages
       a_bill_numbers = []
       s_bill_numbers = []
-      pages = 2 #Extract Total Pages from Bill Page and store, currenlty testing for 5 Pages
+      pages = 20 #Extract Total Pages from Bill Page and store, currenlty testing for 5 Pages
       
       if(!bp.nil?)
         pages.times do |page|
@@ -73,31 +78,44 @@ module NewJersey
         end
       end
       
-      #Scraping actions & versions
+      #Parsing Sponsors
+      sponsor_rows = bdp.search('//table[@width="95%"]').search('//tr')[0].search('//font[@face="Arial, Helvetica, sans-serif"]')
+      sponsor_rows.each do |sp|
+        sp.inner_html.split(/<br \/>/).each do |spx|
+        m =  Hpricot(spx).at("font")
+          if !m.nil? 
+            sponsor =  m.to_plain_text.split(/\sas\s/)
+            #pp m.to_plain_text.split(" as ")
+            bill.add_sponsor(sponsor[0].strip,sponsor[1])
+          end
+        end 
+      end
+      
+      #Parsing actions & versions
       action_rows = bdp.search('//table[@width="95%"]').search('//tr')[3].search('//font')
       actions_version = action_rows[0].inner_html().to_s().split("<br />")
       actions_version.each do |element|
         if(element.include?("<a href"))
+          #Parsing Versions - Versions have links, looking up by a href
           version =  element.slice(0..(element.index(/<a href/) - 1)).strip
           link =  Hpricot(element).search('a').last[:href]
           bill.add_versions(version,link)
         elsif (element.include?("<font") || element.empty? )
           # Do Nothing
         else
+          #Parsing Actions, seperating datesw
           date = element.strip.slice(0..9).strip
           action = element.gsub(/#{date}/," ").strip
           bill.add_action(date,action)
         end
       end
-      
-      
-       return bill
+      bill
     end
     
     private
     
     def get_bill_db(year)
-       return case year
+        case year
           when 1996; "LIS9697"
           when 1998; "LIS9899"
           when 2000; "LIS2000"
@@ -134,13 +152,13 @@ module NewJersey
  
   def self.scrape_bills
   njs = NJLegislationSite.new
-   # njs.bill_numbers(2006,:lower).each do |bno|
-    #  puts "==  Bill  =="
-     # bill = njs.fetch_bill(bno,2006,:lower)
-      #pp bill
-  #  end
+    njs.bill_numbers(2006,:lower).each do |bno|
+      puts "==  Bill  =="
+      bill = njs.fetch_bill(bno,2006,:lower)
+      pp bill
+    end
    
-   pp njs.fetch_bill("A13",2006,:lower)
+    #pp njs.fetch_bill("A15",2008,:lower)
   end
 end
 
