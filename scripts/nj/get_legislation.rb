@@ -78,7 +78,6 @@ module NewJersey
       puts "Processing #{bill_id}"
       bill = Bill.new(bill_id,@year,@chamber)
       bdp = Hpricot(fetch_bill_detail_page(bill_id).body) #Fetching Bill Detail Page(bdp) for the bill
-      
       #Parsing Legislation
       bdp.search('//td[@bgcolor="#fede7e"]').each do |element|
         element.search('//font[@color="maroon"]').each do |l|
@@ -160,8 +159,8 @@ module NewJersey
        a_bill_numbers = []
        s_bill_numbers = []
        doc = Hpricot(fetch_bill_page(page).body)
-       doc.search("//a[@title='View Detail Bill Information']").each do |bill_element|
-         bill_number = (bill_element.inner_html).to_s().slice(/[AS][0-9]{1,10}/)
+       doc.search("//a[@title='View Detail Bill Information']/font").each do |bill_element|
+         bill_number =  bill_element.to_plain_text
          get_chamber_from_bill_no(bill_number)=="lower" ? a_bill_numbers << bill_number : s_bill_numbers << bill_number        
        end
        @chamber == "lower" ? a_bill_numbers : s_bill_numbers
@@ -194,7 +193,6 @@ module NewJersey
       end
     end
   end
-  
 end
 
 NewJersey.run

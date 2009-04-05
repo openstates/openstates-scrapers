@@ -6,4 +6,5 @@ sponsors: yes
 actions: yes
 votes: no
 contributors: Greg Osuri
-notes: Bill Versions are documents related to the bill, e.g., Introduction, Statement, Rewrite, Fiscals etc.,
+notes: * Bill Versions are documents related to the bill and may not be actual versions of the bill, e.g., Introduction, Statement, Rewrite, Fiscals etc.
+* NJ uses bill number in various formats A stands for Assembly or Lower House and S stands for Senate, the id convention is an alpha number A### or S#### or ACR# etc. 
