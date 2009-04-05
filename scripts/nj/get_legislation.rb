@@ -82,7 +82,7 @@ module NewJersey
       #Parsing Legislation
       bdp.search('//td[@bgcolor="#fede7e"]').each do |element|
         element.search('//font[@color="maroon"]').each do |l|
-            bill.legislation = (l.inner_html).to_s.strip
+            bill.legislation = (l.to_plain_text).to_s.strip
         end
       end
       
@@ -104,7 +104,7 @@ module NewJersey
       actions_version = action_rows[0].inner_html().to_s().split("<br />")
       actions_version.each do |element|
         if(element.include?("<a href"))
-          #Parsing Versions - Versions have links, looking up by a href
+          #Parsing Versions - Versions have links, looking up by <a href>
           version =  element.slice(0..(element.index(/<a href/) - 1)).strip
           link =  Hpricot(element).search('a').last[:href]
           bill.add_versions(version,link)
@@ -181,6 +181,7 @@ module NewJersey
       bills.each do |bill|
         common_hash = bill.to_hash
         add_bill(common_hash)
+        common_hash.delete(:bill_name)
         bill.sponsors.each do |sponsor|
           add_sponsorship(common_hash.merge(sponsor))
         end
