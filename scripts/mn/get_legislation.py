@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
+import logging
 import re
 import urllib
 import urlparse
 from BeautifulSoup import BeautifulSoup
-from mechanize import Browser
-import logging
 
 # Toggle this to the logging verbosity you want.
-verbosity = logging.DEBUG
+verbosity = logging.INFO
 
 logger = logging.getLogger("MNScraper")
 logger.setLevel(verbosity)
