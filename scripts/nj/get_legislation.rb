@@ -1,5 +1,13 @@
 # !/usr/bin/ruby
 # This module scrapes legislation for New Jersey
+# 
+# Note:
+# * Bill Versions are documents related to the bill and may not be actual versions of the bill,
+#   e.g., Introduction, Statement, Rewrite, Fiscals etc.
+# * NJ uses bill number in various formats A stands for Assembly or Lower House and S stands for Senate, 
+#   the id convention is an alpha number A### or S#### or ACR# etc.
+# * All the bill numbers are parsed from http://www.njleg.state.nj.us/bills/BillsByNumber.asp 
+#   only way to get to "Upper chamber" bills are to parse every page till we find billnumbers with id pre-fix 'S'
 
 module NewJersey
   require File.join(File.dirname(__FILE__), '..', 'rbutils', 'legislation')
@@ -53,7 +61,8 @@ module NewJersey
       @chamber = chamber
       
       if (bill_db.nil?)
-        raise Scrapable::NoDataForYearError.new(year, "Please make sure year is even(i.e., 1996,1998,2000..) and inbetween 1996 and current year")
+        raise Scrapable::NoDataForYearError.new(year, 
+        "Please make sure year is even(i.e., 1996,1998,2000..) and inbetween 1996 and current year")
       end
       
       @base_uri = "http://www.njleg.state.nj.us"
@@ -63,7 +72,6 @@ module NewJersey
       @billpage = fetch_bill_page
       fetch_page_count
     end
-    
     
     def fetch_bills_by_page(page)
       result = []
@@ -86,13 +94,12 @@ module NewJersey
       end
       
       #Parsing Sponsors
-      sponsor_rows = bdp.search('//table[@width="95%"]').search('//tr')[0].search('//font[@face="Arial, Helvetica, sans-serif"]')
+      sponsor_rows = bdp.at('//table[@width="95%"]/tr').search('//font[@face="Arial, Helvetica, sans-serif"]')
       sponsor_rows.each do |sp|
         sp.inner_html.split(/<br \/>/).each do |spx|
         m =  Hpricot(spx).at("font")
           if !m.nil? 
             sponsor =  m.to_plain_text.split(/\sas\s/)
-            #pp m.to_plain_text.split(" as ")
             bill.add_sponsor(sponsor[0].strip,sponsor[1])
           end
         end 
@@ -159,8 +166,8 @@ module NewJersey
        a_bill_numbers = []
        s_bill_numbers = []
        doc = Hpricot(fetch_bill_page(page).body)
-       doc.search("//a[@title='View Detail Bill Information']/font").each do |bill_element|
-         bill_number =  bill_element.to_plain_text
+       doc.search("//td[@width='5%']/a").each do |bill_element|
+         bill_number =  bill_element.to_plain_text.gsub(/\s\[(.)*/,'')
          get_chamber_from_bill_no(bill_number)=="lower" ? a_bill_numbers << bill_number : s_bill_numbers << bill_number        
        end
        @chamber == "lower" ? a_bill_numbers : s_bill_numbers
@@ -173,7 +180,7 @@ module NewJersey
   
   def self.scrape_bills(chamber, year)
     njs = NJLegislationSite.new(chamber,year.to_i)  
-    puts "Total Records found: #{njs.record_count}"
+    puts "Total Records found: #{njs.record_count} (upper and lower)"
     njs.page_count.times do |page_no|
       puts "Processing Page #{page_no+1} of #{njs.page_count}"
       bills = njs.fetch_bills_by_page(page_no+1)
@@ -193,6 +200,7 @@ module NewJersey
       end
     end
   end
+
 end
 
 NewJersey.run
