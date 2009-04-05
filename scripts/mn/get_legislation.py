@@ -8,7 +8,7 @@ from mechanize import Browser
 import logging
 
 # Toggle this to the logging verbosity you want.
-verbosity = logging.DEBUG
+verbosity = logging.INFO
 
 logger = logging.getLogger("MNScraper")
 logger.setLevel(verbosity)
@@ -18,8 +18,6 @@ console_formatter = logging.Formatter("%(message)s")
 console_handler.setFormatter(console_formatter)
 # Add the handlers to the logger.
 logger.addHandler(console_handler)
-
-
 
 
 # ugly hack
@@ -194,10 +192,13 @@ class MNLegislationScraper(LegislationScraper):
         return bill_actions
 
     def get_bill_info(self, chamber, session, bill_detail_url):
+	'''Extracts all the requested info for a given bill.  
+	
+	Calls the parent's methods to enter the results into CSV files.
+	'''
         bill_detail_url_base='https://www.revisor.leg.state.mn.us/revisor/pages/search_status/'
         bill_detail_url = urlparse.urljoin(bill_detail_url_base, bill_detail_url)
 
-        # parse the bill data page, finding the latest html text
         if chamber == "House":
             chamber = 'lower'
         else:
@@ -210,7 +211,7 @@ class MNLegislationScraper(LegislationScraper):
         bill_title =  self.extract_bill_title(bill_soup)
         self.add_bill(chamber, session, bill_id, bill_title)
 
-        # get all versions
+        # get all versions of the bill.
         # Versions of a bill are on a separate page, linked to from the bill
         # details page in a link titled, "Bill Text".
         version_url_base = 'https://www.revisor.leg.state.mn.us'
@@ -251,7 +252,7 @@ class MNLegislationScraper(LegislationScraper):
         # MN bill search page returns a maximum of 999 search results.
         # To get around that, make multiple search requests and combine the results.
         # when setting the search_range, remember that 'range()' omits the last value.
-        search_range = range(0,10000, 500)
+        search_range = range(0,10000, 900)
         min = search_range[0]
         for max in search_range[1:]:
             # The search form accepts number ranges for bill numbers.
@@ -325,5 +326,3 @@ class MNLegislationScraper(LegislationScraper):
 
 if __name__ == '__main__':
     MNLegislationScraper().run()
-#chamber, session, session_year, session_number, legislative_session
-#    MNLegislationScraper().scrape_session('House', '0862009', '2009', '0', '86' )
