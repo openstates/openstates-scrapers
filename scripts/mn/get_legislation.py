@@ -8,7 +8,7 @@ from mechanize import Browser
 import logging
 
 # Toggle this to the logging verbosity you want.
-verbosity = logging.INFO
+verbosity = logging.DEBUG
 
 logger = logging.getLogger("MNScraper")
 logger.setLevel(verbosity)
@@ -254,6 +254,7 @@ class MNLegislationScraper(LegislationScraper):
         # when setting the search_range, remember that 'range()' omits the last value.
         search_range = range(0,10000, 900)
         min = search_range[0]
+        total_rows = list() # used to concatenate search results
         for max in search_range[1:]:
             # The search form accepts number ranges for bill numbers.
             # Range Format: start-end
@@ -262,15 +263,16 @@ class MNLegislationScraper(LegislationScraper):
             logger.debug("Getting bill data from: %s", url)
             data = urllib.urlopen(url).read()
             soup = BeautifulSoup(data)
-            total_rows = list() # used to concatenate search results
             # Index into the table containing the bills .
             rows = soup.findAll('table')[6].findAll('tr')[1:]
             logger.debug("Rows to process: %s", str(len(rows)))
             # If there are no more results, then we've reached the
             # total number of bills available for this session.
-            if rows == []:
-                return total_rows
-            total_rows.extend(rows)
+            if len(rows) == 0:
+                logger.debug("Total Bills Found: %d", len(total_rows))
+                break
+            else:
+                total_rows.extend(rows)
             # increment min for next loop so we don't get duplicates.
             min = max 
     
