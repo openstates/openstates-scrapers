@@ -1,21 +1,31 @@
 #!/usr/bin/env python
 
+import re
 import urllib
 import urlparse
 from BeautifulSoup import BeautifulSoup
 from mechanize import Browser
 import logging
 
-logger = logging.getLogger()
+# Toggle this to the logging verbosity you want.
+verbosity = logging.DEBUG
+
+logger = logging.getLogger("MNScraper")
+logger.setLevel(verbosity)
+console_handler = logging.StreamHandler()
+# Set up log formatters, and add them to the handlers.
+console_formatter = logging.Formatter("%(message)s")
+console_handler.setFormatter(console_formatter)
+# Add the handlers to the logger.
+logger.addHandler(console_handler)
+
+
+
 
 # ugly hack
 import sys
 sys.path.append('./scripts')
 from pyutils.legislation import LegislationScraper, NoDataForYear
-
-def clean_legislators(s):
-    s = s.replace('&nbsp;', ' ').strip()
-    return [l.strip() for l in s.split(';') if l]
 
 class MNLegislationScraper(LegislationScraper):
     '''
@@ -49,23 +59,41 @@ class MNLegislationScraper(LegislationScraper):
 
     state = 'mn'
 
+    def cleanup_text(self, text):
+        '''Remove junk from text that MN puts in for formatting their tables.
+        Removes surrounding whitespace. 
+        Replaces any '&nbsp;' chars with spaces.
+        
+        Returns a string with the problem text removed/replaced.
+        '''
+        # coerce to string...
+        text = str(text)
+        logger.debug("Cleaning text: %s", text)
+        cleaned_text = text.replace('&nbsp;', '').strip()
+        logger.debug("Cleaned text: %s", cleaned_text)
+        return cleaned_text
+
     def extract_bill_id(self, soup):
         '''Extract the ID of a bill from a Bill Status page.'''
         # The bill name is in a table that has an attribute 'summary' 
         # with a value of 'Show Doc Names'.
         doc_name_table = soup.find('table', attrs={"summary" : "Show Doc Names"})
         bill_id_raw = doc_name_table.td.contents[0]
-        bill_id = re.search(r'Bill Name:\s+\d+', bill_name_raw).groups()[0]
+        bill_id = re.search(r'Bill Name:\s+([H|S]F\d+)', bill_id_raw)
+        if bill_id is not None:
+            bill_id = bill_id.groups()[0]
+            logger.debug("Found bill ID: %s", bill_id)
         return bill_id
 
     def extract_bill_title(self, soup):
         '''Extract the title of a bill from a Bill Status page.'''
         # The bill title is in a table that has an attribute 'summary'
         # with a value of 'Short Description'.
-        short_summary_table = soup.find('table', attrs={"summary" : "Show Doc Names"})
+        short_summary_table = soup.find('table', attrs={"summary" : "Short Description"})
         # The 'Short Summary' table has only one <td> which contains the 
-        # bill id inside a <font> element.
+        # bill title inside a <font> element.
         bill_title = short_summary_table.td.font.contents[0]
+        logger.debug("Found Bill Title: %s", bill_title)
         return bill_title
 
     def extract_bill_version_link(self, soup):
@@ -75,6 +103,7 @@ class MNLegislationScraper(LegislationScraper):
         doc_name_table = soup.find('table', attrs={"summary" : "Show Doc Names"})
         bill_version_raw = doc_name_table.td
         bill_version_link = bill_version_raw.a.attrs[0][1]
+        logger.debug("Found Bill Version Link: %s", bill_version_link)
         return bill_version_link
 
     def extract_bill_versions(self, soup):
@@ -85,7 +114,7 @@ class MNLegislationScraper(LegislationScraper):
         '''
         bill_versions = list()
         # A table of all versions of a bill exists in a table
-        # which has a summary attribute of ''.
+        # which has a 'summary' attribute with a value of ''.
         versions_table = soup.find('table', attrs={'summary' : ''})
         table_rows = versions_table.findAll('tr')
         for row in table_rows:
@@ -97,9 +126,11 @@ class MNLegislationScraper(LegislationScraper):
                 # first column of the table.
                 bill_version = dict()
                 bill_version_column = cols[0]
-                bill_version['name'] = bill_version_column.a.contents[0]
+                bill_version['name'] = self.cleanup_text(bill_version_column.a.contents[0])
                 bill_version['url'] = bill_version_column.a.attrs[0][1]
                 bill_versions.append(bill_version)
+                del bill_version
+        logger.debug("Found Bill Versions: %d", len(bill_versions))
         return bill_versions
 
     def extract_bill_sponsors(self, soup):
@@ -111,14 +142,8 @@ class MNLegislationScraper(LegislationScraper):
         for link in sponsors_links:
             sponsor_name = link.contents[0]
             bill_sponsors.append(sponsor_name)
+        logger.debug("Sponsors Found for this bill: %d", len(bill_sponsors))
         return bill_sponsors
-
-    def cleanup_text(self, text):
-        '''Remove junk from text that MN puts in for formatting.
-        Removes surrounding whitespace, and any '&nbsp;' chars.
-        '''
-        cleaned_text = text.replace('&nbsp;', '').strip()
-        return cleaned_text
 
     def extract_bill_actions(self, soup, current_chamber):
         '''Extract the actions taken on a bill.
@@ -165,6 +190,7 @@ class MNLegislationScraper(LegislationScraper):
                 bill_action['action_text'] = action_text
                 bill_action['action_chamber'] = current_chamber
                 bill_actions.append(bill_action)
+        logger.debug("Actions Found for this bill: %d", len(bill_actions))
         return bill_actions
 
     def get_bill_info(self, chamber, session, bill_detail_url):
@@ -205,7 +231,7 @@ class MNLegislationScraper(LegislationScraper):
         # grab primary and cosponsors 
         # MN uses "Primary Author" to name a bill's primary sponsor.
         # Everyone else listed will be added as a 'cosponsor'.
-        sponsors = self.extract_sponsors(bill_soup)
+        sponsors = self.extract_bill_sponsors(bill_soup)
         primary_sponsor = sponsors[0]
         cosponsors = sponsors[1:]
         self.add_sponsorship(chamber, session, bill_id, 'primary', primary_sponsor)
@@ -225,18 +251,20 @@ class MNLegislationScraper(LegislationScraper):
         # MN bill search page returns a maximum of 999 search results.
         # To get around that, make multiple search requests and combine the results.
         # when setting the search_range, remember that 'range()' omits the last value.
-        search_range = range(0,10000, 900)
+        search_range = range(0,10000, 500)
         min = search_range[0]
         for max in search_range[1:]:
             # The search form accepts number ranges for bill numbers.
             # Range Format: start-end
             # Query Param: 'bill='
             url = 'https://www.revisor.leg.state.mn.us/revisor/pages/search_status/status_results.php?body=%s&search=basic&session=%s&bill=%s-%s&bill_type=bill&submit_bill=GO&keyword_type=all=1&keyword_field_long=1&keyword_field_title=1&titleword=' % (chamber, session, min, max-1)
+            logger.debug("Getting bill data from: %s", url)
             data = urllib.urlopen(url).read()
             soup = BeautifulSoup(data)
             total_rows = list() # used to concatenate search results
             # Index into the table containing the bills .
             rows = soup.findAll('table')[6].findAll('tr')[1:]
+            logger.debug("Rows to process: %s", str(len(rows)))
             # If there are no more results, then we've reached the
             # total number of bills available for this session.
             if rows == []:
@@ -249,10 +277,10 @@ class MNLegislationScraper(LegislationScraper):
             # The second column of the row contains a link pointing to 
             # the status page for the bill.  We'll go there to extract all
             # the bill's info.
-            columns = row.findAll('td')[1]
-            bill_details_column = columns[1]
+            cols = row.findAll('td')
+            bill_details_column = cols[1]
             # Extract the 'href' attribute value.
-            bill_details_url = build_details_column.a.attrs[0][1]
+            bill_details_url = bill_details_column.a.attrs[0][1]
             self.get_bill_info(chamber, session, bill_details_url)
 
     def scrape_bills(self, chamber, year):
@@ -292,6 +320,7 @@ class MNLegislationScraper(LegislationScraper):
             session_number = session[0]
             legislative_session = session[1:3]
             legislative_session_year = session[-4:]
+            logger.debug("Scraping data for MN - Session: %s, Chamber: %s, Year: %s", session, chamber, year)
             self.scrape_session(chamber, session, session_year, session_number, legislative_session)
 
 if __name__ == '__main__':
