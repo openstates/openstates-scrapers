@@ -5,6 +5,7 @@ require 'optparse'
 require 'fileutils'
 require 'open-uri'
 require 'time'
+require 'mechanize'
 
 # Include this module in your scraper and implement a scrape_bills method that
 # takes a chamber and a year and a state method that returns the state abbr.  

@@ -83,6 +83,7 @@ Ruby (1.8.*+)
 -------------
 * hpricot (gem install hpricot)
 * fastercsv (gem install fastercsv)
+* mechanize (gem install mechanize)
 
 A note on new requirements
 --------------------------
