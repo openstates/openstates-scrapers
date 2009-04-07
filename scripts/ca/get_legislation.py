@@ -36,7 +36,7 @@ class CALegislationScraper(LegislationScraper):
         history = BeautifulSoup(history_raw)
 
         # Find title and add bill
-        title_match = re.search('TOPIC\t:\s(\w.+\n(\t\w.*\n){0,})', history_raw, re.MULTILINE)
+        title_match = re.search('TOPIC\s+:\s+(\w.+\n(\t\w.*\n){0,})', history_raw, re.MULTILINE)
         bill_title = title_match.group(1).replace('\n', '').replace('\t', ' ')
         self.add_bill(chamber, session, bill_id, bill_title)
 
@@ -95,7 +95,7 @@ class CALegislationScraper(LegislationScraper):
 
     def scrape_bills(self, chamber, year):
         # CA makes data available from 1993 on
-        if int(year) < 1993 or int(year) > dt.date.today().year:
+        if int(year) < 1995 or int(year) > dt.date.today().year:
             raise NoDataForYear(year)
 
         # We expect the first year of a session (odd)
