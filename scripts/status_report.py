@@ -25,7 +25,10 @@ def get_state_data():
     def parse_state(state):
         data = {}
         for key, func in attributes.iteritems():
-            data[key] = getattr(config, func)(state, key)
+            if config.has_option(state, key):
+                data[key] = getattr(config, func)(state, key)
+            else:
+                data[key] = ''
         return data
 
     for state in states:
