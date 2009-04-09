@@ -1,6 +1,7 @@
 from optparse import make_option, OptionParser
 import datetime
 import csv
+import os.path
 
 class ScrapeError(Exception):
     """
@@ -72,37 +73,21 @@ class LegislationScraper(object):
                     help='scrape lower chamber'),
         make_option('-v', '--verbose', action='store_true', dest='verbose',
                     default=False, help="be verbose")
+        make_option('-d', '--output_dir', action='store', dest='output_dir',
+                    help='output directory'),
     )
-    common_fields = ('bill_state', 'bill_chamber', 'bill_session', 'bill_id')
-    bill_fields = common_fields + ('bill_name',)
-    bill_version_fields = common_fields + ('version_name', 'version_url')
-    sponsor_fields = common_fields + ('sponsor_type', 'sponsor_name')
-    action_fields = common_fields + ('action_chamber', 'action_text', 'action_date')
+
+    common_fields = ['bill_state', 'bill_chamber', 'bill_session', 'bill_id']
+    bill_fields = common_fields + ['bill_name']
+    bill_version_fields = common_fields + ['version_name', 'version_url']
+    sponsor_fields = common_fields + ['sponsor_type', 'sponsor_name']
+    action_fields = common_fields + ['action_chamber', 'action_text', 'action_date']
+    output_dir = None
 
     def __init__(self):
-        self.verbose = False
         if not hasattr(self, 'state'):
             raise Exception('LegislationScrapers must have a state attribute')
-
-        bill_filename = 'data/%s/legislation.csv' % self.state
-        self.bill_csv = csv.DictWriter(open(bill_filename, 'w'), 
-                                       self.bill_fields, extrasaction='ignore')
-
-        bill_version_filename = 'data/%s/bill_versions.csv' % self.state
-        self.version_csv = csv.DictWriter(open(bill_version_filename, 'w'),
-                                          self.bill_version_fields,
-                                          extrasaction='ignore')
-
-        sponsor_filename = 'data/%s/sponsorships.csv' % self.state
-        self.sponsor_csv = csv.DictWriter(open(sponsor_filename, 'w'),
-                                          self.sponsor_fields, 
-                                          extrasaction='ignore')
-
-        action_filename = 'data/%s/actions.csv' % self.state
-        self.action_csv = csv.DictWriter(open(action_filename, 'w'),
-                                         self.action_fields,
-                                         extrasaction='ignore')
-
+    
     def add_bill(self, bill_chamber, bill_session, bill_id, bill_name, **kwargs):
         row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
                'bill_session': bill_session, 'bill_id': bill_id,
@@ -160,9 +145,48 @@ class LegislationScraper(object):
     def scrape_bills(self, chamber, year):
         raise NotImplementedError('LegislatorScrapers must define a scrape_bills method')
 
+    def init_output_files(self,output_dir):
+
+        if output_dir == None:
+            output_dir = os.path.join(os.path.curdir,"data",self.state)
+
+
+        try:
+            os.makedirs(output_dir)
+        except OSError,e:
+            if e.errno != 17 or os.path.isfile(output_dir): # 17 == File exists
+                raise e
+
+        bill_filename = os.path.join(output_dir,'legislation.csv')
+        self.bill_csv = csv.DictWriter(open(bill_filename, 'w'), 
+                                       self.bill_fields, extrasaction='ignore')
+
+        bill_version_filename = os.path.join(output_dir,'bill_versions.csv')
+        self.version_csv = csv.DictWriter(open(bill_version_filename, 'w'),
+                                          self.bill_version_fields,
+                                          extrasaction='ignore')
+
+        sponsor_filename = os.path.join(output_dir,'sponsorships.csv')
+        self.sponsor_csv = csv.DictWriter(open(sponsor_filename, 'w'),
+                                          self.sponsor_fields, 
+                                          extrasaction='ignore')
+
+        action_filename = os.path.join(output_dir,'actions.csv')
+        self.action_csv = csv.DictWriter(open(action_filename, 'w'),
+                                         self.action_fields,
+                                         extrasaction='ignore')
+    
+
     def run(self):
         options, spares = OptionParser(option_list=self.option_list).parse_args()
+
         self.verbose = options.verbose
+
+        if options.output_dir:
+            self.output_dir = options.output_dir
+            
+        self.init_output_files(self.output_dir)
+
         years = options.years
         if options.all_years:
             years = [str(y) for y in range(1969, datetime.datetime.now().year+1)]
