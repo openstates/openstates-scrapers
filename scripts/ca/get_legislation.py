@@ -19,7 +19,7 @@ class CALegislationScraper(LegislationScraper):
         # Get the details page and parse it with BeautifulSoup. These
         # pages contain a malformed 'p' tag that (certain versions of)
         # BS choke on, so we replace it with a regex before parsing.
-        details_raw = urllib2.urlopen(detail_url).read()
+        details_raw = self.urlopen(detail_url)
         details_raw = details_raw.replace('<P ALIGN=CENTER">', '')
         details = BeautifulSoup(details_raw)
 
@@ -29,7 +29,7 @@ class CALegislationScraper(LegislationScraper):
         # in the title come to us w/ malformed meta tags)
         hist_link = details.find(href=re.compile("_history.html"))
         hist_url = 'http://www.leginfo.ca.gov%s' % hist_link['href']
-        history_raw = urllib2.urlopen(hist_url).read()
+        history_raw = self.urlopen(hist_url)
         history_raw = history_raw.replace('<! ****** document data starts here ******>', '')
         rem_meta = re.compile('</title>.*</head>', re.MULTILINE | re.DOTALL)
         history_raw = rem_meta.sub('</title></head>', history_raw)
@@ -85,7 +85,7 @@ class CALegislationScraper(LegislationScraper):
         # (text format, sorted by author)
         url = "http://www.leginfo.ca.gov/pub/%s/bill/index_%s_author_bill_topic" % (session, chamber_name)
         self.be_verbose("Getting bill list for %s %s" % (chamber, session))
-        bill_list = urllib2.urlopen(url).read()
+        bill_list = self.urlopen(url)
         bill_re = re.compile('\s+(%s\s+\d+)(.*(\n\s{31}.*){0,})' % bill_abbr,
                              re.MULTILINE)
 

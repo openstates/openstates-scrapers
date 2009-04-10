@@ -50,7 +50,7 @@ class AKLegislationScraper(LegislationScraper):
         # Get bill list
         bill_list_url = 'http://www.legis.state.ak.us/basis/range_multi.asp?session=%i&date1=%s&date2=%s' % (session, date1, date2)
         self.be_verbose("Getting bill list for %s %s (this may take a long time)." % (chamber, session))
-        bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
+        bill_list = BeautifulSoup(self.urlopen(bill_list_url))
 
         # Find bill links
         re_str = "bill=%s\d+" % bill_abbr
@@ -63,7 +63,7 @@ class AKLegislationScraper(LegislationScraper):
 
             # Get the bill info page and strip malformed t
             info_url = "http://www.legis.state.ak.us/basis/%s" % link['href']
-            info_raw = urllib2.urlopen(info_url).read()
+            info_raw = self.urlopen(info_url)
             info_raw = re.sub('<input type="button".*/>', '', info_raw)
             info_page = BeautifulSoup(info_raw)
 
@@ -111,7 +111,7 @@ class AKLegislationScraper(LegislationScraper):
 
             # Get versions
             text_list_url = "http://www.legis.state.ak.us/basis/get_fulltext.asp?session=%s&bill=%s" % (session, bill_id)
-            text_list = BeautifulSoup(urllib2.urlopen(text_list_url).read())
+            text_list = BeautifulSoup(self.urlopen(text_list_url))
             text_link_re = re.compile('^get_bill_text?')
             for text_link in text_list.findAll('a', href=text_link_re):
                 text_name = text_link.parent.previousSibling.string

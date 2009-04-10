@@ -23,7 +23,7 @@ class VTLegislationScraper(LegislationScraper):
         session = "%d-%d" % (int(year), int(year) + 1)
         bill_list_url = "http://www.leg.state.vt.us/docs/bills.cfm?Session=%d&Body=%s" % (int(year) + 1, bill_abbr[0])
         self.be_verbose("Getting bill list for %s %s" % (chamber, year))
-        bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
+        bill_list = BeautifulSoup(self.urlopen(bill_list_url))
 
         bill_link_re = re.compile('.*?Bill=%s\.\d+.*' % bill_abbr[0])
         for bill_link in bill_list.findAll('a', href=bill_link_re):
@@ -32,7 +32,7 @@ class VTLegislationScraper(LegislationScraper):
             self.add_bill(chamber, session, bill_id, bill_title)
 
             bill_info_url = "http://www.leg.state.vt.us" + bill_link['href']
-            info_page = BeautifulSoup(urllib2.urlopen(bill_info_url).read())
+            info_page = BeautifulSoup(self.urlopen(bill_info_url))
 
             text_links = info_page.findAll('blockquote')[1].findAll('a')
             for text_link in text_links:
@@ -86,8 +86,8 @@ class VTLegislationScraper(LegislationScraper):
                                  'Session': str(int(year) + 1)})
         bill_list_url = "http://www.leg.state.vt.us/database/rintro/results.cfm"
         self.be_verbose("Getting bill list for %s %s" % (chamber, year))
-        bill_list = BeautifulSoup(urllib2.urlopen(
-                bill_list_url, data).read())
+        bill_list = BeautifulSoup(self.urlopen(
+                bill_list_url, data))
 
         bill_link_re = re.compile('.*?Bill=%s.\d+.*' % bill_abbr[0])
         for bill_link in bill_list.findAll('a', href=bill_link_re):
@@ -95,7 +95,7 @@ class VTLegislationScraper(LegislationScraper):
             bill_title = bill_link.parent.parent.findAll('td')[1].string
             self.add_bill(chamber, session, bill_id, bill_title)
 
-            info_page = BeautifulSoup(urllib2.urlopen(
+            info_page = BeautifulSoup(self.urlopen(
                     "http://www.leg.state.vt.us" + bill_link['href']))
 
             text_links = info_page.findAll('blockquote')[-1].findAll('a')

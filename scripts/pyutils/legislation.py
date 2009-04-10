@@ -77,7 +77,7 @@ class LegislationScraper(object):
         make_option('--lower', action='store_true', dest='lower', default=False,
                     help='scrape lower chamber'),
         make_option('-v', '--verbose', action='store_true', dest='verbose',
-                    default=False, help="be verbose")
+                    default=False, help="be verbose"),
         make_option('-d', '--output_dir', action='store', dest='output_dir',
                     help='output directory'),
     )

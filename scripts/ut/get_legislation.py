@@ -23,7 +23,7 @@ class UTLegislationScraper(LegislationScraper):
         self.be_verbose("Getting bill list for %s, %s" % (year, chamber))
 
         try:
-            base_bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
+            base_bill_list = BeautifulSoup(self.urlopen(bill_list_url))
         except:
             # this session doesn't exist for this year
             return
@@ -31,14 +31,14 @@ class UTLegislationScraper(LegislationScraper):
         bill_list_link_re = re.compile('.*%s\d+ht.htm$' % bill_abbr)
 
         for link in base_bill_list.findAll('a', href=bill_list_link_re):
-            bill_list = BeautifulSoup(urllib2.urlopen(link['href']))
+            bill_list = BeautifulSoup(self.urlopen(link['href']))
             bill_link_re = re.compile('.*billhtm/%s.*.htm' % bill_abbr)
 
             for bill_link in bill_list.findAll('a', href=bill_link_re):
                 bill_id = bill_link.string.strip()
 
-                bill_info = BeautifulSoup(urllib2.urlopen(
-                        bill_link['href']).read())
+                bill_info = BeautifulSoup(self.urlopen(
+                        bill_link['href']))
                 (bill_title, primary_sponsor) = bill_info.h3.contents[2].replace(
                     '&nbsp;', ' ').strip().split(' -- ')
 
@@ -50,8 +50,8 @@ class UTLegislationScraper(LegislationScraper):
                 status_link = bill_info.find('a', href=status_re)
 
                 if status_link:
-                    status = BeautifulSoup(urllib2.urlopen(
-                            status_link['href']).read())
+                    status = BeautifulSoup(self.urlopen(
+                            status_link['href']))
                     act_table = status.table
 
                     for row in act_table.findAll('tr')[1:]:

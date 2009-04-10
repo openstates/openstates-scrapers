@@ -32,7 +32,7 @@ class FLLegislationScraper(LegislationScraper):
         for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
             bill_list_url = base_url % (letter, session, chamber_name)
             self.be_verbose("Getting bill list for %s %s, section %s" % (chamber, year, letter))
-            bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
+            bill_list = BeautifulSoup(self.urlopen(bill_list_url))
             
             # Bill ID's are bold
             for b in bill_list.findAll('b'):
@@ -54,7 +54,7 @@ class FLLegislationScraper(LegislationScraper):
                     self.add_bill(chamber, session, bill_id, bill_name)
 
                     # Get bill info page
-                    info_page = BeautifulSoup(urllib2.urlopen(info_url).read())
+                    info_page = BeautifulSoup(self.urlopen(info_url))
 
                     # Get all bill versions
                     bill_table = info_page.find('a', attrs={'name':'BillText'}).parent.parent.findNext('tr').td.table

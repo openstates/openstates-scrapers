@@ -30,7 +30,7 @@ class SDLegislationScraper(LegislationScraper):
         session_url = 'http://legis.state.sd.us/sessions/%s/' % year
         bill_list_url = session_url + 'BillList.aspx'
         self.be_verbose('Getting bill list for %s %s' % (chamber, year))
-        bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url).read())
+        bill_list = BeautifulSoup(self.urlopen(bill_list_url))
 
         # Format of bill link contents
         bill_re = re.compile('%s&nbsp;(\d+)' % bill_abbr)
@@ -52,7 +52,7 @@ class SDLegislationScraper(LegislationScraper):
 
             # Download history page
             hist_url = session_url + bill_link['href']
-            history = BeautifulSoup(urllib2.urlopen(hist_url).read())
+            history = BeautifulSoup(self.urlopen(hist_url))
 
             # Add bill
             self.add_bill(chamber, year, bill_id, bill_name)
@@ -108,7 +108,7 @@ class SDLegislationScraper(LegislationScraper):
         session_url = 'http://legis.state.sd.us/sessions/%s/' % year
         bill_list_url = session_url + 'billlist.htm'
         self.be_verbose("Getting bill list for %s %s" % (chamber, year))
-        bill_list_raw = urllib2.urlopen(bill_list_url).read()
+        bill_list_raw = self.urlopen(bill_list_url)
         bill_list_raw = bill_list_raw.replace('BORDER= ', '').replace('"</A>', '"></A>')
         bill_list = BeautifulSoup(bill_list_raw)
 
@@ -133,7 +133,7 @@ class SDLegislationScraper(LegislationScraper):
 
             # Get history page (replacing malformed tag)
             hist_url = session_url + bill_link['href']
-            history_raw = urllib2.urlopen(hist_url).read()
+            history_raw = self.urlopen(hist_url)
             history_raw = history_raw.replace('BORDER=>', '>')
             history = BeautifulSoup(history_raw)
 
