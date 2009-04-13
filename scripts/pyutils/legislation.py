@@ -95,6 +95,9 @@ class LegislationScraper(object):
             raise Exception('LegislationScrapers must have a state attribute')
     
     def urlopen(self, url):
+        """
+        Grabs a URL, returning a cached version if available.
+        """
         url_cache = os.path.join(self.cache_dir, md5(url).hexdigest()+'.html')
         if os.path.exists(url_cache):
             return open(url_cache).read()
@@ -103,6 +106,14 @@ class LegislationScraper(object):
         return data
 
     def add_bill(self, bill_chamber, bill_session, bill_id, bill_name, **kwargs):
+        """
+        Adds a parsed bill.
+
+        :param bill_chamber: the chamber where the bill originated, "upper" or "lower"
+        :param bill_session: the session the bill came from, in whatever format the state uses to identify sessions (e.g. 2007, 19, 2007B, 17 Special Session 2)
+        :param bill_id: how the state identifies the bill (e.g. HB12, S. 2, S.B. 5)
+        :param bill_name: a title or short summary given to the bill by the state
+        """
         row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
                'bill_session': bill_session, 'bill_id': bill_id,
                'bill_name': bill_name}
@@ -113,6 +124,12 @@ class LegislationScraper(object):
         self.bill_csv.writerow(row)
 
     def add_bill_version(self, bill_chamber, bill_session, bill_id, version_name, version_url, **kwargs):
+        """
+        Adds a version of a bill's text.
+
+        :param version_name: the name given to this version of the bill by the state (if they don't provide a name, try the date published or some other identifying information)
+        :param version_url: the absolute URL to the text this version
+        """
         row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
                'bill_session': bill_session, 'bill_id': bill_id,
                'version_name': version_name, 'version_url': version_url}
@@ -124,6 +141,12 @@ class LegislationScraper(object):
         self.version_csv.writerow(row)
 
     def add_sponsorship(self, bill_chamber, bill_session, bill_id, sponsor_type, sponsor_name, **kwargs):
+        """
+        Associates a sponsor with a specific bill.
+
+        :param sponsor_type: the type of sponsorship (e.g. 'primary', 'cosponsosor')
+        :param sponsor_name: the name of the sponsor
+        """
         row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
                'bill_session': bill_session, 'bill_id': bill_id,
                'sponsor_type': sponsor_type, 'sponsor_name': sponsor_name}
@@ -137,6 +160,13 @@ class LegislationScraper(object):
         self.sponsor_csv.writerow(row)
 
     def add_action(self, bill_chamber, bill_session, bill_id, actor, action_text, action_date, **kwargs):
+        """
+        Associates an action with a specific bill.
+
+        :param actor: the chamber, person or office responsible for this action
+        :param action_text: the text of the action as presented by the state (e.g. 'VOTE ON PASSAGE 20 Aye 13 Nay 2 Abs', 'Referred to Committee on Aging')
+        :param action_date: the date that the action was performed
+        """
         row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
                'bill_session': bill_session, 'bill_id': bill_id,
                'actor': actor, 'action_text': action_text,
@@ -151,12 +181,20 @@ class LegislationScraper(object):
         self.action_csv.writerow(row)
 
     def be_verbose(self, msg):
+        """
+        Output debugging information if verbose mode is enabled.
+        """
         if self.verbose:
             if isinstance(msg, unicode):
                 msg = msg.encode('utf-8')
             print "%s: %s" % (self.state, msg)
 
     def scrape_bills(self, chamber, year):
+        """
+        Scrape all the bills for a given chamber and year. Should raise a
+        NoDataForYear exception if there is no data available for the
+        given year.
+        """
         raise NotImplementedError('LegislatorScrapers must define a scrape_bills method')
 
     def init_output_files(self,output_dir):
