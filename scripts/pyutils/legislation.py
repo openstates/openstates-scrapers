@@ -87,7 +87,7 @@ class LegislationScraper(object):
     bill_fields = common_fields + ['bill_name']
     bill_version_fields = common_fields + ['version_name', 'version_url']
     sponsor_fields = common_fields + ['sponsor_type', 'sponsor_name']
-    action_fields = common_fields + ['action_chamber', 'action_text', 'action_date']
+    action_fields = common_fields + ['actor', 'action_text', 'action_date']
     output_dir = None
 
     def __init__(self):
@@ -136,18 +136,18 @@ class LegislationScraper(object):
                          row['sponsor_name']))
         self.sponsor_csv.writerow(row)
 
-    def add_action(self, bill_chamber, bill_session, bill_id, action_chamber, action_text, action_date, **kwargs):
+    def add_action(self, bill_chamber, bill_session, bill_id, actor, action_text, action_date, **kwargs):
         row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
                'bill_session': bill_session, 'bill_id': bill_id,
-               'action_chamber': action_chamber, 'action_text': action_text,
+               'actor': actor, 'action_text': action_text,
                'action_date': action_date}
         row.update(kwargs)
-        self.be_verbose("add_action %s %s: %s action '%s...' in %s" %
+        self.be_verbose("add_action %s %s: %s action '%s...' by %s" %
                         (row['bill_chamber'],
                          row['bill_session'],
                          row['bill_id'],
                          row['action_text'][:50],
-                         row['action_chamber']))
+                         row['actor']))
         self.action_csv.writerow(row)
 
     def be_verbose(self, msg):
