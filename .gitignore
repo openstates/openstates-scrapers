@@ -1,4 +1,5 @@
 data
+cache
 *.pyc
 *.DS_Store
 *~
