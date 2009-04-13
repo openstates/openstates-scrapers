@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-import urllib2
 import re
 import datetime as dt
-from BeautifulSoup import BeautifulSoup
 import csv
+import html5lib
 
 # ugly hack
 import sys
@@ -13,6 +12,7 @@ from pyutils.legislation import LegislationScraper, NoDataForYear
 class AKLegislationScraper(LegislationScraper):
 
     state = 'ak'
+    soup_parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
     def __init__(self):
         super(AKLegislationScraper, self).__init__()
@@ -50,7 +50,7 @@ class AKLegislationScraper(LegislationScraper):
         # Get bill list
         bill_list_url = 'http://www.legis.state.ak.us/basis/range_multi.asp?session=%i&date1=%s&date2=%s' % (session, date1, date2)
         self.be_verbose("Getting bill list for %s %s (this may take a long time)." % (chamber, session))
-        bill_list = BeautifulSoup(self.urlopen(bill_list_url))
+        bill_list = self.soup_parser(self.urlopen(bill_list_url))
 
         # Find bill links
         re_str = "bill=%s\d+" % bill_abbr
@@ -58,14 +58,12 @@ class AKLegislationScraper(LegislationScraper):
 
         for link in links:
             bill_id = link.contents[0].replace(' ', '')
-            bill_name = link.parent.parent.findNext('td').find('font').string
+            bill_name = link.parent.parent.findNext('td').find('font').contents[0]
             self.add_bill(chamber, session, bill_id, bill_name.strip())
 
             # Get the bill info page and strip malformed t
             info_url = "http://www.legis.state.ak.us/basis/%s" % link['href']
-            info_raw = self.urlopen(info_url)
-            info_raw = re.sub('<input type="button".*/>', '', info_raw)
-            info_page = BeautifulSoup(info_raw)
+            info_page = self.soup_parser(self.urlopen(info_url))
 
             # Get sponsors
             spons_str = info_page.find(
@@ -86,19 +84,19 @@ class AKLegislationScraper(LegislationScraper):
                                      spons_str.strip())
 
             # Get actions
-            act_rows = info_page.find(text="Jrn-Date").parent.parent.parent.findAll('tr')[1:]
+            act_rows = info_page.findAll('table', 'myth')[1].findAll('tr')[1:]
             for row in act_rows:
                 cols = row.findAll('td')
-                act_date = cols[0].font.string
+                act_date = cols[0].font.contents[0]
 
                 if cols[2].font.string == "(H)":
                     act_chamber = "lower"
                 elif cols[2].font.string == "(S)":
                     act_chamber = "upper"
                 else:
-                    act_chamber = "N/A"
+                    act_chamber = chamber
 
-                action = cols[3].font.string
+                action = cols[3].font.contents[0]
 
                 self.add_action(chamber, session, bill_id, act_chamber,
                                 action, act_date)
@@ -106,15 +104,15 @@ class AKLegislationScraper(LegislationScraper):
             # Get subjects
             subject_link_re = re.compile('.*subject=\w+$')
             for subject_link in info_page.findAll('a', href=subject_link_re):
-                subject = subject_link.string.strip()
+                subject = subject_link.contents[0].strip()
                 self.add_subject(chamber, session, bill_id, subject)
 
             # Get versions
             text_list_url = "http://www.legis.state.ak.us/basis/get_fulltext.asp?session=%s&bill=%s" % (session, bill_id)
-            text_list = BeautifulSoup(self.urlopen(text_list_url))
+            text_list = self.soup_parser(self.urlopen(text_list_url))
             text_link_re = re.compile('^get_bill_text?')
             for text_link in text_list.findAll('a', href=text_link_re):
-                text_name = text_link.parent.previousSibling.string
+                text_name = text_link.parent.previousSibling.contents[0]
                 text_url = "http://www.legis.state.ak.us/basis/%s" % text_link['href']
                 self.add_bill_version(chamber, session, bill_id,
                                       text_name, text_url)
