@@ -58,7 +58,7 @@ class AKLegislationScraper(LegislationScraper):
 
         for link in links:
             bill_id = link.contents[0].replace(' ', '')
-            bill_name = link.parent.parent.findNext('td').find('font').contents[0]
+            bill_name = link.parent.parent.findNext('td').find('font').contents[0].strip()
             self.add_bill(chamber, session, bill_id, bill_name.strip())
 
             # Get the bill info page and strip malformed t
@@ -96,7 +96,7 @@ class AKLegislationScraper(LegislationScraper):
                 else:
                     act_chamber = chamber
 
-                action = cols[3].font.contents[0]
+                action = cols[3].font.contents[0].strip()
 
                 self.add_action(chamber, session, bill_id, act_chamber,
                                 action, act_date)
@@ -112,7 +112,7 @@ class AKLegislationScraper(LegislationScraper):
             text_list = self.soup_parser(self.urlopen(text_list_url))
             text_link_re = re.compile('^get_bill_text?')
             for text_link in text_list.findAll('a', href=text_link_re):
-                text_name = text_link.parent.previousSibling.contents[0]
+                text_name = text_link.parent.previousSibling.contents[0].strip()
                 text_url = "http://www.legis.state.ak.us/basis/%s" % text_link['href']
                 self.add_bill_version(chamber, session, bill_id,
                                       text_name, text_url)
