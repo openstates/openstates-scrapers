@@ -36,7 +36,7 @@ class CALegislationScraper(LegislationScraper):
         history = BeautifulSoup(history_raw)
 
         # Find title and add bill
-        title_match = re.search('TOPIC\s+:\s+(\w.+\n(\t\w.*\n){0,})', history_raw, re.MULTILINE)
+        title_match = re.search('TOPIC\s+:\s+(.+\n(\t\w.*\n){0,})', history_raw, re.MULTILINE)
         bill_title = title_match.group(1).replace('\n', '').replace('\t', ' ')
         self.add_bill(chamber, session, bill_id, bill_title)
 
