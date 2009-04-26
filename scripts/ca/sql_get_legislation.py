@@ -4,7 +4,7 @@ from cStringIO import StringIO
 from lxml import etree
 
 from sqlalchemy import (Table, Column, Integer, String, ForeignKey,
-                        DateTime, Text, desc, create_engine,
+                        DateTime, Text, Numeric, desc, create_engine,
                         UnicodeText)
 from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy.ext.declarative import declarative_base
@@ -106,6 +106,44 @@ class BillVersionAuthor(Base):
 
     version = relation(BillVersion, backref=backref('authors'))
 
+class BillAction(Base):
+    __tablename__ = "BILL_HISTORY_TBL"
+
+    bill_id = Column(String(20), ForeignKey(Bill.bill_id))
+    bill_history_id = Column(Numeric, primary_key=True)
+    action_date = Column(DateTime)
+    action = Column(String(2000))
+    trans_uid = Column(String(20))
+    trans_update_dt = Column(DateTime)
+    action_sequence = Column(Integer)
+    action_code = Column(String(5))
+    action_status = Column(String(60))
+    primary_location = Column(String(60))
+    secondary_location = Column(String(60))
+    ternary_location = Column(String(60))
+    end_status = Column(String(60))
+
+    bill = relation(Bill, backref=backref('actions'))
+
+    @property
+    def actor(self):
+        # TODO: replace committee codes w/ names
+
+        if not self.primary_location:
+            return None
+
+        actor = self.primary_location
+
+        if self.secondary_location:
+            actor += " (%s" % self.secondary_location
+
+            if self.ternary_location:
+                actor += " %s" % self.ternary_location
+
+            actor += ")"
+
+        return actor
+
 class CASQLImporter(LegislationScraper):
     state = 'ca'
 
@@ -146,6 +184,11 @@ class CASQLImporter(LegislationScraper):
                     self.add_sponsorship(chamber, session, bill_id,
                                          author.contribution,
                                          author.name)
+
+            for action in bill.actions:
+                actor = action.actor or chamber
+                self.add_action(chamber, session, bill_id, actor,
+                                action.action, action.action_date)
 
 if __name__ == '__main__':
     CASQLImporter('localhost', 'USER', 'PASSWORD').run()
