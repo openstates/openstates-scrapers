@@ -16,6 +16,7 @@ from pyutils.legislation import LegislationScraper, NoDataForYear
 
 # Code for handling California's legislative info SQL dumps
 # You can grab them from http://www.leginfo.ca.gov/FTProtocol.html
+# Requires SQLAlchemy (tested w/ 0.5.3) and lxml
 
 Base = declarative_base()
 
@@ -83,6 +84,28 @@ class BillVersion(Base):
         title = ''.join(texts).strip().encode('ascii', 'replace')
         return title
 
+class BillVersionAuthor(Base):
+    __tablename__ = "BILL_VERSION_AUTHORS_TBL"
+
+    # Note: the primary_keys here are a lie - the actual table has no pk
+    # but SQLAlchemy seems to demand one. Furthermore, I get strange
+    # exceptions when trying to use bill_version_id as part of a
+    # composite primary key.
+
+    bill_version_id = Column(String(30),
+                             ForeignKey(BillVersion.bill_version_id))
+    type = Column(String(15))
+    house = Column(String(100))
+    name = Column(String(100), primary_key=True)
+    contribution = Column(String(100))
+    committee_members = Column(String(2000))
+    active_flg = Column(String(1))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime, primary_key=True)
+    primary_author_flg = Column(String(1))
+
+    version = relation(BillVersion, backref=backref('authors'))
+
 class CASQLImporter(LegislationScraper):
     state = 'ca'
 
@@ -101,8 +124,10 @@ class CASQLImporter(LegislationScraper):
 
         if chamber == 'upper':
             measure_abbr = 'SB'
+            chamber_name = 'SENATE'
         else:
             measure_abbr = 'AB'
+            chamber_name = 'ASSEMBLY'
         
         year2 = str(int(year) + 1)
         session = "%s%s" % (year, year2)
@@ -112,8 +137,15 @@ class CASQLImporter(LegislationScraper):
             measure_type=measure_abbr)
 
         for bill in bills:
-            self.add_bill(chamber, session, bill.short_bill_id,
-                          bill.versions[0].title)
+            bill_id = bill.short_bill_id
+            version = bill.versions[0]
+            self.add_bill(chamber, session, bill_id, version.title)
+
+            for author in version.authors:
+                if author.house == chamber_name:
+                    self.add_sponsorship(chamber, session, bill_id,
+                                         author.contribution,
+                                         author.name)
 
 if __name__ == '__main__':
     CASQLImporter('localhost', 'USER', 'PASSWORD').run()
