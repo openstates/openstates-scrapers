@@ -250,6 +250,10 @@ class CASQLImporter(LegislationScraper):
                                          author.name)
 
             for action in bill.actions:
+                if not action.action:
+                    # NULL action text seems to be an error on CA's part,
+                    # unless it has some meaning I'm missing
+                    continue
                 actor = action.actor or chamber
                 self.add_action(chamber, session, bill_id, actor,
                                 action.action, action.action_date)
