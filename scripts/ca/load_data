@@ -1,0 +1,31 @@
+#!/bin/bash
+
+if [ $# -lt 4 ]; then
+    echo "Usage: load_data HOST USER PASS DATA_DIR"
+    exit
+fi
+
+HOST=$1
+USER=$2
+PASS=$3
+
+cd $4
+
+sed -i 's|c:\\\\pubinfo\\\\|'"$PWD"'/|g' *.sql
+
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_VERSION_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < LAW_SECTION_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_DETAIL_VOTE_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < LOCATION_CODE_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_ANALYSIS_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_MOTION_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < LAW_TOC_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_VERSION_AUTHORS_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < DAILY_FILE_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_SUMMARY_VOTE_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < LAW_TOC_SECTIONS_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < COMMITTEE_HEARING_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < CODES_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_HISTORY_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < LEGISLATOR_TBL.sql
+mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_TBL.sql

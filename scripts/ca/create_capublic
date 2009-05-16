@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ $# -lt 4 ]; then
+    echo "Usage: create_capublic HOST USER PASS DATA-DIR"
+    exit
+fi
+
+HOST=$1
+USER=$2
+PASS=$3
+
+cd $4
+
+mysql -u$USER -p$PASS -h$HOST -v -v -f < capublic.sql
