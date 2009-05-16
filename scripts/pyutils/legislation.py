@@ -189,7 +189,7 @@ class LegislationScraper(object):
                  vote_location, vote_motion, vote_passed,
                  vote_yes_count, vote_no_count, vote_other_count,
                  yes_votes=[], no_votes=[], other_votes=[],
-                 vote_threshold=0.5):
+                 vote_threshold='1/2'):
         row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
                'bill_session': bill_session, 'bill_id': bill_id,
                'vote_date': vote_date, 'vote_location': vote_location,

@@ -185,6 +185,22 @@ class VoteSummary(Base):
     motion = relation(Motion)
     location = relation(Location)
 
+    @property
+    def threshold(self):
+        # This may not always be true...
+        if self.location_code != "AFLOOR" and self.location_code != "SFLOOR":
+            return '1/2'
+
+        # Get the associated bill version (probably?)
+        version = filter(lambda v:
+                            v.bill_version_action_date <= self.vote_date_time,
+                        self.bill.versions)[0]
+
+        if version.vote_required == 'Majority':
+            return '1/2'
+        else:
+            return '2/3'
+
 class VoteDetail(Base):
     __tablename__ = "bill_detail_vote_tbl"
 
@@ -239,13 +255,14 @@ class CASQLImporter(LegislationScraper):
             measure_type=measure_abbr)
 
         for bill in bills:
+            bill_session = "%s%s" % (session, bill.session_num)
             bill_id = bill.short_bill_id
             version = bill.versions[0]
-            self.add_bill(chamber, session, bill_id, version.title)
+            self.add_bill(chamber, bill_session, bill_id, version.title)
 
             for author in version.authors:
                 if author.house == chamber_name:
-                    self.add_sponsorship(chamber, session, bill_id,
+                    self.add_sponsorship(chamber, bill_session, bill_id,
                                          author.contribution,
                                          author.name)
 
@@ -255,12 +272,10 @@ class CASQLImporter(LegislationScraper):
                     # unless it has some meaning I'm missing
                     continue
                 actor = action.actor or chamber
-                self.add_action(chamber, session, bill_id, actor,
+                self.add_action(chamber, bill_session, bill_id, actor,
                                 action.action, action.action_date)
 
             for vote in bill.votes:
-                # Ignoring threshold for now, but note that CA requires
-                # 2/3 majority to pass budget and various other bills
                 if vote.vote_result == '(PASS)':
                     result = True
                 else:
@@ -275,12 +290,12 @@ class CASQLImporter(LegislationScraper):
                         no.append(record.legislator_name)
                     else:
                         other.append(record.legislator_name)
-                self.add_vote(chamber, session, bill_id,
+                self.add_vote(chamber, bill_session, bill_id,
                               vote.vote_date_time,
                               vote.location.description,
                               vote.motion.motion_text,
                               result, vote.ayes, vote.noes, vote.abstain,
-                              yes, no, other, 0.5)
+                              yes, no, other, vote.threshold)
 
 if __name__ == '__main__':
     CASQLImporter('localhost', 'USER', 'PASSWORD').run()
