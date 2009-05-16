@@ -22,7 +22,7 @@ from pyutils.legislation import LegislationScraper, NoDataForYear
 Base = declarative_base()
 
 class Bill(Base):
-    __tablename__ = "BILL_TBL"
+    __tablename__ = "bill_tbl"
     
     bill_id = Column(String(19), primary_key=True)
     session_year = Column(String(8))
@@ -48,7 +48,7 @@ class Bill(Base):
         return "%s%d" % (self.measure_type, self.measure_num)
     
 class BillVersion(Base):
-    __tablename__ = "BILL_VERSION_TBL"
+    __tablename__ = "bill_version_tbl"
 
     bill_version_id = Column(String(30), primary_key=True)
     bill_id = Column(String(19), ForeignKey(Bill.bill_id))
@@ -86,7 +86,7 @@ class BillVersion(Base):
         return title
 
 class BillVersionAuthor(Base):
-    __tablename__ = "BILL_VERSION_AUTHORS_TBL"
+    __tablename__ = "bill_version_authors_tbl"
 
     # Note: the primary_keys here are a lie - the actual table has no pk
     # but SQLAlchemy seems to demand one. Furthermore, I get strange
@@ -108,7 +108,7 @@ class BillVersionAuthor(Base):
     version = relation(BillVersion, backref=backref('authors'))
 
 class BillAction(Base):
-    __tablename__ = "BILL_HISTORY_TBL"
+    __tablename__ = "bill_history_tbl"
 
     bill_id = Column(String(20), ForeignKey(Bill.bill_id))
     bill_history_id = Column(Numeric, primary_key=True)
@@ -146,7 +146,7 @@ class BillAction(Base):
         return actor
 
 class Motion(Base):
-    __tablename__ = "BILL_MOTION_TBL"
+    __tablename__ = "bill_motion_tbl"
 
     motion_id = Column(Integer, primary_key=True)
     motion_text = Column(String(250))
@@ -154,7 +154,7 @@ class Motion(Base):
     trans_update = Column(DateTime)
 
 class Location(Base):
-    __tablename__ = "LOCATION_CODE_TBL"
+    __tablename__ = "location_code_tbl"
 
     session_year = Column(String(8), primary_key=True)
     location_code = Column(String(6), primary_key=True)
@@ -167,7 +167,7 @@ class Location(Base):
     trans_update = Column(DateTime)
 
 class VoteSummary(Base):
-    __tablename__ = "BILL_SUMMARY_VOTE_TBL"
+    __tablename__ = "bill_summary_vote_tbl"
 
     bill_id = Column(String(20), ForeignKey(Bill.bill_id))
     location_code = Column(String(6), ForeignKey(Location.location_code))
@@ -186,7 +186,7 @@ class VoteSummary(Base):
     location = relation(Location)
 
 class VoteDetail(Base):
-    __tablename__ = "BILL_DETAIL_VOTE_TBL"
+    __tablename__ = "bill_detail_vote_tbl"
 
     bill_id = Column(String(20), ForeignKey(Bill.bill_id),
                      ForeignKey(VoteSummary.bill_id))
