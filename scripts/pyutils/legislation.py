@@ -93,6 +93,11 @@ class LegislationScraper(object):
                                    'vote_threshold',
                                    'yes_count', 'no_count', 'other_count',
                                    'yes_votes', 'no_votes', 'other_votes']
+    legislator_fields = ['legislator_state', 'legislator_chamber',
+                         'legislator_session', 'legislator_district',
+                         'legislator_fullname', 'legislator_first_name',
+                         'legislator_last_name', 'legislator_suffix',
+                         'legislator_party']
     output_dir = None
 
     def __init__(self):
@@ -203,6 +208,17 @@ class LegislationScraper(object):
 
         self.vote_csv.writerow(row)
 
+    def add_legislator(self, chamber, session, district, fullname,
+                       first_name, last_name, suffix, party):
+        row = {'legislator_state': self.state, 'legislator_chamber': chamber,
+               'legislator_session': session, 'legislator_district': district,
+               'legislator_fullname': fullname,
+               'legislator_first_name': first_name,
+               'legislator_last_name': last_name,
+               'legislator_suffix': suffix, 'legislator_party': party}
+
+        self.legislator_csv.writerow(row)
+
     def be_verbose(self, msg):
         """
         Output debugging information if verbose mode is enabled.
@@ -255,6 +271,11 @@ class LegislationScraper(object):
         self.vote_csv = csv.DictWriter(open(vote_filename, 'w'),
                                         self.vote_fields,
                                         extrasaction='ignore')
+
+        legislator_filename = os.path.join(output_dir, 'legislators.csv')
+        self.legislator_csv = csv.DictWriter(open(legislator_filename, 'w'),
+                                             self.legislator_fields,
+                                             extrasaction='ignore')
 
     def run(self):
         options, spares = OptionParser(option_list=self.option_list).parse_args()

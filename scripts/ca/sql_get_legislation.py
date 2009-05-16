@@ -145,6 +145,25 @@ class BillAction(Base):
 
         return actor
 
+class Legislator(Base):
+    __tablename__ = 'legislator_tbl'
+
+    district = Column(String(5), primary_key=True)
+    session_year = Column(String(8), primary_key=True)
+    legislator_name = Column(String(30), primary_key=True)
+    house_type = Column(String(1), primary_key=True)
+    author_name = Column(String(200))
+    first_name = Column(String(30))
+    last_name = Column(String(30))
+    middle_initial = Column(String(1))
+    name_suffix = Column(String(12))
+    name_title = Column(String(34))
+    web_name_title = Column(String(34))
+    party = Column(String(4))
+    active_flg = Column(String(1))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime)
+
 class Motion(Base):
     __tablename__ = "bill_motion_tbl"
 
@@ -243,12 +262,25 @@ class CASQLImporter(LegislationScraper):
         if chamber == 'upper':
             measure_abbr = 'SB'
             chamber_name = 'SENATE'
+            house_type = 'S'
         else:
             measure_abbr = 'AB'
             chamber_name = 'ASSEMBLY'
+            house_type = 'A'
         
         year2 = str(int(year) + 1)
         session = "%s%s" % (year, year2)
+
+        legislators = self.session.query(Legislator).filter_by(
+            session_year=session).filter_by(
+            house_type=house_type)
+
+        for legislator in legislators:
+            self.add_legislator(chamber, session, legislator.district,
+                                legislator.legislator_name,
+                                legislator.first_name,
+                                legislator.last_name,
+                                legislator.name_suffix, legislator.party)
 
         bills = self.session.query(Bill).filter_by(
             session_year=session).filter_by(
