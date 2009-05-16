@@ -3,6 +3,7 @@ import datetime as dt
 from cStringIO import StringIO
 from lxml import etree
 
+from sqlalchemy.sql import and_
 from sqlalchemy import (Table, Column, Integer, String, ForeignKey,
                         DateTime, Text, Numeric, desc, create_engine,
                         UnicodeText)
@@ -144,6 +145,69 @@ class BillAction(Base):
 
         return actor
 
+class Motion(Base):
+    __tablename__ = "BILL_MOTION_TBL"
+
+    motion_id = Column(Integer, primary_key=True)
+    motion_text = Column(String(250))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime)
+
+class Location(Base):
+    __tablename__ = "LOCATION_CODE_TBL"
+
+    session_year = Column(String(8), primary_key=True)
+    location_code = Column(String(6), primary_key=True)
+    location_type = Column(String(1))
+    consent_calendar_code = Column(String(2))
+    description = Column(String(60))
+    long_description = Column(String(200))
+    active_flg = Column(String(1))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime)
+
+class VoteSummary(Base):
+    __tablename__ = "BILL_SUMMARY_VOTE_TBL"
+
+    bill_id = Column(String(20), ForeignKey(Bill.bill_id))
+    location_code = Column(String(6), ForeignKey(Location.location_code))
+    vote_date_time = Column(DateTime, primary_key=True)
+    vote_date_seq = Column(Integer, primary_key=True)
+    motion_id = Column(Integer, ForeignKey(Motion.motion_id))
+    ayes = Column(Integer)
+    noes = Column(Integer)
+    abstain = Column(Integer)
+    vote_result = Column(String(6))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime)
+
+    bill = relation(Bill, backref=backref('votes'))
+    motion = relation(Motion)
+    location = relation(Location)
+
+class VoteDetail(Base):
+    __tablename__ = "BILL_DETAIL_VOTE_TBL"
+
+    bill_id = Column(String(20), ForeignKey(Bill.bill_id),
+                     ForeignKey(VoteSummary.bill_id))
+    location_code = Column(String(6), ForeignKey(VoteSummary.location_code))
+    legislator_name = Column(String(50), primary_key=True)
+    vote_date_time = Column(DateTime, ForeignKey(VoteSummary.vote_date_time))
+    vote_date_seq = Column(Integer, ForeignKey(VoteSummary.vote_date_seq))
+    vote_code = Column(String(5), primary_key=True)
+    motion_id = Column(Integer, ForeignKey(VoteSummary.motion_id))
+    trans_uid = Column(String(30), primary_key=True)
+    trans_update = Column(DateTime, primary_key=True)
+
+    bill = relation(Bill, backref=backref('detail_votes'))
+    summary = relation(VoteSummary, primaryjoin=
+                       and_(VoteSummary.bill_id == bill_id,
+                            VoteSummary.location_code == location_code,
+                            VoteSummary.vote_date_time == vote_date_time,
+                            VoteSummary.vote_date_seq == vote_date_seq,
+                            VoteSummary.motion_id == motion_id),
+                       backref=backref('votes'))
+
 class CASQLImporter(LegislationScraper):
     state = 'ca'
 
@@ -189,6 +253,30 @@ class CASQLImporter(LegislationScraper):
                 actor = action.actor or chamber
                 self.add_action(chamber, session, bill_id, actor,
                                 action.action, action.action_date)
+
+            for vote in bill.votes:
+                # Ignoring threshold for now, but note that CA requires
+                # 2/3 majority to pass budget and various other bills
+                if vote.vote_result == '(PASS)':
+                    result = True
+                else:
+                    result = False
+                yes = []
+                no = []
+                other = []
+                for record in vote.votes:
+                    if record.vote_code == 'AYE':
+                        yes.append(record.legislator_name)
+                    elif record.vote_code.startswith('NO'):
+                        no.append(record.legislator_name)
+                    else:
+                        other.append(record.legislator_name)
+                self.add_vote(chamber, session, bill_id,
+                              vote.vote_date_time,
+                              vote.location.description,
+                              vote.motion.motion_text,
+                              result, vote.ayes, vote.noes, vote.abstain,
+                              yes, no, other, 0.5)
 
 if __name__ == '__main__':
     CASQLImporter('localhost', 'USER', 'PASSWORD').run()

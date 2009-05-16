@@ -88,6 +88,11 @@ class LegislationScraper(object):
     bill_version_fields = common_fields + ['version_name', 'version_url']
     sponsor_fields = common_fields + ['sponsor_type', 'sponsor_name']
     action_fields = common_fields + ['actor', 'action_text', 'action_date']
+    vote_fields = common_fields + ['vote_date', 'vote_location',
+                                   'vote_motion', 'vote_passed',
+                                   'vote_threshold',
+                                   'yes_count', 'no_count', 'other_count',
+                                   'yes_votes', 'no_votes', 'other_votes']
     output_dir = None
 
     def __init__(self):
@@ -180,6 +185,24 @@ class LegislationScraper(object):
                          row['actor']))
         self.action_csv.writerow(row)
 
+    def add_vote(self, bill_chamber, bill_session, bill_id, vote_date,
+                 vote_location, vote_motion, vote_passed,
+                 vote_yes_count, vote_no_count, vote_other_count,
+                 yes_votes=[], no_votes=[], other_votes=[],
+                 vote_threshold=0.5):
+        row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
+               'bill_session': bill_session, 'bill_id': bill_id,
+               'vote_date': vote_date, 'vote_location': vote_location,
+               'vote_motion': vote_motion, 'vote_passed': vote_passed,
+               'yes_count': vote_yes_count, 'no_count': vote_no_count,
+               'other_count': vote_other_count,
+               'yes_votes': '|'.join(yes_votes),
+               'no_votes': '|'.join(no_votes),
+               'other_votes': '|'.join(other_votes),
+               'vote_threshold': vote_threshold}
+
+        self.vote_csv.writerow(row)
+
     def be_verbose(self, msg):
         """
         Output debugging information if verbose mode is enabled.
@@ -227,7 +250,11 @@ class LegislationScraper(object):
         self.action_csv = csv.DictWriter(open(action_filename, 'w'),
                                          self.action_fields,
                                          extrasaction='ignore')
-    
+
+        vote_filename = os.path.join(output_dir, 'votes.csv')
+        self.vote_csv = csv.DictWriter(open(vote_filename, 'w'),
+                                        self.vote_fields,
+                                        extrasaction='ignore')
 
     def run(self):
         options, spares = OptionParser(option_list=self.option_list).parse_args()
