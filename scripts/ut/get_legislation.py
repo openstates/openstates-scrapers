@@ -32,6 +32,68 @@ class UTLegislationScraper(LegislationScraper):
                                     tds[0].find(text=True), '', '', '',
                                     tds[2].find(text=True))
 
+    def parse_status(self, chamber, year, bill_id, url):
+        status = self.soup_parser(self.urlopen(url))
+        act_table = status.table
+
+        # Get actions
+        for row in act_table.findAll('tr')[1:]:
+            act_date = row.td.find(text=True)
+            action = row.findAll('td')[1].find(text=True)
+
+            # If not specified, assume action occurred
+            # in originating house
+            actor = chamber
+
+            split_action = action.split('/')
+            if len(split_action) > 1:
+                actor = split_action[0]
+
+                if actor == 'House':
+                    actor = 'upper'
+                elif actor == 'Senate':
+                    actor = 'lower'
+
+                action = '/'.join(split_action[1:]).strip()
+
+            self.add_action(chamber, year, bill_id, actor,
+                            action, act_date)
+
+            # Check if this action is a vote
+            links = row.findAll('a')
+            if len(links) > 1:
+                vote_url = links[-1]['href']
+
+                # Committee votes are of a different format that
+                # we don't handle yet
+                if not vote_url.endswith('txt'):
+                    continue
+
+                vote_url = '/'.join(url.split('/')[:-1]) + '/' + vote_url
+                vote_page = self.urlopen(vote_url)
+
+                vote_re = re.compile('YEAS -?\s?(\d+)(.*)NAYS -?\s?(\d+)'
+                                    '(.*)ABSENT( OR NOT VOTING)? -?\s?'
+                                     '(\d+)(.*)',
+                                    re.MULTILINE | re.DOTALL)
+                match = vote_re.search(vote_page)
+                yes_count = match.group(1)
+                no_count = match.group(3)
+                other_count = match.group(6)
+
+                if int(yes_count) > int(no_count):
+                    passed = True
+                else:
+                    passed = False
+
+                yes_votes = re.split('\s{2,}', match.group(2).strip())
+                no_votes = re.split('\s{2,}', match.group(4).strip())
+                other_votes = re.split('\s{2,}', match.group(7).strip())
+
+                self.add_vote(chamber, year, bill_id, act_date, actor,
+                              action, passed, yes_count, no_count, other_count,
+                              yes_votes, no_votes, other_votes)
+
     def scrape_session(self, chamber, year):
         if chamber == "lower":
             bill_abbr = "HB"
@@ -69,28 +131,8 @@ class UTLegislationScraper(LegislationScraper):
                 status_link = bill_info.find('a', href=status_re)
 
                 if status_link:
-                    status = self.soup_parser(self.urlopen(
-                            status_link['href']))
-                    act_table = status.table
-
-                    for row in act_table.findAll('tr')[1:]:
-                        act_date = row.td.find(text=True)
-                        action = row.findAll('td')[1].find(text=True)
-
-                        actor = chamber
-                        split_action = action.split('/')
-                        if len(split_action) > 1:
-                            actor = split_action[0]
-
-                            if actor == 'House':
-                                actor = 'upper'
-                            elif actor == 'Senate':
-                                actor = 'lower'
-
-                            action = '/'.join(split_action[1:]).strip()
-
-                        self.add_action(chamber, year, bill_id, actor,
-                                        action, act_date)
+                    self.parse_status(chamber, year, bill_id,
+                                      status_link['href'])
 
                 text_find = bill_info.find(text="Bill Text (If you are having trouble viewing PDF files, ")
                 if text_find:
