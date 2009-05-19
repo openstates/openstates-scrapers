@@ -206,6 +206,16 @@ class LegislationScraper(object):
                'other_votes': '|'.join(other_votes),
                'vote_threshold': vote_threshold}
 
+        if vote_passed:
+            result = 'PASS'
+        else:
+            result = 'FAIL'
+
+        self.be_verbose('add_vote %s %s: %s @ %s on %s, %s/%s/%s %s' %
+                        (bill_chamber, bill_session, bill_id,
+                         vote_location, vote_date, vote_yes_count,
+                         vote_no_count, vote_other_count, result))
+
         self.vote_csv.writerow(row)
 
     def add_legislator(self, chamber, session, district, fullname,
@@ -216,6 +226,9 @@ class LegislationScraper(object):
                'legislator_first_name': first_name,
                'legislator_last_name': last_name,
                'legislator_suffix': suffix, 'legislator_party': party}
+
+        self.be_verbose('add_legislator %s %s: %s %s (District %s)' %
+                        (chamber, session, party, fullname, district))
 
         self.legislator_csv.writerow(row)
 
