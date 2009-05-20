@@ -279,7 +279,7 @@ class CASQLImporter(LegislationScraper):
             self.add_legislator(chamber, session, legislator.district,
                                 legislator.legislator_name,
                                 legislator.first_name,
-                                legislator.last_name,
+                                legislator.last_name, legislator.middle_initial,
                                 legislator.name_suffix, legislator.party)
 
         bills = self.session.query(Bill).filter_by(

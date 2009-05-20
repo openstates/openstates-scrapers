@@ -29,7 +29,7 @@ class UTLegislationScraper(LegislationScraper):
             leg_title = tds[1].find(text=True)
             if leg_title == title:
                 self.add_legislator(chamber, year, tds[3].find(text=True),
-                                    tds[0].find(text=True), '', '', '',
+                                    tds[0].find(text=True), '', '', '', '',
                                     tds[2].find(text=True))
 
     def parse_status(self, chamber, year, bill_id, url):

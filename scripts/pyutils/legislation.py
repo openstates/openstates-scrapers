@@ -96,8 +96,8 @@ class LegislationScraper(object):
     legislator_fields = ['legislator_state', 'legislator_chamber',
                          'legislator_session', 'legislator_district',
                          'legislator_fullname', 'legislator_first_name',
-                         'legislator_last_name', 'legislator_suffix',
-                         'legislator_party']
+                         'legislator_last_name', 'legislator_middle_name',
+                         'legislator_suffix', 'legislator_party']
     output_dir = None
 
     def __init__(self):
@@ -219,12 +219,13 @@ class LegislationScraper(object):
         self.vote_csv.writerow(row)
 
     def add_legislator(self, chamber, session, district, fullname,
-                       first_name, last_name, suffix, party):
+                       first_name, last_name, middle_name, suffix, party):
         row = {'legislator_state': self.state, 'legislator_chamber': chamber,
                'legislator_session': session, 'legislator_district': district,
                'legislator_fullname': fullname,
                'legislator_first_name': first_name,
                'legislator_last_name': last_name,
+               'legislator_middle_name': middle_name,
                'legislator_suffix': suffix, 'legislator_party': party}
 
         self.be_verbose('add_legislator %s %s: %s %s (District %s)' %
