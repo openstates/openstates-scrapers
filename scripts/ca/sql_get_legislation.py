@@ -322,9 +322,22 @@ class CASQLImporter(LegislationScraper):
                         no.append(record.legislator_name)
                     else:
                         other.append(record.legislator_name)
+
+                full_loc = vote.location.description
+                first_part = full_loc.split(' ')[0].lower()
+                if first_part in ['asm', 'assembly']:
+                    vote_chamber = 'lower'
+                    vote_location = ' '.join(full_loc.split(' ')[1:])
+                elif first_part.startswith('sen'):
+                    vote_chamber = 'upper'
+                    vote_location = ' '.join(full_loc.split(' ')[1:])
+                else:
+                    vote_chamber = ''
+                    vote_location = full_loc
+
                 self.add_vote(chamber, bill_session, bill_id,
                               vote.vote_date_time,
-                              vote.location.description,
+                              vote_chamber, vote_location,
                               vote.motion.motion_text,
                               result, vote.ayes, vote.noes, vote.abstain,
                               yes, no, other, vote.threshold)

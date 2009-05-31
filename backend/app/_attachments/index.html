@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Generated CouchApp</title>
+    <link rel="stylesheet" href="style/main.css" type="text/css">
+  </head>
+  <body>
+    <h1>Generated CouchApp</h1>
+    <ul id="view"></ul>
+  </body>
+  <script src="/_utils/script/json2.js"></script>
+  <script src="/_utils/script/jquery.js?1.2.6"></script>
+  <script src="/_utils/script/jquery.couch.js?0.8.0"></script>
+  <script type="text/javascript" charset="utf-8">
+    $(function() {
+      var dbname = document.location.href.split('/')[3];
+      var design = unescape(document.location.href).split('/')[5];
+      var DB = $.couch.db(dbname);
+      DB.view(design+"/example", { reduce: false, success: function(json) {
+        $("#view").html(json.rows.map(function(row) {
+          return '<li>'+row.key+'</li>';
+        }).join(''));
+      }});
+    });
+  </script>
+</html>

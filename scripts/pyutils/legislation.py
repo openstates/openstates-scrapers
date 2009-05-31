@@ -88,7 +88,7 @@ class LegislationScraper(object):
     bill_version_fields = common_fields + ['version_name', 'version_url']
     sponsor_fields = common_fields + ['sponsor_type', 'sponsor_name']
     action_fields = common_fields + ['actor', 'action_text', 'action_date']
-    vote_fields = common_fields + ['vote_date', 'vote_location',
+    vote_fields = common_fields + ['vote_date', 'vote_chamber', 'vote_location',
                                    'vote_motion', 'vote_passed',
                                    'vote_threshold',
                                    'yes_count', 'no_count', 'other_count',
@@ -191,13 +191,14 @@ class LegislationScraper(object):
         self.action_csv.writerow(row)
 
     def add_vote(self, bill_chamber, bill_session, bill_id, vote_date,
-                 vote_location, vote_motion, vote_passed,
+                 vote_chamber, vote_location, vote_motion, vote_passed,
                  vote_yes_count, vote_no_count, vote_other_count,
                  yes_votes=[], no_votes=[], other_votes=[],
                  vote_threshold='1/2'):
         row = {'bill_state': self.state, 'bill_chamber': bill_chamber,
                'bill_session': bill_session, 'bill_id': bill_id,
-               'vote_date': vote_date, 'vote_location': vote_location,
+               'vote_date': vote_date, 'vote_chamber': vote_chamber,
+               'vote_location': vote_location,
                'vote_motion': vote_motion, 'vote_passed': vote_passed,
                'yes_count': vote_yes_count, 'no_count': vote_no_count,
                'other_count': vote_other_count,

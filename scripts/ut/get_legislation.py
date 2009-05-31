@@ -28,8 +28,15 @@ class UTLegislationScraper(LegislationScraper):
 
             leg_title = tds[1].find(text=True)
             if leg_title == title:
+                fullname = tds[0].find(text=True)
+                last_name = fullname.split(',')[0]
+                first_name = fullname.split(' ')[1]
+                if len(fullname.split(' ')) > 2:
+                    middle_name = fullname.split(' ')[2]
+
                 self.add_legislator(chamber, year, tds[3].find(text=True),
-                                    tds[0].find(text=True), '', '', '', '',
+                                    fullname, first_name, last_name,
+                                    middle_name, '',
                                     tds[2].find(text=True))
 
     def parse_status(self, chamber, year, bill_id, url):
@@ -50,9 +57,9 @@ class UTLegislationScraper(LegislationScraper):
                 actor = split_action[0]
 
                 if actor == 'House':
-                    actor = 'upper'
-                elif actor == 'Senate':
                     actor = 'lower'
+                elif actor == 'Senate':
+                    actor = 'upper'
 
                 action = '/'.join(split_action[1:]).strip()
 
@@ -90,7 +97,15 @@ class UTLegislationScraper(LegislationScraper):
                 no_votes = re.split('\s{2,}', match.group(4).strip())
                 other_votes = re.split('\s{2,}', match.group(7).strip())
 
-                self.add_vote(chamber, year, bill_id, act_date, actor,
+                if actor == 'upper' or actor == 'lower':
+                    vote_chamber = actor
+                    vote_location = ''
+                else:
+                    vote_chamber = ''
+                    vote_location = actor
+
+                self.add_vote(chamber, year, bill_id, act_date,
+                              vote_chamber, vote_location,
                               action, passed, yes_count, no_count, other_count,
                               yes_votes, no_votes, other_votes)
 

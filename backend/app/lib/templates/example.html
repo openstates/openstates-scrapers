@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Generated CouchApp Form Template</title>
+  </head>
+  <body>
+    <div id="header">
+      <h2><a href="index.html">Back to index</a></h2>
+    </div>
+    <div id="content">
+      <h1><% doc.title %></h1>
+    </div>    
+  </body>
+  <script src="/_utils/script/json2.js"></script>
+  <script src="/_utils/script/jquery.js?1.2.6"></script>
+  <script src="/_utils/script/jquery.couch.js?0.8.0"></script>
+  <script src="<% attachPath %>/jquery.couchapp.js"></script>
+  <script src="blog.js"></script>
+  <script type="text/javascript" charset="utf-8">
+  $.CouchApp(function(app) {
+      var docid = document.location.pathname.split('/').pop();
+      // hey you could run a query to load more information from views
+    });
+  </script>
+  <script src="showdown.js"></script>
+</html>
