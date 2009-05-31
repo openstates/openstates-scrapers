@@ -13,7 +13,7 @@ class NameMatcher(object):
 
     Given the name object:
      {'fullname': 'Michael J. Stephens', 'first_name': 'Michael',
-      'last_name': 'Stephens', 'middle_name': 'J'}
+      'last_name': 'Stephens', 'middle_name': 'Joseph'}
     we will match these forms:
      Michael J. Stephens
      Michael Stephens
