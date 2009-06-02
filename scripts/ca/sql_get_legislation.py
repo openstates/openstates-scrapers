@@ -244,7 +244,43 @@ class VoteDetail(Base):
                        backref=backref('votes'))
 
 class CASQLImporter(LegislationScraper):
+
     state = 'ca'
+
+    # TODO: Grab sessions/sub_sessions programmatically from the site
+    metadata = {'state_name': 'California',
+                'legislature_name': 'California State Legislature',
+                'lower_chamber_name': 'Assembly',
+                'upper_chamber_name': 'Senate',
+                'lower_title': 'Assemblymember',
+                'upper_title': 'Senator',
+                'lower_term': 3,
+                'upper_term': 4,
+                'sessions': ['19931994', '19951996', '19971998',
+                             '19992000', '20012002', '20032004',
+                             '20052006', '20072008', '20092010'],
+                'session_details':
+                {'19931994': {'years': [1993, 1994], 'sub_sessions': [],
+                              'election_year': 1992},
+                 '19951996': {'years': [1995, 1996], 'sub_sessions': [],
+                              'election_year': 1994},
+                 '19971998': {'years': [1997, 1998], 'sub_sessions': [],
+                              'election_year': 1996},
+                 '19992000': {'years': [1999, 2000], 'sub_sessions': [],
+                              'election_year': 1998},
+                 '20012002': {'years': [2001, 2002], 'sub_sessions': [],
+                              'election_year': 2000},
+                 '20032004': {'years': [2003, 2004], 'sub_sessions': [],
+                              'election_year': 2002},
+                 '20052006': {'years': [2005, 2006], 'sub_sessions': [],
+                              'election_year': 2004},
+                 '20072008': {'years': [2007, 2008], 'sub_sessions': [],
+                              'election_year': 2006},
+                 '20092010': {'years': [2009, 2010],
+                              'sub_sessions': ['2009 Special Session 1'],
+                              'election_year': 2008}
+                 }
+                }
 
     def __init__(self, host, user, pw, db='capublic'):
         self.engine = create_engine('mysql://%s:%s@%s/%s?charset=utf8' % (
@@ -253,10 +289,8 @@ class CASQLImporter(LegislationScraper):
         self.session = self.Session()
 
     def scrape_bills(self, chamber, year):
-        if int(year) < 1989 or int(year) > dt.datetime.today().year:
-            raise NoDataForYear(year)
-
-        if int(year) % 2 != 1:
+        session = "%s%d" % (year, int(year) + 1)
+        if not session in self.metadata['sessions']:
             raise NoDataForYear(year)
 
         if chamber == 'upper':
@@ -268,9 +302,6 @@ class CASQLImporter(LegislationScraper):
             chamber_name = 'ASSEMBLY'
             house_type = 'A'
         
-        year2 = str(int(year) + 1)
-        session = "%s%s" % (year, year2)
-
         legislators = self.session.query(Legislator).filter_by(
             session_year=session).filter_by(
             house_type=house_type)
@@ -287,7 +318,10 @@ class CASQLImporter(LegislationScraper):
             measure_type=measure_abbr)
 
         for bill in bills:
-            bill_session = "%s%s" % (session, bill.session_num)
+            bill_session = session
+            if bill.session_num != '0':
+                bill_session += ' Special Session %s' % bill.session_num
+
             bill_id = bill.short_bill_id
             version = bill.versions[0]
             self.add_bill(chamber, bill_session, bill_id, version.title)

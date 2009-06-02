@@ -4,6 +4,10 @@ import csv
 import os
 import urllib2
 from hashlib import md5
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 class ScrapeError(Exception):
     """
@@ -251,11 +255,18 @@ class LegislationScraper(object):
         """
         raise NotImplementedError('LegislatorScrapers must define a scrape_bills method')
 
+    def write_metadata(self):
+        # Check for existence of metadata until old states get updated
+        if hasattr(self, 'metadata'):
+            self.be_verbose('Dumping state metadata')
+
+            with open(self.metadata_filename, 'w') as f:
+                json.dump(self.metadata, f)
+
     def init_output_files(self,output_dir):
 
         if output_dir == None:
             output_dir = os.path.join(os.path.curdir,"data",self.state)
-
 
         try:
             os.makedirs(output_dir)
@@ -292,6 +303,8 @@ class LegislationScraper(object):
                                              self.legislator_fields,
                                              extrasaction='ignore')
 
+        self.metadata_filename = os.path.join(output_dir, 'metadata.json')
+
     def run(self):
         options, spares = OptionParser(option_list=self.option_list).parse_args()
 
@@ -301,6 +314,8 @@ class LegislationScraper(object):
             self.output_dir = options.output_dir
             
         self.init_output_files(self.output_dir)
+
+        self.write_metadata()
 
         years = options.years
         if options.all_years:

@@ -22,9 +22,26 @@ def get_bio(state, year, replace=True, verbose=False):
     assert state in server
     db = server[state]
 
-    # Get list of reps from votesmart
-    candidates = votesmart.candidates.getByOfficeState(8, state.upper(),
-                                                       electionYear=year)
+    metadata = db['state_metadata']
+
+    # We expect the passed in year to be an election year, so find
+    # the session corresponding to that election
+    session = None
+    for (s, details) in metadata['session_details'].items():
+        if details['election_year'] == int(year):
+            session = s
+            break
+    assert session
+
+    # Get list of officials from votesmart
+    candidates = []
+    for officeId in [7, 8, 9]:
+        try:
+            candidates.extend(
+                votesmart.candidates.getByOfficeState(officeId, state.upper(),
+                                                      electionYear=year))
+        except:
+            pass
     elected = filter(lambda cand: cand.electionStatus == 'Won', candidates)
     officials = {}
     for official in elected:
@@ -34,20 +51,23 @@ def get_bio(state, year, replace=True, verbose=False):
             officials[official.lastName] = [official]
 
     # Go through CouchDB legislators
-    # This currently won't work with states which don't use years to
-    # name sessions.
-    # Also we miss some legislators because of an off-by-one error
-    # between election year and the year the session actually starts.
-    for leg in db.view('app/leg-by-year', include_docs=True)[int(year)]:
+    # We grab all legislators for the session following the election year.
+    # While this will get some unneeded docs but only involves one (Couch)
+    # round trip, while searching separately for each official
+    # returned by Vote Smart would involve many round trips.
+    for leg in db.view('app/leg-by-session', include_docs=True,
+                       startkey=[session, None, None],
+                       endkey=[session, "z", None]):
         doc = leg.doc
 
         if 'votesmart' in doc and not replace:
+            # We already have data for this legislator (and don't
+            # want to replace it)
             continue
 
         if doc['last_name'] in officials:
             for match in officials[doc['last_name']]:
-                # This is not state-agnostic:
-                if match.title == 'Representative':
+                if match.title == metadata['lower_title']:
                     chamber = 'lower'
                 else:
                     chamber = 'upper'

@@ -4,6 +4,10 @@ from couchdb.client import Server
 import argparse
 import sys
 import re
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 
 class NameMatcher(object):
@@ -153,13 +157,26 @@ class CouchImporter(object):
 
     def import_all(self):
         self.log("Importing data")
-        self.import_legislators(False)
+        self.import_metadata()
+        self.import_legislators()
         self.import_bills(False)
         self.import_actions(False)
         self.import_sponsors(False)
         self.import_versions(False)
         self.import_votes(False)
         self.update()
+
+    def import_metadata(self):
+        filename = 'data/%s/metadata.json' % self.state
+
+        if 'state_metadata' in self.db:
+            del self.db['state_metadata']
+
+        with open(filename) as f:
+            self.metadata = json.load(f)
+
+        self.metadata['type'] = 'state_metadata'
+        self.db['state_metadata'] = self.metadata
 
     def import_bills(self, flush_cache=True):
         filename = 'data/%s/legislation.csv' % self.state
@@ -304,7 +321,7 @@ class CouchImporter(object):
                                                          session]]
         return len(matches) > 0
 
-    def import_legislators(self, flush_cache=True):
+    def import_legislators(self):
         filename = 'data/%s/legislators.csv' % self.state
         reader = csv.DictReader(open(filename, 'r'),
                                 ['state', 'chamber', 'session', 'district',
@@ -312,10 +329,8 @@ class CouchImporter(object):
                                  'middle_name', 'suffix', 'party'])
 
         for row in reader:
-            session_num = int(row['session'])
-
             if self.legislator_exists(row['chamber'], row['district'],
-                                      session_num):
+                                      row['session']):
                 # Don't need to add to db
                 self.saw_legislator(row, self.legislator_id(row))
             else:
@@ -326,14 +341,10 @@ class CouchImporter(object):
                     [row['chamber'],
                      row['district'],
                      row['fullname']]]:
-                    # Check if this match coincides with an adjacent session
-                    # (we assume that consecutive sessions are represented
-                    # by consecutive integers - need a strategy for states
-                    # where this is not true)
-                    if (session_num + 1 in match.doc['sessions'] or
-                        session_num - 1 in match.doc['sessions']):
+
+                    if self.is_adjacent(row['session'], match.doc['sessions']):
                         # Add on to existing legislator
-                        match.doc['sessions'].append(session_num)
+                        match.doc['sessions'].append(row['session'])
 
                         # Write directly to the DB instead of caching
                         # so that our view will be updated next read
@@ -348,12 +359,23 @@ class CouchImporter(object):
                     leg_id = self.legislator_id(row)
                     self.saw_legislator(row, leg_id)
                     row['type'] = 'legislator'
-                    row['sessions'] = [session_num]
+                    row['sessions'] = [row['session']]
                     del row['session']
                     self.db[leg_id] = row
 
-        if flush_cache:
-            self.update()
+    def is_adjacent(self, session, sessions):
+        """
+        Returns true if session is adjacent to any element of sessions.
+        """
+        for s in sessions:
+            i = self.metadata['sessions'].index(s)
+
+            if i > 0 and self.metadata['sessions'][i - 1] == session:
+                return True
+            if (i < len(self.metadata['sessions']) and
+                self.metadata['sessions'][i + 1] == session):
+                return True
+        return False
 
     def saw_legislator(self, row, leg_id):
         session = row['session']
@@ -365,15 +387,15 @@ class CouchImporter(object):
         self.legislators[session][chamber][row] = leg_id
 
     def lookup_legislator(self, session, chamber, name):
-        # TODO: get rid of this state-specific code
-        if self.state == 'ca':
-            session = session[0:8]
-        elif self.state == 'ut':
-            session = re.match('(\d+)', session).group(1)
+        # We assume that everything after the first space of a session
+        # name represents the sub-session.
+        # We only want the top level session because legislators
+        # are organized by top level session and not sub-session.
+        top_level_session = session.split(' ')[0]
 
-        if (session in self.legislators and
-            chamber in self.legislators[session]):
-            return self.legislators[session][chamber][name]
+        if (top_level_session in self.legislators and
+            chamber in self.legislators[top_level_session]):
+            return self.legislators[top_level_session][chamber][name]
         else:
             return None
 
