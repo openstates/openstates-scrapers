@@ -288,6 +288,28 @@ class CASQLImporter(LegislationScraper):
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
+    def scrape_legislators(self, chamber, year):
+        session = "%s%d" % (year, int(year) + 1)
+        if not session in self.metadata['sessions']:
+            raise NoDataForYear(year)
+
+        if chamber == 'upper':
+            house_type = 'S'
+        else:
+            house_type = 'A'
+        
+        legislators = self.session.query(Legislator).filter_by(
+            session_year=session).filter_by(
+            house_type=house_type)
+
+        for legislator in legislators:
+            self.add_legislator(chamber, session, legislator.district,
+                                legislator.legislator_name,
+                                legislator.first_name,
+                                legislator.last_name, legislator.middle_initial,
+                                legislator.name_suffix, legislator.party)
+
+
     def scrape_bills(self, chamber, year):
         session = "%s%d" % (year, int(year) + 1)
         if not session in self.metadata['sessions']:
@@ -301,17 +323,6 @@ class CASQLImporter(LegislationScraper):
             measure_abbr = 'AB'
             chamber_name = 'ASSEMBLY'
             house_type = 'A'
-        
-        legislators = self.session.query(Legislator).filter_by(
-            session_year=session).filter_by(
-            house_type=house_type)
-
-        for legislator in legislators:
-            self.add_legislator(chamber, session, legislator.district,
-                                legislator.legislator_name,
-                                legislator.first_name,
-                                legislator.last_name, legislator.middle_initial,
-                                legislator.name_suffix, legislator.party)
 
         bills = self.session.query(Bill).filter_by(
             session_year=session).filter_by(

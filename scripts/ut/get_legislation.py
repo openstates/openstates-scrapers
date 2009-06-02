@@ -70,6 +70,9 @@ class UTLegislationScraper(LegislationScraper):
                 }
 
     def scrape_legislators(self, chamber, year):
+        if year not in self.metadata['session_details']:
+            raise NoDataForYear(year)
+
         if chamber == 'lower':
             title = 'Representative'
         else:
@@ -220,7 +223,6 @@ class UTLegislationScraper(LegislationScraper):
             raise NoDataForYear(year)
         session = self.metadata['session_details'][year]
 
-        self.scrape_legislators(chamber, year)
         self.scrape_session(chamber, year)
         for sub_session in session['sub_sessions']:
             self.scrape_session(chamber, sub_session)

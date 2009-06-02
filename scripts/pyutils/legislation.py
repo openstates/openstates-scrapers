@@ -255,6 +255,13 @@ class LegislationScraper(object):
         """
         raise NotImplementedError('LegislatorScrapers must define a scrape_bills method')
 
+    def scrape_legislators(self, chamber, year):
+        """
+        Scrape all of the legislators serving in a given year.
+        Should raise a NoDataForYear exception if the year is invalid.
+        """
+        raise NotImplementedError('LegislatorScrapers must depine a scrape_legislators method')
+
     def write_metadata(self):
         # Check for existence of metadata until old states get updated
         if hasattr(self, 'metadata'):
@@ -330,6 +337,7 @@ class LegislationScraper(object):
         for chamber in chambers:
             for year in years:
                 try:
+                    self.scrape_legislators(chamber, year)
                     self.scrape_bills(chamber, year)
                 except NoDataForYear, e:
                     if options.all_years:
