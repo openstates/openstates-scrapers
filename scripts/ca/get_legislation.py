@@ -1,112 +1,391 @@
 #!/usr/bin/env python
-import urllib2
-import re
 import datetime as dt
-from BeautifulSoup import BeautifulSoup
+from cStringIO import StringIO
+from lxml import etree
+
+from sqlalchemy.sql import and_
+from sqlalchemy import (Table, Column, Integer, String, ForeignKey,
+                        DateTime, Text, Numeric, desc, create_engine,
+                        UnicodeText)
+from sqlalchemy.orm import sessionmaker, relation, backref
+from sqlalchemy.ext.declarative import declarative_base
 
 # ugly hack
 import sys
 sys.path.append('./scripts')
 from pyutils.legislation import LegislationScraper, NoDataForYear
 
-class CALegislationScraper(LegislationScraper):
+# Code for handling California's legislative info SQL dumps
+# You can grab them from http://www.leginfo.ca.gov/FTProtocol.html
+# Requires SQLAlchemy (tested w/ 0.5.3) and lxml
+
+Base = declarative_base()
+
+class Bill(Base):
+    __tablename__ = "bill_tbl"
+    
+    bill_id = Column(String(19), primary_key=True)
+    session_year = Column(String(8))
+    session_num = Column(String(2))
+    measure_type = Column(String(4))
+    measure_num = Column(Integer)
+    measure_state = Column(String(40))
+    chapter_year = Column(String(4))
+    chapter_type = Column(String(10))
+    chapter_session_num = Column(String(2))
+    chapter_num = Column(String(10))
+    latest_bill_version_id = Column(String(30))
+    active_flg = Column(String(1))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime)
+    current_location = Column(String(200))
+    current_secondary_loc = Column(String(60))
+    current_house = Column(String(60))
+    current_status = Column(String(60))
+
+    @property
+    def short_bill_id(self):
+        return "%s%d" % (self.measure_type, self.measure_num)
+    
+class BillVersion(Base):
+    __tablename__ = "bill_version_tbl"
+
+    bill_version_id = Column(String(30), primary_key=True)
+    bill_id = Column(String(19), ForeignKey(Bill.bill_id))
+    version_num = Column(Integer)
+    bill_version_action_date = Column(DateTime)
+    bill_version_action = Column(String(100))
+    request_num = Column(String(10))
+    subject = Column(String(1000))
+    vote_required = Column(String(100))
+    appropriation = Column(String(3))
+    fiscal_committee = Column(String(3))
+    local_program = Column(String(3))
+    substantive_changes = Column(String(3))
+    urgency = Column(String(3))
+    taxlevy = Column(String(3))
+    bill_xml = Column(UnicodeText)
+    active_flg = Column(String(1))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime)
+
+    bill = relation(Bill, backref=
+                    backref('versions',
+                            order_by=desc(bill_version_action_date)))
+
+    @property
+    def xml(self):
+        if not '_xml' in self.__dict__:
+            self._xml = etree.parse(StringIO(self.bill_xml.encode('utf-8')))
+        return self._xml
+
+    @property
+    def title(self):
+        texts = self.xml.xpath("//*[local-name() = 'Title']//text()")
+        title = ''.join(texts).strip().encode('ascii', 'replace')
+        return title
+
+class BillVersionAuthor(Base):
+    __tablename__ = "bill_version_authors_tbl"
+
+    # Note: the primary_keys here are a lie - the actual table has no pk
+    # but SQLAlchemy seems to demand one. Furthermore, I get strange
+    # exceptions when trying to use bill_version_id as part of a
+    # composite primary key.
+
+    bill_version_id = Column(String(30),
+                             ForeignKey(BillVersion.bill_version_id))
+    type = Column(String(15))
+    house = Column(String(100))
+    name = Column(String(100), primary_key=True)
+    contribution = Column(String(100))
+    committee_members = Column(String(2000))
+    active_flg = Column(String(1))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime, primary_key=True)
+    primary_author_flg = Column(String(1))
+
+    version = relation(BillVersion, backref=backref('authors'))
+
+class BillAction(Base):
+    __tablename__ = "bill_history_tbl"
+
+    bill_id = Column(String(20), ForeignKey(Bill.bill_id))
+    bill_history_id = Column(Numeric, primary_key=True)
+    action_date = Column(DateTime)
+    action = Column(String(2000))
+    trans_uid = Column(String(20))
+    trans_update_dt = Column(DateTime)
+    action_sequence = Column(Integer)
+    action_code = Column(String(5))
+    action_status = Column(String(60))
+    primary_location = Column(String(60))
+    secondary_location = Column(String(60))
+    ternary_location = Column(String(60))
+    end_status = Column(String(60))
+
+    bill = relation(Bill, backref=backref('actions'))
+
+    @property
+    def actor(self):
+        # TODO: replace committee codes w/ names
+
+        if not self.primary_location:
+            return None
+
+        actor = self.primary_location
+
+        if self.secondary_location:
+            actor += " (%s" % self.secondary_location
+
+            if self.ternary_location:
+                actor += " %s" % self.ternary_location
+
+            actor += ")"
+
+        return actor
+
+class Legislator(Base):
+    __tablename__ = 'legislator_tbl'
+
+    district = Column(String(5), primary_key=True)
+    session_year = Column(String(8), primary_key=True)
+    legislator_name = Column(String(30), primary_key=True)
+    house_type = Column(String(1), primary_key=True)
+    author_name = Column(String(200))
+    first_name = Column(String(30))
+    last_name = Column(String(30))
+    middle_initial = Column(String(1))
+    name_suffix = Column(String(12))
+    name_title = Column(String(34))
+    web_name_title = Column(String(34))
+    party = Column(String(4))
+    active_flg = Column(String(1))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime)
+
+class Motion(Base):
+    __tablename__ = "bill_motion_tbl"
+
+    motion_id = Column(Integer, primary_key=True)
+    motion_text = Column(String(250))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime)
+
+class Location(Base):
+    __tablename__ = "location_code_tbl"
+
+    session_year = Column(String(8), primary_key=True)
+    location_code = Column(String(6), primary_key=True)
+    location_type = Column(String(1))
+    consent_calendar_code = Column(String(2))
+    description = Column(String(60))
+    long_description = Column(String(200))
+    active_flg = Column(String(1))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime)
+
+class VoteSummary(Base):
+    __tablename__ = "bill_summary_vote_tbl"
+
+    bill_id = Column(String(20), ForeignKey(Bill.bill_id))
+    location_code = Column(String(6), ForeignKey(Location.location_code))
+    vote_date_time = Column(DateTime, primary_key=True)
+    vote_date_seq = Column(Integer, primary_key=True)
+    motion_id = Column(Integer, ForeignKey(Motion.motion_id))
+    ayes = Column(Integer)
+    noes = Column(Integer)
+    abstain = Column(Integer)
+    vote_result = Column(String(6))
+    trans_uid = Column(String(30))
+    trans_update = Column(DateTime)
+
+    bill = relation(Bill, backref=backref('votes'))
+    motion = relation(Motion)
+    location = relation(Location)
+
+    @property
+    def threshold(self):
+        # This may not always be true...
+        if self.location_code != "AFLOOR" and self.location_code != "SFLOOR":
+            return '1/2'
+
+        # Get the associated bill version (probably?)
+        version = filter(lambda v:
+                            v.bill_version_action_date <= self.vote_date_time,
+                        self.bill.versions)[0]
+
+        if version.vote_required == 'Majority':
+            return '1/2'
+        else:
+            return '2/3'
+
+class VoteDetail(Base):
+    __tablename__ = "bill_detail_vote_tbl"
+
+    bill_id = Column(String(20), ForeignKey(Bill.bill_id),
+                     ForeignKey(VoteSummary.bill_id))
+    location_code = Column(String(6), ForeignKey(VoteSummary.location_code))
+    legislator_name = Column(String(50), primary_key=True)
+    vote_date_time = Column(DateTime, ForeignKey(VoteSummary.vote_date_time))
+    vote_date_seq = Column(Integer, ForeignKey(VoteSummary.vote_date_seq))
+    vote_code = Column(String(5), primary_key=True)
+    motion_id = Column(Integer, ForeignKey(VoteSummary.motion_id))
+    trans_uid = Column(String(30), primary_key=True)
+    trans_update = Column(DateTime, primary_key=True)
+
+    bill = relation(Bill, backref=backref('detail_votes'))
+    summary = relation(VoteSummary, primaryjoin=
+                       and_(VoteSummary.bill_id == bill_id,
+                            VoteSummary.location_code == location_code,
+                            VoteSummary.vote_date_time == vote_date_time,
+                            VoteSummary.vote_date_seq == vote_date_seq,
+                            VoteSummary.motion_id == motion_id),
+                       backref=backref('votes'))
+
+class CASQLImporter(LegislationScraper):
 
     state = 'ca'
 
-    def get_bill_info(self, chamber, session, bill_id):
-        detail_url = 'http://www.leginfo.ca.gov/cgi-bin/postquery?bill_number=%s_%s&sess=%s' % (bill_id[:2].lower(), bill_id[2:], session.replace('-', ''))
+    # TODO: Grab sessions/sub_sessions programmatically from the site
+    metadata = {'state_name': 'California',
+                'legislature_name': 'California State Legislature',
+                'lower_chamber_name': 'Assembly',
+                'upper_chamber_name': 'Senate',
+                'lower_title': 'Assemblymember',
+                'upper_title': 'Senator',
+                'lower_term': 3,
+                'upper_term': 4,
+                'sessions': ['19931994', '19951996', '19971998',
+                             '19992000', '20012002', '20032004',
+                             '20052006', '20072008', '20092010'],
+                'session_details':
+                {'19931994': {'years': [1993, 1994], 'sub_sessions': [],
+                              'election_year': 1992},
+                 '19951996': {'years': [1995, 1996], 'sub_sessions': [],
+                              'election_year': 1994},
+                 '19971998': {'years': [1997, 1998], 'sub_sessions': [],
+                              'election_year': 1996},
+                 '19992000': {'years': [1999, 2000], 'sub_sessions': [],
+                              'election_year': 1998},
+                 '20012002': {'years': [2001, 2002], 'sub_sessions': [],
+                              'election_year': 2000},
+                 '20032004': {'years': [2003, 2004], 'sub_sessions': [],
+                              'election_year': 2002},
+                 '20052006': {'years': [2005, 2006], 'sub_sessions': [],
+                              'election_year': 2004},
+                 '20072008': {'years': [2007, 2008], 'sub_sessions': [],
+                              'election_year': 2006},
+                 '20092010': {'years': [2009, 2010],
+                              'sub_sessions': ['2009 Special Session 1'],
+                              'election_year': 2008}
+                 }
+                }
 
-        # Get the details page and parse it with BeautifulSoup. These
-        # pages contain a malformed 'p' tag that (certain versions of)
-        # BS choke on, so we replace it with a regex before parsing.
-        details_raw = self.urlopen(detail_url)
-        details_raw = details_raw.replace('<P ALIGN=CENTER">', '')
-        details = BeautifulSoup(details_raw)
+    def __init__(self, host, user, pw, db='capublic'):
+        self.engine = create_engine('mysql://%s:%s@%s/%s?charset=utf8' % (
+                user, pw, host, db))
+        self.Session = sessionmaker(bind=self.engine)
+        self.session = self.Session()
 
-        # Get the history page (following a link from the details page).
-        # Once again, we remove tags that BeautifulSoup chokes on
-        # (including all meta tags, because bills with quotation marks
-        # in the title come to us w/ malformed meta tags)
-        hist_link = details.find(href=re.compile("_history.html"))
-        hist_url = 'http://www.leginfo.ca.gov%s' % hist_link['href']
-        history_raw = self.urlopen(hist_url)
-        history_raw = history_raw.replace('<! ****** document data starts here ******>', '')
-        rem_meta = re.compile('</title>.*</head>', re.MULTILINE | re.DOTALL)
-        history_raw = rem_meta.sub('</title></head>', history_raw)
-        history = BeautifulSoup(history_raw)
+    def scrape_legislators(self, chamber, year):
+        session = "%s%d" % (year, int(year) + 1)
+        if not session in self.metadata['sessions']:
+            raise NoDataForYear(year)
 
-        # Find title and add bill
-        title_match = re.search('TOPIC\s+:\s+(.+\n(\t\w.*\n){0,})', history_raw, re.MULTILINE)
-        bill_title = title_match.group(1).replace('\n', '').replace('\t', ' ')
-        self.add_bill(chamber, session, bill_id, bill_title)
-
-        # Find author (primary sponsor)
-        sponsor_match = re.search('^AUTHOR\t:\s(.*)$', history_raw, re.MULTILINE)
-        bill_sponsor = sponsor_match.group(1)
-        self.add_sponsorship(chamber, session, bill_id, 'primary', bill_sponsor)
-
-        # Get all versions of the bill
-        text_re = '%s_%s_bill\w*\.html' % (bill_id[:2].lower(), bill_id[2:])
-        links = details.find(text='Bill Text').parent.findAllNext(href=re.compile(text_re))
-        for link in links:
-            version_url = "http://www.leginfo.ca.gov%s" % link['href']
-
-            # This name is not necessarily unique (for example, there may
-            # be many versions called simply "Amended"). Perhaps we should
-            # add a date or something to make it unique?
-            version_name = link.parent.previousSibling.previousSibling.b.font.string
-            self.add_bill_version(chamber, session, bill_id,
-                                  version_name, version_url)
-
-        # Get bill actions
-        action_re = re.compile('^(\d{4})|^([\w.]{4,6}\s+\d{1,2})\s+(.*(\n\s+.*){0,})', re.MULTILINE)
-        act_year = None
-        for act_match in action_re.finditer(history.find('pre').contents[0]):
-            # If we didn't match group 2 then this must be a year change
-            if act_match.group(2) == None:
-                act_year = act_match.group(1)
-                continue
-
-            # If not year change, must be an action
-            act_date = act_match.group(2)
-            action = act_match.group(3).replace('\n', '').replace('  ', ' ').replace('\t', ' ')
-            self.add_action(chamber, session, bill_id, chamber,
-                            action, "%s, %s" % (act_date, act_year))
-
-    def scrape_session(self, chamber, session):
         if chamber == 'upper':
-            chamber_name = 'senate'
-            bill_abbr = 'SB'
-        elif chamber == 'lower':
-            chamber_name = 'assembly'
-            bill_abbr = 'AB'
+            house_type = 'S'
+        else:
+            house_type = 'A'
+        
+        legislators = self.session.query(Legislator).filter_by(
+            session_year=session).filter_by(
+            house_type=house_type)
 
-        # Get the list of all chamber bills for the given session
-        # (text format, sorted by author)
-        url = "http://www.leginfo.ca.gov/pub/%s/bill/index_%s_author_bill_topic" % (session, chamber_name)
-        self.be_verbose("Getting bill list for %s %s" % (chamber, session))
-        bill_list = self.urlopen(url)
-        bill_re = re.compile('\s+(%s\s+\d+)(.*(\n\s{31}.*){0,})' % bill_abbr,
-                             re.MULTILINE)
+        for legislator in legislators:
+            self.add_legislator(chamber, session, legislator.district,
+                                legislator.legislator_name,
+                                legislator.first_name,
+                                legislator.last_name, legislator.middle_initial,
+                                legislator.name_suffix, legislator.party)
 
-        for bill_match in bill_re.finditer(bill_list):
-            bill_id = bill_match.group(1).replace(' ', '')
-            self.get_bill_info(chamber, session, bill_id)
 
     def scrape_bills(self, chamber, year):
-        # CA makes data available from 1993 on
-        if int(year) < 1995 or int(year) > dt.date.today().year:
+        session = "%s%d" % (year, int(year) + 1)
+        if not session in self.metadata['sessions']:
             raise NoDataForYear(year)
 
-        # We expect the first year of a session (odd)
-        if int(year) % 2 != 1:
-            raise NoDataForYear(year)
+        if chamber == 'upper':
+            measure_abbr = 'SB'
+            chamber_name = 'SENATE'
+            house_type = 'S'
+        else:
+            measure_abbr = 'AB'
+            chamber_name = 'ASSEMBLY'
+            house_type = 'A'
 
-        year1 = year[2:]
-        year2 = str((int(year) + 1))[2:]
-        session = "%s-%s" % (year1, year2)
+        bills = self.session.query(Bill).filter_by(
+            session_year=session).filter_by(
+            measure_type=measure_abbr)
 
-        self.scrape_session(chamber, session)
+        for bill in bills:
+            bill_session = session
+            if bill.session_num != '0':
+                bill_session += ' Special Session %s' % bill.session_num
+
+            bill_id = bill.short_bill_id
+            version = bill.versions[0]
+            self.add_bill(chamber, bill_session, bill_id, version.title)
+
+            for author in version.authors:
+                if author.house == chamber_name:
+                    self.add_sponsorship(chamber, bill_session, bill_id,
+                                         author.contribution,
+                                         author.name)
+
+            for action in bill.actions:
+                if not action.action:
+                    # NULL action text seems to be an error on CA's part,
+                    # unless it has some meaning I'm missing
+                    continue
+                actor = action.actor or chamber
+                self.add_action(chamber, bill_session, bill_id, actor,
+                                action.action, action.action_date)
+
+            for vote in bill.votes:
+                if vote.vote_result == '(PASS)':
+                    result = True
+                else:
+                    result = False
+                yes = []
+                no = []
+                other = []
+                for record in vote.votes:
+                    if record.vote_code == 'AYE':
+                        yes.append(record.legislator_name)
+                    elif record.vote_code.startswith('NO'):
+                        no.append(record.legislator_name)
+                    else:
+                        other.append(record.legislator_name)
+
+                full_loc = vote.location.description
+                first_part = full_loc.split(' ')[0].lower()
+                if first_part in ['asm', 'assembly']:
+                    vote_chamber = 'lower'
+                    vote_location = ' '.join(full_loc.split(' ')[1:])
+                elif first_part.startswith('sen'):
+                    vote_chamber = 'upper'
+                    vote_location = ' '.join(full_loc.split(' ')[1:])
+                else:
+                    vote_chamber = ''
+                    vote_location = full_loc
+
+                self.add_vote(chamber, bill_session, bill_id,
+                              vote.vote_date_time,
+                              vote_chamber, vote_location,
+                              vote.motion.motion_text,
+                              result, vote.ayes, vote.noes, vote.abstain,
+                              yes, no, other, vote.threshold)
 
 if __name__ == '__main__':
-    CALegislationScraper().run()
+    CASQLImporter('localhost', 'USER', 'PASSWORD').run()
