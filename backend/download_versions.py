@@ -5,6 +5,8 @@ import sys
 import urllib2
 import os
 
+# It's not very nice on state servers to run this as is, all the way through.
+# Add some throttling before real world use.
 
 def download_versions(state, verbose=False):
     """
@@ -23,7 +25,11 @@ def download_versions(state, verbose=False):
 
     # We only download one version per bill each time through
     # because otherwise we end up with update conflicts.
-    while len(results) > 0:
+    # If we go through a round of the view without successfully downloading
+    # even a single version, we give up.
+    success = True
+    while success and len(results) > 0:
+        success = False
         seen = set()
         for row in results:
             if row.key[1] in seen:
@@ -34,12 +40,13 @@ def download_versions(state, verbose=False):
 
             try:
                 data = urllib2.urlopen(row.value).read()
+                path = row.value.replace('http://', '/').replace('ftp://', '/')
+                db.put_attachment({'_id': row.key[0], '_rev': row.key[1]},
+                                  data, filename=path)
+                success = True
             except urllib2.HTTPError:
                 log("failed downloading %s, skipping" % row.value)
 
-            path = row.value.replace('http://', '/').replace('ftp://', '/')
-            db.put_attachment({'_id': row.key[0], '_rev': row.key[1]},
-                              data, filename=path)
         # View will be regenerated
         results = db.view("app/not-downloaded")
 
