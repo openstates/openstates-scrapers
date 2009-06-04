@@ -2,6 +2,7 @@
 from couchdb.client import Server
 import argparse
 import os
+from schemas import StateMetadata, Legislator, Bill
 try:
     import json
 except ImportError:
@@ -26,20 +27,13 @@ class Exporter(object):
 
         # Grab metadata first so exporter can set up directory structure, etc.
         # based on it
-        self.saw_metadata(db['state_metadata'])
+        self.saw_metadata(StateMetadata.get(db))
 
-        results = db.view('_all_docs', limit=200, include_docs=True)
+        for bill in Bill.all(db):
+            self.saw_bill(bill)
 
-        while len(results) > 0:
-            for row in results:
-                if 'type' in row.doc:
-                    if row.doc['type'] == 'bill':
-                        self.saw_bill(row.doc)
-                    elif row.doc['type'] == 'legislator':
-                        self.saw_legislator(row.doc)
-            results = db.view('_all_docs', limit=200, include_docs=True,
-                              startkey_docid=row.doc['_id'],
-                              skip=1)
+        for legislator in Legislator.all(db):
+            self.saw_legislator(legislator)
 
     def saw_metadata(self, doc):
         raise NotImplementedError('Override saw_metadata')
@@ -53,7 +47,7 @@ class Exporter(object):
 
 class JSONExporter(Exporter):
 
-    def saw_metadata(self, doc):
+    def saw_metadata(self, metadata):
 
         def makedir(dir):
             try:
@@ -66,7 +60,7 @@ class JSONExporter(Exporter):
         makedir('bills')
         makedir('legislators')
 
-        for (session, details) in doc['session_details'].items():
+        for (session, details) in metadata.session_details.items():
             makedir(os.path.join('bills', session))
 
             for sub_session in details['sub_sessions']:
@@ -74,20 +68,20 @@ class JSONExporter(Exporter):
 
         self.log('writing metadata')
         with open(os.path.join(self.output_dir, 'metadata.json'), 'w') as f:
-            json.dump(doc, f)
+            json.dump(metadata._data, f)
 
-    def saw_bill(self, doc):
-        self.log('writing bill %s' % doc['_id'])
-        with open(os.path.join(self.output_dir, 'bills', doc['session'],
-                               doc['bill_id'] + '.json'), 'w') as f:
-            json.dump(doc, f)
+    def saw_bill(self, bill):
+        self.log('writing bill %s' % bill.id)
+        with open(os.path.join(self.output_dir, 'bills', bill.session,
+                               bill.bill_id + '.json'), 'w') as f:
+            json.dump(bill._data, f)
 
-    def saw_legislator(self, doc):
-        self.log('writing legislator')
-        filename = '.'.join(doc['_id'].split(':')[1:]) + '.json'
+    def saw_legislator(self, legislator):
+        self.log('writing legislator %s' % legislator.id)
+        filename = '.'.join(legislator.id.split(':')[1:]) + '.json'
         with open(os.path.join(self.output_dir, 'legislators',
                                filename), 'w') as f:
-            json.dump(doc, f)
+            json.dump(legislator._data, f)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

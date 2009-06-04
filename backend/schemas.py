@@ -7,7 +7,29 @@ from couchdb.schema import *
 # http://code.google.com/p/couchdb-python/issues/detail?id=76
 # http://code.google.com/p/couchdb-python/issues/detail?id=77
 
-class StateMetadata(Document):
+class FiftyStateDocument(Document):
+
+    @classmethod
+    def all(cls, db, limit=200):
+        """
+        Returns an iterator for all of the documents of this type,
+        grabbing 'limit' documents from the database at a time.
+        """
+        type = cls.type.default
+        results = cls.view(db, 'app/by-type', limit=limit,
+                           include_docs=True, eager=True)[type]
+
+        while len(results) > 0:
+            id = None
+            for doc in results:
+                yield doc
+                id = doc.id
+            results = cls.view(db, '_all_docs', include_docs=True,
+                               eager=True, startkey=id,
+                               skip=1)[type]
+
+
+class StateMetadata(FiftyStateDocument):
     type = TextField(default='state_metadata')
     state_name = TextField()
     legislature_name = TextField()
@@ -52,7 +74,7 @@ class StateMetadata(Document):
         return session
 
 
-class Legislator(Document):
+class Legislator(FiftyStateDocument):
     type = TextField(default='legislator')
     state = TextField()
     fullname = TextField()
@@ -98,7 +120,7 @@ class Legislator(Document):
         return matches
 
 
-class Bill(Document):
+class Bill(FiftyStateDocument):
     type = TextField(default='bill')
     state = TextField()
     bill_id = TextField()
