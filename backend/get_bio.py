@@ -2,6 +2,7 @@
 from couchdb.client import Server
 import argparse
 from votesmart import votesmart
+from schemas import Legislator, StateMetadata
 
 
 votesmart.apikey = 'API_KEY'
@@ -22,15 +23,11 @@ def get_bio(state, year, replace=True, verbose=False):
     assert state in server
     db = server[state]
 
-    metadata = db['state_metadata']
+    metadata = StateMetadata.get(db)
 
     # We expect the passed in year to be an election year, so find
     # the session corresponding to that election
-    session = None
-    for (s, details) in metadata['session_details'].items():
-        if details['election_year'] == int(year):
-            session = s
-            break
+    session = metadata.session_for_election(int(year))
     assert session
 
     # Get list of officials from votesmart
@@ -55,32 +52,28 @@ def get_bio(state, year, replace=True, verbose=False):
     # While this will get some unneeded docs but only involves one (Couch)
     # round trip, while searching separately for each official
     # returned by Vote Smart would involve many round trips.
-    for leg in db.view('app/leg-by-session', include_docs=True,
-                       startkey=[session, None, None],
-                       endkey=[session, "z", None]):
-        doc = leg.doc
-
-        if 'votesmart' in doc and not replace:
+    for leg in Legislator.for_session(db, session):
+        if 'votesmart' in leg._data and not replace:
             # We already have data for this legislator (and don't
             # want to replace it)
             continue
 
-        if doc['last_name'] in officials:
-            for match in officials[doc['last_name']]:
-                if match.title == metadata['lower_title']:
+        if leg.last_name in officials:
+            for match in officials[leg.last_name]:
+                if match.title == metadata.lower_title:
                     chamber = 'lower'
                 else:
                     chamber = 'upper'
 
-                if (match.firstName == doc['first_name'] and
-                    chamber == doc['chamber']):
+                if (match.firstName == leg.first_name and
+                    chamber == leg.chamber):
                     # Found match
                     log("Getting bio data for %s (%s)" %
-                        (doc['fullname'], doc['chamber']))
+                        (leg.fullname, leg.chamber))
 
                     bio = votesmart.candidatebio.getBio(match.candidateId)
-                    doc['votesmart'] = bio.__dict__
-                    db.update([doc])
+                    leg._data['votesmart'] = bio.__dict__
+                    leg.store(db)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

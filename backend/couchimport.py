@@ -1,9 +1,11 @@
 #!/usr/bin/env python
-import unicodecsv as csv
 from couchdb.client import Server
 import argparse
 import sys
 import re
+from schemas import StateMetadata, Legislator, Bill
+sys.path.append('../scripts/pyutils')
+import unicodecsv as csv
 try:
     import json
 except ImportError:
@@ -167,19 +169,19 @@ class CouchImporter(object):
         self.update()
 
     def import_metadata(self):
-        filename = 'data/%s/metadata.json' % self.state
+        filename = '../data/%s/metadata.json' % self.state
 
         if 'state_metadata' in self.db:
             del self.db['state_metadata']
 
         with open(filename) as f:
-            self.metadata = json.load(f)
+            self.metadata = StateMetadata.wrap(json.load(f))
 
-        self.metadata['type'] = 'state_metadata'
-        self.db['state_metadata'] = self.metadata
+        self.metadata.id = 'state_metadata'
+        self.metadata.store(self.db)
 
     def import_bills(self, flush_cache=True):
-        filename = 'data/%s/legislation.csv' % self.state
+        filename = '../data/%s/legislation.csv' % self.state
         reader = csv.DictReader(open(filename, 'r'),
                                 ['state', 'chamber', 'session', 'bill_id',
                                  'title'])
@@ -193,7 +195,7 @@ class CouchImporter(object):
             self.update()
 
     def import_actions(self, flush_cache=True):
-        filename = 'data/%s/actions.csv' % self.state
+        filename = '../data/%s/actions.csv' % self.state
         reader = csv.DictReader(open(filename, 'r'),
                                 ['state', 'chamber', 'session', 'bill_id',
                                  'actor', 'action_text', 'action_date'])
@@ -214,7 +216,7 @@ class CouchImporter(object):
             self.update()
 
     def import_sponsors(self, flush_cache=True):
-        filename = 'data/%s/sponsorships.csv' % self.state
+        filename = '../data/%s/sponsorships.csv' % self.state
         reader = csv.DictReader(open(filename, 'r'),
                                 ['state', 'chamber', 'session', 'bill_id',
                                  'sponsor_type', 'sponsor_name'])
@@ -244,7 +246,7 @@ class CouchImporter(object):
             self.update()
 
     def import_versions(self, flush_cache=True):
-        filename = 'data/%s/bill_versions.csv' % self.state
+        filename = '../data/%s/bill_versions.csv' % self.state
         reader = csv.DictReader(open(filename, 'r'),
                                 ['state', 'chamber', 'session', 'bill_id',
                                  'version_name', 'version_url'])
@@ -265,7 +267,7 @@ class CouchImporter(object):
             self.update()
 
     def import_votes(self, flush_cache=True):
-        filename = 'data/%s/votes.csv' % self.state
+        filename = '../data/%s/votes.csv' % self.state
         reader = csv.DictReader(open(filename, 'r'),
                                 ['state', 'chamber', 'session', 'bill_id',
                                  'date', 'vote_chamber', 'vote_location',
@@ -311,47 +313,38 @@ class CouchImporter(object):
         if flush_cache:
             self.update()
 
-    def legislator_exists(self, chamber, district, session):
-        """
-        Check if the legislator has already been imported. Can handle
-        both individual and merged records.
-        """
-        matches = self.db.view('app/leg-with-sessions')[[chamber,
-                                                         district,
-                                                         session]]
-        return len(matches) > 0
-
     def import_legislators(self):
-        filename = 'data/%s/legislators.csv' % self.state
+        filename = '../data/%s/legislators.csv' % self.state
         reader = csv.DictReader(open(filename, 'r'),
                                 ['state', 'chamber', 'session', 'district',
                                  'fullname', 'first_name', 'last_name',
                                  'middle_name', 'suffix', 'party'])
 
         for row in reader:
-            if self.legislator_exists(row['chamber'], row['district'],
-                                      row['session']):
-                # Don't need to add to db
-                self.saw_legislator(row, self.legislator_id(row))
+            existing = Legislator.for_district_and_session(self.db,
+                                                           row['chamber'],
+                                                           row['district'],
+                                                           row['session'])
+            if existing:
+                # We've already got this district covered for this session
+                self.saw_legislator(row, existing[0].id)
             else:
                 # Look for people with this exact name and matching
                 # chamber/district already in the database
-                for match in self.db.view('app/leg-duplicates',
-                                          include_docs=True)[
-                    [row['chamber'],
-                     row['district'],
-                     row['fullname']]]:
+                for match in Legislator.duplicates(self.db, row['chamber'],
+                                                   row['district'],
+                                                   row['fullname']):
 
-                    if self.is_adjacent(row['session'], match.doc['sessions']):
+                    if self.is_adjacent(row['session'], match.sessions):
                         # Add on to existing legislator
-                        match.doc['sessions'].append(row['session'])
+                        match.sessions.append(row['session'])
 
                         # Write directly to the DB instead of caching
                         # so that our view will be updated next read
                         # (same thing below)
-                        self.db.update([match.doc])
+                        match.store(self.db)
 
-                        self.saw_legislator(row, match.doc['_id'])
+                        self.saw_legislator(row, match.id)
 
                         break  # will skip the else block
                 else:
@@ -368,12 +361,7 @@ class CouchImporter(object):
         Returns true if session is adjacent to any element of sessions.
         """
         for s in sessions:
-            i = self.metadata['sessions'].index(s)
-
-            if i > 0 and self.metadata['sessions'][i - 1] == session:
-                return True
-            if (i < len(self.metadata['sessions']) and
-                self.metadata['sessions'][i + 1] == session):
+            if self.metadata.adjacent_sessions(session, s):
                 return True
         return False
 

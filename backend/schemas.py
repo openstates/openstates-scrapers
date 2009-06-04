@@ -39,6 +39,18 @@ class StateMetadata(Document):
                 return True
         return False
 
+    def session_for_election(self, election_year):
+        """
+        Given an election year, return the subsequent session (or
+        None if election_year is not a valid election year)
+        """
+        session = None
+        for (s, details) in self.session_details.items():
+            if details['election_year'] == election_year:
+                session = s
+                break
+        return session
+
 
 class Legislator(Document):
     type = TextField(default='legislator')
@@ -52,6 +64,38 @@ class Legislator(Document):
     chamber = TextField()
     district = TextField()
     sessions = ListField(TextField())
+
+    @classmethod
+    def for_session(cls, db, session):
+        """
+        Return all the Legislators who served in a given session.
+        """
+        return cls.view(db, 'app/leg-by-session', include_docs=True,
+                        eager=True, startkey=[session, None, None],
+                        endkey=[session, "zzzzzzzz", None])
+
+    @classmethod
+    def duplicates(cls, db, chamber, district, fullname):
+        """
+        Return all legislators which match the given chamber,
+        district and fullname.
+        """
+        return cls.view(db, 'app/leg-duplicates', include_docs=True,
+                        eager=True, key=[chamber, district, fullname])
+
+    @classmethod
+    def for_district_and_session(cls, db, chamber, district, session):
+        """
+        Returns the legislator(s) who served in the given chamber,
+        district and session combination.
+        """
+        matches = cls.view(db, 'app/leg-with-sessions', include_docs=True,
+                           eager=True)[[chamber, district, session]]
+
+        if len(matches) == 0:
+            return None
+
+        return matches
 
 
 class Bill(Document):
