@@ -144,9 +144,9 @@ class Bill(FiftyStateDocument):
         chamber=TextField(),
         location=TextField(),
         passed=BooleanField(),
-        yes_count=TextField(),
-        no_count=TextField(),
-        other_count=TextField(),
+        yes_count=IntegerField(),
+        no_count=IntegerField(),
+        other_count=IntegerField(),
         yes_votes=ListField(DictField(Schema.build(
             leg_id=TextField(),
             name=TextField()))),

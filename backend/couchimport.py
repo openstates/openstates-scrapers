@@ -293,6 +293,10 @@ class CouchImporter(object):
                     'yes_count': row['yes_count'], 'no_count': row['no_count'],
                     'other_count': row['other_count']}
 
+            row['yes_count'] = int(row['yes_count'])
+            row['no_count'] = int(row['no_count'])
+            row['other_count'] = int(row['other_count'])
+
             if row['passed'] == "True":
                 vote['passed'] = True
             else:
@@ -327,7 +331,7 @@ class CouchImporter(object):
                                                            row['session'])
             if existing:
                 # We've already got this district covered for this session
-                self.saw_legislator(row, existing[0].id)
+                self.saw_legislator(row, list(existing)[0].id)
             else:
                 # Look for people with this exact name and matching
                 # chamber/district already in the database
@@ -361,7 +365,7 @@ class CouchImporter(object):
         Returns true if session is adjacent to any element of sessions.
         """
         for s in sessions:
-            if self.metadata.adjacent_sessions(session, s):
+            if self.metadata.sessions_adjacent(session, s):
                 return True
         return False
 
