@@ -119,6 +119,23 @@ class Legislator(FiftyStateDocument):
 
         return matches
 
+    def votes(self, db, session=None):
+        """
+        Get all the votes made by this legislator in the given session,
+        or in all sessions if none is specified.
+        """
+
+        def wrap(row):
+            row.value.update({'bill': row.key[2]})
+            return row.value
+
+        if session:
+            return db.view('app/leg-votes', startkey=[self.id, session, None],
+                           endkey=[self.id, session, "z"], wrapper=wrap)
+        else:
+            return db.view('app/leg-votes', startkey=[self.id, None],
+                           endkey=[self.id, "z"], wrapper=wrap)
+
 
 class Bill(FiftyStateDocument):
     type = TextField(default='bill')
