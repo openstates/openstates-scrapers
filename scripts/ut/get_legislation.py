@@ -7,12 +7,13 @@ import html5lib
 # ugly hack
 import sys
 sys.path.append('./scripts')
-from pyutils.legislation import LegislationScraper, NoDataForYear
+from pyutils.legislation import *
 
 class UTLegislationScraper(LegislationScraper):
 
     state = 'ut'
-    soup_parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
+    soup_parser = html5lib.HTMLParser(
+        tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
     # TODO: Grab sessions/sub_sessions programmatically from the site
     metadata = {'state_name': 'Utah',
@@ -92,12 +93,15 @@ class UTLegislationScraper(LegislationScraper):
                 if len(fullname.split(' ')) > 2:
                     middle_name = fullname.split(' ')[2]
 
-                self.add_legislator(chamber, year, tds[3].find(text=True),
-                                    fullname, first_name, last_name,
-                                    middle_name, '',
-                                    tds[2].find(text=True))
+                leg = Legislator(year, chamber, tds[3].find(text=True),
+                                 fullname, first_name, last_name,
+                                 middle_name, party=tds[2].find(text=True))
+                self.add_legislator(leg)
 
-    def parse_status(self, chamber, session, bill_id, url):
+    def parse_status(self, bill, url):
+        chamber = bill['chamber']
+        session = bill['session']
+        bill_id = bill['bill_id']
         status = self.soup_parser(self.urlopen(url))
         act_table = status.table
 
@@ -121,8 +125,7 @@ class UTLegislationScraper(LegislationScraper):
 
                 action = '/'.join(split_action[1:]).strip()
 
-            self.add_action(chamber, session, bill_id, actor,
-                            action, act_date)
+            bill.add_action(actor, action, act_date)
 
             # Check if this action is a vote
             links = row.findAll('a')
@@ -151,10 +154,6 @@ class UTLegislationScraper(LegislationScraper):
                 else:
                     passed = False
 
-                yes_votes = re.split('\s{2,}', match.group(2).strip())
-                no_votes = re.split('\s{2,}', match.group(4).strip())
-                other_votes = re.split('\s{2,}', match.group(7).strip())
-
                 if actor == 'upper' or actor == 'lower':
                     vote_chamber = actor
                     vote_location = ''
@@ -162,10 +161,19 @@ class UTLegislationScraper(LegislationScraper):
                     vote_chamber = ''
                     vote_location = actor
 
-                self.add_vote(chamber, session, bill_id, act_date,
-                              vote_chamber, vote_location,
-                              action, passed, yes_count, no_count, other_count,
-                              yes_votes, no_votes, other_votes)
+                vote = Vote(vote_chamber, vote_location, act_date,
+                            action, passed, yes_count, no_count,
+                            other_count)
+
+                yes_votes = re.split('\s{2,}', match.group(2).strip())
+                no_votes = re.split('\s{2,}', match.group(4).strip())
+                other_votes = re.split('\s{2,}', match.group(7).strip())
+
+                map(vote.yes, yes_votes)
+                map(vote.no, no_votes)
+                map(vote.other, other_votes)
+
+                bill.add_vote(vote)
 
     def scrape_session(self, chamber, session):
         if chamber == "lower":
@@ -175,7 +183,7 @@ class UTLegislationScraper(LegislationScraper):
 
         bill_list_url = "http://www.le.state.ut.us/~%s/bills.htm" % (
             session.replace(' ', ''))
-        self.be_verbose("Getting bill list for %s, %s" % (session, chamber))
+        self.log("Getting bill list for %s, %s" % (session, chamber))
 
         try:
             base_bill_list = self.soup_parser(self.urlopen(bill_list_url))
@@ -197,16 +205,14 @@ class UTLegislationScraper(LegislationScraper):
                 (bill_title, primary_sponsor) = bill_info.h3.contents[2].replace(
                     '&nbsp;', ' ').strip().split(' -- ')
 
-                self.add_bill(chamber, session, bill_id, bill_title)
-                self.add_sponsorship(chamber, session, bill_id, 'primary',
-                                     primary_sponsor)
+                bill = Bill(session, chamber, bill_id, bill_title)
+                bill.add_sponsor('primary', primary_sponsor)
 
                 status_re = re.compile('.*billsta/%s.*.htm' % bill_abbr.lower())
                 status_link = bill_info.find('a', href=status_re)
 
                 if status_link:
-                    self.parse_status(chamber, session, bill_id,
-                                      status_link['href'])
+                    self.parse_status(bill, status_link['href'])
 
                 text_find = bill_info.find(text="Bill Text (If you are having trouble viewing PDF files, ")
                 if text_find:
@@ -214,9 +220,9 @@ class UTLegislationScraper(LegislationScraper):
                     for text_link in text_find.parent.parent.findAll(
                         'a', href=text_link_re)[1:]:
                         version_name = text_link.previous.strip()
-                        self.add_bill_version(chamber, session, bill_id,
-                                              version_name,
-                                              text_link['href'])
+                        bill.add_version(version_name, text_link['href'])
+
+                self.add_bill(bill)
 
     def scrape_bills(self, chamber, year):
         if year not in self.metadata['session_details']:

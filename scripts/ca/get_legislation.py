@@ -13,7 +13,7 @@ from sqlalchemy.ext.declarative import declarative_base
 # ugly hack
 import sys
 sys.path.append('./scripts')
-from pyutils.legislation import LegislationScraper, NoDataForYear
+from pyutils.legislation import *
 
 # Code for handling California's legislative info SQL dumps
 # You can grab them from http://www.leginfo.ca.gov/FTProtocol.html
@@ -21,7 +21,7 @@ from pyutils.legislation import LegislationScraper, NoDataForYear
 
 Base = declarative_base()
 
-class Bill(Base):
+class CABill(Base):
     __tablename__ = "bill_tbl"
     
     bill_id = Column(String(19), primary_key=True)
@@ -47,11 +47,11 @@ class Bill(Base):
     def short_bill_id(self):
         return "%s%d" % (self.measure_type, self.measure_num)
     
-class BillVersion(Base):
+class CABillVersion(Base):
     __tablename__ = "bill_version_tbl"
 
     bill_version_id = Column(String(30), primary_key=True)
-    bill_id = Column(String(19), ForeignKey(Bill.bill_id))
+    bill_id = Column(String(19), ForeignKey(CABill.bill_id))
     version_num = Column(Integer)
     bill_version_action_date = Column(DateTime)
     bill_version_action = Column(String(100))
@@ -69,7 +69,7 @@ class BillVersion(Base):
     trans_uid = Column(String(30))
     trans_update = Column(DateTime)
 
-    bill = relation(Bill, backref=
+    bill = relation(CABill, backref=
                     backref('versions',
                             order_by=desc(bill_version_action_date)))
 
@@ -85,7 +85,7 @@ class BillVersion(Base):
         title = ''.join(texts).strip().encode('ascii', 'replace')
         return title
 
-class BillVersionAuthor(Base):
+class CABillVersionAuthor(Base):
     __tablename__ = "bill_version_authors_tbl"
 
     # Note: the primary_keys here are a lie - the actual table has no pk
@@ -94,7 +94,7 @@ class BillVersionAuthor(Base):
     # composite primary key.
 
     bill_version_id = Column(String(30),
-                             ForeignKey(BillVersion.bill_version_id))
+                             ForeignKey(CABillVersion.bill_version_id))
     type = Column(String(15))
     house = Column(String(100))
     name = Column(String(100), primary_key=True)
@@ -105,12 +105,12 @@ class BillVersionAuthor(Base):
     trans_update = Column(DateTime, primary_key=True)
     primary_author_flg = Column(String(1))
 
-    version = relation(BillVersion, backref=backref('authors'))
+    version = relation(CABillVersion, backref=backref('authors'))
 
-class BillAction(Base):
+class CABillAction(Base):
     __tablename__ = "bill_history_tbl"
 
-    bill_id = Column(String(20), ForeignKey(Bill.bill_id))
+    bill_id = Column(String(20), ForeignKey(CABill.bill_id))
     bill_history_id = Column(Numeric, primary_key=True)
     action_date = Column(DateTime)
     action = Column(String(2000))
@@ -124,7 +124,7 @@ class BillAction(Base):
     ternary_location = Column(String(60))
     end_status = Column(String(60))
 
-    bill = relation(Bill, backref=backref('actions'))
+    bill = relation(CABill, backref=backref('actions'))
 
     @property
     def actor(self):
@@ -145,7 +145,7 @@ class BillAction(Base):
 
         return actor
 
-class Legislator(Base):
+class CALegislator(Base):
     __tablename__ = 'legislator_tbl'
 
     district = Column(String(5), primary_key=True)
@@ -164,7 +164,7 @@ class Legislator(Base):
     trans_uid = Column(String(30))
     trans_update = Column(DateTime)
 
-class Motion(Base):
+class CAMotion(Base):
     __tablename__ = "bill_motion_tbl"
 
     motion_id = Column(Integer, primary_key=True)
@@ -172,7 +172,7 @@ class Motion(Base):
     trans_uid = Column(String(30))
     trans_update = Column(DateTime)
 
-class Location(Base):
+class CALocation(Base):
     __tablename__ = "location_code_tbl"
 
     session_year = Column(String(8), primary_key=True)
@@ -185,14 +185,14 @@ class Location(Base):
     trans_uid = Column(String(30))
     trans_update = Column(DateTime)
 
-class VoteSummary(Base):
+class CAVoteSummary(Base):
     __tablename__ = "bill_summary_vote_tbl"
 
-    bill_id = Column(String(20), ForeignKey(Bill.bill_id))
-    location_code = Column(String(6), ForeignKey(Location.location_code))
+    bill_id = Column(String(20), ForeignKey(CABill.bill_id))
+    location_code = Column(String(6), ForeignKey(CALocation.location_code))
     vote_date_time = Column(DateTime, primary_key=True)
     vote_date_seq = Column(Integer, primary_key=True)
-    motion_id = Column(Integer, ForeignKey(Motion.motion_id))
+    motion_id = Column(Integer, ForeignKey(CAMotion.motion_id))
     ayes = Column(Integer)
     noes = Column(Integer)
     abstain = Column(Integer)
@@ -200,9 +200,9 @@ class VoteSummary(Base):
     trans_uid = Column(String(30))
     trans_update = Column(DateTime)
 
-    bill = relation(Bill, backref=backref('votes'))
-    motion = relation(Motion)
-    location = relation(Location)
+    bill = relation(CABill, backref=backref('votes'))
+    motion = relation(CAMotion)
+    location = relation(CALocation)
 
     @property
     def threshold(self):
@@ -220,27 +220,27 @@ class VoteSummary(Base):
         else:
             return '2/3'
 
-class VoteDetail(Base):
+class CAVoteDetail(Base):
     __tablename__ = "bill_detail_vote_tbl"
 
-    bill_id = Column(String(20), ForeignKey(Bill.bill_id),
-                     ForeignKey(VoteSummary.bill_id))
-    location_code = Column(String(6), ForeignKey(VoteSummary.location_code))
+    bill_id = Column(String(20), ForeignKey(CABill.bill_id),
+                     ForeignKey(CAVoteSummary.bill_id))
+    location_code = Column(String(6), ForeignKey(CAVoteSummary.location_code))
     legislator_name = Column(String(50), primary_key=True)
-    vote_date_time = Column(DateTime, ForeignKey(VoteSummary.vote_date_time))
-    vote_date_seq = Column(Integer, ForeignKey(VoteSummary.vote_date_seq))
+    vote_date_time = Column(DateTime, ForeignKey(CAVoteSummary.vote_date_time))
+    vote_date_seq = Column(Integer, ForeignKey(CAVoteSummary.vote_date_seq))
     vote_code = Column(String(5), primary_key=True)
-    motion_id = Column(Integer, ForeignKey(VoteSummary.motion_id))
+    motion_id = Column(Integer, ForeignKey(CAVoteSummary.motion_id))
     trans_uid = Column(String(30), primary_key=True)
     trans_update = Column(DateTime, primary_key=True)
 
-    bill = relation(Bill, backref=backref('detail_votes'))
-    summary = relation(VoteSummary, primaryjoin=
-                       and_(VoteSummary.bill_id == bill_id,
-                            VoteSummary.location_code == location_code,
-                            VoteSummary.vote_date_time == vote_date_time,
-                            VoteSummary.vote_date_seq == vote_date_seq,
-                            VoteSummary.motion_id == motion_id),
+    bill = relation(CABill, backref=backref('detail_votes'))
+    summary = relation(CAVoteSummary, primaryjoin=
+                       and_(CAVoteSummary.bill_id == bill_id,
+                            CAVoteSummary.location_code == location_code,
+                            CAVoteSummary.vote_date_time == vote_date_time,
+                            CAVoteSummary.vote_date_seq == vote_date_seq,
+                            CAVoteSummary.motion_id == motion_id),
                        backref=backref('votes'))
 
 class CASQLImporter(LegislationScraper):
@@ -298,17 +298,18 @@ class CASQLImporter(LegislationScraper):
         else:
             house_type = 'A'
         
-        legislators = self.session.query(Legislator).filter_by(
+        legislators = self.session.query(CALegislator).filter_by(
             session_year=session).filter_by(
             house_type=house_type)
 
         for legislator in legislators:
-            self.add_legislator(chamber, session, legislator.district,
-                                legislator.legislator_name,
-                                legislator.first_name,
-                                legislator.last_name, legislator.middle_initial,
-                                legislator.name_suffix, legislator.party)
-
+            leg = Legislator(session, chamber, legislator.district,
+                             legislator.legislator_name,
+                             legislator.first_name,
+                             legislator.last_name, legislator.middle_initial,
+                             party=legislator.party,
+                             suffix=legislator.name_suffix)
+            self.add_legislator(leg)
 
     def scrape_bills(self, chamber, year):
         session = "%s%d" % (year, int(year) + 1)
@@ -324,7 +325,7 @@ class CASQLImporter(LegislationScraper):
             chamber_name = 'ASSEMBLY'
             house_type = 'A'
 
-        bills = self.session.query(Bill).filter_by(
+        bills = self.session.query(CABill).filter_by(
             session_year=session).filter_by(
             measure_type=measure_abbr)
 
@@ -335,13 +336,11 @@ class CASQLImporter(LegislationScraper):
 
             bill_id = bill.short_bill_id
             version = bill.versions[0]
-            self.add_bill(chamber, bill_session, bill_id, version.title)
+            fsbill = Bill(bill_session, chamber, bill_id, version.title)
 
             for author in version.authors:
                 if author.house == chamber_name:
-                    self.add_sponsorship(chamber, bill_session, bill_id,
-                                         author.contribution,
-                                         author.name)
+                    fsbill.add_sponsor(author.contribution, author.name)
 
             for action in bill.actions:
                 if not action.action:
@@ -349,24 +348,13 @@ class CASQLImporter(LegislationScraper):
                     # unless it has some meaning I'm missing
                     continue
                 actor = action.actor or chamber
-                self.add_action(chamber, bill_session, bill_id, actor,
-                                action.action, action.action_date)
+                fsbill.add_action(actor, action.action, action.action_date)
 
             for vote in bill.votes:
                 if vote.vote_result == '(PASS)':
                     result = True
                 else:
                     result = False
-                yes = []
-                no = []
-                other = []
-                for record in vote.votes:
-                    if record.vote_code == 'AYE':
-                        yes.append(record.legislator_name)
-                    elif record.vote_code.startswith('NO'):
-                        no.append(record.legislator_name)
-                    else:
-                        other.append(record.legislator_name)
 
                 full_loc = vote.location.description
                 first_part = full_loc.split(' ')[0].lower()
@@ -380,12 +368,23 @@ class CASQLImporter(LegislationScraper):
                     vote_chamber = ''
                     vote_location = full_loc
 
-                self.add_vote(chamber, bill_session, bill_id,
+                fsvote = Vote(vote_chamber, vote_location,
                               vote.vote_date_time,
-                              vote_chamber, vote_location,
-                              vote.motion.motion_text,
-                              result, vote.ayes, vote.noes, vote.abstain,
-                              yes, no, other, vote.threshold)
+                              vote.motion.motion_text, result,
+                              vote.ayes, vote.noes, vote.abstain,
+                              threshold=vote.threshold)
+
+                for record in vote.votes:
+                    if record.vote_code == 'AYE':
+                        fsvote.yes(record.legislator_name)
+                    elif record.vote_code.startswith('NO'):
+                        fsvote.no(record.legislator_name)
+                    else:
+                        fsvote.other(record.legislator_name)
+
+                fsbill.add_vote(fsvote)
+
+            self.add_bill(fsbill)
 
 if __name__ == '__main__':
     CASQLImporter('localhost', 'USER', 'PASSWORD').run()
