@@ -88,6 +88,22 @@ class LegislationScraper(object):
                                          bill['session'],
                                          bill['bill_id']))
 
+        # Associate each recorded vote with an actual legislator
+        for vote in bill['votes']:
+            for type in ['yes_votes', 'no_votes', 'other_votes']:
+                vote[type] = map(lambda l:
+                                 {'name': l,
+                                  'leg_id': self.matcher[vote['chamber']][l]},
+                                 vote[type])
+
+        for sponsor in bill['sponsors']:
+            if 'chamber' in sponsor:
+                leg_id = self.matcher[sponsor['chamber']][sponsor['name']]
+            else:
+                leg_id = self.matcher[bill['chamber']][sponsor['name']]
+
+            sponsor['leg_id'] = leg_id
+
         filename = "%s:%s:%s.json" % (bill['session'], bill['chamber'],
                                       bill['bill_id'])
         with open(os.path.join(self.output_dir, "bills", filename), 'w') as f:
@@ -97,6 +113,11 @@ class LegislationScraper(object):
         self.log("add_legislator %s %s: %s" % (legislator['chamber'],
                                                legislator['session'],
                                                legislator['full_name']))
+
+        self.matcher[legislator['chamber']][legislator] = [
+            legislator['session'],
+            legislator['chamber'],
+            legislator['district']]
 
         filename = "%s:%s:%s.json" % (legislator['session'],
                                       legislator['chamber'],
@@ -135,8 +156,9 @@ class LegislationScraper(object):
             chambers.append('lower')
         if not chambers:
             chambers = ['upper', 'lower']
-        for chamber in chambers:
-            for year in years:
+        for year in years:
+            self.matcher = {'upper': NameMatcher(), 'lower': NameMatcher()}
+            for chamber in chambers:
                 try:
                     self.scrape_legislators(chamber, year)
                     self.scrape_bills(chamber, year)
@@ -150,6 +172,7 @@ class LegislationScraper(object):
 class Bill(dict):
 
     def __init__(self, session, chamber, bill_id, title, **kwargs):
+        self['type'] = 'bill'
         self['session'] = session
         self['chamber'] = chamber
         self['bill_id'] = bill_id
@@ -186,25 +209,26 @@ class Vote(dict):
         self['yes_count'] = yes_count
         self['no_count'] = no_count
         self['other_count'] = other_count
-        self['yes'] = []
-        self['no'] = []
-        self['other'] = []
+        self['yes_votes'] = []
+        self['no_votes'] = []
+        self['other_votes'] = []
         self.update(kwargs)
 
     def yes(self, legislator):
-        self['yes'].append(legislator)
+        self['yes_votes'].append(legislator)
 
     def no(self, legislator):
-        self['no'].append(legislator)
+        self['no_votes'].append(legislator)
 
     def other(self, legislator):
-        self['other'].append(legislator)
+        self['other_votes'].append(legislator)
 
 
 class Legislator(dict):
 
     def __init__(self, session, chamber, district, full_name,
                  first_name, last_name, middle_name, **kwargs):
+        self['type'] = 'legislator'
         self['session'] = session
         self['chamber'] = chamber
         self['district'] = district
@@ -213,3 +237,118 @@ class Legislator(dict):
         self['last_name'] = last_name
         self['middle_name'] = middle_name
         self.update(kwargs)
+
+
+class NameMatcher(object):
+    """
+    Match various forms of a name, provided they uniquely identify
+    a person from everyone else we've seen.
+
+    Given the name object:
+     {'fullname': 'Michael J. Stephens', 'first_name': 'Michael',
+      'last_name': 'Stephens', 'middle_name': 'Joseph'}
+    we will match these forms:
+     Michael J. Stephens
+     Michael Stephens
+     Stephens
+     Stephens, Michael
+     Stephens, M
+     Stephens, Michael Joseph
+     Stephens, Michael J
+     Stephens, M J
+     M Stephens
+     M J Stephens
+     Michael Joseph Stephens
+
+    Tests:
+
+    >>> nm = NameMatcher()
+    >>> nm[{'fullname': 'Michael J. Stephens', 'first_name': 'Michael', \
+            'last_name': 'Stephens', 'middle_name': 'J'}] = 1
+    >>> assert nm['Michael J. Stephens'] == 1
+    >>> assert nm['Stephens'] == 1
+    >>> assert nm['Michael Stephens'] == 1
+    >>> assert nm['Stephens, M'] == 1
+    >>> assert nm['Stephens, Michael'] == 1
+    >>> assert nm['Stephens, M J'] == 1
+
+    Add a similar name:
+
+    >>> nm[{'fullname': 'Mike J. Stephens', 'first_name': 'Mike', \
+            'last_name': 'Stephens', 'middle_name': 'Joseph'}] = 2
+
+    Unique:
+
+    >>> assert nm['Mike J. Stephens'] == 2
+    >>> assert nm['Mike Stephens'] == 2
+    >>> assert nm['Michael Stephens'] == 1
+
+    Not unique anymore:
+
+    >>> assert nm['Stephens'] == None
+    >>> assert nm['Stephens, M'] == None
+    >>> assert nm['Stephens, M J'] == None
+    """
+
+    def __init__(self):
+        self.names = {}
+
+    def __setitem__(self, name, obj):
+        """
+        Expects a dictionary with fullname, first_name, last_name and
+        middle_name elements as key.
+
+        While this can grow quickly, we should never be dealing with
+        more than a few hundred legislators at a time so don't worry about
+        it.
+        """
+
+        def add(name):
+            name = name.replace('.', '').lower()
+            if name in self.names:
+                # This form is not unique
+                self.names[name] = None
+            else:
+                self.names[name] = obj
+
+        #add(name['fullname'])
+        if name['last_name']:
+            add(name['last_name'])
+
+        if name['last_name'] and name['first_name']:
+            add("%s, %s" % (name['last_name'], name['first_name']))
+            add("%s %s" % (name['first_name'], name['last_name']))
+
+            if len(name['first_name']) > 1:
+                add("%s %s" % (name['first_name'][0], name['last_name']))
+                add("%s, %s" % (name['last_name'], name['first_name'][0]))
+
+            if name['middle_name']:
+                add("%s, %s %s" % (name['last_name'], name['first_name'],
+                                   name['middle_name']))
+                add("%s %s %s" % (name['first_name'], name['middle_name'],
+                                  name['last_name']))
+
+                if len(name['first_name']) > 1:
+                    add("%s, %s %s" % (name['last_name'],
+                                       name['first_name'][0],
+                                       name['middle_name']))
+
+                if len(name['middle_name']) > 1:
+                    add("%s, %s %s" % (name['last_name'], name['first_name'],
+                                  name['middle_name'][0]))
+                    add("%s %s %s" % (name['first_name'],
+                                      name['middle_name'][0],
+                                      name['last_name']))
+
+                if (len(name['middle_name']) > 1 and
+                    len(name['first_name']) > 1):
+                    add("%s, %s %s" % (name['last_name'],
+                                       name['first_name'][0],
+                                       name['middle_name'][0]))
+
+    def __getitem__(self, name):
+        name = name.strip().replace('.', '').lower()
+        if name in self.names:
+            return self.names[name]
+        return None
