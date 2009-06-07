@@ -4,7 +4,7 @@
 function(doc) {
     if(doc.type == 'legislator') {
         for(var i in doc.sessions) {
-            emit([doc.party, doc.sessions[i], doc.chamber], doc.fullname);
+            emit([doc.party, doc.sessions[i], doc.chamber], doc.full_name);
         }
     }
 }

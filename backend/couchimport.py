@@ -76,7 +76,7 @@ class CouchImporter(object):
                 continue
 
             # Look for merge candidates
-            for match in Legislator.duplicates(self.db, ['chamber'],
+            for match in Legislator.duplicates(self.db, legislator['chamber'],
                                                legislator['district'],
                                                legislator['full_name']):
                 if self.is_adjacent(legislator['session'], match.sessions):
@@ -107,6 +107,15 @@ class CouchImporter(object):
             self.get(doc_id).update(bill)
 
         self.update()
+
+    def is_adjacent(self, session, sessions):
+        """
+        Returns true if session is adjacent to any element of sessions.
+        """
+        for s in sessions:
+            if self.metadata.sessions_adjacent(session, s):
+                return True
+        return False
 
 
 if __name__ == "__main__":

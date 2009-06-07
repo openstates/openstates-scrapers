@@ -77,7 +77,7 @@ class StateMetadata(FiftyStateDocument):
 class Legislator(FiftyStateDocument):
     type = TextField(default='legislator')
     state = TextField()
-    fullname = TextField()
+    full_name = TextField()
     first_name = TextField()
     last_name = TextField()
     middle_name = TextField()
@@ -97,13 +97,13 @@ class Legislator(FiftyStateDocument):
                         endkey=[session, "zzzzzzzz", None])
 
     @classmethod
-    def duplicates(cls, db, chamber, district, fullname):
+    def duplicates(cls, db, chamber, district, full_name):
         """
         Return all legislators which match the given chamber,
-        district and fullname.
+        district and full name.
         """
         return cls.view(db, 'app/leg-duplicates', include_docs=True,
-                        eager=True, key=[chamber, district, fullname])
+                        eager=True, key=[chamber, district, full_name])
 
     @classmethod
     def for_district_and_session(cls, db, chamber, district, session):
