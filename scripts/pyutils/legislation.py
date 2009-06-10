@@ -18,7 +18,9 @@ class ScrapeError(Exception):
 
 
 class NoDataForYear(ScrapeError):
-    """ exception to be raised when no data exists for a given year """
+    """
+    Exception to be raised when no data exists for a given year
+    """
 
     def __init__(self, year):
         self.year = year
@@ -84,6 +86,9 @@ class LegislationScraper(object):
         makedir(os.path.join(self.cache_dir, self.state))
 
     def add_bill(self, bill):
+        """
+        Add a scraped Bill object.
+        """
         self.log("add_bill %s %s: %s" % (bill['chamber'],
                                          bill['session'],
                                          bill['bill_id']))
@@ -110,6 +115,9 @@ class LegislationScraper(object):
             json.dump(bill, f)
 
     def add_legislator(self, legislator):
+        """
+        Add a scraped Legislator object.
+        """
         self.log("add_legislator %s %s: %s" % (legislator['chamber'],
                                                legislator['session'],
                                                legislator['full_name']))
@@ -170,8 +178,30 @@ class LegislationScraper(object):
 
 
 class Bill(dict):
+    """
+    This represents a state bill or resolution.
+    It is just a dict with some required fields and a few
+    convenience methods. Any key/value pairs stored in it besides the
+    required fields will be saved and stored in the backend database
+    for later use.
+    """
 
     def __init__(self, session, chamber, bill_id, title, **kwargs):
+        """
+        Create a new Bill.
+
+        session: the session in which the bill was introduced.
+        chamber: the chamber in which the bill was introduced:
+          either 'upper' or 'lower'
+        bill_id: an identifier assigned by the state to this bill
+          (should be unique within the context of this chamber/session)
+          e.g.: 'HB 1', 'S. 102', 'H.R. 18'
+        title: a title or short description of this bill provided by
+          the state
+
+        Any additional keyword arguments will be associated with this
+        bill and stored in the database.
+        """
         self['type'] = 'bill'
         self['session'] = session
         self['chamber'] = chamber
@@ -184,16 +214,46 @@ class Bill(dict):
         self.update(kwargs)
 
     def add_sponsor(self, type, name, **kwargs):
+        """
+        Associate a sponsor with this bill.
+
+        type: the type of sponsorship, e.g. 'primary', 'cosponsor'
+        name: the name of the sponsor as provided by the state
+        """
         self['sponsors'].append(dict(type=type, name=name, **kwargs))
 
     def add_version(self, name, url, **kwargs):
+        """
+        Add a version of the text of this bill.
+
+        name: a name given to this version of the text, e.g. 'As Introduced',
+          'Version 2', 'As amended', 'Enrolled'
+        url: the location of this version on the state's legislative website.
+          If multiple formats are provided, a good rule of thumb is to
+          prefer text, followed by html, followed by pdf/word/etc.
+        """
         self['versions'].append(dict(name=name, url=url, **kwargs))
 
     def add_action(self, actor, action, date, **kwargs):
+        """
+        Add an action that was performed on this bill.
+
+        actor: a string representing who performed the action.
+          If the action is associated with one of the chambers this
+          should be 'upper' or 'lower'. Alternatively, this could be
+          the name of a committee, a specific legislator, or an outside
+          actor such as 'Governor'.
+        action: a string representing the action performed, e.g. 'Introduced',
+          'Signed by the Governor', 'Amended'
+        date: the date/time this action was performed.
+        """
         self['actions'].append(dict(actor=actor, action=action,
                                     date=str(date), **kwargs))
 
     def add_vote(self, vote):
+        """
+        Associate a Vote object with this bill.
+        """
         self['votes'].append(vote)
 
 
@@ -201,6 +261,28 @@ class Vote(dict):
 
     def __init__(self, chamber, location, date, motion, passed,
                  yes_count, no_count, other_count, **kwargs):
+        """
+        Create a new Vote.
+
+        chamber: the chamber in which the vote was taken, 'upper' or 'lower'
+        location: optionally,
+        date: the date/time when the vote was taken
+        motion: a string representing the motion that was being voted on
+        passed: did the vote pass, True or False
+        yes_count: the number of 'yes' votes
+        no_count: the number of 'no' votes
+        other_count: the number of abstentions, 'present' votes, or anything
+          else not covered by 'yes' or 'no'.
+
+        Any additional keyword arguments will be associated with this
+        vote and stored in the database.
+
+        Examples:
+          Vote('upper', '', '12/7/08', 'Final passage',
+               True, 30, 8, 3)
+          Vote('lower', 'Finance Committee', '3/4/03 03:40:22',
+               'Recommend passage', 12, 1, 0)
+        """
         self['chamber'] = chamber
         self['location'] = location
         self['date'] = str(date)
@@ -215,12 +297,28 @@ class Vote(dict):
         self.update(kwargs)
 
     def yes(self, legislator):
+        """
+        Indicate that a legislator (given as a string of their name) voted
+        'yes'.
+
+        Exapmples:
+          vote.yes('Smith')
+          vote.yes('Alan Hoerth')
+        """
         self['yes_votes'].append(legislator)
 
     def no(self, legislator):
+        """
+        Indicate that a legislator (given as a string of their name) voted
+        'no'.
+        """
         self['no_votes'].append(legislator)
 
     def other(self, legislator):
+        """
+        Indicate that a legislator (given as a string of their name) abstained,
+        voted 'present', or made any other vote not covered by 'yes' or 'no'.
+        """
         self['other_votes'].append(legislator)
 
 
@@ -228,6 +326,22 @@ class Legislator(dict):
 
     def __init__(self, session, chamber, district, full_name,
                  first_name, last_name, middle_name, **kwargs):
+        """
+        Create a Legislator.
+
+        session: the session in which this legislator served
+        chamber: the chamber in which this legislator served, 'upper' or 'lower'
+        district: the district this legislator is representing, as given
+          by the state, e.g. 'District 2', '7th', 'District C'.
+        full_name: the full name of this legislator
+        first_name: the first name of this legislator
+        last_name: the last name of this legislator
+        middle_name: a middle name or initial of this legislator, blank
+          if none is provided
+
+        Any additional keyword arguments will be associated with this
+        Legislator and stored in the database.
+        """
         self['type'] = 'legislator'
         self['session'] = session
         self['chamber'] = chamber
