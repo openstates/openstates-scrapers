@@ -2,7 +2,7 @@
 import urllib2
 import re
 import datetime as dt
-from BeautifulSoup import BeautifulSoup
+import html5lib
 
 # ugly hack
 import sys
@@ -12,6 +12,8 @@ from pyutils.legislation import *
 class SDLegislationScraper(LegislationScraper):
 
     state = 'sd'
+    soup_parser = html5lib.HTMLParser(
+        tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
     metadata = {
         'state_name': 'South Dakota',
@@ -71,29 +73,29 @@ class SDLegislationScraper(LegislationScraper):
         session_url = 'http://legis.state.sd.us/sessions/%s/' % session
         bill_list_url = session_url + 'BillList.aspx'
         self.log('Getting bill list for %s %s' % (chamber, session))
-        bill_list = BeautifulSoup(self.urlopen(bill_list_url))
+        bill_list = self.soup_parser(self.urlopen(bill_list_url))
 
         # Format of bill link contents
-        bill_re = re.compile('%s&nbsp;(\d+)' % bill_abbr)
+        bill_re = re.compile(u'%s\xa0(\d+)' % bill_abbr)
         date_re = re.compile('\d{2}/\d{2}/\d{4}')
 
         for bill_link in bill_list.findAll('a'):
-            if not bill_link.string:
+            if len(bill_link.contents) == 0:
                 # Empty link
                 continue
 
-            bill_match = bill_re.match(bill_link.string)
+            #print bill_link.contents[0]
+            bill_match = bill_re.search(bill_link.contents[0])
             if not bill_match:
-                # Not a bill link
                 continue
 
             # Parse bill ID and name
-            bill_id = bill_link.string.replace('&nbsp;', ' ')
-            bill_name = bill_link.findNext().string
+            bill_id = bill_link.contents[0].replace(u'\xa0', ' ')
+            bill_name = bill_link.findNext().contents[0]
 
             # Download history page
             hist_url = session_url + bill_link['href']
-            history = BeautifulSoup(self.urlopen(hist_url))
+            history = self.soup_parser(self.urlopen(hist_url))
 
             bill = Bill(session, chamber, bill_id, bill_name)
 
@@ -105,27 +107,27 @@ class SDLegislationScraper(LegislationScraper):
                 version_url = "http://legis.state.sd.us/sessions/%s/%s" % (
                     session, version_path)
 
-                version_name = row.findAll('td')[1].a.string.strip()
+                version_name = row.findAll('td')[1].a.contents[0].strip()
 
                 bill.add_version(version_name, version_url)
 
             # Get actions
             act_table = history.find('table')
-            for act_row in act_table.findAll('td'):
-                if not act_row.findChild(0) or not act_row.findChild(0).string:
+            for act_row in act_table.findAll('tr')[6:]:
+                if act_row.find(text='Action'):
                     continue
 
                 # Get the date (if can't find one then this isn't an action)
-                date_match = date_re.match(act_row.findChild(0).string)
+                date_match = date_re.match(act_row.td.a.contents[0])
                 if not date_match:
                     continue
                 act_date = date_match.group(0)
 
                 # Get the action string
                 action = ""
-                for node in act_row.findChild(0).findNext().contents:
-                    if node.string:
-                        action += node.string
+                for node in act_row.findAll('td')[1].contents:
+                    if hasattr(node, 'contents'):
+                        action += node.contents[0]
                     else:
                         action += node
                 action = action.strip()
@@ -150,34 +152,34 @@ class SDLegislationScraper(LegislationScraper):
         session_url = 'http://legis.state.sd.us/sessions/%s/' % session
         bill_list_url = session_url + 'billlist.htm'
         self.log("Getting bill list for %s %s" % (chamber, session))
-        bill_list_raw = self.urlopen(bill_list_url)
-        bill_list_raw = bill_list_raw.replace('BORDER= ', '').replace('"</A>', '"></A>')
-        bill_list = BeautifulSoup(bill_list_raw)
+        #bill_list_raw = self.urlopen(bill_list_url)
+        #bill_list_raw = bill_list_raw.replace('BORDER= ', '').replace('"</A>', '"></A>')
+        bill_list = self.soup_parser(self.urlopen(bill_list_url))
 
         # Bill and text link formats
         bill_re = re.compile('%s (\d+)' % bill_abbr)
         text_re = re.compile('/sessions/%s/bills/%s.*\.htm' % (session, bill_abbr), re.IGNORECASE)
         date_re = re.compile('\d{2}/\d{2}/\d{4}')
 
-        for bill_link in bill_list.findAll('a'):
-            if not bill_link.string:
+        for bill_link in bill_list.findAll('a', href=re.compile('\d\.htm$')):
+            if len(bill_link.contents) == 0:
                 # Empty link
                 continue
 
-            bill_match = bill_re.match(bill_link.string)
+            bill_match = bill_re.match(bill_link.contents[0])
             if not bill_match:
                 # Not bill link
                 continue
 
             # Get the bill ID and name
-            bill_id = bill_link.string
-            bill_name = bill_link.findNext().string
+            bill_id = bill_link.contents[0]
+            bill_name = bill_link.findNext().contents[0]
 
             # Get history page (replacing malformed tag)
             hist_url = session_url + bill_link['href']
-            history_raw = self.urlopen(hist_url)
-            history_raw = history_raw.replace('BORDER=>', '>')
-            history = BeautifulSoup(history_raw)
+            #history_raw = self.urlopen(hist_url)
+            #history_raw = history_raw.replace('BORDER=>', '>')
+            history = self.soup_parser(self.urlopen(hist_url))
 
             # Get URL of latest verion of bill (should be listed last)
             bill_url = history.findAll('a', href=text_re)[-1]['href']
@@ -193,27 +195,27 @@ class SDLegislationScraper(LegislationScraper):
                 version_path = row.findAll('td')[1].a['href']
                 version_url = "http://legis.state.sd.us" + version_path
 
-                version_name = row.findAll('td')[1].a.string.strip()
+                version_name = row.findAll('td')[1].a.contents[0].strip()
 
                 bill.add_version(version_name, version_url)
 
             # Get actions
             act_table = history.find('table')
-            for act_row in act_table.findAll('td'):
-                if not act_row.findChild(0) or not act_row.findChild(0).string:
+            for act_row in act_table.findAll('tr')[6:]:
+                if act_row.find(text="Action"):
                     continue
 
                 # Get the date (if can't find one then this isn't an action)
-                date_match = date_re.match(act_row.findChild(0).string)
+                date_match = date_re.match(act_row.td.a.contents[0])
                 if not date_match:
                     continue
                 act_date = date_match.group(0)
 
                 # Get the action string
                 action = ""
-                for node in act_row.findChild(0).findNext().contents:
-                    if node.string:
-                        action += node.string
+                for node in act_row.findAll('td')[1].contents:
+                    if hasattr(node, 'contents'):
+                        action += node.contents[0]
                     else:
                         action += node
                 action = action.strip()
@@ -236,9 +238,91 @@ class SDLegislationScraper(LegislationScraper):
             for sub in self.metadata['session_details'][year]['sub_sessions']:
                 self.scrape_old_session(chamber, sub)
 
+    def scrape_new_legislators(self, chamber, session):
+        """
+        Scrape legislators from 2009 and later.
+        """
+
+        if chamber == 'upper':
+            search = 'Senate Members'
+        else:
+            search = 'House Members'
+
+        leg_url = "http://legis.state.sd.us/sessions/%s/MemberMenu.aspx" % (
+            session)
+        leg_list = self.soup_parser(self.urlopen(leg_url))
+
+        list_div = leg_list.find(text=search).findNext('div')
+
+        for link in list_div.findAll('a'):
+            full_name = link.contents[0].strip()
+            first_name = full_name.split(', ')[1].split(' ')[0]
+            last_name = full_name.split(',')[0]
+            middle_name = ''
+
+            leg_page_url = "http://legis.state.sd.us/sessions/%s/%s" % (
+                session, link['href'])
+            leg_page = self.soup_parser(self.urlopen(leg_page_url))
+
+            party = leg_page.find(
+                id="ctl00_contentMain_spanParty").contents[0].strip()
+
+            district = leg_page.find(
+                id="ctl00_contentMain_spanDistrict").contents[0].strip()
+
+            occ_span = leg_page.find(id="ctl00_contentMain_spanOccupation")
+            if len(occ_span.contents) > 0:
+                occupation = occ_span.contents[0].strip()
+            else:
+                occupation = None
+
+            legislator = Legislator(session, chamber, district,
+                                    full_name, first_name, last_name,
+                                    middle_name, party=party,
+                                    occupation=occupation)
+            self.add_legislator(legislator)
+
+    def scrape_old_legislators(self, chamber, session):
+        """
+        Scrape pre-2009 legislators.
+        """
+        if chamber == 'upper':
+            chamber_name = 'Senate'
+        else:
+            chamber_name = 'House'
+
+        leg_list_url = "http://legis.state.sd.us/sessions/%s/MembersDistrict.htm" % session
+        leg_list = self.soup_parser(self.urlopen(leg_list_url))
+
+        for district_str in leg_list.findAll('h2'):
+            district = district_str.contents[0].split(' ')[1].lstrip('0')
+
+            for row in district_str.findNext('table').findAll('tr')[1:]:
+                if row.findAll('td')[1].contents[0] != chamber_name:
+                    continue
+
+                full_name = row.td.a.contents[0].strip()
+                first_name = full_name.split(', ')[1].split(' ')[0]
+                last_name = full_name.split(',')[0]
+                middle_name = ''
+
+                party = row.findAll('td')[3].contents[0]
+                occupation = row.findAll('td')[4].contents[0]
+
+                legislator = Legislator(session, chamber, district,
+                                        full_name, first_name, last_name,
+                                        middle_name, party=party,
+                                        occupation=occupation)
+                self.add_legislator(legislator)
+
     def scrape_legislators(self, chamber, year):
         if year not in self.metadata['session_details']:
             raise NoDataForYear(year)
+
+        if int(year) >= 2009:
+            self.scrape_new_legislators(chamber, year)
+        else:
+            self.scrape_old_legislators(chamber, year)
         
 if __name__ == '__main__':
     SDLegislationScraper().run()
