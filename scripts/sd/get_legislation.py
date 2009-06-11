@@ -150,7 +150,7 @@ class SDLegislationScraper(LegislationScraper):
         header = vote_page.find(id="ctl00_contentMain_hdVote").contents[0]
 
         chamber_name = header.split(', ')[1]
-        if chamber_name == 'House':
+        if chamber_name.startswith('House'):
             chamber = 'lower'
         else:
             chamber = 'upper'
@@ -264,6 +264,17 @@ class SDLegislationScraper(LegislationScraper):
                 for node in act_row.findAll('td')[1].contents:
                     if hasattr(node, 'contents'):
                         action += node.contents[0]
+
+                        if node.contents[0].startswith('YEAS'):
+                            # This is a vote!
+                            if node['href'][0] == '/':
+                                vote_url = "http://legis.state.sd.us/%s" % (
+                                    node['href'])
+                            else:
+                                vote_url = "http://legis.state.sd.us/sessions/%s/%s" % (session, node['href'])
+                            vote = self.scrape_old_vote(vote_url)
+                            vote['date'] = act_date
+                            bill.add_vote(vote)
                     else:
                         action += node
                 action = action.strip()
@@ -272,6 +283,50 @@ class SDLegislationScraper(LegislationScraper):
                 bill.add_action(chamber, action, act_date)
 
             self.add_bill(bill)
+
+    def scrape_old_vote(self, url):
+        vote_page = self.soup_parser(self.urlopen(url))
+
+        header = vote_page.h3.contents[0]
+
+        chamber_name = header.split(', ')[1]
+        if chamber_name.startswith('House'):
+            chamber = 'lower'
+        else:
+            chamber = 'upper'
+
+        motion = ', '.join(header.split(', ')[2:])
+
+        def get_count(cell):
+            if len(cell.contents) == 0:
+                return 0
+            else:
+                return int(cell.contents[0])
+
+        results_tbl = vote_page.findAll('table')[1]
+        yes_count = get_count(results_tbl.findAll('td')[1])
+        no_count = get_count(results_tbl.findAll('td')[3])
+        excused_count = get_count(results_tbl.findAll('td')[5])
+        absent_count = get_count(results_tbl.findAll('td')[7])
+        other_count = excused_count + absent_count
+
+        passed = yes_count > no_count
+
+        vote = Vote(chamber, '', None, motion, passed, yes_count, no_count,
+                    other_count, excused_count=excused_count,
+                    absent_count=absent_count)
+
+        vote_tbl = vote_page.table
+        for row in vote_tbl.findAll('tr'):
+            for td in vote_tbl.findAll('td'):
+                if td.contents[0] == 'Yea':
+                    vote.yes(td.findPrevious().contents[0])
+                elif td.contents[0] == 'Nay':
+                    vote.no(td.findPrevious().contents[0])
+                elif td.contents[0] in ['Excused', 'Absent']:
+                    vote.other(td.findPrevious().contents[0])
+
+        return vote
 
     def scrape_bills(self, chamber, year):
         if year not in self.metadata['session_details']:
@@ -339,14 +394,20 @@ class SDLegislationScraper(LegislationScraper):
         else:
             chamber_name = 'House'
 
-        leg_list_url = "http://legis.state.sd.us/sessions/%s/MembersDistrict.htm" % session
+        if int(session) < 2008:
+            filename = 'district.htm'
+        else:
+            filename = 'MembersDistrict.htm'
+
+        leg_list_url = "http://legis.state.sd.us/sessions/%s/%s" % (
+            session, filename)
         leg_list = self.soup_parser(self.urlopen(leg_list_url))
 
         for district_str in leg_list.findAll('h2'):
             district = district_str.contents[0].split(' ')[1].lstrip('0')
 
             for row in district_str.findNext('table').findAll('tr')[1:]:
-                if row.findAll('td')[1].contents[0] != chamber_name:
+                if row.findAll('td')[1].contents[0].strip() != chamber_name:
                     continue
 
                 full_name = row.td.a.contents[0].strip()
@@ -354,8 +415,8 @@ class SDLegislationScraper(LegislationScraper):
                 last_name = full_name.split(',')[0]
                 middle_name = ''
 
-                party = row.findAll('td')[3].contents[0]
-                occupation = row.findAll('td')[4].contents[0]
+                party = row.findAll('td')[3].contents[0].strip()
+                occupation = row.findAll('td')[4].contents[0].strip()
 
                 legislator = Legislator(session, chamber, district,
                                         full_name, first_name, last_name,
