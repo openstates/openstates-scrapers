@@ -69,7 +69,7 @@ def get_bio(state, year, replace=True, verbose=False):
                     chamber == leg.chamber):
                     # Found match
                     log("Getting bio data for %s (%s)" %
-                        (leg.fullname, leg.chamber))
+                        (leg.full_name, leg.chamber))
 
                     bio = votesmart.candidatebio.getBio(match.candidateId)
                     leg._data['votesmart'] = bio.__dict__
