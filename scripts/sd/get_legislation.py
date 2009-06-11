@@ -128,6 +128,13 @@ class SDLegislationScraper(LegislationScraper):
                 for node in act_row.findAll('td')[1].contents:
                     if hasattr(node, 'contents'):
                         action += node.contents[0]
+
+                        if node.contents[0].startswith('YEAS'):
+                            # This is a vote!
+                            vote_url = "http://legis.state.sd.us/sessions/%s/%s" % (session, node['href'])
+                            vote = self.scrape_new_vote(vote_url)
+                            vote['date'] = act_date
+                            bill.add_vote(vote)
                     else:
                         action += node
                 action = action.strip()
@@ -136,6 +143,47 @@ class SDLegislationScraper(LegislationScraper):
                 bill.add_action(chamber, action, act_date)
 
             self.add_bill(bill)
+
+    def scrape_new_vote(self, url):
+        vote_page = self.soup_parser(self.urlopen(url))
+
+        header = vote_page.find(id="ctl00_contentMain_hdVote").contents[0]
+
+        chamber_name = header.split(', ')[1]
+        if chamber_name == 'House':
+            chamber = 'lower'
+        else:
+            chamber = 'upper'
+
+        motion = ', '.join(header.split(', ')[2:])
+
+        yes_count = int(vote_page.find(
+            id="ctl00_contentMain_tdAyes").contents[0])
+        no_count = int(vote_page.find(
+            id="ctl00_contentMain_tdNays").contents[0])
+        excused_count = int(vote_page.find(
+            id="ctl00_contentMain_tdExcused").contents[0])
+        absent_count = int(vote_page.find(
+            id="ctl00_contentMain_tdAbsent").contents[0])
+        other_count = excused_count + absent_count
+
+        passed = yes_count > no_count
+
+        vote = Vote(chamber, '', None, motion, passed, yes_count, no_count,
+                    other_count, excused_count=excused_count,
+                    absent_count=absent_count)
+
+        vote_tbl = vote_page.find(id="ctl00_contentMain_tblVotes")
+        for row in vote_tbl.findAll('tr'):
+            for td in vote_tbl.findAll('td'):
+                if td.contents[0] == 'Yea':
+                    vote.yes(td.findPrevious().contents[0])
+                elif td.contents[0] == 'Nay':
+                    vote.no(td.findPrevious().contents[0])
+                elif td.contents[0] in ['Excused', 'Absent']:
+                    vote.other(td.findPrevious().contents[0])
+
+        return vote
 
     def scrape_old_session(self, chamber, session):
         """

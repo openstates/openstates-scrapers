@@ -432,50 +432,38 @@ class NameMatcher(object):
         more than a few hundred legislators at a time so don't worry about
         it.
         """
+        # We throw possible forms of this name into a set because we
+        # don't want to try to add the same form twice for the same
+        # name
+        forms = set()
+        forms.add(name['full_name'])
+        forms.add(name['last_name'])
+        forms.add("%s, %s" % (name['last_name'], name['first_name']))
+        forms.add("%s %s" % (name['first_name'], name['last_name']))
+        forms.add("%s %s" % (name['first_name'][0], name['last_name']))
+        forms.add("%s, %s" % (name['last_name'], name['first_name'][0]))
+        forms.add("%s (%s)" % (name['last_name'], name['first_name']))
 
-        def add(name):
-            name = name.replace('.', '').lower()
-            if name in self.names:
-                # This form is not unique
-                self.names[name] = None
+        if len(name['middle_name']) > 0:
+            forms.add("%s, %s %s" % (name['last_name'], name['first_name'],
+                                     name['middle_name']))
+            forms.add("%s, %s %s" % (name['last_name'], name['first_name'][0],
+                                     name['middle_name']))
+            forms.add("%s %s %s" % (name['first_name'], name['middle_name'],
+                                    name['last_name']))
+            forms.add("%s, %s %s" % (name['last_name'], name['first_name'][0],
+                                     name['middle_name'][0]))
+            forms.add("%s %s %s" % (name['first_name'], name['middle_name'][0],
+                                    name['last_name']))
+            forms.add("%s, %s %s" % (name['last_name'], name['first_name'],
+                                     name['middle_name'][0]))
+
+        for form in forms:
+            form = form.replace('.', '').lower()
+            if form in self.names:
+                self.names[form] = None
             else:
-                self.names[name] = obj
-
-        #add(name['fullname'])
-        if name['last_name']:
-            add(name['last_name'])
-
-        if name['last_name'] and name['first_name']:
-            add("%s, %s" % (name['last_name'], name['first_name']))
-            add("%s %s" % (name['first_name'], name['last_name']))
-
-            if len(name['first_name']) > 1:
-                add("%s %s" % (name['first_name'][0], name['last_name']))
-                add("%s, %s" % (name['last_name'], name['first_name'][0]))
-
-            if name['middle_name']:
-                add("%s, %s %s" % (name['last_name'], name['first_name'],
-                                   name['middle_name']))
-                add("%s %s %s" % (name['first_name'], name['middle_name'],
-                                  name['last_name']))
-
-                if len(name['first_name']) > 1:
-                    add("%s, %s %s" % (name['last_name'],
-                                       name['first_name'][0],
-                                       name['middle_name']))
-
-                if len(name['middle_name']) > 1:
-                    add("%s, %s %s" % (name['last_name'], name['first_name'],
-                                  name['middle_name'][0]))
-                    add("%s %s %s" % (name['first_name'],
-                                      name['middle_name'][0],
-                                      name['last_name']))
-
-                if (len(name['middle_name']) > 1 and
-                    len(name['first_name']) > 1):
-                    add("%s, %s %s" % (name['last_name'],
-                                       name['first_name'][0],
-                                       name['middle_name'][0]))
+                self.names[form] = obj
 
     def __getitem__(self, name):
         name = name.strip().replace('.', '').lower()
