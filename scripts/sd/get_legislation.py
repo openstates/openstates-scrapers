@@ -155,6 +155,10 @@ class SDLegislationScraper(LegislationScraper):
         else:
             chamber = 'upper'
 
+        location = ' '.join(chamber_name.split(' ')[1:])
+        if location.startswith('of Representatives'):
+            location = ''
+
         motion = ', '.join(header.split(', ')[2:])
 
         yes_count = int(vote_page.find(
@@ -169,7 +173,8 @@ class SDLegislationScraper(LegislationScraper):
 
         passed = yes_count > no_count
 
-        vote = Vote(chamber, '', None, motion, passed, yes_count, no_count,
+        vote = Vote(chamber, location, None, motion, passed,
+                    yes_count, no_count,
                     other_count, excused_count=excused_count,
                     absent_count=absent_count)
 
@@ -295,6 +300,10 @@ class SDLegislationScraper(LegislationScraper):
         else:
             chamber = 'upper'
 
+        location = ' '.join(chamber_name.split(' ')[1:])
+        if location.startswith('of Representatives'):
+            location = ''
+
         motion = ', '.join(header.split(', ')[2:])
 
         def get_count(cell):
@@ -312,7 +321,8 @@ class SDLegislationScraper(LegislationScraper):
 
         passed = yes_count > no_count
 
-        vote = Vote(chamber, '', None, motion, passed, yes_count, no_count,
+        vote = Vote(chamber, location, None, motion, passed,
+                    yes_count, no_count,
                     other_count, excused_count=excused_count,
                     absent_count=absent_count)
 
