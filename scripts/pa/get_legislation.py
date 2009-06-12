@@ -66,15 +66,16 @@ class PALegislationScraper(LegislationScraper):
         bill_list = BeautifulSoup(self.urlopen(bill_list_url))
 
         # Get all bill links
-        re_str = "body=%s&type=B&bn=\d+" % bill_abbr
+        re_str = "body=%s&type=(B|R)&bn=\d+" % bill_abbr
         links = bill_list.findAll(href=re.compile(re_str))
 
         for link in links:
             bill_number = link.contents[0]
-            bill_id = bill_abbr + 'B' + bill_number
+            type = re.search('type=(B|R)', link['href']).group(1)
+            bill_id = "%s%s %s" % (bill_abbr, type, bill_number)
 
             # Get info page
-            info_url = 'http://www.legis.state.pa.us/cfdocs/billinfo/billinfo.cfm?syear=%s&sind=%i&body=%s&type=B&BN=%s' % (year1, special, bill_abbr, bill_number)
+            info_url = 'http://www.legis.state.pa.us/cfdocs/billinfo/billinfo.cfm?syear=%s&sind=%i&body=%s&type=%s&BN=%s' % (year1, special, bill_abbr, type, bill_number)
             info_page = BeautifulSoup(self.urlopen(info_url))
 
             # Get bill title
@@ -92,53 +93,63 @@ class PALegislationScraper(LegislationScraper):
                 text_url = 'http://www.legis.state.pa.us%s' % text_link['href']
                 bill.add_version(text_link.string.strip(), text_url)
 
-            # Get bill history page
-            history_url = 'http://www.legis.state.pa.us/cfdocs/billinfo/bill_history.cfm?syear=%s&sind=%i&body=%s&type=B&BN=%s' % (year1, special, bill_abbr, bill_number)
-            history = BeautifulSoup(self.urlopen(history_url))
-
-            # Get sponsors
-            # (format changed in 2009)
-            if int(year1) < 2009:
-                sponsors = history.find(text='Sponsors:').parent.findNext('td').find('td').string.strip().replace(' and', ',').split(', ')
-                bill.add_sponsor('primary', sponsors[0])
-                for sponsor in sponsors[1:]:
-                    bill.add_sponsor('cosponsor', sponsor)
-            else:
-                sponsors = history.find(text='Sponsors:').parent.findNext().findAll('a')
-                bill.add_sponsor('primary', sponsors[0].string)
-                for sponsor in sponsors[1:]:
-                    bill.add_sponsor('cosponsor', sponsor.string)
-
-            # Get actions
-            act_table = history.find(text="Actions:").parent.findNextSibling()
-            act_chamber = chamber
-            for row in act_table.findAll('tr'):
-                act_raw = ""
-                for node in row.td.div:
-                    if hasattr(node, 'contents'):
-                        act_raw += node.contents[0]
-                    else:
-                        act_raw += node
-                act_raw = act_raw.replace('&#160;', ' ')
-                act_match = re.match('(.*),\s+((\w+\.?) (\d+), (\d{4}))', act_raw)
-                if act_match:
-                    bill.add_action(act_chamber, act_match.group(1),
-                                    act_match.group(2).strip())
-                else:
-                    # Handle actions from the other chamber
-                    # ("In the (House|Senate)" row followed by actions that
-                    # took place in that chamber)
-                    cham_match = re.match('In the (House|Senate)', act_raw)
-                    if not cham_match:
-                        # Ignore?
-                        continue
-
-                    if cham_match.group(1) == 'House':
-                        act_chamber = 'lower'
-                    else:
-                        act_chamber = 'upper'
-
+            history_url = 'http://www.legis.state.pa.us/cfdocs/billinfo/bill_history.cfm?syear=%s&sind=%i&body=%s&type=%s&BN=%s' % (year1, special, bill_abbr, type, bill_number)
+            self.scrape_history(bill, history_url)
             self.add_bill(bill)
+
+    def scrape_history(self, bill, url):
+        """
+        Given a bill and the url of its history page, scrape all
+        historical information (actions and sponsors) related to that bill.
+        """
+        history = BeautifulSoup(self.urlopen(url))
+
+        self.scrape_sponsors(bill, history)
+
+        act_table = history.find(text="Actions:").parent.findNextSibling()
+        self.scrape_actions(bill, act_table)
+
+    def scrape_sponsors(self, bill, history):
+        # Sponsor format changed in 2009
+        year1 = bill['session'][0:4]
+        if int(year1) < 2009:
+            sponsors = history.find(text='Sponsors:').parent.findNext('td').find('td').string.strip().replace(' and', ',').split(', ')
+            bill.add_sponsor('primary', sponsors[0])
+            for sponsor in sponsors[1:]:
+                bill.add_sponsor('cosponsor', sponsor)
+        else:
+            sponsors = history.find(text='Sponsors:').parent.findNext().findAll('a')
+            bill.add_sponsor('primary', sponsors[0].string)
+            for sponsor in sponsors[1:]:
+                bill.add_sponsor('cosponsor', sponsor.string)
+
+    def scrape_actions(self, bill, act_table):
+        act_chamber = bill['chamber']
+        for row in act_table.findAll('tr'):
+            act_raw = ""
+            for node in row.td.div:
+                if hasattr(node, 'contents'):
+                    act_raw += node.contents[0]
+                else:
+                    act_raw += node
+            act_raw = act_raw.replace('&#160;', ' ')
+            act_match = re.match('(.*),\s+((\w+\.?) (\d+), (\d{4}))', act_raw)
+            if act_match:
+                bill.add_action(act_chamber, act_match.group(1),
+                                act_match.group(2).strip())
+            else:
+                # Handle actions from the other chamber
+                # ("In the (House|Senate)" row followed by actions that
+                # took place in that chamber)
+                cham_match = re.match('In the (House|Senate)', act_raw)
+                if not cham_match:
+                    # Ignore?
+                    continue
+
+                if cham_match.group(1) == 'House':
+                    act_chamber = 'lower'
+                else:
+                    act_chamber = 'upper'
 
     def scrape_bills(self, chamber, year):
         session = "%s-%d" % (year, int(year) + 1)
