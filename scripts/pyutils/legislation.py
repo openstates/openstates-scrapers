@@ -90,7 +90,7 @@ class LegislationScraper(object):
         Grab all the legislators who served in a given year.
         Should raise a NoDataForYear exception if the year is invalid.
         """
-        raise NotImplementedError('LegislationScrapers must define a'
+        raise NotImplementedError('LegislationScrapers must define a '
                                   'scrape_legislators method')
 
     def scrape_bills(self, chamber, year):
@@ -98,7 +98,7 @@ class LegislationScraper(object):
         Grab all the bills for a given chamber and year.
         Should raise a NoDataForYear exception if the year is invalid.
         """
-        raise NotImplementedError('LegislationScrapers must define a'
+        raise NotImplementedError('LegislationScrapers must define a '
                                   'scrape_bills method')
 
     def add_bill(self, bill):
