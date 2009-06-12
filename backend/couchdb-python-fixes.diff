@@ -1,0 +1,45 @@
+Index: couchdb/schema.py
+===================================================================
+--- couchdb/schema.py	(revision 150)
++++ couchdb/schema.py	(working copy)
+@@ -386,7 +386,7 @@
+         def _wrapper(row):
+             if eager:
+                 if row.doc is not None:
+-                    return row.doc
++                    return cls.wrap(row.doc)
+                 return cls.load(db, row.id)
+             data = row.value
+             data['_id'] = row.id
+@@ -409,7 +409,7 @@
+         def _wrapper(row):
+             if eager:
+                 if row.doc is not None:
+-                    return row.doc
++                    return cls.wrap(row.doc)
+                 return cls.load(db, row.id)
+             data = row.value
+             data['_id'] = row.id
+@@ -693,6 +693,12 @@
+         def __nonzero__(self):
+             return bool(self.list)
+ 
++        def __contains__(self, value):
++            for item in iter(self):
++                if item == value:
++                    return True
++            return False
++
+         def append(self, *args, **kwargs):
+             if args:
+                 assert len(args) == 1
+@@ -705,3 +711,9 @@
+         def extend(self, list):
+             for item in list:
+                 self.append(item)
++
++        def index(self, value):
++            for index in range(len(self)):
++                if value == self[index]:
++                    return index
++            raise ValueError('Proxy.index(x): x not in list')

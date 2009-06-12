@@ -112,7 +112,7 @@ class LegislationScraper(object):
 
     def add_bill(self, bill, *args):
         """
-        Add a scraped Bill object.
+        Add a scraped :class:`pyutils.legislation.Bill` object.
         """
         if len(args) > 0:
             self.old_add_bill(bill, *args)
@@ -145,7 +145,7 @@ class LegislationScraper(object):
 
     def add_legislator(self, legislator):
         """
-        Add a scraped Legislator object.
+        Add a scraped :class:`pyutils.legislation.Legislator` object.
         """
         self.log("add_legislator %s %s: %s" % (legislator['chamber'],
                                                legislator['session'],
@@ -270,15 +270,15 @@ class Bill(dict):
 
     def __init__(self, session, chamber, bill_id, title, **kwargs):
         """
-        Create a new Bill.
+        Create a new :obj:`Bill`.
 
-        session: the session in which the bill was introduced.
-        chamber: the chamber in which the bill was introduced:
+        :param session: the session in which the bill was introduced.
+        :param chamber: the chamber in which the bill was introduced:
           either 'upper' or 'lower'
-        bill_id: an identifier assigned by the state to this bill
+        :param bill_id: an identifier assigned by the state to this bill
           (should be unique within the context of this chamber/session)
           e.g.: 'HB 1', 'S. 102', 'H.R. 18'
-        title: a title or short description of this bill provided by
+        :param title: a title or short description of this bill provided by
           the state
 
         Any additional keyword arguments will be associated with this
@@ -299,8 +299,8 @@ class Bill(dict):
         """
         Associate a sponsor with this bill.
 
-        type: the type of sponsorship, e.g. 'primary', 'cosponsor'
-        name: the name of the sponsor as provided by the state
+        :param type: the type of sponsorship, e.g. 'primary', 'cosponsor'
+        :param name: the name of the sponsor as provided by the state
         """
         self['sponsors'].append(dict(type=type, name=name, **kwargs))
 
@@ -308,9 +308,9 @@ class Bill(dict):
         """
         Add a version of the text of this bill.
 
-        name: a name given to this version of the text, e.g. 'As Introduced',
+        :param name: a name given to this version of the text, e.g. 'As Introduced',
           'Version 2', 'As amended', 'Enrolled'
-        url: the location of this version on the state's legislative website.
+        :param url: the location of this version on the state's legislative website.
           If multiple formats are provided, a good rule of thumb is to
           prefer text, followed by html, followed by pdf/word/etc.
         """
@@ -320,21 +320,21 @@ class Bill(dict):
         """
         Add an action that was performed on this bill.
 
-        actor: a string representing who performed the action.
+        :param actor: a string representing who performed the action.
           If the action is associated with one of the chambers this
           should be 'upper' or 'lower'. Alternatively, this could be
           the name of a committee, a specific legislator, or an outside
           actor such as 'Governor'.
-        action: a string representing the action performed, e.g. 'Introduced',
+        :param action: a string representing the action performed, e.g. 'Introduced',
           'Signed by the Governor', 'Amended'
-        date: the date/time this action was performed.
+        :param date: the date/time this action was performed.
         """
         self['actions'].append(dict(actor=actor, action=action,
                                     date=str(date), **kwargs))
 
     def add_vote(self, vote):
         """
-        Associate a Vote object with this bill.
+        Associate a :class:`pyutils.legislation.Vote` object with this bill.
         """
         self['votes'].append(vote)
 
@@ -344,21 +344,22 @@ class Vote(dict):
     def __init__(self, chamber, date, motion, passed,
                  yes_count, no_count, other_count, **kwargs):
         """
-        Create a new Vote.
+        Create a new :obj:`Vote`.
 
-        chamber: the chamber in which the vote was taken, 'upper' or 'lower'
-        date: the date/time when the vote was taken
-        motion: a string representing the motion that was being voted on
-        passed: did the vote pass, True or False
-        yes_count: the number of 'yes' votes
-        no_count: the number of 'no' votes
-        other_count: the number of abstentions, 'present' votes, or anything
+        :param chamber: the chamber in which the vote was taken, 'upper' or 'lower'
+        :param date: the date/time when the vote was taken
+        :param motion: a string representing the motion that was being voted on
+        :param passed: did the vote pass, True or False
+        :param yes_count: the number of 'yes' votes
+        :param no_count: the number of 'no' votes
+        :param other_count: the number of abstentions, 'present' votes, or anything
           else not covered by 'yes' or 'no'.
 
         Any additional keyword arguments will be associated with this
         vote and stored in the database.
 
-        Examples:
+        Examples: ::
+
           Vote('upper', '', '12/7/08', 'Final passage',
                True, 30, 8, 3)
           Vote('lower', 'Finance Committee', '3/4/03 03:40:22',
@@ -381,9 +382,10 @@ class Vote(dict):
         Indicate that a legislator (given as a string of their name) voted
         'yes'.
 
-        Exapmples:
-          vote.yes('Smith')
-          vote.yes('Alan Hoerth')
+        Examples: ::
+
+           vote.yes('Smith')
+           vote.yes('Alan Hoerth')
         """
         self['yes_votes'].append(legislator)
 
@@ -409,14 +411,14 @@ class Legislator(dict):
         """
         Create a Legislator.
 
-        session: the session in which this legislator served
-        chamber: the chamber in which this legislator served, 'upper' or 'lower'
-        district: the district this legislator is representing, as given
+        :param session: the session in which this legislator served
+        :param chamber: the chamber in which this legislator served, 'upper' or 'lower'
+        :param district: the district this legislator is representing, as given
           by the state, e.g. 'District 2', '7th', 'District C'.
-        full_name: the full name of this legislator
-        first_name: the first name of this legislator
-        last_name: the last name of this legislator
-        middle_name: a middle name or initial of this legislator, blank
+        :param full_name: the full name of this legislator
+        :param first_name: the first name of this legislator
+        :param last_name: the last name of this legislator
+        :param middle_name: a middle name or initial of this legislator, blank
           if none is provided
 
         Any additional keyword arguments will be associated with this
