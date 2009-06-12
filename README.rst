@@ -75,9 +75,11 @@ of the AGPLv3.
 Requirements
 ============
 
-Python (2.4+)
+Python (2.5+)
 -------------
 * BeautifulSoup
+* html5lib
+* simplejson if on Python 2.5
 
 Ruby (1.8.*+)
 -------------
