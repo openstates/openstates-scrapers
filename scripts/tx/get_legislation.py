@@ -24,8 +24,7 @@ class TXLegislationScraper(LegislationScraper):
         'lower_term': 2,
         'sessions': ['81'],
         'session_details': {
-            '81': {'years': [2009, 2010], 'election_year': 2008,
-                      'sub_sessions': []},
+            '81': {'years': [2009, 2010], 'sub_sessions': []},
             }
         }
 

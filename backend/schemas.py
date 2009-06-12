@@ -68,7 +68,7 @@ class StateMetadata(FiftyStateDocument):
         """
         session = None
         for (s, details) in self.session_details.items():
-            if details['election_year'] == election_year:
+            if details['years'][0] == election_year + 1:
                 session = s
                 break
         return session

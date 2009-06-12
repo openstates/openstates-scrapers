@@ -28,45 +28,27 @@ class UTLegislationScraper(LegislationScraper):
                              '2003', '2004', '2005', '2006', '2007', '2008',
                              '2009'],
                 'session_details':
-                {'1997':
-                 {'years': [1997], 'sub_sessions': ['1997 S1', '1997 S2'],
-                  'election_year': 1996},
-                 '1998':
-                 {'years': [1998], 'sub_sessions': [], 'election_year': 1996},
-                 '1999':
-                 {'years': [1999], 'sub_sessions': [], 'election_year': 1998},
-                 '2000':
-                 {'years': [2000], 'sub_sessions': [], 'election_year': 1998},
-                 '2001':
-                 {'years': [2001], 'sub_sessions': ['2001 S1', '2001 S2'],
-                  'election_year': 2000},
-                 '2002':
-                 {'years': [2002],
-                  'sub_sessions': ['2002 S2', '2002 S3', '2002 S4', '2002 S5',
-                                   '2002 S6'],
-                  'election_year': 2000},
-                 '2003':
-                 {'years': [2003], 'sub_sessions': ['2003 S1', '2003 S2'],
-                  'election_year': 2002},
-                 '2004':
-                 {'years': [2004], 'sub_sessions': ['2003 S3', '2003 S4'],
-                  'election_year': 2002},
-                 '2005':
-                 {'years': [2005], 'sub_sessions': ['2004 S1', '2004 S2'],
-                  'election_year': 2004},
-                 '2006':
-                 {'years': [2006],
-                  'sub_sessions': ['2006 S3', '2006 S4', '2006 S5'],
-                  'election_year': 2004},
-                 '2007':
-                 {'years': [2007],'sub_sessions': ['2007 S1'],
-                  'election_year': 2006},
-                 '2008':
-                 {'years': [2008], 'sub_sessions': ['2008 S2'],
-                  'election_year': 2006},
-                 '2009':
-                 {'years': [2009], 'sub_sessions': ['2009 S1'],
-                  'election_year': 2008}
+                {'1997': {'years': [1997],
+                          'sub_sessions': ['1997 S1', '1997 S2']},
+                 '1998': {'years': [1998], 'sub_sessions': []},
+                 '1999': {'years': [1999], 'sub_sessions': []},
+                 '2000': {'years': [2000], 'sub_sessions': []},
+                 '2001': {'years': [2001],
+                          'sub_sessions': ['2001 S1', '2001 S2']},
+                 '2002': {'years': [2002],
+                          'sub_sessions': ['2002 S2', '2002 S3', '2002 S4',
+                                           '2002 S5', '2002 S6']},
+                 '2003': {'years': [2003],
+                          'sub_sessions': ['2003 S1', '2003 S2']},
+                 '2004': {'years': [2004],
+                          'sub_sessions': ['2003 S3', '2003 S4']},
+                 '2005': {'years': [2005],
+                          'sub_sessions': ['2004 S1', '2004 S2']},
+                 '2006': {'years': [2006],
+                          'sub_sessions': ['2006 S3', '2006 S4', '2006 S5']},
+                 '2007': {'years': [2007],'sub_sessions': ['2007 S1']},
+                 '2008': {'years': [2008], 'sub_sessions': ['2008 S2']},
+                 '2009': {'years': [2009], 'sub_sessions': ['2009 S1']},
                  }
                 }
 

@@ -38,7 +38,6 @@ class PALegislationScraper(LegislationScraper):
                 self.metadata['sessions'].append(session)
                 self.metadata['session_details'][session] = {
                     'years': [year1, year2],
-                    'election_year': year1 - 1,
                     'sub_sessions': [],
                     }
             else:
