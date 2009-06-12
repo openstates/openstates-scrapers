@@ -368,11 +368,12 @@ class CASQLImporter(LegislationScraper):
                     vote_chamber = ''
                     vote_location = full_loc
 
-                fsvote = Vote(vote_chamber, vote_location,
+                fsvote = Vote(vote_chamber,
                               vote.vote_date_time,
                               vote.motion.motion_text, result,
                               vote.ayes, vote.noes, vote.abstain,
-                              threshold=vote.threshold)
+                              threshold=vote.threshold,
+                              location=vote_location)
 
                 for record in vote.votes:
                     if record.vote_code == 'AYE':

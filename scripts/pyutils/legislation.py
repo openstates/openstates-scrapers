@@ -281,13 +281,12 @@ class Bill(dict):
 
 class Vote(dict):
 
-    def __init__(self, chamber, location, date, motion, passed,
+    def __init__(self, chamber, date, motion, passed,
                  yes_count, no_count, other_count, **kwargs):
         """
         Create a new Vote.
 
         chamber: the chamber in which the vote was taken, 'upper' or 'lower'
-        location: optionally,
         date: the date/time when the vote was taken
         motion: a string representing the motion that was being voted on
         passed: did the vote pass, True or False
@@ -306,7 +305,6 @@ class Vote(dict):
                'Recommend passage', 12, 1, 0)
         """
         self['chamber'] = chamber
-        self['location'] = location
         self['date'] = str(date)
         self['motion'] = motion
         self['passed'] = passed

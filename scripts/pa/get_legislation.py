@@ -186,7 +186,6 @@ class PALegislationScraper(LegislationScraper):
                 vote['motion'] = motion
                 vote['date'] = date
                 vote['chamber'] = chamber
-                vote['location'] = location
 
                 bill.add_vote(vote)
 
@@ -206,7 +205,7 @@ class PALegislationScraper(LegislationScraper):
 
         passed = yes_count > no_count
 
-        vote = Vote(None, None, None, None, passed, yes_count, no_count,
+        vote = Vote(None, None, None, passed, yes_count, no_count,
                     other_count)
 
         vote_tbl = header.findNext('div').findAll('table')[2]

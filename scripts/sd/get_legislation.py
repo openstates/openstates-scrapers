@@ -173,10 +173,11 @@ class SDLegislationScraper(LegislationScraper):
 
         passed = yes_count > no_count
 
-        vote = Vote(chamber, location, None, motion, passed,
+        vote = Vote(chamber, None, motion, passed,
                     yes_count, no_count,
                     other_count, excused_count=excused_count,
-                    absent_count=absent_count)
+                    absent_count=absent_count,
+                    location=location)
 
         vote_tbl = vote_page.find(id="ctl00_contentMain_tblVotes")
         for row in vote_tbl.findAll('tr'):
@@ -321,10 +322,11 @@ class SDLegislationScraper(LegislationScraper):
 
         passed = yes_count > no_count
 
-        vote = Vote(chamber, location, None, motion, passed,
+        vote = Vote(chamber, None, motion, passed,
                     yes_count, no_count,
                     other_count, excused_count=excused_count,
-                    absent_count=absent_count)
+                    absent_count=absent_count,
+                    location=location)
 
         vote_tbl = vote_page.table
         for row in vote_tbl.findAll('tr'):

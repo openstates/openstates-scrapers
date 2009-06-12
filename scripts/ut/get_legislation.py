@@ -161,9 +161,10 @@ class UTLegislationScraper(LegislationScraper):
                     vote_chamber = ''
                     vote_location = actor
 
-                vote = Vote(vote_chamber, vote_location, act_date,
+                vote = Vote(vote_chamber, act_date,
                             action, passed, yes_count, no_count,
-                            other_count)
+                            other_count,
+                            location=vote_location)
 
                 yes_votes = re.split('\s{2,}', match.group(2).strip())
                 no_votes = re.split('\s{2,}', match.group(4).strip())
