@@ -177,7 +177,11 @@ class PALegislationScraper(LegislationScraper):
                 vote = self.scrape_vote_details(url)
 
                 date = link.parent.parent.td.contents[0].strip(' \r\n\t-')
-                motion = link.contents[0].split(', ')[1].strip()
+
+                if link.contents[0].find(',') >= 0:
+                    motion = link.contents[0].split(', ')[1].strip()
+                else:
+                    motion = 'Vote'
 
                 vote['motion'] = motion
                 vote['date'] = date
@@ -223,7 +227,7 @@ class PALegislationScraper(LegislationScraper):
         self.scrape_session(chamber, session)
         for special in self.metadata['session_details'][session]['sub_sessions']:
             session_num = re.search('#(\d+)', special).group(1)
-            self.scrape_session(chamber, session, special)
+            self.scrape_session(chamber, session, session_num)
 
     def scrape_legislators(self, chamber, year):
         # Pennsylvania doesn't make member lists easily available
