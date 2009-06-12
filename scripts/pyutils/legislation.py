@@ -3,6 +3,7 @@ import datetime
 import csv
 import os
 import urllib2
+import warnings
 from hashlib import md5
 try:
     import json
@@ -89,15 +90,17 @@ class LegislationScraper(object):
         """
         Grab metadata about this state's legislature.
         """
-        return self.metadata
+        if hasattr(self, 'metadata'):
+            return self.metadata
+        else:
+            return {}
 
     def scrape_legislators(self, chamber, year):
         """
         Grab all the legislators who served in a given year.
         Should raise a NoDataForYear exception if the year is invalid.
         """
-        raise NotImplementedError('LegislationScrapers must define a '
-                                  'scrape_legislators method')
+        pass
 
     def scrape_bills(self, chamber, year):
         """
@@ -107,10 +110,14 @@ class LegislationScraper(object):
         raise NotImplementedError('LegislationScrapers must define a '
                                   'scrape_bills method')
 
-    def add_bill(self, bill):
+    def add_bill(self, bill, *args):
         """
         Add a scraped Bill object.
         """
+        if len(args) > 0:
+            self.old_add_bill(bill, *args)
+            return
+
         self.log("add_bill %s %s: %s" % (bill['chamber'],
                                          bill['session'],
                                          bill['bill_id']))
@@ -156,6 +163,53 @@ class LegislationScraper(object):
                   'w') as f:
             json.dump(legislator, f)
 
+    def add_sponsorship(self, bill_chamber, bill_session, bill_id, sponsor_type, sponsor_name, **kwargs):
+        """
+        Deprecated method of associating a sponsor with a bill.
+        """
+        warnings.warn("deprecated scraper interface", DeprecationWarning)
+        self.log("add_sponsorship %s %s: %s sponsors (%s) %s" %
+                 (bill_chamber, bill_session, bill_id,
+                  sponsor_type, sponsor_name))
+
+        bill = self.old_bills[(bill_chamber, bill_session, bill_id)]
+        bill.add_sponsor(sponsor_type, sponsor_name)
+
+    def add_action(self, bill_chamber, bill_session, bill_id, actor, action_text, action_date, **kwargs):
+        """
+        Deprecated method of associating an action with a bill.
+        """
+        warnings.warn("deprecated scraper interface", DeprecationWarning)
+        self.log("add_action %s %s: %s action '%s...' by %s" %
+                 (bill_chamber, bill_session, bill_id,
+                  action_text, actor))
+
+        bill = self.old_bills[(bill_chamber, bill_session, bill_id)]
+        bill.add_action(actor, action_text, action_date)
+
+    def add_bill_version(self, bill_chamber, bill_session, bill_id, version_name, version_url, **kwargs):
+        """
+        Deprecated method of associating a text version with a bill.
+        """
+        warnings.warn("deprecated scraper interface", DeprecationWarning)
+        self.log("add_bill_version %s %s: %s.%s" %
+                 (bill_chamber, bill_session, bill_id, version_name))
+
+        bill = self.old_bills[(bill_chamber, bill_session, bill_id)]
+        bill.add_version(version_name, version_url)
+
+    def old_add_bill(self, chamber, session, bill_id, title):
+        warnings.warn("deprecated scraper interface", DeprecationWarning,
+                      stacklevel=2)
+        self.log("add_bill %s %s: %s" % (chamber, session, bill_id))
+
+        bill = Bill(session, chamber, bill_id, title)
+        self.old_bills[(chamber, session, bill_id)] = bill
+
+    def be_verbose(self, msg):
+        warnings.warn("use log() instead", DeprecationWarning)
+        self.log(msg)
+
     def write_metadata(self):
         with open(os.path.join(self.output_dir, 'state_metadata.json'),
                   'w') as f:
@@ -190,8 +244,14 @@ class LegislationScraper(object):
             self.matcher = {'upper': NameMatcher(), 'lower': NameMatcher()}
             for chamber in chambers:
                 try:
+                    self.old_bills = {}
+
                     self.scrape_legislators(chamber, year)
                     self.scrape_bills(chamber, year)
+
+                    # Write out any bills added using the old API
+                    for bill in self.old_bills.values():
+                        self.add_bill(bill)
                 except NoDataForYear, e:
                     if options.all_years:
                         pass
