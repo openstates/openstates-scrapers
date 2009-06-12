@@ -162,7 +162,42 @@ class PALegislationScraper(LegislationScraper):
             self.scrape_session(chamber, session, special)
 
     def scrape_legislators(self, chamber, year):
-        pass
+        # Pennsylvania doesn't make member lists easily available
+        # for previous sessions, unfortunately
+        if int(year) < 2009:
+            raise NoDataForYear(year)
+
+        session = "%s-%d" % (year, int(year) + 1)
+
+        if chamber == 'upper':
+            url = "http://www.legis.state.pa.us/cfdocs/legis/home/member_information/senators_alpha.cfm"
+        else:
+            url = "http://www.legis.state.pa.us/cfdocs/legis/home/member_information/representatives_alpha.cfm"
+
+        member_list = BeautifulSoup(self.urlopen(url))
+
+        for link in member_list.findAll('a', href=re.compile('_bio\.cfm\?id=')):
+            full_name = link.contents[0][0:-4]
+            last_name = full_name.split(',')[0]
+            first_name = full_name.split(' ')[1]
+
+            if len(full_name.split(' ')) > 2:
+                middle_name = full_name.split(' ')[2].strip(',')
+            else:
+                middle_name = ''
+
+            party = link.contents[0][-2]
+            if party == 'R':
+                party = "Republican"
+            elif party == 'D':
+                party = "Democrat"
+
+            district = re.search("District (\d+)", link.parent.contents[1]).group(0)
+
+            legislator = Legislator(session, chamber, district,
+                                    full_name, first_name, last_name,
+                                    middle_name, party=party)
+            self.add_legislator(legislator)
 
 if __name__ == '__main__':
     PALegislationScraper().run()

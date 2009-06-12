@@ -85,6 +85,12 @@ class LegislationScraper(object):
         makedir(os.path.join(self.output_dir, "legislators"))
         makedir(os.path.join(self.cache_dir, self.state))
 
+    def scrape_metadata(self):
+        """
+        Grab metadata about this state's legislature.
+        """
+        return self.metadata
+
     def scrape_legislators(self, chamber, year):
         """
         Grab all the legislators who served in a given year.
@@ -153,7 +159,7 @@ class LegislationScraper(object):
     def write_metadata(self):
         with open(os.path.join(self.output_dir, 'state_metadata.json'),
                   'w') as f:
-            json.dump(self.metadata, f)
+            json.dump(self.scrape_metadata(), f)
 
     def run(self):
         options, spares = OptionParser(
