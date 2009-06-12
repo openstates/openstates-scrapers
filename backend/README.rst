@@ -12,6 +12,7 @@ Requirements
 * a recent SVN checkout of `python-couchdb <http://code.google.com/p/couchdb-python/>`_ patched with the ``couchdb-python-fixes.diff`` file in this directory
 * `CouchApp <http://github.com/jchris/couchapp/tree/master>`_
 * `python-votesmart <http://github.com/sunlightlabs/python-votesmart/tree/master>`_  and an API Key if you want to grab biographical data from `Project Vote Smart <http://www.votesmart.org/>`_
+* `argparse <http://code.google.com/p/argparse/>`_
 
 Examples
 --------

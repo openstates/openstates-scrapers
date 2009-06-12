@@ -1,3 +1,4 @@
+from __future__ import with_statement
 from optparse import make_option, OptionParser
 import datetime
 import csv
