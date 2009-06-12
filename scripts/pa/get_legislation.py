@@ -95,6 +95,10 @@ class PALegislationScraper(LegislationScraper):
 
             history_url = 'http://www.legis.state.pa.us/cfdocs/billinfo/bill_history.cfm?syear=%s&sind=%i&body=%s&type=%s&BN=%s' % (year1, special, bill_abbr, type, bill_number)
             self.scrape_history(bill, history_url)
+
+            vote_url = 'http://www.legis.state.pa.us/cfdocs/billinfo/bill_votes.cfm?syear=%s&sind=%d&body=%s&type=%s&bn=%s' % (year1, special, bill_abbr, type, bill_number)
+            self.scrape_votes(bill, vote_url)
+
             self.add_bill(bill)
 
     def scrape_history(self, bill, url):
@@ -151,6 +155,66 @@ class PALegislationScraper(LegislationScraper):
                 else:
                     act_chamber = 'upper'
 
+    def scrape_votes(self, bill, url):
+        votes_page = BeautifulSoup(self.urlopen(url))
+
+        for td in votes_page.findAll('td', {'class': 'vote'}):
+            prev = td.findPrevious().contents[0].strip()
+            if prev == 'Senate':
+                chamber = 'upper'
+                location = ''
+            elif prev == 'House':
+                chamber = 'lower'
+                location = ''
+            else:
+                # Committee votes come in a number of different formats
+                # that we don't handle yet
+                continue
+
+            votes_list = BeautifulSoup(self.urlopen(td.a['href']))
+            for link in votes_list.findAll('a', href=re.compile('rc_view')):
+                url = "http://www.legis.state.pa.us/CFDOCS/Legis/RC/Public/%s" % link['href']
+                vote = self.scrape_vote_details(url)
+
+                date = link.parent.parent.td.contents[0].strip(' \r\n\t-')
+                motion = link.contents[0].split(', ')[1].strip()
+
+                vote['motion'] = motion
+                vote['date'] = date
+                vote['chamber'] = chamber
+                vote['location'] = location
+
+                bill.add_vote(vote)
+
+    def scrape_vote_details(self, url):
+        vote_page = BeautifulSoup(self.urlopen(url))
+        header = vote_page.find('div', {'class': 'subHdrGraphic'})
+        info_tbl = header.findNext('table')
+
+        motion = info_tbl.findAll('tr')[1].td.contents[-1].strip()
+        date = info_tbl.findAll('tr')[2].findAll('td')[-1].contents[0].strip()
+
+        yes_count = int(info_tbl.find(text=" YEAS").findPrevious().contents[0])
+        no_count = int(info_tbl.find(text=" NAYS").findPrevious().contents[0])
+        lve_count = int(info_tbl.find(text=" LVE").findPrevious().contents[0])
+        nv_count = int(info_tbl.find(text=" N/V").findPrevious().contents[0])
+        other_count = lve_count + nv_count
+
+        passed = yes_count > no_count
+
+        vote = Vote(None, None, None, None, passed, yes_count, no_count,
+                    other_count)
+
+        vote_tbl = header.findNext('div').findAll('table')[2]
+        for yes in vote_tbl.findAll(text=re.compile('^Y$')):
+            vote.yes(yes.findNext().contents[0])
+        for no in vote_tbl.findAll(text=re.compile('^N$')):
+            vote.no(no.findNext().contents[0])
+        for other in vote_tbl.findAll(text=re.compile('^(X|E)$')):
+            vote.other(other.findNext().contents[0])
+
+        return vote
+
     def scrape_bills(self, chamber, year):
         session = "%s-%d" % (year, int(year) + 1)
         if not session in self.metadata['session_details']:
@@ -165,7 +229,8 @@ class PALegislationScraper(LegislationScraper):
         # Pennsylvania doesn't make member lists easily available
         # for previous sessions, unfortunately
         if int(year) < 2009:
-            raise NoDataForYear(year)
+            #raise NoDataForYear(year)
+            return
 
         session = "%s-%d" % (year, int(year) + 1)
 
