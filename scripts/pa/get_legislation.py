@@ -225,7 +225,7 @@ class PALegislationScraper(LegislationScraper):
         self.scrape_session(chamber, session)
         for special in self.metadata['session_details'][session]['sub_sessions']:
             session_num = re.search('#(\d+)', special).group(1)
-            self.scrape_session(chamber, session, session_num)
+            self.scrape_session(chamber, session, int(session_num))
 
     def scrape_legislators(self, chamber, year):
         # Pennsylvania doesn't make member lists easily available
