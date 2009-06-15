@@ -69,7 +69,7 @@ someone will merge your changes into the core.
 Licensing
 ---------
 
-As of June 15th 2009 the Fifty State Project is licensed under the `GPLv3 license <http://www.fsf.org/licensing/licenses/agpl-3.0.html>`_
+As of June 15th 2009 the Fifty State Project is licensed under the `GPLv3 license <http://www.fsf.org/licensing/licenses/gpl-3.0.html>`_
 
 See LICENSING for the full terms of the AGPLv3.
 
