@@ -119,22 +119,40 @@ class Legislator(FiftyStateDocument):
 
         return matches
 
-    def votes(self, db, session=None):
+    @classmethod
+    def by_party_and_session(cls, db, party, session, chamber=None):
         """
-        Get all the votes made by this legislator in the given session,
-        or in all sessions if none is specified.
+        Returns the legislators who were members of the given party
+        during the given session. Optionally filters by chamber as well.
+        """
+        if chamber:
+            matches = cls.view(db, 'app/leg-by-party', include_docs=True,
+                               eager=True, reduce=False)[[party,
+                                                           session,
+                                                           chamber]]
+        else:
+            matches = cls.view(db, 'app/leg-by-party', include_docs=True,
+                               eager=True, reduce=False,
+                               startkey=[party, session, None],
+                               endkey=[party, session, "zzz"])
+
+        if len(matches) == 0:
+            return None
+
+        return matches
+
+    def votes(self, db, session):
+        """
+        Get all the votes made by this legislator in the given session.
         """
 
         def wrap(row):
             row.value.update({'bill': row.key[2]})
             return row.value
 
-        if session:
-            return db.view('app/leg-votes', startkey=[self.id, session, None],
-                           endkey=[self.id, session, "z"], wrapper=wrap)
-        else:
-            return db.view('app/leg-votes', startkey=[self.id, None],
-                           endkey=[self.id, "z"], wrapper=wrap)
+        key = [session, self.chamber, self.district]
+        return db.view('app/leg-votes', startkey=[key, session, None],
+                       endkey=[key, session, "z"], wrapper=wrap)
 
 
 class Bill(FiftyStateDocument):
