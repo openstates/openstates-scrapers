@@ -385,7 +385,7 @@ class SDLegislationScraper(LegislationScraper):
 
             legislator = Legislator(session, chamber, district,
                                     full_name, first_name, last_name,
-                                    middle_name, party=party,
+                                    middle_name, party,
                                     occupation=occupation)
             self.add_legislator(legislator)
 

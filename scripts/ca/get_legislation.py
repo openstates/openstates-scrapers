@@ -298,7 +298,7 @@ class CASQLImporter(LegislationScraper):
                              legislator.legislator_name,
                              legislator.first_name,
                              legislator.last_name, legislator.middle_initial,
-                             party=legislator.party,
+                             legislator.party,
                              suffix=legislator.name_suffix)
             self.add_legislator(leg)
 

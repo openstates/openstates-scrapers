@@ -77,7 +77,7 @@ class UTLegislationScraper(LegislationScraper):
 
                 leg = Legislator(year, chamber, tds[3].find(text=True),
                                  fullname, first_name, last_name,
-                                 middle_name, party=tds[2].find(text=True))
+                                 middle_name, tds[2].find(text=True))
                 self.add_legislator(leg)
 
     def parse_status(self, bill, url):

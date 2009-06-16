@@ -263,7 +263,7 @@ class PALegislationScraper(LegislationScraper):
 
             legislator = Legislator(session, chamber, district,
                                     full_name, first_name, last_name,
-                                    middle_name, party=party)
+                                    middle_name, party)
             self.add_legislator(legislator)
 
 if __name__ == '__main__':

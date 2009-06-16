@@ -410,7 +410,7 @@ class Vote(dict):
 class Legislator(dict):
 
     def __init__(self, session, chamber, district, full_name,
-                 first_name, last_name, middle_name, **kwargs):
+                 first_name, last_name, middle_name, party, **kwargs):
         """
         Create a Legislator.
 
@@ -423,6 +423,7 @@ class Legislator(dict):
         :param last_name: the last name of this legislator
         :param middle_name: a middle name or initial of this legislator, blank
           if none is provided
+        :param party: the party this legislator belongs to
 
         Any additional keyword arguments will be associated with this
         Legislator and stored in the database.
@@ -435,6 +436,7 @@ class Legislator(dict):
         self['first_name'] = first_name
         self['last_name'] = last_name
         self['middle_name'] = middle_name
+        self['party'] = party
         self.update(kwargs)
 
 

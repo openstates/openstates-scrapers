@@ -83,7 +83,7 @@ class AKLegislationScraper(LegislationScraper):
             self.add_legislator(Legislator(session, chamber, district,
                                            full_name, first_name,
                                            last_name, middle_name,
-                                           party=party, code=code))
+                                           party, code=code))
 
     def scrape_session(self, chamber, year):
         if chamber == 'upper':
