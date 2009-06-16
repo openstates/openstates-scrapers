@@ -99,14 +99,16 @@ class LegislationScraper(object):
     def scrape_legislators(self, chamber, year):
         """
         Grab all the legislators who served in a given year.
-        Should raise a NoDataForYear exception if the year is invalid.
+
+        Should raise a :class:`NoDataForYear` exception if the year is invalid.
         """
         pass
 
     def scrape_bills(self, chamber, year):
         """
         Grab all the bills for a given chamber and year.
-        Should raise a NoDataForYear exception if the year is invalid.
+
+        Should raise a :class:`NoDataForYear` exception if the year is invalid.
         """
         raise NotImplementedError('LegislationScrapers must define a '
                                   'scrape_bills method')

@@ -30,16 +30,16 @@ Project Goals
 To encourage as many contributions as possible we aren't saying "write in Python" 
 or anything, but we do need the code to follow a few guidelines.
 
-For details on how scripts should be written and how they should run see scripts/README.rst.
-For details on how data should be stored see data/README.rst.
+For details on how scripts should be written and how they should run see :doc:`scripts/pyutils/README` (or :doc:`scripts/rbutils/README`).
+For details on how data should be stored see :doc:`data/README`.
 
 Usage (proposed)
 ----------------
 Valid options:
- --year: a year or years the parser should attempt
- --all: Attempt to parse years from 1969-2009
- --upper: Parse upper chamber
- --lower: Parse lower chamber
+ * ``--year``: a year or years the parser should attempt
+ * ``--all``: Attempt to parse years from 1969-2009
+ * ``--upper``: Parse upper chamber
+ * ``--lower``: Parse lower chamber
  
 The vision is that the flow will look something like this:
     $  ./scripts/nc/get_legislation --year=2009 --upper
@@ -71,13 +71,13 @@ Licensing
 
 As of June 15th 2009 the Fifty State Project is licensed under the `GPLv3 license <http://www.fsf.org/licensing/licenses/gpl-3.0.html>`_
 
-See LICENSING for the full terms of the AGPLv3.
+See LICENSING for the full terms of the GPLv3.
 
 Requirements
 ============
 
 It is preferred for the sake of maintenance that scripts are written in 
-Python, several Ruby scripts also exist if you are unfamiliar with Ruby.
+Python, several Ruby scripts also exist if you are unfamiliar with Python.
 
 If you are completely unfamiliar with Python or Ruby writing a scraper in
 another language is preferred over not contributing at all but given the

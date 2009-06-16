@@ -13,6 +13,7 @@ Contents:
 
    README
    scripts/pyutils/README
+   scripts/rbutils/README
    scripts/state-specific-index
    data/README
    backend/README
