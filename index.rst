@@ -16,7 +16,6 @@ Contents:
    scripts/rbutils/README
    scripts/state-specific-index
    data/README
-   backend/README
 
 Indices and tables
 ==================
