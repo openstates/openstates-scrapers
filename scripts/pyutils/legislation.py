@@ -49,6 +49,8 @@ class LegislationScraper(object):
     cache_dir = 'cache'
     output_dir = None
 
+    metadata = {}
+
     def __init__(self):
         if not hasattr(self, 'state'):
             raise Exception('LegislationScrapers must have a state attribute')
@@ -91,10 +93,7 @@ class LegislationScraper(object):
         """
         Grab metadata about this state's legislature.
         """
-        if hasattr(self, 'metadata'):
-            return self.metadata
-        else:
-            return {}
+        return self.metadata
 
     def scrape_legislators(self, chamber, year):
         """
@@ -141,6 +140,8 @@ class LegislationScraper(object):
 
             sponsor['leg_id'] = leg_id
 
+        bill['state'] = self.state
+
         filename = "%s:%s:%s.json" % (bill['session'], bill['chamber'],
                                       bill['bill_id'])
         with open(os.path.join(self.output_dir, "bills", filename), 'w') as f:
@@ -158,6 +159,8 @@ class LegislationScraper(object):
             legislator['session'],
             legislator['chamber'],
             legislator['district']]
+
+        legislator['state'] = self.state
 
         filename = "%s:%s:%s.json" % (legislator['session'],
                                       legislator['chamber'],
@@ -214,9 +217,12 @@ class LegislationScraper(object):
         self.log(msg)
 
     def write_metadata(self):
+        metadata = self.scrape_metadata()
+        metadata['state'] = self.state
+
         with open(os.path.join(self.output_dir, 'state_metadata.json'),
                   'w') as f:
-            json.dump(self.scrape_metadata(), f)
+            json.dump(metadata, f)
 
     def run(self):
         options, spares = OptionParser(

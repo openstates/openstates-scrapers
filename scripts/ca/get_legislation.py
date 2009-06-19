@@ -296,8 +296,9 @@ class CASQLImporter(LegislationScraper):
         for legislator in legislators:
             leg = Legislator(session, chamber, legislator.district,
                              legislator.legislator_name,
-                             legislator.first_name,
-                             legislator.last_name, legislator.middle_initial,
+                             legislator.first_name or 'None',
+                             legislator.last_name or 'None',
+                             legislator.middle_initial or '',
                              legislator.party,
                              suffix=legislator.name_suffix)
             self.add_legislator(leg)
