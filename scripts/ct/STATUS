@@ -7,3 +7,7 @@ actions: no
 votes: no
 contributors: bx
 notes:
+When scraping votes, my script has problems with apostrophes in names such as O'Neil.
+This is mainly because such names are formatted as follows: (read it and weep)
+<td valign="top" width="105"><p><span style="font-family: 'Times New Roman'; font-size: 7pt">O</span><span style="font-family: 'Times New Roman'; font-size: 7pt">'<!--&#8217;--></span><span style="font-family: 'Times New Roman'; font-size: 7pt">NEILL</span></p></td>
+(see bill 2 in 2008 for an example)

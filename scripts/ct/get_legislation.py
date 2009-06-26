@@ -9,6 +9,7 @@ from BeautifulSoup import BeautifulSoup
 import re
 import urllib,urllib2
 import time
+import string
 
 # ugly hack
 import sys
@@ -77,9 +78,11 @@ class CTLegislationScraper(LegislationScraper):
 
                 self.add_bill_actions(bill,soup)
                 
-                self.add_bill_votes(bill,soup)
+                self.add_bill_votes(bill,chamber,soup)
 
                 self.add_bill(bill)
+
+                print "--------- end " + str(i) + "--------------"
 
     def add_bill_sponsors(self,bill,soup):
         
@@ -125,7 +128,7 @@ class CTLegislationScraper(LegislationScraper):
                     date = action.contents[2].string
                     action = action.contents[len(action.contents)-1].string
                     bill.add_action('',action,date)
-    def add_bill_votes(self,bill,soup):
+    def add_bill_votes(self,bill,chamber,soup):
         #not all bills have votes
         vote_table = soup.find("table",{"id":"CGAVotes"})
         if vote_table != None:
@@ -137,66 +140,173 @@ class CTLegislationScraper(LegislationScraper):
                     vote_url = regexp.search(line)
                     vote_url = vote_url.group(1)
                     vote_url = "http://cga.ct.gov"+vote_url
-                    self.scrape_votes(vote_url)
+                    self.scrape_votes(vote_url,chamber)
 
-        print "-----------------------"
                 
 
     #url is the url where the vote info page is.  Returns Vote object
-    def scrape_votes(self,url):
+    def scrape_votes(self,url,chamb):
         soup = BeautifulSoup(urllib2.urlopen(urllib2.Request(url)).read())
         date=None
         motion=None
-        yays=-1
-        neys=-1
-        others=-1
+        yeas=None
+        neas=None
+        others=None
         passed=None
-        chamber=None
-        
+        chamber=chamb
+        necessary=None
+        vote=None        
+
         fonts = soup.findAll('font')
-        if len(fonts) > 4: #data is vaguely structured
+        span = soup.findAll('span')
+        if (len(fonts) + (len(span))) > 4: #data is vaguely structured
+            if (len(fonts) < 4):
+                fonts = span
             for line in fonts:
                 #this could be sped up.
-                line = str(line.contents)
+                line = str(line.contents[0])
                 line = line.strip()
                 if line.find("Taken on") > -1:
                     #then the text is in the form of: "Take on <date> <reason>"
                     split = line.split(None,3)
                     date = split[2]
-                    motion=split[3]
-                    print split
+                    if (len(split) > 3):
+                        motion=split[3]
                 elif line.find("Those voting Yea") > -1:
-                    print line + "- yea"
+                    yeas = self.get_num_from_line(line)
                 elif line.find("Those voting Nay") > -1:
-                    print line + "- nay"
+                    neas = self.get_num_from_line(line)
                 elif line.find("Those absent and not voting") > -1:
-                    print line + "- other"
+                    others = self.get_num_from_line(line)
                 elif (line.find("Necessary for Adoption") > -1) or (line.find("Necessary for Passage") > -1):
-                    print line + "- necessary"
+                    necessary = self.get_num_from_line(line)
+            if yeas >= necessary:
+                passed = True
+            else:
+                passed = False
+            vote = Vote(chamber,date,motion,passed,yeas,neas,others)
+            
+            #figure out who voted for what
+            table = soup.findAll('table')
+            tds = table[len(table)-1].findAll('td')#get the last table
+            
+            vote_value = None
+            digits = re.compile('^[\d ]+$')
+            for cell in tds:
+                string = cell.find('font')
+                if (string == None):
+                    string = cell.find('span') #either we are looking at fonts or spans
+                if (string != None):
+                    string = string.contents[0]
+                    string = string.strip()
+                else:
+                    string = ''
+                if (len(string) > 0) and (digits.search(string) == None):
+                    if vote_value == None:
+                        if (string == 'Y') or (string == 'N'):
+                            vote_value = string
+                        elif (string == 'X') or (string == 'A'):
+                            vote_value = 'X'
+                    else:
+                        if vote_value == 'Y':
+                            vote.yes(string)
+                            print string + ' Y'
+                        elif vote_value == 'N':
+                            vote.no(string)
+                            print string + ' N'
+                        else:
+                            vote.other(string)
+                            print string + ' X'
+                        vote_value = None
+            
         else:
             #data is mostly unstructured. Have to sift through a string
             data = soup.find('pre')
-            #print data.contents
             lines = data.contents[len(data.contents)-1]
             lines = lines.strip()
             exp = re.compile(r'\n+|\r+|\f+')
             lines = exp.split(lines)
-            print lines
-            line=""
-            if line.find("Taken on") > -1:
+            names = []
+            for i in range(len(lines)):
+                line = lines[i].strip()
+                if line.find("Taken on") > -1:
                 #then the text is in the form of: "Take on <date> <reason>"
-                split = line.split(None,3)
-                date = split[2]
-                motion=split[3]
-                print split
-            elif line.find("Those voting Yea") > -1:
-                print line + "- yea"
-            elif line.find("Those voting Nay") > -1:
-                print line + "- nay"
-            elif line.find("Those absent and not voting") > -1:
-                print line + "- other"
-            elif (line.find("Necessary for Adoption") > -1) or (line.find("Necessary for Passage") > -1):
-                print line + "- necessary"
+                    split = line.split(None,3)
+                    date = split[2]
+                    if (len(split) > 3):
+                        motion=split[3]
+                elif line.find("Those voting Yea") > -1:
+                    yeas = self.get_num_from_line(line)
+                elif line.find("Those voting Nay") > -1:
+                    neas = self.get_num_from_line(line)
+                elif line.find("Those absent and not voting") > -1:
+                    others = self.get_num_from_line(line)
+                elif (line.find("Necessary for Adoption") > -1) or (line.find("Necessary for Passage") > -1):
+                    if (line.find("Adoption") > -1):
+                        motion="Adoption"
+                    else:
+                        motion="Passage"
+                    necessary = self.get_num_from_line(line)
+                elif (line.find("The following is the roll call vote:") > -1):
+                    break #the next lines contain actual votes
+            #process the vote values
+            if yeas >= necessary:
+                passed = True
+            else:
+                passed = False
+            vote = Vote(chamber,date,motion,passed,yeas,neas,others)
+            lines = lines[i+1:]
+            lines = string.join(lines,'  ')
+            lines = lines.split('  ')
+            absent_vote_value = re.compile('^(X|A)$')
+            yea_vote_value = re.compile('^Y$')
+            nea_vote_value = re.compile('^N$')
+            #there aren't two spaces between vote and name so it doesn't get parsed
+            annoying_vote = re.compile('^(Y|X|A|N) ([\S ]+)$')
+            digits = re.compile('^[\d ]+$')
+            vote_value = None
+            for word in lines:
+                word = word.strip()
+                if (len(word) > 0) and (digits.search(word) == None):
+                    word = strip_digits(word)
+                    if vote_value != None:
+                        if vote_value == 'Y':
+                            vote.yes(word)
+                            print word + " Y"
+                        elif vote_value == 'N':
+                            vote.no(word)
+                            print word + " N"
+                        else:
+                            vote.other(word)
+                            print word + " A"
+                        vote_value = None
+                    elif absent_vote_value.match(word) != None:
+                        vote_value = 'X'
+                    elif yea_vote_value.match(word) != None:
+                        vote_value = 'Y'
+                    elif nea_vote_value.match(word) != None:
+                        vote_value = 'N'
+                    elif annoying_vote.match(word) != None:
+                        split = annoying_vote.match(word)
+                        vote_value = split.group(2)
+                        name = split.group(1)
+                        if vote_value == 'Y':
+                            vote.yes(name)
+                            #print name + "-Y"
+                        elif vote_value == 'N':
+                            vote.no(name)
+                            #print name + "-N"
+                        else:
+                            vote.other(name)
+                            #print name + "-A"
+                        vote_value = None
+
+
+        
+    def get_num_from_line(self,line):
+        num = re.match('[\D]*(\d+)\w*$',line)
+        num = num.group(1)
+        return int(num)
 
 
 
@@ -206,6 +316,18 @@ class CTLegislationScraper(LegislationScraper):
 def cleanup_html(html):
     return html.replace('"""','"')
 
+#stripts digits at beginning of string
+def strip_digits(string):
+    old = string
+    exp = re.compile("^\d* *([\w.,'\s]+)$")
+    string = exp.search(string)
+    if string == None:
+        return old
+    return string.group(1).strip()
+
+#gets the inner most child from the soup
+def get_baby(soup):
+    pass
 
 if __name__ == '__main__':
     CTLegislationScraper().run()
