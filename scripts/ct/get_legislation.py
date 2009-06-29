@@ -82,7 +82,6 @@ class CTLegislationScraper(LegislationScraper):
 
                 self.add_bill(bill)
 
-                print "--------- end " + str(i) + "--------------"
 
     def add_bill_sponsors(self,bill,soup):
         
@@ -210,13 +209,10 @@ class CTLegislationScraper(LegislationScraper):
                     else:
                         if vote_value == 'Y':
                             vote.yes(string)
-                            print string + ' Y'
                         elif vote_value == 'N':
                             vote.no(string)
-                            print string + ' N'
                         else:
                             vote.other(string)
-                            print string + ' X'
                         vote_value = None
             
         else:
@@ -272,13 +268,10 @@ class CTLegislationScraper(LegislationScraper):
                     if vote_value != None:
                         if vote_value == 'Y':
                             vote.yes(word)
-                            print word + " Y"
                         elif vote_value == 'N':
                             vote.no(word)
-                            print word + " N"
                         else:
                             vote.other(word)
-                            print word + " A"
                         vote_value = None
                     elif absent_vote_value.match(word) != None:
                         vote_value = 'X'
@@ -292,13 +285,10 @@ class CTLegislationScraper(LegislationScraper):
                         name = split.group(1)
                         if vote_value == 'Y':
                             vote.yes(name)
-                            #print name + "-Y"
                         elif vote_value == 'N':
                             vote.no(name)
-                            #print name + "-N"
                         else:
                             vote.other(name)
-                            #print name + "-A"
                         vote_value = None
 
 
