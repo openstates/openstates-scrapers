@@ -66,6 +66,8 @@ in any relevant utils directories.
 Whenever your state script works as it should announce it on the mailing list and 
 someone will merge your changes into the core.
 
+.. _licensing:
+
 Licensing
 ---------
 
@@ -84,6 +86,7 @@ another language is preferred over not contributing at all but given the
 number of scripts already written in Python you are strongly encouraged  to
 consider it first.
 
+.. _python-dependencies:
 Python (2.5+)
 -------------
 * BeautifulSoup
