@@ -269,7 +269,9 @@ class CASQLImporter(LegislationScraper):
                  '20052006': {'years': [2005, 2006], 'sub_sessions': []},
                  '20072008': {'years': [2007, 2008], 'sub_sessions': []},
                  '20092010': {'years': [2009, 2010],
-                              'sub_sessions': ['2009 Special Session 1']},
+                              'sub_sessions': ['20092010 Special Session 1',
+                                               '20092010 Special Session 2',
+                                               '20092010 Special Session 3']},
                  }
                 }
 

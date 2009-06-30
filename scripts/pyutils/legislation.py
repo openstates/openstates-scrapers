@@ -1,6 +1,6 @@
 from __future__ import with_statement
 from optparse import make_option, OptionParser
-import datetime
+import datetime, time
 import csv
 import os
 import urllib2
@@ -30,6 +30,14 @@ class NoDataForYear(ScrapeError):
     def __str__(self):
         return 'No data exists for %s' % year
 
+class DateEncoder(json.JSONEncoder):
+    """
+    JSONEncoder that encodes datetime objects as Unix timestamps.
+    """
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return time.mktime(obj.timetuple())
+        return json.JSONEncoder.default(self, obj)
 
 class LegislationScraper(object):
     option_list = (
@@ -145,7 +153,7 @@ class LegislationScraper(object):
         filename = "%s:%s:%s.json" % (bill['session'], bill['chamber'],
                                       bill['bill_id'])
         with open(os.path.join(self.output_dir, "bills", filename), 'w') as f:
-            json.dump(bill, f)
+            json.dump(bill, f, cls=DateEncoder)
 
     def add_legislator(self, legislator):
         """
@@ -167,7 +175,7 @@ class LegislationScraper(object):
                                       legislator['district'])
         with open(os.path.join(self.output_dir, "legislators", filename),
                   'w') as f:
-            json.dump(legislator, f)
+            json.dump(legislator, f, cls=DateEncoder)
 
     def add_sponsorship(self, bill_chamber, bill_session, bill_id, sponsor_type, sponsor_name, **kwargs):
         """
@@ -222,7 +230,7 @@ class LegislationScraper(object):
 
         with open(os.path.join(self.output_dir, 'state_metadata.json'),
                   'w') as f:
-            json.dump(metadata, f)
+            json.dump(metadata, f, cls=DateEncoder)
 
     def run(self):
         options, spares = OptionParser(
@@ -338,8 +346,9 @@ class Bill(dict):
           'Signed by the Governor', 'Amended'
         :param date: the date/time this action was performed.
         """
+
         self['actions'].append(dict(actor=actor, action=action,
-                                    date=str(date), **kwargs))
+                                    date=date, **kwargs))
 
     def add_vote(self, vote):
         """
@@ -375,7 +384,7 @@ class Vote(dict):
                'Recommend passage', 12, 1, 0)
         """
         self['chamber'] = chamber
-        self['date'] = str(date)
+        self['date'] = date
         self['motion'] = motion
         self['passed'] = passed
         self['yes_count'] = yes_count

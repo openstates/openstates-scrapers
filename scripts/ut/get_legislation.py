@@ -90,6 +90,7 @@ class UTLegislationScraper(LegislationScraper):
         # Get actions
         for row in act_table.findAll('tr')[1:]:
             act_date = row.td.find(text=True)
+            act_date = dt.datetime.strptime(act_date, "%m/%d/%Y")
             action = row.findAll('td')[1].find(text=True)
 
             # If not specified, assume action occurred

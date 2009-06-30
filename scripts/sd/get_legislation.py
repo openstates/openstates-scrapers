@@ -114,6 +114,7 @@ class SDLegislationScraper(LegislationScraper):
                 if not date_match:
                     continue
                 act_date = date_match.group(0)
+                act_date = dt.datetime.strptime(act_date, "%m/%d/%Y")
 
                 # Get the action string
                 action = ""
@@ -256,6 +257,7 @@ class SDLegislationScraper(LegislationScraper):
                 if not date_match:
                     continue
                 act_date = date_match.group(0)
+                act_date = dt.datetime.strptime(act_date, "%m/%d/%Y")
 
                 # Get the action string
                 action = ""
