@@ -9,6 +9,7 @@ from sqlalchemy import (Table, Column, Integer, String, ForeignKey,
                         UnicodeText)
 from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy.ext.declarative import declarative_base
+import re
 
 # ugly hack
 import sys
@@ -76,12 +77,18 @@ class CABillVersion(Base):
     @property
     def xml(self):
         if not '_xml' in self.__dict__:
-            self._xml = etree.parse(StringIO(self.bill_xml.encode('utf-8')))
+            self._xml = etree.parse(StringIO(self.bill_xml.encode('utf-8')), etree.XMLParser(recover=True))
         return self._xml
 
     @property
     def title(self):
         texts = self.xml.xpath("//*[local-name() = 'Title']//text()")
+        title = ''.join(texts).strip().encode('ascii', 'replace')
+        return title
+
+    @property
+    def short_title(self):
+        texts = self.xml.xpath("//*[local-name() = 'Subject']//text()")
         title = ''.join(texts).strip().encode('ascii', 'replace')
         return title
 
@@ -329,8 +336,15 @@ class CASQLImporter(LegislationScraper):
                 bill_session += ' Special Session %s' % bill.session_num
 
             bill_id = bill.short_bill_id
-            version = bill.versions[0]
-            fsbill = Bill(bill_session, chamber, bill_id, version.title)
+            version = self.session.query(CABillVersion).filter_by(
+                bill=bill).filter(CABillVersion.bill_xml != None).first()
+            if not version:
+                # not enough data to import
+                continue
+
+            fsbill = Bill(bill_session, chamber, bill_id,
+                          version.title,
+                          short_title=version.short_title)
 
             for author in version.authors:
                 if author.house == chamber_name:
@@ -364,7 +378,8 @@ class CASQLImporter(LegislationScraper):
 
                 fsvote = Vote(vote_chamber,
                               vote.vote_date_time,
-                              vote.motion.motion_text, result,
+                              vote.motion.motion_text or '',
+                              result,
                               vote.ayes, vote.noes, vote.abstain,
                               threshold=vote.threshold,
                               location=vote_location)

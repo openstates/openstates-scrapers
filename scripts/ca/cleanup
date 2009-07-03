@@ -2,6 +2,7 @@
 
 if [ $# -lt 1 ]; then
     echo 'Usage: cleanup DATA-DIR'
+    exit
 fi
 
 cd $1

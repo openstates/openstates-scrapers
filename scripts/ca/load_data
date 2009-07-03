@@ -11,7 +11,8 @@ PASS=$3
 
 cd $4
 
-sed -i 's|c:\\\\pubinfo\\\\|'"$PWD"'/|g' *.sql
+sed=`which gsed || which sed`
+$sed -i 's|c:\\\\pubinfo\\\\|'"$PWD"'/|g' *.sql
 
 mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_VERSION_TBL.sql
 mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < LAW_SECTION_TBL.sql
