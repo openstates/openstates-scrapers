@@ -2,6 +2,7 @@
 import urllib2
 import re
 import datetime as dt
+import calendar
 from BeautifulSoup import BeautifulSoup
 
 # ugly hack
@@ -137,9 +138,11 @@ class PALegislationScraper(LegislationScraper):
                     act_raw += node
             act_raw = act_raw.replace('&#160;', ' ')
             act_match = re.match('(.*),\s+((\w+\.?) (\d+), (\d{4}))', act_raw)
+
             if act_match:
+                date = parse_action_date(act_match.group(2).strip())
                 bill.add_action(act_chamber, act_match.group(1),
-                                act_match.group(2).strip())
+                                date)
             else:
                 # Handle actions from the other chamber
                 # ("In the (House|Senate)" row followed by actions that
@@ -176,6 +179,7 @@ class PALegislationScraper(LegislationScraper):
                 vote = self.scrape_vote_details(url)
 
                 date = link.parent.parent.td.contents[0].strip(' \r\n\t-')
+                date = dt.datetime.strptime(date, "%m/%d/%Y")
 
                 if link.contents[0].find(',') >= 0:
                     motion = link.contents[0].split(', ')[1].strip()
@@ -195,6 +199,7 @@ class PALegislationScraper(LegislationScraper):
 
         motion = info_tbl.findAll('tr')[1].td.contents[-1].strip()
         date = info_tbl.findAll('tr')[2].findAll('td')[-1].contents[0].strip()
+        date = dt.datetime.strptime(date, "%m/%d/%Y")
 
         yes_count = int(info_tbl.find(text=" YEAS").findPrevious().contents[0])
         no_count = int(info_tbl.find(text=" NAYS").findPrevious().contents[0])
@@ -265,6 +270,14 @@ class PALegislationScraper(LegislationScraper):
                                     full_name, first_name, last_name,
                                     middle_name, party)
             self.add_legislator(legislator)
+
+def parse_action_date(date_str):
+    try:
+        date = dt.datetime.strptime(date_str, '%b. %d, %Y')
+    except ValueError:
+        date = dt.datetime.strptime(date_str, '%B %d, %Y')
+
+    return date
 
 if __name__ == '__main__':
     PALegislationScraper().run()
