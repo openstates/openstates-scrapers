@@ -1,0 +1,9 @@
+[Kentucky]
+start_year: 
+bills: yes
+bill_versions: no
+sponsors: no
+actions: no
+votes: no
+contributors: Joshua Ruihley
+notes: currently must be run from pyutils directory, also needs to be updated to new version of pyutils
