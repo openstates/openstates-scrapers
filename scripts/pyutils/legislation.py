@@ -86,6 +86,7 @@ class LegislationScraper(object):
 
             if self.requests >= 100:
                 len = random.randint(1, 10)
+                self.requests = 0
                 self.log("Long sleep: %d seconds" % len)
             else:
                 len = random.random()
