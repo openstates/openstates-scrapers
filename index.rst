@@ -15,7 +15,9 @@ Contents:
    scripts/pyutils/README
    scripts/rbutils/README
    scripts/state-specific-index
+   script/contributing
    data/README
+   data/data-format
 
 Indices and tables
 ==================

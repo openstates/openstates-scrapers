@@ -33,6 +33,8 @@ or anything, but we do need the code to follow a few guidelines.
 For details on how scripts should be written and how they should run see :doc:`scripts/pyutils/README` (or :doc:`scripts/rbutils/README`).
 For details on how data should be stored see :doc:`data/README`.
 
+.. _usage:
+
 Usage (proposed)
 ----------------
 Valid options:
@@ -48,10 +50,13 @@ The vision is that the flow will look something like this:
 Contributing
 ============
 
-If you are interested in contributing the recommended procedure is to check on 
-the `Sunlight Labs Wiki`_ and in the repository to see where your state is.
-The next step is to announce your interest on the `Fifty State Project Google Group <http://groups.google.com/group/fifty-state-project>`_
-(this is where you can ask questions and make suggestions regarding the project).
+If you are interested in contributing the recommended procedure is to
+check on the `Sunlight Labs Wiki
+<http://wiki.sunlightlabs.com/index.php/Fifty_State_Project#Status>`_
+and in the repository to see where your state is.  The next step is to
+announce your interest on the `Fifty State Project Google Group
+<http://groups.google.com/group/fifty-state-project>`_ (this is where
+you can ask questions and make suggestions regarding the project).
 
 Managing a State
 ----------------
@@ -65,6 +70,8 @@ in any relevant utils directories.
 
 Whenever your state script works as it should announce it on the mailing list and 
 someone will merge your changes into the core.
+
+.. _licensing:
 
 Licensing
 ---------
@@ -84,6 +91,7 @@ another language is preferred over not contributing at all but given the
 number of scripts already written in Python you are strongly encouraged  to
 consider it first.
 
+:ref:`Python Libraries <python-dependencies>`
 Python (2.5+)
 -------------
 * BeautifulSoup
