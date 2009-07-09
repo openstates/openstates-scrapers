@@ -99,6 +99,7 @@ class Bill < Hash
     self[:versions] = []
     self[:actions] = []
     self[:votes] = []
+    self[:documents] = []
     self.merge!(extra)
   end
 
@@ -113,6 +114,10 @@ class Bill < Hash
   def add_action(actor, action, date, extra={})
     self[:actions].push({:actor => actor, :action => action,
                           :date => date}.merge(extra))
+  end
+
+  def add_document(name, url, extra={})
+    self[:document].push({:name => name, :url => url,}.merge(extra))
   end
 
   def add_vote(vote)
