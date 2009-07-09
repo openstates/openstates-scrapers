@@ -5,6 +5,7 @@ import csv
 import os
 import urllib2
 import warnings
+import random
 from hashlib import md5
 try:
     import json
@@ -53,6 +54,10 @@ class LegislationScraper(object):
                     default=False, help="be verbose"),
         make_option('-d', '--output_dir', action='store', dest='output_dir',
                     help='output directory'),
+        make_option('-n', '--no_cache', action='store_true', dest='no_cache',
+                    help="don't use web page cache"),
+        make_option('-s', '--sleep', action='store_true', dest='sleep',
+                    help="insert random delays wheen downloading web pages"),
     )
     cache_dir = 'cache'
     output_dir = None
@@ -67,12 +72,33 @@ class LegislationScraper(object):
         """
         Grabs a URL, returning a cached version if available.
         """
-        url_cache = os.path.join(self.cache_dir, self.state,
-                                 md5(url).hexdigest()+'.html')
-        if os.path.exists(url_cache):
-            return open(url_cache).read()
+
+        if not self.no_cache:
+            url_cache = os.path.join(self.cache_dir, self.state,
+                                     md5(url).hexdigest()+'.html')
+            if os.path.exists(url_cache):
+                return open(url_cache).read()
+
+        if self.sleep:
+            # insert a short random delay before each request
+            # and a longer random delay after some requests
+            self.requests += 1
+
+            if self.requests >= 100:
+                len = random.randint(1, 10)
+                self.requests = 0
+                self.log("Long sleep: %d seconds" % len)
+            else:
+                len = random.random()
+                self.log("Short sleep: %f seconds" % len)
+
+            time.sleep(len)
+
         data = urllib2.urlopen(url).read()
-        open(url_cache, 'w').write(data)
+
+        if not self.no_cache:
+            open(url_cache, 'w').write(data)
+
         return data
 
     def log(self, msg):
@@ -237,6 +263,9 @@ class LegislationScraper(object):
             option_list=self.option_list).parse_args()
 
         self.verbose = options.verbose
+        self.no_cache = options.no_cache
+        self.sleep = options.sleep
+        self.requests = 0
 
         if options.output_dir:
             self.output_dir = options.output_dir
