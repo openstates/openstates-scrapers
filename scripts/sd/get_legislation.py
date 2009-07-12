@@ -173,14 +173,13 @@ class SDLegislationScraper(LegislationScraper):
                     location=location)
 
         vote_tbl = vote_page.find(id="ctl00_contentMain_tblVotes")
-        for row in vote_tbl.findAll('tr'):
-            for td in vote_tbl.findAll('td'):
-                if td.contents[0] == 'Yea':
-                    vote.yes(td.findPrevious().contents[0])
-                elif td.contents[0] == 'Nay':
-                    vote.no(td.findPrevious().contents[0])
-                elif td.contents[0] in ['Excused', 'Absent']:
-                    vote.other(td.findPrevious().contents[0])
+        for td in vote_tbl.findAll('td'):
+            if td.contents[0] == 'Yea':
+                vote.yes(td.findPrevious().contents[0])
+            elif td.contents[0] == 'Nay':
+                vote.no(td.findPrevious().contents[0])
+            elif td.contents[0] in ['Excused', 'Absent']:
+                vote.other(td.findPrevious().contents[0])
 
         return vote
 
@@ -323,14 +322,13 @@ class SDLegislationScraper(LegislationScraper):
                     location=location)
 
         vote_tbl = vote_page.table
-        for row in vote_tbl.findAll('tr'):
-            for td in vote_tbl.findAll('td'):
-                if td.contents[0] == 'Yea':
-                    vote.yes(td.findPrevious().contents[0])
-                elif td.contents[0] == 'Nay':
-                    vote.no(td.findPrevious().contents[0])
-                elif td.contents[0] in ['Excused', 'Absent']:
-                    vote.other(td.findPrevious().contents[0])
+        for td in vote_tbl.findAll('td'):
+            if td.contents[0] == 'Yea':
+                vote.yes(td.findPrevious().contents[0])
+            elif td.contents[0] == 'Nay':
+                vote.no(td.findPrevious().contents[0])
+            elif td.contents[0] in ['Excused', 'Absent']:
+                vote.other(td.findPrevious().contents[0])
 
         return vote
 
