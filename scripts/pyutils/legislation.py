@@ -339,6 +339,7 @@ class Bill(dict):
         self['votes'] = []
         self['versions'] = []
         self['actions'] = []
+        self['documents'] = []
         self.update(kwargs)
 
     def add_sponsor(self, type, name, **kwargs):
@@ -349,6 +350,18 @@ class Bill(dict):
         :param name: the name of the sponsor as provided by the state
         """
         self['sponsors'].append(dict(type=type, name=name, **kwargs))
+
+    
+    def add_document(self, name, url, **kwargs):
+        """
+        Add a document or media item that is related to the bill.  Use this method to add documents such as Fiscal Notes, Analyses, Amendments,  or public hearing recordings.
+        :param name: a name given to the document, e.g. 'Fiscal Note for Amendment LCO 6544'        
+        :param url: link to location of document or file
+
+
+          If multiple formats of a document are provided, a good rule of thumb is to prefer text, followed by html, followed by pdf/word/etc.
+        """
+        self['documents'].append(dict(name=name, url=url, **kwargs))
 
     def add_version(self, name, url, **kwargs):
         """
