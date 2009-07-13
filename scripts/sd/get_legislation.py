@@ -375,7 +375,7 @@ class SDLegislationScraper(LegislationScraper):
                 id="ctl00_contentMain_spanParty").contents[0].strip()
 
             district = leg_page.find(
-                id="ctl00_contentMain_spanDistrict").contents[0].strip()
+                id="ctl00_contentMain_spanDistrict").contents[0].strip().lstrip('0')
 
             occ_span = leg_page.find(id="ctl00_contentMain_spanOccupation")
             if len(occ_span.contents) > 0:

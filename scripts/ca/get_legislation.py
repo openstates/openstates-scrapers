@@ -278,7 +278,8 @@ class CASQLImporter(LegislationScraper):
                  '20092010': {'years': [2009, 2010],
                               'sub_sessions': ['20092010 Special Session 1',
                                                '20092010 Special Session 2',
-                                               '20092010 Special Session 3']},
+                                               '20092010 Special Session 3',
+                                               '20092010 Special Session 4',]},
                  }
                 }
 
@@ -303,12 +304,23 @@ class CASQLImporter(LegislationScraper):
             house_type=house_type)
 
         for legislator in legislators:
-            leg = Legislator(session, chamber, legislator.district,
+            if legislator.legislator_name.endswith('Vacancy'):
+                continue
+
+            district = legislator.district[2:].lstrip('0')
+            party = legislator.party
+
+            if party == 'DEM':
+                party = 'Democrat'
+            elif party == 'REP':
+                party = 'Republican'
+
+            leg = Legislator(session, chamber, district,
                              legislator.legislator_name,
                              legislator.first_name or 'None',
                              legislator.last_name or 'None',
                              legislator.middle_initial or '',
-                             legislator.party,
+                             party,
                              suffix=legislator.name_suffix)
             self.add_legislator(leg)
 

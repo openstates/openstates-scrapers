@@ -264,7 +264,7 @@ class PALegislationScraper(LegislationScraper):
             elif party == 'D':
                 party = "Democrat"
 
-            district = re.search("District (\d+)", link.parent.contents[1]).group(0)
+            district = re.search("District (\d+)", link.parent.contents[1]).group(1)
 
             legislator = Legislator(session, chamber, district,
                                     full_name, first_name, last_name,
