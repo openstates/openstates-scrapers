@@ -192,13 +192,15 @@ class LegislationScraper(object):
         self.matcher[legislator['chamber']][legislator] = [
             legislator['session'],
             legislator['chamber'],
-            legislator['district']]
+            legislator['district'],
+            legislator['full_name']]
 
         legislator['state'] = self.state
 
-        filename = "%s:%s:%s.json" % (legislator['session'],
-                                      legislator['chamber'],
-                                      legislator['district'])
+        filename = "%s:%s:%s:%s.json" % (legislator['session'],
+                                         legislator['chamber'],
+                                         legislator['district'],
+                                         legislator['full_name'])
         with open(os.path.join(self.output_dir, "legislators", filename),
                   'w') as f:
             json.dump(legislator, f, cls=DateEncoder)
