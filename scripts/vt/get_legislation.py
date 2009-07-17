@@ -90,7 +90,8 @@ class VTLegislationScraper(LegislationScraper):
 
                 vote_link = row.find('a', text='Details')
                 if vote_link:
-                    self.parse_vote_new(bill, chamber, vote_link.parent['href'])
+                    self.parse_vote_new(bill, act_chamber,
+                                        vote_link.parent['href'])
 
             sponsors = info_page.find(
                 text='Sponsor(s):').parent.parent.findAll('b')
