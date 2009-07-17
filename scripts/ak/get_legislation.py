@@ -47,22 +47,26 @@ class AKLegislationScraper(LegislationScraper):
             raise NoDataForYear(year)
 
         if chamber == 'upper':
-            chamber_abbr = 'H'
-        else:
             chamber_abbr = 'S'
+        else:
+            chamber_abbr = 'H'
 
-        session = 18 + ((int(year) - 1993) / 2)
+        session = str(18 + ((int(year) - 1993) / 2))
 
-        leg_list_url = "http://www.legis.state.ak.us/basis/commbr_info.asp?session=%d" % session
+        leg_list_url = "http://www.legis.state.ak.us/basis/commbr_info.asp?session=%s" % session
         leg_list = self.soup_parser(self.urlopen(leg_list_url))
 
-        leg_re = "get_mbr_info.asp\?member=.+&house=%s&session=%d" % (
+        leg_re = "get_mbr_info.asp\?member=.+&house=%s&session=%s" % (
             chamber_abbr, session)
         links = leg_list.findAll(href=re.compile(leg_re))
 
         for link in links:
             member_url = "http://www.legis.state.ak.us/basis/" + link['href']
             member_page = self.soup_parser(self.urlopen(member_url))
+
+            if member_page.find('td', text=re.compile('Resigned')):
+                # Need a better way to handle this than just dropping
+                continue
 
             full_name = member_page.findAll('h3')[1].contents[0]
             full_name = ' '.join(full_name.split(' ')[1:])
@@ -92,7 +96,7 @@ class AKLegislationScraper(LegislationScraper):
             bill_abbr = 'HB|HCR|HJR'
 
         # Sessions last 2 years, 1993-1994 was the 18th
-        session = 18 + ((int(year) - 1993) / 2)
+        session = str(18 + ((int(year) - 1993) / 2))
         year2 = str(int(year) + 1)
 
         # Full calendar year
@@ -100,7 +104,7 @@ class AKLegislationScraper(LegislationScraper):
         date2 = '1231' + year2[2:]
 
         # Get bill list
-        bill_list_url = 'http://www.legis.state.ak.us/basis/range_multi.asp?session=%i&date1=%s&date2=%s' % (session, date1, date2)
+        bill_list_url = 'http://www.legis.state.ak.us/basis/range_multi.asp?session=%s&date1=%s&date2=%s' % (session, date1, date2)
         self.log("Getting bill list for %s %s (this may take a long time)." %
                  (chamber, session))
         bill_list = self.soup_parser(self.urlopen(bill_list_url))
@@ -139,6 +143,7 @@ class AKLegislationScraper(LegislationScraper):
             for row in act_rows:
                 cols = row.findAll('td')
                 act_date = cols[0].font.contents[0]
+                act_date = dt.datetime.strptime(act_date, '%m/%d/%y')
 
                 if cols[2].font.string == "(H)":
                     act_chamber = "lower"
