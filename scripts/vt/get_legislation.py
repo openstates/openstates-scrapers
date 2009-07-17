@@ -88,6 +88,10 @@ class VTLegislationScraper(LegislationScraper):
                 act_date = dt.datetime.strptime(act_date, '%m/%d/%Y')
                 bill.add_action(act_chamber, action, act_date)
 
+                vote_link = row.find('a', text='Details')
+                if vote_link:
+                    self.parse_vote_new(bill, chamber, vote_link.parent['href'])
+
             sponsors = info_page.find(
                 text='Sponsor(s):').parent.parent.findAll('b')
             bill.add_sponsor('primary', sponsors[0].string)
@@ -95,6 +99,37 @@ class VTLegislationScraper(LegislationScraper):
                 bill.add_sponsor('cosponsor', sponsor.string)
 
             self.add_bill(bill)
+
+    def parse_vote_new(self, bill, chamber, url):
+        vote_page = BeautifulSoup(self.urlopen(url))
+        table = vote_page.table
+        info_row = table.findAll('tr')[1]
+
+        date = info_row.td.contents[0]
+        date = dt.datetime.strptime(date, '%m/%d/%Y')
+        motion = info_row.findAll('td')[1].contents[0]
+        yes_count = int(info_row.findAll('td')[2].contents[0])
+        no_count = int(info_row.findAll('td')[3].contents[0])
+        abs_count = int(info_row.findAll('td')[4].contents[0])
+        passed = info_row.findAll('td')[5].contents[0] == 'Pass'
+
+        vote = Vote(chamber, date, motion, passed,
+                    yes_count, no_count, abs_count)
+
+        for tr in table.findAll('tr')[3:]:
+            if len(tr.findAll('td')) != 2:
+                continue
+
+            name = tr.td.contents[0].split(' of')[0]
+            type = tr.findAll('td')[1].contents[0]
+            if type.startswith('Yea'):
+                vote.yes(name)
+            elif type.startswith('Nay'):
+                vote.no(name)
+            else:
+                vote.other(name)
+
+        bill.add_vote(vote)
 
     def scrape_session_old(self, chamber, session):
         if chamber == "lower":
