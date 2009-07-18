@@ -45,10 +45,6 @@ class FLLegislationScraper(LegislationScraper):
             }
         }
 
-    def scrape_legislators(self, chamber, year):
-        if year not in self.metadata['session_details']:
-            raise NoDataForYear(year)
-
     def scrape_session(self, chamber, session):
         if chamber == 'upper':
             chamber_name = 'Senate'
@@ -115,7 +111,10 @@ class FLLegislationScraper(LegislationScraper):
                             act_chamber = 'upper'
                         else:
                             act_chamber = 'lower'
-                        bill.add_action(act_chamber, action, act_match.group(1))
+
+                        act_date = act_match.group(1)
+                        act_date = dt.datetime.strptime(act_date, '%m/%d/%y')
+                        bill.add_action(act_chamber, action, act_date)
 
                     # Get primary sponsor
                     # Right now we just list the committee as the primary sponsor
@@ -144,6 +143,73 @@ class FLLegislationScraper(LegislationScraper):
         self.scrape_session(chamber, year)
         for session in self.metadata['session_details'][year]['sub_sessions']:
             self.scrape_session(chamber, session)
+
+    def scrape_legislators(self, chamber, year):
+        if year not in self.metadata['session_details']:
+            raise NoDataForYear(year)
+
+        if chamber == 'upper':
+            self.scrape_senators(year)
+        else:
+            self.scrape_reps(year)
+
+    def scrape_senators(self, year):
+        if year != '2009':
+            return
+
+        leg_page = BeautifulSoup(self.urlopen("http://www.flsenate.gov/Legislators/index.cfm?Mode=Member%20Pages&Submenu=1&Tab=legislators"))
+
+        th = leg_page.find('th', text='Legislator').parent
+        table = th.parent.parent
+
+        for row in table.findAll('tr')[1:]:
+            full = row.td.a.contents[0].replace('  ', ' ')
+            (last, first, middle) = self.split_name(full)
+
+            district = row.findAll('td')[1].contents[0]
+            party = row.findAll('td')[2].contents[0]
+
+            leg = Legislator(year, 'upper', district, full,
+                             first, last, middle, party)
+            self.add_legislator(leg)
+
+    def scrape_reps(self, year):
+        if year != '2009':
+            return
+
+        leg_page = BeautifulSoup(self.urlopen("http://www.flhouse.gov/Sections/Representatives/representatives.aspx"))
+
+        table = leg_page.find('table', id='ctrlContentBox_ctrlPageContent__ctl0_dgLegislators')
+
+        for row in table.findAll('tr')[1:]:
+            full = row.findAll('td')[1].a.contents[0].replace('  ', ' ')
+            (last, first, middle) = self.split_name(full)
+
+            district = row.findAll('td')[3].contents[0]
+            party = row.findAll('td')[2].contents[0]
+
+            if party == 'D':
+                party = 'Democrat'
+            elif party == 'R':
+                party = 'Republican'
+
+            leg = Legislator(year, 'lower', district, full,
+                             first, last, middle, party)
+            self.add_legislator(leg)
+
+    def split_name(self, full):
+        last = full.split(',')[0]
+        rest = full.split(',')[1].strip()
+
+        m = re.search('\w([A-Z])\.', rest)
+        if m:
+            middle = m.group(1)
+        else:
+            middle = ''
+
+        first = rest.split(' ')[0]
+
+        return (last, first, middle)
 
 if __name__ == '__main__':
     FLLegislationScraper().run()
