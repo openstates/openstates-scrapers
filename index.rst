@@ -9,15 +9,15 @@ Fifty State Project Documentation
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    README
    scripts/pyutils/README
    scripts/rbutils/README
    scripts/state-specific-index
-   script/contributing
-   data/README
-   data/data-format
+   scripts/contributing
+
+
 
 Indices and tables
 ==================

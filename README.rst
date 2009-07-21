@@ -27,11 +27,6 @@ Project Goals
      2. create voting relationship between legislators and legislation 
 4. Build tools on top of data 
 
-To encourage as many contributions as possible we aren't saying "write in Python" 
-or anything, but we do need the code to follow a few guidelines.
-
-For details on how scripts should be written and how they should run see :doc:`scripts/pyutils/README` (or :doc:`scripts/rbutils/README`).
-For details on how data should be stored see :doc:`data/README`.
 
 .. _usage:
 
@@ -83,24 +78,28 @@ See LICENSING for the full terms of the GPLv3.
 Requirements
 ============
 
-It is preferred for the sake of maintenance that scripts are written in 
-Python, several Ruby scripts also exist if you are unfamiliar with Python.
+Although we have previously allowed you to write parsers in your
+language of choice, for the sake of maintenance we *highly* encourage
+you to write your parsers in Python. Currently Python is the only
+language we are supporting with our documentation and tools.  If you
+would like to contribute in a language other than Python, please send
+an email to `Fifty State Project Google Group
+<http://groups.google.com/group/fifty-state-project>`_ so we can
+discuss the issue.
 
-If you are completely unfamiliar with Python or Ruby writing a scraper in
-another language is preferred over not contributing at all but given the
-number of scripts already written in Python you are strongly encouraged  to
-consider it first.
+For details on how scripts should be written and how they should run see :doc:`scripts/pyutils/README`.
 
-:ref:`Python Libraries <python-dependencies>`
-Python (2.5+)
+If you are completely unfamiliar with Python there is other things you
+can do to help with the government transparency movement.  Ruby developers are encouraged to work on the `Congrelate <http://congrelate.com>`_ Project.  For other project ideas please join the `Sunlight Labs Google Group <http://groups.google.com/group/sunlightlabs>`_.
+
+
+.. _dependencies:
+
+Dependencies
 -------------
+* Python (2.5+)
 * BeautifulSoup
 * html5lib
 * simplejson if on Python 2.5
 * (this list is out of date, refer to specific scripts/state directories for dependencies)
 
-Ruby (1.8.*+)
--------------
-* hpricot (gem install hpricot)
-* fastercsv (gem install fastercsv)
-* mechanize (gem install mechanize)
