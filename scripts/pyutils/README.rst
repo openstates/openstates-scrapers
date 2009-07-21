@@ -1,3 +1,5 @@
+.. _pythonapi:
+
 ==================
 Python Scraper API
 ==================
