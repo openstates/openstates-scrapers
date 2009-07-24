@@ -3,15 +3,18 @@ from optparse import make_option, OptionParser
 import datetime, time
 import csv
 import os
+import sys
 import urllib2
 import warnings
 import random
 from hashlib import md5
+import cookielib
+import contextlib
+from BeautifulSoup import BeautifulSoup
 try:
     import json
 except ImportError:
     import simplejson as json
-
 
 class ScrapeError(Exception):
     """
@@ -41,6 +44,17 @@ class DateEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 class LegislationScraper(object):
+    """Subclass for each state's scraper
+
+    Subclasses must define :method:`scrape_bills` and the attribute
+    `state`
+
+    Put this at the top of your scripts::
+
+        import sys, os
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    """
+    
     option_list = (
         make_option('-y', '--year', action='append', dest='years',
                     help='year(s) to scrape'),
@@ -50,8 +64,8 @@ class LegislationScraper(object):
                     default=False, help='scrape upper chamber'),
         make_option('--lower', action='store_true', dest='lower',
                     default=False, help='scrape lower chamber'),
-        make_option('-v', '--verbose', action='store_true', dest='verbose',
-                    default=False, help="be verbose"),
+        make_option('-v', '--verbose', action='count', dest='verbose',
+                    default=False, help="be verbose (use multiple times for more debugging information)"),
         make_option('-d', '--output_dir', action='store', dest='output_dir',
                     help='output directory'),
         make_option('-n', '--no_cache', action='store_true', dest='no_cache',
@@ -64,9 +78,18 @@ class LegislationScraper(object):
 
     metadata = {}
 
+    # The earliest year for when legislative data is available:
+    # (Used for --all)
+    earliest_year = 1969
+    
+    # The user agent used for requests (this will show up in the
+    # state's logs):
+    user_agent = 'robot: http://wiki.sunlightlabs.com/index.php/Fifty_State_Project'
+
     def __init__(self):
         if not hasattr(self, 'state'):
             raise Exception('LegislationScrapers must have a state attribute')
+        self._cookie_jar = cookielib.CookieJar()
 
     def urlopen(self, url):
         """
@@ -77,6 +100,7 @@ class LegislationScraper(object):
             url_cache = os.path.join(self.cache_dir, self.state,
                                      md5(url).hexdigest()+'.html')
             if os.path.exists(url_cache):
+                self.debug('Getting %s from cache' % url)
                 return open(url_cache).read()
 
         if self.sleep:
@@ -87,28 +111,100 @@ class LegislationScraper(object):
             if self.requests >= 100:
                 len = random.randint(1, 10)
                 self.requests = 0
-                self.log("Long sleep: %d seconds" % len)
+                self.debug("Long sleep: %d seconds" % len)
             else:
                 len = random.random()
-                self.log("Short sleep: %f seconds" % len)
+                self.debug("Short sleep: %f seconds" % len)
 
             time.sleep(len)
 
-        data = urllib2.urlopen(url).read()
+        self.log('Retrieving URL: %s' % url)
+        req = urllib2.Request(url, headers=self._make_headers())
+        self._cookie_jar.add_cookie_header(req)
+        try:
+            resp = urllib2.urlopen(req)
+        except:
+            print 'Error fetching page: %s' % url
+            raise
+        self._cookie_jar.extract_cookies(resp, req)
+        data = resp.read()
 
         if not self.no_cache:
             open(url_cache, 'w').write(data)
 
         return data
 
+    def show_error(self, url, body):
+        exception = sys.exc_info()[1]
+        if isinstance(exception, urllib2.HTTPError):
+            print 'Error body:'
+            print exception.read()
+        print 'Error while parsing %s' % url
+        fn = 'error-page.html'
+        n = 0
+        while os.path.exists(fn):
+            n += 1
+            fn = 'error-page-%s.html'% n
+        fp = open(fn, 'wb')
+        fp.write(body)
+        fp.close()
+        print 'Bad page saved in %s' % fn
+
+    @contextlib.contextmanager
+    def urlopen_context(self, url):
+        """
+        Use like::
+
+            from __future__ import with_statement
+
+            class State(LegislationScraper):
+                def something(self):
+                    with self.urlopen_context(url) as page:
+                        use the page
+
+        When opening a page like this, if there is any error then the
+        page and the URL where this error occurred with be saved and
+        a better error message is presented.
+        """
+        body = self.urlopen(url)
+        try:
+            yield body
+        except:
+            self.show_error(url, body)
+            raise
+
+    @contextlib.contextmanager
+    def soup_context(self, url):
+        """
+        Like :method:`urlopen_context`, except returns a BeautifulSoup
+        parsed document.
+        """
+        body = self.urlopen(url)
+        soup = BeautifulSoup(body)
+        try:
+            yield soup
+        except:
+            self.show_error(url, body)
+            raise
+        
+    def _make_headers(self):
+        return {'User-Agent': self.user_agent}
+
     def log(self, msg):
         """
         Output debugging information if verbose mode is enabled.
         """
         if self.verbose:
-            if isinstance(msg, unicode):
-                msg = msg.encode('utf-8')
-            print "%s: %s" % (self.state, msg)
+            self._log(msg)
+
+    def debug(self, msg):
+        if self.verbose > 1:
+            self._log(msg)
+
+    def _log(self, msg):
+        if isinstance(msg, unicode):
+            msg = msg.encode('utf-8')
+        print "%s: %s" % (self.state, msg)
 
     def init_dirs(self):
 
@@ -261,8 +357,9 @@ class LegislationScraper(object):
             json.dump(metadata, f, cls=DateEncoder)
 
     def run(self):
-        options, spares = OptionParser(
-            option_list=self.option_list).parse_args()
+        parser = OptionParser(
+            option_list=self.option_list)
+        options, spares = parser.parse_args()
 
         self.verbose = options.verbose
         self.no_cache = options.no_cache
@@ -279,8 +376,11 @@ class LegislationScraper(object):
 
         years = options.years
         if options.all_years:
-            years = [str(y) for y in range(1969,
+            years = [str(y) for y in range(self.earliest_year,
                                            datetime.datetime.now().year+1)]
+        if not years:
+            parser.error("You must provide a --year YYYY or --all (all years) option")
+            
         chambers = []
         if options.upper:
             chambers.append('upper')
