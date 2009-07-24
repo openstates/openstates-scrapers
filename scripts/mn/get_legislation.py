@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import with_statement
 import logging
 import re
 import urllib
@@ -20,12 +21,12 @@ logger.addHandler(console_handler)
 
 
 # ugly hack
-import sys
-sys.path.append('./scripts')
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import LegislationScraper, NoDataForYear
 
 class MNLegislationScraper(LegislationScraper):
-    '''
+    """
     The following are functions that you can call on to store your data. The **kwargs argument is options but it allows you to define your own fields to populate.
 
         * add_bill(bill_chamber,bill_session,bill_id,bill_name, **kwargs)
@@ -52,7 +53,7 @@ class MNLegislationScraper(LegislationScraper):
               * action_chamber Chamber in which action happened. [What if it happened outside of either chamber?]
               * action_text Whatever the state called the action
               * action_date date/time action happened [Should we standardize the format?] 
-    '''
+    """
 
     state = 'mn'
 
@@ -191,10 +192,10 @@ class MNLegislationScraper(LegislationScraper):
         return bill_actions
 
     def get_bill_info(self, chamber, session, bill_detail_url):
-	'''Extracts all the requested info for a given bill.  
+	"""Extracts all the requested info for a given bill.  
 	
 	Calls the parent's methods to enter the results into CSV files.
-	'''
+	"""
         bill_detail_url_base='https://www.revisor.leg.state.mn.us/revisor/pages/search_status/'
         bill_detail_url = urlparse.urljoin(bill_detail_url_base, bill_detail_url)
 
@@ -203,48 +204,47 @@ class MNLegislationScraper(LegislationScraper):
         else:
             chamber = 'upper'
 
-        bill_data = urllib.urlopen(bill_detail_url).read()
-        bill_soup = BeautifulSoup(bill_data)
+        with self.soup_context(bill_detail_url) as bill_soup:
 
-        bill_id = self.extract_bill_id(bill_soup)
-        bill_title =  self.extract_bill_title(bill_soup)
-        self.add_bill(chamber, session, bill_id, bill_title)
+            bill_id = self.extract_bill_id(bill_soup)
+            bill_title =  self.extract_bill_title(bill_soup)
+            self.add_bill(chamber, session, bill_id, bill_title)
 
-        # get all versions of the bill.
-        # Versions of a bill are on a separate page, linked to from the bill
-        # details page in a link titled, "Bill Text".
-        version_url_base = 'https://www.revisor.leg.state.mn.us'
-        bill_version_link = self.extract_bill_version_link(bill_soup)
+            # get all versions of the bill.
+            # Versions of a bill are on a separate page, linked to from the bill
+            # details page in a link titled, "Bill Text".
+            version_url_base = 'https://www.revisor.leg.state.mn.us'
+            bill_version_link = self.extract_bill_version_link(bill_soup)
+
         version_detail_url = urlparse.urljoin(version_url_base, bill_version_link)
 
-        version_data = urllib.urlopen(version_detail_url).read()
-        version_soup = BeautifulSoup(version_data)
+        with self.soup_context(version_detail_url) as version_soup:
 
-        # MN bills can have multiple versions.  Get them all, and loop over
-        # the results, adding each one.
-        bill_versions = self.extract_bill_versions(version_soup)
-        for version in bill_versions:
-            version_name = version['name']
-            version_url = urlparse.urljoin(version_url_base, version['url'])
-            self.add_bill_version(chamber, session, bill_id, version_name, version_url)
+            # MN bills can have multiple versions.  Get them all, and loop over
+            # the results, adding each one.
+            bill_versions = self.extract_bill_versions(version_soup)
+            for version in bill_versions:
+                version_name = version['name']
+                version_url = urlparse.urljoin(version_url_base, version['url'])
+                self.add_bill_version(chamber, session, bill_id, version_name, version_url)
 
-        # grab primary and cosponsors 
-        # MN uses "Primary Author" to name a bill's primary sponsor.
-        # Everyone else listed will be added as a 'cosponsor'.
-        sponsors = self.extract_bill_sponsors(bill_soup)
-        primary_sponsor = sponsors[0]
-        cosponsors = sponsors[1:]
-        self.add_sponsorship(chamber, session, bill_id, 'primary', primary_sponsor)
-        for leg in cosponsors:
-            self.add_sponsorship(chamber, session, bill_id, 'cosponsor', leg)
+            # grab primary and cosponsors 
+            # MN uses "Primary Author" to name a bill's primary sponsor.
+            # Everyone else listed will be added as a 'cosponsor'.
+            sponsors = self.extract_bill_sponsors(bill_soup)
+            primary_sponsor = sponsors[0]
+            cosponsors = sponsors[1:]
+            self.add_sponsorship(chamber, session, bill_id, 'primary', primary_sponsor)
+            for leg in cosponsors:
+                self.add_sponsorship(chamber, session, bill_id, 'cosponsor', leg)
 
-        # Add Actions performed on the bill.
-        bill_actions = self.extract_bill_actions(bill_soup, chamber)
-        for action in bill_actions:
-            action_chamber = action['action_chamber']
-            action_date = action['action_date']
-            action_text = action['action_text']
-            self.add_action(chamber, session, bill_id, action_chamber, action_text, action_date)
+            # Add Actions performed on the bill.
+            bill_actions = self.extract_bill_actions(bill_soup, chamber)
+            for action in bill_actions:
+                action_chamber = action['action_chamber']
+                action_date = action['action_date']
+                action_text = action['action_text']
+                self.add_action(chamber, session, bill_id, action_chamber, action_text, action_date)
 
     def scrape_session(self, chamber, session, session_year, session_number, legislative_session):
 
@@ -260,20 +260,19 @@ class MNLegislationScraper(LegislationScraper):
             # Query Param: 'bill='
             url = 'https://www.revisor.leg.state.mn.us/revisor/pages/search_status/status_results.php?body=%s&search=basic&session=%s&bill=%s-%s&bill_type=bill&submit_bill=GO&keyword_type=all=1&keyword_field_long=1&keyword_field_title=1&titleword=' % (chamber, session, min, max-1)
             logger.debug("Getting bill data from: %s", url)
-            data = urllib.urlopen(url).read()
-            soup = BeautifulSoup(data)
-            # Index into the table containing the bills .
-            rows = soup.findAll('table')[6].findAll('tr')[1:]
-            logger.debug("Rows to process: %s", str(len(rows)))
-            # If there are no more results, then we've reached the
-            # total number of bills available for this session.
-            if len(rows) == 0:
-                logger.debug("Total Bills Found: %d", len(total_rows))
-                break
-            else:
-                total_rows.extend(rows)
-            # increment min for next loop so we don't get duplicates.
-            min = max 
+            with self.soup_context(url) as soup:
+                # Index into the table containing the bills .
+                rows = soup.findAll('table')[6].findAll('tr')[1:]
+                logger.debug("Rows to process: %s", str(len(rows)))
+                # If there are no more results, then we've reached the
+                # total number of bills available for this session.
+                if len(rows) == 0:
+                    logger.debug("Total Bills Found: %d", len(total_rows))
+                    break
+                else:
+                    total_rows.extend(rows)
+                # increment min for next loop so we don't get duplicates.
+                min = max 
     
         for row in total_rows:
             # The second column of the row contains a link pointing to 
@@ -281,8 +280,12 @@ class MNLegislationScraper(LegislationScraper):
             # the bill's info.
             cols = row.findAll('td')
             bill_details_column = cols[1]
-            # Extract the 'href' attribute value.
-            bill_details_url = bill_details_column.a.attrs[0][1]
+            try:
+                # Extract the 'href' attribute value.
+                bill_details_url = bill_details_column.a.attrs[0][1]
+            except:
+                logger.warning('Bad bill_details_column: %s' % bill_details_column)
+                continue
             self.get_bill_info(chamber, session, bill_details_url)
 
     def scrape_bills(self, chamber, year):
