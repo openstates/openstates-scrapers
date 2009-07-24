@@ -4,9 +4,8 @@ import re
 import datetime as dt
 from BeautifulSoup import BeautifulSoup
 
-# ugly hack
-import sys
-sys.path.append('./scripts')
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import *
 
 class FLLegislationScraper(LegislationScraper):
@@ -81,7 +80,7 @@ class FLLegislationScraper(LegislationScraper):
                     # Get bill name and info url
                     bill_link = b.parent.findNext('td').a
                     bill_name = bill_link.string.strip()
-                    info_url = "http://www.flsenate.gov/Session/%s&Year=%s" % (bill_link['href'], session)
+                    info_url = "http://www.flsenate.gov/Session/%s&Year=%s" % (bill_link['href'], session.replace(' ', ''))
 
                     # Add bill
                     bill = Bill(session, chamber, bill_id, bill_name)
@@ -98,7 +97,8 @@ class FLLegislationScraper(LegislationScraper):
                             bill.add_version(version_name, version_url)
 
                     # Get actions
-                    hist_table = info_page.find('pre', "billhistory")
+                    #hist_table = info_page.find('pre', "billhistory")
+                    hist_table = info_page.find('tr', 'billInfoHeader').findPrevious('tr')
                     hist = ""
                     for line in hist_table.findAll(text=True):
                         hist += line + "\n"
@@ -114,7 +114,10 @@ class FLLegislationScraper(LegislationScraper):
 
                         act_date = act_match.group(1)
                         act_date = dt.datetime.strptime(act_date, '%m/%d/%y')
-                        bill.add_action(act_chamber, action, act_date)
+
+                        for split_action in re.split(' -[HS]J \d+;? ?', action):
+                            if split_action:
+                                bill.add_action(act_chamber, split_action, act_date)
 
                     # Get primary sponsor
                     # Right now we just list the committee as the primary sponsor
