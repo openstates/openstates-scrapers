@@ -14,8 +14,36 @@ class MOLegislationScraper(LegislationScraper):
     state = 'mo'
 
     metadata = {
-        }
-    
+        'state_name': 'Missouri',
+        'legislature_name': 'Missouri General Assembly',
+        'lower_chamber_name': 'House of Representatives',
+        'upper_chamber_name': 'Senate',
+        'lower_title': 'Representative',
+        'upper_title': 'Senator',
+        'lower_term': 2,
+        'upper_term': 4,
+        'sessions': ['1998', '1999', '2000', '2001', '2002', '2003',
+                     '2004', '2005', '2006', '2007', '2008', '2009',],
+        'session_details': {
+            '1998': {'years': [1998], 'sub_sessions': []},
+            '1999': {'years': [1999], 'sub_sessions': []},
+            '2000': {'years': [2000], 'sub_sessions': []},
+            '2001': {'years': [2001],
+                     'sub_sessions': ['2001 Extraordinary Session']},
+            '2002': {'years': [2002], 'sub_sessions': []},
+            '2003': {'years': [2003],
+                     'sub_sessions': ['2003 1st Extraordinary Session',
+                                      '2003 2nd Extraordinary Session']},
+            '2004': {'years': [2004], 'sub_sessions': []},
+            '2005': {'years': [2005],
+                     'sub_sessions': ['2005 Extraordinary Session']},
+            '2006': {'years': [2006], 'sub_sessions': []},
+            '2007': {'years': [2007],
+                     'sub_sessions': ['2007 Extraordinary Session']},
+            '2008': {'years': [2008], 'sub_sessions': []},
+            '2009': {'years': [2009], 'sub_sessions': []},
+        }}
+
     house_root = 'http://www.house.mo.gov'
     senate_root = 'http://www.senate.mo.gov'
 
@@ -55,15 +83,11 @@ class MOLegislationScraper(LegislationScraper):
                     bill_url= bill_root + '/Bill.aspx?SessionType=R&BillID=' + bill_web_id
                     self.parse_senate_billpage(bill_url, year)
 
-    # parse through a senate bill from its page. year
-    # is passed in, since it's not obvious how to retrieve
-    # it from the page. calls add_bill, and add_sponsorship. 
-    # also calls methods to parse actions and cosponsors.
     def parse_senate_billpage(self, bill_url, year):
         with self.soup_context(bill_url) as bill_page:
             # get all the info needed to record the bill
             bill_id   = bill_page.find(id="lblBillNum").b.font.contents[0]
-            bill_title = bill_page.find(id="lblBillTitle").font.contents[0]
+            bill_title = bill_page.find(id="lblBillTitle").font.string
             bill_desc = bill_page.find(id="lblBriefDesc").font.contents[0]
             bill_lr   = bill_page.find(id="lblLRNum").font.contents[0]
 
@@ -98,7 +122,7 @@ class MOLegislationScraper(LegislationScraper):
             if version_tags != None:
                 for version_tag in version_tags:
                     pdf_url = version_tag.font.a['href']
-                    version = version_tag.font.a.contents[0]
+                    version = version_tag.font.a.string
                     bill.add_version(version, pdf_url)
 
     def parse_senate_actions(self, bill, url):
@@ -136,7 +160,7 @@ class MOLegislationScraper(LegislationScraper):
         #we only have data from 1998-2009
         assert int(year) >= 1998, "no lower chamber data from before 1998"
         assert int(year) <= 2009, "no future data"
-    
+
         sessions = {
             1998: ['bills98'],
             1999: ['bills99'],
@@ -162,12 +186,14 @@ class MOLegislationScraper(LegislationScraper):
         with self.soup_context(url) as bill_list_page:
             # find the first center tag, take the text after 'House of Representatives'
             # and before 'Bills' as the session name
-            header_tag = bill_list_page.find('center')
-            m = re.search("House of Representatives(.*?)Bills", str(header_tag), re.I | re.DOTALL) 
-            session = m.group(1)
-            session = re.sub("<.*?>", '', session).strip()
+            header_tag = str(bill_list_page.find('center'))
+            if header_tag.find('1st Extraordinary Session') != -1:
+                session = year + ' 1st Extraordinary Session'
+            elif header_tag.find('2nd Extraordinary Session') != -1:
+                session = year + ' 2nd Extraordinary Session'
+            else:
+                session = year
 
-            # get bills
             bills = bill_list_page.findAll('b')
 
             for bill in bills:
@@ -234,10 +260,11 @@ class MOLegislationScraper(LegislationScraper):
             version_tags = bill_page.findAll(href=re.compile("biltxt"))
             if version_tags:
                 for version_tag in version_tags:
-                    version  = clean_text(version_tag.b.contents[0])
-                    text_url = version_tag['href']
-                    pdf_url  = version_tag.previousSibling.previousSibling['href']
-                    bill.add_version(version, text_url, pdf_url=pdf_url)
+                    if version_tag.b:
+                        version = clean_text(version_tag.b.contents[0])
+                        text_url = version_tag['href']
+                        pdf_url = version_tag.previousSibling.previousSibling['href']
+                        bill.add_version(version, text_url, pdf_url=pdf_url)
 
         self.add_bill(bill)
 
@@ -281,7 +308,7 @@ class MOLegislationScraper(LegislationScraper):
                              sponsor_link=cell.a['href'])
         else:
             # there are several sponsors, and we have to go to the bill text
-            bill_text_url = self.house_root + cell.a.nextSibling.nextSibling['href']
+            bill_text_url = cell.a.nextSibling.nextSibling['href']
 
             #don't need to parse bill in to soup
             with self.urlopen_context(bill_text_url) as doc:
