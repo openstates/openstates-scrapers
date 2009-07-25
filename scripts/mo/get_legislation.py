@@ -89,7 +89,7 @@ class MOLegislationScraper(LegislationScraper):
             bill_id   = bill_page.find(id="lblBillNum").b.font.contents[0]
             bill_title = bill_page.find(id="lblBillTitle").font.string
             bill_desc = bill_page.find(id="lblBriefDesc").font.contents[0]
-            bill_lr   = bill_page.find(id="lblLRNum").font.contents[0]
+            bill_lr   = bill_page.find(id="lblLRNum").font.string
 
             bill = Bill(year, 'upper', bill_id, bill_desc, bill_url=bill_url,
                         bill_lr=bill_lr, official_title=bill_title)
@@ -219,13 +219,13 @@ class MOLegislationScraper(LegislationScraper):
             bill_desc = header_table.findAll('td')[1].contents[0]
             bill_desc = clean_text(bill_desc)
 
-            lr_label_tag = bill_page.find(text = re.compile("LR"))
+            lr_label_tag = bill_page.find(text = re.compile("LR Number:"))
             bill_lr = lr_label_tag.next.contents[0].strip()
 
             # could substitute the description for the name, but keeping it separate for now.
             bill = Bill(session, 'lower', bill_id, bill_desc,
                         bill_url=url, bill_lr=bill_lr)
-        
+
             # get the sponsors and cosponsors
             sponsor_dirty = bill_page.em.contents[0]
             m = re.search("(.*)\(.*\)",sponsor_dirty)
@@ -243,7 +243,7 @@ class MOLegislationScraper(LegislationScraper):
 
             bill.add_sponsor('primary', bill_sponsor,
                              sponsor_link=bill_sponsor_link)
-        
+
             # check for cosponsors
             cosponsor_cell = bill_details_tbl.find(text = re.compile("CoSponsor")).next
             if cosponsor_cell.a:
@@ -251,7 +251,7 @@ class MOLegislationScraper(LegislationScraper):
 
             # parse out all the actions
             actions_link_tag = bill_page.find('a',text='ACTIONS').previous.previous
-        
+
             actions_link = actions_link_tag['href']
             actions_link = re.sub("content","print",actions_link)
             self.parse_house_actions(bill, actions_link)
@@ -313,13 +313,14 @@ class MOLegislationScraper(LegislationScraper):
             #don't need to parse bill in to soup
             with self.urlopen_context(bill_text_url) as doc:
                 # people between (Sponsor) and (Co-Sponsor) are the cosponsors
-                m = re.search(r"\(Sponsor\),(.*)\(Co", doc, re.DOTALL)
-                cosponsor_list = clean_text(m.group(1))
-                cosponsor_list = re.split(" ?(?:,| AND ) ?", cosponsor_list)
+                m = re.search(r"\(Sponsor\),?(.*)\(Co", doc, re.DOTALL)
+                if m:
+                    cosponsor_list = clean_text(m.group(1))
+                    cosponsor_list = re.split(" ?(?:,| AND ) ?", cosponsor_list)
 
-                for cosponsor_dirty in cosponsor_list:
-                    cosponsor = clean_text(cosponsor_dirty)
-                    bill.add_sponsor('cosponsor', cosponsor)
+                    for cosponsor_dirty in cosponsor_list:
+                        cosponsor = clean_text(cosponsor_dirty)
+                        bill.add_sponsor('cosponsor', cosponsor)
 
 if __name__ == '__main__':
     MOLegislationScraper().run()
