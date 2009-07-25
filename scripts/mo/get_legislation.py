@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Notes about this scraper:
 # 1. This scripts bills after 2005.
@@ -9,8 +9,8 @@ import urllib,urllib2
 import datetime
 
 # ugly hack
-import sys
-sys.path.append('./scripts')
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import LegislationScraper, NoDataForYear
 
 # take in a url, return a beautiful soup

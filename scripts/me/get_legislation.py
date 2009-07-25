@@ -5,9 +5,8 @@ import re
 from BeautifulSoup import BeautifulSoup
 import datetime as dt
 
-# ugly hack
-import sys
-sys.path.append('./scripts')
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import LegislationScraper, NoDataForYear
 
 class MELegislationScraper(LegislationScraper):

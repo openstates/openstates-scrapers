@@ -1,6 +1,9 @@
-import urllib, re, sys
+#!/usr/bin/env python
+import urllib, re
 from BeautifulSoup import BeautifulSoup as BS
-sys.path.insert(0, '../pyutils')
+
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from legislation import LegislationScraper, NoDataForYear
 
 def cleansource(data):

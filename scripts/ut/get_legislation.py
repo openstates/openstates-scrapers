@@ -4,9 +4,8 @@ import re
 import datetime as dt
 import html5lib
 
-# ugly hack
-import sys
-sys.path.append('./scripts')
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import *
 
 class UTLegislationScraper(LegislationScraper):

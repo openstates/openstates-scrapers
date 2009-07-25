@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Notes about this scraper:
 # 1. MA has not posted any bill text of bills in the current session,
@@ -16,9 +16,8 @@ import re
 import urllib,urllib2
 import time
 
-# ugly hack
-import sys
-sys.path.append('.')
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import run_legislation_scraper
 
 def scrape_legislation(chamber,year):

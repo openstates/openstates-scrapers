@@ -11,9 +11,8 @@ from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy.ext.declarative import declarative_base
 import re
 
-# ugly hack
-import sys
-sys.path.append('./scripts')
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import *
 
 # Code for handling California's legislative info SQL dumps

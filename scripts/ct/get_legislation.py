@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 #Bill numbering:
 #SB 1-5000. (errors around 1072?)
@@ -11,9 +11,8 @@ import urllib,urllib2
 import time
 import string
 
-# ugly hack
-import sys
-sys.path.append('./scripts')
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import *
 
 class CTVote():

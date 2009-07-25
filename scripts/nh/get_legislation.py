@@ -1,12 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import urllib, urllib2
 import unicodedata;
 import re
 from BeautifulSoup import BeautifulSoup
 
-# ugly hack
-import sys
-sys.path.append('./scripts')
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import LegislationScraper, NoDataForYear
 
 class NHLegislationScraper(LegislationScraper):
