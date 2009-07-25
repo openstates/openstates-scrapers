@@ -274,6 +274,7 @@ class LegislationScraper(object):
 
         filename = "%s:%s:%s.json" % (bill['session'], bill['chamber'],
                                       bill['bill_id'])
+        filename = filename.encode('ascii', 'replace')
         with open(os.path.join(self.output_dir, "bills", filename), 'w') as f:
             json.dump(bill, f, cls=DateEncoder)
 
@@ -297,6 +298,7 @@ class LegislationScraper(object):
                                          legislator['chamber'],
                                          legislator['district'],
                                          legislator['full_name'])
+        filename = filename.encode('ascii', 'replace')
         with open(os.path.join(self.output_dir, "legislators", filename),
                   'w') as f:
             json.dump(legislator, f, cls=DateEncoder)
