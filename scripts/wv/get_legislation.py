@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import urllib, re
 from BeautifulSoup import BeautifulSoup as BS
+import datetime as dt
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -140,7 +141,7 @@ class WVLegislationScraper(LegislationScraper):
                     # This is not actually an action
                     continue
                 date, action = row.findAll('td')[:2]
-                date = date.contents[0]
+                date = dt.datetime.strptime(date.contents[0], '%m/%d/%y')
                 action = action.contents[0].strip()
                 if 'House' in action:
                     actor = 'lower'
