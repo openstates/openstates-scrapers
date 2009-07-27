@@ -26,8 +26,10 @@ def cleansponsor(sponsor):
     return sponsor
 
 def issponsorlink(a):
-    return a['title'].startswith('View bills Delegate') or \
-           a['title'].startswith('View bills Senator')
+    if 'title' in a:
+        return (a['title'].startswith('View bills Delegate') or
+                a['title'].startswith('View bills Senator'))
+    return False
 
 def sessionexisted(data):
     return not re.search('Please choose another session', data)
@@ -80,16 +82,23 @@ class WVLegislationScraper(LegislationScraper):
 
         q = 'Bills_all_bills.cfm?year=%s&sessiontype=%s&btype=bill&orig=%s' % (year, session, c)
 
-        with self.urlopen_context(urlbase % q) as data:
-            if not sessionexisted(data):
+        try:
+            with self.urlopen_context(urlbase % q) as data:
+                if not sessionexisted(data):
+                    return False
+                soup = BS(cleansource(data))
+                rows = soup.findAll('table')[1].findAll('tr')[1:]
+                for row in rows:
+                    histlink = urlbase % row.td.a['href']
+                    billid = row.td.a.contents[0].contents[0]
+                    self.scrape_bill(chamber, session, billid, histlink, year)
+                return True
+        except urllib2.HTTPError as e:
+            if e.code == 500:
+                # Nonexistent session
                 return False
-            soup = BS(cleansource(data))
-            rows = soup.findAll('table')[1].findAll('tr')[1:]
-            for row in rows:
-                histlink = urlbase % row.td.a['href']
-                billid = row.td.a.contents[0].contents[0]
-                self.scrape_bill(chamber, session, billid, histlink, year)
-            return True
+            else:
+                raise e
 
     def scrape_bill(self, chamber, session, billid, histurl, year):
         if year[0] != 'R':
@@ -102,6 +111,7 @@ class WVLegislationScraper(LegislationScraper):
             basicinfo = soup.findAll('div', id='bhistleft')[0]
             hist = basicinfo.table
 
+            sponsor = None
             for b in basicinfo.findAll('b'):
                 if b.next.startswith('SUMMARY'):
                     title = b.findNextSiblings(text=True)[0].strip()
@@ -112,7 +122,9 @@ class WVLegislationScraper(LegislationScraper):
                         sponsor = cleansponsor(a.contents[0])
 
             bill = Bill(session, chamber, billid, title)
-            bill.add_sponsor('primary', sponsor)
+
+            if sponsor:
+                bill.add_sponsor('primary', sponsor)
 
             for row in hist.findAll('tr'):
                 link = row.td.a
