@@ -5,33 +5,36 @@ def clean_text(text):
     newtext = re.sub(r"[\r\n]+"," ",text)
     newtext = re.sub(r"\s{2,}"," ",newtext)
     m = re.match(r"(.*)\(.*?\)",newtext)
-    if m == None:
-        return newtext
+    if not m:
+        return newtext.strip()
     else:
-        return m.group(1)
+        return m.group(1).strip()
 
-# look in the action to try to parse out the chamber
-# that took the action
-def house_get_chamber_from_action(text):
+def house_get_actor_from_action(text):
     m = re.search(r"\((H|S)\)",text)
-    if m == None:
-        return None
+    if not m:
+        if text.endswith('Governor'):
+            return 'Governor'
+        else:
+            return 'lower'
+
     abbrev = m.group(1)
     if abbrev == 'S':
         return 'upper'
     return 'lower'
 
-# look in the action to try to parse out the chamber
-# that took the action
-def senate_get_chamber_from_action(text):
+def senate_get_actor_from_action(text):
     if re.search("Prefiled",text):
         return 'upper'
-    m = re.search(r"^(H|S)",text)
-    if m == None:
-        m = re.search(r" (H|S) ",text)
-    if m != None:
-        if m.group(1) == 'S':
-            return 'upper'
+
+    m = re.search(r"(H|S)",text)
+    if not m:
+        if text.endswith('Governor'):
+            return 'Governor'
         else:
-            return 'lower'
-    return None
+            return 'upper'
+
+    if m.group(1) == 'S':
+        return 'upper'
+    else:
+        return 'lower'

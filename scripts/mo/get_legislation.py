@@ -3,6 +3,7 @@ from __future__ import with_statement
 import re
 import datetime as dt
 import html5lib
+import urllib2
 from utils import *
 
 import sys, os
@@ -135,8 +136,8 @@ class MOLegislationScraper(LegislationScraper):
                 date = row.td.contents[0]
                 date = dt.datetime.strptime(date, '%m/%d/%Y')
                 action = row.td.nextSibling.nextSibling.contents[0]
-                act_chamber = senate_get_chamber_from_action(action)
-                bill.add_action(act_chamber, action, date)
+                actor = senate_get_actor_from_action(action)
+                bill.add_action(actor, action, date)
 
     def parse_senate_cosponsors(self, bill, url):
         with self.soup_context(url) as cosponsors_page:
@@ -284,8 +285,8 @@ class MOLegislationScraper(LegislationScraper):
                 # previous action
                 if row.td != None:
                     if not row.td.contents[0] and row.td.contents[0] != ' ':
-                        act_chamber = house_get_chamber_from_action(action)
-                        bill.add_action(act_chamber, action, date)
+                        actor = house_get_actor_from_action(action)
+                        bill.add_action(actor, action, date)
                         date = row.td.contents[0]
                         date = dt.datetime.strptime(date, '%m/%d/%Y')
                         action = row.td.nextSibling.nextSibling.contents[0]
@@ -293,8 +294,8 @@ class MOLegislationScraper(LegislationScraper):
                         action += ' ' + row.td.nextSibling.nextSibling.contents[0]
 
         # add that last action
-        act_chamber = house_get_chamber_from_action(action)
-        bill.add_action(act_chamber, action, date)
+        actor = house_get_actor_from_action(action)
+        bill.add_action(actor, action, date)
 
     def parse_house_cosponsors(self, bill, cell):
         # if there's only one sponsor, we don't have to worry about this.
@@ -310,8 +311,9 @@ class MOLegislationScraper(LegislationScraper):
             # there are several sponsors, and we have to go to the bill text
             bill_text_url = cell.a.nextSibling.nextSibling['href']
 
-            #don't need to parse bill in to soup
-            with self.urlopen_context(bill_text_url) as doc:
+            try:
+                doc = self.urlopen(bill_text_url)
+
                 # people between (Sponsor) and (Co-Sponsor) are the cosponsors
                 m = re.search(r"\(Sponsor\),?(.*)\(Co", doc, re.DOTALL)
                 if m:
@@ -321,6 +323,14 @@ class MOLegislationScraper(LegislationScraper):
                     for cosponsor_dirty in cosponsor_list:
                         cosponsor = clean_text(cosponsor_dirty)
                         bill.add_sponsor('cosponsor', cosponsor)
+            except urllib2.HTTPError as e:
+                if e.code == 404:
+                    # Some of the bill text pages are broken, but the
+                    # rest of the bill metadata is valid so just
+                    # log the error and move on
+                    self.log('404 on %s, continuing' % bill_text_url)
+                else:
+                    raise e
 
 if __name__ == '__main__':
     MOLegislationScraper().run()
