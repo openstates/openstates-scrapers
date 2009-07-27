@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from pyutils.legislation import LegislationScraper, NoDataForYear
-
 import urlparse
 from lxml.html import parse
+
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pyutils.legislation import *
 
 class GALegislationScraper(LegislationScraper):
     """
@@ -31,11 +30,6 @@ class GALegislationScraper(LegislationScraper):
         <number> is the number of the resoltion or bill
     
     Each session needs its own parser, so we will do it manually...
-    
-    self.add_bill(bill_chamber, bill_session, bill_id, bill_name)
-    self.add_bill_version(bill_chamber, bill_session, bill_id, version_name, version_url)
-    self.add_sponsorship(bill_chamber, bill_session, bill_id, sponsor_type, sponsor_name)
-    self.add_action(bill_chamber, bill_session, bill_id, action_chamber, action_text, action_date)
     """
     
     state = 'ga'
@@ -79,10 +73,10 @@ class GALegislationScraper(LegislationScraper):
         
         ### Bill
         name = page.cssselect('h3 br')[0].tail.split('-', 1)[1].strip()
-        self.add_bill(chamberName, session, number, name)
+        bill = Bill(session, chamberName, number, name)
         
         ### Versions
-        self.add_bill_version( chamberName, session, number, 'Current', url.replace('/sum/', '/fulltext/') )
+        bill.add_version('Current', url.replace('/sum/', '/fulltext/'))
         
         ### Sponsorships
         rows = page.cssselect('center table tr')
@@ -92,7 +86,7 @@ class GALegislationScraper(LegislationScraper):
             if row.text_content().strip() == 'Links / Committees / Status':
                 break
             for a in row.cssselect('a'):
-                self.add_sponsorship(chamberName, session, number, '', a.text_content().strip())
+                bill.add_sponsor('', a.text_content().strip())
         
         ### Actions
         # The actions are in a pre table that looks like:
@@ -113,9 +107,11 @@ class GALegislationScraper(LegislationScraper):
             if '/' not in senate_date and '/' not in house_date:
                 continue
             if senate_date:
-                self.add_action(chamberName, session, number, 'upper', action_text, senate_date)
+                bill.add_action('upper', action_text, senate_date)
             if house_date:
-                self.add_action(chamberName, session, number, 'lower', action_text, house_date)
+                bill.add_action('lower', action_text, house_date)
+
+        self.add_bill(bill)
     
     def scrape1997(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/1997_98/leg/sum/sb1.htm"
@@ -129,16 +125,16 @@ class GALegislationScraper(LegislationScraper):
         
         ### Bill
         name = page.cssselect('tr > td > font > b')[0].text_content().split('-', 1)[1]
-        self.add_bill(chamberName, session, number, name)
+        bill = Bill(session, chamberName, number, name)
         
         ### Versions
-        self.add_bill_version( chamberName, session, number, 'Current', url.replace('/sum/', '/fulltext/') )
+        bill.add_version('Current', url.replace('/sum/', '/fulltext/'))
         
         ### Sponsorships
         for a in tables[0].cssselect('a'):
             if a.text_content().strip() == 'Current':
                 break
-            self.add_sponsorship(chamberName, session, number, '', a.text_content().strip())
+            bill.add_sponsor('', a.text_content().strip())
         
         ### Actions
         for row in tables[1].cssselect('tr'):
@@ -148,9 +144,11 @@ class GALegislationScraper(LegislationScraper):
             if '/' not in senate_date and '/' not in house_date:
                 continue
             if senate_date:
-                self.add_action(chamberName, session, number, 'upper', action_text, senate_date)
+                bill.add_action('upper', action_text, senate_date)
             if house_date:
-                self.add_action(chamberName, session, number, 'lower', action_text, house_date)
+                bill.add_action('lower', action_text, house_date)
+
+        self.add_bill(bill)
     
     def scrape1999(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/1999_00/leg/sum/sb1.htm"
@@ -161,14 +159,14 @@ class GALegislationScraper(LegislationScraper):
         
         ### Bill
         name = tables[1].cssselect('a')[0].text_content().split('-', 1)[1]
-        self.add_bill(chamberName, session, number, name)
+        bill = Bill(session, chamberName, number, name)
         
         ### Versions
-        self.add_bill_version( chamberName, session, number, 'Current', url.replace('/sum/', '/fulltext/') )
+        bill.add_version('Current', url.replace('/sum/', '/fulltext/'))
         
         ### Sponsorships
         for a in tables[2].cssselect('a'):
-            self.add_sponsorship(chamberName, session, number, '', a.text_content().strip())
+            bill.add_sponsor('', a.text_content().strip())
         
         ### Actions
         for row in tables[-1].cssselect('tr'):
@@ -178,9 +176,11 @@ class GALegislationScraper(LegislationScraper):
             if '/' not in senate_date and '/' not in house_date:
                 continue
             if senate_date:
-                self.add_action(chamberName, session, number, 'upper', action_text, senate_date)
+                bill.add_action('upper', action_text, senate_date)
             if house_date:
-                self.add_action(chamberName, session, number, 'lower', action_text, house_date)
+                bill.add_action('lower', action_text, house_date)
+
+        self.add_bill(bill)
     
     def scrape2001(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/2001_02/sum/sb1.htm"
@@ -191,11 +191,11 @@ class GALegislationScraper(LegislationScraper):
         
         ### Bill
         name = tables[0].text_content().split('-', 1)[1]
-        self.add_bill(chamberName, session, number, name)
+        bill = Bill(session, chamberName, number, name)
         
         ### Sponsorships
         for a in tables[1].cssselect('a'):
-            self.add_sponsorship(chamberName, session, number, '', a.text_content().strip())
+            bill.add_sponsor('', a.text_content().strip())
         
         ### Actions
         center = page.cssselect('table center')[-1]
@@ -207,14 +207,17 @@ class GALegislationScraper(LegislationScraper):
                 continue
             if action_text.startswith('Senate'):
                 action_text = action_text.split(' ', 1)[1].strip()
-                self.add_action(chamberName, session, number, 'upper', action_text, date)
+                bill.add_action('upper', action_text, date)
             elif action_text.startswith('House'):
                 action_text = action_text.split(' ', 1)[1].strip()
-                self.add_action(chamberName, session, number, 'lower', action_text, date)
+                bill.add_action('lower', action_text, date)
         
         ### Versions
         for row in center.cssselect('table table')[1].cssselect('a'):
-            self.add_bill_version( chamberName, session, number, a.text_content(), urlparse.urljoin(url, a.get('href')) )
+            bill.add_version(a.text_content(),
+                             urlparse.urljoin(url, a.get('href')))
+
+        self.add_bill(bill)
     
     def scrape2003(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/2003_04/sum/sum/sb1.htm"
@@ -225,11 +228,11 @@ class GALegislationScraper(LegislationScraper):
         
         ### Bill
         name = tables[0].text_content().split('-', 1)[1]
-        self.add_bill(chamberName, session, number, name)
+        bill = Bill(session, chamberName, number, name)
         
         ### Sponsorships
         for a in tables[1].cssselect('a'):
-            self.add_sponsorship(chamberName, session, number, '', a.text_content().strip())
+            bill.add_sponsor('', a.text_content().strip())
         
         ### Actions
         center = page.cssselect('center table center')[0]
@@ -240,13 +243,16 @@ class GALegislationScraper(LegislationScraper):
             if '/' not in date:
                 continue
             if action_text.startswith('Senate'):
-                self.add_action(chamberName, session, number, 'upper', action_text, date)
+                bill.add_action('upper', action_text, date)
             elif action_text.startswith('House'):
-                self.add_action(chamberName, session, number, 'lower', action_text, date)
+                bill.add_action('lower', action_text, date)
         
         ### Versions
         for row in center.cssselect('table')[-1].cssselect('a'):
-            self.add_bill_version( chamberName, session, number, a.text_content(), urlparse.urljoin(url, a.get('href')) )
+             bill.add_version(a.text_content(),
+                              urlparse.urljoin(url, a.get('href')))
+
+        self.add_bill(bill)
     
     def scrape2005(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/2005_06/sum/sum/sb1.htm"
@@ -254,11 +260,11 @@ class GALegislationScraper(LegislationScraper):
         
         ### Bill
         name = page.cssselect('#legislation h1')[0].text_content().strip()
-        self.add_bill(chamberName, session, number, name)
+        bill = Bill(session, chamberName, number, name)
         
         ### Sponsorships
         for a in page.cssselect("#sponsors a"):
-            self.add_sponsorship(chamberName, session, number, '', a.text_content().strip())
+            bill.add_sponsor('', a.text_content().strip())
         
         ### Actions
         for row in page.cssselect('#history tr')[1:]:
@@ -267,13 +273,16 @@ class GALegislationScraper(LegislationScraper):
             if '/' not in date:
                 continue
             if action_text.startswith('Senate'):
-                self.add_action(chamberName, session, number, 'upper', action_text, date)
+                bill.add_action('upper', action_text, date)
             elif action_text.startswith('House'):
-                self.add_action(chamberName, session, number, 'lower', action_text, date)
+                bill.add_action('lower', action_text, date)
         
         ### Versions
         for row in page.cssselect('#versions a'):
-            self.add_bill_version( chamberName, session, number, a.text_content(), urlparse.urljoin(url, a.get('href')) )
+            bill.add_version(a.text_content(),
+                             urlparse.urljoin(url, a.get('href')))
+
+        self.add_bill(bill)
     
     def scrape2007(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/2007_09/sum/sum/sb1.htm"
@@ -281,11 +290,11 @@ class GALegislationScraper(LegislationScraper):
         
         ### Bill
         name = page.cssselect('#legislation h1')[0].text_content().strip()
-        self.add_bill(chamberName, session, number, name)
+        bill = Bill(session, chamberName, number, name)
         
         ### Sponsorships
         for a in page.cssselect("#sponsors a"):
-            self.add_sponsorship(chamberName, session, number, '', a.text_content().strip())
+            bill.add_sponsor('', a.text_content().strip())
         
         ### Actions
         for row in page.cssselect('#history tr')[1:]:
@@ -294,13 +303,16 @@ class GALegislationScraper(LegislationScraper):
             if '/' not in date:
                 continue
             if action_text.startswith('Senate'):
-                self.add_action(chamberName, session, number, 'upper', action_text, date)
+                bill.add_action('upper', action_text, date)
             elif action_text.startswith('House'):
-                self.add_action(chamberName, session, number, 'lower', action_text, date)
+                bill.add_action('lower', action_text, date)
         
         ### Versions
         for row in page.cssselect('#versions a'):
-            self.add_bill_version( chamberName, session, number, a.text_content(), urlparse.urljoin(url, a.get('href')) )
+            bill.add_version(a.text_content(),
+                             urlparse.urljoin(url, a.get('href')))
+
+        self.add_bill(bill)
     
     def scrape2009(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/2009_10/sum/sum/sb1.htm"
@@ -308,11 +320,13 @@ class GALegislationScraper(LegislationScraper):
         
         ### Bill
         name = page.cssselect('#legislation h1')[0].text_content().strip()
-        self.add_bill(chamberName, session, number, name)
+        bill = Bill(session, chamberName, number, name)
+        #self.add_bill(chamberName, session, number, name)
         
         ### Sponsorships
         for a in page.cssselect("#sponsors a"):
-            self.add_sponsorship(chamberName, session, number, '', a.text_content().strip())
+            #self.add_sponsorship(chamberName, session, number, '', a.text_content().strip())
+            bill.add_sponsor('', a.text_content().strip())
         
         ### Actions
         for row in page.cssselect('#history tr')[1:]:
@@ -321,13 +335,19 @@ class GALegislationScraper(LegislationScraper):
             if '/' not in date:
                 continue
             if action_text.startswith('Senate'):
-                self.add_action(chamberName, session, number, 'upper', action_text, date)
+                #self.add_action(chamberName, session, number, 'upper', action_text, date)
+                bill.add_action('upper', action_text, date)
             elif action_text.startswith('House'):
-                self.add_action(chamberName, session, number, 'lower', action_text, date)
+                #self.add_action(chamberName, session, number, 'lower', action_text, date)
+                bill.add_action('lower', action_text, date)
         
         ### Versions
         for row in page.cssselect('#versions a'):
-            self.add_bill_version( chamberName, session, number, a.text_content(), urlparse.urljoin(url, a.get('href')) )
+            #self.add_bill_version( chamberName, session, number, a.text_content(), urlparse.urljoin(url, a.get('href')) )
+            bill.add_version(a.text_content(),
+                             urlparse.urljoin(url, a.get('href')))
+
+        self.add_bill(bill)
 
 if __name__ == '__main__':
     GALegislationScraper().run()
