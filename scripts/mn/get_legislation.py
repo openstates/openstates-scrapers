@@ -19,42 +19,11 @@ console_handler.setFormatter(console_formatter)
 # Add the handlers to the logger.
 logger.addHandler(console_handler)
 
-
-# ugly hack
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import LegislationScraper, NoDataForYear
+from pyutils.legislation import *
 
 class MNLegislationScraper(LegislationScraper):
-    """
-    The following are functions that you can call on to store your data. The **kwargs argument is options but it allows you to define your own fields to populate.
-
-        * add_bill(bill_chamber,bill_session,bill_id,bill_name, **kwargs)
-              * bill_chamber: Whichever chamber the bill game from, either "upper" or "lower". [What do we do when there is only one chamber?]
-              * bill_session: Session number bill came from, as defined by the state, be that 2007, or 196, or Whatever.
-              * 'bill_id: However the state identifies the bill. For example: S-102,H42.
-              * bill_name: The English name the stage gave the bill 
-        * add_bill_version(bill_chamber,bill_session,bill_id,version_name, version_url, **kwargs)
-              * bill_chamber same as in add_bill
-              * bill_session same as in add_bill
-              * bill_id same as in add_bill
-              * version_name Name of version, whatever the state named it. This could be "Committee Draft", "Proposed Version". If there is only one version of the bill, you can just say "Full Text".
-              * version_url Full url to full text of bill (HTML and plan text preferred, but get whatever type of document you can) 
-        * add_sponsorship(self, bill_chamber, bill_session, bill_id, sponsor_type, sponsor_name, **kwargs)
-              * bill_chamber same as in add_bill
-              * bill_session same as in add_bill
-              * bill_id same as in add_bill
-              * sponsor_type The type of the sponsorship "primary", "secondary", etc.
-              * sponsor_name The name of the entity that is sponsoring the bill, be that a person or a committee, or something else. 
-        * add_action(bill_chamber, bill_session, bill_id, action_chamber, action_text, action_date, **kwargs)
-              * bill_chamber same as in add_bill
-              * bill_session same as in add_bill
-              * bill_id same as in add_bill
-              * action_chamber Chamber in which action happened. [What if it happened outside of either chamber?]
-              * action_text Whatever the state called the action
-              * action_date date/time action happened [Should we standardize the format?] 
-    """
-
     state = 'mn'
 
     def cleanup_text(self, text):
@@ -208,7 +177,7 @@ class MNLegislationScraper(LegislationScraper):
 
             bill_id = self.extract_bill_id(bill_soup)
             bill_title =  self.extract_bill_title(bill_soup)
-            self.add_bill(chamber, session, bill_id, bill_title)
+            bill = Bill(session, chamber, bill_id, bill_title)
 
             # get all versions of the bill.
             # Versions of a bill are on a separate page, linked to from the bill
@@ -226,7 +195,7 @@ class MNLegislationScraper(LegislationScraper):
             for version in bill_versions:
                 version_name = version['name']
                 version_url = urlparse.urljoin(version_url_base, version['url'])
-                self.add_bill_version(chamber, session, bill_id, version_name, version_url)
+                bill.add_version(version_name, version_url)
 
             # grab primary and cosponsors 
             # MN uses "Primary Author" to name a bill's primary sponsor.
@@ -234,9 +203,9 @@ class MNLegislationScraper(LegislationScraper):
             sponsors = self.extract_bill_sponsors(bill_soup)
             primary_sponsor = sponsors[0]
             cosponsors = sponsors[1:]
-            self.add_sponsorship(chamber, session, bill_id, 'primary', primary_sponsor)
+            bill.add_sponsor('primary', primary_sponsor)
             for leg in cosponsors:
-                self.add_sponsorship(chamber, session, bill_id, 'cosponsor', leg)
+                bill.add_sponsor('cosponsor', leg)
 
             # Add Actions performed on the bill.
             bill_actions = self.extract_bill_actions(bill_soup, chamber)
@@ -244,7 +213,9 @@ class MNLegislationScraper(LegislationScraper):
                 action_chamber = action['action_chamber']
                 action_date = action['action_date']
                 action_text = action['action_text']
-                self.add_action(chamber, session, bill_id, action_chamber, action_text, action_date)
+                bill.add_action(action_chamber, action_text, action_date)
+
+        self.add_bill(bill)
 
     def scrape_session(self, chamber, session, session_year, session_number, legislative_session):
 
