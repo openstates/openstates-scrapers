@@ -31,7 +31,7 @@ class NoDataForYear(ScrapeError):
         self.year = year
 
     def __str__(self):
-        return 'No data exists for %s' % year
+        return 'No data exists for %s' % self.year
 
 class DateEncoder(json.JSONEncoder):
     """
