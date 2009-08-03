@@ -44,8 +44,10 @@ class TXLegislationScraper(LegislationScraper):
         bill = Bill(session, chamber, bill_id, bill_title)
 
         for action in root.findall('actions/action'):
+            act_date = dt.datetime.strptime(action.findtext('date'),
+                                            "%m/%d/%Y")
             bill.add_action(chamber, action.findtext('description'),
-                            action.findtext('date'))
+                            act_date)
 
         for author in root.findtext('authors').split(' | '):
             if author != "":
