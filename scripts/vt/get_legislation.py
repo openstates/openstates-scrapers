@@ -9,6 +9,21 @@ import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import *
 
+def parse_exec_date(date_str):
+    """
+    Parse dates for executive actions.
+    """
+
+    match = re.search('(\w+ \d{1,2}, \d{4,4})', date_str)
+    if match:
+        return dt.datetime.strptime(match.group(1), "%B %d, %Y")
+
+    match = re.search('(\d{1,2}/\d{1,2}/\d{4,4})', date_str)
+    if match:
+        return dt.datetime.strptime(match.group(1), "%m/%d/%Y")
+
+    raise ScrapeError("Invalid executive action date: %s" % date_str)
+
 class VTLegislationScraper(LegislationScraper):
 
     state = 'vt'
@@ -68,29 +83,35 @@ class VTLegislationScraper(LegislationScraper):
 
             act_table = info_page.findAll('blockquote')[2].table
             for row in act_table.findAll('tr')[1:]:
-                if row['bgcolor'] == 'Salmon':
-                    act_chamber = 'lower'
-                else:
-                    act_chamber = 'upper'
-
                 action = ""
                 for s in row.findAll('td')[1].findAll(text=True):
                     action += s + " "
                 action = action.strip()
 
-                if row.td.a:
-                    act_date = row.td.a.string
+                match = re.search('Governor on (.*)$', action)
+                if match:
+                    act_date = parse_exec_date(match.group(1).strip())
+                    actor = 'Governor'
                 else:
-                    act_date = row.td.string
-                act_date = re.search(
-                    '\d{1,2}/\d{1,2}/\d{4,4}', act_date).group(0)
-                act_date = dt.datetime.strptime(act_date, '%m/%d/%Y')
-                bill.add_action(act_chamber, action, act_date)
+                    if row['bgcolor'] == 'Salmon':
+                        actor = 'lower'
+                    else:
+                        actor = 'upper'
+
+                    if row.td.a:
+                        act_date = row.td.a.string
+                    else:
+                        act_date = row.td.string
+
+                    act_date = re.search(
+                        '\d{1,2}/\d{1,2}/\d{4,4}', act_date).group(0)
+                    act_date = dt.datetime.strptime(act_date, '%m/%d/%Y')
+
+                bill.add_action(actor, action, act_date)
 
                 vote_link = row.find('a', text='Details')
                 if vote_link:
-                    self.parse_vote_new(bill, act_chamber,
-                                        vote_link.parent['href'])
+                    self.parse_vote_new(bill, actor, vote_link.parent['href'])
 
             sponsors = info_page.find(
                 text='Sponsor(s):').parent.parent.findAll('b')
