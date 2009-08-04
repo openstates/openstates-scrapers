@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import datetime
 import logging
 import os
 import re
@@ -122,6 +123,9 @@ class NDLegislationScraper(LegislationScraper):
         """
         Scrape the ND legislators seated in a given chamber during a given year.
         """
+        # TEMP
+        return
+    
         # Error checking
         if year not in self.metadata['session_details']:
             raise NoDataForYear(year)
@@ -175,9 +179,168 @@ class NDLegislationScraper(LegislationScraper):
             # Save
             legislator = Legislator(**attributes)
             self.add_legislator(legislator)
+            
+    def scrape_bill_details(self, url):
+        """
+        Scrape details from the history page of a specific ND bill.
+        """
+        # Parsing
+        soup = self.parser.parse(self.urlopen(url))
+        
+        attributes = {}
+        
+        # Bill title
+        table = soup.find('table', summary='Measure Number Breakdown')
+        
+        text = ''
+        
+        rows = table.findAll('tr')
+        
+        # Skip the first two rows relating too who introduced the bill
+        i = 2
+        
+        while not rows[i].find('hr'):
+            text = text + ' ' + rows[i].td.contents[0].strip()
+            i = i + 1
+            
+        attributes['title'] = text
+        
+        return attributes
+    
+    def scrape_bill_actions(self, url, year):
+        """
+        Scrape actions from the history page of a specific ND bill.
+        """
+        # Parsing
+        soup = self.parser.parse(self.urlopen(url))
+        
+        actions = []
+        
+        table = soup.find('table', summary='Measure Number Breakdown')
+        
+        headers = table.findAll('th')
+        
+        # These fields must be stored as they are not repeated on every row
+        action_date = None
+        actor = None
+        
+        for header in headers:
+            action = {}
+            
+            if header.contents[0].strip() != '':
+                action_date = datetime.date(
+                    int(year),
+                    int(header.contents[0][0:2]), 
+                    int(header.contents[0][3:5]))
+                
+            action['date'] = action_date
+            
+            actor_cell = header.nextSibling.nextSibling.nextSibling.nextSibling
+            
+            if actor_cell.contents[0].strip() != '':
+                if actor_cell.contents[0] == 'Senate':
+                    actor = u'upper'
+                elif actor_cell.contents[0] == 'House':
+                    actor = u'lower'
+                
+            action['actor'] = actor
+                
+            action_cell = actor_cell.nextSibling.nextSibling.nextSibling.nextSibling
+            
+            action['action'] = action_cell.contents[0].replace('\n', '')
+            
+            actions.append(action)
+            
+        return actions            
+    
+    def scrape_bill_versions(self, url):
+        pass
 
     def scrape_bills(self, chamber, year):
-        pass
+        """
+        Scrape the ND bills considered in a given chamber during a given year.
+        """
+        # Error checking
+        if year not in self.metadata['session_details']:
+            raise NoDataForYear(year)
+        
+        # URL building
+        if chamber == 'upper':
+            url_chamber_name = 'senate'
+            norm_chamber_name = 'Senate'
+            bill_prefix = 'SB'
+        else:
+            url_chamber_name = 'house'
+            norm_chamber_name = 'House'
+            bill_prefix = 'HB'
+        
+        assembly_url = '/assembly/%i-%s' % (
+            self.metadata['session_details'][str(year)]['number'],
+            year)
+        
+        chamber_url = '/bill-text/%s-bill.html' % (url_chamber_name)
+        
+        list_url = self.site_root + assembly_url + chamber_url
+        
+        # Parsing
+        soup = self.parser.parse(self.urlopen(list_url))
+        
+        if not soup:
+            raise ScrapeError('Failed to parse legaslative list page.')
+        
+        table = soup.find('table', summary=norm_chamber_name + ' Bills')
+        
+        bill_links = table.findAll('a', href=re.compile('bill-actions'))
+        bill_urls = {}
+        
+        for link in bill_links:
+            # Populate base attributes
+            attributes = {
+                'session': year,
+                'chamber': chamber,
+                }
+            
+            bill_number = link.contents[0]
+            
+            if not re.match('^[0-9]{4}$', bill_number):
+                raise ScrapeError('Bill number not in expected format.')
+            
+            attributes['bill_id'] = bill_prefix + ' ' + bill_number
+            
+            # Parse details page
+            detail_url = \
+                self.site_root + \
+                assembly_url + \
+                ('/bill-actions/ba%s.html' % bill_number)
+                
+            attributes.update(
+                self.scrape_bill_details(detail_url))
+        
+            logging.debug(attributes)
+        
+            # Save
+            bill = Bill(**attributes)
+            self.add_bill(bill)
+            
+            # Parse actions            
+            actions = self.scrape_bill_actions(detail_url, year)
+            
+            for action in actions:
+                print action
+                bill.add_action(**action)
+                
+            return
+
+            # Parse versions
+            versions_url = \
+                self.site_root + \
+                assembly_url + \
+                '/bill-actions/bi%s.html' % bill_number
+                
+            versions = self.scrape_bill_versions(versions_url)
+            
+            for version in versions:
+                bill.add_version(**version)
     
 if __name__ == '__main__':
     NDLegislationScraper().run()
