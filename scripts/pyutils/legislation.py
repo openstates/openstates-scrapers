@@ -107,12 +107,12 @@ class LegislationScraper(object):
             # and a longer random delay after some requests
             self.requests += 1
 
-            if self.requests >= 100:
-                len = random.randint(1, 10)
+            if self.requests >= 50:
+                len = random.randint(10, 15)
                 self.requests = 0
                 self.debug("Long sleep: %d seconds" % len)
             else:
-                len = random.random()
+                len = random.uniform(1, 4)
                 self.debug("Short sleep: %f seconds" % len)
 
             time.sleep(len)
