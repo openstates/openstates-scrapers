@@ -104,8 +104,13 @@ class UTLegislationScraper(LegislationScraper):
                     actor = 'lower'
                 elif actor == 'Senate':
                     actor = 'upper'
+                elif actor == 'LFA':
+                    actor = 'Office of the Legislative Fiscal Analyst'
 
                 action = '/'.join(split_action[1:]).strip()
+
+            if action == 'Governor Signed':
+                actor = 'Governor'
 
             bill.add_action(actor, action, act_date)
 
