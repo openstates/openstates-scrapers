@@ -1,10 +1,11 @@
 [North Dakota]
 abbreviation: nd
-start_year: 1999
-bills: no
-bill_versions: no
+start_year: 1997
+bills: yes
+bill_versions: yes
 sponsors: no
-actions: no
-votes: no
-contributors: Christopher Groskopf <staringmonkey@gmail.com>
-notes:
+actions: yes
+votes: n/a
+contributors: Christopher Groskopf
+contact: staringmonkey@gmail.com
+notes: Bills (inc. actions and versions) are available starting in 1997.  Legislators in 1999.  Sponsers in 2005.  Vote data is not available.
