@@ -2,6 +2,8 @@
 Overview
 =======================
 
+If you are reading this page on github, please go `here <http://samburg.sunlightlabs.org/docs>`_ to read more complete documentation.
+
 About the Project
 =================
 
