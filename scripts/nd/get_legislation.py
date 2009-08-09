@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import *
 
 # Logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 class NDLegislationScraper(LegislationScraper):
     """
@@ -57,17 +57,23 @@ class NDLegislationScraper(LegislationScraper):
     def scrape_legislators(self, chamber, year):
         """
         Scrape the ND legislators seated in a given chamber during a given year.
-        """
+        """    
         # Error checking
         if year not in self.metadata['session_details']:
+            raise NoDataForYear(year)
+        
+        # No legislator data for 1997 (though other data is available)
+        if year == '1997':
             raise NoDataForYear(year)
         
         # URL building
         if chamber == 'upper':
             url_chamber_name = 'senate'
+            norm_chamber_name = 'Senate'
             url_member_name = 'senators'
         else:
             url_chamber_name = 'house'
+            norm_chamber_name = 'House'
             url_member_name = 'representatives'
         
         assembly_url = '/assembly/%i-%s/%s' % (
@@ -94,6 +100,8 @@ class NDLegislationScraper(LegislationScraper):
         table = header.findNextSibling('table')
         
         member_links = table.findAll('a')
+        
+        logging.info('Scraping %s members for %s.' % (norm_chamber_name, year))
         
         for link in member_links:
             # Populate base attributes
@@ -162,11 +170,18 @@ class NDLegislationScraper(LegislationScraper):
             label.parent.parent.findNextSibling('td').contents[0]
             
         label = soup.find(text=re.compile('Telephone:'))
-        attributes['telephone'] = \
-            label.parent.parent.findNextSibling('td').contents[0]
+        try:
+            attributes['telephone'] = \
+                label.parent.parent.findNextSibling('td').contents[0]
+        except:
+            # Handle aberrant empty tag
+            attributes['telephone'] = u''
         
         label = soup.find(text=re.compile('E-mail:'))
-        email = label.parent.parent.findNextSibling('td').contents[0]
+        try:
+            email = label.parent.parent.findNextSibling('td').contents[0]
+        except:
+            email = u''
         
         if hasattr(email, 'contents'):
             attributes['email'] = email.contents[0]
@@ -190,11 +205,9 @@ class NDLegislationScraper(LegislationScraper):
         if chamber == 'upper':
             url_chamber_name = 'senate'
             norm_chamber_name = 'Senate'
-            bill_prefix = 'SB'
         else:
             url_chamber_name = 'house'
             norm_chamber_name = 'House'
-            bill_prefix = 'HB'
         
         assembly_url = '/assembly/%i-%s' % (
             self.metadata['session_details'][str(year)]['number'],
@@ -213,7 +226,10 @@ class NDLegislationScraper(LegislationScraper):
         table = soup.find('table', summary=norm_chamber_name + ' Bills')
         
         bill_links = table.findAll('a', href=re.compile('bill-actions'))
-        indexed_bills = []
+        indexed_bills = {}
+        
+        logging.info(
+            'Scraping %s bills for %s.' % (norm_chamber_name, year))
         
         for link in bill_links:
             # Populate base attributes
@@ -227,40 +243,73 @@ class NDLegislationScraper(LegislationScraper):
             if not re.match('^[0-9]{4}$', bill_number):
                 raise ScrapeError('Bill number not in expected format.')
             
+            # ND bill prefixes are coded numerically
+            if bill_number[0] == '1':
+                bill_prefix = 'HB'
+            elif bill_number[0] == '2':
+                bill_prefix = 'SB'
+            elif bill_number[0] == '3':
+                bill_prefix = 'HCR'
+            elif bill_number[0] == '4':
+                bill_prefix = 'SCR'
+            elif bill_number[0] == '5':
+                bill_prefix = 'HR'
+            elif bill_number[0] == '6':
+                bill_prefix = 'SR'
+            elif bill_number[0] == '7':
+                bill_prefix = 'HMR'
+            elif bill_number[0] == '8':
+                bill_prefix = 'SMR'
+                
             attributes['bill_id'] = bill_prefix + ' ' + bill_number
             
             # Skip duplicates (bill is listed once for each version)
-            if attributes['bill_id'] in indexed_bills:
+            if attributes['bill_id'] in indexed_bills.keys():
                 continue
             
-            indexed_bills.append(attributes['bill_id'])
+            print attributes['bill_id']
             
             # Parse details page                
             attributes.update(
                 self.scrape_bill_details(assembly_url, bill_number))
         
-            logging.debug(attributes)
-        
             # Create bill
             bill = Bill(**attributes)
             
-            # Parse actions            
+            # Parse actions      
             actions = self.scrape_bill_actions(assembly_url, bill_number, year)
             
             for action in actions:
                 bill.add_action(**action)
-                
-            logging.debug('%i actions' % len(actions))
 
             # Parse versions
             versions = self.scrape_bill_versions(assembly_url, bill_number)
             
             for version in versions:
                 bill.add_version(**version)
+            
+            # Add bill to dictionary, indexed by its id
+            indexed_bills[attributes['bill_id']] = bill
+        
+        # Parse sponsorship data
+        if int(year) >= 2005:
+            logging.info('Scraping sponsorship data.')
+            
+            sponsors = self.scrape_bill_sponsors(assembly_url)
+            
+            for bill_id, sponsor_list in sponsors.items():
+                for sponsor in sponsor_list:
+                    # Its possible a bill was misnamed somewhere... but thats
+                    # not a good enough reason to error out
+                    if bill_id in indexed_bills.keys():
+                        indexed_bills[bill_id].add_sponsor(**sponsor)
+        else:
+            logging.info('Sponsorship data not available for %s.' % year)            
                 
-            logging.debug('%i versions' % len(versions))
-                
-            # Save bill
+        logging.info('Saving scraped bills.')
+        
+        # Save bill
+        for bill in indexed_bills.values():
             self.add_bill(bill)
             
     def scrape_bill_details(self, assembly_url, bill_number):
@@ -279,6 +328,10 @@ class NDLegislationScraper(LegislationScraper):
         
         # Bill title
         table = soup.find('table', summary='Measure Number Breakdown')
+        
+        # There is at least one page that contains no valid data: 2001 / SB2295
+        if not table:
+            return { 'title': u''}
         
         text = ''
         
@@ -310,6 +363,10 @@ class NDLegislationScraper(LegislationScraper):
         actions = []
         
         table = soup.find('table', summary='Measure Number Breakdown')
+        
+        # There is at least one page that contains no valid data: 2001 / SB2295
+        if not table:
+            return []
         
         headers = table.findAll('th')
         
@@ -354,6 +411,9 @@ class NDLegislationScraper(LegislationScraper):
     def scrape_bill_versions(self, assembly_url, bill_number):
         """
         Scrape URLs from the versions page of a specific ND bill.
+        
+        TODO: parse Fiscal Notes
+        e.g. http://www.legis.nd.gov/assembly/61-2009/bill-index/bi4038.html
         """
         url = \
             self.site_root + \
@@ -402,6 +462,80 @@ class NDLegislationScraper(LegislationScraper):
             versions.append(version)
             
         return versions        
+    
+    def scrape_bill_sponsors(self, assembly_url):
+        """
+        Scrape a list of all bill sponsers for a given year and chamber.
+        
+        Sponsers can not be accurately scraped from the bill details page,
+        so instead they are scraped from an index by member/committee.
+        
+        Each sponser is buffered into a list which is set as the value in
+        a dictionary, with the bill id as the key.  This dictionary is passed
+        back to the main scraping method to be appended to the bill
+        attributes.
+        """        
+        url = \
+            self.site_root + \
+            assembly_url + \
+            '/sponsor-inquiry/index.html'
+        
+        # Parsing
+        soup = self.parser.parse(self.urlopen(url))
+        
+        bill_sponsors = {}
+        
+        container = soup.find('div', id='content')
+        categories = container.findAll('dl')
+        
+        for category in categories:
+            links = category.findAll('a')
+            
+            for link in links:            
+                detail_url = \
+                    self.site_root + \
+                    assembly_url + \
+                    '/sponsor-inquiry/' + \
+                    link['href']
+                
+                if re.match('(Senator|Representative) (.*)', link.contents[0]):
+                    name_match = \
+                        re.match('(Senator|Representative) (.*)', link.contents[0])
+                    member_name =  name_match.group(2).strip()
+                else:
+                    member_name = link.contents[0]
+                
+                detail_soup = self.parser.parse(self.urlopen(detail_url))
+                
+                # Bills for which the member was a primary sponsor
+                div = detail_soup.find('div', id='content')
+                
+                primary_bills = div.dl.findAll('dt')
+                
+                for bill in primary_bills:
+                    bill_id = bill.a.contents[0]
+                    sponsor = {'type': u'primary', 'name': member_name}
+                    
+                    if bill_id in bill_sponsors.keys():
+                        bill_sponsors[bill_id].append(sponsor)
+                    else:
+                        bill_sponsors[bill_id] = [sponsor]
+                
+                # Bills for which the member was a cosponsor
+                # (committees will not have this table)
+                if div.table:
+                    cosponsor_bills = div.table.findAll('dt')
+                    
+                    for bill in cosponsor_bills:
+                        bill_id = bill.a.contents[0]
+                        sponsor = {'type': u'cosponsor', 'name': member_name} 
+                        
+                        if bill_id in bill_sponsors.keys():
+                            bill_sponsors[bill_id].append(sponsor)
+                        else:
+                            bill_sponsors[bill_id] = [sponsor]            
+    
+        return bill_sponsors
     
 if __name__ == '__main__':
     NDLegislationScraper().run()
