@@ -3,7 +3,7 @@ abbreviation: nd
 start_year: 1997
 bills: yes
 bill_versions: yes
-sponsors: no
+sponsors: yes
 actions: yes
 votes: n/a
 contributors: Christopher Groskopf
