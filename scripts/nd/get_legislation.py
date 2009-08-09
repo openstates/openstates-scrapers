@@ -267,7 +267,7 @@ class NDLegislationScraper(LegislationScraper):
             if attributes['bill_id'] in indexed_bills.keys():
                 continue
             
-            print attributes['bill_id']
+            logging.debug(attributes['bill_id'])
             
             # Parse details page                
             attributes.update(
