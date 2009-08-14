@@ -69,6 +69,7 @@ class TXLegislationScraper(LegislationScraper):
     def scrape_bill(self, chamber, session, url):
         with self.urlopen_context(url) as data:
             bill = self.parse_bill_xml(chamber, session, data)
+            bill.add_source(url)
 
             versions_url = url.replace('billhistory', 'billtext/html')
             versions_url = '/'.join(versions_url.split('/')[0:-1])
@@ -78,6 +79,7 @@ class TXLegislationScraper(LegislationScraper):
             long_bill_id = "%s%05d" % (bill_prefix, bill_num)
 
             with self.urlopen_context(versions_url) as versions_list:
+                bill.add_source(versions_url)
                 for version in parse_ftp_listing(versions_list):
                     if version.startswith(long_bill_id):
                         version_name = version.split('.')[0]

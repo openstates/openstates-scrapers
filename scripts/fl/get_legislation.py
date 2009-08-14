@@ -82,8 +82,9 @@ class FLLegislationScraper(LegislationScraper):
                     bill_name = bill_link.string.strip()
                     info_url = "http://www.flsenate.gov/Session/%s&Year=%s" % (bill_link['href'], session.replace(' ', ''))
 
-                    # Add bill
+                    # Create bill
                     bill = Bill(session, chamber, bill_id, bill_name)
+                    bill.add_source(info_url)
 
                     # Get bill info page
                     info_page = BeautifulSoup(self.urlopen(info_url))
@@ -136,7 +137,6 @@ class FLLegislationScraper(LegislationScraper):
                             cosponsor = cosponsor.replace('\n', '').strip()
                             bill.add_sponsor('cosponsor', cosponsor)
 
-
                     self.add_bill(bill)
 
     def scrape_bills(self, chamber, year):
@@ -160,7 +160,8 @@ class FLLegislationScraper(LegislationScraper):
         if year != '2009':
             return
 
-        leg_page = BeautifulSoup(self.urlopen("http://www.flsenate.gov/Legislators/index.cfm?Mode=Member%20Pages&Submenu=1&Tab=legislators"))
+        leg_page_url = "http://www.flsenate.gov/Legislators/index.cfm?Mode=Member%20Pages&Submenu=1&Tab=legislators"
+        leg_page = BeautifulSoup(self.urlopen(leg_page_url))
 
         th = leg_page.find('th', text='Legislator').parent
         table = th.parent.parent
@@ -174,13 +175,15 @@ class FLLegislationScraper(LegislationScraper):
 
             leg = Legislator(year, 'upper', district, full,
                              first, last, middle, party)
+            leg.add_source(leg_page_url)
             self.add_legislator(leg)
 
     def scrape_reps(self, year):
         if year != '2009':
             return
 
-        leg_page = BeautifulSoup(self.urlopen("http://www.flhouse.gov/Sections/Representatives/representatives.aspx"))
+        leg_page_url = "http://www.flhouse.gov/Sections/Representatives/representatives.aspx"
+        leg_page = BeautifulSoup(self.urlopen(leg_page_url))
 
         table = leg_page.find('table', id='ctrlContentBox_ctrlPageContent__ctl0_dgLegislators')
 
@@ -198,6 +201,7 @@ class FLLegislationScraper(LegislationScraper):
 
             leg = Legislator(year, 'lower', district, full,
                              first, last, middle, party)
+            leg.add_source(leg_page_url)
             self.add_legislator(leg)
 
     def split_name(self, full):

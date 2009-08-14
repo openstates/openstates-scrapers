@@ -388,6 +388,7 @@ class Bill(dict):
         self['versions'] = []
         self['actions'] = []
         self['documents'] = []
+        self['sources'] = []
         self.update(kwargs)
 
     def add_sponsor(self, type, name, **kwargs):
@@ -399,7 +400,14 @@ class Bill(dict):
         """
         self['sponsors'].append(dict(type=type, name=name, **kwargs))
 
-    
+    def add_source(self, url, **kwargs):
+        """
+        Add a source URL from which data related to this bill was scraped.
+
+        :param url: the location of the source
+        """
+        self['sources'].append(dict(url=url, **kwargs))
+
     def add_document(self, name, url, **kwargs):
         """
         Add a document or media item that is related to the bill.  Use this method to add documents such as Fiscal Notes, Analyses, Amendments,  or public hearing recordings.
@@ -483,6 +491,7 @@ class Vote(dict):
         self['yes_votes'] = []
         self['no_votes'] = []
         self['other_votes'] = []
+        self['sources'] = []
         self.update(kwargs)
 
     def yes(self, legislator):
@@ -511,6 +520,13 @@ class Vote(dict):
         """
         self['other_votes'].append(legislator)
 
+    def add_source(self, url, **kwargs):
+        """
+        Add a source URL from which data related to this vote was scraped.
+
+        :param url: the location of the source
+        """
+        self['sources'].append(dict(url=url, **kwargs))
 
 class Legislator(dict):
 
@@ -542,8 +558,16 @@ class Legislator(dict):
         self['last_name'] = last_name
         self['middle_name'] = middle_name
         self['party'] = party
+        self['sources'] = []
         self.update(kwargs)
 
+    def add_source(self, url, **kwargs):
+        """
+        Add a source URL from which data related to this legislator was scraped.
+
+        :param url: the location of the source
+        """
+        self['sources'].append(dict(url=url, **kwargs))
 
 class NameMatcher(object):
     """

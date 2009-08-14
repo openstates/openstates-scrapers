@@ -84,10 +84,12 @@ class AKLegislationScraper(LegislationScraper):
             party = member_page.find(text=re.compile("Party: "))
             party = ' '.join(party.split(' ')[1:])
 
-            self.add_legislator(Legislator(session, chamber, district,
-                                           full_name, first_name,
-                                           last_name, middle_name,
-                                           party, code=code))
+            leg = Legislator(session, chamber, district,
+                             full_name, first_name,
+                             last_name, middle_name,
+                             party, code=code)
+            leg.add_source(member_url)
+            self.add_legislator(leg)
 
     def scrape_session(self, chamber, year):
         if chamber == 'upper':
@@ -121,6 +123,7 @@ class AKLegislationScraper(LegislationScraper):
             # Get the bill info page and strip malformed t
             info_url = "http://www.legis.state.ak.us/basis/%s" % link['href']
             info_page = self.soup_parser(self.urlopen(info_url))
+            bill.add_source(info_url)
 
             # Get sponsors
             spons_str = info_page.find(
@@ -166,6 +169,8 @@ class AKLegislationScraper(LegislationScraper):
             # Get versions
             text_list_url = "http://www.legis.state.ak.us/basis/get_fulltext.asp?session=%s&bill=%s" % (session, bill_id)
             text_list = self.soup_parser(self.urlopen(text_list_url))
+            bill.add_source(text_list_url)
+
             text_link_re = re.compile('^get_bill_text?')
             for text_link in text_list.findAll('a', href=text_link_re):
                 text_name = text_link.parent.previousSibling.contents[0].strip()

@@ -90,6 +90,7 @@ class SDLegislationScraper(LegislationScraper):
             history = self.soup_parser(self.urlopen(hist_url))
 
             bill = Bill(session, chamber, bill_id, bill_name)
+            bill.add_source(hist_url)
 
             # Get all bill versions
             text_table = history.findAll('table')[1]
@@ -171,6 +172,7 @@ class SDLegislationScraper(LegislationScraper):
                     other_count, excused_count=excused_count,
                     absent_count=absent_count,
                     location=location)
+        vote.add_source(url)
 
         vote_tbl = vote_page.find(id="ctl00_contentMain_tblVotes")
         for td in vote_tbl.findAll('td'):
@@ -223,8 +225,6 @@ class SDLegislationScraper(LegislationScraper):
 
             # Get history page (replacing malformed tag)
             hist_url = session_url + bill_link['href']
-            #history_raw = self.urlopen(hist_url)
-            #history_raw = history_raw.replace('BORDER=>', '>')
             history = self.soup_parser(self.urlopen(hist_url))
 
             # Get URL of latest verion of bill (should be listed last)
@@ -233,6 +233,7 @@ class SDLegislationScraper(LegislationScraper):
 
             # Add bill
             bill = Bill(session, chamber, bill_id, bill_name)
+            bill.add_source(hist_url)
 
             # Get bill versions
             text_table = history.findAll('table')[1]
@@ -320,6 +321,7 @@ class SDLegislationScraper(LegislationScraper):
                     other_count, excused_count=excused_count,
                     absent_count=absent_count,
                     location=location)
+        vote.add_source(url)
 
         vote_tbl = vote_page.table
         for td in vote_tbl.findAll('td'):
@@ -355,9 +357,8 @@ class SDLegislationScraper(LegislationScraper):
         else:
             search = 'House Members'
 
-        leg_url = "http://legis.state.sd.us/sessions/%s/MemberMenu.aspx" % (
-            session)
-        leg_list = self.soup_parser(self.urlopen(leg_url))
+        leg_list_url = "http://legis.state.sd.us/sessions/%s/MemberMenu.aspx" % (session)
+        leg_list = self.soup_parser(self.urlopen(leg_list_url))
 
         list_div = leg_list.find(text=search).findNext('div')
 
@@ -387,6 +388,7 @@ class SDLegislationScraper(LegislationScraper):
                                     full_name, first_name, last_name,
                                     middle_name, party,
                                     occupation=occupation)
+            legislator.add_source(leg_page_url)
             self.add_legislator(legislator)
 
     def scrape_old_legislators(self, chamber, session):
@@ -426,6 +428,7 @@ class SDLegislationScraper(LegislationScraper):
                                         full_name, first_name, last_name,
                                         middle_name, party=party,
                                         occupation=occupation)
+                legislator.add_source(leg_list_url)
                 self.add_legislator(legislator)
 
     def scrape_legislators(self, chamber, year):

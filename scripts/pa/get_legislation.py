@@ -61,10 +61,14 @@ class PALegislationScraper(LegislationScraper):
         type = re.search('type=(B|R|)', link['href']).group(1)
         bill_id = "%s%s %s" % (bill_abbr(chamber), type, bill_number)
 
-        with self.soup_context(info_url(chamber, session, special, type, bill_number)) as info_page:
+        bill_info_url = info_url(chamber, session, special, type, bill_number)
+
+        with self.soup_context(bill_info_url) as info_page:
             title_label = info_page.find(text='Short Title:')
             title = title_label.findNext().contents[0]
+
             bill = Bill(session, chamber, bill_id, title)
+            bill.add_source(bill_info_url)
 
             self.parse_bill_versions(bill, info_page)
 
@@ -91,6 +95,7 @@ class PALegislationScraper(LegislationScraper):
         Grab all history data (actions and votes) for a given bill provided
         the url to its history page.
         """
+        bill.add_source(url)
         with self.soup_context(url) as history_page:
             self.parse_sponsors(bill, history_page)
             self.parse_actions(bill, history_page)
@@ -153,6 +158,7 @@ class PALegislationScraper(LegislationScraper):
         Grab all of the votes for a bill given the url of its primary
         votes page.
         """
+        bill.add_source(url)
         with self.soup_context(url) as votes_page:
             for td in votes_page.findAll('td', {'class': 'vote'}):
                 prev = td.findPrevious().contents[0].strip()
@@ -174,6 +180,7 @@ class PALegislationScraper(LegislationScraper):
         """
         Grab all votes for a bill that occurred in a given chamber.
         """
+        bill.add_source(url)
         with self.soup_context(url) as chamber_votes_page:
             for link in chamber_votes_page.findAll('a', href=re.compile('rc_view')):
                 vote_details_url = "http://www.legis.state.pa.us/CFDOCS/Legis/RC/Public/%s" % link['href']
@@ -216,6 +223,7 @@ class PALegislationScraper(LegislationScraper):
 
             vote = Vote(None, None, None, passed, yes_count, no_count,
                         other_count)
+            vote.add_source(url)
 
             vote_tbl = header.findNext('div').findAll('table')[2]
             for yes in vote_tbl.findAll(text=re.compile('^Y$')):
@@ -245,8 +253,9 @@ class PALegislationScraper(LegislationScraper):
             return
 
         session = "%s-%d" % (year, int(year) + 1)
+        leg_list_url = legislators_url(chamber)
 
-        with self.soup_context(legislators_url(chamber)) as member_list_page:
+        with self.soup_context(leg_list_url) as member_list_page:
 
             for link in member_list_page.findAll('a', href=re.compile('_bio\.cfm\?id=')):
                 full_name = link.contents[0][0:-4]
@@ -269,6 +278,7 @@ class PALegislationScraper(LegislationScraper):
                 legislator = Legislator(session, chamber, district,
                                         full_name, first_name, last_name,
                                         middle_name, party)
+                legislator.add_source(leg_list_url)
                 self.add_legislator(legislator)
 
 if __name__ == '__main__':

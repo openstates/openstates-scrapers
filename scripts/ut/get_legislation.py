@@ -77,6 +77,7 @@ class UTLegislationScraper(LegislationScraper):
                 leg = Legislator(year, chamber, tds[3].find(text=True),
                                  fullname, first_name, last_name,
                                  middle_name, tds[2].find(text=True))
+                leg.add_source(url)
                 self.add_legislator(leg)
 
     def parse_status(self, bill, url):
@@ -84,6 +85,7 @@ class UTLegislationScraper(LegislationScraper):
         session = bill['session']
         bill_id = bill['bill_id']
         status = self.soup_parser(self.urlopen(url))
+        bill.add_source(url)
         act_table = status.table
 
         # Get actions
@@ -152,6 +154,7 @@ class UTLegislationScraper(LegislationScraper):
                             action, passed, yes_count, no_count,
                             other_count,
                             location=vote_location)
+                vote.add_source(vote_url)
 
                 yes_votes = re.split('\s{2,}', match.group(2).strip())
                 no_votes = re.split('\s{2,}', match.group(4).strip())
@@ -188,12 +191,13 @@ class UTLegislationScraper(LegislationScraper):
             for bill_link in bill_list.findAll('a', href=bill_link_re):
                 bill_id = bill_link.find(text=True).strip()
 
-                bill_info = self.soup_parser(self.urlopen(
-                        bill_link['href']))
-                (bill_title, primary_sponsor) = bill_info.h3.contents[2].replace(
-                    '&nbsp;', ' ').strip().split(' -- ')
+                bill_info_url = bill_link['href']
+                bill_info = self.soup_parser(self.urlopen(bill_info_url))
+
+                (bill_title, primary_sponsor) = bill_info.h3.contents[2].replace('&nbsp;', ' ').strip().split(' -- ')
 
                 bill = Bill(session, chamber, bill_id, bill_title)
+                bill.add_source(bill_info_url)
                 bill.add_sponsor('primary', primary_sponsor)
 
                 status_re = re.compile('.*billsta/%s.*.htm' % bill_abbr.lower())

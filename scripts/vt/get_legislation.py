@@ -70,9 +70,11 @@ class VTLegislationScraper(LegislationScraper):
         for bill_link in bill_list.findAll('a', href=bill_link_re):
             bill_id = bill_link.string
             bill_title = bill_link.parent.findNext('b').string
-            bill = Bill(session, chamber, bill_id, bill_title)
-
             bill_info_url = "http://www.leg.state.vt.us" + bill_link['href']
+
+            bill = Bill(session, chamber, bill_id, bill_title)
+            bill.add_source(bill_info_url)
+
             info_page = BeautifulSoup(self.urlopen(bill_info_url))
 
             text_links = info_page.findAll('blockquote')[1].findAll('a')
@@ -111,7 +113,8 @@ class VTLegislationScraper(LegislationScraper):
 
                 vote_link = row.find('a', text='Details')
                 if vote_link:
-                    self.parse_vote_new(bill, actor, vote_link.parent['href'])
+                    vote_url = vote_link.parent['href']
+                    self.parse_vote_new(bill, actor, vote_url)
 
             sponsors = info_page.find(
                 text='Sponsor(s):').parent.parent.findAll('b')
@@ -136,6 +139,7 @@ class VTLegislationScraper(LegislationScraper):
 
         vote = Vote(chamber, date, motion, passed,
                     yes_count, no_count, abs_count)
+        vote.add_source(url)
 
         for tr in table.findAll('tr')[3:]:
             if len(tr.findAll('td')) != 2:
@@ -174,10 +178,12 @@ class VTLegislationScraper(LegislationScraper):
         for bill_link in bill_list.findAll('a', href=bill_link_re):
             bill_id = bill_link.string
             bill_title = bill_link.parent.parent.findAll('td')[1].string
-            bill = Bill(session, chamber, bill_id, bill_title)
+            bill_info_url = "http://www.leg.state.vt.us" + bill_link['href']
 
-            info_page = BeautifulSoup(self.urlopen(
-                    "http://www.leg.state.vt.us" + bill_link['href']))
+            bill = Bill(session, chamber, bill_id, bill_title)
+            bill.add_source(bill_info_url)
+
+            info_page = BeautifulSoup(self.urlopen(bill_info_url))
 
             text_links = info_page.findAll('blockquote')[-1].findAll('a')
             for text_link in text_links:
@@ -292,6 +298,7 @@ class VTLegislationScraper(LegislationScraper):
             leg = Legislator(session, chamber, district, full,
                              first, last, middle, party,
                              official_email=official_email)
+            leg.add_source(leg_url)
             self.add_legislator(leg)
 
 if __name__ == '__main__':
