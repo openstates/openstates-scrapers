@@ -29,6 +29,7 @@ class NCLegislationScraper(LegislationScraper):
         bill_title = bill_soup.findAll('div', style="text-align: center; font: bold 20px Arial; margin-top: 15px; margin-bottom: 8px;")[0].contents[0]
 
         bill = Bill(session, chamber, bill_id, bill_title)
+        bill.add_source(bill_detail_url)
 
         # get all versions
         links = bill_soup.findAll('a')
@@ -52,6 +53,8 @@ class NCLegislationScraper(LegislationScraper):
         rss_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?Session=%s&BillID=%s&view=history_rss' % (session, bill_id)
         rss_data = self.urlopen(rss_url)
         rss_soup = self.soup_parser(rss_data)
+        bill.add_source(rss_url)
+
         # title looks like 'House Chamber: action'
         for item in rss_soup.findAll('item'):
             action = item.title.contents[0]
