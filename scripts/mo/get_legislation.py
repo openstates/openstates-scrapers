@@ -283,21 +283,21 @@ class MOLegislationScraper(LegislationScraper):
             first_row = rows[0]
             date = first_row.td.contents[0].strip()
             date = dt.datetime.strptime(date, '%m/%d/%Y')
-            action = first_row.td.nextSibling.nextSibling.contents[0]
+            action = first_row.td.nextSibling.nextSibling.contents[0].strip()
         
             for row in rows[1:]:
                 # new actions are represented by having dates in the first td
                 # otherwise, it's a continuation of the description from the 
                 # previous action
                 if row.td != None:
-                    if not row.td.contents[0] and row.td.contents[0] != ' ':
+                    if len(row.td.contents) > 0 and row.td.contents[0] != ' ':
                         actor = house_get_actor_from_action(action)
                         bill.add_action(actor, action, date)
-                        date = row.td.contents[0]
+                        date = row.td.contents[0].strip()
                         date = dt.datetime.strptime(date, '%m/%d/%Y')
-                        action = row.td.nextSibling.nextSibling.contents[0]
+                        action = row.td.nextSibling.nextSibling.contents[0].strip()
                     else:
-                        action += ' ' + row.td.nextSibling.nextSibling.contents[0]
+                        action += '\n' + row.td.nextSibling.nextSibling.contents[0].strip()
 
         # add that last action
         actor = house_get_actor_from_action(action)
