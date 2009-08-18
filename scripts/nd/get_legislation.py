@@ -31,10 +31,8 @@ class NDLegislationScraper(LegislationScraper):
         'lower_chamber_name': 'House of Representatives',
         'upper_title': 'Senator',
         'lower_title': 'Representative',
-        # Either member may also serve a four-year term,
-        # See http://www.legis.nd.gov/assembly/ for details
-        'upper_term': 2,
-        'lower_term': 2,
+        'upper_term': 4,
+        'lower_term': 4,
         'sessions': ['1997', '1999', '2001', '2003', '2005', '2007', '2009'],
         'session_details': {
             '1997': {'years': [1997, 1998], 'sub_sessions': [], 
@@ -111,13 +109,14 @@ class NDLegislationScraper(LegislationScraper):
                 }
             
             # Parse member page
-            attributes.update(
-                self.scrape_legislator_bio(self.site_root + link['href']))
+            bio_url = self.site_root + link['href']
+            attributes.update(self.scrape_legislator_bio(bio_url))
         
             logging.debug(attributes)
         
             # Save
             legislator = Legislator(**attributes)
+            legislator.add_source(bio_url)
             self.add_legislator(legislator)
     
     def scrape_legislator_bio(self, url):
@@ -277,13 +276,17 @@ class NDLegislationScraper(LegislationScraper):
             bill = Bill(**attributes)
             
             # Parse actions      
-            actions = self.scrape_bill_actions(assembly_url, bill_number, year)
+            (actions, actions_url) = self.scrape_bill_actions(
+                assembly_url, bill_number, year)
+            bill.add_source(actions_url)
             
             for action in actions:
                 bill.add_action(**action)
 
             # Parse versions
-            versions = self.scrape_bill_versions(assembly_url, bill_number)
+            (versions, versions_url) = self.scrape_bill_versions(
+                assembly_url, bill_number)
+            bill.add_source(versions_url)
             
             for version in versions:
                 bill.add_version(**version)
@@ -295,14 +298,16 @@ class NDLegislationScraper(LegislationScraper):
         if int(year) >= 2005:
             logging.info('Scraping sponsorship data.')
             
-            sponsors = self.scrape_bill_sponsors(assembly_url)
+            (sponsors, sponsors_url) = self.scrape_bill_sponsors(assembly_url)
             
             for bill_id, sponsor_list in sponsors.items():
                 for sponsor in sponsor_list:
                     # Its possible a bill was misnamed somewhere... but thats
                     # not a good enough reason to error out
                     if bill_id in indexed_bills.keys():
-                        indexed_bills[bill_id].add_sponsor(**sponsor)
+                        bill = indexed_bills[bill_id]
+                        bill.add_sponsor(**sponsor)
+                        bill.add_source(sponsors_url)
         else:
             logging.info('Sponsorship data not available for %s.' % year)            
                 
@@ -406,7 +411,7 @@ class NDLegislationScraper(LegislationScraper):
             
             actions.append(action)
             
-        return actions            
+        return (actions, url)
     
     def scrape_bill_versions(self, assembly_url, bill_number):
         """
@@ -461,7 +466,7 @@ class NDLegislationScraper(LegislationScraper):
             
             versions.append(version)
             
-        return versions        
+        return (versions, url)
     
     def scrape_bill_sponsors(self, assembly_url):
         """
@@ -535,7 +540,7 @@ class NDLegislationScraper(LegislationScraper):
                         else:
                             bill_sponsors[bill_id] = [sponsor]            
     
-        return bill_sponsors
+        return (bill_sponsors, url)
     
 if __name__ == '__main__':
     NDLegislationScraper().run()
