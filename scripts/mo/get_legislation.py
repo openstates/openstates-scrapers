@@ -94,6 +94,7 @@ class MOLegislationScraper(LegislationScraper):
 
             bill = Bill(year, 'upper', bill_id, bill_desc, bill_url=bill_url,
                         bill_lr=bill_lr, official_title=bill_title)
+            bill.add_source(bill_url)
 
             # Get the primary sponsor
             bill_sponsor = bill_page.find(id="hlSponsor").i.font.contents[0]
@@ -118,6 +119,7 @@ class MOLegislationScraper(LegislationScraper):
         self.add_bill(bill)
 
     def parse_senate_bill_versions(self, bill, url):
+        bill.add_source(url)
         with self.soup_context(url) as versions_page:
             version_tags = versions_page.findAll('li')
             if version_tags != None:
@@ -127,6 +129,7 @@ class MOLegislationScraper(LegislationScraper):
                     bill.add_version(version, pdf_url)
 
     def parse_senate_actions(self, bill, url):
+        bill.add_source(url)
         with self.soup_context(url) as actions_page:
             bigtable = actions_page.find(id='Table5')
             act_row = bigtable.next.next.nextSibling.next.nextSibling.nextSibling
@@ -140,6 +143,7 @@ class MOLegislationScraper(LegislationScraper):
                 bill.add_action(actor, action, date)
 
     def parse_senate_cosponsors(self, bill, url):
+        bill.add_source(url)
         with self.soup_context(url) as cosponsors_page:
             # cosponsors are all in a table
             cosponsor_table = cosponsors_page.find(id="dgCoSponsors")
@@ -226,6 +230,7 @@ class MOLegislationScraper(LegislationScraper):
             # could substitute the description for the name, but keeping it separate for now.
             bill = Bill(session, 'lower', bill_id, bill_desc,
                         bill_url=url, bill_lr=bill_lr)
+            bill.add_source(url)
 
             # get the sponsors and cosponsors
             sponsor_dirty = bill_page.em.contents[0]
@@ -270,6 +275,7 @@ class MOLegislationScraper(LegislationScraper):
         self.add_bill(bill)
 
     def parse_house_actions(self, bill, url):
+        bill.add_source(url)
         with self.soup_context(url) as actions_page:
             rows = actions_page.findAll('tr')
 
