@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+from __future__ import with_statement
 import html5lib
 import datetime as dt
+import re
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -9,6 +11,24 @@ from pyutils.legislation import *
 def clean_legislators(s):
     s = s.replace('&nbsp;', ' ').strip()
     return [l.strip() for l in s.split(';') if l]
+
+def split_name(full_name):
+    m = re.match('(\w+) (\w)\. (\w+)', full_name)
+    if m:
+        first_name = m.group(1)
+        middle_name = m.group(2)
+        last_name = m.group(3)
+    else:
+        first_name = full_name.split(' ')[0]
+        last_name = ' '.join(full_name.split(' ')[1:])
+        middle_name = ''
+
+    suffix = ''
+    if last_name.endswith(', Jr.'):
+        last_name = last_name.replace(', Jr.', '')
+        suffix = 'Jr.'
+
+    return (first_name, last_name, middle_name, suffix)
 
 class NCLegislationScraper(LegislationScraper):
 
@@ -122,6 +142,38 @@ class NCLegislationScraper(LegislationScraper):
 
         for session in year_mapping[year]:
             self.scrape_session(chamber, session)
+
+    def scrape_legislators(self, chamber, year):
+        if year != '2009':
+            raise NoDataForYear(year)
+
+        url = "http://www.ncga.state.nc.us/gascripts/members/memberList.pl?sChamber="
+        if chamber == 'lower':
+            url += 'House'
+        else:
+            url += 'Senate'
+
+        with self.urlopen_context(url) as leg_list_data:
+            leg_list = self.soup_parser(leg_list_data)
+            leg_table = leg_list.find('div', id='mainBody').find('table')
+
+            for row in leg_table.findAll('tr')[1:]:
+                party = row.td.contents[0].strip()
+                if party == 'Dem':
+                    party = 'Democrat'
+                elif party == 'Rep':
+                    party = 'Republican'
+
+                district = row.findAll('td')[1].contents[0].strip()
+                full_name = row.findAll('td')[2].a.contents[0].strip()
+                full_name = full_name.replace(u'\u00a0', ' ')
+                (first_name, last_name, middle_name, suffix) = split_name(full_name)
+
+                legislator = Legislator(year, chamber, district, full_name,
+                                        first_name, last_name, middle_name,
+                                        party, suffix=suffix)
+                legislator.add_source(url)
+                self.add_legislator(legislator)
 
 if __name__ == '__main__':
     NCLegislationScraper().run()
