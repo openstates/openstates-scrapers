@@ -35,8 +35,50 @@ class NCLegislationScraper(LegislationScraper):
     state = 'nc'
     soup_parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
-    def get_bill_info(self, session, bill_id):
-        bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?Session=%s&BillID=%s' % (session, bill_id)
+    metadata = {
+        'state_name': 'North Carolina',
+        'legislature_name': 'The North Carolina General Assembly',
+        'lower_chamber_name': 'House of Representatives',
+        'upper_chamber_name': 'Senate',
+        'lower_title': 'Representative',
+        'upper_title': 'Senator',
+        'lower_term': 2,
+        'upper_term': 2,
+        'sessions': ['1985-1986', '1987-1988', '1989-1990', '1991-1992',
+                     '1993-1994', '1995-1996', '1997-1998', '1999-2000',
+                     '2001-2002', '2003-2004', '2005-2006', '2007-2008',
+                     '2009-2010'],
+        'session_details': {
+             '1985-1986': {'years': ['1985', '1986'],
+                           'sub_sessions': ['1985E1']},
+             '1987-1988': {'years': [1987, 1988],
+                           'sub_sessions': []},
+             '1989-1990': {'years': [1989, 1990],
+                           'sub_sessions': ['1989E1', '1989E2'],},
+             '1991-1992': {'years': [1991, 1992],
+                          'sub_sessions': ['1991E1']},
+             '1993-1994': {'years': [1993, 1994],
+                           'sub_sessions': ['1993E1']},
+             '1995-1996': {'years': [1995, 1996],
+                           'sub_sessions': ['1995E1', '1995E2']},
+             '1997-1998': {'years': [1997, 1998],
+                           'sub_sessions': ['1997E1']},
+             '1999-2000': {'years': [1999, 2000],
+                           'sub_sessions': ['1999E1', '1999E2']},
+             '2001-2002': {'years': [2001, 2002],
+                           'sub_sessions': ['2001E1']},
+             '2003-2004': {'years': [2003, 2004],
+                           'sub_sessions': ['2003E1', '2003E2', '2003E3']},
+             '2005-2006': {'years': [2005, 2006],
+                           'sub_sessions': []},
+             '2007-2008': {'years': [2007, 2008],
+                           'sub_sessions': ['2007E1', '2007E2']},
+             '2009-2010': {'years': [2009, 2010],
+                           'sub_sessions': []},
+             }}
+
+    def get_bill_info(self, session, sub, bill_id):
+        bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?Session=%s&BillID=%s' % (session[0:4] + sub, bill_id)
         # parse the bill data page, finding the latest html text
         if bill_id[0] == 'H':
             chamber = 'lower'
@@ -48,7 +90,7 @@ class NCLegislationScraper(LegislationScraper):
 
         bill_title = bill_soup.findAll('div', style="text-align: center; font: bold 20px Arial; margin-top: 15px; margin-bottom: 8px;")[0].contents[0]
 
-        bill = Bill(session, chamber, bill_id, bill_title)
+        bill = Bill(session + sub, chamber, bill_id, bill_title)
         bill.add_source(bill_detail_url)
 
         # get all versions
@@ -70,7 +112,7 @@ class NCLegislationScraper(LegislationScraper):
                              leg.contents[0].replace(u'\u00a0', ' '))
 
         # easier to read actions from the rss.. but perhaps favor less HTTP requests?
-        rss_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?Session=%s&BillID=%s&view=history_rss' % (session, bill_id)
+        rss_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?Session=%s&BillID=%s&view=history_rss' % (session[0:4] + sub, bill_id)
         rss_data = self.urlopen(rss_url)
         rss_soup = self.soup_parser(rss_data)
         bill.add_source(rss_url)
@@ -95,8 +137,8 @@ class NCLegislationScraper(LegislationScraper):
 
         self.add_bill(bill)
 
-    def scrape_session(self, chamber, session):
-        url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (session, chamber)
+    def scrape_session(self, chamber, session, sub):
+        url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (session[0:4] + sub, chamber)
 
         data = self.urlopen(url)
         soup = self.soup_parser(data)
@@ -105,47 +147,25 @@ class NCLegislationScraper(LegislationScraper):
         for row in rows:
             td = row.find('td')
             bill_id = td.a.contents[0]
-            self.get_bill_info(session, bill_id)
+            self.get_bill_info(session, sub, bill_id)
 
     def scrape_bills(self, chamber, year):
-        year_mapping = {
-            '1985': ('1985',),
-            '1986': ('1985E1',),
-            '1987': ('1987',),
-            '1988': (),
-            '1989': ('1989', '1989E1'),
-            '1990': ('1989E2',),
-            '1991': ('1991E1', '1991'),
-            '1992': (),
-            '1993': ('1993',),
-            '1994': ('1993E1',),
-            '1995': ('1995',),
-            '1996': ('1995E1', '1995E2'),
-            '1997': ('1997',),
-            '1998': ('1997E1',),
-            '1999': ('1999E1', '1999'),
-            '2000': ('1999E2',),
-            '2001': ('2001',),
-            '2002': ('2001E1',),
-            '2003': ('2003', '2002E1', '2003E2'),
-            '2004': ('2003E3',),
-            '2005': ('2005',),
-            '2006': (),
-            '2007': ('2007E1', '2007'),
-            '2008': ('2007E2',),
-            '2009': ('2009',),
-        }
         chamber = {'lower':'House', 'upper':'Senate'}[chamber]
 
-        if year not in year_mapping:
+        if int(year) % 2 != 1:
             raise NoDataForYear(year)
 
-        for session in year_mapping[year]:
-            self.scrape_session(chamber, session)
+        session = "%d-%d" % (int(year), int(year) + 1)
+
+        self.scrape_session(chamber, session, '')
+        for sub in self.metadata['sessions'][session]['sub_sessions']:
+            self.scrape_session(chamber, session, sub[4:])
 
     def scrape_legislators(self, chamber, year):
         if year != '2009':
             raise NoDataForYear(year)
+
+        session = "%d-%d" % (int(year), int(year) + 1)
 
         url = "http://www.ncga.state.nc.us/gascripts/members/memberList.pl?sChamber="
         if chamber == 'lower':
@@ -169,7 +189,7 @@ class NCLegislationScraper(LegislationScraper):
                 full_name = full_name.replace(u'\u00a0', ' ')
                 (first_name, last_name, middle_name, suffix) = split_name(full_name)
 
-                legislator = Legislator(year, chamber, district, full_name,
+                legislator = Legislator(session, chamber, district, full_name,
                                         first_name, last_name, middle_name,
                                         party, suffix=suffix)
                 legislator.add_source(url)
