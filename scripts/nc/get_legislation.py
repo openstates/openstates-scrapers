@@ -158,7 +158,7 @@ class NCLegislationScraper(LegislationScraper):
         session = "%d-%d" % (int(year), int(year) + 1)
 
         self.scrape_session(chamber, session, '')
-        for sub in self.metadata['sessions'][session]['sub_sessions']:
+        for sub in self.metadata['session_details'][session]['sub_sessions']:
             self.scrape_session(chamber, session, sub[4:])
 
     def scrape_legislators(self, chamber, year):
