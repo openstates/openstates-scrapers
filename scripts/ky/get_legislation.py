@@ -115,7 +115,7 @@ class KYLegislationScraper(LegislationScraper):
                 action_date = action.split('-')[0]
                 action_date = dt.datetime.strptime(action_date, '%b %d')
                 # Fix:
-                action_date = action_date.replace(year=int('20' + session[0:2]))
+                action_date = action_date.replace(year=int('20' + session[2:4]))
 
                 action = '-'.join(action.split('-')[1:])
 
