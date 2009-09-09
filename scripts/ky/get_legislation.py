@@ -128,6 +128,12 @@ class KYLegislationScraper(LegislationScraper):
 
                 bill.add_action(actor, action, action_date)
 
+            vote_link = bill_info.find(href=re.compile('.*/vote_history.pdf'))
+            if vote_link:
+                bill.add_document(
+                    'vote_history.pdf',
+                    bill_info_url.replace('.htm', '') + "/vote_history.pdf")
+
             self.add_bill(bill)
 
     def scrape_legislators(self, chamber, year):
