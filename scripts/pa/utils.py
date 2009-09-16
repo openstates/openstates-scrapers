@@ -10,6 +10,7 @@ def start_year(session):
     return session[0:4]
 
 def parse_action_date(date_str):
+    date_str = date_str.replace('Sept.', 'September')
     try:
         date = dt.datetime.strptime(date_str, '%b. %d, %Y')
     except ValueError:
