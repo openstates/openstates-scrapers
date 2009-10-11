@@ -8,6 +8,7 @@ class Wisconsin < LegislationScraper
   
 
   def scrape_legislators(chamber, year)
+    return
     @words = {'lower' => 'REPRESENTATIVES', 'upper' => 'SENATORS'}
     #p "#{chamber} - #{year}"
     yr = year[2,4]
@@ -38,7 +39,7 @@ class Wisconsin < LegislationScraper
   
   
   def scrape_metadata
-      {
+    details = {
       :state_name => 'Wisconsin',
       :legislature_name =>'The Wisconsin State Legislature',
       :lower_chamber_name =>'Assembly',
@@ -46,25 +47,29 @@ class Wisconsin < LegislationScraper
       :lower_title =>'Representative',
       :upper_title =>'Senator',
       :lower_term =>2,
-      :upper_term =>4,
-      :sessions => ['1989', 
-                  '1991', '1993', '1995', '1997', '1999',
-                  '2001', '2003', '2005', '2007', '2009'],
-      :session_details => {
-          '1989' =>{'years' =>[1989, 1990], 'sub_sessions' =>[]},
-          '1991' =>{'years' =>[1991, 1992], 'sub_sessions' =>[]},
-          '1993' =>{'years' =>[1993, 1994], 'sub_sessions' =>[]},
-          '1995' =>{'years' =>[1995, 1996], 'sub_sessions' =>[]},
-          '1997' =>{'years' =>[1997, 1998], 'sub_sessions' =>[]},
-          '1999' =>{'years' =>[1999, 2000], 'sub_sessions' =>[]},
-          '2001' =>{'years' =>[2001, 2002], 'sub_sessions' =>[]},
-          '2003' =>{'years' =>[2003, 2004], 'sub_sessions' =>[]},
-          '2005' =>{'years' =>[2005, 2006], 'sub_sessions' =>[]},
-          '2007' =>{'years' =>[2007, 2008], 'sub_sessions' =>[]},
-          '2009' =>{'years' =>[2009, 2010], 'sub_sessions' =>[]},
-      }}
+      :upper_term =>4
+    }
+    
+    doc = Hpricot(open('http://www.legis.state.wi.us/'))
+    s = doc / "select[@id=session] option"
+    sessions = []
+    session_details = {}
+    s.each{|sess|
+      text = sess.inner_html
+      if text =~ /^(\d{4})/
+        year = $1.to_i
+        sessions << year
+        session_details[year] = {:years => [year, year+1], :sub_sessions => [] }
+      elsif text =~ /\w\s(\d{4})/
+        year = $1.to_i
+        year -= 1 if year %2 == 0
+        session_details[year][:sub_sessions] << text
+      end 
+    }
+    details[:sessions] = sessions
+    details[:session_details] = session_details
+
+    return details
     end
 end
 Wisconsin.new.run
-
-p 'ding'
