@@ -34,7 +34,77 @@ class Wisconsin < LegislationScraper
   end
   
   def scrape_bills(chamber, year)
-    
+    house = (chamber == 'upper') ? 'S' : 'A'
+    19.upto(19) do |i|
+      url = "http://www.legis.state.wi.us/#{year}/data/#{house}B#{i}hst.html"
+      p url
+      
+      doc = Hpricot(open(url))
+      history = doc / 'pre'
+      history = history.first.inner_html.split("\n")
+      
+      bill_id = nil
+      title = nil
+      sponsers = []
+      actions = nil
+      year = nil
+      
+      buffer = ''
+      
+      history.each{ |line|
+        next if line.chomp == ''
+        #ok, first we need the title. so.. get it.
+        if bill_id.nil?
+          bill_id = (Hpricot(line) / 'a').first.inner_html
+          next
+        end
+        #then a bunch of lines of description that we know is done
+        #when a year shows up on the following line.
+        
+        if title.nil?
+          if line =~ /^(\d{4})$/
+            year = $1.to_i
+            title = buffer
+            buffer = ''
+          end
+          buffer += line.chomp + ' '
+          next
+        end
+        
+        if line =~ /^(\d{4})$/
+          year = $1.to_i
+          buffer = ''
+          next
+        end
+        ls = ''
+        if sponsers.empty?
+          if line =~ /\s+\d{2}-\d{2}/ and not line =~ /Introduced by/
+            ls = buffer
+            start = ls.index("Introduced by")
+            ls = ls[start..-1].split(/and|\,|;/)
+            p ls
+            type = ''
+            ls.each{|s|
+              name = nil
+              if s =~ /Introduced/  
+                type = 'primary' 
+                name = s.split(/Introduced by \w+/).last.strip
+              end
+              if s =~ /cosponsored/
+                type = 'cosponsor' 
+                name = s.split(/cosponsored by \w+/).last.strip
+              end
+              name = s.strip unless name
+              sponsers << {:name => name, :type => type}
+            }
+            buffer = ''
+          end
+          buffer += line.strip + ' '
+          next
+        end
+      }
+    end
+    #
   end
   
   
@@ -50,6 +120,7 @@ class Wisconsin < LegislationScraper
       :upper_term =>4
     }
     
+    #get a current list of 
     doc = Hpricot(open('http://www.legis.state.wi.us/'))
     s = doc / "select[@id=session] option"
     sessions = []
