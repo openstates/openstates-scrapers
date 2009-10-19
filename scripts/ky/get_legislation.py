@@ -155,7 +155,11 @@ class KYLegislationScraper(LegislationScraper):
                     continue
 
                 full_name = leg_link.contents[0].strip()
-                district = row.findAll('td')[2].find(text=True).strip()
+
+                district = ""
+                for text in row.findAll('td')[2].findAll(text=True):
+                    district += text.strip()
+                district = district.strip()
 
                 self.parse_legislator(chamber, year, full_name, district, leg_link['href'])
 
