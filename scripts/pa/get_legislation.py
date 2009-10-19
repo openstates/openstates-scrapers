@@ -129,7 +129,8 @@ class PALegislationScraper(LegislationScraper):
             act_raw = ""
             for node in row.td.div:
                 if hasattr(node, 'contents'):
-                    act_raw += node.contents[0]
+                    if len(node.contents) > 0:
+                        act_raw += node.contents[0]
                 else:
                     act_raw += node
             act_raw = act_raw.replace('&#160;', ' ')
