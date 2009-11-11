@@ -34,8 +34,9 @@ class Wisconsin < LegislationScraper
   end
   
   def scrape_bills(chamber, year)
+    chambers = {'S' => 'upper', 'A' => 'lower'}
     house = (chamber == 'upper') ? 'S' : 'A'
-    19.upto(19) do |i|
+    129.upto(129) do |i|
       url = "http://www.legis.state.wi.us/#{year}/data/#{house}B#{i}hst.html"
       p url
       
@@ -46,8 +47,10 @@ class Wisconsin < LegislationScraper
       bill_id = nil
       title = nil
       sponsers = []
-      actions = nil
-      year = nil
+      actions = []
+      year,month,day = nil,nil,nil
+      house = nil
+      stop = false
       
       buffer = ''
       
@@ -58,57 +61,71 @@ class Wisconsin < LegislationScraper
           bill_id = (Hpricot(line) / 'a').first.inner_html
           next
         end
-        #then a bunch of lines of description that we know is done
-        #when a year shows up on the following line.
-        
-        if title.nil?
-          if line =~ /^(\d{4})$/
-            year = $1.to_i
-            title = buffer
-            buffer = ''
-          end
-          buffer += line.chomp + ' '
-          next
-        end
-        
+
+        #don't add the year to our buffer
         if line =~ /^(\d{4})$/
           year = $1.to_i
-          buffer = ''
           next
         end
-        ls = ''
-        if sponsers.empty?
-          if line =~ /\s+\d{2}-\d{2}/ and not line =~ /Introduced by/
-            ls = buffer
-            start = ls.index("Introduced by")
-            ls = ls[start..-1].split(/and|\,|;/)
-            p ls
-            type = ''
-            ls.each{|s|
-              name = nil
-              if s =~ /Introduced/  
-                type = 'primary' 
-                name = s.split(/Introduced by \w+/).last.strip
-              end
-              if s =~ /cosponsored/
-                type = 'cosponsor' 
-                name = s.split(/cosponsored by \w+/).last.strip
-              end
-              name = s.strip unless name
-              sponsers << {:name => name, :type => type}
-            }
-            buffer = ''
-          end
-          buffer += line.strip + ' '
+        
+        #if there's a date on the line, we know that the last block of
+        #info ended, so we need to do something or another with it
+        if line =~ /\s+(\d{2})-(\d{2}).\s\s([AS])\.\s/
+          month = $1.to_i
+          day = $2.to_i
+          house = $3
+         # p "#{month}/#{day}/#{year} - #{house}"
+          workdata = buffer
+          buffer = ''
+          stop = true
+        else
+          stop = false
+        end
+        buffer += line.strip + ' '
+        
+        if stop and title.nil?
+          title = workdata
           next
+        end
+        
+        if stop and sponsers.empty? and !(line =~ /Introduced by/)
+          sponsers = parse_sponsers(workdata)
+        end
+        
+        if stop
+          actions << workdata
         end
       }
+      #we also have the straggler
+      actions << buffer
+      y actions
     end
     #
   end
   
+  def parse_sponsers(workdata)
+    sponsers = []
+    ls = workdata
+    start = ls.index("Introduced by")
+    ls = ls[start..-1].split(/and|\,|;/)
+    type = ''
+    ls.each{|s|
+      name = nil
+      if s =~ /Introduced/  
+        type = 'primary' 
+        name = s.split(/Introduced by \w+/).last.strip
+      end
+      if s =~ /cosponsored/
+        type = 'cosponsor' 
+        name = s.split(/cosponsored by \w+/).last.strip
+      end
+      name = s.strip unless name
+      sponsers << {:name => name, :type => type}
+    }
+  end
   
   def scrape_metadata
+    return
     details = {
       :state_name => 'Wisconsin',
       :legislature_name =>'The Wisconsin State Legislature',
