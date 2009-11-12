@@ -48,7 +48,8 @@ class Wisconsin < LegislationScraper
       title = nil
       sponsers = []
       actions = []
-      year,month,day = nil,nil,nil
+      month,day,year = nil,nil,nil
+      date = nil
       house = nil
       stop = false
       
@@ -58,12 +59,17 @@ class Wisconsin < LegislationScraper
         next if line.chomp == ''
         #ok, first we need the title. so.. get it.
         if bill_id.nil?
-          bill_id = (Hpricot(line) / 'a').first.inner_html
+          topline = (Hpricot(line) / 'a')
+          if topline.empty?
+            bill_id = line.strip
+          else
+            bill_id = topline.inner_html
+          end
           next
         end
 
         #don't add the year to our buffer
-        if line =~ /^(\d{4})$/
+        if line =~ /^(\d{4})[\s]{0,1}$/
           year = $1.to_i
           next
         end
@@ -71,10 +77,7 @@ class Wisconsin < LegislationScraper
         #if there's a date on the line, we know that the last block of
         #info ended, so we need to do something or another with it
         if line =~ /\s+(\d{2})-(\d{2}).\s\s([AS])\.\s/
-          month = $1.to_i
-          day = $2.to_i
-          house = $3
-         # p "#{month}/#{day}/#{year} - #{house}"
+          month,day,house = $1,$2,$3
           workdata = buffer
           buffer = ''
           stop = true
@@ -93,14 +96,28 @@ class Wisconsin < LegislationScraper
         end
         
         if stop
-          actions << workdata
+          actions << parse_action(date, workdata, chambers[house])
         end
+        #NOW update the date
+        date = "#{month}/#{day}/#{year}"
       }
       #we also have the straggler
-      actions << buffer
+      actions << parse_action(date, buffer, chambers[house])
       y actions
     end
     #
+  end
+  
+  def parse_action(date,action,chamber)
+    # "06-18.  S. Received from Assembly  ................................... 220 "
+    # "___________                      __________________________________________"
+    #    11                                whatever else
+    action = action[11,action.length]  #take out the date and house
+    action = action[0, action.index(' ..')] if action.index(' ..') #clear out bookkeeping
+    
+    #TODO: check for votes
+    
+    return {:date => date, :action => action.strip, :actor => chamber}
   end
   
   def parse_sponsers(workdata)
