@@ -278,7 +278,10 @@ class CASQLImporter(LegislationScraper):
                               'sub_sessions': ['20092010 Special Session 1',
                                                '20092010 Special Session 2',
                                                '20092010 Special Session 3',
-                                               '20092010 Special Session 4',]},
+                                               '20092010 Special Session 4',
+                                               '20092010 Special Session 5',
+                                               '20092010 Special Session 6',
+                                               '20092010 Special Session 7',]},
                  }
                 }
 
