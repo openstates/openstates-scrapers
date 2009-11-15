@@ -5,7 +5,7 @@ require 'hpricot'
 
 class Wisconsin < LegislationScraper
   @@state = 'wi'
-  
+  @@sessions = {}
 
   def scrape_legislators(chamber, year)
     return
@@ -34,10 +34,25 @@ class Wisconsin < LegislationScraper
   end
   
   def scrape_bills(chamber, year)
-    chambers = {'S' => 'upper', 'A' => 'lower'}
+    year = year.to_i - 1 if year.to_i.even?
+
     house = (chamber == 'upper') ? 'S' : 'A'
-    129.upto(129) do |i|
-      url = "http://www.legis.state.wi.us/#{year}/data/#{house}B#{i}hst.html"
+    
+    @@sessions[year.to_i].each{|sess|
+      (year, prefix) = sess.first[1..sess.first.length].split('/')
+      p sess[1]
+      begin
+        parse_session(house, year, prefix, sess[1])
+      rescue OpenURI::HTTPError => e
+        #just ignore it.
+      end
+    }
+  end
+  
+  def parse_session(house ,year, prefix, session)
+    chambers = {'S' => 'upper', 'A' => 'lower'}
+    51.upto(51) do |i|
+      url = "http://www.legis.state.wi.us/#{year}/data/#{prefix}#{house}B#{i}hst.html"
       p url
       
       doc = Hpricot(open(url))
@@ -88,24 +103,41 @@ class Wisconsin < LegislationScraper
         
         if stop and title.nil?
           title = workdata
+          @bill = Bill.new(session, chambers[house], i, title)
           next
         end
         
         if stop and sponsers.empty? and !(line =~ /Introduced by/)
+          date = "#{month}/#{day}/#{year}"
           sponsers = parse_sponsers(workdata)
+          sponsers.each{|s|
+            @bill.add_sponsor(s[:type], s[:name])
+          }
         end
         
         if stop
-          actions << parse_action(date, workdata, chambers[house])
+          actions << parse_action(date, Hpricot(workdata).to_plain_text, chambers[house])
+          if workdata =~ /Ayes (\d+), Noes (\d+)/
+            yes,no = $1,$2
+            @bill.add_vote(Vote.new(chambers[house], date, actions.last[:action], (yes > no), yes, no, 0 ))
+          end
         end
         #NOW update the date
         date = "#{month}/#{day}/#{year}"
       }
       #we also have the straggler
+      #y actions
       actions << parse_action(date, buffer, chambers[house])
-      y actions
+      
+      actions.each{|action|
+        @bill.add_action(action[:actor], action[:action], action[:date])
+      }
+      documents = doc / 'pre' / 'a'
+      documents.each {|doc|
+        @bill.add_document(doc.inner_html, doc['HREF'] )
+      }
+      add_bill(@bill)
     end
-    #
   end
   
   def parse_action(date,action,chamber)
@@ -139,10 +171,10 @@ class Wisconsin < LegislationScraper
       name = s.strip unless name
       sponsers << {:name => name, :type => type}
     }
+    return sponsers
   end
   
   def scrape_metadata
-    return
     details = {
       :state_name => 'Wisconsin',
       :legislature_name =>'The Wisconsin State Legislature',
@@ -165,11 +197,13 @@ class Wisconsin < LegislationScraper
         year = $1.to_i
         sessions << year
         session_details[year] = {:years => [year, year+1], :sub_sessions => [] }
+        @@sessions[year] = [[sess['value'],year]]
       elsif text =~ /\w\s(\d{4})/
         year = $1.to_i
         year -= 1 if year %2 == 0
         session_details[year][:sub_sessions] << text
-      end 
+        @@sessions[year] << [sess['value'], text]
+      end
     }
     details[:sessions] = sessions
     details[:session_details] = session_details
