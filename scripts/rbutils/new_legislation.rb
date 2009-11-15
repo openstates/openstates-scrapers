@@ -117,7 +117,7 @@ class Bill < Hash
   end
 
   def add_document(name, url, extra={})
-    self[:document].push({:name => name, :url => url,}.merge(extra))
+    self[:documents].push({:name => name, :url => url,}.merge(extra))
   end
 
   def add_vote(vote)
