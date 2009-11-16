@@ -5,14 +5,52 @@ require 'hpricot'
 
 class Wisconsin < LegislationScraper
   @@state = 'wi'
+  
+  #used internally for iterating through subsessions in a base year
   @@sessions = {}
 
   def scrape_legislators(chamber, year)
+    year = year.to_i
+    year = year - 1 if year.even?
+    #branch out if we're in the current session
+    if Time.now.year == year
+      current_legislators(chamber, year)
+    else
+      past_legislators(chamber, year)
+    end
+  end
+  
+  def current_legislators(chamber, year)
+    words = {'lower' => 'assembly', 'upper' => 'senate'}
+    url = "http://www.legis.state.wi.us/w3asp/contact/legislatorslist.aspx?house=#{words[chamber]}"
+    doc = Hpricot(open(url))
+    doc = (doc/"td.main table tr")
+    doc.each{|row|
+      #skip this row if it's a header or spacer.
+      cells = row.search("td")
+      next if ["h2","hr"].include?(cells.first.children.first.name)
+      l = {:session => year, :chamber => chamber }
+      cells[0].search("a")[1].inner_html =~ /([\w\-\,\s\.]+)\s+\(([\w])\)/
+      l[:fullname], party = $1, $2
+      l[:district] = cells[2].inner_html.to_i
+      l[:first_name], middle, last = l[:fullname].split(' ')
+      if last.nil?
+        l[:last_name] = middle
+      else
+        l[:last_name] = last
+        l[:middle_name] = middle
+      end
+      add_legislator(l)
+      p "Added #{l[:fullname]}"
+    }
+  end
+  
+  def past_legislators(chamber, year)
     @words = {'lower' => 'REPRESENTATIVES', 'upper' => 'SENATORS'}
-    #p "#{chamber} - #{year}"
     yr = year[2,4]
     path = "Prior%20Sessions/#{year}/indxauth#{yr}/"
     base = "http://nxt.legis.state.wi.us/nxt/gateway.dll?f=xmlcontents&command=getmore&basepathid=#{path}&direction=1&maxnodes=500&minnodesleft=500"
+    p base
     doc = Hpricot(open(base))
     doc = (doc/"n[@t=#{@words[chamber]}]")
     path += doc.first['n']
@@ -28,7 +66,7 @@ class Wisconsin < LegislationScraper
       l[:district] = legislator[/\(\d{1,3}\w{2,3}/][1..-1]
       l.delete(:middle_name) unless l[:middle_name]
       add_legislator(l)
-      #p legislator
+      p "Added #{l[:fullname]}"
     }
   end
   
@@ -43,7 +81,6 @@ class Wisconsin < LegislationScraper
       begin
         parse_session(house, year, prefix, sess[1])
       rescue OpenURI::HTTPError => e
-        p "well shit"
         #just ignore it.
       end
     }
@@ -75,7 +112,7 @@ class Wisconsin < LegislationScraper
       end
       history = doc / 'pre'
       history = history.first.inner_html.split("\n")
-      print "Fetching #{pp[fhouse]} Bill #{("%5d" % i)} ... "
+      print "Fetching #{pp[fhouse]} Bill #{("%4d" % i)} ... "
       
       bill_id = nil
       title = nil
@@ -144,7 +181,6 @@ class Wisconsin < LegislationScraper
         date = "#{month}/#{day}/#{year}"
       }
       #we also have the straggler
-      #y actions
       actions << parse_action(date, buffer, chambers[house])
       
       actions.each{|action|
@@ -173,7 +209,7 @@ class Wisconsin < LegislationScraper
     sponsers = []
     ls = workdata
     start = ls.index("Introduced by")
-    ls = ls[start..-1].split(/and|\,|;/)
+    ls = ls[start..-1].split(/\sand\s|\,|;/)
     type = ''
     ls.each{|s|
       name = nil
@@ -203,7 +239,7 @@ class Wisconsin < LegislationScraper
       :upper_term =>4
     }
     
-    #get a current list of 
+    #get a proper list of sessions
     doc = Hpricot(open('http://www.legis.state.wi.us/'))
     s = doc / "select[@id=session] option"
     sessions = []
