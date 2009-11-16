@@ -8,7 +8,6 @@ class Wisconsin < LegislationScraper
   @@sessions = {}
 
   def scrape_legislators(chamber, year)
-    return
     @words = {'lower' => 'REPRESENTATIVES', 'upper' => 'SENATORS'}
     #p "#{chamber} - #{year}"
     yr = year[2,4]
@@ -44,20 +43,39 @@ class Wisconsin < LegislationScraper
       begin
         parse_session(house, year, prefix, sess[1])
       rescue OpenURI::HTTPError => e
+        p "well shit"
         #just ignore it.
       end
     }
   end
   
-  def parse_session(house ,year, prefix, session)
+  def parse_session(fhouse ,fyear, prefix, session)
     chambers = {'S' => 'upper', 'A' => 'lower'}
-    51.upto(51) do |i|
-      url = "http://www.legis.state.wi.us/#{year}/data/#{prefix}#{house}B#{i}hst.html"
-      p url
-      
-      doc = Hpricot(open(url))
+    pp = {'S' => 'Senate', 'A' => 'House'}
+    i = 0
+    while i+=1 do
+      url = "http://www.legis.state.wi.us/#{fyear}/data/#{prefix}#{fhouse}B#{i}hst.html"
+      begin
+        data = open(url)
+        #hpricot segfaults if there's no data. lovely.
+        if data.length == 0 
+          p "skipping"
+          next
+        end
+        doc = Hpricot(data)
+      rescue OpenURI::HTTPError => e
+        url = "http://www.legis.state.wi.us/#{fyear}/#{prefix}/data/#{fhouse}B#{i}hst.html"
+        p "retrying with #{url}"
+        data = open(url)
+        if data.length == 0 
+          p "skipping" 
+          next 
+        end
+        doc = Hpricot(data)
+      end
       history = doc / 'pre'
       history = history.first.inner_html.split("\n")
+      print "Fetching #{pp[fhouse]} Bill #{("%5d" % i)} ... "
       
       bill_id = nil
       title = nil
@@ -137,6 +155,7 @@ class Wisconsin < LegislationScraper
         @bill.add_document(doc.inner_html, doc['HREF'] )
       }
       add_bill(@bill)
+      print "done.\n"
     end
   end
   
@@ -146,8 +165,6 @@ class Wisconsin < LegislationScraper
     #    11                                whatever else
     action = action[11,action.length]  #take out the date and house
     action = action[0, action.index(' ..')] if action.index(' ..') #clear out bookkeeping
-    
-    #TODO: check for votes
     
     return {:date => date, :action => action.strip, :actor => chamber}
   end
