@@ -46,6 +46,8 @@ class Wisconsin < LegislationScraper
   end
   
   def past_legislators(chamber, year)
+    throw "No sessions for this year" if @@sessions[year].nil?
+    
     @words = {'lower' => 'REPRESENTATIVES', 'upper' => 'SENATORS'}
     yr = year[2,4]
     path = "Prior%20Sessions/#{year}/indxauth#{yr}/"
@@ -72,9 +74,8 @@ class Wisconsin < LegislationScraper
   
   def scrape_bills(chamber, year)
     year = year.to_i - 1 if year.to_i.even?
-
+    throw "No sessions for this year" if @@sessions[year].nil?
     house = (chamber == 'upper') ? 'S' : 'A'
-    
     @@sessions[year.to_i].each{|sess|
       (year, prefix) = sess.first[1..sess.first.length].split('/')
       p sess[1]
@@ -228,6 +229,7 @@ class Wisconsin < LegislationScraper
   end
   
   def scrape_metadata
+ 
     details = {
       :state_name => 'Wisconsin',
       :legislature_name =>'The Wisconsin State Legislature',
