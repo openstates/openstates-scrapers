@@ -25,6 +25,7 @@ class Wisconsin < LegislationScraper
   
   def current_legislators(chamber, year)
     words = {'lower' => 'assembly', 'upper' => 'senate'}
+    parties = {'D' => 'Democratic', 'R' => 'Republican', 'I' => 'Independent'}
     url = "http://www.legis.state.wi.us/w3asp/contact/legislatorslist.aspx?house=#{words[chamber]}"
     doc = Hpricot(open(url))
     doc = (doc/"td.main table tr")
@@ -44,7 +45,7 @@ class Wisconsin < LegislationScraper
         l[:last_name] = last
         l[:middle_name] = middle
       end
-      l[:party] = ""
+      l[:party] = parties.include?(party) ? parties[party] : party
       add_legislator(l)
       p "Added #{l[:full_name]}"
     }
@@ -54,6 +55,7 @@ class Wisconsin < LegislationScraper
     throw "No sessions for this year" if @@sessions[year].nil?
     
     @words = {'lower' => 'REPRESENTATIVES', 'upper' => 'SENATORS'}
+    parties = {'Dem' => 'Democratic', 'Rep' => 'Republican', 'Ind' => 'Independent'}
     yr = year[2,4]
     path = "Prior%20Sessions/#{year}/indxauth#{yr}/"
     base = "http://nxt.legis.state.wi.us/nxt/gateway.dll?f=xmlcontents&command=getmore&basepathid=#{path}&direction=1&maxnodes=500&minnodesleft=500"
@@ -72,7 +74,8 @@ class Wisconsin < LegislationScraper
       l[:last_name] = name[0]
       l[:district] = legislator[/\(\d{1,3}\w{2,3}/][1..-1]
       l.delete(:middle_name) unless l[:middle_name]
-      l[:party] = ""
+      legislator =~ /\;\s(\w+)\.\)/ #party time.
+      l[:party] = parties.include?($1) ? parties[$1] : $1
       add_legislator(l)
       p "Added #{l[:full_name]}"
     }
