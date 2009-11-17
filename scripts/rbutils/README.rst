@@ -28,10 +28,10 @@ An example of the Ruby scraping API (that doesn't actually scrape anything):
       bill = Bill.new("Session 1", "upper", "SB 1", "The First Bill")
       bill.add_sponsor("primary", "Bill Smith")
       bill.add_sponsor("cosponsor", "John Doe")
-      bill.add_action("upper", "Introduced", "12/01/09")
+      bill.add_action("upper", "Introduced", Time.local(2009, 1, 1).to_i)
       bill.add_version("first version", "http://example.org")
     
-      vote = Vote.new("upper", "12/02/09", "Pass", true,
+      vote = Vote.new("upper", Time.local(2009, 1, 1).to_i, "Pass", true,
                       10, 3, 1)
       vote.yes "Bill Smith"
       vote.no "John Doe"
