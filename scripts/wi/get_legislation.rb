@@ -3,6 +3,9 @@ require File.join(File.dirname(__FILE__), '..', 'rbutils', 'new_legislation')
 require 'open-uri'
 require 'hpricot'
 
+# Hpricot runs out of buffer space (for me) on some pages
+Hpricot.buffer_size = 262144
+
 class Wisconsin < LegislationScraper
   @@state = 'wi'
   
@@ -14,9 +17,9 @@ class Wisconsin < LegislationScraper
     year = year - 1 if year.even?
     #branch out if we're in the current session
     if Time.now.year == year
-      current_legislators(chamber, year)
+      current_legislators(chamber, year.to_s)
     else
-      past_legislators(chamber, year)
+      past_legislators(chamber, year.to_s)
     end
   end
   
@@ -31,17 +34,19 @@ class Wisconsin < LegislationScraper
       next if ["h2","hr"].include?(cells.first.children.first.name)
       l = {:session => year, :chamber => chamber }
       cells[0].search("a")[1].inner_html =~ /([\w\-\,\s\.]+)\s+\(([\w])\)/
-      l[:fullname], party = $1, $2
-      l[:district] = cells[2].inner_html.to_i
-      l[:first_name], middle, last = l[:fullname].split(' ')
+      l[:full_name], party = $1, $2
+      l[:district] = cells[2].inner_html.to_s
+      l[:first_name], middle, last = l[:full_name].split(' ')
       if last.nil?
         l[:last_name] = middle
+        l[:middle_name] = ""
       else
         l[:last_name] = last
         l[:middle_name] = middle
       end
+      l[:party] = ""
       add_legislator(l)
-      p "Added #{l[:fullname]}"
+      p "Added #{l[:full_name]}"
     }
   end
   
@@ -67,16 +72,17 @@ class Wisconsin < LegislationScraper
       l[:last_name] = name[0]
       l[:district] = legislator[/\(\d{1,3}\w{2,3}/][1..-1]
       l.delete(:middle_name) unless l[:middle_name]
+      l[:party] = ""
       add_legislator(l)
-      p "Added #{l[:fullname]}"
+      p "Added #{l[:full_name]}"
     }
   end
   
   def scrape_bills(chamber, year)
-    year = year.to_i - 1 if year.to_i.even?
+    year = (year.to_i - 1).to_s if year.to_i.even?
     throw "No sessions for this year" if @@sessions[year].nil?
     house = (chamber == 'upper') ? 'S' : 'A'
-    @@sessions[year.to_i].each{|sess|
+    @@sessions[year].each{|sess|
       (year, prefix) = sess.first[1..sess.first.length].split('/')
       p sess[1]
       begin
@@ -141,7 +147,7 @@ class Wisconsin < LegislationScraper
 
         #don't add the year to our buffer
         if line =~ /^(\d{4})[\s]{0,1}$/
-          year = $1.to_i
+          year = $1
           next
         end
         
@@ -159,7 +165,7 @@ class Wisconsin < LegislationScraper
         
         if stop and title.nil?
           title = workdata
-          @bill = Bill.new(session, chambers[house], i, title)
+          @bill = Bill.new(session, chambers[house], i.to_s, title)
           next
         end
         
@@ -172,17 +178,19 @@ class Wisconsin < LegislationScraper
         end
         
         if stop
-          actions << parse_action(date, Hpricot(workdata).to_plain_text, chambers[house])
+          actions << parse_action(date.to_i, Hpricot(workdata).to_plain_text, chambers[house])
           if workdata =~ /Ayes (\d+), Noes (\d+)/
             yes,no = $1,$2
-            @bill.add_vote(Vote.new(chambers[house], date, actions.last[:action], (yes > no), yes, no, 0 ))
+            d = Time.local(year.to_i, month.to_i, day.to_i)
+            @bill.add_vote(Vote.new(chambers[house], d.to_i, actions.last[:action], (yes > no), yes, no, 0 ))
           end
         end
         #NOW update the date
         date = "#{month}/#{day}/#{year}"
       }
       #we also have the straggler
-      actions << parse_action(date, buffer, chambers[house])
+      d = Time.local(year.to_i, month.to_i, day.to_i)
+      actions << parse_action(d.to_i, buffer, chambers[house])
       
       actions.each{|action|
         @bill.add_action(action[:actor], action[:action], action[:date])
@@ -249,15 +257,15 @@ class Wisconsin < LegislationScraper
     s.each{|sess|
       text = sess.inner_html
       if text =~ /^(\d{4})/
-        year = $1.to_i
+        year = $1
         sessions << year
-        session_details[year] = {:years => [year, year+1], :sub_sessions => [] }
+        session_details[year] = {:years => [year.to_i, year.to_i + 1], :sub_sessions => [] }
         @@sessions[year] = [[sess['value'],year]]
       elsif text =~ /\w\s(\d{4})/
         year = $1.to_i
         year -= 1 if year %2 == 0
-        session_details[year][:sub_sessions] << text
-        @@sessions[year] << [sess['value'], text]
+        session_details[year.to_s][:sub_sessions] << text
+        @@sessions[year.to_s] << [sess['value'], text]
       end
     }
     details[:sessions] = sessions
