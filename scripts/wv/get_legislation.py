@@ -113,6 +113,7 @@ class WVLegislationScraper(LegislationScraper):
             hist = basicinfo.table
 
             sponsor = None
+            title = None
             for b in basicinfo.findAll('b'):
                 if b.next.startswith('SUMMARY'):
                     title = b.findNextSiblings(text=True)[0].strip()
