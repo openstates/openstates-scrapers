@@ -185,7 +185,7 @@ class FLLegislationScraper(LegislationScraper):
         leg_page_url = "http://www.flhouse.gov/Sections/Representatives/representatives.aspx"
         leg_page = BeautifulSoup(self.urlopen(leg_page_url))
 
-        table = leg_page.find('table', id='ctrlContentBox_ctrlPageContent__ctl0_dgLegislators')
+        table = leg_page.find('table', id='ctl00_ContentPlaceHolder1_ctrlContentBox_ctrlPageContent_ctl00_dgLegislators')
 
         for row in table.findAll('tr')[1:]:
             full = row.findAll('td')[1].a.contents[0].replace('  ', ' ')
