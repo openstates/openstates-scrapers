@@ -6,7 +6,7 @@ from BeautifulSoup import BeautifulSoup
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import LegislationScraper, NoDataForYear
+from pyutils.legislation import *
 
 class NHLegislationScraper(LegislationScraper):
 
@@ -103,10 +103,10 @@ class NHLegislationScraper(LegislationScraper):
                     pass
                 if textaudio.search(str(url.string)) != None:
                     pass
-                
-            self.add_bill(chamber,year,bill_id,bill_title)
-            self.add_bill_version(chamber,year,bill_id,"bill text",bill_url)
 
+            bill = Bill(year, chamber, bill_id, bill_title)
+            bill.add_version("Bill text", bill_url)
+            self.add_bill(bill)
 
             #grabs sponsorship
             
