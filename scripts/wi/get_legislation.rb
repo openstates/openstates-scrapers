@@ -181,10 +181,10 @@ class Wisconsin < LegislationScraper
         end
         
         if stop
-          actions << parse_action(date.to_i, Hpricot(workdata).to_plain_text, chambers[house])
+          d = Time.local(year.to_i, month.to_i, day.to_i)
+          actions << parse_action(d.to_i, Hpricot(workdata).to_plain_text, chambers[house])
           if workdata =~ /Ayes (\d+), Noes (\d+)/
             yes,no = $1,$2
-            d = Time.local(year.to_i, month.to_i, day.to_i)
             @bill.add_vote(Vote.new(chambers[house], d.to_i, actions.last[:action], (yes > no), yes, no, 0 ))
           end
         end
