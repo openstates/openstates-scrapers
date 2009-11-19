@@ -33,7 +33,7 @@ class TXLegislationScraper(LegislationScraper):
         'lower_term': 2,
         'sessions': ['81'],
         'session_details': {
-            '81': {'years': [2009, 2010], 'sub_sessions': []},
+            '81': {'years': [2009, 2010], 'sub_sessions': ["811"]},
             }
         }
 
@@ -41,6 +41,10 @@ class TXLegislationScraper(LegislationScraper):
         root = ET.XML(txt)
         bill_id = ' '.join(root.attrib['bill'].split(' ')[1:])
         bill_title = root.findtext("caption")
+
+        if session[2] == 'R':
+            session = session[0:2]
+
         bill = Bill(session, chamber, bill_id, bill_title)
 
         for action in root.findall('actions/action'):
