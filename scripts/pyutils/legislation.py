@@ -589,6 +589,7 @@ class NameMatcher(object):
      M Stephens
      M J Stephens
      Michael Joseph Stephens
+     Stephens (M)
 
     Tests:
 
@@ -643,6 +644,7 @@ class NameMatcher(object):
         forms.add("%s %s" % (name['first_name'][0], name['last_name']))
         forms.add("%s, %s" % (name['last_name'], name['first_name'][0]))
         forms.add("%s (%s)" % (name['last_name'], name['first_name']))
+        forms.add("%s (%s)" % (name['last_name'], name['first_name'][0][0]))
 
         if len(name['middle_name']) > 0:
             forms.add("%s, %s %s" % (name['last_name'], name['first_name'],
