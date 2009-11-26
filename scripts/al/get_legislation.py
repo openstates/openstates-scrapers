@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import re
 import sys
 sys.path.append('./scripts')
@@ -50,8 +51,8 @@ class ALLegislationScraper(LegislationScraper):
 
                 district = int(self.unescape(district.string).strip())
                 (last_name,rest) = name.strip().split(', ',1)
-                rest = rest.strip().split(' ')
-                leg = Legislator(year, chamber, district, name, rest, last_name, '', party)
+                rest = rest.strip().split(' ')[0]
+                leg = Legislator(year, chamber, str(district), name, rest, last_name, '', party)
                 self.add_legislator(leg)
         pass
 
@@ -90,8 +91,10 @@ class ALLegislationScraper(LegislationScraper):
                        y_votes = e[5].string
                        n_votes = e[4].string
                        a_votes = e[6].string
-                       
-                       
+
+                       if not matter:
+                           continue
+
                        roll = e[7].find('input')
                        #(date, amend, matter, committee, nays, yeas, abs, vote_thing) = map(lambda x: x.string, e)
                        if date != None:
@@ -188,7 +191,7 @@ class ALLegislationScraper(LegislationScraper):
 				text = option.string.strip()
 				if not year in self.internal_sessions:
 					self.internal_sessions[year] = []
-					session_details[year] = {'years': year, 'sub_sessions':[] }
+					session_details[year] = {'years': [year], 'sub_sessions':[] }
 					sessions.append(year)
 				session_details[year]['sub_sessions'].append(text)
 				self.internal_sessions[year].append([option['value'], text])
