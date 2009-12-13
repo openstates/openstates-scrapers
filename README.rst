@@ -2,8 +2,6 @@
 Overview
 =======================
 
-If you are reading this page on github, please go `here <http://samburg.sunlightlabs.org/docs>`_ to read more complete documentation.
-
 About the Project
 =================
 
@@ -15,7 +13,7 @@ For details on the reasons for the project and goals behind the project see
 
 To stay up to date and communicate with other contributors to the project visit the `Fifty State Project Google Group <http://groups.google.com/group/fifty-state-project>`_.
 
-For an editable overview of each state's progress visit the `Sunlight Labs Wiki <http://wiki.sunlightlabs.com/index.php/State_Legislation_Page>`_.
+For an overview of each state's progress visit the `Fifty State Project Dev Server <http://fiftystates-dev.sunlightlabs.com>`_.
 
 Project Goals
 -------------
@@ -48,11 +46,9 @@ Contributing
 ============
 
 If you are interested in contributing the recommended procedure is to
-check on the `Sunlight Labs Wiki
-<http://wiki.sunlightlabs.com/index.php/Fifty_State_Project#Status>`_
-and in the repository to see where your state is.  The next step is to
-announce your interest on the `Fifty State Project Google Group
-<http://groups.google.com/group/fifty-state-project>`_ (this is where
+check the repository to see where your state is.
+The next step is to announce your interest on the `Fifty State Project Google Group
+<http://groups.google.com/group/fifty-state-project>`_ (this also is where
 you can ask questions and make suggestions regarding the project).
 
 Managing a State
@@ -73,7 +69,7 @@ someone will merge your changes into the core.
 Licensing
 ---------
 
-As of June 15th 2009 the Fifty State Project is licensed under the `GPLv3 license <http://www.fsf.org/licensing/licenses/gpl-3.0.html>`_
+The Fifty State Project is licensed under the `GPLv3 license <http://www.fsf.org/licensing/licenses/gpl-3.0.html>`_
 
 See LICENSING for the full terms of the GPLv3.
 
