@@ -6,12 +6,6 @@ require 'open-uri'
 class ArizonaScraper < LegislationScraper
   @@state = "az"
   
-  def options
-    @options ||= {
-      :years => ["2009"],
-      :chambers => ["lower","upper"]
-    }
-  end
   def get_bills(uri, prefix)
     doc = Hpricot(open(uri))
     (doc/"table.ContentAreaBackground table tr").map do |row|
@@ -41,7 +35,7 @@ class ArizonaScraper < LegislationScraper
             if i % 2 == 0
               sponsor["sponsor"] = d.inner_text.strip.capitalize
             else
-              sponsor["type"] = d.inner_text.strip
+              sponsor["type"] = d.inner_text.strip=='P' ? 'primary' : 'co-sponsor'
               sponsors << sponsor
               sponsor = {}
             end
@@ -69,7 +63,7 @@ class ArizonaScraper < LegislationScraper
       bill = Bill.new('49leg', chamber, bill_id, bill_hash['title'])
       bill_hash['sponsors'].each { |s| bill.add_sponsor(s['type'] || 'primary', s['sponsor']) }
       add_bill bill
-      puts "added bill: #{bill_id}"
+      #puts "added bill: #{bill_id}"
     end
 
   end
