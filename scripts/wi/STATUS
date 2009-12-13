@@ -1,10 +1,10 @@
 [Wisconsin]
 abbreviation: wi
 start_year: 1989
-bills: no
+bills: yes
 bill_versions: no
-sponsors: no
-actions: no
+sponsors: yes
+actions: yes
 votes: no
 contributors: Mark Olson
 notes:
