@@ -39,10 +39,8 @@ class ArizonaScraper < LegislationScraper
 
           sponsor_set.each_with_index do |d, i|
             if i % 2 == 0
-              # name 
               sponsor["sponsor"] = d.inner_text.strip.capitalize
             else
-              # type
               sponsor["type"] = d.inner_text.strip
               sponsors << sponsor
               sponsor = {}
