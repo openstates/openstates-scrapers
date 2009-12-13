@@ -25,16 +25,31 @@ class ArizonaScraper < LegislationScraper
     rv = {}
     (doc/"table.ContentAreaBackground td table").each do |x|
       key_vals = (x/"td")
-    
+
       key = key_vals[0].inner_text.strip.downcase
       key = key[0..key.length-2]
-    
+      
       if key == "sponsors"
+        
         sponsors = []
-        sponsor_type = key_vals[2].inner_text.strip
-        x.search("sponsor").collect do |y|
-          sponsors << {"sponsor" => y.inner_text.capitalize } #, "type" => sponsor_type}
+        (x/"tr").each do |r|
+          sponsor = {}
+          sponsor_set = (r/"td")
+          sponsor_set.delete_at(0) # get rid of the sponsor key
+
+          sponsor_set.each_with_index do |d, i|
+            if i % 2 == 0
+              # name 
+              sponsor["sponsor"] = d.inner_text.strip.capitalize
+            else
+              # type
+              sponsor["type"] = d.inner_text.strip
+              sponsors << sponsor
+              sponsor = {}
+            end
+          end
         end
+
         rv[key] = sponsors
       elsif key == "title"
         val = key_vals[1].inner_text.strip
