@@ -5,7 +5,7 @@ from pyutils.legislation import LegislationScraper
 
 class MyScraper(LegislationScraper):
     #must set state attribute as the state's abbreviated name
-    self.state = ''
+    state = ''
     
     def scrape_legislators(self,chamber,year):
         pass

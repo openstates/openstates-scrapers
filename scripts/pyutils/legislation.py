@@ -306,11 +306,10 @@ class LegislationScraper(object):
                   'w') as f:
             json.dump(metadata, f, cls=DateEncoder)
 
-    def run(self):
+    def run(self, matcher=None):
         parser = OptionParser(
             option_list=self.option_list)
         options, spares = parser.parse_args()
-
         self.verbose = options.verbose
         self.no_cache = options.no_cache
         self.sleep = options.sleep
@@ -339,18 +338,21 @@ class LegislationScraper(object):
         if not chambers:
             chambers = ['upper', 'lower']
         for year in years:
-            self.matcher = {'upper': NameMatcher(), 'lower': NameMatcher()}
-            for chamber in chambers:
-                try:
-                    self.old_bills = {}
-
+            if matcher is None:
+                self.matcher = {'upper': NameMatcher(), 'lower': NameMatcher()}  
+            else:
+                self.matcher = {'upper': matcher['upper'](), 'lower': matcher['lower']()} 
+            try:
+               for chamber in chambers:
                     self.scrape_legislators(chamber, year)
+               for chamber in chambers:
+                    self.old_bills = {}
                     self.scrape_bills(chamber, year)
-                except NoDataForYear, e:
-                    if options.all_years:
-                        pass
-                    else:
-                        raise
+            except NoDataForYear, e:
+                if options.all_years:
+                    pass
+                else:
+                    raise
 
 
 class Bill(dict):
@@ -633,11 +635,18 @@ class NameMatcher(object):
         more than a few hundred legislators at a time so don't worry about
         it.
         """
+        # Pre-clean the names so that "Joe S. Name" and "Joe S Name" aren't
+        # counted as duplicates, even though they're the same guy.
+        name['full_name'] = name['full_name'].replace('.', '')
+        name['first_name'] = name['first_name'].replace('.', '')
+        name['middle_name'] = name['middle_name'].replace('.', '')
+        name['last_name'] =  name['last_name'].replace('.', '')
+
         # We throw possible forms of this name into a set because we
         # don't want to try to add the same form twice for the same
         # name
         forms = set()
-        forms.add(name['full_name'])
+        forms.add(name['full_name'].replace('.', ''))
         forms.add(name['last_name'])
         forms.add("%s, %s" % (name['last_name'], name['first_name']))
         forms.add("%s %s" % (name['first_name'], name['last_name']))
@@ -659,9 +668,12 @@ class NameMatcher(object):
                                     name['last_name']))
             forms.add("%s, %s %s" % (name['last_name'], name['first_name'],
                                      name['middle_name'][0]))
-
+            forms.add("%s, %s.%s." % (name['last_name'], name['first_name'][0],
+                                     name['middle_name'][0]))
+            print "%s, %s.%s." % (name['last_name'], name['first_name'][0],
+                                     name['middle_name'][0])
         for form in forms:
-            form = form.replace('.', '').lower()
+            form = form.replace('.', '').lower() 
             if form in self.names:
                 self.names[form] = None
             else:
