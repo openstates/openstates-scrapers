@@ -73,7 +73,7 @@ class LouisianaScraper(LegislationScraper):
                                 Republican <br>"""
                         party = re.findall(r'<b>Party<\/b><br \/>\s*(\w+)\s*<', aleg)
                         first, middle, last, suffix = self.parse_name(name)
-                        leg = Legislator(year, 'upper', str(district), name, first, middle, last, party, suffix=suffix)
+                        leg = Legislator(str(year), 'upper', str(district), name, first, middle, last, party, suffix=suffix)
                         self.add_legislator(leg)
 
     def scrape_lower_house(self, year):
@@ -84,7 +84,7 @@ class LouisianaScraper(LegislationScraper):
                 name = re.findall(r'Representative ([\w\s\.\,\"\-]+)\s*<br', aleg)[0].strip()
                 party, district = re.findall(r'(\w+)\s*District\s*(\d+)', aleg)[0]
                 first, middle, last, suffix = self.parse_name(name)
-                leg = Legislator(year, 'lower', str(district), name, first, middle, last, party, suffix=suffix)
+                leg = Legislator(str(year), 'lower', str(district), name, first, middle, last, party, suffix=suffix)
                 
                 self.add_legislator(leg)
 
@@ -130,16 +130,15 @@ class LouisianaScraper(LegislationScraper):
             #"http://www.legis.state.la.us/bills/byinst.asp?sessionid=99RS&billtype=SB&billno=593"
             with self.soup_context('http://www.legis.state.la.us/archive/%s/bills%s.htm' % (s_id, abbr[chamber])) as bills:
                 for bill in bills.findAll('a', href=re.compile('billtype=\w\w&billno=\d+')):
-                    self.scrape_a_bill(bill['href'], chamber, year, session[1])
+                    self.scrape_a_bill(bill['href'], chamber, session[1])
         #http://www.legis.state.la.us/archive/99rs/billssen.htm
         #http://www.legis.state.la.us/archive/99rs/billshse.htm
 
         #http://www.legis.state.la.us/bills/byinst.asp?sessionid=99RS&billtype=HB&billno=18
         pass
 
-    def scrape_a_bill(self, bill, chamber, year, session_name):
+    def scrape_a_bill(self, bill, chamber, session_name):
         abbr = {'upper': 'SB', 'lower': 'HB'}
-        session_name = str(year) + " " + session_name
         bill_info = re.findall('sessionid=(\w+)&billtype=(\w+)&billno=(\d+)', bill)[0]
         with self.soup_context(bill) as bill_summary:
             title = unicode(bill_summary.findAll(text=re.compile('Summary'))[0].parent)
@@ -161,7 +160,7 @@ class LouisianaScraper(LegislationScraper):
         bill.add_source(url)
         with self.soup_context(url) as docs:
             for doc in docs.findAll('table')[2].findAll('tr'):
-                if doc.td is None:
+                if not doc.td or not doc.td.a.string:
                     continue
                 bill.add_document(doc.td.a.string, "http://www.legis.state.la.us/billdata/%s" % doc.td.a['href'])
 
@@ -216,35 +215,41 @@ class LouisianaScraper(LegislationScraper):
 	    return s
 
     def scrape_metadata(self):
-		#http://www.legis.state.la.us/session.htm
-		sessions = []
-		session_details = {}
-		with self.soup_context("http://www.legis.state.la.us/session.htm") as session_page:
-			for session in session_page.findAll('a'):
-				if session.strong == None:
-					continue
-				tmp =  re.split(r'\s*', ''.join(self.flatten(session.strong)))
-				tmper = ' '.join(map(lambda x: x.strip(), tmp))
-				year = int(re.findall(r'^[0-9]+', tmper)[0])
-				text = tmper.split(' ', 1)[1]
-				if not year in self.internal_sessions:
-					self.internal_sessions[year] = []
-					session_details[year] = {'years': year, 'sub_sessions':[] }
-					sessions.append(year)
-				session_details[year]['sub_sessions'].append(text)
-				self.internal_sessions[year].append([session['href'], text])
-		return {
-	        'state_name': 'Louisiana',
-	        'legislature_name': 'Louisiana Legislature',
-	        'lower_chamber_name': 'House of Representatives',
-	        'upper_chamber_name': 'Senate',
-	        'lower_title': 'Representative',
-	        'upper_title': 'Senator',
-	        'lower_term': 4,
-	        'upper_term': 4,
-	        'sessions': sessions,
-	        'session_details': session_details
-	    }
+        # http://www.legis.state.la.us/session.htm
+        sessions = []
+        session_details = {}
+        with self.soup_context("http://www.legis.state.la.us/session.htm") as session_page:
+            for session in session_page.findAll('a'):
+                if session.strong == None:
+                    continue
+                tmp =  re.split(r'\s*', ''.join(self.flatten(session.strong)))
+                text = ' '.join(map(lambda x: x.strip(), tmp))
+                year = int(re.findall(r'^[0-9]+', text)[0])
+                if not year in self.internal_sessions:
+                    self.internal_sessions[year] = []
+                    session_details[year] = {'years': [year], 'sub_sessions':[] }
+                    sessions.append(str(year))
+
+                if text.endswith('Regular Legislative Session'):
+                    text = str(year)
+                else:
+                    session_details[year]['sub_sessions'].append(text)
+
+                self.internal_sessions[year].append((session['href'], text))
+
+            return {
+                'state_name': 'Louisiana',
+                'legislature_name': 'Louisiana Legislature',
+                'lower_chamber_name': 'House of Representatives',
+                'upper_chamber_name': 'Senate',
+                'lower_title': 'Representative',
+                'upper_title': 'Senator',
+                'lower_term': 4,
+                'upper_term': 4,
+                'sessions': sessions,
+                'session_details': session_details
+                }
+
     def unescape(self,s):
         return re.sub('&(%s);' % '|'.join(name2codepoint), lambda m: unichr(name2codepoint[m.group(1)]), s).encode('ascii', 'ignore')
 
