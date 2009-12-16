@@ -4,6 +4,7 @@ import os
 import sys
 import datetime as dt, time
 import random
+import html5lib
 from htmlentitydefs import name2codepoint
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -38,6 +39,9 @@ class LouisianaScraper(LegislationScraper):
     #must set state attribute as the state's abbreviated name
     state = 'la'
     internal_sessions = {}
+
+    soup_parser =  html5lib.HTMLParser(
+        tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
     
     def scrape_legislators(self,chamber,year):
         year = int(year)
@@ -58,7 +62,8 @@ class LouisianaScraper(LegislationScraper):
             for senator in senator_page.findAll('td', width=355)[0].findAll('tr'):
                 link = senator.findAll('a', text=re.compile("Senator"))
                 if link != []:
-                    with self.soup_context('http://senate.legis.state.la.us%s' % link[0].parent['href']) as legislator:
+                    with self.urlopen_context('http://senate.legis.state.la.us%s' % link[0].parent['href']) as legislator_text:
+                        legislator = self.soup_parser(legislator_text)
                         aleg = self.unescape(unicode(legislator))
                         #Senator A.G.  Crowe &nbsp; -&nbsp; District 1
                         name = re.findall(r'Senator ([\w\s\.\,\"\-]+)\s*\-\s*District', aleg)[0].strip()
