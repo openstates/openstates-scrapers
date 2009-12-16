@@ -1,10 +1,14 @@
 import re
+import os
 import sys
-sys.path.append('./scripts')
-from pyutils.legislation import *
 import datetime as dt, time
 import random
 from htmlentitydefs import name2codepoint
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pyutils.legislation import (LegislationScraper, NoDataForYear,
+                                 Bill, Legislator, Vote)
+
 class LANameMatcher:
     def wash(self, form):
         return form.replace('.', '').lower().strip()
