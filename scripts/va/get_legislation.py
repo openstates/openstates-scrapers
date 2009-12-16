@@ -156,7 +156,7 @@ class VALegislationScraper(LegislationScraper):
         with self.soup_context(url) as sponsors:
             for sponsors in sponsors.findAll('ul'):
                 for rep in sponsors.findAll('li'):
-                    p = rep.a.b.string if rep.a.b else rep.a.string
+                    p = rep.a.b.contents[0] if rep.a.b else rep.a.contents[0]
                     bill.add_sponsor(['sponsor', 'cosponsor'][i], p.strip(), chamber=c[i])
                 i += 1
 
@@ -240,6 +240,8 @@ class VALegislationScraper(LegislationScraper):
                 if title['href'].endswith('pdf'):
                     title = re.findall("(\d+/\d+\/\d+)\s+(\w+):\s+(.*)", title.previousSibling.string)[0]
                 bill.add_document('Impact Statement for "%s"' % title[2], "http://leg1.state.va.us%s" % link['href'])
+            elif link.i:
+                bill.add_document(link.i.string, "http://leg1.state.va.us%s" % link['href'])
             else:
                 status = re.findall("(\d+/\d+\/\d+)\s+(\w+):\s+(.*)", link.string)[0]
                 bill.add_version(status[2], "http://leg1.state.va.us%s" % link['href'], date=dt.datetime.strptime(status[0], '%M/%d/%y'))
@@ -271,16 +273,21 @@ class VALegislationScraper(LegislationScraper):
         with self.soup_context("http://leg1.state.va.us/") as session_page:
             #<a href="/942/lis.htm">1994</a> <font face="arial" size=2>Special I<br>
             #this html is a mess, but the text is consistent.. soooo....
-            titles = ['Regular Session', 'Special Session I', 'Special Session II', 'Special Session III']
+            titles = ['', 'Special Session I', 'Special Session II', 'Special Session III']
             for ech in session_page.findAll('a', href=re.compile('([\d+])\/lis.htm')):
                 year = int(ech.string)
                 if not year in self.internal_sessions:
                     self.internal_sessions[year] = []
-                    session_details[year] = {'years': [year], 'sub_sessions':[] }
-                    sessions.append(year)
-                c = len(session_details[year]['sub_sessions'])
-                session_details[year]['sub_sessions'].append(titles[c])
-                self.internal_sessions[year].append([re.findall(r'[0-9]+', ech['href'])[0], "%d %s" % (year, titles[c])])
+                    session_details[ech.string] = {'years': [year], 'sub_sessions':[] }
+                    sessions.append(ech.string)
+                c = len(session_details[ech.string]['sub_sessions'])
+                title = titles[c]
+                if title:
+                    session_details[ech.string]['sub_sessions'].append(title)
+                    self.internal_sessions[year].append((re.findall(r'[0-9]+', ech['href'])[0], "%d %s" % (year, title)))
+                else:
+                    self.internal_sessions[year].append((re.findall(r'[0-9]+', ech['href'])[0], ech.string))
+
         return {
             'state_name': 'Virginia',
             'legislature_name': 'Virginia General Assembly',
@@ -297,7 +304,7 @@ class VALegislationScraper(LegislationScraper):
     def unescape(self,s):
         # I'd never actually seen a \xa0 in the wild before, but it breaks regexes and splits in crazy ways
         # that took me AGES to track down
-        return re.sub('&(%s);' % '|'.join(name2codepoint), lambda m: unichr(name2codepoint[m.group(1)]), s).encode('ascii', 'ignore')
+        return s.replace('&nbsp;', ' ')
 
 if __name__ == '__main__':
     VALegislationScraper().run({'upper': VANameMatcher, 'lower': VANameMatcher})
