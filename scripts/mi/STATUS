@@ -1,0 +1,10 @@
+[Michigan]
+abbreviation: mi
+start_year: 1999
+bills: yes
+bill_versions: yes
+sponsors: yes
+actions: yes
+votes: yes
+contributors: mark olson <dustgun@gmail.com>
+notes:
