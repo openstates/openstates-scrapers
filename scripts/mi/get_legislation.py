@@ -7,12 +7,12 @@ import re
 from pyutils.legislation import LegislationScraper, NoDataForYear, ScrapeError, Legislator, Bill, Vote
 
 from BeautifulSoup import BeautifulSoup
-from pyPdf import PdfFileReader
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter, process_pdf
 from pdfminer.pdfdevice import PDFDevice
 from pdfminer.converter import TextConverter
 from pdfminer.cmap import CMapDB, find_cmap_path
 from pdfminer.layout import LAParams
+
 from StringIO import StringIO
 import urllib2
 import warnings
@@ -42,6 +42,7 @@ class MichiganScraper(LegislationScraper):
                         if tr.findAll('th') != []: continue
                         (district, last_name, first_name, party) = tr.findAll('td', limit=4)
                         if last_name.div.a.font.string is None: continue
+                        if party.div.font.string.strip() == '': continue
                         last_name = last_name.div.a.font.string.strip()
                         first_name = first_name.div.a.font.string.strip()
                         district = district.div.font.string.strip()
