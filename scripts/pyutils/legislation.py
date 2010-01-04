@@ -73,8 +73,6 @@ class LegislationScraper(object):
         make_option('-s', '--sleep', action='store_true', dest='sleep',
                     help="insert random delays wheen downloading web pages"),
     )
-    cache_dir = 'cache'
-    output_dir = None
 
     metadata = {}
 
@@ -90,6 +88,10 @@ class LegislationScraper(object):
         if not hasattr(self, 'state'):
             raise Exception('LegislationScrapers must have a state attribute')
         self._cookie_jar = cookielib.CookieJar()
+
+        self.cache_dir = os.path.join('cache', self.state)
+        self.output_dir = os.path.join('data', self.state)
+        self.error_dir = os.path.join('errors', self.state)
 
         self.logger = logging.getLogger("fiftystates")
         formatter = logging.Formatter("%(asctime)s %(levelname)s " + self.state + " %(message)s")
@@ -108,8 +110,7 @@ class LegislationScraper(object):
         """
 
         if not self.no_cache:
-            url_cache = os.path.join(self.cache_dir, self.state,
-                                     md5(url).hexdigest()+'.html')
+            url_cache = os.path.join(self.cache_dir, md5(url).hexdigest()+'.html')
             if os.path.exists(url_cache):
                 self.debug('Getting %s from cache' % url)
                 return open(url_cache).read()
@@ -151,15 +152,15 @@ class LegislationScraper(object):
             self.logger.error('Error body:')
             self.logger.error(exception.read())
         self.logger.error('Error while parsing %s' % url)
-        fn = 'error-page.html'
+        path = os.path.join(self.error_dir, 'error-page.html')
         n = 0
-        while os.path.exists(fn):
+        while os.path.exists(path):
             n += 1
-            fn = 'error-page-%s.html'% n
-        fp = open(fn, 'wb')
+            path = os.path.join(self.error_dir, 'error-page-%s.html' % n)
+        fp = open(path, 'wb')
         fp.write(body)
         fp.close()
-        self.logger.error('Bad page saved in %s' % fn)
+        self.logger.error('Bad page saved in %s' % path)
 
     @contextlib.contextmanager
     def urlopen_context(self, url):
@@ -212,7 +213,8 @@ class LegislationScraper(object):
 
         makedir(os.path.join(self.output_dir, "bills"))
         makedir(os.path.join(self.output_dir, "legislators"))
-        makedir(os.path.join(self.cache_dir, self.state))
+        makedir(self.cache_dir)
+        makedir(self.error_dir)
 
     def scrape_metadata(self):
         """
@@ -320,9 +322,7 @@ class LegislationScraper(object):
 
         if options.output_dir:
             self.output_dir = options.output_dir
-        else:
-            self.output_dir = os.path.join(os.path.curdir, "data",
-                                           self.state)
+
         self.init_dirs()
         self.write_metadata()
 
