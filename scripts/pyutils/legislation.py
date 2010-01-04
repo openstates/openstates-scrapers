@@ -340,7 +340,7 @@ class LegislationScraper(object):
 
         years = options.years
         if options.all_years:
-            years = [str(y) for y in range(self.earliest_year,
+            years = [str(y) for y in range(scraper.earliest_year,
                                            datetime.datetime.now().year+1)]
         if not years:
             parser.error("You must provide a --year YYYY or --all (all years) option")
