@@ -83,7 +83,7 @@ class LegislationScraper(object):
     
     # The user agent used for requests (this will show up in the
     # state's logs):
-    user_agent = 'robot: http://wiki.sunlightlabs.com/index.php/Fifty_State_Project'
+    user_agent = 'robot: http://fiftystates-dev.sunlightlabs.com/'
 
     def __init__(self):
         if not hasattr(self, 'state'):
