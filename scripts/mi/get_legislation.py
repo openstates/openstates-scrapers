@@ -10,7 +10,7 @@ from BeautifulSoup import BeautifulSoup
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter, process_pdf
 from pdfminer.pdfdevice import PDFDevice
 from pdfminer.converter import TextConverter
-from pdfminer.cmap import CMapDB, find_cmap_path
+from pdfminer.cmapdb import CMapDB
 from pdfminer.layout import LAParams
 
 from StringIO import StringIO
@@ -97,7 +97,7 @@ class MichiganScraper(LegislationScraper):
     
             # UGH! What a useful yet convoluted library.
             outtext = StringIO()
-            rsrc = PDFResourceManager(CMapDB(find_cmap_path()))
+            rsrc = PDFResourceManager(CMapDB())
             device = TextConverter(rsrc, outtext, codec='ascii', laparams=LAParams())
             process_pdf(rsrc, device, StringIO(the_pdf), set())
             outtext.seek(0)
@@ -392,4 +392,4 @@ class MichiganScraper(LegislationScraper):
 
         return (first_name, middle_name, last_name, suffix)
 if __name__ == '__main__':
-    MichiganScraper().run()
+    MichiganScraper.run()
