@@ -75,19 +75,17 @@ class ArizonaScraper < LegislationScraper
   end
 
   def scrape_metadata
-    {:state_name => "Example State",
-      :legislature_name => "Example State Assembly",
+    {:state_name => "Arizona",
+      :legislature_name => "Arizona Legislature",
       :upper_chamber_name => "Senate",
       :lower_chamber_name => "House of Representatives",
-      :upper_term => 4,
+      :upper_term => 2,
       :lower_term => 2,
-      :sessions => ["Session 1", "Session 2"],
-      :session_details => {"Session 1" =>
-        {:years => [2005, 2006],
-          :sub_sessions => ["Session 1 Part 2"]},
-        "Session 2" =>
-        {:years => [2007, 2008],
-          :sub_sessions => []}}}
+      :sessions => ["Forty-ninth Legislature"],
+      :session_details => {"Forty-ninth Legislature" =>
+        {:years => [2009, 2010],
+          :sub_sessions => ["Forty-ninth Legislature - First Regular Session"]}
+      }}
   end
 end
 
