@@ -69,9 +69,9 @@ class ArizonaScraper < LegislationScraper
   end
 
   def scrape_legislators(chamber, session)
-    leg = Legislator.new("Session 1", "upper", "1st District", "Bill Smith",
-                         "Bill", "Smith", "", "Republican")
-    self.add_legislator leg
+    #leg = Legislator.new("Session 1", "upper", "1st District", "Bill Smith",
+    #                     "Bill", "Smith", "", "Republican")
+    #self.add_legislator leg
   end
 
   def scrape_metadata
