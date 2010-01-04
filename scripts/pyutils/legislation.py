@@ -4,7 +4,6 @@ import datetime, time
 import os
 import sys
 import urllib2
-import warnings
 import random
 from hashlib import md5
 import cookielib
