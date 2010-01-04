@@ -686,8 +686,7 @@ class NameMatcher(object):
                                      name['middle_name'][0]))
             forms.add("%s, %s.%s." % (name['last_name'], name['first_name'][0],
                                      name['middle_name'][0]))
-            print "%s, %s.%s." % (name['last_name'], name['first_name'][0],
-                                     name['middle_name'][0])
+
         for form in forms:
             form = form.replace('.', '').lower() 
             if form in self.names:
