@@ -191,4 +191,4 @@ class AKLegislationScraper(LegislationScraper):
         self.scrape_session(chamber, year)
 
 if __name__ == '__main__':
-    AKLegislationScraper().run()
+    AKLegislationScraper.run()

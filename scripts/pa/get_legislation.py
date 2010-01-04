@@ -283,4 +283,4 @@ class PALegislationScraper(LegislationScraper):
                 self.add_legislator(legislator)
 
 if __name__ == '__main__':
-    PALegislationScraper().run()
+    PALegislationScraper.run()

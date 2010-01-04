@@ -156,4 +156,4 @@ class WVLegislationScraper(LegislationScraper):
         self.add_bill(bill)
 
 if __name__ == '__main__':
-    WVLegislationScraper().run()
+    WVLegislationScraper.run()

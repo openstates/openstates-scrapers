@@ -307,4 +307,4 @@ class VALegislationScraper(LegislationScraper):
         return s.replace('&nbsp;', ' ')
 
 if __name__ == '__main__':
-    VALegislationScraper().run({'upper': VANameMatcher, 'lower': VANameMatcher})
+    VALegislationScraper.run(matcher={'upper': VANameMatcher, 'lower': VANameMatcher})

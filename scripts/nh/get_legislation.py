@@ -114,4 +114,4 @@ class NHLegislationScraper(LegislationScraper):
 
 
 if __name__ == '__main__':
-    NHLegislationScraper().run()
+    NHLegislationScraper.run()

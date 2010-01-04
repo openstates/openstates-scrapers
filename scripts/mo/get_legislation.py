@@ -339,4 +339,4 @@ class MOLegislationScraper(LegislationScraper):
                     raise e
 
 if __name__ == '__main__':
-    MOLegislationScraper().run()
+    MOLegislationScraper.run()

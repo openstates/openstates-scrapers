@@ -350,4 +350,4 @@ class GALegislationScraper(LegislationScraper):
         self.add_bill(bill)
 
 if __name__ == '__main__':
-    GALegislationScraper().run()
+    GALegislationScraper.run()

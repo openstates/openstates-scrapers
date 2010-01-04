@@ -211,4 +211,4 @@ class ALLegislationScraper(LegislationScraper):
 		return re.sub('&(%s);' % '|'.join(name2codepoint), lambda m: unichr(name2codepoint[m.group(1)]), s)
 		
 if __name__ == '__main__':
-    ALLegislationScraper().run()
+    ALLegislationScraper.run()

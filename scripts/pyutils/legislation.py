@@ -83,20 +83,29 @@ class LegislationScraper(object):
     # state's logs):
     user_agent = 'robot: http://fiftystates-dev.sunlightlabs.com/'
 
-    def __init__(self):
+    def __init__(self, verbosity=logging.INFO, sleep=False,
+                 no_cache=False, output_dir=None, **kwargs):
         if not hasattr(self, 'state'):
             raise Exception('LegislationScrapers must have a state attribute')
         self._cookie_jar = cookielib.CookieJar()
 
+        self.reset_name_matchers()
+
+        self.sleep = sleep
+        self.no_cache = no_cache
+        self.requests = 0
+
+        self.output_dir = output_dir or os.path.join('data', self.state)
         self.cache_dir = os.path.join('cache', self.state)
-        self.output_dir = os.path.join('data', self.state)
         self.error_dir = os.path.join('errors', self.state)
+        self._init_dirs()
 
         self.logger = logging.getLogger("fiftystates")
         formatter = logging.Formatter("%(asctime)s %(levelname)s " + self.state + " %(message)s")
         console = logging.StreamHandler()
         console.setFormatter(formatter)
         self.logger.addHandler(console)
+        self.logger.setLevel(verbosity)
 
         # Convenience methods
         self.log = self.logger.info
@@ -201,7 +210,7 @@ class LegislationScraper(object):
     def _make_headers(self):
         return {'User-Agent': self.user_agent}
 
-    def init_dirs(self):
+    def _init_dirs(self):
 
         def makedir(path):
             try:
@@ -303,27 +312,31 @@ class LegislationScraper(object):
                   'w') as f:
             json.dump(metadata, f, cls=DateEncoder)
 
-    def run(self, matcher=None):
+    def reset_name_matchers(self, upper=None, lower=None):
+        self.matcher = {}
+        self.matcher['upper'] = upper or NameMatcher()
+        self.matcher['lower'] = lower or NameMatcher()
+
+    @classmethod
+    def run(cls, matcher=None):
+        """
+        Create and run a scraper for this state, based on
+        command line options.
+        """
         parser = OptionParser(
-            option_list=self.option_list)
+            option_list=cls.option_list)
         options, spares = parser.parse_args()
-        self.no_cache = options.no_cache
-        self.sleep = options.sleep
-        self.requests = 0
 
         if options.verbose == 0:
-            level = logging.WARNING
+            verbosity = logging.WARNING
         elif options.verbose == 1:
-            level = logging.INFO
+            verbosity = logging.INFO
         else:
-            level = logging.DEBUG
-        self.logger.setLevel(level)
+            verbosity = logging.DEBUG
 
-        if options.output_dir:
-            self.output_dir = options.output_dir
+        scraper = cls(verbosity=verbosity, **vars(options))
 
-        self.init_dirs()
-        self.write_metadata()
+        scraper.write_metadata()
 
         years = options.years
         if options.all_years:
@@ -341,15 +354,16 @@ class LegislationScraper(object):
             chambers = ['upper', 'lower']
         for year in years:
             if matcher is None:
-                self.matcher = {'upper': NameMatcher(), 'lower': NameMatcher()}  
+                scraper.reset_name_matchers()
             else:
-                self.matcher = {'upper': matcher['upper'](), 'lower': matcher['lower']()} 
+                scraper.reset_name_matchers(upper=matcher['upper'](),
+                                            lower=matcher['lower']())
             try:
                for chamber in chambers:
-                    self.scrape_legislators(chamber, year)
+                    scraper.scrape_legislators(chamber, year)
                for chamber in chambers:
-                    self.old_bills = {}
-                    self.scrape_bills(chamber, year)
+                    scraper.old_bills = {}
+                    scraper.scrape_bills(chamber, year)
             except NoDataForYear, e:
                 if options.all_years:
                     pass

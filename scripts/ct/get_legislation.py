@@ -319,4 +319,4 @@ def get_baby(soup):
     pass
 
 if __name__ == '__main__':
-    CTLegislationScraper().run()
+    CTLegislationScraper.run()

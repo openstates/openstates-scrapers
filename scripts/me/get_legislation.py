@@ -50,4 +50,4 @@ class MELegislationScraper(LegislationScraper):
             self.scrape_session(chamber, year, special)
 
 if __name__ == '__main__':
-    MELegislationScraper().run()
+    MELegislationScraper.run()

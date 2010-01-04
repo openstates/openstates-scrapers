@@ -226,4 +226,4 @@ class UTLegislationScraper(LegislationScraper):
             self.scrape_session(chamber, sub_session)
 
 if __name__ == '__main__':
-    UTLegislationScraper().run()
+    UTLegislationScraper.run()

@@ -187,4 +187,4 @@ class KYLegislationScraper(LegislationScraper):
             self.add_legislator(legislator)
 
 if __name__ == '__main__':
-    KYLegislationScraper().run()
+    KYLegislationScraper.run()

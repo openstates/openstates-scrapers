@@ -122,4 +122,4 @@ class TXLegislationScraper(LegislationScraper):
             self.scrape_session(chamber, session)
 
 if __name__ == '__main__':
-    TXLegislationScraper().run()
+    TXLegislationScraper.run()

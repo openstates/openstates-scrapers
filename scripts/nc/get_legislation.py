@@ -196,4 +196,4 @@ class NCLegislationScraper(LegislationScraper):
                 self.add_legislator(legislator)
 
 if __name__ == '__main__':
-    NCLegislationScraper().run()
+    NCLegislationScraper.run()

@@ -286,4 +286,4 @@ class MNLegislationScraper(LegislationScraper):
             self.scrape_session(chamber, session, session_year, session_number, legislative_session)
 
 if __name__ == '__main__':
-    MNLegislationScraper().run()
+    MNLegislationScraper.run()

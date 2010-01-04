@@ -302,4 +302,4 @@ class VTLegislationScraper(LegislationScraper):
             self.add_legislator(leg)
 
 if __name__ == '__main__':
-    VTLegislationScraper().run()
+    VTLegislationScraper.run()

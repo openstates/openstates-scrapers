@@ -254,4 +254,4 @@ class LouisianaScraper(LegislationScraper):
         return re.sub('&(%s);' % '|'.join(name2codepoint), lambda m: unichr(name2codepoint[m.group(1)]), s).encode('ascii', 'ignore')
 
 if __name__ == '__main__':
-    LouisianaScraper().run({'upper': LANameMatcher, 'lower': LANameMatcher})
+    LouisianaScraper.run({'upper': LANameMatcher, 'lower': LANameMatcher})

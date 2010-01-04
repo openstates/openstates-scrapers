@@ -441,4 +441,4 @@ class SDLegislationScraper(LegislationScraper):
             self.scrape_old_legislators(chamber, year)
         
 if __name__ == '__main__':
-    SDLegislationScraper().run()
+    SDLegislationScraper.run()

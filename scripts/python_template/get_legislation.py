@@ -14,4 +14,4 @@ class MyScraper(LegislationScraper):
         pass
     
 if __name__ == '__main__':
-    MyScraper().run()
+    MyScraper.run()
