@@ -1,23 +1,9 @@
 #!/usr/bin/env python
-
 from __future__ import with_statement
-import logging
 import re
 import urllib
 import urlparse
 from BeautifulSoup import BeautifulSoup
-
-# Toggle this to the logging verbosity you want.
-verbosity = logging.INFO
-
-logger = logging.getLogger("MNScraper")
-logger.setLevel(verbosity)
-console_handler = logging.StreamHandler()
-# Set up log formatters, and add them to the handlers.
-console_formatter = logging.Formatter("%(message)s")
-console_handler.setFormatter(console_formatter)
-# Add the handlers to the logger.
-logger.addHandler(console_handler)
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -35,9 +21,9 @@ class MNLegislationScraper(LegislationScraper):
         '''
         # coerce to string...
         text = str(text)
-        logger.debug("Cleaning text: %s", text)
+        self.debug("Cleaning text: %s" % text)
         cleaned_text = text.replace('&nbsp;', '').strip()
-        logger.debug("Cleaned text: %s", cleaned_text)
+        self.debug("Cleaned text: %s" % cleaned_text)
         return cleaned_text
 
     def extract_bill_id(self, soup):
@@ -49,7 +35,7 @@ class MNLegislationScraper(LegislationScraper):
         bill_id = re.search(r'Bill Name:\s+([H|S]F\d+)', bill_id_raw)
         if bill_id is not None:
             bill_id = bill_id.groups()[0]
-            logger.debug("Found bill ID: %s", bill_id)
+            self.debug("Found bill ID: %s" % bill_id)
         return bill_id
 
     def extract_bill_title(self, soup):
@@ -60,7 +46,7 @@ class MNLegislationScraper(LegislationScraper):
         # The 'Short Summary' table has only one <td> which contains the 
         # bill title inside a <font> element.
         bill_title = short_summary_table.td.font.contents[0]
-        logger.debug("Found Bill Title: %s", bill_title)
+        self.debug("Found Bill Title: %s" % bill_title)
         return bill_title
 
     def extract_bill_version_link(self, soup):
@@ -70,7 +56,7 @@ class MNLegislationScraper(LegislationScraper):
         doc_name_table = soup.find('table', attrs={"summary" : "Show Doc Names"})
         bill_version_raw = doc_name_table.td
         bill_version_link = bill_version_raw.a.attrs[0][1]
-        logger.debug("Found Bill Version Link: %s", bill_version_link)
+        self.debug("Found Bill Version Link: %s" % bill_version_link)
         return bill_version_link
 
     def extract_bill_versions(self, soup):
@@ -97,7 +83,7 @@ class MNLegislationScraper(LegislationScraper):
                 bill_version['url'] = bill_version_column.a.attrs[0][1]
                 bill_versions.append(bill_version)
                 del bill_version
-        logger.debug("Found Bill Versions: %d", len(bill_versions))
+        self.debug("Found Bill Versions: %d" % len(bill_versions))
         return bill_versions
 
     def extract_bill_sponsors(self, soup):
@@ -109,7 +95,7 @@ class MNLegislationScraper(LegislationScraper):
         for link in sponsors_links:
             sponsor_name = link.contents[0]
             bill_sponsors.append(sponsor_name)
-        logger.debug("Sponsors Found for this bill: %d", len(bill_sponsors))
+        self.debug("Sponsors Found for this bill: %d" % len(bill_sponsors))
         return bill_sponsors
 
     def extract_bill_actions(self, soup, current_chamber):
@@ -157,7 +143,7 @@ class MNLegislationScraper(LegislationScraper):
                 bill_action['action_text'] = action_text
                 bill_action['action_chamber'] = current_chamber
                 bill_actions.append(bill_action)
-        logger.debug("Actions Found for this bill: %d", len(bill_actions))
+        self.debug("Actions Found for this bill: %d" % len(bill_actions))
         return bill_actions
 
     def get_bill_info(self, chamber, session, bill_detail_url):
@@ -230,15 +216,15 @@ class MNLegislationScraper(LegislationScraper):
             # Range Format: start-end
             # Query Param: 'bill='
             url = 'https://www.revisor.leg.state.mn.us/revisor/pages/search_status/status_results.php?body=%s&search=basic&session=%s&bill=%s-%s&bill_type=bill&submit_bill=GO&keyword_type=all=1&keyword_field_long=1&keyword_field_title=1&titleword=' % (chamber, session, min, max-1)
-            logger.debug("Getting bill data from: %s", url)
+            self.debug("Getting bill data from: %s" % url)
             with self.soup_context(url) as soup:
                 # Index into the table containing the bills .
                 rows = soup.findAll('table')[6].findAll('tr')[1:]
-                logger.debug("Rows to process: %s", str(len(rows)))
+                self.debug("Rows to process: %s" % str(len(rows)))
                 # If there are no more results, then we've reached the
                 # total number of bills available for this session.
                 if len(rows) == 0:
-                    logger.debug("Total Bills Found: %d", len(total_rows))
+                    self.debug("Total Bills Found: %d" % len(total_rows))
                     break
                 else:
                     total_rows.extend(rows)
@@ -255,7 +241,7 @@ class MNLegislationScraper(LegislationScraper):
                 # Extract the 'href' attribute value.
                 bill_details_url = bill_details_column.a.attrs[0][1]
             except:
-                logger.warning('Bad bill_details_column: %s' % bill_details_column)
+                self.warning('Bad bill_details_column: %s' % bill_details_column)
                 continue
             self.get_bill_info(chamber, session, bill_details_url)
 
@@ -296,7 +282,7 @@ class MNLegislationScraper(LegislationScraper):
             session_number = session[0]
             legislative_session = session[1:3]
             legislative_session_year = session[-4:]
-            logger.debug("Scraping data for MN - Session: %s, Chamber: %s, Year: %s", session, chamber, year)
+            self.debug("Scraping data for MN - Session: %s, Chamber: %s, Year: %s" % (session, chamber, year))
             self.scrape_session(chamber, session, session_year, session_number, legislative_session)
 
 if __name__ == '__main__':

@@ -9,6 +9,7 @@ import random
 from hashlib import md5
 import cookielib
 import contextlib
+import logging
 from BeautifulSoup import BeautifulSoup
 try:
     import json
@@ -90,6 +91,17 @@ class LegislationScraper(object):
             raise Exception('LegislationScrapers must have a state attribute')
         self._cookie_jar = cookielib.CookieJar()
 
+        self.logger = logging.getLogger("fiftystates")
+        formatter = logging.Formatter("%(asctime)s %(levelname)s " + self.state + " %(message)s")
+        console = logging.StreamHandler()
+        console.setFormatter(formatter)
+        self.logger.addHandler(console)
+
+        # Convenience methods
+        self.log = self.logger.info
+        self.debug = self.logger.debug
+        self.warning = self.logger.warning
+
     def urlopen(self, url):
         """
         Grabs a URL, returning a cached version if available.
@@ -123,7 +135,7 @@ class LegislationScraper(object):
         try:
             resp = urllib2.urlopen(req)
         except:
-            print 'Error fetching page: %s' % url
+            self.logger.exception('Error fetching page: %s' % url)
             raise
         self._cookie_jar.extract_cookies(resp, req)
         data = resp.read()
@@ -136,9 +148,9 @@ class LegislationScraper(object):
     def show_error(self, url, body):
         exception = sys.exc_info()[1]
         if isinstance(exception, urllib2.HTTPError):
-            print 'Error body:'
-            print exception.read()
-        print 'Error while parsing %s' % url
+            self.logger.error('Error body:')
+            self.logger.error(exception.read())
+        self.logger.error('Error while parsing %s' % url)
         fn = 'error-page.html'
         n = 0
         while os.path.exists(fn):
@@ -147,7 +159,7 @@ class LegislationScraper(object):
         fp = open(fn, 'wb')
         fp.write(body)
         fp.close()
-        print 'Bad page saved in %s' % fn
+        self.logger.error('Bad page saved in %s' % fn)
 
     @contextlib.contextmanager
     def urlopen_context(self, url):
@@ -188,22 +200,6 @@ class LegislationScraper(object):
         
     def _make_headers(self):
         return {'User-Agent': self.user_agent}
-
-    def log(self, msg):
-        """
-        Output debugging information if verbose mode is enabled.
-        """
-        if self.verbose:
-            self._log(msg)
-
-    def debug(self, msg):
-        if self.verbose > 1:
-            self._log(msg)
-
-    def _log(self, msg):
-        if isinstance(msg, unicode):
-            msg = msg.encode('utf-8')
-        print "%s: %s" % (self.state, msg)
 
     def init_dirs(self):
 
@@ -310,10 +306,17 @@ class LegislationScraper(object):
         parser = OptionParser(
             option_list=self.option_list)
         options, spares = parser.parse_args()
-        self.verbose = options.verbose
         self.no_cache = options.no_cache
         self.sleep = options.sleep
         self.requests = 0
+
+        if options.verbose == 0:
+            level = logging.WARNING
+        elif options.verbose == 1:
+            level = logging.INFO
+        else:
+            level = logging.DEBUG
+        self.logger.setLevel(level)
 
         if options.output_dir:
             self.output_dir = options.output_dir

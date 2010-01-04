@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-
 import datetime
-import logging
 import os
 import re
 import sys
@@ -10,9 +8,6 @@ import html5lib
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import *
-
-# Logging
-logging.basicConfig(level=logging.INFO)
 
 class NDLegislationScraper(LegislationScraper):
     """
@@ -99,7 +94,7 @@ class NDLegislationScraper(LegislationScraper):
         
         member_links = table.findAll('a')
         
-        logging.info('Scraping %s members for %s.' % (norm_chamber_name, year))
+        self.log('Scraping %s members for %s.' % (norm_chamber_name, year))
         
         for link in member_links:
             # Populate base attributes
@@ -112,7 +107,7 @@ class NDLegislationScraper(LegislationScraper):
             bio_url = self.site_root + link['href']
             attributes.update(self.scrape_legislator_bio(bio_url))
         
-            logging.debug(attributes)
+            self.debug(attributes)
         
             # Save
             legislator = Legislator(**attributes)
@@ -227,8 +222,7 @@ class NDLegislationScraper(LegislationScraper):
         bill_links = table.findAll('a', href=re.compile('bill-actions'))
         indexed_bills = {}
         
-        logging.info(
-            'Scraping %s bills for %s.' % (norm_chamber_name, year))
+        self.log('Scraping %s bills for %s.' % (norm_chamber_name, year))
         
         for link in bill_links:
             # Populate base attributes
@@ -266,7 +260,7 @@ class NDLegislationScraper(LegislationScraper):
             if attributes['bill_id'] in indexed_bills.keys():
                 continue
             
-            logging.debug(attributes['bill_id'])
+            self.debug(attributes['bill_id'])
             
             # Parse details page                
             attributes.update(
@@ -296,7 +290,7 @@ class NDLegislationScraper(LegislationScraper):
         
         # Parse sponsorship data
         if int(year) >= 2005:
-            logging.info('Scraping sponsorship data.')
+            self.log('Scraping sponsorship data.')
             
             (sponsors, sponsors_url) = self.scrape_bill_sponsors(assembly_url)
             
@@ -309,9 +303,9 @@ class NDLegislationScraper(LegislationScraper):
                         bill.add_sponsor(**sponsor)
                         bill.add_source(sponsors_url)
         else:
-            logging.info('Sponsorship data not available for %s.' % year)            
+            self.log('Sponsorship data not available for %s.' % year)
                 
-        logging.info('Saving scraped bills.')
+        self.log('Saving scraped bills.')
         
         # Save bill
         for bill in indexed_bills.values():
