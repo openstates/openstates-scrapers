@@ -60,7 +60,7 @@ class ArizonaScraper < LegislationScraper
     
     bill_list.each do |bill_id|
       bill_hash = parse_bill(bill_id)
-      bill = Bill.new('49leg', chamber, bill_id, bill_hash['title'])
+      bill = Bill.new('Forty-ninth Legislature - First Regular Session', chamber, bill_id, bill_hash['title'])
       bill_hash['sponsors'].each { |s| bill.add_sponsor(s['type'] || 'primary', s['sponsor']) }
       add_bill bill
       #puts "added bill: #{bill_id}"
