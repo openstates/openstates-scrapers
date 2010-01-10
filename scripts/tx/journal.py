@@ -1,6 +1,8 @@
 import lxml.etree
 import re
 
+from get_legislation import TXLegislationScraper
+
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import Vote
@@ -32,39 +34,49 @@ def votes(root):
         text = ''.join(el.getprevious().itertext())
         m = re.search(r'(\w+ \d+) was adopted by \(Record (\d+)\): (\d+) Yeas, (\d+) Nays, (\d+) Present', text)
         if m:
-            print "%s was adopted by %s" % (m.group(1), m.group(2))
             yes_count = int(m.group(3))
             no_count = int(m.group(4))
             other_count = int(m.group(5))
-            print '%d yeas, %d nays, %d other' % (yes_count,
-                                                  no_count,
-                                                  other_count)
+
             vote = Vote('lower', None, 'final passage', True,
                         yes_count, no_count, other_count)
+            vote['bill_id'] = m.group(1)
+            vote['session'] = '81'
+            vote['record'] = m.group(2)
+            vote['filename'] = m.group(2)
 
             for name in names(el):
                 vote.yes(name)
-            for name in names(el.getnext()):
-                vote.no(name)
-            for name in names(el.getnext().getnext()):
-                vote.other(name)
 
+            el = el.getnext()
+            if el.text and el.text.startswith('Nays'):
+                for name in names(el):
+                    vote.no(name)
+                el = el.getnext()
+
+            while el.text and re.match(r'Present|Absent', el.text):
+                for name in names(el):
+                    vote.other(name)
+                el = el.getnext()
+
+            vote['other_count'] = len(vote['other_votes'])
             yield vote
         else:
             pass
 
-def parse(f):
+def parse(f, scraper):
     root = lxml.etree.parse(f, lxml.etree.HTMLParser())
     clean(root)
     for vote in votes(root):
-        pass
+        scraper._add_standalone_vote(vote)
 
 if __name__ == '__main__':
     # Test run
+    scraper = TXLegislationScraper()
     try:
         f = open('81RDAY85FINAL.HTM')
     except:
         import urllib2
         f = urllib2.urlopen('http://www.journals.house.state.tx.us/hjrnl/81r/html/81RDAY85FINAL.HTM')
 
-    parse(f)
+    parse(f, scraper)
