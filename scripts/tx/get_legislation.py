@@ -150,7 +150,7 @@ class TXLegislationScraper(LegislationScraper):
 
             for el in root.xpath('//table[@summary="senator identification"]'):
                 full_name = el.xpath('string(tr/td[@headers="senator"]/a)')
-                district = int(el.xpath('string(tr/td[@headers="district"])'))
+                district = el.xpath('string(tr/td[@headers="district"])')
                 party = el.xpath('string(tr/td[@headers="party"])')
 
                 first_name, rest = full_name.split(' ', 1)
@@ -179,7 +179,7 @@ class TXLegislationScraper(LegislationScraper):
 
             for el in root.xpath('//form[@name="frmMembers"]/table/tr')[1:]:
                 full_name = el.xpath('string(td/a/font/span)')
-                district = int(el.xpath('string(td[2]/span)'))
+                district = el.xpath('string(td[2]/span)')
                 county = el.xpath('string(td[3]/span)')
 
                 last_name, rest = full_name.split(', ')
