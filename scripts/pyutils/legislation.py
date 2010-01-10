@@ -304,6 +304,29 @@ class LegislationScraper(object):
                   'w') as f:
             json.dump(legislator, f, cls=DateEncoder)
 
+    def _add_standalone_vote(self, vote):
+        filename = vote["filename"] + ".json"
+        self.log("_add_standalone_vote %s %s: %s '%s'" % (vote['session'],
+                                                          vote['chamber'],
+                                                          vote['bill_id'],
+                                                          vote['motion']))
+
+        for type in ['yes_votes', 'no_votes', 'other_votes']:
+            vote[type] = map(lambda l:
+                                 {'name': l,
+                                  'leg_id': self.matcher[vote['chamber']][l]},
+                             vote[type])
+
+        path = os.path.join(self.output_dir, 'votes', filename)
+        try:
+            with open(path, 'w') as f:
+                json.dump(vote, f, cls=DateEncoder)
+        except IOError as e:
+            if e.errno == 2:
+                os.makedirs(os.path.join(self.output_dir, 'votes'))
+                with open(path, 'w') as f:
+                    json.dump(vote, f, cls=DateEncoder)
+
     def write_metadata(self):
         metadata = self.scrape_metadata()
         metadata['state'] = self.state
