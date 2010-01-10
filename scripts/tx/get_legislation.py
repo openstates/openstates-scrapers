@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-import re
 import urlparse
 import datetime as dt
-from xml.etree import ElementTree as ET
+import lxml.etree
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import LegislationScraper, Bill
 
 def parse_ftp_listing(text):
     lines = text.strip().split('\r\n')
@@ -38,7 +37,7 @@ class TXLegislationScraper(LegislationScraper):
         }
 
     def parse_bill_xml(self, chamber, session, txt):
-        root = ET.XML(txt)
+        root = lxml.etree.fromstring(txt)
         bill_id = ' '.join(root.attrib['bill'].split(' ')[1:])
         bill_title = root.findtext("caption")
 
