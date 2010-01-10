@@ -76,6 +76,10 @@ class TXLegislationScraper(LegislationScraper):
             if cosponsor != "":
                 bill.add_sponsor('cosponsor', cosponsor)
 
+        bill['subjects'] = []
+        for subject in root.iterfind('subjects/subject'):
+            bill['subjects'].append(subject.text.strip())
+
         return bill
 
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
