@@ -1,5 +1,6 @@
 import lxml.etree
 import re
+import datetime
 
 from get_legislation import TXLegislationScraper
 
@@ -67,7 +68,13 @@ def votes(root):
 def parse(f, scraper):
     root = lxml.etree.parse(f, lxml.etree.HTMLParser())
     clean(root)
+
+    title = root.find('head/title').text
+    date_string = title.split(' -')[0]
+    date = datetime.datetime.strptime(date_string, "%A, %B %d, %Y")
+
     for vote in votes(root):
+        vote['date'] = date
         scraper._add_standalone_vote(vote)
 
 if __name__ == '__main__':
