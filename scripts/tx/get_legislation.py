@@ -49,8 +49,19 @@ class TXLegislationScraper(LegislationScraper):
         for action in root.findall('actions/action'):
             act_date = dt.datetime.strptime(action.findtext('date'),
                                             "%m/%d/%Y")
-            bill.add_action(chamber, action.findtext('description'),
-                            act_date)
+
+            extra = {}
+            extra['action_number'] = action.find('actionNumber').text
+            comment = action.find('comment')
+            if comment is not None and comment.text:
+                extra['comment'] = comment.text
+
+            actor = {'H': 'lower',
+                     'S': 'upper',
+                     'E': 'executive'}[extra['action_number'][0]]
+
+            bill.add_action(actor, action.findtext('description'),
+                            act_date, **extra)
 
         for author in root.findtext('authors').split(' | '):
             if author != "":
