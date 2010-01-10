@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-import re
 import urlparse
 import datetime as dt
-from xml.etree import ElementTree as ET
+import lxml.etree
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import LegislationScraper, Bill, Legislator
 
 def parse_ftp_listing(text):
     lines = text.strip().split('\r\n')
@@ -38,7 +37,7 @@ class TXLegislationScraper(LegislationScraper):
         }
 
     def parse_bill_xml(self, chamber, session, txt):
-        root = ET.XML(txt)
+        root = lxml.etree.fromstring(txt)
         bill_id = ' '.join(root.attrib['bill'].split(' ')[1:])
         bill_title = root.findtext("caption")
 
@@ -50,8 +49,19 @@ class TXLegislationScraper(LegislationScraper):
         for action in root.findall('actions/action'):
             act_date = dt.datetime.strptime(action.findtext('date'),
                                             "%m/%d/%Y")
-            bill.add_action(chamber, action.findtext('description'),
-                            act_date)
+
+            extra = {}
+            extra['action_number'] = action.find('actionNumber').text
+            comment = action.find('comment')
+            if comment is not None and comment.text:
+                extra['comment'] = comment.text
+
+            actor = {'H': 'lower',
+                     'S': 'upper',
+                     'E': 'executive'}[extra['action_number'][0]]
+
+            bill.add_action(actor, action.findtext('description'),
+                            act_date, **extra)
 
         for author in root.findtext('authors').split(' | '):
             if author != "":
@@ -65,6 +75,10 @@ class TXLegislationScraper(LegislationScraper):
         for cosponsor in root.findtext('cosponsors').split(' | '):
             if cosponsor != "":
                 bill.add_sponsor('cosponsor', cosponsor)
+
+        bill['subjects'] = []
+        for subject in root.iterfind('subjects/subject'):
+            bill['subjects'].append(subject.text.strip())
 
         return bill
 
@@ -120,6 +134,70 @@ class TXLegislationScraper(LegislationScraper):
         self.scrape_session(chamber, session_num + 'R')
         for session in subs:
             self.scrape_session(chamber, session)
+
+    def scrape_legislators(self, chamber, year):
+        if year != '2009':
+            raise NoDataForYear(year)
+
+        if chamber == 'upper':
+            self.scrape_senators(year)
+        else:
+            self.scrape_reps(year)
+
+    def scrape_senators(self, year):
+        with self.urlopen_context('http://www.senate.state.tx.us/75r/senate/senmem.htm') as page:
+            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+
+            for el in root.xpath('//table[@summary="senator identification"]'):
+                full_name = el.xpath('string(tr/td[@headers="senator"]/a)')
+                district = el.xpath('string(tr/td[@headers="district"])')
+                party = el.xpath('string(tr/td[@headers="party"])')
+
+                first_name, rest = full_name.split(' ', 1)
+                rest = rest.split(', ')
+                if len(rest) > 1:
+                    suffix = rest[1]
+                else: suffix = ''
+                rest = rest[0].split(' ')
+                last_name = rest[-1]
+                if len(rest) > 1:
+                    middle = ' '.join(rest[0:-1])
+                else:
+                    middle = ''
+
+                leg = Legislator('81', 'upper', district, full_name,
+                                 first_name, last_name, middle,
+                                 party)
+                leg.add_source('http://www.senate.state.tx.us/75r/senate/senmem.htm')
+                self.add_legislator(leg)
+
+
+    def scrape_reps(self, year):
+        with self.urlopen_context(
+            'http://www.house.state.tx.us/members/welcome.php') as page:
+            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+
+            for el in root.xpath('//form[@name="frmMembers"]/table/tr')[1:]:
+                full_name = el.xpath('string(td/a/font/span)')
+                district = el.xpath('string(td[2]/span)')
+                county = el.xpath('string(td[3]/span)')
+
+                last_name, rest = full_name.split(', ')
+                rest = rest.split(' ')
+                first_name = rest[0]
+                if len(rest) > 1:
+                    middle = ' '.join(rest[1:])
+                else:
+                    middle = ''
+
+                # Texas doesn't seem to list reps' parties anywhere
+                party = ''
+
+                leg = Legislator('81', 'lower', district,
+                                 full_name, first_name, last_name,
+                                 middle, party)
+                leg.add_source('http://www.house.state.tx.us/members/welcome.php')
+                self.add_legislator(leg)
 
 if __name__ == '__main__':
     TXLegislationScraper.run()
