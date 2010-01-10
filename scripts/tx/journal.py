@@ -39,7 +39,7 @@ def votes(root):
             no_count = int(m.group(4))
             other_count = int(m.group(5))
 
-            vote = Vote('lower', None, 'final passage', True,
+            vote = Vote(None, None, 'final passage', True,
                         yes_count, no_count, other_count)
             vote['bill_id'] = m.group(1)
             vote['session'] = '81'
@@ -65,16 +65,17 @@ def votes(root):
         else:
             pass
 
-def parse(f, scraper):
+def parse(f, chamber, scraper):
     root = lxml.etree.parse(f, lxml.etree.HTMLParser())
     clean(root)
 
     title = root.find('head/title').text
-    date_string = title.split(' -')[0]
+    date_string = title.split('-')[0].strip()
     date = datetime.datetime.strptime(date_string, "%A, %B %d, %Y")
 
     for vote in votes(root):
         vote['date'] = date
+        vote['chamber'] = chamber
         scraper._add_standalone_vote(vote)
 
 if __name__ == '__main__':
@@ -86,4 +87,4 @@ if __name__ == '__main__':
         import urllib2
         f = urllib2.urlopen('http://www.journals.house.state.tx.us/hjrnl/81r/html/81RDAY85FINAL.HTM')
 
-    parse(f, scraper)
+    parse(f, 'lower', scraper)
