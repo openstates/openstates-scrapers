@@ -674,13 +674,6 @@ class NameMatcher(object):
         more than a few hundred legislators at a time so don't worry about
         it.
         """
-        # Pre-clean the names so that "Joe S. Name" and "Joe S Name" aren't
-        # counted as duplicates, even though they're the same guy.
-        name['full_name'] = name['full_name'].replace('.', '')
-        name['first_name'] = name['first_name'].replace('.', '')
-        name['middle_name'] = name['middle_name'].replace('.', '')
-        name['last_name'] =  name['last_name'].replace('.', '')
-
         # We throw possible forms of this name into a set because we
         # don't want to try to add the same form twice for the same
         # name
