@@ -6,7 +6,7 @@ import re
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import LegislationScraper, Legislator, Bill
+from pyutils.legislation import LegislationScraper, Legislator, Bill, Vote
 
 def clean_legislators(s):
     s = s.replace('&nbsp;', ' ').strip()
@@ -96,7 +96,7 @@ class NCLegislationScraper(LegislationScraper):
         # get all versions
         links = bill_soup.findAll('a', href=re.compile('/Sessions/%s/Bills/\w+/HTML' % session[0:4]))
         for link in links:
-            version_name = link.parent.previousSibling.previousSibling.contents[0].replace('&nbsp;', ' ')
+            version_name = link.parent.previousSibling.previousSibling.contents[0].replace('&nbsp;', ' ').replace('\u00a0',' ')
             version_url = 'http://www.ncga.state.nc.us' + link['href']
             bill.add_version(version_name, version_url)
 
@@ -123,21 +123,53 @@ class NCLegislationScraper(LegislationScraper):
             elif action.endswith('Gov.'): actor = 'Governor'
             bill.add_action(actor, action, act_date)
 
-
-        # http://www.ncga.state.nc.us/gascripts/voteHistory/RollCallVoteTranscriptP.pl?bPrintable=true&sSession=2009&sChamber=H&RCS=1
         # /gascripts/voteHistory/RollCallVoteTranscript.pl?sSession=2009&sChamber=H&RCS=1
         for vote in bill_soup.findAll('a', href=re.compile('RollCallVoteTranscript')):
             self.get_vote(bill, vote['href'])
-
-
-
         self.add_bill(bill)
 
     def get_vote(self, bill, url):
-        url = 'http://www.ncga.state.nc.us' + url
+        url = 'http://www.ncga.state.nc.us' + url + '&bPrintable=true'
+        chamber = {'H': 'lower', 'S': 'upper'}[re.findall('sChamber=(\w)', url)[0]]
         data = self.urlopen(url)
         soup = self.soup_parser(data)
+        
+        #<br>Sponsor: Holliman<br>R2 For Adopt
+        motion = soup.findAll('font', text=re.compile('Sponsor:'))[0].next.next
+        #<font size=-1><b>Outcome:</b> PASSED<br><b>Time:</b> Jan 28 2009  1:26PM</font>
+        vote_time = soup.findAll('b',text='Time:')[0].next.strip()
+        vote_time = dt.datetime.strptime(vote_time, '%b %d %Y  %I:%M%p')
+        
+        vote_mess = soup.findAll('td', text=re.compile('Total Votes:'))[0]
+        (yeas, noes, nots, absent, excused) = map(lambda x: int(x), re.findall('Ayes: (\d+)\s+Noes: (\d+)\s+Not: (\d+)\s+Exc. Absent: (\d+)\s+Exc. Vote: (\d+)', vote_mess, re.U)[0])
 
+        # chamber, date, motion, passed, yes_count, no_count, other_count
+        v = Vote(chamber, vote_time, motion, (yeas > noes), yeas, noes, nots + absent + excused)
+        # eh, it's easier to just get table[2] for this..
+        vote_table = soup.findAll('table')[2]
+
+        for row in vote_table.findAll('tr'):
+            if 'Democrat' in self.flatten(row): continue
+            cells = row.findAll('td')
+            if len(cells) == 2: 
+                vote_type, a = cells
+                bunch = [self.flatten(a)]
+            else: 
+                vote_type, d, r = cells 
+                bunch = [self.flatten(d), self.flatten(r)]
+            vote_type = vote_type.font.b.contents[0] # why doesn't .string work? ... bleh.
+         
+            if 'Ayes' in vote_type: adder = v.yes
+            elif 'Noes' in vote_type: adder = v.no
+            else: adder = v.other
+
+            for party in bunch:
+                party = map(lambda x: x.replace(' (SPEAKER)', ''), party[(party.index(':')+1):].split(';'))
+                if party[0] == 'None': party = [] 
+                for x in party: adder(x)   
+
+        v.add_source(url)
+        bill.add_vote(v)    
 
     def scrape_session(self, chamber, session, sub):
         url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (session[0:4] + sub, chamber)
