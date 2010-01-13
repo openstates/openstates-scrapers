@@ -96,7 +96,7 @@ class NCLegislationScraper(LegislationScraper):
         # get all versions
         links = bill_soup.findAll('a', href=re.compile('/Sessions/%s/Bills/\w+/HTML' % session[0:4]))
         for link in links:
-            version_name = link.parent.previousSibling.previousSibling.contents[0].replace('&nbsp;', ' ').replace('\u00a0',' ')
+            version_name = link.parent.previousSibling.previousSibling.contents[0].replace('&nbsp;', ' ').replace(u'\u00a0',' ')
             version_url = 'http://www.ncga.state.nc.us' + link['href']
             bill.add_version(version_name, version_url)
 
