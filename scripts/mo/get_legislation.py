@@ -6,10 +6,12 @@ import html5lib
 import urllib2
 import sys
 import os
-from utils import clean_text, house_get_actor_from_action
+from utils import (clean_text, house_get_actor_from_action,
+                   senate_get_actor_from_action)
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import LegislationScraper, Bill, Vote, Legislator
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
 
 
 class MOLegislationScraper(LegislationScraper):

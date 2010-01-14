@@ -4,10 +4,13 @@ import re
 import urllib
 import urlparse
 from BeautifulSoup import BeautifulSoup
+import os
+import sys
 
-import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
+
 
 class MNLegislationScraper(LegislationScraper):
     state = 'mn'

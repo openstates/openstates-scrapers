@@ -2,7 +2,8 @@
 import re
 import os
 import sys
-import datetime as dt, time
+import datetime as dt
+import time
 import random
 from BeautifulSoup import BeautifulSoup
 from htmlentitydefs import name2codepoint

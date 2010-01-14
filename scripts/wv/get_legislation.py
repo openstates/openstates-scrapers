@@ -7,8 +7,8 @@ import os
 from BeautifulSoup import BeautifulSoup as BS
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import LegislationScraper, Bill, Vote, Legislator
-
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
 
 def cleansource(data):
     '''Remove some irregularities from WV's HTML.

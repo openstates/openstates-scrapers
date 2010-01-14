@@ -11,7 +11,8 @@ from utils import (bill_abbr, start_year, parse_action_date,
                    legislators_url)
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import LegislationScraper, Bill, Vote, Legislator
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
 
 
 class PALegislationScraper(LegislationScraper):

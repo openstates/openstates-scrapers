@@ -3,11 +3,12 @@ import datetime
 import os
 import re
 import sys
-
 import html5lib
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear, ScrapeError)
+
 
 class NDLegislationScraper(LegislationScraper):
     """
