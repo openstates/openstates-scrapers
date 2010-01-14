@@ -1,16 +1,19 @@
 import lxml.etree
 import re
 import datetime
-
+import sys
+import os
 from get_legislation import TXLegislationScraper
 
-import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import Vote
 
+
 def clean(root):
     # Remove page breaks
-    for el in root.xpath(u'//p[contains(., "HOUSE JOURNAL \u2014") or contains(., "81st LEGISLATURE \u2014")] | //hr[@noshade and @size=1]'):
+    for el in root.xpath(u'//p[contains(., "HOUSE JOURNAL \u2014")'
+                         ' or contains(., "81st LEGISLATURE \u2014")] |'
+                         ' //hr[@noshade and @size=1]'):
         el.getparent().remove(el)
 
     # Remove empty paragraphs
@@ -18,6 +21,7 @@ def clean(root):
         if el.tail and el.tail != '\r\n' and el.getprevious() is not None:
             el.getprevious().tail = el.tail
         el.getparent().remove(el)
+
 
 def names(el):
     text = el.text + el.tail
@@ -30,10 +34,12 @@ def names(el):
 
     return names
 
+
 def votes(root):
     for el in root.xpath(u'//p[starts-with(., "Yeas \u2014")]'):
         text = ''.join(el.getprevious().itertext())
-        m = re.search(r'(\w+ \d+) was adopted by \(Record (\d+)\): (\d+) Yeas, (\d+) Nays, (\d+) Present', text)
+        m = re.search(r'(\w+ \d+) was adopted by \(Record (\d+)\): '
+                      '(\d+) Yeas, (\d+) Nays, (\d+) Present', text)
         if m:
             yes_count = int(m.group(3))
             no_count = int(m.group(4))
@@ -65,6 +71,7 @@ def votes(root):
         else:
             pass
 
+
 def parse(f, chamber, scraper):
     root = lxml.etree.parse(f, lxml.etree.HTMLParser())
     clean(root)
@@ -85,6 +92,7 @@ if __name__ == '__main__':
         f = open('81RDAY85FINAL.HTM')
     except:
         import urllib2
-        f = urllib2.urlopen('http://www.journals.house.state.tx.us/hjrnl/81r/html/81RDAY85FINAL.HTM')
+        f = urllib2.urlopen('http://www.journals.house.state.tx.us/'
+                            'hjrnl/81r/html/81RDAY85FINAL.HTM')
 
     parse(f, 'lower', scraper)

@@ -1,6 +1,7 @@
 from __future__ import with_statement
 from optparse import make_option, OptionParser
-import datetime, time
+import datetime
+import time
 import os
 import sys
 import urllib2
@@ -10,10 +11,12 @@ import cookielib
 import contextlib
 import logging
 from BeautifulSoup import BeautifulSoup
+
 try:
     import json
 except ImportError:
     import simplejson as json
+
 
 class ScrapeError(Exception):
     """
@@ -33,14 +36,17 @@ class NoDataForYear(ScrapeError):
     def __str__(self):
         return 'No data exists for %s' % self.year
 
+
 class DateEncoder(json.JSONEncoder):
     """
     JSONEncoder that encodes datetime objects as Unix timestamps.
     """
+
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return time.mktime(obj.timetuple())
         return json.JSONEncoder.default(self, obj)
+
 
 class LegislationScraper(object):
     """Subclass for each state's scraper
@@ -64,7 +70,9 @@ class LegislationScraper(object):
         make_option('--lower', action='store_true', dest='lower',
                     default=False, help='scrape lower chamber'),
         make_option('-v', '--verbose', action='count', dest='verbose',
-                    default=False, help="be verbose (use multiple times for more debugging information)"),
+                    default=False,
+                    help="be verbose (use multiple times for more"\
+                        "debugging information)"),
         make_option('-d', '--output_dir', action='store', dest='output_dir',
                     help='output directory'),
         make_option('-n', '--no_cache', action='store_true', dest='no_cache',
@@ -101,7 +109,8 @@ class LegislationScraper(object):
         self._init_dirs()
 
         self.logger = logging.getLogger("fiftystates")
-        formatter = logging.Formatter("%(asctime)s %(levelname)s " + self.state + " %(message)s")
+        formatter = logging.Formatter("%(asctime)s %(levelname)s " +
+                                      self.state + " %(message)s")
         console = logging.StreamHandler()
         console.setFormatter(formatter)
         self.logger.addHandler(console)
@@ -118,7 +127,8 @@ class LegislationScraper(object):
         """
 
         if not self.no_cache:
-            url_cache = os.path.join(self.cache_dir, md5(url).hexdigest()+'.html')
+            url_cache = os.path.join(self.cache_dir,
+                                     md5(url).hexdigest() + '.html')
             if os.path.exists(url_cache):
                 self.debug('Getting %s from cache' % url)
                 return open(url_cache).read()
@@ -363,9 +373,10 @@ class LegislationScraper(object):
         years = options.years
         if options.all_years:
             years = [str(y) for y in range(scraper.earliest_year,
-                                           datetime.datetime.now().year+1)]
+                                           datetime.datetime.now().year + 1)]
         if not years:
-            parser.error("You must provide a --year YYYY or --all (all years) option")
+            parser.error(
+                "You must provide a --year YYYY or --all (all years) option")
 
         chambers = []
         if options.upper:
@@ -381,9 +392,9 @@ class LegislationScraper(object):
                 scraper.reset_name_matchers(upper=matcher['upper'](),
                                             lower=matcher['lower']())
             try:
-               for chamber in chambers:
+                for chamber in chambers:
                     scraper.scrape_legislators(chamber, year)
-               for chamber in chambers:
+                for chamber in chambers:
                     scraper.old_bills = {}
                     scraper.scrape_bills(chamber, year)
             except NoDataForYear, e:
@@ -618,6 +629,7 @@ class Legislator(Person):
         self['first_name'] = first_name
         self['last_name'] = last_name
         self['middle_name'] = middle_name
+
 
 
 class NameMatcher(object):

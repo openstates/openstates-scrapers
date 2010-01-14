@@ -1,17 +1,19 @@
 import re
 
+
 # remove whitespace, linebreaks, and end parentheses
 def clean_text(text):
-    newtext = re.sub(r"[\r\n]+"," ",text)
-    newtext = re.sub(r"\s{2,}"," ",newtext)
-    m = re.match(r"(.*)\(.*?\)",newtext)
+    newtext = re.sub(r"[\r\n]+", " ", text)
+    newtext = re.sub(r"\s{2,}", " ", newtext)
+    m = re.match(r"(.*)\(.*?\)", newtext)
     if not m:
         return newtext.strip()
     else:
         return m.group(1).strip()
 
+
 def house_get_actor_from_action(text):
-    m = re.search(r"\((H|S)\)",text)
+    m = re.search(r"\((H|S)\)", text)
     if not m:
         if text.endswith('Governor'):
             return 'Governor'
@@ -23,11 +25,12 @@ def house_get_actor_from_action(text):
         return 'upper'
     return 'lower'
 
+
 def senate_get_actor_from_action(text):
-    if re.search("Prefiled",text):
+    if re.search("Prefiled", text):
         return 'upper'
 
-    m = re.search(r"(H|S)",text)
+    m = re.search(r"(H|S)", text)
     if not m:
         if text.endswith('Governor'):
             return 'Governor'

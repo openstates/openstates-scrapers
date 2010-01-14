@@ -2,20 +2,24 @@
 import urlparse
 import datetime as dt
 import lxml.etree
+import sys
+import os
 
-import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import LegislationScraper, Bill, Legislator
+
 
 def parse_ftp_listing(text):
     lines = text.strip().split('\r\n')
     return (' '.join(line.split()[3:]) for line in lines)
+
 
 def chamber_name(chamber):
     if chamber == 'upper':
         return 'senate'
     else:
         return 'house'
+
 
 class TXLegislationScraper(LegislationScraper):
 
@@ -106,7 +110,7 @@ class TXLegislationScraper(LegislationScraper):
                         bill.add_version(version_name, version_url)
 
             self.add_bill(bill)
-    
+
     def scrape_session(self, chamber, session):
         billdirs_path = '/bills/%s/billhistory/%s_bills/' % (
             session, chamber_name(chamber))
@@ -145,7 +149,8 @@ class TXLegislationScraper(LegislationScraper):
             self.scrape_reps(year)
 
     def scrape_senators(self, year):
-        with self.urlopen_context('http://www.senate.state.tx.us/75r/senate/senmem.htm') as page:
+        senator_url = 'http://www.senate.state.tx.us/75r/senate/senmem.htm'
+        with self.urlopen_context(senator_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
             for el in root.xpath('//table[@summary="senator identification"]'):
@@ -157,7 +162,8 @@ class TXLegislationScraper(LegislationScraper):
                 rest = rest.split(', ')
                 if len(rest) > 1:
                     suffix = rest[1]
-                else: suffix = ''
+                else:
+                    suffix = ''
                 rest = rest[0].split(' ')
                 last_name = rest[-1]
                 if len(rest) > 1:
@@ -168,13 +174,13 @@ class TXLegislationScraper(LegislationScraper):
                 leg = Legislator('81', 'upper', district, full_name,
                                  first_name, last_name, middle,
                                  party)
-                leg.add_source('http://www.senate.state.tx.us/75r/senate/senmem.htm')
+                leg.add_source(senator_url)
+
                 self.add_legislator(leg)
 
-
     def scrape_reps(self, year):
-        with self.urlopen_context(
-            'http://www.house.state.tx.us/members/welcome.php') as page:
+        rep_url = 'http://www.house.state.tx.us/members/welcome.php'
+        with self.urlopen_context(rep_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
             for el in root.xpath('//form[@name="frmMembers"]/table/tr')[1:]:
@@ -196,7 +202,8 @@ class TXLegislationScraper(LegislationScraper):
                 leg = Legislator('81', 'lower', district,
                                  full_name, first_name, last_name,
                                  middle, party)
-                leg.add_source('http://www.house.state.tx.us/members/welcome.php')
+                leg.add_source(rep_url)
+
                 self.add_legislator(leg)
 
 if __name__ == '__main__':

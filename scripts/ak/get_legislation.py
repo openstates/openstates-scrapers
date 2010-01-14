@@ -3,16 +3,18 @@ import re
 import datetime as dt
 import csv
 import html5lib
-
-# ugly hack
 import sys
-sys.path.append('./scripts')
-from pyutils.legislation import *
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pyutils.legislation import LegislationScraper, Bill, Legislator
+
 
 class AKLegislationScraper(LegislationScraper):
 
     state = 'ak'
-    soup_parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
+    soup_parser = html5lib.HTMLParser(
+        tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
     metadata = {
         'state_name': 'Alaska',
@@ -53,7 +55,8 @@ class AKLegislationScraper(LegislationScraper):
 
         session = str(18 + ((int(year) - 1993) / 2))
 
-        leg_list_url = "http://www.legis.state.ak.us/basis/commbr_info.asp?session=%s" % session
+        leg_list_url = "http://www.legis.state.ak.us/"\
+            "basis/commbr_info.asp?session=%s" % session
         leg_list = self.soup_parser(self.urlopen(leg_list_url))
 
         leg_re = "get_mbr_info.asp\?member=.+&house=%s&session=%s" % (
@@ -106,7 +109,9 @@ class AKLegislationScraper(LegislationScraper):
         date2 = '1231' + year2[2:]
 
         # Get bill list
-        bill_list_url = 'http://www.legis.state.ak.us/basis/range_multi.asp?session=%s&date1=%s&date2=%s' % (session, date1, date2)
+        bill_list_url = 'http://www.legis.state.ak.us/'\
+            'basis/range_multi.asp?session=%s&date1=%s&date2=%s' % (
+            session, date1, date2)
         self.log("Getting bill list for %s %s (this may take a long time)." %
                  (chamber, session))
         bill_list = self.soup_parser(self.urlopen(bill_list_url))
@@ -117,7 +122,8 @@ class AKLegislationScraper(LegislationScraper):
 
         for link in links:
             bill_id = link.contents[0].replace(' ', '')
-            bill_name = link.parent.parent.findNext('td').find('font').contents[0].strip()
+            bill_name = link.parent.parent.findNext('td').find(
+                'font').contents[0].strip()
             bill = Bill(session, chamber, bill_id, bill_name.strip())
 
             # Get the bill info page and strip malformed t
@@ -170,14 +176,20 @@ class AKLegislationScraper(LegislationScraper):
                 bill['subjects'].append(subject)
 
             # Get versions
-            text_list_url = "http://www.legis.state.ak.us/basis/get_fulltext.asp?session=%s&bill=%s" % (session, bill_id)
+            text_list_url = "http://www.legis.state.ak.us/"\
+                "basis/get_fulltext.asp?session=%s&bill=%s" % (
+                session, bill_id)
             text_list = self.soup_parser(self.urlopen(text_list_url))
             bill.add_source(text_list_url)
 
             text_link_re = re.compile('^get_bill_text?')
             for text_link in text_list.findAll('a', href=text_link_re):
-                text_name = text_link.parent.previousSibling.contents[0].strip()
-                text_url = "http://www.legis.state.ak.us/basis/%s" % text_link['href']
+                text_name = text_link.parent.previousSibling.contents[0]
+                text_name = text_name.strip()
+
+                text_url = "http://www.legis.state.ak.us/basis/%s" % (
+                    text_link['href'])
+
                 bill.add_version(text_name, text_url)
 
             self.add_bill(bill)

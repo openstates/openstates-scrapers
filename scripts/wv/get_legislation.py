@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-import urllib, re
-from BeautifulSoup import BeautifulSoup as BS
+import urllib
+import re
 import datetime as dt
+import sys
+import os
+from BeautifulSoup import BeautifulSoup as BS
 
-import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import LegislationScraper, Bill, Vote, Legislator
+
 
 def cleansource(data):
     '''Remove some irregularities from WV's HTML.
@@ -15,16 +18,18 @@ It includes a spurious </HEAD> before the useful data begins and lines like '<op
     data = data.replace('</HEAD>', '')
     return re.sub('(="[^"]+")([a-zA-Z])', r'\1 \2', data)
 
+
 def cleansponsor(sponsor):
     if sponsor.endswith('President)'):
-        ## in the senate:
-        ## Soandso (Salutation President)
+        # in the senate:
+        # Soandso (Salutation President)
         return sponsor.split(' ')[0]
-    if ' Speaker' in sponsor: # leading space in case there is a Rep. Speaker
-        ## in the house:
-        ## Salutation Speaker (Salutation Soandso)
+    if ' Speaker' in sponsor:  # leading space in case there is a Rep. Speaker
+        # in the house:
+        # Salutation Speaker (Salutation Soandso)
         return sponsor.split(' ')[-1][:-1]
     return sponsor
+
 
 def issponsorlink(a):
     if 'title' in a:
@@ -32,10 +37,12 @@ def issponsorlink(a):
                 a['title'].startswith('View bills Senator'))
     return False
 
+
 def sessionexisted(data):
     return not re.search('Please choose another session', data)
 
 urlbase = 'http://www.legis.state.wv.us/Bill_Status/%s'
+
 
 class WVLegislationScraper(LegislationScraper):
 
@@ -81,7 +88,8 @@ class WVLegislationScraper(LegislationScraper):
         else:
             c = 'h'
 
-        q = 'Bills_all_bills.cfm?year=%s&sessiontype=%s&btype=bill&orig=%s' % (year, session, c)
+        q = 'Bills_all_bills.cfm?year=%s&sessiontype=%s&btype=bill&orig=%s' % (
+            year, session, c)
 
         try:
             with self.urlopen_context(urlbase % q) as data:
@@ -105,7 +113,8 @@ class WVLegislationScraper(LegislationScraper):
         if year[0] != 'R':
             session = year
         else:
-            session = self.metadata['session_details'][year]['sub_sessions'][int(year[0]) - 1]
+            session = self.metadata['session_details'][year][
+                'sub_sessions'][int(year[0]) - 1]
 
         with self.urlopen_context(histurl) as data:
             soup = BS(cleansource(data))
@@ -148,12 +157,13 @@ class WVLegislationScraper(LegislationScraper):
                     actor = 'lower'
                 elif 'Senate' in action:
                     actor = 'upper'
-                else: # for lack of a better
+                else:  # for lack of a better
                     actor = chamber
 
                 bill.add_action(actor, action, date)
 
         self.add_bill(bill)
+
 
 if __name__ == '__main__':
     WVLegislationScraper.run()
