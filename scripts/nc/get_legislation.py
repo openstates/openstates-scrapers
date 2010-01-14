@@ -134,8 +134,11 @@ class NCLegislationScraper(LegislationScraper):
         data = self.urlopen(url)
         soup = self.soup_parser(data)
         
-        #<br>Sponsor: Holliman<br>R2 For Adopt
-        motion = soup.findAll('font', text=re.compile('Sponsor:'))[0].next.next
+        # <td valign=top width=20%><font size=-1>10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="/gascripts/BillLookUp/BillLookUp.pl?Session=2009&BillID=S198">SB 198</a></b></font></td>
+        # <td valign=top width=45%><font size=-1><b>   2nd Edition </b><br>Second Reading</font></td>
+        motion = soup.findAll('a', href=re.compile('BillLookUp\.pl'))[0] \
+                     .findParents('tr',limit=1)[0].findAll('td')[1].font.contents[-1]
+
         #<font size=-1><b>Outcome:</b> PASSED<br><b>Time:</b> Jan 28 2009  1:26PM</font>
         vote_time = soup.findAll('b',text='Time:')[0].next.strip()
         vote_time = dt.datetime.strptime(vote_time, '%b %d %Y  %I:%M%p')
