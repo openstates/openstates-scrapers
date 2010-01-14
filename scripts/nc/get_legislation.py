@@ -6,7 +6,7 @@ import re
 
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import LegislationScraper, Legislator, Bill, Vote
 
 def clean_legislators(s):
     s = s.replace('&nbsp;', ' ').strip()
@@ -78,7 +78,7 @@ class NCLegislationScraper(LegislationScraper):
              }}
 
     def get_bill_info(self, session, sub, bill_id):
-        bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?Session=%s&BillID=%s' % (session[0:4] + sub, bill_id)
+        bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?bPrintable=true&Session=%s&BillID=%s&votesToView=all' % (session[0:4] + sub, bill_id)
         # parse the bill data page, finding the latest html text
         if bill_id[0] == 'H':
             chamber = 'lower'
@@ -94,16 +94,15 @@ class NCLegislationScraper(LegislationScraper):
         bill.add_source(bill_detail_url)
 
         # get all versions
-        links = bill_soup.findAll('a')
+        links = bill_soup.findAll('a', href=re.compile('/Sessions/%s/Bills/\w+/HTML' % session[0:4]))
         for link in links:
-            if link.has_key('href') and link['href'].startswith('/Sessions') and link['href'].endswith('.html'):
-                version_name = link.parent.previousSibling.previousSibling.contents[0].replace('&nbsp;', ' ')
-                version_url = 'http://www.ncga.state.nc.us' + link['href']
-                bill.add_version(version_name, version_url)
+            version_name = link.parent.previousSibling.previousSibling.contents[0].replace('&nbsp;', ' ').replace(u'\u00a0',' ')
+            version_url = 'http://www.ncga.state.nc.us' + link['href']
+            bill.add_version(version_name, version_url)
 
-        # grab primary and cosponsors from table[6]
-        tables = bill_soup.findAll('table')
-        sponsor_rows = tables[7].findAll('tr')
+        # figure out which table has sponsor data
+        sponsor_table = bill_soup.findAll('th', text='Sponsors', limit=1)[0].findParents('table', limit=1)[0]
+        sponsor_rows = sponsor_table.findAll('tr')
         for leg in sponsor_rows[1].td.findAll('a'):
             bill.add_sponsor('primary',
                              leg.contents[0].replace(u'\u00a0', ' '))
@@ -111,31 +110,66 @@ class NCLegislationScraper(LegislationScraper):
             bill.add_sponsor('cosponsor',
                              leg.contents[0].replace(u'\u00a0', ' '))
 
-        # easier to read actions from the rss.. but perhaps favor less HTTP requests?
-        rss_url = 'http://www.ncga.state.nc.us/gascripts/BillLookUp/BillLookUp.pl?Session=%s&BillID=%s&view=history_rss' % (session[0:4] + sub, bill_id)
-        rss_data = self.urlopen(rss_url)
-        rss_soup = self.soup_parser(rss_data)
-        bill.add_source(rss_url)
 
-        # title looks like 'House Chamber: action'
-        for item in rss_soup.findAll('item'):
-            action = item.title.contents[0]
-            pieces = item.title.contents[0].split(' Chamber: ')
-            if len(pieces) == 2:
-                actor = pieces[0].replace('Senate', 'upper').replace(
-                    'House', 'lower')
-                action = pieces[1]
-            else:
-                action = pieces[0]
-                if action.endswith('Gov.'):
-                    actor = 'Governor'
-                else:
-                    actor = ''
-            date = ' '.join(item.pubdate.contents[0].split(' ')[1:4])
-            date = dt.datetime.strptime(date, "%d %b %Y")
-            bill.add_action(actor, action, date)
+        action_table = bill_soup.findAll('th', text='Chamber', limit=1)[0].findParents('table', limit=1)[0]
+        for row in action_table.findAll('tr'):
+            cells = row.findAll('td')
+            if len(cells) != 3: continue
+            act_date,actor,action = map(lambda x: self.flatten(x), cells)
+            act_date = dt.datetime.strptime(act_date, '%m/%d/%Y')
 
+            if actor == 'Senate': actor = 'upper'
+            elif actor == 'House': actor = 'lower'
+            elif action.endswith('Gov.'): actor = 'Governor'
+            bill.add_action(actor, action, act_date)
+
+        # /gascripts/voteHistory/RollCallVoteTranscript.pl?sSession=2009&sChamber=H&RCS=1
+        for vote in bill_soup.findAll('a', href=re.compile('RollCallVoteTranscript')):
+            self.get_vote(bill, vote['href'])
         self.add_bill(bill)
+
+    def get_vote(self, bill, url):
+        url = 'http://www.ncga.state.nc.us' + url + '&bPrintable=true'
+        chamber = {'H': 'lower', 'S': 'upper'}[re.findall('sChamber=(\w)', url)[0]]
+        data = self.urlopen(url)
+        soup = self.soup_parser(data)
+        
+        #<br>Sponsor: Holliman<br>R2 For Adopt
+        motion = soup.findAll('font', text=re.compile('Sponsor:'))[0].next.next
+        #<font size=-1><b>Outcome:</b> PASSED<br><b>Time:</b> Jan 28 2009  1:26PM</font>
+        vote_time = soup.findAll('b',text='Time:')[0].next.strip()
+        vote_time = dt.datetime.strptime(vote_time, '%b %d %Y  %I:%M%p')
+        
+        vote_mess = soup.findAll('td', text=re.compile('Total Votes:'))[0]
+        (yeas, noes, nots, absent, excused) = map(lambda x: int(x), re.findall('Ayes: (\d+)\s+Noes: (\d+)\s+Not: (\d+)\s+Exc. Absent: (\d+)\s+Exc. Vote: (\d+)', vote_mess, re.U)[0])
+
+        # chamber, date, motion, passed, yes_count, no_count, other_count
+        v = Vote(chamber, vote_time, motion, (yeas > noes), yeas, noes, nots + absent + excused)
+        # eh, it's easier to just get table[2] for this..
+        vote_table = soup.findAll('table')[2]
+
+        for row in vote_table.findAll('tr'):
+            if 'Democrat' in self.flatten(row): continue
+            cells = row.findAll('td')
+            if len(cells) == 2: 
+                vote_type, a = cells
+                bunch = [self.flatten(a)]
+            else: 
+                vote_type, d, r = cells 
+                bunch = [self.flatten(d), self.flatten(r)]
+            vote_type = vote_type.font.b.contents[0] # why doesn't .string work? ... bleh.
+         
+            if 'Ayes' in vote_type: adder = v.yes
+            elif 'Noes' in vote_type: adder = v.no
+            else: adder = v.other
+
+            for party in bunch:
+                party = map(lambda x: x.replace(' (SPEAKER)', ''), party[(party.index(':')+1):].split(';'))
+                if party[0] == 'None': party = [] 
+                for x in party: adder(x)   
+
+        v.add_source(url)
+        bill.add_vote(v)    
 
     def scrape_session(self, chamber, session, sub):
         url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (session[0:4] + sub, chamber)
@@ -143,8 +177,7 @@ class NCLegislationScraper(LegislationScraper):
         data = self.urlopen(url)
         soup = self.soup_parser(data)
 
-        rows = soup.findAll('table')[6].findAll('tr')[1:]
-        for row in rows:
+        for row in soup.findAll('table')[6].findAll('tr')[1:]:
             td = row.find('td')
             bill_id = td.a.contents[0]
             self.get_bill_info(session, sub, bill_id)
@@ -194,6 +227,17 @@ class NCLegislationScraper(LegislationScraper):
                                         party, suffix=suffix)
                 legislator.add_source(url)
                 self.add_legislator(legislator)
+
+    def flatten(self, tree):
+        def squish(tree):
+            if tree.string:
+                s = tree.string
+            else:
+                s = map(lambda x: self.flatten(x), tree.contents)
+            if len(s) == 1:
+                s = s[0]
+            return s
+        return ''.join(squish(tree)).strip()
 
 if __name__ == '__main__':
     NCLegislationScraper.run()
