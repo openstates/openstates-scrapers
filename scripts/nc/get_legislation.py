@@ -34,6 +34,7 @@ class NCLegislationScraper(LegislationScraper):
 
     state = 'nc'
     soup_parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
+    lt_gov = None
 
     metadata = {
         'state_name': 'North Carolina',
@@ -155,8 +156,21 @@ class NCLegislationScraper(LegislationScraper):
             if 'Democrat' in self.flatten(row): continue
             cells = row.findAll('td')
             if len(cells) == 1:
-                #TODO: Uh, how do you *store* this?
-                v['passed'] = 'VOTES YES' in self.flatten(cells[0])
+                # I can't find any examples of ties in the House, nor information on who would break them.
+                if not self.lt_gov and chamber == 'upper':  
+                   full_name = soup.findAll('td', text=re.compile('Lieutenant Governor'))[0].parent.findAll('span')[0].contents[0]
+                   (first_name, last_name, middle_name, suffix) = split_name(full_name)
+                   #FIXME: we can't have the chamber be 'Executive' or anything because NameMatcher freaks out. 
+                   self.lt_gov = Legislator(bill['session'], chamber, None, full_name,
+                                        first_name, last_name, middle_name,
+                                        party, suffix=suffix, position='Lieutenant Governor')
+                   self.add_legislator(self.lt_gov)
+                if 'VOTES YES' in self.flatten(cells[0]):
+                    v['passed'] = True
+                    v.yes(full_name)
+                else:
+                    v['passed'] = False
+                    v.no(full_name)
                 continue
             elif len(cells) == 2: 
                 vote_type, a = cells
