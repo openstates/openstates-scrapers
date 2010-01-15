@@ -163,7 +163,7 @@ class NCLegislationScraper(LegislationScraper):
                    #FIXME: we can't have the chamber be 'Executive' or anything because NameMatcher freaks out. 
                    self.lt_gov = Legislator(bill['session'], chamber, None, full_name,
                                         first_name, last_name, middle_name,
-                                        party, suffix=suffix, position='Lieutenant Governor')
+                                        None, suffix=suffix, position='Lieutenant Governor')
                    self.add_legislator(self.lt_gov)
                 if 'VOTES YES' in self.flatten(cells[0]):
                     v['passed'] = True
