@@ -154,12 +154,18 @@ class NCLegislationScraper(LegislationScraper):
         for row in vote_table.findAll('tr'):
             if 'Democrat' in self.flatten(row): continue
             cells = row.findAll('td')
-            if len(cells) == 2: 
+            if len(cells) == 1:
+                #TODO: Uh, how do you *store* this?
+                v['passed'] = 'VOTES YES' in self.flatten(cells[0])
+                continue
+            elif len(cells) == 2: 
                 vote_type, a = cells
                 bunch = [self.flatten(a)]
-            else: 
+            elif len(cells) == 3: 
                 vote_type, d, r = cells 
                 bunch = [self.flatten(d), self.flatten(r)]
+            else: continue
+
             vote_type = vote_type.font.b.contents[0] # why doesn't .string work? ... bleh.
          
             if 'Ayes' in vote_type: adder = v.yes
