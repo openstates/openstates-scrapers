@@ -186,19 +186,6 @@ class PALegislationScraper(LegislationScraper):
             for link in chamber_votes_page.findAll('a', href=re.compile('rc_view')):
                 vote_details_url = "http://www.legis.state.pa.us/CFDOCS/Legis/RC/Public/%s" % link['href']
                 vote = self.parse_vote_details(vote_details_url)
-
-                date = link.parent.parent.td.contents[0].strip(' \r\n\t-')
-                date = dt.datetime.strptime(date, "%m/%d/%Y")
-
-                if link.contents[0].find(',') >= 0:
-                    motion = link.contents[0].split(', ')[1].strip()
-                else:
-                    motion = "Vote"
-
-                vote['motion'] = motion
-                vote['date'] = date
-                vote['chamber'] = chamber
-
                 bill.add_vote(vote)
 
     def parse_vote_details(self, url):
@@ -206,34 +193,48 @@ class PALegislationScraper(LegislationScraper):
         Grab the details of a specific vote, such as how each legislator
         voted.
         """
+        def find_vote(color):
+             return vote_page.findAll('span', {'class': 'font8text'}, style=lambda(s): s and color in s)
+
         with self.soup_context(url) as vote_page:
             header = vote_page.find('div', {'class': 'subHdrGraphic'})
-            info_tbl = header.findNext('table')
+            chamber = 'upper' if ('Senate' in header.string) else 'lower'
 
-            motion = info_tbl.findAll('tr')[1].td.contents[-1].strip()
-            date = info_tbl.findAll('tr')[2].findAll('td')[-1].contents[0].strip()
-            date = dt.datetime.strptime(date, "%m/%d/%Y")
-
-            yes_count = int(info_tbl.find(text=" YEAS").findPrevious().contents[0])
-            no_count = int(info_tbl.find(text=" NAYS").findPrevious().contents[0])
-            lve_count = int(info_tbl.find(text=" LVE").findPrevious().contents[0])
-            nv_count = int(info_tbl.find(text=" N/V").findPrevious().contents[0])
+            # we'll use the link back to the bill as a base to get the motion/date
+            linkback = vote_page.find('a', href=re.compile('billinfo')).parent.parent
+            date = linkback.find('div').string
+            date = dt.datetime.strptime(date, "%A, %B %d, %Y")
+            motion = linkback.findNextSibling('div')
+            if motion.a:
+                motion = "%s %s" % (motion.a.string, motion.contents[-1].string.strip())
+            elif motion.span:
+                motion = "%s %s" % (motion.span.string.strip(), motion.contents[-1].string.strip())
+            else:
+                motion = motion.string.strip().replace('&nbsp;','')
+            
+            yes_count = int(vote_page.find('div', text='YEAS').next.string)
+            no_count = int(vote_page.find('div', text='NAYS').next.string)
+            lve_count = int(vote_page.find('div', text='LVE').next.string)
+            nv_count = int(vote_page.find('div', text='N/V').next.string)
             other_count = lve_count + nv_count
 
             passed = yes_count > no_count
-
-            vote = Vote(None, None, None, passed, yes_count, no_count,
+            vote = Vote(chamber, date, motion, passed, yes_count, no_count,
                         other_count)
             vote.add_source(url)
 
-            vote_tbl = header.findNext('div').findAll('table')[2]
-            for yes in vote_tbl.findAll(text=re.compile('^Y$')):
-                vote.yes(yes.findNext().contents[0])
-            for no in vote_tbl.findAll(text=re.compile('^N$')):
-                vote.no(no.findNext().contents[0])
-            for other in vote_tbl.findAll(text=re.compile('^(X|E)$')):
-                vote.other(other.findNext().contents[0])
+            # find the votes by the background colors
+            yes_votes = [vote.yes, find_vote('CCFFCC')]
+            no_votes = [vote.no, find_vote('FFCCCC')]
+            nv_votes = [vote.other, find_vote('FFFFFF')]
+            
+            for (action,votes) in (yes_votes, no_votes, nv_votes):
+                for a_vote in votes:
+                    action(a_vote.findNextSibling('span').string)
 
+            if len(vote['yes_votes']) != yes_count: raise ScrapeError('wrong yes count')
+            if len(vote['no_votes']) != no_count: raise ScrapeError('wrong no count %d/%d' % (len(vote['no_votes']), no_count))
+            if len(vote['other_votes']) != other_count: raise ScrapeError('wrong other count')
         return vote
 
     def scrape_bills(self, chamber, year):
