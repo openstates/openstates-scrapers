@@ -149,7 +149,8 @@ class KYLegislationScraper(LegislationScraper):
             leg_table = leg_list.find(id="table2")
 
             for row in leg_table.findAll('tr')[1:]:
-                leg_link = row.findAll('td')[1].font.a
+                leg_link = row.findAll('td')[1].font
+                if leg_link: leg_link = leg_link.a
                 if not leg_link:
                     # Vacant seat
                     continue
