@@ -193,8 +193,9 @@ class PALegislationScraper(LegislationScraper):
         Grab the details of a specific vote, such as how each legislator
         voted.
         """
-        def find_vote(color):
-             return vote_page.findAll('span', {'class': 'font8text'}, style=lambda(s): s and color in s)
+        def find_vote(letter):
+             #return vote_page.findAll('span', {'class': 'font8text'}, style=lambda(s): s and color in s)
+             return vote_page.findAll('span', {'class': 'font8text'}, text=letter)
 
         with self.soup_context(url) as vote_page:
             header = vote_page.find('div', {'class': 'subHdrGraphic'})
@@ -223,18 +224,22 @@ class PALegislationScraper(LegislationScraper):
                         other_count)
             vote.add_source(url)
 
-            # find the votes by the background colors
-            yes_votes = [vote.yes, find_vote('CCFFCC')]
-            no_votes = [vote.no, find_vote('FFCCCC')]
-            nv_votes = [vote.other, find_vote('FFFFFF')]
+            #yes_votes = [vote.yes, find_vote('CCFFCC')]
+            #no_votes = [vote.no, find_vote('FFCCCC')]
+            #nv_votes = [vote.other, find_vote('FFFFFF')]
+
+            # find the votes by the inner text. because background colors lie.
+            yes_votes = [vote.yes, find_vote('Y')]
+            no_votes = [vote.no, find_vote('N')]
+            nv_votes = [vote.other, find_vote('E') + find_vote('X')]
             
             for (action,votes) in (yes_votes, no_votes, nv_votes):
                 for a_vote in votes:
-                    action(a_vote.findNextSibling('span').string)
+                    action(a_vote.parent.findNextSibling('span').string)
 
-            if len(vote['yes_votes']) != yes_count: raise ScrapeError('wrong yes count')
+            if len(vote['yes_votes']) != yes_count: raise ScrapeError('wrong yes count %d/%d' % (len(vote['yes_votes']), yes_count))
             if len(vote['no_votes']) != no_count: raise ScrapeError('wrong no count %d/%d' % (len(vote['no_votes']), no_count))
-            if len(vote['other_votes']) != other_count: raise ScrapeError('wrong other count')
+            if len(vote['other_votes']) != other_count: raise ScrapeError('wrong other count %d/%d' % (len(vote['other_votes']), other_count))
         return vote
 
     def scrape_bills(self, chamber, year):
