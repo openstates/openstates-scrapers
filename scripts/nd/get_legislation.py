@@ -90,10 +90,10 @@ class NDLegislationScraper(LegislationScraper):
         if not header:
             raise ScrapeError('Legaslative list header element not found.')
         
-        party_abbreviations = {'(D)': 'Democrat', '(R)': 'Republican'}
+        party_images = {'/images/donkey.gif': 'Democrat', '/images/elephant.gif': 'Republican'}
         for row in header.findNextSibling('table').findAll('tr'):
             cells = row.findAll('td')
-            party = party_abbreviations[cells[0].img['alt']]
+            party = party_images[cells[0].img['src']]
             name = map(lambda x: x.strip(), cells[1].a.contents[0].split(', '))
             name.reverse()
             name = ' '.join(name)
