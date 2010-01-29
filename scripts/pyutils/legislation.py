@@ -53,7 +53,7 @@ class LegislationScraper(object):
         import sys, os
         sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     """
-    
+
     option_list = (
         make_option('-y', '--year', action='append', dest='years',
                     help='year(s) to scrape'),
@@ -78,7 +78,7 @@ class LegislationScraper(object):
     # The earliest year for when legislative data is available:
     # (Used for --all)
     earliest_year = 1969
-    
+
     # The user agent used for requests (this will show up in the
     # state's logs):
     user_agent = 'robot: http://fiftystates-dev.sunlightlabs.com/'
@@ -206,7 +206,7 @@ class LegislationScraper(object):
         except:
             self.show_error(url, body)
             raise
-        
+
     def _make_headers(self):
         return {'User-Agent': self.user_agent}
 
@@ -283,21 +283,20 @@ class LegislationScraper(object):
         """
         Add a scraped :class:`pyutils.legislation.Legislator` object.
         """
-        self.log("add_legislator %s %s: %s" % (legislator['chamber'],
-                                               legislator['session'],
-                                               legislator['full_name']))
+        self.log("add_legislator: %s" % legislator['full_name'])
 
-        self.matcher[legislator['chamber']][legislator] = [
-            legislator['session'],
-            legislator['chamber'],
-            legislator['district'],
+        role = legislator['roles'][0]
+        self.matcher[role['chamber']][legislator] = [
+            role['session'],
+            role['chamber'],
+            role['district'],
             legislator['full_name']]
 
         legislator['state'] = self.state
 
-        filename = "%s:%s:%s:%s.json" % (legislator['session'],
-                                         legislator['chamber'],
-                                         legislator['district'],
+        filename = "%s:%s:%s:%s.json" % (role['session'],
+                                         role['chamber'],
+                                         role['district'],
                                          legislator['full_name'])
         filename = filename.encode('ascii', 'replace')
         with open(os.path.join(self.output_dir, "legislators", filename),
@@ -367,7 +366,7 @@ class LegislationScraper(object):
                                            datetime.datetime.now().year+1)]
         if not years:
             parser.error("You must provide a --year YYYY or --all (all years) option")
-            
+
         chambers = []
         if options.upper:
             chambers.append('upper')
@@ -452,7 +451,7 @@ class Bill(dict):
     def add_document(self, name, url, **kwargs):
         """
         Add a document or media item that is related to the bill.  Use this method to add documents such as Fiscal Notes, Analyses, Amendments,  or public hearing recordings.
-        :param name: a name given to the document, e.g. 'Fiscal Note for Amendment LCO 6544'        
+        :param name: a name given to the document, e.g. 'Fiscal Note for Amendment LCO 6544'
         :param url: link to location of document or file
 
 
@@ -569,7 +568,37 @@ class Vote(dict):
         """
         self['sources'].append(dict(url=url, **kwargs))
 
-class Legislator(dict):
+class Person(dict):
+
+    def __init__(self, full_name, **kwargs):
+        super(Person, self).__init__()
+        self['type'] = 'person'
+        self['full_name'] = full_name
+        self['sources'] = []
+        self['roles'] = []
+        self.update(kwargs)
+
+    def add_role(self, role, session, start_date=None, end_date=None, **kwargs):
+        """
+        If ``start_date`` or ``end_date`` are ``None``, they will default
+        to the start/end date of the given legislative session.
+
+        Examples:
+
+        leg.add_role('member', session='2009', chamber='upper',
+                     party='Republican', district='10th')
+        """
+        self['roles'].append(dict(role=role, session=session, **kwargs))
+
+    def add_source(self, url, **kwargs):
+        """
+        Add a source URL from which data related to this legislator was scraped.
+
+        :param url: the location of the source
+        """
+        self['sources'].append(dict(url=url, **kwargs))
+
+class Legislator(Person):
 
     def __init__(self, session, chamber, district, full_name,
                  first_name, last_name, middle_name, party, **kwargs):
@@ -590,25 +619,14 @@ class Legislator(dict):
         Any additional keyword arguments will be associated with this
         Legislator and stored in the database.
         """
+        super(Legislator, self).__init__(full_name, **kwargs)
         self['type'] = 'legislator'
-        self['session'] = session
-        self['chamber'] = chamber
-        self['district'] = district
-        self['full_name'] = full_name
+        self.add_role('member', session, chamber=chamber, district=district,
+                      party=party)
         self['first_name'] = first_name
         self['last_name'] = last_name
         self['middle_name'] = middle_name
-        self['party'] = party
-        self['sources'] = []
-        self.update(kwargs)
 
-    def add_source(self, url, **kwargs):
-        """
-        Add a source URL from which data related to this legislator was scraped.
-
-        :param url: the location of the source
-        """
-        self['sources'].append(dict(url=url, **kwargs))
 
 class NameMatcher(object):
     """
@@ -704,7 +722,7 @@ class NameMatcher(object):
                                      name['middle_name'][0]))
 
         for form in forms:
-            form = form.replace('.', '').lower() 
+            form = form.replace('.', '').lower()
             if form in self.names:
                 self.names[form] = None
             else:
