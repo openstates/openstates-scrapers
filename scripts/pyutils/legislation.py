@@ -393,7 +393,24 @@ class LegislationScraper(object):
                     raise
 
 
-class Bill(dict):
+class FiftystatesObject(dict):
+
+    def __init__(self, type, **kwargs):
+        super(FiftystatesObject, self).__init__()
+        self['type'] = type
+        self['sources'] = []
+        self.update(kwargs)
+
+    def add_source(self, url, **kwargs):
+        """
+        Add a source URL from which data related to this vote was scraped.
+
+        :param url: the location of the source
+        """
+        self['sources'].append(dict(url=url, **kwargs))
+
+
+class Bill(FiftystatesObject):
     """
     This represents a state bill or resolution.
     It is just a dict with some required fields and a few
@@ -418,7 +435,7 @@ class Bill(dict):
         Any additional keyword arguments will be associated with this
         bill and stored in the database.
         """
-        self['type'] = 'bill'
+        super(Bill, self).__init__('bill', **kwargs)
         self['session'] = session
         self['chamber'] = chamber
         self['bill_id'] = bill_id
@@ -428,8 +445,6 @@ class Bill(dict):
         self['versions'] = []
         self['actions'] = []
         self['documents'] = []
-        self['sources'] = []
-        self.update(kwargs)
 
     def add_sponsor(self, type, name, **kwargs):
         """
@@ -439,14 +454,6 @@ class Bill(dict):
         :param name: the name of the sponsor as provided by the state
         """
         self['sponsors'].append(dict(type=type, name=name, **kwargs))
-
-    def add_source(self, url, **kwargs):
-        """
-        Add a source URL from which data related to this bill was scraped.
-
-        :param url: the location of the source
-        """
-        self['sources'].append(dict(url=url, **kwargs))
 
     def add_document(self, name, url, **kwargs):
         """
@@ -495,7 +502,7 @@ class Bill(dict):
         self['votes'].append(vote)
 
 
-class Vote(dict):
+class Vote(FiftystatesObject):
 
     def __init__(self, chamber, date, motion, passed,
                  yes_count, no_count, other_count, **kwargs):
@@ -521,6 +528,7 @@ class Vote(dict):
           Vote('lower', 'Finance Committee', '3/4/03 03:40:22',
                'Recommend passage', 12, 1, 0)
         """
+        super(Vote, self).__init__('vote', **kwargs)
         self['chamber'] = chamber
         self['date'] = date
         self['motion'] = motion
@@ -531,8 +539,6 @@ class Vote(dict):
         self['yes_votes'] = []
         self['no_votes'] = []
         self['other_votes'] = []
-        self['sources'] = []
-        self.update(kwargs)
 
     def yes(self, legislator):
         """
@@ -560,23 +566,13 @@ class Vote(dict):
         """
         self['other_votes'].append(legislator)
 
-    def add_source(self, url, **kwargs):
-        """
-        Add a source URL from which data related to this vote was scraped.
 
-        :param url: the location of the source
-        """
-        self['sources'].append(dict(url=url, **kwargs))
-
-class Person(dict):
+class Person(FiftystatesObject):
 
     def __init__(self, full_name, **kwargs):
-        super(Person, self).__init__()
-        self['type'] = 'person'
+        super(Person, self).__init__('person', **kwargs)
         self['full_name'] = full_name
-        self['sources'] = []
         self['roles'] = []
-        self.update(kwargs)
 
     def add_role(self, role, session, start_date=None, end_date=None, **kwargs):
         """
@@ -590,13 +586,6 @@ class Person(dict):
         """
         self['roles'].append(dict(role=role, session=session, **kwargs))
 
-    def add_source(self, url, **kwargs):
-        """
-        Add a source URL from which data related to this legislator was scraped.
-
-        :param url: the location of the source
-        """
-        self['sources'].append(dict(url=url, **kwargs))
 
 class Legislator(Person):
 
@@ -620,7 +609,7 @@ class Legislator(Person):
         Legislator and stored in the database.
         """
         super(Legislator, self).__init__(full_name, **kwargs)
-        self['type'] = 'legislator'
+        #self['type'] = 'legislator'
         self.add_role('member', session, chamber=chamber, district=district,
                       party=party)
         self['first_name'] = first_name
