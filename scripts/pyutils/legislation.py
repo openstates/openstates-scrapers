@@ -401,13 +401,14 @@ class FiftystatesObject(dict):
         self['sources'] = []
         self.update(kwargs)
 
-    def add_source(self, url, **kwargs):
+    def add_source(self, url, retrieved=None, **kwargs):
         """
         Add a source URL from which data related to this vote was scraped.
 
         :param url: the location of the source
         """
-        self['sources'].append(dict(url=url, **kwargs))
+        retrieved = retrieved or datetime.datetime.now()
+        self['sources'].append(dict(url=url, retrieved=retrieved, **kwargs))
 
 
 class Bill(FiftystatesObject):
