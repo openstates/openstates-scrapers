@@ -32,8 +32,10 @@ class ExampleLegislationScraper(LegislationScraper):
             raise NoDataForYear
 
         if chamber == 'upper':
+            other_chamber = 'lower'
             bill_id = 'SB 1'
         else:
+            other_chamber = 'upper'
             bill_id = 'HB 1'
 
         b1 = Bill('2009-2010', chamber, bill_id, 'A super bill')
@@ -57,6 +59,10 @@ class ExampleLegislationScraper(LegislationScraper):
 
         b1.add_vote(v1)
         b1.add_vote(v2)
+
+        b1.add_action(chamber, 'introduced', d1)
+        b1.add_action(chamber, 'read first time', d1)
+        b1.add_action(other_chamber, 'introduced', d2)
 
         self.add_bill(b1)
 
