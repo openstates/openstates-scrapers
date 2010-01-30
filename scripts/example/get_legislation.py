@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import os
+import datetime
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
@@ -42,12 +43,14 @@ class ExampleLegislationScraper(LegislationScraper):
         b1.add_sponsor('primary', 'Bob Smith')
         b1.add_sponsor('secondary', 'Johnson, Sally')
 
-        v1 = Vote('upper', '1/29/2010', 'Final passage',
+        d1 = datetime.datetime.strptime('1/29/2010', '%m/%d/%Y')
+        v1 = Vote('upper', d1, 'Final passage',
                   True, 2, 0, 0)
         v1.yes('Bob Smith')
         v1.yes('Sally Johnson')
 
-        v2 = Vote('lower', '1/30/2010', 'Final passage',
+        d2 = datetime.datetime.strptime('1/30/2010', '%m/%d/%Y')
+        v2 = Vote('lower', d2, 'Final passage',
                   False, 0, 1, 1)
         v2.no('B. Smith')
         v2.other('Sally Johnson')
