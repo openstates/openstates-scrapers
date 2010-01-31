@@ -156,6 +156,9 @@ class AKLegislationScraper(LegislationScraper):
                     act_chamber = chamber
 
                 action = cols[3].font.contents[0].strip()
+                if re.match("\w+ Y(\d+) N(\d+)", action):
+                    vote = self.parse_vote(bill, action, act_chamber, act_date, cols[1].a['href'])
+                    bill.add_vote(vote)
 
                 bill.add_action(act_chamber, action, act_date)
 
@@ -178,6 +181,33 @@ class AKLegislationScraper(LegislationScraper):
                 bill.add_version(text_name, text_url)
 
             self.add_bill(bill)
+
+    def parse_vote(self, bill, action, act_chamber, act_date, url):
+        url = "http://www.legis.state.ak.us/basis/%s" % url
+        info_page = self.soup_parser(self.urlopen(url))
+
+        tally = re.findall('Y(\d+) N(\d+)\s*(?:\w(\d+))*\s*(?:\w(\d+))*\s*(?:\w(\d+))*', action)[0]
+        yes, no, o1, o2, o3 = map(lambda x: 0 if x == '' else int(x), tally)
+        yes, no, other = int(yes), int(no), (int(o1) + int(o2) + int(o3))
+
+        votes = info_page.findAll('pre', text=re.compile('Yeas'), limit=1)[0].split('\n\n')
+
+        motion = info_page.findAll(text=re.compile('The question being'))[0]
+        motion = re.findall('The question being:\s*"(.*)\?"', motion, re.DOTALL)[0].replace('\n', ' ')
+
+        vote = Vote(act_chamber, act_date, motion, yes> no, yes, no, other)
+
+        for vote_list in votes:
+            vote_type = False
+            if vote_list.startswith('Yeas: '): vote_list, vote_type = vote_list[6:], vote.yes
+            elif vote_list.startswith('Nays: '): vote_list, vote_type = vote_list[6:], vote.no
+            elif vote_list.startswith('Excused: '): vote_list, vote_type = vote_list[9:], vote.other
+            elif vote_list.startswith('Absent: '): vote_list, vote_type = vote_list[9:],vote.other
+            if vote_type: 
+                for name in vote_list.split(','): vote_type(name.strip())
+
+        vote.add_source(url)
+        return vote
 
     def scrape_bills(self, chamber, year):
         # Data available for 1993 on
