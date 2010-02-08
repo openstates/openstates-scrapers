@@ -585,7 +585,9 @@ class Person(FiftystatesObject):
         leg.add_role('member', session='2009', chamber='upper',
                      party='Republican', district='10th')
         """
-        self['roles'].append(dict(role=role, session=session, **kwargs))
+        self['roles'].append(dict(role=role, session=session,
+                                  start_date=start_date,
+                                  end_date=end_date, **kwargs))
 
 
 class Legislator(Person):
