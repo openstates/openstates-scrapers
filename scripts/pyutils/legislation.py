@@ -69,6 +69,8 @@ class LegislationScraper(object):
                     default=False, help='scrape upper chamber'),
         make_option('--lower', action='store_true', dest='lower',
                     default=False, help='scrape lower chamber'),
+        make_option('--nolegislators', action='store_false', dest='legislators',
+                    default=True, help="don't scrape legislator data"),
         make_option('-v', '--verbose', action='count', dest='verbose',
                     default=False,
                     help="be verbose (use multiple times for more"\
@@ -392,8 +394,9 @@ class LegislationScraper(object):
                 scraper.reset_name_matchers(upper=matcher['upper'](),
                                             lower=matcher['lower']())
             try:
-                for chamber in chambers:
-                    scraper.scrape_legislators(chamber, year)
+                if options.legislators:
+                    for chamber in chambers:
+                        scraper.scrape_legislators(chamber, year)
                 for chamber in chambers:
                     scraper.old_bills = {}
                     scraper.scrape_bills(chamber, year)

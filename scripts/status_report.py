@@ -12,9 +12,12 @@ attributes = {
     'actions': 'getboolean',
     'votes': 'getboolean',
     'contributors': 'get',
+    'contact': 'get',
+    'executable': 'get',
     'notes': 'get'}
 attr_names = ('bills', 'bill_versions', 'sponsors', 'actions',
-              'votes', 'start_year', 'contributors', 'notes')
+              'votes', 'start_year', 'contributors', 'contact',
+              'executable', 'notes')
 
 verbose = True
 
@@ -45,7 +48,7 @@ def get_state_data():
                 data[key] = ''
         return data
 
-    for state in states:
+    for state in sorted(states):
         yield (state, parse_state(state))
 
 def html_str(val):
