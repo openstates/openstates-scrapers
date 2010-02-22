@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import glob
 import ConfigParser
-import sys
+import sys, time
 from optparse import make_option, OptionParser
+from git import Repo
 
 attributes = {
     'start_year':'getint',
@@ -17,7 +18,8 @@ attributes = {
     'notes': 'get'}
 attr_names = ('bills', 'bill_versions', 'sponsors', 'actions',
               'votes', 'start_year', 'contributors', 'contact',
-              'executable', 'notes')
+              'executable', 'notes', 'authors', 'latest_commit',
+             'num_commits')
 
 verbose = True
 
@@ -46,10 +48,25 @@ def get_state_data():
                     log("Problem reading config for %s" %(state))
             else:
                 data[key] = ''
+
+        data.update(check_state_commits(config.get(state, 'abbreviation')))
         return data
 
     for state in sorted(states):
         yield (state, parse_state(state))
+
+def check_state_commits(state):
+    repo = Repo('..')
+    data = {}
+    commits = repo.commits(path='scripts/'+state, max_count=1000)
+    if commits:
+        data['num_commits'] = len(commits)
+        data['latest_commit'] = time.strftime('%Y-%m-%d', commits[0].committed_date)
+        authors = set()
+        for c in commits:
+            authors.add(c.author.name)
+        data['authors'] = ', '.join(authors)
+    return data
 
 def html_str(val):
     if isinstance(val, bool):
@@ -81,6 +98,4 @@ def build_html_table():
 
 if __name__ == '__main__':
     build_html_table()
-
-
 
