@@ -30,12 +30,12 @@ class MNLegislationScraper(LegislationScraper):
     state = 'mn'
 
     def cleanup_text(self, text):
-        '''Remove junk from text that MN puts in for formatting their tables.
+        """Remove junk from text that MN puts in for formatting their tables.
         Removes surrounding whitespace.
         Replaces any '&nbsp;' chars with spaces.
 
         Returns a string with the problem text removed/replaced.
-        '''
+        """
         # coerce to string...
         text = str(text)
         self.debug("Cleaning text: %s" % text)
@@ -44,7 +44,7 @@ class MNLegislationScraper(LegislationScraper):
         return cleaned_text
 
     def extract_bill_id(self, soup):
-        '''Extract the ID of a bill from a Bill Status page.'''
+        """Extract the ID of a bill from a Bill Status page."""
         # The bill name is in a table that has an attribute 'summary'
         # with a value of 'Show Doc Names'.
         doc_name_table = soup.find('table', attrs={"summary" : "Show Doc Names"})
@@ -56,7 +56,7 @@ class MNLegislationScraper(LegislationScraper):
         return bill_id
 
     def extract_bill_title(self, soup):
-        '''Extract the title of a bill from a Bill Status page.'''
+        """Extract the title of a bill from a Bill Status page."""
         # The bill title is in a table that has an attribute 'summary'
         # with a value of 'Short Description'.
         short_summary_table = soup.find('table', attrs={"summary" : "Short Description"})
@@ -67,9 +67,9 @@ class MNLegislationScraper(LegislationScraper):
         return bill_title
 
     def extract_senate_bill_version_link(self, soup):
-        '''Extract the link which points to the version information for a
+        """Extract the link which points to the version information for a
         given bill.
-        '''
+        """
         # The "Bill Text" link for the Senate points you to a page of the
         # current draft of the bill.  At the top of this page there is a table
         # containing links for "Authors and Status", "List Versions", and a
@@ -83,11 +83,11 @@ class MNLegislationScraper(LegislationScraper):
         return bill_version_link
 
     def extract_bill_versions(self, soup):
-        '''Extract all versions of a given bill.
+        """Extract all versions of a given bill.
 
         Returns a list of dicts with 'name' and 'url' keys for each version
         found.
-        '''
+        """
         bill_versions = list()
         # A table of all versions of a bill exists in a table
         # which has a 'summary' attribute with a value of ''.
@@ -110,7 +110,7 @@ class MNLegislationScraper(LegislationScraper):
         return bill_versions
 
     def extract_bill_sponsors(self, soup):
-        '''Extract the primary and cosponsors for a given bill.'''
+        """Extract the primary and cosponsors for a given bill."""
         bill_sponsors = list()
         sponsors_table = soup.find('table', attrs={'summary' : 'Show Authors'})
         # Sponsors' names are links within the sponsors_table table.
@@ -122,7 +122,7 @@ class MNLegislationScraper(LegislationScraper):
         return bill_sponsors
 
     def extract_bill_actions(self, soup, current_chamber):
-        '''Extract the actions taken on a bill.
+        """Extract the actions taken on a bill.
         A bill can have actions taken from either chamber.  The current
         chamber's actions will be the first table of actions. The other
         chamber's actions will be in the second table.
@@ -131,7 +131,8 @@ class MNLegislationScraper(LegislationScraper):
             action_chamber = 'upper|lower'
             action = string
             date = MM/DD/YYYY
-        '''
+        """
+
         bill_actions = list()
         action_tables = soup.findAll('table', attrs={'summary' : 'Actions'})
         # First, process the actions taken by the current chamber.
