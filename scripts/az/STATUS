@@ -2,9 +2,9 @@
 abbreviation: az
 start_year: 2009
 bills: yes
-bill_versions: n/a
+bill_versions: no
 sponsors: yes
-actions: n/a
-votes: n/a
+actions: no
+votes: no
 contributors: Dan Hixon, Marc Chung
 notes:  * AZ uses bill number format of H#### for the house (lower) and SB#### for the senate (upper)
