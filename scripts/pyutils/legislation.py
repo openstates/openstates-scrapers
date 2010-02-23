@@ -10,6 +10,7 @@ from hashlib import md5
 import cookielib
 import contextlib
 import logging
+import codecs
 from BeautifulSoup import BeautifulSoup
 
 try:
@@ -90,6 +91,8 @@ class LegislationScraper(object):
     # The user agent used for requests (this will show up in the
     # state's logs):
     user_agent = 'robot: http://fiftystates-dev.sunlightlabs.com/'
+
+    encoding = 'utf-8'
 
     def __init__(self, verbosity=logging.INFO, sleep=False,
                  no_cache=False, output_dir=None, **kwargs):
@@ -286,7 +289,7 @@ class LegislationScraper(object):
         filename = "%s:%s:%s.json" % (bill['session'], bill['chamber'],
                                       bill['bill_id'])
         filename = filename.encode('ascii', 'replace')
-        with open(os.path.join(self.output_dir, "bills", filename), 'w') as f:
+        with codecs.open(os.path.join(self.output_dir, "bills", filename), 'w', encoding=self.encoding) as f:
             json.dump(bill, f, cls=DateEncoder)
 
     def add_legislator(self, legislator):

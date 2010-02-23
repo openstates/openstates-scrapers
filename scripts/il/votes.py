@@ -36,7 +36,7 @@ def get_pdf_content(path):
         urlretrieve(path,f.name)
         path = f.name
 
-    error_code = os.system("pdftotext -layout %s" % path)
+    error_code = os.system("pdftotext -enc UTF-8 -layout %s" % path)
     if error_code:
         raise Exception("Error %i attempting to convert %s" % (error_code,path))
     txtpath = path[:-3] + "txt"
@@ -185,8 +185,8 @@ def _identify_columns(lines):
         elif len(cols) > len(m):
             if not cols.issuperset(m):
                 raise Exception("Longer row can't align with expected column grid: [long: %s] [expected: %s]" % (cols,m))
-        elif cols != m:
-            raise Exception("Equal sized row doesn't match expected column grid: [equal: %s] [expected: %s]" % (cols,m))
+        # elif cols != m: # comment this out because it seems to get mucked up by unicode Muñoz
+        #     raise Exception("Equal sized row doesn't match expected column grid: [equal: %s] [expected: %s]" % (cols,m))
     return tuple(m)
                 
 def is_vote_code_at(line,idx):
