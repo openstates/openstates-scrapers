@@ -1,19 +1,17 @@
 #!/usr/bin/env python
-
-#Bill numbering:
-#SB 1-5000. (errors around 1072?)
-#HB 5001-9999
-
-
 from BeautifulSoup import BeautifulSoup
 import re
-import urllib,urllib2
+import urllib
+import urllib2
 import time
 import string
+import sys
+import os
 
-import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
+
 
 class CTVote():
     def __init__():
@@ -25,7 +23,8 @@ class CTVote():
         passed=None
         chamber=None
         url=None
-        
+
+
 class CTLegislationScraper(LegislationScraper):
     #some constants
     state = 'ct'
@@ -47,7 +46,7 @@ class CTLegislationScraper(LegislationScraper):
         elif chamber == 'lower':
             min = self.lower_bill_no_min
             max = self.lower_bill_no_max
-        
+
         for i in range(min,max+1):
         #obtain html
             index_file ='http://cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill&bill_num=%d&which_year=%s'\
@@ -60,7 +59,7 @@ class CTLegislationScraper(LegislationScraper):
             #check to see legislation exists
             if soup.find("div",{"class":"CGASubHeader"}) == None:
                 continue #bill does not exist
-            else: 
+            else:
                 #find bill title
                 tables = soup.find("table",{"class":"CGABlackOnWhite"})
                 bill_title = tables.findAll("td")[1].contents[2]
@@ -76,18 +75,18 @@ class CTLegislationScraper(LegislationScraper):
                 self.add_bill_sponsors(bill,soup)
 
                 self.add_bill_actions(bill,soup)
-                
+
                 self.add_bill_votes(bill,chamber,soup)
 
                 self.add_bill(bill)
 
 
     def add_bill_sponsors(self,bill,soup):
-        
+
         #add primary sponsors
         sponsors = soup.find("table",{"class":"CGABlackOnWhite"}).findAll("td")[2]
         num_sponsors = len(sponsors)/2
-                
+
         for i in range(num_sponsors):
             name = sponsors.contents[(i+1)*2]
             if i == 0:
@@ -108,7 +107,7 @@ class CTLegislationScraper(LegislationScraper):
                             if len(item) > 0:
                                 bill.add_sponsor("cosponsor",item)
 
-    def add_bill_versions(self,bill,soup):        
+    def add_bill_versions(self,bill,soup):
         ahrefs = soup.find("table",{"id":"CGABillText"}).findAll("a")
         for href in ahrefs:
             if(href.string != "[pdf]"):
@@ -117,7 +116,7 @@ class CTLegislationScraper(LegislationScraper):
                 bill_url = bill_url.group(1)
                 bill_url = "http://cga.ct.gov"+bill_url
                 bill.add_version(href.string,bill_url)
-    
+
     def add_bill_actions(self,bill,soup):
         for td in soup.findAll('td'): #ug, this is slow, can I be more efficient here?
             if (td.string != None) and (td.string.find("Bill History") > -1):
@@ -140,7 +139,7 @@ class CTLegislationScraper(LegislationScraper):
                     vote_url = "http://cga.ct.gov"+vote_url
                     self.scrape_votes(vote_url,chamber)
 
-                
+
 
     #url is the url where the vote info page is.  Returns Vote object
     def scrape_votes(self,url,chamb):
@@ -153,7 +152,7 @@ class CTLegislationScraper(LegislationScraper):
         passed=None
         chamber=chamb
         necessary=None
-        vote=None        
+        vote=None
 
         fonts = soup.findAll('font')
         span = soup.findAll('span')
@@ -183,11 +182,11 @@ class CTLegislationScraper(LegislationScraper):
             else:
                 passed = False
             vote = Vote(chamber,date,motion,passed,yeas,neas,others)
-            
+
             #figure out who voted for what
             table = soup.findAll('table')
             tds = table[len(table)-1].findAll('td')#get the last table
-            
+
             vote_value = None
             digits = re.compile('^[\d ]+$')
             for cell in tds:
@@ -213,7 +212,7 @@ class CTLegislationScraper(LegislationScraper):
                         else:
                             vote.other(string)
                         vote_value = None
-            
+
         else:
             #data is mostly unstructured. Have to sift through a string
             data = soup.find('pre')
@@ -291,7 +290,7 @@ class CTLegislationScraper(LegislationScraper):
                         vote_value = None
 
 
-        
+
     def get_num_from_line(self,line):
         num = re.match('[\D]*(\d+)\w*$',line)
         num = num.group(1)
@@ -299,7 +298,7 @@ class CTLegislationScraper(LegislationScraper):
 
 
 
-#all CT bill pages have a bug in them (three quotation marks in a row 
+#all CT bill pages have a bug in them (three quotation marks in a row
 #in one of the href tags) that crashes beautiful soup.  This funciton
 #returns a version of the html without this bug
 def cleanup_html(html):
@@ -319,4 +318,4 @@ def get_baby(soup):
     pass
 
 if __name__ == '__main__':
-    CTLegislationScraper().run()
+    CTLegislationScraper.run()

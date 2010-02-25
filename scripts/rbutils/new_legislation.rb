@@ -27,11 +27,13 @@ class LegislationScraper
   end
 
   def add_bill(bill)
+    bill[:state] = @@state
     name = File.join(@bills_dir, "#{bill[:session]}:#{bill[:chamber]}:#{bill[:bill_id]}.json")
     File.open(name, 'w') { |f| f.write(bill.to_json) }
   end
 
   def add_legislator(legislator)
+    legislator[:state] = @@state
     name = File.join(@legs_dir, "#{legislator[:session]}:#{legislator[:chamber]}:#{legislator[:district]}.json")
     File.open(name, 'w') { |f| f.write(legislator.to_json) }
   end
@@ -84,6 +86,7 @@ class LegislationScraper
 
   private
   def add_metadata(metadata)
+    metadata[:state] = @@state
     name = File.join(@state_dir, "state_metadata.json")
     File.open(name, 'w') { |f| f.write(metadata.to_json) }
   end
@@ -117,7 +120,7 @@ class Bill < Hash
   end
 
   def add_document(name, url, extra={})
-    self[:document].push({:name => name, :url => url,}.merge(extra))
+    self[:documents].push({:name => name, :url => url,}.merge(extra))
   end
 
   def add_vote(vote)

@@ -3,10 +3,13 @@ import urllib2
 import re
 import datetime as dt
 import html5lib
+import sys
+import os
 
-import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
+
 
 class UTLegislationScraper(LegislationScraper):
 
@@ -45,7 +48,7 @@ class UTLegislationScraper(LegislationScraper):
                           'sub_sessions': ['2004 S1', '2004 S2']},
                  '2006': {'years': [2006],
                           'sub_sessions': ['2006 S3', '2006 S4', '2006 S5']},
-                 '2007': {'years': [2007],'sub_sessions': ['2007 S1']},
+                 '2007': {'years': [2007], 'sub_sessions': ['2007 S1']},
                  '2008': {'years': [2008], 'sub_sessions': ['2008 S2']},
                  '2009': {'years': [2009], 'sub_sessions': ['2009 S1']},
                  }
@@ -77,6 +80,7 @@ class UTLegislationScraper(LegislationScraper):
                 leg = Legislator(year, chamber, tds[3].find(text=True),
                                  fullname, first_name, last_name,
                                  middle_name, tds[2].find(text=True))
+                leg.add_source(url)
                 self.add_legislator(leg)
 
     def parse_status(self, bill, url):
@@ -84,6 +88,7 @@ class UTLegislationScraper(LegislationScraper):
         session = bill['session']
         bill_id = bill['bill_id']
         status = self.soup_parser(self.urlopen(url))
+        bill.add_source(url)
         act_table = status.table
 
         # Get actions
@@ -104,8 +109,13 @@ class UTLegislationScraper(LegislationScraper):
                     actor = 'lower'
                 elif actor == 'Senate':
                     actor = 'upper'
+                elif actor == 'LFA':
+                    actor = 'Office of the Legislative Fiscal Analyst'
 
                 action = '/'.join(split_action[1:]).strip()
+
+            if action == 'Governor Signed':
+                actor = 'Governor'
 
             bill.add_action(actor, action, act_date)
 
@@ -147,6 +157,7 @@ class UTLegislationScraper(LegislationScraper):
                             action, passed, yes_count, no_count,
                             other_count,
                             location=vote_location)
+                vote.add_source(vote_url)
 
                 yes_votes = re.split('\s{2,}', match.group(2).strip())
                 no_votes = re.split('\s{2,}', match.group(4).strip())
@@ -183,21 +194,26 @@ class UTLegislationScraper(LegislationScraper):
             for bill_link in bill_list.findAll('a', href=bill_link_re):
                 bill_id = bill_link.find(text=True).strip()
 
-                bill_info = self.soup_parser(self.urlopen(
-                        bill_link['href']))
-                (bill_title, primary_sponsor) = bill_info.h3.contents[2].replace(
+                bill_info_url = bill_link['href']
+                bill_info = self.soup_parser(self.urlopen(bill_info_url))
+
+                bill_title, primary_sponsor = bill_info.h3.contents[2].replace(
                     '&nbsp;', ' ').strip().split(' -- ')
 
                 bill = Bill(session, chamber, bill_id, bill_title)
+                bill.add_source(bill_info_url)
                 bill.add_sponsor('primary', primary_sponsor)
 
-                status_re = re.compile('.*billsta/%s.*.htm' % bill_abbr.lower())
+                status_re = re.compile('.*billsta/%s.*.htm' %
+                                       bill_abbr.lower())
                 status_link = bill_info.find('a', href=status_re)
 
                 if status_link:
                     self.parse_status(bill, status_link['href'])
 
-                text_find = bill_info.find(text="Bill Text (If you are having trouble viewing PDF files, ")
+                text_find = bill_info.find(
+                    text="Bill Text (If you are having trouble viewing")
+
                 if text_find:
                     text_link_re = re.compile('.*\.htm')
                     for text_link in text_find.parent.parent.findAll(
@@ -217,4 +233,4 @@ class UTLegislationScraper(LegislationScraper):
             self.scrape_session(chamber, sub_session)
 
 if __name__ == '__main__':
-    UTLegislationScraper().run()
+    UTLegislationScraper.run()

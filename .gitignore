@@ -4,3 +4,6 @@ cache
 *.DS_Store
 *~
 docs/_build/*
+local_settings.py
+errors/*
+*.pid

@@ -1,0 +1,14 @@
+# Common requirements
+BeautifulSoup
+html5lib
+lxml
+
+# Only needed if on Python 2.5
+simplejson
+
+# Required for Michigan
+PdfMiner>=20091219
+
+# Required for California
+SQLAlchemy>=0.5.3
+MySQL-python

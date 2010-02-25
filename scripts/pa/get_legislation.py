@@ -3,11 +3,17 @@ from __future__ import with_statement
 import re
 import datetime as dt
 import calendar
-from utils import *
+import sys
+import os
 
-import sys, os
+from utils import (bill_abbr, start_year, parse_action_date,
+                   bill_list_url, history_url, info_url, vote_url,
+                   legislators_url)
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
+
 
 class PALegislationScraper(LegislationScraper):
 
@@ -27,13 +33,16 @@ class PALegislationScraper(LegislationScraper):
         }
 
     def scrape_metadata(self):
-        with self.soup_context("http://www.legis.state.pa.us/cfdocs/legis/home/session.cfm") as session_page:
+        metadata_url = "http://www.legis.state.pa.us/cfdocs/"\
+            "legis/home/session.cfm"
+
+        with self.soup_context(metadata_url) as session_page:
             for option in session_page.find(id="BTI_sess").findAll('option'):
                 if option['value'].endswith('_0'):
                     year1 = int(option['value'][1:5])
                     year2 = year1 + 1
                     session = "%d-%d" % (year1, year2)
-            
+
                     self.metadata['sessions'].append(session)
                     self.metadata['session_details'][session] = {
                         'years': [year1, year2],
@@ -50,8 +59,10 @@ class PALegislationScraper(LegislationScraper):
         return self.metadata
 
     def scrape_session(self, chamber, session, special=0):
-        with self.soup_context(bill_list_url(chamber, session, special)) as bill_list_page:
-            bill_link_re =  "body=%s&type=(B|R)&bn=\d+" % bill_abbr(chamber)
+        session_url = bill_list_url(chamber, session, special)
+
+        with self.soup_context(session_url) as bill_list_page:
+            bill_link_re = "body=%s&type=(B|R)&bn=\d+" % bill_abbr(chamber)
 
             for link in bill_list_page.findAll(href=re.compile(bill_link_re)):
                 self.parse_bill(chamber, session, special, link)
@@ -61,15 +72,22 @@ class PALegislationScraper(LegislationScraper):
         type = re.search('type=(B|R|)', link['href']).group(1)
         bill_id = "%s%s %s" % (bill_abbr(chamber), type, bill_number)
 
-        with self.soup_context(info_url(chamber, session, special, type, bill_number)) as info_page:
+        bill_info_url = info_url(chamber, session, special, type, bill_number)
+
+        with self.soup_context(bill_info_url) as info_page:
             title_label = info_page.find(text='Short Title:')
             title = title_label.findNext().contents[0]
+
             bill = Bill(session, chamber, bill_id, title)
+            bill.add_source(bill_info_url)
 
             self.parse_bill_versions(bill, info_page)
 
-            self.parse_history(bill, history_url(chamber, session, special, type, bill_number))
-            self.parse_votes(bill, vote_url(chamber, session, special, type, bill_number))
+            self.parse_history(bill, history_url(chamber, session, special,
+                                                 type, bill_number))
+
+            self.parse_votes(bill, vote_url(chamber, session, special,
+                                            type, bill_number))
 
             self.add_bill(bill)
 
@@ -91,6 +109,7 @@ class PALegislationScraper(LegislationScraper):
         Grab all history data (actions and votes) for a given bill provided
         the url to its history page.
         """
+        bill.add_source(url)
         with self.soup_context(url) as history_page:
             self.parse_sponsors(bill, history_page)
             self.parse_actions(bill, history_page)
@@ -101,13 +120,18 @@ class PALegislationScraper(LegislationScraper):
         """
         # Sponsor format changed in 2009
         if int(start_year(bill['session'])) < 2009:
-            sponsors = history_page.find(text='Sponsors:').parent.findNext('td').find('td').string.strip().replace(' and', ',').split(', ')
+            sponsors = history_page.find(
+                text='Sponsors:').parent.findNext('td').find(
+                'td').string.strip().replace(' and', ',').split(', ')
+
             bill.add_sponsor('primary', sponsors[0])
 
             for cosponsor in sponsors[1:]:
                 bill.add_sponsor('cosponsor', cosponsor)
         else:
-            sponsors = history_page.find(text='Sponsors:').parent.findNext().findAll('a')
+            sponsors = history_page.find(
+                text='Sponsors:').parent.findNext().findAll('a')
+
             bill.add_sponsor('primary', sponsors[0].contents[0])
 
             for cosponsor in sponsors[1:]:
@@ -124,7 +148,8 @@ class PALegislationScraper(LegislationScraper):
             act_raw = ""
             for node in row.td.div:
                 if hasattr(node, 'contents'):
-                    act_raw += node.contents[0]
+                    if len(node.contents) > 0:
+                        act_raw += node.contents[0]
                 else:
                     act_raw += node
             act_raw = act_raw.replace('&#160;', ' ')
@@ -153,6 +178,7 @@ class PALegislationScraper(LegislationScraper):
         Grab all of the votes for a bill given the url of its primary
         votes page.
         """
+        bill.add_source(url)
         with self.soup_context(url) as votes_page:
             for td in votes_page.findAll('td', {'class': 'vote'}):
                 prev = td.findPrevious().contents[0].strip()
@@ -174,23 +200,14 @@ class PALegislationScraper(LegislationScraper):
         """
         Grab all votes for a bill that occurred in a given chamber.
         """
+        bill.add_source(url)
         with self.soup_context(url) as chamber_votes_page:
-            for link in chamber_votes_page.findAll('a', href=re.compile('rc_view')):
-                vote_details_url = "http://www.legis.state.pa.us/CFDOCS/Legis/RC/Public/%s" % link['href']
+            for link in chamber_votes_page.findAll(
+                'a', href=re.compile('rc_view')):
+
+                vote_details_url = "http://www.legis.state.pa.us/CFDOCS/"\
+                    "Legis/RC/Public/%s" % link['href']
                 vote = self.parse_vote_details(vote_details_url)
-
-                date = link.parent.parent.td.contents[0].strip(' \r\n\t-')
-                date = dt.datetime.strptime(date, "%m/%d/%Y")
-
-                if link.contents[0].find(',') >= 0:
-                    motion = link.contents[0].split(', ')[1].strip()
-                else:
-                    motion = "Vote"
-
-                vote['motion'] = motion
-                vote['date'] = date
-                vote['chamber'] = chamber
-
                 bill.add_vote(vote)
 
     def parse_vote_details(self, url):
@@ -198,33 +215,64 @@ class PALegislationScraper(LegislationScraper):
         Grab the details of a specific vote, such as how each legislator
         voted.
         """
+
+        def find_vote(letter):
+            return vote_page.findAll('span', {'class': 'font8text'},
+                                     text=letter)
+
         with self.soup_context(url) as vote_page:
             header = vote_page.find('div', {'class': 'subHdrGraphic'})
-            info_tbl = header.findNext('table')
 
-            motion = info_tbl.findAll('tr')[1].td.contents[-1].strip()
-            date = info_tbl.findAll('tr')[2].findAll('td')[-1].contents[0].strip()
-            date = dt.datetime.strptime(date, "%m/%d/%Y")
+            if 'Senate' in header.string:
+                chamber = 'upper'
+            else:
+                chamber = 'lower'
 
-            yes_count = int(info_tbl.find(text=" YEAS").findPrevious().contents[0])
-            no_count = int(info_tbl.find(text=" NAYS").findPrevious().contents[0])
-            lve_count = int(info_tbl.find(text=" LVE").findPrevious().contents[0])
-            nv_count = int(info_tbl.find(text=" N/V").findPrevious().contents[0])
+            # we'll use the link back to the bill as a base to
+            # get the motion/date
+            linkback = vote_page.find(
+                'a', href=re.compile('billinfo')).parent.parent
+            date = linkback.find('div').string
+            date = dt.datetime.strptime(date, "%A, %B %d, %Y")
+            motion = linkback.findNextSibling('div')
+            if motion.a:
+                motion = "%s %s" % (motion.a.string,
+                                    motion.contents[-1].string.strip())
+            elif motion.span:
+                motion = "%s %s" % (motion.span.string.strip(),
+                                    motion.contents[-1].string.strip())
+            else:
+                motion = motion.string.strip().replace('&nbsp;', '')
+
+            yes_count = int(vote_page.find('div', text='YEAS').next.string)
+            no_count = int(vote_page.find('div', text='NAYS').next.string)
+            lve_count = int(vote_page.find('div', text='LVE').next.string)
+            nv_count = int(vote_page.find('div', text='N/V').next.string)
             other_count = lve_count + nv_count
 
             passed = yes_count > no_count
-
-            vote = Vote(None, None, None, passed, yes_count, no_count,
+            vote = Vote(chamber, date, motion, passed, yes_count, no_count,
                         other_count)
+            vote.add_source(url)
 
-            vote_tbl = header.findNext('div').findAll('table')[2]
-            for yes in vote_tbl.findAll(text=re.compile('^Y$')):
-                vote.yes(yes.findNext().contents[0])
-            for no in vote_tbl.findAll(text=re.compile('^N$')):
-                vote.no(no.findNext().contents[0])
-            for other in vote_tbl.findAll(text=re.compile('^(X|E)$')):
-                vote.other(other.findNext().contents[0])
+            # find the votes by the inner text. because background colors lie.
+            yes_votes = [vote.yes, find_vote('Y')]
+            no_votes = [vote.no, find_vote('N')]
+            nv_votes = [vote.other, find_vote('E') + find_vote('X')]
 
+            for (action, votes) in (yes_votes, no_votes, nv_votes):
+                for a_vote in votes:
+                    action(a_vote.parent.findNextSibling('span').string)
+
+            if len(vote['yes_votes']) != yes_count:
+                raise ScrapeError('wrong yes count %d/%d' %
+                                  (len(vote['yes_votes']), yes_count))
+            if len(vote['no_votes']) != no_count:
+                raise ScrapeError('wrong no count %d/%d' %
+                                  (len(vote['no_votes']), no_count))
+            if len(vote['other_votes']) != other_count:
+                raise ScrapeError('wrong other count %d/%d' %
+                                  (len(vote['other_votes']), other_count))
         return vote
 
     def scrape_bills(self, chamber, year):
@@ -233,7 +281,9 @@ class PALegislationScraper(LegislationScraper):
             raise NoDataForYear(year)
 
         self.scrape_session(chamber, session)
-        for special in self.metadata['session_details'][session]['sub_sessions']:
+
+        specials = self.metadata['session_details'][session]['sub_sessions']
+        for special in specials:
             session_num = re.search('#(\d+)', special).group(1)
             self.scrape_session(chamber, session, int(session_num))
 
@@ -245,10 +295,12 @@ class PALegislationScraper(LegislationScraper):
             return
 
         session = "%s-%d" % (year, int(year) + 1)
+        leg_list_url = legislators_url(chamber)
 
-        with self.soup_context(legislators_url(chamber)) as member_list_page:
+        with self.soup_context(leg_list_url) as member_list_page:
+            for link in member_list_page.findAll(
+                'a', href=re.compile('_bio\.cfm\?id=')):
 
-            for link in member_list_page.findAll('a', href=re.compile('_bio\.cfm\?id=')):
                 full_name = link.contents[0][0:-4]
                 last_name = full_name.split(',')[0]
                 first_name = full_name.split(' ')[1]
@@ -264,12 +316,14 @@ class PALegislationScraper(LegislationScraper):
                 elif party == 'D':
                     party = "Democrat"
 
-                district = re.search("District (\d+)", link.parent.contents[1]).group(1)
+                district = re.search(
+                    "District (\d+)", link.parent.contents[1]).group(1)
 
                 legislator = Legislator(session, chamber, district,
                                         full_name, first_name, last_name,
                                         middle_name, party)
+                legislator.add_source(leg_list_url)
                 self.add_legislator(legislator)
 
 if __name__ == '__main__':
-    PALegislationScraper().run()
+    PALegislationScraper.run()

@@ -5,6 +5,6 @@ bills: yes
 bill_versions: yes
 sponsors: yes
 actions: yes
-votes: no
+votes: yes
 contributors: Michael Stephens
 notes:

@@ -1,0 +1,12 @@
+[Wisconsin]
+abbreviation: wi
+start_year: 1989
+bills: yes
+bill_versions: no
+sponsors: yes
+actions: yes
+votes: no
+contributors: Mark Olson
+notes:
+	Doesn't deal with biannual nature of WI's legislative sessions
+	Doesn't deal with the current session

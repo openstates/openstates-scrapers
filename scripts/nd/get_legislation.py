@@ -1,18 +1,14 @@
 #!/usr/bin/env python
-
 import datetime
-import logging
 import os
 import re
 import sys
-
 import html5lib
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear, ScrapeError)
 
-# Logging
-logging.basicConfig(level=logging.INFO)
 
 class NDLegislationScraper(LegislationScraper):
     """
@@ -31,10 +27,8 @@ class NDLegislationScraper(LegislationScraper):
         'lower_chamber_name': 'House of Representatives',
         'upper_title': 'Senator',
         'lower_title': 'Representative',
-        # Either member may also serve a four-year term,
-        # See http://www.legis.nd.gov/assembly/ for details
-        'upper_term': 2,
-        'lower_term': 2,
+        'upper_term': 4,
+        'lower_term': 4,
         'sessions': ['1997', '1999', '2001', '2003', '2005', '2007', '2009'],
         'session_details': {
             '1997': {'years': [1997, 1998], 'sub_sessions': [], 
@@ -97,27 +91,43 @@ class NDLegislationScraper(LegislationScraper):
         if not header:
             raise ScrapeError('Legaslative list header element not found.')
         
-        table = header.findNextSibling('table')
-        
-        member_links = table.findAll('a')
-        
-        logging.info('Scraping %s members for %s.' % (norm_chamber_name, year))
-        
-        for link in member_links:
-            # Populate base attributes
+        party_images = {'/images/donkey.gif': 'Democrat', '/images/elephant.gif': 'Republican'}
+        for row in header.findNextSibling('table').findAll('tr'):
+            cells = row.findAll('td')
+            party = party_images[cells[0].img['src']]
+            name = map(lambda x: x.strip(), cells[1].a.contents[0].split(', '))
+            name.reverse()
+            name = ' '.join(name)
+            district = re.findall('District (\d+)', cells[2].contents[0])[0]
             attributes = {
                 'session': year,
                 'chamber': chamber,
-                }
-            
-            # Parse member page
-            attributes.update(
-                self.scrape_legislator_bio(self.site_root + link['href']))
-        
-            logging.debug(attributes)
-        
+                'district': district,
+                'party': party,
+                'full_name': name,
+            }
+            split_name = name.split(' ')
+            if len(split_name) > 2:
+                attributes['first_name'] = split_name[0]
+                attributes['middle_name'] = split_name[1].strip(' .')
+                attributes['last_name'] = split_name[2]
+            else:
+                attributes['first_name'] = split_name[0]
+                attributes['middle_name'] = u''
+                attributes['last_name'] = split_name[1]
+
+            # we can get some more data..
+            bio_url = self.site_root + cells[1].a['href']
+            try:
+                attributes.update(self.scrape_legislator_bio(bio_url))
+            except urllib2.HTTPError: 
+                self.log("failed to fetch %s" % bio_url)
+
+            self.debug("attributes: %d", len(attributes))
+            self.debug(attributes)
             # Save
             legislator = Legislator(**attributes)
+            legislator.add_source(bio_url)
             self.add_legislator(legislator)
     
     def scrape_legislator_bio(self, url):
@@ -128,42 +138,14 @@ class NDLegislationScraper(LegislationScraper):
         formatted exactly as more recent ones are.
         """
         # Parsing
-        soup = self.parser.parse(self.urlopen(url))
+        try:
+            data = self.urlopen(url)
+        except: 
+            return {}
+        soup = self.parser.parse(data)
         
         attributes = {}
-        
-        # Name
-        label = soup.find(re.compile('^(h1|h2)'))
-        name_match = re.match('(Senator|Representative) (.*)', label.contents[0])
-        attributes['full_name'] =  name_match.group(2).strip()
-        parts = attributes['full_name'].split()
-        
-        if len(parts) > 2:
-            attributes['first_name'] = parts[0].strip()
-            attributes['middle_name'] = parts[1].strip(' .')
-            attributes['last_name'] = parts[2].strip()
-        else:
-            attributes['first_name'] = parts[0].strip()
-            attributes['middle_name'] = u''
-            attributes['last_name'] = parts[1].strip()
-        
-        # Other required data
-        label = soup.find(text=re.compile('Party:')).parent
-        
-        if label.name == 'span':     
-            attributes['party'] = \
-                label.parent.findNextSibling('td').contents[0]
-        else:
-            attributes['party'] = label.nextSibling
-        
-        label = soup.find(text=re.compile('District:')).parent
-        
-        if label.name == 'span':     
-            attributes['district'] = \
-                label.parent.findNextSibling('td').contents[0]
-        else:
-            attributes['district'] = label.nextSibling 
-        
+   
         # Supplemental data
         label = soup.find(text=re.compile('Address:'))
         attributes['address'] = \
@@ -228,8 +210,7 @@ class NDLegislationScraper(LegislationScraper):
         bill_links = table.findAll('a', href=re.compile('bill-actions'))
         indexed_bills = {}
         
-        logging.info(
-            'Scraping %s bills for %s.' % (norm_chamber_name, year))
+        self.log('Scraping %s bills for %s.' % (norm_chamber_name, year))
         
         for link in bill_links:
             # Populate base attributes
@@ -267,7 +248,7 @@ class NDLegislationScraper(LegislationScraper):
             if attributes['bill_id'] in indexed_bills.keys():
                 continue
             
-            logging.debug(attributes['bill_id'])
+            self.debug(attributes['bill_id'])
             
             # Parse details page                
             attributes.update(
@@ -277,13 +258,17 @@ class NDLegislationScraper(LegislationScraper):
             bill = Bill(**attributes)
             
             # Parse actions      
-            actions = self.scrape_bill_actions(assembly_url, bill_number, year)
+            (actions, actions_url) = self.scrape_bill_actions(
+                assembly_url, bill_number, year)
+            bill.add_source(actions_url)
             
             for action in actions:
                 bill.add_action(**action)
 
             # Parse versions
-            versions = self.scrape_bill_versions(assembly_url, bill_number)
+            (versions, versions_url) = self.scrape_bill_versions(
+                assembly_url, bill_number)
+            bill.add_source(versions_url)
             
             for version in versions:
                 bill.add_version(**version)
@@ -293,20 +278,22 @@ class NDLegislationScraper(LegislationScraper):
         
         # Parse sponsorship data
         if int(year) >= 2005:
-            logging.info('Scraping sponsorship data.')
+            self.log('Scraping sponsorship data.')
             
-            sponsors = self.scrape_bill_sponsors(assembly_url)
+            (sponsors, sponsors_url) = self.scrape_bill_sponsors(assembly_url)
             
             for bill_id, sponsor_list in sponsors.items():
                 for sponsor in sponsor_list:
                     # Its possible a bill was misnamed somewhere... but thats
                     # not a good enough reason to error out
                     if bill_id in indexed_bills.keys():
-                        indexed_bills[bill_id].add_sponsor(**sponsor)
+                        bill = indexed_bills[bill_id]
+                        bill.add_sponsor(**sponsor)
+                        bill.add_source(sponsors_url)
         else:
-            logging.info('Sponsorship data not available for %s.' % year)            
+            self.log('Sponsorship data not available for %s.' % year)
                 
-        logging.info('Saving scraped bills.')
+        self.log('Saving scraped bills.')
         
         # Save bill
         for bill in indexed_bills.values():
@@ -406,7 +393,7 @@ class NDLegislationScraper(LegislationScraper):
             
             actions.append(action)
             
-        return actions            
+        return (actions, url)
     
     def scrape_bill_versions(self, assembly_url, bill_number):
         """
@@ -461,7 +448,7 @@ class NDLegislationScraper(LegislationScraper):
             
             versions.append(version)
             
-        return versions        
+        return (versions, url)
     
     def scrape_bill_sponsors(self, assembly_url):
         """
@@ -535,7 +522,7 @@ class NDLegislationScraper(LegislationScraper):
                         else:
                             bill_sponsors[bill_id] = [sponsor]            
     
-        return bill_sponsors
+        return (bill_sponsors, url)
     
 if __name__ == '__main__':
-    NDLegislationScraper().run()
+    NDLegislationScraper.run()
