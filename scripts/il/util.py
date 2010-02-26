@@ -3,19 +3,19 @@ from BeautifulSoup import BeautifulSoup
 from pyutils.legislation import LegislationScraper
 
 
-class util_scraper(LegislationScraper):
-    state = 'il'
-
-scraper_cacher = util_scraper()
+# class util_scraper(LegislationScraper):
+#     state = 'il'
+# 
+# scraper_cacher = util_scraper()
 
 def get_text(soup):
     if isinstance(soup,str) or isinstance(soup,unicode): s = soup
     else: s = "".join(soup(text=True))
     return s.replace("\n","")
         
-def get_soup(url):
+def get_soup(scraper, url):
     """Consolidate the code for getting a cached HTML page, and also tuck in the given url cause that's handy."""
-    s = BeautifulSoup(scraper_cacher.urlopen(url))
+    s = BeautifulSoup(scraper.urlopen(url))
     s.orig_url = url
     return s
 

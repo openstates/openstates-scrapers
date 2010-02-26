@@ -88,23 +88,23 @@ class ILLegislationScraper(LegislationScraper):
             session = self.year2session[year]
         except KeyError:                
             raise NoDataForYear(year)
-        urls = bills.get_all_bill_urls(chamber,session,types=['HB','SB'])
+        urls = bills.get_all_bill_urls(self, chamber,session,types=['HB','SB'])
         for url in urls:
             self._scrape_bill(url)
 
     def _scrape_bill(self,url):
         try:
-            bill = bills.parse_bill(url)
-            self.apply_votes(bill)
+            bill = bills.parse_bill(self, url)
+            #self.apply_votes(bill)
             self.add_bill(bill)
             self.log("Added %s-%s" % (bill['session'],bill['bill_id']))
         except Exception, e:
             self.warning("Error parsing %s [%s] [%s]" % (url,e, type(e)))
         
-    def apply_votes(self,bill):
+    def apply_votes(self, bill):
         """Given a bill (and assuming it has a status_url in its dict), parse all of the votes
         """
-        bill_votes = votes.all_votes_for_url(bill['status_url'])
+        bill_votes = votes.all_votes_for_url(self, bill['status_url'])
         for (chamber,vote_desc,pdf_url,these_votes) in bill_votes:
             try:
                 date = vote_desc.split("-")[-1]

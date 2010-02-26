@@ -8,13 +8,13 @@ BASE_LEGISLATION_URL = "http://ilga.gov/legislation/default.asp?GA=%s"
 
 TITLE_REMOVING_PATTERN = re.compile(".*(Rep|Sen). (.+)$")
 SPONSOR_PATTERN = re.compile("^(Added |Removed )?(.+Sponsor) (Rep|Sen). (.+)$")
-def parse_bill(url):
+def parse_bill(scraper, url):
     """Given a bill status URL, return a fully loaded Bill object, except for votes, which
        are expected to be handled externally.
     """
     session = extract_session(url)
     chamber = chamber_for_doctype(extract_doctype(url))
-    s = get_soup(url)
+    s = get_soup(scraper, url)
     bill_id = extract_bill_id(s)
     landmark = s(text=re.compile(".*Short Description.*"))
     name_span = landmark[0].findParent().findNextSibling()
@@ -27,11 +27,11 @@ def parse_bill(url):
     for type,namelist in sponsor_dict.iteritems():
         for name in namelist:
             bill.add_sponsor(type,name)
-    for name,link in extract_versions(s):
+    for name,link in extract_versions(scraper, s):
         bill.add_version(name,link)
     return bill
 
-def extract_versions(s):
+def extract_versions(scraper, s):
     """Get the fulltext link from the page.
     visit it.
     get all links on that page that ref fulltext.asp
@@ -42,7 +42,7 @@ def extract_versions(s):
     versions = []
     links = s("a", {"class": "legislinks", "href": re.compile(".*fulltext.asp.*")})
     if links:
-        s = get_soup(urljoin(s.orig_url, links[0]['href']))
+        s = get_soup(scraper, urljoin(s.orig_url, links[0]['href']))
         links = s("a", {"href": re.compile(".*fulltext.asp.*"), "target": None}) # target is used for printer friendly, we'll skip that one.
         for link in links:
             versions.append((link.next, urljoin(s.orig_url,link['href'] + "&print=true")))
@@ -103,25 +103,25 @@ def extract_bill_id(soup):
         return match.groups()[0]
     raise ValueError("Title text doesn't match expected pattern [%s]" % title_text)        
     
-def get_all_bill_urls(chamber,session,types=None):
+def get_all_bill_urls(scraper, chamber,session,types=None):
     """Given a session number (e.g. '96' for the 2009-2010 GA session) and a chamber,
        return all bill URLs which can be identified as associated with the given session.
        At this time, Executive Orders and Joint Session Resolutions will never be returned.
     """
     session_url = BASE_LEGISLATION_URL % session
-    s = get_soup(session_url)
+    s = get_soup(scraper, session_url)
     groups = extract_bill_groups(s,session_url)
     special_sessions = s(text=re.compile(".*View Special Session.*"))
     if special_sessions:
         ss_url = urljoin(session_url,special_sessions[0].parent['href'])
-        ss = get_soup(ss_url)
+        ss = get_soup(scraper, ss_url)
         groups.extend(extract_bill_groups(ss,ss_url))
 
     urls = []
     for g in groups:
         doctype = extract_doctype(g)
         if (types is None or doctype in types) and (chamber == chamber_for_doctype(doctype)):
-            urls.extend(extract_bill_urls_from_group(chamber, g))
+            urls.extend(extract_bill_urls_from_group(scraper, chamber, g))
         
     return urls
 
@@ -172,11 +172,11 @@ def extract_bill_groups(soup,base_url=BASE_LEGISLATION_URL):
     links = soup("a", {"href": re.compile(".*grplist.*")})
     return map(lambda link: urljoin(base_url,link['href']),links)
 
-def extract_bill_urls_from_group(chamber,url):
+def extract_bill_urls_from_group(scraper, chamber,url):
     """Given a url to a page grouping bills of a certain type in a certain session,
        return a sequence of all the URLs to the specific bill statuses from that page.
     """
-    s = get_soup(url)
+    s = get_soup(scraper, url)
     bill_links = s("a",{"href":re.compile(".*BillStatus.*DocTypeID")})
     bill_links = map(lambda link: urljoin(url,link['href']), bill_links)
     return bill_links

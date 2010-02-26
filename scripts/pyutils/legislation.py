@@ -118,6 +118,7 @@ class LegislationScraper(object):
                                       self.state + " %(message)s")
         console = logging.StreamHandler()
         console.setFormatter(formatter)
+        print 2
         self.logger.addHandler(console)
         self.logger.setLevel(verbosity)
 

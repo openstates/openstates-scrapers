@@ -42,14 +42,14 @@ def get_pdf_content(path):
     txtpath = path[:-3] + "txt"
     return open(txtpath).readlines()
 
-def get_bill_pages(url=None,doc_types=None):
+def get_bill_pages(scraper, url=None,doc_types=None):
     if url is None: url = legislation_url()
     """Return a sequence of tuples by retrieving all the documents described in the given url (representing
         a specific GA and session.)  Optionally filter the sequence to only the given document types ('house bill',
         'senate bill', etc.).  Each tuple returned will be in the form:
             (bill_id,short_name,status_url)
     """
-    s = get_soup(url)
+    s = get_soup(scraper, url)
     links = s("a", { "href": lambda x: x is not None and x.find("grplist.asp") != -1 })
     links = map(lambda x: x['href'], links)
     d = {}
@@ -64,7 +64,7 @@ def get_bill_pages(url=None,doc_types=None):
     for type in doc_types:
         if d.has_key(type):
             simplified_url = min_max(d[type])
-            pages.extend(extract_bill_links(simplified_url))
+            pages.extend(extract_bill_links(scraper, simplified_url))
     
     return pages            
 
@@ -91,11 +91,11 @@ def min_max(l):
     urlparts[4] = urlencode(query)
     return urlunparse(urlparts)
 
-def extract_bill_links(url):
+def extract_bill_links(scraper, url):
     """Given a url to a page of BillStatus links (as expected from min_max),
        return a list of tuples of the form (id, title, url)
     """
-    s = get_soup(url)
+    s = get_soup(scraper, url)
     links = s("a", { "href": lambda x: x is not None and x.find("BillStatus") != -1})
     l = []
     for link in links:
@@ -118,14 +118,14 @@ def vote_history_link(url):
     return urlunparse(parts)
 
 
-def extract_vote_pdf_links(url,chamber_filter=None):
+def extract_vote_pdf_links(scraper, url,chamber_filter=None):
     """Given a URL to a "votehistory.asp" page, return a sequence of tuples, each of which 
        has the form (chamber,label,url)
        
        It's expected that the URLs are for PDF files.
     """
     l = []
-    s = get_soup(url)
+    s = get_soup(scraper, url)
     if s.find(text="No vote detail available for the selected legislation."):
         return []
     tables = s("table")
@@ -259,20 +259,20 @@ def _dump_votes_file_namer(voter,ga,session):
     output += ".csv"
     return output
 
-def all_votes_for_url(status_url):
+def all_votes_for_url(scraper, status_url):
     result = []
-    votes = extract_vote_pdf_links(vote_history_link(status_url))        
+    votes = extract_vote_pdf_links(scraper, vote_history_link(status_url))        
     for (chamber,vote_desc,pdf_url) in votes:
         bill_votes = parse_vote_document(pdf_url)
         result.append((chamber,vote_desc,pdf_url,bill_votes))
     return result
 
-def dump_votes(voter,chamber=None,ga=None,session=None,output=None):
+def dump_votes(scraper, voter,chamber=None,ga=None,session=None,output=None):
     if voter is None:
         raise ValueError("A voter must be specified.")
 
     url = legislation_url(ga,session)
-    pages = get_bill_pages(url)
+    pages = get_bill_pages(scraper, url)
     
     if output is None:
         output = _dump_votes_file_namer(voter,ga,session)                
