@@ -68,22 +68,18 @@ class ILLegislationScraper(LegislationScraper):
 
     def scrape_legislators(self, chamber, year):
         # Data available for 1993 on
-        #self.log("scrape legislators [chamber: %s] [year: %s]" % (chamber,year))
         try:
             session = self.year2session[year]
         except KeyError:                
             raise NoDataForYear(year)
 
         url = legislators.get_legislator_url(chamber,session)
-        #self.log("url: %s" % url)
         data = self.urlopen(url)
 
         for legislator in legislators.get_legislators(chamber,session,data):
-            #self.log("adding %s" % legislator['full_name'])        
             self.add_legislator(legislator)
 
     def scrape_bills(self, chamber, year):
-        #self.log("scrape legislators [chamber: %s] [year: %s]" % (chamber,year))
         try:
             session = self.year2session[year]
         except KeyError:                
@@ -97,7 +93,6 @@ class ILLegislationScraper(LegislationScraper):
             bill = bills.parse_bill(self, url)
             self.apply_votes(bill)
             self.add_bill(bill)
-            #self.log("Added %s-%s" % (bill['session'],bill['bill_id']))
         except Exception, e:
             self.warning("Error parsing %s [%s] [%s]" % (url,e, type(e)))
         

@@ -280,7 +280,7 @@ def dump_votes(scraper, voter,chamber=None,ga=None,session=None,output=None):
     writer = csv.writer(open(output,"w"))
     writer.writerow(['bill_id','short_name','status_url','vote_desc','voters_vote','vote_pdf'])
     for (bill_id,short_name,status_url) in pages:
-        votes = extract_vote_pdf_links(vote_history_link(status_url),chamber)
+        votes = extract_vote_pdf_links(scraper, vote_history_link(status_url),chamber)
         for (chamber,vote_desc,pdf_url) in votes:
             bill_votes = parse_vote_document(pdf_url)
             voters_vote = bill_votes.get(voter,"VOTER %s NOT FOUND" % voter)
