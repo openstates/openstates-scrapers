@@ -24,9 +24,15 @@ def clean(root):
             el.getprevious().tail = el.tail
         el.getparent().remove(el)
 
+    # Journal pages sometimes replace spaces with <font color="White">i</font>
+    # (or multiple i's for bigger spaces)
+    for el in root.xpath('//font[@color="White"]'):
+        if el.text:
+            el.text = ' ' * len(el.text)
+
 
 def names(el):
-    text = el.text + el.tail
+    text = (el.text or '') + (el.tail or '')
     names = [name.strip() for name in text.split(';') if name.strip()]
 
     # First name will have stuff to ignore before an mdash
