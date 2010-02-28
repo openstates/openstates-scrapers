@@ -43,7 +43,7 @@ class GALegislationScraper(LegislationScraper):
 
     @contextlib.contextmanager
     def lxml_context(self, url):
-        body = self.urlopen(url)
+        body = unicode(self.urlopen(url), 'latin-1')
         elem = lxml.html.fromstring(body)
         try:
             yield elem
