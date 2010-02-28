@@ -6,6 +6,7 @@ import os
 import urlparse
 from cStringIO import StringIO as StringIO
 from get_legislation import TXLegislationScraper, parse_ftp_listing
+import uuid
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import Vote
@@ -13,10 +14,12 @@ from pyutils.legislation import Vote
 
 def clean(root):
     # Remove page breaks
-    for el in root.xpath(u'//p[contains(., "HOUSE JOURNAL \u2014")'
-                         ' or contains(., "81st LEGISLATURE \u2014")] |'
-                         ' //hr[@noshade and @size=1]'):
-        el.getparent().remove(el)
+    for el in root.xpath('//hr[@noshade and @size=1]'):
+        parent = el.getparent()
+        previous = el.getprevious()
+        if previous and previous.text and previous.text.find("JOURNAL") != -1:
+            parent.remove(previous)
+        parent.remove(el)
 
     # Remove empty paragraphs
     for el in root.xpath('//p[not(node())]'):
@@ -44,10 +47,16 @@ def names(el):
 
 
 def votes(root):
+    for vote in record_votes(root):
+        yield vote
+    for vote in viva_voce_votes(root):
+        yield vote
+
+def record_votes(root):
     for el in root.xpath(u'//p[starts-with(., "Yeas \u2014")]'):
         text = ''.join(el.getprevious().itertext())
         text.replace('\n', ' ')
-        m = re.search(r'(?P<bill_id>\w+\W+\d+)(,\W+as\W+amended,)?\W+was\W+'
+        m = re.search(r'(?P<bill_id>\w+\W+\d+)(,?\W+as\W+amended,?)?\W+was\W+'
                       '(?P<type>adopted|passed'
                       '(\W+to\W+(?P<to>engrossment|third\W+reading))?)\W+'
                       'by\W+\(Record\W+(?P<record>\d+)\):\W+'
@@ -68,6 +77,7 @@ def votes(root):
                         yes_count, no_count, other_count)
             vote['bill_id'] = m.group('bill_id')
             vote['session'] = '81'
+            vote['method'] = 'record'
             vote['record'] = m.group('record')
             vote['filename'] = m.group('record')
 
@@ -90,6 +100,32 @@ def votes(root):
         else:
             pass
 
+
+def viva_voce_votes(root):
+     for el in root.xpath(u'//p[starts-with(., "All Members are deemed")]'):
+         text = ''.join(el.getprevious().itertext())
+         text.replace('\n', ' ')
+         m = re.search(r'(?P<bill_id>\w+\W+\d+)(,\W+as\W+amended,)?\W+was\W+'
+                       '(?P<type>adopted|passed'
+                       '(\W+to\W+(?P<to>engrossment|third\W+reading))?)\W+'
+                       'by\W+a\W+viva\W+voce\W+vote', text)
+         if m:
+             type = m.group('type')
+             if type == 'adopted' or type == 'passed':
+                 type = 'final passage'
+             else:
+                 type = 'to ' + m.group('to')
+
+             # No identifier, generate our own
+             record = str(uuid.uuid1())
+
+             vote = Vote(None, None, type, True, 0, 0, 0)
+             vote['bill_id'] = m.group('bill_id')
+             vote['session'] = '81'
+             vote['method'] = 'viva voce'
+             vote['filename'] = record
+             vote['record'] = record
+             yield vote
 
 def parse(url, chamber, scraper):
     with scraper.urlopen_context(url) as page:
@@ -120,3 +156,11 @@ if __name__ == '__main__':
                     continue
                 url = urlparse.urljoin(house_root, name)
                 parse(url, 'lower', scraper)
+
+        senate_root = urlparse.urljoin(session_root, 'senate/', True)
+        with scraper.urlopen_context(senate_root) as listing:
+            for name in parse_ftp_listing(listing):
+                if name.startswith('INDEX'):
+                    continue
+                url = urlparse.urljoin(senate_root, name)
+                parse(url, 'upper', scraper)
