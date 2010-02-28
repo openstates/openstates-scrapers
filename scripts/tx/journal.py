@@ -46,6 +46,13 @@ def names(el):
     return names
 
 
+def get_type(match):
+    if match.group('type') == 'passed' or match.group('type') == 'adopted':
+        return 'final passage'
+    else:
+        return 'to ' + match.group('to')
+
+
 def votes(root):
     for vote in record_votes(root):
         yield vote
@@ -67,12 +74,7 @@ def record_votes(root):
             no_count = int(m.group('nays'))
             other_count = int(m.group('present'))
 
-            type = m.group('type')
-            if type == 'adopted' or type == 'passed':
-                type = 'final passage'
-            else:
-                type = 'to ' + m.group('to')
-
+            type = get_type(m)
             vote = Vote(None, None, type, True,
                         yes_count, no_count, other_count)
             vote['bill_id'] = m.group('bill_id')
@@ -102,30 +104,58 @@ def record_votes(root):
 
 
 def viva_voce_votes(root):
-     for el in root.xpath(u'//p[starts-with(., "All Members are deemed")]'):
-         text = ''.join(el.getprevious().itertext())
-         text.replace('\n', ' ')
-         m = re.search(r'(?P<bill_id>\w+\W+\d+)(,\W+as\W+amended,)?\W+was\W+'
-                       '(?P<type>adopted|passed'
-                       '(\W+to\W+(?P<to>engrossment|third\W+reading))?)\W+'
-                       'by\W+a\W+viva\W+voce\W+vote', text)
-         if m:
-             type = m.group('type')
-             if type == 'adopted' or type == 'passed':
-                 type = 'final passage'
-             else:
-                 type = 'to ' + m.group('to')
+    prev_id = None
+    for el in root.xpath(u'//p[starts-with(., "All Members are deemed")]'):
+        text = ''.join(el.getprevious().itertext())
+        text.replace('\n', ' ')
+        m = re.search(r'(?P<bill_id>\w+\W+\d+)(,\W+as\W+amended,)?\W+was\W+'
+                      '(?P<type>adopted|passed'
+                      '(\W+to\W+(?P<to>engrossment|third\W+reading))?)\W+'
+                      'by\W+a\W+viva\W+voce\W+vote', text)
+        if m:
+            type = get_type(m)
 
-             # No identifier, generate our own
-             record = str(uuid.uuid1())
+            # No identifier, generate our own
+            record = str(uuid.uuid1())
 
-             vote = Vote(None, None, type, True, 0, 0, 0)
-             vote['bill_id'] = m.group('bill_id')
-             vote['session'] = '81'
-             vote['method'] = 'viva voce'
-             vote['filename'] = record
-             vote['record'] = record
-             yield vote
+            vote = Vote(None, None, type, True, 0, 0, 0)
+            vote['bill_id'] = m.group('bill_id')
+            vote['session'] = '81'
+            vote['method'] = 'viva voce'
+            vote['filename'] = record
+            vote['record'] = record
+            yield vote
+            continue
+
+        m = re.search('The\W+bill\W+was.+and\W+was\W+'
+                      '(?P<type>adopted|passed'
+                      '(\W+to\W+(?P<to>engrossment|third\W+reading))?)\W+'
+                      'by\W+a\W+viva\W+voce\W+vote', text)
+        if m:
+            prev_text = ''.join(el.getprevious().getprevious().itertext())
+            m2 = re.match('(HB|SB|CSHB|CSSB|HR|SR)\W+\d+', prev_text)
+            if m2:
+                bill_id = m2.group()
+                prev_id = bill_id
+            else:
+                # This is scary
+                bill_id = prev_id
+
+            if not bill_id:
+                continue
+
+            type = get_type(m)
+            record = str(uuid.uuid1())
+            vote = Vote(None, None, type, True, 0, 0, 0)
+            vote['bill_id'] = bill_id
+            vote['session'] = '81'
+            vote['method'] = 'viva voce'
+            vote['filename'] = record
+            vote['record'] = record
+
+            yield vote
+            continue
+
 
 def parse(url, chamber, scraper):
     with scraper.urlopen_context(url) as page:
