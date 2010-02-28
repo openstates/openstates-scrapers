@@ -3,7 +3,9 @@ import re
 import datetime
 import sys
 import os
-from get_legislation import TXLegislationScraper
+import urlparse
+from cStringIO import StringIO as StringIO
+from get_legislation import TXLegislationScraper, parse_ftp_listing
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import Vote
@@ -38,19 +40,22 @@ def names(el):
 def votes(root):
     for el in root.xpath(u'//p[starts-with(., "Yeas \u2014")]'):
         text = ''.join(el.getprevious().itertext())
-        m = re.search(r'(\w+ \d+) was adopted by \(Record (\d+)\): '
-                      '(\d+) Yeas, (\d+) Nays, (\d+) Present', text)
+        m = re.search(r'(?P<bill_id>\w+ \d+)(, as amended,)?'
+                      ' (was adopted by|was passed by)'
+                      ' \(Record (?P<record>\d+)\): '
+                      '(?P<yeas>\d+) Yeas, (?P<nays>\d+) Nays, '
+                      '(?P<present>\d+) Present', text)
         if m:
-            yes_count = int(m.group(3))
-            no_count = int(m.group(4))
-            other_count = int(m.group(5))
+            yes_count = int(m.group('yeas'))
+            no_count = int(m.group('nays'))
+            other_count = int(m.group('present'))
 
             vote = Vote(None, None, 'final passage', True,
                         yes_count, no_count, other_count)
-            vote['bill_id'] = m.group(1)
+            vote['bill_id'] = m.group('bill_id')
             vote['session'] = '81'
-            vote['record'] = m.group(2)
-            vote['filename'] = m.group(2)
+            vote['record'] = m.group('record')
+            vote['filename'] = m.group('record')
 
             for name in names(el):
                 vote.yes(name)
@@ -72,27 +77,32 @@ def votes(root):
             pass
 
 
-def parse(f, chamber, scraper):
-    root = lxml.etree.parse(f, lxml.etree.HTMLParser())
-    clean(root)
+def parse(url, chamber, scraper):
+    with scraper.urlopen_context(url) as page:
+        root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+        clean(root)
 
-    title = root.find('head/title').text
-    date_string = title.split('-')[0].strip()
-    date = datetime.datetime.strptime(date_string, "%A, %B %d, %Y")
+        title = root.find('head/title').text
+        date_string = title.split('-')[0].strip()
+        date = datetime.datetime.strptime(date_string, "%A, %B %d, %Y")
 
-    for vote in votes(root):
-        vote['date'] = date
-        vote['chamber'] = chamber
-        scraper._add_standalone_vote(vote)
+        for vote in votes(root):
+            vote['date'] = date
+            vote['chamber'] = chamber
+            scraper._add_standalone_vote(vote)
 
 if __name__ == '__main__':
     # Test run
     scraper = TXLegislationScraper()
-    try:
-        f = open('81RDAY85FINAL.HTM')
-    except:
-        import urllib2
-        f = urllib2.urlopen('http://www.journals.house.state.tx.us/'
-                            'hjrnl/81r/html/81RDAY85FINAL.HTM')
 
-    parse(f, 'lower', scraper)
+    ftp_root = "ftp://ftp.legis.state.tx.us/journals/"
+    for session in ['81R', '811']:
+        session_root = urlparse.urljoin(ftp_root, session + '/html/', True)
+
+        house_root = urlparse.urljoin(session_root, 'house/', True)
+        with scraper.urlopen_context(house_root) as listing:
+            for name in parse_ftp_listing(listing):
+                if name.startswith('INDEX'):
+                    continue
+                url = urlparse.urljoin(house_root, name)
+                parse(url, 'lower', scraper)
