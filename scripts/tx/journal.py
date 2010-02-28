@@ -46,17 +46,25 @@ def names(el):
 def votes(root):
     for el in root.xpath(u'//p[starts-with(., "Yeas \u2014")]'):
         text = ''.join(el.getprevious().itertext())
-        m = re.search(r'(?P<bill_id>\w+ \d+)(, as amended,)?'
-                      ' (was adopted by|was passed by)'
-                      ' \(Record (?P<record>\d+)\): '
-                      '(?P<yeas>\d+) Yeas, (?P<nays>\d+) Nays, '
-                      '(?P<present>\d+) Present', text)
+        text.replace('\n', ' ')
+        m = re.search(r'(?P<bill_id>\w+\W+\d+)(,\W+as\W+amended,)?\W+was\W+'
+                      '(?P<type>adopted|passed'
+                      '(\W+to\W+(?P<to>engrossment|third\W+reading))?)\W+'
+                      'by\W+\(Record\W+(?P<record>\d+)\):\W+'
+                      '(?P<yeas>\d+)\W+Yeas,\W+(?P<nays>\d+)\W+Nays,\W+'
+                      '(?P<present>\d+)\W+Present', text)
         if m:
             yes_count = int(m.group('yeas'))
             no_count = int(m.group('nays'))
             other_count = int(m.group('present'))
 
-            vote = Vote(None, None, 'final passage', True,
+            type = m.group('type')
+            if type == 'adopted' or type == 'passed':
+                type = 'final passage'
+            else:
+                type = 'to ' + m.group('to')
+
+            vote = Vote(None, None, type, True,
                         yes_count, no_count, other_count)
             vote['bill_id'] = m.group('bill_id')
             vote['session'] = '81'
