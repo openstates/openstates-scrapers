@@ -222,6 +222,33 @@ class TXLegislationScraper(LegislationScraper):
                                  middle, party)
                 leg.add_source(rep_url)
 
+                # Is there anything out there that handles meta refresh?
+                redirect_url = el.xpath('td/a')[0].attrib['href']
+                redirect_url = ('http://www.house.state.tx.us/members/' +
+                                redirect_url)
+                details_url = redirect_url
+                with self.urlopen_context(redirect_url) as redirect_page:
+                    redirect = lxml.etree.fromstring(redirect_page,
+                                                     lxml.etree.HTMLParser())
+
+                    filename = redirect.xpath(
+                        "//meta[@http-equiv='refresh']")[0].attrib['content']
+                    filename = filename.split('0;URL=')[1]
+
+                    details_url = details_url.replace('welcome.htm', filename)
+
+                print details_url
+                with self.urlopen_context(details_url) as details_page:
+                    details = lxml.etree.fromstring(details_page,
+                                                    lxml.etree.HTMLParser())
+
+                    comms = details.xpath(
+                        "//b[contains(text(), 'Committee Assignments')]/"
+                        "..//a")
+                    for comm in comms:
+                        leg.add_role('committee member', '81',
+                                     committee=comm.text.strip())
+
                 self.add_legislator(leg)
 
 if __name__ == '__main__':
