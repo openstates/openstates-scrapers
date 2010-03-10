@@ -155,7 +155,8 @@ class TXLegislationScraper(LegislationScraper):
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
             for el in root.xpath('//table[@summary="senator identification"]'):
-                full_name = el.xpath('string(tr/td[@headers="senator"]/a)')
+                sen_link = el.xpath('tr/td[@headers="senator"]/a')[0]
+                full_name = sen_link.text
                 district = el.xpath('string(tr/td[@headers="district"])')
                 party = el.xpath('string(tr/td[@headers="party"])')
 
@@ -176,6 +177,22 @@ class TXLegislationScraper(LegislationScraper):
                                  first_name, last_name, middle,
                                  party)
                 leg.add_source(senator_url)
+
+                details_url = ('http://www.senate.state.tx.us/75r/senate/' +
+                               sen_link.attrib['href'])
+                with self.urlopen_context(details_url) as details_page:
+                    details = lxml.etree.fromstring(details_page,
+                                                    lxml.etree.HTMLParser())
+
+                    comms = details.xpath("//h2[contains(text(), 'Committee Membership')]")[0]
+                    comms = comms.getnext()
+                    for comm in comms.xpath('li/a'):
+                        comm_name = comm.text
+                        if comm.tail:
+                            comm_name += comm.tail
+
+                        leg.add_role('committee member', '81',
+                                     committee=comm_name.strip())
 
                 self.add_legislator(leg)
 
