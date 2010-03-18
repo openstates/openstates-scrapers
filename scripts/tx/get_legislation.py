@@ -235,11 +235,22 @@ class TXLegislationScraper(LegislationScraper):
                     redirect = lxml.etree.fromstring(redirect_page,
                                                      lxml.etree.HTMLParser())
 
-                    filename = redirect.xpath(
-                        "//meta[@http-equiv='refresh']")[0].attrib['content']
-                    filename = filename.split('0;URL=')[1]
+                    try:
+                        filename = redirect.xpath(
+                            "//meta[@http-equiv='refresh']"
+                            )[0].attrib['content']
 
-                    details_url = details_url.replace('welcome.htm', filename)
+                        filename = filename.split('0;URL=')[1]
+
+                        details_url = details_url.replace('welcome.htm',
+                                                          filename)
+                    except:
+                        # The Speaker's member page does not redirect.
+                        # The Speaker is not on any committees
+                        # so we can just continue with the next member.
+                        self.add_legislator(leg)
+                        continue
+
 
                 with self.urlopen_context(details_url) as details_page:
                     details = lxml.etree.fromstring(details_page,
