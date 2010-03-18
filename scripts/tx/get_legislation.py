@@ -206,6 +206,10 @@ class TXLegislationScraper(LegislationScraper):
                 district = el.xpath('string(td[2]/span)')
                 county = el.xpath('string(td[3]/span)')
 
+                if full_name.startswith('District'):
+                    # Ignore empty seats
+                    continue
+
                 last_name, rest = full_name.split(', ')
                 rest = rest.split(' ')
                 first_name = rest[0]
