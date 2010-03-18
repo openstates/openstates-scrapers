@@ -8,12 +8,28 @@ import os
 from BeautifulSoup import BeautifulSoup
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import LegislationScraper, Bill, Vote, Legislator
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
 
 
 class NHLegislationScraper(LegislationScraper):
 
     state = 'nh'
+
+    metadata = {
+        'state_name': 'New Hampshire',
+        'legislature_name': 'New Hampshire General Legislature',
+        'upper_chamber_name': 'Senate',
+        'lower_chamber_name': 'House of Representatives',
+        'upper_title': 'Senator',
+        'lower_title': 'Representative',
+        'upper_term': 2,
+        'lower_term': 2,
+        'sessions': ['2009-2010'],
+        'session_details': {
+            '2009-2010': {'years': [2009, 2010], 'sub_sessions': []},
+            }
+        }
 
     def get_bill_text(self, url):
         regexp = re.compile("href=\"(\S*)\"")
@@ -26,6 +42,13 @@ class NHLegislationScraper(LegislationScraper):
         sponsor_url = sponsor_url.group(1)
 
     def scrape_bills(self, chamber, year):
+        if year == '2009':
+            self.scrape_year(chamber, '2009', '2009-2010')
+            self.scrape_year(chamber, '2010', '2009-2010')
+        else:
+            raise NoDataForYear(year)
+
+    def scrape_year(self, chamber, year, session):
         if chamber == 'upper':
             chamber_abbr = 'H'
         elif chamber == 'lower':
@@ -103,8 +126,9 @@ class NHLegislationScraper(LegislationScraper):
                 if textaudio.search(str(url.string)) != None:
                     pass
 
-            bill = Bill(year, chamber, bill_id, bill_title)
+            bill = Bill(session, chamber, bill_id, bill_title)
             bill.add_version("Bill text", bill_url)
+            bill.add_source(search_url)
             self.add_bill(bill)
 
             #grabs sponsorship
