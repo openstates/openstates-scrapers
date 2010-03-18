@@ -237,7 +237,6 @@ class TXLegislationScraper(LegislationScraper):
 
                     details_url = details_url.replace('welcome.htm', filename)
 
-                print details_url
                 with self.urlopen_context(details_url) as details_page:
                     details = lxml.etree.fromstring(details_page,
                                                     lxml.etree.HTMLParser())
