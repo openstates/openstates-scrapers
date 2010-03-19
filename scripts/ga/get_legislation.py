@@ -41,6 +41,29 @@ class GALegislationScraper(LegislationScraper):
 
     state = 'ga'
 
+    metadata = {
+        'state_name': 'Georgia',
+        'legislature_name': 'Georgia General Assembly',
+        'upper_chamber_name': 'Senate',
+        'lower_chamber_name': 'House of Representatives',
+        'upper_title': 'Senator',
+        'lower_title': 'Representative',
+        'upper_term': 2,
+        'lower_term': 2,
+        'sessions': ['1995-1996', '1997-1998', '1999-2000', '2001-2002',
+                     '2003-2004', '2005-2006', '2007-2008', '2009-2010',],
+        'session_details': {
+            '1995-1996': {'years': [1995, 1996], 'sub_sessions': []},
+            '1997-1998': {'years': [1997, 1998], 'sub_sessions': []},
+            '1999-2000': {'years': [1999, 2000], 'sub_sessions': []},
+            '2001-2002': {'years': [2001, 2002], 'sub_sessions': []},
+            '2003-2004': {'years': [2003, 2004], 'sub_sessions': []},
+            '2005-2006': {'years': [2005, 2006], 'sub_sessions': []},
+            '2007-2008': {'years': [2007, 2008], 'sub_sessions': []},
+            '2009-2010': {'years': [2009, 2010], 'sub_sessions': []},
+            }
+        }
+
     @contextlib.contextmanager
     def lxml_context(self, url):
         body = unicode(self.urlopen(url), 'latin-1')
@@ -64,7 +87,7 @@ class GALegislationScraper(LegislationScraper):
         else:
             base = "http://www.legis.ga.gov/legis/%s/sum/%s%s%d.htm"
 
-        session = "%s_%s" % (year, str(year + 1)[2:])
+        session = "%s_%s" % (year, str(year + 1))
 
         chamberName = chamber
         chamber = {'lower': 'h', 'upper': 's'}[chamber]
@@ -77,7 +100,9 @@ class GALegislationScraper(LegislationScraper):
         for type in ('b', 'r'):
             number = 1
             while True:
-                url = base % (session, chamber, type, number)
+                url_session = "%s_%s" % (session[0:4],
+                                         session[-2:len(session)])
+                url = base % (url_session, chamber, type, number)
                 try:
                     scraper(url, year, chamberName, session, number)
                 except IOError:
