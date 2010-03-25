@@ -7,8 +7,8 @@ lxml
 simplejson
 
 # Required for Michigan
-PdfMiner>=20091219
+#PdfMiner>=20091219
 
 # Required for California
-SQLAlchemy>=0.5.3
-MySQL-python
+#SQLAlchemy>=0.5.3
+#MySQL-python
