@@ -4,6 +4,7 @@ import datetime as dt
 import lxml.etree
 import sys
 import os
+import name_tools
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
@@ -160,22 +161,11 @@ class TXLegislationScraper(LegislationScraper):
                 district = el.xpath('string(tr/td[@headers="district"])')
                 party = el.xpath('string(tr/td[@headers="party"])')
 
-                first_name, rest = full_name.split(' ', 1)
-                rest = rest.split(', ')
-                if len(rest) > 1:
-                    suffix = rest[1]
-                else:
-                    suffix = ''
-                rest = rest[0].split(' ')
-                last_name = rest[-1]
-                if len(rest) > 1:
-                    middle = ' '.join(rest[0:-1])
-                else:
-                    middle = ''
+                pre, first, last, suffixes = name_tools.split(full_name)
 
                 leg = Legislator('81', 'upper', district, full_name,
-                                 first_name, last_name, middle,
-                                 party)
+                                 first, last, '', party,
+                                 suffix=suffixes)
                 leg.add_source(senator_url)
 
                 details_url = ('http://www.senate.state.tx.us/75r/senate/' +
@@ -210,20 +200,12 @@ class TXLegislationScraper(LegislationScraper):
                     # Ignore empty seats
                     continue
 
-                last_name, rest = full_name.split(', ')
-                rest = rest.split(' ')
-                first_name = rest[0]
-                if len(rest) > 1:
-                    middle = ' '.join(rest[1:])
-                else:
-                    middle = ''
-
-                # Texas doesn't seem to list reps' parties anywhere
+                pre, first, last, suffixes = name_tools.split(full_name)
                 party = ''
 
                 leg = Legislator('81', 'lower', district,
-                                 full_name, first_name, last_name,
-                                 middle, party)
+                                 full_name, first, last,
+                                 '', party, suffix=suffixes)
                 leg.add_source(rep_url)
 
                 # Is there anything out there that handles meta refresh?

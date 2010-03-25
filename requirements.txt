@@ -2,6 +2,7 @@
 BeautifulSoup
 html5lib
 lxml
+name_tools
 
 # Only needed if on Python 2.5
 simplejson
