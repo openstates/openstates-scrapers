@@ -95,9 +95,5 @@ can do to help with the government transparency movement.  Ruby developers are e
 
 Dependencies
 -------------
-* Python (2.5+)
-* BeautifulSoup
-* html5lib
-* simplejson if on Python 2.5
-* (this list is out of date, refer to specific scripts/state directories for dependencies)
 
+See the included requirements.txt
