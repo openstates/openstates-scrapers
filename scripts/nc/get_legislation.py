@@ -8,7 +8,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 NoDataForYear)
+                                 NoDataForYear, Person)
 
 
 def clean_legislators(s):
