@@ -39,16 +39,17 @@ class NMLegislationScraper(LegislationScraper):
             raise NoDataForYear(year)
 
         if chamber == 'upper':
-            self.scrape_senators(year)
+            url = 'http://legis.state.nm.us/lcs/leg.aspx?T=S'
         else:
-            self.scrape_reps(year)
+            url =  'http://legis.state.nm.us/lcs/leg.aspx?T=R'
 
-    def scrape_senators(self, year):
-        senators_url = 'http://legis.state.nm.us/lcs/leg.aspx?T=S'
+        self.scrape_data(url, chamber)
+
+    def scrape_data(self, url, chamber):
         party_fulls = {'R' : 'Republican', 'D' : 'Democrat'}
-        with self.soup_context(senators_url) as page:
-            for senator in page.find('table', id = 'ctl00_mainCopy_DataList1')('td'):
-                spans = senator('span')
+        with self.soup_context(url) as page:
+            for data in page.find('table', id = 'ctl00_mainCopy_DataList1')('td'):
+                spans = data('span')
                 full_name = ' '.join([span.string.strip() for span in spans])
                 if len(spans[0].string.strip().split()) == 2:
                     first_name, middle_name = spans[0].string.strip().split()
@@ -56,38 +57,14 @@ class NMLegislationScraper(LegislationScraper):
                     first_name, middle_name = spans[0].string.strip(), ''
                 last_name = spans[1].string.strip()
 
-                senator_details_url = get_abs_url(senators_url, senator.find('a')['href'])
-                with self.soup_context(senator_details_url) as senator_details:
-                    district = senator_details.find('a', id = 'ctl00_mainCopy_LegisInfo_DISTRICTLabel').string.strip()
-                    party = party_fulls[senator_details.find('span', id = 'ctl00_mainCopy_LegisInfo_PARTYLabel').string]
+                details_url = get_abs_url(url, data.find('a')['href'])
+                with self.soup_context(details_url) as details:
+                    district = details.find('a', id = 'ctl00_mainCopy_LegisInfo_DISTRICTLabel').string.strip()
+                    party = party_fulls[details.find('span', id = 'ctl00_mainCopy_LegisInfo_PARTYLabel').string]
 
-                    leg = Legislator('2010', 'upper', district, full_name, first_name, 
+                    leg = Legislator('2010', chamber, district, full_name, first_name, 
                             last_name, middle_name, party)
-                    leg.add_source(senator_details_url)
-
-                    self.add_legislator(leg)
-
-    def scrape_reps(self, year):
-        reps_url = 'http://legis.state.nm.us/lcs/leg.aspx?T=R'
-        party_fulls = {'R' : 'Republican', 'D' : 'Democrat'}
-        with self.soup_context(reps_url) as page:
-            for rep in page.find('table', id = 'ctl00_mainCopy_DataList1')('td'):
-                spans = rep('span')
-                full_name = ' '.join([span.string.strip() for span in spans])
-                if len(spans[0].string.strip().split()) == 2:
-                    first_name, middle_name = spans[0].string.strip().split()
-                else:
-                    first_name, middle_name = spans[0].string.strip(), ''
-                last_name = spans[1].string.strip()
-
-                rep_details_url = get_abs_url(reps_url, rep.find('a')['href'])
-                with self.soup_context(rep_details_url) as rep_details:
-                    district = rep_details.find('a', id = 'ctl00_mainCopy_LegisInfo_DISTRICTLabel').string.strip()
-                    party = party_fulls[rep_details.find('span', id = 'ctl00_mainCopy_LegisInfo_PARTYLabel').string]
-
-                    leg = Legislator('2010', 'lower', district, full_name, first_name, 
-                            last_name, middle_name, party)
-                    leg.add_source(rep_details_url)
+                    leg.add_source(details_url)
 
                     self.add_legislator(leg)
 
