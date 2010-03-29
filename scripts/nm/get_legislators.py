@@ -50,6 +50,9 @@ class NMLegislationScraper(LegislationScraper):
         with self.soup_context(url) as page:
             for data in page.find('table', id = 'ctl00_mainCopy_DataList1')('td'):
                 spans = data('span')
+                if len(spans) == 0:
+                    self.debug('Found an empty cell in %s. Continuing' % url)
+                    continue
                 full_name = ' '.join([span.string.strip() for span in spans])
                 if len(spans[0].string.strip().split()) == 2:
                     first_name, middle_name = spans[0].string.strip().split()
