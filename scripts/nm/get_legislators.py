@@ -69,6 +69,13 @@ class NMLegislationScraper(LegislationScraper):
                             last_name, middle_name, party)
                     leg.add_source(details_url)
 
+                    comms_table = details.find('table', id = 'ctl00_mainCopy_MembershipGrid')
+                    for comms_raw_data in comms_table('tr')[1:]:
+                        comm_data = comms_raw_data('td')
+                        comm_role_type = comm_data[0].string.strip()
+                        comm_name = comm_data[1]('a')[0].string.strip()
+                        leg.add_role(comm_role_type, '2010', chamber = chamber, committee = comm_name)
+
                     self.add_legislator(leg)
 
 if __name__ == '__main__':
