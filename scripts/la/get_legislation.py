@@ -154,23 +154,35 @@ class LouisianaScraper(LegislationScraper):
 
     def scrape_bills(self, chamber, year):
         year = int(year)
-        abbr = {'upper': 'sen', 'lower': 'hse'}
+        #abbr = {'upper': 'sen', 'lower': 'hse'}
+        abbr = {'upper': 'SB', 'lower': 'HB'}
         for session in self.internal_sessions[year]:
             s_id = re.findall('\/(\w+)\.htm', session[0])[0]
-            bills_url = 'http://www.legis.state.la.us/archive/%s/'\
-                'bills%s.htm' % (s_id, abbr[chamber])
 
-            with self.soup_context(bills_url) as bills:
-                for bill in bills.findAll('a', href=re.compile(
-                        'billtype=\w\w&billno=\d+')):
-                    self.scrape_a_bill(bill['href'], chamber, session[1])
+            # Fake it until we can make it
+            bill_number = 1
+            failures = 0
+            while failures < 5:
+                bill_url = 'http://www.legis.state.la.us/billdata/'\
+                            'byinst.asp?sessionid=%s&billtype=%s&billno=%d' % (
+                             s_id, abbr[chamber], bill_number)
+                bill_number = bill_number + 1
+                if self.scrape_a_bill(bill_url, chamber, session[1]): 
+                    failures = 0
+                else:
+                    failures = failures + 1
+
 
     def scrape_a_bill(self, bill, chamber, session_name):
         abbr = {'upper': 'SB', 'lower': 'HB'}
         bill_info = re.findall(
             r'sessionid=(\w+)&billtype=(\w+)&billno=(\d+)', bill)[0]
-
+        
         with self.soup_context(bill) as bill_summary:
+            # Check to see if the bill actually exists
+            if bill_summary.findAll(
+                    text='Specified Bill could not be found.') != []:
+                return False
             title = unicode(bill_summary.findAll(
                     text=re.compile('Summary'))[0].parent)
             title = title[(title.find('</b>') + 5):-5]
@@ -192,6 +204,7 @@ class LouisianaScraper(LegislationScraper):
                                      bill_info[1], bill_info[2])
 
         self.add_bill(the_bill)
+        return True
 
     def scrape_docs(self, bill, session, chamber, bill_no):
         url = 'http://www.legis.state.la.us/billdata/'\
