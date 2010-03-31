@@ -136,7 +136,7 @@ class MichiganScraper(LegislationScraper):
             title = title.replace('\n','').replace('\r','')
             bill_id = "%s %d" % (abbr, bill_no)
 
-            the_bill = Bill("Regular Session %d" % oyear, chamber, bill_id, title)
+            the_bill = Bill("%d" % oyear, chamber, bill_id, title)
 
             #sponsors
             first = 0
