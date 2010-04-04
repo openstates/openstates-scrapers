@@ -41,7 +41,7 @@ class NMLegislationScraper(LegislationScraper):
         if chamber == 'upper':
             url = 'http://legis.state.nm.us/lcs/leg.aspx?T=S'
         else:
-            url =  'http://legis.state.nm.us/lcs/leg.aspx?T=R'
+            url = 'http://legis.state.nm.us/lcs/leg.aspx?T=R'
 
         self.scrape_data(url, chamber)
 
@@ -77,6 +77,52 @@ class NMLegislationScraper(LegislationScraper):
                         leg.add_role(comm_role_type, '2010', chamber = chamber, committee = comm_name)
 
                     self.add_legislator(leg)
+
+    def scrape_bills(self, chamber, year):
+        if year not in self.metadata['sessions']:
+            raise NoDataForYear(year)
+
+        start_char = 'S' if chamber == 'upper' else 'H'
+        print start_char
+
+        nm_locator_url = 'http://legis.state.nm.us/lcs/locator.aspx'
+        with self.soup_context(nm_locator_url) as page:
+            #The first `tr` is simply 'Bill Locator`. Ignoring that
+            data_table = page.find('table', id = 'ctl00_mainCopy_Locators')('tr')[1:]
+            for session in data_table:
+                session_tag = session.find('a')
+                session_name = ' '.join([tag.string.strip() for tag in session_tag('span')]).strip()
+                if year not in session_name:
+                    continue
+                session_url = get_abs_url(nm_locator_url, session_tag['href'])
+                with self.soup_context(session_url) as session_page:
+                    bills_data_table = session_page.find('table', id = 'ctl00_mainCopy_LocatorGrid')('tr')[1:]
+                    for bill in bills_data_table:
+                        data = bill('td')
+
+                        bill_num_link = data[0].find('a')
+                        bill_num = ''.join([tag.string.strip() if tag.string else '' for tag in bill_num_link('span')]).strip()
+                        bill_num = bill_num[1:] if bill_num.startswith('*') else bill_num
+                        if not bill_num.startswith(start_char):
+                            self.log('Skipping %s. This bill is not for the relevant chamber %s.' % (bill_num, chamber))
+                            continue
+
+                        bill_title = data[1].string.strip()
+                        #For now, removing the '*' in front of the bill # (* means emergency)
+
+                        bill_url = get_abs_url(session_url, bill_num_link['href'].replace(' ', ''))
+
+                        bill = Bill(session = year, chamber = 'lower' if bill_num.startswith('H') else 'upper', \
+                                bill_id = bill_num, title = bill_title)
+                        bill.add_source(bill_url)
+
+                        with self.soup_context(bill_url) as bill_page:
+                            sponsor_link = bill_page.find('a', id = 'ctl00_mainCopy__SessionFormView_SponsorLink')
+                            sponsor_name = ' '.join([tag.string.strip() for tag in sponsor_link('span')]).strip()
+                            bill.add_sponsor(type = 'primary', name = sponsor_name)
+                            #Much more can be scraped here - such as bill documents, vote docs etc.
+
+                        self.add_bill(bill)
 
 if __name__ == '__main__':
     NMLegislationScraper.run()
