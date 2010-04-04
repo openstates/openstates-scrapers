@@ -112,7 +112,7 @@ class NMLegislationScraper(LegislationScraper):
 
                         bill_url = get_abs_url(session_url, bill_num_link['href'].replace(' ', ''))
 
-                        bill = Bill(session = year, chamber = 'lower' if bill_num.startswith('H') else 'upper', \
+                        bill = Bill(session = session_name, chamber = 'lower' if bill_num.startswith('H') else 'upper', \
                                 bill_id = bill_num, title = bill_title)
                         bill.add_source(bill_url)
 
