@@ -3,6 +3,7 @@ import sys
 import os
 import urlparse
 from urllib import quote as urlquote
+import re
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
@@ -15,6 +16,8 @@ def get_abs_url(base_url, fetched_url):
     fetched_url -- the relative url
     """
     return urlparse.urljoin(base_url, fetched_url)
+
+DATE_RE = re.compile(r'\((?P<date>.*)\)')
 
 class NMLegislationScraper(LegislationScraper):
     state = 'nm'
@@ -78,12 +81,32 @@ class NMLegislationScraper(LegislationScraper):
 
                     self.add_legislator(leg)
 
+    def get_doc_data(self, base_url, soup):
+        ret_dict = {}
+
+        ret_dict['name'] = soup.find('span').string.strip()
+
+        try:
+            """
+                Need to put this in try block 'cause 'Final Version' and
+                'Fiscal Impact Report' will not have any links besides
+                the pdf links
+            """
+            ret_dict['url'] = get_abs_url(base_url, soup('a')[1]['href'])
+        except IndexError:
+            ret_dict['url'] = get_abs_url(base_url, soup.find('a')['href'])
+
+        date = soup.find('font')
+        if date:
+            ret_dict['date'] = DATE_RE.match(date.string.strip()).group('date')
+
+        return ret_dict
+
     def scrape_bills(self, chamber, year):
         if year not in self.metadata['sessions']:
             raise NoDataForYear(year)
 
         start_char = 'S' if chamber == 'upper' else 'H'
-        print start_char
 
         nm_locator_url = 'http://legis.state.nm.us/lcs/locator.aspx'
         with self.soup_context(nm_locator_url) as page:
@@ -112,15 +135,28 @@ class NMLegislationScraper(LegislationScraper):
 
                         bill_url = get_abs_url(session_url, bill_num_link['href'].replace(' ', ''))
 
-                        bill = Bill(session = session_name, chamber = 'lower' if bill_num.startswith('H') else 'upper', \
-                                bill_id = bill_num, title = bill_title)
+                        bill = Bill(session = session_name, chamber = chamber, bill_id = bill_num, title = bill_title)
                         bill.add_source(bill_url)
 
                         with self.soup_context(bill_url) as bill_page:
                             sponsor_link = bill_page.find('a', id = 'ctl00_mainCopy__SessionFormView_SponsorLink')
                             sponsor_name = ' '.join([tag.string.strip() for tag in sponsor_link('span')]).strip()
                             bill.add_sponsor(type = 'primary', name = sponsor_name)
-                            #Much more can be scraped here - such as bill documents, vote docs etc.
+
+                            bill.add_version(**self.get_doc_data(bill_url, bill_page.find('table', id = 'ctl00_mainCopy_Introduced')))
+
+                            committee_data = bill_page.find('table', id = 'ctl00_mainCopy_CommReportsList')
+                            if committee_data:
+                                for comms_data in committee_data('tr'):
+                                    bill.add_document(**self.get_doc_data(bill_url, comms_data))
+
+                            fir_data = bill_page.find('table', id = 'ctl00_mainCopy_FIRs')
+                            if fir_data:
+                                bill.add_document(**self.get_doc_data(bill_url, fir_data))
+
+                            fin_ver_data = bill_page.find('table', id = 'ctl00_mainCopy_FinalVersion')
+                            if fin_ver_data:
+                                bill.add_version(**self.get_doc_data(bill_url, fin_ver_data))
 
                         self.add_bill(bill)
 
