@@ -46,9 +46,9 @@ class NMLegislationScraper(LegislationScraper):
         else:
             url = 'http://legis.state.nm.us/lcs/leg.aspx?T=R'
 
-        self.scrape_data(url, chamber)
+        self.scrape_legislator_data(url, chamber)
 
-    def scrape_data(self, url, chamber):
+    def scrape_legislator_data(self, url, chamber):
         party_fulls = {'R' : 'Republican', 'D' : 'Democrat'}
         with self.soup_context(url) as page:
             for data in page.find('table', id = 'ctl00_mainCopy_DataList1')('td'):
