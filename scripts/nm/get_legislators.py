@@ -139,9 +139,14 @@ class NMLegislationScraper(LegislationScraper):
                         bill.add_source(bill_url)
 
                         with self.soup_context(bill_url) as bill_page:
-                            sponsor_link = bill_page.find('a', id = 'ctl00_mainCopy__SessionFormView_SponsorLink')
-                            sponsor_name = ' '.join([tag.string.strip() for tag in sponsor_link('span')]).strip()
-                            bill.add_sponsor(type = 'primary', name = sponsor_name)
+                            sponsor_data = bill_page.find('table', id = 'ctl00_mainCopy__SessionFormView')
+                            #The last link in this block will be the link to 'Key to Abbreviations'. Ignoring it.
+                            for sponsor_link in sponsor_data('a')[:-1]:
+                                #We will always have one extra 'a' tag than required - and it's 'span' strings will be empty.
+                                #need to check for that condition.
+                                sponsor_name = ' '.join([tag.string.strip() if tag.string else '' for tag in sponsor_link('span')]).strip()
+                                if sponsor_name != '':
+                                    bill.add_sponsor(type = 'primary', name = sponsor_name)
 
                             bill.add_version(**self.get_doc_data(bill_url, bill_page.find('table', id = 'ctl00_mainCopy_Introduced')))
 
