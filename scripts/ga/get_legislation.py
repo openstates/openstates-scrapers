@@ -4,6 +4,7 @@ import lxml.html
 import contextlib
 import sys
 import os
+import datetime
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
@@ -374,6 +375,8 @@ class GALegislationScraper(LegislationScraper):
 
                 if '/' not in date:
                     continue
+
+                date = datetime.datetime.strptime(date, '%m/%d/%Y')
 
                 if action_text.startswith('Senate'):
                     bill.add_action('upper', action_text, date)
