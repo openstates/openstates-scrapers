@@ -13,4 +13,6 @@ notes:
     Votes for a given bill are provided in a pdf file hence
     they are not being collected (a document is added to each
     bill with relevant upper and lower house votes linking to 
-    respective pdf files though).
+    respective pdf files though). Also, all sponsors to a bill
+    are added as primary sponsors (since the site does not tell
+    us who is the primary sponsor and who is/are co-sponsors).
