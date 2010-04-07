@@ -46,7 +46,6 @@ class NMLegislationScraper(LegislationScraper):
             sessions are available and we want to be able to get to them.
         """
         nm_locator_url = 'http://legis.state.nm.us/lcs/locator.aspx'
-        metadata = self.metadata.copy()
         with self.soup_context(nm_locator_url) as page:
             #The first `tr` is simply 'Bill Locator`. Ignoring that
             data_table = page.find('table', id = 'ctl00_mainCopy_Locators')('tr')[1:]
