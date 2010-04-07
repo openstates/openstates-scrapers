@@ -209,7 +209,7 @@ class NCLegislationScraper(LegislationScraper):
                     self.lt_gov.add_role('Lieutenant Governor',
                                          bill['session'])
 
-                    self.add_legislator(self.lt_gov)
+                    self.add_person(self.lt_gov)
 
                 if 'VOTES YES' in self.flatten(cells[0]):
                     v['passed'] = True
