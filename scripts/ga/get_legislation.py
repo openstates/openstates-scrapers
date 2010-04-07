@@ -358,7 +358,10 @@ class GALegislationScraper(LegislationScraper):
         with self.lxml_context(url) as page:
             # Bill
             name = page.cssselect('#legislation h1')[0].text_content().strip()
-            bill = Bill(session, chamberName, number, name)
+
+            bill_id = name.split(' - ')[0].strip()
+
+            bill = Bill(session, chamberName, bill_id, name)
 
             # Sponsorships
             for a in page.cssselect("#sponsors a"):
