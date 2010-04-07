@@ -25,6 +25,10 @@ def parse_exec_date(date_str):
     if match:
         return dt.datetime.strptime(match.group(1), "%m/%d/%Y")
 
+    match = re.search('(\d{1,2}/\d{1,2}/\d{2,2})', date_str)
+    if match:
+        return dt.datetime.strptime(match.group(1), "%m/%d/%y")
+
     raise ScrapeError("Invalid executive action date: %s" % date_str)
 
 
