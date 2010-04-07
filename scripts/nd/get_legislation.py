@@ -380,9 +380,10 @@ class NDLegislationScraper(LegislationScraper):
             
             if len(actor_cell.contents) != 0 and \
                 actor_cell.contents[0].strip() != '':
-                if actor_cell.contents[0] == 'Senate':
+                actor = actor_cell.contents[0].strip()
+                if actor == 'Senate':
                     actor = u'upper'
-                elif actor_cell.contents[0] == 'House':
+                elif actor == 'House':
                     actor = u'lower'
                 
             action['actor'] = actor
