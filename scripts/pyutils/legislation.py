@@ -291,6 +291,20 @@ class LegislationScraper(object):
         with open(os.path.join(self.output_dir, "bills", filename), 'w') as f:
             json.dump(bill, f, cls=DateEncoder)
 
+    def add_person(self, person):
+        self.log("add_person: %s" % person['full_name'])
+
+        legislator['state'] = self.state
+
+        role = person['roles'][0]
+        filename = "%s_%s.json" % (role['session'],
+                                   person['full_name'])
+        filename = filename.encode('ascii', 'replace')
+
+        with open(os.path.join(self.output_dir, "legislators", filename),
+                  'w') as f:
+            json.dump(person, f, cls=DateEncoder)
+
     def add_legislator(self, legislator):
         """
         Add a scraped :class:`pyutils.legislation.Legislator` object.
