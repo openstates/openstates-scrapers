@@ -8,6 +8,11 @@ import re
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
                                  NoDataForYear)
+
+DATE_RE = re.compile(r'\((?P<date>.*)\)')
+
+SESSION_NAME_RE = re.compile(r'^(?P<year>\d{4}) (?P<sub_session>.*)$')
+
 def get_abs_url(base_url, fetched_url):
     """
     This function will give us the absolute url for any href entry.
@@ -16,8 +21,6 @@ def get_abs_url(base_url, fetched_url):
     fetched_url -- the relative url
     """
     return urlparse.urljoin(base_url, fetched_url)
-
-DATE_RE = re.compile(r'\((?P<date>.*)\)')
 
 class NMLegislationScraper(LegislationScraper):
     state = 'nm'
@@ -31,11 +34,35 @@ class NMLegislationScraper(LegislationScraper):
         'lower_title': 'Representative',
         'upper_term': 4,
         'lower_term': 2,
-        'sessions': ['2010'],
+        'sessions': [],
         'session_details': {
-            '2010': {'years': [2010], 'sub_sessions': ["Regular", "2nd Special"]},
             }
         }
+
+    def scrape_metadata(self):
+        """
+            We will fetch a list of available sessions from the 'bill locator' page.
+            We won't get legislators for all these sessions, but all bills for these
+            sessions are available and we want to be able to get to them.
+        """
+        nm_locator_url = 'http://legis.state.nm.us/lcs/locator.aspx'
+        metadata = self.metadata.copy()
+        with self.soup_context(nm_locator_url) as page:
+            #The first `tr` is simply 'Bill Locator`. Ignoring that
+            data_table = page.find('table', id = 'ctl00_mainCopy_Locators')('tr')[1:]
+            for session in data_table:
+                session_tag = session.find('a')
+                session_name = ' '.join([tag.string.strip() for tag in session_tag('span')]).strip()
+
+                session_year, sub_session_name = SESSION_NAME_RE.match(session_name).groups()
+                if session_year in self.metadata['sessions']:
+                    if sub_session_name not in self.metadata['session_details'][session_year]['sub_sessions']:
+                        self.metadata['session_details'][session_year]['sub_sessions'].append(sub_session_name)
+                else:
+                    self.metadata['sessions'].append(session_year)
+                    self.metadata['session_details'][session_year] = dict(years = session_year, sub_sessions = [sub_session_name])
+
+        return self.metadata
 
     def scrape_legislators(self, chamber, year):
         if year != '2010':
@@ -97,7 +124,9 @@ class NMLegislationScraper(LegislationScraper):
             ret_dict['url'] = get_abs_url(base_url, soup.find('a')['href'])
 
         date = soup.find('font')
-        if date:
+        #Need to check both if tag exists and has some text - sometimes even if 1'st check passes
+        #the 2'nd one won't. See http://legis.state.nm.us/lcs/_session.aspx?chamber=H&legtype=B&legno=1&year=03s
+        if date and date.string:
             ret_dict['date'] = DATE_RE.match(date.string.strip()).group('date')
 
         return ret_dict
@@ -115,8 +144,10 @@ class NMLegislationScraper(LegislationScraper):
             for session in data_table:
                 session_tag = session.find('a')
                 session_name = ' '.join([tag.string.strip() for tag in session_tag('span')]).strip()
+
                 if year not in session_name:
                     continue
+
                 session_url = get_abs_url(nm_locator_url, session_tag['href'])
                 with self.soup_context(session_url) as session_page:
                     bills_data_table = session_page.find('table', id = 'ctl00_mainCopy_LocatorGrid')('tr')[1:]
