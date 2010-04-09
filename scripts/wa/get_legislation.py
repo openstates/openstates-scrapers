@@ -28,7 +28,10 @@ class WALegislationScraper(LegislationScraper):
 
   @contextlib.contextmanager
   def lxml_context(self, url):
-      body = self.urlopen(url)
+      try:
+      	body = self.urlopen(url)
+      except:
+	body = self.urlopen("http://www.google.com")
       elem = lxml.html.fromstring(body)
       try:
           yield elem
