@@ -83,37 +83,41 @@ class WALegislationScraper(LegislationScraper):
 								bill.add_sponsor('primary', name_tuple[0])
 							except:
 								pass
-							
-				print 			
-				print bill		
+									
 				self.add_bill(bill)
 
   
-  def scrape_senators(self):
-      with self.lxml_context("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx") as page:
-	  senator_table = page.get_element_by_id("ctl00_PlaceHolderMain_dlMembers")
-          senators = senator_table.cssselect('a')
-	  for senator in senators:
-		name = senator.text_content()
+  def scrape_legislator_data(self, url, chamber):
+      with self.lxml_context(url) as page:
+	  legislator_table = page.get_element_by_id("ctl00_PlaceHolderMain_dlMembers")
+          legislators = legislator_table.cssselect('a')
+	  for legislator in legislators:
+		name = legislator.text_content()
                 separated_name = string.split(name, ' ')
-		senator_page_url = "http://www.leg.wa.gov/senate/senators/Pages/" + separated_name[-1].lower() + ".aspx"
-		with self.lxml_context(senator_page_url) as senator_page:
+
+		if chamber == 'upper':
+			legislator_page_url = "http://www.leg.wa.gov/senate/senators/Pages/" + separated_name[-1].lower() + ".aspx"
+		else: 
+			legislator_page_url = "http://www.leg.wa.gov/house/representatives/Pages/" + separated_name[-1].lower() + ".aspx"
+
+		with self.lxml_context(legislator_page_url) as legislator_page:
 			try:
-				full_name, first_name, middle_name, last_name = self.scrape_legislator_name(senator_page)
+				full_name, first_name, middle_name, last_name = self.scrape_legislator_name(legislator_page)
 			except:
-				break		 
+				break	 
 	
-			party_element = senator_page.get_element_by_id("ctl00_PlaceHolderMain_lblParty")
+			party_element = legislator_page.get_element_by_id("ctl00_PlaceHolderMain_lblParty")
                         if party_element.text_content() == '(R)':
 				party = 'Republican'
 			else:
 				party = 'Democrat'
   
-			district_element = senator_page.get_element_by_id("ctl00_PlaceHolderMain_hlDistrict")
+			district_element = legislator_page.get_element_by_id("ctl00_PlaceHolderMain_hlDistrict")
                         district = district_element.text_content()        
                
-			legislator = Legislator('2009-2010', 'upper', district, full_name, first_name, last_name, middle_name, party)
-			legislator.add_source(senator_page_url)
+			legislator = Legislator('2009-2010', chamber, district, full_name, first_name, last_name, middle_name, party)
+			legislator.add_source(legislator_page_url)
+			print legislator
 			self.add_legislator(legislator)
 
     
@@ -121,8 +125,17 @@ class WALegislationScraper(LegislationScraper):
      if (year < 2009):
      	raise NoDataForYear(year)
 
-     #self.scrape_senators()
      self.scrape_year(2009)
+
+  def scrape_legislators(self, chamber, year):
+      if year != '2009':
+        raise NoDataForYear(year)
+
+      if chamber == 'upper':
+      	self.scrape_legislator_data("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx", 'upper')
+
+      else:
+        self.scrape_legislator_data("http://www.leg.wa.gov/house/representatives/Pages/default.aspx", 'lower')
             
             
 if __name__ == '__main__':
