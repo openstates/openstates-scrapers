@@ -8,4 +8,4 @@ votes: no
 contributors: Gabriel J. Pérez-Irizarry
 contact: gabrieljoel@gmail.com
 executable: get_legislation.py
-notes: Legislator data is only available for 2009. 
+notes: Legislator data is only available for 2009. Bill data can only be obtained for both houses at the same time for now.  
