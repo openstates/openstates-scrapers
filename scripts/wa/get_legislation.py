@@ -23,6 +23,28 @@ class WALegislationScraper(LegislationScraper):
           self.show_error(url, body)
           raise
 
+  def scrape_legislator_name(self, senator_page):
+	name_element = senator_page.get_element_by_id("ctl00_PlaceHolderMain_lblMemberName")
+	name_text = name_element.text_content()
+        full_name = name_text.replace('Senator', ' ')
+	full_name = full_name.replace('Rep.', ' ')
+        full_name = full_name.strip()
+        separated_full_name = string.split(full_name, ' ')	
+	
+	if len(separated_full_name) < 2:
+		raise
+
+	elif len(separated_full_name) == 2:
+		first_name = separated_full_name[0]
+		last_name = separated_full_name[1]
+		middle_name = ''
+	elif len(separated_full_name) == 3:
+		first_name = separated_full_name[0]
+		last_name = separated_full_name[2]
+		middle_name = separated_full_name[1]
+	
+	return full_name, first_name, middle_name, last_name
+
   def scrape_year(self, year):
       with self.lxml_context("http://apps.leg.wa.gov/billinfo/dailystatus.aspx?year=" + str(year)) as page:
 	for element, attribute, link, pos in page.iterlinks():
@@ -36,18 +58,36 @@ class WALegislationScraper(LegislationScraper):
 				session = split_title[3].strip()
 
 				if (split_title[0] == 'SB'):
-					chamber = 'Senate'
+					chamber = 'upper'
 				else: 
-					chamber = 'House'
+					chamber = 'lower'
 				
 				title_element = bill_page.get_element_by_id("ctl00_ContentPlaceHolder1_lblSubTitle")
 				title = title_element.text_content()
 
 				bill = 	Bill(session, chamber, bill_id, title)
 				bill.add_source(bill_page_url)
-				print bill
+				
+ 				for element, attribute, link, pos in bill_page.iterlinks():
+					if re.search("billdocs", link) != None:
+						if re.search("Amendments", link) != None:
+							bill.add_document("Amendment: " + element.text_content(), link)	
+						elif re.search("Bills", link) != None:
+							bill.add_version(element.text_content(), link) 
+						else:
+							bill.add_document(element.text_content(), link)
+					elif re.search("senators|representatives", link) != None:
+						with self.lxml_context(link) as senator_page:
+							try:
+								name_tuple = self.scrape_legislator_name(senator_page)
+								bill.add_sponsor('primary', name_tuple[0])
+							except:
+								pass
+							
+				print 			
+				print bill		
 				self.add_bill(bill)
-	
+
   
   def scrape_senators(self):
       with self.lxml_context("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx") as page:
@@ -58,21 +98,11 @@ class WALegislationScraper(LegislationScraper):
                 separated_name = string.split(name, ' ')
 		senator_page_url = "http://www.leg.wa.gov/senate/senators/Pages/" + separated_name[-1].lower() + ".aspx"
 		with self.lxml_context(senator_page_url) as senator_page:
-                        name_element = senator_page.get_element_by_id("ctl00_PlaceHolderMain_lblMemberName")
-			name_text = name_element.text_content()
-                        full_name = name_text.replace('Senator', ' ')
-                        full_name = full_name.strip()
-                        separated_full_name = string.split(full_name, ' ')
-                        if len(separated_full_name) == 2:
-				first_name = separated_full_name[0]
-				last_name = separated_full_name[1]
-				middle_name = ''
-			else:
-				first_name = separated_full_name[0]
-				last_name = separated_full_name[2]
-				middle_name = last_name = separated_full_name[1]
-				 
-
+			try:
+				full_name, first_name, middle_name, last_name = self.scrape_legislator_name(senator_page)
+			except:
+				break		 
+	
 			party_element = senator_page.get_element_by_id("ctl00_PlaceHolderMain_lblParty")
                         if party_element.text_content() == '(R)':
 				party = 'Republican'
@@ -86,8 +116,6 @@ class WALegislationScraper(LegislationScraper):
 			legislator.add_source(senator_page_url)
 			self.add_legislator(legislator)
 
-           
-  
     
   def scrape_bills(self, chamber, year):
      if (year < 2009):
