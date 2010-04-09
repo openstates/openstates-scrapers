@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import sys, os, string, re
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -13,13 +12,23 @@ class WALegislationScraper(LegislationScraper):
   
   state = 'wa'
 
+   metadata = {
+        'state_name': 'Washington',
+        'legislature_name': 'Washington Legislature',
+        'upper_chamber_name': 'Senate',
+        'lower_chamber_name': 'House of Representatives',
+        'upper_title': 'Senator',
+        'lower_title': 'Representative',
+        'upper_term': 4,
+        'lower_term': 2,
+        'sessions': [],
+        'session_details': {
+            }
+        }
+
   @contextlib.contextmanager
   def lxml_context(self, url):
-      try:
-     	body = self.urlopen(url)
-      except:
-	print "ERROR"
-	pass
+      body = self.urlopen(url)
       elem = lxml.html.fromstring(body)
       try:
           yield elem
