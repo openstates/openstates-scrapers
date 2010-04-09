@@ -12,7 +12,7 @@ class WALegislationScraper(LegislationScraper):
   
   state = 'wa'
 
-   metadata = {
+  metadata = {
         'state_name': 'Washington',
         'legislature_name': 'Washington Legislature',
         'upper_chamber_name': 'Senate',
@@ -42,8 +42,12 @@ class WALegislationScraper(LegislationScraper):
         full_name = name_text.replace('Senator', ' ')
 	full_name = full_name.replace('Rep.', ' ')
         full_name = full_name.strip()
-        separated_full_name = string.split(full_name, ' ')	
-	
+
+	return self.separate_name(full_name)
+        
+  def separate_name(self, full_name):
+	separated_full_name = string.split(full_name, ' ')	
+
 	if len(separated_full_name) < 2:
 		raise
 
@@ -55,8 +59,17 @@ class WALegislationScraper(LegislationScraper):
 		first_name = separated_full_name[0]
 		last_name = separated_full_name[2]
 		middle_name = separated_full_name[1]
+	else:
+		first_name = separated_full_name[0]
+		middle_name = separated_full_name[1]
+		last_name_list = separated_full_name[1:]
+		last_name = ""
+		for name in last_name_list:
+			last_name += name
 	
 	return full_name, first_name, middle_name, last_name
+
+	
 
   def scrape_year(self, year):
       with self.lxml_context("http://apps.leg.wa.gov/billinfo/dailystatus.aspx?year=" + str(year)) as page:
@@ -96,8 +109,6 @@ class WALegislationScraper(LegislationScraper):
 								bill.add_sponsor('primary', name_tuple[0])
 							except:
 								pass
-
-				print bill
 									
 				self.add_bill(bill)
 
@@ -108,8 +119,8 @@ class WALegislationScraper(LegislationScraper):
           legislators = legislator_table.cssselect('a')
 	  for legislator in legislators:
 		name = legislator.text_content()
-                separated_name = string.split(name, ' ')
-		name_for_url = separated_name[-1].lower()
+		full_name, first_name, middle_name, last_name = self.separate_name(name)
+		name_for_url = last_name.lower()
 		name_for_url = re.sub("'", "", name_for_url)
 		
 		if chamber == 'upper':
