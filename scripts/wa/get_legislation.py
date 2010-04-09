@@ -15,7 +15,11 @@ class WALegislationScraper(LegislationScraper):
 
   @contextlib.contextmanager
   def lxml_context(self, url):
-      body = self.urlopen(url)
+      try:
+     	body = self.urlopen(url)
+      except:
+	print "ERROR"
+	pass
       elem = lxml.html.fromstring(body)
       try:
           yield elem
@@ -83,6 +87,8 @@ class WALegislationScraper(LegislationScraper):
 								bill.add_sponsor('primary', name_tuple[0])
 							except:
 								pass
+
+				print bill
 									
 				self.add_bill(bill)
 
@@ -94,11 +100,13 @@ class WALegislationScraper(LegislationScraper):
 	  for legislator in legislators:
 		name = legislator.text_content()
                 separated_name = string.split(name, ' ')
-
+		name_for_url = separated_name[-1].lower()
+		name_for_url = re.sub("'", "", name_for_url)
+		
 		if chamber == 'upper':
-			legislator_page_url = "http://www.leg.wa.gov/senate/senators/Pages/" + separated_name[-1].lower() + ".aspx"
+			legislator_page_url = "http://www.leg.wa.gov/senate/senators/Pages/" + name_for_url + ".aspx"
 		else: 
-			legislator_page_url = "http://www.leg.wa.gov/house/representatives/Pages/" + separated_name[-1].lower() + ".aspx"
+			legislator_page_url = "http://www.leg.wa.gov/house/representatives/Pages/" + name_for_url + ".aspx"
 
 		with self.lxml_context(legislator_page_url) as legislator_page:
 			try:
@@ -117,15 +125,14 @@ class WALegislationScraper(LegislationScraper):
                
 			legislator = Legislator('2009-2010', chamber, district, full_name, first_name, last_name, middle_name, party)
 			legislator.add_source(legislator_page_url)
-			print legislator
 			self.add_legislator(legislator)
 
     
   def scrape_bills(self, chamber, year):
-     if (year < 2009):
+     if (year < 2005):
      	raise NoDataForYear(year)
 
-     self.scrape_year(2009)
+     self.scrape_year(year)
 
   def scrape_legislators(self, chamber, year):
       if year != '2009':
