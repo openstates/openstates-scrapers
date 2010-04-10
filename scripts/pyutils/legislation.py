@@ -294,7 +294,7 @@ class LegislationScraper(object):
     def add_person(self, person):
         self.log("add_person: %s" % person['full_name'])
 
-        legislator['state'] = self.state
+        person['state'] = self.state
 
         role = person['roles'][0]
         filename = "%s_%s.json" % (role['session'],
