@@ -107,7 +107,7 @@ class TXLegislationScraper(LegislationScraper):
                 for version in parse_ftp_listing(versions_list):
                     if version.startswith(long_bill_id):
                         version_name = version.split('.')[0]
-                        version_url = urlparse.urljoin(versions_url,
+                        version_url = urlparse.urljoin(versions_url + '/',
                                                        version)
                         bill.add_version(version_name, version_url)
 
