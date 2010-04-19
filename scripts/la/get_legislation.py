@@ -84,8 +84,9 @@ class LouisianaScraper(LegislationScraper):
                         name = name.replace('  ', ' ')
                         district = re.findall(r'\s*District (\d+)', aleg)[0]
 
-                        party = re.findall(
+                        parties = re.findall(
                             r'<b>Party<\/b><br \/>\s*(\w+)\s*<', aleg)
+                        party = ', '.join(parties)
 
                         first, middle, last, suffix = self.parse_name(name)
 
@@ -167,7 +168,7 @@ class LouisianaScraper(LegislationScraper):
                             'byinst.asp?sessionid=%s&billtype=%s&billno=%d' % (
                              s_id, abbr[chamber], bill_number)
                 bill_number = bill_number + 1
-                if self.scrape_a_bill(bill_url, chamber, session[1]): 
+                if self.scrape_a_bill(bill_url, chamber, session[1]):
                     failures = 0
                 else:
                     failures = failures + 1
@@ -177,7 +178,7 @@ class LouisianaScraper(LegislationScraper):
         abbr = {'upper': 'SB', 'lower': 'HB'}
         bill_info = re.findall(
             r'sessionid=(\w+)&billtype=(\w+)&billno=(\d+)', bill)[0]
-        
+
         with self.soup_context(bill) as bill_summary:
             # Check to see if the bill actually exists
             if bill_summary.findAll(
