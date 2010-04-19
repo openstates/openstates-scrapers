@@ -11,6 +11,8 @@ from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
                                  NoDataForYear)
 
 
+import journal
+
 def parse_ftp_listing(text):
     lines = text.strip().split('\r\n')
     return (' '.join(line.split()[3:]) for line in lines)
@@ -125,6 +127,24 @@ class TXLegislationScraper(LegislationScraper):
                     for history in parse_ftp_listing(bills):
                         self.scrape_bill(chamber, session,
                                          urlparse.urljoin(bill_url, history))
+
+        if session in ['81R', '811']:
+            journal_root = urlparse.urljoin(
+                self._ftp_root, "/journals/" + session + "/html/", True)
+
+            if chamber == 'lower':
+                journal_root = urlparse.urljoin(journal_root,
+                                                'house/', True)
+            else:
+                journal_root = urlparse.urljoin(journal_root,
+                                                'senate/', True)
+
+            with self.urlopen_context(journal_root) as listing:
+                for name in parse_ftp_listing(listing):
+                    if name.startswith('INDEX'):
+                        continue
+                    url = urlparse.urljoin(journal_root, name)
+                    journal.parse(url, chamber, self)
 
     def scrape_bills(self, chamber, year):
         if int(year) < 2009 or int(year) > dt.date.today().year:
