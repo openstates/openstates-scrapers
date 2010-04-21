@@ -7,5 +7,5 @@ fi
 
 cd $1
 
-rm *_TBL.dat
-rm *_TBL*.lob
+find . -name '*_TBL.dat' | xargs /bin/rm -f
+find . -name '*_TBL*.lob' | xargs /bin/rm -f
