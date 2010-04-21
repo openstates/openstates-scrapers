@@ -3,10 +3,13 @@ import urllib2
 import re
 import datetime as dt
 import html5lib
+import sys
+import os
 
-import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
+
 
 class UTLegislationScraper(LegislationScraper):
 
@@ -45,7 +48,7 @@ class UTLegislationScraper(LegislationScraper):
                           'sub_sessions': ['2004 S1', '2004 S2']},
                  '2006': {'years': [2006],
                           'sub_sessions': ['2006 S3', '2006 S4', '2006 S5']},
-                 '2007': {'years': [2007],'sub_sessions': ['2007 S1']},
+                 '2007': {'years': [2007], 'sub_sessions': ['2007 S1']},
                  '2008': {'years': [2008], 'sub_sessions': ['2008 S2']},
                  '2009': {'years': [2009], 'sub_sessions': ['2009 S1']},
                  }
@@ -194,19 +197,23 @@ class UTLegislationScraper(LegislationScraper):
                 bill_info_url = bill_link['href']
                 bill_info = self.soup_parser(self.urlopen(bill_info_url))
 
-                (bill_title, primary_sponsor) = bill_info.h3.contents[2].replace('&nbsp;', ' ').strip().split(' -- ')
+                bill_title, primary_sponsor = bill_info.h3.contents[2].replace(
+                    '&nbsp;', ' ').strip().split(' -- ')
 
                 bill = Bill(session, chamber, bill_id, bill_title)
                 bill.add_source(bill_info_url)
                 bill.add_sponsor('primary', primary_sponsor)
 
-                status_re = re.compile('.*billsta/%s.*.htm' % bill_abbr.lower())
+                status_re = re.compile('.*billsta/%s.*.htm' %
+                                       bill_abbr.lower())
                 status_link = bill_info.find('a', href=status_re)
 
                 if status_link:
                     self.parse_status(bill, status_link['href'])
 
-                text_find = bill_info.find(text="Bill Text (If you are having trouble viewing PDF files, ")
+                text_find = bill_info.find(
+                    text="Bill Text (If you are having trouble viewing")
+
                 if text_find:
                     text_link_re = re.compile('.*\.htm')
                     for text_link in text_find.parent.parent.findAll(

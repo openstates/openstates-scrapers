@@ -1,9 +1,10 @@
 [Alaska]
+abbreviation: ak
 start_year: 1993
 bills: yes
 bill_versions: yes
 sponsors: yes
 actions: yes
-votes: no
-contributors: Michael Stephens
+votes: yes
+contributors: Michael Stephens, Mark Olson
 notes:

@@ -3,11 +3,12 @@ import datetime
 import os
 import re
 import sys
-
 import html5lib
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear, ScrapeError)
+
 
 class NDLegislationScraper(LegislationScraper):
     """
@@ -90,25 +91,40 @@ class NDLegislationScraper(LegislationScraper):
         if not header:
             raise ScrapeError('Legaslative list header element not found.')
         
-        table = header.findNextSibling('table')
-        
-        member_links = table.findAll('a')
-        
-        self.log('Scraping %s members for %s.' % (norm_chamber_name, year))
-        
-        for link in member_links:
-            # Populate base attributes
+        party_images = {'/images/donkey.gif': 'Democrat', '/images/elephant.gif': 'Republican'}
+        for row in header.findNextSibling('table').findAll('tr'):
+            cells = row.findAll('td')
+            party = party_images[cells[0].img['src']]
+            name = map(lambda x: x.strip(), cells[1].a.contents[0].split(', '))
+            name.reverse()
+            name = ' '.join(name)
+            district = re.findall('District (\d+)', cells[2].contents[0])[0]
             attributes = {
                 'session': year,
                 'chamber': chamber,
-                }
-            
-            # Parse member page
-            bio_url = self.site_root + link['href']
-            attributes.update(self.scrape_legislator_bio(bio_url))
-        
+                'district': district,
+                'party': party,
+                'full_name': name,
+            }
+            split_name = name.split(' ')
+            if len(split_name) > 2:
+                attributes['first_name'] = split_name[0]
+                attributes['middle_name'] = split_name[1].strip(' .')
+                attributes['last_name'] = split_name[2]
+            else:
+                attributes['first_name'] = split_name[0]
+                attributes['middle_name'] = u''
+                attributes['last_name'] = split_name[1]
+
+            # we can get some more data..
+            bio_url = self.site_root + cells[1].a['href']
+            try:
+                attributes.update(self.scrape_legislator_bio(bio_url))
+            except urllib2.HTTPError: 
+                self.log("failed to fetch %s" % bio_url)
+
+            self.debug("attributes: %d", len(attributes))
             self.debug(attributes)
-        
             # Save
             legislator = Legislator(**attributes)
             legislator.add_source(bio_url)
@@ -122,42 +138,14 @@ class NDLegislationScraper(LegislationScraper):
         formatted exactly as more recent ones are.
         """
         # Parsing
-        soup = self.parser.parse(self.urlopen(url))
+        try:
+            data = self.urlopen(url)
+        except: 
+            return {}
+        soup = self.parser.parse(data)
         
         attributes = {}
-        
-        # Name
-        label = soup.find(re.compile('^(h1|h2)'))
-        name_match = re.match('(Senator|Representative) (.*)', label.contents[0])
-        attributes['full_name'] =  name_match.group(2).strip()
-        parts = attributes['full_name'].split()
-        
-        if len(parts) > 2:
-            attributes['first_name'] = parts[0].strip()
-            attributes['middle_name'] = parts[1].strip(' .')
-            attributes['last_name'] = parts[2].strip()
-        else:
-            attributes['first_name'] = parts[0].strip()
-            attributes['middle_name'] = u''
-            attributes['last_name'] = parts[1].strip()
-        
-        # Other required data
-        label = soup.find(text=re.compile('Party:')).parent
-        
-        if label.name == 'span':     
-            attributes['party'] = \
-                label.parent.findNextSibling('td').contents[0]
-        else:
-            attributes['party'] = label.nextSibling
-        
-        label = soup.find(text=re.compile('District:')).parent
-        
-        if label.name == 'span':     
-            attributes['district'] = \
-                label.parent.findNextSibling('td').contents[0]
-        else:
-            attributes['district'] = label.nextSibling 
-        
+   
         # Supplemental data
         label = soup.find(text=re.compile('Address:'))
         attributes['address'] = \
@@ -392,9 +380,10 @@ class NDLegislationScraper(LegislationScraper):
             
             if len(actor_cell.contents) != 0 and \
                 actor_cell.contents[0].strip() != '':
-                if actor_cell.contents[0] == 'Senate':
+                actor = actor_cell.contents[0].strip()
+                if actor == 'Senate':
                     actor = u'upper'
-                elif actor_cell.contents[0] == 'House':
+                elif actor == 'House':
                     actor = u'lower'
                 
             action['actor'] = actor

@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 import re
 import sys
-sys.path.append('./scripts')
-from pyutils.legislation import *
+import os
 import datetime as dt, time
 import random
 from htmlentitydefs import name2codepoint
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
+
 
 class ALLegislationScraper(LegislationScraper):
     state = 'al'

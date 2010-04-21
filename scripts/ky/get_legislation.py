@@ -3,10 +3,13 @@ from __future__ import with_statement
 import re
 import html5lib
 import datetime as dt
+import sys
+import os
 
-import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
+
 
 def chamber_abbr(chamber):
     if chamber == 'upper':
@@ -14,17 +17,20 @@ def chamber_abbr(chamber):
     else:
         return 'H'
 
+
 def bill_abbr(chamber):
     if chamber == 'upper':
         return 'SB'
     else:
         return 'HB'
 
+
 def session_url(session):
     if session.endswith('Special Session'):
         return "http://www.lrc.ky.gov/record/%s/" % (session[2:4] + 'SS')
     else:
         return "http://www.lrc.ky.gov/record/%s/" % (session[2:4] + 'RS')
+
 
 def split_name(full_name):
     last_name = full_name.split(',')[0]
@@ -44,6 +50,7 @@ def split_name(full_name):
 
     return (first_name.strip(), last_name.strip(), middle_name.strip())
 
+
 class KYLegislationScraper(LegislationScraper):
 
     state = 'ky'
@@ -59,9 +66,8 @@ class KYLegislationScraper(LegislationScraper):
         'upper_term': 4,
         'sessions': ['2009'],
         'session_details': {
-            '2009': {'years': [2009], 'sub_sessions': ['2009 Special Session']}
-            }
-        }
+            '2009': {'years': [2009],
+                     'sub_sessions': ['2009 Special Session']}}}
 
     soup_parser = html5lib.HTMLParser(
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
@@ -75,7 +81,8 @@ class KYLegislationScraper(LegislationScraper):
             self.scrape_session(chamber, sub)
 
     def scrape_session(self, chamber, session):
-        bill_list_url = session_url(session) + "bills_%s.htm" % chamber_abbr(chamber)
+        bill_list_url = session_url(session) + "bills_%s.htm" % (
+            chamber_abbr(chamber))
 
         with self.soup_context(bill_list_url) as bill_list:
             bill_re = "%s\d{1,4}.htm" % bill_abbr(chamber)
@@ -99,23 +106,28 @@ class KYLegislationScraper(LegislationScraper):
             bill_title = version_link.findNext('p').contents[0].strip()
 
             bill = Bill(session, chamber, bill_id, bill_title)
-            bill.add_version("Most Recent Version", session_url(session) + version_url)
+            bill.add_version("Most Recent Version",
+                             session_url(session) + version_url)
             bill.add_source(bill_info_url)
 
-            sponsor_links = bill_info.findAll(href=re.compile('legislator/[SH]\d+\.htm'))
+            sponsor_links = bill_info.findAll(href=re.compile(
+                    'legislator/[SH]\d+\.htm'))
+
             for sponsor_link in sponsor_links:
                 bill.add_sponsor('primary', sponsor_link.contents[0].strip())
 
             action_p = version_link.findAllNext('p')[-1]
             for action in action_p.findAll(text=True):
                 action = action.strip()
-                if not action or action == 'last action' or 'Prefiled' in action:
+                if (not action or action == 'last action' or
+                    'Prefiled' in action):
                     continue
 
                 action_date = action.split('-')[0]
                 action_date = dt.datetime.strptime(action_date, '%b %d')
                 # Fix:
-                action_date = action_date.replace(year=int('20' + session[2:4]))
+                action_date = action_date.replace(
+                    year=int('20' + session[2:4]))
 
                 action = '-'.join(action.split('-')[1:])
 
@@ -149,7 +161,8 @@ class KYLegislationScraper(LegislationScraper):
             leg_table = leg_list.find(id="table2")
 
             for row in leg_table.findAll('tr')[1:]:
-                leg_link = row.findAll('td')[1].font.a
+                leg_link = row.findAll('td')[1].font
+                if leg_link: leg_link = leg_link.a
                 if not leg_link:
                     # Vacant seat
                     continue
@@ -161,7 +174,8 @@ class KYLegislationScraper(LegislationScraper):
                     district += text.strip()
                 district = district.strip()
 
-                self.parse_legislator(chamber, year, full_name, district, leg_link['href'])
+                self.parse_legislator(chamber, year, full_name,
+                                      district, leg_link['href'])
 
     def parse_legislator(self, chamber, year, full_name, district, url):
         with self.soup_context(url) as leg_page:

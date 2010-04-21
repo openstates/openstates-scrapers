@@ -1,19 +1,20 @@
 #!/usr/bin/env python
-import datetime as dt
-from cStringIO import StringIO
-from lxml import etree
-
 from sqlalchemy.sql import and_
 from sqlalchemy import (Table, Column, Integer, String, ForeignKey,
                         DateTime, Text, Numeric, desc, create_engine,
                         UnicodeText)
 from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy.ext.declarative import declarative_base
+import datetime as dt
+from cStringIO import StringIO
+from lxml import etree
 import re
+import sys
+import os
 
-import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
 
 # Code for handling California's legislative info SQL dumps
 # You can grab them from http://www.leginfo.ca.gov/FTProtocol.html
@@ -21,9 +22,10 @@ from pyutils.legislation import *
 
 Base = declarative_base()
 
+
 class CABill(Base):
     __tablename__ = "bill_tbl"
-    
+
     bill_id = Column(String(19), primary_key=True)
     session_year = Column(String(8))
     session_num = Column(String(2))
@@ -46,7 +48,8 @@ class CABill(Base):
     @property
     def short_bill_id(self):
         return "%s%d" % (self.measure_type, self.measure_num)
-    
+
+
 class CABillVersion(Base):
     __tablename__ = "bill_version_tbl"
 
@@ -69,14 +72,14 @@ class CABillVersion(Base):
     trans_uid = Column(String(30))
     trans_update = Column(DateTime)
 
-    bill = relation(CABill, backref=
-                    backref('versions',
-                            order_by=desc(bill_version_action_date)))
+    bill = relation(CABill, backref=backref(
+            'versions', order_by=desc(bill_version_action_date)))
 
     @property
     def xml(self):
         if not '_xml' in self.__dict__:
-            self._xml = etree.parse(StringIO(self.bill_xml.encode('utf-8')), etree.XMLParser(recover=True))
+            self._xml = etree.fromstring(self.bill_xml.encode('utf-8'),
+                                         etree.XMLParser(recover=True))
         return self._xml
 
     @property
@@ -90,6 +93,7 @@ class CABillVersion(Base):
         texts = self.xml.xpath("//*[local-name() = 'Subject']//text()")
         title = ''.join(texts).strip()
         return title
+
 
 class CABillVersionAuthor(Base):
     __tablename__ = "bill_version_authors_tbl"
@@ -112,6 +116,7 @@ class CABillVersionAuthor(Base):
     primary_author_flg = Column(String(1))
 
     version = relation(CABillVersion, backref=backref('authors'))
+
 
 class CABillAction(Base):
     __tablename__ = "bill_history_tbl"
@@ -151,6 +156,7 @@ class CABillAction(Base):
 
         return actor
 
+
 class CALegislator(Base):
     __tablename__ = 'legislator_tbl'
 
@@ -170,6 +176,7 @@ class CALegislator(Base):
     trans_uid = Column(String(30))
     trans_update = Column(DateTime)
 
+
 class CAMotion(Base):
     __tablename__ = "bill_motion_tbl"
 
@@ -177,6 +184,7 @@ class CAMotion(Base):
     motion_text = Column(String(250))
     trans_uid = Column(String(30))
     trans_update = Column(DateTime)
+
 
 class CALocation(Base):
     __tablename__ = "location_code_tbl"
@@ -190,6 +198,7 @@ class CALocation(Base):
     active_flg = Column(String(1))
     trans_uid = Column(String(30))
     trans_update = Column(DateTime)
+
 
 class CAVoteSummary(Base):
     __tablename__ = "bill_summary_vote_tbl"
@@ -226,6 +235,7 @@ class CAVoteSummary(Base):
         else:
             return '2/3'
 
+
 class CAVoteDetail(Base):
     __tablename__ = "bill_detail_vote_tbl"
 
@@ -241,13 +251,15 @@ class CAVoteDetail(Base):
     trans_update = Column(DateTime, primary_key=True)
 
     bill = relation(CABill, backref=backref('detail_votes'))
-    summary = relation(CAVoteSummary, primaryjoin=
-                       and_(CAVoteSummary.bill_id == bill_id,
-                            CAVoteSummary.location_code == location_code,
-                            CAVoteSummary.vote_date_time == vote_date_time,
-                            CAVoteSummary.vote_date_seq == vote_date_seq,
-                            CAVoteSummary.motion_id == motion_id),
-                       backref=backref('votes'))
+    summary = relation(
+        CAVoteSummary,
+        primaryjoin=and_(CAVoteSummary.bill_id == bill_id,
+                         CAVoteSummary.location_code == location_code,
+                         CAVoteSummary.vote_date_time == vote_date_time,
+                         CAVoteSummary.vote_date_seq == vote_date_seq,
+                         CAVoteSummary.motion_id == motion_id),
+        backref=backref('votes'))
+
 
 class CASQLImporter(LegislationScraper):
 
@@ -281,9 +293,8 @@ class CASQLImporter(LegislationScraper):
                                                '20092010 Special Session 4',
                                                '20092010 Special Session 5',
                                                '20092010 Special Session 6',
-                                               '20092010 Special Session 7',]},
-                 }
-                }
+                                               '20092010 Special Session 7',
+                                               ]}}}
 
     def __init__(self, host, user, pw, db='capublic'):
         self.engine = create_engine('mysql://%s:%s@%s/%s?charset=utf8' % (
@@ -300,7 +311,7 @@ class CASQLImporter(LegislationScraper):
             house_type = 'S'
         else:
             house_type = 'A'
-        
+
         legislators = self.session.query(CALegislator).filter_by(
             session_year=session).filter_by(
             house_type=house_type)
@@ -409,6 +420,7 @@ class CASQLImporter(LegislationScraper):
                 fsbill.add_vote(fsvote)
 
             self.add_bill(fsbill)
+
 
 if __name__ == '__main__':
     CASQLImporter('localhost', 'USER', 'PASSWORD').run()

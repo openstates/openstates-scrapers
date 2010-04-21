@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 import sys
-sys.path.append('./scripts')
-import datetime as dt, time
+import os
+import datetime as dt
+import time
 import re
 
-from pyutils.legislation import LegislationScraper, NoDataForYear, ScrapeError, Legislator, Bill, Vote
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 ScrapeError, NoDataForYear)
 
 from BeautifulSoup import BeautifulSoup
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter, process_pdf
@@ -133,7 +136,7 @@ class MichiganScraper(LegislationScraper):
             title = title.replace('\n','').replace('\r','')
             bill_id = "%s %d" % (abbr, bill_no)
 
-            the_bill = Bill("Regular Session %d" % oyear, chamber, bill_id, title)
+            the_bill = Bill("%d" % oyear, chamber, bill_id, title)
 
             #sponsors
             first = 0

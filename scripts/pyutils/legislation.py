@@ -1,6 +1,7 @@
 from __future__ import with_statement
 from optparse import make_option, OptionParser
-import datetime, time
+import datetime
+import time
 import os
 import sys
 import urllib2
@@ -10,10 +11,12 @@ import cookielib
 import contextlib
 import logging
 from BeautifulSoup import BeautifulSoup
+
 try:
     import json
 except ImportError:
     import simplejson as json
+
 
 class ScrapeError(Exception):
     """
@@ -33,14 +36,17 @@ class NoDataForYear(ScrapeError):
     def __str__(self):
         return 'No data exists for %s' % self.year
 
+
 class DateEncoder(json.JSONEncoder):
     """
     JSONEncoder that encodes datetime objects as Unix timestamps.
     """
+
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return time.mktime(obj.timetuple())
         return json.JSONEncoder.default(self, obj)
+
 
 class LegislationScraper(object):
     """Subclass for each state's scraper
@@ -53,7 +59,7 @@ class LegislationScraper(object):
         import sys, os
         sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     """
-    
+
     option_list = (
         make_option('-y', '--year', action='append', dest='years',
                     help='year(s) to scrape'),
@@ -63,8 +69,12 @@ class LegislationScraper(object):
                     default=False, help='scrape upper chamber'),
         make_option('--lower', action='store_true', dest='lower',
                     default=False, help='scrape lower chamber'),
+        make_option('--nolegislators', action='store_false', dest='legislators',
+                    default=True, help="don't scrape legislator data"),
         make_option('-v', '--verbose', action='count', dest='verbose',
-                    default=False, help="be verbose (use multiple times for more debugging information)"),
+                    default=False,
+                    help="be verbose (use multiple times for more"\
+                        "debugging information)"),
         make_option('-d', '--output_dir', action='store', dest='output_dir',
                     help='output directory'),
         make_option('-n', '--no_cache', action='store_true', dest='no_cache',
@@ -78,7 +88,7 @@ class LegislationScraper(object):
     # The earliest year for when legislative data is available:
     # (Used for --all)
     earliest_year = 1969
-    
+
     # The user agent used for requests (this will show up in the
     # state's logs):
     user_agent = 'robot: http://fiftystates-dev.sunlightlabs.com/'
@@ -101,7 +111,8 @@ class LegislationScraper(object):
         self._init_dirs()
 
         self.logger = logging.getLogger("fiftystates")
-        formatter = logging.Formatter("%(asctime)s %(levelname)s " + self.state + " %(message)s")
+        formatter = logging.Formatter("%(asctime)s %(levelname)s " +
+                                      self.state + " %(message)s")
         console = logging.StreamHandler()
         console.setFormatter(formatter)
         self.logger.addHandler(console)
@@ -118,7 +129,8 @@ class LegislationScraper(object):
         """
 
         if not self.no_cache:
-            url_cache = os.path.join(self.cache_dir, md5(url).hexdigest()+'.html')
+            url_cache = os.path.join(self.cache_dir,
+                                     md5(url).hexdigest() + '.html')
             if os.path.exists(url_cache):
                 self.debug('Getting %s from cache' % url)
                 return open(url_cache).read()
@@ -206,7 +218,7 @@ class LegislationScraper(object):
         except:
             self.show_error(url, body)
             raise
-        
+
     def _make_headers(self):
         return {'User-Agent': self.user_agent}
 
@@ -273,31 +285,44 @@ class LegislationScraper(object):
 
         bill['state'] = self.state
 
-        filename = "%s:%s:%s.json" % (bill['session'], bill['chamber'],
+        filename = "%s_%s_%s.json" % (bill['session'], bill['chamber'],
                                       bill['bill_id'])
         filename = filename.encode('ascii', 'replace')
         with open(os.path.join(self.output_dir, "bills", filename), 'w') as f:
             json.dump(bill, f, cls=DateEncoder)
 
+    def add_person(self, person):
+        self.log("add_person: %s" % person['full_name'])
+
+        person['state'] = self.state
+
+        role = person['roles'][0]
+        filename = "%s_%s.json" % (role['session'],
+                                   person['full_name'])
+        filename = filename.encode('ascii', 'replace')
+
+        with open(os.path.join(self.output_dir, "legislators", filename),
+                  'w') as f:
+            json.dump(person, f, cls=DateEncoder)
+
     def add_legislator(self, legislator):
         """
         Add a scraped :class:`pyutils.legislation.Legislator` object.
         """
-        self.log("add_legislator %s %s: %s" % (legislator['chamber'],
-                                               legislator['session'],
-                                               legislator['full_name']))
+        self.log("add_legislator: %s" % legislator['full_name'])
 
-        self.matcher[legislator['chamber']][legislator] = [
-            legislator['session'],
-            legislator['chamber'],
-            legislator['district'],
+        role = legislator['roles'][0]
+        self.matcher[role['chamber']][legislator] = [
+            role['session'],
+            role['chamber'],
+            role['district'],
             legislator['full_name']]
 
         legislator['state'] = self.state
 
-        filename = "%s:%s:%s:%s.json" % (legislator['session'],
-                                         legislator['chamber'],
-                                         legislator['district'],
+        filename = "%s_%s_%s_%s.json" % (role['session'],
+                                         role['chamber'],
+                                         role['district'],
                                          legislator['full_name'])
         filename = filename.encode('ascii', 'replace')
         with open(os.path.join(self.output_dir, "legislators", filename),
@@ -364,10 +389,11 @@ class LegislationScraper(object):
         years = options.years
         if options.all_years:
             years = [str(y) for y in range(scraper.earliest_year,
-                                           datetime.datetime.now().year+1)]
+                                           datetime.datetime.now().year + 1)]
         if not years:
-            parser.error("You must provide a --year YYYY or --all (all years) option")
-            
+            parser.error(
+                "You must provide a --year YYYY or --all (all years) option")
+
         chambers = []
         if options.upper:
             chambers.append('upper')
@@ -382,9 +408,10 @@ class LegislationScraper(object):
                 scraper.reset_name_matchers(upper=matcher['upper'](),
                                             lower=matcher['lower']())
             try:
-               for chamber in chambers:
-                    scraper.scrape_legislators(chamber, year)
-               for chamber in chambers:
+                if options.legislators:
+                    for chamber in chambers:
+                        scraper.scrape_legislators(chamber, year)
+                for chamber in chambers:
                     scraper.old_bills = {}
                     scraper.scrape_bills(chamber, year)
             except NoDataForYear, e:
@@ -394,7 +421,25 @@ class LegislationScraper(object):
                     raise
 
 
-class Bill(dict):
+class FiftystatesObject(dict):
+
+    def __init__(self, type, **kwargs):
+        super(FiftystatesObject, self).__init__()
+        self['type'] = type
+        self['sources'] = []
+        self.update(kwargs)
+
+    def add_source(self, url, retrieved=None, **kwargs):
+        """
+        Add a source URL from which data related to this vote was scraped.
+
+        :param url: the location of the source
+        """
+        retrieved = retrieved or datetime.datetime.now()
+        self['sources'].append(dict(url=url, retrieved=retrieved, **kwargs))
+
+
+class Bill(FiftystatesObject):
     """
     This represents a state bill or resolution.
     It is just a dict with some required fields and a few
@@ -419,7 +464,7 @@ class Bill(dict):
         Any additional keyword arguments will be associated with this
         bill and stored in the database.
         """
-        self['type'] = 'bill'
+        super(Bill, self).__init__('bill', **kwargs)
         self['session'] = session
         self['chamber'] = chamber
         self['bill_id'] = bill_id
@@ -429,8 +474,6 @@ class Bill(dict):
         self['versions'] = []
         self['actions'] = []
         self['documents'] = []
-        self['sources'] = []
-        self.update(kwargs)
 
     def add_sponsor(self, type, name, **kwargs):
         """
@@ -441,18 +484,10 @@ class Bill(dict):
         """
         self['sponsors'].append(dict(type=type, name=name, **kwargs))
 
-    def add_source(self, url, **kwargs):
-        """
-        Add a source URL from which data related to this bill was scraped.
-
-        :param url: the location of the source
-        """
-        self['sources'].append(dict(url=url, **kwargs))
-
     def add_document(self, name, url, **kwargs):
         """
         Add a document or media item that is related to the bill.  Use this method to add documents such as Fiscal Notes, Analyses, Amendments,  or public hearing recordings.
-        :param name: a name given to the document, e.g. 'Fiscal Note for Amendment LCO 6544'        
+        :param name: a name given to the document, e.g. 'Fiscal Note for Amendment LCO 6544'
         :param url: link to location of document or file
 
 
@@ -496,7 +531,7 @@ class Bill(dict):
         self['votes'].append(vote)
 
 
-class Vote(dict):
+class Vote(FiftystatesObject):
 
     def __init__(self, chamber, date, motion, passed,
                  yes_count, no_count, other_count, **kwargs):
@@ -522,6 +557,7 @@ class Vote(dict):
           Vote('lower', 'Finance Committee', '3/4/03 03:40:22',
                'Recommend passage', 12, 1, 0)
         """
+        super(Vote, self).__init__('vote', **kwargs)
         self['chamber'] = chamber
         self['date'] = date
         self['motion'] = motion
@@ -532,8 +568,6 @@ class Vote(dict):
         self['yes_votes'] = []
         self['no_votes'] = []
         self['other_votes'] = []
-        self['sources'] = []
-        self.update(kwargs)
 
     def yes(self, legislator):
         """
@@ -561,15 +595,30 @@ class Vote(dict):
         """
         self['other_votes'].append(legislator)
 
-    def add_source(self, url, **kwargs):
-        """
-        Add a source URL from which data related to this vote was scraped.
 
-        :param url: the location of the source
-        """
-        self['sources'].append(dict(url=url, **kwargs))
+class Person(FiftystatesObject):
 
-class Legislator(dict):
+    def __init__(self, full_name, **kwargs):
+        super(Person, self).__init__('person', **kwargs)
+        self['full_name'] = full_name
+        self['roles'] = []
+
+    def add_role(self, role, session, start_date=None, end_date=None, **kwargs):
+        """
+        If ``start_date`` or ``end_date`` are ``None``, they will default
+        to the start/end date of the given legislative session.
+
+        Examples:
+
+        leg.add_role('member', session='2009', chamber='upper',
+                     party='Republican', district='10th')
+        """
+        self['roles'].append(dict(role=role, session=session,
+                                  start_date=start_date,
+                                  end_date=end_date, **kwargs))
+
+
+class Legislator(Person):
 
     def __init__(self, session, chamber, district, full_name,
                  first_name, last_name, middle_name, party, **kwargs):
@@ -590,25 +639,15 @@ class Legislator(dict):
         Any additional keyword arguments will be associated with this
         Legislator and stored in the database.
         """
-        self['type'] = 'legislator'
-        self['session'] = session
-        self['chamber'] = chamber
-        self['district'] = district
-        self['full_name'] = full_name
+        super(Legislator, self).__init__(full_name, **kwargs)
+        #self['type'] = 'legislator'
+        self.add_role('member', session, chamber=chamber, district=district,
+                      party=party)
         self['first_name'] = first_name
         self['last_name'] = last_name
         self['middle_name'] = middle_name
-        self['party'] = party
-        self['sources'] = []
-        self.update(kwargs)
 
-    def add_source(self, url, **kwargs):
-        """
-        Add a source URL from which data related to this legislator was scraped.
 
-        :param url: the location of the source
-        """
-        self['sources'].append(dict(url=url, **kwargs))
 
 class NameMatcher(object):
     """
@@ -704,7 +743,7 @@ class NameMatcher(object):
                                      name['middle_name'][0]))
 
         for form in forms:
-            form = form.replace('.', '').lower() 
+            form = form.replace('.', '').lower()
             if form in self.names:
                 self.names[form] = None
             else:

@@ -2,20 +2,28 @@
 import urlparse
 import datetime as dt
 import lxml.etree
+import sys
+import os
+import name_tools
 
-import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import LegislationScraper, Bill, Legislator
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
+
+
+import journal
 
 def parse_ftp_listing(text):
     lines = text.strip().split('\r\n')
     return (' '.join(line.split()[3:]) for line in lines)
+
 
 def chamber_name(chamber):
     if chamber == 'upper':
         return 'senate'
     else:
         return 'house'
+
 
 class TXLegislationScraper(LegislationScraper):
 
@@ -101,12 +109,12 @@ class TXLegislationScraper(LegislationScraper):
                 for version in parse_ftp_listing(versions_list):
                     if version.startswith(long_bill_id):
                         version_name = version.split('.')[0]
-                        version_url = urlparse.urljoin(versions_url,
+                        version_url = urlparse.urljoin(versions_url + '/',
                                                        version)
                         bill.add_version(version_name, version_url)
 
             self.add_bill(bill)
-    
+
     def scrape_session(self, chamber, session):
         billdirs_path = '/bills/%s/billhistory/%s_bills/' % (
             session, chamber_name(chamber))
@@ -119,6 +127,24 @@ class TXLegislationScraper(LegislationScraper):
                     for history in parse_ftp_listing(bills):
                         self.scrape_bill(chamber, session,
                                          urlparse.urljoin(bill_url, history))
+
+        if session in ['81R', '811']:
+            journal_root = urlparse.urljoin(
+                self._ftp_root, "/journals/" + session + "/html/", True)
+
+            if chamber == 'lower':
+                journal_root = urlparse.urljoin(journal_root,
+                                                'house/', True)
+            else:
+                journal_root = urlparse.urljoin(journal_root,
+                                                'senate/', True)
+
+            with self.urlopen_context(journal_root) as listing:
+                for name in parse_ftp_listing(listing):
+                    if name.startswith('INDEX'):
+                        continue
+                    url = urlparse.urljoin(journal_root, name)
+                    journal.parse(url, chamber, self)
 
     def scrape_bills(self, chamber, year):
         if int(year) < 2009 or int(year) > dt.date.today().year:
@@ -145,36 +171,44 @@ class TXLegislationScraper(LegislationScraper):
             self.scrape_reps(year)
 
     def scrape_senators(self, year):
-        with self.urlopen_context('http://www.senate.state.tx.us/75r/senate/senmem.htm') as page:
+        senator_url = 'http://www.senate.state.tx.us/75r/senate/senmem.htm'
+        with self.urlopen_context(senator_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
             for el in root.xpath('//table[@summary="senator identification"]'):
-                full_name = el.xpath('string(tr/td[@headers="senator"]/a)')
+                sen_link = el.xpath('tr/td[@headers="senator"]/a')[0]
+                full_name = sen_link.text
                 district = el.xpath('string(tr/td[@headers="district"])')
                 party = el.xpath('string(tr/td[@headers="party"])')
 
-                first_name, rest = full_name.split(' ', 1)
-                rest = rest.split(', ')
-                if len(rest) > 1:
-                    suffix = rest[1]
-                else: suffix = ''
-                rest = rest[0].split(' ')
-                last_name = rest[-1]
-                if len(rest) > 1:
-                    middle = ' '.join(rest[0:-1])
-                else:
-                    middle = ''
+                pre, first, last, suffixes = name_tools.split(full_name)
 
                 leg = Legislator('81', 'upper', district, full_name,
-                                 first_name, last_name, middle,
-                                 party)
-                leg.add_source('http://www.senate.state.tx.us/75r/senate/senmem.htm')
+                                 first, last, '', party,
+                                 suffix=suffixes)
+                leg.add_source(senator_url)
+
+                details_url = ('http://www.senate.state.tx.us/75r/senate/' +
+                               sen_link.attrib['href'])
+                with self.urlopen_context(details_url) as details_page:
+                    details = lxml.etree.fromstring(details_page,
+                                                    lxml.etree.HTMLParser())
+
+                    comms = details.xpath("//h2[contains(text(), 'Committee Membership')]")[0]
+                    comms = comms.getnext()
+                    for comm in comms.xpath('li/a'):
+                        comm_name = comm.text
+                        if comm.tail:
+                            comm_name += comm.tail
+
+                        leg.add_role('committee member', '81',
+                                     committee=comm_name.strip())
+
                 self.add_legislator(leg)
 
-
     def scrape_reps(self, year):
-        with self.urlopen_context(
-            'http://www.house.state.tx.us/members/welcome.php') as page:
+        rep_url = 'http://www.house.state.tx.us/members/welcome.php'
+        with self.urlopen_context(rep_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
             for el in root.xpath('//form[@name="frmMembers"]/table/tr')[1:]:
@@ -182,21 +216,55 @@ class TXLegislationScraper(LegislationScraper):
                 district = el.xpath('string(td[2]/span)')
                 county = el.xpath('string(td[3]/span)')
 
-                last_name, rest = full_name.split(', ')
-                rest = rest.split(' ')
-                first_name = rest[0]
-                if len(rest) > 1:
-                    middle = ' '.join(rest[1:])
-                else:
-                    middle = ''
+                if full_name.startswith('District'):
+                    # Ignore empty seats
+                    continue
 
-                # Texas doesn't seem to list reps' parties anywhere
+                pre, first, last, suffixes = name_tools.split(full_name)
                 party = ''
 
                 leg = Legislator('81', 'lower', district,
-                                 full_name, first_name, last_name,
-                                 middle, party)
-                leg.add_source('http://www.house.state.tx.us/members/welcome.php')
+                                 full_name, first, last,
+                                 '', party, suffix=suffixes)
+                leg.add_source(rep_url)
+
+                # Is there anything out there that handles meta refresh?
+                redirect_url = el.xpath('td/a')[0].attrib['href']
+                redirect_url = ('http://www.house.state.tx.us/members/' +
+                                redirect_url)
+                details_url = redirect_url
+                with self.urlopen_context(redirect_url) as redirect_page:
+                    redirect = lxml.etree.fromstring(redirect_page,
+                                                     lxml.etree.HTMLParser())
+
+                    try:
+                        filename = redirect.xpath(
+                            "//meta[@http-equiv='refresh']"
+                            )[0].attrib['content']
+
+                        filename = filename.split('0;URL=')[1]
+
+                        details_url = details_url.replace('welcome.htm',
+                                                          filename)
+                    except:
+                        # The Speaker's member page does not redirect.
+                        # The Speaker is not on any committees
+                        # so we can just continue with the next member.
+                        self.add_legislator(leg)
+                        continue
+
+
+                with self.urlopen_context(details_url) as details_page:
+                    details = lxml.etree.fromstring(details_page,
+                                                    lxml.etree.HTMLParser())
+
+                    comms = details.xpath(
+                        "//b[contains(text(), 'Committee Assignments')]/"
+                        "..//a")
+                    for comm in comms:
+                        leg.add_role('committee member', '81',
+                                     committee=comm.text.strip())
+
                 self.add_legislator(leg)
 
 if __name__ == '__main__':

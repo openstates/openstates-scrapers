@@ -3,16 +3,19 @@ import re
 import datetime as dt
 import csv
 import html5lib
-
-# ugly hack
 import sys
-sys.path.append('./scripts')
-from pyutils.legislation import *
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
+
 
 class AKLegislationScraper(LegislationScraper):
 
     state = 'ak'
-    soup_parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
+    soup_parser = html5lib.HTMLParser(
+        tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
     metadata = {
         'state_name': 'Alaska',
@@ -53,7 +56,8 @@ class AKLegislationScraper(LegislationScraper):
 
         session = str(18 + ((int(year) - 1993) / 2))
 
-        leg_list_url = "http://www.legis.state.ak.us/basis/commbr_info.asp?session=%s" % session
+        leg_list_url = "http://www.legis.state.ak.us/"\
+            "basis/commbr_info.asp?session=%s" % session
         leg_list = self.soup_parser(self.urlopen(leg_list_url))
 
         leg_re = "get_mbr_info.asp\?member=.+&house=%s&session=%s" % (
@@ -106,7 +110,9 @@ class AKLegislationScraper(LegislationScraper):
         date2 = '1231' + year2[2:]
 
         # Get bill list
-        bill_list_url = 'http://www.legis.state.ak.us/basis/range_multi.asp?session=%s&date1=%s&date2=%s' % (session, date1, date2)
+        bill_list_url = 'http://www.legis.state.ak.us/'\
+            'basis/range_multi.asp?session=%s&date1=%s&date2=%s' % (
+            session, date1, date2)
         self.log("Getting bill list for %s %s (this may take a long time)." %
                  (chamber, session))
         bill_list = self.soup_parser(self.urlopen(bill_list_url))
@@ -117,7 +123,8 @@ class AKLegislationScraper(LegislationScraper):
 
         for link in links:
             bill_id = link.contents[0].replace(' ', '')
-            bill_name = link.parent.parent.findNext('td').find('font').contents[0].strip()
+            bill_name = link.parent.parent.findNext('td').find(
+                'font').contents[0].strip()
             bill = Bill(session, chamber, bill_id, bill_name.strip())
 
             # Get the bill info page and strip malformed t
@@ -156,6 +163,15 @@ class AKLegislationScraper(LegislationScraper):
                     act_chamber = chamber
 
                 action = cols[3].font.contents[0].strip()
+                if re.match("\w+ Y(\d+) N(\d+)", action):
+                    try:
+                        vote = self.parse_vote(bill, action,
+                                               act_chamber, act_date,
+                                               cols[1].a['href'])
+                        bill.add_vote(vote)
+                    except:
+                        self.log("Failed parsing vote at %s" %
+                                 cols[1].a['href'])
 
                 bill.add_action(act_chamber, action, act_date)
 
@@ -167,17 +183,50 @@ class AKLegislationScraper(LegislationScraper):
                 bill['subjects'].append(subject)
 
             # Get versions
-            text_list_url = "http://www.legis.state.ak.us/basis/get_fulltext.asp?session=%s&bill=%s" % (session, bill_id)
+            text_list_url = "http://www.legis.state.ak.us/"\
+                "basis/get_fulltext.asp?session=%s&bill=%s" % (
+                session, bill_id)
             text_list = self.soup_parser(self.urlopen(text_list_url))
             bill.add_source(text_list_url)
 
             text_link_re = re.compile('^get_bill_text?')
             for text_link in text_list.findAll('a', href=text_link_re):
-                text_name = text_link.parent.previousSibling.contents[0].strip()
-                text_url = "http://www.legis.state.ak.us/basis/%s" % text_link['href']
+                text_name = text_link.parent.previousSibling.contents[0]
+                text_name = text_name.strip()
+
+                text_url = "http://www.legis.state.ak.us/basis/%s" % (
+                    text_link['href'])
+
                 bill.add_version(text_name, text_url)
 
             self.add_bill(bill)
+
+    def parse_vote(self, bill, action, act_chamber, act_date, url):
+        url = "http://www.legis.state.ak.us/basis/%s" % url
+        info_page = self.soup_parser(self.urlopen(url))
+
+        tally = re.findall('Y(\d+) N(\d+)\s*(?:\w(\d+))*\s*(?:\w(\d+))*\s*(?:\w(\d+))*', action)[0]
+        yes, no, o1, o2, o3 = map(lambda x: 0 if x == '' else int(x), tally)
+        yes, no, other = int(yes), int(no), (int(o1) + int(o2) + int(o3))
+
+        votes = info_page.findAll('pre', text=re.compile('Yeas'), limit=1)[0].split('\n\n')
+
+        motion = info_page.findAll(text=re.compile('The question being'))[0]
+        motion = re.findall('The question being:\s*"(.*)\?"', motion, re.DOTALL)[0].replace('\n', ' ')
+
+        vote = Vote(act_chamber, act_date, motion, yes> no, yes, no, other)
+
+        for vote_list in votes:
+            vote_type = False
+            if vote_list.startswith('Yeas: '): vote_list, vote_type = vote_list[6:], vote.yes
+            elif vote_list.startswith('Nays: '): vote_list, vote_type = vote_list[6:], vote.no
+            elif vote_list.startswith('Excused: '): vote_list, vote_type = vote_list[9:], vote.other
+            elif vote_list.startswith('Absent: '): vote_list, vote_type = vote_list[9:],vote.other
+            if vote_type: 
+                for name in vote_list.split(','): vote_type(name.strip())
+
+        vote.add_source(url)
+        return vote
 
     def scrape_bills(self, chamber, year):
         # Data available for 1993 on

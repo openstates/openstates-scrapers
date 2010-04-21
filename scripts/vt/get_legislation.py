@@ -1,13 +1,16 @@
 #!/usr/bin/env python
-import urllib2, urllib
+import urllib
+import urllib2
 import re
 from BeautifulSoup import BeautifulSoup
 import datetime as dt
 import time
+import sys
+import os
 
-import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import *
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear, ScrapeError)
 
 def parse_exec_date(date_str):
     """
@@ -22,7 +25,12 @@ def parse_exec_date(date_str):
     if match:
         return dt.datetime.strptime(match.group(1), "%m/%d/%Y")
 
+    match = re.search('(\d{1,2}/\d{1,2}/\d{2,2})', date_str)
+    if match:
+        return dt.datetime.strptime(match.group(1), "%m/%d/%y")
+
     raise ScrapeError("Invalid executive action date: %s" % date_str)
+
 
 class VTLegislationScraper(LegislationScraper):
 
@@ -62,8 +70,9 @@ class VTLegislationScraper(LegislationScraper):
         else:
             bill_abbr = "S."
 
-        bill_list_url = "http://www.leg.state.vt.us/docs/bills.cfm?Session=%s&Body=%s" % (session.split('-')[1], bill_abbr[0])
-        self.log("Getting bill list for %s %s" % (chamber, session))
+        bill_list_path = "docs/bills.cfm?Session=%s&Body=%s" % (
+            session.split('-')[1], bill_abbr[0])
+        bill_list_url = "http://www.leg.state.vt.us/" + bill_list_path
         bill_list = BeautifulSoup(self.urlopen(bill_list_url))
 
         bill_link_re = re.compile('.*?Bill=%s\.\d+.*' % bill_abbr[0])
@@ -170,8 +179,8 @@ class VTLegislationScraper(LegislationScraper):
         data = urllib.urlencode({'Date': start_date,
                                  'Body': bill_abbr[0],
                                  'Session': session.split('-')[1]})
-        bill_list_url = "http://www.leg.state.vt.us/database/rintro/results.cfm"
-        self.log("Getting bill list for %s %s" % (chamber, session))
+        bill_list_url = "http://www.leg.state.vt.us/database/"\
+            "rintro/results.cfm"
         bill_list = BeautifulSoup(urllib2.urlopen(bill_list_url, data))
 
         bill_link_re = re.compile('.*?Bill=%s.\d+.*' % bill_abbr[0])
@@ -252,7 +261,8 @@ class VTLegislationScraper(LegislationScraper):
         # just HTML tables
         # What Vermont claims is a CSV file is actually one row of comma
         # separated values followed by a ColdFusion error.
-        leg_url = "http://www.leg.state.vt.us/legdir/memberdata.cfm/memberdata.doc?FileType=W"
+        leg_url = "http://www.leg.state.vt.us/legdir/"\
+            "memberdata.cfm/memberdata.doc?FileType=W"
         leg_table = BeautifulSoup(self.urlopen(leg_url))
 
         for tr in leg_table.findAll('tr')[1:]:

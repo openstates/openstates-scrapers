@@ -3,11 +3,13 @@ import urllib2
 import re
 import datetime as dt
 import html5lib
-
-# ugly hack
 import sys
-sys.path.append('./scripts')
-from pyutils.legislation import *
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
+
 
 class SDLegislationScraper(LegislationScraper):
 
@@ -47,7 +49,7 @@ class SDLegislationScraper(LegislationScraper):
             '2009': {'years': [2009], 'sub_sessions': [], 'alternate': '84th'},
             }
         }
-    
+
     # The format of SD's legislative info pages changed in 2009, so we have
     # two separate scrapers.
 
@@ -125,7 +127,9 @@ class SDLegislationScraper(LegislationScraper):
 
                         if node.contents[0].startswith('YEAS'):
                             # This is a vote!
-                            vote_url = "http://legis.state.sd.us/sessions/%s/%s" % (session, node['href'])
+                            vote_url = "http://legis.state.sd.us/sessions/"\
+                                "%s/%s" % (session, node['href'])
+
                             vote = self.scrape_new_vote(vote_url)
                             vote['date'] = act_date
                             bill.add_vote(vote)
@@ -199,14 +203,12 @@ class SDLegislationScraper(LegislationScraper):
         # BeautifulSoup choke on)
         session_url = 'http://legis.state.sd.us/sessions/%s/' % session
         bill_list_url = session_url + 'billlist.htm'
-        self.log("Getting bill list for %s %s" % (chamber, session))
-        #bill_list_raw = self.urlopen(bill_list_url)
-        #bill_list_raw = bill_list_raw.replace('BORDER= ', '').replace('"</A>', '"></A>')
         bill_list = self.soup_parser(self.urlopen(bill_list_url))
 
         # Bill and text link formats
         bill_re = re.compile('%s (\d+)' % bill_abbr)
-        text_re = re.compile('/sessions/%s/bills/%s.*\.htm' % (session, bill_abbr), re.IGNORECASE)
+        text_re = re.compile('/sessions/%s/bills/%s.*\.htm' % (
+                session, bill_abbr), re.IGNORECASE)
         date_re = re.compile('\d{2}/\d{2}/\d{4}')
 
         for bill_link in bill_list.findAll('a', href=re.compile('\d\.htm$')):
@@ -271,7 +273,9 @@ class SDLegislationScraper(LegislationScraper):
                                 vote_url = "http://legis.state.sd.us/%s" % (
                                     node['href'])
                             else:
-                                vote_url = "http://legis.state.sd.us/sessions/%s/%s" % (session, node['href'])
+                                vote_url = "http://legis.state.sd.us/"\
+                                    "sessions/%s/%s" % (session, node['href'])
+
                             vote = self.scrape_old_vote(vote_url)
                             vote['date'] = act_date
                             bill.add_vote(vote)
@@ -357,7 +361,8 @@ class SDLegislationScraper(LegislationScraper):
         else:
             search = 'House Members'
 
-        leg_list_url = "http://legis.state.sd.us/sessions/%s/MemberMenu.aspx" % (session)
+        leg_list_url = "http://legis.state.sd.us/sessions/%s/"\
+            "MemberMenu.aspx" % (session)
         leg_list = self.soup_parser(self.urlopen(leg_list_url))
 
         list_div = leg_list.find(text=search).findNext('div')
@@ -376,7 +381,8 @@ class SDLegislationScraper(LegislationScraper):
                 id="ctl00_contentMain_spanParty").contents[0].strip()
 
             district = leg_page.find(
-                id="ctl00_contentMain_spanDistrict").contents[0].strip().lstrip('0')
+                id="ctl00_contentMain_spanDistrict").contents[0]
+            district = district.strip().lstrip('0')
 
             occ_span = leg_page.find(id="ctl00_contentMain_spanOccupation")
             if len(occ_span.contents) > 0:
@@ -439,6 +445,7 @@ class SDLegislationScraper(LegislationScraper):
             self.scrape_new_legislators(chamber, year)
         else:
             self.scrape_old_legislators(chamber, year)
-        
+
+
 if __name__ == '__main__':
     SDLegislationScraper.run()
