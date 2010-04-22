@@ -78,7 +78,7 @@ class WisconsinScraper(LegislationScraper):
  
             page = lxml.html.fromstring(body).cssselect('pre')[0]
             # split the history into each line, exluding all blank lines and the title line
-            history = filter(lambda x: len(x.strip()) > 0, lxml.html.tostring(page).split("\n"))[1:-1]
+            history = filter(lambda x: len(x.strip()) > 0, lxml.html.tostring(page).split("\n"))[2:-1]
             buffer = ''
             bill_id = page.find("a").text_content()
             bill_title = None
