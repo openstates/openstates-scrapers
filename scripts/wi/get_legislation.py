@@ -1,11 +1,19 @@
 #!/usr/bin/env python
-import urlparse
 import datetime as dt
 import lxml.html
 import sys
 import os
 import re
 import name_tools
+
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter, process_pdf
+from pdfminer.pdfdevice import PDFDevice
+from pdfminer.converter import TextConverter
+from pdfminer.cmapdb import CMapDB
+from pdfminer.layout import LAParams
+
+from StringIO import StringIO
+import urllib2
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
@@ -16,6 +24,76 @@ class WisconsinScraper(LegislationScraper):
     state = 'wi'
     earliest_year = 1999
     internal_sessions = {}
+
+    def scrape_bills(self, chamber, year):
+        # we need to be able to make http://www.legis.state.wi.us/2009/data/AB2hst.html
+        # and http://www.legis.state.wi.us/2009/data/DE9AB2hst.html
+        for sess in self.internal_sessions[int(year)]:
+          yp = sess[0][1:].split('/', 1)
+          (year, prefix) = (yp[0], yp[1]) if len(yp) == 2 else (yp[0], '')
+          self.scrape_session(chamber, year, prefix, sess[1])
+          return
+
+    def scrape_session(self, chamber, year, prefix, session):
+        def parse_sponsors(bill, line):
+            sponsor_type = None
+            for r in re.split(r'\sand\s|\,|;', line):
+                r = r.strip()
+                if r.find('Introduced by') != -1:
+                    sponsor_type = 'primary'
+                    r = re.split(r'Introduced by \w+', r)[1]
+
+                if r.find('cosponsored by') != -1:
+                    sponsor_type = 'cosponsor'
+                    r = re.split(r'cosponsored by \w+', r)[1] 
+                print "%s is a %s" % (r.strip(), sponsor_type)
+
+
+        house = 'SB' if (chamber == 'upper') else 'AB'
+        i = 1
+        while True:
+            url = "http://www.legis.state.wi.us/%s/data/%s%s%dhst.html" % (year, prefix, house, i)
+            print url
+            body = unicode(self.urlopen(url), 'latin-1')
+            page = lxml.html.fromstring(body).cssselect('pre')[0]
+
+            # split the history into each line, exluding all blank lines and the title line
+            history = filter(lambda x: len(x.strip()) > 0, page.text_content().split("\n"))[1:]
+            
+            buffer = ''
+            bill_id = page.find("a").text_content()
+            bill_title = None;
+            bill_sponsors = False;
+            for line in history:
+                stop = False
+
+                # the year changed
+                if re.match(r'^(\d{4})[\s]{0,1}$', line):
+                    print "New year: ", line
+                    continue
+
+                # the action changed. 
+                if re.match(r'\s+(\d{2})-(\d{2}).\s\s([AS])\.\s', line):
+                   workdata = buffer
+                   #print "new action"
+                  # print buffer
+                   buffer = ''
+                   stop = True
+
+                buffer = buffer + ' ' + line.strip()
+                if(stop and not bill_title):
+                    bill_title = workdata
+                    continue
+
+                if(stop and not bill_sponsors):
+                    parse_sponsors(None, workdata)
+                    bill_sponsors = True
+                    
+            print bill_title
+            return
+
+
+        
 
     def scrape_legislators(self, chamber, year):
         year = int(year)
