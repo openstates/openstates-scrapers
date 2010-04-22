@@ -1,18 +1,63 @@
 #!/usr/bin/env python
+import urlparse
+import datetime as dt
+import lxml.html
 import sys
-sys.path.append('./scripts')
-import datetime as dt, time
+import os
 import re
+import name_tools
 
-from pyutils.legislation import LegislationScraper, NoDataForYear, ScrapeError, Legislator, Bill, Vote
-
-
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
+                                 NoDataForYear)
 
 
 class WisconsinScraper(LegislationScraper):
     state = 'wi'
     earliest_year = 1999
     internal_sessions = {}
+
+    def scrape_legislators(self, chamber, year):
+        year = int(year)
+        session = self.internal_sessions[year][0][1]
+        # iterating through subsessions would be a better way to do this..
+        if year % 2 == 0 and (year != dt.date.today().year or  year+1 != dt.date.today().year):
+            raise NoDataForYear(year)
+
+        if chamber == 'upper':
+            url = "http://legis.wi.gov/w3asp/contact/legislatorslist.aspx?house=senate"
+        else:
+            url = "http://legis.wi.gov/w3asp/contact/legislatorslist.aspx?house=assembly"
+        
+        body = unicode(self.urlopen(url), 'latin-1')
+        page = lxml.html.fromstring(body)
+
+        for row in page.cssselect("#ctl00_C_dgLegData tr"):
+            if len(row.cssselect("td a")) > 0:
+                rep_url = list(row)[0].cssselect("a[href]")[0].get("href")
+                (full_name, party) = re.findall(r'([\w\-\,\s\.]+)\s+\(([\w])\)', 
+                                     list(row)[0].text_content())[0]
+
+                pre, first, last, suffixes = name_tools.split(full_name)
+
+                district = str(int(list(row)[2].text_content()))
+
+                leg = Legislator(session, chamber, district, full_name,
+                                 first, last, '', party,
+                                 suffix=suffixes)
+                leg.add_source(rep_url)
+
+                leg = self.add_committees(leg, rep_url, session)
+                self.add_legislator(leg)
+
+    def add_committees(self, legislator, rep_url, session):
+        url = 'http://legis.wi.gov/w3asp/contact/' + rep_url + '&display=committee'
+        body = unicode(self.urlopen(url), 'latin-1')
+        cmts = lxml.html.fromstring(body).cssselect("#ctl00_C_lblCommInfo a")
+        for c in map(lambda x: x.text_content().split('(')[0], list(cmts)):
+            legislator.add_role('committee member', session, committee=c.strip())
+        return legislator
+
 
     def scrape_metadata(self):
         sessions = []
