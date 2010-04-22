@@ -36,6 +36,7 @@ class WisconsinScraper(LegislationScraper):
 
     def scrape_session(self, chamber, year, prefix, session):
         def parse_sponsors(bill, line):
+            print "parsing sponsors"
             sponsor_type = None
             for r in re.split(r'\sand\s|\,|;', line):
                 r = r.strip()
@@ -46,10 +47,22 @@ class WisconsinScraper(LegislationScraper):
                 if r.find('cosponsored by') != -1:
                     sponsor_type = 'cosponsor'
                     r = re.split(r'cosponsored by \w+', r)[1] 
-                print "%s is a %s" % (r.strip(), sponsor_type)
+                bill.add_sponsor(sponsor_type, r.strip())
+                #print "%s is a %s" % (r.strip(), sponsor_type)
 
+
+        def parse_action(bill, line, actor, date):
+            print "parsing action %s %s %s" % (date, actor, line)
+            # "06-18.  S. Received from Assembly  ................................... 220 "
+            # "___________                      __________________________________________"
+            #    11         
+            line = line.strip()[11:]  #take out the date and house
+            if line.find('..') != -1: 
+                line = line[0:line.find(' ..')]  #clear out bookkeeping
+            bill.add_action(actor, line, date)
 
         house = 'SB' if (chamber == 'upper') else 'AB'
+        chambers = {'S': 'upper', 'A': 'lower'}
         i = 1
         while True:
             url = "http://www.legis.state.wi.us/%s/data/%s%s%dhst.html" % (year, prefix, house, i)
@@ -62,34 +75,52 @@ class WisconsinScraper(LegislationScraper):
             
             buffer = ''
             bill_id = page.find("a").text_content()
-            bill_title = None;
-            bill_sponsors = False;
+            bill_title = None
+            bill_sponsors = False
+
+            current_year = None
+            action_date = None
+            current_chamber = None
+
             for line in history:
                 stop = False
 
                 # the year changed
                 if re.match(r'^(\d{4})[\s]{0,1}$', line):
+                    current_year = int(line.strip())
                     print "New year: ", line
                     continue
 
                 # the action changed. 
                 if re.match(r'\s+(\d{2})-(\d{2}).\s\s([AS])\.\s', line):
+                   dm = re.findall(r'\s+(\d{2})-(\d{2}).\s\s([AS])\.\s', line)[0]
                    workdata = buffer
-                   #print "new action"
-                  # print buffer
                    buffer = ''
                    stop = True
 
                 buffer = buffer + ' ' + line.strip()
                 if(stop and not bill_title):
                     bill_title = workdata
+                    bill = Bill(session, chamber, bill_id, bill_title)
                     continue
 
                 if(stop and not bill_sponsors):
-                    parse_sponsors(None, workdata)
+                    parse_sponsors(bill, workdata)
                     bill_sponsors = True
+                    current_chamber = chambers[dm[2]]
+                    action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
+                    continue
                     
-            print bill_title
+                if(stop):
+                    parse_action(bill, workdata, current_chamber, action_date)
+                    #now update the date
+                    current_chamber = chambers[dm[2]]
+                    action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
+                
+            current_chamber = chambers[dm[2]]
+            action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))    
+            parse_action(bill, buffer, current_chamber, action_date)
+            self.add_bill(bill)
             return
 
 
