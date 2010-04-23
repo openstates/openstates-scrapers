@@ -35,18 +35,21 @@ class WisconsinScraper(LegislationScraper):
           
 
     def scrape_session(self, chamber, year, prefix, session):
-        def parse_sponsors(bill, line):
+        def parse_sponsors(bill, line, chamber):
             sponsor_type = None
+            if chamber == 'upper':
+                leg_chamber = {'primary': 'upper', 'cosponsor': 'lower'}
+            else:
+                leg_chamber = {'primary': 'lower', 'cosponsor': 'upper'}
             for r in re.split(r'\sand\s|\,|;', line):
                 r = r.strip()
                 if r.find('Introduced by') != -1:
                     sponsor_type = 'primary'
                     r = re.split(r'Introduced by \w+', r)[1]
-
                 if r.find('cosponsored by') != -1:
                     sponsor_type = 'cosponsor'
                     r = re.split(r'cosponsored by \w+', r)[1] 
-                bill.add_sponsor(sponsor_type, r.strip())
+                bill.add_sponsor(sponsor_type, r.strip(), chamber=leg_chamber[sponsor_type])
 
 
         def parse_action(bill, line, actor, date):
@@ -110,7 +113,7 @@ class WisconsinScraper(LegislationScraper):
                     continue
 
                 if(stop and not bill_sponsors):
-                    parse_sponsors(bill, workdata)
+                    parse_sponsors(bill, workdata, chamber)
                     bill_sponsors = True
                     current_chamber = chambers[dm[2]]
                     action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
