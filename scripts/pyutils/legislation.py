@@ -53,8 +53,9 @@ class DateEncoder(json.JSONEncoder):
 class LegislationScraper(object):
     """Subclass for each state's scraper
 
-    Subclasses must define :method:`scrape_bills` and the attribute
-    `state`
+    Subclasses should define :meth:`scrape_bills`,
+    :meth:`scrape_legislators`, and :attr:`metadata` and
+    :attr:`state` attributes.
 
     Put this at the top of your scripts::
 
@@ -87,8 +88,8 @@ class LegislationScraper(object):
 
     metadata = {}
 
-    # The earliest year for when legislative data is available:
-    # (Used for --all)
+    # The earliest year for which legislative data is available in
+    # any state (used for --all)
     earliest_year = 1969
 
     # The user agent used for requests (this will show up in the
@@ -97,6 +98,16 @@ class LegislationScraper(object):
 
     def __init__(self, verbosity=logging.INFO, sleep=False,
                  no_cache=False, output_dir=None, **kwargs):
+        """
+        Create a new LegislationScraper instance.
+
+        :param verbosity: minimum level of messages to log (from the
+          Python standard library's :mod:`logging` module)
+        :param sleep: if True, will insert random sleeps between attempts
+          to download pages
+        :param no_cache: if True, will ignore any cached downloads
+        :param output_dir: the Fifty State data directory to use
+        """
         if not hasattr(self, 'state'):
             raise Exception('LegislationScrapers must have a state attribute')
         self._cookie_jar = cookielib.CookieJar()
@@ -127,7 +138,8 @@ class LegislationScraper(object):
 
     def urlopen(self, url):
         """
-        Grabs a URL, returning a cached version if available.
+        Grabs a URL, returning a cached version if available and
+        sleeping if necessary.
         """
 
         if not self.no_cache:
@@ -187,14 +199,14 @@ class LegislationScraper(object):
     @contextlib.contextmanager
     def urlopen_context(self, url):
         """
-        Use like::
+        Use like: ::
 
-            from __future__ import with_statement
+           from __future__ import with_statement
 
-            class State(LegislationScraper):
-                def something(self):
-                    with self.urlopen_context(url) as page:
-                        use the page
+           class State(LegislationScraper):
+               def something(self):
+                   with self.urlopen_context(url) as page:
+                       do_stuff(page)
 
         When opening a page like this, if there is any error then the
         page and the URL where this error occurred with be saved and
@@ -240,13 +252,40 @@ class LegislationScraper(object):
 
     def scrape_metadata(self):
         """
-        Grab metadata about this state's legislature.
+        Grab metadata about this state's legislature. Should return a
+        dictionary with at least the following attributes:
+
+        * `state_name`: the full name of this state, e.g. New Hampshire
+        * `legislature name`: the name of this state's legislative body, e.g.
+          `"Texas Legislature"`
+        * `upper_chamber_name`: the name of the upper chamber of this state's
+           legislature, e.g. `"Senate"`
+        * `lower_chamber_name`: the name of the lower chamber of this
+           state's legislature, e.g. `"House of Representatives"`
+        * `upper_title`: the title of a member of this state's upper chamber,
+           e.g. `"Senator"`
+        * `lower_title`: the title of a member of this state's lower chamber,
+           e.g. `"Representative"`
+        * `upper_term`: the length, in years, of a term in this state's
+           upper chamber, e.g. `4`
+        * `lower_term`: the length, in years, of a term in this state's
+           lower chamber, e.g. `2`
+        * `sessions`: an ordered list of available sessions, e.g.
+           `['2005-2006', '2007-2008', '2009-2010']
+        * `session_details`: a dictionary, with an entry for each session
+          indicating the years it encompasses as well as any 'sub' sessions,
+          e.g.::
+
+           {'2009-2010': {'years': [2009, 2010],
+                          'sub_sessions': ["2009 Special Session 1"]}}
+
         """
         return self.metadata
 
     def scrape_legislators(self, chamber, year):
         """
-        Grab all the legislators who served in a given year.
+        Grab all the legislators who served in a given year. Must be
+        overridden by subclasses.
 
         Should raise a :class:`NoDataForYear` exception if the year is invalid.
         """
@@ -254,7 +293,8 @@ class LegislationScraper(object):
 
     def scrape_bills(self, chamber, year):
         """
-        Grab all the bills for a given chamber and year.
+        Grab all the bills for a given chamber and year. Must be
+        overridden by subclasses.
 
         Should raise a :class:`NoDataForYear` exception if the year is invalid.
         """
@@ -263,7 +303,8 @@ class LegislationScraper(object):
 
     def add_bill(self, bill):
         """
-        Add a scraped :class:`pyutils.legislation.Bill` object.
+        Save a scraped :class:`pyutils.legislation.Bill` object. Only
+        call after all data for the given bill has been collected.
         """
         self.log("add_bill %s %s: %s" % (bill['chamber'],
                                          bill['session'],
@@ -294,6 +335,14 @@ class LegislationScraper(object):
             json.dump(bill, f, cls=DateEncoder)
 
     def add_person(self, person):
+        """
+        Save a scraped :class:`pyutils.legislation.Person` object. Only
+        call after all data for the given person has been collected.
+
+        Should be used for non-legislator people (e.g. Governor, Lt. Gov).
+        To add :class:`pyutils.legislation.Legislator` objects call
+        :meth:`pyutils.legislation.add_legislator`.
+        """
         self.log("add_person: %s" % person['full_name'])
 
         person['state'] = self.state
@@ -309,7 +358,8 @@ class LegislationScraper(object):
 
     def add_legislator(self, legislator):
         """
-        Add a scraped :class:`pyutils.legislation.Legislator` object.
+        Save a scraped :class:`pyutils.legislation.Legislator` object.
+        Only call after all data for the given legislator has been collected.
         """
         self.log("add_legislator: %s" % legislator['full_name'])
 
@@ -601,6 +651,14 @@ class Vote(FiftystatesObject):
 class Person(FiftystatesObject):
 
     def __init__(self, full_name, **kwargs):
+        """
+        Create a Person.
+
+        Note: the :class:`pyutils.legislation.Legislator` class should
+        be used when dealing with state legislators.
+
+        :param full_name: the person's full name
+        """
         super(Person, self).__init__('person', **kwargs)
         self['full_name'] = full_name
         self['roles'] = []
