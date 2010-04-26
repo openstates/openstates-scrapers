@@ -483,7 +483,7 @@ class FiftystatesObject(dict):
 
     def add_source(self, url, retrieved=None, **kwargs):
         """
-        Add a source URL from which data related to this vote was scraped.
+        Add a source URL from which data related to this object was scraped.
 
         :param url: the location of the source
         """
