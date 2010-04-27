@@ -5,9 +5,9 @@ import time
 import os
 import sys
 import urllib2
+import urlparse
 import random
 from hashlib import md5
-import cookielib
 import contextlib
 import logging
 import warnings
@@ -15,13 +15,26 @@ from names import NameMatcher
 
 try:
     from BeautifulSoup import BeautifulSoup
+    USE_SOUP = True
 except ImportError:
-    pass
+    print "BeautifulSoup not found, LegislationScraper.soup_context will " \
+        "be unavailable"
+    USE_SOUP = False
 
 try:
     import lxml.html
+    USE_LXML = True
 except ImportError:
-    pass
+    print "lxml not found, LegislationScraper.lxml_context will " \
+        "be unavailable"
+    USE_LXML = False
+
+try:
+    import httplib2
+    USE_HTTPLIB2 = True
+except ImportError:
+    print "httplib2 not found, falling back to urllib2"
+    USE_HTTPLIB2 = False
 
 try:
     import json
@@ -119,7 +132,6 @@ class LegislationScraper(object):
         """
         if not hasattr(self, 'state'):
             raise Exception('LegislationScrapers must have a state attribute')
-        self._cookie_jar = cookielib.CookieJar()
 
         self.reset_name_matchers()
 
@@ -140,6 +152,13 @@ class LegislationScraper(object):
         self.logger.addHandler(console)
         self.logger.setLevel(verbosity)
 
+        if USE_HTTPLIB2:
+            if self.no_cache:
+                self.http = httplib2.Http()
+            else:
+                self.http = httplib2.Http(self.cache_dir)
+            self.http.follow_redirects = True
+
         # Convenience methods
         self.log = self.logger.info
         self.debug = self.logger.debug
@@ -150,14 +169,6 @@ class LegislationScraper(object):
         Grabs a URL, returning a cached version if available and
         sleeping if necessary.
         """
-
-        if not self.no_cache:
-            url_cache = os.path.join(self.cache_dir,
-                                     md5(url).hexdigest() + '.html')
-            if os.path.exists(url_cache):
-                self.debug('Getting %s from cache' % url)
-                return open(url_cache).read()
-
         if self.sleep:
             # insert a short random delay before each request
             # and a longer random delay after some requests
@@ -173,21 +184,33 @@ class LegislationScraper(object):
 
             time.sleep(len)
 
-        self.log('Retrieving URL: %s' % url)
-        req = urllib2.Request(url, headers=self._make_headers())
-        self._cookie_jar.add_cookie_header(req)
-        try:
-            resp = urllib2.urlopen(req)
-        except:
-            self.logger.exception('Error fetching page: %s' % url)
-            raise
-        self._cookie_jar.extract_cookies(resp, req)
-        data = resp.read()
+        parsed = urlparse.urlparse(url)
+        if parsed.scheme in ['http', 'https'] and USE_HTTPLIB2:
+            try:
+                resp, content = self.http.request(
+                    url, "GET", headers=self._make_headers())
+            except:
+                self.logger.exception('Error fetching page: %s' % url)
+                raise
 
-        if not self.no_cache:
-            open(url_cache, 'w').write(data)
+            if resp.fromcache:
+                self.log("Got %s (httplib2, cached)" % url)
+            else:
+                self.log("Got %s (httplib2)" % url)
 
-        return data
+            return content
+        else:
+            # Use urllib2 for non-http requests (e.g. ftp)
+            req = urllib2.Request(url, headers=self._make_headers())
+            try:
+                resp = urllib2.urlopen(req)
+            except:
+                self.logger.exception("Error fetching page: %s" % url)
+                raise
+
+            self.log("Got %s (urllib2)" % url)
+
+            return resp.read()
 
     def show_error(self, url, body):
         exception = sys.exc_info()[1]
@@ -234,12 +257,11 @@ class LegislationScraper(object):
         Like :method:`urlopen_context`, except returns a BeautifulSoup
         parsed document.
         """
-        body = self.urlopen(url)
-
-        try:
-            soup = BeautifulSoup(body)
-        except NameError:
+        if not USE_SOUP:
             raise ScrapeError("BeautifulSoup does not seem to be installed.")
+
+        body = self.urlopen(url)
+        soup = BeautifulSoup(body)
 
         try:
             yield soup
@@ -253,12 +275,11 @@ class LegislationScraper(object):
         Like :method:`urlopen_context`, except returns an lxml parsed
         document.
         """
-        body = self.urlopen(url)
-
-        try:
-            elem = lxml.html.fromstring(body)
-        except NameError:
+        if not USE_LXML:
             raise ScrapeError("lxml does not seem to be installed.")
+
+        body = self.urlopen(url)
+        elem = lxml.html.fromstring(body)
 
         try:
             yield elem
