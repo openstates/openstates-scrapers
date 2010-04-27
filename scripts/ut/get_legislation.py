@@ -81,7 +81,7 @@ class UTLegislationScraper(LegislationScraper):
                                  fullname, first_name, last_name,
                                  middle_name, tds[2].find(text=True))
                 leg.add_source(url)
-                self.add_legislator(leg)
+                self.save_legislator(leg)
 
     def parse_status(self, bill, url):
         chamber = bill['chamber']
@@ -221,7 +221,7 @@ class UTLegislationScraper(LegislationScraper):
                         version_name = text_link.previous.strip()
                         bill.add_version(version_name, text_link['href'])
 
-                self.add_bill(bill)
+                self.save_bill(bill)
 
     def scrape_bills(self, chamber, year):
         if year not in self.metadata['session_details']:

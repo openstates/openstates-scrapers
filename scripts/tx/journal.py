@@ -195,7 +195,7 @@ def parse(url, chamber, scraper):
         for vote in votes(root):
             vote['date'] = date
             vote['chamber'] = chamber
-            scraper._add_standalone_vote(vote)
+            scraper._save_standalone_vote(vote)
 
 if __name__ == '__main__':
     # Test run

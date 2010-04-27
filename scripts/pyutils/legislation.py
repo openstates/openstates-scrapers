@@ -10,6 +10,7 @@ from hashlib import md5
 import cookielib
 import contextlib
 import logging
+import warnings
 from BeautifulSoup import BeautifulSoup
 
 from names import NameMatcher
@@ -302,13 +303,17 @@ class LegislationScraper(object):
                                   'scrape_bills method')
 
     def add_bill(self, bill):
+        warnings.warn("add_bill renamed save_bill", DeprecationWarning)
+        self.save_bill(bill)
+
+    def save_bill(self, bill):
         """
         Save a scraped :class:`pyutils.legislation.Bill` object. Only
         call after all data for the given bill has been collected.
         """
-        self.log("add_bill %s %s: %s" % (bill['chamber'],
-                                         bill['session'],
-                                         bill['bill_id']))
+        self.log("save_bill %s %s: %s" % (bill['chamber'],
+                                          bill['session'],
+                                          bill['bill_id']))
 
         # Associate each recorded vote with an actual legislator
         for vote in bill['votes']:
@@ -335,15 +340,19 @@ class LegislationScraper(object):
             json.dump(bill, f, cls=DateEncoder)
 
     def add_person(self, person):
+        warnings.warn("add_person renamed save_person", DeprecationWarning)
+        self.save_person(person)
+
+    def save_person(self, person):
         """
         Save a scraped :class:`pyutils.legislation.Person` object. Only
         call after all data for the given person has been collected.
 
         Should be used for non-legislator people (e.g. Governor, Lt. Gov).
         To add :class:`pyutils.legislation.Legislator` objects call
-        :meth:`pyutils.legislation.add_legislator`.
+        :meth:`pyutils.legislation.save_legislator`.
         """
-        self.log("add_person: %s" % person['full_name'])
+        self.log("save_person: %s" % person['full_name'])
 
         person['state'] = self.state
 
@@ -357,11 +366,16 @@ class LegislationScraper(object):
             json.dump(person, f, cls=DateEncoder)
 
     def add_legislator(self, legislator):
+        warnings.warn("add_legislator renamed save_legislator",
+                      DeprecationWarning)
+        self.save_legislator(legislator)
+
+    def save_legislator(self, legislator):
         """
         Save a scraped :class:`pyutils.legislation.Legislator` object.
         Only call after all data for the given legislator has been collected.
         """
-        self.log("add_legislator: %s" % legislator['full_name'])
+        self.log("save_legislator: %s" % legislator['full_name'])
 
         role = legislator['roles'][0]
         self.matcher[role['chamber']][legislator] = [
@@ -381,12 +395,12 @@ class LegislationScraper(object):
                   'w') as f:
             json.dump(legislator, f, cls=DateEncoder)
 
-    def _add_standalone_vote(self, vote):
+    def _save_standalone_vote(self, vote):
         filename = vote["filename"] + ".json"
-        self.log("_add_standalone_vote %s %s: %s '%s'" % (vote['session'],
-                                                          vote['chamber'],
-                                                          vote['bill_id'],
-                                                          vote['motion']))
+        self.log("_save_standalone_vote %s %s: %s '%s'" % (vote['session'],
+                                                           vote['chamber'],
+                                                           vote['bill_id'],
+                                                           vote['motion']))
 
         for type in ['yes_votes', 'no_votes', 'other_votes']:
             vote[type] = map(lambda l:

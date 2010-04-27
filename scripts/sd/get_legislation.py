@@ -140,7 +140,7 @@ class SDLegislationScraper(LegislationScraper):
                 # Add action
                 bill.add_action(chamber, action, act_date)
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape_new_vote(self, url):
         vote_page = self.soup_parser(self.urlopen(url))
@@ -286,7 +286,7 @@ class SDLegislationScraper(LegislationScraper):
                 # Add action
                 bill.add_action(chamber, action, act_date)
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape_old_vote(self, url):
         vote_page = self.soup_parser(self.urlopen(url))
@@ -395,7 +395,7 @@ class SDLegislationScraper(LegislationScraper):
                                     middle_name, party,
                                     occupation=occupation)
             legislator.add_source(leg_page_url)
-            self.add_legislator(legislator)
+            self.save_legislator(legislator)
 
     def scrape_old_legislators(self, chamber, session):
         """
@@ -435,7 +435,7 @@ class SDLegislationScraper(LegislationScraper):
                                         middle_name, party=party,
                                         occupation=occupation)
                 legislator.add_source(leg_list_url)
-                self.add_legislator(legislator)
+                self.save_legislator(legislator)
 
     def scrape_legislators(self, chamber, year):
         if year not in self.metadata['session_details']:

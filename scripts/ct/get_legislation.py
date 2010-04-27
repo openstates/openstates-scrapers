@@ -78,8 +78,7 @@ class CTLegislationScraper(LegislationScraper):
 
                 self.add_bill_votes(bill,chamber,soup)
 
-                self.add_bill(bill)
-
+                self.save_bill(bill)
 
     def add_bill_sponsors(self,bill,soup):
 

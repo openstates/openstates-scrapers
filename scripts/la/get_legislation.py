@@ -94,7 +94,7 @@ class LouisianaScraper(LegislationScraper):
                                          str(district), name, first,
                                          middle, last, party, suffix=suffix)
 
-                        self.add_legislator(leg)
+                        self.save_legislator(leg)
 
     def scrape_lower_house(self, year):
         #todo: tedious name parsing
@@ -116,7 +116,7 @@ class LouisianaScraper(LegislationScraper):
                                  name, first, middle, last, party,
                                  suffix=suffix)
 
-                self.add_legislator(leg)
+                self.save_legislator(leg)
 
     # stealing from llimllib, since his works pretty well.
     def parse_name(self, name):
@@ -204,7 +204,7 @@ class LouisianaScraper(LegislationScraper):
         documents = self.scrape_docs(the_bill, bill_info[0],
                                      bill_info[1], bill_info[2])
 
-        self.add_bill(the_bill)
+        self.save_bill(the_bill)
         return True
 
     def scrape_docs(self, bill, session, chamber, bill_no):

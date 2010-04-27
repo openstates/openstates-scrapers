@@ -40,7 +40,7 @@ class MELegislationScraper(LegislationScraper):
             if item.find("td", { "class" : "RecordNumbers" }):
 		bill_id = item.find("td", { "class" : "RecordNumbers" }).contents[0].split(',')[1].strip()
 		bill_title = item.nextSibling.find("td", { "class" : "RecordTitle" }).contents[0]
-                self.add_bill(chamber, sessionname, bill_id, bill_title)
+                self.save_bill(chamber, sessionname, bill_id, bill_title)
 
     def scrape_bills(self, chamber, year):
         if int(year) < 1998 or int(year) > dt.date.today().year or int(year) % 2 == 0:

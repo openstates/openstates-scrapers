@@ -109,7 +109,7 @@ class VALegislationScraper(LegislationScraper):
             sanitized = leg['full_name'].replace('.', '').lower()
             if self.matcher[chamber][sanitized] and self.matcher[chamber][sanitized][2] == district:
                 return
-            self.add_legislator(leg)
+            self.save_legislator(leg)
 
     def scrape_bills(self,chamber,year):
         #http://leg1.state.va.us/cgi-bin/legp504.exe?951+sum+HB246
@@ -147,7 +147,7 @@ class VALegislationScraper(LegislationScraper):
                                 self.fetch_actions(bill, one_bill)   
                             else:
                                 pass
-                        self.add_bill(bill)
+                        self.save_bill(bill)
         pass
 
     def fetch_sponsors(self, bill, url):

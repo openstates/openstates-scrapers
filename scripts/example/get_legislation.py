@@ -64,7 +64,7 @@ class ExampleLegislationScraper(LegislationScraper):
         b1.add_action(chamber, 'read first time', d1)
         b1.add_action(other_chamber, 'introduced', d2)
 
-        self.add_bill(b1)
+        self.save_bill(b1)
 
     def scrape_legislators(self, chamber, year):
         if year != '2009':
@@ -87,8 +87,8 @@ class ExampleLegislationScraper(LegislationScraper):
         l2.add_role('Minority Leader', '2009-2010')
         l2.add_source('http://example.com/Sally_Johnson.html')
 
-        self.add_legislator(l1)
-        self.add_legislator(l2)
+        self.save_legislator(l1)
+        self.save_legislator(l2)
 
 
 if __name__ == '__main__':

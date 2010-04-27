@@ -89,7 +89,7 @@ class PALegislationScraper(LegislationScraper):
             self.parse_votes(bill, vote_url(chamber, session, special,
                                             type, bill_number))
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def parse_bill_versions(self, bill, info_page):
         """
@@ -323,7 +323,7 @@ class PALegislationScraper(LegislationScraper):
                                         full_name, first_name, last_name,
                                         middle_name, party)
                 legislator.add_source(leg_list_url)
-                self.add_legislator(legislator)
+                self.save_legislator(legislator)
 
 if __name__ == '__main__':
     PALegislationScraper.run()

@@ -113,7 +113,7 @@ class TXLegislationScraper(LegislationScraper):
                                                        version)
                         bill.add_version(version_name, version_url)
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape_session(self, chamber, session):
         billdirs_path = '/bills/%s/billhistory/%s_bills/' % (
@@ -204,7 +204,7 @@ class TXLegislationScraper(LegislationScraper):
                         leg.add_role('committee member', '81',
                                      committee=comm_name.strip())
 
-                self.add_legislator(leg)
+                self.save_legislator(leg)
 
     def scrape_reps(self, year):
         rep_url = 'http://www.house.state.tx.us/members/welcome.php'
@@ -250,7 +250,7 @@ class TXLegislationScraper(LegislationScraper):
                         # The Speaker's member page does not redirect.
                         # The Speaker is not on any committees
                         # so we can just continue with the next member.
-                        self.add_legislator(leg)
+                        self.save_legislator(leg)
                         continue
 
 
@@ -265,7 +265,7 @@ class TXLegislationScraper(LegislationScraper):
                         leg.add_role('committee member', '81',
                                      committee=comm.text.strip())
 
-                self.add_legislator(leg)
+                self.save_legislator(leg)
 
 if __name__ == '__main__':
     TXLegislationScraper.run()

@@ -129,7 +129,7 @@ class NHLegislationScraper(LegislationScraper):
             bill = Bill(session, chamber, bill_id, bill_title)
             bill.add_version("Bill text", bill_url)
             bill.add_source(search_url)
-            self.add_bill(bill)
+            self.save_bill(bill)
 
             #grabs sponsorship
 

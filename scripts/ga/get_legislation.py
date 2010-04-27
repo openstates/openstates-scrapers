@@ -156,7 +156,7 @@ class GALegislationScraper(LegislationScraper):
                 if house_date:
                     bill.add_action('lower', action_text, house_date)
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape1997(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/1997_98/leg/sum/sb1.htm"
@@ -193,7 +193,7 @@ class GALegislationScraper(LegislationScraper):
                 if house_date:
                     bill.add_action('lower', action_text, house_date)
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape1999(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/1999_00/leg/sum/sb1.htm"
@@ -224,7 +224,7 @@ class GALegislationScraper(LegislationScraper):
                 if house_date:
                     bill.add_action('lower', action_text, house_date)
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape2001(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/2001_02/sum/sb1.htm"
@@ -260,7 +260,7 @@ class GALegislationScraper(LegislationScraper):
                 bill.add_version(a.text_content(),
                                  urlparse.urljoin(url, a.get('href')))
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape2003(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/2003_04/sum/sum/sb1.htm"
@@ -294,7 +294,7 @@ class GALegislationScraper(LegislationScraper):
                 bill.add_version(a.text_content(),
                                  urlparse.urljoin(url, a.get('href')))
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape2005(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/2005_06/sum/sum/sb1.htm"
@@ -323,7 +323,7 @@ class GALegislationScraper(LegislationScraper):
                 bill.add_version(a.text_content(),
                                  urlparse.urljoin(url, a.get('href')))
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape2007(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/2007_09/sum/sum/sb1.htm"
@@ -352,7 +352,7 @@ class GALegislationScraper(LegislationScraper):
                 bill.add_version(a.text_content(),
                                  urlparse.urljoin(url, a.get('href')))
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape2009(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/2009_10/sum/sum/sb1.htm"
@@ -388,7 +388,7 @@ class GALegislationScraper(LegislationScraper):
                 bill.add_version(a.text_content(),
                                  urlparse.urljoin(url, a.get('href')))
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
 if __name__ == '__main__':
     GALegislationScraper.run()

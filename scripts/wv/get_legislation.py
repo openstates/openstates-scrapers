@@ -162,7 +162,7 @@ class WVLegislationScraper(LegislationScraper):
 
                 bill.add_action(actor, action, date)
 
-        self.add_bill(bill)
+        self.save_bill(bill)
 
 
 if __name__ == '__main__':

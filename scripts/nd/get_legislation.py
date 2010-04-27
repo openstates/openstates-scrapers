@@ -128,7 +128,7 @@ class NDLegislationScraper(LegislationScraper):
             # Save
             legislator = Legislator(**attributes)
             legislator.add_source(bio_url)
-            self.add_legislator(legislator)
+            self.save_legislator(legislator)
     
     def scrape_legislator_bio(self, url):
         """
@@ -297,7 +297,7 @@ class NDLegislationScraper(LegislationScraper):
         
         # Save bill
         for bill in indexed_bills.values():
-            self.add_bill(bill)
+            self.save_bill(bill)
             
     def scrape_bill_details(self, assembly_url, bill_number):
         """

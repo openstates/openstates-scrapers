@@ -121,7 +121,7 @@ class MOLegislationScraper(LegislationScraper):
             if versions_url:
                 self.parse_senate_bill_versions(bill, versions_url['href'])
 
-        self.add_bill(bill)
+        self.save_bill(bill)
 
     def parse_senate_bill_versions(self, bill, url):
         bill.add_source(url)
@@ -285,7 +285,7 @@ class MOLegislationScraper(LegislationScraper):
                         pdf_url = pdf_url.previousSibling['href']
                         bill.add_version(version, text_url, pdf_url=pdf_url)
 
-        self.add_bill(bill)
+        self.save_bill(bill)
 
     def parse_house_actions(self, bill, url):
         bill.add_source(url)

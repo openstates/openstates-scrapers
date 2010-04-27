@@ -57,7 +57,7 @@ class ALLegislationScraper(LegislationScraper):
                 (last_name,rest) = name.strip().split(', ',1)
                 rest = rest.strip().split(' ')[0]
                 leg = Legislator(year, chamber, str(district), name, rest, last_name, '', party)
-                self.add_legislator(leg)
+                self.save_legislator(leg)
         pass
 
     def scrape_bill(self, chamber, current_bill, session):
@@ -147,7 +147,7 @@ class ALLegislationScraper(LegislationScraper):
                            bill.add_vote(vote)
                        
                        bill.add_action(chamber, matter, act_date)
-             self.add_bill(bill)
+             self.save_bill(bill)
 
     def scrape_bills(self,chamber,year):
         r = random.random()

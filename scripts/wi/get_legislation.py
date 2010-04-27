@@ -129,7 +129,7 @@ class WisconsinScraper(LegislationScraper):
             action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))    
             parse_action(bill, buffer, current_chamber, action_date)
             bill.add_source(url)
-            self.add_bill(bill)
+            self.save_bill(bill)
             i = i + 1
 
     def add_vote(self, bill, chamber, date, line):
@@ -208,7 +208,7 @@ class WisconsinScraper(LegislationScraper):
                 leg.add_source(rep_url)
 
                 leg = self.add_committees(leg, rep_url, session)
-                self.add_legislator(leg)
+                self.save_legislator(leg)
 
     def add_committees(self, legislator, rep_url, session):
         url = 'http://legis.wi.gov/w3asp/contact/' + rep_url + '&display=committee'

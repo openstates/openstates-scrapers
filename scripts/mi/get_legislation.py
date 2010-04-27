@@ -51,7 +51,7 @@ class MichiganScraper(LegislationScraper):
                         district = district.div.font.string.strip()
                         party = abbr[party.div.font.string.strip()]
                         leg = Legislator(year, chamber, district, first_name + " " + last_name, first_name, last_name, '', party)
-                        self.add_legislator(leg)
+                        self.save_legislator(leg)
         else: 
             with self.soup_context('http://www.senate.michigan.gov/SenatorInfo/alphabetical_list_of_senators.htm') as legs:
                 for tr in legs.findAll('tr'):
@@ -72,7 +72,7 @@ class MichiganScraper(LegislationScraper):
 
                     party = party.font.string.strip()
                     leg = Legislator(year, chamber, district, name, first.strip(), last.strip(), middle.strip(), party, suffix=suffix)
-                    self.add_legislator(leg)
+                    self.save_legislator(leg)
 
     def scrape_past_legislators(self, chamber, year):
         year = int(year)
@@ -114,7 +114,7 @@ class MichiganScraper(LegislationScraper):
             name = res[0][0]
             (first, middle, last, suffix) = self.parse_name(name)
             leg = Legislator(year, chamber, res[0][2], name, first , last, middle, res[0][1], suffix=suffix)
-            self.add_legislator(leg)
+            self.save_legislator(leg)
 
     def scrape_bills(self,chamber,year):
         if int(year) %2 == 0:  
@@ -161,7 +161,7 @@ class MichiganScraper(LegislationScraper):
 
             the_bill.add_source('http://legislature.mi.gov/doc.aspx?%d-%s-%04d' % (year, abbr, bill_no))
             self.parse_actions(the_bill, bill_page.findAll(id='frg_billstatus_HistoriesGridView')[0])
-            self.add_bill(the_bill)
+            self.save_bill(the_bill)
             bill_no = bill_no + 1
         pass
 

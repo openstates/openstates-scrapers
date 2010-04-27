@@ -335,7 +335,7 @@ class CASQLImporter(LegislationScraper):
                              legislator.middle_initial or '',
                              party,
                              suffix=legislator.name_suffix)
-            self.add_legislator(leg)
+            self.save_legislator(leg)
 
     def scrape_bills(self, chamber, year):
         session = "%s%d" % (year, int(year) + 1)
@@ -419,7 +419,7 @@ class CASQLImporter(LegislationScraper):
 
                 fsbill.add_vote(fsvote)
 
-            self.add_bill(fsbill)
+            self.save_bill(fsbill)
 
 
 if __name__ == '__main__':

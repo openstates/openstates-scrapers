@@ -155,7 +155,7 @@ class FLLegislationScraper(LegislationScraper):
                             cosponsor = cosponsor.replace('\n', '').strip()
                             bill.add_sponsor('cosponsor', cosponsor)
 
-                    self.add_bill(bill)
+                    self.save_bill(bill)
 
     def scrape_bills(self, chamber, year):
         if year not in self.metadata['session_details']:
@@ -195,7 +195,7 @@ class FLLegislationScraper(LegislationScraper):
             leg = Legislator(year, 'upper', district, full,
                              first, last, middle, party)
             leg.add_source(leg_page_url)
-            self.add_legislator(leg)
+            self.save_legislator(leg)
 
     def scrape_reps(self, year):
         if year != '2009':
@@ -224,7 +224,7 @@ class FLLegislationScraper(LegislationScraper):
             leg = Legislator(year, 'lower', district, full,
                              first, last, middle, party)
             leg.add_source(leg_page_url)
-            self.add_legislator(leg)
+            self.save_legislator(leg)
 
     def split_name(self, full):
         last = full.split(',')[0]

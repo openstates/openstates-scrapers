@@ -219,7 +219,7 @@ class MNLegislationScraper(LegislationScraper):
                 action_text = action['action_text']
                 bill.add_action(action_chamber, action_text, action_date)
 
-        self.add_bill(bill)
+        self.save_bill(bill)
 
     def scrape_session(self, chamber, session, session_year, session_number, legislative_session):
         """Scrape all bills for a given chamber and a given session.

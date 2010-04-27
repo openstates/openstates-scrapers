@@ -156,7 +156,7 @@ class NCLegislationScraper(LegislationScraper):
                 'RollCallVoteTranscript')):
             self.get_vote(bill, vote['href'])
 
-        self.add_bill(bill)
+        self.save_bill(bill)
 
     def get_vote(self, bill, url):
         url = 'http://www.ncga.state.nc.us' + url + '&bPrintable=true'
@@ -209,7 +209,7 @@ class NCLegislationScraper(LegislationScraper):
                     self.lt_gov.add_role('Lieutenant Governor',
                                          bill['session'])
 
-                    self.add_person(self.lt_gov)
+                    self.save_person(self.lt_gov)
 
                 if 'VOTES YES' in self.flatten(cells[0]):
                     v['passed'] = True
@@ -311,7 +311,7 @@ class NCLegislationScraper(LegislationScraper):
                                         first_name, last_name, middle_name,
                                         party, suffix=suffix)
                 legislator.add_source(url)
-                self.add_legislator(legislator)
+                self.save_legislator(legislator)
 
     def flatten(self, tree):
 

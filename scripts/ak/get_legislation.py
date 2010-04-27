@@ -93,7 +93,7 @@ class AKLegislationScraper(LegislationScraper):
                              last_name, middle_name,
                              party, code=code)
             leg.add_source(member_url)
-            self.add_legislator(leg)
+            self.save_legislator(leg)
 
     def scrape_session(self, chamber, year):
         if chamber == 'upper':
@@ -199,7 +199,7 @@ class AKLegislationScraper(LegislationScraper):
 
                 bill.add_version(text_name, text_url)
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def parse_vote(self, bill, action, act_chamber, act_date, url):
         url = "http://www.legis.state.ak.us/basis/%s" % url

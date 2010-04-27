@@ -146,7 +146,7 @@ class KYLegislationScraper(LegislationScraper):
                     'vote_history.pdf',
                     bill_info_url.replace('.htm', '') + "/vote_history.pdf")
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape_legislators(self, chamber, year):
         if year != '2009':
@@ -198,7 +198,7 @@ class KYLegislationScraper(LegislationScraper):
                                     first_name, last_name, middle_name, party)
             legislator.add_source(url)
 
-            self.add_legislator(legislator)
+            self.save_legislator(legislator)
 
 if __name__ == '__main__':
     KYLegislationScraper.run()

@@ -131,7 +131,7 @@ class VTLegislationScraper(LegislationScraper):
             for sponsor in sponsors[1:]:
                 bill.add_sponsor('cosponsor', sponsor.string)
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def parse_vote_new(self, bill, chamber, url):
         vote_page = BeautifulSoup(self.urlopen(url))
@@ -240,7 +240,7 @@ class VTLegislationScraper(LegislationScraper):
                         date = dt.datetime.strptime(act_date, '%m/%d/%Y')
                         bill.add_action(act_chamber, action, act_date)
 
-            self.add_bill(bill)
+            self.save_bill(bill)
 
     def scrape_bills(self, chamber, year):
         session = "%s-%d" % (year, int(year) + 1)
@@ -309,7 +309,7 @@ class VTLegislationScraper(LegislationScraper):
                              first, last, middle, party,
                              official_email=official_email)
             leg.add_source(leg_url)
-            self.add_legislator(leg)
+            self.save_legislator(leg)
 
 if __name__ == '__main__':
     VTLegislationScraper.run()

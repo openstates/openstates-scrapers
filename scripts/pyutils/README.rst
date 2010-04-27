@@ -8,7 +8,7 @@ LegislationScraper
 ==================
 
 .. autoclass:: pyutils.legislation.LegislationScraper
-   :members: __init__, urlopen, log, add_bill, add_legislator, scrape_bills, scrape_legislators, scrape_metadata, add_person, urlopen, urlopen_context, run
+   :members: __init__, urlopen, log, save_bill, save_legislator, scrape_bills, scrape_legislators, scrape_metadata, save_person, urlopen, urlopen_context, run
 
 Bill
 ====
