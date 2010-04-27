@@ -11,9 +11,17 @@ import cookielib
 import contextlib
 import logging
 import warnings
-from BeautifulSoup import BeautifulSoup
-
 from names import NameMatcher
+
+try:
+    from BeautifulSoup import BeautifulSoup
+except ImportError:
+    pass
+
+try:
+    import lxml.html
+except ImportError:
+    pass
 
 try:
     import json
@@ -227,9 +235,33 @@ class LegislationScraper(object):
         parsed document.
         """
         body = self.urlopen(url)
-        soup = BeautifulSoup(body)
+
+        try:
+            soup = BeautifulSoup(body)
+        except NameError:
+            raise ScrapeError("BeautifulSoup does not seem to be installed.")
+
         try:
             yield soup
+        except:
+            self.show_error(url, body)
+            raise
+
+    @contextlib.contextmanager
+    def lxml_context(self, url):
+        """
+        Like :method:`urlopen_context`, except returns an lxml parsed
+        document.
+        """
+        body = self.urlopen(url)
+
+        try:
+            elem = lxml.html.fromstring(body)
+        except NameError:
+            raise ScrapeError("lxml does not seem to be installed.")
+
+        try:
+            yield elem
         except:
             self.show_error(url, body)
             raise
