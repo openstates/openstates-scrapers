@@ -7,7 +7,6 @@ import sys
 import urllib2
 import urlparse
 import random
-from hashlib import md5
 import contextlib
 import logging
 import warnings
