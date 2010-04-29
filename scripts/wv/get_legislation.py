@@ -4,6 +4,7 @@ import re
 import datetime as dt
 import sys
 import os
+import urllib2
 from BeautifulSoup import BeautifulSoup as BS
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
