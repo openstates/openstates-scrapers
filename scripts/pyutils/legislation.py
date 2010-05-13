@@ -188,6 +188,11 @@ class LegislationScraper(object):
             try:
                 resp, content = self.http.request(
                     url, "GET", headers=self._make_headers())
+
+                # raise a urllib2.HTTPError so underlying code can rely on it
+                if resp.status >= 400:
+                    raise urllib2.HTTPError(url, resp.status, resp.reason,
+                                            resp.items, None)
             except:
                 self.logger.exception('Error fetching page: %s' % url)
                 raise
