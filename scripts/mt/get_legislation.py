@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 
-from pyutils.legislation import LegislationScraper, NoDataForYear, Legislator
 from datetime import datetime
 import csv
 import html5lib
@@ -9,7 +8,8 @@ import os
 import re
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-#sys.path.append('./scripts')
+from pyutils.legislation import LegislationScraper, NoDataForYear, Legislator
+
 
 
 class MTScraper(LegislationScraper):
@@ -140,7 +140,7 @@ class MTScraper(LegislationScraper):
             legislator = Legislator(session, chamber, district, '%s %s' % (first_name, last_name), \
                                     first_name, last_name, '', party)
             legislator.add_source(url)
-            self.add_legislator(legislator)
+            self.save_legislator(legislator)
 
     def scrape_post_2003_legislators(self, chamber, year, session, suffix):
         url = 'http://leg.mt.gov/content/sessions/%d%s/%d%sMembers.txt' % \
@@ -180,7 +180,7 @@ class MTScraper(LegislationScraper):
             legislator = Legislator(session, chamber, district, '%s %s' % (first_name, last_name), \
                                     first_name, last_name, '', party)
             legislator.add_source(url)
-            self.add_legislator(legislator)
+            self.save_legislator(legislator)
 
     def scrape_bills(self, chamber, year):
         #bill id
