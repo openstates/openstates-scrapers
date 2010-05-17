@@ -194,15 +194,19 @@ class TXLegislationScraper(LegislationScraper):
                     details = lxml.etree.fromstring(details_page,
                                                     lxml.etree.HTMLParser())
 
-                    comms = details.xpath("//h2[contains(text(), 'Committee Membership')]")[0]
-                    comms = comms.getnext()
-                    for comm in comms.xpath('li/a'):
-                        comm_name = comm.text
-                        if comm.tail:
-                            comm_name += comm.tail
+                    try:
+                        comms = details.xpath("//h2[contains(text(), 'Committee Membership')]")[0]
+                        comms = comms.getnext()
+                        for comm in comms.xpath('li/a'):
+                            comm_name = comm.text
+                            if comm.tail:
+                                comm_name += comm.tail
 
-                        leg.add_role('committee member', '81',
-                                     committee=comm_name.strip())
+                            leg.add_role('committee member', '81',
+                                         committee=comm_name.strip())
+                    except IndexError:
+                        # this legislator has no committee memberships yet
+                        pass
 
                 self.save_legislator(leg)
 
