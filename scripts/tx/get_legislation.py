@@ -62,7 +62,7 @@ class TXLegislationScraper(LegislationScraper):
             extra['action_number'] = action.find('actionNumber').text
             comment = action.find('comment')
             if comment is not None and comment.text:
-                extra['comment'] = comment.text
+                extra['comment'] = comment.text.strip()
 
             actor = {'H': 'lower',
                      'S': 'upper',
