@@ -141,7 +141,7 @@ class TXLegislationScraper(LegislationScraper):
 
             with self.urlopen_context(journal_root) as listing:
                 for name in parse_ftp_listing(listing):
-                    if name.startswith('INDEX'):
+                    if name.startswith('INDEX') or name.startswith('AUTHOR'):
                         continue
                     url = urlparse.urljoin(journal_root, name)
                     journal.parse(url, chamber, self)
