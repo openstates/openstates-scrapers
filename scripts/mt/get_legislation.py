@@ -7,10 +7,17 @@ import html5lib
 import os
 import re
 import sys
+from lxml.etree import ElementTree
+import lxml.html
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import LegislationScraper, NoDataForYear, Legislator
 
 
+actor_map = {
+    '(S)': 'upper',
+    '(H)': 'lower',
+    '(C)': 'clerk',
+    }
 
 class MTScraper(LegislationScraper):
     #must set state attribute as the state's abbreviated name
@@ -18,7 +25,7 @@ class MTScraper(LegislationScraper):
 
     def __init__(self, *args, **kwargs):
         super(MTScraper, self).__init__(*args, **kwargs)
-        self.parser = html5lib.HTMLParser(tree = html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
+        self.parser = html5lib.HTMLParser(tree = html5lib.treebuilders.getTreeBuilder('lxml')).parse
 
         self.metadata = {
             'state_name': 'Montana',
@@ -190,8 +197,6 @@ class MTScraper(LegislationScraper):
         #sponsers(name, type)
         #actions(date, actor, action)
         #votes(chamber, date, motion, passed, yes_count, no_count, other_count, yes_votes(name), no_votes(name), other_votes(name)
-        if chamber == 'upper':
-            return
         year = int(year)
         session = self.getSession(year)
         #2 year terms starting on odd year, so if even number, use the previous odd year
@@ -203,86 +208,81 @@ class MTScraper(LegislationScraper):
 
 
         base_bill_url = 'http://data.opi.mt.gov/bills/%d/BillHtml/' % year
-        #Get all links, exclude 1st because it is "To Parent Directory"
-        url_list = (link.contents[0] for link in self.parser(self.urlopen(base_bill_url)).findAll('a')[1:])
-        for bill_url in url_list:
-            anchors = self.parser(self.urlopen(base_bill_url + bill_url)).findAll('a')
-            for anchor in anchors:
-                if anchor.contents:
-                    if anchor.contents[0].next.next == 'status of this bill':
-                        #Open link to status page
-                        status_url = anchor['href'].replace('\n', '')
-                        status_page = self.parser(self.urlopen(status_url))
-                        bill_id = status_page.find(text = 'Bill Type - Number:').next.contents[0]
-                        title = status_page.find(text = 'Short Title:').next.contents[0]
-                        #Discard first row as it is the 'title' row
-                        sponsors = []
-                        for sponsor_row in status_page.find('a', attrs = {'name' : 'spon_table'}).table.findAll('tr')[1:]:
-                            sponsor_columns = sponsor_row.findAll('td')
-                            sponsor_type = sponsor_columns[0].contents[0]
-                            sponsor_last_name = sponsor_columns[1].contents[0]
-                            sponsor_first_name = sponsor_columns[2].contents[0]
-                            sponsor_middle_initial = sponsor_columns[3].contents[0]
-                            nbsp = '\xA0'
-                            sponsor_first_name = '' if sponsor_first_name == nbsp else ', ' + sponsor_first_name
-                            #sponsor_middle_initial = sponsor_middle_initial == nbsp and '' or ' %s.' % sponsor_middle_initial
-                            sponsor_middle_initial = '' if sponsor_middle_initial == nbsp else ' %s.' % sponsor_middle_initial
-                            sponsor_full_name = sponsor_last_name + sponsor_first_name + sponsor_middle_initial
-                            sponsors.append({'name' : sponsor_full_name,
-                                             'type' : sponsor_type})
-                        for action_row in status_page.find('a', attrs = {'name' : 'ba_table'}).table.findAll('tr')[1:]:
-                            action_columns = action_row.findAll('td')
-                            print action_columns
-                            action_action = action_columns[0].contents[0]
-                            action_actor = action_action[0:3]
-                            if action_actor == "(H)":
-                                action_actor = "lower"
-                                action_action = action_action[4:]
-                            elif action_actor == "(S)":
-                                action_actor = "upper"
-                                action_action = action_action[4:]
-                            elif action_action == "(C)":
-                                action_actor = "clerk"
-                                action_action = action_action[4:]
-                            else:
-                                action_actor = None
-                            print action_columns[1].contents[0]
-                            action_date = datetime.strptime(action_columns[1].contents[0], '%m/%d/%Y')
-                            action_votes_yes = action_columns[2].contents[0]
-                            action_votes_no = action_columns[3].contents[0]
-                            action_committee = action_columns[4].contents[0]
-                            print action_action
-                            print action_actor
-                            print action_date
-                            print action_votes_yes
-                            print action_votes_no
-                            print action_committee
-                            break
 
-                        print bill_id
-                        print session
-                        print chamber
-                        print title
-                        print sponsors
-                        break
-            if bill_url.startswith('HB'):
-                all_prefix = 'HB'
-                if int(bill_url[2:6]) < 100:
-                    all_suffix = '0099'
-            all_versions_url = 'http://data.opi.mt.gov/bills/%d/%s%s/' % (year, all_prefix, all_suffix)
-            all_versions_page = self.parser(self.urlopen(all_versions_url))
-            for anchor in all_versions_page.findAll('a'):
-                file_name = anchor.contents[0]
-                if file_name.startswith(bill_url[0:6]):
-                    version_number = file_name[7]
-                    if version_number == 'x':
-                        version_title = 'Final Version'
-                        version_url = base_bill_url + bill_url
-                    else:
-                        version_title = 'Version %s' % version_number
-                        version_url = all_versions_url + file_name
-                    print version_title
-                    print version_url
+        index_page = ElementTree(lxml.html.fromstring(self.urlopen(base_bill_url)))
+
+        bill_urls = []
+        for bill_anchor in index_page.findall('//a'):
+            # House bills start with H, Senate bills start with S
+            if chamber == 'lower' and bill_anchor.text.startswith('H'):
+                bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
+            elif bill_anchor.text.startswith('S'):
+                bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
+                
+        for bill_url in bill_urls:
+            print bill_url
+            bill = ElementTree(lxml.html.fromstring(self.urlopen(bill_url)))
+            for anchor in bill.findall('//a'):
+                if anchor.text_content().startswith('status of'):
+                    status_url = anchor.attrib['href'].replace("\r", "").replace("\n", "")
+                    status_page = ElementTree(lxml.html.fromstring(self.urlopen(status_url)))
+
+                    bill_id = status_page.xpath("/div/form[1]/table[2]/tr[2]/td[2]")[0].text_content()
+                    title = status_page.xpath("/div/form[1]/table[2]/tr[3]/td[2]")[0].text_content()
+
+                    sponsors = []
+                    for sponsor_row in status_page.xpath('/div/form[6]/table[1]/tr')[1:]:
+                        sponsor_type = sponsor_row.xpath("td[1]")[0].text
+                        sponsor_last_name = sponsor_row.xpath("td[2]")[0].text
+                        sponsor_first_name = sponsor_row.xpath("td[3]")[0].text
+                        sponsor_middle_initial = sponsor_row.xpath("td[4]")[0].text
+
+                        sponsor_middle_initial = sponsor_middle_initial.replace("&nbsp", "")
+                        sponsor_full_name = "%s, %s %s" % (sponsor_last_name,  sponsor_first_name, sponsor_middle_initial)
+                        sponsor_full_name = sponsor_full_name.strip()
+                        sponsors.append({'name' : sponsor_full_name,
+                                         'type' : sponsor_type})
+                    for action in status_page.xpath('/div/form[3]/table[1]/tr')[1:]:
+                        try:
+                            actor = actor_map[action.xpath("td[1]")[0].text_content().split(" ")[0]]
+                            action_name = action.xpath("td[1]")[0].text_content().replace(actor, "")[4:].strip()
+                        except KeyError:
+                            actor = ''
+                            action_name = action.xpath("td[1]")[0].text_content().strip()
+
+                        action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y')
+                        action_votes_yes = action.xpath("td[3]")[0].text_content().replace("&nbsp", "")
+                        action_votes_no = action.xpath("td[4]")[0].text_content().replace("&nbsp", "")
+                        action_committee = action.xpath("td[5]")[0].text.replace("&nbsp", "")
+
+                        print "\t%s" % action_name
+                        # print actor
+                        # print action_date
+                        # print action_votes_yes
+                        # print action_votes_no
+                        # print action_committee
+
+                    print bill_id
+                    # print session
+                    # print chamber
+                    # print title
+                    # print sponsors
+                    break
+
+            # import pdb; pdb.set_trace()
+            # all_versions_page = self.parser(self.urlopen(all_versions_url))
+            # for anchor in all_versions_page.findAll('a'):
+            #     file_name = anchor.contents[0]
+            #     if file_name.startswith(bill_url[0:6]):
+            #         version_number = file_name[7]
+            #         if version_number == 'x':
+            #             version_title = 'Final Version'
+            #             version_url = base_bill_url + bill_url
+            #         else:
+            #             version_title = 'Version %s' % version_number
+            #             version_url = all_versions_url + file_name
+            #         print version_title
+            #         print version_url
             break
 
 if __name__ == '__main__':
