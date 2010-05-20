@@ -10,13 +10,17 @@ import sys
 from lxml.etree import ElementTree
 import lxml.html
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import LegislationScraper, NoDataForYear, Legislator
+from pyutils.legislation import Bill, LegislationScraper, NoDataForYear, Legislator
 
 
 actor_map = {
     '(S)': 'upper',
     '(H)': 'lower',
     '(C)': 'clerk',
+    }
+
+sponsor_map = {
+    'Primary Sponsor': 'primary'
     }
 
 class MTScraper(LegislationScraper):
@@ -190,13 +194,6 @@ class MTScraper(LegislationScraper):
             self.save_legislator(legislator)
 
     def scrape_bills(self, chamber, year):
-        #bill id
-        #session
-        #chamber
-        #title
-        #sponsers(name, type)
-        #actions(date, actor, action)
-        #votes(chamber, date, motion, passed, yes_count, no_count, other_count, yes_votes(name), no_votes(name), other_votes(name)
         year = int(year)
         session = self.getSession(year)
         #2 year terms starting on odd year, so if even number, use the previous odd year
@@ -205,10 +202,7 @@ class MTScraper(LegislationScraper):
         if year % 2 == 0:
             year -= 1
 
-
-
         base_bill_url = 'http://data.opi.mt.gov/bills/%d/BillHtml/' % year
-
         index_page = ElementTree(lxml.html.fromstring(self.urlopen(base_bill_url)))
 
         bill_urls = []
@@ -220,54 +214,8 @@ class MTScraper(LegislationScraper):
                 bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
                 
         for bill_url in bill_urls:
-            print bill_url
-            bill = ElementTree(lxml.html.fromstring(self.urlopen(bill_url)))
-            for anchor in bill.findall('//a'):
-                if anchor.text_content().startswith('status of'):
-                    status_url = anchor.attrib['href'].replace("\r", "").replace("\n", "")
-                    status_page = ElementTree(lxml.html.fromstring(self.urlopen(status_url)))
-
-                    bill_id = status_page.xpath("/div/form[1]/table[2]/tr[2]/td[2]")[0].text_content()
-                    title = status_page.xpath("/div/form[1]/table[2]/tr[3]/td[2]")[0].text_content()
-
-                    sponsors = []
-                    for sponsor_row in status_page.xpath('/div/form[6]/table[1]/tr')[1:]:
-                        sponsor_type = sponsor_row.xpath("td[1]")[0].text
-                        sponsor_last_name = sponsor_row.xpath("td[2]")[0].text
-                        sponsor_first_name = sponsor_row.xpath("td[3]")[0].text
-                        sponsor_middle_initial = sponsor_row.xpath("td[4]")[0].text
-
-                        sponsor_middle_initial = sponsor_middle_initial.replace("&nbsp", "")
-                        sponsor_full_name = "%s, %s %s" % (sponsor_last_name,  sponsor_first_name, sponsor_middle_initial)
-                        sponsor_full_name = sponsor_full_name.strip()
-                        sponsors.append({'name' : sponsor_full_name,
-                                         'type' : sponsor_type})
-                    for action in status_page.xpath('/div/form[3]/table[1]/tr')[1:]:
-                        try:
-                            actor = actor_map[action.xpath("td[1]")[0].text_content().split(" ")[0]]
-                            action_name = action.xpath("td[1]")[0].text_content().replace(actor, "")[4:].strip()
-                        except KeyError:
-                            actor = ''
-                            action_name = action.xpath("td[1]")[0].text_content().strip()
-
-                        action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y')
-                        action_votes_yes = action.xpath("td[3]")[0].text_content().replace("&nbsp", "")
-                        action_votes_no = action.xpath("td[4]")[0].text_content().replace("&nbsp", "")
-                        action_committee = action.xpath("td[5]")[0].text.replace("&nbsp", "")
-
-                        print "\t%s" % action_name
-                        # print actor
-                        # print action_date
-                        # print action_votes_yes
-                        # print action_votes_no
-                        # print action_committee
-
-                    print bill_id
-                    # print session
-                    # print chamber
-                    # print title
-                    # print sponsors
-                    break
+            bill = self.parse_bill(bill_url, session, chamber)
+            self.save_bill(bill)
 
             # import pdb; pdb.set_trace()
             # all_versions_page = self.parser(self.urlopen(all_versions_url))
@@ -284,6 +232,57 @@ class MTScraper(LegislationScraper):
             #         print version_title
             #         print version_url
             break
+
+    def parse_bill(self, bill_url, session, chamber):
+        bill = None
+        print bill_url
+        bill_page = ElementTree(lxml.html.fromstring(self.urlopen(bill_url)))
+        for anchor in bill_page.findall('//a'):
+            if anchor.text_content().startswith('status of'):
+                status_url = anchor.attrib['href'].replace("\r", "").replace("\n", "")
+                status_page = ElementTree(lxml.html.fromstring(self.urlopen(status_url)))
+                
+                bill_id = status_page.xpath("/div/form[1]/table[2]/tr[2]/td[2]")[0].text_content()
+                title = status_page.xpath("/div/form[1]/table[2]/tr[3]/td[2]")[0].text_content()
+                
+                bill = Bill(session, chamber, bill_id, title)
+                bill.add_source(bill_url)
+                
+                for sponsor_row in status_page.xpath('/div/form[6]/table[1]/tr')[1:]:
+                    sponsor_type = sponsor_row.xpath("td[1]")[0].text
+                    sponsor_last_name = sponsor_row.xpath("td[2]")[0].text
+                    sponsor_first_name = sponsor_row.xpath("td[3]")[0].text
+                    sponsor_middle_initial = sponsor_row.xpath("td[4]")[0].text
+                    
+                    sponsor_middle_initial = sponsor_middle_initial.replace("&nbsp", "")
+                    sponsor_full_name = "%s, %s %s" % (sponsor_last_name,  sponsor_first_name, sponsor_middle_initial)
+                    sponsor_full_name = sponsor_full_name.strip()
+                    
+                    if sponsor_map.has_key(sponsor_type):
+                        sponsor_type = sponsor_map[sponsor_type]
+                    bill.add_sponsor(sponsor_type, sponsor_full_name)
+                for action in status_page.xpath('/div/form[3]/table[1]/tr')[1:]:
+                    try:
+                        actor = actor_map[action.xpath("td[1]")[0].text_content().split(" ")[0]]
+                        action_name = action.xpath("td[1]")[0].text_content().replace(actor, "")[4:].strip()
+                    except KeyError:
+                        actor = ''
+                        action_name = action.xpath("td[1]")[0].text_content().strip()
+
+                    action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y')
+                    action_votes_yes = action.xpath("td[3]")[0].text_content().replace("&nbsp", "")
+                    action_votes_no = action.xpath("td[4]")[0].text_content().replace("&nbsp", "")
+                    action_committee = action.xpath("td[5]")[0].text.replace("&nbsp", "")
+
+                    bill.add_action(actor, action_name, action_date)
+                print bill_id
+                # print session
+                # print chamber
+                # print title
+                # print sponsors
+                break
+        return bill
+        
 
 if __name__ == '__main__':
     MTScraper().run()
