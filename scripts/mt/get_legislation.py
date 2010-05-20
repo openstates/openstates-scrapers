@@ -285,4 +285,4 @@ class MTScraper(LegislationScraper):
         
 
 if __name__ == '__main__':
-    MTScraper().run()
+    MTScraper.run()
