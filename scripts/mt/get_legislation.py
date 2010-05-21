@@ -216,21 +216,6 @@ class MTScraper(LegislationScraper):
         for bill_url in bill_urls:
             bill = self.parse_bill(bill_url, session, chamber)
             self.save_bill(bill)
-
-            # import pdb; pdb.set_trace()
-            # all_versions_page = self.parser(self.urlopen(all_versions_url))
-            # for anchor in all_versions_page.findAll('a'):
-            #     file_name = anchor.contents[0]
-            #     if file_name.startswith(bill_url[0:6]):
-            #         version_number = file_name[7]
-            #         if version_number == 'x':
-            #             version_title = 'Final Version'
-            #             version_url = base_bill_url + bill_url
-            #         else:
-            #             version_title = 'Version %s' % version_number
-            #             version_url = all_versions_url + file_name
-            #         print version_title
-            #         print version_url
             break
 
     def parse_bill(self, bill_url, session, chamber):
@@ -275,14 +260,26 @@ class MTScraper(LegislationScraper):
                     action_committee = action.xpath("td[5]")[0].text.replace("&nbsp", "")
 
                     bill.add_action(actor, action_name, action_date)
-                print bill_id
-                # print session
-                # print chamber
-                # print title
-                # print sponsors
-                break
+            elif anchor.text_content().startswith('This bill in WP'):
+                index_url = anchor.attrib['href']
+                index_url = index_url[0:index_url.rindex('/')]
+                self.parse_and_add_bill_versions(bill, index_url)
         return bill
-        
+
+    def parse_and_add_bill_versions(self, bill, index_url):
+        index_page = ElementTree(lxml.html.fromstring(self.urlopen(index_url)))
+        tokens = bill['bill_id'].split(" ")
+        bill_regex = re.compile("%s0*%s\_" % (tokens[0], tokens[1]))
+        for anchor in index_page.findall('//a'):
+            if bill_regex.match(anchor.text_content()) is not None:
+                file_name = anchor.text_content()
+                version = file_name[file_name.find('_')+1:file_name.find('.')]
+                version_title = 'Final Version'
+                if version != 'x':
+                    version_title = 'Version %s' % version
+
+                version_url = index_url[0:index_url.find('bills')-1] + anchor.attrib['href']
+                bill.add_version(version_title, version_url)
 
 if __name__ == '__main__':
     MTScraper.run()
