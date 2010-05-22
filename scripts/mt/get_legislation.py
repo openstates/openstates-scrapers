@@ -10,7 +10,7 @@ import sys
 from lxml.etree import ElementTree
 import lxml.html
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pyutils.legislation import Bill, LegislationScraper, NoDataForYear, Legislator
+from pyutils.legislation import Bill, LegislationScraper, NoDataForYear, Legislator, Vote
 
 
 actor_map = {
@@ -22,6 +22,9 @@ actor_map = {
 sponsor_map = {
     'Primary Sponsor': 'primary'
     }
+
+vote_passage_indicators = ['Concurred', 'Passed']
+vote_failure_indicators = []
 
 class MTScraper(LegislationScraper):
     #must set state attribute as the state's abbreviated name
@@ -216,11 +219,9 @@ class MTScraper(LegislationScraper):
         for bill_url in bill_urls:
             bill = self.parse_bill(bill_url, session, chamber)
             self.save_bill(bill)
-            break
 
     def parse_bill(self, bill_url, session, chamber):
         bill = None
-        print bill_url
         bill_page = ElementTree(lxml.html.fromstring(self.urlopen(bill_url)))
         for anchor in bill_page.findall('//a'):
             if anchor.text_content().startswith('status of'):
@@ -256,6 +257,30 @@ class MTScraper(LegislationScraper):
             action_committee = action.xpath("td[5]")[0].text.replace("&nbsp", "")
             
             bill.add_action(actor, action_name, action_date)
+
+            # TODO: Review... should something be both an action and a vote?
+            try:
+                action_votes_yes = int(action_votes_yes)
+                action_votes_no = int(action_votes_no)
+                passed = None
+                for i in vote_passage_indicators:
+                    if action_name.count(i):
+                        passed = True
+                for i in vote_failure_indicators:
+                    if action_name.count(i) and passed == True:
+                        raise Exception ("passage and failure indicator both present: %s" % action_name)
+                if passed is None:
+                    raise Exception("Unknown passage: %s" % action_name)
+                bill.add_vote(Vote(bill['chamber'],
+                                   action_date,
+                                   action_name,
+                                   passed,
+                                   action_votes_yes,
+                                   action_votes_no,
+                                   0))
+            except ValueError:
+                pass
+
             
     def add_sponsors(self, bill, status_page):
         for sponsor_row in status_page.xpath('/div/form[6]/table[1]/tr')[1:]:
