@@ -23,8 +23,9 @@ sponsor_map = {
     'Primary Sponsor': 'primary'
     }
 
-vote_passage_indicators = ['Concurred', 'Passed']
-vote_failure_indicators = []
+vote_passage_indicators = ['Adopted', 'Carried', 'Concurred', 'Indefinitely Postponed', 'Passed', 'Rereferred to Committee']
+vote_failure_indicators = ['Failed',]
+vote_ambiguious_indicators = ['On Motion Rules Suspended', 'Reconsidered Previous', 'Segregated from Committee', 'Special Action', 'Taken from']
 
 class MTScraper(LegislationScraper):
     #must set state attribute as the state's abbreviated name
@@ -213,9 +214,9 @@ class MTScraper(LegislationScraper):
             # House bills start with H, Senate bills start with S
             if chamber == 'lower' and bill_anchor.text.startswith('H'):
                 bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
-            elif bill_anchor.text.startswith('S'):
+            elif chamber == 'upper' and bill_anchor.text.startswith('S'):
                 bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
-                
+
         for bill_url in bill_urls:
             bill = self.parse_bill(bill_url, session, chamber)
             self.save_bill(bill)
@@ -224,12 +225,20 @@ class MTScraper(LegislationScraper):
         bill = None
         bill_page = ElementTree(lxml.html.fromstring(self.urlopen(bill_url)))
         for anchor in bill_page.findall('//a'):
-            if anchor.text_content().startswith('status of'):
+            if (anchor.text_content().startswith('status of') or
+                anchor.text_content().startswith('Detailed Information (status)')):
                 status_url = anchor.attrib['href'].replace("\r", "").replace("\n", "")
                 status_page = ElementTree(lxml.html.fromstring(self.urlopen(status_url)))
-                
-                bill_id = status_page.xpath("/div/form[1]/table[2]/tr[2]/td[2]")[0].text_content()
-                title = status_page.xpath("/div/form[1]/table[2]/tr[3]/td[2]")[0].text_content()
+                # see 2007 HB 2... weird.  
+                try:
+                    bill_id = status_page.xpath("/div/form[1]/table[2]/tr[2]/td[2]")[0].text_content()
+                except IndexError:
+                    bill_id = status_page.xpath('/html/html[2]/tr[1]/td[2]')[0].text_content()
+
+                try:
+                    title = status_page.xpath("/div/form[1]/table[2]/tr[3]/td[2]")[0].text_content()
+                except IndexError:
+                    title = status_page.xpath('/html/html[3]/tr[1]/td[2]')[0].text_content()
                 
                 bill = Bill(session, chamber, bill_id, title)
                 bill.add_source(bill_url)
@@ -263,12 +272,29 @@ class MTScraper(LegislationScraper):
                 action_votes_yes = int(action_votes_yes)
                 action_votes_no = int(action_votes_no)
                 passed = None
+                # some actions take a super majority, so we aren't just comparing the yeas and nays here.
                 for i in vote_passage_indicators:
                     if action_name.count(i):
                         passed = True
                 for i in vote_failure_indicators:
                     if action_name.count(i) and passed == True:
-                        raise Exception ("passage and failure indicator both present: %s" % action_name)
+                        # a quick explanation:  originally an exception was
+                        # thrown if both passage and failure indicators were
+                        # present because I thought that would be a bug in my
+                        # lists.  Then I found 2007 HB 160.
+                        # Now passed = False if the nays outnumber the yays..
+                        # I won't automatically mark it as passed if the yays
+                        # ounumber the nays because I don't know what requires
+                        # a supermajority in MT.  
+                        if action_votes_no >= action_votes_yes:
+                            passed = False
+                        else:
+                            raise Exception ("passage and failure indicator both present: %s" % action_name)
+                    if action_name.count(i) and passed == None:
+                        passed = False
+                for i in vote_ambiguious_indicators:
+                    if action_name.count(i):
+                        passed = action_votes_yes > action_votes_no
                 if passed is None:
                     raise Exception("Unknown passage: %s" % action_name)
                 bill.add_vote(Vote(bill['chamber'],
