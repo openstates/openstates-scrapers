@@ -4,6 +4,7 @@ import datetime as dt
 import lxml.etree
 import sys
 import os
+import re
 import name_tools
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,6 +24,17 @@ def chamber_name(chamber):
         return 'senate'
     else:
         return 'house'
+
+
+def clean_committee_name(comm_name):
+    comm_name = comm_name.strip()
+    comm_name = re.sub(' ?[-,] (Co|Vice)?[- ]?Chair$', '', comm_name)
+    comm_name = re.sub('Appropriations - S/C:', 'Appropriations-S/C on',
+                       comm_name)
+    if comm_name == 'Appropriations-S/C Stimulus':
+        comm_name = 'Appropriations-S/C on Stimulus'
+
+    return comm_name
 
 
 class TXLegislationScraper(LegislationScraper):
@@ -202,8 +214,9 @@ class TXLegislationScraper(LegislationScraper):
                             if comm.tail:
                                 comm_name += comm.tail
 
+                            comm_name = clean_committee_name(comm_name)
                             leg.add_role('committee member', '81',
-                                         committee=comm_name.strip())
+                                         committee=comm_name)
                     except IndexError:
                         # this legislator has no committee memberships yet
                         pass
@@ -265,9 +278,19 @@ class TXLegislationScraper(LegislationScraper):
                     comms = details.xpath(
                         "//b[contains(text(), 'Committee Assignments')]/"
                         "..//a")
+
                     for comm in comms:
+                        comm_name = clean_committee_name(comm.text)
+
+                        if re.match('Authored|Sponsored|Co-|other sessions',
+                                    comm_name):
+                            # A couple representative pages are broken and
+                            # include links to authored/sponsored bills
+                            # under committees
+                            continue
+
                         leg.add_role('committee member', '81',
-                                     committee=comm.text.strip())
+                                     committee=comm_name)
 
                 self.save_legislator(leg)
 
