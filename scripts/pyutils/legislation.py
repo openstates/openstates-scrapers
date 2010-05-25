@@ -305,6 +305,7 @@ class LegislationScraper(object):
 
         makedir(os.path.join(self.output_dir, "bills"))
         makedir(os.path.join(self.output_dir, "legislators"))
+        makedir(os.path.join(self.output_dir, "committees"))
         makedir(self.cache_dir)
         makedir(self.error_dir)
 
@@ -451,6 +452,20 @@ class LegislationScraper(object):
         with open(os.path.join(self.output_dir, "legislators", filename),
                   'w') as f:
             json.dump(legislator, f, cls=DateEncoder)
+
+    def save_committee(self, committee):
+        """
+        Save a scraped :class:`pyutils.legislation.Committee` object.
+        Only call after all data for the given committeee has been collected.
+        """
+        self.log("save_committeee: %s" % committee['name'])
+
+        filename = "%(chamber)s_%(name)s.json" % committee
+
+        with open(os.path.join(self.output_dir, "committees", filename),
+                  'w') as f:
+            json.dump(committee, f, cls=DateEncoder)
+
 
     def _save_standalone_vote(self, vote):
         filename = vote["filename"] + ".json"
@@ -777,3 +792,16 @@ class Legislator(Person):
         self['first_name'] = first_name
         self['last_name'] = last_name
         self['middle_name'] = middle_name
+
+
+class Committee(FiftystatesObject):
+
+    def __init__(self, chamber, name, parent=None, **kwargs):
+        super(Committee, self).__init__('committee', **kwargs)
+        self['chamber'] = chamber
+        self['name'] = name
+        self['members'] = []
+
+    def add_member(self, legislator, role='member', **kwargs):
+        self['members'].append(dict(legislator=legislator, role=role,
+                                    **kwargs))
