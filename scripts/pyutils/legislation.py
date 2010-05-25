@@ -563,7 +563,7 @@ class FiftystatesObject(dict):
 
     def __init__(self, type, **kwargs):
         super(FiftystatesObject, self).__init__()
-        self['type'] = type
+        self['_type'] = type
         self['sources'] = []
         self.update(kwargs)
 
