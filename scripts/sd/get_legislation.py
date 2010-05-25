@@ -50,6 +50,13 @@ class SDLegislationScraper(LegislationScraper):
             }
         }
 
+    def _make_headers(self):
+        # South Dakota's gzipped responses seem to be broken
+        headers = super(SDLegislationScraper, self)._make_headers()
+        headers['Accept-Encoding'] = ''
+
+        return headers
+
     # The format of SD's legislative info pages changed in 2009, so we have
     # two separate scrapers.
 
