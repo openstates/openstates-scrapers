@@ -208,7 +208,7 @@ if __name__ == '__main__':
         house_root = urlparse.urljoin(session_root, 'house/', True)
         with scraper.urlopen_context(house_root) as listing:
             for name in parse_ftp_listing(listing):
-                if name.startswith('INDEX'):
+                if not name.startswith('81'):
                     continue
                 url = urlparse.urljoin(house_root, name)
                 parse(url, 'lower', scraper)
@@ -216,7 +216,7 @@ if __name__ == '__main__':
         senate_root = urlparse.urljoin(session_root, 'senate/', True)
         with scraper.urlopen_context(senate_root) as listing:
             for name in parse_ftp_listing(listing):
-                if name.startswith('INDEX'):
+                if not name.startswith('81'):
                     continue
                 url = urlparse.urljoin(senate_root, name)
                 parse(url, 'upper', scraper)
