@@ -114,8 +114,13 @@ class VTLegislationScraper(LegislationScraper):
                     else:
                         act_date = row.td.string
 
-                    act_date = re.search(
-                        '\d{1,2}/\d{1,2}/\d{4,4}', act_date).group(0)
+                    try:
+                        act_date = re.search(
+                            '\d{1,2}/\d{1,2}/\d{4,4}', act_date).group(0)
+                    except AttributeError:
+                        # No date, skip
+                        continue
+
                     act_date = dt.datetime.strptime(act_date, '%m/%d/%Y')
 
                 bill.add_action(actor, action, act_date)
