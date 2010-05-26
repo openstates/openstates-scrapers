@@ -1,99 +1,11 @@
-=======================
-Overview
-=======================
+The Fifty State Project collects and makes available data about state legislative activities, including bill summaries, votes, sponsorships and state legislator information. This data is gathered directly from the states and made available in a common format for interested developers, through a RESTful API and through upcoming data dumps.
 
-About the Project
-=================
+Links
+=====
 
-The goal of the Fifty State Project is to build scrapers and parsers in order to get as much state 
-legislative data as possible in one place.
-
-For details on the reasons for the project and goals behind the project see 
-`the project announcement <http://sunlightlabs.com/blog/2009/02/26/fifty-state-project/>`_.
-
-To stay up to date and communicate with other contributors to the project visit the `Fifty State Project Google Group <http://groups.google.com/group/fifty-state-project>`_.
-
-For an overview of each state's progress visit the `Fifty State Project Dev Server <http://fiftystates-dev.sunlightlabs.com>`_.
-
-Project Goals
--------------
-
-1. Collect URLs of State Legislature and Legislative Information Pages [done]
-2. Grab legislators and legislation
-     1. Build scrapers and obtain data files for legislation in each of the fifty states
-     2. create sponsor relationship between legislators and legislation 
-3. Grab votes
-     1. Build scrapers and obtain data files for legislator votes on legislation
-     2. create voting relationship between legislators and legislation 
-4. Build tools on top of data 
-
-
-.. _usage:
-
-Usage (proposed)
-----------------
-Valid options:
- * ``--year``: a year or years the parser should attempt
- * ``--all``: Attempt to parse years from 1969-2009
- * ``--upper``: Parse upper chamber
- * ``--lower``: Parse lower chamber
- 
-The vision is that the flow will look something like this:
-    $  ./scripts/nc/get_legislation --year=2009 --upper
-
-
-Contributing
-============
-
-If you are interested in contributing the recommended procedure is to
-check the repository to see where your state is.
-The next step is to announce your interest on the `Fifty State Project Google Group
-<http://groups.google.com/group/fifty-state-project>`_ (this also is where
-you can ask questions and make suggestions regarding the project).
-
-Managing a State
-----------------
-
-Once you have claimed a state on the wiki and mailing list you should probably 
-maintain your own fork of the project on `github <http://github.com>`_.
-
-Please avoid making changes to files in other states/etc. on your state branch.
-Stick to editing files in the scripts/*your_state* directory and where necessary 
-in any relevant utils directories.
-
-Whenever your state script works as it should announce it on the mailing list and 
-someone will merge your changes into the core.
-
-.. _licensing:
-
-Licensing
----------
-
-The Fifty State Project is licensed under the `GPLv3 license <http://www.fsf.org/licensing/licenses/gpl-3.0.html>`_
-
-See LICENSING for the full terms of the GPLv3.
-
-Requirements
-============
-
-Although we have previously allowed you to write parsers in your
-language of choice, for the sake of maintenance we *highly* encourage
-you to write your parsers in Python. Currently Python is the only
-language we are supporting with our documentation and tools.  If you
-would like to contribute in a language other than Python, please send
-an email to `Fifty State Project Google Group
-<http://groups.google.com/group/fifty-state-project>`_ so we can
-discuss the issue.
-
-For details on how scripts should be written and how they should run see :doc:`scripts/pyutils/README`.
-
-If you are completely unfamiliar with Python there is other things you
-can do to help with the government transparency movement.  Ruby developers are encouraged to work on the `Congrelate <http://congrelate.com>`_ Project.  For other project ideas please join the `Sunlight Labs Google Group <http://groups.google.com/group/sunlightlabs>`_.
-
-
-.. _dependencies:
-
-Dependencies
--------------
-
-See the included requirements.txt
+* `Fifty State Project API <http://fiftystates-dev.sunlightlabs.com/api.html>`_
+* `python-fiftystates: Python API Client <http://fiftystates-dev.sunlightlabs.com/client.html>`_
+* `Code on GitHub <http://github.com/sunlightlabs/fiftystates/>`_
+* `Contributing Guidelines <http://fiftystates-dev.sunlightlabs.com/contributing.html>`_
+* `Fifty State Project Google Group <http://groups.google.com/group/fifty-state-project>`_
+* `Sunlight Labs <http://sunlightlabs.com>`_
