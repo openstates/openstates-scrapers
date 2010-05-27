@@ -2,6 +2,7 @@
 import sys
 
 from fiftystates.backend import db
+from fiftystates.backend.utils import base_arg_parser
 
 import argparse
 import name_tools
@@ -65,12 +66,10 @@ def import_nimsp_ids(state_abbrev):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
+        parents=[base_arg_parser],
         description=('Associate Fifty State objects with corresponding '
                      'National Institute on Money in State Politics IDs.'))
 
-    parser.add_argument('state', type=str,
-                        help=('the two-letter abbreviation of the state to '
-                              'import'))
     parser.add_argument('--nimsp_key', '-k', type=str,
                         help='the NIMSP API key to use')
 

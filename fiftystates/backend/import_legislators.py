@@ -13,7 +13,8 @@ except:
     import simplejson as json
 
 from fiftystates.backend import db
-from fiftystates.backend.utils import insert_with_id, update, prepare_obj
+from fiftystates.backend.utils import (insert_with_id, update, prepare_obj,
+                                       base_arg_parser)
 
 import pymongo
 import argparse
@@ -81,11 +82,9 @@ def import_legislator(data):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
+        parents=[base_arg_parser],
         description='Import scraped state legislators into a mongo databse.')
 
-    parser.add_argument('state', type=str,
-                        help=('the two-letter abbreviation of the state to '
-                              'import'))
     parser.add_argument('--data_dir', '-d', type=str,
                         help='the base Fifty State data directory')
 
