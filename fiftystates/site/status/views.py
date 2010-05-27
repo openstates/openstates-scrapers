@@ -12,6 +12,7 @@ def status_index(request):
                               {'statuses': statuses},
                               context_instance=RequestContext(request))
 
+
 def map_svg(request):
     from svgmaps import colorized_svg
     from collections import defaultdict

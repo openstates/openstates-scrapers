@@ -23,7 +23,9 @@ class StateStatus(models.Model):
     contributors = models.ManyToManyField(Contributor, related_name='states')
 
     def completeness(self):
-        return sum((self.bills, self.bill_versions, self.sponsors, self.legislators, self.committees, self.actions, self.votes))/7.0
+        return sum((self.bills, self.bill_versions, self.sponsors,
+                    self.legislators, self.committees, self.actions,
+                    self.votes)) / 7.0
 
     def __unicode__(self):
         return self.state

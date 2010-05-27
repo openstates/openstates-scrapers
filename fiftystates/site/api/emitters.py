@@ -2,6 +2,7 @@ from fiftystates.site.api.models import LogEntry
 
 from piston.emitters import JSONEmitter
 
+
 class LoggingJSONEmitter(JSONEmitter):
     def render(self, request):
         LogEntry.objects.create(

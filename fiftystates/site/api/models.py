@@ -12,4 +12,3 @@ class LogEntry(models.Model):
 
     class Meta:
         ordering = ('-timestamp',)
-

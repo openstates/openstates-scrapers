@@ -54,7 +54,7 @@ state_nums = {
     '08': 'co',
     '09': 'ct',
     '10': 'de',
-    '11': 'dc', # unicameral city council
+    '11': 'dc',  # unicameral city council
     '12': 'fl',
     '13': 'ga',
     '15': 'hi',
@@ -73,7 +73,7 @@ state_nums = {
     '28': 'ms',
     '29': 'mo',
     '30': 'mt',
-    '31': 'ne', # unicameral
+    '31': 'ne',  # unicameral
     '32': 'nv',
     '33': 'nh',
     '34': 'nj',
@@ -97,26 +97,26 @@ state_nums = {
     '54': 'wv',
     '55': 'wi',
     '56': 'wy',
-    '72': 'pr'
+    '72': 'pr',
 }
-    
+
 # Auto-generated `LayerMapping` dictionary for District model
 upper_district_mapping = {
-    'state_abbrev' : 'STATE',
-    'sld' : 'SLDU',
-    'name' : 'NAME',
-    'lsad' : 'LSAD',
-    'geo_id' : 'GEO_ID',
-    'lsad_trans' : 'LSAD_TRANS',
-    'geom' : 'MULTIPOLYGON',
+    'state_abbrev': 'STATE',
+    'sld': 'SLDU',
+    'name': 'NAME',
+    'lsad': 'LSAD',
+    'geo_id': 'GEO_ID',
+    'lsad_trans': 'LSAD_TRANS',
+    'geom': 'MULTIPOLYGON',
 }
 
 lower_district_mapping = {
-    'state_abbrev' : 'STATE',
-    'sld' : 'SLDL',
-    'name' : 'NAME',
-    'lsad' : 'LSAD',
-    'geo_id' : 'GEO_ID',
-    'lsad_trans' : 'LSAD_TRANS',
-    'geom' : 'MULTIPOLYGON',
+    'state_abbrev': 'STATE',
+    'sld': 'SLDL',
+    'name': 'NAME',
+    'lsad': 'LSAD',
+    'geo_id': 'GEO_ID',
+    'lsad_trans': 'LSAD_TRANS',
+    'geom': 'MULTIPOLYGON',
 }

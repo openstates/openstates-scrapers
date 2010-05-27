@@ -44,13 +44,15 @@ def update_status_from_proj(state, proj):
 
         # commits
         repo = Repo(proj.get_local_repo_dir())
-        commits = list(repo.iter_commits(paths='scripts/'+state_name))
+        commits = list(repo.iter_commits(paths='scripts/' + state_name))
         if commits:
             state.num_commits = len(commits)
-            state.latest_commit = datetime.datetime.fromtimestamp(commits[0].committed_date)
+            state.latest_commit = datetime.datetime.fromtimestamp(
+                commits[0].committed_date)
 
             for c in commits:
-                author = Contributor.objects.lookup(c.author.name, c.author.email)
+                author = Contributor.objects.lookup(c.author.name,
+                                                    c.author.email)
                 state.contributors.add(author)
 
     return state
@@ -60,7 +62,8 @@ class Command(NoArgsCommand):
     help = 'Updates project information'
 
     def handle_noargs(self, **options):
-        main_proj = Project.objects.get(host_username='sunlightlabs', name='fiftystates')
+        main_proj = Project.objects.get(host_username='sunlightlabs',
+                                        name='fiftystates')
 
         state_objs = StateStatus.objects.all()
 
