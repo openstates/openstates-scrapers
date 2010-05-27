@@ -81,7 +81,7 @@ def import_legislator(data):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Import scraped state legislation into a mongo databse.')
+        description='Import scraped state legislators into a mongo databse.')
 
     parser.add_argument('state', type=str,
                         help=('the two-letter abbreviation of the state to '
