@@ -1,0 +1,18 @@
+{% extends "gis/kml/base.kml" %}
+
+{% block placemarks %}
+<Style id="democratStyle"><PolyStyle><color>80800000</color><fill>1</fill><outline>1</outline></PolyStyle><LineStyle><color>F0800000</color><width>1</width></LineStyle></Style>
+<Style id="republicanStyle"><PolyStyle><color>80000090</color><fill>1</fill><outline>1</outline></PolyStyle><LineStyle><color>F0000090</color><width>1</width></LineStyle></Style>
+<Style id="purpleStyle"><PolyStyle><color>80800090</color><fill>1</fill><outline>1</outline></PolyStyle><LineStyle><color>F0800090</color><width>1</width></LineStyle></Style>
+<Style id="otherStyle"><PolyStyle><color>80008000</color><fill>1</fill><outline>1</outline></PolyStyle><LineStyle><color>F0008000</color><width>1</width></LineStyle></Style>
+<Style id="independentStyle"><PolyStyle><color>80000000</color><fill>1</fill><outline>1</outline></PolyStyle><LineStyle><color>F0000000</color><width>1</width></LineStyle></Style>
+
+{% for place in places %}
+<Placemark>
+<styleUrl>{% ifequal place.current_party "Democrat" %}#democratStyle{% endifequal %}{% ifequal place.current_party "Republican" %}#republicanStyle{% endifequal %}{% ifequal place.current_party "Purple" %}#purpleStyle{% endifequal %}{% ifequal place.current_party "Other" %}#otherStyle{% endifequal %}{% ifequal place.current_party "Independent" %}#independentStyle{% endifequal %}</styleUrl>
+<name>{{state.name}} {{chamber_name}} {{ place.name }}</name>
+<description>{{ place.current_legislators_string }} ({{ place.current_party }})</description>
+{{place.kml|safe}}
+</Placemark>
+{%endfor%}
+{%endblock%}
