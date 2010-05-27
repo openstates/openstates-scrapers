@@ -5,7 +5,13 @@ import datetime
 from fiftystates.backend import db
 
 import nltk
+import argparse
 import name_tools
+
+base_arg_parser = argparse.ArgumentParser(add_help=False)
+base_arg_parser.add_argument('state', type=str,
+                             help=('the two-letter abbreviation of the '
+                                   'state to import'))
 
 
 def keywordize(str):

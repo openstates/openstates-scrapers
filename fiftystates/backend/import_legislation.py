@@ -14,7 +14,7 @@ except:
 
 from fiftystates.backend import db
 from fiftystates.backend.utils import (insert_with_id, keywordize,
-                                       update, prepare_obj)
+                                       update, prepare_obj, base_arg_parser)
 
 import pymongo
 import argparse
@@ -44,11 +44,9 @@ def import_bills(state, data_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
+        parents=[base_arg_parser],
         description='Import scraped state legislation into a mongo databse.')
 
-    parser.add_argument('state', type=str,
-                        help=('the two-letter abbreviation of the state to '
-                              'import'))
     parser.add_argument('--data_dir', '-d', type=str,
                         help='the base Fifty State data directory')
 

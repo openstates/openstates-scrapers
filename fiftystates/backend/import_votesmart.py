@@ -3,7 +3,7 @@ import re
 import sys
 
 from fiftystates.backend import db
-from fiftystates.backend.utils import insert_with_id
+from fiftystates.backend.utils import insert_with_id, base_arg_parser
 
 import pymongo
 import argparse
@@ -123,12 +123,10 @@ def import_legislator_ids(state):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
+        parents=[base_arg_parser],
         description=('Associate Fifty State objects with corresponding '
                      'Project Vote Smart IDs.'))
 
-    parser.add_argument('state', type=str,
-                        help=('the two-letter abbreviation of the state to '
-                              'import'))
     parser.add_argument('--votesmart_key', '-k', type=str,
                         help='the votesmart API key to use')
 
