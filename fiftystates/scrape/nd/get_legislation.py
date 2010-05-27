@@ -525,5 +525,3 @@ class NDLegislationScraper(LegislationScraper):
     
         return (bill_sponsors, url)
     
-if __name__ == '__main__':
-    NDLegislationScraper.run()

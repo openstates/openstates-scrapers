@@ -294,5 +294,3 @@ class TXLegislationScraper(LegislationScraper):
 
                 self.save_legislator(leg)
 
-if __name__ == '__main__':
-    TXLegislationScraper.run()

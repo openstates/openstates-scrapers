@@ -165,6 +165,3 @@ class WVLegislationScraper(LegislationScraper):
 
         self.save_bill(bill)
 
-
-if __name__ == '__main__':
-    WVLegislationScraper.run()

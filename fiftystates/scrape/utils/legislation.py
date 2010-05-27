@@ -84,29 +84,6 @@ class LegislationScraper(object):
         sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     """
 
-    option_list = (
-        make_option('-y', '--year', action='append', dest='years',
-                    help='year(s) to scrape'),
-        make_option('--all', action='store_true', dest='all_years',
-                    default=False, help='scrape all data (overrides --year)'),
-        make_option('--upper', action='store_true', dest='upper',
-                    default=False, help='scrape upper chamber'),
-        make_option('--lower', action='store_true', dest='lower',
-                    default=False, help='scrape lower chamber'),
-        make_option('--nolegislators', action='store_false', dest='legislators',
-                    default=True, help="don't scrape legislator data"),
-        make_option('-v', '--verbose', action='count', dest='verbose',
-                    default=False,
-                    help="be verbose (use multiple times for more"\
-                        "debugging information)"),
-        make_option('-d', '--output_dir', action='store', dest='output_dir',
-                    help='output directory'),
-        make_option('-n', '--no_cache', action='store_true', dest='no_cache',
-                    help="don't use web page cache"),
-        make_option('-s', '--sleep', action='store_true', dest='sleep',
-                    help="insert random delays wheen downloading web pages"),
-    )
-
     metadata = {}
 
     # The earliest year for which legislative data is available in
@@ -502,61 +479,6 @@ class LegislationScraper(object):
         self.matcher = {}
         self.matcher['upper'] = upper or NameMatcher()
         self.matcher['lower'] = lower or NameMatcher()
-
-    @classmethod
-    def run(cls, matcher=None):
-        """
-        Create and run a scraper for this state, based on
-        command line options.
-        """
-        parser = OptionParser(
-            option_list=cls.option_list)
-        options, spares = parser.parse_args()
-
-        if options.verbose == 0:
-            verbosity = logging.WARNING
-        elif options.verbose == 1:
-            verbosity = logging.INFO
-        else:
-            verbosity = logging.DEBUG
-
-        scraper = cls(verbosity=verbosity, **vars(options))
-
-        scraper.write_metadata()
-
-        years = options.years
-        if options.all_years:
-            years = [str(y) for y in range(scraper.earliest_year,
-                                           datetime.datetime.now().year + 1)]
-        if not years:
-            parser.error(
-                "You must provide a --year YYYY or --all (all years) option")
-
-        chambers = []
-        if options.upper:
-            chambers.append('upper')
-        if options.lower:
-            chambers.append('lower')
-        if not chambers:
-            chambers = ['upper', 'lower']
-        for year in years:
-            if matcher is None:
-                scraper.reset_name_matchers()
-            else:
-                scraper.reset_name_matchers(upper=matcher['upper'](),
-                                            lower=matcher['lower']())
-            try:
-                if options.legislators:
-                    for chamber in chambers:
-                        scraper.scrape_legislators(chamber, year)
-                for chamber in chambers:
-                    scraper.old_bills = {}
-                    scraper.scrape_bills(chamber, year)
-            except NoDataForYear, e:
-                if options.all_years:
-                    pass
-                else:
-                    raise
 
 
 class FiftystatesObject(dict):

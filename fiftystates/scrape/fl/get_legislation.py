@@ -240,6 +240,3 @@ class FLLegislationScraper(LegislationScraper):
 
         return (last, first, middle)
 
-
-if __name__ == '__main__':
-    FLLegislationScraper.run()

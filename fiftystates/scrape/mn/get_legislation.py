@@ -329,5 +329,3 @@ class MNLegislationScraper(LegislationScraper):
             self.debug("Scraping data for MN - Session: %s, Chamber: %s, Year: %s" % (session, chamber, year))
             self.scrape_session(chamber, session, session_year, session_number, legislative_session)
 
-if __name__ == '__main__':
-    MNLegislationScraper.run()

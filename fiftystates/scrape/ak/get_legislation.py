@@ -238,6 +238,3 @@ class AKLegislationScraper(LegislationScraper):
             raise NoDataForYear(year)
 
         self.scrape_session(chamber, year)
-
-if __name__ == '__main__':
-    AKLegislationScraper.run()

@@ -232,5 +232,3 @@ class UTLegislationScraper(LegislationScraper):
         for sub_session in session['sub_sessions']:
             self.scrape_session(chamber, sub_session)
 
-if __name__ == '__main__':
-    UTLegislationScraper.run()

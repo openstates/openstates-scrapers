@@ -135,6 +135,3 @@ class NHLegislationScraper(LegislationScraper):
 
             #todo: add sponsorship, audio, actions
 
-
-if __name__ == '__main__':
-    NHLegislationScraper.run()
