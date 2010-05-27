@@ -260,7 +260,7 @@ class MDLegislationScraper(LegislationScraper):
         self.scrape_members(sen_url, 'upper')
 
 
-    def scrape_committees(self, chamber):
+    def scrape_committees(self, chamber, year):
         house_url = 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hsecom.html'
         with self.lxml_context(house_url) as doc:
             # distinct URLs containing /com/
