@@ -246,6 +246,3 @@ class WisconsinScraper(LegislationScraper):
             'session_details': session_details
         }
 
-
-if __name__ == '__main__':
-    WisconsinScraper.run()

@@ -316,5 +316,3 @@ class VTLegislationScraper(LegislationScraper):
             leg.add_source(leg_url)
             self.save_legislator(leg)
 
-if __name__ == '__main__':
-    VTLegislationScraper.run()

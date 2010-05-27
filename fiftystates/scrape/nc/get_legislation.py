@@ -327,5 +327,3 @@ class NCLegislationScraper(LegislationScraper):
         return ''.join(squish(tree)).strip()
 
 
-if __name__ == '__main__':
-    NCLegislationScraper.run()

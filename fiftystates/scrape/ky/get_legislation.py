@@ -199,6 +199,3 @@ class KYLegislationScraper(LegislationScraper):
             legislator.add_source(url)
 
             self.save_legislator(legislator)
-
-if __name__ == '__main__':
-    KYLegislationScraper.run()

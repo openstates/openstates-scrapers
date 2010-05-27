@@ -394,5 +394,3 @@ class MichiganScraper(LegislationScraper):
             last_name = re.sub(", \w*?\.|(I+)$", "", last_name)
 
         return (first_name, middle_name, last_name, suffix)
-if __name__ == '__main__':
-    MichiganScraper.run()

@@ -284,7 +284,3 @@ class MDLegislationScraper(LegislationScraper):
                     elif 'html/msa' in l.get('href'):
                         cur_com.add_member(l.text)
                 self.save_committee(cur_com)
-
-if __name__ == '__main__':
-    #MDLegislationScraper.run()
-    MDLegislationScraper().scrape_committees('lower')

@@ -49,5 +49,3 @@ class MELegislationScraper(LegislationScraper):
         for special in ["R1", "R2", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]:
             self.scrape_session(chamber, year, special)
 
-if __name__ == '__main__':
-    MELegislationScraper.run()

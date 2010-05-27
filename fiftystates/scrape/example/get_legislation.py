@@ -90,6 +90,3 @@ class ExampleLegislationScraper(LegislationScraper):
         self.save_legislator(l1)
         self.save_legislator(l2)
 
-
-if __name__ == '__main__':
-    ExampleLegislationScraper.run()

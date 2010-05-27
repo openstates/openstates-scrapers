@@ -325,5 +325,3 @@ class PALegislationScraper(LegislationScraper):
                 legislator.add_source(leg_list_url)
                 self.save_legislator(legislator)
 
-if __name__ == '__main__':
-    PALegislationScraper.run()

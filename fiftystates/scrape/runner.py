@@ -3,75 +3,13 @@ import logging
 from optparse import make_option, OptionParser
 from utils.legislation import NoDataForYear
 
-def main():
-    option_list = (
-        make_option('-y', '--year', action='append', dest='years',
-                    help='year(s) to scrape'),
-        make_option('--all', action='store_true', dest='all_years',
-                    default=False, help='scrape all data (overrides --year)'),
-
-        make_option('--upper', action='store_true', dest='upper',
-                    default=False, help='scrape upper chamber'),
-        make_option('--lower', action='store_true', dest='lower',
-                    default=False, help='scrape lower chamber'),
-
-        make_option('--bills', action='store_true', dest='legislators',
-                    default=False, help="scrape bill data"),
-        make_option('--legislators', action='store_true', dest='bills',
-                    default=False, help="scrape legislator data"),
-        make_option('--committees', action='store_true', dest='committees',
-                    default=False, help="scrape committee data"),
-        make_option('--votes', action='store_true', dest='votes',
-                    default=False, help="scrape vote data"),
-
-        make_option('-v', '--verbose', action='count', dest='verbose',
-                    default=False,
-                    help="be verbose (use multiple times for more"\
-                        "debugging information)"),
-        make_option('-d', '--output_dir', action='store', dest='output_dir',
-                    help='output directory'),
-        make_option('-n', '--no_cache', action='store_true', dest='no_cache',
-                    help="don't use web page cache"),
-        make_option('-s', '--sleep', action='store_true', dest='sleep',
-                    help="insert random delays wheen downloading web pages"),
-    )
-
-    parser = OptionParser(option_list=option_list)
-    options, spares = parser.parse_args()
-
-    if len(spares) != 1:
-        print "Usage"
-        return 1
-
-    if options.verbose == 0:
-        verbosity = logging.WARNING
-    elif options.verbose == 1:
-        verbosity = logging.INFO
-    else:
-        verbosity = logging.DEBUG
-
-    # get scraper object
-    state = spares[0]
+def run_oldschool(state, years, chambers, verbosity, options):
     statemod = __import__('%s.get_legislation' % state)
-    scraper = statemod.get_legislation.MDLegislationScraper(verbosity, vars(options))
+    Scraper = getattr(statemod.get_legislation, '%sLegislationScraper'
+                      % state.upper())
+    scraper = Scraper(verbosity, vars(options))
+
     scraper.write_metadata()
-
-    # determine years
-    years = options.years
-    if options.all_years:
-        years = [str(y) for y in range(scraper.earliest_year,
-                                       datetime.datetime.now().year + 1)]
-    if not years:
-        years = [datetime.datetime.now().year]
-
-    # determine chambers
-    chambers = []
-    if options.upper:
-        chambers.append('upper')
-    if options.lower:
-        chambers.append('lower')
-    if not chambers:
-        chambers = ['upper', 'lower']
 
     for year in years:
         #if matcher is None:
@@ -95,6 +33,72 @@ def main():
             else:
                 raise
 
+def main():
+    option_list = (
+        make_option('-y', '--year', action='append', dest='years',
+                    help='year(s) to scrape'),
+        make_option('--all', action='store_true', dest='all_years',
+                    default=False, help='scrape all data (overrides --year)'),
+
+        make_option('--upper', action='store_true', dest='upper',
+                    default=False, help='scrape upper chamber'),
+        make_option('--lower', action='store_true', dest='lower',
+                    default=False, help='scrape lower chamber'),
+
+        make_option('--bills', action='store_true', dest='bills',
+                    default=False, help="scrape bill data"),
+        make_option('--legislators', action='store_true', dest='legislators',
+                    default=False, help="scrape legislator data"),
+        make_option('--committees', action='store_true', dest='committees',
+                    default=False, help="scrape committee data"),
+        make_option('--votes', action='store_true', dest='votes',
+                    default=False, help="scrape vote data"),
+
+        make_option('-v', '--verbose', action='count', dest='verbose',
+                    default=False,
+                    help="be verbose (use multiple times for more"\
+                        "debugging information)"),
+        make_option('-d', '--output_dir', action='store', dest='output_dir',
+                    help='output directory'),
+        make_option('-n', '--no_cache', action='store_true', dest='no_cache',
+                    help="don't use web page cache"),
+        make_option('-s', '--sleep', action='store_true', dest='sleep',
+                    help="insert random delays wheen downloading web pages"),
+    )
+
+    parser = OptionParser(option_list=option_list)
+    options, spares = parser.parse_args()
+
+    if len(spares) != 1:
+        print "Must pass a state abbreviation (eg. nc)"
+        return 1
+    state = spares[0]
+
+    if options.verbose == 0:
+        verbosity = logging.WARNING
+    elif options.verbose == 1:
+        verbosity = logging.INFO
+    else:
+        verbosity = logging.DEBUG
+
+    # determine years
+    years = options.years
+    if options.all_years:
+        years = [str(y) for y in range(scraper.earliest_year,
+                                       datetime.datetime.now().year + 1)]
+    if not years:
+        years = [datetime.datetime.now().year]
+
+    # determine chambers
+    chambers = []
+    if options.upper:
+        chambers.append('upper')
+    if options.lower:
+        chambers.append('lower')
+    if not chambers:
+        chambers = ['upper', 'lower']
+
+    run_oldschool(state, years, chambers, verbosity, options)
 
 if __name__ == '__main__':
     main()
