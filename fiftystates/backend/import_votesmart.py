@@ -2,12 +2,15 @@
 import re
 import sys
 
+from fiftystates import settings
 from fiftystates.backend import db
 from fiftystates.backend.utils import insert_with_id, base_arg_parser
 
 import pymongo
 import argparse
 from votesmart import votesmart, VotesmartApiError
+
+votesmart.apikey = getattr(settings, 'VOTESMART_API_KEY', '')
 
 
 def import_votesmart_data(state_abbrev):
@@ -132,6 +135,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    votesmart.apikey = args.votesmart_key
+    if args.votesmart_key:
+        votesmart.apikey = args.votesmart_key
 
     import_votesmart_data(args.state)

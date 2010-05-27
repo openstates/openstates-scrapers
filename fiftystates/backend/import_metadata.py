@@ -7,6 +7,7 @@ try:
 except ImportError:
     import simplejson as json
 
+from fiftystates import settings
 from fiftystates.backend import db
 from fiftystates.backend.utils import base_arg_parser
 
@@ -32,8 +33,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not args.data_dir:
-        args.data_dir = os.path.join(os.path.abspath(os.path.dirname(
-                    __file__)), '..', '..', 'data')
+    if args.data_dir:
+        data_dir = args.data_dir
+    else:
+        data_dir = settings.FIFTYSTATES_DATA_DIR
 
-    import_metadata(args.state, args.data_dir)
+    import_metadata(args.state, data_dir)

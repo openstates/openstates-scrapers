@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 import sys
 
+from fiftystates import settings
 from fiftystates.backend import db
 from fiftystates.backend.utils import base_arg_parser
 
 import argparse
 import name_tools
 from nimsp import nimsp, NimspApiError
+
+nimsp.apikey = getattr(settings, 'NIMSP_API_KEY', '')
 
 
 def import_nimsp_ids(state_abbrev):
@@ -75,6 +78,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    nimsp.apikey = args.nimsp_key
+    if args.nimsp_key:
+        nimsp.apikey = args.nimsp_key
 
     import_nimsp_ids(args.state)
