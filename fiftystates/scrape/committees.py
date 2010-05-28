@@ -10,6 +10,10 @@ from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
 
 
 class CommitteeScraper(Scraper):
+    def scrape_committees(self, chamber, year):
+        raise NotImplementedError('CommitteeScrapers must define a '
+                                  'scrape_committees method')
+
     def save_committee(self, committee):
         """
         Save a scraped :class:`pyutils.legislation.Committee` object.

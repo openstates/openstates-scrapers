@@ -17,7 +17,7 @@ class BillScraper(Scraper):
 
         Should raise a :class:`NoDataForYear` exception if the year is invalid.
         """
-        raise NotImplementedError('LegislationScrapers must define a '
+        raise NotImplementedError('BillScrapers must define a '
                                   'scrape_bills method')
 
     def save_bill(self, bill):
