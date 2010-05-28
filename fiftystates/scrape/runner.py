@@ -3,6 +3,7 @@ import logging
 from optparse import make_option, OptionParser
 from utils.legislation import NoDataForYear
 
+
 def run_oldschool(state, years, chambers, verbosity, options):
     statemod = __import__('%s.get_legislation' % state)
     Scraper = getattr(statemod.get_legislation, '%sLegislationScraper'
@@ -32,6 +33,7 @@ def run_oldschool(state, years, chambers, verbosity, options):
                 pass
             else:
                 raise
+
 
 def main():
     option_list = (
@@ -99,6 +101,7 @@ def main():
         chambers = ['upper', 'lower']
 
     run_oldschool(state, years, chambers, verbosity, options)
+
 
 if __name__ == '__main__':
     main()

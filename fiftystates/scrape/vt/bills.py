@@ -1,22 +1,19 @@
-#!/usr/bin/env python
+import re
 import urllib
 import urllib2
-import re
-from BeautifulSoup import BeautifulSoup
 import datetime as dt
-import time
-import sys
-import os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 NoDataForYear, ScrapeError)
+from fiftystates.scrape import ScrapeError, NoDataForYear
+from fiftystates.scrape.votes import Vote
+from fiftystates.scrape.bills import BillScraper, Bill
+
+from BeautifulSoup import BeautifulSoup
+
 
 def parse_exec_date(date_str):
     """
     Parse dates for executive actions.
     """
-
     match = re.search('(\w+ \d{1,2}, \d{4,4})', date_str)
     if match:
         return dt.datetime.strptime(match.group(1), "%B %d, %Y")
@@ -32,37 +29,16 @@ def parse_exec_date(date_str):
     raise ScrapeError("Invalid executive action date: %s" % date_str)
 
 
-class VTLegislationScraper(LegislationScraper):
-
+class VTBillScraper(BillScraper):
     state = 'vt'
 
-    metadata = {
-        'state_name': 'Vermont',
-        'legislature_name': 'Vermont General Assembly',
-        'upper_chamber_name': 'Senate',
-        'lower_chamber_name': 'House of Representatives',
-        'upper_title': 'Senator',
-        'lower_title': 'Representative',
-        'upper_term': 2,
-        'lower_term': 2,
-        'sessions': ['1987-1988', '1989-1990', '1991-1992', '1993-1994',
-                     '1995-1996', '1997-1998', '1999-2000', '2001-2002',
-                     '2003-2004', '2005-2006', '2007-2008', '2009-2010'],
-        'session_details': {
-            '1987-1988': {'years': [1987, 1988], 'sub_sessions': []},
-            '1989-1990': {'years': [1989, 1990], 'sub_sessions': []},
-            '1991-1992': {'years': [1991, 1992], 'sub_sessions': []},
-            '1993-1994': {'years': [1993, 1994], 'sub_sessions': []},
-            '1995-1996': {'years': [1995, 1996], 'sub_sessions': []},
-            '1997-1998': {'years': [1997, 1998], 'sub_sessions': []},
-            '1999-2000': {'years': [1999, 2000], 'sub_sessions': []},
-            '2001-2002': {'years': [2001, 2003], 'sub_sessions': []},
-            '2003-2004': {'years': [2003, 2004], 'sub_sessions': []},
-            '2005-2006': {'years': [2005, 2006], 'sub_sessions': []},
-            '2007-2008': {'years': [2007, 2008], 'sub_sessions': []},
-            '2009-2010': {'years': [2009, 2010], 'sub_sessions': []},
-            }
-        }
+    def scrape_bills(self, chamber, year):
+        session = "%s-%d" % (year, int(year) + 1)
+
+        if int(year) >= 2009:
+            self.scrape_session_new(chamber, session)
+        else:
+            self.scrape_session_old(chamber, session)
 
     def scrape_session_new(self, chamber, session):
         if chamber == "lower":
@@ -246,73 +222,3 @@ class VTLegislationScraper(LegislationScraper):
                         bill.add_action(act_chamber, action, act_date)
 
             self.save_bill(bill)
-
-    def scrape_bills(self, chamber, year):
-        session = "%s-%d" % (year, int(year) + 1)
-        if session not in self.metadata['session_details']:
-            raise NoDataForYear(year)
-
-        if int(year) >= 2009:
-            self.scrape_session_new(chamber, session)
-        else:
-            self.scrape_session_old(chamber, session)
-
-    def scrape_legislators(self, chamber, year):
-        if int(year) != 2009:
-            return
-        session = "%s-%d" % (year, int(year) + 1)
-
-        # What Vermont claims are Word and Excel files are actually
-        # just HTML tables
-        # What Vermont claims is a CSV file is actually one row of comma
-        # separated values followed by a ColdFusion error.
-        leg_url = "http://www.leg.state.vt.us/legdir/"\
-            "memberdata.cfm/memberdata.doc?FileType=W"
-        leg_table = BeautifulSoup(self.urlopen(leg_url))
-
-        for tr in leg_table.findAll('tr')[1:]:
-            leg_cham = tr.findAll('td')[3].contents[0]
-            if leg_cham == 'H' and chamber == 'upper':
-                continue
-            if leg_cham == 'S' and chamber == 'lower':
-                continue
-
-            district = tr.findAll('td')[5].contents[0]
-            district = district.replace(' District', '').strip()
-            first = tr.findAll('td')[6].contents[0]
-
-            middle = tr.findAll('td')[7]
-            if len(middle.contents) == 0:
-                middle = ''
-            else:
-                middle = middle.contents[0].strip()
-
-            last = tr.findAll('td')[8].contents[0]
-
-            if len(middle) == 0:
-                full = "%s, %s" % (last, first)
-            else:
-                full = "%s, %s %s." % (last, first, middle)
-
-            official_email = tr.findAll('td')[9]
-            if len(official_email.contents) == 0:
-                official_email = ''
-            else:
-                official_email = official_email.contents[0]
-
-            party = tr.findAll('td')[4].contents[0]
-            if party == 'D':
-                party = 'Democrat'
-            elif party == 'R':
-                party = 'Republican'
-            elif party == 'I':
-                party = 'Independent'
-            elif party == 'P':
-                party = 'Progressive'
-
-            leg = Legislator(session, chamber, district, full,
-                             first, last, middle, party,
-                             official_email=official_email)
-            leg.add_source(leg_url)
-            self.save_legislator(leg)
-
