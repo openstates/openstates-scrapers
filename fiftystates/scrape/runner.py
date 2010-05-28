@@ -2,6 +2,8 @@ import datetime
 import logging
 from optparse import make_option, OptionParser
 import os
+import sys
+
 from fiftystates.scrape import NoDataForYear, JSONDateEncoder
 
 try:
@@ -73,6 +75,7 @@ def run(state, years, chambers, output_dir, options):
 
     opts = {'output_dir': output_dir,
             'no_cache': options.no_cache,
+            'requests_per_minute': options.rpm,
             # cache_dir, error_dir, requests_per_minute
         }
 
@@ -153,8 +156,8 @@ def main():
                     help='output directory'),
         make_option('-n', '--no_cache', action='store_true', dest='no_cache',
                     help="don't use web page cache"),
-        make_option('-s', '--sleep', action='store_true', dest='sleep',
-                    help="insert random delays wheen downloading web pages"),
+        make_option('-r', '--rpm', action='store', type="int", dest='rpm',
+                    default=60),
         make_option('--old', action='store_true', dest='oldschool',
                     help="run an old style scraper"),
     )
@@ -213,6 +216,11 @@ def main():
     if not chambers:
         chambers = ['upper', 'lower']
 
+    if not (options.bills or options.legislators or options.votes or
+            options.committees):
+        print "Must specify at least one of --bills, --legislators, --committees, --votes"
+        return 1
+
     try:
         if options.oldschool:
             run_oldschool(state, years, chambers, options)
@@ -220,7 +228,9 @@ def main():
             run(state, years, chambers, output_dir, options)
     except RunException, e:
         print 'Error:', e
+        return 1
 
 
 if __name__ == '__main__':
-    main()
+    result = main()
+    sys.exit(result)
