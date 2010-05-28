@@ -1,27 +1,24 @@
 from __future__ import with_statement
-from optparse import make_option, OptionParser
-import datetime
-import time
 import os
-import sys
-import urllib2
-import urlparse
-import random
-import contextlib
+import time
 import logging
-import warnings
-import scrapelib
+import urllib2
+import datetime
+import contextlib
+from optparse import make_option, OptionParser
 
 try:
     import json
 except ImportError:
     import simplejson as json
 
+import scrapelib
+
 try:
     from BeautifulSoup import BeautifulSoup
     USE_SOUP = True
 except ImportError:
-    print "BeautifulSoup not found, LegislationScraper.soup_context will " \
+    print "BeautifulSoup not found, Scraper.soup_context will " \
         "be unavailable"
     USE_SOUP = False
 
@@ -77,7 +74,7 @@ class Scraper(scrapelib.Scraper):
                     help="don't use web page cache"),
         make_option('-r', '--rpm', action='store', type="int",
                     dest='requests_per_minute',
-                    help="insert random delays wheen downloading web pages"),
+                    help="throttle number of requests per minute"),
     )
 
     metadata = {}
