@@ -17,7 +17,8 @@ class LegislatorScraper(Scraper):
 
         Should raise a :class:`NoDataForYear` exception if the year is invalid.
         """
-        pass
+        raise NotImplementedError('LegislatorScrapers must define a '
+                                  'scrape_legislators method')
 
     def save_person(self, person):
         """

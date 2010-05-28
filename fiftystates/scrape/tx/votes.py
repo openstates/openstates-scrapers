@@ -1,18 +1,15 @@
-import lxml.etree
 import re
-import datetime
-import sys
-import os
-import urlparse
-from cStringIO import StringIO as StringIO
-from get_legislation import TXLegislationScraper, parse_ftp_listing
 import uuid
+import urlparse
+import datetime
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import Vote
+from fiftystates.scrape.votes import VoteScraper, Vote
+from fiftystates.scrape.tx.utils import parse_ftp_listing
+
+import lxml.etree
 
 
-def clean(root):
+def clean_journal(root):
     # Remove page breaks
     for el in root.xpath('//hr[@noshade and @size=1]'):
         parent = el.getparent()
@@ -58,6 +55,7 @@ def votes(root):
         yield vote
     for vote in viva_voce_votes(root):
         yield vote
+
 
 def record_votes(root):
     for el in root.xpath(u'//p[starts-with(., "Yeas \u2014")]'):
@@ -183,40 +181,45 @@ def viva_voce_votes(root):
             continue
 
 
-def parse(url, chamber, scraper):
-    with scraper.urlopen_context(url) as page:
-        root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
-        clean(root)
+class TXVoteScraper(VoteScraper):
+    state = 'tx'
+    _ftp_root = 'ftp://ftp.legis.state.tx.us/'
 
-        title = root.find('head/title').text
-        date_string = title.split('-')[0].strip()
-        date = datetime.datetime.strptime(date_string, "%A, %B %d, %Y")
+    def scrape_votes(self, chamber, year):
+        if year != '2009':
+            raise NoDataForYear(year)
 
-        for vote in votes(root):
-            vote['date'] = date
-            vote['chamber'] = chamber
-            scraper._save_standalone_vote(vote)
+        for session in ['81R', '811']:
+            self.scrape_session(chamber, session)
 
-if __name__ == '__main__':
-    # Test run
-    scraper = TXLegislationScraper()
+    def scrape_session(self, chamber, session):
+        journal_root = urlparse.urljoin(self._ftp_root, ("/journals/" +
+                                                         session +
+                                                         "/html/"),
+                                        True)
 
-    ftp_root = "ftp://ftp.legis.state.tx.us/journals/"
-    for session in ['81R', '811']:
-        session_root = urlparse.urljoin(ftp_root, session + '/html/', True)
+        if chamber == 'lower':
+            journal_root = urlparse.urljoin(journal_root, "house/", True)
+        else:
+            journal_root = urlparse.urljoin(journal_root, "senate/", True)
 
-        house_root = urlparse.urljoin(session_root, 'house/', True)
-        with scraper.urlopen_context(house_root) as listing:
+        with self.urlopen_context(journal_root) as listing:
             for name in parse_ftp_listing(listing):
                 if not name.startswith('81'):
                     continue
-                url = urlparse.urljoin(house_root, name)
-                parse(url, 'lower', scraper)
+                url = urlparse.urljoin(journal_root, name)
+                self.scrape_journal(url, chamber)
 
-        senate_root = urlparse.urljoin(session_root, 'senate/', True)
-        with scraper.urlopen_context(senate_root) as listing:
-            for name in parse_ftp_listing(listing):
-                if not name.startswith('81'):
-                    continue
-                url = urlparse.urljoin(senate_root, name)
-                parse(url, 'upper', scraper)
+    def scrape_journal(self, url, chamber):
+        with self.urlopen_context(url) as page:
+            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+            clean_journal(root)
+
+            title = root.find('head/title').text
+            date_string = title.split('-')[0].strip()
+            date = datetime.datetime.strptime(date_string, "%A, %B %d, %Y")
+
+            for vote in votes(root):
+                vote['date'] = date
+                vote['chamber'] = chamber
+                self.save_vote(vote)
