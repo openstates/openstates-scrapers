@@ -1,23 +1,34 @@
 import datetime
 import logging
 from optparse import make_option, OptionParser
-from utils.legislation import NoDataForYear
+import os
+from fiftystates.scrape import NoDataForYear, JSONDateEncoder
 
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
-def run_oldschool(state, years, chambers, verbosity, options):
-    statemod = __import__('%s.get_legislation' % state)
-    Scraper = getattr(statemod.get_legislation, '%sLegislationScraper'
+class RunException(Exception):
+    """ exception when trying to run a scraper """
+
+def run_oldschool(state, years, chambers, options):
+    mod_name = "%s.get_legislation" % state
+    try:
+        statemod = __import__(mod_name)
+        Scraper = getattr(statemod.get_legislation, "%sLegislationScraper"
                       % state.upper())
-    scraper = Scraper(verbosity, vars(options))
+    except ImportError:
+        raise RunException("could not import %s" % mod_name)
+    except AttributeError:
+        raise RunException("could not import %sLegislationScraper"
+                           % state.upper())
+
+    scraper = Scraper(vars(options))
 
     scraper.write_metadata()
 
     for year in years:
-        #if matcher is None:
-        #    scraper.reset_name_matchers()
-        #else:
-        #    scraper.reset_name_matchers(upper=matcher['upper'](),
-        #                                lower=matcher['lower']())
         try:
             for chamber in chambers:
                 if options.bills:
@@ -33,6 +44,84 @@ def run_oldschool(state, years, chambers, verbosity, options):
                 pass
             else:
                 raise
+
+def _load_scraper(state, scraper_type):
+    """
+        state: lower case two letter abbreviation of state
+        scraper_type: bills, legislators, committees, votes
+    """
+    mod_path = 'fiftystates.scrape.%s.%s' % (state, scraper_type)
+    scraper_name = '%s%sScraper' % (state.upper(), scraper_type[:-1].capitalize())
+
+    try:
+        mod = __import__(mod_path, fromlist=[scraper_name])
+        return getattr(mod, scraper_name)
+    except ImportError:
+        raise RunException("could not import %s" % mod_path)
+    except AttributeError:
+        raise RunException("could not import %s" % scraper_name)
+
+def run(state, years, chambers, output_dir, options):
+
+    # write metadata
+    try:
+        metadata = __import__(state).metadata
+        with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
+            json.dump(metadata, f, cls=JSONDateEncoder)
+    except (ImportError, AttributeError), e:
+        pass
+
+    opts = {'output_dir': output_dir,
+            'no_cache': options.no_cache,
+            # cache_dir, error_dir, requests_per_minute
+        }
+
+    # scrape bills
+    if options.bills:
+        BillScraper = _load_scraper(state, 'bills')
+        scraper = BillScraper(**opts)
+        for year in years:
+            try:
+                for chamber in chambers:
+                    scraper.scrape_bills(chamber, year)
+            except NoDataForYear, e:
+                if options.all_years:
+                    pass
+                else:
+                    raise
+
+    # scrape legislators
+    if options.legislators:
+        LegislatorScraper = _load_scraper(state, 'legislators')
+        scraper = LegislatorScraper(**opts)
+        for year in years:
+            try:
+                for chamber in chambers:
+                    scraper.scrape_legislators(chamber, year)
+            except NoDataForYear, e:
+                pass
+
+    # scrape committees
+    if options.committees:
+        CommitteeScraper = _load_scraper(state, 'committees')
+        scraper = CommitteeScraper(**opts)
+        for year in years:
+            try:
+                for chamber in chambers:
+                    scraper.scrape_committees(chamber, year)
+            except NoDataForYear, e:
+                pass
+
+    # scrape votes
+    if options.votes:
+        VoteScraper = _load_scraper(state, 'votes')
+        scraper = VoteScraper(**opts)
+        for year in years:
+            try:
+                for chamber in chambers:
+                    scraper.scrape_votes(chamber, year)
+            except NoDataForYear, e:
+                pass
 
 
 def main():
@@ -66,6 +155,8 @@ def main():
                     help="don't use web page cache"),
         make_option('-s', '--sleep', action='store_true', dest='sleep',
                     help="insert random delays wheen downloading web pages"),
+        make_option('--old', action='store_true', dest='oldschool',
+                    help="run an old style scraper"),
     )
 
     parser = OptionParser(option_list=option_list)
@@ -76,12 +167,34 @@ def main():
         return 1
     state = spares[0]
 
+    # configure logger
     if options.verbose == 0:
         verbosity = logging.WARNING
     elif options.verbose == 1:
         verbosity = logging.INFO
     else:
         verbosity = logging.DEBUG
+
+    logger = logging.getLogger("fiftystates")
+    formatter = logging.Formatter("%(asctime)s %(levelname)s " + state +
+                                  " %(message)s")
+    console = logging.StreamHandler()
+    console.setFormatter(formatter)
+    logger.addHandler(console)
+    logger.setLevel(verbosity)
+
+    # create output directories
+    def makedir(path):
+        try:
+            os.makedirs(path)
+        except OSError, e:
+            if e.errno != 17 or os.path.isfile(path):
+                raise e
+
+    output_dir = options.output_dir or os.path.join('data', state)
+    makedir(os.path.join(output_dir, "bills"))
+    makedir(os.path.join(output_dir, "legislators"))
+    makedir(os.path.join(output_dir, "committees"))
 
     # determine years
     years = options.years
@@ -100,7 +213,13 @@ def main():
     if not chambers:
         chambers = ['upper', 'lower']
 
-    run_oldschool(state, years, chambers, verbosity, options)
+    try:
+        if options.oldschool:
+            run_oldschool(state, years, chambers, options)
+        else:
+            run(state, years, chambers, output_dir, options)
+    except RunException, e:
+        print 'Error:', e
 
 
 if __name__ == '__main__':
