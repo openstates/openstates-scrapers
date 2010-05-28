@@ -16,7 +16,7 @@ class VoteScraper(Scraper):
 
     def save_vote(self, vote):
         filename = vote["filename"] + ".json"
-        self.log("_save_standalone_vote %s %s: %s '%s'" % (vote['session'],
+        self.log("save_vote %s %s: %s '%s'" % (vote['session'],
                                                            vote['chamber'],
                                                            vote['bill_id'],
                                                            vote['motion']))
