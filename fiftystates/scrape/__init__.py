@@ -12,6 +12,8 @@ try:
 except ImportError:
     import simplejson as json
 
+from fiftystates import settings
+
 import scrapelib
 
 try:
@@ -99,10 +101,12 @@ class Scraper(scrapelib.Scraper):
         if no_cache:
             kwargs['cache_dir'] = None
         elif 'cache_dir' not in kwargs:
-            kwargs['cache_dir'] = os.path.join('cache', self.state)
+            kwargs['cache_dir'] = getattr(settings, 'FIFTYSTATES_CACHE_DIR',
+                                          None)
 
         if 'error_dir' not in kwargs:
-            kwargs['error_dir'] = os.path.join('errors', self.state)
+            kwargs['error_dir'] = getattr(settings, 'FIFTYSTATES_ERROR_DIR',
+                                          None)
 
         if 'requests_per_minute' not in kwargs:
             kwargs['requests_per_minute'] = None
@@ -112,6 +116,8 @@ class Scraper(scrapelib.Scraper):
         if not hasattr(self, 'state'):
             raise Exception('Scrapers must have a state attribute')
 
+        self.output_dir = output_dir or os.path.join(
+            settings.FIFTYSTATES_DATA_DIR)
         self.output_dir = output_dir or os.path.join('data', self.state)
         self._init_dirs()
 
