@@ -1,3 +1,14 @@
+status = dict(
+    bills=True,
+    bill_versions=True,
+    sponsors=True,
+    actions=True,
+    votes=True,
+    legislators=True,
+    contributors=['Michael Stephens'],
+    notes="",
+)
+
 metadata = dict(
     state_name='Vermont',
     legislature_name='Vermont General Assembly',
