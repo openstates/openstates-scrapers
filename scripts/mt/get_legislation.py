@@ -23,9 +23,25 @@ sponsor_map = {
     'Primary Sponsor': 'primary'
     }
 
-vote_passage_indicators = ['Adopted', 'Carried', 'Concurred', 'Indefinitely Postponed', 'Passed', 'Rereferred to Committee']
-vote_failure_indicators = ['Failed',]
-vote_ambiguious_indicators = ['On Motion Rules Suspended', 'Reconsidered Previous', 'Segregated from Committee', 'Special Action', 'Taken from']
+vote_passage_indicators = ['Adopted',
+                           'Appointed',
+                           'Carried',
+                           'Concurred',
+                           'Passed',
+                           'Rereferred to Committee']
+vote_failure_indicators = ['Failed',
+                           'Rejected',
+                           ]
+vote_ambiguious_indicators = [
+    'Indefinitely Postponed',
+    'On Motion Rules Suspended',
+    'Pass Consideration',
+    'Reconsidered Previous',
+    'Rules Suspended',
+    'Segregated from Committee',
+    'Special Action',
+    'Sponsor List Modified',
+    'Taken from']
 
 class MTScraper(LegislationScraper):
     #must set state attribute as the state's abbreviated name
@@ -61,6 +77,7 @@ class MTScraper(LegislationScraper):
 
         self.base_year = 1999
         self.base_session = 56
+        self.search_url_template = "http://laws.leg.mt.gov/laws%s/LAW0203W$BSRV.ActionQuery?P_BLTP_BILL_TYP_CD=%s&P_BILL_NO=%s&P_BILL_DFT_NO=&Z_ACTION=Find&P_SBJ_DESCR=&P_SBJT_SBJ_CD=&P_LST_NM1=&P_ENTY_ID_SEQ="
 
     def getSession(self, year):
         for session, years in self.metadata['session_details'].items():
@@ -228,28 +245,45 @@ class MTScraper(LegislationScraper):
             if (anchor.text_content().startswith('status of') or
                 anchor.text_content().startswith('Detailed Information (status)')):
                 status_url = anchor.attrib['href'].replace("\r", "").replace("\n", "")
-                status_page = ElementTree(lxml.html.fromstring(self.urlopen(status_url)))
-                # see 2007 HB 2... weird.  
-                try:
-                    bill_id = status_page.xpath("/div/form[1]/table[2]/tr[2]/td[2]")[0].text_content()
-                except IndexError:
-                    bill_id = status_page.xpath('/html/html[2]/tr[1]/td[2]')[0].text_content()
-
-                try:
-                    title = status_page.xpath("/div/form[1]/table[2]/tr[3]/td[2]")[0].text_content()
-                except IndexError:
-                    title = status_page.xpath('/html/html[3]/tr[1]/td[2]')[0].text_content()
-                
-                bill = Bill(session, chamber, bill_id, title)
-                bill.add_source(bill_url)
-
-                self.add_sponsors(bill, status_page)
-                self.add_actions(bill, status_page)
+                bill = self.parse_bill_status_page(status_url, bill_url, session, chamber)
             elif anchor.text_content().startswith('This bill in WP'):
                 index_url = anchor.attrib['href']
                 index_url = index_url[0:index_url.rindex('/')]
                 self.add_bill_versions(bill, index_url)
+
+        if bill is None:
+            # No bill was found.  Maybe something like HB0790 in the 2005 session?
+            # We can search for the bill metadata.
+            page_name = bill_url.split("/")[-1].split(".")[0]
+            bill_type = page_name[0:2]
+            bill_number = page_name[2:]
+            laws_year = bill_url.split("/")[4][2:]
+
+            status_url = self.search_url_template % (laws_year, bill_type, bill_number)
+            bill = self.parse_bill_status_page(status_url, bill_url, session, chamber)
         return bill
+
+    def parse_bill_status_page(self, status_url, bill_url, session, chamber):
+        status_page = ElementTree(lxml.html.fromstring(self.urlopen(status_url)))
+        # see 2007 HB 2... weird.  
+        try:
+            bill_id = status_page.xpath("/div/form[1]/table[2]/tr[2]/td[2]")[0].text_content()
+        except IndexError:
+            bill_id = status_page.xpath('/html/html[2]/tr[1]/td[2]')[0].text_content()
+        
+        try:
+            title = status_page.xpath("/div/form[1]/table[2]/tr[3]/td[2]")[0].text_content()
+        except IndexError:
+            title = status_page.xpath('/html/html[3]/tr[1]/td[2]')[0].text_content()
+                
+        bill = Bill(session, chamber, bill_id, title)
+        bill.add_source(bill_url)
+        
+        self.add_sponsors(bill, status_page)
+        self.add_actions(bill, status_page)
+
+        return bill
+        
 
     def add_actions(self, bill, status_page):
         for action in status_page.xpath('/div/form[3]/table[1]/tr')[1:]:
@@ -340,3 +374,7 @@ class MTScraper(LegislationScraper):
 
 if __name__ == '__main__':
     MTScraper.run()
+
+    # scraper = MTScraper()
+    # bill_url = 'http://data.opi.mt.gov/bills/2005/BillHtml/HB0790.htm'
+    # scraper.parse_bill(bill_url, scraper.getSession(2005), 'lower')
