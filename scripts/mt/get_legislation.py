@@ -27,8 +27,11 @@ vote_passage_indicators = ['Adopted',
                            'Appointed',
                            'Carried',
                            'Concurred',
+                           'Dissolved',
                            'Passed',
-                           'Rereferred to Committee']
+                           'Rereferred to Committee',
+                           'Veto Overidden',
+                           'Veto Overridden']
 vote_failure_indicators = ['Failed',
                            'Rejected',
                            ]
@@ -375,6 +378,6 @@ class MTScraper(LegislationScraper):
 if __name__ == '__main__':
     MTScraper.run()
 
-    # scraper = MTScraper()
-    # bill_url = 'http://data.opi.mt.gov/bills/2005/BillHtml/HB0790.htm'
-    # scraper.parse_bill(bill_url, scraper.getSession(2005), 'lower')
+    #scraper = MTScraper()
+    #bill_url = 'http://data.opi.mt.gov/bills/2003/BillHtml/HB0424.htm'
+    #scraper.parse_bill(bill_url, scraper.getSession(2003), 'lower')
