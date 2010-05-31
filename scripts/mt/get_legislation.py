@@ -30,6 +30,7 @@ vote_passage_indicators = ['Adopted',
                            'Dissolved',
                            'Passed',
                            'Rereferred to Committee',
+                           'Transmitted to',
                            'Veto Overidden',
                            'Veto Overridden']
 vote_failure_indicators = ['Failed',
@@ -119,7 +120,8 @@ class MTScraper(LegislationScraper):
 
     def scrape_pre_2003_legislators(self, chamber, year, session, suffix):
         url = 'http://leg.mt.gov/css/Sessions/%d%s/legname.asp' % (session, suffix)
-        page_data = self.parser(self.urlopen(url))
+        legislator_page = ElementTree(lxml.html.fromstring(self.urlopen(url)))
+
         if year == 2001:
             if chamber == 'upper':
                 tableName = '57th Legislatore Roster Senate (2001-2002)'
@@ -134,48 +136,47 @@ class MTScraper(LegislationScraper):
             else:
                 tableName = 'Members of the House'
                 startRow = 5
-        for row in page_data.find('table', attrs = {'name' : tableName}).findAll('tr')[startRow:]:
-            row = row.findAll('td')
-            #Ignore row with just email in it
-            if str(row[0].contents[0]).strip() == '&nbsp;':
-                continue
-            #Parse different locations for name if name is a link
-            if row[0].find('a'):
-                name = row[0].contents[0].next
-                #print name.next
-                party_letter = name.next[2]
-            else:
-                if chamber == 'upper' and year == 2001:
-                    name, party_letter = row[0].contents[2].rsplit(' (', 1)
-                else:
-                    name, party_letter = row[0].contents[0].rsplit(' (', 1)
-                party_letter = party_letter[0]
 
-            #Get first name, last name, and suffix out of name string
-            nameParts = [namePart.strip() for namePart in name.split(',')]
-            assert len(nameParts) < 4
-            if len(nameParts) == 2:
-                #Case last_name, first_name
-                last_name, first_name = nameParts
-            elif len(nameParts) == 3:
-                #Case last_name, suffix, first_name
-                last_name = ' '.join(nameParts[0:2])
-                first_name = nameParts[2]
+        for table in legislator_page.xpath("//table"):
+            if table.attrib.has_key('name') and table.attrib['name'] == tableName:
+                parse_names = False
+                for row in table.getchildren():
+                    if row.tag != 'tr':
+                        continue
+                    celldata = row.getchildren()[0].text_content().strip()
+                    if parse_names and len(celldata) != 0:
+                        name, party_letter = celldata.rsplit(' (', 1)
+                        party_letter = party_letter[0]
 
-            district = row[2].contents[0].strip()
+                        nameParts = [namePart.strip() for namePart in name.split(',')]
+                        assert len(nameParts) < 4
+                        if len(nameParts) == 2:
+                            last_name, first_name = nameParts
+                        elif len(nameParts) == 3:
+                            last_name = ' '.join(nameParts[0:2])
+                            first_name = nameParts[2]
+                        else:
+                            name, party_letter = celldata.rsplit(' (', 1)
+                            
+                        district = row.getchildren()[2].text_content().strip()
 
-            if party_letter == 'R':
-                party = 'Republican'
-            elif party_letter == 'D':
-                party = 'Democrat'
-            else:
-                #Haven't yet run into others, so not sure how the state abbreviates them
-                party = party_letter
+                        if party_letter == 'R':
+                            party = 'Republican'
+                        elif party_letter == 'D':
+                            party = 'Democrat'
+                        else:
+                            party = party_letter
 
-            legislator = Legislator(session, chamber, district, '%s %s' % (first_name, last_name), \
-                                    first_name, last_name, '', party)
-            legislator.add_source(url)
-            self.save_legislator(legislator)
+                        legislator = Legislator(session, chamber, district, '%s %s' % (first_name, last_name), \
+                                                first_name, last_name, '', party)
+                        legislator.add_source(url)
+                        self.save_legislator(legislator)
+
+                    if celldata == "Name (Party)":
+                        # The table headers seem to vary in size, but the last row
+                        # always seems to start with 'Name (Party)' -- once we find
+                        # that, start parsing legislator names
+                        parse_names = True
 
     def scrape_post_2003_legislators(self, chamber, year, session, suffix):
         url = 'http://leg.mt.gov/content/sessions/%d%s/%d%sMembers.txt' % \
