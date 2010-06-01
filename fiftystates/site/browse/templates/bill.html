@@ -36,5 +36,14 @@
         {% endfor %}
       </ul>
     </div>
+
+    <div class="versions">
+      <h4>Versions:</h4>
+      <ul>
+        {% for version in bill.versions %}
+        <li><a href="{{version.url}}">{{version.name}}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
   </body>
 </html>
