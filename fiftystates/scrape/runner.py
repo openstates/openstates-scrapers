@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import datetime
 import logging
 from optparse import make_option, OptionParser
