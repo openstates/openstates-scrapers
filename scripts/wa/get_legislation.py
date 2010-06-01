@@ -66,9 +66,9 @@ class WALegislationScraper(LegislationScraper):
             middle_name = separated_full_name[1]
             last_name_list = separated_full_name[1:]
             last_name = ""
-        for name in last_name_list:
-            last_name += name
-    
+            for name in last_name_list:
+                last_name += name
+      
         return full_name, first_name, middle_name, last_name 
 
     def scrape_year(self, year):
