@@ -28,3 +28,16 @@ def bill(request, state, session, chamber, id):
         raise Http404
 
     return render_to_response('bill.html', {'bill': bill})
+
+
+def legislator(request, id):
+    leg = db.legislators.find_one({'_all_ids': id})
+    if not leg:
+        raise Http404
+
+    for role in leg['roles']:
+        if role['type'] == 'member':
+            leg['active_role'] = role
+            break
+
+    return render_to_response('legislator.html', {'leg': leg})
