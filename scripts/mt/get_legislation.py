@@ -45,6 +45,7 @@ vote_ambiguious_indicators = [
     'Segregated from Committee',
     'Special Action',
     'Sponsor List Modified',
+    'Tabled',
     'Taken from']
 
 class MTScraper(LegislationScraper):
@@ -222,12 +223,15 @@ class MTScraper(LegislationScraper):
         year = int(year)
         session = self.getSession(year)
         #2 year terms starting on odd year, so if even number, use the previous odd year
-        if year < 2001:
+        if year < 1999:
             raise NoDataForYear(year)
         if year % 2 == 0:
             year -= 1
 
-        base_bill_url = 'http://data.opi.mt.gov/bills/%d/BillHtml/' % year
+        if year == 1999:
+            base_bill_url = 'http://data.opi.mt.gov/bills/BillHtml/'
+        else:
+            base_bill_url = 'http://data.opi.mt.gov/bills/%d/BillHtml/' % year
         index_page = ElementTree(lxml.html.fromstring(self.urlopen(base_bill_url)))
 
         bill_urls = []
@@ -253,6 +257,8 @@ class MTScraper(LegislationScraper):
             elif anchor.text_content().startswith('This bill in WP'):
                 index_url = anchor.attrib['href']
                 index_url = index_url[0:index_url.rindex('/')]
+                # this looks weird.  See http://data.opi.mt.gov/bills/BillHtml/SB0002.htm for why
+                index_url = index_url[index_url.rindex("http://"):]
                 self.add_bill_versions(bill, index_url)
 
         if bill is None:
@@ -261,7 +267,7 @@ class MTScraper(LegislationScraper):
             page_name = bill_url.split("/")[-1].split(".")[0]
             bill_type = page_name[0:2]
             bill_number = page_name[2:]
-            laws_year = bill_url.split("/")[4][2:]
+            laws_year = self.metadata['session_details'][session]['years'][0] % 100
 
             status_url = self.search_url_template % (laws_year, bill_type, bill_number)
             bill = self.parse_bill_status_page(status_url, bill_url, session, chamber)
@@ -379,6 +385,6 @@ class MTScraper(LegislationScraper):
 if __name__ == '__main__':
     MTScraper.run()
 
-    #scraper = MTScraper()
-    #bill_url = 'http://data.opi.mt.gov/bills/2003/BillHtml/HB0424.htm'
-    #scraper.parse_bill(bill_url, scraper.getSession(2003), 'lower')
+    # scraper = MTScraper()
+    # bill_url = 'http://data.opi.mt.gov/bills/BillHtml/SB0039.htm'
+    # scraper.parse_bill(bill_url, scraper.getSession(1999), 'lower')
