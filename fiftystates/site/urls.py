@@ -9,4 +9,5 @@ urlpatterns = patterns('',
     (r'^api/locksmith/', include('locksmith.auth.urls')),
     (r'^api/', include('fiftystates.site.api.urls')),
     (r'^status/', include('fiftystates.site.status.urls')),
+    (r'^browse/', include('fiftystates.site.browse.urls')),
 )

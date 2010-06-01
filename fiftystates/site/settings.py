@@ -81,6 +81,7 @@ INSTALLED_APPS = (
     'fiftystates.site.api',
     'fiftystates.site.geo',
     'fiftystates.site.status',
+    'fiftystates.site.browse',
     'ostracker',
     'locksmith.auth',
 )
