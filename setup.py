@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 from setuptools import setup
-from fiftystates.client import __version__
 
 long_description = open('README.rst').read()
 
 setup(name="fiftystates",
-      version=__version__,
+      version='0.1',
       namespace_packages=['fiftystates'],
       packages=['fiftystates.scrape', 'fiftystates.backend',
                 'fiftystates.site'],
