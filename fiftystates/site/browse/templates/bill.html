@@ -13,7 +13,7 @@
   <h4>Sponsored by:</h4>
   <ul>
     {% for sponsor in bill.sponsors %}
-    <li><a href="{{sponsor.leg_id}}">{{sponsor.name}}</a></li>
+    <li><a href="/browse/people/{{sponsor.leg_id}}/">{{sponsor.name}}</a></li>
     {% endfor %}
   </ul>
 </div>

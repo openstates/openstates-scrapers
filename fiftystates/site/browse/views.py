@@ -30,12 +30,20 @@ def state_index(request, state):
                            'type': 'member',
                            'district': {'$ne': '22'}}}}).sort('last_name')
 
+    upper = list(upper)
+    for leg in upper:
+        leg['url'] = '/browse/people/%s/' % leg['_id']
+
     lower = db.legislators.find({
             'roles': {'$elemMatch':
                           {'state': state,
                            'session': current_session,
                            'chamber': 'lower',
                            'type': 'member'}}}).sort('last_name')
+
+    lower = list(lower)
+    for leg in lower:
+        leg['url'] = '/browse/people/%s/' % leg['_id']
 
     return render_to_response('state_index.html',
                               {'recent_bills': recent_bills,

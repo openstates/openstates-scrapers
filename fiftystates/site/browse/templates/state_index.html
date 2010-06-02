@@ -25,7 +25,7 @@
   <h4>{{ metadata.upper_title }}s ({{ upper|length }})</h4>
   <ul>
     {% for leg in upper %}
-      <li><a href="{{leg.id}}">{{ leg.full_name }}</a>,
+      <li><a href="{{leg.url}}">{{ leg.full_name }}</a>,
         District {{ leg.roles.0.district }}
       </li>
     {% endfor %}
@@ -36,7 +36,7 @@
   <h4>{{ metadata.lower_title }}s ({{ lower|length }})</h4>
   <ul>
     {% for leg in lower %}
-      <li><a href="{{leg.id}}">{{ leg.full_name }}</a>,
+      <li><a href="{{leg.url}}">{{ leg.full_name }}</a>,
         District {{ leg.roles.0.district }}
       </li>
     {% endfor %}
