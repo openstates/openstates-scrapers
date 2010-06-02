@@ -14,8 +14,6 @@ class FiftyStatesDocumentMetaClass(Document.__metaclass__):
     """
     Allow mongokit documents to inherit members of 'structure',
     'required_fields' and 'default_values'.
-
-    Also, register document types with the global mongokit connection.
     """
     def __new__(cls, name, bases, attrs):
         new_cls = super(FiftyStatesDocumentMetaClass, cls).__new__(
