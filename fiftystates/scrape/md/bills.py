@@ -1,36 +1,33 @@
 #!/usr/bin/env python
 import datetime
 import itertools
-import os
 import re
-import sys
-import time
 from urllib2 import HTTPError
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 Committee, NoDataForYear)
+from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.votes import Vote
 
 CHAMBERS = {
     'upper': ('SB','SJ'),
     'lower': ('HB','HJ'),
 }
 SESSIONS = {
-    '2010': ('rs',),
-    '2009': ('rs',),
-    '2008': ('rs',),
-    '2007': ('rs','s1'),
-    '2006': ('rs','s1'),
-    '2005': ('rs',),
-    '2004': ('rs','s1'),
-    '2003': ('rs',),
-    '2002': ('rs',),
-    '2001': ('rs',),
-    '2000': ('rs',),
-    '1999': ('rs',),
-    '1998': ('rs',),
-    '1997': ('rs',),
-    '1996': ('rs',),
+    2010: ('rs',),
+    2009: ('rs',),
+    2008: ('rs',),
+    2007: ('rs','s1'),
+    2006: ('rs','s1'),
+    2005: ('rs',),
+    2004: ('rs','s1'),
+    2003: ('rs',),
+    2002: ('rs',),
+    2001: ('rs',),
+    2000: ('rs',),
+    1999: ('rs',),
+    1998: ('rs',),
+    1997: ('rs',),
+    1996: ('rs',),
 }
 
 BASE_URL = "http://mlis.state.md.us"
@@ -38,8 +35,7 @@ BILL_URL = BASE_URL + "/%s%s/billfile/%s%04d.htm" # year, session, bill_type, nu
 
 MOTION_RE = re.compile(r"(?P<motion>[\w\s]+) \((?P<yeas>\d{1,3})-(?P<nays>\d{1,3})\)")
 
-class MDLegislationScraper(LegislationScraper):
-
+class MDBillScraper(BillScraper):
     state = 'md'
 
     metadata = {
@@ -123,7 +119,7 @@ class MDLegislationScraper(LegislationScraper):
             href = elem.get('href')
             if href and "votes" in href and href.endswith('htm'):
                 vote_url = BASE_URL + href
-                with self.lxml_context(vote_url) as vote_doc:
+                with self.lxml(vote_url) as (resp, vote_doc):
                     # motion
                     for a in vote_doc.cssselect('a'):
                          if 'motions' in a.get('href'):
@@ -173,7 +169,7 @@ class MDLegislationScraper(LegislationScraper):
         """ Creates a bill object
         """
         url = BILL_URL % (year, session, bill_type, number)
-        with self.lxml_context(url) as doc:
+        with self.lxml(url) as (resp, doc):
             # title
             # find <a name="Title">, get parent dt, get parent dl, then get dd within dl
             title = doc.cssselect('a[name=Title]')[0] \
