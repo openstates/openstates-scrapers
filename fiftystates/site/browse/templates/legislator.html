@@ -4,7 +4,7 @@
 {% block title %}{{ leg.full_name }} - The Fifty State Project{% endblock %}
 
 {% block content %}
-<h3>{{ leg.active_role|title }} {{ leg.full_name }}</h3>
+<h3>{{ leg.active_role|leg_title }} {{ leg.full_name }}</h3>
 <h4>
   {{ leg.active_role.state|state_name }} {{ leg.active_role|short_chamber }}
   District {{ leg.active_role.district }}
@@ -16,7 +16,7 @@
     {% for role in leg.roles %}
       <li>
         {% if role.type == 'member' %}
-          {{ role.session }}: {{ role|title }}, District {{ role.district }}
+          {{ role.session }}: {{ role|leg_title }}, District {{ role.district }}
         {% endif %}
 
         {% if role.type == 'committee member' %}

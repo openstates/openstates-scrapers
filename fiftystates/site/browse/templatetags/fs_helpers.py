@@ -28,7 +28,7 @@ def short_chamber(role):
 
 
 @register.filter
-def title(role):
+def leg_title(role):
     if role['type'] == 'member':
         return metadata(role['state'])['%s_title' % role['chamber']]
     return ''
