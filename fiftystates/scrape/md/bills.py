@@ -1,36 +1,33 @@
 #!/usr/bin/env python
 import datetime
 import itertools
-import os
 import re
-import sys
-import time
 from urllib2 import HTTPError
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 Committee, NoDataForYear)
+from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.votes import Vote
 
 CHAMBERS = {
     'upper': ('SB','SJ'),
     'lower': ('HB','HJ'),
 }
 SESSIONS = {
-    '2010': ('rs',),
-    '2009': ('rs',),
-    '2008': ('rs',),
-    '2007': ('rs','s1'),
-    '2006': ('rs','s1'),
-    '2005': ('rs',),
-    '2004': ('rs','s1'),
-    '2003': ('rs',),
-    '2002': ('rs',),
-    '2001': ('rs',),
-    '2000': ('rs',),
-    '1999': ('rs',),
-    '1998': ('rs',),
-    '1997': ('rs',),
-    '1996': ('rs',),
+    2010: ('rs',),
+    2009: ('rs',),
+    2008: ('rs',),
+    2007: ('rs','s1'),
+    2006: ('rs','s1'),
+    2005: ('rs',),
+    2004: ('rs','s1'),
+    2003: ('rs',),
+    2002: ('rs',),
+    2001: ('rs',),
+    2000: ('rs',),
+    1999: ('rs',),
+    1998: ('rs',),
+    1997: ('rs',),
+    1996: ('rs',),
 }
 
 BASE_URL = "http://mlis.state.md.us"
@@ -38,8 +35,7 @@ BILL_URL = BASE_URL + "/%s%s/billfile/%s%04d.htm" # year, session, bill_type, nu
 
 MOTION_RE = re.compile(r"(?P<motion>[\w\s]+) \((?P<yeas>\d{1,3})-(?P<nays>\d{1,3})\)")
 
-class MDLegislationScraper(LegislationScraper):
-
+class MDBillScraper(BillScraper):
     state = 'md'
 
     metadata = {
@@ -123,7 +119,7 @@ class MDLegislationScraper(LegislationScraper):
             href = elem.get('href')
             if href and "votes" in href and href.endswith('htm'):
                 vote_url = BASE_URL + href
-                with self.lxml_context(vote_url) as vote_doc:
+                with self.lxml(vote_url) as (resp, vote_doc):
                     # motion
                     for a in vote_doc.cssselect('a'):
                          if 'motions' in a.get('href'):
@@ -173,7 +169,7 @@ class MDLegislationScraper(LegislationScraper):
         """ Creates a bill object
         """
         url = BILL_URL % (year, session, bill_type, number)
-        with self.lxml_context(url) as doc:
+        with self.lxml(url) as (resp, doc):
             # title
             # find <a name="Title">, get parent dt, get parent dl, then get dd within dl
             title = doc.cssselect('a[name=Title]')[0] \
@@ -212,75 +208,3 @@ class MDLegislationScraper(LegislationScraper):
 
         for session in SESSIONS[year]:
             self.scrape_session(chamber, year, session)
-
-
-    def scrape_members(self, url, chamber):
-        detail_re = re.compile('\((R|D)\), (?:Senate President, )?(?:House Speaker, )?District (\w+)')
-
-        with self.lxml_context(url) as doc:
-            # data on this page is <li>s that have anchor tags
-            for a in doc.cssselect('li a'):
-                link = a.get('href')
-                # tags don't close so we get the <li> and <a> content and diff them
-                name_text = a.text_content()
-                detail_text = a.getparent().text_content().replace(name_text, '')
-
-                # ignore if it is not a valid link
-                if link:
-                    # handle names
-                    names = name_text.split(',')
-                    last_name = names[0]
-                    first_name = names[1]
-                    # TODO: try to trim first name to remove middle initial
-                    if len(names) > 2:
-                        suffix = names[2]
-                    else:
-                        suffix = None
-
-                    # handle details
-                    details = detail_text.strip()
-                    party, district = detail_re.match(details).groups()
-
-                    leg = Legislator('current', chamber, district,
-                                     ' '.join((first_name, last_name)),
-                                     first_name, last_name, '',
-                                     party, suffix=suffix,
-                                     url='http://www.msa.md.gov'+link)
-                    self.save_legislator(leg)
-
-
-    def scrape_legislators(self, chamber, year):
-        house_url = 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hseal.html'
-        sen_url = "http://www.msa.md.gov/msa/mdmanual/05sen/html/senal.html"
-
-        if year not in SESSIONS:
-            raise NoDataForYear(year)
-
-        self.scrape_members(house_url, 'lower')
-        self.scrape_members(sen_url, 'upper')
-
-
-    def scrape_committees(self, chamber, year):
-        house_url = 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hsecom.html'
-        with self.lxml_context(house_url) as doc:
-            # distinct URLs containing /com/
-            committees = set([l.get('href') for l in doc.cssselect('li a')
-                              if l.get('href', '').find('/com/') != -1])
-
-        for com in committees:
-            com_url = 'http://www.msa.md.gov'+com
-            with self.lxml_context(com_url) as cdoc:
-                for h in cdoc.cssselect('h2, h3'):
-                    if h.text:
-                        committee_name = h.text
-                        break
-                cur_com = Committee('lower', committee_name)
-                cur_com.add_source(com_url)
-                for l in cdoc.cssselect('a[href]'):
-                    if ' SUBCOMMITTEE' in (l.text or ''):
-                        self.save_committee(cur_com)
-                        cur_com = Committee('lower', l.text, committee_name)
-                        cur_com.add_source(com_url)
-                    elif 'html/msa' in l.get('href'):
-                        cur_com.add_member(l.text)
-                self.save_committee(cur_com)
