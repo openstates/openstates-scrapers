@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block title %}
 {{ bill.state|upper }} {{ bill.bill_id }} - The Fifty State Project
@@ -22,7 +23,7 @@
   <ul>
     {% for action in bill.actions reversed %}
     <li>
-      <time datetime="{{action.date|date:"c"}}">{{action.date|date}}</time>
+      <time datetime="{{action.date|date:"c"}}">{{ action.date|naturalday }}</time>
       <span class="actor">({{action.actor}})</span> {{action.action}}
     </li>
     {% endfor %}
