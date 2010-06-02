@@ -34,16 +34,16 @@ def import_bills(state, data_dir):
                                   'chamber': data['chamber'],
                                   'bill_id': data['bill_id']})
 
-        for sponsor in bill['sponsors']:
-            id = get_legislator_id(state, bill['session'], None,
+        for sponsor in data['sponsors']:
+            id = get_legislator_id(state, data['session'], None,
                                    sponsor['name'])
             sponsor['leg_id'] = id
 
-        for vote in bill['votes']:
+        for vote in data['votes']:
             for vtype in ('yes_votes', 'no_votes', 'other_votes'):
                 svlist = []
                 for svote in vote[vtype]:
-                    id = get_legislator_id(state, bill['session'],
+                    id = get_legislator_id(state, data['session'],
                                            vote['chamber'], svote)
                     svlist.append({'name': svote, 'leg_id': id})
 
