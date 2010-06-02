@@ -27,12 +27,20 @@ class WALegislationScraper(LegislationScraper):
         }
 
     @contextlib.contextmanager
-    def lxml_context(self, url):
+    def lxml_context(self, url, sep=None, sep_after=True):
         try:
             body = self.urlopen(url)
         except:
             body = self.urlopen("http://www.google.com")
+        
+        if sep != None: 
+            if sep_after == True:
+                before, itself, body = body.rpartition(sep)
+            else:
+                body, itself, after = body.rpartition(sep)    
+        
         elem = lxml.html.fromstring(body)
+        
         try:
             yield elem
         except:
@@ -71,11 +79,20 @@ class WALegislationScraper(LegislationScraper):
       
         return full_name, first_name, middle_name, last_name 
 
-    def scrape_year(self, year):
-      
-        with self.lxml_context("http://apps.leg.wa.gov/billinfo/dailystatus.aspx?year=" + str(year)) as page:
+    def scrape_year(self, year, chamber):    
+        
+        sep = '<h1>House</h1>'
+            
+        if chamber == 'upper':
+            after = False
+            reg = '[5-9]'
+        else:
+            after = True
+            reg = '[1-4]'
+                
+        with self.lxml_context("http://apps.leg.wa.gov/billinfo/dailystatus.aspx?year=" + str(year), sep, after) as page:
             for element, attribute, link, pos in page.iterlinks():
-                if re.search("bill=[0-9]{4}", link) != None:
+                if re.search("bill=" + reg + "[0-9]{3}", link) != None:
                     bill_page_url = "http://apps.leg.wa.gov/billinfo/" + link
                     with self.lxml_context(bill_page_url) as bill_page:
                         raw_title = bill_page.cssselect('title')
@@ -84,11 +101,6 @@ class WALegislationScraper(LegislationScraper):
                         bill_id = bill_id.strip()
                         session = split_title[3].strip()
 
-                        if (split_title[0] == 'SB'):
-                            chamber = 'upper'
-                        else: 
-                            chamber = 'lower'
-                
                         title_element = bill_page.get_element_by_id("ctl00_ContentPlaceHolder1_lblSubTitle")
                         title = title_element.text_content()
 
@@ -154,17 +166,17 @@ class WALegislationScraper(LegislationScraper):
         if (year < 2005):
             raise NoDataForYear(year)
 
-        self.scrape_year(year)
+        self.scrape_year(year, chamber)
 
     def scrape_legislators(self, chamber, year):
         if year != '2009':
             raise NoDataForYear(year)
 
-        if chamber == 'upper':
-            self.scrape_legislator_data("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx", 'upper')
+        #if chamber == 'upper':
+        #    self.scrape_legislator_data("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx", 'upper')
 
-        else:
-            self.scrape_legislator_data("http://www.leg.wa.gov/house/representatives/Pages/default.aspx", 'lower')
+        #else:
+        #    self.scrape_legislator_data("http://www.leg.wa.gov/house/representatives/Pages/default.aspx", 'lower')
                      
 if __name__ == '__main__':
     WALegislationScraper.run()
