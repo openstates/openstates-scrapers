@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os, string, re
+from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lxml.html
 import contextlib
@@ -25,6 +26,9 @@ class WALegislationScraper(LegislationScraper):
         'session_details': {
             }
         }
+    
+    def clean_string(self, s):
+        return re.sub('[^0-9]', '', s)
 
     @contextlib.contextmanager
     def lxml_context(self, url, sep=None, sep_after=True):
@@ -78,6 +82,41 @@ class WALegislationScraper(LegislationScraper):
                 last_name += name
       
         return full_name, first_name, middle_name, last_name 
+    
+    def scrape_actions(self, bill_page, bill):
+        b_elements = bill_page.cssselect('b')
+                        
+        for e in b_elements:
+            if re.search("[0-9]{4}", e.text_content()) != None:
+                split_string = e.text_content().split()
+                start_year = split_string[0]
+                break
+                            
+        current_year = int(start_year)
+        month_letters_to_numbers = {'Jan':1, 'Feb':2, 'Mar':3, 'Apr':4, 'May':5, 'Jun':6, 'Jul':7, \
+                                    'Aug':8, 'Sep':9, 'Oct':10, 'Nov':11, 'Dec':12}
+                        
+        action_dates = bill_page.cssselect('td[style="padding-left:20px"][nowrap="nowrap"][valign="top"]')
+        action_texts = bill_page.cssselect('td[width="100%"]')
+                                     
+        last_month = 1
+        for date, action_text in zip(action_dates, action_texts):
+            print date.text_content()
+            splitted_date = date.text_content().split(" ")
+            # If it is not a date skip  
+            try:
+                month = month_letters_to_numbers[splitted_date[0]]
+            except:
+                continue
+            
+            day = self.clean_string(splitted_date[1])
+
+            if(last_month > month):
+                current_year = current_year + 1
+            last_month = month                                            
+            bill.add_action('upper', action_text.text_content(), datetime.strptime(str(month) + '/' + day + '/' + str(current_year), '%m/%d/%Y'))
+                            
+                                    
 
     def scrape_year(self, year, chamber):    
         
@@ -106,6 +145,8 @@ class WALegislationScraper(LegislationScraper):
 
                         bill = Bill(session, chamber, bill_id, title)
                         bill.add_source(bill_page_url)
+                
+                        self.scrape_actions(bill_page, bill)
                 
                         for element, attribute, link, pos in bill_page.iterlinks():
                             if re.search("billdocs", link) != None:
