@@ -18,10 +18,29 @@ def state_index(request, state):
         raise Http404
 
     recent_bills = db.bills.find({'state': state.lower()}).sort(
-        'created_at', pymongo.DESCENDING).limit(10)
+        'created_at', pymongo.DESCENDING).limit(20)
+
+    current_session = meta['sessions'][-1]
+
+    upper = db.legislators.find({
+            'roles': {'$elemMatch':
+                          {'state': state,
+                           'session': current_session,
+                           'chamber': 'upper',
+                           'type': 'member',
+                           'district': {'$ne': '22'}}}}).sort('last_name')
+
+    lower = db.legislators.find({
+            'roles': {'$elemMatch':
+                          {'state': state,
+                           'session': current_session,
+                           'chamber': 'lower',
+                           'type': 'member'}}}).sort('last_name')
 
     return render_to_response('state_index.html',
                               {'recent_bills': recent_bills,
+                               'upper': list(upper),
+                               'lower': list(lower),
                                'metadata': meta})
 
 
