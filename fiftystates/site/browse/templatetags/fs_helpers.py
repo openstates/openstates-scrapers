@@ -1,4 +1,4 @@
-from fiftystates.backend import db
+from fiftystates.backend import db, metadata
 
 from django import template
 from django.template.defaultfilters import stringfilter
@@ -9,16 +9,13 @@ register = template.Library()
 @register.filter
 @stringfilter
 def state_name(abbrev):
-    abbrev = abbrev.lower()
-    return db.metadata.find_one({'_id': abbrev})['state_name']
+    return metadata(abbrev)['state_name']
 
 
 @register.filter
 def chamber(role):
     if role['type'] == 'member':
-        meta = db.metadata.find_one({'_id': role['state']})
-
-        return meta["%s_chamber_name" % role['chamber']]
+        return metadata(role['state'])['%s_chamber_name' % role['chamber']]
     return ''
 
 
@@ -33,7 +30,5 @@ def short_chamber(role):
 @register.filter
 def title(role):
     if role['type'] == 'member':
-        meta = db.metadata.find_one({'_id': role['state']})
-
-        return meta["%s_title" % role['chamber']]
+        return metadata(role['state'])['%s_title' % role['chamber']]
     return ''
