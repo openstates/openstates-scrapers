@@ -1,8 +1,8 @@
 from fiftystates import settings
 
-import pymongo
+import mongokit
 
-conn = pymongo.Connection(getattr(settings, 'MONGO_HOST', 'localhost'),
+conn = mongokit.Connection(getattr(settings, 'MONGO_HOST', 'localhost'),
                           getattr(settings, 'MONGO_PORT', 27017))
 
 db = conn[getattr(settings, 'MONGO_DATABASE', 'fiftystates')]
