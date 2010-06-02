@@ -5,6 +5,7 @@ status = dict(
     actions=True,
     votes=True,
     legislators=True,
+    committees=True,
     contributors=['Jeremy Carbaugh', 'James Turk'],
     notes="",
 )
@@ -12,7 +13,7 @@ status = dict(
 from fiftystates.scrape.md.bills import SESSIONS
 
 metadata = dict(
-    state_name='Vermont',
+    state_name='Maryland',
     legislature_name='Maryland General Assembly',
     upper_chamber_name='Senate',
     lower_chamber_name='House of Delegates',
