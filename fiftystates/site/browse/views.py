@@ -1,13 +1,28 @@
 import re
 
-from fiftystates.backend import db
+from fiftystates.backend import db, metadata
 
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import render_to_response
 
+import pymongo
+
 
 def index(request):
     raise Http404
+
+
+def state_index(request, state):
+    meta = metadata(state)
+    if not meta:
+        raise Http404
+
+    recent_bills = db.bills.find({'state': state.lower()}).sort(
+        'created_at', pymongo.DESCENDING).limit(10)
+
+    return render_to_response('state_index.html',
+                              {'recent_bills': recent_bills,
+                               'metadata': meta})
 
 
 def bill(request, state, session, chamber, id):

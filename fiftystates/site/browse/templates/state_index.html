@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load fs_helpers %}
+{% load humanize %}
+
+{% block title %}
+{{ metadata.state_name }} - The Fifty State Project
+{% endblock %}
+
+{% block content %}
+<h3>{{ metadata.state_name }}</h3>
+
+<div class="recent_bills">
+  <h4>Recently added bills:</h4>
+  {% for bill in recent_bills %}
+    <ul>
+      <li>
+        <a href="billlink">{{ bill.bill_id }}</a>
+        added {{ bill.created_at|naturalday }}
+      </li>
+    </ul>
+  {% endfor %}
+</div>
+
+
+{% endblock %}
