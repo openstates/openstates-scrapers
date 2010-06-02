@@ -14,6 +14,7 @@ except:
 
 from fiftystates import settings
 from fiftystates.backend import db
+from fiftystates.backend.names import get_legislator_id
 from fiftystates.backend.utils import (insert_with_id, keywordize,
                                        update, prepare_obj, base_arg_parser)
 
@@ -32,6 +33,21 @@ def import_bills(state, data_dir):
                                   'session': data['session'],
                                   'chamber': data['chamber'],
                                   'bill_id': data['bill_id']})
+
+        for sponsor in data['sponsors']:
+            id = get_legislator_id(state, data['session'], None,
+                                   sponsor['name'])
+            sponsor['leg_id'] = id
+
+        for vote in data['votes']:
+            for vtype in ('yes_votes', 'no_votes', 'other_votes'):
+                svlist = []
+                for svote in vote[vtype]:
+                    id = get_legislator_id(state, data['session'],
+                                           vote['chamber'], svote)
+                    svlist.append({'name': svote, 'leg_id': id})
+
+                vote[vtype] = svlist
 
         if not bill:
             data['created_at'] = datetime.datetime.now()
