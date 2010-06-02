@@ -1,12 +1,21 @@
 import datetime
 
+from fiftystates.backend import conn
+
 from mongokit import Document
+
+
+def mongokit_register(cls):
+    conn.register([cls])
+    return cls
 
 
 class FiftyStatesDocumentMetaClass(Document.__metaclass__):
     """
     Allow mongokit documents to inherit members of 'structure',
     'required_fields' and 'default_values'.
+
+    Also, register document types with the global mongokit connection.
     """
     def __new__(cls, name, bases, attrs):
         new_cls = super(FiftyStatesDocumentMetaClass, cls).__new__(
@@ -63,6 +72,7 @@ class FiftyStatesDocument(Document):
         return super(FiftyStatesDocument, self).save(*args, **kwargs)
 
 
+@mongokit_register
 class Legislator(FiftyStatesDocument):
     structure = {
             'full_name': unicode,
@@ -81,6 +91,7 @@ class Legislator(FiftyStatesDocument):
     default_values = {'middle_name': u""}
 
 
+@mongokit_register
 class Bill(FiftyStatesDocument):
     structure = {
         'state': unicode,
