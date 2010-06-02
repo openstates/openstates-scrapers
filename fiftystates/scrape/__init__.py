@@ -91,10 +91,6 @@ class Scraper(scrapelib.Scraper):
         self.debug = self.logger.debug
         self.warning = self.logger.warning
 
-    def urlopen(self, *args, **kwargs):
-        # Grab data out of (headers, data) tuple
-        return super(Scraper, self).urlopen(*args, **kwargs)[1]
-
     @contextlib.contextmanager
     def soup_context(self, url):
         """
@@ -104,11 +100,11 @@ class Scraper(scrapelib.Scraper):
         if not USE_SOUP:
             raise ScrapeError("BeautifulSoup does not seem to be installed.")
 
-        body = self.urlopen(url)
+        resp, body = self.urlopen(url)
         soup = BeautifulSoup(body)
 
         try:
-            yield soup
+            yield resp, soup
         except:
             self.show_error(url, body)
             raise
