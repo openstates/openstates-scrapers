@@ -3,7 +3,42 @@ import datetime
 from mongokit import Document
 
 
+class FiftyStatesDocumentMetaClass(Document.__metaclass__):
+    """
+    Allow mongokit documents to inherit members of 'structure',
+    'required_fields' and 'default_values'.
+    """
+    def __new__(cls, name, bases, attrs):
+        new_cls = super(FiftyStatesDocumentMetaClass, cls).__new__(
+            cls, name, bases, attrs)
+        sup = super(cls, new_cls)
+
+        if hasattr(new_cls, 'structure') and 'structure' in sup.__dict__:
+            old_struct = new_cls.structure
+            new_cls.structure = sup.__dict__['structure'].copy()
+            new_cls.structure.update(old_struct)
+
+        if (hasattr(new_cls, 'default_values') and
+            'default_values' in sup.__dict__):
+
+            old_defaults = new_cls.default_values
+            new_cls.default_values = sup.__dict__['default_values'].copy()
+            new_cls.default_values.update(old_defaults)
+
+        if (hasattr(new_cls, 'required_fields') and
+            'required_fields' in sup.__dict__):
+
+            new_cls.required_fields.extend(sup.__dict__['required_fields'])
+
+            # Remove duplicates
+            new_cls.required_fields = list(set(new_cls.required_fields))
+
+        return new_cls
+
+
 class FiftyStatesDocument(Document):
+    __metaclass__ = FiftyStatesDocumentMetaClass
+
     structure = {
         '_id': unicode,
         '_all_ids': list,
@@ -29,8 +64,7 @@ class FiftyStatesDocument(Document):
 
 
 class Legislator(FiftyStatesDocument):
-    structure = FiftyStatesDocument.structure.copy()
-    structure.update({
+    structure = {
             'full_name': unicode,
             'first_name': unicode,
             'last_name': unicode,
@@ -40,22 +74,15 @@ class Legislator(FiftyStatesDocument):
             'roles': list,
             'created_at': datetime.datetime,
             'updated_at': datetime.datetime,
-            })
+            }
 
-    required_fields = FiftyStatesDocument.required_fields[0:]
-    required_fields.extend(
-        ['full_name', 'first_name', 'last_name', 'middle_name'])
+    required_fields = ['full_name', 'first_name', 'last_name', 'middle_name']
 
-    default_values = FiftyStatesDocument.default_values.copy()
-    default_values.update({
-            '_type': u"person",
-            'middle_name': u"",
-            })
+    default_values = {'middle_name': u""}
 
 
 class Bill(FiftyStatesDocument):
-    structure = FiftyStatesDocument.structure.copy()
-    structure.update({
+    structure = {
         'state': unicode,
         'session': unicode,
         'chamber': unicode,
@@ -64,12 +91,9 @@ class Bill(FiftyStatesDocument):
         'actions': list,
         'sponsors': list,
         'votes': list,
-        })
+        }
 
-    required_fields = FiftyStatesDocument.required_fields[0:]
-    required_fields.extend(
-        ['state', 'session', 'chamber', 'title', 'bill_id', 'actions',
-         'sponsors', 'votes'])
+    required_fields = ['state', 'session', 'chamber', 'title', 'bill_id',
+                       'actions', 'sponsors', 'votes']
 
-    default_values = FiftyStatesDocument.default_values.copy()
-    default_values.update({'_type': u"bill"})
+    default_values = {'_type': u"bill"}
