@@ -461,7 +461,7 @@ class LegislationScraper(object):
         try:
             with open(path, 'w') as f:
                 json.dump(vote, f, cls=DateEncoder)
-        except IOError as e:
+        except IOError, e:
             if e.errno == 2:
                 os.makedirs(os.path.join(self.output_dir, 'votes'))
                 with open(path, 'w') as f:
