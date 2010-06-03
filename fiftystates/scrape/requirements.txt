@@ -1,5 +1,5 @@
 # Common requirements
-scrapelib==0.1
+-e git+http://github.com/mikejs/scrapelib.git#egg=scrapelib
 BeautifulSoup
 html5lib
 lxml
