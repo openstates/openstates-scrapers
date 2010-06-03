@@ -1,0 +1,12 @@
+[Montana]
+abbreviation: mt
+start_year: 1999
+bills: yes
+bill_versions: yes
+sponsors: yes
+actions: yes
+votes: yes
+contributors: James Falcon <therealfalcon@gmail.com>, Tim Freund <tim@freunds.net>
+notes: Special sessions aren't yet parsed.  Vote passage determination needs
+work (some action names/passage indicators are ambiguous).  Bills published
+exclusively in PDF do not have their various versions tracked.
