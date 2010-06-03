@@ -85,6 +85,8 @@ class Scraper(scrapelib.Scraper):
 
         self.output_dir = output_dir
 
+        self.follow_robots = False
+
         # logging convenience methods
         self.logger = logging.getLogger("fiftystates")
         self.log = self.logger.info
