@@ -108,7 +108,7 @@ class Scraper(scrapelib.Scraper):
         try:
             yield resp
         except:
-            self.show_error(url, body)
+            self._save_error(url, resp)
             raise
 
 class FiftystatesObject(dict):
