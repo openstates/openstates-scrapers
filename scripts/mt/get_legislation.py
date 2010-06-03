@@ -183,8 +183,8 @@ class MTScraper(LegislationScraper):
         url = 'http://leg.mt.gov/content/sessions/%d%s/%d%sMembers.txt' % \
             (session, suffix, year, chamber == 'upper' and 'Senate' or 'House')
 
-        #Currently 2009 is different
-        if year > 2008:
+        # 2009 Senate is different than 
+        if year > 2008 and chamber == 'upper':
             csv_parser = csv.reader(self.urlopen(url).split(os.linesep), delimiter = '\t')
             #Discard title row
             csv_parser.next()
@@ -236,13 +236,15 @@ class MTScraper(LegislationScraper):
 
         bill_urls = []
         for bill_anchor in index_page.findall('//a'):
-            # House bills start with H, Senate bills start with S
-            if chamber == 'lower' and bill_anchor.text.startswith('H'):
-                bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
-            elif chamber == 'upper' and bill_anchor.text.startswith('S'):
-                bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
+            # See 2009 HB 645
+            if bill_anchor.text.find("govlineveto") == -1:
+                # House bills start with H, Senate bills start with S
+                if chamber == 'lower' and bill_anchor.text.startswith('H'):
+                    bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
+                elif chamber == 'upper' and bill_anchor.text.startswith('S'):
+                    bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
 
-        for bill_url in bill_urls:
+        for bill_url in bill_urls:            
             bill = self.parse_bill(bill_url, session, chamber)
             self.save_bill(bill)
 
@@ -368,6 +370,8 @@ class MTScraper(LegislationScraper):
             bill.add_sponsor(sponsor_type, sponsor_full_name)
 
     def add_bill_versions(self, bill, index_url):
+        # This method won't pick up bill versions where the bill is published
+        # exclusively in PDF.  See 2009 HB 645 for a sample        
         index_page = ElementTree(lxml.html.fromstring(self.urlopen(index_url)))
         tokens = bill['bill_id'].split(" ")
         bill_regex = re.compile("%s0*%s\_" % (tokens[0], tokens[1]))
