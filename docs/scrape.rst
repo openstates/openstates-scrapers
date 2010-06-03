@@ -8,7 +8,7 @@ LegislationScraper
 ==================
 
 .. autoclass:: fiftystates.scrape.utils.legislation.LegislationScraper
-   :members: __init__, urlopen, log, save_bill, save_legislator, scrape_bills, scrape_legislators, scrape_metadata, save_person, urlopen, urlopen_context, lxml_context, run
+   :members: __init__, urlopen, save_bill, save_legislator, scrape_bills, scrape_legislators, scrape_metadata, save_person, urlopen, urlopen_context, lxml_context
 
 Bill
 ====
