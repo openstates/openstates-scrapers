@@ -106,7 +106,7 @@ class Scraper(scrapelib.Scraper):
         soup = BeautifulSoup(resp)
 
         try:
-            yield resp
+            yield soup
         except:
             self._save_error(url, resp)
             raise
