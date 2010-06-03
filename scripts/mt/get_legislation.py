@@ -36,7 +36,7 @@ vote_passage_indicators = ['Adopted',
 vote_failure_indicators = ['Failed',
                            'Rejected',
                            ]
-vote_ambiguious_indicators = [
+vote_ambiguous_indicators = [
     'Indefinitely Postponed',
     'On Motion Rules Suspended',
     'Pass Consideration',
@@ -338,7 +338,7 @@ class MTScraper(LegislationScraper):
                             raise Exception ("passage and failure indicator both present: %s" % action_name)
                     if action_name.count(i) and passed == None:
                         passed = False
-                for i in vote_ambiguious_indicators:
+                for i in vote_ambiguous_indicators:
                     if action_name.count(i):
                         passed = action_votes_yes > action_votes_no
                 if passed is None:
