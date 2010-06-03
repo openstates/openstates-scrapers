@@ -102,11 +102,11 @@ class Scraper(scrapelib.Scraper):
         if not USE_SOUP:
             raise ScrapeError("BeautifulSoup does not seem to be installed.")
 
-        resp, body = self.urlopen(url)
-        soup = BeautifulSoup(body)
+        resp = self.urlopen(url)
+        soup = BeautifulSoup(resp)
 
         try:
-            yield resp, soup
+            yield resp
         except:
             self.show_error(url, body)
             raise
