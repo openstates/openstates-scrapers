@@ -13,7 +13,8 @@ Links
    :maxdepth: 1
 
    api
-   scrape
+   contributing
+   pythonapi
    Code on GitHub <http://github.com/sunlightlabs/fiftystates>
    Google Group <http://groups.google.com/group/fifty-state-project>
    Sunlight Labs <http://sunlightlabs.com>

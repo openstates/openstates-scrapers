@@ -35,7 +35,7 @@ The following keys are required:
 `lower_term`
     the length, in years, of a term in this state's lower chamber, e.g. `2`
 `sessions`
-    an ordered list of available sessions, e.g.  `['2005-2006', '2007-2008', '2009-2010']
+    an ordered list of available sessions, e.g.  ['2005-2006', '2007-2008', '2009-2010']
 `session_details`
     a dictionary, with an entry for each session indicating
     the years it encompasses as well as any 'sub' sessions, e.g.::
@@ -49,7 +49,8 @@ Scraping Basics
 ===============
 
 All scrapers inherit from :class:`fiftystates.scrape.Scraper`, which provides
-basic functionality that derived scrapers will use.
+basic functionality that derived scrapers will use. All derived scrapers must implement
+a ``scrape(chamber, year)`` method.
 
 The most useful on the base `Scraper` class is ``urlopen(url, method='GET', body=None)``.
 ``Scraper.urlopen`` opens a URL and returns a string-like object that can then be
@@ -80,18 +81,60 @@ It is also possible to access the ``self.logger`` object directly.
 Bills
 =====
 
+Each ``xy/bills.py`` should define a ``XYBillScraper`` that derives from
+:class:`fiftystates.scrape.bills.BillScraper` and implements the ``scrape(chamber, year)``
+method.
+
+As your ``scrape`` method gathers bills, it should create :class:`fiftystates.scrape.bills.Bill`
+objects and call ``self.save_bill`` when it has added all related actions/sources to a bill.
+
+Often it is easiest to also add votes at this time, to add a vote that took place on a
+specific motion create :class:`fiftystates.scrape.votes.Vote` objects and attach them using a
+Bill's ``add_vote`` method.
+
 .. _votes:
 
 Votes
 =====
+
+Sometimes it is difficult to gather votes as bills are being collected, in these
+cases you can provide a ``xy/votes.py`` containing a ``XYVoteScraper`` that derives from
+:mod:`fiftystates.scrape.bills.VoteScraper` and implements the ``scrape(chamber, year)``
+method.
+
+As your ``scrape`` method gathers votes, it should create :class:`fiftystates.scrape.votes.Vote`
+objects and save them with ``self.save_vote``.
+
+If your ``XYBillScraper`` gathers votes you should not provide a ``XYVoteScraper``.
 
 .. _legislators:
 
 Legislators
 ===========
 
+Each ``xy/legislators.py`` should define a ``XYLegislatorScraper`` that derives from
+:class:`fiftystates.scrape.legislators.LegislatorScraper` and implements the
+``scrape(chamber, year)`` method.
+
+Your ``scrape`` method should create :class:`fiftystates.scrape.legislators.Legislator`
+objects and call ``self.save_legislator`` on them.
+
+In many cases it is not possible to retrieve legislators prior to the current session,
+in these cases it is acceptable to raise a :class:`fiftystates.scrape.NoDataForYear`
+exception.
+
 .. _committees:
 
 Committees
 ==========
 
+Each ``xy/committees.py`` should define a ``XYCommitteeScraper`` that derives from
+:class:`fiftystates.scrape.committees.CommitteeScraper` and implements the
+``scrape(chamber, year)`` method.
+
+Your ``scrape`` method should create :class:`fiftystates.scrape.committee.Committee`
+objects and call ``self.save_committee`` on them.
+
+In many cases it is not possible to retrieve legislators prior to the current session,
+in these cases it is acceptable to raise a :class:`fiftystates.scrape.NoDataForYear`
+exception.
