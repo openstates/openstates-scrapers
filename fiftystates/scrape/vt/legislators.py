@@ -6,7 +6,7 @@ from BeautifulSoup import BeautifulSoup
 class VTLegislatorScraper(LegislatorScraper):
     state = 'vt'
 
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         if int(year) != 2009:
             return
         session = "%s-%d" % (year, int(year) + 1)

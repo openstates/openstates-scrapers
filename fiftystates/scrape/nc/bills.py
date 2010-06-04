@@ -196,7 +196,7 @@ class NCBillScraper(BillScraper):
             bill_id = td.a.contents[0]
             self.get_bill_info(session, sub, bill_id)
 
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
 
         if int(year) % 2 != 1:

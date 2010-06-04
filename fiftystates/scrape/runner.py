@@ -87,7 +87,7 @@ def run(state, years, chambers, output_dir, options):
         for year in years:
             try:
                 for chamber in chambers:
-                    scraper.scrape_bills(chamber, year)
+                    scraper.scrape(chamber, year)
             except NoDataForYear, e:
                 if options.all_years:
                     pass
@@ -101,7 +101,7 @@ def run(state, years, chambers, output_dir, options):
         for year in years:
             try:
                 for chamber in chambers:
-                    scraper.scrape_legislators(chamber, year)
+                    scraper.scrape(chamber, year)
             except NoDataForYear, e:
                 pass
 
@@ -112,7 +112,7 @@ def run(state, years, chambers, output_dir, options):
         for year in years:
             try:
                 for chamber in chambers:
-                    scraper.scrape_committees(chamber, year)
+                    scraper.scrape(chamber, year)
             except NoDataForYear, e:
                 pass
 
@@ -123,7 +123,7 @@ def run(state, years, chambers, output_dir, options):
         for year in years:
             try:
                 for chamber in chambers:
-                    scraper.scrape_votes(chamber, year)
+                    scraper.scrape(chamber, year)
             except NoDataForYear, e:
                 pass
 

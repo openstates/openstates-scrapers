@@ -5,7 +5,7 @@ from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 class MDLegislatorScraper(LegislatorScraper):
     state = 'md'
 
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         urls = {'lower': "http://www.msa.md.gov/msa/mdmanual/06hse/html/hseal.html",
                 'upper': "http://www.msa.md.gov/msa/mdmanual/05sen/html/senal.html"}
         detail_re = re.compile('\((R|D)\), (?:Senate President, )?(?:House Speaker, )?District (\w+)')

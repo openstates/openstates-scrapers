@@ -11,7 +11,7 @@ from BeautifulSoup import BeautifulSoup
 class FLBillScraper(BillScraper):
     state = 'fl'
 
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         if year not in metadata['session_details']:
             raise NoDataForYear(year)
 

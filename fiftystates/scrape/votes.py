@@ -10,9 +10,8 @@ from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
 
 
 class VoteScraper(Scraper):
-    def scrape_votes(self, chamber, year):
-        raise NotImplementedYear('VoteScrapers must define a '
-                                 'scrape_votes method')
+    def scrape(self, chamber, year):
+        raise NotImplementedYear('VoteScrapers must define a scrape method')
 
     def save_vote(self, vote):
         filename = vote["filename"] + ".json"

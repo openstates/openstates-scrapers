@@ -32,7 +32,7 @@ def parse_exec_date(date_str):
 class VTBillScraper(BillScraper):
     state = 'vt'
 
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         session = "%s-%d" % (year, int(year) + 1)
 
         if int(year) >= 2009:

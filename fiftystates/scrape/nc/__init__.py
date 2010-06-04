@@ -1,15 +1,3 @@
-status = dict(
-    bills=True,
-    bill_versions=True,
-    sponsors=True,
-    actions=True,
-    votes=True,
-    legislators=True,
-    committees=False,
-    contributors=['James Turk'],
-    notes="",
-)
-
 metadata = dict(
     state_name='North Carolina',
     legislature_name='North Carolina General Assembly',

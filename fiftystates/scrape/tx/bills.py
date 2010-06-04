@@ -13,7 +13,7 @@ class TXBillScraper(BillScraper):
     state = 'tx'
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
 
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         if int(year) < 2009 or int(year) > dt.date.today().year:
             raise NoDataForYear(year)
 

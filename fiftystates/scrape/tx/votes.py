@@ -185,7 +185,7 @@ class TXVoteScraper(VoteScraper):
     state = 'tx'
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
 
-    def scrape_votes(self, chamber, year):
+    def scrape(self, chamber, year):
         if year != '2009':
             raise NoDataForYear(year)
 

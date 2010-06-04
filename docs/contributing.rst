@@ -18,9 +18,6 @@ After you have announced your intent the process is:
 .. contents::
    :local:
 
-What All Developers Should Know
-===============================
-
 Obtaining Source Code
 ---------------------
 
@@ -30,96 +27,72 @@ Code can be pulled via git from the following location::
 
 You are encouraged to create a `github <http://github.com>`_ account
 and create a fork from sunlightlabs' `fiftystate project <http://github.com/sunlightlabs/fiftystates/>`_ code to work off of.
-Feel free to send pull requests to `mikejs <http://github.com/mikejs>`_ when
-you have working code.
+Feel free to send pull requests to `mikejs <http://github.com/mikejs>`_ when you have working code.
 
-Utilities
----------
 
-All new scrapers should be written in Python, using our :ref:`Python scraping utilities <pythonapi>`.
+Setting Up Your Environment
+---------------------------
+
+It is strongly recommended that you install `python-virtualenv <http://pypi.python.org/pypi/virtualenv>`_ and create a "fiftystates" virtualenv.  This allows you to install packages that the project needs without modifying your global python installation.
+
+After creating a virtualenv be sure that the base ``fiftystates`` directory has been added to your path
+(the easiest way to do this during development is by running ``python setup.py develop`` in the base ``fiftystates`` directory).
 
 The preferred library for scraping is `lxml <http://codespeak.net/lxml/>`_ which offers robust support
 for several different methods of scraping.  For cases where lxml is not an option (such as scraping from
 Text or PDF files) other libraries may be used.
 
-Licensing
----------
+TODO: write more here about using pip and git branching?
 
-The Fifty State Project scrapers are currently licensed under the `GPL 3 <http://gplv3.fsf.org/>`_.
-If you would like to submit code under a different license please contact us.
+Writing a Scraper
+-----------------
 
-Writing a Parser
-================
+If you are starting a new state the first step will be to create a subdirectory of ``fiftystates/scrape``
+with the two letter postal abbreviation of your state (ie. wy for wyoming).
 
-Creating a New State Parser
----------------------------
+All code that you write should be within this directory, common files are:
 
-If a parser for the state you are working on does not already exist,
-you should create a directory under *scripts* and name it after the
-official two letter abbreviation of the state name.  The name of the
-directory should be written in lowercase.  Each state directory file
-should have at least two files.  One file should be called STATUS.
-See `Communicating Code Status`_ for information on what should be in this file.
-The second file should be an executable that collects and writes the
-state legislative data into the *data*/*your state* directory in json,
-for an example of this file view *scripts/example/get_legislation.py* or
-any of the existing completed states.
+``__init__.py``
+    When starting a new state you should first create an ``__init__.py`` that contains a :ref:`metadata dictionary <metadata>`.
+``bills.py``
+    :ref:`Scraping of bills <bills>`, including sponsorship information, actions, and (optionally) votes. [Required]
+``legislators.py``
+    :ref:`Scraping of legislators <legislators>`, optionally may scrape committees as well. [Required]
+``committees.py``
+    :ref:`Scraping of committees <committees>`. Only required if legislators.py does not include scraping committees.
+``votes.py``
+    :ref:`Scraping of votes <votes>`. Only required if bills.py does not include scraping votes.
 
-Python Parser Tools
--------------------
+When implementing these files be sure to refer to the linked documentation and
 
-To aid in development, we have created tools that take care of writing
-the data to intermediate json files and provide some utilities that you
-may find useful in handling errors and logging.
-These tools are located in the *scripts/pyutils* directory, see
-the :ref:`pythonapi` for more information.
+Running Your Scraper
+--------------------
 
-Running Your Parser
--------------------
+There is an executable located at ``fiftystates/scrape/runner.py`` that is used to run scrapers
+and takes a number of command line options.  View the documentation for :mod:`fiftystates.scrape.runner`
+for more detail on available options.
 
-When you test your parser please run it from the top level of the
-*fiftystates* directory (ie: python ./scripts/ct/get_legislation.py -y
-2008 --upper).  This is where we will be running the scripts from and
-it will ensure all data gets written to the proper place.  If you use
-our skeleton code, it imports the libraries assuming you will be running the
-script from the *fiftystates* directory.
+Examples of common usage
+""""""""""""""""""""""""
 
-.. _STATUS:
+Getting all 2009 legislators for New York::
 
-Communicating Code Status
--------------------------
-Each state submission should have a text file named STATUS in its
-state directory.  This file should contain up to date information on
-the status of the parser. The following text can be used as a template::
+    python fiftystates/scrape/runner.py ny --legislators -y 2009
 
-    [California]
-    start_year: 2008
-    bills: yes
-    bill_versions: no
-    sponsors: no
-    actions: no
-    votes: no
-    legislators: yes
-    committees: no
-    contributors: your name, somebody else's name
-    contact: wendy@email.com
-    notes:
+Getting all committees and bills for Oklahoma from the latest session::
 
-- This file should be written in the style `described here <http://docs.python.org/library/configparser.html>`_
-- You should write the full name of the state you are parsing
-  in-between the square brackets.
-- under **start_year**, you should write the first year you can get
-  legislative data from
-- **contributors** should be a comma separated list of the names of the people who contributed to the state's scraper.
-- **notes** is any notes you have on the code, including any bugs or
-  issues.  You should also include information on any extra data you
-  may be scraping.
-- the remaining values should be *yes*, *no*, or *n/a*. *yes* means you have functionality
-   that scrapes that data, *no* means that you have yet to implement
-   the functionality or that it is not fully implemented, *n/a* means
-   that that data is not available from the state.
+    python fiftystates/scrape/runner.py ok --committees --bills
 
-If you decide to stop maintaining your script, please send a
-message to the `Fifty State Project Google Group
-<http://groups.google.com/group/fifty-state-project>`_ so we can find
-someone else to take over your states.
+
+Submitting Your Code
+--------------------
+
+When you have working code for your state please submit a pull request via github and/or email the
+`Fifty State Project Google Group <http://groups.google.com/group/fifty-state-project>`_ one of the
+committers will review your code and integrate it into the repository.
+
+This is also a good time to get commit access to the main repository so that you can continue to maintain
+your scraper should anything break.
+
+The Fifty State Project is licensed under the `GPL 3 <http://gplv3.fsf.org/>`_ and by
+submitting your code for inclusion you agree to allow your code to be distributed under this license.

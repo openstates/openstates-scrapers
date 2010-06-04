@@ -85,6 +85,8 @@ class Scraper(scrapelib.Scraper):
 
         self.output_dir = output_dir
 
+        self.follow_robots = False
+
         # logging convenience methods
         self.logger = logging.getLogger("fiftystates")
         self.log = self.logger.info
@@ -100,13 +102,13 @@ class Scraper(scrapelib.Scraper):
         if not USE_SOUP:
             raise ScrapeError("BeautifulSoup does not seem to be installed.")
 
-        resp, body = self.urlopen(url)
-        soup = BeautifulSoup(body)
+        resp = self.urlopen(url)
+        soup = BeautifulSoup(resp)
 
         try:
-            yield resp, soup
+            yield soup
         except:
-            self.show_error(url, body)
+            self._save_error(url, resp)
             raise
 
 class FiftystatesObject(dict):

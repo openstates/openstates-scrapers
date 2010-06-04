@@ -201,7 +201,7 @@ class MDBillScraper(BillScraper):
                         raise he
                     break
 
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
 
         if year not in SESSIONS:
             raise NoDataForYear(year)

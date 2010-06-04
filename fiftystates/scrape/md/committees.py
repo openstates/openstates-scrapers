@@ -4,7 +4,7 @@ class MDCommitteeScraper(CommitteeScraper):
 
     state = 'md'
 
-    def scrape_committees(self, chamber, year):
+    def scrape(self, chamber, year):
         # TODO: scrape senate committees
         house_url = 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hsecom.html'
 
