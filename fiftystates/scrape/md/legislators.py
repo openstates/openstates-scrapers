@@ -1,5 +1,7 @@
 import re
 
+import lxml.html
+
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 class MDLegislatorScraper(LegislatorScraper):
@@ -13,7 +15,9 @@ class MDLegislatorScraper(LegislatorScraper):
         if year != 2010:
             raise NoDataForYear(year)
 
-        with self.lxml(urls[chamber]) as (resp, doc):
+        with self.urlopen(urls[chamber]) as html:
+            doc = lxml.html.fromstring(html)
+
             # data on this page is <li>s that have anchor tags
             for a in doc.cssselect('li a'):
                 link = a.get('href')
