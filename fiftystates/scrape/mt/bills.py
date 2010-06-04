@@ -61,7 +61,7 @@ class MTBillScraper(BillScraper):
             if year in years['years']:
                 return session
 
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         year = int(year)
         session = self.getSession(year)
         #2 year terms starting on odd year, so if even number, use the previous odd year

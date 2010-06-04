@@ -10,7 +10,7 @@ import lxml.etree
 class TXLegislatorScraper(LegislatorScraper):
     state = 'tx'
 
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         if year != '2009':
             raise NoDataForYear(year)
 

@@ -35,7 +35,7 @@ class NMBillScraper(BillScraper):
 
         return ret_dict
     
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         if year not in metadata['sessions']:
             raise NoDataForYear(year)
 

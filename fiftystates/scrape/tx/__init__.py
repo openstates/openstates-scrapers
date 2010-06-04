@@ -1,14 +1,3 @@
-status = dict(
-    bills=True,
-    bill_versions=True,
-    sponsors=True,
-    actions=True,
-    votes=True,
-    legislators=True,
-    contributors=['Michael Stephens'],
-    notes="",
-)
-
 metadata = dict(
     state_name='Texas',
     legislature_name='Texas Legislature',

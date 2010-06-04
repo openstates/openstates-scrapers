@@ -10,7 +10,7 @@ from BeautifulSoup import BeautifulSoup
 class FLLegislatorScraper(LegislatorScraper):
     state = 'fl'
 
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         if year not in metadata['session_details']:
             raise NoDataForYear(year)
 

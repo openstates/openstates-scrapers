@@ -8,7 +8,7 @@ class NCLegislatorScraper(LegislatorScraper):
     soup_parser = html5lib.HTMLParser(
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         session = "%d-%d" % (int(year), int(year) + 1)
 
         url = "http://www.ncga.state.nc.us/gascripts/members/"\

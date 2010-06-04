@@ -8,7 +8,7 @@ from fiftystates.scrape.nm.utils import get_abs_url
 class NMLegislatorScraper(LegislatorScraper):
     state = 'nm'
 
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         if year != '2010':
             raise NoDataForYear(year)
 
