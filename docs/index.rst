@@ -15,6 +15,7 @@ Links
    api
    contributing
    pythonapi
+   Current Status <http://fiftystates-dev.sunlightlabs.com/status/>
    Code on GitHub <http://github.com/sunlightlabs/fiftystates>
    Google Group <http://groups.google.com/group/fifty-state-project>
    Sunlight Labs <http://sunlightlabs.com>
