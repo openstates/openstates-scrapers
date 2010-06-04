@@ -11,12 +11,13 @@ class OHLegislatorScraper(LegislatorScraper):
 
 
 
-	def scrape_legislators(self, chamber, year):
+	def scrape(self, chamber, year):
+		self.save_errors=False
 		if year != '2009':
 			raise NoDataForYear(year)
 
 		if chamber == 'upper':
-			self.scrape_senators(year)
+			self.scrape_senators()
 		else:
 			self.scrape_reps()
 
@@ -26,23 +27,55 @@ class OHLegislatorScraper(LegislatorScraper):
 		self.follow_robots = False;
 
 
-		# There is only 99 districts and 1 representative for each district
+		# There is only 99 districts
 		for district in range(1,100):
 
 			rep_url = 'http://www.house.state.oh.us/components/com_displaymembers/page.php?district=' + str(district)
-			with self.urlopen(rep_url) as (response, page):
+			with self.urlopen(rep_url) as page:
 				root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
 				for el in root.xpath('//table[@class="page"]'):
 					rep_link = el.xpath('tr/td/title')[0]
 					full_name = rep_link.text
-					district = el.xpath('string(tr/td[@class="info"]/strong)')
-					party = el.xpath('string(tr/td/h2/[@class="title"]/div')[-1]
+					party = full_name[-2]
+					full_name = full_name[0 : len(full_name)-3]
+					
 
-					leg = Legislator( '128', 'lower', district, full_name, party)
+					leg = Legislator('128', 'lower', district, full_name, party)
 					leg.add_source(rep_url)
 
 
 			
 				self.save_legislator(leg)
 
+
+	def scrape_senators(self):
+
+		self.follow_robots = False;
+
+		sen_url = 'http://www.ohiosenate.gov/directory.html' 
+		with self.urlopen(sen_url) as page:
+			root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+
+			for el in root.xpath('//table[@class="fullWidth"]/tr/td'):
+
+
+				sen_link = el.xpath('a[@class="senatorLN"]')[1]
+				full_name = sen_link.text
+				full_name = full_name[0 : len(full_name) - 2]
+				district = el.xpath('string(h3)')
+				district = district.split()[1]
+				party = el.xpath('string(a[@class="senatorLN"]/span)')
+
+				first_name = full_name.split()[0]
+				last_name = full_name.split()[1]
+				middle_name = ''
+
+				leg = Legislator('128', 'upper', district, full_name, 
+						first_name, last_name, middle_name, party)
+				leg.add_source(sen_url)
+
+				self.save_legislator(leg)
+
+
+	
