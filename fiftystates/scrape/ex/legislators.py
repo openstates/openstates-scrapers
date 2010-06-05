@@ -5,7 +5,7 @@ from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 class EXLegislatorScraper(LegislatorScraper):
     state = 'ex'
 
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         if year != '2009':
             raise NoDataForYear
 
