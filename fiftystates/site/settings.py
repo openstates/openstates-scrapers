@@ -84,9 +84,7 @@ INSTALLED_APPS = (
     'django.contrib.gis',
     'fiftystates.site.api',
     'fiftystates.site.geo',
-    'fiftystates.site.status',
     'fiftystates.site.browse',
-    'ostracker',
     'locksmith.auth',
 )
 
