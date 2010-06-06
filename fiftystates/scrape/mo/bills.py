@@ -2,7 +2,7 @@ import re
 import datetime as dt
 import urllib2
 
-import html5lib
+from BeautifulSoup import BeautifulSoup
 
 from fiftystates.scrape import NoDataForYear
 from fiftystates.scrape.bills import BillScraper, Bill
@@ -16,9 +16,6 @@ class MOBillScraper(BillScraper):
 
     house_root = 'http://www.house.mo.gov'
     senate_root = 'http://www.senate.mo.gov'
-
-    soup_parser = html5lib.HTMLParser(
-        tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
     def scrape(self, chamber, year):
         # wrapper to call senate or house scraper. No year check
@@ -41,7 +38,7 @@ class MOBillScraper(BillScraper):
         index_url = bill_root + 'BillList.aspx?SessionType=R'
 
         with self.urlopen(index_url) as index_page:
-            index_page = self.soup_parser(index_page)
+            index_page = BeautifulSoup(index_page)
             # each bill is in it's own table (nested in a larger table)
             bill_tables = index_page.findAll(id="Table2")
 
@@ -61,7 +58,7 @@ class MOBillScraper(BillScraper):
 
     def parse_senate_billpage(self, bill_url, year):
         with self.urlopen(bill_url) as bill_page:
-            bill_page = self.soup_parser(bill_page)
+            bill_page = BeautifulSoup(bill_page)
             # get all the info needed to record the bill
             bill_id = bill_page.find(id="lblBillNum").b.font.contents[0]
             bill_title = bill_page.find(id="lblBillTitle").font.string
@@ -97,7 +94,7 @@ class MOBillScraper(BillScraper):
     def parse_senate_bill_versions(self, bill, url):
         bill.add_source(url)
         with self.urlopen(url) as versions_page:
-            versions_page = self.soup_parser(versions_page)
+            versions_page = BeautifulSoup(versions_page)
             version_tags = versions_page.findAll('li')
             if version_tags != None:
                 for version_tag in version_tags:
@@ -108,7 +105,7 @@ class MOBillScraper(BillScraper):
     def parse_senate_actions(self, bill, url):
         bill.add_source(url)
         with self.urlopen(url) as actions_page:
-            actions_page = self.soup_parser(actions_page)
+            actions_page = BeautifulSoup(actions_page)
             bigtable = actions_page.find(id='Table5')
             act_row = bigtable.next.next.nextSibling.next
             act_row = act_row.nextSibling.nextSibling
@@ -125,7 +122,7 @@ class MOBillScraper(BillScraper):
     def parse_senate_cosponsors(self, bill, url):
         bill.add_source(url)
         with self.urlopen(url) as cosponsors_page:
-            cosponsors_page = self.soup_parser(cosponsors_page)
+            cosponsors_page = BeautifulSoup(cosponsors_page)
             # cosponsors are all in a table
             cosponsor_table = cosponsors_page.find(id="dgCoSponsors")
             cosponsors = cosponsor_table.findAll("tr")
@@ -170,7 +167,7 @@ class MOBillScraper(BillScraper):
         url_root = re.match("(.*//.*?/)", url).group(1)
 
         with self.urlopen(url) as bill_list_page:
-            bill_list_page = self.soup_parser(bill_list_page)
+            bill_list_page = BeautifulSoup(bill_list_page)
             # find the first center tag, take the text after
             # 'House of Representatives' and before 'Bills' as
             # the session name
@@ -195,7 +192,7 @@ class MOBillScraper(BillScraper):
         url = re.sub("content", "print", url)
 
         with self.urlopen(url) as bill_page_data:
-            bill_page = self.soup_parser(bill_page_data)
+            bill_page = BeautifulSoup(bill_page_data)
             header_table = bill_page.table
 
             # get all the info needed to record the bill
@@ -263,7 +260,7 @@ class MOBillScraper(BillScraper):
     def parse_house_actions(self, bill, url):
         bill.add_source(url)
         with self.urlopen(url) as actions_page:
-            actions_page = self.soup_parser(actions_page)
+            actions_page = BeautifulSoup(actions_page)
             rows = actions_page.findAll('tr')
 
             # start with index 0 because the table doesn't have an opening <tr>
