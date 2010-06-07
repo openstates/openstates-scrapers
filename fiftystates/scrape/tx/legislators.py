@@ -21,7 +21,7 @@ class TXLegislatorScraper(LegislatorScraper):
 
     def scrape_senators(self, year):
         senator_url = 'http://www.senate.state.tx.us/75r/senate/senmem.htm'
-        with self.urlopen_context(senator_url) as page:
+        with self.urlopen(senator_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
             for el in root.xpath('//table[@summary="senator identification"]'):
@@ -36,7 +36,7 @@ class TXLegislatorScraper(LegislatorScraper):
 
                 details_url = ('http://www.senate.state.tx.us/75r/senate/' +
                                sen_link.attrib['href'])
-                with self.urlopen_context(details_url) as details_page:
+                with self.urlopen(details_url) as details_page:
                     details = lxml.etree.fromstring(details_page,
                                                     lxml.etree.HTMLParser())
 
@@ -60,7 +60,7 @@ class TXLegislatorScraper(LegislatorScraper):
 
     def scrape_reps(self, year):
         rep_url = 'http://www.house.state.tx.us/members/welcome.php'
-        with self.urlopen_context(rep_url) as page:
+        with self.urlopen(rep_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
             for el in root.xpath('//form[@name="frmMembers"]/table/tr')[1:]:
@@ -80,7 +80,7 @@ class TXLegislatorScraper(LegislatorScraper):
                 redirect_url = ('http://www.house.state.tx.us/members/' +
                                 redirect_url)
                 details_url = redirect_url
-                with self.urlopen_context(redirect_url) as redirect_page:
+                with self.urlopen(redirect_url) as redirect_page:
                     redirect = lxml.etree.fromstring(redirect_page,
                                                      lxml.etree.HTMLParser())
 
@@ -100,7 +100,7 @@ class TXLegislatorScraper(LegislatorScraper):
                         self.save_legislator(leg)
                         continue
 
-                with self.urlopen_context(details_url) as details_page:
+                with self.urlopen(details_url) as details_page:
                     details = lxml.etree.fromstring(details_page,
                                                     lxml.etree.HTMLParser())
 
