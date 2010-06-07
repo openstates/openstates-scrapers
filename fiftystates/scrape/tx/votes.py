@@ -203,7 +203,7 @@ class TXVoteScraper(VoteScraper):
         else:
             journal_root = urlparse.urljoin(journal_root, "senate/", True)
 
-        with self.urlopen_context(journal_root) as listing:
+        with self.urlopen(journal_root) as listing:
             for name in parse_ftp_listing(listing):
                 if not name.startswith('81'):
                     continue
@@ -211,7 +211,7 @@ class TXVoteScraper(VoteScraper):
                 self.scrape_journal(url, chamber)
 
     def scrape_journal(self, url, chamber):
-        with self.urlopen_context(url) as page:
+        with self.urlopen(url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
             clean_journal(root)
 
