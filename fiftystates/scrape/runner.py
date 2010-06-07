@@ -16,11 +16,11 @@ class RunException(Exception):
     """ exception when trying to run a scraper """
 
 def run_oldschool(state, years, chambers, options):
-    mod_name = "%s.get_legislation" % state
+    mod_name = "fiftystates.scrape.%s.get_legislation" % state
+    scraper_name = '%sLegislationScraper' % state.upper()
     try:
-        statemod = __import__(mod_name)
-        Scraper = getattr(statemod.get_legislation, "%sLegislationScraper"
-                      % state.upper())
+        mod = __import__(mod_name, fromlist=[scraper_name])
+        Scraper = getattr(mod, scraper_name)
     except ImportError:
         raise RunException("could not import %s" % mod_name)
     except AttributeError:
@@ -87,7 +87,7 @@ def run(state, years, chambers, output_dir, options):
         for year in years:
             try:
                 for chamber in chambers:
-                    scraper.scrape_bills(chamber, year)
+                    scraper.scrape(chamber, year)
             except NoDataForYear, e:
                 if options.all_years:
                     pass
@@ -101,7 +101,7 @@ def run(state, years, chambers, output_dir, options):
         for year in years:
             try:
                 for chamber in chambers:
-                    scraper.scrape_legislators(chamber, year)
+                    scraper.scrape(chamber, year)
             except NoDataForYear, e:
                 pass
 
@@ -112,7 +112,7 @@ def run(state, years, chambers, output_dir, options):
         for year in years:
             try:
                 for chamber in chambers:
-                    scraper.scrape_committees(chamber, year)
+                    scraper.scrape(chamber, year)
             except NoDataForYear, e:
                 pass
 
@@ -123,7 +123,7 @@ def run(state, years, chambers, output_dir, options):
         for year in years:
             try:
                 for chamber in chambers:
-                    scraper.scrape_votes(chamber, year)
+                    scraper.scrape(chamber, year)
             except NoDataForYear, e:
                 pass
 

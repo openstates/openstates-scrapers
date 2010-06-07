@@ -8,7 +8,7 @@ from fiftystates.scrape.votes import Vote
 class EXBillScraper(BillScraper):
     state = 'ex'
 
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         if year != '2009':
             raise NoDataForYear(year)
 

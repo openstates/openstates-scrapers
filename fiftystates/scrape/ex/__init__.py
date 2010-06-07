@@ -1,15 +1,3 @@
-status = dict(
-    bills=True,
-    bill_versions=True,
-    sponsors=True,
-    actions=True,
-    votes=True,
-    legislators=True,
-    contributors=['Michael Stephens'],
-    notes=("An example of how to implement a scraper for the"
-           " Fifty State Project"),
-    )
-
 metadata = dict(
     name='Example State',
     abbreviation='ex',

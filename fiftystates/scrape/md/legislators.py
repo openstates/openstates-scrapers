@@ -1,11 +1,13 @@
 import re
 
+import lxml.html
+
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 class MDLegislatorScraper(LegislatorScraper):
     state = 'md'
 
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         urls = {'lower': "http://www.msa.md.gov/msa/mdmanual/06hse/html/hseal.html",
                 'upper': "http://www.msa.md.gov/msa/mdmanual/05sen/html/senal.html"}
         detail_re = re.compile('\((R|D)\), (?:Senate President, )?(?:House Speaker, )?District (\w+)')
@@ -13,7 +15,9 @@ class MDLegislatorScraper(LegislatorScraper):
         if year != 2010:
             raise NoDataForYear(year)
 
-        with self.lxml(urls[chamber]) as (resp, doc):
+        with self.urlopen(urls[chamber]) as html:
+            doc = lxml.html.fromstring(html)
+
             # data on this page is <li>s that have anchor tags
             for a in doc.cssselect('li a'):
                 link = a.get('href')

@@ -10,7 +10,7 @@ from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
 
 
 class LegislatorScraper(Scraper):
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         """
         Grab all the legislators who served in a given year. Must be
         overridden by subclasses.
@@ -18,7 +18,7 @@ class LegislatorScraper(Scraper):
         Should raise a :class:`NoDataForYear` exception if the year is invalid.
         """
         raise NotImplementedError('LegislatorScrapers must define a '
-                                  'scrape_legislators method')
+                                  'scrape method')
 
     def save_person(self, person):
         """

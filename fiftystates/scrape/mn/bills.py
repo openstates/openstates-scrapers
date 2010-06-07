@@ -1,15 +1,9 @@
-#!/usr/bin/env python
-from __future__ import with_statement
 import re
-import urllib
 import urlparse
 from BeautifulSoup import BeautifulSoup
-import os
-import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 NoDataForYear)
+from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape.bills import BillScraper, Bill
 
 # URL for searching the Minnesota Legislature bills.
 # The search form accepts number ranges for bill numbers.
@@ -26,7 +20,7 @@ BILL_DETAIL_URL_BASE = 'https://www.revisor.leg.state.mn.us/revisor/pages/search
 # The versions of a bill use a different base URL.
 VERSION_URL_BASE = "https://www.revisor.mn.gov"
 
-class MNLegislationScraper(LegislationScraper):
+class MNBillScraper(BillScraper):
     state = 'mn'
 
     def cleanup_text(self, text):
@@ -171,16 +165,17 @@ class MNLegislationScraper(LegislationScraper):
         return bill_actions
 
     def get_bill_info(self, chamber, session, bill_detail_url, version_list_url):
-	"""Extracts all the requested info for a given bill.
+        """Extracts all the requested info for a given bill.
 
-	Calls the parent's methods to enter the results into JSON files.
-	"""
+        Calls the parent's methods to enter the results into JSON files.
+        """
         if chamber == "House":
             chamber = 'lower'
         else:
             chamber = 'upper'
 
-        with self.soup_context(bill_detail_url) as bill_soup:
+        with self.urlopen(bill_detail_url) as bill_html:
+            bill_soup = BeautifulSoup(bill_html)
 
             bill_id = self.extract_bill_id(bill_soup)
             bill_title =  self.extract_bill_title(bill_soup)
@@ -190,7 +185,8 @@ class MNLegislationScraper(LegislationScraper):
         # Versions of a bill are on a separate page, linked to from the column
         # labeled, "Bill Text", on the search results page.
 
-        with self.soup_context(version_list_url) as version_soup:
+        with self.urlopen(version_list_url) as version_html:
+            version_soup = BeautifulSoup(version_html)
 
             # MN bills can have multiple versions.  Get them all, and loop over
             # the results, adding each one.
@@ -240,7 +236,8 @@ class MNLegislationScraper(LegislationScraper):
             # Query Param: 'bill='
             url = BILL_SEARCH_URL % (chamber, session, min, max-1)
             self.debug("Getting bill data from: %s" % url)
-            with self.soup_context(url) as soup:
+            with self.urlopen(url) as html:
+                soup = BeautifulSoup(html)
                 # Index into the table containing the bills .
                 rows = soup.findAll('table')[6].findAll('tr')[1:]
                 self.debug("Rows to process: %s" % str(len(rows)))
@@ -282,12 +279,13 @@ class MNLegislationScraper(LegislationScraper):
             # versions from the Senate requires an extra step here.
             if chamber == 'Senate':
                 senate_bill_text_url = urlparse.urljoin(VERSION_URL_BASE, bill_version_list_url)
-                with self.soup_context(senate_bill_text_url) as senate_soup:
+                with self.urlopen(senate_bill_text_url) as senate_html:
+                    senate_soup = BeautifulSoup(senate_html)
                     bill_version_list_url = self.extract_senate_bill_version_link(senate_soup)
             bill_version_list_url = urlparse.urljoin(VERSION_URL_BASE, bill_version_list_url)
             self.get_bill_info(chamber, session, bill_details_url, bill_version_list_url)
 
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         """Initiates the scraping of all bills for a given chamber and year."""
 
         # Minnesota legislative session value formula

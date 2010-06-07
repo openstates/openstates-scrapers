@@ -1,6 +1,8 @@
 from __future__ import with_statement
 import re
 
+from BeautifulSoup import BeautifulSoup
+
 from fiftystates.scrape import NoDataForYear
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.nm import metadata
@@ -35,14 +37,15 @@ class NMBillScraper(BillScraper):
 
         return ret_dict
     
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         if year not in metadata['sessions']:
             raise NoDataForYear(year)
 
         start_char = 'S' if chamber == 'upper' else 'H'
 
         nm_locator_url = 'http://legis.state.nm.us/lcs/locator.aspx'
-        with self.soup_context(nm_locator_url) as page:
+        with self.urlopen(nm_locator_url) as page:
+            page = BeautifulSoup(page)
             #The first `tr` is simply 'Bill Locator`. Ignoring that
             data_table = page.find('table', id = 'ctl00_mainCopy_Locators')('tr')[1:]
             for session in data_table:
@@ -53,7 +56,8 @@ class NMBillScraper(BillScraper):
                     continue
 
                 session_url = get_abs_url(nm_locator_url, session_tag['href'])
-                with self.soup_context(session_url) as session_page:
+                with self.urlopen(session_url) as session_page:
+                    session_page = BeautifulSoup(session_page)
                     bills_data_table = session_page.find('table', id = 'ctl00_mainCopy_LocatorGrid')('tr')[1:]
                     for bill in bills_data_table:
                         data = bill('td')
@@ -73,7 +77,8 @@ class NMBillScraper(BillScraper):
                         bill = Bill(session = session_name, chamber = chamber, bill_id = bill_num, title = bill_title)
                         bill.add_source(bill_url)
 
-                        with self.soup_context(bill_url) as bill_page:
+                        with self.urlopen(bill_url) as bill_page:
+                            bill_page = BeautifulSoup(bill_page)
                             sponsor_data = bill_page.find('table', id = 'ctl00_mainCopy__SessionFormView')
                             #The last link in this block will be the link to 'Key to Abbreviations'. Ignoring it.
                             for sponsor_link in sponsor_data('a')[:-1]:

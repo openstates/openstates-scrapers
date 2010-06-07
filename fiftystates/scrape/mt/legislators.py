@@ -32,7 +32,7 @@ class MTLegislatorScraper(LegislatorScraper):
         elif last_number in ('3'):
             return 'rd'
 
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         year = int(year)
         #2 year terms starting on odd year, so if even number, use the previous odd year
         if year < self.base_year:

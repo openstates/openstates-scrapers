@@ -1,5 +1,7 @@
 from __future__ import with_statement
 
+from BeautifulSoup import BeautifulSoup
+
 from fiftystates.scrape import NoDataForYear
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.nm.utils import get_abs_url
@@ -8,7 +10,7 @@ from fiftystates.scrape.nm.utils import get_abs_url
 class NMLegislatorScraper(LegislatorScraper):
     state = 'nm'
 
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         if year != '2010':
             raise NoDataForYear(year)
 
@@ -21,7 +23,8 @@ class NMLegislatorScraper(LegislatorScraper):
 
     def scrape_legislator_data(self, url, chamber):
         party_fulls = {'R' : 'Republican', 'D' : 'Democrat'}
-        with self.soup_context(url) as page:
+        with self.urlopen(url) as page:
+            page = BeautifulSoup(page)
             for data in page.find('table', id = 'ctl00_mainCopy_DataList1')('td'):
                 spans = data('span')
                 if len(spans) == 0:
@@ -35,7 +38,8 @@ class NMLegislatorScraper(LegislatorScraper):
                 last_name = spans[1].string.strip()
 
                 details_url = get_abs_url(url, data.find('a')['href'])
-                with self.soup_context(details_url) as details:
+                with self.urlopen(details_url) as details:
+                    details = BeautifulSoup(details)
                     district = details.find('a', id = 'ctl00_mainCopy_LegisInfo_DISTRICTLabel').string.strip()
                     party = party_fulls[details.find('span', id = 'ctl00_mainCopy_LegisInfo_PARTYLabel').string]
 

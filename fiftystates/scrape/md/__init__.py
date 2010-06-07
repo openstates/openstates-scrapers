@@ -1,15 +1,3 @@
-status = dict(
-    bills=True,
-    bill_versions=True,
-    sponsors=True,
-    actions=True,
-    votes=True,
-    legislators=True,
-    committees=True,
-    contributors=['Jeremy Carbaugh', 'James Turk'],
-    notes="",
-)
-
 from fiftystates.scrape.md.bills import SESSIONS
 
 metadata = dict(
