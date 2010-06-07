@@ -22,7 +22,11 @@ class TXBillScraper(BillScraper):
             raise NoDataForYear(year)
 
         session_num = str((int(year) - 1989) / 2 + 71)
-        subs = metadata['session_details'][session_num]['sub_sessions']
+        subs = []
+        for s in metadata['sessions']:
+            if s['name'] == session_num:
+                subs = s['sub_sessions']
+                break
 
         self.scrape_session(chamber, session_num + 'R')
         for session in subs:
@@ -33,10 +37,10 @@ class TXBillScraper(BillScraper):
             session, chamber_name(chamber))
         billdirs_url = urlparse.urljoin(self._ftp_root, billdirs_path)
 
-        with self.urlopen_context(billdirs_url) as bill_dirs:
+        with self.urlopen(billdirs_url) as bill_dirs:
             for dir in parse_ftp_listing(bill_dirs):
                 bill_url = urlparse.urljoin(billdirs_url, dir) + '/'
-                with self.urlopen_context(bill_url) as bills:
+                with self.urlopen(bill_url) as bills:
                     for history in parse_ftp_listing(bills):
                         self.scrape_bill(chamber, session,
                                          urlparse.urljoin(bill_url, history))
@@ -52,7 +56,7 @@ class TXBillScraper(BillScraper):
                 journal_root = urlparse.urljoin(journal_root,
                                                 'senate/', True)
 
-            with self.urlopen_context(journal_root) as listing:
+            with self.urlopen(journal_root) as listing:
                 for name in parse_ftp_listing(listing):
                     if not name.startswith('81'):
                         continue
@@ -60,7 +64,7 @@ class TXBillScraper(BillScraper):
                     journal.parse(url, chamber, self)
 
     def scrape_bill(self, chamber, session, url):
-        with self.urlopen_context(url) as data:
+        with self.urlopen(url) as data:
             bill = self.parse_bill_xml(chamber, session, data)
             bill.add_source(url)
 
@@ -71,7 +75,7 @@ class TXBillScraper(BillScraper):
             bill_num = int(bill['bill_id'].split()[1])
             long_bill_id = "%s%05d" % (bill_prefix, bill_num)
 
-            with self.urlopen_context(versions_url) as versions_list:
+            with self.urlopen(versions_url) as versions_list:
                 bill.add_source(versions_url)
                 for version in parse_ftp_listing(versions_list):
                     if version.startswith(long_bill_id):

@@ -94,7 +94,7 @@ def import_legislator_ids(state):
     else:
         offices['lower'] = 7
 
-    current_session = state['sessions'][-1]
+    current_session = state['sessions'][-1]['name']
 
     for chamber, office in offices.items():
         officials = votesmart.officials.getByOfficeState(

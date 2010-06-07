@@ -11,17 +11,23 @@ status = dict(
     )
 
 metadata = dict(
-    state_name='Example State',
+    name='Example State',
+    abbreviation='ex',
     legislature_name='Example Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='House of Representatives',
-    upper_title='Senator',
-    lower_title='Representative',
-    upper_term=6,
-    lower_term=2,
-    sessions=['2007-2008', '2009-2010'],
-    session_details={
-        '2007-2008': {'years': [2007, 2008], 'sub_sessions':
-                          ['2007-2008 Sub Session 1',
-                           '2007-2008 Sub Session 2']},
-        '2009-2010': {'years': [2009, 2010], 'sub_sessions': []}})
+    upper_chamber_title='Senator',
+    lower_chamber_title='Representative',
+    upper_chamber_term=6,
+    lower_chamber_term=2,
+    sessions = [
+        {'name': '2007-2008',
+         'sub_sessions':
+             ['2007-2008 Sub Session 1',
+              '2007-2008 Sub Session 2'],
+         'start_year': 2009, 'end_year': 2010},
+        {'name': '2009-2010',
+         'sub_sessions': [],
+         'start_year': 2009, 'end_year': 2010},
+        ],
+    )
