@@ -35,7 +35,8 @@ class TXLegislatorScraper(LegislatorScraper):
                                  party=party)
                 leg.add_source(senator_url)
 
-                with self.urlopen(sen_link.attrib['href']) as details_page:
+                details_url = sen_link.attrib['href']
+                with self.urlopen(details_url) as details_page:
                     details = lxml.html.fromstring(details_page)
                     details.make_links_absolute(details_url)
 
