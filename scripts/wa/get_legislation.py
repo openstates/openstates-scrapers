@@ -83,6 +83,75 @@ class WALegislationScraper(LegislationScraper):
       
         return full_name, first_name, middle_name, last_name 
     
+    def scrape_votes(self, vote_page, bill, url): 
+        date_match = re.search("[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}", vote_page.text_content())
+        date_match = date_match.group(0)
+        
+        vote_date = datetime.strptime(date_match, '%m/%d/%Y')
+        
+        votes = {"Yeas":0, "Nays":0, "Absent":0, "Excused":0}
+        
+        for type, number in votes.items():
+            match = re.search(type + ": [0-9]+", vote_page.text_content())
+            match = match.group(0)
+            match = match.split(" ")
+            number = match[1]
+            print type + " " + number
+            
+        passed = votes["Yeas"] > votes["Nays"] 
+        
+        chamber_match = re.search("(Senate|House) vote", vote_page.text_content())
+        chamber_match = chamber_match.group(0)
+        chamber_match = chamber_match.split(" ")
+        chamber_match = chamber_match[0]
+        
+        if chamber_match == "Senate":
+            chamber = "upper"
+            title = "Senator"
+        else:
+            chamber = "lower"
+            title = "Representative"
+            
+            
+        motion_match = vote_page.cssselect('td[align="center"]')
+        motion_match = motion_match[2]
+        motion = motion_match.text_content()
+        
+        vote = Vote(chamber, vote_date, motion, passed, votes["Yeas"], votes["Nays"], votes["Absent"] + votes["Excused"])
+        vote.add_source(url)   
+        
+        vote_elements = vote_page.cssselect('span[class="RollCall"]')
+        
+        vote_types = []
+        
+        for ve in vote_elements:
+            voters = ve.text_content().split(", ")
+            
+            if len(voters) == 1:
+                voters = voters[0].split(" and ")
+                
+            before, itself, after = voters[0].partition(title)
+            voters[0] = after.lstrip("s ")
+            voters[-1] = voters[-1].lstrip("and ")
+                
+            vote_types.append(voters)              
+            
+        for v in vote_types[0]:
+            vote.yes(v)
+        
+        for v in vote_types[1]:
+            vote.no(v)
+            
+        for v in vote_types[2]:
+            vote.other(v)
+     
+        for v in vote_types[3]:
+            vote.other(v)
+        
+        bill.add_vote(vote)
+        
+       
+    
     def scrape_actions(self, bill_page, bill):
         b_elements = bill_page.cssselect('b')
                         
@@ -101,7 +170,6 @@ class WALegislationScraper(LegislationScraper):
                                      
         last_month = 1
         for date, action_text in zip(action_dates, action_texts):
-            print date.text_content()
             splitted_date = date.text_content().split(" ")
             # If it is not a date skip  
             try:
@@ -163,6 +231,15 @@ class WALegislationScraper(LegislationScraper):
                                         bill.add_sponsor('primary', name_tuple[0])
                                     except:
                                         pass
+                            elif re.search("ShowRollCall", link) != None:
+                                match = re.search("([0-9]+,[0-9]+)", link)
+                                match = match.group(0)
+                                match = match.split(',')
+                                id1 = match[0]
+                                id2 = match[1]
+                                url = "http://flooractivityext.leg.wa.gov/rollcall.aspx?id=" + id1 + "&bienId=" +id2
+                                with self.lxml_context(url) as vote_page:
+                                    self.scrape_votes(vote_page, bill, url)
                                     
                         self.add_bill(bill)
 
