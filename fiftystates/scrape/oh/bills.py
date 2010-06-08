@@ -175,20 +175,26 @@ class OHBillScraper(BillScraper):
 
 	def scrape_votes(self, bill, file_type, number):
 
+
 		self.follow_robots = False;
 
 		vote_url = 'http://www.legislature.state.oh.us/votes.cfm?ID=128_' + file_type + '_' + str(number)
-
+		
 		with self.urlopen(vote_url) as page:
 			root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+			
+			for el in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2][@class="bigPanel"]/blockquote/font/table'):
 
-			#for el in root.xpath('//table/tr/td/table/tr/td[@class="bigPanel"]/blockquote/font/table/tbody/'):
-			for el in root.xpath('//table/tr/td/table/tr/td[@class="bigPanel"]/blockquote'):
-				date = el.xpath('string(tr[1]/td[0]/font/a)')
-				#motion = el.xpath('string(tr[1]/td[1]/font)')[1]
-				
-				#for gr in el.xpath('string(div[@id="Yea0"]/table/tr/td/)'):
-				#	bill.yes(gr.xpath('/font'))
+				#need to insert a loop to go though every other row
+				for mr in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2][@class="bigPanel"]/blockquote/font/table/tr/td/font'):
+					print "inner loop"
+					date = mr.path('string(/a)')
+					#date = el.xpath('string(td[2]/font)')
+					#date = mr.xpath('string(tr[2]/td[1]/font/a)')
+					#motion = mr.xpath('string(tr[2]/td[2]/font)')
+					#motion = motion.rpartition(motion.split()[-1])[0]
+					print date
+					#print motion
 
 				
 
