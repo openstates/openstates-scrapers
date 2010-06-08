@@ -43,13 +43,9 @@ class TXLegislatorScraper(LegislatorScraper):
                     try:
                         img = details.xpath(
                             "//img[contains(@name, 'District')]")[0]
-                        #leg['photo_url'] = ('http://www.senate.state.tx.us/'
-                        #                    '75r/senate/' + img.attrib['src'])
                         leg['photo_url'] = img.attrib['src']
-                        print leg['photo_url']
                     except IndexError:
                         # no photo
-                        print "NO PHOTO"
                         pass
 
                     try:
