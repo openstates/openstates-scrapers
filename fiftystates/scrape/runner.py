@@ -15,6 +15,16 @@ except ImportError:
 class RunException(Exception):
     """ exception when trying to run a scraper """
 
+    def __init__(self, msg, orig_exception=None):
+        self.msg = msg
+        self.orig_exception = orig_exception
+
+    def __str__(self):
+        if self.orig_exception:
+            return '%s\nOriginal Exception: %s' % (self.msg, self.orig_exception)
+        else:
+            return self.msg
+
 def run_oldschool(state, years, chambers, options):
     mod_name = "fiftystates.scrape.%s.get_legislation" % state
     scraper_name = '%sLegislationScraper' % state.upper()
@@ -59,10 +69,10 @@ def _load_scraper(state, scraper_type):
     try:
         mod = __import__(mod_path, fromlist=[scraper_name])
         return getattr(mod, scraper_name)
-    except ImportError:
-        raise RunException("could not import %s" % mod_path)
-    except AttributeError:
-        raise RunException("could not import %s" % scraper_name)
+    except ImportError, e:
+        raise RunException("could not import %s" % mod_path, e)
+    except AttributeError, e:
+        raise RunException("could not import %s" % scraper_name, e)
 
 def run(state, years, chambers, output_dir, options):
 
@@ -77,7 +87,7 @@ def run(state, years, chambers, output_dir, options):
     opts = {'output_dir': output_dir,
             'no_cache': options.no_cache,
             'requests_per_minute': options.rpm,
-            # cache_dir, error_dir, requests_per_minute
+            # cache_dir, error_dir
         }
 
     # scrape bills
