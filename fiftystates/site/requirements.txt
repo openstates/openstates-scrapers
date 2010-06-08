@@ -1,6 +1,5 @@
-Django==1.2
+Django==1.2.1
 django-piston==0.2.2
 psycopg2==2.2.1
 GitPython==0.2.0-beta1
 -e git://github.com/sunlightlabs/django-locksmith.git#egg=django-locksmith
-nltk==2.0b8

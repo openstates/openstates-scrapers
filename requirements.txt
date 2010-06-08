@@ -1,0 +1,3 @@
+-r fiftystates/backend/requirements.txt
+-r fiftystates/site/requirements.txt
+-r fiftystates/scrape/requirements.txt
