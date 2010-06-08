@@ -1,46 +1,19 @@
-#!/usr/bin/env python
 import re
 import datetime as dt
-import csv
+
+from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.votes import Vote
+
 import html5lib
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 NoDataForYear)
 
 
-class AKLegislationScraper(LegislationScraper):
-
+class AKBillScraper(BillScraper):
     state = 'ak'
     soup_parser = html5lib.HTMLParser(
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
-    metadata = {
-        'state_name': 'Alaska',
-        'legislature_name': 'The Alaska State Legislature',
-        'lower_chamber_name': 'House of Representatives',
-        'upper_chamber_name': 'Senate',
-        'lower_title': 'Representative',
-        'upper_title': 'Senator',
-        'lower_term': 2,
-        'upper_term': 4,
-        'sessions': ['18', '19', '20', '21', '22', '23', '24',
-                     '25', '26'],
-        'session_details': {
-            '18': {'years': [1993, 1994], 'sub_sessions': []},
-            '19': {'years': [1995, 1996], 'sub_sessions': []},
-            '20': {'years': [1997, 1998], 'sub_sessions': []},
-            '21': {'years': [1999, 2000], 'sub_sessions': []},
-            '22': {'years': [2001, 2002], 'sub_sessions': []},
-            '23': {'years': [2003, 2004], 'sub_sessions': []},
-            '24': {'years': [2005, 2006], 'sub_sessions': []},
-            '25': {'years': [2007, 2008], 'sub_sessions': []},
-            '26': {'years': [2009, 2010], 'sub_sessions': []},
-        }}
-
-    def scrape_legislators(self, chamber, year):
+    def scrape(self, chamber, year):
         # Data available for 1993 on
         if int(year) < 1993 or int(year) > dt.date.today().year:
             raise NoDataForYear(year)
@@ -49,51 +22,7 @@ class AKLegislationScraper(LegislationScraper):
         if int(year) % 2 != 1:
             raise NoDataForYear(year)
 
-        if chamber == 'upper':
-            chamber_abbr = 'S'
-        else:
-            chamber_abbr = 'H'
-
-        session = str(18 + ((int(year) - 1993) / 2))
-
-        leg_list_url = "http://www.legis.state.ak.us/"\
-            "basis/commbr_info.asp?session=%s" % session
-        leg_list = self.soup_parser(self.urlopen(leg_list_url))
-
-        leg_re = "get_mbr_info.asp\?member=.+&house=%s&session=%s" % (
-            chamber_abbr, session)
-        links = leg_list.findAll(href=re.compile(leg_re))
-
-        for link in links:
-            member_url = "http://www.legis.state.ak.us/basis/" + link['href']
-            member_page = self.soup_parser(self.urlopen(member_url))
-
-            if member_page.find('td', text=re.compile('Resigned')):
-                # Need a better way to handle this than just dropping
-                continue
-
-            full_name = member_page.findAll('h3')[1].contents[0]
-            full_name = ' '.join(full_name.split(' ')[1:])
-            full_name = re.sub('\s+', ' ', full_name).strip()
-
-            first_name = full_name.split(' ')[0]
-            last_name = full_name.split(' ')[-1]
-            middle_name = ' '.join(full_name.split(' ')[1:-1])
-
-            code = link['href'][24:27]
-
-            district = member_page.find(text=re.compile("District:"))
-            district = district.strip().split(' ')[-1]
-
-            party = member_page.find(text=re.compile("Party: "))
-            party = ' '.join(party.split(' ')[1:])
-
-            leg = Legislator(session, chamber, district,
-                             full_name, first_name,
-                             last_name, middle_name,
-                             party, code=code)
-            leg.add_source(member_url)
-            self.save_legislator(leg)
+        self.scrape_session(chamber, year)
 
     def scrape_session(self, chamber, year):
         if chamber == 'upper':
@@ -205,36 +134,33 @@ class AKLegislationScraper(LegislationScraper):
         url = "http://www.legis.state.ak.us/basis/%s" % url
         info_page = self.soup_parser(self.urlopen(url))
 
-        tally = re.findall('Y(\d+) N(\d+)\s*(?:\w(\d+))*\s*(?:\w(\d+))*\s*(?:\w(\d+))*', action)[0]
+        tally = re.findall('Y(\d+) N(\d+)\s*(?:\w(\d+))*\s*(?:\w(\d+))*'
+                           '\s*(?:\w(\d+))*', action)[0]
         yes, no, o1, o2, o3 = map(lambda x: 0 if x == '' else int(x), tally)
         yes, no, other = int(yes), int(no), (int(o1) + int(o2) + int(o3))
 
-        votes = info_page.findAll('pre', text=re.compile('Yeas'), limit=1)[0].split('\n\n')
+        votes = info_page.findAll('pre', text=re.compile('Yeas'),
+                                  limit=1)[0].split('\n\n')
 
         motion = info_page.findAll(text=re.compile('The question being'))[0]
-        motion = re.findall('The question being:\s*"(.*)\?"', motion, re.DOTALL)[0].replace('\n', ' ')
+        motion = re.findall('The question being:\s*"(.*)\?"',
+                            motion, re.DOTALL)[0].replace('\n', ' ')
 
-        vote = Vote(act_chamber, act_date, motion, yes> no, yes, no, other)
+        vote = Vote(act_chamber, act_date, motion, yes > no, yes, no, other)
 
         for vote_list in votes:
             vote_type = False
-            if vote_list.startswith('Yeas: '): vote_list, vote_type = vote_list[6:], vote.yes
-            elif vote_list.startswith('Nays: '): vote_list, vote_type = vote_list[6:], vote.no
-            elif vote_list.startswith('Excused: '): vote_list, vote_type = vote_list[9:], vote.other
-            elif vote_list.startswith('Absent: '): vote_list, vote_type = vote_list[9:],vote.other
-            if vote_type: 
-                for name in vote_list.split(','): vote_type(name.strip())
+            if vote_list.startswith('Yeas: '):
+                vote_list, vote_type = vote_list[6:], vote.yes
+            elif vote_list.startswith('Nays: '):
+                vote_list, vote_type = vote_list[6:], vote.no
+            elif vote_list.startswith('Excused: '):
+                vote_list, vote_type = vote_list[9:], vote.other
+            elif vote_list.startswith('Absent: '):
+                vote_list, vote_type = vote_list[9:], vote.other
+            if vote_type:
+                for name in vote_list.split(','):
+                    vote_type(name.strip())
 
         vote.add_source(url)
         return vote
-
-    def scrape_bills(self, chamber, year):
-        # Data available for 1993 on
-        if int(year) < 1993 or int(year) > dt.date.today().year:
-            raise NoDataForYear(year)
-
-        # Expect first year of session (odd)
-        if int(year) % 2 != 1:
-            raise NoDataForYear(year)
-
-        self.scrape_session(chamber, year)
