@@ -1,57 +1,23 @@
-#!/usr/bin/env python
-from __future__ import with_statement
 import re
 import datetime as dt
-import html5lib
 import urllib2
-import sys
-import os
+
+from BeautifulSoup import BeautifulSoup
+
+from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape.bills import BillScraper, Bill
+
 from utils import (clean_text, house_get_actor_from_action,
                    senate_get_actor_from_action)
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 NoDataForYear)
-
-
-class MOLegislationScraper(LegislationScraper):
+class MOBillScraper(BillScraper):
 
     state = 'mo'
-
-    metadata = {
-        'state_name': 'Missouri',
-        'legislature_name': 'Missouri General Assembly',
-        'lower_chamber_name': 'House of Representatives',
-        'upper_chamber_name': 'Senate',
-        'lower_title': 'Representative',
-        'upper_title': 'Senator',
-        'lower_term': 2,
-        'upper_term': 4,
-        'sessions': ['1998', '1999', '2000', '2001', '2002', '2003',
-                     '2004', '2005', '2006', '2007', '2008', '2009'],
-        'session_details': {
-            '1998': {'years': [1998], 'sub_sessions': []},
-            '1999': {'years': [1999], 'sub_sessions': []},
-            '2000': {'years': [2000], 'sub_sessions': []},
-            '2001': {'years': [2001],
-                     'sub_sessions': ['2001 Extraordinary Session']},
-            '2002': {'years': [2002], 'sub_sessions': []},
-            '2003': {'years': [2003],
-                     'sub_sessions': ['2003 1st Extraordinary Session',
-                                      '2003 2nd Extraordinary Session']},
-            '2004': {'years': [2004], 'sub_sessions': []},
-            '2005': {'years': [2005],
-                     'sub_sessions': ['2005 Extraordinary Session']},
-            '2006': {'years': [2006], 'sub_sessions': []},
-            '2007': {'years': [2007],
-                     'sub_sessions': ['2007 Extraordinary Session']},
-            '2008': {'years': [2008], 'sub_sessions': []},
-            '2009': {'years': [2009], 'sub_sessions': []}}}
 
     house_root = 'http://www.house.mo.gov'
     senate_root = 'http://www.senate.mo.gov'
 
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         # wrapper to call senate or house scraper. No year check
         # here, since house and senate have different backdates
         if chamber == 'upper':
@@ -71,7 +37,8 @@ class MOLegislationScraper(LegislationScraper):
         bill_root = self.senate_root + '/' + year2 + 'info/BTS_Web/'
         index_url = bill_root + 'BillList.aspx?SessionType=R'
 
-        with self.soup_context(index_url) as index_page:
+        with self.urlopen(index_url) as index_page:
+            index_page = BeautifulSoup(index_page)
             # each bill is in it's own table (nested in a larger table)
             bill_tables = index_page.findAll(id="Table2")
 
@@ -90,7 +57,8 @@ class MOLegislationScraper(LegislationScraper):
                     self.parse_senate_billpage(bill_url, year)
 
     def parse_senate_billpage(self, bill_url, year):
-        with self.soup_context(bill_url) as bill_page:
+        with self.urlopen(bill_url) as bill_page:
+            bill_page = BeautifulSoup(bill_page)
             # get all the info needed to record the bill
             bill_id = bill_page.find(id="lblBillNum").b.font.contents[0]
             bill_title = bill_page.find(id="lblBillTitle").font.string
@@ -125,7 +93,8 @@ class MOLegislationScraper(LegislationScraper):
 
     def parse_senate_bill_versions(self, bill, url):
         bill.add_source(url)
-        with self.soup_context(url) as versions_page:
+        with self.urlopen(url) as versions_page:
+            versions_page = BeautifulSoup(versions_page)
             version_tags = versions_page.findAll('li')
             if version_tags != None:
                 for version_tag in version_tags:
@@ -135,7 +104,8 @@ class MOLegislationScraper(LegislationScraper):
 
     def parse_senate_actions(self, bill, url):
         bill.add_source(url)
-        with self.soup_context(url) as actions_page:
+        with self.urlopen(url) as actions_page:
+            actions_page = BeautifulSoup(actions_page)
             bigtable = actions_page.find(id='Table5')
             act_row = bigtable.next.next.nextSibling.next
             act_row = act_row.nextSibling.nextSibling
@@ -151,7 +121,8 @@ class MOLegislationScraper(LegislationScraper):
 
     def parse_senate_cosponsors(self, bill, url):
         bill.add_source(url)
-        with self.soup_context(url) as cosponsors_page:
+        with self.urlopen(url) as cosponsors_page:
+            cosponsors_page = BeautifulSoup(cosponsors_page)
             # cosponsors are all in a table
             cosponsor_table = cosponsors_page.find(id="dgCoSponsors")
             cosponsors = cosponsor_table.findAll("tr")
@@ -195,7 +166,8 @@ class MOLegislationScraper(LegislationScraper):
     def parse_house_billpage(self, url, year):
         url_root = re.match("(.*//.*?/)", url).group(1)
 
-        with self.soup_context(url) as bill_list_page:
+        with self.urlopen(url) as bill_list_page:
+            bill_list_page = BeautifulSoup(bill_list_page)
             # find the first center tag, take the text after
             # 'House of Representatives' and before 'Bills' as
             # the session name
@@ -215,14 +187,12 @@ class MOLegislationScraper(LegislationScraper):
                     bill_url = bill_link['href']
                     self.parse_house_bill(bill_url, session)
 
-    soup_parser = html5lib.HTMLParser(
-        tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
     def parse_house_bill(self, url, session):
         url = re.sub("content", "print", url)
 
-        with self.urlopen_context(url) as bill_page_data:
-            bill_page = self.soup_parser(bill_page_data)
+        with self.urlopen(url) as bill_page_data:
+            bill_page = BeautifulSoup(bill_page_data)
             header_table = bill_page.table
 
             # get all the info needed to record the bill
@@ -289,7 +259,8 @@ class MOLegislationScraper(LegislationScraper):
 
     def parse_house_actions(self, bill, url):
         bill.add_source(url)
-        with self.soup_context(url) as actions_page:
+        with self.urlopen(url) as actions_page:
+            actions_page = BeautifulSoup(actions_page)
             rows = actions_page.findAll('tr')
 
             # start with index 0 because the table doesn't have an opening <tr>
@@ -354,5 +325,3 @@ class MOLegislationScraper(LegislationScraper):
                     self.log('404 on %s, continuing' % bill_text_url)
                 else:
                     raise e
-
-

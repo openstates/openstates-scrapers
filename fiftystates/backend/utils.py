@@ -70,6 +70,9 @@ def insert_with_id(obj):
             all_ids.append(obj['_id'])
         obj['_all_ids'] = all_ids
 
+        if obj['type'] in ['person', 'legislator']:
+            obj['leg_id'] = obj['_id']
+
         try:
             collection.insert(obj, safe=True)
             break

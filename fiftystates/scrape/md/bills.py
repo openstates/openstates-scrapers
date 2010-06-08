@@ -4,6 +4,8 @@ import itertools
 import re
 from urllib2 import HTTPError
 
+import lxml.html
+
 from fiftystates.scrape import NoDataForYear
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
@@ -119,7 +121,8 @@ class MDBillScraper(BillScraper):
             href = elem.get('href')
             if href and "votes" in href and href.endswith('htm'):
                 vote_url = BASE_URL + href
-                with self.lxml(vote_url) as (resp, vote_doc):
+                with self.urlopen(vote_url) as vote_html:
+                    vote_doc = lxml.html.fromstring(vote_html)
                     # motion
                     for a in vote_doc.cssselect('a'):
                          if 'motions' in a.get('href'):
@@ -169,7 +172,8 @@ class MDBillScraper(BillScraper):
         """ Creates a bill object
         """
         url = BILL_URL % (year, session, bill_type, number)
-        with self.lxml(url) as (resp, doc):
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
             # title
             # find <a name="Title">, get parent dt, get parent dl, then get dd within dl
             title = doc.cssselect('a[name=Title]')[0] \

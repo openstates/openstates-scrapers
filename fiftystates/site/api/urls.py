@@ -6,11 +6,13 @@ from piston.emitters import Emitter
 from fiftystates.site.api.handlers import *
 from fiftystates.site.api.emitters import LoggingJSONEmitter
 
-from locksmith.auth.authentication import PistonKeyAuthentication
+if getattr(settings, 'USE_LOCKSMITH', False):
+    from locksmith.auth.authentication import PistonKeyAuthentication
+    authorizer = PistonKeyAuthentication()
+    Emitter.register('json', LoggingJSONEmitter, 'application/json; charset=utf-8')
+else:
+    authorizer = None
 
-Emitter.register('json', LoggingJSONEmitter, 'application/json; charset=utf-8')
-
-authorizer = PistonKeyAuthentication()
 bill_handler = Resource(BillHandler, authentication=authorizer)
 state_handler = Resource(StateHandler, authentication=authorizer)
 legislator_handler = Resource(LegislatorHandler, authentication=authorizer)

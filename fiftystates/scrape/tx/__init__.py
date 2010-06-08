@@ -1,13 +1,16 @@
 metadata = dict(
-    state_name='Texas',
+    name='Texas',
+    abbreviation='tx',
     legislature_name='Texas Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='House of Representatives',
-    upper_title='Senator',
-    lower_title='Representative',
-    upper_term=4,
-    lower_term=2,
-    sessions=['81'],
-    session_details={
-        '81': {'years': [2009, 2010], 'sub_sessions': ["811"]}},
-)
+    upper_chamber_title='Senator',
+    lower_chamber_title='Representative',
+    upper_chamber_term=4,
+    lower_chamber_term=2,
+    sessions=[
+        {'name': '81',
+         'sub_sessions': ["811"],
+         'start_year': 2009, 'end_year': 2010},
+        ],
+    )

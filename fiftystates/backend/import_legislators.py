@@ -53,11 +53,13 @@ def import_legislator(data):
     if not leg:
         metadata = db.metadata.find_one({'_id': data['state']})
 
+        session_names = [s['name'] for s in metadata['sessions']]
+
         try:
-            index = metadata['sessions'].index(cur_role['session'])
+            index = session_names.index(cur_role['session'])
 
             if index > 0:
-                prev_session = metadata['sessions'][index - 1]
+                prev_session = session_names[index - 1]
                 prev_leg = db.legislators.find_one(
                     {'state': data['state'],
                      'full_name': data['full_name'],

@@ -16,15 +16,6 @@ from fiftystates import settings
 
 import scrapelib
 
-try:
-    from BeautifulSoup import BeautifulSoup
-    USE_SOUP = True
-except ImportError:
-    print "BeautifulSoup not found, Scraper.soup_context will " \
-        "be unavailable"
-    USE_SOUP = False
-
-
 class ScrapeError(Exception):
     """
     Base class for scrape errors.
@@ -92,24 +83,6 @@ class Scraper(scrapelib.Scraper):
         self.log = self.logger.info
         self.debug = self.logger.debug
         self.warning = self.logger.warning
-
-    @contextlib.contextmanager
-    def soup_context(self, url):
-        """
-        Like :method:`urlopen_context`, except returns a BeautifulSoup
-        parsed document.
-        """
-        if not USE_SOUP:
-            raise ScrapeError("BeautifulSoup does not seem to be installed.")
-
-        resp = self.urlopen(url)
-        soup = BeautifulSoup(resp)
-
-        try:
-            yield soup
-        except:
-            self._save_error(url, resp)
-            raise
 
 class FiftystatesObject(dict):
     def __init__(self, type, **kwargs):

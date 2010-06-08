@@ -1,3 +1,5 @@
+import lxml.html
+
 from fiftystates.scrape.committees import CommitteeScraper, Committee
 
 class MDCommitteeScraper(CommitteeScraper):
@@ -8,14 +10,16 @@ class MDCommitteeScraper(CommitteeScraper):
         # TODO: scrape senate committees
         house_url = 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hsecom.html'
 
-        with self.lxml(house_url) as (resp, doc):
+        with self.urlopen(house_url) as html:
+            doc = lxml.html.fromstring(html)
             # distinct URLs containing /com/
             committees = set([l.get('href') for l in doc.cssselect('li a')
                               if l.get('href', '').find('/com/') != -1])
 
         for com in committees:
             com_url = 'http://www.msa.md.gov'+com
-            with self.lxml(com_url) as (resp, cdoc):
+            with self.urlopen(com_url) as chtml:
+                cdoc = lxml.html.fromstring(chtml)
                 for h in cdoc.cssselect('h2, h3'):
                     if h.text:
                         committee_name = h.text
