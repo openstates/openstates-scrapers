@@ -259,8 +259,8 @@ class OHBillScraper(BillScraper):
 
                         vote.no(legis)
 
+                    if yes_count > 0 or no_count > 0:
+                        bill.add_vote(vote)   
 
-                    bill.add_vote(vote)   
-
-                    print vote
-                    print "\n\n" 
+                        #print vote
+                        #print "\n\n" 
