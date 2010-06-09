@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load fs_helpers %}
+
+{% block title %}{{ leg.full_name }} - The Fifty State Project{% endblock %}
+
+{% block content %}
+<h3>{{ leg.active_role|leg_title }} {{ leg.full_name }}</h3>
+<h4>
+  {{ leg.active_role.state|state_name }} {{ leg.active_role|short_chamber }}
+  District {{ leg.active_role.district }}
+</h4>
+
+<div class="roles">
+  <h4>Legislative Roles:</h4>
+  <ul>
+    {% for role in leg.roles %}
+      <li>
+        {% if role.type == 'member' %}
+          {{ role.session }}: {{ role|leg_title }}, District {{ role.district }}
+        {% endif %}
+
+        {% if role.type == 'committee member' %}
+          {{ role.session }}: member of the {{ role.committee }} Committee
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

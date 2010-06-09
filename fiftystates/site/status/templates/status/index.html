@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style type="text/css">
+        table { border-width: 1px; border-color: #333; border-style: solid; border-collapse: collapse; }
+        th, td { border-width: 1px; border-color: #333; border-style: solid; padding: 1px 1em;}
+        tr { height: 70px; }
+        td.status { padding: 0px; }
+        td.yes { background-color: #005500; }
+        td.no { background-color: #550000; }
+    </style>
+    <script src="http://assets.sunlightlabs.com/site3/scripts/jquery-1.3.2.min.js"></script>
+    <script src="http://assets.sunlightlabs.com/site3/scripts/jquery.tablesorter.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('table').tablesorter();
+        });
+    </script>
+</head>
+<body>
+
+<table>
+    <thead> <tr>
+        <th>State</th>
+        <th>Bills</th>
+        <th>Bill Versions</th>
+        <th>Sponsors</th>
+        <th>Actions</th>
+        <th>Votes</th>
+        <th>Legislators</th>
+        <th>Committees</th>
+        <!--        <th>Notes</th> -->
+        <th>Owner</th>
+        <th># commits</th>
+        <th>Latest Commit</th>
+        <th>Contributors</th>
+    </tr> </thead>
+
+    {% for status in statuses %}
+    <tr>
+        <td>{{status.state.upper}}
+            {% if request.user.is_staff %}
+            <a href="/admin/status/statestatus/{{status.id}}/">(edit)</a>
+            {% endif %}
+        </td>
+
+        <td class="status {% if status.bills %}yes">y{% else %}no">n{% endif %}</td>
+        <td class="status {% if status.bill_versions %}yes">y{% else %}no">n{% endif %}</td>
+        <td class="status {% if status.sponsors %}yes">y{% else %}no">n{% endif %}</td>
+        <td class="status {% if status.actions %}yes">y{% else %}no">n{% endif %}</td>
+        <td class="status {% if status.votes %}yes">y{% else %}no">n{% endif %}</td>
+        <td class="status {% if status.legislators %}yes">y{% else %}no">n{% endif %}</td>
+        <td class="status {% if status.committees %}yes">y{% else %}no">n{% endif %}</td>
+
+<!-- <td>{{status.notes}}</td>-->
+        <td>{{status.owner}}</td>
+        <td>{{status.num_commits}}</td>
+        <td>{{status.latest_commit|date:"Y-m-d"}}</td>
+        <td><ul>
+                {% for c in status.contributors.all %}
+                <li> {{c.name}} </li>
+                {% endfor %}
+            <ul>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

@@ -1,0 +1,8 @@
+pymongo==1.5.2
+name_tools==0.1
+python-votesmart==0.3.0
+nimsp==0.3.3
+nltk==2.0b8
+#simplejson==2.1.1
+argparse==1.1
+mongokit>=0.5.6

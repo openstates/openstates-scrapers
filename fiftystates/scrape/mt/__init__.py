@@ -1,0 +1,50 @@
+status = dict(
+    bills=True,
+    bill_versions=True,
+    sponsors=True,
+    actions=True,
+    votes=True,
+    contributors=['James Falcon <therealfalcon@gmail.com>',
+                  'Tim Freund <tim@freunds.net>'],
+    notes="""
+Special sessions aren't yet parsed.  Vote passage determination needs
+work (some action names/passage indicators are ambiguous).  Bills published
+exclusively in PDF do not have their various versions tracked.""",
+    )
+
+metadata = {
+    'name': 'Montana',
+    'abbreviation': 'mt',
+    'legislature_name': 'Montana Legislature',
+    'upper_chamber_name': 'Senate',
+    'lower_chamber_name': 'House of Representatives',
+    'upper_chamber_title': 'Senator',
+    'lower_chamber_title': 'Representative',
+    'upper_chamber_term': 4,
+    'lower_chamber_term': 2,
+    'sessions': [
+        {'name': '55th',
+         'sub_sessions': [],
+         'start_year': 1997, 'end_year': 1998},
+        {'name': '56th',
+         'sub_sessions': ['1999 Special Session', '2000 Special Legislative'],
+         'start_yea': 1999, 'end_year': 2000},
+        {'name': '57th',
+         'sub_sessions': ['August 2002 Special Session #1',
+                          'August 2002 Special Session #2'],
+         'start_year': 2001, 'end_year': 2002},
+        {'name': '58th',
+         'sub_sessions': [],
+         'start_year': 2003, 'end_year': 2004},
+        {'name': '59th',
+         'sub_sessions': ['December 2005 Special Session'],
+         'start_year': 2005, 'end_year': 2006},
+        {'name': '60th',
+         'sub_sessions': ['2007 September Special Session #1',
+                          '2007 September Special Session #2'],
+         'start_year': 2007, 'end_year': 2008},
+        {'name': '61st',
+         'sub_sessions': [],
+         'start_year': 2009, 'end_year': 2010},
+        ],
+    }

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}
+{{ bill.state|upper }} {{ bill.bill_id }} - The Fifty State Project
+{% endblock %}
+
+{% block content %}
+<h3>{{bill.state|upper}} {{bill.bill_id}}
+<h4>{{bill.title}}</h4>
+
+<div class="sponsors">
+  <h4>Sponsored by:</h4>
+  <ul>
+    {% for sponsor in bill.sponsors %}
+    <li><a href="/browse/people/{{sponsor.leg_id}}/">{{sponsor.name}}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="actions">
+  <h4>Legislative Actions:</h4>
+  <ul>
+    {% for action in bill.actions reversed %}
+    <li>
+      <time datetime="{{action.date|date:"c"}}">{{ action.date|naturalday }}</time>
+      <span class="actor">({{action.actor}})</span> {{action.action}}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="votes">
+  <h4>Votes:</h4>
+  <ul>
+    {% for vote in bill.votes %}
+    <li><a href="{{vote.id}}">: ({{vote.actor}}) {{vote.motion}}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="versions">
+  <h4>Versions:</h4>
+  <ul>
+    {% for version in bill.versions %}
+    <li><a href="{{version.url}}">{{version.name}}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

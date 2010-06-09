@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+    echo 'Usage: cleanup DATA-DIR'
+    exit
+fi
+
+cd $1
+
+find . -name '*_TBL.dat' | xargs /bin/rm -f
+find . -name '*_TBL*.lob' | xargs /bin/rm -f

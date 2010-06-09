@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load fs_helpers %}
+{% load humanize %}
+
+{% block title %}
+{{ metadata.state_name }} - The Fifty State Project
+{% endblock %}
+
+{% block content %}
+<h2>{{ metadata.state_name }}</h2>
+
+<div style="float: left;" class="recent_bills">
+  <h4 width="100%">Recently added bills:</h4>
+  <ul>
+    {% for bill in recent_bills %}
+      <li>
+        <a href="billlink">{{ bill.bill_id }}</a>
+        added {{ bill.created_at|naturalday }}
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div style="float: left;" class="upper_members">
+  <h4>{{ metadata.upper_title }}s ({{ upper|length }})</h4>
+  <ul>
+    {% for leg in upper %}
+      <li><a href="{{leg.url}}">{{ leg.full_name }}</a>,
+        District {{ leg.roles.0.district }}
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div style="float:left;" class="lower_members">
+  <h4>{{ metadata.lower_title }}s ({{ lower|length }})</h4>
+  <ul>
+    {% for leg in lower %}
+      <li><a href="{{leg.url}}">{{ leg.full_name }}</a>,
+        District {{ leg.roles.0.district }}
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% endblock %}
