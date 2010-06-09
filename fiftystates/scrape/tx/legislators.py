@@ -46,7 +46,7 @@ class TXLegislatorScraper(LegislatorScraper):
             full_name = td.xpath('string(//div[2]/strong)').strip()
             district = td.xpath('string(//div[3])').strip()
 
-            party = td.xpath('string(//div[4])')[0].strip()
+            party = td.xpath('string(//div[4])').strip()[0]
             if party == 'D':
                 party = 'Democrat'
             elif party == 'R':
