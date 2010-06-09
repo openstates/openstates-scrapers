@@ -5,6 +5,7 @@ import datetime as dt
 from fiftystates.scrape.oh import metadata
 from fiftystates.scrape.oh.utils import chamber_name, parse_ftp_listing
 from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.votes import VoteScraper, Vote
 
 import xlrd
 import urllib
@@ -176,31 +177,90 @@ class OHBillScraper(BillScraper):
     def scrape_votes(self, bill, file_type, number):
 
 
-        self.follow_robots = False;
-
         vote_url = 'http://www.legislature.state.oh.us/votes.cfm?ID=128_' + file_type + '_' + str(number)
         
         with self.urlopen(vote_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
             
             for el in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2][@class="bigPanel"]/blockquote/font/table'):
-
-
                 for mr in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2][@class="bigPanel"]/blockquote/font/table/tr[position() > 1]'):
                     
+                    yes_count = 0
+                    yes_placement = 0
+                    no_count = 0
+                    no_placement = 0 
+
                     date = mr.xpath('string(td/font/a)')
                     date = date.lstrip()
                     date = date.rstrip()
-                    info = mr.xpath('string(td[2]/font)')
-                    motion = mr.xpath('string(td/font)')
-                    if date != '' and date != 'details':           
-                        print date
-                       # print motion.split()
-                    #print info.split()
-                    #if motion.split()[0] == 'Yeas':
-                    #    print "votes"
-                    #else:
-                    #    print "date"
-                        #print motion.split()
-                   # print "                                                                                                                                                                                                     "
-                    #print date.split()
+                    info = mr.xpath('string(td[2]/font)')  
+
+                    #print date
+                    #print "date"
+                        
+                    if info.split()[0] == 'Yeas':
+                        #print info.split()
+                        #print "\n\n"
+                        
+                        #yes votes
+                        yes_count = info.split()[2]
+
+                        #no votes
+                        for voter in range(3, len(info.split())):
+                           if info.split()[voter] == '-':
+                            no_count = info.split()[voter + 1]
+                            no_placement = voter + 2
+                            yes_placement = voter - 2
+                                 
+
+                    #motion and chamber
+                    if info.split()[-1] == 'details':
+                        motion = info[0:len(info)-10]
+                        motion = motion.lstrip()
+                        motion = motion.rstrip()
+                        chamber = motion.split()[0]
+
+                    
+                    #pass or not (only by which has more. need to see look up how they are passed)
+                    if yes_count > no_count:
+                        passed = True
+                    else:
+                        passed = False
+
+                    vote = Vote(chamber, date, motion, passed, yes_count, no_count, "other_count")
+
+                    #adding in yas voters
+                    for voters in range(3, yes_placement):
+                        legis = ""
+                        initials = 0                        
+
+                        #checks to see if the next name is actually an initial
+                        if len(info.split()[voters+1]) < 2:
+                            legis = legis + info.split()[voters] + " " + info.split()[voters + 1]
+                        elif len(info.split()[voters]) < 2:
+                            initials = 1
+                        else:
+                            legis = legis + info.split()[voters]
+
+                        vote.yes(legis)
+                    
+                    #adding in no voters
+                    for voters in range(no_placement, len(info.split())):
+                        legis = ""                                         
+                        initials = 0
+
+                        #checks to see if the next name is actually an initial
+                        if (info.split()[voters] != info.split()[-1]) and (len(info.split()[voters+1]) < 2):
+                            legis = legis + info.split()[voters] + " " + info.split()[voters + 1]
+                        elif len(info.split()[voters]) < 2:
+                            initals = 1
+                        else:
+                            legis = legis + info.split()[voters]
+
+                        vote.no(legis)
+
+
+                    bill.add_vote(vote)   
+
+                    print vote
+                    print "\n\n" 
