@@ -53,7 +53,7 @@ class TXLegislatorScraper(LegislatorScraper):
                 party = 'Republican'
 
             leg = Legislator('81', chamber, district, full_name,
-                             party=party)
+                             party=party, photo_url=photo_url)
 
             comm_div = root.xpath('//div[string() = "Committee Membership:"]'
                                   '/following-sibling::div'
