@@ -55,6 +55,8 @@ class TXLegislatorScraper(LegislatorScraper):
             leg = Legislator('81', chamber, district, full_name,
                              party=party, photo_url=photo_url)
 
+            leg.add_source(member_url)
+
             comm_div = root.xpath('//div[string() = "Committee Membership:"]'
                                   '/following-sibling::div'
                                   '[@class="rcwcontent"]')[0]
