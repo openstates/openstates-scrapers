@@ -2,14 +2,10 @@
 import urllib
 import re
 import datetime as dt
-import sys
-import os
 import urllib2
-from BeautifulSoup import BeautifulSoup as BS
+from BeautifulSoup import BeautifulSoup
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 NoDataForYear)
+from fiftystates.scrape.bills import BillScraper, Bill
 
 def cleansource(data):
     '''Remove some irregularities from WV's HTML.
@@ -44,38 +40,13 @@ def sessionexisted(data):
 
 urlbase = 'http://www.legis.state.wv.us/Bill_Status/%s'
 
-
-class WVLegislationScraper(LegislationScraper):
+class WVBillScraper(BillScraper):
 
     state = 'wv'
 
-    metadata = {
-        'state_name': 'West Virginia',
-        'legislature_name': 'The West Virginia Legislature',
-        'lower_chamber_name': 'House of Delegates',
-        'upper_chamber_name': 'Senate',
-        'lower_title': 'Delegate',
-        'upper_title': 'Senator',
-        'lower_term': 2,
-        'upper_term': 4,
-        'sessions': map(str, xrange(1993, 2010)),
-        'session_details': {}}
-
-    def scrape_metadata(self):
-        for year in self.metadata['sessions']:
-            self.metadata['session_details'][year] = {
-                'years': [int(year)],
-                'sub_sessions': []}
-
-            for sub in ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th']:
-                self.metadata['session_details'][year]['sub_sessions'].append(
-                    "%s %s special session" % (year, sub))
-
-        return self.metadata
-
     session_abbrevs = 'RS 1X 2X 3X 4X 5X 6X 7X'.split()
 
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         if int(year) < 1993:
             raise NoDataForYear
 
@@ -93,10 +64,10 @@ class WVLegislationScraper(LegislationScraper):
             year, session, c)
 
         try:
-            with self.urlopen_context(urlbase % q) as data:
+            with self.urlopen(urlbase % q) as data:
                 if not sessionexisted(data):
                     return False
-                soup = BS(cleansource(data))
+                soup = BeautifulSoup(cleansource(data))
                 rows = soup.findAll('table')[1].findAll('tr')[1:]
                 for row in rows:
                     histlink = urlbase % row.td.a['href']
@@ -117,8 +88,8 @@ class WVLegislationScraper(LegislationScraper):
             session = self.metadata['session_details'][year][
                 'sub_sessions'][int(year[0]) - 1]
 
-        with self.urlopen_context(histurl) as data:
-            soup = BS(cleansource(data))
+        with self.urlopen(histurl) as data:
+            soup = BeautifulSoup(cleansource(data))
             basicinfo = soup.findAll('div', id='bhistleft')[0]
             hist = basicinfo.table
 
