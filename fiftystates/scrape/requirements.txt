@@ -1,11 +1,8 @@
 # Common requirements
 -e git+http://github.com/mikejs/scrapelib.git#egg=scrapelib
-BeautifulSoup==3.0.8.1
+BeautifulSoup>=3.1
 html5lib
-lxml
-
-# Only needed if on Python 2.5
-#simplejson
+lxml>=2.2
 
 # Required for Michigan
 #PdfMiner>=20091219
