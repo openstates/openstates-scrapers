@@ -29,6 +29,35 @@ def parse_exec_date(date_str):
     raise ScrapeError("Invalid executive action date: %s" % date_str)
 
 
+def clean_action(action):
+    action = action.strip()
+
+    # collapse multiple whitespace
+    action = ' '.join([w for w in action.split() if w])
+
+    # floating punctuation
+    action = re.sub(r'\s([,.;:])(\s)', r'\1\2', action)
+
+    return action
+
+
+def action_type(action):
+    action = action.lower()
+
+    if re.match('^read (the )?first time', action):
+        return 'bill:introduced'
+    elif re.search('.*proposal of amendment(; text)?$', action):
+        return 'amendment:introduced'
+    elif action.endswith('proposal of amendment concurred in'):
+        return 'amendment:passed'
+    elif action.endswith('and passed'):
+        return 'bill:passed'
+    elif action.startswith('signed by governor'):
+        return 'bill:signed'
+
+    return 'other'
+
+
 class VTBillScraper(BillScraper):
     state = 'vt'
 
@@ -73,7 +102,7 @@ class VTBillScraper(BillScraper):
                 action = ""
                 for s in row.findAll('td')[1].findAll(text=True):
                     action += s + " "
-                action = action.strip()
+                action = clean_action(action)
 
                 match = re.search('Governor on (.*)$', action)
                 if match:
@@ -99,7 +128,8 @@ class VTBillScraper(BillScraper):
 
                     act_date = dt.datetime.strptime(act_date, '%m/%d/%Y')
 
-                bill.add_action(actor, action, act_date)
+                bill.add_action(actor, action, act_date,
+                                type=action_type(action))
 
                 vote_link = row.find('a', text='Details')
                 if vote_link:
@@ -191,14 +221,16 @@ class VTBillScraper(BillScraper):
             act_table = info_page.find(
                 text='%s Status:' % chamber_name).findNext('table')
             for row in act_table.findAll('tr')[3:]:
-                action = row.td.string.replace('&nbsp;', '').strip(':')
+                action = clean_action(row.td.string.replace(
+                        '&nbsp;', '').strip(':'))
 
                 act_date = row.findAll('td')[1].b.string.replace('&nbsp;', '')
                 if act_date != "":
                     detail = row.findAll('td')[2].b
                     if detail and detail.string != "":
                         action += ": %s" % detail.string.replace('&nbsp;', '')
-                    bill.add_action(chamber, action, act_date)
+                    bill.add_action(chamber, action, act_date,
+                                    type=action_type(action))
 
             # Grab actions from the other chamber
             act_table = info_page.find(
@@ -209,7 +241,8 @@ class VTBillScraper(BillScraper):
                 else:
                     act_chamber = 'upper'
                 for row in act_table.findAll('tr')[3:]:
-                    action = row.td.string.replace('&nbsp;', '').strip(':')
+                    action = clean_action(row.td.string.replace(
+                            '&nbsp;', '').strip(':'))
 
                     act_date = row.findAll('td')[1].b.string.replace(
                         '&nbsp;', '')
@@ -219,6 +252,7 @@ class VTBillScraper(BillScraper):
                             action += ": %s" % detail.string.replace(
                                 '&nbsp;', '')
                         date = dt.datetime.strptime(act_date, '%m/%d/%Y')
-                        bill.add_action(act_chamber, action, act_date)
+                        bill.add_action(act_chamber, action, act_date,
+                                        type=action_type(action))
 
             self.save_bill(bill)
