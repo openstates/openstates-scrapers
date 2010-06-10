@@ -182,6 +182,7 @@ class OHBillScraper(BillScraper):
         with self.urlopen(vote_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
             
+            save_date = ''
             for el in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2][@class="bigPanel"]/blockquote/font/table'):
                 for mr in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2][@class="bigPanel"]/blockquote/font/table/tr[position() > 1]'):
                     
@@ -195,13 +196,15 @@ class OHBillScraper(BillScraper):
                     date = date.rstrip()
                     info = mr.xpath('string(td[2]/font)')  
 
-                    #print date
-                    #print "date"
-                        
+                    
+                    #makes sure that date is saved 
+                    if len(date.split()) > 0:
+                        save_date = date
+
+                    #figures out the number of votes for each way
+                    #also figures out placement of yes and no voters starts for later iteration
                     if info.split()[0] == 'Yeas':
-                        #print info.split()
-                        #print "\n\n"
-                        
+                                                
                         #yes votes
                         yes_count = info.split()[2]
 
@@ -227,7 +230,7 @@ class OHBillScraper(BillScraper):
                     else:
                         passed = False
 
-                    vote = Vote(chamber, date, motion, passed, yes_count, no_count, "other_count")
+                    vote = Vote(chamber, save_date, motion, passed, yes_count, no_count, "other_count")
 
                     #adding in yas voters
                     for voters in range(3, yes_placement):
@@ -241,8 +244,9 @@ class OHBillScraper(BillScraper):
                             initials = 1
                         else:
                             legis = legis + info.split()[voters]
-
-                        vote.yes(legis)
+                        
+                        if initials < 1:
+                            vote.yes(legis)
                     
                     #adding in no voters
                     for voters in range(no_placement, len(info.split())):
@@ -257,10 +261,11 @@ class OHBillScraper(BillScraper):
                         else:
                             legis = legis + info.split()[voters]
 
-                        vote.no(legis)
-
+                        if initials < 1:
+                            vote.no(legis)
+                    
+                    #gets rid of blank votes
                     if yes_count > 0 or no_count > 0:
+                        vote.add_source(vote_url)
                         bill.add_vote(vote)   
 
-                        #print vote
-                        #print "\n\n" 
