@@ -26,7 +26,7 @@ class OHCommitteeScraper(CommitteeScraper):
         save_chamber = chamber
 
         #id range for senate committees on their website
-        for comm_id in range(87, 123):
+        for comm_id in range(87, 124):
 
             chamber = save_chamber
 
@@ -53,11 +53,29 @@ class OHCommitteeScraper(CommitteeScraper):
                     
                 committee.add_source(comm_url)
                 self.save_committee(committee)
-                #print "\n"
-                #print committee
-                #print "\n"
+                
 
 
     def scrape_senate_comm(self, chamber, year):
 
-        print "You are in the senate. This needs to be worked on"
+        committees = ["agriculture", "education", "energy-and-public-utilities", "environment-and-natural-resources", "finance-and-financial-institutions", "government-oversight", "health-human-services-and-aging", "highways-and-transportation", "insurance-commerce-and-labor", "judiciary-civil-justice", "judiciary-criminal-justice", "reference", "rules", "state-and-local-government-and-veterans-affairs", "ways-and-means-and-economic-development"]
+
+
+        for name in committees:
+            comm_url = 'http://www.ohiosenate.gov/committees/standing/detail/' + name + '.html'
+            with self.urlopen(comm_url) as page:
+                root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+
+                comm_name = name
+                comm_name = comm_name.replace("-", " ")
+                comm_name = name.capitalize()            
+                committee = Committee(chamber, comm_name)
+                committee.add_source(comm_url) 
+                
+
+                for el in root.xpath('//table/tr/td'):
+                    sen_name = el.xpath('string(a[@class="senatorLN"])')
+                    mark = sen_name.find('(')
+                    full_name = sen_name[0 : mark]
+                    committee.add_member(full_name)
+                self.save_committee(committee)
