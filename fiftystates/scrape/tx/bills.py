@@ -45,24 +45,6 @@ class TXBillScraper(BillScraper):
                         self.scrape_bill(chamber, session,
                                          urlparse.urljoin(bill_url, history))
 
-        if session in ['81R', '811']:
-            journal_root = urlparse.urljoin(
-                self._ftp_root, "/journals/" + session + "/html/", True)
-
-            if chamber == 'lower':
-                journal_root = urlparse.urljoin(journal_root,
-                                                'house/', True)
-            else:
-                journal_root = urlparse.urljoin(journal_root,
-                                                'senate/', True)
-
-            with self.urlopen(journal_root) as listing:
-                for name in parse_ftp_listing(listing):
-                    if not name.startswith('81'):
-                        continue
-                    url = urlparse.urljoin(journal_root, name)
-                    journal.parse(url, chamber, self)
-
     def scrape_bill(self, chamber, session, url):
         with self.urlopen(url) as data:
             bill = self.parse_bill_xml(chamber, session, data)
