@@ -126,6 +126,11 @@ class Bill(FiftystatesObject):
         :param date: the date/time this action was performed.
         """
 
+        if not 'type' in kwargs:
+            kwargs['type'] = ['other']
+        elif not isinstance(kwargs['type'], list):
+            kwargs['type'] = list(kwargs['type'])
+
         self['actions'].append(dict(actor=actor, action=action,
                                     date=date, **kwargs))
 
