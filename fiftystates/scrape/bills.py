@@ -126,7 +126,7 @@ class Bill(FiftystatesObject):
         :param date: the date/time this action was performed.
         """
 
-        if not 'type' in kwargs:
+        if not 'type' in kwargs or kwargs['type'] is None:
             kwargs['type'] = ['other']
         elif not isinstance(kwargs['type'], list):
             kwargs['type'] = list(kwargs['type'])
