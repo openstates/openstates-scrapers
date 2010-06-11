@@ -9,3 +9,6 @@ errors/*
 *.pid
 *.swp
 fabfile.py
+fiftystates.egg-info
+dist/
+MANIFEST
