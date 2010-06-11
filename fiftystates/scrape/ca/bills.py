@@ -1,3 +1,5 @@
+import re
+
 from fiftystates.scrape import NoDataForYear
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
@@ -73,7 +75,37 @@ class CABillScraper(BillScraper):
                     # unless it has some meaning I'm missing
                     continue
                 actor = action.actor or chamber
-                fsbill.add_action(actor, action.action, action.action_date)
+                actor = actor.strip()
+                match = re.match(r'(Assembly|Senate)($| \(Floor)', actor)
+                if match:
+                    actor = {'Assembly': 'lower',
+                             'Senate': 'upper'}[match.group(1)]
+                elif actor.startswith('Governor'):
+                    actor = 'executive'
+                else:
+                    actor = re.sub('^Assembly', 'lower', actor)
+                    actor = re.sub('^Senate', 'upper', actor)
+
+                type = []
+
+                act_str = action.action
+                if act_str.startswith('Introduced'):
+                    type.append('bill:introduced')
+
+                if 'To Com' in act_str:
+                    type.append('committee:referred')
+
+                if 'Read third time.  Passed.' in act_str:
+                    type.append('bill:passed')
+
+                if 'Approved by Governor' in act_str:
+                    type.append('bill:signed')
+
+                if 'Item veto' in act_str:
+                    type.append('veto:line-item')
+
+                fsbill.add_action(actor, act_str, action.action_date,
+                                  type=type)
 
             for vote in bill.votes:
                 if vote.vote_result == '(PASS)':
