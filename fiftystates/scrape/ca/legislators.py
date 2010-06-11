@@ -56,9 +56,9 @@ class CALegislatorScraper(LegislatorScraper):
 
             leg = Legislator(session, chamber, district,
                              legislator.legislator_name,
-                             legislator.first_name or 'None',
-                             legislator.last_name or 'None',
-                             legislator.middle_initial or '',
-                             party,
+                             first_name=legislator.first_name or '',
+                             last_name=legislator.last_name or '',
+                             middle_name=legislator.middle_initial or '',
+                             party=party,
                              suffix=legislator.name_suffix)
             self.save_legislator(leg)
