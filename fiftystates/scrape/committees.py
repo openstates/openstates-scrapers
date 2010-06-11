@@ -21,7 +21,8 @@ class CommitteeScraper(Scraper):
         """
         self.log("save_committeee: %s" % committee['name'])
 
-        filename = "%(chamber)s_%(name)s.json" % committee
+        filename = "%s_%s.json" % (committee['chamber'],
+                                   committee['name'].replace('/', ','))
 
         with open(os.path.join(self.output_dir, "committees", filename),
                   'w') as f:
