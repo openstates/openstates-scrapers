@@ -77,5 +77,6 @@ class OHCommitteeScraper(CommitteeScraper):
                     sen_name = el.xpath('string(a[@class="senatorLN"])')
                     mark = sen_name.find('(')
                     full_name = sen_name[0 : mark]
-                    committee.add_member(full_name)
+                    if len(full_name) != 0:
+                        committee.add_member(full_name)
                 self.save_committee(committee)
