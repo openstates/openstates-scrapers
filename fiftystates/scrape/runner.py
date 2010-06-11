@@ -25,39 +25,6 @@ class RunException(Exception):
         else:
             return self.msg
 
-def run_oldschool(state, years, chambers, options):
-    mod_name = "fiftystates.scrape.%s.get_legislation" % state
-    scraper_name = '%sLegislationScraper' % state.upper()
-    try:
-        mod = __import__(mod_name, fromlist=[scraper_name])
-        Scraper = getattr(mod, scraper_name)
-    except ImportError:
-        raise RunException("could not import %s" % mod_name)
-    except AttributeError:
-        raise RunException("could not import %sLegislationScraper"
-                           % state.upper())
-
-    scraper = Scraper(vars(options))
-
-    scraper.write_metadata()
-
-    for year in years:
-        try:
-            for chamber in chambers:
-                if options.bills:
-                    scraper.scrape_bills(chamber, year)
-                if options.legislators:
-                    scraper.scrape_legislators(chamber, year)
-                if options.committees:
-                    scraper.scrape_committees(chamber, year)
-                if options.votes:
-                    scraper.scrape_votes(chamber, year)
-        except NoDataForYear, e:
-            if options.all_years:
-                pass
-            else:
-                raise
-
 def _load_scraper(state, scraper_type):
     """
         state: lower case two letter abbreviation of state
@@ -169,8 +136,6 @@ def main():
                     help="don't use web page cache"),
         make_option('-r', '--rpm', action='store', type="int", dest='rpm',
                     default=60),
-        make_option('--old', action='store_true', dest='oldschool',
-                    help="run an old style scraper"),
     )
 
     parser = OptionParser(option_list=option_list)
@@ -233,10 +198,7 @@ def main():
         return 1
 
     try:
-        if options.oldschool:
-            run_oldschool(state, years, chambers, options)
-        else:
-            run(state, years, chambers, output_dir, options)
+        run(state, years, chambers, output_dir, options)
     except RunException, e:
         print 'Error:', e
         return 1
