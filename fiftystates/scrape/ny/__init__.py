@@ -8,6 +8,6 @@ metadata = dict(
   lower_chamber_title='Assembly Member',
   upper_chamber_term=2,
   lower_chamber_term=2,
-  sessions=[],
-  session_details={}
+  sessions=['2009-2010'],
+  session_details={'2009-2010': {'years': [2009, 2010]}}
 )
