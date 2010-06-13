@@ -1,5 +1,6 @@
 import lxml.html
 import datetime as dt
+from fiftystates.scrape import NoDataForYear
 
 from fiftystates.scrape.committees import CommitteeScraper, Committee
 
