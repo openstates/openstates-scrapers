@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-# ugly hack
-import sys
-sys.path.append('./scripts')
-from pyutils.legislation import Legislator
 from BeautifulSoup import BeautifulSoup
 from urlparse import urljoin
 import re
 from util import get_text
+
+from fiftystates.scrape.il import year2session
+from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 MEMBER_LIST_URL = {
     'upper': 'http://ilga.gov/senate/default.asp?GA=%s',
@@ -14,6 +13,22 @@ MEMBER_LIST_URL = {
 }
 
 MEMBER_ID_PATTERN = re.compile("^.*MemberID=(\d+).*$")
+
+class ILLegislatorScraper(LegislatorScraper):
+    state = 'il'
+
+    def scrape(self, chamber, year):
+        # Data available for 1993 on
+        try:
+            session = year2session[year]
+        except KeyError:
+            raise NoDataForYear(year)
+
+        url = get_legislator_url(chamber,session)
+        data = self.urlopen(url)
+
+        for legislator in get_legislators(chamber,session,data):
+            self.save_legislator(legislator)
 
 def get_legislator_url(chamber,session):
     """Produce a URL for a list of legislators for a given chamber/session.
@@ -72,7 +87,7 @@ def parse_legislator_row(chamber, session, row):
                                            last_name, middle_name,
                                            party, member_id=member_id,suffix=suffix,
                                            url=url)
-                                           
+
 def get_legislator_rows(data):
     s = BeautifulSoup(data)
     table = s("table")[3]

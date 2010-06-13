@@ -1,13 +1,82 @@
 # -*- coding: utf-8 -*-
 import re
 from urlparse import urljoin,urlsplit
-from pyutils.legislation import Bill, Vote
+
 from util import get_soup, get_text, elem_name, standardize_chamber
+import votes
+
+from fiftystates.scrape.il import year2session
+from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.votes import Vote
+
 
 BASE_LEGISLATION_URL = "http://ilga.gov/legislation/default.asp?GA=%s"
 
 TITLE_REMOVING_PATTERN = re.compile(".*(Rep|Sen). (.+)$")
 SPONSOR_PATTERN = re.compile("^(Added |Removed )?(.+Sponsor) (Rep|Sen). (.+)$")
+
+class ILBillScraper(BillScraper):
+
+    state = 'il'
+
+    def scrape(self, chamber, year):
+        try:
+            session = year2session[year]
+        except KeyError:
+            raise NoDataForYear(year)
+        urls = get_all_bill_urls(self, chamber,session,types=['HB','SB'])
+        for url in urls:
+            self._scrape_bill(url)
+
+    def _scrape_bill(self,url):
+        try:
+            bill = parse_bill(self, url)
+            self.apply_votes(bill)
+            self.save_bill(bill)
+        except Exception, e:
+            self.warning("Error parsing %s [%s] [%s]" % (url,e, type(e)))
+
+    def apply_votes(self, bill):
+        """Given a bill (and assuming it has a status_url in its dict), parse all of the votes
+        """
+        bill_votes = votes.all_votes_for_url(self, bill['status_url'])
+        for (chamber,vote_desc,pdf_url,these_votes) in bill_votes:
+            try:
+                date = vote_desc.split("-")[-1]
+            except IndexError:
+                self.warning("[%s] Couldn't get date out of [%s]" % (bill['bill_id'],vote_desc))
+                continue
+            yes_votes = []
+            no_votes = []
+            other_votes = []
+            for voter,vote in these_votes.iteritems():
+                if vote == 'Y': 
+                    yes_votes.append(voter)
+                elif vote == 'N': 
+                    no_votes.append(voter)
+                else:
+                    other_votes.append(voter)
+            passed = len(yes_votes) > len(no_votes) # not necessarily correct, but not sure where else to get it. maybe from pdf
+            vote = Vote(standardize_chamber(chamber),date,vote_desc,passed, len(yes_votes), len(no_votes), len(other_votes),pdf_url=pdf_url)
+            for voter in yes_votes:
+                vote.yes(voter)
+            for voter in no_votes:
+                vote.no(voter)
+            for voter in other_votes:
+                vote.other(voter)
+            bill.add_vote(vote)
+
+    def apply_votes_from_actions(self,bill):
+        """Not quite clear on how to connect actions to vote PDFs, so this may not be usable.
+        """
+        for action_dict in bill['actions']:
+            match = VOTE_ACTION_PATTERN.match(action_dict['action'])
+            if match:
+                motion,yes_count,no_count,other_count = match.groups()
+                passed = int(yes_count) > int(no_count) # lame assumption - can we analyze the text instead?
+                bill.add_vote(Vote(action_dict['actor'],action_dict['date'].strip(),motion.strip(),passed,int(yes_count),int(no_count),int(other_count)))
+
+
 def parse_bill(scraper, url):
     """Given a bill status URL, return a fully loaded Bill object, except for votes, which
        are expected to be handled externally.
