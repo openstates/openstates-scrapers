@@ -36,6 +36,8 @@ class HILegislatorScraper(LegislatorScraper):
 
 
     def scrape(self, chamber, year):
+        # All other years are stored in a pdf
+        # http://www.capitol.hawaii.gov/session2009/misc/statehood.pdf
         if int(year) != 2009:
             return
         
