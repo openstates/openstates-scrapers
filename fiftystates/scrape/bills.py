@@ -128,6 +128,8 @@ class Bill(FiftystatesObject):
 
         if not 'type' in kwargs or kwargs['type'] is None:
             kwargs['type'] = ['other']
+        elif isinstance(kwargs['type'], basestring):
+            kwargs['type'] = [kwargs['type']]
         elif not isinstance(kwargs['type'], list):
             kwargs['type'] = list(kwargs['type'])
 
