@@ -2,10 +2,36 @@ from fiftystates.scrape import ScrapeError, NoDataForYear
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.bills import BillScraper, Bill
 
-import re, string
+import lxml.html
+import re, string, contextlib
 import datetime as dt
 
 class WABillScraper(BillScraper):
+    state = 'wa'
+    
+    @contextlib.contextmanager
+    def lxml_context(self, url, sep=None, sep_after=True):
+        try:
+            body = self.urlopen(url)
+        except:
+            body = self.urlopen("http://www.google.com")
+        
+        if sep != None: 
+            if sep_after == True:
+                before, itself, body = body.rpartition(sep)
+            else:
+                body, itself, after = body.rpartition(sep)    
+        
+        elem = lxml.html.fromstring(body)
+        
+        try:
+            yield elem
+        except:
+            raise
+    
+    def clean_string(self, s):
+        return re.sub('[^0-9]', '', s)
+
     def scrape_year(self, year, chamber):    
         
         sep = '<h1>House</h1>'
@@ -61,7 +87,7 @@ class WABillScraper(BillScraper):
                                 with self.lxml_context(url) as vote_page:
                                     self.scrape_votes(vote_page, bill, url)
                                     
-                        self.add_bill(bill)
+                        self.save_bill(bill)
                         
     def scrape_votes(self, vote_page, bill, url): 
         date_match = re.search("[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}", vote_page.text_content())
@@ -163,7 +189,7 @@ class WABillScraper(BillScraper):
             bill.add_action('upper', action_text.text_content(), dt.datetime.strptime(str(month) + '/' + day + '/' + str(current_year), '%m/%d/%Y'))
     
     
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         if (year < 2005):
             raise NoDataForYear(year)
 
