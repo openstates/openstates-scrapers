@@ -1,4 +1,5 @@
 import re
+import datetime as dt
 
 from fiftystates.scrape import NoDataForYear
 from fiftystates.scrape.bills import BillScraper, Bill
@@ -10,6 +11,10 @@ from fiftystates.scrape.pa.utils import (bill_abbr, start_year,
                                          vote_url)
 
 from BeautifulSoup import BeautifulSoup
+
+
+def action_type(action):
+    return 'other'
 
 
 class PABillScraper(BillScraper):
@@ -34,14 +39,12 @@ class PABillScraper(BillScraper):
 
     def scrape_session(self, chamber, session, special=0):
         session_url = bill_list_url(chamber, session, special)
-        print session_url
         
         with self.urlopen(session_url) as bill_list_page:
             bill_list_page = BeautifulSoup(bill_list_page)
             bill_link_re = "body=%s&type=(B|R)&bn=\d+" % bill_abbr(chamber)
 
             for link in bill_list_page.findAll(href=re.compile(bill_link_re)):
-                print link
                 self.parse_bill(chamber, session, special, link)
 
     def parse_bill(self, chamber, session, special, link):
@@ -51,7 +54,8 @@ class PABillScraper(BillScraper):
 
         bill_info_url = info_url(chamber, session, special, type, bill_number)
 
-        with self.soup_context(bill_info_url) as info_page:
+        with self.urlopen(bill_info_url) as info_page:
+            info_page = BeautifulSoup(info_page)
             title_label = info_page.find(text='Short Title:')
             title = title_label.findNext().contents[0]
 
@@ -87,7 +91,8 @@ class PABillScraper(BillScraper):
         the url to its history page.
         """
         bill.add_source(url)
-        with self.soup_context(url) as history_page:
+        with self.urlopen(url) as history_page:
+            history_page = BeautifulSoup(history_page)
             self.parse_sponsors(bill, history_page)
             self.parse_actions(bill, history_page)
 
@@ -134,8 +139,10 @@ class PABillScraper(BillScraper):
 
             if act_match:
                 date = parse_action_date(act_match.group(2).strip())
-                bill.add_action(act_chamber, act_match.group(1),
-                                date)
+                action = act_match.group(1).strip()
+                type = action_type(action)
+                bill.add_action(act_chamber, action, date,
+                                type=type)
             else:
                 # Handle actions from the other chamber
                 # ("In the (House|Senate)" row followed by actions that
@@ -156,7 +163,8 @@ class PABillScraper(BillScraper):
         votes page.
         """
         bill.add_source(url)
-        with self.soup_context(url) as votes_page:
+        with self.urlopen(url) as votes_page:
+            votes_page = BeautifulSoup(votes_page)
             for td in votes_page.findAll('td', {'class': 'vote'}):
                 prev = td.findPrevious().contents[0].strip()
                 if prev == 'Senate':
@@ -178,7 +186,8 @@ class PABillScraper(BillScraper):
         Grab all votes for a bill that occurred in a given chamber.
         """
         bill.add_source(url)
-        with self.soup_context(url) as chamber_votes_page:
+        with self.urlopen(url) as chamber_votes_page:
+            chamber_votes_page = BeautifulSoup(chamber_votes_page)
             for link in chamber_votes_page.findAll(
                 'a', href=re.compile('rc_view')):
 
@@ -197,7 +206,8 @@ class PABillScraper(BillScraper):
             return vote_page.findAll('span', {'class': 'font8text'},
                                      text=letter)
 
-        with self.soup_context(url) as vote_page:
+        with self.urlopen(url) as vote_page:
+            vote_page = BeautifulSoup(vote_page)
             header = vote_page.find('div', {'class': 'subHdrGraphic'})
 
             if 'Senate' in header.string:

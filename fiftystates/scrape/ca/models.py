@@ -1,24 +1,10 @@
-#!/usr/bin/env python
-from sqlalchemy.sql import and_
 from sqlalchemy import (Table, Column, Integer, String, ForeignKey,
-                        DateTime, Text, Numeric, desc, create_engine,
-                        UnicodeText)
-from sqlalchemy.orm import sessionmaker, relation, backref
+                        DateTime, Numeric, desc, UnicodeText)
+from sqlalchemy.sql import and_
+from sqlalchemy.orm import backref, relation
 from sqlalchemy.ext.declarative import declarative_base
-import datetime as dt
-from cStringIO import StringIO
+
 from lxml import etree
-import re
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 NoDataForYear)
-
-# Code for handling California's legislative info SQL dumps
-# You can grab them from http://www.leginfo.ca.gov/FTProtocol.html
-# Requires SQLAlchemy (tested w/ 0.5.3) and lxml
 
 Base = declarative_base()
 
@@ -78,7 +64,7 @@ class CABillVersion(Base):
     @property
     def xml(self):
         if not '_xml' in self.__dict__:
-            self._xml = etree.fromstring(self.bill_xml.encode('utf-8'),
+            self._xml = etree.fromstring(self.bill_xml,
                                          etree.XMLParser(recover=True))
         return self._xml
 
@@ -259,168 +245,3 @@ class CAVoteDetail(Base):
                          CAVoteSummary.vote_date_seq == vote_date_seq,
                          CAVoteSummary.motion_id == motion_id),
         backref=backref('votes'))
-
-
-class CASQLImporter(LegislationScraper):
-
-    state = 'ca'
-
-    # TODO: Grab sessions/sub_sessions programmatically from the site
-    metadata = {'state_name': 'California',
-                'legislature_name': 'California State Legislature',
-                'lower_chamber_name': 'Assembly',
-                'upper_chamber_name': 'Senate',
-                'lower_title': 'Assemblymember',
-                'upper_title': 'Senator',
-                'lower_term': 3,
-                'upper_term': 4,
-                'sessions': ['19931994', '19951996', '19971998',
-                             '19992000', '20012002', '20032004',
-                             '20052006', '20072008', '20092010'],
-                'session_details':
-                {'19931994': {'years': [1993, 1994], 'sub_sessions': []},
-                 '19951996': {'years': [1995, 1996], 'sub_sessions': []},
-                 '19971998': {'years': [1997, 1998], 'sub_sessions': []},
-                 '19992000': {'years': [1999, 2000], 'sub_sessions': []},
-                 '20012002': {'years': [2001, 2002], 'sub_sessions': []},
-                 '20032004': {'years': [2003, 2004], 'sub_sessions': []},
-                 '20052006': {'years': [2005, 2006], 'sub_sessions': []},
-                 '20072008': {'years': [2007, 2008], 'sub_sessions': []},
-                 '20092010': {'years': [2009, 2010],
-                              'sub_sessions': ['20092010 Special Session 1',
-                                               '20092010 Special Session 2',
-                                               '20092010 Special Session 3',
-                                               '20092010 Special Session 4',
-                                               '20092010 Special Session 5',
-                                               '20092010 Special Session 6',
-                                               '20092010 Special Session 7',
-                                               ]}}}
-
-    def __init__(self, host, user, pw, db='capublic'):
-        self.engine = create_engine('mysql://%s:%s@%s/%s?charset=utf8' % (
-                user, pw, host, db))
-        self.Session = sessionmaker(bind=self.engine)
-        self.session = self.Session()
-
-    def scrape_legislators(self, chamber, year):
-        session = "%s%d" % (year, int(year) + 1)
-        if not session in self.metadata['sessions']:
-            raise NoDataForYear(year)
-
-        if chamber == 'upper':
-            house_type = 'S'
-        else:
-            house_type = 'A'
-
-        legislators = self.session.query(CALegislator).filter_by(
-            session_year=session).filter_by(
-            house_type=house_type)
-
-        for legislator in legislators:
-            if legislator.legislator_name.endswith('Vacancy'):
-                continue
-
-            district = legislator.district[2:].lstrip('0')
-            party = legislator.party
-
-            if party == 'DEM':
-                party = 'Democrat'
-            elif party == 'REP':
-                party = 'Republican'
-
-            leg = Legislator(session, chamber, district,
-                             legislator.legislator_name,
-                             legislator.first_name or 'None',
-                             legislator.last_name or 'None',
-                             legislator.middle_initial or '',
-                             party,
-                             suffix=legislator.name_suffix)
-            self.save_legislator(leg)
-
-    def scrape_bills(self, chamber, year):
-        session = "%s%d" % (year, int(year) + 1)
-        if not session in self.metadata['sessions']:
-            raise NoDataForYear(year)
-
-        if chamber == 'upper':
-            measure_abbr = 'SB'
-            chamber_name = 'SENATE'
-            house_type = 'S'
-        else:
-            measure_abbr = 'AB'
-            chamber_name = 'ASSEMBLY'
-            house_type = 'A'
-
-        bills = self.session.query(CABill).filter_by(
-            session_year=session).filter_by(
-            measure_type=measure_abbr)
-
-        for bill in bills:
-            bill_session = session
-            if bill.session_num != '0':
-                bill_session += ' Special Session %s' % bill.session_num
-
-            bill_id = bill.short_bill_id
-            version = self.session.query(CABillVersion).filter_by(
-                bill=bill).filter(CABillVersion.bill_xml != None).first()
-            if not version:
-                # not enough data to import
-                continue
-
-            fsbill = Bill(bill_session, chamber, bill_id,
-                          version.title,
-                          short_title=version.short_title)
-
-            for author in version.authors:
-                if author.house == chamber_name:
-                    fsbill.add_sponsor(author.contribution, author.name)
-
-            for action in bill.actions:
-                if not action.action:
-                    # NULL action text seems to be an error on CA's part,
-                    # unless it has some meaning I'm missing
-                    continue
-                actor = action.actor or chamber
-                fsbill.add_action(actor, action.action, action.action_date)
-
-            for vote in bill.votes:
-                if vote.vote_result == '(PASS)':
-                    result = True
-                else:
-                    result = False
-
-                full_loc = vote.location.description
-                first_part = full_loc.split(' ')[0].lower()
-                if first_part in ['asm', 'assembly']:
-                    vote_chamber = 'lower'
-                    vote_location = ' '.join(full_loc.split(' ')[1:])
-                elif first_part.startswith('sen'):
-                    vote_chamber = 'upper'
-                    vote_location = ' '.join(full_loc.split(' ')[1:])
-                else:
-                    vote_chamber = ''
-                    vote_location = full_loc
-
-                fsvote = Vote(vote_chamber,
-                              vote.vote_date_time,
-                              vote.motion.motion_text or '',
-                              result,
-                              vote.ayes, vote.noes, vote.abstain,
-                              threshold=vote.threshold,
-                              location=vote_location)
-
-                for record in vote.votes:
-                    if record.vote_code == 'AYE':
-                        fsvote.yes(record.legislator_name)
-                    elif record.vote_code.startswith('NO'):
-                        fsvote.no(record.legislator_name)
-                    else:
-                        fsvote.other(record.legislator_name)
-
-                fsbill.add_vote(fsvote)
-
-            self.save_bill(fsbill)
-
-
-if __name__ == '__main__':
-    CASQLImporter('localhost', 'USER', 'PASSWORD').run()

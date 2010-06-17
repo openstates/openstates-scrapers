@@ -86,9 +86,8 @@ Response will be an object with the following fields:
 	* ``full_name``: The name of the sponsor
 	* ``type``: The type of sponsorship (state specific, examples include 'Primary Sponsor', 'Co-Sponsor')
 
-* ``votes``: A list of votes relating to this bill. Individual roll call results are not included inline, see :ref:`vote lookup <vote-lookup>` if you would like that data. Each vote will be an object with at least the following fields:
+* ``votes``: A list of votes relating to this bill. Each vote will be an object with at least the following fields:
 
-	* ``vote_id``: A permanent, unique identifier for this vote that can be used to grab more information.
 	* ``date``: The date/time the vote was taken
 	* ``chamber``: The chamber that the vote was taken in
 	* ``motion``: The motion being voted on
@@ -198,33 +197,6 @@ Example::
 Result will be a list of objects, each containing the same fields returned by :ref:`legislator lookup <leg-lookup>`. If no matching legislators are found, will return an empty list.
 
 .. _vote-lookup:
-
-Vote Lookup
------------
-
-If you have the Fifty State Project ``vote_id`` of a specific vote, you can lookup more information using this call.
-
-URL Format::
-
-	http://fiftystates-dev.sunlightlabs.com/api/votes/:VOTE-ID:/?apikey=YOUR_API_KEY
-
-Example::
-
-	http://fiftystates-dev.sunlightlabs.com/api/votes/105/?apikey=YOUR_API_KEY
-
-Response will be a single object with at least the following fields:
-
-* ``vote_id``: A permanent, unique identifier for this vote that can be used to grab more information.
-* ``date``: The date/time the vote was taken
-* ``chamber``: The chamber that the vote was taken in
-* ``motion``: The motion being voted on
-* ``yes_count``, ``no_count``, ``other_count``: The number of 'yes', 'no', and other votes
-* ``passed``: Whether or not the vote passed
-* ``roll``: A list of roll call votes, if available. Each object will have at least the following fields:
-
-	* ``leg_id``: The Fifty State Project legislator ID of a voting legislator.
-	* ``full_name``: The name of the legislator
-	* ``type``: The way the legislator voted, e.g. 'yes', 'no', 'absent', 'other'
 
 District Lookup
 ---------------

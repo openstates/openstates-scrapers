@@ -18,21 +18,27 @@ SOURCE_SRS = 4269
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        try:
-            abbrev = args[0].lower()
-        except IndexError:
-            print "Please provide a state to import"
-            sys.exit(1)
+        if len(args):
+            for arg in args:
+                abbrev = arg.lower()
+                num = None
+                for n, s in state_nums.iteritems():
+                    if s == abbrev:
+                        num = n
+                        break
+                if num is None:
+                    print "Could not find census state number for %s" % args[0]
+                    sys.exit(1)
 
-        num = None
-        for n, s in state_nums.iteritems():
-            if s == abbrev:
-                num = n
-                break
-        if num is None:
-            print "Could not find census state number for %s" % args[0]
-            sys.exit(1)
+                import_state(num)
+        else:
+            print "Importing All States..."
+            for n in state_nums:
+                print state_nums[n]
+                self.import_state(n)
+            sys.exit(0)
 
+    def import_state(self, num):
         for chamber, mapping in {'su': upper_district_mapping,
                                  'sl': lower_district_mapping}.items():
             path = os.path.abspath(os.path.join(
@@ -46,10 +52,13 @@ class Command(BaseCommand):
                              source_srs=SOURCE_SRS,
                              transform=True).save(strict=True)
             except:
-                self.download_state_shapefiles(path, num)
-                LayerMapping(District, path, mapping,
-                             source_srs=SOURCE_SRS,
-                             transform=True).save(strict=True)
+                try:
+                    self.download_state_shapefiles(path, num)
+                    LayerMapping(District, path, mapping,
+                                 source_srs=SOURCE_SRS,
+                                 transform=True).save(strict=True)
+                except:
+                    print 'error importing %s' % path
 
     def download_state_shapefiles(self, path, num):
         for chamber in ('su', 'sl'):

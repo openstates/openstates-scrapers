@@ -46,7 +46,7 @@ def import_nimsp_ids(state_abbrev):
 
         # NIMSP is picky about name format
         name = leg['last_name']
-        if leg['suffix']:
+        if 'suffix' in leg and leg['suffix']:
             name += " " + leg['suffix'].replace(".", "")
         name += ", " + leg['first_name'].replace(".", "")
 
