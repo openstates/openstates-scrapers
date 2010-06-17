@@ -70,7 +70,8 @@ class LALegislatorScraper(LegislatorScraper):
         for i in range(1, 106):
             leg_url = "http://house.louisiana.gov/H_Reps/members.asp?ID=%d" % i
 
-            with self.soup_context(leg_url) as legislator:
+            with self.urlopen(leg_url) as legislator:
+                legislator = BeautifulSoup(legislator)
                 aleg = self.unescape(unicode(legislator))
 
                 name = re.findall(
