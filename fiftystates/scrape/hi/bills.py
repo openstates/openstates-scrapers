@@ -53,7 +53,8 @@ class HIBillScraper(BillScraper):
                 if re.search("billtype=" + type + "&billnumber=[0-9]+", link) != None:
                     bill_page_url = "http://www.capitol.hawaii.gov/session2009/lists/" + link
                     with self.lxml_context(bill_page_url) as bill_page:
-                        bill_id = bill_page.get_element_by_id("LinkButtonMeasure")
+                        bill_id = bill_page.cssselect('a[class="headerlink"]')
+                        bill_id = bill_id[0]
                         print bill_id.text_content()
                         #bill = Bill(session, chamber, )
             
