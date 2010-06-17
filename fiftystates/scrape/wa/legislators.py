@@ -2,12 +2,21 @@ from fiftystates.scrape import ScrapeError, NoDataForYear
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
-import contextlib
-import re, string
+import re, string, contextlib
 
 class WALegislatorScraper(LegislatorScraper):
     state = 'wa'
     
+    def scrape(self, chamber, year):
+            if year != '2009':
+                raise NoDataForYear(year)
+
+            if chamber == 'upper':
+                self.scrape_legislator_data("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx", 'upper')
+
+            else:
+                self.scrape_legislator_data("http://www.leg.wa.gov/house/representatives/Pages/default.aspx", 'lower')
+                       
     @contextlib.contextmanager
     def lxml_context(self, url, sep=None, sep_after=True):
         try:
@@ -96,14 +105,5 @@ class WALegislatorScraper(LegislatorScraper):
                     legislator.add_source(legislator_page_url)
                     self.add_legislator(legislator)
         
-        def scrape_legislators(self, chamber, year):
-            if year != '2009':
-                raise NoDataForYear(year)
-
-            if chamber == 'upper':
-                self.scrape_legislator_data("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx", 'upper')
-
-            else:
-                self.scrape_legislator_data("http://www.leg.wa.gov/house/representatives/Pages/default.aspx", 'lower')
-                     
+        
 
