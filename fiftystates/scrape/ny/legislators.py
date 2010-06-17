@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from votesmart import votesmart, VotesmartApiError
-from django.conf import settings
+from fiftystates import settings
 
 votesmart.apikey = settings.VOTESMART_API_KEY
 
