@@ -64,6 +64,28 @@ class HIBillScraper(BillScraper):
                         bill = Bill(session, chamber, bill_id, bill_title)
                         bill.add_source(bill_page_url)
                         
+                        actions_table_list = bill_page.cssselect('table[rules="all"]')
+                        actions_table = actions_table_list[0]
+                        action_elements = actions_table.cssselect('tr')
+                        for ae in action_elements:
+                            action_element_parts = ae.cssselect('td')
+                            action_date = action_element_parts[0]
+                            actor_house = action_element_parts[1]
+                            action_text = action_element_parts[2]
+                            
+                            match = re.search("committee(\(s\))? on [A-Z]{3}((/|-)[A-Z]{3})?", action_text)
+                            
+                            if(match != None):
+                                print match.group(0)
+                            elif(actor_house == 'D'):
+                                pass
+                            elif (actor_house == 'S'):
+                                pass
+                            else:
+                                pass
+                                                           
+                            #bill.add_action(actor, action_text, dt.datetime.strptime(action_date, '%m/%d/%Y'))
+                        
                         versions_page_url = "http://www.capitol.hawaii.gov/session2009/getstatus.asp?query=" \
                          + type + bill_number + "&showtext=on&currpage=1"
                          
@@ -73,7 +95,6 @@ class HIBillScraper(BillScraper):
                                 element_text = ve.text_content()
                                 bill_version_url = "http://www.capitol.hawaii.gov/session2009/Bills/" + element_text
                                 version_name = element_text.rstrip("_.HTM")
-                                print version_name
                                 bill.add_version(version_name, bill_version_url)
                             
             
