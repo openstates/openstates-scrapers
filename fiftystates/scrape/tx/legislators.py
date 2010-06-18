@@ -63,7 +63,7 @@ class TXLegislatorScraper(LegislatorScraper):
 
             for br in comm_div.xpath('*/br'):
                 if br.tail:
-                    leg.add_role('committee member', '81', chamber,
+                    leg.add_role('committee member', '81', chamber=chamber,
                                  committee=br.tail.strip())
 
             self.save_legislator(leg)
