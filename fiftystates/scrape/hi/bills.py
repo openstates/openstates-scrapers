@@ -53,10 +53,29 @@ class HIBillScraper(BillScraper):
                 if re.search("billtype=" + type + "&billnumber=[0-9]+", link) != None:
                     bill_page_url = "http://www.capitol.hawaii.gov/session2009/lists/" + link
                     with self.lxml_context(bill_page_url) as bill_page:
+                        splitted_link = link.split("=")
+                        bill_number = splitted_link[-1]
                         bill_id = bill_page.cssselect('a[class="headerlink"]')
                         bill_id = bill_id[0]
-                        print bill_id.text_content()
-                        #bill = Bill(session, chamber, )
+                        bill_id = bill_id.text_content()
+                        bill_title = bill_page.cssselect('td[style="color:Black"]')
+                        bill_title = bill_title[0]
+                        bill_title = bill_title.text_content()
+                        bill = Bill(session, chamber, bill_id, bill_title)
+                        bill.add_source(bill_page_url)
+                        
+                        versions_page_url = "http://www.capitol.hawaii.gov/session2009/getstatus.asp?query=" \
+                         + type + bill_number + "&showtext=on&currpage=1"
+                         
+                        with self.lxml_context(versions_page_url) as versions_page:
+                            versions_elements = versions_page.cssselect('span[class="searchtitle"]')
+                            for ve in versions_elements:
+                                element_text = ve.text_content()
+                                bill_version_url = "http://www.capitol.hawaii.gov/session2009/Bills/" + element_text
+                                version_name = element_text.rstrip("_.HTM")
+                                print version_name
+                                bill.add_version(version_name, bill_version_url)
+                            
             
 
     def scrape_session_old(self, chamber, session):
