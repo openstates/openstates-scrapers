@@ -25,12 +25,12 @@ class NVLegislatorScraper(LegislatorScraper):
             raise NoDataForYear(year)
 
         if chamber == 'upper':
-            self.scrape_senators(chamber, session, year)
+            self.scrape_legislators(chamber, session, year)
         elif chamber == 'lower':
-            self.scrape_assemb(chamber, session, year)
+            self.scrape_legislators(chamber, session, year)
 
 
-    def scrape_senators(self, chamber, session, year):
+    def scrape_legislators(self, chamber, session, year):
        
         sessionsuffix = 'th'
         if str(session)[-1] == '1':
@@ -41,13 +41,19 @@ class NVLegislatorScraper(LegislatorScraper):
             sessionsuffix = 'rd'
 
         insert = str(session) + sessionsuffix + str(year)
-        sen_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/legislators/Senators/slist.cfm'
         
-        with self.urlopen(sen_url) as page:
+        if chamber == 'upper':        
+            leg_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/legislators/Senators/slist.cfm'
+            n = 22
+        elif chamber == 'lower':
+            leg_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/legislators/Assembly/alist.cfm'
+            n = 43
+
+        with self.urlopen(leg_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())        
 
-            #There are 21 districts currently
-            for numdistricts in range(1, 22):
+            #Going through the districts
+            for numdistricts in range(1, n):
                 namepath = 'string(/html/body/table[%s]/tr/td/table[1]/tr/td[2]/font/a)' % (numdistricts + 2)
                 last_name = root.xpath(namepath).split()[0]
                 last_name = last_name[0 : len(last_name) - 1]
@@ -81,9 +87,7 @@ class NVLegislatorScraper(LegislatorScraper):
                 address = address
                 
                 leg = Legislator(session, chamber, district, full_name, first_name, last_name, middle_name, party, end_date = end_date, email = email, address = address)
-                leg.add_source(sen_url)
+                leg.add_source(leg_url)
                 self.save_legislator(leg)
 
 
-    def scrape_assemb(self, chamber, session, year):
-        print "In Assembly"
