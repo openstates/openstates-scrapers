@@ -58,6 +58,9 @@ class MECommitteeScraper(CommitteeScraper):
     def scrape_senate_comm(self, chamber, session):
         #print "Need to be worked on"
         
+        senurl = ' http://www.maine.gov/legis/senate/senators/bios/bio%ss.htm'
+        
+
         #works on joint legislation
         self.scrape_joint_comm(chamber, session)
 
@@ -114,9 +117,4 @@ class MECommitteeScraper(CommitteeScraper):
                
             self.save_committee(committee) 
                             
-             
-                  
-        
-
-
 
