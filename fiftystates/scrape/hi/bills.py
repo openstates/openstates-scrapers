@@ -67,24 +67,28 @@ class HIBillScraper(BillScraper):
                         actions_table_list = bill_page.cssselect('table[rules="all"]')
                         actions_table = actions_table_list[0]
                         action_elements = actions_table.cssselect('tr')
+                        # first element is not an action element
+                        action_elements.pop(0)
                         for ae in action_elements:
                             action_element_parts = ae.cssselect('td')
+                            
                             action_date = action_element_parts[0]
                             actor_house = action_element_parts[1]
                             action_text = action_element_parts[2]
                             
-                            match = re.search("committee(\(s\))? on [A-Z]{3}((/|-)[A-Z]{3})?", action_text)
-                            
+                            # look for acting comittes
+                            match = re.search("(committee\(s\)|committee) on ([A-Z]{3}(/|-)[A-Z]{3}|[A-Z]{3})", action_text.text_content())
+    
                             if(match != None):
-                                print match.group(0)
-                            elif(actor_house == 'D'):
-                                pass
+                                actor = match.group(0)
+                            elif(actor_house == 'H'):
+                                actor = "lower"
                             elif (actor_house == 'S'):
-                                pass
+                                actor = "upper"
                             else:
-                                pass
-                                                           
-                            #bill.add_action(actor, action_text, dt.datetime.strptime(action_date, '%m/%d/%Y'))
+                                actor = chamber
+#                                                           
+                            bill.add_action(actor, action_text, dt.datetime.strptime(action_date.text_content(), '%m/%d/%Y'))
                         
                         versions_page_url = "http://www.capitol.hawaii.gov/session2009/getstatus.asp?query=" \
                          + type + bill_number + "&showtext=on&currpage=1"
