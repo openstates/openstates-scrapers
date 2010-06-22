@@ -66,7 +66,10 @@ class NVCommitteeScraper(CommitteeScraper):
                 print "\n"
             
     def scrape_assem_comm(self, chamber, insert, year):
+
         
+        self.scrape_comm( chamber, insert)
+
         committees = ['CMC', 'CPP', 'ED', 'EPE', 'GA', 'HH', 'JUD', 'NR', 'tax', 'TRN', 'WM']
 
         for committee in committees:
@@ -117,5 +120,19 @@ class NVCommitteeScraper(CommitteeScraper):
                         role = 'member'
                     comm.add_member(name, role = role)
                 comm.add_source(leg_url)
-                self.save_committee(comm)
+                #self.save_committee(comm)
              
+
+    def scrape_comm(self, chamber, insert):
+       leg_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/Committees/S_Committees/'
+       
+       committees = []
+
+       with self.urlopen(leg_url) as page:
+            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+            for mr in root.xpath('/html/body/div[@id="content"]/table/tr/td/font/b/a'):
+                web_end = mr.xpath('string(@href)')
+                committees.append(web_end)
+
+       print committees            
+    
