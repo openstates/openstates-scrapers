@@ -1,4 +1,5 @@
 metadata = dict(
+<<<<<<< HEAD
     name='New York',
     abbreviation='ny',
     legislature_name='New York Legislature',
