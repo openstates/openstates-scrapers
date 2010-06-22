@@ -76,7 +76,7 @@ class HIBillScraper(BillScraper):
                             actor_house = action_element_parts[1]
                             action_text = action_element_parts[2]
                             
-                            # look for acting comittes
+                            # look for acting comittees
                             match = re.search("(committee\(s\)|committee) on ([A-Z]{3}(/|-)[A-Z]{3}|[A-Z]{3})", action_text.text_content())
     
                             if(match != None):
@@ -87,7 +87,28 @@ class HIBillScraper(BillScraper):
                                 actor = "upper"
                             else:
                                 actor = chamber
-#                                                           
+                                
+                            if (re.search("The votes were as follows", action_text.text_content()) != None):
+                                votes_parts = action_text.text_content().split(";")
+                                print action_text.text_content()
+                                
+                                votes = {"Ayes":0, "Ayes with reservations":0, "Noes":0, "Excused":0}
+                                
+                                numbers = [0, 0, 0, 0]
+                                
+                                for i, t in enumerate(votes_parts):
+                                    match = re.search("[0-9]+", t)
+                                    if (match != None):
+                                        numbers[i] = match.group(0)
+                                
+                                for n in numbers:
+                                    print n
+                                
+                              
+                                
+                                
+                                
+                                                           
                             bill.add_action(actor, action_text, dt.datetime.strptime(action_date.text_content(), '%m/%d/%Y'))
                         
                         versions_page_url = "http://www.capitol.hawaii.gov/session2009/getstatus.asp?query=" \
