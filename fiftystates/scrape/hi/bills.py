@@ -90,19 +90,29 @@ class HIBillScraper(BillScraper):
                                 
                             if (re.search("The votes were as follows", action_text.text_content()) != None):
                                 votes_parts = action_text.text_content().split(";")
-                                print action_text.text_content()
+                                voters = []
+                                
+                                for vp in votes_parts:
+                                    before, sep, after = vp.partition("(s)")
+                                    voters_list = after.split(", ")
+                                    voters_list[0] = voters_list[0].lstrip(" ")
+                                    voters_list[-1] = voters_list[-1].rstrip(". ")                          
+                                    voters.append(voters_list)
+                                    
+                                for v in voters:
+                                    print len(v)
+                                    print v
+                                
                                 
                                 votes = {"Ayes":0, "Ayes with reservations":0, "Noes":0, "Excused":0}
                                 
-                                numbers = [0, 0, 0, 0]
+                                vote_counts = [0, 0, 0, 0]
                                 
                                 for i, t in enumerate(votes_parts):
                                     match = re.search("[0-9]+", t)
                                     if (match != None):
-                                        numbers[i] = match.group(0)
+                                        vote_counts[i] = match.group(0)
                                 
-                                for n in numbers:
-                                    print n
                                 
                               
                                 
