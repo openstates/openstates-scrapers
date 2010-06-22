@@ -34,32 +34,56 @@ class NVCommitteeScraper(CommitteeScraper):
 
 
         if chamber == 'upper':
-            self.scrape_senate_comm(chamber, session, year, insert)
+            self.scrape_senate_comm(chamber, insert)
         elif chamber == 'lower':
-            self.scrape_assem_comm(chamber, session, year, insert)
+            self.scrape_assem_comm(chamber, insert)
 
 
-    def scrape_senate_comm(self, chamber, session, year, insert):
-        print "In the senate"
+    def scrape_senate_comm(self, chamber, insert):
 
-
-    def scrape_assem_comm(self, chamber, session, year, insert):
-        
-        committees = ['CMC', 'COW', 'CPP', 'ED', 'EPE', 'GA', 'HH', 'JUD', 'NR', 'tax', 'TRN', 'WM']
+        committees = ['CL', 'TRN', 'FIN', 'GA', 'HR', 'JUD', 'LA', 'NR', 'TAX']
 
         for committee in committees:
-            assem_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/Committees/A_Committees/' + committee  + '.cfm' 
+            leg_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/Committees/S_Committees/' + committee  + '.cfm'
 
-            with self.urlopen(assem_url) as page:
+            with self.urlopen(leg_url) as page:
                 root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
-                comm_name = root.xpath('string(/html/body/div[@id="content"]/h1)')
-                comm_name = comm_name[0: len(comm_name) - 22]
+                comm_name = root.xpath('string(/html/body/div[@id="content"]/center/h2)')
+                if committee == 'NR':
+                    comm_name = root.xpath('string(/html/body/div[@id="content"]/h2/center)')
+                comm_name = comm_name[7: len(comm_name) - 22]
                 comm = Committee(chamber, comm_name)
 
                 for mr in root.xpath('/html/body/div[@id="content"]/ul/li'):
                     name = mr.xpath('string(a)')
                     name = name.strip()
                     comm.add_member(name)
-                comm.add_source(assem_url)
+                comm.add_source(leg_url)
+                self.save_committee(comm)
+
+
+    def scrape_assem_comm(self, chamber, insert):
+        
+        committees = ['CMC', 'CPP', 'ED', 'EPE', 'GA', 'HH', 'JUD', 'NR', 'tax', 'TRN', 'WM']
+
+        for committee in committees:
+            leg_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/Committees/A_Committees/' + committee  + '.cfm' 
+
+            with self.urlopen(leg_url) as page:
+                root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+
+                comm_name = root.xpath('string(/html/body/div[@id="content"]/h1)')
+                comm_name = comm_name[0: len(comm_name) - 22]
+                if committee == 'EPE':
+                    comm_name = 'Elections, Procedures, Ethics, and Constitutional Amendments'
+                if comm_name.split()[0] == 'Assembly':
+                    comm_name = comm_name[9: len(comm_name)]
+                comm = Committee(chamber, comm_name)
+
+                for mr in root.xpath('/html/body/div[@id="content"]/ul/li'):
+                    name = mr.xpath('string(a)')
+                    name = name.strip()
+                    comm.add_member(name)
+                comm.add_source(leg_url)
                 self.save_committee(comm)
