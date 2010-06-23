@@ -75,7 +75,8 @@ class LALegislatorScraper(LegislatorScraper):
                 aleg = self.unescape(unicode(legislator))
 
                 name = re.findall(
-                    r'Representative ([\w\s\.\,\"\-]+)\s*<br', aleg)[0].strip()
+                    r'Representative ([\w\s\.\,\"\-\']+)\s*<br',
+                    aleg)[0].strip()
 
                 party, district = re.findall(
                     r'(\w+)\s*District\s*(\d+)', aleg)[0]
