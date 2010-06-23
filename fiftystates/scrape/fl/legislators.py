@@ -11,7 +11,10 @@ class FLLegislatorScraper(LegislatorScraper):
     state = 'fl'
 
     def scrape(self, chamber, year):
-        if year not in metadata['session_details']:
+        for session in metadata['sessions']:
+            if session['start_year'] <= int(year) <= session['end_year']:
+                break
+        else:
             raise NoDataForYear(year)
 
         if chamber == 'upper':
