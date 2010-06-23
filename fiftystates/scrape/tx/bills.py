@@ -45,24 +45,6 @@ class TXBillScraper(BillScraper):
                         self.scrape_bill(chamber, session,
                                          urlparse.urljoin(bill_url, history))
 
-        if session in ['81R', '811']:
-            journal_root = urlparse.urljoin(
-                self._ftp_root, "/journals/" + session + "/html/", True)
-
-            if chamber == 'lower':
-                journal_root = urlparse.urljoin(journal_root,
-                                                'house/', True)
-            else:
-                journal_root = urlparse.urljoin(journal_root,
-                                                'senate/', True)
-
-            with self.urlopen(journal_root) as listing:
-                for name in parse_ftp_listing(listing):
-                    if not name.startswith('81'):
-                        continue
-                    url = urlparse.urljoin(journal_root, name)
-                    journal.parse(url, chamber, self)
-
     def scrape_bill(self, chamber, session, url):
         with self.urlopen(url) as data:
             bill = self.parse_bill_xml(chamber, session, data)
@@ -110,8 +92,29 @@ class TXBillScraper(BillScraper):
                      'S': 'upper',
                      'E': 'executive'}[extra['action_number'][0]]
 
+            desc = action.findtext('description').strip()
+
+            if desc == 'Amended':
+                type = 'amendment:passed'
+            elif desc == 'Amendment(s) offered':
+                type = 'amendment:introduced'
+            elif desc == 'Amendment amended':
+                type = 'amendment:amended'
+            elif desc == 'Amendment withdrawn':
+                type = 'amendment:withdrawn'
+            elif desc.startswith('Received by the Secretary of'):
+                type = 'bill:introduced'
+            elif desc == 'Passed':
+                type = 'bill:passed'
+            elif desc.startswith('Received from the'):
+                type = 'bill:introduced'
+            elif desc.startswith('Signed by the Governor'):
+                type = 'bill:signed'
+            else:
+                type = 'other'
+
             bill.add_action(actor, action.findtext('description'),
-                            act_date, **extra)
+                            act_date, type=type, **extra)
 
         for author in root.findtext('authors').split(' | '):
             if author != "":

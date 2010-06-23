@@ -12,119 +12,58 @@ class TXLegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, year):
         if year != '2009':
-            raise NoDataForYear(year)
+            raise NoDataForYear
 
         if chamber == 'upper':
-            self.scrape_senators(year)
+            chamber_type = 'S'
         else:
-            self.scrape_reps(year)
+            chamber_type = 'H'
 
-    def scrape_senators(self, year):
-        senator_url = 'http://www.senate.state.tx.us/75r/senate/senmem.htm'
-        with self.urlopen(senator_url) as page:
+        url = ("http://www.legdir.legis.state.tx.us/members.aspx?type=%s" %
+               chamber_type)
+        with self.urlopen(url) as page:
             root = lxml.html.fromstring(page)
-            root.make_links_absolute(senator_url)
 
-            for el in root.xpath('//table[@summary="senator identification"]'):
-                sen_link = el.xpath('tr/td[@headers="senator"]/a')[0]
-                full_name = sen_link.text
-                district = el.xpath('string(tr/td[@headers="district"])')
-                party = el.xpath('string(tr/td[@headers="party"])')
+            for li in root.xpath('//ul[@class="options"]/li'):
+                member_url = re.match(r"goTo\('(MemberInfo[^']+)'\);",
+                                      li.attrib['onclick']).group(1)
+                member_url = ("http://www.legdir.legis.state.tx.us/" +
+                              member_url)
+                self.scrape_member(chamber, year, member_url)
 
-                leg = Legislator('81', 'upper', district, full_name,
-                                 party=party)
-                leg.add_source(senator_url)
-
-                details_url = sen_link.attrib['href']
-                with self.urlopen(details_url) as details_page:
-                    details = lxml.html.fromstring(details_page)
-                    details.make_links_absolute(details_url)
-
-                    try:
-                        img = details.xpath(
-                            "//img[contains(@name, 'District')]")[0]
-                        leg['photo_url'] = img.attrib['src']
-                    except IndexError:
-                        # no photo
-                        pass
-
-                    try:
-                        comms = details.xpath("//h2[contains(text(), "
-                                              "'Committee Membership')]")[0]
-                        comms = comms.getnext()
-                        for comm in comms.xpath('li/a'):
-                            comm_name = comm.text
-                            if comm.tail:
-                                comm_name += comm.tail
-
-                            comm_name = clean_committee_name(comm_name)
-                            leg.add_role('committee member', '81',
-                                         committee=comm_name)
-                    except IndexError:
-                        # this legislator has no committee memberships yet
-                        pass
-
-                self.save_legislator(leg)
-
-    def scrape_reps(self, year):
-        rep_url = 'http://www.house.state.tx.us/members/welcome.php'
-        with self.urlopen(rep_url) as page:
+    def scrape_member(self, chamber, year, member_url):
+        with self.urlopen(member_url) as page:
             root = lxml.html.fromstring(page)
-            root.make_links_absolute(rep_url)
+            root.make_links_absolute(member_url)
 
-            for el in root.xpath('//form[@name="frmMembers"]/table/tr')[1:]:
-                full_name = el.xpath('string(td/a/font/span)')
-                district = el.xpath('string(td[2]/span)')
-                county = el.xpath('string(td[3]/span)')
+            sdiv = root.xpath('//div[@class="subtitle"]')[0]
+            table = sdiv.getnext()
 
-                if full_name.startswith('District'):
-                    # Ignore empty seats
-                    continue
+            photo_url = table.xpath('//img[@id="ctl00_ContentPlaceHolder1'
+                                    '_imgMember"]')[0].attrib['src']
 
-                leg = Legislator('81', 'lower', district, full_name)
-                leg.add_source(rep_url)
+            td = table.xpath('//td[@valign="top"]')[0]
+            full_name = td.xpath('string(//div[2]/strong)').strip()
+            district = td.xpath('string(//div[3])').strip()
 
-                # Is there anything out there that handles meta refresh?
-                redirect_url = el.xpath('td/a')[0].attrib['href']
-                details_url = redirect_url
-                with self.urlopen(redirect_url) as redirect_page:
-                    redirect = lxml.html.fromstring(redirect_page)
+            party = td.xpath('string(//div[4])').strip()[0]
+            if party == 'D':
+                party = 'Democrat'
+            elif party == 'R':
+                party = 'Republican'
 
-                    try:
-                        filename = redirect.xpath(
-                            "//meta[@http-equiv='refresh']")[0].attrib[
-                            'content']
+            leg = Legislator('81', chamber, district, full_name,
+                             party=party, photo_url=photo_url)
 
-                        filename = filename.split('0;URL=')[1]
+            leg.add_source(member_url)
 
-                        details_url = details_url.replace('welcome.htm',
-                                                          filename)
-                    except:
-                        # The Speaker's member page does not redirect.
-                        # The Speaker is not on any committees
-                        # so we can just continue with the next member.
-                        self.save_legislator(leg)
-                        continue
+            comm_div = root.xpath('//div[string() = "Committee Membership:"]'
+                                  '/following-sibling::div'
+                                  '[@class="rcwcontent"]')[0]
 
-                with self.urlopen(details_url) as details_page:
-                    details = lxml.html.fromstring(details_page)
-                    details.make_links_absolute(details_url)
+            for br in comm_div.xpath('*/br'):
+                if br.tail:
+                    leg.add_role('committee member', '81', chamber=chamber,
+                                 committee=br.tail.strip())
 
-                    comms = details.xpath(
-                        "//b[contains(text(), 'Committee Assignments')]/"
-                        "..//a")
-
-                    for comm in comms:
-                        comm_name = clean_committee_name(comm.text)
-
-                        if re.match('Authored|Sponsored|Co-|other sessions',
-                                    comm_name):
-                            # A couple representative pages are broken and
-                            # include links to authored/sponsored bills
-                            # under committees
-                            continue
-
-                        leg.add_role('committee member', '81',
-                                     committee=comm_name)
-
-                self.save_legislator(leg)
+            self.save_legislator(leg)
