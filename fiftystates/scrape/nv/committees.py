@@ -79,16 +79,25 @@ class NVCommitteeScraper(CommitteeScraper):
                 comm = Committee(chamber, comm_name)
                 count = 0
                 #print comm_name
-                if session <= 73:
-                    path = '//li' 
+                if session == 73 or session == 71:
+                    path = '//li'
+                elif session == 72:
+                    path = '/html/body/ul/li' 
                 else:
                     path = '/html/body/div[@id="content"]/ul/li'
 
                 for mr in root.xpath(path):
                     name = mr.xpath('string(a)')
                     name = name.replace(' \r\n ', '')
-                    count = count + 1               
- 
+
+                    if session == 72:
+                        name = mr.xpath('string()')
+                        name = name.replace('\r\n', '')
+                        name = name.replace(' -Vice Chair', '')
+                        name = name.replace(' -Chair', '')
+
+                    count = count + 1                
+
                     if count == 1 and committee[0:3] != 'EPE.cfm':
                         role = 'Chair'
                     elif count == 2 and committee[0:3] != 'EPE.cfm':
