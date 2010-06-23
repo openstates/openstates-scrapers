@@ -35,13 +35,11 @@ class FLLegislatorScraper(LegislatorScraper):
 
         for row in table.findAll('tr')[1:]:
             full = row.td.a.contents[0].replace('  ', ' ')
-            (last, first, middle) = self.split_name(full)
 
             district = row.findAll('td')[1].contents[0]
             party = row.findAll('td')[2].contents[0]
 
-            leg = Legislator(year, 'upper', district, full,
-                             first, last, middle, party)
+            leg = Legislator(year, 'upper', district, full, party=party)
             leg.add_source(leg_page_url)
             self.save_legislator(leg)
 
@@ -59,7 +57,6 @@ class FLLegislatorScraper(LegislatorScraper):
 
         for row in table.findAll('tr')[1:]:
             full = row.findAll('td')[1].a.contents[0].replace('  ', ' ')
-            (last, first, middle) = self.split_name(full)
 
             district = row.findAll('td')[3].contents[0]
             party = row.findAll('td')[2].contents[0]
@@ -69,21 +66,6 @@ class FLLegislatorScraper(LegislatorScraper):
             elif party == 'R':
                 party = 'Republican'
 
-            leg = Legislator(year, 'lower', district, full,
-                             first, last, middle, party)
+            leg = Legislator(year, 'lower', district, full, party=party)
             leg.add_source(leg_page_url)
             self.save_legislator(leg)
-
-    def split_name(self, full):
-        last = full.split(',')[0]
-        rest = full.split(',')[1].strip()
-
-        m = re.search('\w([A-Z])\.', rest)
-        if m:
-            middle = m.group(1)
-        else:
-            middle = ''
-
-        first = rest.split(' ')[0]
-
-        return (last, first, middle)
