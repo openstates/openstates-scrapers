@@ -52,18 +52,17 @@ class NVCommitteeScraper(CommitteeScraper):
 
                 comm_name = root.xpath('string(/html/body/div[@id="content"]/center/h2)')
 
-                #special cases for each session
+                #special cases for each session to grab the name
                 if session == 73:
                     comm_name = root.xpath('string(/html/body/div[@id="content"]/h2[1])')
                 elif session == 72: 
                     comm_name = root.xpath('string(/html/body/h2[1]/font)')
                 elif session == 71:
                     comm_name = root.xpath('string(/html/body/h2)')
-                    #print root.xpath('string(/html/body/h2)')
-
                 elif committee == 'NR.cfm' and session != 72 and session != 71:
                     comm_name = root.xpath('string(/html/body/div[@id="content"]/h2)')
 
+                #Marking for grabbing only the name of the committee
                 startmark = comm_name.find("Senate")
                 if startmark == -1:
                     startmark = 0
@@ -76,13 +75,20 @@ class NVCommitteeScraper(CommitteeScraper):
                 else:
                     comm_name = comm_name[startmark: endmark - 3]
                 
+
                 comm = Committee(chamber, comm_name)
                 count = 0
+                #print comm_name
+                if session <= 73:
+                    path = '//li' 
+                else:
+                    path = '/html/body/div[@id="content"]/ul/li'
 
-                for mr in root.xpath('/html/body/div[@id="content"]/ul/li'):
+                for mr in root.xpath(path):
                     name = mr.xpath('string(a)')
-                    name = name.strip()
-                    count = count + 1
+                    name = name.replace(' \r\n ', '')
+                    count = count + 1               
+ 
                     if count == 1 and committee[0:3] != 'EPE.cfm':
                         role = 'Chair'
                     elif count == 2 and committee[0:3] != 'EPE.cfm':
@@ -92,7 +98,6 @@ class NVCommitteeScraper(CommitteeScraper):
                     comm.add_member(name, role)
                 comm.add_source(leg_url)
                 self.save_committee(comm)
-                
             
     def scrape_assem_comm(self, chamber, insert, year):
 
