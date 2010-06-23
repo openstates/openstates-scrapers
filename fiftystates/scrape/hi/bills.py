@@ -132,7 +132,7 @@ class HIBillScraper(BillScraper):
                             action_date = dt.datetime.strptime(action_date.text_content(), '%m/%d/%Y') 
                                 
                             if (re.search("The votes were as follows", action_text.text_content()) != None):
-                                self.scrape_votes(action_text.text_content(), bill_page_url, actor_house, action_date)
+                                self.scrape_votes(action_text.text_content(), bill_page_url, actor_house, action_date, bill)
                                                            
                             bill.add_action(actor, action_text, action_date)
                         
