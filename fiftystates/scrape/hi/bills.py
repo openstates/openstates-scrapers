@@ -31,6 +31,47 @@ class HIBillScraper(BillScraper):
         except:
             raise
     
+    def scrape_votes(self, vote_text, vote_url, house, date, bill):
+        votes_parts = vote_text.split(";")
+        voters = []
+                                
+        motion_text, sep, after = vote_text.partition(" The votes were as follows:")
+                                
+        for vp in votes_parts:
+            before, sep, after = vp.partition("(s)")
+            voters_list = after.split(", ")
+            voters_list[0] = voters_list[0].lstrip(" ")
+            voters_list[-1] = voters_list[-1].rstrip(". ")                          
+            voters.append(voters_list)
+                                
+        #Ayes, Ayes with reservations, Noes, Excused
+                                
+        vote_counts = [0, 0, 0, 0]
+                                
+        for i, t in enumerate(votes_parts):
+            match = re.search("[0-9]+", t)
+            if (match != None):
+                vote_counts[i] = int(match.group(0))
+                                
+        if(house == 'H'):
+            vote_house = "lower"
+        else:
+            vote_house = "upper"
+                                
+        vote = Vote(vote_house, date, motion_text, True, \
+                vote_counts[0], vote_counts[2], vote_counts[1] + vote_counts[3])
+        vote.add_source(vote_url)
+                                
+        for yes_voter in voters[0]:
+            vote.yes(yes_voter)
+        for no_voter in voters[2]:
+            vote.no(no_voter)
+        for other_voter in voters[1]:
+            vote.other(other_voter)
+        for other_voter in voters[2]:
+            vote.other(other_voter)  
+        
+        bill.add_vote(vote)    
 
     def scrape(self, chamber, year):
         session = "%s-%d" % (year, int(year) + 1)
@@ -87,51 +128,11 @@ class HIBillScraper(BillScraper):
                                 actor = "upper"
                             else:
                                 actor = chamber
+                            
+                            action_date = dt.datetime.strptime(action_date.text_content(), '%m/%d/%Y') 
                                 
                             if (re.search("The votes were as follows", action_text.text_content()) != None):
-                                votes_parts = action_text.text_content().split(";")
-                                voters = []
-                                
-                                motion_text, sep, after = action_text.text_content().partition(" The votes were as follows:")
-                                
-                                for vp in votes_parts:
-                                    before, sep, after = vp.partition("(s)")
-                                    voters_list = after.split(", ")
-                                    voters_list[0] = voters_list[0].lstrip(" ")
-                                    voters_list[-1] = voters_list[-1].rstrip(". ")                          
-                                    voters.append(voters_list)
-                                
-                                #Ayes, Ayes with reservations, Noes, Excused
-                                
-                                vote_counts = [0, 0, 0, 0]
-                                
-                                for i, t in enumerate(votes_parts):
-                                    match = re.search("[0-9]+", t)
-                                    if (match != None):
-                                        vote_counts[i] = int(match.group(0))
-                                
-                                action_date = dt.datetime.strptime(action_date.text_content(), '%m/%d/%Y') 
-                                
-                                if(actor_house == 'H'):
-                                    vote_house = "lower"
-                                else:
-                                    vote_house = "upper"
-                                
-                                vote = Vote(vote_house, action_date, motion_text, True, \
-                                             vote_counts[0], vote_counts[2], vote_counts[1] + vote_counts[3])
-                                vote.add_source(bill_page_url)
-                                
-                                for yes_voter in voters[0]:
-                                    vote.yes(yes_voter)
-                                for no_voter in voters[2]:
-                                    vote.no(no_voter)
-                                for other_voter in voters[1]:
-                                    vote.other(other_voter)
-                                for other_voter in voters[2]:
-                                    vote.other(other_voter)  
-                                    
-                                print vote_house, action_date, motion_text                 
-       
+                                self.scrape_votes(action_text.text_content(), bill_page_url, actor_house, action_date)
                                                            
                             bill.add_action(actor, action_text, action_date)
                         
