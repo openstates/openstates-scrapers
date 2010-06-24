@@ -57,11 +57,8 @@ class LALegislatorScraper(LegislatorScraper):
                             r'<b>Party<\/b><br \/>\s*(\w+)\s*<', aleg)
                         party = ', '.join(parties)
 
-                        first, middle, last, suffix = self.parse_name(name)
-
                         leg = Legislator(str(year), 'upper',
-                                         str(district), name, first,
-                                         middle, last, party, suffix=suffix)
+                                         str(district), name, party=party)
 
                         self.save_legislator(leg)
 
@@ -75,53 +72,16 @@ class LALegislatorScraper(LegislatorScraper):
                 aleg = self.unescape(unicode(legislator))
 
                 name = re.findall(
-                    r'Representative ([\w\s\.\,\"\-]+)\s*<br', aleg)[0].strip()
+                    r'Representative ([\w\s\.\,\"\-\']+)\s*<br',
+                    aleg)[0].strip()
 
                 party, district = re.findall(
                     r'(\w+)\s*District\s*(\d+)', aleg)[0]
 
-                first, middle, last, suffix = self.parse_name(name)
-
                 leg = Legislator(str(year), 'lower', str(district),
-                                 name, first, middle, last, party,
-                                 suffix=suffix)
+                                 name, party=party)
 
                 self.save_legislator(leg)
-
-    # stealing from llimllib, since his works pretty well.
-    def parse_name(self, name):
-        nickname = re.findall('\".*?\"', name)
-        nickname = nickname[0] if nickname else ''
-        name = re.sub("\".*?\"", "", name).strip()
-
-        names = name.split(" ")
-        first_name = names[0]
-
-        # The "Jody" Amedee case
-        if len(names) == 1:
-            first_name = nickname
-            middle_name = ''
-            last_name = names[0]
-        elif len(names) > 2:
-            middle_names = [names[1]]
-            for i, n in enumerate(names[2:]):
-                if re.search("\w\.$", n.strip()):
-                    middle_names.append(n)
-                else:
-                    break
-            middle_name = " ".join(middle_names)
-            last_name = " ".join(names[i + 2:])
-        else:
-            middle_name = ""
-            last_name = names[1]
-
-        # steal jr.s or sr.s
-        suffix = re.findall(", (\w*?)\.|(I+)$", last_name) or ""
-        if suffix:
-            suffix = suffix[0][0] or suffix[0][1]
-            last_name = re.sub(", \w*?\.|(I+)$", "", last_name)
-
-        return (first_name, middle_name, last_name, suffix)
 
     def unescape(self, s):
         return re.sub('&(%s);' % '|'.join(name2codepoint),
