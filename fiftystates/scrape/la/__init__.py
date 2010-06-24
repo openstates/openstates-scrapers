@@ -28,14 +28,16 @@ for session in session_page.findAll('a'):
     year = int(re.findall(r'^[0-9]+', text)[0])
     if not year in internal_sessions:
         internal_sessions[year] = []
-        session_details[year] = {'years': [year],
-                                 'sub_sessions': []}
-        sessions.append(str(year))
+        sessions.append({'name': str(year), 'start_year': year,
+                         'end_year': year, 'sub_sessions': []})
 
     if text.endswith('Regular Legislative Session'):
         text = str(year)
     else:
-        session_details[year]['sub_sessions'].append(text)
+        for s in sessions:
+            if s['start_year'] == year:
+                s['sub_sessions'].append(text)
+                break
 
     internal_sessions[year].append((session['href'], text))
 
@@ -49,5 +51,4 @@ metadata = {
     'upper_title': 'Senator',
     'lower_term': 4,
     'upper_term': 4,
-    'sessions': sessions,
-    'session_details': session_details}
+    'sessions': list(reversed(sessions))}
