@@ -61,10 +61,26 @@ class NVBillScraper(BillScraper):
                     title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
                     bill = Bill(session, chamber, bill_id, title)
 
-                    sponsors = self.scrape_sponsors(page_path)
+                    primary, secondary = self.scrape_sponsors(page_path)
+                    
+                    if primary[0] == 'By:':
+                        primary.pop(0)
+                        
+                        if primary[0] == 'ElectionsProceduresEthicsand':
+                            primary[0] = 'Elections Procedures Ethics and'
+
+                        full_name = ''
+                        for part_name in primary:
+                            full_name = full_name + part_name + " "
+                        bill.add_sponsor('primary', full_name)
+                    else:
+                        for leg in primary:
+                            bill.add_sponsor('primary', leg)
+                    for leg in secondary:
+                        bill.add_sponsor('cosponsor', leg)
 
                     bill.add_source(page_path)
-                    #self.save_bill(bill)
+                    self.save_bill(bill)
 
     def scrape_links(self, url):
 
@@ -85,8 +101,32 @@ class NVBillScraper(BillScraper):
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
             path = 'string(/html/body/div[@id="content"]/table[1]/tr[4]/td)'
             sponsors = root.xpath(path)
-            sponsors = sponsors.replace(',', '')
+            sponsors = sponsors.replace(', ', '')
             sponsors = sponsors.split()
-            if [] 
-            print sponsors
-            return sponsors
+
+            if '(Bolded' in sponsors:
+                sponsors.remove('By:')
+                sponsors.remove('(Bolded')
+                sponsors.remove('name')
+                sponsors.remove('indicates')
+                sponsors.remove('primary')
+                sponsors.remove('sponsorship)')          
+
+            for mr in root.xpath('/html/body/div[@id="content"]/table[1]/tr[4]/td/b[position() > 2]'):
+                name = mr.xpath('string()')
+                name = name.replace(' ', '')
+                primary.append(name)
+
+            for unwanted in primary:
+                if unwanted in sponsors:
+                    sponsors.remove(unwanted)
+
+            if len(primary) == 0:
+                primary = sponsors
+                sponsors = []
+
+            #if primary[0] == 'By:':
+            #    primary.pop(0)
+
+            #print "Primary: ", primary, "\n", "Secondary: ", sponsors
+            return primary, sponsors
