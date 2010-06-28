@@ -79,6 +79,7 @@ class NVBillScraper(BillScraper):
                     for leg in secondary:
                         bill.add_sponsor('cosponsor', leg)
 
+                    self.scrape_actions(page_path, bill, "Assembly")
                     bill.add_source(page_path)
                     self.save_bill(bill)
 
@@ -130,3 +131,20 @@ class NVBillScraper(BillScraper):
 
             #print "Primary: ", primary, "\n", "Secondary: ", sponsors
             return primary, sponsors
+
+
+    def scrape_actions(self, url, bill, actor):
+        with self.urlopen(url) as page:
+            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+            path = '/html/body/div[@id="content"]/table/tr/td/p[1]'
+            count = 6
+            for mr in root.xpath(path):
+                date = mr.xpath('string()')
+                date = date.split()[0] + " " + date.split()[1] + " " + date.split()[2]
+
+                count = count + 1
+                action_path = '/html/body/div[@id="content"]/table[%s]/tr/td/ul/li' % (count)
+                for el in root.xpath(action_path):
+                    action = el.xpath('string()')
+                    bill.add_action(actor, action, date)
+            
