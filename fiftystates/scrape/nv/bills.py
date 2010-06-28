@@ -21,6 +21,8 @@ class NVBillScraper(BillScraper):
         curyear = time.year
         if ((int(year) - curyear) % 2) == 1:
             session = ((int(year) -  curyear) / 2) + 76
+        elif( ((int(year) - curyear) % 2) == 0) and year >= 2010:
+            session = ((int(year) - curyear) / 2) + 26
         else:
             raise NoDataForYear(year)
 
@@ -32,7 +34,8 @@ class NVBillScraper(BillScraper):
         elif str(session)[-1] == '3':
             sessionsuffix = 'rd'
         insert = str(session) + sessionsuffix + str(year)
-
+        if session == 26:
+            insert = str(session) + sessionsuffix + str(year) + "Special"
 
         if chamber == 'upper':
             self.scrape_senate_bills(chamber, insert, session)
@@ -41,7 +44,45 @@ class NVBillScraper(BillScraper):
 
 
     def scrape_senate_bills(self, chamber, insert, session):
-        print "In senate bills"
+
+        doc_type = [2, 4, 7, 8]
+        for doc in doc_type:
+            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/HistListBills.cfm?DoctypeID=%s' % (insert, doc)
+            links = self.scrape_links(parentpage_url)
+            count = 0
+            for link in links:
+                count = count + 1
+                page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
+                with self.urlopen(page_path) as page:
+                    root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+
+                    bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
+                    title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
+                    bill = Bill(session, chamber, bill_id, title)
+
+                    primary, secondary = self.scrape_sponsors(page_path)
+
+                    if primary[0] == 'By:':
+                        primary.pop(0)
+
+                        if primary[0] == 'ElectionsProceduresEthicsand':
+                            primary[0] = 'Elections Procedures Ethics and'
+
+                        full_name = ''
+                        for part_name in primary:
+                            full_name = full_name + part_name + " "
+                        bill.add_sponsor('primary', full_name)
+                    else:
+                        for leg in primary:
+                            bill.add_sponsor('primary', leg)
+                    for leg in secondary:
+                        bill.add_sponsor('cosponsor', leg)
+
+                    self.scrape_actions(page_path, bill, "Senate")
+                    self.scrape_votes(page_path, bill, "Senate", insert, title)
+                    bill.add_source(page_path)
+                    self.save_bill(bill)
+
 
 
     def scrape_assem_bills(self, chamber, insert, session):
