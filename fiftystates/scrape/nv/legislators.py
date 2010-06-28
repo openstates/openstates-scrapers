@@ -74,7 +74,10 @@ class NVLegislatorScraper(LegislatorScraper):
                     last_name = last_name + " " + root.xpath(namepath).split()[1]
                     last_name = last_name[0: len(last_name) - 1]
 
-                full_name = first_name + " " + middle_name + " " + last_name
+                if len(middle_name) > 0:
+                    full_name = first_name + " " + middle_name + " " + last_name
+                else:
+                    full_name = first_name + " " + last_name
                  
                 partypath = 'string(/html/body/table[%s]/tr/td/table[1]/tr/td[3]/font)' % (numdistricts + 2)
                 party = root.xpath(partypath).split()[-1]
