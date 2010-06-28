@@ -80,6 +80,7 @@ class NVBillScraper(BillScraper):
                         bill.add_sponsor('cosponsor', leg)
 
                     self.scrape_actions(page_path, bill, "Assembly")
+                    self.scrape_votes(page_path, bill, "Assembly", insert, title)
                     bill.add_source(page_path)
                     self.save_bill(bill)
 
@@ -126,12 +127,7 @@ class NVBillScraper(BillScraper):
                 primary = sponsors
                 sponsors = []
 
-            #if primary[0] == 'By:':
-            #    primary.pop(0)
-
-            #print "Primary: ", primary, "\n", "Secondary: ", sponsors
             return primary, sponsors
-
 
     def scrape_actions(self, url, bill, actor):
         with self.urlopen(url) as page:
@@ -147,4 +143,44 @@ class NVBillScraper(BillScraper):
                 for el in root.xpath(action_path):
                     action = el.xpath('string()')
                     bill.add_action(actor, action, date)
-            
+
+    def scrape_votes(self, bill_url, bill, chamber, insert, motion):
+        with self.urlopen(bill_url) as page:
+            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+            url_path = ('/html/body/div[@id="content"]/table[5]/tr/td/a')
+            for mr in root.xpath(url_path):
+                url_end = mr.xpath('string(@href)')
+                vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, url_end)
+                
+                with self.urlopen(vote_url) as page:
+                    root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+
+                    date = root.xpath('string(/html/body/center/font)').split()[-1]
+                    yes_count = root.xpath('string(/html/body/center/table/tr/td[1])').split()[0]
+                    no_count = root.xpath('string(/html/body/center/table/tr/td[2])').split()[0]
+                    excused = root.xpath('string(/html/body/center/table/tr/td[3])').split()[0]
+                    not_voting = root.xpath('string(/html/body/center/table/tr/td[4])').split()[0]
+                    absent = root.xpath('string(/html/body/center/table/tr/td[5])').split()[0]
+                    
+                    if yes_count > no_count:
+                        passed = True
+                    else:
+                        passed = False
+
+                    vote = Vote(chamber, date, motion, passed, yes_count, no_count, '', not_voting = not_voting, absent = absent)
+
+                    for el in root.xpath('/html/body/table[2]/tr'):
+                        name = el.xpath('string(td[1])').strip()
+                        full_name = ''
+                        for part in name:
+                            full_name = full_name + part + " "
+                        name = str(name)
+                        vote_result = el.xpath('string(td[2])').split()[0]
+                        
+                        if vote_result == 'Yea':
+                            vote.yes(name)
+                        elif vote_result == 'Nay':
+                            vote.no(name)
+                        else:
+                            vote.other(name)
+                    bill.add_vote(vote)
