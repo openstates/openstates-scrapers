@@ -21,6 +21,8 @@ class NVLegislatorScraper(LegislatorScraper):
         curyear = time.year
         if ((int(year) - curyear) % 2) == 1:
             session = ((int(year) -  curyear) / 2) + 76
+        elif( ((int(year) - curyear) % 2) == 0) and year >= 2010:
+            session = ((int(year) - curyear) / 2) + 26
         else:
             raise NoDataForYear(year)
 
@@ -41,7 +43,9 @@ class NVLegislatorScraper(LegislatorScraper):
             sessionsuffix = 'rd'
 
         insert = str(session) + sessionsuffix + str(year)
-        
+        if session == 26:
+            insert = str(session) + sessionsuffix + str(year) + "Special"
+
         if chamber == 'upper':        
             leg_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/legislators/Senators/slist.cfm'
             n = 22
