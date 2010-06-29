@@ -13,11 +13,11 @@ session_details = {}
 for option in _doc.xpath("//select[@id='session']/option"):
     year = _year_re.findall(option.text)[0]
     if not year in internal_sessions:
-        internal_sessions[year] = []
+        internal_sessions[int(year)] = []
         session_details[year] = {'years': [year], 'sub_sessions':[] }
         sessions.append(year)
     session_details[year]['sub_sessions'].append(option.text)
-    internal_sessions[year].append([option.values()[0], option.text])
+    internal_sessions[int(year)].append([option.values()[0], option.text])
 
 metadata = {
     'state_name': 'Wisconsin',
