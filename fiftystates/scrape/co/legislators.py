@@ -42,7 +42,6 @@ class COLegislatorScraper(LegislatorScraper):
                 with self.lxml_context(link) as legislator_page:
                     leg_elements = legislator_page.cssselect('b')
                     leg_name = leg_elements[0].text_content()
-                    print leg_name
 #                    district_text = leg_elements[1].text_content()
 #                    district_split = district_text.split(", ")
 #                    district = ""
@@ -57,19 +56,28 @@ class COLegislatorScraper(LegislatorScraper):
                     
                     district_match = re.search("District [0-9]+", legislator_page.text_content())
                     if (district_match != None):
-                        print district_match.group(0)
+                        district = district_match.group(0)
                     
                     email_match = re.search('E-mail: (.*)', legislator_page.text_content())
                     if (email_match != None):
-                        print email_match.group(1)
+                        email = email_match.group(1)
                         
-                    form_page_url = "http://www.leg.state.co.us/Clics/CLICS2010A/csl.nsf/DirectoryHou?openframeset"
-                    with self.lxml_context(form_page_url) as form_page:
-                        form = form_page.forms[0]
-                        print lxml.html.tostring(form)
+                    form_page_url = "http://www.leg.state.co.us//clics/clics2010a/directory.nsf/d1325833be2cc8ec0725664900682205?SearchView"
+                    form_page = lxml.html.parse(form_page_url).getroot()
+                    form_page.forms[0].fields['Query'] = leg_name
+                    result = lxml.html.parse(lxml.html.submit_form(form_page.forms[0])).getroot()
+                    elements = result.cssselect('td')
+                    party_letter = elements[7].text_content()
                     
-#                    leg = Legislator(year, chamber, district, "",
-#                                 "", "", "", party,
-#                                 official_email=email)
-#                    leg.add_source(source)
-#                    self.save_legislator(leg)
+                    if party_letter == "D":
+                        party = "Republican"
+                    elif party_letter == "R":
+                        party = "Democrat"
+                    else:
+                        party = "Independent"
+                    
+                    leg = Legislator(year, chamber, district, leg_name,
+                                 "", "", "", party,
+                                 official_email=email)
+                    leg.add_source(legislator_page)
+                    self.save_legislator(leg)
