@@ -25,39 +25,39 @@ class NJLegislatorScraper(LegislatorScraper):
     def scrape_legislators(self, chamber, year):
 
         leg_url = 'http://www.njleg.state.nj.us/members/roster_BIO.asp'
-        body = 'SearchFirstName=&SearchLastName=&District=&SubmitSearch=Find&GotoPage=2&MoveRec=&Search=Search&ClearSearch=&GoTo=2'
+        for number in range(1,5):
+            body = 'SearchFirstName=&SearchLastName=&District=&SubmitSearch=Find&GotoPage=%s&MoveRec=&Search=Search&ClearSearch=&GoTo=%s' % (number, number)
 
-        with self.urlopen(leg_url, 'POST', body) as page:
-            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
-            session = year
-            save_district = '' 
-            for mr in root.xpath('//table/tr[4]/td/table/tr'):
-                full_name = mr.xpath('string(td[2]/a)')
-                full_name = self.unescape(full_name)
-                full_name = full_name.replace('u00a0', ' ')
-                #print name
-                info = mr.xpath('string(td[2])').split()
-                party = ''
-                chamber = ''
-                if 'Democrat' in info:
-                    party = 'Democrat'
-                elif 'Republican' in info:
-                    party = 'Republican'
-                if ('Assemblywoman' in info) or ('Assemblyman' in info):
-                    chamber = 'General Assembly'
-                elif 'Senator' in info:
-                    chamber = 'Senate'
+            with self.urlopen(leg_url, 'POST', body) as page:
+                root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+                session = year
+                save_district = '' 
+                for mr in root.xpath('//table/tr[4]/td/table/tr'):
+                    full_name = mr.xpath('string(td[2]/a)')
+                    full_name = self.unescape(full_name)
+                    full_name = full_name.replace('u00a0', ' ')
+                    #print name
+                    info = mr.xpath('string(td[2])').split()
+                    party = ''
+                    chamber = ''
+                    if 'Democrat' in info:
+                        party = 'Democrat'
+                    elif 'Republican' in info:
+                        party = 'Republican'
+                    if ('Assemblywoman' in info) or ('Assemblyman' in info):
+                        chamber = 'General Assembly'
+                    elif 'Senator' in info:
+                        chamber = 'Senate'
 
-                if len(chamber) > 0:
-                    leg = Legislator(session, chamber, save_district, full_name, "", "", "", party)
-                    leg.add_source(leg_url)
-                    self.save_legislator(leg)
+                    if len(chamber) > 0:
+                        leg = Legislator(session, chamber, save_district, full_name, "", "", "", party)
+                        leg.add_source(leg_url)
+                        self.save_legislator(leg)
 
-                district = mr.xpath('string(td/a/font/b)').split()
-                if len(district) > 0:
-                    district = district[0] + " " + district[1]
-                    save_district = district
-
+                    district = mr.xpath('string(td/a/font/b)').split()
+                    if len(district) > 0:
+                        district = district[0] + " " + district[1]
+                        save_district = district
 
     ## From Coleslaw
     # Removes HTML or XML character references and entities from a text string.
