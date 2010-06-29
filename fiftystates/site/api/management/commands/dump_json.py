@@ -52,11 +52,6 @@ class Command(BaseCommand):
 
             zip.writestr(path, json.dumps(bill, cls=FiftyStateEncoder))
 
-            for vote in bill['votes']:
-                path = "/api/votes/%s" % vote['id']
-
-                zip.writestr(path, json.dumps(vote, cls=FiftyStateEncoder))
-
         for legislator in db.legislators.find({'state': self.state_abbrev}):
             path = '/api/legislators/%s' % legislator['_id']
 

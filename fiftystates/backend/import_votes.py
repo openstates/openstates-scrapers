@@ -43,7 +43,7 @@ def import_votes(state, data_dir):
             svlist = []
             for svote in data[vtype]:
                 id = get_legislator_id(state, data['session'],
-                                       vote['chamber'], svote)
+                                       data['chamber'], svote)
                 svlist.append({'name': svote, 'leg_id': id})
 
             data[vtype] = svlist
@@ -51,10 +51,11 @@ def import_votes(state, data_dir):
         for vote in bill['votes']:
             if (vote['motion'] == data['motion']
                 and vote['date'] == data['date']):
-                break
+                vote.update(data)
         else:
             bill['votes'].append(data)
-            db.bills.save(bill)
+
+        db.bills.save(bill)
 
 
 if __name__ == '__main__':
