@@ -9,6 +9,6 @@ metadata = dict(
     lower_term=2,
     sessions=['214'],
     session_details={
-        '214': {'start_year': 2010, 'sub_sessions': [] },
+        '214': {'years': [2010], 'sub_sessions': []} },
 )
 
