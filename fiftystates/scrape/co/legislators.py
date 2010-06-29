@@ -1,8 +1,8 @@
+from fiftystates.scrape import ScrapeError, NoDataForYear
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
-import contextlib
-import re
+import re, contextlib
 
 class COLegislatorScraper(LegislatorScraper):
     state = 'co'
@@ -29,31 +29,22 @@ class COLegislatorScraper(LegislatorScraper):
             #self.show_error(url, body)
             raise
 
-
     def scrape(self, chamber, year):
+        if year != '2009':
+            raise NoDataForYear(year)
+        
         if chamber == "upper":
             url = "http://www.leg.state.co.us/Clics/CLICS2010A/directory.nsf/MIWeb?OpenForm&chamber=Senate"
-            type = "HB"
         else:
             url = "http://www.leg.state.co.us/Clics/CLICS2010A/directory.nsf/MIWeb?OpenForm&chamber=House"
-            type = "SB"
+            
         with self.lxml_context(url) as page:
+            # Iterate through legislator names
             for element, attribute, link, pos in page.iterlinks():
                 with self.lxml_context(link) as legislator_page:
                     leg_elements = legislator_page.cssselect('b')
                     leg_name = leg_elements[0].text_content()
-#                    district_text = leg_elements[1].text_content()
-#                    district_split = district_text.split(", ")
-#                    district = ""
-#                    if (len(district_split) > 1):
-#                        district = district_split[1]
-#                        if (re.search("District [0-9]+", district) == None):
-#                            district_text = leg_elements[2].text_content()
-#                            district_split = district_text.split(", ")
-#                            district = district_split[1]
-#                    print district
-#                    
-                    
+                 
                     district_match = re.search("District [0-9]+", legislator_page.text_content())
                     if (district_match != None):
                         district = district_match.group(0)
