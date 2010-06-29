@@ -62,6 +62,11 @@ class COLegislatorScraper(LegislatorScraper):
                     email_match = re.search('E-mail: (.*)', legislator_page.text_content())
                     if (email_match != None):
                         print email_match.group(1)
+                        
+                    form_page_url = "http://www.leg.state.co.us/Clics/CLICS2010A/csl.nsf/DirectoryHou?openframeset"
+                    with self.lxml_context(form_page_url) as form_page:
+                        form = form_page.forms[0]
+                        print lxml.html.tostring(form)
                     
 #                    leg = Legislator(year, chamber, district, "",
 #                                 "", "", "", party,
