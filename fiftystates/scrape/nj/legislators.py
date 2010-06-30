@@ -33,10 +33,13 @@ class NJLegislatorScraper(LegislatorScraper):
                 session = year
                 save_district = '' 
                 for mr in root.xpath('//table/tr[4]/td/table/tr'):
-                    full_name = mr.xpath('string(td[2]/a)')
-                    full_name = self.unescape(full_name)
-                    full_name = full_name.replace('u00a0', ' ')
-                    #print name
+                    name = mr.xpath('string(td[2]/a)').split()
+                    full_name = ''
+                    for part in name:
+                        if part != name[-1]:
+                            full_name = full_name + part + " "
+                        else:
+                            full_name = full_name + part
                     info = mr.xpath('string(td[2])').split()
                     party = ''
                     chamber = ''
@@ -56,33 +59,6 @@ class NJLegislatorScraper(LegislatorScraper):
 
                     district = mr.xpath('string(td/a/font/b)').split()
                     if len(district) > 0:
-                        district = district[0] + " " + district[1]
+                        district = district[1]
                         save_district = district
-
-    ## From Coleslaw
-    # Removes HTML or XML character references and entities from a text string.
-    #
-    # @param text The HTML (or XML) source text.
-    # @return The plain text, as a Unicode string, if necessary.
-    def unescape(self, text):
-        def fixup(self, m):
-            text = m.group(0)
-            if text[:2] == "&#":
-                # character reference
-                try:
-                    if text[:3] == "&#x":
-                        return unichr(int(text[3:-1], 16))
-                    else:
-                        return unichr(int(text[2:-1]))
-                except ValueError:
-                    pass
-            else:
-                # named entity
-                try:
-                    text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
-                except KeyError:
-                    pass
-            return text # leave as is
-        return re.sub("&#?\w+;", fixup, text)
-
 
