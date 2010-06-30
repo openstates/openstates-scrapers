@@ -56,7 +56,7 @@ def import_nimsp_ids(state_abbrev):
                 candidate_name=name, year=year,
                 candidate_status='WON')
         except NimspApiError as e:
-            print "Failed matching %s" % name
+            print "Failed matching %s" % name.encode('ascii', 'replace')
             continue
 
         if len(results) == 1:
@@ -64,7 +64,7 @@ def import_nimsp_ids(state_abbrev):
                 results[0].imsp_candidate_id)
             db.legislators.save(leg)
         else:
-            print "Too many results for %s" % name
+            print "Too many results for %s" % name.encode('asii', 'replace')
 
 
 if __name__ == '__main__':
