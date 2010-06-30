@@ -17,7 +17,7 @@ metadata = dict(
          'start_year': 1999, 'end_year': 1999},
         {'name': '2000',
          'sub_sessions': ['2000 A', '2000 O'],
-         'start_year': 2000, 'end_year': 2000}
+         'start_year': 2000, 'end_year': 2000},
         {'name': '2001',
          'sub_sessions': ['2001 A', '2001 B', '2001 C'],
          'start_year': 2001, 'end_year': 2001},

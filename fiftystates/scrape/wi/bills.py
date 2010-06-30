@@ -1,38 +1,27 @@
-#!/usr/bin/env python
 import datetime as dt
 import lxml.html
-import sys
-import os
 import re
-import name_tools
-
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter, process_pdf
-from pdfminer.pdfdevice import PDFDevice
-from pdfminer.converter import TextConverter
-from pdfminer.cmapdb import CMapDB
-from pdfminer.layout import LAParams
-
 from StringIO import StringIO
-import urllib2
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 NoDataForYear)
+from pdfminer.pdfinterp import PDFResourceManager, process_pdf
+from pdfminer.converter import TextConverter
 
+from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.votes import Vote
+from fiftystates.scrape.wi import internal_sessions
 
-class WisconsinScraper(LegislationScraper):
+class WIBillScraper(BillScraper):
     state = 'wi'
     earliest_year = 1999
-    internal_sessions = {}
 
-    def scrape_bills(self, chamber, year):
+    def scrape(self, chamber, year):
         # we need to be able to make http://www.legis.state.wi.us/2009/data/AB2hst.html
         # and http://www.legis.state.wi.us/2009/data/DE9AB2hst.html
-        for sess in self.internal_sessions[int(year)]:
+        for sess in internal_sessions[int(year)]:
           yp = sess[0][1:].split('/', 1)
           (year, prefix) = (yp[0], yp[1]) if len(yp) == 2 else (yp[0], '')
           self.scrape_session(chamber, year, prefix, sess[1])
-          
+
 
     def scrape_session(self, chamber, year, prefix, session):
         def parse_sponsors(bill, line, chamber):
@@ -73,12 +62,12 @@ class WisconsinScraper(LegislationScraper):
         chambers = {'S': 'upper', 'A': 'lower'}
         i = 1
         while True:
-            try:
-                url = "http://www.legis.state.wi.us/%s/data/%s%s%dhst.html" % (year, prefix, house, i)
-                body = unicode(self.urlopen(url), 'latin-1')
-            except urllib2.HTTPError as e: #404tastic
-                 return
- 
+            url = "http://www.legis.state.wi.us/%s/data/%s%s%dhst.html" % (year, prefix, house, i)
+            body = self.urlopen(url) #unicode(self.urlopen(url), 'latin-1')
+
+            if body.response.code != 200:
+                 continue
+
             page = lxml.html.fromstring(body).cssselect('pre')[0]
             # split the history into each line, exluding all blank lines and the title line
             history = filter(lambda x: len(x.strip()) > 0, lxml.html.tostring(page).split("\n"))[2:-1]
@@ -118,13 +107,13 @@ class WisconsinScraper(LegislationScraper):
                     current_chamber = chambers[dm[2]]
                     action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
                     continue
-                    
+
                 if(stop):
                     parse_action(bill, workdata, current_chamber, action_date)
                     #now update the date
                     current_chamber = chambers[dm[2]]
                     action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
-                
+
             current_chamber = chambers[dm[2]]
             action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))    
             parse_action(bill, buffer, current_chamber, action_date)
@@ -175,74 +164,3 @@ class WisconsinScraper(LegislationScraper):
             NO VACANT DISTRICTS SEQUENCE NO. 6 Tuesday, January 27, 2009 2:49 PM  WISCONSIN ASSEMBLY ROLL CALL1
             """
             print text
-    
-
-    def scrape_legislators(self, chamber, year):
-        year = int(year)
-        session = self.internal_sessions[year][0][1]
-        # iterating through subsessions would be a better way to do this..
-        if year % 2 == 0 and (year != dt.date.today().year or  year+1 != dt.date.today().year):
-            raise NoDataForYear(year)
-
-        if chamber == 'upper':
-            url = "http://legis.wi.gov/w3asp/contact/legislatorslist.aspx?house=senate"
-        else:
-            url = "http://legis.wi.gov/w3asp/contact/legislatorslist.aspx?house=assembly"
-        
-        body = unicode(self.urlopen(url), 'latin-1')
-        page = lxml.html.fromstring(body)
-
-        for row in page.cssselect("#ctl00_C_dgLegData tr"):
-            if len(row.cssselect("td a")) > 0:
-                rep_url = list(row)[0].cssselect("a[href]")[0].get("href")
-                (full_name, party) = re.findall(r'([\w\-\,\s\.]+)\s+\(([\w])\)', 
-                                     list(row)[0].text_content())[0]
-
-                pre, first, last, suffixes = name_tools.split(full_name)
-
-                district = str(int(list(row)[2].text_content()))
-
-                leg = Legislator(session, chamber, district, full_name,
-                                 first, last, '', party,
-                                 suffix=suffixes)
-                leg.add_source(rep_url)
-
-                leg = self.add_committees(leg, rep_url, session)
-                self.save_legislator(leg)
-
-    def add_committees(self, legislator, rep_url, session):
-        url = 'http://legis.wi.gov/w3asp/contact/' + rep_url + '&display=committee'
-        body = unicode(self.urlopen(url), 'latin-1')
-        cmts = lxml.html.fromstring(body).cssselect("#ctl00_C_lblCommInfo a")
-        for c in map(lambda x: x.text_content().split('(')[0], list(cmts)):
-            legislator.add_role('committee member', session, committee=c.strip())
-        return legislator
-
-
-    def scrape_metadata(self):
-        sessions = []
-        session_details = {}
-
-        with self.soup_context("http://www.legis.state.wi.us/") as session_page:
-            for option in session_page.find(id='session').findAll('option'):
-                year = int(re.findall(r'[0-9]+', option.string)[0])
-                text = option.string.strip()
-                if not year in self.internal_sessions:
-                    self.internal_sessions[year] = []
-                    session_details[year] = {'years': [year], 'sub_sessions':[] }
-                    sessions.append(year)
-                session_details[year]['sub_sessions'].append(text)
-                self.internal_sessions[year].append([option['value'], text])
-        return {
-            'state_name': 'Wisconsin',
-            'legislature_name': 'Wisconsin State Legislature',
-            'lower_chamber_name': 'Assembly',
-            'upper_chamber_name': 'Senate',
-            'lower_title': 'Representative',
-            'upper_title': 'Senator',
-            'lower_term': 2,
-            'upper_term': 4,
-            'sessions': sessions,
-            'session_details': session_details
-        }
-

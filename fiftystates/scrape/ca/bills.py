@@ -104,6 +104,9 @@ class CABillScraper(BillScraper):
                 if 'Item veto' in act_str:
                     type.append('veto:line-item')
 
+                if not type:
+                    type = ['other']
+
                 fsbill.add_action(actor, act_str, action.action_date,
                                   type=type)
 
