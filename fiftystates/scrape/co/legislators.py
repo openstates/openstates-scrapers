@@ -45,10 +45,12 @@ class COLegislatorScraper(LegislatorScraper):
                     leg_elements = legislator_page.cssselect('b')
                     leg_name = leg_elements[0].text_content()
                  
+                    district = ""
                     district_match = re.search("District [0-9]+", legislator_page.text_content())
                     if (district_match != None):
                         district = district_match.group(0)
                     
+                    email = ""
                     email_match = re.search('E-mail: (.*)', legislator_page.text_content())
                     if (email_match != None):
                         email = email_match.group(1)
@@ -70,5 +72,6 @@ class COLegislatorScraper(LegislatorScraper):
                     leg = Legislator(year, chamber, district, leg_name,
                                  "", "", "", party,
                                  official_email=email)
-                    leg.add_source(legislator_page)
+                    leg.add_source(link)
+                    
                     self.save_legislator(leg)
