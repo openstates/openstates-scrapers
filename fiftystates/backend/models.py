@@ -84,9 +84,12 @@ class Legislator(FiftyStatesDocument):
             'updated_at': datetime.datetime,
             }
 
-    required_fields = ['full_name', 'first_name', 'last_name', 'middle_name']
+    required_fields = ['full_name', 'first_name', 'last_name', 'middle_name',
+                       'votesmart_id', 'nimsp_candidate_id']
 
-    default_values = {'middle_name': u""}
+    default_values = {'middle_name': u"",
+                      'votesmart_id': None,
+                      'nimsp_candidate_id': None}
 
 
 @mongokit_register
