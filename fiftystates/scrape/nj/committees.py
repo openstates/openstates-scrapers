@@ -35,9 +35,8 @@ class NJCommitteeScraper(CommitteeScraper):
                     root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
                     comm_count = 5
                     curr_comm = ''
-                    special_case = 0
                     curr_name = []
-
+                    curr = False
                     for mr in root.xpath('//table'):        
                         #Committee Names
                         if comm_count % 2 == 1:
@@ -48,10 +47,12 @@ class NJCommitteeScraper(CommitteeScraper):
                                 comm_name = comm_name + part + " "
                             comm_name = comm_name[0: len(comm_name) - 1]
                             if len(name) > 0:
-                                curr_comm = comm_name                                
+                                curr_comm = comm_name
+                                curr = True                                
                             curr_name = name
                         # Leg Names
-                        if ((comm_count % 2 == 0) and (len(curr_name) > 0)) or (comm_count == 11):
+                        if ((comm_count % 2 == 0) and (len(curr_name) > 0) or (comm_count == 11)) and curr == True:
+                            curr = False
                             if comm_count != 11:
                                 comm = Committee(chamber, curr_comm)
                                 path = '//tr[%s]/td/a/font' % (comm_count)
