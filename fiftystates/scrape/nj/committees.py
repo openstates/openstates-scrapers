@@ -37,8 +37,8 @@ class NJCommitteeScraper(CommitteeScraper):
                     curr_comm = ''
                     special_case = 0
                     curr_name = []
-                    for mr in root.xpath('//table'):
-                                
+
+                    for mr in root.xpath('//table'):        
                         #Committee Names
                         if comm_count % 2 == 1:
                             path = 'string(//tr[%s]//font/b)' % (comm_count)
@@ -48,12 +48,16 @@ class NJCommitteeScraper(CommitteeScraper):
                                 comm_name = comm_name + part + " "
                             comm_name = comm_name[0: len(comm_name) - 1]
                             if len(name) > 0:
-                                curr_comm = comm_name
+                                curr_comm = comm_name                                
                             curr_name = name
                         # Leg Names
-                        if (comm_count % 2 == 0) and (len(curr_name) > 0):
-                            comm = Committee(chamber,curr_comm)
-                            path = '//tr[%s]/td/a/font' % (comm_count)
+                        if ((comm_count % 2 == 0) and (len(curr_name) > 0)) or (comm_count == 11):
+                            if comm_count != 11:
+                                comm = Committee(chamber, curr_comm)
+                                path = '//tr[%s]/td/a/font' % (comm_count)
+                            else:
+                                comm = Committee(chamber, curr_comm)
+                                path = '//tr[12]/td/a/font'
                             count = 0
                             for el in root.xpath(path):
                                 leg = el.xpath('string()').split()
@@ -73,6 +77,44 @@ class NJCommitteeScraper(CommitteeScraper):
                                 else:
                                     role = 'member'
                                 comm.add_member(leg_name, role)
+
                             comm.add_source(comm_url)
                             self.save_committee(comm)
+                        
                         comm_count = comm_count + 1
+
+
+                if (chamber == 'upper' and number != 4 ) or (chamber == 'lower'):
+                    #Special case
+                    #Committee Name
+                    path = 'string(//tr[13]//font/b)'
+                    name = root.xpath(path).split()
+                    comm_name = ''
+                    for part in name:
+                        comm_name = comm_name + part + " "
+                    comm_name = comm_name[0: len(comm_name) - 1]
+
+                    #Members
+                    comm = Committee(chamber, comm_name)
+                    path = '//tr[14]/td/a/font' 
+                    count = 0
+                    for el in root.xpath(path):
+                        leg = el.xpath('string()').split()
+                        leg_name = ''
+                        count = count + 1
+                        if len(leg) == 2:
+                            leg[0] = leg[0].replace(',', '')
+                            leg_name = leg[1] + " " + leg[0]
+                        elif len(leg) == 3:
+                            leg[0] = leg[0].replace(',', '')
+                            leg_name = leg[1] + " " + leg[2] + " " + leg[0]
+
+                        if count == 1:
+                            role = 'Chair'
+                        elif count == 2:
+                            role = 'Vice-Chair'
+                        else:
+                            role = 'member'
+                        comm.add_member(leg_name, role)
+                    comm.add_source(comm_url)
+                    self.save_committee(comm)
