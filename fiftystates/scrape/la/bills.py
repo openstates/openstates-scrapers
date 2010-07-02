@@ -1,10 +1,10 @@
 import re
-import datetime as dt
+import datetime
 
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.la import metadata, internal_sessions
 
-from BeautifulSoup import BeautifulSoup
+import lxml.html
 
 
 class LABillScraper(BillScraper):
@@ -20,120 +20,107 @@ class LABillScraper(BillScraper):
             bill_number = 1
             failures = 0
             while failures < 5:
-                bill_url = 'http://www.legis.state.la.us/billdata/'\
+                bill_url = ('http://www.legis.state.la.us/billdata/'
                             'byinst.asp?sessionid=%s&billtype=%s&billno=%d' % (
-                             s_id, abbr[chamber], bill_number)
-                bill_number = bill_number + 1
-                if self.scrape_a_bill(bill_url, chamber, session[1]):
+                        s_id, abbr[chamber], bill_number))
+
+                if self.scrape_bill(bill_url, chamber, session[1]):
                     failures = 0
                 else:
-                    failures = failures + 1
+                    failures += 1
 
-    def scrape_a_bill(self, bill, chamber, session_name):
-        abbr = {'upper': 'SB', 'lower': 'HB'}
-        bill_info = re.findall(
-            r'sessionid=(\w+)&billtype=(\w+)&billno=(\d+)', bill)[0]
+                bill_number += 1
 
-        with self.urlopen(bill) as bill_summary:
-            bill_summary = BeautifulSoup(bill_summary)
-            # Check to see if the bill actually exists
-            if bill_summary.findAll(
-                    text='Specified Bill could not be found.') != []:
+    def scrape_bill(self, bill_url, chamber, session):
+        with self.urlopen(bill_url) as text:
+            if "Specified Bill could not be found" in text:
                 return False
-            title = unicode(bill_summary.findAll(
-                    text=re.compile('Summary'))[0].parent)
-            title = title[(title.find('</b>') + 5):-5]
+            page = lxml.html.fromstring(text)
+            page.make_links_absolute(bill_url)
 
-        bill_id = "%s %s" % (bill_info[1], bill_info[2])
-        the_bill = Bill(session_name, chamber, bill_id, title)
+            bill_id = page.xpath("string(//h2)").split()[0]
 
-        versions = self.scrape_versions(the_bill, bill_info[0],
-                                        bill_info[1], bill_info[2])
+            summary = page.xpath(
+                "string(//*[starts-with(text(), 'Summary: ')])")
+            summary = summary.replace('Summary: ', '')
 
-        history = self.scrape_history(the_bill, bill_info[0],
-                                      bill_info[1], bill_info[2])
-        # sponsor names are really different than what we pull off
-        # of the rosters. thanks louisiana
-        sponsors = self.scrape_sponsors(the_bill, bill_info[0],
-                                        bill_info[1], bill_info[2])
+            bill = Bill(session, chamber, bill_id, summary)
 
-        documents = self.scrape_docs(the_bill, bill_info[0],
-                                     bill_info[1], bill_info[2])
+            history_link = page.xpath("//a[text() = 'History']")[0]
+            history_url = history_link.attrib['href']
+            self.scrape_history(bill, history_url)
 
-        self.save_bill(the_bill)
-        return True
+            authors_link = page.xpath("//a[text() = 'Authors']")[0]
+            authors_url = authors_link.attrib['href']
+            self.scrape_authors(bill, authors_url)
 
-    def scrape_docs(self, bill, session, chamber, bill_no):
-        url = 'http://www.legis.state.la.us/billdata/'\
-            'byinst.asp?sessionid=%s&billid=%s%s&doctype=AMD' % (
-            session, chamber, bill_no)
-        bill.add_source(url)
+            try:
+                versions_link = page.xpath(
+                    "//a[text() = 'Text - All Versions']")[0]
+                versions_url = versions_link.attrib['href']
+                self.scrape_versions(bill, versions_url)
+            except IndexError:
+                # Only current version
+                try:
+                    version_link = page.xpath(
+                        "//a[text() = 'Text - Current']")[0]
+                    version_url = version_link.attrib['href']
+                    bill.add_version("%s Current" % bill_id, version_url)
+                except IndexError:
+                    # Some bills don't have any versions :(
+                    pass
 
-        with self.urlopen(url) as docs:
-            docs = BeautifulSoup(docs)
-            for doc in docs.findAll('table')[2].findAll('tr'):
-                if not doc.td or not doc.td.a.string:
-                    continue
-                bill.add_document(doc.td.a.string,
-                                  "http://www.legis.state.la.us/"\
-                                      "billdata/%s" % doc.td.a['href'])
+            self.save_bill(bill)
 
-    def scrape_versions(self, bill, session, chamber, bill_no):
-        url = 'http://www.legis.state.la.us/billdata/'\
-            'byinst.asp?sessionid=%s&billid=%s%s&doctype=BT' % (
-            session, chamber, bill_no)
-        bill.add_source(url)
+            return True
 
-        with self.urlopen(url) as versions:
-            versions = BeautifulSoup(versions)
-            for version in versions.findAll('table')[2].findAll('tr'):
-                if version.td is None:
-                    continue
-                bill.add_version(version.td.a.string,
-                                 "http://www.legis.state.la.us/"\
-                                     "billdata/%s" % version.td.a['href'])
+    def scrape_history(self, bill, url):
+        with self.urlopen(url) as text:
+            page = lxml.html.fromstring(text)
 
-    def scrape_history(self, bill, session, chamber, bill_no):
-        abbr = {'S': 'upper', 'H': 'lower'}
-        url = 'http://www.legis.state.la.us/billdata/History.asp'\
-            '?sessionid=%s&billid=%s%s' % (session, chamber, bill_no)
-        bill.add_source(url)
+            action_table = page.xpath("//td/b[text() = 'Action']/../../..")[0]
 
-        with self.urlopen(url) as history:
-            history = BeautifulSoup(history)
-            for action in history.findAll('table')[2].findAll('tr'):
-                (date, house, _, matter) = action.findAll('td')
-                if date.b:
-                    continue
-                act_date = dt.datetime.strptime(date.string, "%m/%d/%Y")
-                bill.add_action(abbr[house.string], matter.string, act_date)
+            for row in action_table.xpath('tr')[1:]:
+                cells = row.xpath('td')
+                date = cells[0].text.strip()
+                date = datetime.datetime.strptime(date, '%m/%d/%Y')
 
-    def scrape_sponsors(self, bill, session, chamber, bill_no):
-        abbr = {'S': 'upper', 'H': 'lower'}
-        url = 'http://www.legis.state.la.us/billdata/Authors.asp'\
-            '?sessionid=%s&billid=%s%s' % (session, chamber, bill_no)
-        bill.add_source(url)
+                chamber = cells[1].text.strip()
+                if chamber == 'S':
+                    chamber = 'upper'
+                elif chamber == 'H':
+                    chamber = 'lower'
 
-        with self.urlopen(url) as history:
-            history = BeautifulSoup(history)
-            for sponsor in history.findAll('table')[2].findAll('tr'):
-                name = sponsor.td.string
-                t = ''
-                if name is None:
-                    continue
-                elif name.count('(Primary Author)') > 0:
-                    t = 'primary'
-                    name = name.replace('(Primary Author)', '')
+                action = cells[3].text.strip()
+
+                bill.add_action(chamber, action, date)
+
+    def scrape_authors(self, bill, url):
+        with self.urlopen(url) as text:
+            page = lxml.html.fromstring(text)
+
+            author_table = page.xpath(
+                "//td[contains(text(), 'Author)')]/../..")[0]
+
+            for row in author_table.xpath('tr')[1:]:
+                author = row.xpath('string()').strip()
+
+                if "(Primary Author)" in author:
+                    type = 'primary author'
+                    author = author.replace(" (Primary Author)", '')
                 else:
-                    t = 'cosponsor'
-                bill.add_sponsor(t, name)
+                    type = 'author'
 
-    def flatten(self, tree):
-        if tree.string:
-            s = tree.string
-        else:
-            s = map(lambda x: self.flatten(x), tree.contents)
-            if len(s) == 1:
-                s = s[0]
+                bill.add_sponsor(type, author)
 
-        return s
+    def scrape_versions(self, bill, url):
+        with self.urlopen(url) as text:
+            page = lxml.html.fromstring(text)
+            page.make_links_absolute(url)
+
+            for a in reversed(page.xpath(
+                    "//a[contains(@href, 'streamdocument.asp')]")):
+                version_url = a.attrib['href']
+                version = a.text.strip()
+
+                bill.add_version(version, version_url)
