@@ -61,10 +61,14 @@ class LABillScraper(BillScraper):
                 self.scrape_versions(bill, versions_url)
             except IndexError:
                 # Only current version
-                version_link = page.xpath(
-                    "//a[text() = 'Text - Current']")[0]
-                version_url = version_link.attrib['href']
-                bill.add_version("%s Current" % bill_id, version_url)
+                try:
+                    version_link = page.xpath(
+                        "//a[text() = 'Text - Current']")[0]
+                    version_url = version_link.attrib['href']
+                    bill.add_version("%s Current" % bill_id, version_url)
+                except IndexError:
+                    # Some bills don't have any versions :(
+                    pass
 
             self.save_bill(bill)
 
@@ -120,4 +124,3 @@ class LABillScraper(BillScraper):
                 version = a.text.strip()
 
                 bill.add_version(version, version_url)
-
