@@ -1,0 +1,11 @@
+[Washington]
+start_year: 2005
+bills: yes
+bill_versions: yes
+sponsors: yes
+actions: no
+votes: no
+contributors: Gabriel J. Pérez-Irizarry
+contact: gabrieljoel@gmail.com
+executable: get_legislation.py
+notes: Legislator data is only available for 2009.  
