@@ -154,7 +154,7 @@ def main():
     else:
         verbosity = logging.DEBUG
 
-    logger = logging.getLogger("fiftystates")
+    logger = logging.getLogger()
     formatter = logging.Formatter("%(asctime)s %(levelname)s " + state +
                                   " %(message)s")
     console = logging.StreamHandler()
