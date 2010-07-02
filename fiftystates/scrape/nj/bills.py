@@ -74,6 +74,10 @@ class NJBillScraper(BillScraper):
             sponsorship = root.xpath('string(//tr[1]/td[1]/div/font[3])').split()
             primary_count = sponsorship.count('Primary')
             sponsor_count = 1
+            #Special case
+            if session == 214 and bill_id == 'A101':
+                sponsorship = root.xpath('string(//tr[1]/td[1]/div/font[5])').split()
+                primary_count = sponsorship.count('Primary')
             for sp in root.xpath('//tr[1]/td[1]/div/font/a/font'):
                 sponsor = sp.xpath('string()').split()
                 if len(sponsor) == 3:
@@ -83,10 +87,11 @@ class NJBillScraper(BillScraper):
                     leg = sponsor[1] + " " + sponsor[0]
                     leg = leg[0: len(leg) - 1]
 
+                if sponsor_count <= primary_count:
+                    sponsor_type = 'Primary'
                 if sponsor_count > primary_count:
                     sponsor_type = 'Co-sponsor'
-                else:
-                    sponsor_type = 'Primary'
+
                 bill.add_sponsor(sponsor_type, leg)
                 sponsor_count = sponsor_count + 1
 
