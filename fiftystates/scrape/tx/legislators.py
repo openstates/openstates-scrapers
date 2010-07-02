@@ -44,7 +44,9 @@ class TXLegislatorScraper(LegislatorScraper):
 
             td = table.xpath('//td[@valign="top"]')[0]
             full_name = td.xpath('string(//div[2]/strong)').strip()
+
             district = td.xpath('string(//div[3])').strip()
+            district = district.replace('District ', '')
 
             party = td.xpath('string(//div[4])').strip()[0]
             if party == 'D':
