@@ -66,7 +66,7 @@ class WIBillScraper(BillScraper):
             body = self.urlopen(url) #unicode(self.urlopen(url), 'latin-1')
 
             if body.response.code != 200:
-                 continue
+                 break
 
             page = lxml.html.fromstring(body).cssselect('pre')[0]
             # split the history into each line, exluding all blank lines and the title line
