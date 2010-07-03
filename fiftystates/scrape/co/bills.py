@@ -37,25 +37,47 @@ class COBillScraper(BillScraper):
         bills_url = "http://www.leg.state.co.us/CLICS/CLICS" + year + "A/csl.nsf/%28bf-1%29?OpenView&Count=2000"
         with self.lxml_context(bills_url) as bills_page:
             table_rows = bills_page.cssselect('tr')
+            # Eliminate empty rows
+            table_rows = table_rows[0:len(table_rows):2]
             for row in table_rows:
                 print "row"
                 row_elements = row.cssselect('td')
                 
                 bill_document = row_elements[0]
                 bill_document.make_links_absolute("http://www.leg.state.co.us")
-                links = []
-                for element, attribute, link, pos in bill_document.iterlinks():
-                    links.append(link)
-                if len(links) > 1:
-                    bill_document_link = links[0]
-                    print bill_document_link
                 
-                    title_and_sponsors = row_elements[1]
-                    title_and_sponsors_elements = title_and_sponsors.cssselect('font')
-                    title = title_and_sponsors_elements[0].text_content()
-                    print title
-                    
-#                for re in row_elements:
-#                    print "row element"
-#                    print re.text_content()
-               
+                element, attribute, link, pos = bill_document.iterlinks().next()
+                bill_id = element.text_content().rstrip('.pdf')
+                bill_document_link = link           
+                
+                title_and_sponsors = row_elements[1]
+                title_match = re.search('([A-Z][a-z]+.+[a-z])[A-Z]', title_and_sponsors.text_content())
+                sponsors_match = re.search('[a-z]([A-Z]+.+)', title_and_sponsors.text_content())
+                title = title_match.group(1)
+                sponsors =  sponsors_match.group(1)
+                
+                bill = Bill(year, chamber, bill_id, title)
+                
+                versions_page = row_elements[2]
+                versions_page.make_links_absolute("http://www.leg.state.co.us")
+                element, attribute, link, pos = versions_page.iterlinks().next()
+                
+                bill.add_source(link)
+                
+                with self.lxml_context(link) as versions_page:
+                    page_tables = versions_page.cssselect('table')
+                    versions_table = page_tables[1]
+                    rows = versions_table.cssselect('tr')
+                                   
+                    for row in rows:
+                        row_elements = row.cssselect('td')
+                        if (len(row_elements) > 1):
+                            version_name = row_elements[0].text_content()
+                            documents_links_element = row_elements[2]
+                            documents_links_element.make_links_absolute("http://www.leg.state.co.us")
+                            print version_name
+                            for element, attribute, link, pos in documents_links_element.iterlinks():
+                                bill.add_version(version_name, link)
+                                print link
+                                
+                        
