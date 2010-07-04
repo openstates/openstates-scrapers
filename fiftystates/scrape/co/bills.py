@@ -28,6 +28,22 @@ class COBillScraper(BillScraper):
             yield elem
         except:
             raise
+        
+    def scrape_versions(self, link, bill):
+            with self.lxml_context(link) as versions_page:
+                    page_tables = versions_page.cssselect('table')
+                    versions_table = page_tables[1]
+                    rows = versions_table.cssselect('tr')
+                                   
+                    for row in rows:
+                        row_elements = row.cssselect('td')
+                        if (len(row_elements) > 1):
+                            version_name = row_elements[0].text_content()
+                            documents_links_element = row_elements[2]
+                            documents_links_element.make_links_absolute("http://www.leg.state.co.us")
+                            for element, attribute, link, pos in documents_links_element.iterlinks():
+                                bill.add_version(version_name, link)
+                    
 
     def scrape(self, chamber, year):
         # Data prior to 1997 is contained in pdfs
@@ -64,20 +80,17 @@ class COBillScraper(BillScraper):
                 
                 bill.add_source(link)
                 
-                with self.lxml_context(link) as versions_page:
-                    page_tables = versions_page.cssselect('table')
-                    versions_table = page_tables[1]
-                    rows = versions_table.cssselect('tr')
-                                   
-                    for row in rows:
-                        row_elements = row.cssselect('td')
-                        if (len(row_elements) > 1):
-                            version_name = row_elements[0].text_content()
-                            documents_links_element = row_elements[2]
-                            documents_links_element.make_links_absolute("http://www.leg.state.co.us")
-                            print version_name
-                            for element, attribute, link, pos in documents_links_element.iterlinks():
-                                bill.add_version(version_name, link)
-                                print link
-                                
+                self.scrape_versions(link, bill)
+                      
+                actions_page = row_elements[3]
+                actions_page.make_links_absolute("http://www.leg.state.co.us")
+                element, attribute, link, pos = actions_page.iterlinks().next()
+                
+                print element.text_content()
+                with self.lxml_context(link) as actions_page:
+                    action_elements = actions_page.cssselect('br')
+                    for ae in action_elements:
+                        print ae.text_content()
                         
+                    
+                
