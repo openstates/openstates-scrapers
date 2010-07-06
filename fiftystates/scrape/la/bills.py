@@ -168,7 +168,7 @@ class LABillScraper(BillScraper):
             vote_type = None
             total_re = re.compile('^Total--(\d+)$')
             for line in html.xpath('string(/html/body)').split('\n'):
-                line = line.strip()
+                line = line.replace('&nbsp;', '').strip()
 
                 if line in ('YEAS', 'NAYS', 'ABSENT'):
                     vote_type = {'YEAS': 'yes', 'NAYS': 'no',
