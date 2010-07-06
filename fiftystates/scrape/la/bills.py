@@ -150,7 +150,7 @@ class LABillScraper(BillScraper):
         chamber = {'Senate': 'upper', 'House': 'lower'}[match.group(1)]
         motion = match.group(2)
 
-        vote = Vote(chamber, datetime.datetime.now(), motion, None,
+        vote = Vote(chamber, None, motion, None,
                     None, None, None)
 
         with self.urlopen(url) as text:
