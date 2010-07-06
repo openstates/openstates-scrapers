@@ -108,9 +108,11 @@ def import_legislator_ids(state):
                                         'last_name': official.lastName})
 
             if legs.count() > 1:
-                print "Too many matches for '%s'" % official
+                print ("Too many matches for '%s'" % official).encode('ascii',
+                                                                      'replace')
             elif legs.count() == 0:
-                print "No matches for '%s'" % official
+                print ("No matches for '%s'" % official).encode('ascii',
+                                                                'replace')
             else:
                 leg = legs[0]
 

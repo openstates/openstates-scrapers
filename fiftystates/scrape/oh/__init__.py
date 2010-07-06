@@ -1,21 +1,10 @@
-status = dict(
-	bills=False,
-	bill_versions=False,
-	sponsors=False,
-	actions=False,
-	votes=False,
-	legislators=False,
-	contributors=['Dan Schneiderman'],
-	notes="",
-)
-
 metadata = dict(
 	state_name='Ohio',
-	legislature_name='Texas Legislature',
+	legislature_name='Ohio Legislature',
 	upper_chamber_name='Senate',
 	lower_chamber_name='House of Representatives',
 	upper_title='Senator',
-	lower_title='representative',
+	lower_title='Representative',
 	upper_term=4,
 	lower_term=2,
 	sessions=['128'],

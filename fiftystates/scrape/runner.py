@@ -154,13 +154,11 @@ def main():
     else:
         verbosity = logging.DEBUG
 
-    logger = logging.getLogger("fiftystates")
-    formatter = logging.Formatter("%(asctime)s %(levelname)s " + state +
-                                  " %(message)s")
-    console = logging.StreamHandler()
-    console.setFormatter(formatter)
-    logger.addHandler(console)
-    logger.setLevel(verbosity)
+    logging.basicConfig(level=verbosity,
+                        format="%(asctime)s %(name)s %(levelname)s " + state +
+                               " %(message)s",
+                        datefmt="%H:%M:%S",
+                       )
 
     # create output directories
     def makedir(path):
