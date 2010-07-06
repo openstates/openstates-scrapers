@@ -36,7 +36,7 @@ class COBillScraper(BillScraper):
             raise
         
     def scrape_votes(self, link, chamber, bill):
-         with self.lxml_context(link) as votes_page:
+        with self.lxml_context(link) as votes_page:
             page_tables = votes_page.cssselect('table')
             votes_table = page_tables[0]
             votes_elements = votes_table.cssselect('td')
