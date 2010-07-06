@@ -74,8 +74,12 @@ class LABillScraper(BillScraper):
                     # Some bills don't have any versions :(
                     pass
 
-            votes_link = page.xpath("//a[text() = 'Votes']")[0]
-            self.scrape_votes(bill, votes_link.attrib['href'])
+            try:
+                votes_link = page.xpath("//a[text() = 'Votes']")[0]
+                self.scrape_votes(bill, votes_link.attrib['href'])
+            except IndexError:
+                # Some bills don't have any votes
+                pass
 
             self.save_bill(bill)
 
