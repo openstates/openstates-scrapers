@@ -82,6 +82,7 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'django.contrib.humanize',
     'django.contrib.gis',
+    'django.contrib.redirects',
     'fiftystates.site.api',
     'fiftystates.site.geo',
     'fiftystates.site.browse',
