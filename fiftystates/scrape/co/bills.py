@@ -43,8 +43,29 @@ class COBillScraper(BillScraper):
                             documents_links_element.make_links_absolute("http://www.leg.state.co.us")
                             for element, attribute, link, pos in documents_links_element.iterlinks():
                                 bill.add_version(version_name, link)
-                    
+    
+    def scrape_actions(self, link, bill):
+        with self.lxml_context(link) as actions_page:
+                page_elements = actions_page.cssselect('b')
+                actions_element = page_elements[3]
+                actions = actions_element.text_content().split('\n')
 
+                for action in actions:
+                    date_regex = '[0-9]{2}/[0-9]{2}/[0-9]{4}'
+                    date_match = re.search(date_regex, action)
+                    action_date = date_match.group(0)
+                    action_date_obj = dt.datetime.strptime(action_date, '%m/%d/%Y')
+
+                    actor = ''
+                    if 'House' in action:
+                        actor = 'lower'
+                    elif 'Senate' in action:
+                        actor = 'upper'
+                    elif 'Governor Action' in action:
+                        actor = 'Governor'
+                         
+                    bill.add_action(actor, action, action_date_obj)
+                    
     def scrape(self, chamber, year):
         # Data prior to 1997 is contained in pdfs
         if year < '1997':
@@ -94,27 +115,10 @@ class COBillScraper(BillScraper):
                 actions_page_element = row_elements[3]
                 element, attribute, link, pos = actions_page_element.iterlinks().next()
                 frame_link = "http://www.leg.state.co.us" + link.split('?Open&target=')[1]
+                
+                self.scrape_actions(frame_link, bill)
             
-                with self.lxml_context(frame_link) as actions_page:
-                    page_elements = actions_page.cssselect('b')
-                    actions_element = page_elements[3]
-                    actions = actions_element.text_content().split('\n')
-
-                    for action in actions:
-                        date_regex = '[0-9]{2}/[0-9]{2}/[0-9]{4}'
-                        date_match = re.search(date_regex, action)
-                        action_date = date_match.group(0)
-                        action_date_obj = dt.datetime.strptime(action_date, '%m/%d/%Y')
-
-                        actor = ''
-                        if 'House' in action:
-                            actor = 'lower'
-                        elif 'Senate' in action:
-                            actor = 'upper'
-                        elif 'Governor Action' in action:
-                            actor = 'Governor'
-                            
-                        bill.add_action(actor, action, action_date_obj)
+                
                         
                                 
                         
