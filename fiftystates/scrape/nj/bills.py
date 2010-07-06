@@ -78,6 +78,7 @@ class NJBillScraper(BillScraper):
             if session == 214 and bill_id == 'A101':
                 sponsorship = root.xpath('string(//tr[1]/td[1]/div/font[5])').split()
                 primary_count = sponsorship.count('Primary')
+            #End special case
             for sp in root.xpath('//tr[1]/td[1]/div/font/a/font'):
                 sponsor = sp.xpath('string()').split()
                 if len(sponsor) == 3:
@@ -95,4 +96,25 @@ class NJBillScraper(BillScraper):
                 bill.add_sponsor(sponsor_type, leg)
                 sponsor_count = sponsor_count + 1
 
-            self.save_bill(bill)
+            #Actions
+            action_page = bill_view_page
+            action_page = action_page.replace('<br>', '\n')
+            roo = lxml.etree.fromstring(action_page, lxml.etree.HTMLParser())
+            block_o_actions = roo.xpath('string(//tr[4]/td/font[1])').split()
+            date_mark = 0
+            action_part_count = 0
+            action_name = ''
+            for action_part in block_o_actions:
+                if ('/2010' in action_part):
+                    #bill.add_action(chamber, action_name, date)
+                    #print action_part, '\t', action_name
+                    date_mark = block_o_actions.index(action_part)
+                    date = action_part
+                    action_name = ''
+                if action_part_count == (date_mark + 1):
+                #elif ('/2010' not in action_part) and date_mark < action_part_count:
+                    action_name = action_name + action_part + " "  
+                
+                action_part_count = action_part_count + 1
+            #print '\n', block_o_actions, '\n'
+            #self.save_bill(bill)
