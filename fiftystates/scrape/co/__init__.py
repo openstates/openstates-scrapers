@@ -1,10 +1,10 @@
 status = dict(
-    bills=False,
-    bill_versions=False,
-    sponsors=False,
-    actions=False,
-    votes=False,
-    legislators=False,
+    bills=True,
+    bill_versions=True,
+    sponsors=True,
+    actions=True,
+    votes=True,
+    legislators=True,
     contributors=['Gabriel J. Perez-Irizarry'],
     notes="",
 )
