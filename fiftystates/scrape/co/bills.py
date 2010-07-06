@@ -71,26 +71,54 @@ class COBillScraper(BillScraper):
                 sponsors_match = re.search('[a-z]([A-Z]+.+)', title_and_sponsors.text_content())
                 title = title_match.group(1)
                 sponsors =  sponsors_match.group(1)
+                separated_sponsors = sponsors.split('--')
                 
                 bill = Bill(year, chamber, bill_id, title)
                 
-                versions_page = row_elements[2]
-                versions_page.make_links_absolute("http://www.leg.state.co.us")
-                element, attribute, link, pos = versions_page.iterlinks().next()
+                if separated_sponsors[1] == '(NONE)':
+                    bill.add_sponsor('primary', separated_sponsors[0])
+                
+                else:
+                    bill.add_sponsor('cosponsor', separated_sponsors[0])
+                    bill.add_sponsor('cosponsor', separated_sponsors[1])                
+               
+                
+                versions_page_element = row_elements[2]
+                versions_page_element.make_links_absolute("http://www.leg.state.co.us")
+                element, attribute, link, pos = versions_page_element.iterlinks().next()
                 
                 bill.add_source(link)
                 
                 self.scrape_versions(link, bill)
                       
-                actions_page = row_elements[3]
-                actions_page.make_links_absolute("http://www.leg.state.co.us")
-                element, attribute, link, pos = actions_page.iterlinks().next()
-                
-                print element.text_content()
-                with self.lxml_context(link) as actions_page:
-                    action_elements = actions_page.cssselect('br')
-                    for ae in action_elements:
-                        print ae.text_content()
+                actions_page_element = row_elements[3]
+                element, attribute, link, pos = actions_page_element.iterlinks().next()
+                frame_link = "http://www.leg.state.co.us" + link.split('?Open&target=')[1]
+            
+                with self.lxml_context(frame_link) as actions_page:
+                    page_elements = actions_page.cssselect('b')
+                    actions_element = page_elements[3]
+                    actions = actions_element.text_content().split('\n')
+
+                    for action in actions:
+                        date_regex = '[0-9]{2}/[0-9]{2}/[0-9]{4}'
+                        date_match = re.search(date_regex, action)
+                        action_date = date_match.group(0)
+                        action_date_obj = dt.datetime.strptime(action_date, '%m/%d/%Y')
+
+                        actor = ''
+                        if 'House' in action:
+                            actor = 'lower'
+                        elif 'Senate' in action:
+                            actor = 'upper'
+                        elif 'Governor Action' in action:
+                            actor = 'Governor'
+                            
+                        bill.add_action(actor, action, action_date_obj)
+                        
+                                
+                        
+                           
                         
                     
                 
