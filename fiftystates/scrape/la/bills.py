@@ -49,6 +49,7 @@ class LABillScraper(BillScraper):
             summary = summary.replace('Summary: ', '')
 
             bill = Bill(session, chamber, bill_id, summary)
+            bill.add_source(bill_url)
 
             history_link = page.xpath("//a[text() = 'History']")[0]
             history_url = history_link.attrib['href']
@@ -88,6 +89,7 @@ class LABillScraper(BillScraper):
     def scrape_history(self, bill, url):
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
+            bill.add_source(url)
 
             action_table = page.xpath("//td/b[text() = 'Action']/../../..")[0]
 
@@ -109,6 +111,7 @@ class LABillScraper(BillScraper):
     def scrape_authors(self, bill, url):
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
+            bill.add_source(url)
 
             author_table = page.xpath(
                 "//td[contains(text(), 'Author)')]/../..")[0]
@@ -128,6 +131,7 @@ class LABillScraper(BillScraper):
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
             page.make_links_absolute(url)
+            bill.add_source(url)
 
             for a in reversed(page.xpath(
                     "//a[contains(@href, 'streamdocument.asp')]")):
@@ -152,6 +156,7 @@ class LABillScraper(BillScraper):
 
         vote = Vote(chamber, None, motion, None,
                     None, None, None)
+        vote.add_source(url)
 
         with self.urlopen(url) as text:
             (fd, temp_path) = tempfile.mkstemp()

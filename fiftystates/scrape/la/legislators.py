@@ -50,8 +50,9 @@ class LALegislatorScraper(LegislatorScraper):
             else:
                 party = "Other"
 
-            self.save_legislator(Legislator(session, 'lower', district, name,
-                                            party=party))
+            leg = Legislator(session, 'lower', district, name, party=party)
+            leg.add_source(url)
+            self.save_legislator(leg)
 
     def scrape_senator(self, name, session, url):
         with self.urlopen(url) as text:
@@ -62,8 +63,9 @@ class LALegislatorScraper(LegislatorScraper):
 
             district = re.search(r'District (\d+)', district).group(1)
 
-            district = page.xpath(
+            party = page.xpath(
                 "//b[text() = 'Party']")[0].getnext().tail.strip()
 
-            self.save_legislator(Legislator(session, 'upper',
-                                            district, name, party=party))
+            leg = Legislator(session, 'upper', district, name, party=party)
+            leg.add_source(url)
+            self.save_legislator(leg)
