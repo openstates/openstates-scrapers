@@ -30,6 +30,7 @@ class COLegislatorScraper(LegislatorScraper):
             raise
 
     def scrape(self, chamber, year):
+        # Legislator data only available for the current session
         if year != '2009':
             raise NoDataForYear(year)
         
