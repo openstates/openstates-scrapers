@@ -1,7 +1,11 @@
+import os
 import re
+import tempfile
 import datetime
 
 from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.votes import Vote
+from fiftystates.scrape.utils import pdf_to_lxml
 from fiftystates.scrape.la import metadata, internal_sessions
 
 import lxml.html
@@ -70,6 +74,9 @@ class LABillScraper(BillScraper):
                     # Some bills don't have any versions :(
                     pass
 
+            votes_link = page.xpath("//a[text() = 'Votes']")[0]
+            self.scrape_votes(bill, votes_link.attrib['href'])
+
             self.save_bill(bill)
 
             return True
@@ -124,3 +131,55 @@ class LABillScraper(BillScraper):
                 version = a.text.strip()
 
                 bill.add_version(version, version_url)
+
+    def scrape_votes(self, bill, url):
+        with self.urlopen(url) as text:
+            page = lxml.html.fromstring(text)
+            page.make_links_absolute(url)
+
+            for a in page.xpath("//a[contains(@href, 'streamdocument.asp')]"):
+                self.scrape_vote(bill, a.text, a.attrib['href'])
+
+    def scrape_vote(self, bill, name, url):
+        match = re.match('^(Senate|House) Vote on [^,]*,(.*)$', name)
+
+        chamber = {'Senate': 'upper', 'House': 'lower'}[match.group(1)]
+        motion = match.group(2)
+
+        vote = Vote(chamber, datetime.datetime.now(), motion, None,
+                    None, None, None)
+
+        with self.urlopen(url) as text:
+            (fd, temp_path) = tempfile.mkstemp()
+            with os.fdopen(fd, 'wb') as w:
+                w.write(text)
+            html = pdf_to_lxml(temp_path)
+            os.remove(temp_path)
+
+            vote_type = None
+            total_re = re.compile('^Total--(\d+)$')
+            for line in html.xpath('string(/html/body)').split('\n'):
+                line = line.strip()
+
+                if line in ('YEAS', 'NAYS', 'ABSENT'):
+                    vote_type = {'YEAS': 'yes', 'NAYS': 'no',
+                                 'ABSENT': 'other'}[line]
+                elif vote_type:
+                    match = total_re.match(line)
+                    if match:
+                        vote['%s_count' % vote_type] = int(match.group(1))
+                    elif vote_type == 'yes':
+                        vote.yes(line)
+                    elif vote_type == 'no':
+                        vote.no(line)
+                    elif vote_type == 'other':
+                        vote.other(line)
+
+        # The PDFs oddly don't say whether a vote passed or failed.
+        # Hopefully passage just requires yes_votes > not_yes_votes
+        if vote['yes_count'] > (vote['no_count'] + vote['other_count']):
+            vote['passed'] = True
+        else:
+            vote['passed'] = False
+
+        bill.add_vote(vote)
