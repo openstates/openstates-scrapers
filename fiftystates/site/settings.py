@@ -59,6 +59,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
     'locksmith.auth.middleware.APIKeyMiddleware',
+    'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
 )
 
 ROOT_URLCONF = 'fiftystates.site.urls'
