@@ -3,11 +3,17 @@ from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.bills import BillScraper, Bill
 
 import lxml.html
-import re, contextlib
+import re, contextlib, itertools
 import datetime as dt
 
 class COBillScraper(BillScraper):
     state = 'co'
+    
+    # From the itertools docs's recipe section 
+    def grouper(self, n, iterable, fillvalue=None):
+        "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
+        args = [iter(iterable)] * n
+        return itertools.izip_longest(fillvalue=fillvalue, *args) 
     
     @contextlib.contextmanager
     def lxml_context(self, url, sep=None, sep_after=True):
@@ -29,6 +35,38 @@ class COBillScraper(BillScraper):
         except:
             raise
         
+    def scrape_votes(self, link, chamber, bill):
+         with self.lxml_context(link) as votes_page:
+            page_tables = votes_page.cssselect('table')
+            votes_table = page_tables[0]
+            votes_elements = votes_table.cssselect('td')
+            # Eliminate table headings and unnecessary element
+            votes_elements = votes_elements[3:len(votes_elements)]
+            ve = self.grouper(5, votes_elements)
+            for actor, date, name_and_text, name, text in ve: 
+                if 'cow' in text.text_content() or 'COW' in text.text_content():
+                    continue
+                vote_date = dt.datetime.strptime(date.text_content(), '%m/%d/%Y')
+                motion_and_votes = text.text_content().lstrip('FINAL VOTE - ')
+                motion, sep, votes = motion_and_votes.partition('.')
+                if 'passed' in votes:
+                    passed = True
+                else:
+                    passed = False
+
+                votes_match = re.search('([0-9]+)-([0-9]+)-?([0-9]+)?', votes)
+                yes_count = votes_match.group(1)
+                no_count = votes_match.group(2)
+                other_count = votes_match.group(3)
+                        
+                if other_count == None:
+                    other_count = 0
+
+                vote = Vote(chamber, vote_date, motion, passed, \
+                            yes_count, no_count, other_count)
+                vote.add_source(link)
+                bill.add_vote(vote)
+       
     def scrape_versions(self, link, bill):
             with self.lxml_context(link) as versions_page:
                     page_tables = versions_page.cssselect('table')
@@ -95,6 +133,7 @@ class COBillScraper(BillScraper):
                 separated_sponsors = sponsors.split('--')
                 
                 bill = Bill(year, chamber, bill_id, title)
+                bill.add_version('current', bill_document_link)
                 
                 if separated_sponsors[1] == '(NONE)':
                     bill.add_sponsor('primary', separated_sponsors[0])
@@ -117,9 +156,12 @@ class COBillScraper(BillScraper):
                 frame_link = "http://www.leg.state.co.us" + link.split('?Open&target=')[1]
                 
                 self.scrape_actions(frame_link, bill)
-            
                 
-                        
+                votes_page_element = row_elements[7]
+                element, attribute, link, pos = votes_page_element.iterlinks().next()
+                frame_link = "http://www.leg.state.co.us" + link.split('?Open&target=')[1]
+                
+                self.scrape_votes(link, chamber, bill)
                                 
                         
                            
