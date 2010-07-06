@@ -59,6 +59,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
     'locksmith.auth.middleware.APIKeyMiddleware',
+    'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
 )
 
 ROOT_URLCONF = 'fiftystates.site.urls'
@@ -82,6 +83,7 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'django.contrib.humanize',
     'django.contrib.gis',
+    'django.contrib.redirects',
     'fiftystates.site.api',
     'fiftystates.site.geo',
     'fiftystates.site.browse',

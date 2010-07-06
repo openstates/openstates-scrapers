@@ -1,18 +1,18 @@
 status = dict(
-    bills=True,
-    bill_versions=True,
-    sponsors=True,
-    actions=True,
-    votes=True,
-    legislators=True,
+    bills=False,
+    bill_versions=False,
+    sponsors=False,
+    actions=False,
+    votes=False,
+    legislators=False,
     contributors=['Gabriel J. Perez-Irizarry'],
     notes="",
 )
 
 metadata = dict(
-    name='Colorado',
-    abbreviation='co',
-    legislature_name='Colorado General Assembly',
+    name='Oregon',
+    abbreviation='or',
+    legislature_name='Oregon Legislative Assembly',
     upper_chamber_name='Senate',
     lower_chamber_name='House of Representatives',
     upper_chamber_title='Senator',

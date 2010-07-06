@@ -14,112 +14,120 @@ class WIBillScraper(BillScraper):
     state = 'wi'
     earliest_year = 1999
 
+#    def scrape(self, chamber, year):
+#        # we need to be able to make http://www.legis.state.wi.us/2009/data/AB2hst.html
+#        # and http://www.legis.state.wi.us/2009/data/DE9AB2hst.html
+#        for sess in internal_sessions[int(year)]:
+#          yp = sess[0][1:].split('/', 1)
+#          (year, prefix) = (yp[0], yp[1]) if len(yp) == 2 else (yp[0], '')
+#          self.scrape_session(chamber, year, prefix, sess[1])
+
     def scrape(self, chamber, year):
-        # we need to be able to make http://www.legis.state.wi.us/2009/data/AB2hst.html
-        # and http://www.legis.state.wi.us/2009/data/DE9AB2hst.html
-        for sess in internal_sessions[int(year)]:
-          yp = sess[0][1:].split('/', 1)
-          (year, prefix) = (yp[0], yp[1]) if len(yp) == 2 else (yp[0], '')
-          self.scrape_session(chamber, year, prefix, sess[1])
+        types = {'lower': ['ab', 'ajr', 'ar', 'ap'],
+                 'upper': ['sb', 'sjr', 'sr', 'sp']}
 
+        for t in types[chamber]:
+            url = 'http://www.legis.state.wi.us/%s/data/%s_list.html' % (year, t)
+            with self.urlopen(url) as data:
+                doc = lxml.html.fromstring(data)
+                doc.make_links_absolute(url)
+                rows = doc.xpath('//tr')
+                for row in rows[1:]:
+                    link = row.xpath('td[1]/a')[0]
+                    bill_id = link.text
+                    link = link.get('href')
+                    title = row.xpath('td[2]/text()')[0][13:]
+                    bill = Bill(year, chamber, bill_id, title)
+                    self.log('Bill(%s, %s, %s, %s)' % (year, chamber, bill_id, title))
+                    self.scrape_bill_history(bill, link)
 
-    def scrape_session(self, chamber, year, prefix, session):
-        def parse_sponsors(bill, line, chamber):
-            sponsor_type = None
-            if chamber == 'upper':
-                leg_chamber = {'primary': 'upper', 'cosponsor': 'lower'}
-            else:
-                leg_chamber = {'primary': 'lower', 'cosponsor': 'upper'}
-            for r in re.split(r'\sand\s|\,|;', line):
-                r = r.strip()
-                if r.find('Introduced by') != -1:
-                    sponsor_type = 'primary'
-                    r = re.split(r'Introduced by \w+', r)[1]
-                if r.find('cosponsored by') != -1:
-                    sponsor_type = 'cosponsor'
-                    r = re.split(r'cosponsored by \w+', r)[1] 
-                bill.add_sponsor(sponsor_type, r.strip(), chamber=leg_chamber[sponsor_type])
+    def scrape_bill_history(self, bill, url):
+        body = self.urlopen(url) #unicode(self.urlopen(url), 'latin-1')
+        chambers = {'A': 'lower', 'S': 'upper'}
 
+        page = lxml.html.fromstring(body).cssselect('pre')[0]
+        # split the history into each line, exluding all blank lines and the title line
+        history = filter(lambda x: len(x.strip()) > 0, lxml.html.tostring(page).split("\n"))[2:-1]
+        buffer = ''
+        bill_title = None
+        bill_sponsors = False
 
-        def parse_action(bill, line, actor, date):
-            line = lxml.html.fromstring(line)
-            sane = line.text_content()
-            # "06-18.  S. Received from Assembly  ................................... 220 "
-            # "___________                      __________________________________________"
-            #    11         
-            sane = sane.strip()[11:]  #take out the date and house
-            if sane.find('..') != -1: 
-                sane = sane[0:sane.find(' ..')]  #clear out bookkeeping
-            bill.add_action(actor, sane, date)
-            for doc in line.findall('a'):
-                # have this treat amendments better, as they show up like "1" or "3" now..
-                bill.add_document(doc.text_content(), doc.get('href'))
+        current_year = None
+        action_date = None
+        current_chamber = None
 
-            if sane.find('Ayes') != -1:
-                self.add_vote(bill, actor, date, sane)
+        for line in history:
+            stop = False
 
-        house = 'SB' if (chamber == 'upper') else 'AB'
-        chambers = {'S': 'upper', 'A': 'lower'}
-        i = 1
-        while True:
-            url = "http://www.legis.state.wi.us/%s/data/%s%s%dhst.html" % (year, prefix, house, i)
-            body = self.urlopen(url) #unicode(self.urlopen(url), 'latin-1')
+            # the year changed
+            if re.match(r'^(\d{4})[\s]{0,1}$', line):
+                current_year = int(line.strip())
+                continue
 
-            if body.response.code != 200:
-                 continue
+            # the action changed. 
+            if re.match(r'\s+(\d{2})-(\d{2}).\s\s([AS])\.\s', line):
+               dm = re.findall(r'\s+(\d{2})-(\d{2}).\s\s([AS])\.\s', line)[0]
+               workdata = buffer
+               buffer = ''
+               stop = True
 
-            page = lxml.html.fromstring(body).cssselect('pre')[0]
-            # split the history into each line, exluding all blank lines and the title line
-            history = filter(lambda x: len(x.strip()) > 0, lxml.html.tostring(page).split("\n"))[2:-1]
-            buffer = ''
-            bill_id = page.find("a").text_content()
-            bill_title = None
-            bill_sponsors = False
+            buffer = buffer + ' ' + line.strip()
+            if(stop and not bill_title):
+                bill_title = workdata
+                continue
 
-            current_year = None
-            action_date = None
-            current_chamber = None
+            if stop and not bill_sponsors:
+                self.parse_sponsors(bill, workdata, bill['chamber'])
+                bill_sponsors = True
+                print dm[2]
+                current_chamber = chambers[dm[2]]
+                action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
+                continue
 
-            for line in history:
-                stop = False
+            if stop:
+                self.parse_action(bill, workdata, current_chamber, action_date)
+                #now update the date
+                current_chamber = chambers[dm[2]]
+                action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
 
-                # the year changed
-                if re.match(r'^(\d{4})[\s]{0,1}$', line):
-                    current_year = int(line.strip())
-                    continue
+        current_chamber = chambers[dm[2]]
+        action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))    
+        self.parse_action(bill, buffer, current_chamber, action_date)
+        bill.add_source(url)
+        self.save_bill(bill)
 
-                # the action changed. 
-                if re.match(r'\s+(\d{2})-(\d{2}).\s\s([AS])\.\s', line):
-                   dm = re.findall(r'\s+(\d{2})-(\d{2}).\s\s([AS])\.\s', line)[0]
-                   workdata = buffer
-                   buffer = ''
-                   stop = True
+    def parse_sponsors(self, bill, line, chamber):
+        sponsor_type = None
+        if chamber == 'upper':
+            leg_chamber = {'primary': 'upper', 'cosponsor': 'lower'}
+        else:
+            leg_chamber = {'primary': 'lower', 'cosponsor': 'upper'}
+        for r in re.split(r'\sand\s|\,|;', line):
+            r = r.strip()
+            if r.find('Introduced by') != -1:
+                sponsor_type = 'primary'
+                r = re.split(r'Introduced by \w+', r)[1]
+            if r.find('cosponsored by') != -1:
+                sponsor_type = 'cosponsor'
+                r = re.split(r'cosponsored by \w+', r)[1] 
+            bill.add_sponsor(sponsor_type, r.strip(), chamber=leg_chamber[sponsor_type])
 
-                buffer = buffer + ' ' + line.strip()
-                if(stop and not bill_title):
-                    bill_title = workdata
-                    bill = Bill(session, chamber, bill_id, bill_title)
-                    continue
+    def parse_action(self, bill, line, actor, date):
+        line = lxml.html.fromstring(line)
+        sane = line.text_content()
+        # "06-18.  S. Received from Assembly  ................................... 220 "
+        # "___________                      __________________________________________"
+        #    11
+        sane = sane.strip()[11:]  #take out the date and house
+        if sane.find('..') != -1: 
+            sane = sane[0:sane.find(' ..')]  #clear out bookkeeping
+        bill.add_action(actor, sane, date)
+        for doc in line.findall('a'):
+            # have this treat amendments better, as they show up like "1" or "3" now..
+            bill.add_document(doc.text_content(), doc.get('href'))
 
-                if(stop and not bill_sponsors):
-                    parse_sponsors(bill, workdata, chamber)
-                    bill_sponsors = True
-                    current_chamber = chambers[dm[2]]
-                    action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
-                    continue
-
-                if(stop):
-                    parse_action(bill, workdata, current_chamber, action_date)
-                    #now update the date
-                    current_chamber = chambers[dm[2]]
-                    action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
-
-            current_chamber = chambers[dm[2]]
-            action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))    
-            parse_action(bill, buffer, current_chamber, action_date)
-            bill.add_source(url)
-            self.save_bill(bill)
-            i = i + 1
+        if sane.find('Ayes') != -1:
+            self.add_vote(bill, actor, date, sane)
 
     def add_vote(self, bill, chamber, date, line):
         votes = re.findall(r'Ayes (\d+)\, Noes (\d+)', line)
@@ -132,7 +140,7 @@ class WIBillScraper(BillScraper):
             vote_url = filter(lambda x: x.get('href').find('votes') != -1, line.findall('a'))
             vote_url = vote_url[0].get('href')
         with self.urlopen_context(vote_url) as the_pdf:
-    
+
             # UGH! What a useful yet convoluted library.
             outtext = StringIO()
             rsrc = PDFResourceManager()
