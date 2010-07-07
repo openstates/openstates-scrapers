@@ -1,65 +1,47 @@
-#!/usr/bin/env python
-import urllib2
 import re
 import datetime as dt
+
+from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.votes import Vote
+from fiftystates.scrape.sd import metadata
+
 import html5lib
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 NoDataForYear)
 
 
-class SDLegislationScraper(LegislationScraper):
-
+class SDBillScraper(BillScraper):
     state = 'sd'
+
     soup_parser = html5lib.HTMLParser(
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
-    metadata = {
-        'state_name': 'South Dakota',
-        'legislature_name': 'South Dakota State Legislature',
-        'upper_chamber_name': 'Senate',
-        'lower_chamber_name': 'House of Representatives',
-        'upper_title': 'Senator',
-        'lower_title': 'Representative',
-        'upper_term': 2,
-        'lower_term': 2,
-        'sessions': ['1997', '1998', '1999', '2000', '2001', '2002', '2003',
-                     '2004', '2005', '2006', '2007', '2008', '2009'],
-        'session_details': {
-            '1997': {'years': [1997], 'sub_sessions': ['1997s'],
-                     'alternate': '72nd'},
-            '1998': {'years': [1998], 'sub_sessions': [], 'alternate': '73rd'},
-            '1999': {'years': [1999], 'sub_sessions': [], 'alternate': '74th'},
-            '2000': {'years': [2000], 'sub_sessions': ['2000s'],
-                     'alternate': '75th'},
-            '2001': {'years': [2001], 'sub_sessions': ['2001s'],
-                     'alternate': '76th'},
-            '2002': {'years': [2002], 'sub_sessions': [], 'alternate': '77th'},
-            '2003': {'years': [2003], 'sub_sessions': ['2003s'],
-                     'alternate': '78th'},
-            '2004': {'years': [2004], 'sub_sessions': [], 'alternate': '79th'},
-            '2005': {'years': [2005], 'sub_sessions': ['2005s'],
-                     'alternate': '80th'},
-            '2006': {'years': [2006], 'sub_sessions': [], 'alternate': '81st'},
-            '2007': {'years': [2007], 'sub_sessions': [], 'alternate': '82nd'},
-            '2008': {'years': [2008], 'sub_sessions': [], 'alternate': '83rd'},
-            '2009': {'years': [2009], 'sub_sessions': [], 'alternate': '84th'},
-            }
-        }
-
-    def _make_headers(self):
+    def _make_headers(self, url):
         # South Dakota's gzipped responses seem to be broken
-        headers = super(SDLegislationScraper, self)._make_headers()
+        headers = super(SDBillScraper, self)._make_headers(url)
         headers['Accept-Encoding'] = ''
 
         return headers
 
+    def scrape(self, chamber, year):
+        session = None
+        for s in metadata['sessions']:
+            if s['start_year'] == int(year):
+                session = s
+                break
+        else:
+            return NoDataForYear(year)
+
+        if int(year) >= 2009:
+            self.scrape_new_session(chamber, year)
+            for sub in session['sub_sessions']:
+                self.scrape_new_session(chamber, sub)
+        else:
+            self.scrape_old_session(chamber, year)
+            for sub in session['sub_sessions']:
+                self.scrape_old_session(chamber, sub)
+
     # The format of SD's legislative info pages changed in 2009, so we have
     # two separate scrapers.
-
     def scrape_new_session(self, chamber, session):
         """
         Scrapes SD's bill data from 2009 on.
@@ -344,112 +326,3 @@ class SDLegislationScraper(LegislationScraper):
                 vote.other(td.findPrevious().contents[0])
 
         return vote
-
-    def scrape_bills(self, chamber, year):
-        if year not in self.metadata['session_details']:
-            raise NoDataForYear(year)
-
-        if int(year) >= 2009:
-            self.scrape_new_session(chamber, year)
-            for sub in self.metadata['session_details'][year]['sub_sessions']:
-                self.scrape_new_session(chamber, sub)
-        else:
-            self.scrape_old_session(chamber, year)
-            for sub in self.metadata['session_details'][year]['sub_sessions']:
-                self.scrape_old_session(chamber, sub)
-
-    def scrape_new_legislators(self, chamber, session):
-        """
-        Scrape legislators from 2009 and later.
-        """
-
-        if chamber == 'upper':
-            search = 'Senate Members'
-        else:
-            search = 'House Members'
-
-        leg_list_url = "http://legis.state.sd.us/sessions/%s/"\
-            "MemberMenu.aspx" % (session)
-        leg_list = self.soup_parser(self.urlopen(leg_list_url))
-
-        list_div = leg_list.find(text=search).findNext('div')
-
-        for link in list_div.findAll('a'):
-            full_name = link.contents[0].strip()
-            first_name = full_name.split(', ')[1].split(' ')[0]
-            last_name = full_name.split(',')[0]
-            middle_name = ''
-
-            leg_page_url = "http://legis.state.sd.us/sessions/%s/%s" % (
-                session, link['href'])
-            leg_page = self.soup_parser(self.urlopen(leg_page_url))
-
-            party = leg_page.find(
-                id="ctl00_contentMain_spanParty").contents[0].strip()
-
-            district = leg_page.find(
-                id="ctl00_contentMain_spanDistrict").contents[0]
-            district = district.strip().lstrip('0')
-
-            occ_span = leg_page.find(id="ctl00_contentMain_spanOccupation")
-            if len(occ_span.contents) > 0:
-                occupation = occ_span.contents[0].strip()
-            else:
-                occupation = None
-
-            legislator = Legislator(session, chamber, district,
-                                    full_name, first_name, last_name,
-                                    middle_name, party,
-                                    occupation=occupation)
-            legislator.add_source(leg_page_url)
-            self.save_legislator(legislator)
-
-    def scrape_old_legislators(self, chamber, session):
-        """
-        Scrape pre-2009 legislators.
-        """
-        if chamber == 'upper':
-            chamber_name = 'Senate'
-        else:
-            chamber_name = 'House'
-
-        if int(session) < 2008:
-            filename = 'district.htm'
-        else:
-            filename = 'MembersDistrict.htm'
-
-        leg_list_url = "http://legis.state.sd.us/sessions/%s/%s" % (
-            session, filename)
-        leg_list = self.soup_parser(self.urlopen(leg_list_url))
-
-        for district_str in leg_list.findAll('h2'):
-            district = district_str.contents[0].split(' ')[1].lstrip('0')
-
-            for row in district_str.findNext('table').findAll('tr')[1:]:
-                if row.findAll('td')[1].contents[0].strip() != chamber_name:
-                    continue
-
-                full_name = row.td.a.contents[0].strip()
-                first_name = full_name.split(', ')[1].split(' ')[0]
-                last_name = full_name.split(',')[0]
-                middle_name = ''
-
-                party = row.findAll('td')[3].contents[0].strip()
-                occupation = row.findAll('td')[4].contents[0].strip()
-
-                legislator = Legislator(session, chamber, district,
-                                        full_name, first_name, last_name,
-                                        middle_name, party=party,
-                                        occupation=occupation)
-                legislator.add_source(leg_list_url)
-                self.save_legislator(legislator)
-
-    def scrape_legislators(self, chamber, year):
-        if year not in self.metadata['session_details']:
-            raise NoDataForYear(year)
-
-        if int(year) >= 2009:
-            self.scrape_new_legislators(chamber, year)
-        else:
-            self.scrape_old_legislators(chamber, year)
-
