@@ -35,11 +35,11 @@ class NJBillScraper(BillScraper):
                 root = lxml.etree.fromstring(first_bill_page, lxml.etree.HTMLParser())
                 num_pages = root.xpath('string(//table/tr[1]/td[4]/div/font/b/font)').split()[-1]
                 num_pages = int(num_pages)
-                self.scrape_bills_number(session, first_bill_page)
+                self.scrape_bills_number(session, first_bill_page, year)
                 #print num_pages
 
 
-    def scrape_bills_number(self, session, page):
+    def scrape_bills_number(self, session, page, year):
         bills = []        
         root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
         count = 1
@@ -55,9 +55,9 @@ class NJBillScraper(BillScraper):
             bills.append(bill_object)
             count = count + 4
         for bill in bills:
-            self.scrape_info(session, bill)
+            self.scrape_info(session, bill, year)
 
-    def scrape_info(self, session, bill_number):
+    def scrape_info(self, session, bill_number, year):
         bill_view_url = 'http://www.njleg.state.nj.us/bills/BillView.asp'
         bill_id = bill_number[0]
         bill_view_body = 'BillNumber=%s++++&LastSession=' % bill_number[0]
@@ -99,16 +99,17 @@ class NJBillScraper(BillScraper):
             #Actions
             #Make a new action for everything behind a "BRWASHERE"
             action_page = bill_view_page
-            action_page = action_page.replace('<br>', '\nBRWASHERE\n') #originally replacing with a new line
+            action_page = action_page.replace('<br>', '\nBRWASHERE\n')
             roo = lxml.etree.fromstring(action_page, lxml.etree.HTMLParser())
             block_o_actions = roo.xpath('string(//tr[4]/td/font[1])').split()
             action_part_count = 0
             date = ''
             action_name = ''
             intro_count = 0
-            print block_o_actions
+            year_insert1 = '/%s' % (year)
+            year_insert2 = '/%s' % (int(year) + 1)
             for action_part in block_o_actions:
-                if (action_part_count == 0) or ('/2010' in action_part):
+                if (action_part_count == 0) or (year_insert1 in action_part) or (year_insert2 in action_part):
                     date = action_part
                 elif action_part != 'BRWASHERE':
                     action_name = action_name + action_part + " "
@@ -117,7 +118,7 @@ class NJBillScraper(BillScraper):
                         action = action_name[0: len(action_name) - 1]
                         if action.split()[0] != 'Introduced':
                             bill.add_action(chamber, action, date)
-                            print action
+                            print date, '\t', action
                     action_name = ''
                 action_part_count = action_part_count + 1
             print '\n'
