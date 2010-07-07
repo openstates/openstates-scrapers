@@ -97,24 +97,29 @@ class NJBillScraper(BillScraper):
                 sponsor_count = sponsor_count + 1
 
             #Actions
+            #Make a new action for everything behind a "BRWASHERE"
             action_page = bill_view_page
-            action_page = action_page.replace('<br>', '\n')
+            action_page = action_page.replace('<br>', '\nBRWASHERE\n') #originally replacing with a new line
             roo = lxml.etree.fromstring(action_page, lxml.etree.HTMLParser())
             block_o_actions = roo.xpath('string(//tr[4]/td/font[1])').split()
-            date_mark = 0
             action_part_count = 0
+            date = ''
             action_name = ''
+            intro_count = 0
+            print block_o_actions
             for action_part in block_o_actions:
-                if ('/2010' in action_part):
-                    #bill.add_action(chamber, action_name, date)
-                    #print action_part, '\t', action_name
-                    date_mark = block_o_actions.index(action_part)
+                if (action_part_count == 0) or ('/2010' in action_part):
                     date = action_part
+                elif action_part != 'BRWASHERE':
+                    action_name = action_name + action_part + " "
+                elif action_part == 'BRWASHERE':
+                    if len(action_name) > 0:
+                        action = action_name[0: len(action_name) - 1]
+                        if action.split()[0] != 'Introduced':
+                            bill.add_action(chamber, action, date)
+                            print action
                     action_name = ''
-                if action_part_count == (date_mark + 1):
-                #elif ('/2010' not in action_part) and date_mark < action_part_count:
-                    action_name = action_name + action_part + " "  
-                
                 action_part_count = action_part_count + 1
-            #print '\n', block_o_actions, '\n'
+            print '\n'
+
             #self.save_bill(bill)
