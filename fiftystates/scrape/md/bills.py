@@ -172,7 +172,7 @@ class MDBillScraper(BillScraper):
         """ Creates a bill object
         """
         url = BILL_URL % (year, session, bill_type, number)
-        with self.urlopen(url) as html:
+        with self.urlopen(url, raise_errors=True) as html:
             doc = lxml.html.fromstring(html)
             # title
             # find <a name="Title">, get parent dt, get parent dl, then get dd within dl
