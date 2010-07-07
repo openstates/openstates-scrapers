@@ -151,6 +151,9 @@ class LABillScraper(BillScraper):
     def scrape_vote(self, bill, name, url):
         match = re.match('^(Senate|House) Vote on [^,]*,(.*)$', name)
 
+        if not match:
+            return
+
         chamber = {'Senate': 'upper', 'House': 'lower'}[match.group(1)]
         motion = match.group(2)
 
