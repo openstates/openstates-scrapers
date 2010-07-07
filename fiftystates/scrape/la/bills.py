@@ -106,7 +106,24 @@ class LABillScraper(BillScraper):
 
                 action = cells[3].text.strip()
 
-                bill.add_action(chamber, action, date)
+                atype = []
+
+                if action.startswith('Prefiled'):
+                    atype.append('bill:introduced')
+
+                if 'referred to the committee' in action.lower():
+                    atype.append('committee:referred')
+
+                if action.startswith('Signed by the Governor.'):
+                    atype.append('bill:signed')
+
+                if 'Amendments proposed' in action:
+                    atype.append('amendment:introduced')
+
+                if 'finally passed' in action:
+                    atype.append('bill:passed')
+
+                bill.add_action(chamber, action, date, type=atype)
 
     def scrape_authors(self, bill, url):
         with self.urlopen(url) as text:
