@@ -2,9 +2,9 @@
 import datetime
 import itertools
 import re
-from urllib2 import HTTPError
 
 import lxml.html
+from scrapelib import HTTPError
 
 from fiftystates.scrape import NoDataForYear
 from fiftystates.scrape.bills import BillScraper, Bill
@@ -199,9 +199,7 @@ class MDBillScraper(BillScraper):
                 try:
                     self.scrape_bill(chamber, year, session, bill_type, i)
                 except HTTPError, he:
-                    # hope this is because the page doesn't exist
-                    # and not because something is broken
-                    if he.code != 404:
+                    if he.response.code != 404:
                         raise he
                     break
 
