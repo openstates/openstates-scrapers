@@ -25,23 +25,37 @@ class RunException(Exception):
         else:
             return self.msg
 
-def _load_scraper(state, scraper_type):
-    """
-        state: lower case two letter abbreviation of state
-        scraper_type: bills, legislators, committees, votes
-    """
-    mod_path = 'fiftystates.scrape.%s.%s' % (state, scraper_type)
-    scraper_name = '%s%sScraper' % (state.upper(), scraper_type[:-1].capitalize())
-
-    try:
-        mod = __import__(mod_path, fromlist=[scraper_name])
-        return getattr(mod, scraper_name)
-    except ImportError, e:
-        raise RunException("could not import %s" % mod_path, e)
-    except AttributeError, e:
-        raise RunException("could not import %s" % scraper_name, e)
-
 def run(state, years, chambers, output_dir, options):
+    def _run_scraper(scraper_type):
+        """
+            state: lower case two letter abbreviation of state
+            scraper_type: bills, legislators, committees, votes
+        """
+        mod_path = 'fiftystates.scrape.%s.%s' % (state, scraper_type)
+        scraper_name = '%s%sScraper' % (state.upper(), scraper_type[:-1].capitalize())
+
+        try:
+            mod = __import__(mod_path, fromlist=[scraper_name])
+            ScraperClass = getattr(mod, scraper_name)
+        except ImportError, e:
+            if not options.alldata:
+                raise RunException("could not import %s" % mod_path, e)
+            return
+        except AttributeError, e:
+            if not options.alldata:
+                raise RunException("could not import %s" % scraper_name, e)
+            return
+
+        scraper = ScraperClass(**opts)
+        for year in years:
+            try:
+                for chamber in chambers:
+                    scraper.scrape(chamber, year)
+            except NoDataForYear, e:
+                if options.all_years:
+                    pass
+                else:
+                    raise
 
     # write metadata
     try:
@@ -57,52 +71,20 @@ def run(state, years, chambers, output_dir, options):
             # cache_dir, error_dir
         }
 
-    # scrape bills
+    if options.alldata:
+        options.bills = True
+        options.legislators = True
+        options.votes = True
+        options.committees = True
+
     if options.bills:
-        BillScraper = _load_scraper(state, 'bills')
-        scraper = BillScraper(**opts)
-        for year in years:
-            try:
-                for chamber in chambers:
-                    scraper.scrape(chamber, year)
-            except NoDataForYear, e:
-                if options.all_years:
-                    pass
-                else:
-                    raise
-
-    # scrape legislators
+        _run_scraper('bills')
     if options.legislators:
-        LegislatorScraper = _load_scraper(state, 'legislators')
-        scraper = LegislatorScraper(**opts)
-        for year in years:
-            try:
-                for chamber in chambers:
-                    scraper.scrape(chamber, year)
-            except NoDataForYear, e:
-                pass
-
-    # scrape committees
+        _run_scraper('legislators')
     if options.committees:
-        CommitteeScraper = _load_scraper(state, 'committees')
-        scraper = CommitteeScraper(**opts)
-        for year in years:
-            try:
-                for chamber in chambers:
-                    scraper.scrape(chamber, year)
-            except NoDataForYear, e:
-                pass
-
-    # scrape votes
+        _run_scraper('committees')
     if options.votes:
-        VoteScraper = _load_scraper(state, 'votes')
-        scraper = VoteScraper(**opts)
-        for year in years:
-            try:
-                for chamber in chambers:
-                    scraper.scrape(chamber, year)
-            except NoDataForYear, e:
-                pass
+        _run_scraper('votes')
 
 
 def main():
@@ -125,6 +107,8 @@ def main():
                     default=False, help="scrape committee data"),
         make_option('--votes', action='store_true', dest='votes',
                     default=False, help="scrape vote data"),
+        make_option('--alldata', action='store_true', dest='alldata',
+                    default=False, help="scrape all available types of data"),
 
         make_option('-v', '--verbose', action='count', dest='verbose',
                     default=False,
@@ -191,7 +175,7 @@ def main():
         chambers = ['upper', 'lower']
 
     if not (options.bills or options.legislators or options.votes or
-            options.committees):
+            options.committees or options.alldata):
         print "Must specify at least one of --bills, --legislators, --committees, --votes"
         return 1
 
