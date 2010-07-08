@@ -20,12 +20,12 @@ def state_index(request, state):
     recent_bills = db.bills.find({'state': state.lower()}).sort(
         'created_at', pymongo.DESCENDING).limit(20)
 
-    current_session = meta['sessions'][-1]
+    current_term = meta['terms'][-1]
 
     upper = db.legislators.find({
             'roles': {'$elemMatch':
                           {'state': state,
-                           'session': current_session,
+                           'term': current_term,
                            'chamber': 'upper',
                            'type': 'member',
                            'district': {'$ne': '22'}}}}).sort('last_name')
@@ -37,7 +37,7 @@ def state_index(request, state):
     lower = db.legislators.find({
             'roles': {'$elemMatch':
                           {'state': state,
-                           'session': current_session,
+                           'term': current_term,
                            'chamber': 'lower',
                            'type': 'member'}}}).sort('last_name')
 
