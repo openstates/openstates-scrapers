@@ -28,12 +28,8 @@ class CABillScraper(BillScraper):
 
     def scrape(self, chamber, year):
         session = "%s%d" % (year, int(year) + 1)
-        found = False
-        for s in metadata['sessions']:
-            if s['name'] == session:
-                found = True
-                break
-        if not found:
+        if session not in [s_ for t in metadata['terms']
+                           for s_ in t['sessions']]:
             raise NoDataForYear(year)
 
         if chamber == 'upper':

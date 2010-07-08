@@ -52,7 +52,7 @@ class LegislatorScraper(Scraper):
         role = legislator['roles'][0]
         legislator['state'] = self.state
 
-        filename = "%s_%s_%s_%s.json" % (role['session'],
+        filename = "%s_%s_%s_%s.json" % (role['term'],
                                          role['chamber'],
                                          role['district'],
                                          legislator['full_name'])
@@ -76,7 +76,7 @@ class Person(FiftystatesObject):
         self['full_name'] = full_name
         self['roles'] = []
 
-    def add_role(self, role, session, start_date=None, end_date=None,
+    def add_role(self, role, term, start_date=None, end_date=None,
                  **kwargs):
         """
         If ``start_date`` or ``end_date`` are ``None``, they will default
@@ -87,13 +87,13 @@ class Person(FiftystatesObject):
         leg.add_role('member', session='2009', chamber='upper',
                      party='Republican', district='10th')
         """
-        self['roles'].append(dict(role=role, session=session,
+        self['roles'].append(dict(role=role, term=term,
                                   start_date=start_date,
                                   end_date=end_date, **kwargs))
 
 
 class Legislator(Person):
-    def __init__(self, session, chamber, district, full_name,
+    def __init__(self, term, chamber, district, full_name,
                  first_name='', last_name='', middle_name='',
                  party='', **kwargs):
         """
@@ -120,7 +120,7 @@ class Legislator(Person):
         """
         super(Legislator, self).__init__(full_name, **kwargs)
         #self['type'] = 'legislator'
-        self.add_role('member', session, chamber=chamber, district=district,
+        self.add_role('member', term, chamber=chamber, district=district,
                       party=party)
         self['first_name'] = first_name
         self['last_name'] = last_name

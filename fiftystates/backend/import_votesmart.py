@@ -94,22 +94,24 @@ def import_legislator_ids(state):
     else:
         offices['lower'] = 7
 
-    current_session = state['sessions'][-1]['name']
+    current_term = state['terms'][-1]['name']
 
     for chamber, office in offices.items():
         officials = votesmart.officials.getByOfficeState(
             office, state['_id'].upper())
 
         for official in officials:
-            legs = db.legislators.find({'roles.type': 'member',
-                                        'roles.chamber': chamber,
-                                        'roles.session': current_session,
+            legs = db.legislators.find({'roles':
+                                            {'$elemMatch':
+                                                 {'type': 'member',
+                                                  'chamber': chamber,
+                                                  'term': current_term}},
                                         'first_name': official.firstName,
                                         'last_name': official.lastName})
 
             if legs.count() > 1:
-                print ("Too many matches for '%s'" % official).encode('ascii',
-                                                                      'replace')
+                print ("Too many matches for '%s'" % official).encode(
+                    'ascii', 'replace')
             elif legs.count() == 0:
                 print ("No matches for '%s'" % official).encode('ascii',
                                                                 'replace')
@@ -118,7 +120,7 @@ def import_legislator_ids(state):
 
                 for r in leg['roles']:
                     if (r['type'] == 'member' and
-                        r['session'] == current_session):
+                        r['term'] == current_term):
 
                         leg['votesmart_id'] = official.candidateId
                         db.legislators.save(leg)
