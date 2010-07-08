@@ -25,7 +25,7 @@ class RunException(Exception):
         else:
             return self.msg
 
-def run(state, years, chambers, sessions, output_dir, options):
+def main():
     def _run_scraper(scraper_type):
         """
             state: lower case two letter abbreviation of state
@@ -64,37 +64,7 @@ def run(state, years, chambers, sessions, output_dir, options):
             for chamber in chambers:
                 scraper.scrape(chamber, session)
 
-    # write metadata
-    try:
-        metadata = __import__(state).metadata
-        with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
-            json.dump(metadata, f, cls=JSONDateEncoder)
-    except (ImportError, AttributeError), e:
-        pass
 
-    opts = {'output_dir': output_dir,
-            'no_cache': options.no_cache,
-            'requests_per_minute': options.rpm,
-            # cache_dir, error_dir
-        }
-
-    if options.alldata:
-        options.bills = True
-        options.legislators = True
-        options.votes = True
-        options.committees = True
-
-    if options.bills:
-        _run_scraper('bills')
-    if options.legislators:
-        _run_scraper('legislators')
-    if options.committees:
-        _run_scraper('committees')
-    if options.votes:
-        _run_scraper('votes')
-
-
-def main():
     option_list = (
         make_option('-y', '--year', action='append', dest='years',
                     help='deprecated'),
@@ -198,7 +168,35 @@ def main():
             options.committees or options.alldata):
         raise RunException("Must specify at least one of --bills, --legislators, --committees, --votes")
 
-    run(state, years, chambers, sessions, output_dir, options)
+
+    # write metadata
+    try:
+        metadata = __import__(state).metadata
+        with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
+            json.dump(metadata, f, cls=JSONDateEncoder)
+    except (ImportError, AttributeError), e:
+        pass
+
+    opts = {'output_dir': output_dir,
+            'no_cache': options.no_cache,
+            'requests_per_minute': options.rpm,
+            # cache_dir, error_dir
+        }
+
+    if options.alldata:
+        options.bills = True
+        options.legislators = True
+        options.votes = True
+        options.committees = True
+
+    if options.bills:
+        _run_scraper('bills')
+    if options.legislators:
+        _run_scraper('legislators')
+    if options.committees:
+        _run_scraper('committees')
+    if options.votes:
+        _run_scraper('votes')
 
 
 if __name__ == '__main__':

@@ -12,7 +12,7 @@ class MDLegislatorScraper(LegislatorScraper):
                 'upper': "http://www.msa.md.gov/msa/mdmanual/05sen/html/senal.html"}
         detail_re = re.compile('\((R|D)\), (?:Senate President, )?(?:House Speaker, )?District (\w+)')
 
-        if year != 2010:
+        if year != '2010':
             raise NoDataForYear(year)
 
         with self.urlopen(urls[chamber]) as html:
