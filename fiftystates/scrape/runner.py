@@ -46,15 +46,10 @@ def run(state, years, chambers, sessions, output_dir, options):
 
         scraper = ScraperClass(**opts)
 
+        # try and run years
         for year in years:
-            try:
-                for chamber in chambers:
-                    scraper.scrape(chamber, year)
-            except NoDataForYear, e:
-                if options.all_years:
-                    pass
-                else:
-                    raise
+            for chamber in chambers:
+                scraper.scrape(chamber, year)
 
         # run for sessions
         if not sessions:
@@ -63,6 +58,8 @@ def run(state, years, chambers, sessions, output_dir, options):
             run_sessions = [latest_session]
         else:
             run_sessions = sessions
+
+        # try and run sessions
         for session in run_sessions:
             for chamber in chambers:
                 scraper.scrape(chamber, session)
@@ -101,8 +98,6 @@ def main():
     option_list = (
         make_option('-y', '--year', action='append', dest='years',
                     help='deprecated'),
-        make_option('--all', action='store_true', dest='all_years',
-                    default=False, help='deprecated'),
 
         make_option('-s', '--session', action='append', dest='sessions',
                     help='session(s) to scrape'),
@@ -173,9 +168,6 @@ def main():
 
     # determine years
     years = options.years
-    if options.all_years:
-        years = [str(y) for y in range(scraper.earliest_year,
-                                       datetime.datetime.now().year + 1)]
 
     # determine sessions
     sessions = options.sessions
