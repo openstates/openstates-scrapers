@@ -17,9 +17,9 @@ class CommitteeScraper(Scraper):
     def save_committee(self, committee):
         """
         Save a scraped :class:`pyutils.legislation.Committee` object.
-        Only call after all data for the given committeee has been collected.
+        Only call after all data for the given committee has been collected.
         """
-        self.log("save_committeee: %s" % committee['name'])
+        self.log("save_committee: %s" % committee['name'])
 
         filename = "%s_%s.json" % (committee['chamber'],
                                    committee['name'].replace('/', ','))
