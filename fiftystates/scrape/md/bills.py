@@ -40,21 +40,6 @@ MOTION_RE = re.compile(r"(?P<motion>[\w\s]+) \((?P<yeas>\d{1,3})-(?P<nays>\d{1,3
 class MDBillScraper(BillScraper):
     state = 'md'
 
-    metadata = {
-        'state_name': 'Maryland',
-        'legislature_name': 'Maryland General Assembly',
-        'upper_chamber_name': 'Senate',
-        'lower_chamber_name': 'House of Delegates',
-        'upper_title': 'Senator',
-        'lower_title': 'Delegate',
-        'upper_term': 4,
-        'lower_term': 4,
-        'sessions': SESSIONS.keys(),
-        'session_details': {
-            '2007-2008': {'years': [2007, 2008], 'sub_sessions':
-                              ['Sub Session 1', 'Sub Session 2']},
-            '2009-2010': {'years': [2009, 2010], 'sub_sessions': []}}}
-
     def parse_bill_sponsors(self, doc, bill):
         sponsor_list = doc.cssselect('a[name=Sponlst]')
         if sponsor_list:
@@ -172,7 +157,7 @@ class MDBillScraper(BillScraper):
         """ Creates a bill object
         """
         url = BILL_URL % (year, session, bill_type, number)
-        with self.urlopen(url, raise_errors=True) as html:
+        with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
             # title
             # find <a name="Title">, get parent dt, get parent dl, then get dd within dl
