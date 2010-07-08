@@ -102,7 +102,7 @@ class LegislatorSearchHandler(FiftyStateHandler):
                 filter[key] = re.compile("^%s$" % value, re.IGNORECASE)
 
         elemMatch = {}
-        for key in ('chamber', 'session', 'district', 'party'):
+        for key in ('chamber', 'term', 'district', 'party'):
             value = request.GET.get(key)
             if value:
                 elemMatch[key] = re.compile("^%s$" % value,
@@ -122,7 +122,7 @@ class DistrictHandler(FiftyStateHandler):
         legislators = db.legislators.find(
             {'state': model.state_abbrev,
              'roles': {'$elemMatch': {
-                        'session': model.session,
+                        'term': model.session,
                         'district': model.name,
                         'chamber': model.chamber}}})
 

@@ -27,17 +27,17 @@ def import_nimsp_ids(state_abbrev):
     else:
         lower_office_id = None
 
-    current_session = state['sessions'][-1]['name']
-    year = state['sessions'][-1]['start_year'] - 1
+    current_term = state['terms'][-1]['name']
+    year = state['terms'][-1]['start_year'] - 1
 
     for leg in db.legislators.find({'roles': {'$elemMatch': {
                     'type': 'member',
-                    'session': current_session,
+                    'term': current_term,
                     'state': state_abbrev}}}):
 
         role = None
         for r in leg['roles']:
-            if r['type'] == 'member' and r['session'] == current_session:
+            if r['type'] == 'member' and r['term'] == current_term:
                 role = r
                 break
 

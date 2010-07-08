@@ -7,8 +7,10 @@ metadata = dict(
     upper_chamber_title='Senator',
     lower_chamber_term=3,
     upper_chamber_term=4,
-    sessions=[
-        {'name': '20092010', 'sub_session': [
+    terms=[
+        {'name': '20092010',
+         'sessions': [
+                '20092010',
                 '20092010 Special Session 1',
                 '20092010 Special Session 2',
                 '20092010 Special Session 3',
@@ -16,7 +18,9 @@ metadata = dict(
                 '20092010 Special Session 5',
                 '20092010 Special Session 6',
                 '20092010 Special Session 7',
-                '20092010 Special Session 8'],
-         'start_year': 2009, 'end_year': 2010},
+                '20092010 Special Session 8',
+                ],
+         'start_year': 2009, 'end_year': 2010,
+         },
         ],
     )

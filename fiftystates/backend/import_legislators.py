@@ -45,7 +45,7 @@ def import_legislator(data):
         {'state': data['state'],
          'full_name': data['full_name'],
          'roles': {'$elemMatch': {
-                    'session': cur_role['session'],
+                    'term': cur_role['term'],
                     'chamber': cur_role['chamber'],
                     'type': cur_role['type'],
                     'district': cur_role['district']}}})
@@ -53,18 +53,18 @@ def import_legislator(data):
     if not leg:
         metadata = db.metadata.find_one({'_id': data['state']})
 
-        session_names = [s['name'] for s in metadata['sessions']]
+        term_names = [t['name'] for t in metadata['terms']]
 
         try:
-            index = session_names.index(cur_role['session'])
+            index = term_names.index(cur_role['term'])
 
             if index > 0:
-                prev_session = session_names[index - 1]
+                prev_term = term_names[index - 1]
                 prev_leg = db.legislators.find_one(
-                    {'state': data['state'],
-                     'full_name': data['full_name'],
+                    {'full_name': data['full_name'],
                      'roles': {'$elemMatch': {
-                                'session': prev_session,
+                                'state': data['state'],
+                                'term': prev_term,
                                 'chamber': cur_role['chamber'],
                                 'type': cur_role['type'],
                                 'district': cur_role['district']}}})
@@ -73,7 +73,7 @@ def import_legislator(data):
                     update(prev_leg, data, db.legislators)
                     return
         except ValueError:
-            print "Invalid session: %s" % cur_role['session']
+            print "Invalid term: %s" % cur_role['term']
             sys.exit(1)
 
         data['created_at'] = datetime.datetime.now()

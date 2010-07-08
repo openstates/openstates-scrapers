@@ -16,7 +16,16 @@ def get_legislator_id(state, session, chamber, name):
 def init_name_matcher(state, session, chamber):
     matcher = NameMatcher()
 
-    elemMatch = {'state': state, 'session': session, 'type': 'member'}
+    elemMatch = {'state': state, 'type': 'member'}
+
+    metadata = db.metadata.find_one({'_id': state})
+    for term in metadata['terms']:
+        if session in term['sessions']:
+            elemMatch['term'] = term
+            break
+    else:
+        raise Exception("bad term")
+
     if chamber and chamber != 'both':
         elemMatch['chamber'] = chamber
 
