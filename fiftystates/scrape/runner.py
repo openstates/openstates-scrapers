@@ -25,7 +25,7 @@ class RunException(Exception):
         else:
             return self.msg
 
-def run(state, years, chambers, output_dir, options):
+def run(state, years, chambers, sessions, output_dir, options):
     def _run_scraper(scraper_type):
         """
             state: lower case two letter abbreviation of state
@@ -40,13 +40,12 @@ def run(state, years, chambers, output_dir, options):
         except ImportError, e:
             if not options.alldata:
                 raise RunException("could not import %s" % mod_path, e)
-            return
         except AttributeError, e:
             if not options.alldata:
                 raise RunException("could not import %s" % scraper_name, e)
-            return
 
         scraper = ScraperClass(**opts)
+
         for year in years:
             try:
                 for chamber in chambers:
@@ -56,6 +55,17 @@ def run(state, years, chambers, output_dir, options):
                     pass
                 else:
                     raise
+
+        # run for sessions
+        if not sessions:
+            latest_session = metadata['terms'][-1]['sessions'][-1]
+            print 'No session specified, using latest "%s"' % latest_session
+            run_sessions = [latest_session]
+        else:
+            run_sessions = sessions
+        for session in run_sessions:
+            for chamber in chambers:
+                scraper.scrape(chamber, session)
 
     # write metadata
     try:
@@ -90,9 +100,14 @@ def run(state, years, chambers, output_dir, options):
 def main():
     option_list = (
         make_option('-y', '--year', action='append', dest='years',
-                    help='year(s) to scrape'),
+                    help='deprecated'),
         make_option('--all', action='store_true', dest='all_years',
-                    default=False, help='scrape all data (overrides --year)'),
+                    default=False, help='deprecated'),
+
+        make_option('-s', '--session', action='append', dest='sessions',
+                    help='session(s) to scrape'),
+        make_option('-t', '--term', action='append', dest='terms',
+                    help='term(s) to scrape'),
 
         make_option('--upper', action='store_true', dest='upper',
                     default=False, help='scrape upper chamber'),
@@ -126,8 +141,7 @@ def main():
     options, spares = parser.parse_args()
 
     if len(spares) != 1:
-        print "Must pass a state abbreviation (eg. nc)"
-        return 1
+        raise RunException("Must pass a state abbreviation (eg. nc)")
     state = spares[0]
 
     # configure logger
@@ -162,8 +176,22 @@ def main():
     if options.all_years:
         years = [str(y) for y in range(scraper.earliest_year,
                                        datetime.datetime.now().year + 1)]
-    if not years:
-        years = [datetime.datetime.now().year]
+
+    # determine sessions
+    sessions = options.sessions
+    if options.terms:
+        for term in metadata['terms']:
+            if term in options.terms:
+                sessions.extend(term['sessions'])
+    sessions = set(sessions or [])
+
+    if years:
+        if sessions:
+            raise RunException('cannot specify years and sessions')
+        else:
+            print 'use of -y, --years, --all is deprecated'
+    else:
+        years = []
 
     # determine chambers
     chambers = []
@@ -176,16 +204,14 @@ def main():
 
     if not (options.bills or options.legislators or options.votes or
             options.committees or options.alldata):
-        print "Must specify at least one of --bills, --legislators, --committees, --votes"
-        return 1
+        raise RunException("Must specify at least one of --bills, --legislators, --committees, --votes")
 
-    try:
-        run(state, years, chambers, output_dir, options)
-    except RunException, e:
-        print 'Error:', e
-        return 1
+    run(state, years, chambers, sessions, output_dir, options)
 
 
 if __name__ == '__main__':
-    result = main()
-    sys.exit(result)
+    try:
+        result = main()
+    except RunException, e:
+        print 'Error:', e
+        sys.exit(1)
