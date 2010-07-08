@@ -16,7 +16,7 @@
     {% for role in leg.roles %}
       <li>
         {% if role.type == 'member' %}
-          {{ role.session }}: {{ role|leg_title }}, District {{ role.district }}
+          {{ role.term }}: {{ role|leg_title }}, District {{ role.district }}
         {% endif %}
 
         {% if role.type == 'committee member' %}
