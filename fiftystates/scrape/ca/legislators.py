@@ -24,10 +24,10 @@ class CALegislatorScraper(LegislatorScraper):
         self.session = self.Session()
 
     def scrape(self, chamber, year):
-        session = "%s%d" % (year, int(year) + 1)
+        term = "%s%d" % (year, int(year) + 1)
         found = False
-        for s in metadata['sessions']:
-            if s['name'] == session:
+        for t in metadata['terms']:
+            if t['name'] == term:
                 found = True
                 break
         if not found:
@@ -39,7 +39,7 @@ class CALegislatorScraper(LegislatorScraper):
             house_type = 'A'
 
         legislators = self.session.query(CALegislator).filter_by(
-            session_year=session).filter_by(
+            session_year=term).filter_by(
             house_type=house_type)
 
         for legislator in legislators:
@@ -54,7 +54,7 @@ class CALegislatorScraper(LegislatorScraper):
             elif party == 'REP':
                 party = 'Republican'
 
-            leg = Legislator(session, chamber, district,
+            leg = Legislator(term, chamber, district,
                              legislator.legislator_name,
                              first_name=legislator.first_name or '',
                              last_name=legislator.last_name or '',
