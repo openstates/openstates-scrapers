@@ -34,4 +34,13 @@ class CACommitteeScraper(CommitteeScraper):
                     continue
 
                 name = a.xpath('string(ul)').strip()
-                committee.add_member(name)
+                name = re.sub('\s+', ' ', name)
+
+                parts = name.split('-', 2)
+                if len(parts) > 1:
+                    name = parts[0].strip()
+                    mtype = parts[1].strip().lower()
+                else:
+                    mtype = 'member'
+
+                committee.add_member(name, mtype)
