@@ -46,23 +46,30 @@ def main():
 
         scraper = ScraperClass(**opts)
 
-        # try and run years
-        for year in years:
-            for chamber in chambers:
-                scraper.scrape(chamber, year)
+        # times: the list to iterate over for second scrape param
+        if years:
+            times = years
 
         # run for sessions
-        if not sessions:
-            latest_session = metadata['terms'][-1]['sessions'][-1]
-            print 'No session specified, using latest "%s"' % latest_session
-            run_sessions = [latest_session]
-        else:
-            run_sessions = sessions
+        if scraper_type in ('bills', 'votes'):
+            if not sessions:
+                latest_session = metadata['terms'][-1]['sessions'][-1]
+                print 'No session specified, using latest "%s"' % latest_session
+                times = [latest_session]
+            else:
+                times = sessions
+        elif scraper_type in ('legislators', 'committees'):
+            if not terms:
+                latest_term = metadata['terms'][-1]
+                print 'No term specified using latest "%s"' % latest_term
+                times = [latest_term]
+            else:
+                times = terms
 
-        # try and run sessions
-        for session in run_sessions:
+        # run scraper against year/session/term
+        for time in times:
             for chamber in chambers:
-                scraper.scrape(chamber, session)
+                scraper.scrape(chamber, time)
 
 
     option_list = (
