@@ -1,7 +1,7 @@
 import re
 import datetime
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
@@ -12,7 +12,7 @@ class LALegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, year):
         if year != '2009':
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         list_url = "http://www.legis.state.la.us/bios.htm"
         with self.urlopen(list_url) as text:

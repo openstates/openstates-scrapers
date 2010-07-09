@@ -3,7 +3,7 @@ import urllib
 import re
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import Bill, BillScraper
 
 class NHBillScraper(BillScraper):
@@ -25,7 +25,7 @@ class NHBillScraper(BillScraper):
             self.scrape_year(chamber, '2009', '2009-2010')
             self.scrape_year(chamber, '2010', '2009-2010')
         else:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
     def scrape_year(self, chamber, year, session):
         if chamber == 'upper':

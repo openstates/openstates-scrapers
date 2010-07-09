@@ -51,9 +51,9 @@ class GABillScraper(BillScraper):
         year = int(year)
 
         if (year < 1995):
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         if (year % 2 == 0):
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if year <= 2000:
             base = "http://www.legis.ga.gov/legis/%s/leg/sum/%s%s%d.htm"
@@ -68,7 +68,7 @@ class GABillScraper(BillScraper):
         try:
             scraper = getattr(self, 'scrape%s' % year)
         except AttributeError:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         for type in ('b', 'r'):
             number = 1

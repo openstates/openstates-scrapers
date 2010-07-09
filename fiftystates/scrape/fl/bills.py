@@ -1,7 +1,7 @@
 import re
 import datetime as dt
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.fl import metadata
 
@@ -17,7 +17,7 @@ class FLBillScraper(BillScraper):
                 session = s
                 break
         else:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
 
         self.scrape_session(chamber, year)

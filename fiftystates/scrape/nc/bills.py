@@ -3,7 +3,7 @@ import re
 
 import html5lib
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.nc.utils import split_name
@@ -200,7 +200,7 @@ class NCBillScraper(BillScraper):
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
 
         if int(year) % 2 != 1:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         session = "%d-%d" % (int(year), int(year) + 1)
 

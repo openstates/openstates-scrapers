@@ -1,5 +1,3 @@
-from fiftystates.scrape.md.bills import SESSIONS
-
 metadata = dict(
     name='Maryland',
     abbreviation='md',

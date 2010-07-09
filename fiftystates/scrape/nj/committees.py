@@ -1,6 +1,6 @@
 import datetime
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.committees import CommitteeScraper, Committee
 from fiftystates.scrape.nv.utils import clean_committee_name
 
@@ -15,7 +15,7 @@ class NJCommitteeScraper(CommitteeScraper):
         self.save_errors=False
 
         if year < 1996:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         elif year == 1996:
             year_abr = 9697
         elif year == 1998:

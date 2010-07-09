@@ -15,7 +15,7 @@ class NJBillScraper(BillScraper):
     def scrape(self, chamber, year):
 
         if year < 1996:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         elif year == 1996:
             year_abr = 9697
         elif year == 1998:

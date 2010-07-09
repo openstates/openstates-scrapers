@@ -1,6 +1,6 @@
 import lxml.html
 import datetime as dt
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 
 from fiftystates.scrape.committees import CommitteeScraper, Committee
 
@@ -12,7 +12,7 @@ class NYCommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, year):
         # Data available for this year only
         if int(year) != dt.date.today().year:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == "upper":
             self.scrape_senate()

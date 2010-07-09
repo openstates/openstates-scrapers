@@ -15,7 +15,7 @@ class LegislatorScraper(Scraper):
         Grab all the legislators who served in a given year. Must be
         overridden by subclasses.
 
-        Should raise a :class:`NoDataForYear` exception if the year is invalid.
+        Should raise a :class:`NoDataForPeriod` exception if the year is invalid.
         """
         raise NotImplementedError('LegislatorScrapers must define a '
                                   'scrape method')

@@ -5,7 +5,7 @@ from optparse import make_option, OptionParser
 import os
 import sys
 
-from fiftystates.scrape import NoDataForYear, JSONDateEncoder
+from fiftystates.scrape import NoDataForPeriod, JSONDateEncoder
 
 try:
     import json
@@ -25,7 +25,7 @@ class RunException(Exception):
         else:
             return self.msg
 
-def run(state, years, chambers, output_dir, options):
+def main():
     def _run_scraper(scraper_type):
         """
             state: lower case two letter abbreviation of state
@@ -40,59 +40,46 @@ def run(state, years, chambers, output_dir, options):
         except ImportError, e:
             if not options.alldata:
                 raise RunException("could not import %s" % mod_path, e)
-            return
         except AttributeError, e:
             if not options.alldata:
                 raise RunException("could not import %s" % scraper_name, e)
-            return
 
-        scraper = ScraperClass(**opts)
-        for year in years:
-            try:
-                for chamber in chambers:
-                    scraper.scrape(chamber, year)
-            except NoDataForYear, e:
-                if options.all_years:
-                    pass
-                else:
-                    raise
+        scraper = ScraperClass(metadata, **opts)
 
-    # write metadata
-    try:
-        metadata = __import__(state).metadata
-        with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
-            json.dump(metadata, f, cls=JSONDateEncoder)
-    except (ImportError, AttributeError), e:
-        pass
+        # times: the list to iterate over for second scrape param
+        if years:
+            times = years
 
-    opts = {'output_dir': output_dir,
-            'no_cache': options.no_cache,
-            'requests_per_minute': options.rpm,
-            # cache_dir, error_dir
-        }
+        # run for sessions
+        if scraper_type in ('bills', 'votes'):
+            if not sessions:
+                latest_session = metadata['terms'][-1]['sessions'][-1]
+                print 'No session specified, using latest "%s"' % latest_session
+                times = [latest_session]
+            else:
+                times = sessions
+        elif scraper_type in ('legislators', 'committees'):
+            if not terms:
+                latest_term = metadata['terms'][-1]['name']
+                print 'No term specified using latest "%s"' % latest_term
+                times = [latest_term]
+            else:
+                times = terms
 
-    if options.alldata:
-        options.bills = True
-        options.legislators = True
-        options.votes = True
-        options.committees = True
-
-    if options.bills:
-        _run_scraper('bills')
-    if options.legislators:
-        _run_scraper('legislators')
-    if options.committees:
-        _run_scraper('committees')
-    if options.votes:
-        _run_scraper('votes')
+        # run scraper against year/session/term
+        for time in times:
+            for chamber in chambers:
+                scraper.scrape(chamber, time)
 
 
-def main():
     option_list = (
         make_option('-y', '--year', action='append', dest='years',
-                    help='year(s) to scrape'),
-        make_option('--all', action='store_true', dest='all_years',
-                    default=False, help='scrape all data (overrides --year)'),
+                    help='deprecated'),
+
+        make_option('-s', '--session', action='append', dest='sessions',
+                    help='session(s) to scrape'),
+        make_option('-t', '--term', action='append', dest='terms',
+                    help='term(s) to scrape'),
 
         make_option('--upper', action='store_true', dest='upper',
                     default=False, help='scrape upper chamber'),
@@ -126,8 +113,7 @@ def main():
     options, spares = parser.parse_args()
 
     if len(spares) != 1:
-        print "Must pass a state abbreviation (eg. nc)"
-        return 1
+        raise RunException("Must pass a state abbreviation (eg. nc)")
     state = spares[0]
 
     # configure logger
@@ -159,11 +145,23 @@ def main():
 
     # determine years
     years = options.years
-    if options.all_years:
-        years = [str(y) for y in range(scraper.earliest_year,
-                                       datetime.datetime.now().year + 1)]
-    if not years:
-        years = [datetime.datetime.now().year]
+
+    # determine sessions
+    sessions = options.sessions
+    terms = options.terms
+    if terms:
+        for term in metadata['terms']:
+            if term in terms:
+                sessions.extend(term['sessions'])
+    sessions = set(sessions or [])
+
+    if years:
+        if sessions:
+            raise RunException('cannot specify years and sessions')
+        else:
+            print 'use of -y, --years, --all is deprecated'
+    else:
+        years = []
 
     # determine chambers
     chambers = []
@@ -176,16 +174,40 @@ def main():
 
     if not (options.bills or options.legislators or options.votes or
             options.committees or options.alldata):
-        print "Must specify at least one of --bills, --legislators, --committees, --votes"
-        return 1
+        raise RunException("Must specify at least one of --bills, --legislators, --committees, --votes")
 
-    try:
-        run(state, years, chambers, output_dir, options)
-    except RunException, e:
-        print 'Error:', e
-        return 1
+
+    # write metadata
+    mod_name = 'fiftystates.scrape.%s' % state
+    metadata = __import__(mod_name, fromlist=['metadata']).metadata
+    with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
+        json.dump(metadata, f, cls=JSONDateEncoder)
+
+    opts = {'output_dir': output_dir,
+            'no_cache': options.no_cache,
+            'requests_per_minute': options.rpm,
+            # cache_dir, error_dir
+        }
+
+    if options.alldata:
+        options.bills = True
+        options.legislators = True
+        options.votes = True
+        options.committees = True
+
+    if options.bills:
+        _run_scraper('bills')
+    if options.legislators:
+        _run_scraper('legislators')
+    if options.committees:
+        _run_scraper('committees')
+    if options.votes:
+        _run_scraper('votes')
 
 
 if __name__ == '__main__':
-    result = main()
-    sys.exit(result)
+    try:
+        result = main()
+    except RunException, e:
+        print 'Error:', e
+        sys.exit(1)

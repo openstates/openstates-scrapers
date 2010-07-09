@@ -1,7 +1,7 @@
 import re
 import datetime
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.committees import CommitteeScraper, Committee
 from fiftystates.scrape.nv.utils import clean_committee_name
 
@@ -14,14 +14,14 @@ class NVCommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, year):
         self.save_errors=False
         if year < 2001:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         time = datetime.datetime.now()
         curyear = time.year
         if ((int(year) - curyear) % 2) == 1:
             session = ((int(year) -  curyear) / 2) + 76
         else:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         sessionsuffix = 'th'
         if str(session)[-1] == '1':

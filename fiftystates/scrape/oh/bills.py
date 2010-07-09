@@ -18,7 +18,7 @@ class OHBillScraper(BillScraper):
 
     def scrape(self, chamber, year):
         if int(year) < 2009 or int(year) > dt.date.today().year:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             self.scrape_house_bills()

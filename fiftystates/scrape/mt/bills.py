@@ -2,7 +2,7 @@ import os
 import re
 from datetime import datetime
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.mt import metadata
@@ -66,7 +66,7 @@ class MTBillScraper(BillScraper):
         session = self.getSession(year)
         #2 year terms starting on odd year, so if even number, use the previous odd year
         if year < 1999:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         if year % 2 == 0:
             year -= 1
 

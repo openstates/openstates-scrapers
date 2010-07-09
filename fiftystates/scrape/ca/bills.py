@@ -1,6 +1,6 @@
 import re
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.ca import metadata
@@ -30,7 +30,7 @@ class CABillScraper(BillScraper):
         session = "%s%d" % (year, int(year) + 1)
         if session not in [s_ for t in metadata['terms']
                            for s_ in t['sessions']]:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             measure_abbr = 'SB'

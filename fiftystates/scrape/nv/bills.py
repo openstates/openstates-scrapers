@@ -15,7 +15,7 @@ class NVBillScraper(BillScraper):
     def scrape(self, chamber, year):
         self.save_errors=False
         if year < 2001:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         time = datetime.datetime.now()
         curyear = time.year
@@ -24,7 +24,7 @@ class NVBillScraper(BillScraper):
         elif( ((int(year) - curyear) % 2) == 0) and year >= 2010:
             session = ((int(year) - curyear) / 2) + 26
         else:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         sessionsuffix = 'th'
         if str(session)[-1] == '1':

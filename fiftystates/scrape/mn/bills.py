@@ -2,7 +2,7 @@ import re
 import urlparse
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 
 # URL for searching the Minnesota Legislature bills.
@@ -316,7 +316,7 @@ class MNBillScraper(BillScraper):
         chamber = available_chambers[chamber]
 
         if year not in year_mapping:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         for session in year_mapping[year]:
             session_year = year

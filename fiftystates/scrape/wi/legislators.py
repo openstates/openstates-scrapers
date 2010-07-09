@@ -15,7 +15,7 @@ class WILegislatorScraper(LegislatorScraper):
         session = internal_sessions[year][0][1]
         # iterating through subsessions would be a better way to do this..
         if year % 2 == 0 and (year != dt.date.today().year or  year+1 != dt.date.today().year):
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             url = "http://legis.wi.gov/w3asp/contact/legislatorslist.aspx?house=senate"

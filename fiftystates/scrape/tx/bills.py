@@ -19,7 +19,7 @@ class TXBillScraper(BillScraper):
                 sessions = t['sessions']
                 break
         else:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         for session in sessions:
             if session[-1].isdigit():

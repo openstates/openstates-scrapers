@@ -1,7 +1,7 @@
 import os
 import csv
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 import html5lib
@@ -36,7 +36,7 @@ class MTLegislatorScraper(LegislatorScraper):
         year = int(year)
         #2 year terms starting on odd year, so if even number, use the previous odd year
         if year < self.base_year:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         if year % 2 == 0:
             year -= 1
 

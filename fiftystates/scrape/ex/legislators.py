@@ -1,4 +1,4 @@
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 
@@ -7,7 +7,7 @@ class EXLegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, year):
         if year != '2009':
-            raise NoDataForYear
+            raise NoDataForPeriod
 
         l1 = Legislator('2009-2010', chamber, '1st',
                         'Bob Smith', party='Democrat')

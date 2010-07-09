@@ -1,7 +1,7 @@
 import re
 import datetime as dt
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.ut import metadata
@@ -22,7 +22,7 @@ class UTBillScraper(BillScraper):
                 sub_sessions = session['sub_sessions']
                 break
         if not found:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         self.scrape_session(chamber, year)
         for sub_session in sub_sessions:

@@ -1,4 +1,4 @@
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.ca import metadata
 from fiftystates.scrape.ca.models import CALegislator
@@ -31,7 +31,7 @@ class CALegislatorScraper(LegislatorScraper):
                 found = True
                 break
         if not found:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             house_type = 'S'
