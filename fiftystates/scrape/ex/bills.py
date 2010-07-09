@@ -1,6 +1,6 @@
 import datetime
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 
@@ -10,7 +10,7 @@ class EXBillScraper(BillScraper):
 
     def scrape(self, chamber, year):
         if year != '2009':
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         session = '2009-2010'
 

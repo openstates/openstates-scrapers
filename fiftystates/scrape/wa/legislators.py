@@ -1,4 +1,4 @@
-from fiftystates.scrape import ScrapeError, NoDataForYear
+from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
@@ -9,7 +9,7 @@ class WALegislatorScraper(LegislatorScraper):
     
     def scrape(self, chamber, year):
         if year != '2009':
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         
         if chamber == 'upper':
             self.scrape_legislator_data("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx", 'upper')

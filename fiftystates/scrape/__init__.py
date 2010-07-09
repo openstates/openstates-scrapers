@@ -23,15 +23,15 @@ class ScrapeError(Exception):
     pass
 
 
-class NoDataForYear(ScrapeError):
+class NoDataForPeriod(ScrapeError):
     """
-    Exception to be raised when no data exists for a given year
+    Exception to be raised when no data exists for a given period
     """
-    def __init__(self, year):
-        self.year = year
+    def __init__(self, period):
+        self.period = period
 
     def __str__(self):
-        return 'No data exists for %s' % self.year
+        return 'No data exists for %s' % self.period
 
 
 class JSONDateEncoder(json.JSONEncoder):

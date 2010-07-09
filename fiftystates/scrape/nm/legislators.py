@@ -2,7 +2,7 @@ from __future__ import with_statement
 
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.nm.utils import get_abs_url
 
@@ -12,7 +12,7 @@ class NMLegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, year):
         if year != '2010':
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             url = 'http://legis.state.nm.us/lcs/leg.aspx?T=S'

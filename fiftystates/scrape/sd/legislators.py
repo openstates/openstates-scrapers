@@ -1,4 +1,4 @@
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.sd import metadata
 
@@ -23,7 +23,7 @@ class SDLegislatorScraper(LegislatorScraper):
             if session['start_year'] == int(year):
                 break
         else:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if int(year) >= 2009:
             self.scrape_new_legislators(chamber, year)

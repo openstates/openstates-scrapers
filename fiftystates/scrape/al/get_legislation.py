@@ -8,7 +8,7 @@ from htmlentitydefs import name2codepoint
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 NoDataForYear)
+                                 NoDataForPeriod)
 
 
 class ALLegislationScraper(LegislationScraper):
@@ -17,7 +17,7 @@ class ALLegislationScraper(LegislationScraper):
 
     def scrape_legislators(self,chamber,year):
         if int(year) < time.localtime()[0] or int(year) not in self.internal_sessions:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             url = 'http://www.legislature.state.al.us/senate/senators/senateroster_alpha.html'
@@ -154,7 +154,7 @@ class ALLegislationScraper(LegislationScraper):
         abbr = 'HB' if chamber == 'lower' else 'SB'
         year = int(year)
         if year not in self.internal_sessions:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         for session in self.internal_sessions[year]:
             #we *have* to refresh this page inbetween runs, otherwise the session will expire
             self.urlopen("http://alisondb.legislature.state.al.us/acas/ACASLoginMac.asp?SESSION=%s&C=%f" % (session[0], r))

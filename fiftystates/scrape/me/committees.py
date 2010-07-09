@@ -2,7 +2,7 @@ import re
 import urlparse
 import datetime
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.committees import CommitteeScraper, Committee
 from fiftystates.scrape.oh.utils import clean_committee_name
 
@@ -17,7 +17,7 @@ class MECommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, year):
         self.save_errors=False
         if year < 2009:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         time = datetime.datetime.now()
         curyear = time.year

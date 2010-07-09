@@ -4,7 +4,7 @@ import datetime as dt
 from BeautifulSoup import BeautifulSoup
 import html5lib
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.ky import metadata
 
@@ -37,7 +37,7 @@ class KYBillScraper(BillScraper):
 
     def scrape(self, chamber, year):
         if year not in metadata['sessions']:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         self.scrape_session(chamber, year)
         for sub in metadata['session_details'][year]['sub_sessions']:

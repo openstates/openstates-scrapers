@@ -5,7 +5,7 @@ from optparse import make_option, OptionParser
 import os
 import sys
 
-from fiftystates.scrape import NoDataForYear, JSONDateEncoder
+from fiftystates.scrape import NoDataForPeriod, JSONDateEncoder
 
 try:
     import json

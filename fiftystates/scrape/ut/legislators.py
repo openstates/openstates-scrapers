@@ -16,7 +16,7 @@ class UTLegislatorScraper(LegislatorScraper):
                 found = True
                 break
         if not found:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'lower':
             title = 'Representative'

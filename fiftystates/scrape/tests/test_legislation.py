@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 NoDataForYear)
+                                 NoDataForPeriod)
 
 
 def suite():
@@ -14,8 +14,8 @@ def suite():
 
 class LegislationUtilsTest(unittest.TestCase):
     
-    def testNoDataForYearException(self):
-        yearError = NoDataForYear("1991");
+    def testNoDataForPeriodException(self):
+        yearError = NoDataForPeriod("1991");
         assert yearError.year == "1991", "Wrong Year"
         assert str(yearError) == "No data exists for 1991", (
             "Bad Error Message: " + str(yearError))

@@ -1,4 +1,4 @@
-from fiftystates.scrape import ScrapeError, NoDataForYear
+from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.bills import BillScraper, Bill
 
@@ -191,6 +191,6 @@ class WABillScraper(BillScraper):
     
     def scrape(self, chamber, year):
         if (year < 2005):
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         self.scrape_year(year, chamber)

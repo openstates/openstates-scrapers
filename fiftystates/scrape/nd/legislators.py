@@ -2,7 +2,7 @@ import datetime
 import re
 import html5lib
 
-from fiftystates.scrape import NoDataForYear, ScrapeError
+from fiftystates.scrape import NoDataForPeriod, ScrapeError
 from fiftystates.scrape.legislators import Legislator, LegislatorScraper
 from fiftystates.scrape.nd import metadata
 
@@ -23,11 +23,11 @@ class NDLegislatorScraper(LegislatorScraper):
         """    
         # Error checking
         if year not in metadata['session_details']:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         
         # No legislator data for 1997 (though other data is available)
         if year == '1997':
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         
         # URL building
         if chamber == 'upper':

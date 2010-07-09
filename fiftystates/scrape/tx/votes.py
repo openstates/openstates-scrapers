@@ -187,7 +187,7 @@ class TXVoteScraper(VoteScraper):
 
     def scrape(self, chamber, year):
         if year != '2009':
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         for session in ['81R', '811']:
             self.scrape_session(chamber, session)

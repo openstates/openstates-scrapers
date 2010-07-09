@@ -2,7 +2,7 @@ import re
 import urlparse
 import htmlentitydefs
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.nj.utils import clean_committee_name
 
@@ -16,7 +16,7 @@ class NJLegislatorScraper(LegislatorScraper):
         self.save_errors=False
 
         if year < 1996:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         elif year == 1996:
             year_abr = 9697
         elif year == 1998:

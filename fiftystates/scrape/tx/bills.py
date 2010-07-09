@@ -15,11 +15,11 @@ class TXBillScraper(BillScraper):
 
     def scrape(self, chamber, year):
         if int(year) < 2009 or int(year) > dt.date.today().year:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         # Expect the first year of a session
         if int(year) % 2 == 0:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         session_num = str((int(year) - 1989) / 2 + 71)
         subs = []

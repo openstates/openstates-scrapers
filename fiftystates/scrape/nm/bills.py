@@ -3,7 +3,7 @@ import re
 
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.nm import metadata
 from fiftystates.scrape.nm.utils import get_abs_url
@@ -39,7 +39,7 @@ class NMBillScraper(BillScraper):
     
     def scrape(self, chamber, year):
         if year not in metadata['sessions']:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         start_char = 'S' if chamber == 'upper' else 'H'
 

@@ -1,6 +1,6 @@
 import re
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.committees import CommitteeScraper, Committee
 from fiftystates.scrape.oh.utils import clean_committee_name
 
@@ -12,7 +12,7 @@ class OHCommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, year):
         self.save_errors=False
         if year != '2009':
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             self.scrape_senate_comm(chamber, year)

@@ -1,7 +1,7 @@
 import re
 import datetime as dt
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.sd import metadata
@@ -29,7 +29,7 @@ class SDBillScraper(BillScraper):
                 session = s
                 break
         else:
-            return NoDataForYear(year)
+            return NoDataForPeriod(year)
 
         if int(year) >= 2009:
             self.scrape_new_session(chamber, year)

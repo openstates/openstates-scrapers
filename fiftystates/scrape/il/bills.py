@@ -23,7 +23,7 @@ class ILBillScraper(BillScraper):
         try:
             session = year2session[year]
         except KeyError:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         urls = get_all_bill_urls(self, chamber,session,types=['HB','SB'])
         for url in urls:
             self._scrape_bill(url)

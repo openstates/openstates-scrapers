@@ -1,6 +1,6 @@
 import re
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.pa import metadata
 from fiftystates.scrape.pa.utils import legislators_url
@@ -15,7 +15,7 @@ class PALegislatorScraper(LegislatorScraper):
         # Pennsylvania doesn't make member lists easily available
         # for previous sessions, unfortunately
         if int(year) < 2009:
-            #raise NoDataForYear(year)
+            #raise NoDataForPeriod(year)
             return
 
         session = "%s-%d" % (year, int(year) + 1)

@@ -1,7 +1,7 @@
 import re
 import datetime as dt
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 import html5lib
@@ -15,11 +15,11 @@ class AKLegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, year):
         # Data available for 1993 on
         if int(year) < 1993 or int(year) > dt.date.today().year:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         # Expect first year of session (odd)
         if int(year) % 2 != 1:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             chamber_abbr = 'S'

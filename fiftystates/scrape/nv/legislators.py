@@ -2,7 +2,7 @@ import re
 import urlparse
 import datetime
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.nv.utils import clean_committee_name
 
@@ -15,7 +15,7 @@ class NVLegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, year):
         self.save_errors=False
         if year < 2001:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         time = datetime.datetime.now()
         curyear = time.year
@@ -24,7 +24,7 @@ class NVLegislatorScraper(LegislatorScraper):
         elif( ((int(year) - curyear) % 2) == 0) and year >= 2010:
             session = ((int(year) - curyear) / 2) + 26
         else:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             self.scrape_legislators(chamber, session, year)

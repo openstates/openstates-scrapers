@@ -6,7 +6,7 @@ import re
 import lxml.html
 from scrapelib import HTTPError
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 
@@ -191,7 +191,7 @@ class MDBillScraper(BillScraper):
     def scrape(self, chamber, year):
 
         if year not in SESSIONS:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         for session in SESSIONS[year]:
             self.scrape_session(chamber, year, session)

@@ -1,7 +1,7 @@
 import re
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import Legislator, LegislatorScraper
 
 def split_name(full_name):
@@ -27,7 +27,7 @@ class KYLegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, year):
         if year != '2009':
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             leg_list_url = 'http://www.lrc.ky.gov/senate/senmembers.htm'

@@ -22,7 +22,7 @@ class ILLegislatorScraper(LegislatorScraper):
         try:
             session = year2session[year]
         except KeyError:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         url = get_legislator_url(chamber,session)
         data = self.urlopen(url)
