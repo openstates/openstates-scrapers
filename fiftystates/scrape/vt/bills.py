@@ -6,6 +6,7 @@ import datetime as dt
 from fiftystates.scrape import ScrapeError, NoDataForYear
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.vt import metadata
 
 from BeautifulSoup import BeautifulSoup
 
@@ -62,12 +63,20 @@ class VTBillScraper(BillScraper):
     state = 'vt'
 
     def scrape(self, chamber, year):
-        session = "%s-%d" % (year, int(year) + 1)
+        term = "%s-%d" % (year, int(year) + 1)
+        for t in metadata['terms']:
+            if t['name'] == term:
+                sessions = t['sessions']
+                break
+        else:
+            raise NoDataForYear(year)
 
         if int(year) >= 2009:
-            self.scrape_session_new(chamber, session)
+            for session in sessions:
+                self.scrape_session_new(chamber, session)
         else:
-            self.scrape_session_old(chamber, session)
+            for session in sessions:
+                self.scrape_session_old(chamber, session)
 
     def scrape_session_new(self, chamber, session):
         if chamber == "lower":

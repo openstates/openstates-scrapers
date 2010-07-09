@@ -7,9 +7,9 @@ class VTLegislatorScraper(LegislatorScraper):
     state = 'vt'
 
     def scrape(self, chamber, year):
-        if int(year) != 2009:
-            return
-        session = "%s-%d" % (year, int(year) + 1)
+        if year != '2009':
+            raise NoDataForYear(year)
+        term = "%s-%d" % (year, int(year) + 1)
 
         # What Vermont claims are Word and Excel files are actually
         # just HTML tables
@@ -59,7 +59,7 @@ class VTLegislatorScraper(LegislatorScraper):
             elif party == 'P':
                 party = 'Progressive'
 
-            leg = Legislator(session, chamber, district, full,
+            leg = Legislator(term, chamber, district, full,
                              first, last, middle, party,
                              official_email=official_email)
             leg.add_source(leg_url)
