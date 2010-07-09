@@ -44,7 +44,7 @@ def main():
             if not options.alldata:
                 raise RunException("could not import %s" % scraper_name, e)
 
-        scraper = ScraperClass(**opts)
+        scraper = ScraperClass(metadata, **opts)
 
         # times: the list to iterate over for second scrape param
         if years:
@@ -178,12 +178,10 @@ def main():
 
 
     # write metadata
-    try:
-        metadata = __import__(state).metadata
-        with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
-            json.dump(metadata, f, cls=JSONDateEncoder)
-    except (ImportError, AttributeError), e:
-        pass
+    mod_name = 'fiftystates.scrape.%s' % state
+    metadata = __import__(mod_name, fromlist=['metadata']).metadata
+    with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
+        json.dump(metadata, f, cls=JSONDateEncoder)
 
     opts = {'output_dir': output_dir,
             'no_cache': options.no_cache,

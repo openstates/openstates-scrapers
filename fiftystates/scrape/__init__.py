@@ -45,17 +45,17 @@ class JSONDateEncoder(json.JSONEncoder):
 
 
 class Scraper(scrapelib.Scraper):
-    # The earliest year for which legislative data is available in
-    # any state (used for --all)
-    earliest_year = 1969
 
-    def __init__(self, no_cache=False, output_dir=None, **kwargs):
+    def __init__(self, metadata, no_cache=False, output_dir=None, **kwargs):
         """
         Create a new Scraper instance.
 
+        :param metadata: metadata for this state
         :param no_cache: if True, will ignore any cached downloads
         :param output_dir: the Fifty State data directory to use
         """
+        self.metadata = metadata
+
         if no_cache:
             kwargs['cache_dir'] = None
         elif 'cache_dir' not in kwargs:
@@ -83,6 +83,18 @@ class Scraper(scrapelib.Scraper):
         self.log = self.logger.info
         self.debug = self.logger.debug
         self.warning = self.logger.warning
+
+    def validate_session(self, session):
+        for t in self.metadata['terms']:
+            if session in t['sessions']:
+                return True
+        raise NoDataForPeriod(session)
+
+    def validate_term(self, term):
+        for t in self.metadata['terms']:
+            if term == t['name']:
+                return True
+        return NoDataForPeriod(session)
 
 class FiftystatesObject(dict):
     def __init__(self, type, **kwargs):
