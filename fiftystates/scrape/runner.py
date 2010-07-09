@@ -49,9 +49,7 @@ def main():
         # times: the list to iterate over for second scrape param
         if years:
             times = years
-
-        # run for sessions
-        if scraper_type in ('bills', 'votes'):
+        elif scraper_type in ('bills', 'votes'):
             if not sessions:
                 latest_session = metadata['terms'][-1]['sessions'][-1]
                 print 'No session specified, using latest "%s"' % latest_session
