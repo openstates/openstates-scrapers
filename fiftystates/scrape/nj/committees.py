@@ -32,28 +32,37 @@ class NJCommitteeScraper(CommitteeScraper):
     def scrape_committees(self, year_abr, session):
 
         members_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/COMEMB.DBF' % (year_abr)
-        comm_info__url = 'ftp://www.njleg.state.nj.us/ag/%sdata/COMMITT.DBF' % (year_abr)
+        comm_info_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/COMMITT.DBF' % (year_abr)
 
         members_db = dbf.Dbf("COMEMB.DBF")
         info_db = dbf.Dbf("COMMITT.DBF")
 
         comm_dictionary = {}
 
+        #Committe Info Database
         for name_rec in info_db:
-            abr = name_rec["code"]
+            abrv = name_rec["code"]
             comm_name = name_rec["descriptio"]
+            comm_type = name_rec["type"]
+            aide = name_rec["aide"]
+            contact_info = name_rec["phone"]
 
-            comm_dictionary[abr] = comm_name
-
-        for member_rec in members_db:
-            abrv = member_rec["code"]
-            comm_name = comm_dictionary[abrv]
-            
             if abrv[0] == "A":
                 chamber = "General Assembly"
             elif abrv[0] == "S":
                 chamber = "Senate"
+
+            comm = Committee(chamber, comm_name, comm_type = comm_type, aide = aide, contact_info = contact_info)
+            comm.add_source(members_url)
+            comm.add_source(comm_info_url)
+            comm_dictionary[abrv] = comm
+
+        #Committee Member Database
+        for member_rec in members_db:
+            abr = member_rec["code"]
+            comm_name = comm_dictionary[abr]
+            
             leg = member_rec["member"]            
-            comm = Committee(chamber, comm_name)
-            comm.add_member(leg)
-            self.save_committee(comm) 
+            comm_name.add_member(leg)
+            
+            self.save_committee(comm_name) 
