@@ -148,9 +148,10 @@ def main():
 
     # determine sessions
     sessions = options.sessions
-    if options.terms:
+    terms = options.terms
+    if terms:
         for term in metadata['terms']:
-            if term in options.terms:
+            if term in terms:
                 sessions.extend(term['sessions'])
     sessions = set(sessions or [])
 
