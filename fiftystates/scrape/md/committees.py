@@ -6,7 +6,7 @@ class MDCommitteeScraper(CommitteeScraper):
 
     state = 'md'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term):
         com_url = {'lower': 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hsecom.html',
                    'upper': 'http://www.msa.md.gov/msa/mdmanual/05sen/html/sencom.html'}
         # joint: http://www.msa.md.gov/msa/mdmanual/07leg/html/ga.html

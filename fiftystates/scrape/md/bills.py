@@ -9,31 +9,15 @@ from scrapelib import HTTPError
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
+from fiftystates.scrape.md import metadata
 
 CHAMBERS = {
     'upper': ('SB','SJ'),
     'lower': ('HB','HJ'),
 }
-SESSIONS = {
-    2010: ('rs',),
-    2009: ('rs',),
-    2008: ('rs',),
-    2007: ('rs','s1'),
-    2006: ('rs','s1'),
-    2005: ('rs',),
-    2004: ('rs','s1'),
-    2003: ('rs',),
-    2002: ('rs',),
-    2001: ('rs',),
-    2000: ('rs',),
-    1999: ('rs',),
-    1998: ('rs',),
-    1997: ('rs',),
-    1996: ('rs',),
-}
 
 BASE_URL = "http://mlis.state.md.us"
-BILL_URL = BASE_URL + "/%s%s/billfile/%s%04d.htm" # year, session, bill_type, number
+BILL_URL = BASE_URL + "/%s/billfile/%s%04d.htm" # year, session, bill_type, number
 
 MOTION_RE = re.compile(r"(?P<motion>[\w\s]+) \((?P<yeas>\d{1,3})-(?P<nays>\d{1,3})\)")
 
@@ -153,10 +137,14 @@ class MDBillScraper(BillScraper):
                     bill.add_source(vote_url)
 
 
-    def scrape_bill(self, chamber, year, session, bill_type, number):
+    def scrape_bill(self, chamber, session, bill_type, number):
         """ Creates a bill object
         """
-        url = BILL_URL % (year, session, bill_type, number)
+        if len(session) == 4:
+            session_url = session+'rs'
+        else:
+            session_url = session
+        url = BILL_URL % (session_url, bill_type, number)
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
             # title
@@ -166,7 +154,7 @@ class MDBillScraper(BillScraper):
 
             # create the bill object now that we have the title
             print "%s %d %s" % (bill_type, number, title)
-            bill = Bill(year, chamber, "%s %d" % (bill_type, number), title)
+            bill = Bill(session, chamber, "%s %d" % (bill_type, number), title)
             bill.add_source(url)
 
             self.parse_bill_sponsors(doc, bill)     # sponsors
@@ -178,20 +166,15 @@ class MDBillScraper(BillScraper):
             self.save_bill(bill)
 
 
-    def scrape_session(self, chamber, year, session):
+    def scrape(self, chamber, session):
+
+        self.validate_session(session)
+
         for bill_type in CHAMBERS[chamber]:
             for i in itertools.count(1):
                 try:
-                    self.scrape_bill(chamber, year, session, bill_type, i)
+                    self.scrape_bill(chamber, session, bill_type, i)
                 except HTTPError, he:
                     if he.response.code != 404:
                         raise he
                     break
-
-    def scrape(self, chamber, year):
-
-        if year not in SESSIONS:
-            raise NoDataForPeriod(year)
-
-        for session in SESSIONS[year]:
-            self.scrape_session(chamber, year, session)
