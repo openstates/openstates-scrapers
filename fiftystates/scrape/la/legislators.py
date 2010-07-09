@@ -35,7 +35,11 @@ class LALegislatorScraper(LegislatorScraper):
                 else:
                     self.scrape_rep(name, year, leg_url)
 
-    def scrape_rep(self, name, session, url):
+    def scrape_rep(self, name, term, url):
+        # special case a name that confuses name_tools
+        if name == 'Franklin, A.B.':
+            name = 'Franklin, A. B.'
+
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
 
@@ -50,11 +54,11 @@ class LALegislatorScraper(LegislatorScraper):
             else:
                 party = "Other"
 
-            leg = Legislator(session, 'lower', district, name, party=party)
+            leg = Legislator(term, 'lower', district, name, party=party)
             leg.add_source(url)
             self.save_legislator(leg)
 
-    def scrape_senator(self, name, session, url):
+    def scrape_senator(self, name, term, url):
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
 
@@ -66,6 +70,6 @@ class LALegislatorScraper(LegislatorScraper):
             party = page.xpath(
                 "//b[text() = 'Party']")[0].getnext().tail.strip()
 
-            leg = Legislator(session, 'upper', district, name, party=party)
+            leg = Legislator(term, 'upper', district, name, party=party)
             leg.add_source(url)
             self.save_legislator(leg)
