@@ -6,6 +6,7 @@ from fiftystates.scrape.nv.utils import clean_committee_name
 
 import lxml.etree
 from dbfpy import dbf
+import scrapelib
 
 class NJCommitteeScraper(CommitteeScraper):
     state = 'nj'
@@ -33,9 +34,12 @@ class NJCommitteeScraper(CommitteeScraper):
 
         members_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/COMEMB.DBF' % (year_abr)
         comm_info_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/COMMITT.DBF' % (year_abr)
+     
+        COMEMB_dbf, resp = self.urlretrieve(members_url)
+        COMMIT_dbf, resp2 = self.urlretrieve(comm_info_url)
 
-        members_db = dbf.Dbf("COMEMB.DBF")
-        info_db = dbf.Dbf("COMMITT.DBF")
+        members_db = dbf.Dbf(COMEMB_dbf)
+        info_db = dbf.Dbf(COMMIT_dbf)
 
         comm_dictionary = {}
 
