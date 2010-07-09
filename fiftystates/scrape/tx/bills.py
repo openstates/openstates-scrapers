@@ -14,22 +14,16 @@ class TXBillScraper(BillScraper):
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
 
     def scrape(self, chamber, year):
-        if int(year) < 2009 or int(year) > dt.date.today().year:
-            raise NoDataForYear(year)
-
-        # Expect the first year of a session
-        if int(year) % 2 == 0:
-            raise NoDataForYear(year)
-
-        session_num = str((int(year) - 1989) / 2 + 71)
-        subs = []
-        for s in metadata['sessions']:
-            if s['name'] == session_num:
-                subs = s['sub_sessions']
+        for t in metadata['terms']:
+            if t['start_year'] == int(year):
+                sessions = t['sessions']
                 break
+        else:
+            raise NoDataForYear(year)
 
-        self.scrape_session(chamber, session_num + 'R')
-        for session in subs:
+        for session in sessions:
+            if session[-1].isdigit():
+                session = session + "R"
             self.scrape_session(chamber, session)
 
     def scrape_session(self, chamber, session):
