@@ -32,7 +32,6 @@ class NVCommitteeScraper(CommitteeScraper):
             sessionsuffix = 'rd'
         insert = str(session) + sessionsuffix + str(year)
 
-
         if chamber == 'upper':
             self.scrape_senate_comm(chamber, insert, session)
         elif chamber == 'lower':
