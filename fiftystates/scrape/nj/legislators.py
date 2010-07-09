@@ -6,7 +6,7 @@ from fiftystates.scrape import NoDataForYear
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.nj.utils import clean_committee_name
 
-import urllib
+import scrapelib
 from dbfpy import dbf
 
 class NJLegislatorScraper(LegislatorScraper):
@@ -33,9 +33,11 @@ class NJLegislatorScraper(LegislatorScraper):
 
     def scrape_legislators(self, year_abr, session):
 
-        file_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/ROSTER.MDX' % (year_abr)
+        file_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/ROSTER.DBF' % (year_abr)
 
-        db = dbf.Dbf("ROSTER.DBF")        
+        ROSTER_dbf, resp = self.urlretrieve(file_url)
+        db = dbf.Dbf(ROSTER_dbf)        
+
         for rec in db:
             first_name = rec["firstname"]
             middle_name = rec["midname"]
