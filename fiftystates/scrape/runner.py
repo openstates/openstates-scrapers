@@ -182,6 +182,9 @@ def main():
     with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
         json.dump(metadata, f, cls=JSONDateEncoder)
 
+    if not years and 'terms' not in metadata:
+        raise RunException('metadata must include "terms"')
+
     opts = {'output_dir': output_dir,
             'no_cache': options.no_cache,
             'requests_per_minute': options.rpm,
