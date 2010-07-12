@@ -32,6 +32,8 @@ metadata = dict(
                                'sub_sessions': ["First Special Session"]}, \
                      '2003' : {'years': [2003], \
                                'sub_sessions': []}, \
+                     '2004' : {'years': [2004], \
+                               'sub_sessions': []}, \
                      '2005' : {'years': [2005], \
                                'sub_sessions': []}, \
                      '2006' : {'years': [2006], \
