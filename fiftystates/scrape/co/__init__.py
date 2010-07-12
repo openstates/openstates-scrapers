@@ -10,26 +10,28 @@ status = dict(
 )
 
 metadata = dict(
-    name='Washington',
-    abbreviation='wa',
-    legislature_name='Washington State Legislature',
+    name='Colorado',
+    abbreviation='co',
+    legislature_name='Colorado General Assembly',
     upper_chamber_name='Senate',
     lower_chamber_name='House of Representatives',
     upper_chamber_title='Senator',
     lower_chamber_title='Representative',
     upper_chamber_term=4,
     lower_chamber_term=2,
-    sessions= map(str, xrange(2001, 2010)),
-    session_details={'2001' : {'years': [2001], \
+    sessions= map(str, xrange(1997, 2010)),
+    session_details={'1997' : {'years': [1997], \
+                               'sub_sessions': []}, \
+                     '1999' : {'years': [1999], \
+                               'sub_sessions': []}, \
+                     '2001' : {'years': [2001], \
                                'sub_sessions': ["First Special Session", \
                                                 "Second Special Session", \
                                                 ]}, \
                      '2002' : {'years': [2002], \
-                               'sub_sessions': []}, \
+                               'sub_sessions': ["First Special Session"]}, \
                      '2003' : {'years': [2003], \
-                               'sub_sessions': ["First Special Session", \
-                                                "Second Special Session", \
-                                                "Third Special Session"]}, \
+                               'sub_sessions': []}, \
                      '2004' : {'years': [2004], \
                                'sub_sessions': []}, \
                      '2005' : {'years': [2005], \
@@ -44,4 +46,3 @@ metadata = dict(
                                'sub_sessions': []}                             
                     }
 )
-
