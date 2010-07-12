@@ -22,7 +22,7 @@ class TXBillScraper(BillScraper):
             raise NoDataForPeriod(year)
 
         for session in sessions:
-            if session[-1].isdigit():
+            if len(session) == 2:
                 session = session + "R"
             self.scrape_session(chamber, session)
 
