@@ -190,7 +190,7 @@ class WABillScraper(BillScraper):
     
     
     def scrape(self, chamber, year):
-        if (year < 2005):
+        if (year < 2001):
             raise NoDataForYear(year)
 
         self.scrape_year(year, chamber)
