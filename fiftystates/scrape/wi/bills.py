@@ -8,21 +8,33 @@ from pdfminer.converter import TextConverter
 
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
-from fiftystates.scrape.wi import internal_sessions
 
 class WIBillScraper(BillScraper):
     state = 'wi'
-    earliest_year = 1999
 
-#    def scrape(self, chamber, year):
-#        # we need to be able to make http://www.legis.state.wi.us/2009/data/AB2hst.html
-#        # and http://www.legis.state.wi.us/2009/data/DE9AB2hst.html
-#        for sess in internal_sessions[int(year)]:
-#          yp = sess[0][1:].split('/', 1)
-#          (year, prefix) = (yp[0], yp[1]) if len(yp) == 2 else (yp[0], '')
-#          self.scrape_session(chamber, year, prefix, sess[1])
+    def scrape(self, chamber, session):
+        if 'Regular' in session:
+            self.scrape_regular(chamber, year=session[0:4])
+        else:
+            raise NoDataForPeriod(session)
 
-    def scrape(self, chamber, year):
+        """
+        TODO: scrape special sessions
+        /2009/DE9: Dec 2009 Special Session
+        /2009/JN9: June 2009 Special Session
+        /2007/AP8: April 2008 Special Session
+        /2007/MR8: March 2008 Special Session
+        /2007/de7: Dec 2007 Special Session
+        /2007/oc7: Oct 2007 Special Session
+        /2007/jr7: Jan 2007 Special Session
+        /2005/jr5: Jan 2005 Special Session
+        /2003/jr3: Jan 2003 Special Session
+        /2001/my2: May 2002 Special Session
+        /2001/jr2: Jan 2002 Special Session
+        /2001/my1: May 2001 Special Session
+        """
+
+    def scrape_regular(self, chamber, year):
         types = {'lower': ['ab', 'ajr', 'ar', 'ap'],
                  'upper': ['sb', 'sjr', 'sr', 'sp']}
 
