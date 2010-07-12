@@ -20,15 +20,8 @@ class VoteScraper(Scraper):
                                                            vote['bill_id'],
                                                            vote['motion']))
 
-        path = os.path.join(self.output_dir, 'votes', filename)
-        try:
-            with open(path, 'w') as f:
-                json.dump(vote, f, cls=JSONDateEncoder)
-        except IOError as e:
-            if e.errno == 2:
-                os.makedirs(os.path.join(self.output_dir, 'votes'))
-                with open(path, 'w') as f:
-                    json.dump(vote, f, cls=JSONDateEncoder)
+        with open(os.path.join(self.output_dir, 'votes', filename), 'w') as f:
+            json.dump(vote, f, cls=JSONDateEncoder)
 
 
 class Vote(FiftystatesObject):

@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import datetime
+import glob
 import logging
-from optparse import make_option, OptionParser
 import os
 import sys
+from optparse import make_option, OptionParser
 
 from fiftystates.scrape import NoDataForPeriod, JSONDateEncoder
 
@@ -33,6 +34,17 @@ def main():
         """
         mod_path = 'fiftystates.scrape.%s.%s' % (state, scraper_type)
         scraper_name = '%s%sScraper' % (state.upper(), scraper_type[:-1].capitalize())
+
+        # make or clear directory for this type
+        path = os.path.join(output_dir, scraper_type)
+        try:
+            os.makedirs(path)
+        except OSError, e:
+            if e.errno != 17:
+                raise e
+            else:
+                for f in glob.glob(path+'/*.json'):
+                    os.remove(f)
 
         try:
             mod = __import__(mod_path, fromlist=[scraper_name])
@@ -128,18 +140,7 @@ def main():
                         datefmt="%H:%M:%S",
                        )
 
-    # create output directories
-    def makedir(path):
-        try:
-            os.makedirs(path)
-        except OSError, e:
-            if e.errno != 17 or os.path.isfile(path):
-                raise e
-
     output_dir = options.output_dir or os.path.join('data', state)
-    makedir(os.path.join(output_dir, "bills"))
-    makedir(os.path.join(output_dir, "legislators"))
-    makedir(os.path.join(output_dir, "committees"))
 
     # determine years
     years = options.years

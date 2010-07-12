@@ -14,8 +14,7 @@ def flatten(tree):
     return s
 
 internal_sessions = {}
-sessions = []
-session_details = {}
+terms = []
 metadata_url = "http://www.legis.state.la.us/session.htm"
 
 session_page = urllib2.urlopen(metadata_url)
@@ -28,15 +27,15 @@ for session in session_page.findAll('a'):
     year = int(re.findall(r'^[0-9]+', text)[0])
     if not year in internal_sessions:
         internal_sessions[year] = []
-        sessions.append({'name': str(year), 'start_year': year,
-                         'end_year': year, 'sub_sessions': []})
+        terms.append({'name': str(year), 'start_year': year,
+                      'end_year': year, 'sessions': [str(year)]})
 
     if text.endswith('Regular Legislative Session'):
         text = str(year)
     else:
-        for s in sessions:
-            if s['start_year'] == year:
-                s['sub_sessions'].append(text)
+        for t in terms:
+            if t['start_year'] == year:
+                t['sessions'].append(text)
                 break
 
     internal_sessions[year].append((session['href'], text))
@@ -51,4 +50,4 @@ metadata = {
     'upper_title': 'Senator',
     'lower_term': 4,
     'upper_term': 4,
-    'sessions': list(reversed(sessions))}
+    'terms': list(reversed(terms))}
