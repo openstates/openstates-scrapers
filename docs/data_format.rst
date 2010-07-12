@@ -16,11 +16,12 @@ In each state's directory should be a file ``state_metadata.json``. This file sh
 * ``upper_chamber_name`` and ``lower_chamber_name``: the names of the chambers of the state legislature, e.g. ``"Senate"``, ``"House of Representatives"``
 * ``upper_title`` and ``lower_title``: the title that members of each chamber hold, e.g. ``"Senator"``, ``"Representative"``
 * ``upper_term`` and ``lower_term``: the length in years of a term in each chamber, e.g. ``2``, ``4``
-* ``sessions``: a chronological listing of valid sessions, e.g. ``['2005-2006', '2007-2008', '2009-2010']`` or ``['81st', '82nd', '83rd']``
-* ``session_details``: a dictionary with an entry for each session with the following attributes:
+* ``terms``: a list of dictionaries with the following keys:
+  - ``name``: name for the term: generally something like ``2007-2009``.  (These terms will be passed to ``LegislatorScraper.scrape`` and ``CommitteeScraper.scrape``.)
+  - ``sessions``: a list of sessions associated with this session, e.g. ``['2007 Regular Session', '2007 Special Session #1', '2007 Special Session #2']`` (These sessions will be passed to ``BillScraper.scrape`` and ``VoteScraper.scrape``.)
+  - ``start_year``: year this term covers, e.g. ``2007``
+  - ``end_year``: end year of the term, e.g. ``2009``
 
- - ``years``: a list of the years this session covers, e.g. ``[2007]`` or ``[2007, 2008]`` 
- - ``sub_sessions``: a list of special/sub sessions associated with this session, e.g. ``['2001 Special Session #1', '2001 Special Session #2']`` or ``[]``
 
 Bills
 -----
@@ -59,7 +60,7 @@ Legislators
 
 Underneath the state's directory should be a 'legislators' directory with a separate JSON file for each legislator. Note that legislators who have served multiple terms should have a separate file for each session they served in. Each file should contain a single object with the following required fields:
 
-* ``session``: the session in which this legislator served
+* ``term``: the term in which this legislator served
 * ``chamber``: the chamber in which this legislator served, ``'upper'`` or ``'lower'``
 * ``district``: the district this legislator is representing, as given by the state, e.g. ``'District 2'``, ``'7th'``, ``'District C'``.
 * ``full_name``: the full name of this legislator
