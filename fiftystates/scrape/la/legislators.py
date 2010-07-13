@@ -39,8 +39,9 @@ class LALegislatorScraper(LegislatorScraper):
         # special case names that confuses name_tools
         if name == 'Franklin, A.B.':
             name = 'Franklin, A. B.'
-        elif name == 'Badon, Jr., Austin J.':
-            name = 'Badon, Austin J. Jr.'
+        elif ', Jr., ' in name:
+            name.replace(', Jr., ', ' ')
+            name += ', Jr.'
 
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
