@@ -42,6 +42,9 @@ class LALegislatorScraper(LegislatorScraper):
         elif ', Jr., ' in name:
             name.replace(', Jr., ', ' ')
             name += ', Jr.'
+        elif ', III, ' in name:
+            name.replace(', III, ', ' ')
+            name += ', III'
 
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
