@@ -36,9 +36,15 @@ class LALegislatorScraper(LegislatorScraper):
                     self.scrape_rep(name, year, leg_url)
 
     def scrape_rep(self, name, term, url):
-        # special case a name that confuses name_tools
+        # special case names that confuses name_tools
         if name == 'Franklin, A.B.':
             name = 'Franklin, A. B.'
+        elif ', Jr., ' in name:
+            name.replace(', Jr., ', ' ')
+            name += ', Jr.'
+        elif ', III, ' in name:
+            name.replace(', III, ', ' ')
+            name += ', III'
 
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)

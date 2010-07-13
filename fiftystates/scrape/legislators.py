@@ -34,7 +34,7 @@ class LegislatorScraper(Scraper):
         person['state'] = self.state
 
         role = person['roles'][0]
-        filename = "%s_%s.json" % (role['session'],
+        filename = "%s_%s.json" % (role['term'],
                                    person['full_name'])
         filename = filename.encode('ascii', 'replace')
 
@@ -80,11 +80,11 @@ class Person(FiftystatesObject):
                  **kwargs):
         """
         If ``start_date`` or ``end_date`` are ``None``, they will default
-        to the start/end date of the given legislative session.
+        to the start/end date of the given term.
 
         Examples:
 
-        leg.add_role('member', session='2009', chamber='upper',
+        leg.add_role('member', term='2009', chamber='upper',
                      party='Republican', district='10th')
         """
         self['roles'].append(dict(role=role, term=term,
@@ -99,7 +99,7 @@ class Legislator(Person):
         """
         Create a Legislator.
 
-        :param session: the session in which this legislator served
+        :param term: the term for this legislator
         :param chamber: the chamber in which this legislator served,
           'upper' or 'lower'
         :param district: the district this legislator is representing, as given

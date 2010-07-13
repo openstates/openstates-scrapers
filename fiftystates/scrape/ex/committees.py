@@ -4,7 +4,7 @@ class EXCommitteeScraper(CommitteeScraper):
 
     state = 'ex'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term):
         com = Committee('lower', 'Committee on Finance')
         com.add_source('http://example.com')
         # can optionally specify role

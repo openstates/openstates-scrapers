@@ -10,7 +10,7 @@ announcing your intention to claim a new state.
 After you have announced your intent the process is:
 
 * create a fork of the `fiftystates project on github <http://github.com/sunlightlabs/fiftystates/>`_
-* write your scraper in your fork
+* write your scraper, making commits to your fork
 * get in contact with a committer that will oversee getting your work merged
 * once your code has been committed you may ask for commit access to maintain
   changes to your state(s)
@@ -42,8 +42,6 @@ The preferred library for scraping is `lxml <http://codespeak.net/lxml/>`_ which
 for several different methods of scraping.  For cases where lxml is not an option (such as scraping from
 Text or PDF files) other libraries may be used.
 
-TODO: write more here about using pip and git branching?
-
 Writing a Scraper
 -----------------
 
@@ -63,7 +61,7 @@ All code that you write should be within this directory, common files are:
 ``votes.py``
     :ref:`Scraping of votes <votes>`. Only required if bills.py does not include scraping votes.
 
-When implementing these files be sure to refer to the linked documentation and
+When implementing these files be sure to refer to the linked documentation.
 
 Running Your Scraper
 --------------------
@@ -75,13 +73,13 @@ for more detail on available options.
 Examples of common usage
 """"""""""""""""""""""""
 
-Getting all 2009 legislators for New York::
+Getting all legislators for New York from the latest session::
 
-    python fiftystates/scrape/runner.py ny --legislators -y 2009
+    python fiftystates/scrape/runner.py ny --legislators
 
-Getting all committees and bills for Oklahoma from the latest session::
+Getting all committees and bills for Oklahoma from the 204th session::
 
-    python fiftystates/scrape/runner.py ok --committees --bills
+    python fiftystates/scrape/runner.py ok --committees --bills --session 204
 
 
 Submitting Your Code

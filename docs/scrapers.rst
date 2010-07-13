@@ -34,14 +34,21 @@ The following keys are required:
     the length, in years, of a term in this state's upper chamber, e.g. `4`
 `lower_term`
     the length, in years, of a term in this state's lower chamber, e.g. `2`
-`sessions`
-    an ordered list of available sessions, e.g.  ['2005-2006', '2007-2008', '2009-2010']
-`session_details`
-    a dictionary, with an entry for each session indicating
-    the years it encompasses as well as any 'sub' sessions, e.g.::
+`terms`
+    a list of dictionaries, with an entry for each term indicating
+    the years it encompasses as well as all related sessions, e.g.::
 
-       {'2009-2010': {'years': [2009, 2010],
-                      'sub_sessions': ["2009 Special Session 1"]}}
+       [
+        {'name': '2001-2002',
+         'sessions': ['2001 Regular Session',
+                      'May 2002 Special Session',
+                      'May 2001 Special Session'],
+         'start_year': 2001, 'end_year': 2002},
+        {'name': '2003-2004',
+         'sessions': ['2003 Regular Session',
+                      'Jan 2003 Special Session'],
+         'start_year': 2003, 'end_year': 2004},
+       ]
 
 .. _scraping-basics:
 
