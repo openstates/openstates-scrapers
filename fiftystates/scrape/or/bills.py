@@ -67,10 +67,58 @@ class ORBillScraper(BillScraper):
                     if match != None:
                         measure_pages.append("http://www.leg.state.or.us/" + match.group(0))
         
-        for mp in measure_pages:
+        if chamber == 'upper':
+            marker = 'SB'
+        else:
+            marker = 'HB'
+            
+        actions = []
+        bill_info = {}
+        
+        for mp in measure_pages:  
             with self.lxml_context(mp) as measure_page:
                 measures = measure_page.text_content()
-        
+                lines = measures.split('\n')
+                raw_date = ''
+                action_party = ''
+                key = ''
+                bill_count = 0
+                
+                for line in lines:
+                    date_match = re.search('([0-9]{1,2}-[0-9]{1,2})(\((S|H)\))?', line)
+                    
+                    if marker in line:
+                        
+                        if bill_count > 0:
+                            value = bill_info[key]
+                            bill_info[key] = value.append(actions)
+                            actions = []
+                        
+                        new_bill = True
+                        bill_count += 1
+                        action_count = 0
+                        key_match = re.search(marker + ' [0-9]{1,4}', line)
+                        key  = key_match.group(0)
+                        text = line.split(key)[1]                  
+                    
+                    elif date_match != None:
+                        if new_bill:
+                            bill_info[key] = [text]
+                            new_bill = False
+                        
+                        if action_count > 0 :
+                            actions.append((raw_date, action_party, text))
+                            action_count += 1
+                            
+                        raw_date = date_match.group(1)
+                        action_party = date_match.group(2)                
+                        text = line.split(date_match.group(0))[1]
+                            
+                    elif line.isalnum() == False:
+                        break
+                         
+                    else:
+                        text = text + ' ' + line
                     
                 
                 
