@@ -1,7 +1,7 @@
 import datetime
 
 from fiftystates.scrape.nj import metadata
-from fiftystates.scrape.nv.utils import chamber_name
+from fiftystates.scrape.nj.utils import chamber_name
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import VoteScraper, Vote
 
@@ -18,9 +18,9 @@ class NJBillScraper(BillScraper):
 
         session = int(session)
         if session < 209:
-            raise NoDataForPeriod(year)
+            raise NoDataForPeriod(session)
         else:
-            year_abr = 2010
+            year_abr = ((session - 209) * 2) + 2000
 
         self.scrape_bill_pages(session, year_abr)
 
@@ -87,50 +87,60 @@ class NJBillScraper(BillScraper):
             bill.add_document(doc_name, doc_url)
 
         #Senate Votes
-        s_vote_url = 'ftp://www.njleg.state.nj.us/votes/S%s.zip' % year_abr
-        s_vote_zip, resp = self.urlretrieve(s_vote_url)
-        zipedfile = zipfile.ZipFile(s_vote_zip)
-        senate_file = zipedfile.open("S2010.txt", 'U')
-        sdict_file = csv.DictReader(senate_file)
+        file1 = 'A' + str(year_abr)
+        file2 = 'A' + str(year_abr + 1)
+        file3 = 'S' + str(year_abr)
+        file4 = 'S' + str(year_abr + 1)
+        vote_info_list = [file1, file2, file3, file4]
+        for bill_vote_file in vote_info_list:
+            s_vote_url = 'ftp://www.njleg.state.nj.us/votes/%s.zip' % bill_vote_file
+            s_vote_zip, resp = self.urlretrieve(s_vote_url)
+            zipedfile = zipfile.ZipFile(s_vote_zip)
+            vfile = "%s.txt" % bill_vote_file
+            vote_file = zipedfile.open(vfile, 'U')
+            vdict_file = csv.DictReader(vote_file)
 
-        votes = {}
-        current_bill = ""
-        current_action = ""
-
-        for rec in sdict_file:
-            bill_id = rec["Bill"]
-            bill_id = bill_id.strip()
-            leg = rec["Full_Name"]
-            date = rec["Session_Date"]
-            action = rec["Action"]
-            leg_vote = rec["Legislator_Vote"]
-            vote_id = bill_id + "_" + action
-            vote_id = vote_id.replace(" ", "_")
-            passed = None
-            if vote_id not in votes:
-                votes[vote_id] = Vote("Senate", date, action, passed, None, None, None, bill_id = bill_id)
-            if leg_vote == "Y":
-                votes[vote_id].yes(leg)
-            elif leg_vote == "N":
-                votes[vote_id].no(leg)
+            votes = {}
+            if bill_vote_file[0] == "A":
+                chamber = "General Assembly"
             else:
-                votes[vote_id].other(leg)
+                chamber = "Senate"
 
-        #Counts yes/no/other votes and saves overall vote
-        for vote in votes.itervalues():
-            vote_yes_count = len(vote["yes_votes"])
-            vote_no_count = len(vote["no_votes"])
-            vote_other_count = len(vote["other_votes"])
-            vote["yes_count"] = vote_yes_count
-            vote["no_count"] = vote_no_count
-            vote["other_count"] = vote_other_count
-            if vote_yes_count > vote_no_count:
-                vote["passed"] = True
-            else:
-                vote["passed"] = False
-            vote_bill_id = vote["bill_id"]
-            bill = bill_dict[vote_bill_id]
-            bill.add_vote(vote)
+            for rec in vdict_file:
+                bill_id = rec["Bill"]
+                bill_id = bill_id.strip()
+                leg = rec["Full_Name"]
+                date = rec["Session_Date"]
+                action = rec["Action"]
+                leg_vote = rec["Legislator_Vote"]
+                vote_id = bill_id + "_" + action
+                vote_id = vote_id.replace(" ", "_")
+                passed = None
+                
+                if vote_id not in votes:
+                    votes[vote_id] = Vote(chamber, date, action, passed, None, None, None, bill_id = bill_id)
+                if leg_vote == "Y":
+                    votes[vote_id].yes(leg)
+                elif leg_vote == "N":
+                    votes[vote_id].no(leg)
+                else:
+                    votes[vote_id].other(leg)
+
+            #Counts yes/no/other votes and saves overall vote
+            for vote in votes.itervalues():
+                vote_yes_count = len(vote["yes_votes"])
+                vote_no_count = len(vote["no_votes"])
+                vote_other_count = len(vote["other_votes"])
+                vote["yes_count"] = vote_yes_count
+                vote["no_count"] = vote_no_count
+                vote["other_count"] = vote_other_count
+                if vote_yes_count > vote_no_count:
+                    vote["passed"] = True
+                else:
+                    vote["passed"] = False
+                vote_bill_id = vote["bill_id"]
+                bill = bill_dict[vote_bill_id]
+                bill.add_vote(vote)
 
         #Actions
         bill_action_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/BILLHIST.DBF' % (year_abr)
