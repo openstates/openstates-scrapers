@@ -33,7 +33,8 @@ def clean_journal(root):
 
 def names(el):
     text = (el.text or '') + (el.tail or '')
-    names = [name.strip() for name in text.split(';') if name.strip()]
+    names = [name.strip().replace('\r', '').replace('\n', '')
+             for name in text.split(';') if name.strip()]
 
     # First name will have stuff to ignore before an mdash
     names[0] = names[0].split(u'\u2014')[1].strip()

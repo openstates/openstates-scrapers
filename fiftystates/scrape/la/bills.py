@@ -123,6 +123,25 @@ class LABillScraper(BillScraper):
                 if 'finally passed' in action:
                     atype.append('bill:passed')
 
+                match = re.match(r'House conferees appointed: (.*)', action)
+                if match:
+                    names = match.group(1).split(', ')
+                    names[-1] = names[-1].strip('.').replace('and ', '')
+                    conf = bill.get('conference_committee', {})
+                    conf['lower'] = names
+                    bill['conference_committee'] = conf
+
+                match = re.match(
+                    r'Senate conference committee appointed: (.*)',
+                    action)
+                if match:
+                    names = match.group(1).split(', ')
+                    names[-1] = names[-1].strip('.').replace('and ', '')
+                    conf = bill.get('conference_committee', {})
+                    conf['upper'] = names
+                    bill['conference_committee'] = conf
+
+
                 bill.add_action(chamber, action, date, type=atype)
 
     def scrape_authors(self, bill, url):
