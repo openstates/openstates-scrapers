@@ -7,7 +7,10 @@ metadata = dict(
     lower_title='Representative',
     upper_term=2,
     lower_term=2,
-    sessions=['124'],
-    session_details={
-        '124': {'years': [2009, 2010], 'sub_sessions': [] }},
+    terms = [
+        {'name': '2003-2004', 'sessions': ['122'], 'start_year': 2003, 'end_year': 2004},
+        {'name': '2005-2006', 'sessions': ['123'], 'start_year': 2005, 'end_year': 2006},
+        {'name': '2007-2008', 'sessions': ['123'], 'start_year': 2007, 'end_year': 2008},
+        {'name': '2009-2010', 'sessions': ['124'], 'start_year': 2009, 'end_year': 2010},
+    ]
 )
