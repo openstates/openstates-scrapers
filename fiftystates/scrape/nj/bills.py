@@ -18,7 +18,7 @@ class NJBillScraper(BillScraper):
 
         session = int(session)
         if session < 209:
-            raise NoDataForPeriod(year)
+            raise NoDataForPeriod(session)
         else:
             year_abr = ((session - 209) * 2) + 2000
 
