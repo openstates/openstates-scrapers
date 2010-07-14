@@ -9,20 +9,21 @@ import lxml.etree
 class OHLegislatorScraper(LegislatorScraper):
     state = 'oh'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term_name):
         self.save_errors=False
-        if year != '2009':
-            raise NoDataForPeriod(year)
+
+        year = term_name[0:4]
+        if int(year) < 2009:
+            raise NoDataForPeriod(term_name)
+
+        session = ((int(year) - 2009)/2) + 128
 
         if chamber == 'upper':
-            self.scrape_senators(chamber, year)
+            self.scrape_senators(chamber, session, term_name)
         else:
-            self.scrape_reps(chamber, year)
-
+            self.scrape_reps(chamber, session, term_name)
     
-    def scrape_reps(self, chamber, year):
-
-
+    def scrape_reps(self, chamber, session, term_name):
         # There is only 99 districts
         for district in range(1,100):
 
@@ -35,25 +36,21 @@ class OHLegislatorScraper(LegislatorScraper):
                     full_name = rep_link.text
                     party = full_name[-2]
                     full_name = full_name[0 : len(full_name)-3]
-                    
+                    first_name = None
+                    last_name = None
+                    middle_name = None                    
 
-                    leg = Legislator('128', chamber, district, full_name, party)
+                    leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party)
                     leg.add_source(rep_url)
 
-
-            
                 self.save_legislator(leg)
 
-
-    def scrape_senators(self, chamber, year):
-
-
+    def scrape_senators(self, chamber, session, term_name):
         sen_url = 'http://www.ohiosenate.gov/directory.html' 
         with self.urlopen(sen_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
             for el in root.xpath('//table[@class="fullWidth"]/tr/td'):
-
 
                 sen_link = el.xpath('a[@class="senatorLN"]')[1]
                 full_name = sen_link.text
@@ -64,13 +61,10 @@ class OHLegislatorScraper(LegislatorScraper):
 
                 first_name = full_name.split()[0]
                 last_name = full_name.split()[1]
-                middle_name = ''
+                middle_name = None
 
-                leg = Legislator('128', chamber, district, full_name, 
+                leg = Legislator(term_name, chamber, district, full_name, 
                         first_name, last_name, middle_name, party)
                 leg.add_source(sen_url)
 
                 self.save_legislator(leg)
-
-
-    
