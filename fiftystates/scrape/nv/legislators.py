@@ -12,27 +12,26 @@ import urllib
 class NVLegislatorScraper(LegislatorScraper):
     state = 'nv'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term_name):
         self.save_errors=False
-        if year < 2001:
+        year = term_name[0:4]
+        if int(year) < 2001:
             raise NoDataForPeriod(year)
 
-        time = datetime.datetime.now()
-        curyear = time.year
-        if ((int(year) - curyear) % 2) == 1:
-            session = ((int(year) -  curyear) / 2) + 76
-        elif( ((int(year) - curyear) % 2) == 0) and year >= 2010:
-            session = ((int(year) - curyear) / 2) + 26
+        if ((int(year) - 2010) % 2) == 1:
+            session = ((int(year) -  2010) / 2) + 76
+        elif( ((int(year) - 2010) % 2) == 0) and year >= 2010:
+            session = ((int(year) - 2010) / 2) + 26
         else:
-            raise NoDataForPeriod(year)
+            raise NoDataForPeriod(term_name)
 
         if chamber == 'upper':
-            self.scrape_legislators(chamber, session, year)
+            self.scrape_legislators(chamber, session, year, term_name)
         elif chamber == 'lower':
-            self.scrape_legislators(chamber, session, year)
+            self.scrape_legislators(chamber, session, year, term_name)
 
 
-    def scrape_legislators(self, chamber, session, year):
+    def scrape_legislators(self, chamber, session, year, term_name):
        
         sessionsuffix = 'th'
         if str(session)[-1] == '1':
@@ -93,7 +92,7 @@ class NVLegislatorScraper(LegislatorScraper):
                 address = root.xpath(addresspath)
                 address = address
                 
-                leg = Legislator(session, chamber, district, full_name, first_name, last_name, middle_name, party, end_date = end_date, email = email, address = address)
+                leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party, end_date = end_date, email = email, address = address)
                 leg.add_source(leg_url)
                 self.save_legislator(leg)
 
