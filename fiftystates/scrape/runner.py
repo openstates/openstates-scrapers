@@ -142,6 +142,12 @@ def main():
 
     output_dir = options.output_dir or os.path.join('data', state)
 
+    # write metadata
+    mod_name = 'fiftystates.scrape.%s' % state
+    metadata = __import__(mod_name, fromlist=['metadata']).metadata
+    with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
+        json.dump(metadata, f, cls=JSONDateEncoder)
+
     # determine years
     years = options.years
 
@@ -174,13 +180,6 @@ def main():
     if not (options.bills or options.legislators or options.votes or
             options.committees or options.alldata):
         raise RunException("Must specify at least one of --bills, --legislators, --committees, --votes")
-
-
-    # write metadata
-    mod_name = 'fiftystates.scrape.%s' % state
-    metadata = __import__(mod_name, fromlist=['metadata']).metadata
-    with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
-        json.dump(metadata, f, cls=JSONDateEncoder)
 
     if not years and 'terms' not in metadata:
         raise RunException('metadata must include "terms"')
