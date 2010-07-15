@@ -46,8 +46,24 @@ def clean_journal(root):
 
 def names(el):
     text = (el.text or '') + (el.tail or '')
-    names = [name.strip().replace('\r\n', '').replace('  ', ' ')
-             for name in text.split(';') if name.strip()]
+
+    names = []
+    for name in text.split(';'):
+        name = name.strip().replace('\r\n', '').replace('  ', ' ')
+
+        if not name:
+            continue
+
+        if name == 'Gonzalez Toureilles':
+            name = 'Toureilles'
+        elif name == 'Mallory Caraway':
+            name = 'Caraway'
+        elif name == 'Martinez Fischer':
+            name = 'Fischer'
+        elif name == 'Rios Ybarra':
+            name = 'Ybarra'
+
+        names.append(name)
 
     # First name will have stuff to ignore before an mdash
     names[0] = names[0].split(u'\u2014')[1].strip()
