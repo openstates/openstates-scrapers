@@ -13,21 +13,21 @@ import urllib
 class MELegislatorScraper(LegislatorScraper):
     state = 'me'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term_name):
         self.save_errors=False
-        if year < 2009:
-            raise NoDataForPeriod(year)
 
-        time = datetime.datetime.now()
-        curyear = time.year
-        session = (int(year) -  curyear) + 125
+        year = term_name[0:4]
+        if int(year) < 2009:
+            raise NoDataForPeriod(term_name)
+
+        session = ((int(year) - 2009)/2) + 124
 
         if chamber == 'upper':
-            self.scrape_senators(chamber, session)
+            self.scrape_senators(chamber, session, term_name)
         elif chamber == 'lower':
-            self.scrape_reps(chamber, session)
+            self.scrape_reps(chamber, session, term_name)
 
-    def scrape_reps(self, chamber, session):
+    def scrape_reps(self, chamber, session, term_name):
 
        rep_url = 'http://www.maine.gov/legis/house/dist_mem.htm'
 
@@ -56,16 +56,13 @@ class MELegislatorScraper(LegislatorScraper):
                         if party == "V":
                             name = "Vacant"
 
-                        leg = Legislator(session, chamber, district, name, firstname, lastname, middlename, party)
+                        leg = Legislator(term_name, chamber, district, name, firstname, lastname, middlename, party)
                         leg.add_source(rep_url)
                         self.save_legislator(leg)
 
-
-
-
-    def scrape_senators(self, chamber, session):
+    def scrape_senators(self, chamber, session, term_name):
         
-        fileurl = 'http://www.maine.gov/legis/senate/senators/email/124SenatorsList.xls'
+        fileurl = 'http://www.maine.gov/legis/senate/senators/email/%sSenatorsList.xls' % session
 
         senators = urllib.urlopen(fileurl).read()
         f = open('me_senate.xls', 'w')
@@ -101,11 +98,8 @@ class MELegislatorScraper(LegislatorScraper):
                 else:
                     phone = phone[1:4] + phone[6:9] + phone[10:14]            
 
+                leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party, suffix = suffix, resident_county = resident_county, mailing_address= mailing_address, mailing_city = mailing_city, mailing_state = mailing_state, mail_zip = mail_zip, phone = phone, email= email)
 
-                leg = Legislator(session, chamber, district, full_name, first_name, last_name, middle_name, party, suffix = suffix, resident_county = resident_county, mailing_address= mailing_address, mailing_city = mailing_city, mailing_state = mailing_state, mail_zip = mail_zip, phone = phone, email= email)
-
-
-                
                 leg.add_source(fileurl)
                 self.save_legislator(leg) 
 

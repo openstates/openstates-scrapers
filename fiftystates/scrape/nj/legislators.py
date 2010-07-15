@@ -24,11 +24,11 @@ class NJLegislatorScraper(LegislatorScraper):
         session = ((int(year) - 2010)/2) + 214
 
         if chamber == 'upper':
-            self.scrape_legislators(year_abr, session)
+            self.scrape_legislators(year_abr, session, term_name)
         elif chamber == 'lower':
-            self.scrape_legislators(year_abr, session)
+            self.scrape_legislators(year_abr, session, term_name)
 
-    def scrape_legislators(self, year_abr, session):
+    def scrape_legislators(self, year_abr, session, term_name):
 
         file_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/ROSTER.DBF' % (year_abr)
 
@@ -68,6 +68,6 @@ class NJLegislatorScraper(LegislatorScraper):
             zipcode = rec["zipcode"]
             phone = rec["phone"]
 
-            leg = Legislator(session, chamber, district, full_name, first_name, last_name, middle_name, party, title = title, legal_position = legal_position, leg_status = leg_status, address = address, city = city, state = state, zipcode = zipcode, phone = phone)
+            leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party, title = title, legal_position = legal_position, leg_status = leg_status, address = address, city = city, state = state, zipcode = zipcode, phone = phone)
             leg.add_source(file_url)
             self.save_legislator(leg)

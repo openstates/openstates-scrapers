@@ -11,17 +11,16 @@ import lxml.etree
 class NVCommitteeScraper(CommitteeScraper):
     state = 'nv'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term_name):
         self.save_errors=False
-        if year < 2001:
-            raise NoDataForPeriod(year)
+        year = term_name[0:4]
+        if int(year) < 2001:
+            raise NoDataForPeriod(term_name)
 
-        time = datetime.datetime.now()
-        curyear = time.year
-        if ((int(year) - curyear) % 2) == 1:
-            session = ((int(year) -  curyear) / 2) + 76
+        if ((int(year) - 2010) % 2) == 1:
+            session = ((int(year) -  2010) / 2) + 76
         else:
-            raise NoDataForPeriod(year)
+            raise NoDataForPeriod(term_name)
 
         sessionsuffix = 'th'
         if str(session)[-1] == '1':

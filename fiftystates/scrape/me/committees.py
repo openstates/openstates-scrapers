@@ -14,14 +14,14 @@ import urllib
 class MECommitteeScraper(CommitteeScraper):
     state = 'me'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term_name):
         self.save_errors=False
-        if year < 2009:
-            raise NoDataForPeriod(year)
 
-        time = datetime.datetime.now()
-        curyear = time.year
-        session = (int(year) -  curyear) + 125
+        year = term_name[0:4]
+        if int(year) < 2009:
+            raise NoDataForPeriod(term_name)
+
+        session = ((int(year) - 2009)/2) + 124
 
         if chamber == 'upper':
             self.scrape_senate_comm(chamber, session)
@@ -116,5 +116,3 @@ class MECommitteeScraper(CommitteeScraper):
                 committee.add_member(full_name, role = role, party = party, legalres = legalres, address1 = address1, address2 = address2, town = town, state = state, zipcode = zipcode, phone = phone, home_email = home_email, leg_email = leg_email)
                
             self.save_committee(committee) 
-                            
-

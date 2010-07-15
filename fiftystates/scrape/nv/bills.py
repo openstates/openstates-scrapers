@@ -12,19 +12,12 @@ import lxml.etree
 class NVBillScraper(BillScraper):
     state = 'nv'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, session):
         self.save_errors=False
-        if year < 2001:
-            raise NoDataForPeriod(year)
-
-        time = datetime.datetime.now()
-        curyear = time.year
-        if ((int(year) - curyear) % 2) == 1:
-            session = ((int(year) -  curyear) / 2) + 76
-        elif( ((int(year) - curyear) % 2) == 0) and year >= 2010:
-            session = ((int(year) - curyear) / 2) + 26
-        else:
-            raise NoDataForPeriod(year)
+        if session < 71:
+            raise NoDataForPeriod(session)
+        
+        year = ((int(session) - 71) * 2) + 2001
 
         sessionsuffix = 'th'
         if str(session)[-1] == '1':
