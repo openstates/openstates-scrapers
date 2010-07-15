@@ -1,7 +1,7 @@
 import datetime
 
 from fiftystates.scrape.nj import metadata
-from fiftystates.scrape.nv.utils import chamber_name
+from fiftystates.scrape.nj.utils import chamber_name
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import VoteScraper, Vote
 
@@ -18,7 +18,7 @@ class NJBillScraper(BillScraper):
 
         session = int(session)
         if session < 209:
-            raise NoDataForPeriod(year)
+            raise NoDataForPeriod(session)
         else:
             year_abr = ((session - 209) * 2) + 2000
 

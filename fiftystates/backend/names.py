@@ -21,7 +21,7 @@ def init_name_matcher(state, session, chamber):
     metadata = db.metadata.find_one({'_id': state})
     for term in metadata['terms']:
         if session in term['sessions']:
-            elemMatch['term'] = term
+            elemMatch['term'] = term['name']
             break
     else:
         raise Exception("bad term")

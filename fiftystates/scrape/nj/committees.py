@@ -11,19 +11,15 @@ import scrapelib
 class NJCommitteeScraper(CommitteeScraper):
     state = 'nj'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term_name):
         self.save_errors=False
 
-        if year < 1996:
-            raise NoDataForPeriod(year)
-        elif year == 1996:
-            year_abr = 9697
-        elif year == 1998:
-            year_abr = 9899
+        year = int(term_name[0:4])
+        if year < 2000:
+            raise NoDataForPeriod(term_name)
         else:
             year_abr = year
-
-        session = (int(year) - 2010) + 214
+        session = ((int(year) - 2010)/2) + 214
 
         if chamber == 'upper':
             self.scrape_committees(year_abr, session)
