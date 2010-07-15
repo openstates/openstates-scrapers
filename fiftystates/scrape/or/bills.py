@@ -28,6 +28,10 @@ class ORBillScraper(BillScraper):
             yield elem
         except:
             raise
+        
+    def clean_space(self, str):
+        new_str = ' '.join(str.split())
+        return new_str
                     
     def scrape(self, chamber, year):
         
@@ -92,20 +96,32 @@ class ORBillScraper(BillScraper):
                     if marker in line:                      
                         if not first_bill:
                             value = bill_info[key]
-                            bill_info[key] = value.append(actions)
+                            actions.append((raw_date, action_party, self.clean_space(text)))
+                            value.append(actions)
+                            #bill_info[key] = value.append(actions)
+                            #print key
+                            #print value[0]
+                            #for action in actions:
+                            #    print action[0]
+                            #    print action[1]
+                            #    print action[2]
                             actions = []
-                        
-                        first_bill = False
-                        new_bill = True
-                        
-                        key_match = re.search(marker + ' [0-9]{1,4}', line)
+                            
+                        else:
+                            first_bill = False
+                            
+                        new_bill = True                      
+                        print marker + ' +[0-9]{1,4}'
+                        key_match = re.search(marker + ' +[0-9]{1,4}', line)
+                        if key_match == None:
+                            print line
                         key  = key_match.group(0)
-                        text = line.split(key)[1]                  
+                        text = line.split(key)[1]                 
                     
                     elif date_match != None:
                         if new_bill:
-                            bill_info[key] = [text]
-                            print bill_info[key], key
+                            bill_info[key] = [self.clean_space(text)]
+                            #print bill_info[key], key
                             new_bill = False
                         
                         else:
@@ -124,7 +140,17 @@ class ORBillScraper(BillScraper):
                     else:
                         text = text + ' ' + line
                         
-            print bill_info
+            for key, value in bill_info.iteritems():
+                print key
+                text = value[0]
+                print text
+                actions = value[1]
+                for a in actions:
+                    print a[0]
+                    print a[1]
+                    print a[2]
+
+                
                     
                 
                 
