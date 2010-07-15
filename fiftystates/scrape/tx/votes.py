@@ -14,9 +14,22 @@ def clean_journal(root):
     for el in root.xpath('//hr[@noshade and @size=1]'):
         parent = el.getparent()
         previous = el.getprevious()
-        if previous and previous.text and previous.text.find("JOURNAL") != -1:
+        if previous:
             parent.remove(previous)
         parent.remove(el)
+
+    # Does lxml not support xpath ends-with?
+    for el in root.xpath("//p[contains(text(), 'REGULAR SESSION')]"):
+        if el.text.endswith("REGULAR SESSION"):
+            parent = el.getparent()
+            parent.remove(el)
+
+    for el in root.xpath("//p[contains(text(), 'JOURNAL')]"):
+        if (("HOUSE JOURNAL" in el.text or "SENATE JOURNAL" in el.text) and
+            "Day" in el.text):
+
+            parent = el.getparent()
+            parent.remove(el)
 
     # Remove empty paragraphs
     for el in root.xpath('//p[not(node())]'):
