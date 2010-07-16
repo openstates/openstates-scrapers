@@ -26,7 +26,7 @@ def keywordize(str):
         words.extend(nltk.tokenize.word_tokenize(sent))
 
     stemmer = nltk.stem.porter.PorterStemmer()
-    stop_words = nltk.corpus.stopwords.words()
+    stop_words = nltk.corpus.stopwords.words("english")
     words = [stemmer.stem(word.lower()) for word in words if
              (word.isalpha() or word.isdigit()) and
              word.lower() not in stop_words]

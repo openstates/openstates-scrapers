@@ -252,4 +252,5 @@ class TXVoteScraper(VoteScraper):
             for vote in votes(root):
                 vote['date'] = date
                 vote['chamber'] = chamber
+                vote.add_source(url)
                 self.save_vote(vote)
