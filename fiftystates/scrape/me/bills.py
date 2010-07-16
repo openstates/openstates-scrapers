@@ -51,4 +51,31 @@ class MEBillScraper(BillScraper):
             else:
                 chamber = "House of Represenatives"
             bill = Bill(session, chamber, bill_id, title)
-            print bill
+            count = 3
+            for action in root.xpath('//td[2]/table[2]/tr[position() > 2]/td[1]'):
+                col2_path = 'string(//td[2]/table[2]/tr[%s]/td[2])' % count
+                action_info = root.xpath(col2_path).split()
+                action_name = action.xpath('string()').strip()
+                count = count + 1
+                if action_name.find("Senate") != -1:
+                    actor = "Senate"
+                elif action_name.find("House") != -1:
+                    actor = "House"
+                elif action_name.find("Governor") != -1:
+                    actor = "Governor"
+                else:
+                    actor = "stop"
+                if actor != "stop":
+                    if action_info[0].find("/") == -1:
+                        date = None
+                    else:
+                        date = action_info.pop(0)
+                    action_title = ""
+                    for part in action_info:
+                        action_title = action_title + part + " "
+                    action_title = action_title.strip()
+                    if len(action_title) < 1:
+                        action_title = action_name
+                    bill.add_action(actor, action_title, date)
+
+            self.save_bill(bill)
