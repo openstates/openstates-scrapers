@@ -56,6 +56,7 @@ class ORBillScraper(BillScraper):
                 pages_for_year.append(bsp)
      
         measure_pages = []
+        bill_pages = []
      
         for pfy in pages_for_year:
             with self.lxml_context(pfy) as year_bills_page:
@@ -91,27 +92,20 @@ class ORBillScraper(BillScraper):
                 first_bill = True
                 
                 for line in lines:
-                    date_match = re.search('([0-9]{1,2}-[0-9]{1,2})(\((S|H)\))?', line)
+                    date_match = re.search('([0-9]{1,2}-[0-9]{1,2})(\((S|H)\))? ', line)
                     
                     if marker in line:                      
                         if not first_bill:
                             value = bill_info[key]
-                            actions.append((raw_date, action_party, self.clean_space(text)))
+                            date = dt.datetime.strptime(raw_date + '-' + year, '%m-%d-%Y')
+                            actions.append((date, action_party, self.clean_space(text)))
                             value.append(actions)
-                            #bill_info[key] = value.append(actions)
-                            #print key
-                            #print value[0]
-                            #for action in actions:
-                            #    print action[0]
-                            #    print action[1]
-                            #    print action[2]
                             actions = []
                             
                         else:
                             first_bill = False
                             
                         new_bill = True                      
-                        print marker + ' +[0-9]{1,4}'
                         key_match = re.search(marker + ' +[0-9]{1,4}', line)
                         if key_match == None:
                             print line
@@ -121,11 +115,11 @@ class ORBillScraper(BillScraper):
                     elif date_match != None:
                         if new_bill:
                             bill_info[key] = [self.clean_space(text)]
-                            #print bill_info[key], key
                             new_bill = False
                         
                         else:
-                            actions.append((raw_date, action_party, text))
+                            date = dt.datetime.strptime(raw_date + '-' + year, '%m-%d-%Y')
+                            actions.append((date, action_party, text))
                             
                         raw_date = date_match.group(1)
                         action_party = date_match.group(2)                
@@ -140,15 +134,15 @@ class ORBillScraper(BillScraper):
                     else:
                         text = text + ' ' + line
                         
-            for key, value in bill_info.iteritems():
-                print key
-                text = value[0]
-                print text
-                actions = value[1]
-                for a in actions:
-                    print a[0]
-                    print a[1]
-                    print a[2]
+#            for key, value in bill_info.iteritems():
+#                print key
+#                text = value[0]
+#                print text
+#                actions = value[1]
+#                for a in actions:
+#                    print a[0]
+#                    print a[1]
+#                    print a[2]
 
                 
                     
