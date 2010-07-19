@@ -15,18 +15,26 @@ class MEBillScraper(BillScraper):
         if session < 121:
             raise NoDataForPeriod(session)
         session_id = (int(session) - 124) + 8
-        
-        self.scrape_bill(session, session_id)
 
-    def scrape_bill(self, session, session_id):
-        main_directory_url = 'http://www.mainelegislature.org/legis/bills/bills_%sth/billtexts/' % session
+        if str(session)[-1] == "1":
+            session_abr = str(session) + "st"
+        elif str(session)[-1] == "2":
+            session_abr = str(session) + "nd"
+        elif str(session)[-1] == "3":
+            session_abr = str(session) + "rd"
+        else:
+            session_abr = str(session) + "th"
+        
+        self.scrape_bill(session, session_id, session_abr)
+
+    def scrape_bill(self, session, session_id, session_abr):
+        main_directory_url = 'http://www.mainelegislature.org/legis/bills/bills_%s/billtexts/' % session_abr
 
         with self.urlopen(main_directory_url) as main_directory_page:
             root = lxml.etree.fromstring(main_directory_page, lxml.etree.HTMLParser())
             main_dir_links = root.xpath('//tr/td/ul/li//@href')
-            #Joint committees -> main_dir_links.append('contents0.asp')
             for link in main_dir_links:
-                dir_url = 'http://www.mainelegislature.org/legis/bills/bills_124th/billtexts/%s' % link
+                dir_url = 'http://www.mainelegislature.org/legis/bills/bills_%s/billtexts/%s' % (session_abr, link)
                 with self.urlopen(dir_url) as dir_page:
                     root = lxml.etree.fromstring(dir_page, lxml.etree.HTMLParser())
                     count = 1
@@ -51,11 +59,14 @@ class MEBillScraper(BillScraper):
             else:
                 chamber = "House of Represenatives"
             bill = Bill(session, chamber, bill_id, title)
+            bill.add_source(bill_info_url)
+
+            #Actions
             actions_url_addon = root.xpath('string(//table/tr[3]/td/a/@href)')
             actions_url = 'http://www.mainelegislature.org/LawMakerWeb/%s' % actions_url_addon
+            bill.add_source(actions_url)
             with self.urlopen(actions_url) as actions_page:
                 root2 = lxml.etree.fromstring(actions_page, lxml.etree.HTMLParser())
-                #print root2.xpath('string(//table[2]/tr[5]/td[1])')
                 count = 2
                 for mr in root2.xpath("//td[2]/table[2]/tr[position() > 1]/td[1]"):
                     date = mr.xpath('string()')
@@ -65,4 +76,44 @@ class MEBillScraper(BillScraper):
                     action = root2.xpath(action_path)
                     count = count + 1
                     bill.add_action(actor, action, date)
+            #Votes
+            votes_url_addon = root.xpath('string(//table/tr[9]/td/a/@href)')
+            votes_url = 'http://www.mainelegislature.org/LawMakerWeb/%s' % votes_url_addon
+            bill.add_source(votes_url)
+            with self.urlopen(votes_url) as votes_page:
+                vote_root = lxml.etree.fromstring(votes_page, lxml.etree.HTMLParser())
+                for mr in vote_root.xpath('//table[position() > 1]/tr/td/a'):
+                    vote_detail_addon = mr.xpath('string(@href)')
+                    vote_detail_url = 'http://www.mainelegislature.org/LawMakerWeb/%s' % vote_detail_addon
+                    bill.add_source(vote_detail_url)
+                    with self.urlopen(vote_detail_url) as vote_detail_page:
+                        detail_root = lxml.etree.fromstring(vote_detail_page, lxml.etree.HTMLParser())
+                        date = detail_root.xpath('string(//table[2]//tr[2]/td[3])')
+                        motion = detail_root.xpath('string(//table[2]//tr[3]/td[3])')
+                        passed = detail_root.xpath('string(//table[2]//tr[5]/td[3])') == 'PREVAILS'
+                        yes_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
+                        no_count = detail_root.xpath('string(//table[2]//tr[7]/td[3])')
+                        absent_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
+                        excused_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
+                        other_count = None
+
+                        if votes_url.find('House') != -1:
+                            chamber = "House"
+                        else:
+                            chamber = "Senate"
+
+                        vote = Vote(chamber, date, motion, passed, yes_count, no_count, other_count, absent_count = absent_count, excused_count = excused_count)
+
+                        for member in detail_root.xpath('//table[3]/tr[position() > 1]'):
+                            leg = member.xpath('string(td[2])')
+                            party = member.xpath('string(td[3])')
+                            leg_vote = member.xpath('string(td[4])')
+
+                            if leg_vote == "Y":
+                                vote.yes(leg)
+                            elif leg_vote == "N":
+                                vote.no(leg)
+                            else:
+                                vote.other(leg)
+                        bill.add_vote(vote)
             self.save_bill(bill)
