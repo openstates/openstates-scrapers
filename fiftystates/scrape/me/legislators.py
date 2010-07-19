@@ -47,6 +47,7 @@ class MELegislatorScraper(LegislatorScraper):
                     if name.split()[0] != 'District':
                         mark = name.find('(')
                         party = name[mark + 1]
+                        district_name = name[mark+3: -1]
                         name = name[15 : mark]
 
                         firstname = ""
@@ -56,7 +57,7 @@ class MELegislatorScraper(LegislatorScraper):
                         if party == "V":
                             name = "Vacant"
 
-                        leg = Legislator(term_name, chamber, district, name, firstname, lastname, middlename, party)
+                        leg = Legislator(term_name, chamber, district, name, firstname, lastname, middlename, party, district_name = district_name)
                         leg.add_source(rep_url)
                         self.save_legislator(leg)
 
@@ -93,12 +94,15 @@ class MELegislatorScraper(LegislatorScraper):
                 phone =  str(sh.cell(rownum, 13).value)
                 email = str(sh.cell(rownum, 14).value)
 
+                #For matching up legs with votes
+                district_name = mailing_city
+
                 if phone.find("-") == -1:
                     phone = phone[0: len(phone) - 2]
                 else:
                     phone = phone[1:4] + phone[6:9] + phone[10:14]            
 
-                leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party, suffix = suffix, resident_county = resident_county, mailing_address= mailing_address, mailing_city = mailing_city, mailing_state = mailing_state, mail_zip = mail_zip, phone = phone, email= email)
+                leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party, suffix = suffix, resident_county = resident_county, mailing_address= mailing_address, mailing_city = mailing_city, mailing_state = mailing_state, mail_zip = mail_zip, phone = phone, email= email, disctict_name = district_name)
 
                 leg.add_source(fileurl)
                 self.save_legislator(leg) 

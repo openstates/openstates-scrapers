@@ -14,11 +14,14 @@ class NVBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         self.save_errors=False
-        if session < 71:
+
+        if session.find('Special') != -1:
+            year = session[0:4]
+        elif int(session) >= 71:    
+            year = ((int(session) - 71) * 2) + 2001
+        else:
             raise NoDataForPeriod(session)
         
-        year = ((int(session) - 71) * 2) + 2001
-
         sessionsuffix = 'th'
         if str(session)[-1] == '1':
             sessionsuffix = 'st'
@@ -26,9 +29,12 @@ class NVBillScraper(BillScraper):
             sessionsuffix = 'nd'
         elif str(session)[-1] == '3':
             sessionsuffix = 'rd'
-        insert = str(session) + sessionsuffix + str(year)
-        if session == 26:
+
+        if session.find('Special') != -1:
+            session = session[-2: len(session)]
             insert = str(session) + sessionsuffix + str(year) + "Special"
+        else:
+            insert = str(session) + sessionsuffix + str(year)
 
         if chamber == 'upper':
             self.scrape_senate_bills(chamber, insert, session)
@@ -51,6 +57,9 @@ class NVBillScraper(BillScraper):
 
                     bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
                     title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
+
+                    if insert.find('Special') != -1:
+                        session = insert
                     bill = Bill(session, chamber, bill_id, title)
 
                     primary, secondary = self.scrape_sponsors(page_path)
@@ -93,6 +102,9 @@ class NVBillScraper(BillScraper):
 
                     bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
                     title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
+
+                    if insert.find('Special') != -1:
+                        session = insert
                     bill = Bill(session, chamber, bill_id, title)
 
                     primary, secondary = self.scrape_sponsors(page_path)

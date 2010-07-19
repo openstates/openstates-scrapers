@@ -209,6 +209,8 @@ class LABillScraper(BillScraper):
             body = html.xpath('string(/html/body)')
             for line in body.replace(u'\xa0', '\n').split('\n'):
                 line = line.replace('&nbsp;', '').strip()
+                if not line:
+                    continue
 
                 if line in ('YEAS', 'NAYS', 'ABSENT'):
                     vote_type = {'YEAS': 'yes', 'NAYS': 'no',
