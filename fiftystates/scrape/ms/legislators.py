@@ -6,7 +6,6 @@ from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.ms.utils import clean_committee_name
 
 import scrapelib
-import StringIO
 
 class MSLegislatorScraper(LegislatorScraper):
     state = 'ms'
@@ -20,13 +19,15 @@ class MSLegislatorScraper(LegislatorScraper):
     def scrape_legs(self, chamber, term_name):
         if chamber == 'upper':
             url = 'http://billstatus.ls.state.ms.us/members/ss_membs.xml'
+            range_num = 5
         else:
             url = 'http://billstatus.ls.state.ms.us/members/hr_membs.xml'
+            range_num = 6
 
         with self.urlopen(url) as leg_dir_page:
             root = lxml.etree.fromstring(leg_dir_page, lxml.etree.HTMLParser())
             for mr in root.xpath('//legislature/member'):
-                for num in range(1,6):
+                for num in range(1, range_num):
                     leg_path = "string(m%s_name)" % num
                     leg_link_path = "string(m%s_link)" % num
                     leg = mr.xpath(leg_path)
@@ -49,7 +50,22 @@ class MSLegislatorScraper(LegislatorScraper):
             party = root.xpath('string(//party)')
             district = root.xpath('string(//district)')
             first_name, middle_name, last_name = None, None, None
-            leg = Legislator(term, chamber, district, leg_name, first_name, last_name, middle_name, party, role=role)
+
+            if chamber == "lower":
+                chamber = "House"
+            else:
+                chamber = "Senate"
+
+            home_phone = root.xpath('string(//h_phone)')
+            bis_phone = root.xpath('string(//b_phone)')
+            capital_phone = root.xpath('string(//cap_phone)')
+            other_phone = root.xpath('string(//oth_phone)')
+            org_info = root.xpath('string(//org_info)')
+            email_name = root.xpath('string(//email_address)')
+            email = '%s@%s.ms.gov' % (email_name, chamber)
+            
+
+            leg = Legislator(term, chamber, district, leg_name, first_name, last_name, middle_name, party, role=role, home_phone = home_phone, bis_phone = bis_phone, capital_phone=capital_phone, other_phone=other_phone, org_info=org_info, email=email)
             leg.add_source(url)
             self.save_legislator(leg)
             
