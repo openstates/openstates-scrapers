@@ -21,8 +21,12 @@ class CommitteeScraper(Scraper):
         """
         self.log("save_committee: %s" % committee['name'])
 
+        name = committee['name']
+        if 'subcommittee' in committee:
+            name += '_%s' % committee['subcommittee']
+
         filename = "%s_%s.json" % (committee['chamber'],
-                                   committee['name'].replace('/', ','))
+                                   name.replace('/', ','))
 
         with open(os.path.join(self.output_dir, "committees", filename),
                   'w') as f:
