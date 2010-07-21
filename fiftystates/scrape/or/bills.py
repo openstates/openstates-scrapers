@@ -72,7 +72,9 @@ class ORBillScraper(BillScraper):
                         measure_pages.append("http://www.leg.state.or.us/" + match.group(0))
                         bill_pages_directory.append("http://www.leg.state.or.us/" + match.group(1) + "/measures/main.html")
                         
-        bill_pages = []          
+        bill_pages = [] 
+        
+                 
              
         for bp in bill_pages_directory:
             with self.lxml_context(bp) as bills_page:
@@ -139,49 +141,56 @@ class ORBillScraper(BillScraper):
                 for line in lines:
                     date_match = re.search('([0-9]{1,2}-[0-9]{1,2})(\((S|H)\))? ', line)
                     
-                    for marker in markers: 
-                        if marker in line[0:2]:                    
-                            if not first_bill:
-                                value = bill_info[key]
-                                date = dt.datetime.strptime(raw_date + '-' + year, '%m-%d-%Y')
-                                actions.append((date, action_party, self.clean_space(text)))
-                                value.append(actions)
-                                actions = []
-                                
-                            else:
-                                first_bill = False
-                                
-                            new_bill = True  
-                            regex = marker + ' +[0-9]{1,4}'       
-                            key_match = re.search(regex, line)
-                            if key_match == None:
-                                print line
-                                print regex
-                            key  = self.clean_space(key_match.group(0))
-                            text = line.split(key)[1]                 
-                        
-                        elif date_match != None:
-                            if new_bill:
-                                bill_info[key] = [self.clean_space(text)]
-                                new_bill = False
+                    marker_in_line = False
+                    for marker in markers:
+                        if marker in line[0:2]:
+                            marker_in_line = True
+                            break
+                         
+                    if marker_in_line:                    
+                        if not first_bill:
+                            value = bill_info[key]
+                            date = dt.datetime.strptime(raw_date + '-' + year, '%m-%d-%Y')
+                            actions.append((date, action_party, self.clean_space(text)))
+                            value.append(actions)
+                            actions = []
                             
-                            else:
-                                date = dt.datetime.strptime(raw_date + '-' + year, '%m-%d-%Y')
-                                actions.append((date, action_party, text))
-                                
-                            raw_date = date_match.group(1)
-                            action_party = date_match.group(2)                
-                            text = line.split(date_match.group(0))[1]
-                                
-                        elif line.isspace():
-                            continue
-                        
-                        elif '---' in line:
-                            continue
-                             
                         else:
-                            text = text + ' ' + line
+                            first_bill = False
                             
+                        new_bill = True  
+                        regex = marker + ' +[0-9]{1,4}'       
+                        key_match = re.search(regex, line)
+                        if key_match == None:
+                            print line
+                            print regex
+                        key  = self.clean_space(key_match.group(0))
+                        text = line.split(key)[1]                 
+                    
+                    elif date_match != None:
+                        if new_bill:
+                            bill_info[key] = [self.clean_space(text)]
+                            print self.clean_space(text)
+                            print 
+                            new_bill = False
+                        
+                        else:
+                            date = dt.datetime.strptime(raw_date + '-' + year, '%m-%d-%Y')
+                            actions.append((date, action_party, self.clean_space(text)))
+                            
+                        raw_date = date_match.group(1)
+                        action_party = date_match.group(2)                
+                        text = line.split(date_match.group(0))[1]
+                            
+                    elif line.isspace():
+                        continue
+                    
+                    elif '---' in line:
+                        continue
+                         
+                    else:
+                        text = text + ' ' + line
+                        
 #            for key, value in bill_info.iteritems():
 #                print key
 #                text = value[0]
