@@ -172,8 +172,18 @@ class LatestBillsHandler(FiftyStateHandler):
             resp.write(": state parameter required")
             return resp
 
-        updated_since = datetime.datetime.strptime(updated_since,
-                                                   "%Y-%m-%d %H:%M")
+        try:
+            updated_since = datetime.datetime.strptime(updated_since,
+                                                       "%Y-%m-%d %H:%M")
+        except ValueError:
+            try:
+                updated_since = datetime.datetime.strptiem(updated_since,
+                                                           "%Y-%m-%d")
+            except ValueError:
+                resp = rc.BAD_REQUEST
+                resp.write(": invalid updated_since parameter."
+                           " Please supply a date in YYYY-MM-DD format.")
+                return resp
 
         bills = db.bills.find({'updated_at': {'$gte': updated_since},
                                'state': state.lower()})
