@@ -21,25 +21,24 @@ class PABillScraper(BillScraper):
     state = 'pa'
 
     def scrape(self, chamber, year):
-        session = "%s-%d" % (year, int(year) + 1)
-        found = False
-        for s in metadata['sessions']:
-            if s['name'] == session:
-                found = True
-                specials = s['sub_sessions']
+        term = None
+        for t in metadata['terms']:
+            if t['name'] == "%s-%d" % (year, int(year) + 1):
+                term = t
                 break
-        if not found:
-            raise NoDataForPeriod(year)
+        else:
+            raise NoDataForYear(year)
 
-        self.scrape_session(chamber, session)
-
-        for special in specials:
-            session_num = re.search('#(\d+)', special).group(1)
-            self.scrape_session(chamber, session, int(session_num))
+        for session in term['sessions']:
+            match = re.search("#(\d+)", session)
+            if match:
+                self.scrape_session(chamber, session, int(match.group(1)))
+            else:
+                self.scrape_session(chamber, session)
 
     def scrape_session(self, chamber, session, special=0):
         session_url = bill_list_url(chamber, session, special)
-        
+
         with self.urlopen(session_url) as bill_list_page:
             bill_list_page = BeautifulSoup(bill_list_page)
             bill_link_re = "body=%s&type=(B|R)&bn=\d+" % bill_abbr(chamber)

@@ -12,17 +12,16 @@ class FLBillScraper(BillScraper):
     state = 'fl'
 
     def scrape(self, chamber, year):
-        for s in metadata['sessions']:
-            if s['start_year'] <= int(year) <= s['end_year']:
-                session = s
+        term = None
+        for t in metadata['terms']:
+            if t['start_year'] <= int(year) <= t['end_year']:
+                term = t
                 break
         else:
             raise NoDataForPeriod(year)
 
-
-        self.scrape_session(chamber, year)
-        for sub in session['sub_sessions']:
-            self.scrape_session(chamber, sub)
+        for session in term['sessions']:
+            self.scrape_session(chamber, session)
 
     def scrape_session(self, chamber, session):
         if chamber == 'upper':
