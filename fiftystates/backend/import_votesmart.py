@@ -101,13 +101,14 @@ def import_legislator_ids(state):
             office, state['_id'].upper())
 
         for official in officials:
-            legs = db.legislators.find({'roles':
-                                            {'$elemMatch':
-                                                 {'type': 'member',
-                                                  'chamber': chamber,
-                                                  'term': current_term}},
-                                        'first_name': official.firstName,
-                                        'last_name': official.lastName})
+            legs = db.legislators.find(
+                {'roles': {'$elemMatch':
+                     {'type': 'member',
+                      'chamber': chamber,
+                      'district': official.officeDistrictName,
+                      'term': current_term}},
+                 'last_name': official.lastName,
+               })
 
             if legs.count() > 1:
                 print ("Too many matches for '%s'" % official).encode(
