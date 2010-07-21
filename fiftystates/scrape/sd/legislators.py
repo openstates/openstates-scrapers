@@ -19,8 +19,8 @@ class SDLegislatorScraper(LegislatorScraper):
         return headers
 
     def scrape(self, chamber, year):
-        for session in metadata['sessions']:
-            if session['start_year'] == int(year):
+        for term in metadata['terms']:
+            if term['start_year'] == int(year):
                 break
         else:
             raise NoDataForPeriod(year)
