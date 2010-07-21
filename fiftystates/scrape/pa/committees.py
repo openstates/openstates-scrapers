@@ -30,9 +30,6 @@ class PACommitteeScraper(CommitteeScraper):
                 name = name[0:-4]
 
                 for link in li.xpath("a"):
-                    if chamber == 'lower':
-                        import pdb
-#                        pdb.set_trace()
                     if not link.tail:
                         continue
 
