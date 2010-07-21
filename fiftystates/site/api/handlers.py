@@ -177,7 +177,7 @@ class LatestBillsHandler(FiftyStateHandler):
                                                        "%Y-%m-%d %H:%M")
         except ValueError:
             try:
-                updated_since = datetime.datetime.strptiem(updated_since,
+                updated_since = datetime.datetime.strptime(updated_since,
                                                            "%Y-%m-%d")
             except ValueError:
                 resp = rc.BAD_REQUEST
