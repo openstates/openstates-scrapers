@@ -145,6 +145,11 @@ def main():
     # write metadata
     mod_name = 'fiftystates.scrape.%s' % state
     metadata = __import__(mod_name, fromlist=['metadata']).metadata
+    try:
+        os.makedirs(output_dir)
+    except OSError, e:
+        if e.errno != 17:
+            raise e
     with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
         json.dump(metadata, f, cls=JSONDateEncoder)
 
