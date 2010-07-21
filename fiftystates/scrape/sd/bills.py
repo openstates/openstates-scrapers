@@ -23,22 +23,20 @@ class SDBillScraper(BillScraper):
         return headers
 
     def scrape(self, chamber, year):
-        session = None
-        for s in metadata['sessions']:
-            if s['start_year'] == int(year):
-                session = s
+        term = None
+        for t in metadata['terms']:
+            if t['start_year'] == int(year):
+                term = t
                 break
         else:
             return NoDataForPeriod(year)
 
         if int(year) >= 2009:
-            self.scrape_new_session(chamber, year)
-            for sub in session['sub_sessions']:
-                self.scrape_new_session(chamber, sub)
+            for session in term['sessions']:
+                self.scrape_new_session(chamber, session)
         else:
-            self.scrape_old_session(chamber, year)
-            for sub in session['sub_sessions']:
-                self.scrape_old_session(chamber, sub)
+            for session in term['sessions']:
+                self.scrape_old_sessioin(chamber, session)
 
     # The format of SD's legislative info pages changed in 2009, so we have
     # two separate scrapers.
