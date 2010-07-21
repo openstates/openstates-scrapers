@@ -35,4 +35,30 @@ class MSBillScraper(BillScraper):
                     title = details_root.xpath('string(//shorttitle)')
                     longtitle = details_root.xpath('string(//longtitle)')
                     bill = Bill(session, chamber, bill_id, title, longtitle = longtitle)
+
+                    #sponsors
+                    main_sponsor = details_root.xpath('string(//p_name)')
+                    main_sponsor_link = details_root.xpath('string(//p_link)').replace(" ", "_")
+                    main_sponsor_url =  'http://billstatus.ls.state.ms.us/2010/pdf/House_authors/%s.xml' % main_sponsor_link
+                    type = "Primary sponsor"
+                    bill.add_sponsor(type, main_sponsor, main_sponsor_url = main_sponsor_url)
+                    for author in details_root.xpath('//authors/additional'):
+                        leg = author.xpath('string(co_name)').replace(" ", "_")
+                        leg_url = 'http://billstatus.ls.state.ms.us/2010/pdf/House_authors/%s.xml' % leg
+                        type = "additional sponsor"
+                        bill.add_sponsor(type, leg, leg_url=leg_url)
+
+                    #Actions
+                    for action in details_root.xpath('//history/action'):
+                        action_num  = action.xpath('string(act_number)')
+                        action_desc = action.xpath('string(act_desc)')
+                        date = action_desc.split()[0] + "/" + session
+                        actor = action_desc.split()[1][1]
+                        if actor == "H":
+                            actor = "House of Representatives"
+                        else:
+                            actor = "Senate"
+                        action = action_desc[10: len(action_desc)]
+                        bill.add_action(actor, action, date, action_num=action_num)                        
+
                     self.save_bill(bill)
