@@ -78,17 +78,44 @@ class ORBillScraper(BillScraper):
             with self.lxml_context(bp) as bills_page:
                 for element, attribute, link, pos in bills_page.iterlinks():
                     if re.search(' +.html +', link)!= None:
-                        print 'here'
                         continue
-                    base_link = bp.rstrip('main.html')
-                    if not '.html' in link:
-                        bill_pages.append(base_link + link + '.html')
-                    else:
-                        bill_pages.append(base_link + link)
                     
-        bill_pages = bill_pages[3:-2]
+                    base_link = bp.rstrip('main.html')
+
+                    if chamber == 'upper':
+                        if link[0] == 's':
+                            bill_pages.append(base_link + link.translate(None, '\n'))                      
+                    else:
+                        if link[0] == 'h':
+                            bill_pages.append(base_link + link.translate(None, '\n')) 
+                            
+        # Remove unnecesary link 
+        bill_pages.pop(0)
+        
+        bills_dict = {}
+
         for bp in bill_pages:
-            print bp
+            with self.lxml_context(bp) as bills_page:
+                bills = bills_page.cssselect('a')
+                for b in bills:
+                    bill_description = b.text_content()
+                    title, sep, version = bill_description.partition('-')
+                    splitted_title = title.split()
+                    bill_number = splitted_title[-1]
+                    splitted_title.pop(-1)
+                    initials = ''
+                    for t in splitted_title:
+                        initials += t[0]
+                    
+                    key = initials + ' ' + bill_number.lstrip('0')
+                    link = b.iterlinks().next()[2]
+                   
+                    try: 
+                        bills_dict[key]
+                    except KeyError:
+                        bills_dict[key] = []
+                    
+                    bills_dict[key].append((version, base_link + link))
         
         if chamber == 'upper':
             markers = ('SB', 'SR', 'SJR', 'SJM', 'SCR', 'SM')
@@ -113,7 +140,7 @@ class ORBillScraper(BillScraper):
                     date_match = re.search('([0-9]{1,2}-[0-9]{1,2})(\((S|H)\))? ', line)
                     
                     for marker in markers: 
-                        if marker in line:                      
+                        if marker in line[0:2]:                    
                             if not first_bill:
                                 value = bill_info[key]
                                 date = dt.datetime.strptime(raw_date + '-' + year, '%m-%d-%Y')
