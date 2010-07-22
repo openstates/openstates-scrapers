@@ -89,11 +89,11 @@ class MSBillScraper(BillScraper):
         for num in range(yea_mark, end_mark):
             name = split_text[num].replace(" ", "")
             name = name.replace("\n", "")
-            if nays == False and other == False and name != "Total" and name != "Nays" and not re.match("\d{1,2}\.", name):
+            if nays == False and other == False and name != "Total" and name != "Nays" and not re.match("\d{1,2}\.", name) and len(name) > 1:
                 yes_votes.append(name)
-            elif nays == True and other == False and name != "Total" and name != "Absentorthosenotvoting" and not re.match("\d{1,2}\.", name):
+            elif nays == True and other == False and name != "Total" and name != "Absentorthosenotvoting" and not re.match("\d{1,2}\.", name) and len(name) > 1:
                  no_votes.append(name)
-            elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name):
+            elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name) and len(name) > 1:
                 other_votes.append(name)
             else:
                 if name == "Nays":
