@@ -19,11 +19,12 @@ class CommitteeScraper(Scraper):
         Save a scraped :class:`pyutils.legislation.Committee` object.
         Only call after all data for the given committee has been collected.
         """
-        self.log("save_committee: %s" % committee['name'])
-
-        name = committee['name']
+        name = committee['committee']
         if 'subcommittee' in committee:
             name += '_%s' % committee['subcommittee']
+        self.log("save_committee: %s" % name)
+
+        committee['state'] = self.state
 
         filename = "%s_%s.json" % (committee['chamber'],
                                    name.replace('/', ','))
@@ -34,11 +35,14 @@ class CommitteeScraper(Scraper):
 
 
 class Committee(FiftystatesObject):
-    def __init__(self, chamber, name, parent=None, **kwargs):
+    def __init__(self, chamber, committee, subcommittee=None,
+                 **kwargs):
         super(Committee, self).__init__('committee', **kwargs)
         self['chamber'] = chamber
-        self['name'] = name
-        self['members'] = []
+        self['committee'] = committee
+        if subcommittee:
+            self['subcommittee'] = subcommittee
+        self['members'] = kwargs.get('members', [])
 
     def add_member(self, legislator, role='member', **kwargs):
         self['members'].append(dict(legislator=legislator, role=role,
