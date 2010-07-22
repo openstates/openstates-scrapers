@@ -23,12 +23,51 @@ import name_tools
 def import_committees(state, data_dir):
     data_dir = os.path.join(data_dir, state)
     pattern = os.path.join(data_dir, 'committees', '*.json')
-    for path in glob.iglob(pattern):
+
+    meta = db.metadata.find_one({'_id': state})
+    current_term = meta['terms'][-1]['name']
+
+    paths = glob.glob(pattern)
+
+    if not paths:
+        # Not standalone committees
+        for legislator in db.legislators.find({
+            'roles': {'$elemMatch': {'term': current_term}}}):
+
+            for role in legislator['roles']:
+                if (role['type'] == 'committee member' and
+                    'committee_id' not in role):
+
+                    spec = {'state': role['state'],
+                            'committee': role['committee']}
+                    if 'subcommittee' in role:
+                        spec['subcommittee'] = role['subcommittee']
+
+                    committee = db.committees.find_one(spec)
+
+                    if not committee:
+                        committee = spec
+                        committee['_type'] = 'committee'
+                        committee['members'] = []
+                        insert_with_id(committee)
+
+                    for member in committee['members']:
+                        if member['leg_id'] == legislator['leg_id']:
+                            break
+                    else:
+                        committee['members'].append(
+                            {'name': legislator['full_name'],
+                             'leg_id': legislator['leg_id'],
+                             'role': 'member'})
+                        db.committees.save(committee)
+
+                        role['committee_id'] = committee['_id']
+
+            db.legislators.save(legislator)
+
+    for path in paths:
         with open(path) as f:
             data = prepare_obj(json.load(f))
-
-        meta = db.metadata.find_one({'_id': state})
-        current_term = meta['terms'][-1]['name']
 
         spec = {'state': state,
                 'committee': data['committee']}
@@ -76,7 +115,8 @@ def import_committees(state, data_dir):
                             'committee': committee['committee'],
                             'term': current_term,
                             'chamber': committee['chamber'],
-                            'committee_id': committee['_id']}
+                            'committee_id': committee['_id'],
+                            'state': state}
                 if 'subcommittee' in committee:
                     new_role['subcommittee'] = committee['subcommittee']
                 legislator['roles'].append(new_role)
