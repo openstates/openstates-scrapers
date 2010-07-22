@@ -57,4 +57,9 @@ class Command(BaseCommand):
 
             zip.writestr(path, json.dumps(legislator, cls=FiftyStateEncoder))
 
+        for committee in db.committees.find({'state': self.state_abbrev}):
+            path = '/api/committees/%s' % committee['_id']
+
+            zip.writestr(path, json.dumps(committee, cls=FiftyStateEncoder))
+
         zip.close()

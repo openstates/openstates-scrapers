@@ -74,8 +74,7 @@ def insert_with_id(obj):
             obj['leg_id'] = obj['_id']
 
         try:
-            collection.insert(obj, safe=True)
-            break
+            return collection.insert(obj, safe=True)
         except pymongo.DuplicateKeyError:
             continue
 
