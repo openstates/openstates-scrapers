@@ -39,6 +39,7 @@ def import_committees(state, data_dir):
                     'committee_id' not in role):
 
                     spec = {'state': role['state'],
+                            'chamber': role['chamber'],
                             'committee': role['committee']}
                     if 'subcommittee' in role:
                         spec['subcommittee'] = role['subcommittee']
