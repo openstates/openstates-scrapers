@@ -2,8 +2,9 @@ from fiftystates.scrape.ms import metadata
 from fiftystates.scrape.ms.utils import chamber_name, parse_ftp_listing
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import VoteScraper, Vote
-
+from fiftystates.scrape.utils import convert_pdf
 import lxml.etree
+import re
 
 class MSBillScraper(BillScraper):
     state = 'ms'
@@ -52,6 +53,7 @@ class MSBillScraper(BillScraper):
                     for action in details_root.xpath('//history/action'):
                         action_num  = action.xpath('string(act_number)')
                         action_desc = action.xpath('string(act_desc)')
+                        act_vote = action.xpath('string(act_vote)').replace("../../../..", "")
                         date = action_desc.split()[0] + "/" + session
                         actor = action_desc.split()[1][1]
                         if actor == "H":
@@ -61,4 +63,49 @@ class MSBillScraper(BillScraper):
                         action = action_desc[10: len(action_desc)]
                         bill.add_action(actor, action, date, action_num=action_num)                        
 
+                        vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
+                        if vote_url != "http://billstatus.ls.state.ms.us":
+                            vote =self.scrape_votes(vote_url, action, date, chamber)
+                            bill.add_vote(vote)
                     self.save_bill(bill)
+
+    def scrape_votes(self, url, motion, date, chamber):
+        vote_pdf, resp = self.urlretrieve(url)
+        text = convert_pdf(vote_pdf, 'text')
+        text = text.replace("Yeas--", ",Yeas, ")
+        text = text.replace("Nays--", ",Nays, ")
+        text = text.replace("Total--", ",Total, ")
+        text = text.replace("DISCLAIMER", ",DISCLAIMER,")
+        text = text.replace("--", ",")
+        text = text.replace("Absent or those not voting", ",Absentorthosenotvoting,")
+        passed = text.find("passed") != -1
+        split_text = text.split(",")
+        yea_mark = split_text.index("Yeas") + 1
+        end_mark = split_text.index("DISCLAIMER")
+        nays, other = False, False
+        yes_votes = []
+        no_votes = []
+        other_votes = []
+        for num in range(yea_mark, end_mark):
+            name = split_text[num].replace(" ", "")
+            name = name.replace("\n", "")
+            if nays == False and other == False and name != "Total" and name != "Nays" and not re.match("\d{1,2}\.", name):
+                yes_votes.append(name)
+            elif nays == True and other == False and name != "Total" and name != "Absentorthosenotvoting" and not re.match("\d{1,2}\.", name):
+                 no_votes.append(name)
+            elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name):
+                other_votes.append(name)
+            else:
+                if name == "Nays":
+                    nays = True
+                if name == "Absentorthosenotvoting":
+                    nays = False
+                    other = True
+        yes_count = len(yes_votes)
+        no_count = len(no_votes)
+        other_count = len(other_votes)
+        vote = Vote(chamber, date, motion, passed, yes_count, no_count, other_count)
+        vote['yes_votes'] = yes_votes
+        vote['no_votes'] = no_votes
+        vote['other_votes'] = other_votes
+        return vote
