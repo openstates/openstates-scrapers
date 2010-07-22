@@ -13,7 +13,8 @@ except:
 
 from fiftystates import settings
 from fiftystates.backend import db
-from fiftystates.backend.utils import base_arg_parser, prepare_obj
+from fiftystates.backend.utils import (base_arg_parser, prepare_obj, update,
+                                       insert_with_id)
 
 import argparse
 import name_tools
@@ -29,7 +30,20 @@ def import_committees(state, data_dir):
         meta = db.metadata.find_one({'_id': state})
         current_term = meta['terms'][-1]['name']
 
-        for member in data['members']:
+        spec = {'state': state,
+                'committee': data['committee']}
+        if 'subcommittee' in data:
+            spec['subcommittee'] = data['subcommittee']
+
+        committee = db.committees.find_one(spec)
+
+        if not committee:
+            insert_with_id(data)
+            committee = data
+        else:
+            update(committee, data, db.committees)
+
+        for member in committee['members']:
             if not member['legislator']:
                 continue
 
@@ -50,19 +64,26 @@ def import_committees(state, data_dir):
 
             legislator = found[0]
 
+            member['leg_id'] = legislator['_id']
+
             for role in legislator['roles']:
                 if (role['type'] == 'committee member' and
                     role['term'] == current_term and
-                    role['committee'] == data['name']):
+                    role['committee_id'] == committee['_id']):
                     break
             else:
-                legislator['roles'].append({
-                        'type': 'committee member',
-                        'committee': data['name'],
-                        'term': current_term,
-                        'chamber': data['chamber']})
+                new_role = {'type': 'committee member',
+                            'committee': committee['committee'],
+                            'term': current_term,
+                            'chamber': committee['chamber'],
+                            'committee_id': committee['_id']}
+                if 'subcommittee' in committee:
+                    new_role['subcommittee'] = committee['subcommittee']
+                legislator['roles'].append(new_role)
                 legislator['updated_at'] = datetime.datetime.now()
                 db.legislators.save(legislator)
+
+        db.committees.save(committee)
 
 
 if __name__ == '__main__':
