@@ -1,4 +1,4 @@
-var objects = new Array();
+var objects;
 
 $(document).ready(function() {
     if (navigator.userAgent.indexOf('Gecko/') == -1) {
@@ -10,7 +10,8 @@ $(document).ready(function() {
 
 function populateLegislators(state) {
     populate("/data/" + state + "/legislators",
-             [{'name': "full_name"}]);
+             [{'name': "full_name"}, {'name': "first_name"},
+              {'name': "last_name"}]);
 }
 
 function populateBills(state) {
@@ -20,7 +21,9 @@ function populateBills(state) {
 
 function populate(dir, columns) {
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-    
+
+    objects = new Array();
+
     $("#obj_view").hide();
 
     var dir_path = window.location.pathname.split("/");
@@ -28,7 +31,7 @@ function populate(dir, columns) {
     console.log(dir_path);
 
     var obj_list = document.createElement("table");
-    
+
     var thead = document.createElement("thead");
     var tr = document.createElement("tr");
     for (var i in columns) {
@@ -36,10 +39,14 @@ function populate(dir, columns) {
     }
     $(thead).append(tr);
     $(obj_list).append(thead);
-    
+
     var obj_paths = listing(dir_path);
-    
+
     for (var i in obj_paths) {
+        if (obj_paths[i].indexOf(".json") == -1) {
+            continue;
+        }
+
         var obj = JSON.parse($.twFile.load(obj_paths[i]));
         objects.push(obj);
 
@@ -48,6 +55,11 @@ function populate(dir, columns) {
         for (var c in columns) {
             var column = columns[c];
             var value = obj[column.name];
+
+            if (typeof value == "string") {
+                value = "'" + value + "'"
+            }
+
             if (c == 0) {
                 $(tr).append("<td><a href='#" + value + "' onclick='view(" +
                              i + ")'>" + value + "</a></td>");
@@ -84,29 +96,29 @@ function view(i) {
     var pre = document.createElement("pre");
     $(pre).attr("id", "obj_text").html(JSON.stringify(obj, null, 2));
     $("#obj_text").replaceWith(pre);
-    
+
     $("#obj_view").show();
 }
 
 function listing(path) {
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-    
+
     var directory = Components.classes[
         "@mozilla.org/file/local;1"].createInstance(
             Components.interfaces.nsILocalFile);
-    
+
     directory.initWithPath(path);
-    
+
     if (!directory.exists() || !directory.isDirectory()) {
         return null;
     }
-    
+
     children = new Array();
     entries = directory.directoryEntries;
     while(entries.hasMoreElements()) {
         children.push(entries.getNext().QueryInterface(
             Components.interfaces.nsILocalFile).path);
     }
-    
+
     return children;
 }
