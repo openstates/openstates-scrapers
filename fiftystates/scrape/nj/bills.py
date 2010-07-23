@@ -91,7 +91,10 @@ class NJBillScraper(BillScraper):
         file2 = 'A' + str(year_abr + 1)
         file3 = 'S' + str(year_abr)
         file4 = 'S' + str(year_abr + 1)
-        vote_info_list = [file1, file2, file3, file4]
+        if str(year_abr) != '2010':
+            vote_info_list = [file1, file2, file3, file4]
+        else:
+            vote_info_list = [file1, file3]
         for bill_vote_file in vote_info_list:
             s_vote_url = 'ftp://www.njleg.state.nj.us/votes/%s.zip' % bill_vote_file
             s_vote_zip, resp = self.urlretrieve(s_vote_url)
