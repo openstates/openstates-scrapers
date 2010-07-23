@@ -111,8 +111,11 @@ function view(i) {
     var obj = objects[i];
 
     var pre = document.createElement("pre");
-    $(pre).attr("id", "obj_text").html(JSON.stringify(obj, null, 2));
+    $(pre).attr("id", "obj_text").html(JSON.stringify(obj, null, 2)).attr(
+        "class", "prettyprint");
     $("#obj_text").replaceWith(pre);
+
+    prettyPrint();
 
     $("#obj_view").show();
 }
