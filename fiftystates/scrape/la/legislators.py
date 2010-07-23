@@ -25,7 +25,7 @@ class LALegislatorScraper(LegislatorScraper):
                 contains = 'house.louisiana'
 
             for a in page.xpath("//a[contains(@href, '%s')]" % contains):
-                name = a.text.strip()
+                name = a.text.strip().decode('utf8')
                 leg_url = a.attrib['href']
                 if chamber == 'upper':
                     try:
