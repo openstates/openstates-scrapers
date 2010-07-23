@@ -55,9 +55,9 @@ class NJLegislatorScraper(LegislatorScraper):
                 party = party
             chamber = rec["house"]
             if chamber == 'A':
-                chamber = "General Assembly"
+                chamber = "lower"
             elif chamber == 'S':
-                chamber = "Senate"
+                chamber = "upper"
 
             title = rec["title"]
             legal_position = rec["legpos"]
