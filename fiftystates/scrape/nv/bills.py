@@ -79,14 +79,14 @@ class NVBillScraper(BillScraper):
                     for leg in secondary:
                         bill.add_sponsor('cosponsor', leg)
 
-                    self.scrape_actions(page_path, bill, "Senate")
-                    self.scrape_votes(page_path, bill, "Senate", insert, title, year)
+                    self.scrape_actions(page_path, bill, "upper")
+                    self.scrape_votes(page_path, bill, "upper", insert, title, year)
                     bill.add_source(page_path)
                     self.save_bill(bill)
 
 
 
-    def scrape_assem_bills(self, chamber, insert, session):
+    def scrape_assem_bills(self, chamber, insert, session, year):
         
         doc_type = [1, 3, 5, 6]
         for doc in doc_type:
@@ -124,8 +124,8 @@ class NVBillScraper(BillScraper):
                     for leg in secondary:
                         bill.add_sponsor('cosponsor', leg)
 
-                    self.scrape_actions(page_path, bill, "Assembly")
-                    self.scrape_votes(page_path, bill, "Assembly", insert, title)
+                    self.scrape_actions(page_path, bill, "lower")
+                    self.scrape_votes(page_path, bill, "lower", insert, title, year)
                     bill.add_source(page_path)
                     self.save_bill(bill)
 
