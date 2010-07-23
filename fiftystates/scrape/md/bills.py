@@ -16,6 +16,34 @@ CHAMBERS = {
     'lower': ('HB','HJ'),
 }
 
+classifiers = {
+    r'Committee Amendment .+? Adopted': 'amendment:passed',
+    r'Favorable': 'committee:passed:favorable',
+    r'First Reading': 'committee:referred',
+    r'Floor (Committee )?Amendment\s?\(.+?\)$': 'amendment:introduced',
+    r'Floor Amendment .+? Rejected': 'amendment:failed',
+    r'Floor (Committee )?Amendment .+? Adopted': 'amendment:passed',
+    r'Floor Amendment .+? Withrdawn': 'amendment:withdrawn',
+    r'Pre\-filed': 'bill:introduced',
+    r'Re\-(referred|assigned)': 'committee:referred',
+    r'Recommit to Committee': 'committee:referred',
+    r'Third Reading Passed': 'bill:passed',
+    r'Third Reading Failed': 'bill:failed',
+    r'Unfavorable': 'committee:passed:unfavorable',
+    r'Vetoed': 'veto',
+    r'Approved by the Governor': 'bill:signed',
+    r'Conference Committee|Passed Enrolled|Special Order|Senate Concur|Motion|Laid Over|Hearing|Committee Amendment|Assigned a chapter': 'other',
+}
+
+def _classify_action(action):
+    if not action:
+        return None
+
+    for regex, type in classifiers.iteritems():
+        if re.match(regex, action):
+            return type
+    return None
+
 BASE_URL = "http://mlis.state.md.us"
 BILL_URL = BASE_URL + "/%s/billfile/%s%04d.htm" # year, session, bill_type, number
 
@@ -39,27 +67,33 @@ class MDBillScraper(BillScraper):
             bill.add_sponsor('primary', sponsor)
 
     def parse_bill_actions(self, doc, bill):
-        for h5 in doc.cssselect('h5'):
-            if h5.text in ('House Action', 'Senate Action'):
-                chamber = 'upper' if h5.text == 'Senate Action' else 'lower'
-                elems = h5.getnext().cssselect('dt')
-                for elem in elems:
-                    action_date = elem.text.strip()
-                    if action_date != "No Action":
-                        try:
-                            action_date = datetime.datetime.strptime(
-                                "%s/%s" % (action_date, bill['session']), '%m/%d/%Y')
-                            action_desc = ""
-                            dd_elem = elem.getnext()
-                            while dd_elem is not None and dd_elem.tag == 'dd':
-                                if action_desc:
-                                    action_desc = "%s %s" % (action_desc, dd_elem.text.strip())
-                                else:
-                                    action_desc = dd_elem.text.strip()
-                                dd_elem = dd_elem.getnext()
-                            bill.add_action(chamber, action_desc, action_date)
-                        except ValueError:
-                            pass # probably trying to parse a bad entry, not really an action
+        for h5 in doc.xpath('//h5'):
+            if h5.text == 'House Action':
+                chamber = 'lower'
+            elif h5.text == 'Senate Action':
+                chamber = 'upper'
+            elif h5.text == 'Action after passage in Senate and House':
+                chamber = 'governor'
+            else:
+                break
+            dts = h5.getnext().xpath('dl/dt')
+            for dt in dts:
+                action_date = dt.text.strip()
+                if action_date != 'No Action':
+                    try:
+                        action_date = datetime.datetime.strptime(action_date,
+                                                                 '%m/%d')
+                        action_date = action_date.replace(int(bill['session']))
+
+                        actions = dt.getnext().text_content().split('\r\n')
+                        for act in actions:
+                            act = act.strip()
+                            atype = _classify_action(act)
+                            if atype:
+                                bill.add_action(chamber, act, action_date,
+                                               type=atype)
+                    except ValueError:
+                        pass # probably trying to parse a bad entry
 
     def parse_bill_documents(self, doc, bill):
         for elem in doc.cssselect('b'):
