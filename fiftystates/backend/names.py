@@ -24,7 +24,7 @@ def init_name_matcher(state, session, chamber):
             elemMatch['term'] = term['name']
             break
     else:
-        raise Exception("bad term")
+        raise Exception("bad session: " + session)
 
     if chamber and chamber != 'both':
         elemMatch['chamber'] = chamber
