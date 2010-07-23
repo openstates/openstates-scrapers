@@ -31,7 +31,6 @@ class NJBillScraper(BillScraper):
         main_bill_db = dbf.Dbf(MAINBILL_dbf)
         bill_dict = {}
 
-        #print main_bill_db[2]
         for rec in main_bill_db:
             bill_type = rec["billtype"]
             bill_number = int(rec["billnumber"])
@@ -41,7 +40,7 @@ class NJBillScraper(BillScraper):
                 chamber = "General Assembly"
             else:
                 chamber = "Senate"
-            bill = Bill(session, chamber, bill_id, title)
+            bill = Bill(str(session), chamber, bill_id, title)
             bill.add_source(main_bill_url)
             bill_dict[bill_id] = bill
 
@@ -50,7 +49,6 @@ class NJBillScraper(BillScraper):
         SPONSORS_dbf, resp = self.urlretrieve(bill_sponsors_url)
         bill_sponsors_db = dbf.Dbf(SPONSORS_dbf)
 
-        #print bill_sponsors_db[2]
         for rec in bill_sponsors_db:
             bill_type = rec["billtype"]
             bill_number = int(rec["billnumber"])
@@ -150,6 +148,9 @@ class NJBillScraper(BillScraper):
         bill_action_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/BILLHIST.DBF' % (year_abr)
         ACTION_dbf, resp = self.urlretrieve(bill_action_url)
         bill_action_db = dbf.Dbf(ACTION_dbf)
+        bill.add_source(bill_sponsors_url)
+        bill.add_source(bill_document_url)
+        bill.add_source(bill_action_url)
 
         for rec in bill_action_db:
             bill_type = rec["billtype"]
@@ -161,7 +162,4 @@ class NJBillScraper(BillScraper):
             actor = rec["house"]
             comment = rec["comment"]
             bill.add_action(actor, action, date, comment = comment)
-            bill.add_source(bill_sponsors_url)
-            bill.add_source(bill_document_url)
-            bill.add_source(bill_action_url)
             self.save_bill(bill)
