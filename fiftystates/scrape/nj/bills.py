@@ -37,9 +37,9 @@ class NJBillScraper(BillScraper):
             bill_id = bill_type + str(bill_number)
             title = rec["synopsis"]
             if bill_type[0] == 'A':
-                chamber = "General Assembly"
+                chamber = "lower"
             else:
-                chamber = "Senate"
+                chamber = "upper"
             bill = Bill(str(session), chamber, bill_id, title)
             bill.add_source(main_bill_url)
             bill_dict[bill_id] = bill
