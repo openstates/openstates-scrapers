@@ -16,6 +16,7 @@ from fiftystates import settings
 
 import scrapelib
 
+
 class ScrapeError(Exception):
     """
     Base class for scrape errors.
@@ -39,8 +40,11 @@ class JSONDateEncoder(json.JSONEncoder):
     JSONEncoder that encodes datetime objects as Unix timestamps.
     """
     def default(self, obj):
-        if isinstance(obj, datetime.datetime):
+        if (isinstance(obj, datetime.datetime) or
+            isinstance(obj, datetime.date)):
+
             return time.mktime(obj.timetuple())
+
         return json.JSONEncoder.default(self, obj)
 
 
@@ -95,6 +99,7 @@ class Scraper(scrapelib.Scraper):
             if term == t['name']:
                 return True
         return NoDataForPeriod(session)
+
 
 class FiftystatesObject(dict):
     def __init__(self, type, **kwargs):
