@@ -11,9 +11,8 @@ class MSBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         self.save_errors=False
-        if int(session) < 2008:
+        if int(session[0:4]) < 2008:
             raise NoDataForPeriod(session)
-
         self.scrape_bills(session)
 
     def scrape_bills(self, session):
@@ -30,7 +29,7 @@ class MSBillScraper(BillScraper):
                 link = mr.xpath('string(actionlink)').replace("..", "")
                 main_doc = mr.xpath('string(measurelink)').replace("../../../", "")
                 main_doc_url = 'http://billstatus.ls.state.ms.us/%s' % main_doc
-                bill_details_url = 'http://billstatus.ls.state.ms.us/2010/pdf%s' % link
+                bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf%s' % (session, link)
                 with self.urlopen(bill_details_url) as details_page:
                     details_root = lxml.etree.fromstring(details_page, lxml.etree.HTMLParser())
                     title = details_root.xpath('string(//shorttitle)')

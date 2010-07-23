@@ -8,7 +8,7 @@ metadata = dict(
     upper_term=4,
     lower_term=4,
     terms=[
-        {'name': '2008-2011', 'sessions': ['2008', '2009', '2010', '2011'], 'start_year': 2008, 'end_year': 2011},]
+        {'name': '2008-2011', 'sessions': ['2008', '2009', '20091E', '20092E', '20093E', '2010', '20101E'], 'start_year': 2008, 'end_year': 2011},]
 )
 
 
