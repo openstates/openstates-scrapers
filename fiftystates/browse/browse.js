@@ -27,7 +27,8 @@ function populateLegislators(state) {
 
 function populateBills(state) {
     populate("/data/" + state + "/bills",
-             [{'name': "bill_id"}, {'name': "title"}]);
+             [{'name': "bill_id"}, {'name': 'session'},
+              {'name': 'chamber'}, {'name': "title"}]);
 }
 
 function populate(dir, columns) {
