@@ -4,7 +4,18 @@ $(document).ready(function() {
     if (navigator.userAgent.indexOf('Gecko/') == -1) {
         $("#loading").html("The Open States Browser only supports Firefox.");
     } else {
-        setTimeout(populateLegislators, 0, ['md']);
+        $("#legislators_button").click(function() {
+            $("#obj_list_wrapper").hide();
+            $("#loading").show();
+            setTimeout(populateLegislators, 0, [$("#state").val()]);
+        });
+        $("#bills_button").click(function() {
+            $("#obj_list_wrapper").hide();
+            $("#loading").show();
+            setTimeout(populateBills, 0, [$("#state").val()]);
+        });
+
+        setTimeout(populateLegislators, 0, [$("#state").val()]);
     }
 });
 
@@ -77,14 +88,20 @@ function populate(dir, columns) {
     }
     dtCols[0] = {"sType": "html"};
 
-    $(obj_list).attr("id", "obj_table");
-    $("#obj_list").replaceWith(obj_list);
+    $(obj_list).attr("id", "obj_list");
+
+    if ($("#obj_list_wrapper").length > 0) {
+        $("#obj_list_wrapper").replaceWith(obj_list);
+    } else {
+        $("#obj_list").replaceWith(obj_list);
+    }
 
     $(obj_list).dataTable({"aaSorting": [[0, "asc"]],
                            "aoColumns": dtCols,
                            "bAutoWidth": true,
                            "bPaginate": true,
                            "sPaginationType": "full_numbers"});
+
 
     $("#obj_list").show();
     $("#loading").hide();
