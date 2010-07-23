@@ -1,5 +1,4 @@
-import datetime
-
+from datetime import datetime
 from fiftystates.scrape.nj import metadata
 from fiftystates.scrape.nj.utils import chamber_name
 from fiftystates.scrape.bills import BillScraper, Bill
@@ -113,7 +112,9 @@ class NJBillScraper(BillScraper):
                 bill_id = rec["Bill"]
                 bill_id = bill_id.strip()
                 leg = rec["Full_Name"]
+
                 date = rec["Session_Date"]
+                date = datetime.strptime(date, "%m/%d/%Y")
                 action = rec["Action"]
                 leg_vote = rec["Legislator_Vote"]
                 vote_id = bill_id + "_" + action
