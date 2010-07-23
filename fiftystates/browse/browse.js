@@ -1,5 +1,13 @@
 var objects = new Array();
 
+$(document).ready(function() {
+    if (navigator.userAgent.indexOf('Gecko/') == -1) {
+        $("#loading").html("The Open States Browser only supports Firefox.");
+    } else {
+        setTimeout(populateLegislators, 0, ['md']);
+    }
+});
+
 function populateLegislators(state) {
     populate("/data/" + state + "/legislators",
              [{'name': "full_name"}]);
