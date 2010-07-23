@@ -1,6 +1,5 @@
 import re
-import datetime
-
+from datetime import datetime
 
 from fiftystates.scrape.nv import metadata
 from fiftystates.scrape.nv.utils import chamber_name, parse_ftp_listing
@@ -37,12 +36,12 @@ class NVBillScraper(BillScraper):
             insert = str(session) + sessionsuffix + str(year)
 
         if chamber == 'upper':
-            self.scrape_senate_bills(chamber, insert, session)
+            self.scrape_senate_bills(chamber, insert, session, year)
         elif chamber == 'lower':
-            self.scrape_assem_bills(chamber, insert, session)
+            self.scrape_assem_bills(chamber, insert, session, year)
 
 
-    def scrape_senate_bills(self, chamber, insert, session):
+    def scrape_senate_bills(self, chamber, insert, session, year):
 
         doc_type = [2, 4, 7, 8]
         for doc in doc_type:
@@ -81,7 +80,7 @@ class NVBillScraper(BillScraper):
                         bill.add_sponsor('cosponsor', leg)
 
                     self.scrape_actions(page_path, bill, "Senate")
-                    self.scrape_votes(page_path, bill, "Senate", insert, title)
+                    self.scrape_votes(page_path, bill, "Senate", insert, title, year)
                     bill.add_source(page_path)
                     self.save_bill(bill)
 
@@ -183,14 +182,14 @@ class NVBillScraper(BillScraper):
             for mr in root.xpath(path):
                 date = mr.xpath('string()')
                 date = date.split()[0] + " " + date.split()[1] + " " + date.split()[2]
-
+                date = datetime.strptime(date, "%b %d, %Y")
                 count = count + 1
                 action_path = '/html/body/div[@id="content"]/table[%s]/tr/td/ul/li' % (count)
                 for el in root.xpath(action_path):
                     action = el.xpath('string()')
                     bill.add_action(actor, action, date)
 
-    def scrape_votes(self, bill_url, bill, chamber, insert, motion):
+    def scrape_votes(self, bill_url, bill, chamber, insert, motion, year):
         with self.urlopen(bill_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
             url_path = ('/html/body/div[@id="content"]/table[5]/tr/td/a')
@@ -202,6 +201,9 @@ class NVBillScraper(BillScraper):
                     root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
                     date = root.xpath('string(/html/body/center/font)').split()[-1]
+                    date = date + "-" + str(year)
+                    date = datetime.strptime(date, "%m-%d-%Y")
+                    #FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
                     yes_count = root.xpath('string(/html/body/center/table/tr/td[1])').split()[0]
                     no_count = root.xpath('string(/html/body/center/table/tr/td[2])').split()[0]
                     excused = root.xpath('string(/html/body/center/table/tr/td[3])').split()[0]
