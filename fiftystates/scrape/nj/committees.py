@@ -48,9 +48,9 @@ class NJCommitteeScraper(CommitteeScraper):
             contact_info = name_rec["phone"]
 
             if abrv[0] == "A":
-                chamber = "General Assembly"
+                chamber = "upper"
             elif abrv[0] == "S":
-                chamber = "Senate"
+                chamber = "lower"
 
             comm = Committee(chamber, comm_name, comm_type = comm_type, aide = aide, contact_info = contact_info)
             comm.add_source(members_url)
