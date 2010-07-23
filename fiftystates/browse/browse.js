@@ -60,11 +60,14 @@ function populate(dir, columns) {
     $(obj_list).attr("id", "obj_table");
     $("#obj_list").replaceWith(obj_list);
 
-    $("#obj_list").dataTable({"aaSorting": [[0, "asc"]],
-                              "aoColumns": dtCols,
-                              "bAutoWidth": true});
+    $(obj_list).dataTable({"aaSorting": [[0, "asc"]],
+                           "aoColumns": dtCols,
+                           "bAutoWidth": true,
+                           "bPaginate": true,
+                           "sPaginationType": "full_numbers"});
 
     $("#obj_list").show();
+    $("#loading").hide();
 }
 
 function view(i) {

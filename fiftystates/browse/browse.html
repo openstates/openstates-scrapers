@@ -2,11 +2,25 @@
 
 <head>
   <title>Open States Browser</title>
-  
+
   <script type="text/javascript" src="jquery-1.4.2.min.js"> </script>
   <script type="text/javascript" src="jQuery.twFile.js"> </script>
   <script type="text/javascript" src="jquery.dataTables.js"> </script>
   <script type="text/javascript" src="browse.js"></script>
+
+  <style>
+  .paginate_active {
+    margin: .1em;
+    text-decoration: underline;
+    font-weight: bold;
+  }
+
+  .paginate_button {
+    margin: .1em;
+    text-decoration: underline;
+    color: blue;
+  }
+  </style>
 </head>
 
 <body onload="populateLegislators('md')">
@@ -14,6 +28,8 @@
     <div id="obj_view" style="margin-bottom:3em; display: none;">
       <pre id="obj_text"></pre>
     </div>
+
+    <span id="loading">Loading...</span>
 
     <table id="obj_list">
       <thead><tr></tr></thead>
