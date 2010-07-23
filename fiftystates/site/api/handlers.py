@@ -83,6 +83,11 @@ class StateHandler(FiftyStateHandler):
         return db.metadata.find_one({'_id': state.lower()})
 
 
+class CommitteeHandler(FiftyStateHandler):
+    def read(self, request, id):
+        return db.committees.find_one({'_all_ids': id})
+
+
 class LegislatorHandler(FiftyStateHandler):
     def read(self, request, id):
         return db.legislators.find_one({'_all_ids': id})

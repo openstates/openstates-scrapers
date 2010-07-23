@@ -30,7 +30,7 @@ class MDCommitteeScraper(CommitteeScraper):
                 for l in cdoc.cssselect('a[href]'):
                     if ' SUBCOMMITTEE' in (l.text or ''):
                         self.save_committee(cur_com)
-                        cur_com = Committee(chamber, l.text, committee_name)
+                        cur_com = Committee(chamber, committee_name, l.text)
                         cur_com.add_source(com_url)
                     elif 'html/msa' in l.get('href'):
                         cur_com.add_member(l.text)
