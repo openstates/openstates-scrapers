@@ -57,7 +57,7 @@ class WIBillScraper(BillScraper):
                                                            bill_id, title))
                         self.scrape_bill_history(bill, link)
             except scrapelib.HTTPError, e:
-                if e.response.status == 404:
+                if e.response.code == 404:
                     self.log('No data for %s %s' % (year, t))
 
     def scrape_bill_history(self, bill, url):
