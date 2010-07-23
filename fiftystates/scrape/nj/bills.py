@@ -151,7 +151,6 @@ class NJBillScraper(BillScraper):
         ACTION_dbf, resp = self.urlretrieve(bill_action_url)
         bill_action_db = dbf.Dbf(ACTION_dbf)
 
-        #print bill_action_db[2]
         for rec in bill_action_db:
             bill_type = rec["billtype"]
             bill_number = int(rec["billnumber"])
@@ -161,7 +160,7 @@ class NJBillScraper(BillScraper):
             date = rec["dateaction"]
             actor = rec["house"]
             comment = rec["comment"]
-            bill.add_action(actor, action, str(date), comment = comment)
+            bill.add_action(actor, action, date, comment = comment)
             bill.add_source(bill_sponsors_url)
             bill.add_source(bill_document_url)
             bill.add_source(bill_action_url)
