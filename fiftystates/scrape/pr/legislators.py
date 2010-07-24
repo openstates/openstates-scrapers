@@ -87,13 +87,18 @@ class PRLegislatorScraper(LegislatorScraper):
                     name_dist_party = leg_data[0].text_content()
                     name, sep, dist_party = name_dist_party.partition('Distrito')
                     dist = re.search('[0-9]+', dist_party).group(0)
-                    party = leg_data[1].text_content()
+                    leg_party = leg_data[1].text_content()
                     name = name.lstrip()
                     link_part = l.cssselect('a')[0].iterlinks().next()[2]
                     link = 'http://www.camaraderepresentantes.org/' + link_part
                     imgs = l.cssselect('img')
                     pic_link_part = imgs[0].iterlinks().next()[2]
                     pic_link = 'http://www.camaraderepresentantes.org/' + pic_link_part
+                    
+                    leg = Legislator(year, chamber, dist, name, \
+                                     party = leg_party, head_shot = pic_link)
+                    leg.add_source(link)
+                    self.save_legislator(leg)
                 
                 
                 for l in legs_acu:
@@ -104,7 +109,13 @@ class PRLegislatorScraper(LegislatorScraper):
                     name_party = l.text_content().lstrip()
                     match = re.search('PNP|PPD', name_party)
                     name = name_party[:-4]
-                    party = match.group(0)
+                    leg_party = match.group(0)                                     
+                        
+                    leg = Legislator(year, chamber, 'at large', name, \
+                                     party = leg_party, head_shot = pic_link)
+                    
+                    leg.add_source(link)
+                    self.save_legislator(leg)
                     
                    
         
