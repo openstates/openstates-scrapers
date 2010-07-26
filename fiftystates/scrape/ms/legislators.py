@@ -51,11 +51,6 @@ class MSLegislatorScraper(LegislatorScraper):
             district = root.xpath('string(//district)')
             first_name, middle_name, last_name = None, None, None
 
-            if chamber == "lower":
-                chamber = "House"
-            else:
-                chamber = "Senate"
-
             home_phone = root.xpath('string(//h_phone)')
             bis_phone = root.xpath('string(//b_phone)')
             capital_phone = root.xpath('string(//cap_phone)')
