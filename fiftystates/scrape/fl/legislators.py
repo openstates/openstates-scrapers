@@ -1,6 +1,6 @@
 import re
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.fl import metadata
 
@@ -11,11 +11,11 @@ class FLLegislatorScraper(LegislatorScraper):
     state = 'fl'
 
     def scrape(self, chamber, year):
-        for session in metadata['sessions']:
-            if session['start_year'] <= int(year) <= session['end_year']:
+        for term in metadata['terms']:
+            if term['start_year'] <= int(year) <= term['end_year']:
                 break
         else:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             self.scrape_senators(year)

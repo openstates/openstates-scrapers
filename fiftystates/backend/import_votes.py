@@ -52,6 +52,7 @@ def import_votes(state, data_dir):
             if (vote['motion'] == data['motion']
                 and vote['date'] == data['date']):
                 vote.update(data)
+                break
         else:
             bill['votes'].append(data)
 

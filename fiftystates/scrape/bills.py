@@ -15,7 +15,7 @@ class BillScraper(Scraper):
         Grab all the bills for a given chamber and year. Must be
         overridden by subclasses.
 
-        Should raise a :class:`NoDataForYear` exception if the year is invalid.
+        Should raise a :class:`NoDataForPeriod` exception if the year is invalid.
         """
         raise NotImplementedError('BillScrapers must define a scrape method')
 

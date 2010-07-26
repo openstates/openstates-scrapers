@@ -1,0 +1,52 @@
+<html>
+
+<head>
+  <title>Open States Browser</title>
+
+  <link href="prettify.css" type="text/css" rel="stylesheet" />
+
+  <script type="text/javascript" src="jquery-1.4.2.min.js"> </script>
+  <script type="text/javascript" src="jQuery.twFile.js"> </script>
+  <script type="text/javascript" src="jquery.dataTables.js"> </script>
+  <script type="text/javascript" src="prettify.js"> </script>
+  <script type="text/javascript" src="browse.js"> </script>
+
+  <style>
+  .paginate_active {
+    margin: .1em;
+    text-decoration: underline;
+    font-weight: bold;
+  }
+
+  .paginate_button {
+    margin: .1em;
+    text-decoration: underline;
+    color: blue;
+  }
+
+  th {
+    left-margin: 1em;
+    text-align: left;
+  }
+  </style>
+</head>
+
+<body>
+  <div id="content">
+    <div id="obj_view" style="margin-bottom:3em; display: none;">
+      <pre id="obj_text" class="prettyprint"></pre>
+    </div>
+
+    <input id="state" type="text" value="md" />
+    <button id="legislators_button">Legislators</button>
+    <button id="bills_button">Bills</button>
+
+    <div id="loading">Loading...</div>
+
+    <table id="obj_list">
+      <thead><tr></tr></thead>
+    </table>
+  </div>
+</body>
+
+</html>

@@ -1,6 +1,6 @@
 import re
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.tx.utils import clean_committee_name
 
@@ -12,7 +12,7 @@ class TXLegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, year):
         if year != '2009':
-            raise NoDataForYear
+            raise NoDataForPeriod
 
         if chamber == 'upper':
             chamber_type = 'S'
@@ -66,6 +66,6 @@ class TXLegislatorScraper(LegislatorScraper):
             for br in comm_div.xpath('*/br'):
                 if br.tail:
                     leg.add_role('committee member', '81', chamber=chamber,
-                                 committee=br.tail.strip())
+                                 committee=clean_committee_name(br.tail))
 
             self.save_legislator(leg)

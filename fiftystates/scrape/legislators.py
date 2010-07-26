@@ -15,7 +15,7 @@ class LegislatorScraper(Scraper):
         Grab all the legislators who served in a given year. Must be
         overridden by subclasses.
 
-        Should raise a :class:`NoDataForYear` exception if the year is invalid.
+        Should raise a :class:`NoDataForPeriod` exception if the year is invalid.
         """
         raise NotImplementedError('LegislatorScrapers must define a '
                                   'scrape method')
@@ -34,7 +34,7 @@ class LegislatorScraper(Scraper):
         person['state'] = self.state
 
         role = person['roles'][0]
-        filename = "%s_%s.json" % (role['session'],
+        filename = "%s_%s.json" % (role['term'],
                                    person['full_name'])
         filename = filename.encode('ascii', 'replace')
 
@@ -52,7 +52,7 @@ class LegislatorScraper(Scraper):
         role = legislator['roles'][0]
         legislator['state'] = self.state
 
-        filename = "%s_%s_%s_%s.json" % (role['session'],
+        filename = "%s_%s_%s_%s.json" % (role['term'],
                                          role['chamber'],
                                          role['district'],
                                          legislator['full_name'])
@@ -76,30 +76,30 @@ class Person(FiftystatesObject):
         self['full_name'] = full_name
         self['roles'] = []
 
-    def add_role(self, role, session, start_date=None, end_date=None,
+    def add_role(self, role, term, start_date=None, end_date=None,
                  **kwargs):
         """
         If ``start_date`` or ``end_date`` are ``None``, they will default
-        to the start/end date of the given legislative session.
+        to the start/end date of the given term.
 
         Examples:
 
-        leg.add_role('member', session='2009', chamber='upper',
+        leg.add_role('member', term='2009', chamber='upper',
                      party='Republican', district='10th')
         """
-        self['roles'].append(dict(role=role, session=session,
+        self['roles'].append(dict(role=role, term=term,
                                   start_date=start_date,
                                   end_date=end_date, **kwargs))
 
 
 class Legislator(Person):
-    def __init__(self, session, chamber, district, full_name,
+    def __init__(self, term, chamber, district, full_name,
                  first_name='', last_name='', middle_name='',
                  party='', **kwargs):
         """
         Create a Legislator.
 
-        :param session: the session in which this legislator served
+        :param term: the term for this legislator
         :param chamber: the chamber in which this legislator served,
           'upper' or 'lower'
         :param district: the district this legislator is representing, as given
@@ -120,7 +120,7 @@ class Legislator(Person):
         """
         super(Legislator, self).__init__(full_name, **kwargs)
         #self['type'] = 'legislator'
-        self.add_role('member', session, chamber=chamber, district=district,
+        self.add_role('member', term, chamber=chamber, district=district,
                       party=party)
         self['first_name'] = first_name
         self['last_name'] = last_name

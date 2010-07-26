@@ -1,7 +1,7 @@
 import re
 import datetime as dt
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 
@@ -16,11 +16,11 @@ class AKBillScraper(BillScraper):
     def scrape(self, chamber, year):
         # Data available for 1993 on
         if int(year) < 1993 or int(year) > dt.date.today().year:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         # Expect first year of session (odd)
         if int(year) % 2 != 1:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         self.scrape_session(chamber, year)
 

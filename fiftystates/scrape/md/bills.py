@@ -2,58 +2,55 @@
 import datetime
 import itertools
 import re
-from urllib2 import HTTPError
 
 import lxml.html
+from scrapelib import HTTPError
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
+from fiftystates.scrape.md import metadata
 
 CHAMBERS = {
     'upper': ('SB','SJ'),
     'lower': ('HB','HJ'),
 }
-SESSIONS = {
-    2010: ('rs',),
-    2009: ('rs',),
-    2008: ('rs',),
-    2007: ('rs','s1'),
-    2006: ('rs','s1'),
-    2005: ('rs',),
-    2004: ('rs','s1'),
-    2003: ('rs',),
-    2002: ('rs',),
-    2001: ('rs',),
-    2000: ('rs',),
-    1999: ('rs',),
-    1998: ('rs',),
-    1997: ('rs',),
-    1996: ('rs',),
+
+classifiers = {
+    r'Committee Amendment .+? Adopted': 'amendment:passed',
+    r'Favorable': 'committee:passed:favorable',
+    r'First Reading': 'committee:referred',
+    r'Floor (Committee )?Amendment\s?\(.+?\)$': 'amendment:introduced',
+    r'Floor Amendment .+? Rejected': 'amendment:failed',
+    r'Floor (Committee )?Amendment .+? Adopted': 'amendment:passed',
+    r'Floor Amendment .+? Withrdawn': 'amendment:withdrawn',
+    r'Pre\-filed': 'bill:introduced',
+    r'Re\-(referred|assigned)': 'committee:referred',
+    r'Recommit to Committee': 'committee:referred',
+    r'Third Reading Passed': 'bill:passed',
+    r'Third Reading Failed': 'bill:failed',
+    r'Unfavorable': 'committee:passed:unfavorable',
+    r'Vetoed': 'veto',
+    r'Approved by the Governor': 'bill:signed',
+    r'Conference Committee|Passed Enrolled|Special Order|Senate Concur|Motion|Laid Over|Hearing|Committee Amendment|Assigned a chapter': 'other',
 }
 
+def _classify_action(action):
+    if not action:
+        return None
+
+    for regex, type in classifiers.iteritems():
+        if re.match(regex, action):
+            return type
+    return None
+
 BASE_URL = "http://mlis.state.md.us"
-BILL_URL = BASE_URL + "/%s%s/billfile/%s%04d.htm" # year, session, bill_type, number
+BILL_URL = BASE_URL + "/%s/billfile/%s%04d.htm" # year, session, bill_type, number
 
 MOTION_RE = re.compile(r"(?P<motion>[\w\s]+) \((?P<yeas>\d{1,3})-(?P<nays>\d{1,3})\)")
 
 class MDBillScraper(BillScraper):
     state = 'md'
-
-    metadata = {
-        'state_name': 'Maryland',
-        'legislature_name': 'Maryland General Assembly',
-        'upper_chamber_name': 'Senate',
-        'lower_chamber_name': 'House of Delegates',
-        'upper_title': 'Senator',
-        'lower_title': 'Delegate',
-        'upper_term': 4,
-        'lower_term': 4,
-        'sessions': SESSIONS.keys(),
-        'session_details': {
-            '2007-2008': {'years': [2007, 2008], 'sub_sessions':
-                              ['Sub Session 1', 'Sub Session 2']},
-            '2009-2010': {'years': [2009, 2010], 'sub_sessions': []}}}
 
     def parse_bill_sponsors(self, doc, bill):
         sponsor_list = doc.cssselect('a[name=Sponlst]')
@@ -70,27 +67,33 @@ class MDBillScraper(BillScraper):
             bill.add_sponsor('primary', sponsor)
 
     def parse_bill_actions(self, doc, bill):
-        for h5 in doc.cssselect('h5'):
-            if h5.text in ('House Action', 'Senate Action'):
-                chamber = 'upper' if h5.text == 'Senate Action' else 'lower'
-                elems = h5.getnext().cssselect('dt')
-                for elem in elems:
-                    action_date = elem.text.strip()
-                    if action_date != "No Action":
-                        try:
-                            action_date = datetime.datetime.strptime(
-                                "%s/%s" % (action_date, bill['session']), '%m/%d/%Y')
-                            action_desc = ""
-                            dd_elem = elem.getnext()
-                            while dd_elem is not None and dd_elem.tag == 'dd':
-                                if action_desc:
-                                    action_desc = "%s %s" % (action_desc, dd_elem.text.strip())
-                                else:
-                                    action_desc = dd_elem.text.strip()
-                                dd_elem = dd_elem.getnext()
-                            bill.add_action(chamber, action_desc, action_date)
-                        except ValueError:
-                            pass # probably trying to parse a bad entry, not really an action
+        for h5 in doc.xpath('//h5'):
+            if h5.text == 'House Action':
+                chamber = 'lower'
+            elif h5.text == 'Senate Action':
+                chamber = 'upper'
+            elif h5.text == 'Action after passage in Senate and House':
+                chamber = 'governor'
+            else:
+                break
+            dts = h5.getnext().xpath('dl/dt')
+            for dt in dts:
+                action_date = dt.text.strip()
+                if action_date != 'No Action':
+                    try:
+                        action_date = datetime.datetime.strptime(action_date,
+                                                                 '%m/%d')
+                        action_date = action_date.replace(int(bill['session']))
+
+                        actions = dt.getnext().text_content().split('\r\n')
+                        for act in actions:
+                            act = act.strip()
+                            atype = _classify_action(act)
+                            if atype:
+                                bill.add_action(chamber, act, action_date,
+                                               type=atype)
+                    except ValueError:
+                        pass # probably trying to parse a bad entry
 
     def parse_bill_documents(self, doc, bill):
         for elem in doc.cssselect('b'):
@@ -168,10 +171,14 @@ class MDBillScraper(BillScraper):
                     bill.add_source(vote_url)
 
 
-    def scrape_bill(self, chamber, year, session, bill_type, number):
+    def scrape_bill(self, chamber, session, bill_type, number):
         """ Creates a bill object
         """
-        url = BILL_URL % (year, session, bill_type, number)
+        if len(session) == 4:
+            session_url = session+'rs'
+        else:
+            session_url = session
+        url = BILL_URL % (session_url, bill_type, number)
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
             # title
@@ -181,7 +188,7 @@ class MDBillScraper(BillScraper):
 
             # create the bill object now that we have the title
             print "%s %d %s" % (bill_type, number, title)
-            bill = Bill(year, chamber, "%s %d" % (bill_type, number), title)
+            bill = Bill(session, chamber, "%s %d" % (bill_type, number), title)
             bill.add_source(url)
 
             self.parse_bill_sponsors(doc, bill)     # sponsors
@@ -193,22 +200,15 @@ class MDBillScraper(BillScraper):
             self.save_bill(bill)
 
 
-    def scrape_session(self, chamber, year, session):
+    def scrape(self, chamber, session):
+
+        self.validate_session(session)
+
         for bill_type in CHAMBERS[chamber]:
             for i in itertools.count(1):
                 try:
-                    self.scrape_bill(chamber, year, session, bill_type, i)
+                    self.scrape_bill(chamber, session, bill_type, i)
                 except HTTPError, he:
-                    # hope this is because the page doesn't exist
-                    # and not because something is broken
-                    if he.code != 404:
+                    if he.response.code != 404:
                         raise he
                     break
-
-    def scrape(self, chamber, year):
-
-        if year not in SESSIONS:
-            raise NoDataForYear(year)
-
-        for session in SESSIONS[year]:
-            self.scrape_session(chamber, year, session)

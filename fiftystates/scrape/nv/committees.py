@@ -1,7 +1,7 @@
 import re
 import datetime
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.committees import CommitteeScraper, Committee
 from fiftystates.scrape.nv.utils import clean_committee_name
 
@@ -11,17 +11,16 @@ import lxml.etree
 class NVCommitteeScraper(CommitteeScraper):
     state = 'nv'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term_name):
         self.save_errors=False
-        if year < 2001:
-            raise NoDataForYear(year)
+        year = term_name[0:4]
+        if int(year) < 2001:
+            raise NoDataForPeriod(term_name)
 
-        time = datetime.datetime.now()
-        curyear = time.year
-        if ((int(year) - curyear) % 2) == 1:
-            session = ((int(year) -  curyear) / 2) + 76
+        if ((int(year) - 2010) % 2) == 1:
+            session = ((int(year) -  2010) / 2) + 76
         else:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(term_name)
 
         sessionsuffix = 'th'
         if str(session)[-1] == '1':
@@ -31,7 +30,6 @@ class NVCommitteeScraper(CommitteeScraper):
         elif str(session)[-1] == '3':
             sessionsuffix = 'rd'
         insert = str(session) + sessionsuffix + str(year)
-
 
         if chamber == 'upper':
             self.scrape_senate_comm(chamber, insert, session)

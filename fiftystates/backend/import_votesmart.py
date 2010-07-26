@@ -43,32 +43,30 @@ def import_committees(state):
         for committee in votesmart.committee.getCommitteesByTypeState(
             typeId=typeId, stateId=state['_id'].upper()):
 
-            parent_id = committee.parentId
-            if parent_id == "-1":
-                parent_id = None
+            committee_name = committee.name
+            subcommittee_name = None
 
-            data = db.committees.find_one({
-                    'state': state['_id'],
-                    'votesmart_id': committee.committeeId})
+            if committee.parentId != "-1":
+                parent = votesmart.committee.getCommittee(committee.parentId)
+                subcommittee_name = committee_name
+                committee_name = parent.name
 
-            insert = False
+            spec = {'state': state['_id'],
+                    'chamber': chamber,
+                    'committee': committee_name}
+            if subcommittee_name:
+                spec['subcommittee'] = subcommittee_name
+
+            data = db.committees.find_one(spec)
+
             if not data:
-                insert = True
-                data = {}
+                print "No matches for '%s'" % (subcommittee_name or
+                                               committee_name)
+                continue
 
-            data.update({'state': state['_id'],
-                         'votesmart_id': committee.committeeId,
-                         'chamber': chamber,
-                         'name': committee.name,
-                         'parent_votesmart_id': parent_id,
-                         '_type': 'committee'})
+            data['votesmart_id'] = committee.committeeId
 
-            if insert:
-                insert_with_id(data)
-            else:
-                db.committees.save(data)
-
-    import_committee_ids(state)
+            db.committees.save(data)
 
 
 def import_committee_ids(state):
@@ -94,22 +92,25 @@ def import_legislator_ids(state):
     else:
         offices['lower'] = 7
 
-    current_session = state['sessions'][-1]['name']
+    current_term = state['terms'][-1]['name']
 
     for chamber, office in offices.items():
         officials = votesmart.officials.getByOfficeState(
             office, state['_id'].upper())
 
         for official in officials:
-            legs = db.legislators.find({'roles.type': 'member',
-                                        'roles.chamber': chamber,
-                                        'roles.session': current_session,
-                                        'first_name': official.firstName,
-                                        'last_name': official.lastName})
+            legs = db.legislators.find(
+                {'roles': {'$elemMatch':
+                     {'type': 'member',
+                      'chamber': chamber,
+                      'district': official.officeDistrictName,
+                      'term': current_term}},
+                 'last_name': official.lastName,
+               })
 
             if legs.count() > 1:
-                print ("Too many matches for '%s'" % official).encode('ascii',
-                                                                      'replace')
+                print ("Too many matches for '%s'" % official).encode(
+                    'ascii', 'replace')
             elif legs.count() == 0:
                 print ("No matches for '%s'" % official).encode('ascii',
                                                                 'replace')
@@ -118,7 +119,7 @@ def import_legislator_ids(state):
 
                 for r in leg['roles']:
                     if (r['type'] == 'member' and
-                        r['session'] == current_session):
+                        r['term'] == current_term):
 
                         leg['votesmart_id'] = official.candidateId
                         db.legislators.save(leg)

@@ -1,7 +1,7 @@
 import re
-import datetime as dt
+import datetime
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.pa import metadata
@@ -10,7 +10,7 @@ from fiftystates.scrape.pa.utils import (bill_abbr, start_year,
                                          bill_list_url, history_url, info_url,
                                          vote_url)
 
-from BeautifulSoup import BeautifulSoup
+import lxml.html
 
 
 def action_type(action):
@@ -21,243 +21,146 @@ class PABillScraper(BillScraper):
     state = 'pa'
 
     def scrape(self, chamber, year):
-        session = "%s-%d" % (year, int(year) + 1)
-        found = False
-        for s in metadata['sessions']:
-            if s['name'] == session:
-                found = True
-                specials = s['sub_sessions']
+        term = None
+        for t in metadata['terms']:
+            if t['name'] == "%s-%d" % (year, int(year) + 1):
+                term = t
                 break
-        if not found:
+        else:
             raise NoDataForYear(year)
 
-        self.scrape_session(chamber, session)
-
-        for special in specials:
-            session_num = re.search('#(\d+)', special).group(1)
-            self.scrape_session(chamber, session, int(session_num))
+        for session in term['sessions']:
+            match = re.search("#(\d+)", session)
+            if match:
+                self.scrape_session(chamber, session, int(match.group(1)))
+            else:
+                self.scrape_session(chamber, session)
 
     def scrape_session(self, chamber, session, special=0):
-        session_url = bill_list_url(chamber, session, special)
-        
-        with self.urlopen(session_url) as bill_list_page:
-            bill_list_page = BeautifulSoup(bill_list_page)
-            bill_link_re = "body=%s&type=(B|R)&bn=\d+" % bill_abbr(chamber)
+        url = bill_list_url(chamber, session, special)
 
-            for link in bill_list_page.findAll(href=re.compile(bill_link_re)):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+
+            for link in page.xpath('//a[contains(@href, "billinfo")]'):
                 self.parse_bill(chamber, session, special, link)
 
     def parse_bill(self, chamber, session, special, link):
-        bill_number = link.contents[0]
-        type = re.search('type=(B|R|)', link['href']).group(1)
-        bill_id = "%s%s %s" % (bill_abbr(chamber), type, bill_number)
+        bill_num = link.text.strip()
+        bill_type = re.search('type=(B|R|)', link.attrib['href']).group(1)
+        bill_id = "%s%s %s" % (bill_abbr(chamber), bill_type, bill_num)
 
-        bill_info_url = info_url(chamber, session, special, type, bill_number)
+        url = info_url(chamber, session, special, bill_type, bill_num)
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
-        with self.urlopen(bill_info_url) as info_page:
-            info_page = BeautifulSoup(info_page)
-            title_label = info_page.find(text='Short Title:')
-            title = title_label.findNext().contents[0]
+            title = page.xpath(
+                "//td[text() = 'Short Title:']/following-sibling::td")[0]
+            title = title.text.strip()
 
             bill = Bill(session, chamber, bill_id, title)
-            bill.add_source(bill_info_url)
+            bill.add_source(url)
 
-            self.parse_bill_versions(bill, info_page)
+            self.parse_bill_versions(bill, page)
 
             self.parse_history(bill, history_url(chamber, session, special,
-                                                 type, bill_number))
+                                                 bill_type, bill_num))
 
             self.parse_votes(bill, vote_url(chamber, session, special,
-                                            type, bill_number))
+                                            bill_type, bill_num))
 
             self.save_bill(bill)
 
-    def parse_bill_versions(self, bill, info_page):
-        """
-        Grab links to all versions of a bill from its info page.
-        """
-        pn_table = info_page.find('div', {"class": 'pn_table'})
-        text_rows = pn_table.findAll('tr')[1:]
+    def parse_bill_versions(self, bill, page):
+        for link in page.xpath(
+            '//div[@class="pn_table"]/descendant::a[@class="link2"]'):
 
-        for row in text_rows:
-            text_link = row.td.a
-            text_url = 'http://www.legis.state.pa.us%s' % text_link['href']
-            text_name = text_link.contents[0].strip()
-            bill.add_version(text_name, text_url)
+            bill.add_version("Printer's No. %s" % link.text.strip(),
+                             link.attrib['href'])
 
     def parse_history(self, bill, url):
-        """
-        Grab all history data (actions and votes) for a given bill provided
-        the url to its history page.
-        """
         bill.add_source(url)
-        with self.urlopen(url) as history_page:
-            history_page = BeautifulSoup(history_page)
-            self.parse_sponsors(bill, history_page)
-            self.parse_actions(bill, history_page)
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+            self.parse_sponsors(bill, page)
+            self.parse_actions(bill, page)
 
-    def parse_sponsors(self, bill, history_page):
-        """
-        Grab all of a bill's sponsors from its history page.
-        """
-        # Sponsor format changed in 2009
-        if int(start_year(bill['session'])) < 2009:
-            sponsors = history_page.find(
-                text='Sponsors:').parent.findNext('td').find(
-                'td').string.strip().replace(' and', ',').split(', ')
+    def parse_sponsors(self, bill, page):
+        first = True
+        for link in page.xpath(
+            "//td[text() = 'Sponsors:']/../descendant::a"):
 
-            bill.add_sponsor('primary', sponsors[0])
-
-            for cosponsor in sponsors[1:]:
-                bill.add_sponsor('cosponsor', cosponsor)
-        else:
-            sponsors = history_page.find(
-                text='Sponsors:').parent.findNext().findAll('a')
-
-            bill.add_sponsor('primary', sponsors[0].contents[0])
-
-            for cosponsor in sponsors[1:]:
-                bill.add_sponsor('cosponsor', cosponsor.contents[0])
-
-    def parse_actions(self, bill, history_page):
-        """
-        Grab all of a bill's actions from its history page.
-        """
-        act_table = history_page.find(text="Actions:").parent.findNextSibling()
-        act_chamber = bill['chamber']
-
-        for row in act_table.findAll('tr'):
-            act_raw = ""
-            for node in row.td.div:
-                if hasattr(node, 'contents'):
-                    if len(node.contents) > 0:
-                        act_raw += node.contents[0]
-                else:
-                    act_raw += node
-            act_raw = act_raw.replace('&#160;', ' ')
-            act_match = re.match('(.*),\s+((\w+\.?) (\d+), (\d{4}))', act_raw)
-
-            if act_match:
-                date = parse_action_date(act_match.group(2).strip())
-                action = act_match.group(1).strip()
-                type = action_type(action)
-                bill.add_action(act_chamber, action, date,
-                                type=type)
+            if first:
+                sponsor_type = 'primary'
+                first = False
             else:
-                # Handle actions from the other chamber
-                # ("In the (House|Senate)" row followed by actions that
-                # took place in that chamber)
-                cham_match = re.match('In the (House|Senate)', act_raw)
-                if not cham_match:
-                    # Ignore?
-                    continue
+                sponsor_type = 'cosponsor'
 
-                if cham_match.group(1) == 'House':
-                    act_chamber = 'lower'
-                else:
-                    act_chamber = 'upper'
+            bill.add_sponsor(sponsor_type, link.text.strip())
+
+    def parse_actions(self, bill, page):
+        chamber = bill['chamber']
+
+        for tr in page.xpath("//td[text() = 'Actions:']/"
+                             "following-sibling::td/table/tr"):
+            action = tr.xpath("string()").replace(u'\xa0', ' ').strip()
+
+            if action == 'In the House':
+                chamber = 'lower'
+                continue
+            elif action == 'In the Senate':
+                chamber = 'upper'
+                continue
+
+            match = re.match(
+                r"(.*),\s+(\w+\.?\s+\d{1,2},\s+\d{4})( \(\d+-\d+\))?", action)
+
+            if not match:
+                continue
+
+            action = match.group(1)
+            date = parse_action_date(match.group(2))
+            bill.add_action(chamber, action, date, type=action_type(action))
 
     def parse_votes(self, bill, url):
-        """
-        Grab all of the votes for a bill given the url of its primary
-        votes page.
-        """
         bill.add_source(url)
-        with self.urlopen(url) as votes_page:
-            votes_page = BeautifulSoup(votes_page)
-            for td in votes_page.findAll('td', {'class': 'vote'}):
-                prev = td.findPrevious().contents[0].strip()
-                if prev == 'Senate':
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+
+            for td in page.xpath("//td[@class = 'vote']"):
+                caption = td.xpath("string(preceding-sibling::td)").strip()
+
+                location = ''
+                if caption == 'Senate':
                     chamber = 'upper'
-                    location = ''
-                elif prev == 'House':
+                elif caption == 'House':
                     chamber = 'lower'
-                    location = ''
                 else:
-                    # Committee votes come in a number of different formats
-                    # that we don't handle yet
                     continue
 
-                chamber_votes_url = td.a['href']
-                self.parse_chamber_votes(chamber, bill, chamber_votes_url)
+                self.parse_chamber_votes(chamber, bill,
+                                         td.xpath('a')[0].attrib['href'])
 
     def parse_chamber_votes(self, chamber, bill, url):
-        """
-        Grab all votes for a bill that occurred in a given chamber.
-        """
         bill.add_source(url)
-        with self.urlopen(url) as chamber_votes_page:
-            chamber_votes_page = BeautifulSoup(chamber_votes_page)
-            for link in chamber_votes_page.findAll(
-                'a', href=re.compile('rc_view')):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
-                vote_details_url = "http://www.legis.state.pa.us/CFDOCS/"\
-                    "Legis/RC/Public/%s" % link['href']
-                vote = self.parse_vote_details(vote_details_url)
-                bill.add_vote(vote)
+            for link in page.xpath("//a[contains(@href, 'rc_view')]"):
+                vote = self.parse_roll_call(link.attrib['href'])
+                # bill.add_vote(vote)
 
-    def parse_vote_details(self, url):
-        """
-        Grab the details of a specific vote, such as how each legislator
-        voted.
-        """
+    def parse_roll_call(self, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
 
-        def find_vote(letter):
-            return vote_page.findAll('span', {'class': 'font8text'},
-                                     text=letter)
+            date = page.xpath(
+                "//div[@class='font8text']")[1].text.split(',', 1)[1].strip()
 
-        with self.urlopen(url) as vote_page:
-            vote_page = BeautifulSoup(vote_page)
-            header = vote_page.find('div', {'class': 'subHdrGraphic'})
-
-            if 'Senate' in header.string:
-                chamber = 'upper'
-            else:
-                chamber = 'lower'
-
-            # we'll use the link back to the bill as a base to
-            # get the motion/date
-            linkback = vote_page.find(
-                'a', href=re.compile('billinfo')).parent.parent
-            date = linkback.find('div').string
-            date = dt.datetime.strptime(date, "%A, %B %d, %Y")
-            motion = linkback.findNextSibling('div')
-            if motion.a:
-                motion = "%s %s" % (motion.a.string,
-                                    motion.contents[-1].string.strip())
-            elif motion.span:
-                motion = "%s %s" % (motion.span.string.strip(),
-                                    motion.contents[-1].string.strip())
-            else:
-                motion = motion.string.strip().replace('&nbsp;', '')
-
-            yes_count = int(vote_page.find('div', text='YEAS').next.string)
-            no_count = int(vote_page.find('div', text='NAYS').next.string)
-            lve_count = int(vote_page.find('div', text='LVE').next.string)
-            nv_count = int(vote_page.find('div', text='N/V').next.string)
-            other_count = lve_count + nv_count
-
-            passed = yes_count > no_count
-            vote = Vote(chamber, date, motion, passed, yes_count, no_count,
-                        other_count)
-            vote.add_source(url)
-
-            # find the votes by the inner text. because background colors lie.
-            yes_votes = [vote.yes, find_vote('Y')]
-            no_votes = [vote.no, find_vote('N')]
-            nv_votes = [vote.other, find_vote('E') + find_vote('X')]
-
-            for (action, votes) in (yes_votes, no_votes, nv_votes):
-                for a_vote in votes:
-                    action(a_vote.parent.findNextSibling('span').string)
-
-            if len(vote['yes_votes']) != yes_count:
-                raise ScrapeError('wrong yes count %d/%d' %
-                                  (len(vote['yes_votes']), yes_count))
-            if len(vote['no_votes']) != no_count:
-                raise ScrapeError('wrong no count %d/%d' %
-                                  (len(vote['no_votes']), no_count))
-            if len(vote['other_votes']) != other_count:
-                raise ScrapeError('wrong other count %d/%d' %
-                                  (len(vote['other_votes']), other_count))
-        return vote
+            # TODO: parse PA's horrible new roll-call vote pages
+            return None

@@ -1,7 +1,7 @@
 import re
 import datetime
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
@@ -12,7 +12,7 @@ class LALegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, year):
         if year != '2009':
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         list_url = "http://www.legis.state.la.us/bios.htm"
         with self.urlopen(list_url) as text:
@@ -25,7 +25,7 @@ class LALegislatorScraper(LegislatorScraper):
                 contains = 'house.louisiana'
 
             for a in page.xpath("//a[contains(@href, '%s')]" % contains):
-                name = a.text.strip()
+                name = a.text.strip().decode('utf8')
                 leg_url = a.attrib['href']
                 if chamber == 'upper':
                     try:
@@ -35,7 +35,17 @@ class LALegislatorScraper(LegislatorScraper):
                 else:
                     self.scrape_rep(name, year, leg_url)
 
-    def scrape_rep(self, name, session, url):
+    def scrape_rep(self, name, term, url):
+        # special case names that confuses name_tools
+        if name == 'Franklin, A.B.':
+            name = 'Franklin, A. B.'
+        elif ', Jr., ' in name:
+            name.replace(', Jr., ', ' ')
+            name += ', Jr.'
+        elif ', III, ' in name:
+            name.replace(', III, ', ' ')
+            name += ', III'
+
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
 
@@ -50,10 +60,11 @@ class LALegislatorScraper(LegislatorScraper):
             else:
                 party = "Other"
 
-            self.save_legislator(Legislator(session, 'lower', district, name,
-                                            party=party))
+            leg = Legislator(term, 'lower', district, name, party=party)
+            leg.add_source(url)
+            self.save_legislator(leg)
 
-    def scrape_senator(self, name, session, url):
+    def scrape_senator(self, name, term, url):
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
 
@@ -62,8 +73,9 @@ class LALegislatorScraper(LegislatorScraper):
 
             district = re.search(r'District (\d+)', district).group(1)
 
-            district = page.xpath(
+            party = page.xpath(
                 "//b[text() = 'Party']")[0].getnext().tail.strip()
 
-            self.save_legislator(Legislator(session, 'upper',
-                                            district, name, party=party))
+            leg = Legislator(term, 'upper', district, name, party=party)
+            leg.add_source(url)
+            self.save_legislator(leg)

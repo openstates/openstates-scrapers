@@ -14,23 +14,21 @@ import lxml.etree
 
 class OHBillScraper(BillScraper):
     state = 'oh'
+    def scrape(self, chamber, session):
 
-
-    def scrape(self, chamber, year):
-        if int(year) < 2009 or int(year) > dt.date.today().year:
-            raise NoDataForYear(year)
+        if int(session) < 128:
+            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
-            self.scrape_house_bills()
+            self.scrape_house_bills(session)
         elif chamber == 'lower':
-            self.scrape_senate_bills()
+            self.scrape_senate_bills(session)
 
+    def scrape_house_bills(self, session):
 
-    def scrape_house_bills(self):
-
-        house_bills_url = 'http://www.lsc.state.oh.us/status128/hb.xls'
-        house_jointres_url = 'http://www.lsc.state.oh.us/status128/hjr.xls'
-        house_concurres_url = 'http://www.lsc.state.oh.us/status128/hcr.xls'
+        house_bills_url = 'http://www.lsc.state.oh.us/status%s/hb.xls' % session
+        house_jointres_url = 'http://www.lsc.state.oh.us/status%s/hjr.xls' % session
+        house_concurres_url = 'http://www.lsc.state.oh.us/status%s/hcr.xls' % session
         files = (house_bills_url, house_jointres_url, house_concurres_url)
 
         for house_file in files:
@@ -54,7 +52,7 @@ class OHBillScraper(BillScraper):
             
                 bill_id = file_type + str(int(rownum))
                 bill_title = str(sh.cell(rownum, 3).value) 
-                bill = Bill( '128', 'upper', bill_id, bill_title)
+                bill = Bill( session, 'upper', bill_id, bill_title)
                 bill.add_sponsor( 'primary', str(sh.cell(rownum, 1).value) )
 
                 if sh.cell(rownum, 2).value is not '':
@@ -65,7 +63,6 @@ class OHBillScraper(BillScraper):
                 #Actions - starts column after bill title
                 for colnum in range( 4, sh.ncols - 1):
             
-    
                     coltitle = str(sh.cell(0, colnum).value)
                     cell = sh.cell(rownum, colnum)              
 
@@ -91,17 +88,16 @@ class OHBillScraper(BillScraper):
                         bill.add_action(committee, action, date = '')
 
                 bill.add_source(house_file)
-                self.scrape_votes(bill, file_type, rownum)
+                self.scrape_votes(bill, file_type, rownum, session)
 
                 self.save_bill(bill)
 
 
+    def scrape_senate_bills(self, session):
 
-    def scrape_senate_bills(self):
-
-        senate_bills_url = 'http://www.lsc.state.oh.us/status128/sb.xls'
-        senate_jointres_url = 'http://www.lsc.state.oh.us/status128/sjr.xls'
-        senate_concurres_url = 'http://www.lsc.state.oh.us/status128/scr.xls'
+        senate_bills_url = 'http://www.lsc.state.oh.us/status%s/sb.xls' % session
+        senate_jointres_url = 'http://www.lsc.state.oh.us/status%s/sjr.xls' % session
+        senate_concurres_url = 'http://www.lsc.state.oh.us/status%s/scr.xls' % session
         files = [senate_bills_url, senate_jointres_url, senate_concurres_url]
 
         for senate_file in files:
@@ -110,7 +106,6 @@ class OHBillScraper(BillScraper):
             f = open('oh_bills.xls','w')
             f.write(senate_bills_file)
             f.close()
-
 
             wb = xlrd.open_workbook('oh_bills.xls')
             sh = wb.sheet_by_index(0)
@@ -121,13 +116,11 @@ class OHBillScraper(BillScraper):
             else:
                 file_type = senate_file[len(senate_file) - 6:len(senate_file)-4]
 
-
-
             for rownum in range(1, sh.nrows):
 
                 bill_id = file_type + str(int(rownum))
                 bill_title = str(sh.cell(rownum, 3).value)
-                bill = Bill( '128', 'lower', bill_id, bill_title)
+                bill = Bill( session, 'lower', bill_id, bill_title)
                 bill.add_sponsor( 'primary', str(sh.cell(rownum, 1).value) )
 
                 if sh.cell(rownum, 2).value is not '':
@@ -137,7 +130,6 @@ class OHBillScraper(BillScraper):
 
                 #Actions - starts column after bill title
                 for colnum in range( 4, sh.ncols - 1):
-
 
                     coltitle = str(sh.cell(0, colnum).value)
                     cell = sh.cell(rownum, colnum)
@@ -160,7 +152,6 @@ class OHBillScraper(BillScraper):
                     action = str(sh.cell( 0, colnum).value)
                     date = cell.value
 
-
                     if type(cell.value) == float:
                         bill.add_action(actor, action, date)
 
@@ -169,16 +160,12 @@ class OHBillScraper(BillScraper):
                         bill.add_action(committee, action, date = '')
 
                 bill.add_source(senate_file)
-                self.scrape_votes(bill, file_type, rownum)
+                self.scrape_votes(bill, file_type, rownum, session)
 
                 self.save_bill(bill)
 
-
-    def scrape_votes(self, bill, file_type, number):
-
-
-        vote_url = 'http://www.legislature.state.oh.us/votes.cfm?ID=128_' + file_type + '_' + str(number)
-        
+    def scrape_votes(self, bill, file_type, number, session):
+        vote_url = 'http://www.legislature.state.oh.us/votes.cfm?ID=' + session + '_' + file_type + '_' + str(number)
         with self.urlopen(vote_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
             
@@ -196,7 +183,6 @@ class OHBillScraper(BillScraper):
                     date = date.rstrip()
                     info = mr.xpath('string(td[2]/font)')  
 
-                    
                     #makes sure that date is saved 
                     if len(date.split()) > 0:
                         save_date = date
@@ -215,7 +201,6 @@ class OHBillScraper(BillScraper):
                             no_placement = voter + 2
                             yes_placement = voter - 2
                                  
-
                     #motion and chamber
                     if info.split()[-1] == 'details':
                         motion = info[0:len(info)-10]
@@ -223,7 +208,6 @@ class OHBillScraper(BillScraper):
                         motion = motion.rstrip()
                         chamber = motion.split()[0]
 
-                    
                     #pass or not (only by which has more. need to see look up how they are passed)
                     if yes_count > no_count:
                         passed = True
@@ -268,4 +252,3 @@ class OHBillScraper(BillScraper):
                     if yes_count > 0 or no_count > 0:
                         vote.add_source(vote_url)
                         bill.add_vote(vote)   
-

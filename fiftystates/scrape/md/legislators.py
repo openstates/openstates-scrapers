@@ -2,18 +2,21 @@ import re
 
 import lxml.html
 
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 class MDLegislatorScraper(LegislatorScraper):
     state = 'md'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term):
         urls = {'lower': "http://www.msa.md.gov/msa/mdmanual/06hse/html/hseal.html",
                 'upper': "http://www.msa.md.gov/msa/mdmanual/05sen/html/senal.html"}
         detail_re = re.compile('\((R|D)\), (?:Senate President, )?(?:House Speaker, )?District (\w+)')
 
-        if year != 2010:
-            raise NoDataForYear(year)
+        self.validate_term(term)
+
+        if term != '2007-2010':
+            raise NoDataForPeriod(term)
 
         with self.urlopen(urls[chamber]) as html:
             doc = lxml.html.fromstring(html)
@@ -41,7 +44,7 @@ class MDLegislatorScraper(LegislatorScraper):
                     details = detail_text.strip()
                     party, district = detail_re.match(details).groups()
 
-                    leg = Legislator('current', chamber, district,
+                    leg = Legislator('2007-2010', chamber, district,
                                      ' '.join((first_name, last_name)),
                                      first_name, last_name, '',
                                      party, suffix=suffix,

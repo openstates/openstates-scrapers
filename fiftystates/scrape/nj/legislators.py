@@ -2,63 +2,72 @@ import re
 import urlparse
 import htmlentitydefs
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.nj.utils import clean_committee_name
 
-import lxml.etree
-import urllib
+import scrapelib
+from dbfpy import dbf
 
 class NJLegislatorScraper(LegislatorScraper):
     state = 'nj'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term_name):
         self.save_errors=False
-        if year < 2009:
-            raise NoDataForYear(year)
+
+        year = int(term_name[0:4])
+        if year < 2000:
+            raise NoDataForPeriod(term_name)
+        else:
+            year_abr = year
+
+        session = ((int(year) - 2010)/2) + 214
 
         if chamber == 'upper':
-            self.scrape_legislators(chamber, year)
+            self.scrape_legislators(year_abr, session, term_name)
         elif chamber == 'lower':
-            self.scrape_legislators(chamber, year)
+            self.scrape_legislators(year_abr, session, term_name)
 
-    def scrape_legislators(self, chamber, year):
+    def scrape_legislators(self, year_abr, session, term_name):
 
-        leg_url = 'http://www.njleg.state.nj.us/members/roster_BIO.asp'
-        for number in range(1,5):
-            body = 'SearchFirstName=&SearchLastName=&District=&SubmitSearch=Find&GotoPage=%s&MoveRec=&Search=Search&ClearSearch=&GoTo=%s' % (number, number)
+        file_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/ROSTER.DBF' % (year_abr)
 
-            with self.urlopen(leg_url, 'POST', body) as page:
-                root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
-                session = year
-                save_district = '' 
-                for mr in root.xpath('//table/tr[4]/td/table/tr'):
-                    name = mr.xpath('string(td[2]/a)').split()
-                    full_name = ''
-                    for part in name:
-                        if part != name[-1]:
-                            full_name = full_name + part + " "
-                        else:
-                            full_name = full_name + part
-                    info = mr.xpath('string(td[2])').split()
-                    party = ''
-                    chamber = ''
-                    if 'Democrat' in info:
-                        party = 'Democrat'
-                    elif 'Republican' in info:
-                        party = 'Republican'
-                    if ('Assemblywoman' in info) or ('Assemblyman' in info):
-                        chamber = 'General Assembly'
-                    elif 'Senator' in info:
-                        chamber = 'Senate'
+        ROSTER_dbf, resp = self.urlretrieve(file_url)
+        db = dbf.Dbf(ROSTER_dbf)        
 
-                    if len(chamber) > 0:
-                        leg = Legislator(session, chamber, save_district, full_name, "", "", "", party)
-                        leg.add_source(leg_url)
-                        self.save_legislator(leg)
+        for rec in db:
+            first_name = rec["firstname"]
+            middle_name = rec["midname"]
+            last_name = rec["lastname"]
+            suffix = rec["suffix"]
+            full_name = first_name + " " + middle_name + " " + last_name + " " + suffix
+            full_name = full_name.replace('  ', ' ')
+            full_name = full_name[0: len(full_name) - 1]
+            
+            district = rec["district"]
+            district = int(district)
+            party = rec["party"]
+            if party == 'R':
+                party = "Republican"
+            elif party == 'D':
+                party = "Democracy"
+            else:
+                party = party
+            chamber = rec["house"]
+            if chamber == 'A':
+                chamber = "lower"
+            elif chamber == 'S':
+                chamber = "upper"
 
-                    district = mr.xpath('string(td/a/font/b)').split()
-                    if len(district) > 0:
-                        district = district[1]
-                        save_district = district
+            title = rec["title"]
+            legal_position = rec["legpos"]
+            leg_status = rec["legstatus"]
+            address = rec["address"]
+            city = rec["city"]
+            state = rec["state"]
+            zipcode = rec["zipcode"]
+            phone = rec["phone"]
 
+            leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party, title = title, legal_position = legal_position, leg_status = leg_status, address = address, city = city, state = state, zipcode = zipcode, phone = phone)
+            leg.add_source(file_url)
+            self.save_legislator(leg)

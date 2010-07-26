@@ -2,7 +2,7 @@ import datetime
 import html5lib
 import re
 
-from fiftystates.scrape import NoDataForYear, ScrapeError
+from fiftystates.scrape import NoDataForPeriod, ScrapeError
 from fiftystates.scrape.bills import Bill, BillScraper
 from fiftystates.scrape.nd import metadata
 
@@ -22,7 +22,7 @@ class NDBillScraper(BillScraper):
         """
         # Error checking
         if year not in metadata['session_details']:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         
         # URL building
         if chamber == 'upper':

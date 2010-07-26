@@ -1,6 +1,6 @@
 import re
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.committees import CommitteeScraper, Committee
 from fiftystates.scrape.oh.utils import clean_committee_name
 
@@ -9,27 +9,24 @@ import lxml.etree
 class OHCommitteeScraper(CommitteeScraper):
     state = 'oh'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term_name):
         self.save_errors=False
-        if year != '2009':
-            raise NoDataForYear(year)
+
+        year = term_name[0:4]
+        if int(year) < 2009:
+            raise NoDataForPeriod(term_name)
+        session = ((int(year) - 2009)/2) + 128
 
         if chamber == 'upper':
-            self.scrape_senate_comm(chamber, year)
+            self.scrape_senate_comm(chamber, session)
         else:
-            self.scrape_reps_comm(chamber, year)
+            self.scrape_reps_comm(chamber, session)
 
-
-
-    def scrape_reps_comm(self, chamber, year):
-
+    def scrape_reps_comm(self, chamber, session):
         save_chamber = chamber
-
         #id range for senate committees on their website
         for comm_id in range(87, 124):
-
             chamber = save_chamber
-
             comm_url = 'http://www.house.state.oh.us/index.php?option=com_displaycommittees&task=2&type=Regular&committeeId=' + str(comm_id)
             with self.urlopen(comm_url) as page:
                 root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
@@ -54,12 +51,9 @@ class OHCommitteeScraper(CommitteeScraper):
                 committee.add_source(comm_url)
                 self.save_committee(committee)
                 
-
-
-    def scrape_senate_comm(self, chamber, year):
+    def scrape_senate_comm(self, chamber, session):
 
         committees = ["agriculture", "education", "energy-and-public-utilities", "environment-and-natural-resources", "finance-and-financial-institutions", "government-oversight", "health-human-services-and-aging", "highways-and-transportation", "insurance-commerce-and-labor", "judiciary-civil-justice", "judiciary-criminal-justice", "reference", "rules", "state-and-local-government-and-veterans-affairs", "ways-and-means-and-economic-development"]
-
 
         for name in committees:
             comm_url = 'http://www.ohiosenate.gov/committees/standing/detail/' + name + '.html'
@@ -72,7 +66,6 @@ class OHCommitteeScraper(CommitteeScraper):
                 committee = Committee(chamber, comm_name)
                 committee.add_source(comm_url) 
                 
-
                 for el in root.xpath('//table/tr/td'):
                     sen_name = el.xpath('string(a[@class="senatorLN"])')
                     mark = sen_name.find('(')

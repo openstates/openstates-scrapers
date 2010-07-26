@@ -14,9 +14,22 @@ def clean_journal(root):
     for el in root.xpath('//hr[@noshade and @size=1]'):
         parent = el.getparent()
         previous = el.getprevious()
-        if previous and previous.text and previous.text.find("JOURNAL") != -1:
+        if previous:
             parent.remove(previous)
         parent.remove(el)
+
+    # Does lxml not support xpath ends-with?
+    for el in root.xpath("//p[contains(text(), 'REGULAR SESSION')]"):
+        if el.text.endswith("REGULAR SESSION"):
+            parent = el.getparent()
+            parent.remove(el)
+
+    for el in root.xpath("//p[contains(text(), 'JOURNAL')]"):
+        if (("HOUSE JOURNAL" in el.text or "SENATE JOURNAL" in el.text) and
+            "Day" in el.text):
+
+            parent = el.getparent()
+            parent.remove(el)
 
     # Remove empty paragraphs
     for el in root.xpath('//p[not(node())]'):
@@ -33,7 +46,24 @@ def clean_journal(root):
 
 def names(el):
     text = (el.text or '') + (el.tail or '')
-    names = [name.strip() for name in text.split(';') if name.strip()]
+
+    names = []
+    for name in text.split(';'):
+        name = name.strip().replace('\r\n', '').replace('  ', ' ')
+
+        if not name:
+            continue
+
+        if name == 'Gonzalez Toureilles':
+            name = 'Toureilles'
+        elif name == 'Mallory Caraway':
+            name = 'Caraway'
+        elif name == 'Martinez Fischer':
+            name = 'Fischer'
+        elif name == 'Rios Ybarra':
+            name = 'Ybarra'
+
+        names.append(name)
 
     # First name will have stuff to ignore before an mdash
     names[0] = names[0].split(u'\u2014')[1].strip()
@@ -187,7 +217,7 @@ class TXVoteScraper(VoteScraper):
 
     def scrape(self, chamber, year):
         if year != '2009':
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         for session in ['81R', '811']:
             self.scrape_session(chamber, session)
@@ -222,4 +252,5 @@ class TXVoteScraper(VoteScraper):
             for vote in votes(root):
                 vote['date'] = date
                 vote['chamber'] = chamber
+                vote.add_source(url)
                 self.save_vote(vote)

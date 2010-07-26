@@ -6,11 +6,12 @@ class MDCommitteeScraper(CommitteeScraper):
 
     state = 'md'
 
-    def scrape(self, chamber, year):
-        # TODO: scrape senate committees
-        house_url = 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hsecom.html'
+    def scrape(self, chamber, term):
+        com_url = {'lower': 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hsecom.html',
+                   'upper': 'http://www.msa.md.gov/msa/mdmanual/05sen/html/sencom.html'}
+        # joint: http://www.msa.md.gov/msa/mdmanual/07leg/html/ga.html
 
-        with self.urlopen(house_url) as html:
+        with self.urlopen(com_url[chamber]) as html:
             doc = lxml.html.fromstring(html)
             # distinct URLs containing /com/
             committees = set([l.get('href') for l in doc.cssselect('li a')
@@ -24,12 +25,12 @@ class MDCommitteeScraper(CommitteeScraper):
                     if h.text:
                         committee_name = h.text
                         break
-                cur_com = Committee('lower', committee_name)
+                cur_com = Committee(chamber, committee_name)
                 cur_com.add_source(com_url)
                 for l in cdoc.cssselect('a[href]'):
                     if ' SUBCOMMITTEE' in (l.text or ''):
                         self.save_committee(cur_com)
-                        cur_com = Committee('lower', l.text, committee_name)
+                        cur_com = Committee(chamber, committee_name, l.text)
                         cur_com.add_source(com_url)
                     elif 'html/msa' in l.get('href'):
                         cur_com.add_member(l.text)

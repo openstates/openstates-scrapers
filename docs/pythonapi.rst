@@ -8,14 +8,14 @@ Scraper
 -------
 
 .. autoclass:: fiftystates.scrape.Scraper
-   :members: __init__, urlopen, scrape
+   :members: __init__, urlopen
 
 Exceptions
 ==========
 
 .. autoclass:: fiftystates.scrape.ScrapeError
 
-.. autoclass:: fiftystates.scrape.NoDataForYear
+.. autoclass:: fiftystates.scrape.NoDataForPeriod
 
 Bills
 =====

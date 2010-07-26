@@ -7,7 +7,7 @@ import re
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.legislation import (LegislationScraper, Bill, Vote, Legislator,
-                                 ScrapeError, NoDataForYear)
+                                 ScrapeError, NoDataForPeriod)
 
 from BeautifulSoup import BeautifulSoup
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter, process_pdf
@@ -29,7 +29,7 @@ class MichiganScraper(LegislationScraper):
 
     def scrape_legislators(self,chamber,year):
         if int(year) %2 == 0:  
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         if int(year) < time.localtime()[0]:
             self.scrape_past_legislators(chamber, year)
@@ -118,7 +118,7 @@ class MichiganScraper(LegislationScraper):
 
     def scrape_bills(self,chamber,year):
         if int(year) %2 == 0:  
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         # 
         year = int(year)
         oyear = year #save off the original of the session

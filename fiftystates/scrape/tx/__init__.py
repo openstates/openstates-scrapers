@@ -8,9 +8,9 @@ metadata = dict(
     lower_chamber_title='Representative',
     upper_chamber_term=4,
     lower_chamber_term=2,
-    sessions=[
+    terms=[
         {'name': '81',
-         'sub_sessions': ["811"],
+         'sessions': ['81', '811'],
          'start_year': 2009, 'end_year': 2010},
         ],
     )

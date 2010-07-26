@@ -83,6 +83,11 @@ class StateHandler(FiftyStateHandler):
         return db.metadata.find_one({'_id': state.lower()})
 
 
+class CommitteeHandler(FiftyStateHandler):
+    def read(self, request, id):
+        return db.committees.find_one({'_all_ids': id})
+
+
 class LegislatorHandler(FiftyStateHandler):
     def read(self, request, id):
         return db.legislators.find_one({'_all_ids': id})
@@ -102,7 +107,7 @@ class LegislatorSearchHandler(FiftyStateHandler):
                 filter[key] = re.compile("^%s$" % value, re.IGNORECASE)
 
         elemMatch = {}
-        for key in ('chamber', 'session', 'district', 'party'):
+        for key in ('chamber', 'term', 'district', 'party'):
             value = request.GET.get(key)
             if value:
                 elemMatch[key] = re.compile("^%s$" % value,
@@ -122,7 +127,7 @@ class DistrictHandler(FiftyStateHandler):
         legislators = db.legislators.find(
             {'state': model.state_abbrev,
              'roles': {'$elemMatch': {
-                        'session': model.session,
+                        'term': model.session,
                         'district': model.name,
                         'chamber': model.chamber}}})
 
@@ -172,8 +177,18 @@ class LatestBillsHandler(FiftyStateHandler):
             resp.write(": state parameter required")
             return resp
 
-        updated_since = datetime.datetime.strptime(updated_since,
-                                                   "%Y-%m-%d %H:%M")
+        try:
+            updated_since = datetime.datetime.strptime(updated_since,
+                                                       "%Y-%m-%d %H:%M")
+        except ValueError:
+            try:
+                updated_since = datetime.datetime.strptime(updated_since,
+                                                           "%Y-%m-%d")
+            except ValueError:
+                resp = rc.BAD_REQUEST
+                resp.write(": invalid updated_since parameter."
+                           " Please supply a date in YYYY-MM-DD format.")
+                return resp
 
         bills = db.bills.find({'updated_at': {'$gte': updated_since},
                                'state': state.lower()})

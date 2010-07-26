@@ -16,6 +16,7 @@ from fiftystates import settings
 
 import scrapelib
 
+
 class ScrapeError(Exception):
     """
     Base class for scrape errors.
@@ -23,15 +24,15 @@ class ScrapeError(Exception):
     pass
 
 
-class NoDataForYear(ScrapeError):
+class NoDataForPeriod(ScrapeError):
     """
-    Exception to be raised when no data exists for a given year
+    Exception to be raised when no data exists for a given period
     """
-    def __init__(self, year):
-        self.year = year
+    def __init__(self, period):
+        self.period = period
 
     def __str__(self):
-        return 'No data exists for %s' % self.year
+        return 'No data exists for %s' % self.period
 
 
 class JSONDateEncoder(json.JSONEncoder):
@@ -39,23 +40,26 @@ class JSONDateEncoder(json.JSONEncoder):
     JSONEncoder that encodes datetime objects as Unix timestamps.
     """
     def default(self, obj):
-        if isinstance(obj, datetime.datetime):
+        if (isinstance(obj, datetime.datetime) or
+            isinstance(obj, datetime.date)):
+
             return time.mktime(obj.timetuple())
+
         return json.JSONEncoder.default(self, obj)
 
 
 class Scraper(scrapelib.Scraper):
-    # The earliest year for which legislative data is available in
-    # any state (used for --all)
-    earliest_year = 1969
 
-    def __init__(self, no_cache=False, output_dir=None, **kwargs):
+    def __init__(self, metadata, no_cache=False, output_dir=None, **kwargs):
         """
         Create a new Scraper instance.
 
+        :param metadata: metadata for this state
         :param no_cache: if True, will ignore any cached downloads
         :param output_dir: the Fifty State data directory to use
         """
+        self.metadata = metadata
+
         if no_cache:
             kwargs['cache_dir'] = None
         elif 'cache_dir' not in kwargs:
@@ -83,6 +87,19 @@ class Scraper(scrapelib.Scraper):
         self.log = self.logger.info
         self.debug = self.logger.debug
         self.warning = self.logger.warning
+
+    def validate_session(self, session):
+        for t in self.metadata['terms']:
+            if session in t['sessions']:
+                return True
+        raise NoDataForPeriod(session)
+
+    def validate_term(self, term):
+        for t in self.metadata['terms']:
+            if term == t['name']:
+                return True
+        return NoDataForPeriod(session)
+
 
 class FiftystatesObject(dict):
     def __init__(self, type, **kwargs):

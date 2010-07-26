@@ -17,7 +17,7 @@ class CTBillScraper(BillScraper):
 
     def scrape(self,chamber,year):
         if year < self.min_year:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         if chamber == 'upper':
             min = self.upper_bill_no_min
             max = self.upper_bill_no_max

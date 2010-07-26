@@ -48,7 +48,7 @@ class WVBillScraper(BillScraper):
 
     def scrape(self, chamber, year):
         if int(year) < 1993:
-            raise NoDataForYear
+            raise NoDataForPeriod
 
         for session in self.session_abbrevs:
             if not self.scrape_session(chamber, session, year):

@@ -4,7 +4,7 @@ import urllib2
 
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape import NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 
 from utils import (clean_text, house_get_actor_from_action,
@@ -28,7 +28,7 @@ class MOBillScraper(BillScraper):
     def scrape_senate(self, year):
         # We only have data from 2005-2009
         if int(year) < 2005 or int(year) > dt.date.today().year:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         year2 = "%02d" % (int(year) % 100)
 

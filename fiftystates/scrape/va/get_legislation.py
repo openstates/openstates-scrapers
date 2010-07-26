@@ -9,7 +9,7 @@ from BeautifulSoup import BeautifulSoup
 from htmlentitydefs import name2codepoint
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, NoDataForYear,
+from utils.legislation import (LegislationScraper, NoDataForPeriod,
                                  Bill, Legislator, Vote)
 
 class VANameMatcher:
@@ -51,7 +51,7 @@ class VALegislationScraper(LegislationScraper):
         abbr = {'upper': 'S', 'lower': 'H'}
         year = int(year)
         if year not in self.internal_sessions:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
         for session in self.internal_sessions[year]:
             self.log(session[1])
             with self.soup_context("http://leg1.state.va.us/%s/mbr/MBR.HTM" % session[0]) as member_page:
@@ -120,7 +120,7 @@ class VALegislationScraper(LegislationScraper):
         types = {'lower': ['HB', 'HJ'], 'upper': ['SB']} # we can add SR and HR if we want
         year = int(year)
         if year not in self.internal_sessions:
-            raise NoDataForYear(year)
+            raise NoDataForPeriod(year)
 
         for bill_type in types[chamber]:
             for session in self.internal_sessions[year]:
