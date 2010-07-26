@@ -55,9 +55,9 @@ class MEBillScraper(BillScraper):
             root = lxml.etree.fromstring(bill_sum_page, lxml.etree.HTMLParser())
             sponsor = root.xpath('string(//tr[3]/td[1]/b[1])')
             if bill_id[0] == "S":
-                chamber = "Senate"
+                chamber = "upper"
             else:
-                chamber = "House of Represenatives"
+                chamber = "lower"
             bill = Bill(session, chamber, bill_id, title)
             bill.add_source(bill_info_url)
 
@@ -98,9 +98,9 @@ class MEBillScraper(BillScraper):
                         other_count = None
 
                         if votes_url.find('House') != -1:
-                            chamber = "House"
+                            chamber = "lower"
                         else:
-                            chamber = "Senate"
+                            chamber = "upper"
 
                         vote = Vote(chamber, date, motion, passed, yes_count, no_count, other_count, absent_count = absent_count, excused_count = excused_count)
 
