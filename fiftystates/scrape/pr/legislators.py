@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-
 from fiftystates.scrape import ScrapeError, NoDataForYear
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
-import re, contextlib, itertools
+import re, contextlib
 
 class PRLegislatorScraper(LegislatorScraper):
     state = 'pr'
@@ -37,9 +35,7 @@ class PRLegislatorScraper(LegislatorScraper):
             raise NoDataForYear(year)
         
         if chamber == 'upper':
-            legislator_pages_dir = ('http://www.senadopr.us/Pages/Senadores%20de%20Mayoria.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20de%20Minoria.aspx',
-                                'http://www.senadopr.us/senadores/Pages/Senadores%20Acumulacion.aspx',
+            legislator_pages_dir = ('http://www.senadopr.us/senadores/Pages/Senadores%20Acumulacion.aspx',
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20I.aspx',
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20II.aspx',
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20III.aspx',
@@ -67,9 +63,21 @@ class PRLegislatorScraper(LegislatorScraper):
                         name = data_elements[1].text_content()
                         link_part = data_elements[1].iterlinks().next()[2]
                         link = 'http://www.senadopr.us' + link_part
-                        party = data_elements[2].text_content()
-                        phone_no = data_elements[3].text_content()
-                        email = data_elements[4].text_content()
+                        leg_party = data_elements[2].text_content()
+                        leg_phone_no = data_elements[3].text_content()
+                        leg_email = data_elements[4].text_content()
+                        
+                        if counter == 0:
+                            dist = 'at large'
+                        else
+                            dist = counter
+                        
+                        leg = Legislator(year, chamber, dist, name, \
+                                         leg_party = party, head_shot = pic_link, \
+                                         phone = leg_phone_no, email = leg_email)
+                        leg.add_source(link)
+                        leg.add_source(leg_page_dir)
+                        self.save_legislator(leg)
                     
                     
         else:
@@ -98,6 +106,7 @@ class PRLegislatorScraper(LegislatorScraper):
                     leg = Legislator(year, chamber, dist, name, \
                                      party = leg_party, head_shot = pic_link)
                     leg.add_source(link)
+                    leg.add_source(legislator_pages_dir)
                     self.save_legislator(leg)
                 
                 
@@ -115,6 +124,7 @@ class PRLegislatorScraper(LegislatorScraper):
                                      party = leg_party, head_shot = pic_link)
                     
                     leg.add_source(link)
+                    leg.add_source(legislator_pages_dir)
                     self.save_legislator(leg)
                     
                    
