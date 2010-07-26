@@ -2,7 +2,9 @@ from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
+import datetime as dt
 import re, contextlib
+
 
 class PRLegislatorScraper(LegislatorScraper):
     state = 'pr'
@@ -30,12 +32,17 @@ class PRLegislatorScraper(LegislatorScraper):
             raise
 
     def scrape(self, chamber, year):
-        # Legislator data only available for the  session
-        if year != '2010':
+        # Data available for this year only
+        if int(year) != dt.date.today().year:
             raise NoDataForPeriod(year)
         
-        if chamber == 'upper':
-            legislator_pages_dir = ('http://www.senadopr.us/senadores/Pages/Senadores%20Acumulacion.aspx',
+        if chamber == "upper":
+            self.scrape_senate(year)
+        elif chamber == "lower":
+            self.scrape_house(year)
+                    
+    def scrape_senate(self, year):
+        legislator_pages_dir = ('http://www.senadopr.us/senadores/Pages/Senadores%20Acumulacion.aspx',
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20I.aspx',
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20II.aspx',
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20III.aspx',
@@ -44,44 +51,42 @@ class PRLegislatorScraper(LegislatorScraper):
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20VI.aspx',
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20VII.aspx',
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20VIII.aspx')
-        else:
-            legislator_pages_dir = 'http://www.camaraderepresentantes.org/legsv.asp'
-            
-        if chamber == 'upper':    
-            for counter, leg_page_dir in enumerate(legislator_pages_dir):
-                with self.lxml_context(leg_page_dir) as leg_page:
-                    tables = leg_page.cssselect('table')
-                    legislators_table = tables[62]
-                    leg_data = legislators_table.cssselect('tr')
-                    # remove table header
-                    leg_data = leg_data[5:]
-                    for ld in leg_data:
-                        data_elements = ld.cssselect('td')
-                        
-                        pic_link_part = data_elements[0].iterlinks().next()[2]
-                        pic_link = 'http://www.senadopr.us' + pic_link_part
-                        name = data_elements[1].text_content()
-                        link_part = data_elements[1].iterlinks().next()[2]
-                        link = 'http://www.senadopr.us' + link_part
-                        leg_party = data_elements[2].text_content()
-                        leg_phone_no = data_elements[3].text_content()
-                        leg_email = data_elements[4].text_content()
-                        
-                        if counter == 0:
-                            dist = 'at large'
-                        else:
-                            dist = counter
-                        
-                        leg = Legislator(year, chamber, dist, name, \
-                                         party = leg_party, head_shot = pic_link, \
-                                         phone = leg_phone_no, email = leg_email)
-                        leg.add_source(link)
-                        leg.add_source(leg_page_dir)
-                        self.save_legislator(leg)
-                    
-                    
-        else:
-            with self.lxml_context(legislator_pages_dir) as leg_page:
+        
+        for counter, leg_page_dir in enumerate(legislator_pages_dir):
+            with self.lxml_context(leg_page_dir) as leg_page:
+                tables = leg_page.cssselect('table')
+                legislators_table = tables[62]
+                leg_data = legislators_table.cssselect('tr')
+                # remove table header
+                leg_data = leg_data[5:]
+                for ld in leg_data:
+                    data_elements = ld.cssselect('td')
+                   
+                    pic_link_part = data_elements[0].iterlinks().next()[2]
+                    pic_link = 'http://www.senadopr.us' + pic_link_part
+                    name = data_elements[1].text_content()
+                    link_part = data_elements[1].iterlinks().next()[2]
+                    link = 'http://www.senadopr.us' + link_part
+                    leg_party = data_elements[2].text_content()
+                    leg_phone_no = data_elements[3].text_content()
+                    leg_email = data_elements[4].text_content()
+                   
+                    if counter == 0:
+                        dist = 'at large'
+                    else:
+                        dist = counter
+                   
+                    leg = Legislator(year, 'upper', dist, name, \
+                                     party = leg_party, head_shot = pic_link, \
+                                     phone = leg_phone_no, email = leg_email)
+                    leg.add_source(link)
+                    leg.add_source(leg_page_dir)
+                    self.save_legislator(leg)
+    
+    def scrape_house(self, year):
+        legislator_pages_dir = 'http://www.camaraderepresentantes.org/legsv.asp'
+        
+        with self.lxml_context(legislator_pages_dir) as leg_page:
                 tables = leg_page.cssselect('table')
                 leg_dist_table = tables[4]
                 leg_acu_table = tables[5]
@@ -103,13 +108,12 @@ class PRLegislatorScraper(LegislatorScraper):
                     pic_link_part = imgs[0].iterlinks().next()[2]
                     pic_link = 'http://www.camaraderepresentantes.org/' + pic_link_part
                     
-                    leg = Legislator(year, chamber, dist, name, \
+                    leg = Legislator(year, 'lower', dist, name, \
                                      party = leg_party, head_shot = pic_link)
                     leg.add_source(link)
                     leg.add_source(legislator_pages_dir)
                     self.save_legislator(leg)
-                
-                
+                 
                 for l in legs_acu:
                     link_part = l.iterlinks().next()[2]
                     link = 'http://www.camaraderepresentantes.org/' + link_part
@@ -120,12 +124,13 @@ class PRLegislatorScraper(LegislatorScraper):
                     name = name_party[:-4]
                     leg_party = match.group(0)                                     
                         
-                    leg = Legislator(year, chamber, 'at large', name, \
+                    leg = Legislator(year, 'lower', 'at large', name, \
                                      party = leg_party, head_shot = pic_link)
                     
                     leg.add_source(link)
                     leg.add_source(legislator_pages_dir)
                     self.save_legislator(leg)
-                    
-                   
         
+               
+              
+
