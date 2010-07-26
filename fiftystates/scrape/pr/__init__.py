@@ -4,7 +4,7 @@ status = dict(
     sponsors=False,
     actions=False,
     votes=False,
-    legislators=False,
+    legislators=True,
     contributors=['Gabriel J. Perez-Irizarry'],
     notes="",
 )

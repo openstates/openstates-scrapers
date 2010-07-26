@@ -1,35 +1,12 @@
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from fiftystates.scrape.pr.utils import lxml_context, legislators_url
 
 import lxml.html
-import datetime as dt
-import re, contextlib
-
+import re
 
 class PRLegislatorScraper(LegislatorScraper):
     state = 'pr'
-    
-    @contextlib.contextmanager
-    def lxml_context(self, url, sep=None, sep_after=True):
-        try:
-            body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")
-        
-        if sep != None: 
-            if sep_after == True:
-                before, itself, body = body.rpartition(sep)
-            else:
-                body, itself, after = body.rpartition(sep)    
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
-            yield elem
-        except:
-            print "FAIL"
-            #self.show_error(url, body)
-            raise
 
     def scrape(self, chamber, term):
         # Data available for this term only
@@ -42,18 +19,10 @@ class PRLegislatorScraper(LegislatorScraper):
             self.scrape_house(term)
                     
     def scrape_senate(self, term):
-        legislator_pages_dir = ('http://www.senadopr.us/senadores/Pages/Senadores%20Acumulacion.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20I.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20II.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20III.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20IV.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20V.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20VI.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20VII.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20VIII.aspx')
+        legislator_pages_dir = legislators_url('upper')
         
         for counter, leg_page_dir in enumerate(legislator_pages_dir):
-            with self.lxml_context(leg_page_dir) as leg_page:
+            with lxml_context(leg_page_dir) as leg_page:
                 tables = leg_page.cssselect('table')
                 legislators_table = tables[62]
                 leg_data = legislators_table.cssselect('tr')
@@ -84,9 +53,9 @@ class PRLegislatorScraper(LegislatorScraper):
                     self.save_legislator(leg)
     
     def scrape_house(self, term):
-        legislator_pages_dir = 'http://www.camaraderepresentantes.org/legsv.asp'
+        legislator_pages_dir = legislators_url('lower')
         
-        with self.lxml_context(legislator_pages_dir) as leg_page:
+        with lxml_context(legislator_pages_dir) as leg_page:
                 tables = leg_page.cssselect('table')
                 leg_dist_table = tables[4]
                 leg_acu_table = tables[5]
