@@ -1,4 +1,4 @@
-from fiftystates.scrape import ScrapeError, NoDataForYear
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
@@ -30,9 +30,9 @@ class PRLegislatorScraper(LegislatorScraper):
             raise
 
     def scrape(self, chamber, year):
-        # Legislator data only available for the 2009 session
-        if year != '2009':
-            raise NoDataForYear(year)
+        # Legislator data only available for the  session
+        if year != '2010':
+            raise NoDataForPeriod(year)
         
         if chamber == 'upper':
             legislator_pages_dir = ('http://www.senadopr.us/senadores/Pages/Senadores%20Acumulacion.aspx',
@@ -69,11 +69,11 @@ class PRLegislatorScraper(LegislatorScraper):
                         
                         if counter == 0:
                             dist = 'at large'
-                        else
+                        else:
                             dist = counter
                         
                         leg = Legislator(year, chamber, dist, name, \
-                                         leg_party = party, head_shot = pic_link, \
+                                         party = leg_party, head_shot = pic_link, \
                                          phone = leg_phone_no, email = leg_email)
                         leg.add_source(link)
                         leg.add_source(leg_page_dir)
