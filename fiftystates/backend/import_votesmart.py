@@ -43,32 +43,30 @@ def import_committees(state):
         for committee in votesmart.committee.getCommitteesByTypeState(
             typeId=typeId, stateId=state['_id'].upper()):
 
-            parent_id = committee.parentId
-            if parent_id == "-1":
-                parent_id = None
+            committee_name = committee.name
+            subcommittee_name = None
 
-            data = db.committees.find_one({
-                    'state': state['_id'],
-                    'votesmart_id': committee.committeeId})
+            if committee.parentId != "-1":
+                parent = votesmart.committee.getCommittee(committee.parentId)
+                subcommittee_name = committee_name
+                committee_name = parent.name
 
-            insert = False
+            spec = {'state': state['_id'],
+                    'chamber': chamber,
+                    'committee': committee_name}
+            if subcommittee_name:
+                spec['subcommittee'] = subcommittee_name
+
+            data = db.committees.find_one(spec)
+
             if not data:
-                insert = True
-                data = {}
+                print "No matches for '%s'" % (subcommittee_name or
+                                               committee_name)
+                continue
 
-            data.update({'state': state['_id'],
-                         'votesmart_id': committee.committeeId,
-                         'chamber': chamber,
-                         'name': committee.name,
-                         'parent_votesmart_id': parent_id,
-                         '_type': 'committee'})
+            data['votesmart_id'] = committee.committeeId
 
-            if insert:
-                insert_with_id(data)
-            else:
-                db.committees.save(data)
-
-    import_committee_ids(state)
+            db.committees.save(data)
 
 
 def import_committee_ids(state):

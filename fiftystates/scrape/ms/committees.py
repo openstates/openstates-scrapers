@@ -27,9 +27,9 @@ class MSCommitteeScraper(CommitteeScraper):
             for mr in root.xpath('//committee'):
                 name = mr.xpath('string(name)')
                 if chamber == 'h':
-                    chamber = "House of Representatives"
+                    chamber = "lower"
                 else:
-                    chamber = "Senate"
+                    chamber = "upper"
                 comm = Committee(chamber, name)
 
                 chair = mr.xpath('string(chair)')
