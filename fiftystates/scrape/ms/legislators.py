@@ -34,10 +34,18 @@ class MSLegislatorScraper(LegislatorScraper):
                     leg_link = mr.xpath(leg_link_path)
                     role = "member"
                     self.scrape_details(chamber, term_name, leg, leg_link, role)
-            chair_name = root.xpath('string(//chair_name)')
-            chair_link = root.xpath('string(//chair_link)')
-            role = root.xpath('string(//chair_title)')
-            self.scrape_details(chamber, term_name, chair_name, chair_link, role)
+            if chamber == 'lower':
+                chair_name = root.xpath('string(//chair_name)')
+                chair_link = root.xpath('string(//chair_link)')
+                role = root.xpath('string(//chair_title)')
+                self.scrape_details(chamber, term_name, chair_name, chair_link, role)
+            else:
+                #Senate Chair is the Governor. Info has to be hard coded
+                chair_name = root.xpath('string(//chair_name)')
+                role = root.xpath('string(//chair_title)')
+                district = "Governor"
+                leg = Legislator(term_name, chamber, district, chair_name, first_name = None, last_name = None, middle_name = None, party = "Republican", role=role)
+
             protemp_name = root.xpath('string(//protemp_name)')
             protemp_link = root.xpath('string(//protemp_link)')
             role = root.xpath('string(//protemp_title)')
@@ -46,6 +54,7 @@ class MSLegislatorScraper(LegislatorScraper):
     def scrape_details(self, chamber, term, leg_name, leg_link, role):
         url = 'http://billstatus.ls.state.ms.us/members/%s' % leg_link
         with self.urlopen(url) as details_page:
+            details_page = details_page.decode('latin1').encode('utf8', 'ignore')
             root = lxml.etree.fromstring(details_page, lxml.etree.HTMLParser())
             party = root.xpath('string(//party)')
             district = root.xpath('string(//district)')
