@@ -55,7 +55,7 @@ class MSBillScraper(BillScraper):
                         action_num  = action.xpath('string(act_number)')
                         action_desc = action.xpath('string(act_desc)')
                         act_vote = action.xpath('string(act_vote)').replace("../../../..", "")
-                        date = action_desc.split()[0] + "/" + session
+                        date = action_desc.split()[0] + "/" + session[0:4]
                         date = datetime.strptime(date, "%m/%d/%Y")
                         actor = action_desc.split()[1][1]
                         if actor == "H":
