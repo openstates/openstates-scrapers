@@ -37,8 +37,11 @@ class FLLegislatorScraper(LegislatorScraper):
             full = row.td.a.contents[0].replace('  ', ' ')
             if full == 'Vacant':
                 self.save_legislator(Legislator(
-                        year, 'upper', district, 'Vacant'))
+                        year, 'upper', district, 'Vacant Seat'))
                 continue
+
+            if full == 'Alexander, JD':
+                full = 'JD Alexander'
 
             district = row.findAll('td')[1].contents[0]
             party = row.findAll('td')[2].contents[0]
