@@ -52,6 +52,7 @@ class NVBillScraper(BillScraper):
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
                 with self.urlopen(page_path) as page:
+                    page = page.decode("utf8").replace(u"\xa0", " ")
                     root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
                     bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
@@ -97,6 +98,7 @@ class NVBillScraper(BillScraper):
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
                 with self.urlopen(page_path) as page:
+                    page = page.decode("utf8").replace(u"\xa0", " ")
                     root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
                     bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
@@ -195,6 +197,7 @@ class NVBillScraper(BillScraper):
             vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, url_end)
             bill.add_source(vote_url)    
             with self.urlopen(vote_url) as page:
+                page = page.decode("utf8").replace(u"\xa0", " ")
                 root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
                 date = root.xpath('string(/html/body/center/font)').split()[-1]
