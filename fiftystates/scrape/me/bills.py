@@ -74,6 +74,10 @@ class MEBillScraper(BillScraper):
                     action_path = "string(//td[2]/table/tr[%s]/td[3])" % count
                     action = root2.xpath(action_path)
                     count = count + 1
+                    if actor == "House":
+                        actor = "lower"
+                    else:
+                        actor = "upper"
                     bill.add_action(actor, action, date)
             #Votes
             votes_url_addon = root.xpath('string(//table/tr[9]/td/a/@href)')
@@ -92,7 +96,6 @@ class MEBillScraper(BillScraper):
                             date = datetime.strptime(date, "%B %d, %Y")
                         except:
                             date = datetime.strptime(date, "%b. %d, %Y")
-                        print date
                         motion = detail_root.xpath('string(//table[2]//tr[3]/td[3])')
                         passed = detail_root.xpath('string(//table[2]//tr[5]/td[3])') == 'PREVAILS'
                         yes_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
