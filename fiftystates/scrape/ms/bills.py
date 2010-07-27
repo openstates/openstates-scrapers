@@ -59,15 +59,15 @@ class MSBillScraper(BillScraper):
                         date = datetime.strptime(date, "%m/%d/%Y")
                         actor = action_desc.split()[1][1]
                         if actor == "H":
-                            actor = "House of Representatives"
+                            actor = "lower"
                         else:
-                            actor = "Senate"
+                            actor = "upper"
                         action = action_desc[10: len(action_desc)]
                         bill.add_action(actor, action, date, action_num=action_num)                        
 
                         vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
                         if vote_url != "http://billstatus.ls.state.ms.us":
-                            vote =self.scrape_votes(vote_url, action, date, chamber)
+                            vote =self.scrape_votes(vote_url, action, date, actor)
                             bill.add_vote(vote)
                     self.save_bill(bill)
 
