@@ -24,22 +24,24 @@ class MSCommitteeScraper(CommitteeScraper):
         url = 'http://billstatus.ls.state.ms.us/htms/%s_cmtememb.xml' % chamber
         with self.urlopen(url) as comm_page:
             root = lxml.etree.fromstring(comm_page, lxml.etree.HTMLParser())
+            if chamber == 'h':
+                chamber = "lower"
+            else:
+                chamber = "upper"
             for mr in root.xpath('//committee'):
                 name = mr.xpath('string(name)')
-                if chamber == 'h':
-                    chamber = "lower"
-                else:
-                    chamber = "upper"
                 comm = Committee(chamber, name)
 
                 chair = mr.xpath('string(chair)')
                 chair = chair.strip(", Chairman")
                 role = "Chairman"
-                comm.add_member(chair, role=role)
+                if len(chair) > 0:
+                    comm.add_member(chair, role=role)
                 vice_chair = mr.xpath('string(vice_chair)')
                 vice_chair = vice_chair.strip(", Vice-Chairman")
                 role = "Vice-Chairman"
-                comm.add_member(vice_chair, role=role)
+                if len(vice_chair) > 0:
+                    comm.add_member(vice_chair, role=role)
                 members = mr.xpath('string(members)').split(";")
                 
                 for leg in members:
