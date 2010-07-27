@@ -119,6 +119,10 @@ class FLBillScraper(BillScraper):
                     # original human sponsors as primary
                     spon_re = re.compile('by ([^;(\n]+;?|\w+)')
                     sponsor = spon_re.search(hist).group(1).strip('; ')
+
+                    if sponsor == 'Alexander, JD':
+                        sponsor = 'JD Alexander'
+
                     bill.add_sponsor('primary', sponsor)
 
                     # Get co-sponsors
