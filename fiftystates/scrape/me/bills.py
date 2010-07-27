@@ -1,10 +1,8 @@
-import datetime
-
 from fiftystates.scrape.me import metadata
 from fiftystates.scrape.me.utils import chamber_name
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import VoteScraper, Vote
-
+from datetime import datetime
 import lxml.etree
 
 class MEBillScraper(BillScraper):
@@ -70,6 +68,7 @@ class MEBillScraper(BillScraper):
                 count = 2
                 for mr in root2.xpath("//td[2]/table[2]/tr[position() > 1]/td[1]"):
                     date = mr.xpath('string()')
+                    date = datetime.strptime(date, "%m/%d/%Y")
                     actor_path = "string(//td[2]/table/tr[%s]/td[2])" % count
                     actor = root2.xpath(actor_path)
                     action_path = "string(//td[2]/table/tr[%s]/td[3])" % count
@@ -89,6 +88,11 @@ class MEBillScraper(BillScraper):
                     with self.urlopen(vote_detail_url) as vote_detail_page:
                         detail_root = lxml.etree.fromstring(vote_detail_page, lxml.etree.HTMLParser())
                         date = detail_root.xpath('string(//table[2]//tr[2]/td[3])')
+                        try:
+                            date = datetime.strptime(date, "%B %d, %Y")
+                        except:
+                            date = datetime.strptime(date, "%b. %d, %Y")
+                        print date
                         motion = detail_root.xpath('string(//table[2]//tr[3]/td[3])')
                         passed = detail_root.xpath('string(//table[2]//tr[5]/td[3])') == 'PREVAILS'
                         yes_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
