@@ -3,6 +3,7 @@ from fiftystates.scrape.ms.utils import chamber_name, parse_ftp_listing
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import VoteScraper, Vote
 from fiftystates.scrape.utils import convert_pdf
+from datetime import datetime
 import lxml.etree
 import re
 
@@ -19,7 +20,6 @@ class MSBillScraper(BillScraper):
         url = 'http://billstatus.ls.state.ms.us/%s/pdf/all_measures/allmsrs.xml' % session
 
         with self.urlopen(url) as bill_dir_page:
-           # bill_dir_page = bill_dir_page.encode('ascii', 'ignore')
             root = lxml.etree.fromstring(bill_dir_page, lxml.etree.HTMLParser())
             for mr in root.xpath('//lastaction/msrgroup'):
                 bill_id = mr.xpath('string(measure)').replace(" ", "")
@@ -56,6 +56,7 @@ class MSBillScraper(BillScraper):
                         action_desc = action.xpath('string(act_desc)')
                         act_vote = action.xpath('string(act_vote)').replace("../../../..", "")
                         date = action_desc.split()[0] + "/" + session
+                        date = datetime.strptime(date, "%m/%d/%Y")
                         actor = action_desc.split()[1][1]
                         if actor == "H":
                             actor = "House of Representatives"
