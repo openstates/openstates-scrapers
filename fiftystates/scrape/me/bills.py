@@ -56,7 +56,7 @@ class MEBillScraper(BillScraper):
                 chamber = "upper"
             else:
                 chamber = "lower"
-            bill = Bill(session, chamber, bill_id, title)
+            bill = Bill(str(session), chamber, bill_id, title)
             bill.add_source(bill_info_url)
 
             #Actions
