@@ -53,6 +53,7 @@ class NVLegislatorScraper(LegislatorScraper):
             n = 43
 
         with self.urlopen(leg_url) as page:
+            page = page.replace("&nbsp;", " ")
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())        
 
             #Going through the districts
@@ -82,7 +83,7 @@ class NVLegislatorScraper(LegislatorScraper):
                 party = root.xpath(partypath).split()[-1]
 
                 districtpath = 'string(/html/body/table[%s]/tr/td/table[1]/tr/td[4]/font)' % (numdistricts + 2)
-                district = root.xpath(districtpath)[11: len(root.xpath(districtpath))]
+                district = root.xpath(districtpath)[11: len(root.xpath(districtpath))].strip()
                
                 termpath = 'string(/html/body/table[%s]/tr/td/table[2]/tr/td[5])' % (numdistricts + 2)
                 end_date = root.xpath(termpath)[12: 21]
@@ -90,8 +91,7 @@ class NVLegislatorScraper(LegislatorScraper):
                 
                 addresspath = 'string(/html/body/table[%s]/tr/td/table[2]/tr/td[2])' % (numdistricts + 2)
                 address = root.xpath(addresspath)
-                address = address
-                
+
                 leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party, end_date = end_date, email = email, address = address)
                 leg.add_source(leg_url)
                 self.save_legislator(leg)
