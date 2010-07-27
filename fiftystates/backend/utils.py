@@ -96,7 +96,7 @@ def update(old, new, coll):
 
     if changed:
         old['updated_at'] = datetime.datetime.now()
-        coll.save(old)
+        coll.save(old, safe=True)
 
 
 def prepare_obj(obj):

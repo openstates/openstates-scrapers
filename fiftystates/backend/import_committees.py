@@ -60,11 +60,11 @@ def import_committees(state, data_dir):
                             {'name': legislator['full_name'],
                              'leg_id': legislator['leg_id'],
                              'role': 'member'})
-                        db.committees.save(committee)
+                        db.committees.save(committee, safe=True)
 
                         role['committee_id'] = committee['_id']
 
-            db.legislators.save(legislator)
+            db.legislators.save(legislator, safe=True)
 
     for path in paths:
         with open(path) as f:
@@ -124,9 +124,9 @@ def import_committees(state, data_dir):
                     new_role['subcommittee'] = committee['subcommittee']
                 legislator['roles'].append(new_role)
                 legislator['updated_at'] = datetime.datetime.now()
-                db.legislators.save(legislator)
+                db.legislators.save(legislator, safe=True)
 
-        db.committees.save(committee)
+        db.committees.save(committee, safe=True)
 
 
 if __name__ == '__main__':
