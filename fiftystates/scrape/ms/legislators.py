@@ -58,7 +58,7 @@ class MSLegislatorScraper(LegislatorScraper):
             root = lxml.etree.fromstring(details_page, lxml.etree.HTMLParser())
             party = root.xpath('string(//party)')
             district = root.xpath('string(//district)')
-            first_name, middle_name, last_name = None, None, None
+            first_name, middle_name, last_name = "", "", ""
 
             home_phone = root.xpath('string(//h_phone)')
             bis_phone = root.xpath('string(//b_phone)')
