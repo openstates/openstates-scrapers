@@ -33,12 +33,12 @@ class MSCommitteeScraper(CommitteeScraper):
                 comm = Committee(chamber, name)
 
                 chair = mr.xpath('string(chair)')
-                chair = chair.strip(", Chairman")
+                chair = chair.replace(", Chairman", "")
                 role = "Chairman"
                 if len(chair) > 0:
                     comm.add_member(chair, role=role)
                 vice_chair = mr.xpath('string(vice_chair)')
-                vice_chair = vice_chair.strip(", Vice-Chairman")
+                vice_chair = vice_chair.replace(", Vice-Chairman", "")
                 role = "Vice-Chairman"
                 if len(vice_chair) > 0:
                     comm.add_member(vice_chair, role=role)
