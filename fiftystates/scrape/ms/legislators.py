@@ -44,7 +44,7 @@ class MSLegislatorScraper(LegislatorScraper):
                 chair_name = root.xpath('string(//chair_name)')
                 role = root.xpath('string(//chair_title)')
                 district = "Governor"
-                leg = Legislator(term_name, chamber, district, chair_name, first_name = None, last_name = None, middle_name = None, party = "Republican", role=role)
+                leg = Legislator(term_name, chamber, district, chair_name, first_name = "", last_name = "", middle_name = "", party = "Republican", role=role)
 
             protemp_name = root.xpath('string(//protemp_name)')
             protemp_link = root.xpath('string(//protemp_link)')
