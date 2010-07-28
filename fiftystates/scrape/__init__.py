@@ -52,16 +52,18 @@ class JSONDateEncoder(json.JSONEncoder):
 
 class Scraper(scrapelib.Scraper):
 
-    def __init__(self, metadata, no_cache=False, output_dir=None, **kwargs):
+    def __init__(self, metadata, no_cache=False, output_dir=None,
+                 strict_validation=None, **kwargs):
         """
         Create a new Scraper instance.
 
         :param metadata: metadata for this state
         :param no_cache: if True, will ignore any cached downloads
         :param output_dir: the Fifty State data directory to use
+        :param strict_validation: exit immediately if validation fails
         """
-        self.metadata = metadata
 
+        # configure underlying scrapelib object
         if no_cache:
             kwargs['cache_dir'] = None
         elif 'cache_dir' not in kwargs:
@@ -80,7 +82,9 @@ class Scraper(scrapelib.Scraper):
         if not hasattr(self, 'state'):
             raise Exception('Scrapers must have a state attribute')
 
+        self.metadata = metadata
         self.output_dir = output_dir
+        self.strict_validation = strict_validation
 
         self.follow_robots = False
 
@@ -99,6 +103,8 @@ class Scraper(scrapelib.Scraper):
                                 validator_cls=DatetimeValidator)
         except ValueError, ve:
             self.warning(ve)
+            if self.strict_validation:
+                raise ve
 
     def validate_session(self, session):
         for t in self.metadata['terms']:

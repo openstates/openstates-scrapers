@@ -114,6 +114,9 @@ def main():
                     default=False,
                     help="be verbose (use multiple times for more"\
                         "debugging information)"),
+        make_option('--strict', action='store_true', dest='strict',
+                    default=False, help="fail immediately when encountering a"\
+                        "validation warning"),
         make_option('-d', '--output_dir', action='store', dest='output_dir',
                     help='output directory'),
         make_option('-n', '--no_cache', action='store_true', dest='no_cache',
@@ -206,6 +209,7 @@ def main():
     opts = {'output_dir': output_dir,
             'no_cache': options.no_cache,
             'requests_per_minute': options.rpm,
+            'strict_validation': options.strict,
             # cache_dir, error_dir
         }
 
