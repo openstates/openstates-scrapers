@@ -60,5 +60,5 @@ class CALegislatorScraper(LegislatorScraper):
                              last_name=legislator.last_name or '',
                              middle_name=legislator.middle_initial or '',
                              party=party,
-                             suffix=legislator.name_suffix)
+                             suffixes=legislator.name_suffix)
             self.save_legislator(leg)
