@@ -13,12 +13,12 @@
         "role": {"type": "string"},
         "district": {"type": "string"},
         "party": {"type": "string"},
-        "start_date": {"type": ["string", "number", "null"]},
-        "end_date": {"type": ["string", "number", "null"]}
+        "start_date": {"type": ["string", "datetime", "null"]},
+        "end_date": {"type": ["string", "datetime", "null"]}
     }}},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
         "url": {"type": "string"},
-        "retrieved": {"type": "number"}
+        "retrieved": {"type": "datetime"}
     }}}
  }
 }

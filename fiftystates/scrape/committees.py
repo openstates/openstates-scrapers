@@ -10,6 +10,13 @@ from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
 
 
 class CommitteeScraper(Scraper):
+
+    def _get_schema(self):
+        schema_path = os.path.join(os.path.split(__file__)[0],
+                                   '../../schemas/committee.json')
+        schema = json.load(open(schema_path))
+        return schema
+
     def scrape(self, chamber, year):
         raise NotImplementedError('CommitteeScrapers must define a '
                                   'scrape method')
@@ -25,6 +32,8 @@ class CommitteeScraper(Scraper):
         self.log("save_committee: %s" % name)
 
         committee['state'] = self.state
+
+        self.validate_json(committee)
 
         filename = "%s_%s.json" % (committee['chamber'],
                                    name.replace('/', ','))

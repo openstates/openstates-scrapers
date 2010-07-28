@@ -7,7 +7,7 @@ class DatetimeValidator(JSONSchemaValidator):
     """
     def validate_type(self, x, fieldname, schema, fieldtype=None):
         if fieldtype == 'datetime':
-            if not isinstance(x, datetime):
+            if not isinstance(x[fieldname], datetime.datetime):
                 raise ValueError("Value for field '%s' is not a valid datetime"
                                  % fieldname)
             else:
