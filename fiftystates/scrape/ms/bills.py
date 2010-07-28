@@ -52,7 +52,8 @@ class MSBillScraper(BillScraper):
 
                     #Actions
                     for action in details_root.xpath('//history/action'):
-                        action_num  = action.xpath('string(act_number)')
+                        action_num  = action.xpath('string(act_number)').strip()
+                        action_num = int(action_num)
                         action_desc = action.xpath('string(act_desc)')
                         act_vote = action.xpath('string(act_vote)').replace("../../../..", "")
                         date = action_desc.split()[0] + "/" + session[0:4]

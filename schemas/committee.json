@@ -1,0 +1,18 @@
+{"description": "committee data",
+ "type": "object",
+ "properties": {
+    "_type": {"type": "string", "enum":["committee"]},
+    "committee": {"type": "string"},
+    "subcommittee": {"type": ["null", "string"]},
+    "state": {"type": "string", "minLength": 2, "maxLength": 2},
+    "chamber": {"type": "string", "enum": ["upper", "lower"]},
+    "members": {"type": "array", "items": {"type": "object", "properties": {
+        "role": {"type": "string"},
+        "legislator": {"type": "string"}
+    }}},
+    "sources": {"type": "array", "items": {"type": "object", "properties": {
+        "url": {"type": "string"},
+        "retrieved": {"type": "number"}
+    }}}
+ }
+}
