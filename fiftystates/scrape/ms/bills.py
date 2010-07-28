@@ -57,11 +57,14 @@ class MSBillScraper(BillScraper):
                         act_vote = action.xpath('string(act_vote)').replace("../../../..", "")
                         date = action_desc.split()[0] + "/" + session[0:4]
                         date = datetime.strptime(date, "%m/%d/%Y")
-                        actor = action_desc.split()[1][1]
-                        if actor == "H":
-                            actor = "lower"
-                        else:
-                            actor = "upper"
+                        try:
+                            actor = action_desc.split()[2][1]
+                            if actor == "H":
+                                actor = "lower"
+                            else:
+                                actor = "upper"
+                        except:
+                            actor = "Executive"
                         action = action_desc[10: len(action_desc)]
                         bill.add_action(actor, action, date, action_num=action_num)                        
 
@@ -91,16 +94,17 @@ class MSBillScraper(BillScraper):
         for num in range(yea_mark, end_mark):
             name = split_text[num].replace(" ", "")
             name = name.replace("\n", "")
+
             if nays == False and other == False and name != "Total" and name != "Nays" and not re.match("\d{1,2}\.", name) and len(name) > 1:
                 yes_votes.append(name)
-            elif nays == True and other == False and name != "Total" and name != "Absentorthosenotvoting" and not re.match("\d{1,2}\.", name) and len(name) > 1:
+            elif nays == True and other == False and name != "Total" and name.find("Absentor") == -1 and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
                  no_votes.append(name)
-            elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name) and len(name) > 1:
+            elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
                 other_votes.append(name)
             else:
                 if name == "Nays":
                     nays = True
-                if name == "Absentorthosenotvoting":
+                if name.find("Absent") != -1:
                     nays = False
                     other = True
         yes_count = len(yes_votes)
