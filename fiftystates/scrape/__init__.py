@@ -7,12 +7,15 @@ import datetime
 import contextlib
 from optparse import make_option, OptionParser
 
+import jsonschema
+
 try:
     import json
 except ImportError:
     import simplejson as json
 
 from fiftystates import settings
+from fiftystates.scrape.validator import DatetimeValidator
 
 import scrapelib
 
@@ -87,6 +90,15 @@ class Scraper(scrapelib.Scraper):
         self.log = self.logger.info
         self.debug = self.logger.debug
         self.warning = self.logger.warning
+
+    def validate_json(self, obj):
+        if not hasattr(self, '_schema'):
+            self._schema = self._get_schema()
+        try:
+            jsonschema.validate(dict(obj), self._schema,
+                                validator_cls=DatetimeValidator)
+        except ValueError, ve:
+            self.warning(ve)
 
     def validate_session(self, session):
         for t in self.metadata['terms']:
