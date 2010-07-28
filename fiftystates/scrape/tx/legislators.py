@@ -1,7 +1,8 @@
 import re
 
 from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from fiftystates.scrape.legislators import (LegislatorScraper, Legislator,
+                                            Person)
 from fiftystates.scrape.tx.utils import clean_committee_name
 
 import lxml.html
@@ -43,6 +44,9 @@ class TXLegislatorScraper(LegislatorScraper):
                                     '_imgMember"]')[0].attrib['src']
 
             td = table.xpath('//td[@valign="top"]')[0]
+
+            type = td.xpath('string(//div[1]/strong)').strip()
+
             full_name = td.xpath('string(//div[2]/strong)').strip()
 
             district = td.xpath('string(//div[3])').strip()
@@ -54,8 +58,12 @@ class TXLegislatorScraper(LegislatorScraper):
             elif party == 'R':
                 party = 'Republican'
 
-            leg = Legislator('81', chamber, district, full_name,
-                             party=party, photo_url=photo_url)
+            if type == 'Lt. Gov.':
+                leg = Person(full_name)
+                leg.add_role('Lt. Governor', '81', party=party)
+            else:
+                leg = Legislator('81', chamber, district, full_name,
+                                 party=party, photo_url=photo_url)
 
             leg.add_source(member_url)
 
@@ -68,4 +76,7 @@ class TXLegislatorScraper(LegislatorScraper):
                     leg.add_role('committee member', '81', chamber=chamber,
                                  committee=clean_committee_name(br.tail))
 
-            self.save_legislator(leg)
+            if type == 'Lt. Gov.':
+                self.save_person(leg)
+            else:
+                self.save_legislator(leg)
