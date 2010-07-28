@@ -66,7 +66,7 @@ def import_committees(state):
 
             data['votesmart_id'] = committee.committeeId
 
-            db.committees.save(data)
+            db.committees.save(data, safe=True)
 
 
 def import_committee_ids(state):
@@ -122,7 +122,7 @@ def import_legislator_ids(state):
                         r['term'] == current_term):
 
                         leg['votesmart_id'] = official.candidateId
-                        db.legislators.save(leg)
+                        db.legislators.save(leg, safe=True)
 
                         break
 
