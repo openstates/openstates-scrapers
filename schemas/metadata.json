@@ -1,0 +1,22 @@
+{"description": "metadata for a state",
+ "type": "object",
+ "properties": {
+    "name": {"type": "string"},
+    "abbreviation": {"type": "string", "minLength": 2, "maxLength": 2},
+    "legislature_name": {"type": "string"},
+    "lower_chamber_name": {"type": "string"},
+    "upper_chamber_name": {"type": "string"},
+    "lower_chamber_title": {"type": "string"},
+    "upper_chamber_title": {"type": "string"},
+    "lower_chamber_term": {"type": ["integer", "string"]},
+    "upper_chamber_term": {"type": ["integer", "string"]},
+    "terms": { "type": "array", "minItems": 1, "items":
+      {"type":"object", "properties": {
+        "name": {"type": "string"},
+        "start_year": {"type": "integer", "minimum": 1900, "maximum": 2010},
+        "end_year": {"type": "integer", "minimum": 1900, "maximum": 2020},
+        "sessions": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+      } }
+    }
+ }
+}
