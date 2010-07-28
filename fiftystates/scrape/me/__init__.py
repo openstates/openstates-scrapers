@@ -1,5 +1,6 @@
 metadata = dict(
-    state_name='Maine',
+    name='Maine',
+    abbreviation='me',
     legislature_name='Maine Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='House of Representatives',

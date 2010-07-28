@@ -49,7 +49,7 @@ class NJLegislatorScraper(LegislatorScraper):
             if party == 'R':
                 party = "Republican"
             elif party == 'D':
-                party = "Democracy"
+                party = "Democrat"
             else:
                 party = party
             chamber = rec["house"]
@@ -67,6 +67,6 @@ class NJLegislatorScraper(LegislatorScraper):
             zipcode = rec["zipcode"]
             phone = rec["phone"]
 
-            leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party, title = title, legal_position = legal_position, leg_status = leg_status, address = address, city = city, state = state, zipcode = zipcode, phone = phone)
+            leg = Legislator(term_name, chamber, str(district), full_name, first_name, last_name, middle_name, party, title = title, legal_position = legal_position, leg_status = leg_status, address = address, city = city, state = state, zipcode = zipcode, phone = phone)
             leg.add_source(file_url)
             self.save_legislator(leg)

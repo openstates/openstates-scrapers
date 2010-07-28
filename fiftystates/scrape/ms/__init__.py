@@ -1,5 +1,6 @@
 metadata = dict(
-    state_name='Mississippi',
+    name='Mississippi',
+    abbreviation='ms',
     legislature_name='Mississippi Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='House of Representatives',

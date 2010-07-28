@@ -1,5 +1,6 @@
 metadata = dict(
-	state_name='Ohio',
+	name='Ohio',
+    abbreviation='oh',
 	legislature_name='Ohio Legislature',
 	upper_chamber_name='Senate',
 	lower_chamber_name='House of Representatives',
