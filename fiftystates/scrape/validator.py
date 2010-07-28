@@ -1,6 +1,8 @@
 from jsonschema.validator import JSONSchemaValidator
 import datetime
 
+from fiftystates.scrape import FiftystatesObject
+
 class DatetimeValidator(JSONSchemaValidator):
     """ add a 'datetime' type to the valid types that verifies it recieves
         a datetime instance
@@ -13,5 +15,9 @@ class DatetimeValidator(JSONSchemaValidator):
             else:
                 return x
         else:
+            # convert FiftystatesObjects to dicts
+            if isinstance(x[fieldname], FiftystatesObject):
+                x[fieldname] = dict(x[fieldname])
+
             JSONSchemaValidator.validate_type(self, x, fieldname, schema,
                                               fieldtype)

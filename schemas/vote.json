@@ -6,7 +6,7 @@
     "bill_chamber": {"type": "string", "enum": ["upper", "lower"]},
     "session": {"type": "string"},
     "bill_id": {"type": "string"},
-    "date": {"type": "number"},
+    "date": {"type": "datetime"},
     "motion": {"type": "string"},
     "passed": {"type": "boolean"},
     "yes_count": {"type": "integer", "minimum": 0},
@@ -17,7 +17,7 @@
     "other_votes": {"type": "array", "items": {"type": "string"}},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
         "url": {"type": "string"},
-        "retrieved": {"type": "number"}
+        "retrieved": {"type": "datetime"}
     }}}
  }
 }

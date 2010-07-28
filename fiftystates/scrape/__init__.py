@@ -15,7 +15,6 @@ except ImportError:
     import simplejson as json
 
 from fiftystates import settings
-from fiftystates.scrape.validator import DatetimeValidator
 
 import scrapelib
 
@@ -92,10 +91,11 @@ class Scraper(scrapelib.Scraper):
         self.warning = self.logger.warning
 
     def validate_json(self, obj):
+        from fiftystates.scrape.validator import DatetimeValidator
         if not hasattr(self, '_schema'):
             self._schema = self._get_schema()
         try:
-            jsonschema.validate(dict(obj), self._schema,
+            jsonschema.validate(obj, self._schema,
                                 validator_cls=DatetimeValidator)
         except ValueError, ve:
             self.warning(ve)

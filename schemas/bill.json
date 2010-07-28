@@ -22,7 +22,7 @@
     "actions": {"type": "array", "items": {"type": "object", "properties": {
         "action": {"type": "string"},
         "actor": {"type": "string"},
-        "date": {"type": "number"},
+        "date": {"type": "datetime"},
         "type": {"type": "array", "items": {"type": "string", "enum":
             ["bill:introduced", "bill:passed", "bill:failed", "bill:signed",
              "amendment:introduced", "amendment:passed", "amendment:failed",
@@ -34,7 +34,7 @@
     "votes": {"type": "array", "items": {"type": "object", "properties": {
         "_type": {"type": "string", "enum":["vote"]},
         "chamber": {"type": "string", "enum": ["upper", "lower"]},
-        "date": {"type": "number"},
+        "date": {"type": "datetime"},
         "motion": {"type": "string"},
         "passed": {"type": "boolean"},
         "yes_count": {"type": "integer", "minimum": 0},
@@ -45,12 +45,12 @@
         "other_votes": {"type": "array", "items": {"type": "string"}},
         "sources": {"type": "array", "items": {"type": "object", "properties": {
             "url": {"type": "string"},
-            "retrieved": {"type": "number"}
+            "retrieved": {"type": "datetime"}
         }}}
     }}},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
         "url": {"type": "string"},
-        "retrieved": {"type": "number"}
+        "retrieved": {"type": "datetime"}
     }}}
  }
 }
