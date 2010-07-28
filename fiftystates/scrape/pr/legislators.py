@@ -1,12 +1,28 @@
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.pr.utils import lxml_context, legislators_url
+from fiftystates.scrape.pr.utils import legislators_url
 
 import lxml.html
-import re
+import re, contextlib
 
 class PRLegislatorScraper(LegislatorScraper):
     state = 'pr'
+    
+    @contextlib.contextmanager
+    def lxml_context(self, url):
+        try:
+            body = self.urlopen(url)
+        except:
+            body = self.urlopen("http://www.google.com") 
+        
+        elem = lxml.html.fromstring(body)
+        
+        try:
+            yield elem
+        except:
+            print "FAIL"
+            #self.show_error(url, body)
+            raise
 
     def scrape(self, chamber, term):
         # Data available for this term only
@@ -22,7 +38,7 @@ class PRLegislatorScraper(LegislatorScraper):
         legislator_pages_dir = legislators_url('upper')
         
         for counter, leg_page_dir in enumerate(legislator_pages_dir):
-            with lxml_context(leg_page_dir) as leg_page:
+            with self.lxml_context(leg_page_dir) as leg_page:
                 tables = leg_page.cssselect('table')
                 legislators_table = tables[62]
                 leg_data = legislators_table.cssselect('tr')
@@ -55,7 +71,7 @@ class PRLegislatorScraper(LegislatorScraper):
     def scrape_house(self, term):
         legislator_pages_dir = legislators_url('lower')
         
-        with lxml_context(legislator_pages_dir) as leg_page:
+        with self.lxml_context(legislator_pages_dir) as leg_page:
                 tables = leg_page.cssselect('table')
                 leg_dist_table = tables[4]
                 leg_acu_table = tables[5]

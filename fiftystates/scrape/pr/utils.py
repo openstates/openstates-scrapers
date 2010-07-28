@@ -1,21 +1,22 @@
-import lxml.html
-import contextlib
+import itertools
 
-@contextlib.contextmanager
-def lxml_context(self, url):
-    try:
-        body = self.urlopen(url)
-    except:
-        body = self.urlopen("http://www.google.com") 
+# From the itertools docs's recipe section 
+def grouper(n, iterable, fillvalue=None):
+    "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
+    args = [iter(iterable)] * n
+    return itertools.izip_longest(fillvalue=fillvalue, *args) 
+
+def clean_newline(str):
+        new_str = ' '.join(str.split('\n'))
+        return new_str
+
+def clean_space(str):
+        new_str = ' '.join(str.split())
+        return new_str
     
-    elem = lxml.html.fromstring(body)
-    
-    try:
-        yield elem
-    except:
-        print "FAIL"
-        #self.show_error(url, body)
-        raise
+def between_keywords(key1, key2, str):
+    right_part = str.split(key1)[0]
+    return right_part.split(key2)[1]
 
 def legislators_url(chamber):
     if 'upper':
@@ -30,3 +31,12 @@ def legislators_url(chamber):
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20VIII.aspx')
     else:
         return 'http://www.camaraderepresentantes.org/legsv.asp'
+
+def committees_url(chamber):
+    if chamber == 'upper':
+        return {'permanent':'http://senadopr.us/Pages/ComisionesPermanentes.aspx',
+                'special':'http://senadopr.us/Pages/ComisionesEspeciales.aspx',
+                'joint':'http://senadopr.us/Pages/ComisionesConjuntas.aspx'}
+    else:
+        return {'permanent':'http://www.camaraderepresentantes.org/comisiones.asp',
+                'special':'http://www.camaraderepresentantes.org/comisiones3.asp'}
