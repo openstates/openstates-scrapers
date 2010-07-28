@@ -2,7 +2,8 @@ import lxml.html
 import contextlib
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.committees import CommitteeScraper, Committee
-from fiftystates.scrape.pr.utils import committees_url, grouper
+from fiftystates.scrape.pr.utils import committees_url, grouper,\
+    clean_newline, clean_space, between_keywords
 
 
 class PRCommitteeScraper(CommitteeScraper):
@@ -55,6 +56,18 @@ class PRCommitteeScraper(CommitteeScraper):
     def scrape_house(self):
         committees_pages = committees_url('lower')
         
+        link = committees_pages['permanent']
+        with self.lxml_context(link) as perm_committees_pages:
+            a_elements = perm_committees_pages.cssselect('a')
+            committee_elements = a_elements[1:-7]
+            self.scrape_house_committee_data(committee_elements, link)
+        
+        link = committees_pages['special']
+        with self.lxml_context(link) as special_committees_pages:
+            a_elements = special_committees_pages.cssselect('a')
+            committee_elements = a_elements[1:10]
+            self.scrape_house_committee_data(committee_elements, link)
+        
     def scrape_senate_comittee_data(self, committee_elements, link):
         committees_grouped = grouper(3, committee_elements)
             
@@ -67,4 +80,27 @@ class PRCommitteeScraper(CommitteeScraper):
             com = Committee('upper', name, president = com_president)
             com.add_source(com_link)
             com.add_source(link)
+            
+    def scrape_house_committee_data(self, committee_elements, link):
+        for ce in committee_elements:
+            link_part =  ce.iterlinks().next()[2]
+            link = 'http://www.camaraderepresentantes.org/' + link_part
+            name = ce.text_content()
+            
+            with self.lxml_context(link) as committee_page:
+                td_elements = committee_page.cssselect('td')
+                committee_data = td_elements[7]
+                committee_text = clean_newline(committee_data.text_content())
+                
+                address = committee_text.split('Tel:')[0]
+                telephone = clean_space(between_keywords('Fax:', 'Tel:', committee_text))                    
+                tty = clean_space(between_keywords('Presidente', 'TTY:', committee_text))                                  
+                president = clean_space(between_keywords('Vice Presidente:', 'Presidente:', committee_text))                    
+                vicepresident = clean_space(between_keywords('Secretario(a):', 'Vice Presidente:', committee_text))
+                secretary = clean_space(between_keywords('Repr', 'Secretario(a):', committee_text))
+                majority_members = between_keywords('Miembros Minoria:', 'Miembros Mayor', committee_data.text_content())
+                majority_members = majority_members[4:].split('\n')
+                minority_members = committee_data.text_content().split('Miembros Minoria:')[1]
+                minority_members = minority_members.split('\n')
+                
             
