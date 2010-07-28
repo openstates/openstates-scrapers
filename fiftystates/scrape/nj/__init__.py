@@ -1,5 +1,6 @@
 metadata = dict(
-    state_name='New Jersey',
+    name='New Jersey',
+    abbreviation='nj',
     legislature_name='New Jersey Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='General Assembly',
