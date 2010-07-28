@@ -6,6 +6,8 @@ import os
 import sys
 from optparse import make_option, OptionParser
 
+import jsonschema
+
 from fiftystates.scrape import NoDataForPeriod, JSONDateEncoder
 
 try:
@@ -33,7 +35,8 @@ def main():
             scraper_type: bills, legislators, committees, votes
         """
         mod_path = 'fiftystates.scrape.%s.%s' % (state, scraper_type)
-        scraper_name = '%s%sScraper' % (state.upper(), scraper_type[:-1].capitalize())
+        scraper_name = '%s%sScraper' % (state.upper(),
+                                        scraper_type[:-1].capitalize())
 
         # make or clear directory for this type
         path = os.path.join(output_dir, scraper_type)
@@ -140,16 +143,27 @@ def main():
                         datefmt="%H:%M:%S",
                        )
 
+    # make output dir if it doesn't exist
     output_dir = options.output_dir or os.path.join('data', state)
-
-    # write metadata
-    mod_name = 'fiftystates.scrape.%s' % state
-    metadata = __import__(mod_name, fromlist=['metadata']).metadata
     try:
         os.makedirs(output_dir)
     except OSError, e:
         if e.errno != 17:
             raise e
+
+    # write metadata
+    mod_name = 'fiftystates.scrape.%s' % state
+    metadata = __import__(mod_name, fromlist=['metadata']).metadata
+
+    try:
+        schema_path = os.path.join(os.path.split(__file__)[0],
+                                   '../../schemas/metadata.json')
+        schema = json.load(open(schema_path))
+        jsonschema.validate(metadata, schema)
+    except ValueError, e:
+        logging.getLogger('fiftystates').warning('metadata validation error: ' +
+                                                 str(e))
+
     with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
         json.dump(metadata, f, cls=JSONDateEncoder)
 
