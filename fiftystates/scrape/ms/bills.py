@@ -95,11 +95,11 @@ class MSBillScraper(BillScraper):
             name = split_text[num].replace(" ", "")
             name = name.replace("\n", "")
 
-            if nays == False and other == False and name != "Total" and name != "Nays" and not re.match("\d{1,2}\.", name) and len(name) > 1:
+            if self.check_name(name, nays, other) == 1:
                 yes_votes.append(name)
-            elif nays == True and other == False and name != "Total" and name.find("Absentor") == -1 and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
+            elif self.check_name(name, nays, other) == 2:
                  no_votes.append(name)
-            elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
+            elif self.check_name(name, nays, other) == 3:
                 other_votes.append(name)
             else:
                 if name == "Nays":
@@ -115,3 +115,16 @@ class MSBillScraper(BillScraper):
         vote['no_votes'] = no_votes
         vote['other_votes'] = other_votes
         return vote
+
+    def check_name(self, name, nays, other):
+
+        if nays == False and other == False and name != "Total" and name != "Nays" and not re.match("\d{1,2}\.", name) and len(name) > 1:
+            name_type = 1
+        elif nays == True and other == False and name != "Total" and name.find("Absentor") == -1 and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
+            name_type = 2
+        elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
+            name_type = 3
+        else:
+            name_type = 0
+
+        return name_type
