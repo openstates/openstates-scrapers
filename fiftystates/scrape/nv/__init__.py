@@ -1,5 +1,6 @@
 metadata = dict(
-    state_name='Nevada',
+    name='Nevada',
+    abbreviation='nv',
     legislature_name='Nevada Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='Assembly',
