@@ -5,7 +5,7 @@
     "committee": {"type": "string"},
     "subcommittee": {"type": ["null", "string"]},
     "state": {"type": "string", "minLength": 2, "maxLength": 2},
-    "chamber": {"type": "string", "enum": ["upper", "lower"]},
+    "chamber": {"type": "string", "enum": ["upper", "lower", "joint"]},
     "members": {"type": "array", "items": {"type": "object", "properties": {
         "role": {"type": "string"},
         "legislator": {"type": "string"}
