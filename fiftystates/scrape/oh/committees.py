@@ -36,7 +36,7 @@ class OHCommitteeScraper(CommitteeScraper):
                 
                 #joint legislative committiees
                 if comm_id < 92:
-                    chamber = "joint_legislation"
+                    chamber = "joint"
 
                 committee = Committee(chamber, comm_name)
                
