@@ -40,8 +40,7 @@ class Committee(FiftystatesObject):
         super(Committee, self).__init__('committee', **kwargs)
         self['chamber'] = chamber
         self['committee'] = committee
-        if subcommittee:
-            self['subcommittee'] = subcommittee
+        self['subcommittee'] = subcommittee
         self['members'] = kwargs.get('members', [])
 
     def add_member(self, legislator, role='member', **kwargs):
