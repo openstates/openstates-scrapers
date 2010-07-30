@@ -82,6 +82,7 @@ class VTBillScraper(BillScraper):
 
     def scrape_bill(self, bill, url):
         with self.urlopen(url) as page:
+            page.replace('&nbsp;', ' ')
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
             bill.add_source(url)
