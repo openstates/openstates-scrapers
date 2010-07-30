@@ -120,6 +120,7 @@ class VTBillScraper(BillScraper):
                         # No date, skip
                         self.warning("skipping action '%s -- %s'" % (
                             date, action))
+                        continue
 
                     date = datetime.datetime.strptime(date, "%m/%d/%Y")
                     date = date.date()
