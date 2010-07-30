@@ -134,6 +134,7 @@ class VTBillScraper(BillScraper):
 
     def scrape_vote(self, bill, chamber, url):
         with self.urlopen(url) as page:
+            page = page.replace('&nbsp;', ' ')
             page = lxml.html.fromstring(page)
 
             info_row = page.xpath("//table[1]/tr[2]")[0]
