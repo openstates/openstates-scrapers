@@ -7,7 +7,7 @@ import datetime
 import contextlib
 from optparse import make_option, OptionParser
 
-import jsonschema
+import validictory
 
 try:
     import json
@@ -99,8 +99,8 @@ class Scraper(scrapelib.Scraper):
         if not hasattr(self, '_schema'):
             self._schema = self._get_schema()
         try:
-            jsonschema.validate(obj, self._schema,
-                                validator_cls=DatetimeValidator)
+            validictory.validate(obj, self._schema,
+                                 validator_cls=DatetimeValidator)
         except ValueError, ve:
             self.warning(ve)
             if self.strict_validation:
