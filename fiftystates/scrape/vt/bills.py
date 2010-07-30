@@ -117,7 +117,7 @@ class VTBillScraper(BillScraper):
                             r"\d\d?/\d\d?/\d{4,4}", date).group(0)
                     except AttributeError:
                         # No date, skip
-                        self.warn("skipping action '%s -- %s'" % (
+                        self.warning("skipping action '%s -- %s'" % (
                             date, action))
 
                     date = datetime.datetime.strptime(date, "%m/%d/%Y")
