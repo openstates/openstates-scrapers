@@ -1,4 +1,3 @@
-from fiftystates.scrape import ScrapeError
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
