@@ -7,7 +7,7 @@ import datetime
 import contextlib
 from optparse import make_option, OptionParser
 
-import validictory
+from fiftystates.scrape.validator import DatetimeValidator
 
 try:
     import json
@@ -84,7 +84,10 @@ class Scraper(scrapelib.Scraper):
 
         self.metadata = metadata
         self.output_dir = output_dir
+
+        # validation
         self.strict_validation = strict_validation
+        self.validator = DatetimeValidator(strict_validation)
 
         self.follow_robots = False
 
@@ -95,16 +98,15 @@ class Scraper(scrapelib.Scraper):
         self.warning = self.logger.warning
 
     def validate_json(self, obj):
-        from fiftystates.scrape.validator import DatetimeValidator
         if not hasattr(self, '_schema'):
             self._schema = self._get_schema()
         try:
-            validictory.validate(obj, self._schema,
-                                 validator_cls=DatetimeValidator)
+            self.validator.validate(obj, self._schema)
+            for error in self.validator.errors:
+                self.warning(error['message'])
+            self.validator.errors = []
         except ValueError, ve:
-            self.warning(ve)
-            if self.strict_validation:
-                raise ve
+            raise ve
 
     def all_sessions(self):
         sessions = []
