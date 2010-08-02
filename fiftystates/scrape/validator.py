@@ -7,4 +7,4 @@ class DatetimeValidator(SchemaValidator):
     """
 
     def validate_type_datetime(self, x):
-        return isinstance(x, datetime.datetime)
+        return isinstance(x, (datetime.date, datetime.datetime))
