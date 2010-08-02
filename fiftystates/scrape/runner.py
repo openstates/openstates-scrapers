@@ -6,7 +6,7 @@ import os
 import sys
 from optparse import make_option, OptionParser
 
-import jsonschema
+import validictory
 
 from fiftystates.scrape import NoDataForPeriod, JSONDateEncoder
 
@@ -162,7 +162,7 @@ def main():
         schema_path = os.path.join(os.path.split(__file__)[0],
                                    '../../schemas/metadata.json')
         schema = json.load(open(schema_path))
-        jsonschema.validate(metadata, schema)
+        validictory.validate(metadata, schema)
     except ValueError, e:
         logging.getLogger('fiftystates').warning('metadata validation error: ' +
                                                  str(e))

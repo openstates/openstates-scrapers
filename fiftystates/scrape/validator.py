@@ -1,12 +1,12 @@
-from jsonschema.validator import JSONSchemaValidator
+from validictory.validator import SchemaValidator
 import datetime
 
 from fiftystates.scrape import FiftystatesObject
 
-class DatetimeValidator(JSONSchemaValidator):
+class DatetimeValidator(SchemaValidator):
     """ add a 'datetime' type to the valid types that verifies it recieves
         a datetime instance
     """
-    def __init__(self, *args, **kwargs):
-        super(DatetimeValidator, self).__init__(*args, **kwargs)
-        self._typesmap['datetime'] = lambda x: isinstance(x, datetime.datetime)
+
+    def validate_type_datetime(self, x):
+        return isinstance(x, datetime.datetime)
