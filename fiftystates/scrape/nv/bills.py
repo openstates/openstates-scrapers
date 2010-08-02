@@ -208,13 +208,13 @@ class NVBillScraper(BillScraper):
                 excused = root.xpath('string(/html/body/center/table/tr/td[3])').split()[0]
                 not_voting = root.xpath('string(/html/body/center/table/tr/td[4])').split()[0]
                 absent = root.xpath('string(/html/body/center/table/tr/td[5])').split()[0]
-                    
+                other_count = 0    
                 if yes_count > no_count:
                     passed = True
                 else:
                     passed = False
-
-                vote = Vote(chamber, date, motion, passed, yes_count, no_count, '', not_voting = not_voting, absent = absent)
+                
+                vote = Vote(chamber, date, motion, passed, int(yes_count), int(no_count), other_count, not_voting = int(not_voting), absent = int(absent))
 
                 for el in root.xpath('/html/body/table[2]/tr'):
                     name = el.xpath('string(td[1])').strip()

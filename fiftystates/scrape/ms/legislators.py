@@ -67,7 +67,10 @@ class MSLegislatorScraper(LegislatorScraper):
             org_info = root.xpath('string(//org_info)')
             email_name = root.xpath('string(//email_address)')
             email = '%s@%s.ms.gov' % (email_name, chamber)
-            
+            if party == 'D':
+                party = 'Democrat'
+            else:
+                party = 'Republican' 
 
             leg = Legislator(term, chamber, district, leg_name, first_name, last_name, middle_name, party, role=role, home_phone = home_phone, bis_phone = bis_phone, capital_phone=capital_phone, other_phone=other_phone, org_info=org_info, email=email)
             leg.add_source(url)
