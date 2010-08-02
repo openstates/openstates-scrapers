@@ -74,7 +74,7 @@ def main():
         elif scraper_type in ('legislators', 'committees'):
             if not terms:
                 latest_term = metadata['terms'][-1]['name']
-                print 'No term specified using latest "%s"' % latest_term
+                print 'No term specified, using latest "%s"' % latest_term
                 times = [latest_term]
             else:
                 times = terms
