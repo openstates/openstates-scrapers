@@ -91,7 +91,7 @@ class Scraper(scrapelib.Scraper):
 
         # validation
         self.strict_validation = strict_validation
-        self.validator = DatetimeValidator(strict_validation)
+        self.validator = DatetimeValidator()
 
         self.follow_robots = False
 
@@ -106,11 +106,10 @@ class Scraper(scrapelib.Scraper):
             self._schema = self._get_schema()
         try:
             self.validator.validate(obj, self._schema)
-            for error in self.validator.errors:
-                self.warning(error['message'])
-            self.validator.errors = []
         except ValueError, ve:
-            raise ve
+            self.warning(str(ve))
+            if self.strict_validation:
+                raise ve
 
     def all_sessions(self):
         sessions = []
