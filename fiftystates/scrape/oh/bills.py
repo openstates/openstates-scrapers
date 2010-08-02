@@ -80,11 +80,9 @@ class OHBillScraper(BillScraper):
                     date = cell.value
                     
                     if type(cell.value) == float:
+                        date = str(xlrd.xldate_as_tuple(date, 0))
+                        date = datetime.strptime(date, "(%Y, %m, %d, %H, %M, %S)")
                         bill.add_action(actor, action, date)    
-
-                    if (len(coltitle) != 0 ) and coltitle.split()[-1] == 'Committee':
-                        committee = str(cell.value)
-                        bill.add_action(committee, action, date = None)
 
                 bill.add_source(house_file)
                 self.scrape_votes(bill, file_type, rownum, session)
@@ -156,12 +154,6 @@ class OHBillScraper(BillScraper):
                         date = datetime.strptime(date, "(%Y, %m, %d, %H, %M, %S)")
                         bill.add_action(actor, action, date)
 
-                    #if (len(coltitle) != 0 ) and coltitle.split()[-1] == 'Committee':
-                        #committee = str(cell.value)
-                        #FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
-                        #print committee
-                        #bill.add_action(committee, action, date = None)
-
                 bill.add_source(senate_file)
                 self.scrape_votes(bill, file_type, rownum, session)
 
@@ -225,7 +217,7 @@ class OHBillScraper(BillScraper):
 
                     vote = Vote(chamber, save_date, motion, passed, int(yes_count), int(no_count), other_count = 0)
 
-                    #adding in yas voters
+                    #adding in yea voters
                     for voters in range(3, yes_placement):
                         legis = ""
                         initials = 0                        
