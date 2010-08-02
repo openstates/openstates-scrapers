@@ -93,13 +93,25 @@ class MSBillScraper(BillScraper):
         no_votes = []
         other_votes = []
         for num in range(yea_mark, end_mark):
-            name = split_text[num].replace(" ", "")
+            name = split_text[num]
             name = name.replace("\n", "")
+
+            if name.find("(") != -1:
+                if len(name.split()) == 2:
+                    name = name.split()[0]
+                if len(name.split()) == 3:
+                    name =  name.split()[0] + " " + name.split()[1]
+                
+            if len(name) > 0 and name[0] == " ":
+                name = name[1: len(name)]
+
+            if len(name.split()) > 3:
+                name = name.replace(" ", "")
 
             if self.check_name(name, nays, other) == 1:
                 yes_votes.append(name)
             elif self.check_name(name, nays, other) == 2:
-                 no_votes.append(name)
+                no_votes.append(name)
             elif self.check_name(name, nays, other) == 3:
                 other_votes.append(name)
             else:
