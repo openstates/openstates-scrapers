@@ -80,7 +80,7 @@ def insert_with_id(obj):
 
 
 def timestamp_to_dt(timestamp):
-    return datetime.datetime(*time.localtime(timestamp)[0:7])
+    return datetime.datetime(*time.localtime(timestamp)[0:6])
 
 
 def update(old, new, coll):

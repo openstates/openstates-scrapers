@@ -1,29 +1,16 @@
 import re
-import datetime as dt
+import datetime
 
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.fl import metadata
 
-from BeautifulSoup import BeautifulSoup
+import lxml.html
 
 
 class FLBillScraper(BillScraper):
     state = 'fl'
 
-    def scrape(self, chamber, year):
-        term = None
-        for t in metadata['terms']:
-            if t['start_year'] <= int(year) <= t['end_year']:
-                term = t
-                break
-        else:
-            raise NoDataForPeriod(year)
-
-        for session in term['sessions']:
-            self.scrape_session(chamber, session)
-
-    def scrape_session(self, chamber, session):
+    def scrape(self, chamber, session):
         if chamber == 'upper':
             chamber_name = 'Senate'
             bill_abbr = 'S'
@@ -31,108 +18,81 @@ class FLBillScraper(BillScraper):
             chamber_name = 'House'
             bill_abbr = 'H'
 
-        # Base url for bills sorted by first letter of title
-        base_url = 'http://www.flsenate.gov/Session/'\
-            'index.cfm?Mode=Bills&BI_Mode=ViewBySubject&'\
-            'Letter=%s&Year=%s&Chamber=%s'
+        base_url = ('http://www.flsenate.gov/Session/'
+                    'index.cfm?Mode=Bills&BI_Mode=ViewBySubject&'
+                    'Letter=%s&Year=%s&Chamber=%s')
 
-        # Bill ID format
-        bill_re = re.compile("%s (\d{4}[ABCDEO]?)" % bill_abbr)
-
-        # Go through all sorted bill list pages
         for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-            bill_list_url = base_url % (letter, session.replace(' ', ''),
-                                        chamber_name)
-            self.log("Getting bill list for %s %s (%s)" % (chamber, session,
-                                                           letter))
-            bill_list = BeautifulSoup(self.urlopen(bill_list_url))
+            url = base_url % (letter, session.replace(' ', ''),
+                              chamber_name)
 
-            # Bill ID's are bold
-            for b in bill_list.findAll('b'):
-                if not b.string:
-                    continue
+            with self.urlopen(url) as page:
+                page = lxml.html.fromstring(page)
+                page.make_links_absolute(url)
 
-                match = bill_re.search(b.string)
-                if match:
-                    # Bill ID and number
-                    bill_id = match.group(0)
-                    bill_number = match.group(1)
+                for link in page.xpath("//a[contains(@href, 'BillNum=')]"):
+                    self.scrape_bill(chamber, session, link.attrib['href'])
 
-                    # Get bill name and info url
-                    bill_link = b.parent.findNext('td').a
-                    bill_name = bill_link.string.strip()
-                    info_url = "http://www.flsenate.gov/Session/%s&Year=%s" % (
-                        bill_link['href'], session.replace(' ', ''))
+    def scrape_bill(self, chamber, session, url):
+        url = url + "&Year=%s" % session
+        with self.urlopen(url) as page:
+            page = page.replace('&nbsp;', ' ').replace('<br>', '\n')
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
-                    # Create bill
-                    bill = Bill(session, chamber, bill_id, bill_name)
-                    bill.add_source(info_url)
+            title = page.xpath('//h3')[0].text.strip()
+            title = re.match(r"^\w+\s+\d+:\s+(.*)$", title).group(1)
 
-                    # Get bill info page
-                    info_page = BeautifulSoup(self.urlopen(info_url))
+            bill_id = page.xpath("string(//pre[@class='billhistory']/b)")
+            bill_id = bill_id.split()[0].strip()
 
-                    # Get all bill versions
-                    bill_table = info_page.find(
-                        'a',
-                        attrs={'name': 'BillText'}).parent.parent.findNext(
-                        'tr').td.table
+            bill = Bill(session, chamber, bill_id, title)
+            bill.add_source(url)
 
-                    if bill_table:
-                        for tr in bill_table.findAll('tr')[1:]:
-                            version_name = tr.td.string
-                            version_url = "http://www.flsenate.gov%s" % (
-                                tr.a['href'])
-                            bill.add_version(version_name, version_url)
+            hist = page.xpath("string(//pre[@class='billhistory'])").strip()
+            act_re = re.compile(r'^  (\d\d/\d\d/\d\d) (SENATE|HOUSE)'
+                                r'(.*\n(\s{16,16}.*\n){0,})',
+                                re.MULTILINE)
 
-                    # Get actions
-                    hist_table = info_page.find(
-                        'tr', 'billInfoHeader').findPrevious('tr')
-                    hist = ""
-                    for line in hist_table.findAll(text=True):
-                        hist += line + "\n"
-                    hist = hist.replace('&nbsp;', ' ')
-                    act_re = re.compile(r'^  (\d\d/\d\d/\d\d) (SENATE|HOUSE)'
-                                        '(.*\n(\s{16,16}.*\n){0,})',
-                                        re.MULTILINE)
+            # Actions
+            for match in act_re.finditer(hist):
+                action = match.group(3).replace('\n', ' ')
+                action = re.sub(r'\s+', ' ', action).strip()
 
-                    for act_match in act_re.finditer(hist):
-                        action = act_match.group(3).replace('\n', ' ')
-                        action = re.sub('\s+', ' ', action).strip()
-                        if act_match.group(2) == 'SENATE':
-                            act_chamber = 'upper'
-                        else:
-                            act_chamber = 'lower'
+                if match.group(2) == 'SENATE':
+                    actor = 'upper'
+                else:
+                    actor = 'lower'
 
-                        act_date = act_match.group(1)
-                        act_date = dt.datetime.strptime(act_date, '%m/%d/%y')
+                date = match.group(1)
+                date = datetime.datetime.strptime(date, "%m/%d/%y")
 
-                        for act_text in re.split(' -[HS]J \d+;? ?', action):
-                            if not act_text:
-                                continue
+                for act_text in re.split(' -[HS]J \d+;? ?', action):
+                    act_text = act_text.strip()
+                    if not act_text:
+                        continue
 
-                            bill.add_action(act_chamber, act_text, act_date)
+                    bill.add_action(actor, act_text, date)
 
-                    # Get primary sponsor
-                    # Right now we just list the committee as the primary
-                    # sponsor for committee substituts. In the future,
-                    # consider listing committee separately and listing the
-                    # original human sponsors as primary
-                    spon_re = re.compile('by ([^;(\n]+;?|\w+)')
-                    sponsor = spon_re.search(hist).group(1).strip('; ')
+            # Sponsors
+            primary_sponsor = re.search(r'by ([^;(\n]+;?|\w+)',
+                                        hist).group(1).strip('; ')
+            bill.add_sponsor('primary', primary_sponsor)
 
-                    if sponsor == 'Alexander, JD':
-                        sponsor = 'JD Alexander'
+            cospon_re = re.compile(r'\((CO-SPONSORS|CO-AUTHORS)\) '
+                                   '([\w .]+(;[\w .\n]+){0,})',
+                                   re.MULTILINE)
+            match = cospon_re.search(hist)
 
-                    bill.add_sponsor('primary', sponsor)
+            if match:
+                for cosponsor in match.group(2).split(';'):
+                    cosponsor = cosponsor.replace('\n', '').strip()
+                    bill.add_sponsor('cosponsor', cosponsor)
 
-                    # Get co-sponsors
-                    cospon_re = re.compile(r'\((CO-SPONSORS|CO-AUTHORS)\) '
-                                           '([\w .]+(;[\w .\n]+){0,})',
-                                           re.MULTILINE)
-                    cospon_match = cospon_re.search(hist)
-                    if cospon_match:
-                        for cosponsor in cospon_match.group(2).split(';'):
-                            cosponsor = cosponsor.replace('\n', '').strip()
-                            bill.add_sponsor('cosponsor', cosponsor)
+            # Versions
+            for link in page.xpath("//a[contains(@href, 'billtext/html')]"):
+                version = link.xpath('string(../../td[1])').strip()
 
-                    self.save_bill(bill)
+                bill.add_version(version, link.attrib['href'])
+
+            self.save_bill(bill)

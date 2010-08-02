@@ -74,6 +74,10 @@ class Scraper(scrapelib.Scraper):
             kwargs['error_dir'] = getattr(settings, 'FIFTYSTATES_ERROR_DIR',
                                           None)
 
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = getattr(settings, 'SCRAPELIB_TIMEOUT',
+                                        600)
+
         if 'requests_per_minute' not in kwargs:
             kwargs['requests_per_minute'] = None
 

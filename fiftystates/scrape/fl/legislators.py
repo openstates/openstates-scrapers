@@ -32,6 +32,8 @@ class FLLegislatorScraper(LegislatorScraper):
                 # by 'JD', thinking it is a suffix instead of a first name
                 if name == 'Alexander, JD':
                     name = 'JD Alexander'
+                elif name == 'Vacant':
+                    name = 'Vacant Seat'
 
                 district = link.xpath('string(../../td[2])').strip()
                 party = link.xpath('string(../../td[3])').strip()

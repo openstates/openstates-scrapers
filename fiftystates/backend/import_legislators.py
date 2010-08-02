@@ -41,14 +41,18 @@ def import_legislator(data):
 
     cur_role = data['roles'][0]
 
+    spec = {'state': data['state'],
+            'term': cur_role['term'],
+            'type': cur_role['type']}
+    if 'district' in cur_role:
+        spec['district'] = cur_role['district']
+    if 'chamber' in cur_role:
+        spec['chamber'] = cur_role['chamber']
+
     leg = db.legislators.find_one(
         {'state': data['state'],
          'full_name': data['full_name'],
-         'roles': {'$elemMatch': {
-                    'term': cur_role['term'],
-                    'chamber': cur_role['chamber'],
-                    'type': cur_role['type'],
-                    'district': cur_role['district']}}})
+         'roles': {'$elemMatch': spec}})
 
     if not leg:
         metadata = db.metadata.find_one({'_id': data['state']})
@@ -60,14 +64,10 @@ def import_legislator(data):
 
             if index > 0:
                 prev_term = term_names[index - 1]
+                spec['term'] = prev_term
                 prev_leg = db.legislators.find_one(
                     {'full_name': data['full_name'],
-                     'roles': {'$elemMatch': {
-                                'state': data['state'],
-                                'term': prev_term,
-                                'chamber': cur_role['chamber'],
-                                'type': cur_role['type'],
-                                'district': cur_role['district']}}})
+                     'roles': {'$elemMatch': spec}})
 
                 if prev_leg:
                     update(prev_leg, data, db.legislators)
