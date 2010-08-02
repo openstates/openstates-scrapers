@@ -124,13 +124,23 @@ class CABillScraper(BillScraper):
                     vote_chamber = ''
                     vote_location = full_loc
 
+                motion = vote.motion.motion_text or ''
+
+                if "Third Reading" in motion or "3rd Reading" in motion:
+                    vtype = 'passage'
+                elif "Do Pass" in motion:
+                    vtype = 'passage'
+                else:
+                    vtype = 'other'
+
                 fsvote = Vote(vote_chamber,
                               vote.vote_date_time,
-                              vote.motion.motion_text or '',
+                              motion,
                               result,
                               vote.ayes, vote.noes, vote.abstain,
                               threshold=vote.threshold,
-                              location=vote_location)
+                              location=vote_location
+                              type=vtype)
 
                 for record in vote.votes:
                     if record.vote_code == 'AYE':
