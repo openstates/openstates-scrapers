@@ -102,14 +102,14 @@ class MEBillScraper(BillScraper):
                         no_count = detail_root.xpath('string(//table[2]//tr[7]/td[3])')
                         absent_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
                         excused_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
-                        other_count = None
+                        other_count = 0
 
                         if votes_url.find('House') != -1:
                             chamber = "lower"
                         else:
                             chamber = "upper"
 
-                        vote = Vote(chamber, date, motion, passed, yes_count, no_count, other_count, absent_count = absent_count, excused_count = excused_count)
+                        vote = Vote(chamber, date, motion, passed, int(yes_count), int(no_count), other_count, absent_count = int(absent_count), excused_count = int(excused_count))
 
                         for member in detail_root.xpath('//table[3]/tr[position() > 1]'):
                             leg = member.xpath('string(td[2])')
