@@ -106,6 +106,12 @@ class Scraper(scrapelib.Scraper):
             if self.strict_validation:
                 raise ve
 
+    def all_sessions(self):
+        sessions = []
+        for t in self.metadata['terms']:
+            sessions.extend(t['sessions'])
+        return sessions
+
     def validate_session(self, session):
         for t in self.metadata['terms']:
             if session in t['sessions']:

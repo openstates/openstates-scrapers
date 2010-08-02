@@ -15,6 +15,7 @@ class VoteScraper(Scraper):
         schema_path = os.path.join(os.path.split(__file__)[0],
                                    '../../schemas/vote.json')
         schema = json.load(open(schema_path))
+        schema['properties']['session']['enum'] = self.all_sessions()
         return schema
 
     def scrape(self, chamber, year):

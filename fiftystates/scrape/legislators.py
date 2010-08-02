@@ -15,6 +15,8 @@ class LegislatorScraper(Scraper):
         schema_path = os.path.join(os.path.split(__file__)[0],
                                    '../../schemas/legislator.json')
         schema = json.load(open(schema_path))
+        terms = [t['name'] for t in self.metadata['terms']]
+        schema['properties']['roles']['items']['properties']['term']['enum'] = terms
         return schema
 
     def scrape(self, chamber, year):
