@@ -36,6 +36,7 @@ class MSBillScraper(BillScraper):
                     details_root = lxml.etree.fromstring(details_page, lxml.etree.HTMLParser())
                     title = details_root.xpath('string(//shorttitle)')
                     longtitle = details_root.xpath('string(//longtitle)')
+
                     bill = Bill(session, chamber, bill_id, title, longtitle = longtitle)
 
                     #sponsors
@@ -49,6 +50,34 @@ class MSBillScraper(BillScraper):
                         leg_url = 'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, leg)
                         type = "additional sponsor"
                         bill.add_sponsor(type, leg, leg_url=leg_url)
+
+
+                    #FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
+                    #Versions 
+                    curr_version = details_root.xpath('string(//current_other)').replace("../../../../", "")
+                    curr_version_url = "http://billstatus.ls.state.ms.us/" + curr_version
+                    bill.add_version("Current version", curr_version_url)
+
+                    intro_version = details_root.xpath('string(//intro_other)').replace("../../../../", "")
+                    intro_version_url = "http://billstatus.ls.state.ms.us/" + intro_version
+                    bill.add_version("As Introduced", intro_version_url)
+
+                    comm_version = details_root.xpath('string(//cmtesub_other)').replace("../../../../", "")
+                    if comm_version.find("documents") != -1:
+                        comm_version_url = "http://billstatus.ls.state.ms.us/" + comm_version
+                        bill.add_version("Committee Substitute", comm_version_url)
+
+                    passed_version = details_root.xpath('string(//passed_other)').replace("../../../../", "")
+                    if passed_version.find("documents") != -1:
+                        passed_version_url = "http://billstatus.ls.state.ms.us/" + passed_version
+                        title = "As Passed the " + chamber
+                        bill.add_version(title, passed_version_url)                    
+ 
+                    asg_version = details_root.xpath('string(//asg_other)').replace("../../../../", "")
+                    if asg_version.find("documents") != -1:
+                        asg_version_url = "http://billstatus.ls.state.ms.us/" + asg_version
+                        bill.add_version("Approved by the Governor", asg_version_url)
+
 
                     #Actions
                     for action in details_root.xpath('//history/action'):
@@ -67,6 +96,13 @@ class MSBillScraper(BillScraper):
                         except:
                             actor = "Executive"
                         action = action_desc[10: len(action_desc)]
+
+                        if action.find("Veto") != -1:
+                            version_path = details_root.xpath("string(//veto_other)")
+                            version_path = version_path.replace("../../../../", "")
+                            version_url = "http://billstatus.ls.state.ms.us/" + version_path
+                            bill.add_version("Veto", version_url) 
+
                         bill.add_action(actor, action, date, action_num=action_num)                        
 
                         vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
