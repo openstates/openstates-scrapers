@@ -15,11 +15,11 @@ class NCBillScraper(BillScraper):
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
     lt_gov = None
 
-    def get_bill_info(self, session, sub, bill_id):
+    def get_bill_info(self, session, bill_id):
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/'\
             'BillLookUp/BillLookUp.pl?bPrintable=true'\
             '&Session=%s&BillID=%s&votesToView=all' % (
-            session[0:4] + sub, bill_id)
+            session, bill_id)
 
         # parse the bill data page, finding the latest html text
         if bill_id[0] == 'H':
@@ -35,7 +35,7 @@ class NCBillScraper(BillScraper):
                                        " 20px Arial; margin-top: 15px;"
                                        " margin-bottom: 8px;")[0].contents[0]
 
-        bill = Bill(session + sub, chamber, bill_id, bill_title)
+        bill = Bill(session, chamber, bill_id, bill_title)
         bill.add_source(bill_detail_url)
 
         # get all versions
@@ -126,22 +126,10 @@ class NCBillScraper(BillScraper):
             if len(cells) == 1:
                 # I can't find any examples of ties in the House,
                 # nor information on who would break them.
-                if not self.lt_gov and chamber == 'upper':
+                if chamber == 'upper':
                     full_name = soup.findAll(
                         'td', text=re.compile('Lieutenant Governor'))[0] \
                         .parent.findAll('span')[0].contents[0]
-                    (first_name, last_name, middle_name, suffix) = split_name(
-                        full_name)
-
-                    self.lt_gov = Person(full_name, first_name=first_name,
-                                         last_name=last_name,
-                                         middle_name=middle_name,
-                                         suffix=suffix)
-
-                    self.lt_gov.add_role('Lieutenant Governor',
-                                         bill['session'])
-
-                    self.save_person(self.lt_gov)
 
                 if 'VOTES YES' in self.flatten(cells[0]):
                     v['passed'] = True
@@ -183,10 +171,11 @@ class NCBillScraper(BillScraper):
         v.add_source(url)
         bill.add_vote(v)
 
-    def scrape_session(self, chamber, session, sub):
+    def scrape(self, chamber, session):
+        chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
         url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/'\
             'displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (
-            session[0:4] + sub, chamber)
+            session, chamber)
 
         data = self.urlopen(url)
         soup = self.soup_parser(data)
@@ -194,19 +183,7 @@ class NCBillScraper(BillScraper):
         for row in soup.findAll('table')[6].findAll('tr')[1:]:
             td = row.find('td')
             bill_id = td.a.contents[0]
-            self.get_bill_info(session, sub, bill_id)
-
-    def scrape(self, chamber, year):
-        chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
-
-        if int(year) % 2 != 1:
-            raise NoDataForPeriod(year)
-
-        session = "%d-%d" % (int(year), int(year) + 1)
-
-        self.scrape_session(chamber, session, '')
-        for sub in self.metadata['session_details'][session]['sub_sessions']:
-            self.scrape_session(chamber, session, sub[4:])
+            self.get_bill_info(session, bill_id)
 
     def flatten(self, tree):
 
