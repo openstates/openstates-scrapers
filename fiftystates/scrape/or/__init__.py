@@ -70,6 +70,5 @@ metadata = dict(
          'sessions': ['1995 Regular Session',
                       '1995 Special Session'],
          'start_year': 1995, 'end_year': 1995},
-         ]
-                    }
+         ]                  
 )
