@@ -1,0 +1,25 @@
+{"description": "legislator data",
+ "type": "object",
+ "properties": {
+    "_type": {"type": "string", "enum":["person"]},
+    "full_name": {"type": "string", "minLength": 1},
+    "state": {"type": "string", "minLength": 2, "maxLength": 2},
+    "first_name": {"type": "string"},
+    "middle_name": {"type": "string"},
+    "last_name": {"type": "string"},
+    "roles": {"type": "array", "items": {"type": "object", "properties": {
+        "chamber": {"type": "string", "enum": ["upper", "lower"],
+                "optional": true},
+        "term": {"type": "string"},
+        "role": {"type": "string"},
+        "district": {"type": "string", "optional": true},
+        "party": {"type": "string", "optional": true},
+        "start_date": {"type": ["string", "datetime", "null"]},
+        "end_date": {"type": ["string", "datetime", "null"]}
+    }}},
+    "sources": {"type": "array", "items": {"type": "object", "properties": {
+        "url": {"type": "string"},
+        "retrieved": {"type": "datetime"}
+    }}}
+ }
+}

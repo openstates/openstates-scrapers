@@ -7,6 +7,8 @@ import datetime
 import contextlib
 from optparse import make_option, OptionParser
 
+from fiftystates.scrape.validator import DatetimeValidator
+
 try:
     import json
 except ImportError:
@@ -50,16 +52,18 @@ class JSONDateEncoder(json.JSONEncoder):
 
 class Scraper(scrapelib.Scraper):
 
-    def __init__(self, metadata, no_cache=False, output_dir=None, **kwargs):
+    def __init__(self, metadata, no_cache=False, output_dir=None,
+                 strict_validation=None, **kwargs):
         """
         Create a new Scraper instance.
 
         :param metadata: metadata for this state
         :param no_cache: if True, will ignore any cached downloads
         :param output_dir: the Fifty State data directory to use
+        :param strict_validation: exit immediately if validation fails
         """
-        self.metadata = metadata
 
+        # configure underlying scrapelib object
         if no_cache:
             kwargs['cache_dir'] = None
         elif 'cache_dir' not in kwargs:
@@ -70,6 +74,10 @@ class Scraper(scrapelib.Scraper):
             kwargs['error_dir'] = getattr(settings, 'FIFTYSTATES_ERROR_DIR',
                                           None)
 
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = getattr(settings, 'SCRAPELIB_TIMEOUT',
+                                        600)
+
         if 'requests_per_minute' not in kwargs:
             kwargs['requests_per_minute'] = None
 
@@ -78,7 +86,12 @@ class Scraper(scrapelib.Scraper):
         if not hasattr(self, 'state'):
             raise Exception('Scrapers must have a state attribute')
 
+        self.metadata = metadata
         self.output_dir = output_dir
+
+        # validation
+        self.strict_validation = strict_validation
+        self.validator = DatetimeValidator()
 
         self.follow_robots = False
 
@@ -87,6 +100,22 @@ class Scraper(scrapelib.Scraper):
         self.log = self.logger.info
         self.debug = self.logger.debug
         self.warning = self.logger.warning
+
+    def validate_json(self, obj):
+        if not hasattr(self, '_schema'):
+            self._schema = self._get_schema()
+        try:
+            self.validator.validate(obj, self._schema)
+        except ValueError, ve:
+            self.warning(str(ve))
+            if self.strict_validation:
+                raise ve
+
+    def all_sessions(self):
+        sessions = []
+        for t in self.metadata['terms']:
+            sessions.extend(t['sessions'])
+        return sessions
 
     def validate_session(self, session):
         for t in self.metadata['terms']:

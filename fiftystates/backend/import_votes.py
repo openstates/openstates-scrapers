@@ -56,7 +56,7 @@ def import_votes(state, data_dir):
         else:
             bill['votes'].append(data)
 
-        db.bills.save(bill)
+        db.bills.save(bill, safe=True)
 
 
 if __name__ == '__main__':

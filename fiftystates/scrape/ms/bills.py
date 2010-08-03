@@ -3,6 +3,7 @@ from fiftystates.scrape.ms.utils import chamber_name, parse_ftp_listing
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import VoteScraper, Vote
 from fiftystates.scrape.utils import convert_pdf
+from datetime import datetime
 import lxml.etree
 import re
 
@@ -19,7 +20,6 @@ class MSBillScraper(BillScraper):
         url = 'http://billstatus.ls.state.ms.us/%s/pdf/all_measures/allmsrs.xml' % session
 
         with self.urlopen(url) as bill_dir_page:
-           # bill_dir_page = bill_dir_page.encode('ascii', 'ignore')
             root = lxml.etree.fromstring(bill_dir_page, lxml.etree.HTMLParser())
             for mr in root.xpath('//lastaction/msrgroup'):
                 bill_id = mr.xpath('string(measure)').replace(" ", "")
@@ -39,34 +39,39 @@ class MSBillScraper(BillScraper):
                     bill = Bill(session, chamber, bill_id, title, longtitle = longtitle)
 
                     #sponsors
-                    main_sponsor = details_root.xpath('string(//p_name)')
+                    main_sponsor = details_root.xpath('string(//p_name)').split()[0]
                     main_sponsor_link = details_root.xpath('string(//p_link)').replace(" ", "_")
-                    main_sponsor_url =  'http://billstatus.ls.state.ms.us/2010/pdf/House_authors/%s.xml' % main_sponsor_link
+                    main_sponsor_url =  'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, main_sponsor_link)
                     type = "Primary sponsor"
                     bill.add_sponsor(type, main_sponsor, main_sponsor_url = main_sponsor_url)
                     for author in details_root.xpath('//authors/additional'):
                         leg = author.xpath('string(co_name)').replace(" ", "_")
-                        leg_url = 'http://billstatus.ls.state.ms.us/2010/pdf/House_authors/%s.xml' % leg
+                        leg_url = 'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, leg)
                         type = "additional sponsor"
                         bill.add_sponsor(type, leg, leg_url=leg_url)
 
                     #Actions
                     for action in details_root.xpath('//history/action'):
-                        action_num  = action.xpath('string(act_number)')
+                        action_num  = action.xpath('string(act_number)').strip()
+                        action_num = int(action_num)
                         action_desc = action.xpath('string(act_desc)')
                         act_vote = action.xpath('string(act_vote)').replace("../../../..", "")
-                        date = action_desc.split()[0] + "/" + session
-                        actor = action_desc.split()[1][1]
-                        if actor == "H":
-                            actor = "House of Representatives"
-                        else:
-                            actor = "Senate"
+                        date = action_desc.split()[0] + "/" + session[0:4]
+                        date = datetime.strptime(date, "%m/%d/%Y")
+                        try:
+                            actor = action_desc.split()[2][1]
+                            if actor == "H":
+                                actor = "lower"
+                            else:
+                                actor = "upper"
+                        except:
+                            actor = "Executive"
                         action = action_desc[10: len(action_desc)]
                         bill.add_action(actor, action, date, action_num=action_num)                        
 
                         vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
                         if vote_url != "http://billstatus.ls.state.ms.us":
-                            vote =self.scrape_votes(vote_url, action, date, chamber)
+                            vote =self.scrape_votes(vote_url, action, date, actor)
                             bill.add_vote(vote)
                     self.save_bill(bill)
 
@@ -88,18 +93,31 @@ class MSBillScraper(BillScraper):
         no_votes = []
         other_votes = []
         for num in range(yea_mark, end_mark):
-            name = split_text[num].replace(" ", "")
+            name = split_text[num]
             name = name.replace("\n", "")
-            if nays == False and other == False and name != "Total" and name != "Nays" and not re.match("\d{1,2}\.", name) and len(name) > 1:
+
+            if name.find("(") != -1:
+                if len(name.split()) == 2:
+                    name = name.split()[0]
+                if len(name.split()) == 3:
+                    name =  name.split()[0] + " " + name.split()[1]
+                
+            if len(name) > 0 and name[0] == " ":
+                name = name[1: len(name)]
+
+            if len(name.split()) > 3:
+                name = name.replace(" ", "")
+
+            if self.check_name(name, nays, other) == 1:
                 yes_votes.append(name)
-            elif nays == True and other == False and name != "Total" and name != "Absentorthosenotvoting" and not re.match("\d{1,2}\.", name) and len(name) > 1:
-                 no_votes.append(name)
-            elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name) and len(name) > 1:
+            elif self.check_name(name, nays, other) == 2:
+                no_votes.append(name)
+            elif self.check_name(name, nays, other) == 3:
                 other_votes.append(name)
             else:
                 if name == "Nays":
                     nays = True
-                if name == "Absentorthosenotvoting":
+                if name.find("Absent") != -1:
                     nays = False
                     other = True
         yes_count = len(yes_votes)
@@ -110,3 +128,16 @@ class MSBillScraper(BillScraper):
         vote['no_votes'] = no_votes
         vote['other_votes'] = other_votes
         return vote
+
+    def check_name(self, name, nays, other):
+
+        if nays == False and other == False and name != "Total" and name != "Nays" and not re.match("\d{1,2}\.", name) and len(name) > 1:
+            name_type = 1
+        elif nays == True and other == False and name != "Total" and name.find("Absentor") == -1 and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
+            name_type = 2
+        elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
+            name_type = 3
+        else:
+            name_type = 0
+
+        return name_type

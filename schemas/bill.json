@@ -1,0 +1,56 @@
+{"description": "bill data",
+ "type": "object",
+ "properties": {
+    "_type": {"type": "string", "enum":["bill"]},
+    "state": {"type": "string", "minLength": 2, "maxLength": 2},
+    "session": {"type": "string"},
+    "chamber": {"type": "string", "enum": ["upper", "lower"]},
+    "bill_id": {"type": "string"},
+    "title": {"type": "string"},
+    "versions": {"type": "array", "items": {"type": "object", "properties": {
+        "name": {"type": "string"},
+        "url": {"type": "string"}
+    }}},
+    "documents": {"type": "array", "items": {"type": "object", "properties": {
+        "name": {"type": "string"},
+        "url": {"type": "string"}
+    }}},
+    "sponsors": {"type": "array", "items": {"type": "object", "properties": {
+        "type": {"type": "string"},
+        "name": {"type": "string"}
+    }}},
+    "actions": {"type": "array", "items": {"type": "object", "properties": {
+        "action": {"type": "string"},
+        "actor": {"type": "string"},
+        "date": {"type": "datetime"},
+        "type": {"type": "array", "items": {"type": "string", "enum":
+            ["bill:introduced", "bill:passed", "bill:failed", "bill:signed",
+             "amendment:introduced", "amendment:passed", "amendment:failed",
+             "amendment:amended", "amendment:withdrawn", "committee:referred",
+             "committee:passed", "committee:passed:favorable",
+             "committee:passed:unfavorable", "veto", "veto:line-item", "other"]
+             }}
+    }}},
+    "votes": {"type": "array", "items": {"type": "object", "properties": {
+        "_type": {"type": "string", "enum":["vote"]},
+        "chamber": {"type": "string", "enum": ["upper", "lower"]},
+        "date": {"type": "datetime"},
+        "motion": {"type": "string"},
+        "passed": {"type": "boolean"},
+        "yes_count": {"type": "integer", "minimum": 0},
+        "yes_votes": {"type": "array", "items": {"type": "string"}},
+        "no_count": {"type": "integer", "minimum": 0},
+        "no_votes": {"type": "array", "items": {"type": "string"}},
+        "other_count": {"type": "integer", "minimum": 0},
+        "other_votes": {"type": "array", "items": {"type": "string"}},
+        "sources": {"type": "array", "items": {"type": "object", "properties": {
+            "url": {"type": "string"},
+            "retrieved": {"type": "datetime"}
+        }}}
+    }}},
+    "sources": {"type": "array", "items": {"type": "object", "properties": {
+        "url": {"type": "string"},
+        "retrieved": {"type": "datetime"}
+    }}}
+ }
+}

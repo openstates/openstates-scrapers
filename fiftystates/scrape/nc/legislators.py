@@ -8,9 +8,7 @@ class NCLegislatorScraper(LegislatorScraper):
     soup_parser = html5lib.HTMLParser(
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
-    def scrape(self, chamber, year):
-        session = "%d-%d" % (int(year), int(year) + 1)
-
+    def scrape(self, chamber, term):
         url = "http://www.ncga.state.nc.us/gascripts/members/"\
             "memberList.pl?sChamber="
 
@@ -19,7 +17,7 @@ class NCLegislatorScraper(LegislatorScraper):
         else:
             url += 'Senate'
 
-        with self.urlopen(url) as (resp, data):
+        with self.urlopen(url) as data:
             leg_list = self.soup_parser(data)
             leg_table = leg_list.find('div', id='mainBody').find('table')
 
@@ -36,7 +34,7 @@ class NCLegislatorScraper(LegislatorScraper):
                 (first_name, last_name, middle_name, suffix) = split_name(
                     full_name)
 
-                legislator = Legislator(session, chamber, district, full_name,
+                legislator = Legislator(term, chamber, district, full_name,
                                         first_name, last_name, middle_name,
                                         party, suffix=suffix)
                 legislator.add_source(url)

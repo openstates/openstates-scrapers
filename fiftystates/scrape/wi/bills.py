@@ -14,7 +14,7 @@ class WIBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         if 'Regular' in session:
-            self.scrape_regular(chamber, year=session[0:4])
+            self.scrape_regular(chamber, session)
         else:
             raise NoDataForPeriod(session)
 
@@ -34,9 +34,10 @@ class WIBillScraper(BillScraper):
         /2001/my1: May 2001 Special Session
         """
 
-    def scrape_regular(self, chamber, year):
+    def scrape_regular(self, chamber, session):
         types = {'lower': ['ab', 'ajr', 'ar', 'ap'],
                  'upper': ['sb', 'sjr', 'sr', 'sp']}
+        year = session[0:4]
 
         for t in types[chamber]:
             url = 'http://www.legis.state.wi.us/%s/data/%s_list.html' % (year,
@@ -52,9 +53,7 @@ class WIBillScraper(BillScraper):
                         bill_id = link.text
                         link = link.get('href')
                         title = row.xpath('td[2]/text()')[0][13:]
-                        bill = Bill(year, chamber, bill_id, title)
-                        self.log('Bill(%s, %s, %s, %s)' % (year, chamber,
-                                                           bill_id, title))
+                        bill = Bill(session, chamber, bill_id, title)
                         self.scrape_bill_history(bill, link)
             except scrapelib.HTTPError, e:
                 if e.response.code == 404:

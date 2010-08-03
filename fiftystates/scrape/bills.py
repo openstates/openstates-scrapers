@@ -10,6 +10,14 @@ from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
 
 
 class BillScraper(Scraper):
+
+    def _get_schema(self):
+        schema_path = os.path.join(os.path.split(__file__)[0],
+                                   '../../schemas/bill.json')
+        schema = json.load(open(schema_path))
+        schema['properties']['session']['enum'] = self.all_sessions()
+        return schema
+
     def scrape(self, chamber, year):
         """
         Grab all the bills for a given chamber and year. Must be
@@ -29,6 +37,7 @@ class BillScraper(Scraper):
                                           bill['bill_id']))
 
         bill['state'] = self.state
+        self.validate_json(bill)
 
         filename = "%s_%s_%s.json" % (bill['session'], bill['chamber'],
                                       bill['bill_id'])

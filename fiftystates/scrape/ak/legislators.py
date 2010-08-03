@@ -1,68 +1,53 @@
 import re
-import datetime as dt
+import datetime
 
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
-import html5lib
+import lxml.html
 
 
 class AKLegislatorScraper(LegislatorScraper):
     state = 'ak'
-    soup_parser = html5lib.HTMLParser(
-        tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
-    def scrape(self, chamber, year):
-        # Data available for 1993 on
-        if int(year) < 1993 or int(year) > dt.date.today().year:
-            raise NoDataForPeriod(year)
-
-        # Expect first year of session (odd)
-        if int(year) % 2 != 1:
-            raise NoDataForPeriod(year)
-
+    def scrape(self, chamber, term):
         if chamber == 'upper':
             chamber_abbr = 'S'
         else:
             chamber_abbr = 'H'
 
-        session = str(18 + ((int(year) - 1993) / 2))
+        url = ("http://www.legis.state.ak.us/"
+               "basis/commbr_info.asp?session=%s" % term)
 
-        leg_list_url = "http://www.legis.state.ak.us/"\
-            "basis/commbr_info.asp?session=%s" % session
-        leg_list = self.soup_parser(self.urlopen(leg_list_url))
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
-        leg_re = "get_mbr_info.asp\?member=.+&house=%s&session=%s" % (
-            chamber_abbr, session)
-        links = leg_list.findAll(href=re.compile(leg_re))
+            for link in page.xpath("//a[contains(@href, 'get_mbr_info')]"):
+                if ("house=%s" % chamber_abbr) not in link.attrib['href']:
+                    continue
 
-        for link in links:
-            member_url = "http://www.legis.state.ak.us/basis/" + link['href']
-            member_page = self.soup_parser(self.urlopen(member_url))
+                self.scrape_legislator(chamber, term, link.attrib['href'])
 
-            if member_page.find('td', text=re.compile('Resigned')):
-                # Need a better way to handle this than just dropping
-                continue
+    def scrape_legislator(self, chamber, term, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
 
-            full_name = member_page.findAll('h3')[1].contents[0]
-            full_name = ' '.join(full_name.split(' ')[1:])
-            full_name = re.sub('\s+', ' ', full_name).strip()
+            name = page.xpath('//h3')[1].text
+            name = re.sub(r'\s+', ' ', name)
+            name = name.replace('Senator', '').replace('Representative', '')
+            name = name.strip()
 
-            first_name = full_name.split(' ')[0]
-            last_name = full_name.split(' ')[-1]
-            middle_name = ' '.join(full_name.split(' ')[1:-1])
+            code = re.search(r'member=([A-Z]{3,3})&', url).group(1)
 
-            code = link['href'][24:27]
+            district = page.xpath("//td[starts-with(text(), 'District:')]")
+            district = district[0].text.replace("District:", "").strip()
 
-            district = member_page.find(text=re.compile("District:"))
-            district = district.strip().split(' ')[-1]
+            party = page.xpath("//td[starts-with(text(), 'Party:')]")
+            party = party[0].text.replace("Party:", "").strip()
 
-            party = member_page.find(text=re.compile("Party: "))
-            party = ' '.join(party.split(' ')[1:])
+            leg = Legislator(term, chamber, district, name, party=party,
+                             code=code)
+            leg.add_source(url)
 
-            leg = Legislator(session, chamber, district,
-                             full_name, first_name,
-                             last_name, middle_name,
-                             party, code=code)
-            leg.add_source(member_url)
             self.save_legislator(leg)

@@ -1,66 +1,59 @@
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
-from BeautifulSoup import BeautifulSoup
+import lxml.html
 
 
 class VTLegislatorScraper(LegislatorScraper):
     state = 'vt'
 
-    def scrape(self, chamber, year):
-        if year != '2009':
-            raise NoDataForYear(year)
-        term = "%s-%d" % (year, int(year) + 1)
+    def scrape(self, chamber, term):
+        if term != '2009-2010':
+            raise NoDataForPeriod(term)
 
         # What Vermont claims are Word and Excel files are actually
         # just HTML tables
         # What Vermont claims is a CSV file is actually one row of comma
         # separated values followed by a ColdFusion error.
-        leg_url = "http://www.leg.state.vt.us/legdir/"\
-            "memberdata.cfm/memberdata.doc?FileType=W"
-        leg_table = BeautifulSoup(self.urlopen(leg_url))
+        url = ("http://www.leg.state.vt.us/legdir/"
+               "memberdata.cfm/memberdata.doc?FileType=W")
 
-        for tr in leg_table.findAll('tr')[1:]:
-            leg_cham = tr.findAll('td')[3].contents[0]
-            if leg_cham == 'H' and chamber == 'upper':
-                continue
-            if leg_cham == 'S' and chamber == 'lower':
-                continue
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
 
-            district = tr.findAll('td')[5].contents[0]
-            district = district.replace(' District', '').strip()
-            first = tr.findAll('td')[6].contents[0]
+            for tr in page.xpath("//tr")[1:]:
+                row_chamber = tr.xpath("string(td[4])")
+                if row_chamber == 'S' and chamber == 'lower':
+                    continue
+                elif row_chamber == 'H' and chamber == 'upper':
+                    continue
 
-            middle = tr.findAll('td')[7]
-            if len(middle.contents) == 0:
-                middle = ''
-            else:
-                middle = middle.contents[0].strip()
+                district = tr.xpath("string(td[6])")
+                district = district.replace('District', '').strip()
 
-            last = tr.findAll('td')[8].contents[0]
+                first_name = tr.xpath("string(td[7])")
+                middle_name = tr.xpath("string(td[8])")
+                last_name = tr.xpath("string(td[9])")
 
-            if len(middle) == 0:
-                full = "%s, %s" % (last, first)
-            else:
-                full = "%s, %s %s." % (last, first, middle)
+                if middle_name:
+                    full_name = "%s %s %s" % (first_name, middle_name,
+                                              last_name)
+                else:
+                    full_name = "%s %s" % (first_name, last_name)
 
-            official_email = tr.findAll('td')[9]
-            if len(official_email.contents) == 0:
-                official_email = ''
-            else:
-                official_email = official_email.contents[0]
+                email = tr.xpath("string(td[10])")
 
-            party = tr.findAll('td')[4].contents[0]
-            if party == 'D':
-                party = 'Democrat'
-            elif party == 'R':
-                party = 'Republican'
-            elif party == 'I':
-                party = 'Independent'
-            elif party == 'P':
-                party = 'Progressive'
+                party = tr.xpath("string(td[5])")
+                party = {'D': 'Democrat',
+                         'R': 'Republican',
+                         'I': 'Independent',
+                         'P': 'Progressive'}.get(party, party)
 
-            leg = Legislator(term, chamber, district, full,
-                             first, last, middle, party,
-                             official_email=official_email)
-            leg.add_source(leg_url)
-            self.save_legislator(leg)
+                leg = Legislator(term, chamber, district, full_name,
+                                 first_name=first_name,
+                                 middle_name=middle_name,
+                                 last_name=last_name,
+                                 party=party,
+                                 email=email)
+                leg.add_source(url)
+                self.save_legislator(leg)
