@@ -126,22 +126,10 @@ class NCBillScraper(BillScraper):
             if len(cells) == 1:
                 # I can't find any examples of ties in the House,
                 # nor information on who would break them.
-                if not self.lt_gov and chamber == 'upper':
+                if chamber == 'upper':
                     full_name = soup.findAll(
                         'td', text=re.compile('Lieutenant Governor'))[0] \
                         .parent.findAll('span')[0].contents[0]
-                    (first_name, last_name, middle_name, suffix) = split_name(
-                        full_name)
-
-                    self.lt_gov = Person(full_name, first_name=first_name,
-                                         last_name=last_name,
-                                         middle_name=middle_name,
-                                         suffix=suffix)
-
-                    self.lt_gov.add_role('Lieutenant Governor',
-                                         bill['session'])
-
-                    self.save_person(self.lt_gov)
 
                 if 'VOTES YES' in self.flatten(cells[0]):
                     v['passed'] = True
