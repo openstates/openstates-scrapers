@@ -52,7 +52,6 @@ class MSBillScraper(BillScraper):
                         bill.add_sponsor(type, leg, leg_url=leg_url)
 
 
-                    #FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
                     #Versions 
                     curr_version = details_root.xpath('string(//current_other)').replace("../../../../", "")
                     curr_version_url = "http://billstatus.ls.state.ms.us/" + curr_version
@@ -101,7 +100,7 @@ class MSBillScraper(BillScraper):
                             version_path = details_root.xpath("string(//veto_other)")
                             version_path = version_path.replace("../../../../", "")
                             version_url = "http://billstatus.ls.state.ms.us/" + version_path
-                            bill.add_version("Veto", version_url) 
+                            bill.add_document("Veto", version_url) 
 
                         bill.add_action(actor, action, date, action_num=action_num)                        
 
