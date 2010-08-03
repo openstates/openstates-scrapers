@@ -19,30 +19,58 @@ metadata = dict(
     lower_chamber_title='Representative',
     upper_chamber_term=4,
     lower_chamber_term=2,
-    sessions= map(str, xrange(1997, 2010)),
-    session_details={'1997' : {'years': [1997], \
-                               'sub_sessions': []}, \
-                     '1999' : {'years': [1999], \
-                               'sub_sessions': []}, \
-                     '2001' : {'years': [2001], \
-                               'sub_sessions': ["First Special Session", \
-                                                "Second Special Session", \
-                                                ]}, \
-                     '2002' : {'years': [2002], \
-                               'sub_sessions': ["First Special Session"]}, \
-                     '2003' : {'years': [2003], \
-                               'sub_sessions': []}, \
-                     '2004' : {'years': [2004], \
-                               'sub_sessions': []}, \
-                     '2005' : {'years': [2005], \
-                               'sub_sessions': []}, \
-                     '2006' : {'years': [2006], \
-                               'sub_sessions': ["First Special Session"]}, \
-                     '2007' : {'years': [2007], \
-                               'sub_sessions': []}, \
-                     '2008 Special Session' : {'years': [2008], \
-                               'sub_sessions': []}, \
-                     '2009' : {'years': [2009], \
-                               'sub_sessions': []}                             
-                    }
+    terms = [
+        {'name': '2009',
+         'sessions': ['2009 Regular Session'],
+         'start_year': 2009, 'end_year': 2009},
+        {'name': '2008',
+         'sessions': ['2008 Regular Session',
+                      '2008 Special Session'],
+         'start_year': 2008, 'end_year': 2008},
+         {'name': '2007',
+         'sessions': ['2007 Regular Session'],
+         'start_year': 2007, 'end_year': 2007},
+         {'name': '2006',
+         'sessions': ['2006 Regular Session'],
+         'start_year': 2006, 'end_year': 2006},
+         {'name': '2005',
+         'sessions': ['2005 Special Session'],
+         'start_year': 2005, 'end_year': 2005},
+         {'name': '2004',
+         'sessions': ['2004 Regular Session'],
+         'start_year': 2004, 'end_year': 2004},
+         {'name': '2007',
+         'sessions': ['2007 Regular Session'],
+         'start_year': 2007, 'end_year': 2007},
+         {'name': '2005',
+         'sessions': ['2005 Regular Session'],
+         'start_year': 2005, 'end_year': 2005},
+         {'name': '2004',
+         'sessions': ['2004 Regular Session'],
+         'start_year': 2004, 'end_year': 2004},
+         {'name': '2003',
+         'sessions': ['2003 Regular Session'],
+         'start_year': 2003, 'end_year': 2003},
+         {'name': '2002',
+         'sessions': ['2002 Regular Session',
+                      '2002 Special Session'],
+         'start_year': 2002, 'end_year': 2002},
+         {'name': '2001',
+         'sessions': ['2001 Regular Session',
+                      '2001 First Special Session',
+                      '2001 Second Special Session'],
+         'start_year': 2001, 'end_year': 2001},
+         {'name': '2000',
+         'sessions': ['2000 Regular Session'],
+         'start_year': 2000, 'end_year': 2000},
+          {'name': '1999',
+         'sessions': ['1999 Regular Session'],
+         'start_year': 1999, 'end_year': 1999},
+         {'name': '1998',
+         'sessions': ['1998 Regular Session'],
+         'start_year': 1998, 'end_year': 1998},
+         {'name': '1997',
+         'sessions': ['1997 Regular Session'],
+         'start_year': 1997, 'end_year': 1997},
+         ]                  
 )
