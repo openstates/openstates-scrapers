@@ -1,6 +1,6 @@
-
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
+
 
 class NCLegislatorScraper(LegislatorScraper):
     state = 'nc'

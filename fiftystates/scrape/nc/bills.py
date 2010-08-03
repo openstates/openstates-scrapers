@@ -3,17 +3,13 @@ import re
 
 import html5lib
 
-from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import Vote
-from fiftystates.scrape.nc.utils import split_name
 
 class NCBillScraper(BillScraper):
 
     state = 'nc'
     soup_parser = html5lib.HTMLParser(
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
-    lt_gov = None
 
     def get_bill_info(self, session, bill_id):
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/'\
@@ -84,92 +80,7 @@ class NCBillScraper(BillScraper):
 
             bill.add_action(actor, action, act_date)
 
-        for vote in bill_soup.findAll('a', href=re.compile(
-                'RollCallVoteTranscript')):
-            self.get_vote(bill, vote['href'])
-
         self.save_bill(bill)
-
-    def get_vote(self, bill, url):
-        url = 'http://www.ncga.state.nc.us' + url + '&bPrintable=true'
-        chamber = {'H': 'lower', 'S': 'upper'}[
-            re.findall('sChamber=(\w)', url)[0]]
-
-        data = self.urlopen(url)
-        soup = self.soup_parser(data)
-
-        motion = soup.findAll('a', href=re.compile('BillLookUp\.pl'))[0] \
-                     .findParents('tr', limit=1)[0].findAll('td')[1] \
-                     .font.contents[-1]
-
-        vote_time = soup.findAll('b', text='Time:')[0].next.strip()
-        vote_time = dt.datetime.strptime(vote_time, '%b %d %Y  %I:%M%p')
-
-        vote_mess = soup.findAll('td', text=re.compile('Total Votes:'))[0]
-        (yeas, noes, nots, absent, excused) = map(lambda x: int(x),
-                                                  re.findall(
-                'Ayes: (\d+)\s+Noes: (\d+)\s+Not: (\d+)\s+Exc. '
-                'Absent: (\d+)\s+Exc. Vote: (\d+)', vote_mess, re.U)[0])
-
-        # chamber, date, motion, passed, yes_count, no_count, other_count
-        v = Vote(chamber, vote_time, motion, (yeas > noes),
-                 yeas, noes, nots + absent + excused)
-
-        # eh, it's easier to just get table[2] for this..
-        vote_table = soup.findAll('table')[2]
-
-        for row in vote_table.findAll('tr'):
-            if 'Democrat' in self.flatten(row):
-                continue
-
-            cells = row.findAll('td')
-            if len(cells) == 1:
-                # I can't find any examples of ties in the House,
-                # nor information on who would break them.
-                if chamber == 'upper':
-                    full_name = soup.findAll(
-                        'td', text=re.compile('Lieutenant Governor'))[0] \
-                        .parent.findAll('span')[0].contents[0]
-
-                if 'VOTES YES' in self.flatten(cells[0]):
-                    v['passed'] = True
-                    v.yes(full_name)
-                else:
-                    v['passed'] = False
-                    v.no(full_name)
-                continue
-            elif len(cells) == 2:
-                vote_type, a = cells
-                bunch = [self.flatten(a)]
-            elif len(cells) == 3:
-                vote_type, d, r = cells
-                bunch = [self.flatten(d), self.flatten(r)]
-            else:
-                continue
-
-            # why doesn't .string work? ... bleh.
-            vote_type = vote_type.font.b.contents[0]
-
-            if 'Ayes' in vote_type:
-                adder = v.yes
-            elif 'Noes' in vote_type:
-                adder = v.no
-            else:
-                adder = v.other
-
-            for party in bunch:
-                party = map(lambda x: x.replace(
-                        ' (SPEAKER)', ''), party[
-                        (party.index(':') + 1):].split(';'))
-
-                if party[0] == 'None':
-                    party = []
-
-                for x in party:
-                    adder(x)
-
-        v.add_source(url)
-        bill.add_vote(v)
 
     def scrape(self, chamber, session):
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
@@ -197,5 +108,4 @@ class NCBillScraper(BillScraper):
             return s
 
         return ''.join(squish(tree)).strip()
-
 
