@@ -24,17 +24,17 @@ class PRLegislatorScraper(LegislatorScraper):
             #self.show_error(url, body)
             raise
 
-    def scrape(self, chamber, term):
-        # Data available for this term only
-        if term != '2010-2011':
-            raise NoDataForPeriod(term)
+    def scrape(self, chamber, session):
+        # Data available for this session only
+        if session != '2010-2011':
+            raise NoDataForPeriod(session)
         
         if chamber == "upper":
-            self.scrape_senate(term)
+            self.scrape_senate(session)
         elif chamber == "lower":
-            self.scrape_house(term)
+            self.scrape_house(session)
                     
-    def scrape_senate(self, term):
+    def scrape_senate(self, session):
         legislator_pages_dir = legislators_url('upper')
         
         for counter, leg_page_dir in enumerate(legislator_pages_dir):
@@ -61,14 +61,14 @@ class PRLegislatorScraper(LegislatorScraper):
                     else:
                         dist = counter
                    
-                    leg = Legislator(term, 'upper', dist, name, \
+                    leg = Legislator(session, 'upper', dist, name, \
                                      party = leg_party, head_shot = pic_link, \
                                      phone = leg_phone_no, email = leg_email)
                     leg.add_source(link)
                     leg.add_source(leg_page_dir)
                     self.save_legislator(leg)
     
-    def scrape_house(self, term):
+    def scrape_house(self, session):
         legislator_pages_dir = legislators_url('lower')
         
         with self.lxml_context(legislator_pages_dir) as leg_page:
@@ -93,7 +93,7 @@ class PRLegislatorScraper(LegislatorScraper):
                     pic_link_part = imgs[0].iterlinks().next()[2]
                     pic_link = 'http://www.camaraderepresentantes.org/' + pic_link_part
                     
-                    leg = Legislator(term, 'lower', dist, name, \
+                    leg = Legislator(session, 'lower', dist, name, \
                                      party = leg_party, head_shot = pic_link)
                     leg.add_source(link)
                     leg.add_source(legislator_pages_dir)
@@ -109,7 +109,7 @@ class PRLegislatorScraper(LegislatorScraper):
                     name = name_party[:-4]
                     leg_party = match.group(0)                                     
                         
-                    leg = Legislator(term, 'lower', 'at-large', name, \
+                    leg = Legislator(session, 'lower', 'at-large', name, \
                                      party = leg_party, head_shot = pic_link)
                     
                     leg.add_source(link)

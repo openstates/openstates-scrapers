@@ -25,7 +25,7 @@ class PRBillScraper(BillScraper):
             #self.show_error(url, body)
             raise
                     
-    def scrape(self, chamber, year):    
+    def scrape(self, chamber, session):    
         bill_search_url = 'http://www.camaraderepresentantes.org/cr_buscar.asp'
         bill_types = {'Project':'P', 'Resolution':'R', \
                              'Joint Resolution':'RC', \
