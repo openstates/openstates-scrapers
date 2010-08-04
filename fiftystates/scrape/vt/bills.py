@@ -149,6 +149,15 @@ class VTBillScraper(BillScraper):
             other_count = int(info_row.xpath("string(td[5])"))
             passed = info_row.xpath("string(td[6])") == 'Pass'
 
+            if motion == 'Shall the bill pass?':
+                type = 'passage'
+            elif motion == 'Shall the bill be read the third time?':
+                type = 'reading:3'
+            elif 'be amended as' in motion:
+                type = 'amendment'
+            else:
+                type = 'other'
+
             vote = Vote(chamber, date, motion, passed,
                         yes_count, no_count, other_count)
             vote.add_source(url)
