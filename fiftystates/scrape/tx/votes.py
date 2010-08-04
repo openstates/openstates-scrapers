@@ -80,6 +80,13 @@ def get_motion(match):
         return 'to ' + match.group('to')
 
 
+def get_type(motion):
+    if motion == 'final passage':
+        return 'passage'
+    else:
+        return 'other'
+
+
 def votes(root):
     for vote in record_votes(root):
         yield vote
@@ -111,21 +118,17 @@ def record_votes(root):
                 continue
 
             motion = get_motion(m)
-
-            if motion == 'final passage':
-                type = 'passage'
-            else:
-                type = 'other'
+            type = get_type(motion)
 
             vote = Vote(None, None, motion, True,
-                        yes_count, no_count, other_count,
-                        type=type)
+                        yes_count, no_count, other_count)
             vote['bill_id'] = bill_id
             vote['bill_chamber'] = bill_chamber
             vote['session'] = '81'
             vote['method'] = 'record'
             vote['record'] = m.group('record')
             vote['filename'] = m.group('record')
+            vote['type'] = type
 
             for name in names(el):
                 vote.yes(name)
@@ -157,7 +160,7 @@ def viva_voce_votes(root):
                       '(\W+to\W+(?P<to>engrossment|third\W+reading))?)\W+'
                       'by\W+a\W+viva\W+voce\W+vote', text)
         if m:
-            type = get_type(m)
+            motion = get_motion(m)
 
             # No identifier, generate our own
             record = str(uuid.uuid1())
@@ -170,7 +173,7 @@ def viva_voce_votes(root):
             else:
                 continue
 
-            vote = Vote(None, None, type, True, 0, 0, 0)
+            vote = Vote(None, None, motion, True, 0, 0, 0)
             vote['bill_id'] = bill_id
             vote['bill_chamber'] = bill_chamber
             vote['session'] = '81'
@@ -204,15 +207,18 @@ def viva_voce_votes(root):
             else:
                 continue
 
-            type = get_type(m)
+            motion = get_motion(m)
+            type = get_type(motion)
+
             record = str(uuid.uuid1())
-            vote = Vote(None, None, type, True, 0, 0, 0)
+            vote = Vote(None, None, motion, True, 0, 0, 0)
             vote['bill_id'] = bill_id
             vote['bill_chamber'] = bill_chamber
             vote['session'] = '81'
             vote['method'] = 'viva voce'
             vote['filename'] = record
             vote['record'] = record
+            vote['type'] = type
 
             yield vote
             continue
