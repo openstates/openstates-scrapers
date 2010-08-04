@@ -191,10 +191,20 @@ class LABillScraper(BillScraper):
             return
 
         chamber = {'Senate': 'upper', 'House': 'lower'}[match.group(1)]
-        motion = match.group(2)
+        motion = match.group(2).strip()
+
+        if motion.startswith('FINAL PASSAGE'):
+            type = 'passage'
+        elif motion.startswith('AMENDMENT'):
+            type = 'amendment'
+        elif 'ON 3RD READINT' in motion:
+            type = 'reading:3'
+        else:
+            type = 'other'
 
         vote = Vote(chamber, None, motion, None,
                     None, None, None)
+        vote['type'] = type
         vote.add_source(url)
 
         with self.urlopen(url) as text:
