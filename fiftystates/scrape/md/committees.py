@@ -33,5 +33,12 @@ class MDCommitteeScraper(CommitteeScraper):
                         cur_com = Committee(chamber, committee_name, l.text)
                         cur_com.add_source(com_url)
                     elif 'html/msa' in l.get('href'):
-                        cur_com.add_member(l.text)
+                        prev = l.getprevious()
+                        name = l.text
+                        if name.endswith(','):
+                            name = name[:-1]
+                        if prev is not None and prev.tag == 'i':
+                            cur_com.add_member(name, 'ex-officio')
+                        else:
+                            cur_com.add_member(name)
                 self.save_committee(cur_com)
