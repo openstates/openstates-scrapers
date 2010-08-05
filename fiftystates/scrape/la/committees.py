@@ -59,6 +59,9 @@ class LACommitteeScraper(CommitteeScraper):
 
                 name = cells[0].xpath('string()').strip()
 
+                if name.startswith('Vacant'):
+                    continue
+
                 font = cells[1].xpath('font')[0]
                 committees = []
 
