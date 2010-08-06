@@ -80,6 +80,11 @@ class SDBillScraper(BillScraper):
                     atypes.append('amendment:introduced')
                     atypes.append('amendment:passed')
 
+                if 'Veto override, Passed' in action:
+                    atypes.append('veto:override:passed')
+                elif 'Veto override, Failed' in action:
+                    atypes.append('veto:override:failed')
+
                 match = re.match("First read in (Senate|House)", action)
                 if match:
                     if match.group(1) == 'Senate':
