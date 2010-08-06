@@ -111,8 +111,16 @@ class SDBillScraper(BillScraper):
 
             passed = yes_count > no_count
 
+            if motion.startswith('Do Pass'):
+                type = 'passage'
+            elif motion == 'Concurred in amendments':
+                type = 'amendment'
+            else:
+                type = 'other'
+
             vote = Vote(chamber, date, motion, passed, yes_count, no_count,
                         other_count)
+            vote['type'] = type
 
             if committee:
                 vote['committee'] = committee
