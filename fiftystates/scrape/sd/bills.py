@@ -111,7 +111,7 @@ class SDBillScraper(BillScraper):
 
             passed = yes_count > no_count
 
-            vote = Vote(chamber, None, motion, passed, yes_count, no_count,
+            vote = Vote(chamber, date, motion, passed, yes_count, no_count,
                         other_count)
 
             if committee:
