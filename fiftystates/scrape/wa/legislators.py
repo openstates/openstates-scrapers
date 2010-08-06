@@ -1,33 +1,19 @@
 from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from fiftystates.scrape.wa.utils import separate_name, legs_url, year_from_session
 
 import lxml.html
-import re, string, contextlib
+import re, contextlib
 
 class WALegislatorScraper(LegislatorScraper):
     state = 'wa'
     
-    def scrape(self, chamber, year):
-        if year != '2009':
-            raise NoDataForPeriod(year)
-        
-        if chamber == 'upper':
-            self.scrape_legislator_data("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx", 'upper')
-        else:
-            self.scrape_legislator_data("http://www.leg.wa.gov/house/representatives/Pages/default.aspx", 'lower')
-                       
     @contextlib.contextmanager
-    def lxml_context(self, url, sep=None, sep_after=True):
+    def lxml_context(self, url):
         try:
             body = self.urlopen(url)
         except:
-            body = self.urlopen("http://www.google.com")
-        
-        if sep != None: 
-            if sep_after == True:
-                before, itself, body = body.rpartition(sep)
-            else:
-                body, itself, after = body.rpartition(sep)    
+            body = self.urlopen("http://www.google.com") 
         
         elem = lxml.html.fromstring(body)
         
@@ -35,30 +21,16 @@ class WALegislatorScraper(LegislatorScraper):
             yield elem
         except:
             raise
+          
+    def scrape(self, chamber, session):
+        if year_from_session(session) != 2009:
+            raise NoDataForPeriod(session)
         
-    def separate_name(self, full_name):
-        separated_full_name = string.split(full_name, ' ')
-
-        if len(separated_full_name) < 2:
-            raise
-        elif len(separated_full_name) == 2:
-            first_name = separated_full_name[0]
-            last_name = separated_full_name[1]
-            middle_name = ''
-        elif len(separated_full_name) == 3:
-            first_name = separated_full_name[0]
-            last_name = separated_full_name[2]
-            middle_name = separated_full_name[1]
+        if chamber == 'upper':
+            self.scrape_legislator_data("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx", 'upper')
         else:
-            first_name = separated_full_name[0]
-            middle_name = separated_full_name[1]
-            last_name_list = separated_full_name[1:]
-            last_name = ""
-            for name in last_name_list:
-                last_name += name
-      
-        return full_name, first_name, middle_name, last_name 
-        
+            self.scrape_legislator_data("http://www.leg.wa.gov/house/representatives/Pages/default.aspx", 'lower')
+                       
     def scrape_legislator_name(self, senator_page):
         name_element = senator_page.get_element_by_id("ctl00_PlaceHolderMain_lblMemberName")
         name_text = name_element.text_content()
@@ -66,7 +38,7 @@ class WALegislatorScraper(LegislatorScraper):
         full_name = full_name.replace('Rep.', ' ')
         full_name = full_name.strip()
 
-        return self.separate_name(full_name)
+        return separate_name(full_name)
         
     def scrape_legislator_data(self, url, chamber):
         with self.lxml_context(url) as page:
@@ -74,14 +46,11 @@ class WALegislatorScraper(LegislatorScraper):
             legislators = legislator_table.cssselect('a')
             for legislator in legislators:
                 name = legislator.text_content()
-                full_name, first_name, middle_name, last_name = self.separate_name(name)
+                full_name, first_name, middle_name, last_name = separate_name(name)
                 name_for_url = last_name.lower()
                 name_for_url = re.sub("'", "", name_for_url)
         
-                if chamber == 'upper':
-                    legislator_page_url = "http://www.leg.wa.gov/senate/senators/Pages/" + name_for_url + ".aspx"
-                else: 
-                    legislator_page_url = "http://www.leg.wa.gov/house/representatives/Pages/" + name_for_url + ".aspx"
+                legislator_page_url = legs_url(chamber, name_for_url)
 
                 with self.lxml_context(legislator_page_url) as legislator_page:
                     try:
