@@ -47,8 +47,6 @@ def _classify_action(action):
 BASE_URL = "http://mlis.state.md.us"
 BILL_URL = BASE_URL + "/%s/billfile/%s%04d.htm" # year, session, bill_type, number
 
-MOTION_RE = re.compile(r"(?P<motion>[\w\s]+) \((?P<yeas>\d{1,3})-(?P<nays>\d{1,3})\)")
-
 class MDBillScraper(BillScraper):
     state = 'md'
 
@@ -178,10 +176,8 @@ class MDBillScraper(BillScraper):
         url = BILL_URL % (session_url, bill_type, number)
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
-            # title
-            # find <a name="Title">, get parent dt, get parent dl, then get dd within dl
-            title = doc.cssselect('a[name=Title]')[0] \
-                .getparent().getparent().cssselect('dd')[0].text.strip()
+            # find <a name="Title">, get parent dt, get parent dl, then dd n dl
+            title = doc.xpath('//a[@name="Title"][1]/../../dd[1]/text()')[0].strip()
 
             # create the bill object now that we have the title
             print "%s %d %s" % (bill_type, number, title)
