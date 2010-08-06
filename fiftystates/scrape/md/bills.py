@@ -126,25 +126,22 @@ class MDBillScraper(BillScraper):
                 vote_url = BASE_URL + href
                 with self.urlopen(vote_url) as vote_html:
                     vote_doc = lxml.html.fromstring(vote_html)
+
                     # motion
-                    for a in vote_doc.cssselect('a'):
-                         if 'motions' in a.get('href'):
-                            match = MOTION_RE.match(a.text)
-                            if match:
-                                motion = match.groupdict().get('motion', '').strip()
-                                params['passed'] = 'Passed' in motion or 'Adopted' in motion
-                                params['motion'] = motion
-                                break
-                    # ugh
-                    bs = vote_doc.cssselect('b')[:5]
-                    yeas = int(bs[0].text.split()[0])
-                    nays = int(bs[1].text.split()[0])
-                    excused = int(bs[2].text.split()[0])
-                    not_voting = int(bs[3].text.split()[0])
-                    absent = int(bs[4].text.split()[0])
+                    box = vote_doc.xpath('//td[@colspan=3]/font[@size=-1]/text()')
+                    params['motion'] = box[-1]
+
+                    # counts
+                    bs = vote_doc.xpath('//td[@width="20%"]/font/b/text()')
+                    yeas = int(bs[0].split()[0])
+                    nays = int(bs[1].split()[0])
+                    excused = int(bs[2].split()[0])
+                    not_voting = int(bs[3].split()[0])
+                    absent = int(bs[4].split()[0])
                     params['yes_count'] = yeas
                     params['no_count'] = nays
                     params['other_count'] = excused + not_voting + absent
+                    params['passed'] = yeas > nays
 
                     # date
                     # parse the following format: March 23, 2009 8:44 PM
