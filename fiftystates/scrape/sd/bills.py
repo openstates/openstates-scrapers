@@ -57,6 +57,29 @@ class SDBillScraper(BillScraper):
                 if action == 'Action':
                     continue
 
+                atypes = []
+                if action.startswith('First read'):
+                    atypes.append('bill:introduced')
+                elif action.startswith('Signed by Governor'):
+                    atypes.append('bill:signed')
+
+                match = re.match(r'(.*) Do Pass( Amended)?, (Passed|Failed)',
+                                 action)
+                if match:
+                    if match.group(1) in ['Senate',
+                                          'House of Representatives']:
+                        first = 'bill'
+                    else:
+                        first = 'committee'
+                    atypes.append("%s:%s" % (first, match.group(3).lower()))
+
+                if 'referred to' in action.lower():
+                    atypes.append('committee:referred')
+
+                if 'Motion to amend, Passed Amendment' in action:
+                    atypes.append('amendment:introduced')
+                    atypes.append('amendment:passed')
+
                 match = re.match("First read in (Senate|House)", action)
                 if match:
                     if match.group(1) == 'Senate':
@@ -74,7 +97,7 @@ class SDBillScraper(BillScraper):
                 for link in row.xpath("td[2]/a[contains(@href, 'RollCall')]"):
                     self.scrape_vote(bill, date, link.attrib['href'])
 
-                bill.add_action(actor, action, date)
+                bill.add_action(actor, action, date, type=atypes)
 
             self.save_bill(bill)
 
