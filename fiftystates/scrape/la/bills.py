@@ -49,7 +49,9 @@ class LABillScraper(BillScraper):
                 "string(//*[starts-with(text(), 'Summary: ')])")
             summary = summary.replace('Summary: ', '')
 
-            match = re.match(r"^([^:]+): ([^(]+)", summary)
+            match = re.match(r"^([^:]+): "
+                             r"((\(Constitutional Amendment\) )?[^(]+)",
+                             summary)
 
             if match:
                 subjects = [match.group(1).strip()]
