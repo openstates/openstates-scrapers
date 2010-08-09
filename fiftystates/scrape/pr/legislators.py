@@ -1,6 +1,6 @@
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.pr.utils import legislators_url
+from fiftystates.scrape.pr.utils import legislators_url, year_from_session
 
 import lxml.html
 import re, contextlib
@@ -26,12 +26,12 @@ class PRLegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, session):
         # Data available for this session only
-        if session != '2010-2011':
+        if year_from_session(session) != 2010:
             raise NoDataForPeriod(session)
         
-        if chamber == "upper":
+        if chamber == 'upper':
             self.scrape_senate(session)
-        elif chamber == "lower":
+        elif chamber == 'lower':
             self.scrape_house(session)
                     
     def scrape_senate(self, session):
@@ -59,9 +59,9 @@ class PRLegislatorScraper(LegislatorScraper):
                     if counter == 0:
                         dist = 'at-large'
                     else:
-                        dist = counter
+                        dist = counter                     
                    
-                    leg = Legislator(session, 'upper', dist, name, \
+                    leg = Legislator(session, 'upper', str(dist), name, \
                                      party = leg_party, head_shot = pic_link, \
                                      phone = leg_phone_no, email = leg_email)
                     leg.add_source(link)
@@ -72,7 +72,7 @@ class PRLegislatorScraper(LegislatorScraper):
         legislator_pages_dir = legislators_url('lower')
         
         with self.lxml_context(legislator_pages_dir) as leg_page:
-                tables = leg_page.cssselect('table')
+                tables = leg_page.cssselect("table")
                 leg_dist_table = tables[4]
                 leg_acu_table = tables[5]
                 legs_dist = leg_dist_table.cssselect('td')
@@ -92,7 +92,7 @@ class PRLegislatorScraper(LegislatorScraper):
                     imgs = l.cssselect('img')
                     pic_link_part = imgs[0].iterlinks().next()[2]
                     pic_link = 'http://www.camaraderepresentantes.org/' + pic_link_part
-                    
+
                     leg = Legislator(session, 'lower', dist, name, \
                                      party = leg_party, head_shot = pic_link)
                     leg.add_source(link)
@@ -107,8 +107,8 @@ class PRLegislatorScraper(LegislatorScraper):
                     name_party = l.text_content().lstrip()
                     match = re.search('PNP|PPD', name_party)
                     name = name_party[:-4]
-                    leg_party = match.group(0)                                     
-                        
+                    leg_party = match.group(0) 
+                                                                               
                     leg = Legislator(session, 'lower', 'at-large', name, \
                                      party = leg_party, head_shot = pic_link)
                     

@@ -1,10 +1,11 @@
 from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.pr.utils import grouper
+from fiftystates.scrape.pr.utils import grouper, doc_link_url, year_from_session
 
 import lxml.html
 import contextlib
+import datetime as dt
 
 class PRBillScraper(BillScraper):
     state = 'pr'
@@ -31,7 +32,8 @@ class PRBillScraper(BillScraper):
                              'Joint Resolution':'RC', \
                              'Concurrent Resolution':'RK', \
                              'Appointment':'N'}
-        bodies = {'upper':'S', 'lower':'C'}
+        #bodies = {'upper':'S', 'lower':'C'}
+        bodies = {'upper':'S'}
         
         bill_search_page = lxml.html.parse(bill_search_url).getroot()
         search_form = bill_search_page.forms[0]
@@ -41,6 +43,12 @@ class PRBillScraper(BillScraper):
                 search_form.fields['cuerpo'] = body
                 search_form.fields['tipo'] = bill_type
                 search_form.fields['autor'] = 'NA'
+                
+                if year_from_session(session) == '2009':
+                    search_form.fields['f2'] = '12/31/2009'
+                elif year_from_session(session) == '2010':
+                    search_form.fields['f1'] = '01/01/2010'
+                
                 result = lxml.html.parse(lxml.html.submit_form(search_form)).getroot()
                 table_elements = result.cssselect('table')
                 table_elements.pop()
@@ -65,17 +73,21 @@ class PRBillScraper(BillScraper):
                     td_elements = td_elements[4:-1]                   
                     action_elements = grouper(3, td_elements)
                     
-                    for date, action, empty in action_elements:
-                        date = date.text_content()
+                    for date_element, action, empty in action_elements:
+                        # Clean unicode character
+                        date_text = date_element.text_content().replace(u'\xa0',u'')
+                        date = dt.datetime.strptime(date_text, '%m/%d/%Y')
+                        action_text = action.text_content()
                         try:
                             doc_link_part = action.iterlinks().next()[2]
                             if 'voto' in doc_link_part:
                                 raise                           
-                            doc_link = 'http://www.camaraderepresentantes.org' + doc_link_part
-                            bill.add_version((action.text_content(), doc_link))
+                            doc_link = doc_link_url(doc_link_part)
+                            bill.add_version((action_text, doc_link))
                         except:
-                            print 'no doc'
-                        action = action.text_content()
+                            pass
+                    
+                        bill.add_action(chamber, action_text, date)
                     
                            
                         
