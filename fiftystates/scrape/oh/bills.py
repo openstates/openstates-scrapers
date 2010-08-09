@@ -1,12 +1,11 @@
 from __future__ import with_statement
 import urlparse
 import datetime as dt
-
 from fiftystates.scrape.oh import metadata
 from fiftystates.scrape.oh.utils import chamber_name, parse_ftp_listing
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import VoteScraper, Vote
-
+from datetime import datetime
 import xlrd
 import urllib
 import lxml.etree
@@ -79,13 +78,11 @@ class OHBillScraper(BillScraper):
  
                     action = str(sh.cell( 0, colnum).value)
                     date = cell.value
-
+                    
                     if type(cell.value) == float:
+                        date = str(xlrd.xldate_as_tuple(date, 0))
+                        date = datetime.strptime(date, "(%Y, %m, %d, %H, %M, %S)")
                         bill.add_action(actor, action, date)    
-
-                    if (len(coltitle) != 0 ) and coltitle.split()[-1] == 'Committee':
-                        committee = str(cell.value)
-                        bill.add_action(committee, action, date = '')
 
                 bill.add_source(house_file)
                 self.scrape_votes(bill, file_type, rownum, session)
@@ -153,11 +150,9 @@ class OHBillScraper(BillScraper):
                     date = cell.value
 
                     if type(cell.value) == float:
+                        date = str(xlrd.xldate_as_tuple(date, 0))
+                        date = datetime.strptime(date, "(%Y, %m, %d, %H, %M, %S)")
                         bill.add_action(actor, action, date)
-
-                    if (len(coltitle) != 0 ) and coltitle.split()[-1] == 'Committee':
-                        committee = str(cell.value)
-                        bill.add_action(committee, action, date = '')
 
                 bill.add_source(senate_file)
                 self.scrape_votes(bill, file_type, rownum, session)
@@ -169,7 +164,7 @@ class OHBillScraper(BillScraper):
         with self.urlopen(vote_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
             
-            save_date = ''
+            save_date = None
             for el in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2][@class="bigPanel"]/blockquote/font/table'):
                 for mr in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2][@class="bigPanel"]/blockquote/font/table/tr[position() > 1]'):
                     
@@ -185,6 +180,7 @@ class OHBillScraper(BillScraper):
 
                     #makes sure that date is saved 
                     if len(date.split()) > 0:
+                        date = datetime.strptime(date, "%m/%d/%Y")
                         save_date = date
 
                     #figures out the number of votes for each way
@@ -207,6 +203,11 @@ class OHBillScraper(BillScraper):
                         motion = motion.lstrip()
                         motion = motion.rstrip()
                         chamber = motion.split()[0]
+                        
+                        if chamber == "Senate":
+                            chamber = "upper"
+                        else:
+                            chamber = "lower"
 
                     #pass or not (only by which has more. need to see look up how they are passed)
                     if yes_count > no_count:
@@ -214,9 +215,9 @@ class OHBillScraper(BillScraper):
                     else:
                         passed = False
 
-                    vote = Vote(chamber, save_date, motion, passed, yes_count, no_count, "other_count")
+                    vote = Vote(chamber, save_date, motion, passed, int(yes_count), int(no_count), other_count = 0)
 
-                    #adding in yas voters
+                    #adding in yea voters
                     for voters in range(3, yes_placement):
                         legis = ""
                         initials = 0                        

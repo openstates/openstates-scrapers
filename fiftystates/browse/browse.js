@@ -4,15 +4,18 @@ $(document).ready(function() {
     if (navigator.userAgent.indexOf('Gecko/') == -1) {
         $("#loading").html("The Open States Browser only supports Firefox.");
     } else {
-        $("#legislators_button").click(function() {
-            $("#obj_list_wrapper").hide();
-            $("#loading").show();
-            setTimeout(populateLegislators, 0, [$("#state").val()]);
-        });
-        $("#bills_button").click(function() {
-            $("#obj_list_wrapper").hide();
-            $("#loading").show();
-            setTimeout(populateBills, 0, [$("#state").val()]);
+        var types = {"legislators": populateLegislators,
+                     "bills": populateBills,
+                     "committees": populateCommittees,
+                     "votes": populateVotes}
+
+        $.each(types, function(type, populateFunc) {
+            $("#" + type + "_button").click(function() {
+                $("#obj_list_wrapper").hide();
+                $("#loading").show();
+
+                setTimeout(types[type], 0, [$("#state").val()]);
+            });
         });
 
         setTimeout(populateLegislators, 0, [$("#state").val()]);
@@ -29,6 +32,17 @@ function populateBills(state) {
     populate("/data/" + state + "/bills",
              [{'name': "bill_id"}, {'name': 'session'},
               {'name': 'chamber'}, {'name': "title"}]);
+}
+
+function populateCommittees(state) {
+    populate("/data/" + state + "/committees",
+             [{'name': 'committee'}, {'name': 'subcommittee'},
+              {'name': 'chamber'}]);
+}
+
+function populateVotes(state) {
+    populate("/data/" + state + '/votes',
+             [{'name': 'bill_id'}, {'name': 'motion'}]);
 }
 
 function populate(dir, columns) {

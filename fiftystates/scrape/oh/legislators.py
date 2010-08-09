@@ -1,10 +1,9 @@
-import re
-
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.oh.utils import clean_committee_name
-
+from datetime import datetime
 import lxml.etree
+import re
 
 class OHLegislatorScraper(LegislatorScraper):
     state = 'oh'
@@ -26,7 +25,6 @@ class OHLegislatorScraper(LegislatorScraper):
     def scrape_reps(self, chamber, session, term_name):
         # There is only 99 districts
         for district in range(1,100):
-
             rep_url = 'http://www.house.state.oh.us/components/com_displaymembers/page.php?district=' + str(district)
             with self.urlopen(rep_url) as page:
                 root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
@@ -36,11 +34,18 @@ class OHLegislatorScraper(LegislatorScraper):
                     full_name = rep_link.text
                     party = full_name[-2]
                     full_name = full_name[0 : len(full_name)-3]
-                    first_name = None
-                    last_name = None
-                    middle_name = None                    
+                    first_name = ""
+                    last_name = ""
+                    middle_name = ""                    
+                    
+                    if party == "D":
+                        party = "Democrat"
+                    elif party == "R":
+                        party = "Republican"
+                    else:
+                        party = party
 
-                    leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party)
+                    leg = Legislator(term_name, chamber, str(district), full_name, first_name, last_name, middle_name, party)
                     leg.add_source(rep_url)
 
                 self.save_legislator(leg)
@@ -59,9 +64,16 @@ class OHLegislatorScraper(LegislatorScraper):
                 district = district.split()[1]
                 party = el.xpath('string(a[@class="senatorLN"]/span)')
 
+                if party == "D":
+                    party = "Democrat"
+                elif party == "R":
+                    party = "Republican"
+                else:
+                    party = party
+
                 first_name = full_name.split()[0]
                 last_name = full_name.split()[1]
-                middle_name = None
+                middle_name = ""
 
                 leg = Legislator(term_name, chamber, district, full_name, 
                         first_name, last_name, middle_name, party)

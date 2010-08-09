@@ -1,28 +1,20 @@
 from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.bills import BillScraper, Bill
-
+from fiftystates.scrape.hi.utils import versions_page, year_from_session, bills_url
 import lxml.html
 import re, contextlib
 import datetime as dt
-
-
 
 class HIBillScraper(BillScraper):
     state = 'hi'
     
     @contextlib.contextmanager
-    def lxml_context(self, url, sep=None, sep_after=True):
+    def lxml_context(self, url):
         try:
             body = self.urlopen(url)
         except:
             body = self.urlopen("http://www.google.com")
-        
-        if sep != None: 
-            if sep_after == True:
-                before, itself, body = body.rpartition(sep)
-            else:
-                body, itself, after = body.rpartition(sep)    
         
         elem = lxml.html.fromstring(body)
         
@@ -73,22 +65,18 @@ class HIBillScraper(BillScraper):
         
         bill.add_vote(vote)    
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, session):
+        year = year_from_session(session)
         session = "%s-%d" % (year, int(year) + 1)
 
-        if int(year) >= 2009:
+        if year >= 2009:
             self.scrape_session_2009(chamber, session)
         else:
             self.scrape_session_old(chamber, session)
 
     def scrape_session_2009(self, chamber, session):
-        if chamber == "upper":
-            url = "http://www.capitol.hawaii.gov/session2009/lists/RptIntroSB.aspx"
-            type = "HB"
-        else:
-            url = "http://www.capitol.hawaii.gov/session2009/lists/RptIntroSB.aspx"
-            type = "SB"
-            
+        url, type = bills_url(chamber)
+                    
         with self.lxml_context(url) as page:
             for element, attribute, link, pos in page.iterlinks():         
                 if re.search("billtype=" + type + "&billnumber=[0-9]+", link) != None:
@@ -110,6 +98,7 @@ class HIBillScraper(BillScraper):
                         action_elements = actions_table.cssselect('tr')
                         # first element is not an action element
                         action_elements.pop(0)
+                        
                         for ae in action_elements:
                             action_element_parts = ae.cssselect('td')
                             
@@ -136,8 +125,7 @@ class HIBillScraper(BillScraper):
                                                            
                             bill.add_action(actor, action_text, action_date)
                         
-                        versions_page_url = "http://www.capitol.hawaii.gov/session2009/getstatus.asp?query=" \
-                         + type + bill_number + "&showtext=on&currpage=1"
+                        versions_page_url = versions_page(type, bill_number)
                          
                         with self.lxml_context(versions_page_url) as versions_page:
                             versions_elements = versions_page.cssselect('span[class="searchtitle"]')
@@ -146,8 +134,6 @@ class HIBillScraper(BillScraper):
                                 bill_version_url = "http://www.capitol.hawaii.gov/session2009/Bills/" + element_text
                                 version_name = element_text.rstrip("_.HTM")
                                 bill.add_version(version_name, bill_version_url)
-                            
-            
 
     def scrape_session_old(self, chamber, session):
         pass

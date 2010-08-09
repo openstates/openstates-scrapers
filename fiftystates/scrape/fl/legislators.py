@@ -2,74 +2,66 @@ import re
 
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.fl import metadata
 
-from BeautifulSoup import BeautifulSoup
+import lxml.html
 
 
 class FLLegislatorScraper(LegislatorScraper):
     state = 'fl'
 
-    def scrape(self, chamber, year):
-        for term in metadata['terms']:
-            if term['start_year'] <= int(year) <= term['end_year']:
-                break
-        else:
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, term):
+        if term != '2010':
+            raise NoDataForPeriod(term)
 
         if chamber == 'upper':
-            self.scrape_senators(year)
+            self.scrape_senators(term)
         else:
-            self.scrape_reps(year)
+            self.scrape_reps(term)
 
-    def scrape_senators(self, year):
-        if year != '2009':
-            return
+    def scrape_senators(self, term):
+        url = ("http://www.flsenate.gov/Legislators/"
+               "index.cfm?Mode=Member%20Pages&Submenu=1&Tab=legislators")
 
-        leg_page_url = "http://www.flsenate.gov/Legislators/"\
-            "index.cfm?Mode=Member%20Pages&Submenu=1&Tab=legislators"
-        leg_page = BeautifulSoup(self.urlopen(leg_page_url))
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
 
-        th = leg_page.find('th', text='Legislator').parent
-        table = th.parent.parent
+            for link in page.xpath("//a[contains(@href, '/legislators')]"):
+                name = re.sub(r"\s+", " ", link.text).strip()
 
-        for row in table.findAll('tr')[1:]:
-            full = row.td.a.contents[0].replace('  ', ' ')
-            if full == 'Vacant':
-                self.save_legislator(Legislator(
-                        year, 'upper', district, 'Vacant'))
-                continue
+                # Special case - name_tools gets confused
+                # by 'JD', thinking it is a suffix instead of a first name
+                if name == 'Alexander, JD':
+                    name = 'JD Alexander'
+                elif name == 'Vacant':
+                    name = 'Vacant Seat'
 
-            district = row.findAll('td')[1].contents[0]
-            party = row.findAll('td')[2].contents[0]
+                district = link.xpath('string(../../td[2])').strip()
+                party = link.xpath('string(../../td[3])').strip()
 
-            leg = Legislator(year, 'upper', district, full, party=party)
-            leg.add_source(leg_page_url)
-            self.save_legislator(leg)
+                leg = Legislator(term, 'upper', district, name,
+                                 party=party)
+                leg.add_source(url)
+                self.save_legislator(leg)
 
-    def scrape_reps(self, year):
-        if year != '2009':
-            return
+    def scrape_reps(self, term):
+        url = ("http://www.flhouse.gov/Sections/Representatives/"
+               "representatives.aspx")
 
-        leg_page_url = "http://www.flhouse.gov/Sections/Representatives/"\
-            "representatives.aspx"
-        leg_page = BeautifulSoup(self.urlopen(leg_page_url))
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page.decode('utf8'))
 
-        table = leg_page.find('table',
-                              id='ctl00_ContentPlaceHolder1_ctrlContentBox'\
-                                  '_ctrlPageContent_ctl00_dgLegislators')
+            for link in page.xpath("//a[contains(@href, 'MemberId')]"):
+                name = re.sub(r"\s+", " ", link.text).strip()
 
-        for row in table.findAll('tr')[1:]:
-            full = row.findAll('td')[1].a.contents[0].replace('  ', ' ')
+                party = link.xpath('string(../../td[3])').strip()
+                if party == 'D':
+                    party = 'Democrat'
+                elif party == 'R':
+                    party = 'Republican'
 
-            district = row.findAll('td')[3].contents[0]
-            party = row.findAll('td')[2].contents[0]
+                district = link.xpath('string(../../td[4])').strip()
 
-            if party == 'D':
-                party = 'Democrat'
-            elif party == 'R':
-                party = 'Republican'
-
-            leg = Legislator(year, 'lower', district, full, party=party)
-            leg.add_source(leg_page_url)
-            self.save_legislator(leg)
+                leg = Legislator(term, 'lower', district, name,
+                                 party=party)
+                leg.add_source(url)
+                self.save_legislator(leg)

@@ -19,40 +19,56 @@ metadata = dict(
     lower_chamber_title='Representative',
     upper_chamber_term=4,
     lower_chamber_term=2,
-       sessions=['1995', '1996 Special Session', '1997', '1999', '2001', \
-              '2002 Special Sessions', '2003', '2005', '2006 Special Session', \
-               '2007', '2008 Special Session', '2009', '2010 Special Session'],
-    session_details={'1995': {'years': [1995], \
-                               'sub_sessions': ["1995 Special Session"]}, \
-                     '1996 Special Session' : {'years': [1996], \
-                               'sub_sessions': []}, \
-                     '1997' : {'years': [1997], \
-                               'sub_sessions': []}, \
-                     '1999' : {'years': [1999], \
-                               'sub_sessions': []}, \
-                     '2001' : {'years': [2001], \
-                               'sub_sessions': []}, \
-                     '2002 Special Sessions' : {'years': [2002], \
-                               'sub_sessions': ["First Special Session", \
-                                                "Second Special Session", \
-                                                "Third Special Session", \
-                                                "Fourth Special Session", \
-                                                "Fifth Special Session"] \
-                                                }, \
-                     '2003' : {'years': [2003], \
-                               'sub_sessions': []}, \
-                     '2005' : {'years': [2005], \
-                               'sub_sessions': []}, \
-                     '2006 Special Session' : {'years': [2006], \
-                               'sub_sessions': []}, \
-                     '2007' : {'years': [2007], \
-                               'sub_sessions': []}, \
-                     '2008 Special Session' : {'years': [2008], \
-                               'sub_sessions': []}, \
-                     '2009' : {'years': [2009], \
-                               'sub_sessions': []}, \
-                     '2010 Special Session' : {'years': [2010], \
-                               'sub_sessions': []}, \
-                               
-                    }
+    terms = [
+        {'name': '2010 Special Session',
+         'sessions': ['2010 Special Session'],
+         'start_year': 2010, 'end_year': 2010},
+        {'name': '2009',
+         'sessions': ['2009 Special Session'],
+         'start_year': 2009, 'end_year': 2009},
+         {'name': '2008 Special Session',
+         'sessions': ['2008 Special Session'],
+         'start_year': 2008, 'end_year': 2008},
+         {'name': '2007',
+         'sessions': ['2007 Regular Session'],
+         'start_year': 2007, 'end_year': 2007},
+         {'name': '2006 Special Session',
+         'sessions': ['2006 Special Session'],
+         'start_year': 2006, 'end_year': 2006},
+         {'name': '2005',
+         'sessions': ['2005 Regular Session'],
+         'start_year': 2005, 'end_year': 2005},
+         {'name': '2007',
+         'sessions': ['2007 Regular Session'],
+         'start_year': 2007, 'end_year': 2007},
+         {'name': '2005',
+         'sessions': ['2005 Regular Session'],
+         'start_year': 2005, 'end_year': 2005},
+         {'name': '2003',
+         'sessions': ['2003 Regular Session'],
+         'start_year': 2003, 'end_year': 2003},
+         {'name': '2002 Special Sessions',
+         'sessions': ['2002 First Special Session',
+                      '2002 Second Special Session'
+                      '2002 Third Special Session',
+                      '2002 Fourth Special Session',
+                      '2002 Fifth Special Session'],
+         'start_year': 2002, 'end_year': 2002},
+         {'name': '2001',
+         'sessions': ['2001 Regular Session'],
+         'start_year': 2001, 'end_year': 2001},
+         {'name': '1999',
+         'sessions': ['1999 Regular Session'],
+         'start_year': 1999, 'end_year': 1999},
+         {'name': '1997',
+         'sessions': ['1997 Regular Session'],
+         'start_year': 1997, 'end_year': 1997},
+          {'name': '1996 Special Session',
+         'sessions': ['1996 Special Session'],
+         'start_year': 1996, 'end_year': 1996},
+         {'name': '1995',
+         'sessions': ['1995 Regular Session',
+                      '1995 Special Session'],
+         'start_year': 1995, 'end_year': 1995},
+         ]                  
 )

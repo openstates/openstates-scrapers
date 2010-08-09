@@ -1,0 +1,23 @@
+{"description": "bill data",
+ "type": "object",
+ "properties": {
+    "_type": {"type": "string", "enum":["vote"]},
+    "chamber": {"type": "string", "enum": ["upper", "lower"]},
+    "bill_chamber": {"type": "string", "enum": ["upper", "lower"]},
+    "session": {"type": "string"},
+    "bill_id": {"type": "string"},
+    "date": {"type": "datetime"},
+    "motion": {"type": "string"},
+    "passed": {"type": "boolean"},
+    "yes_count": {"type": "integer", "minimum": 0},
+    "yes_votes": {"type": "array", "items": {"type": "string"}},
+    "no_count": {"type": "integer", "minimum": 0},
+    "no_votes": {"type": "array", "items": {"type": "string"}},
+    "other_count": {"type": "integer", "minimum": 0},
+    "other_votes": {"type": "array", "items": {"type": "string"}},
+    "sources": {"type": "array", "items": {"type": "object", "properties": {
+        "url": {"type": "string"},
+        "retrieved": {"type": "datetime"}
+    }}}
+ }
+}

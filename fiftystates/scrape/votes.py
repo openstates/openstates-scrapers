@@ -10,15 +10,26 @@ from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
 
 
 class VoteScraper(Scraper):
+
+    def _get_schema(self):
+        schema_path = os.path.join(os.path.split(__file__)[0],
+                                   '../../schemas/vote.json')
+        schema = json.load(open(schema_path))
+        schema['properties']['session']['enum'] = self.all_sessions()
+        return schema
+
     def scrape(self, chamber, year):
         raise NotImplementedYear('VoteScrapers must define a scrape method')
 
     def save_vote(self, vote):
         filename = vote["filename"] + ".json"
+
         self.log("save_vote %s %s: %s '%s'" % (vote['session'],
-                                                           vote['chamber'],
-                                                           vote['bill_id'],
-                                                           vote['motion']))
+                                               vote['chamber'],
+                                               vote['bill_id'],
+                                               vote['motion']))
+
+        self.validate_json(vote)
 
         with open(os.path.join(self.output_dir, 'votes', filename), 'w') as f:
             json.dump(vote, f, cls=JSONDateEncoder)

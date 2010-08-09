@@ -20,7 +20,7 @@ def import_metadata(state, data_dir):
         data = json.load(f)
 
     data['_id'] = state
-    db.metadata.save(data)
+    db.metadata.save(data, safe=True)
 
 
 if __name__ == '__main__':

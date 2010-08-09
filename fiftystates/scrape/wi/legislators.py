@@ -29,7 +29,7 @@ class WILegislatorScraper(LegislatorScraper):
                         district = str(int(list(row)[2].text_content()))
 
                         leg = Legislator(term, chamber, district, full_name,
-                                         party)
+                                         party=party)
                         leg.add_source(rep_url)
 
                         leg = self.add_committees(leg, rep_url, term)

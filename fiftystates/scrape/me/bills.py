@@ -1,10 +1,8 @@
-import datetime
-
 from fiftystates.scrape.me import metadata
 from fiftystates.scrape.me.utils import chamber_name
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import VoteScraper, Vote
-
+from datetime import datetime
 import lxml.etree
 
 class MEBillScraper(BillScraper):
@@ -58,7 +56,7 @@ class MEBillScraper(BillScraper):
                 chamber = "upper"
             else:
                 chamber = "lower"
-            bill = Bill(session, chamber, bill_id, title)
+            bill = Bill(str(session), chamber, bill_id, title)
             bill.add_source(bill_info_url)
 
             #Actions
@@ -70,11 +68,16 @@ class MEBillScraper(BillScraper):
                 count = 2
                 for mr in root2.xpath("//td[2]/table[2]/tr[position() > 1]/td[1]"):
                     date = mr.xpath('string()')
+                    date = datetime.strptime(date, "%m/%d/%Y")
                     actor_path = "string(//td[2]/table/tr[%s]/td[2])" % count
                     actor = root2.xpath(actor_path)
                     action_path = "string(//td[2]/table/tr[%s]/td[3])" % count
                     action = root2.xpath(action_path)
                     count = count + 1
+                    if actor == "House":
+                        actor = "lower"
+                    else:
+                        actor = "upper"
                     bill.add_action(actor, action, date)
             #Votes
             votes_url_addon = root.xpath('string(//table/tr[9]/td/a/@href)')
@@ -89,20 +92,24 @@ class MEBillScraper(BillScraper):
                     with self.urlopen(vote_detail_url) as vote_detail_page:
                         detail_root = lxml.etree.fromstring(vote_detail_page, lxml.etree.HTMLParser())
                         date = detail_root.xpath('string(//table[2]//tr[2]/td[3])')
+                        try:
+                            date = datetime.strptime(date, "%B %d, %Y")
+                        except:
+                            date = datetime.strptime(date, "%b. %d, %Y")
                         motion = detail_root.xpath('string(//table[2]//tr[3]/td[3])')
                         passed = detail_root.xpath('string(//table[2]//tr[5]/td[3])') == 'PREVAILS'
                         yes_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
                         no_count = detail_root.xpath('string(//table[2]//tr[7]/td[3])')
                         absent_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
                         excused_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
-                        other_count = None
+                        other_count = 0
 
                         if votes_url.find('House') != -1:
                             chamber = "lower"
                         else:
                             chamber = "upper"
 
-                        vote = Vote(chamber, date, motion, passed, yes_count, no_count, other_count, absent_count = absent_count, excused_count = excused_count)
+                        vote = Vote(chamber, date, motion, passed, int(yes_count), int(no_count), other_count, absent_count = int(absent_count), excused_count = int(excused_count))
 
                         for member in detail_root.xpath('//table[3]/tr[position() > 1]'):
                             leg = member.xpath('string(td[2])')

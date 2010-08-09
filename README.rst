@@ -3,7 +3,7 @@ The Open State Project collects and makes available data about state legislative
 Links
 =====
 
-* `Fifty State Project API <http://dev.sunlightlabs.com/api.html>`_
+* `Open State Project API <http://fiftystates-dev.sunlightlabs.com/api.html>`_
 * `python-fiftystates: Python API Client <http://fiftystates-dev.sunlightlabs.com/client.html>`_
 * `Code on GitHub <http://github.com/sunlightlabs/fiftystates/>`_
 * `Contributing Guidelines <http://code.google.com/p/openstates/wiki/Contributing>`_

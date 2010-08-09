@@ -44,7 +44,7 @@ class MSLegislatorScraper(LegislatorScraper):
                 chair_name = root.xpath('string(//chair_name)')
                 role = root.xpath('string(//chair_title)')
                 district = "Governor"
-                leg = Legislator(term_name, chamber, district, chair_name, first_name = None, last_name = None, middle_name = None, party = "Republican", role=role)
+                leg = Legislator(term_name, chamber, district, chair_name, first_name = "", last_name = "", middle_name = "", party = "Republican", role=role)
 
             protemp_name = root.xpath('string(//protemp_name)')
             protemp_link = root.xpath('string(//protemp_link)')
@@ -58,7 +58,7 @@ class MSLegislatorScraper(LegislatorScraper):
             root = lxml.etree.fromstring(details_page, lxml.etree.HTMLParser())
             party = root.xpath('string(//party)')
             district = root.xpath('string(//district)')
-            first_name, middle_name, last_name = None, None, None
+            first_name, middle_name, last_name = "", "", ""
 
             home_phone = root.xpath('string(//h_phone)')
             bis_phone = root.xpath('string(//b_phone)')
@@ -67,7 +67,10 @@ class MSLegislatorScraper(LegislatorScraper):
             org_info = root.xpath('string(//org_info)')
             email_name = root.xpath('string(//email_address)')
             email = '%s@%s.ms.gov' % (email_name, chamber)
-            
+            if party == 'D':
+                party = 'Democrat'
+            else:
+                party = 'Republican' 
 
             leg = Legislator(term, chamber, district, leg_name, first_name, last_name, middle_name, party, role=role, home_phone = home_phone, bis_phone = bis_phone, capital_phone=capital_phone, other_phone=other_phone, org_info=org_info, email=email)
             leg.add_source(url)

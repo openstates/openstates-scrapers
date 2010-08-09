@@ -73,7 +73,7 @@ def names(el):
     return names
 
 
-def get_type(match):
+def get_motion(match):
     if match.group('type') == 'passed' or match.group('type') == 'adopted':
         return 'final passage'
     else:
@@ -110,9 +110,16 @@ def record_votes(root):
             else:
                 continue
 
-            type = get_type(m)
-            vote = Vote(None, None, type, True,
-                        yes_count, no_count, other_count)
+            motion = get_motion(m)
+
+            if motion == 'final passage':
+                type = 'passage'
+            else:
+                type = 'other'
+
+            vote = Vote(None, None, motion, True,
+                        yes_count, no_count, other_count,
+                        type=type)
             vote['bill_id'] = bill_id
             vote['bill_chamber'] = bill_chamber
             vote['session'] = '81'

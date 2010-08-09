@@ -102,9 +102,9 @@ class NJBillScraper(BillScraper):
 
             votes = {}
             if bill_vote_file[0] == "A":
-                chamber = "General Assembly"
+                chamber = "lower"
             else:
-                chamber = "Senate"
+                chamber = "upper"
 
             for rec in vdict_file:
                 bill_id = rec["Bill"]

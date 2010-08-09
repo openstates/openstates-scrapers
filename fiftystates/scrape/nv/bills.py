@@ -52,6 +52,7 @@ class NVBillScraper(BillScraper):
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
                 with self.urlopen(page_path) as page:
+                    page = page.decode("utf8").replace(u"\xa0", " ")
                     root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
                     bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
@@ -60,6 +61,10 @@ class NVBillScraper(BillScraper):
                     if insert.find('Special') != -1:
                         session = insert
                     bill = Bill(session, chamber, bill_id, title)
+
+                    bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
+                    text_url = "http://www.leg.state.nv.us" + bill_text
+                    bill.add_version("Bill Text", text_url)
 
                     primary, secondary = self.scrape_sponsors(page)
 
@@ -78,6 +83,18 @@ class NVBillScraper(BillScraper):
                             bill.add_sponsor('primary', leg)
                     for leg in secondary:
                         bill.add_sponsor('cosponsor', leg)
+
+
+                    minutes_count = 2
+                    for mr in root.xpath('//table[4]/tr/td[3]/a'):
+                        minutes =  mr.xpath("string(@href)")
+                        minutes_url = "http://www.leg.state.nv.us" + minutes
+                        minutes_date_path = "string(//table[4]/tr[%s]/td[2])" % minutes_count
+                        minutes_date = mr.xpath(minutes_date_path).split()
+                        minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Minutes"
+                        bill.add_document(minutes_date, minutes_url)
+                        minutes_count = minutes_count + 1
+
 
                     self.scrape_actions(page, bill, "upper")
                     self.scrape_votes(page, bill, "upper", insert, title, year)
@@ -97,6 +114,7 @@ class NVBillScraper(BillScraper):
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
                 with self.urlopen(page_path) as page:
+                    page = page.decode("utf8").replace(u"\xa0", " ")
                     root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
                     bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
@@ -105,6 +123,10 @@ class NVBillScraper(BillScraper):
                     if insert.find('Special') != -1:
                         session = insert
                     bill = Bill(session, chamber, bill_id, title)
+                    bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
+                    text_url = "http://www.leg.state.nv.us" + bill_text
+                    bill.add_version("Bill Text", text_url)
+
 
                     primary, secondary = self.scrape_sponsors(page)
                     
@@ -123,6 +145,17 @@ class NVBillScraper(BillScraper):
                             bill.add_sponsor('primary', leg)
                     for leg in secondary:
                         bill.add_sponsor('cosponsor', leg)
+                    
+                    minutes_count = 2
+                    for mr in root.xpath('//table[4]/tr/td[3]/a'):
+                        minutes =  mr.xpath("string(@href)")
+                        minutes_url = "http://www.leg.state.nv.us" + minutes
+                        minutes_date_path = "string(//table[4]/tr[%s]/td[2])" % minutes_count
+                        minutes_date = mr.xpath(minutes_date_path).split()
+                        minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Minutes"
+                        bill.add_document(minutes_date, minutes_url)
+                        minutes_count = minutes_count + 1
+
 
                     self.scrape_actions(page, bill, "lower")
                     self.scrape_votes(page, bill, "lower", insert, title, year)
@@ -195,6 +228,7 @@ class NVBillScraper(BillScraper):
             vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, url_end)
             bill.add_source(vote_url)    
             with self.urlopen(vote_url) as page:
+                page = page.decode("utf8").replace(u"\xa0", " ")
                 root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
                 date = root.xpath('string(/html/body/center/font)').split()[-1]
@@ -205,13 +239,13 @@ class NVBillScraper(BillScraper):
                 excused = root.xpath('string(/html/body/center/table/tr/td[3])').split()[0]
                 not_voting = root.xpath('string(/html/body/center/table/tr/td[4])').split()[0]
                 absent = root.xpath('string(/html/body/center/table/tr/td[5])').split()[0]
-                    
+                other_count = 0    
                 if yes_count > no_count:
                     passed = True
                 else:
                     passed = False
-
-                vote = Vote(chamber, date, motion, passed, yes_count, no_count, '', not_voting = not_voting, absent = absent)
+                
+                vote = Vote(chamber, date, motion, passed, int(yes_count), int(no_count), other_count, not_voting = int(not_voting), absent = int(absent))
 
                 for el in root.xpath('/html/body/table[2]/tr'):
                     name = el.xpath('string(td[1])').strip()

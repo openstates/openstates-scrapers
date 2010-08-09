@@ -1,6 +1,8 @@
 from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.wa.utils import clean_string, year_from_session, votes_url
+
 
 import lxml.html
 import re, string, contextlib
@@ -28,67 +30,7 @@ class WABillScraper(BillScraper):
             yield elem
         except:
             raise
-    
-    def clean_string(self, s):
-        return re.sub('[^0-9]', '', s)
-
-    def scrape_year(self, year, chamber):    
-        
-        sep = '<h1>House</h1>'
-            
-        if chamber == 'upper':
-            after = False
-            reg = '[5-9]'
-        else:
-            after = True
-            reg = '[1-4]'
-                
-        with self.lxml_context("http://apps.leg.wa.gov/billinfo/dailystatus.aspx?year=" + str(year), sep, after) as page:
-            for element, attribute, link, pos in page.iterlinks():
-                if re.search("bill=" + reg + "[0-9]{3}", link) != None:
-                    bill_page_url = "http://apps.leg.wa.gov/billinfo/" + link
-                    with self.lxml_context(bill_page_url) as bill_page:
-                        raw_title = bill_page.cssselect('title')
-                        split_title = string.split(raw_title[0].text_content(), ' ')
-                        bill_id = split_title[0] + ' ' + split_title[1]
-                        bill_id = bill_id.strip()
-                        session = split_title[3].strip()
-
-                        title_element = bill_page.get_element_by_id("ctl00_ContentPlaceHolder1_lblSubTitle")
-                        title = title_element.text_content()
-
-                        bill = Bill(session, chamber, bill_id, title)
-                        bill.add_source(bill_page_url)
-                
-                        self.scrape_actions(bill_page, bill)
-                
-                        for element, attribute, link, pos in bill_page.iterlinks():
-                            if re.search("billdocs", link) != None:
-                                if re.search("Amendments", link) != None:
-                                    bill.add_document("Amendment: " + element.text_content(), link)    
-                                elif re.search("Bills", link) != None:
-                                    bill.add_version(element.text_content(), link) 
-                                else:
-                                    bill.add_document(element.text_content(), link)
-                            elif re.search("senators|representatives", link) != None:
-                                with self.lxml_context(link) as senator_page:
-                                    try:
-                                        name_tuple = self.scrape_legislator_name(senator_page)
-                                        bill.add_sponsor('primary', name_tuple[0])
-                                    except:
-                                        pass
-                            elif re.search("ShowRollCall", link) != None:
-                                match = re.search("([0-9]+,[0-9]+)", link)
-                                match = match.group(0)
-                                match = match.split(',')
-                                id1 = match[0]
-                                id2 = match[1]
-                                url = "http://flooractivityext.leg.wa.gov/rollcall.aspx?id=" + id1 + "&bienId=" +id2
-                                with self.lxml_context(url) as vote_page:
-                                    self.scrape_votes(vote_page, bill, url)
-                                    
-                        self.save_bill(bill)
-                        
+       
     def scrape_votes(self, vote_page, bill, url): 
         date_match = re.search("[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}", vote_page.text_content())
         date_match = date_match.group(0)
@@ -115,8 +57,7 @@ class WABillScraper(BillScraper):
             title = "Senator"
         else:
             chamber = "lower"
-            title = "Representative"
-            
+            title = "Representative"          
             
         motion_match = vote_page.cssselect('td[align="center"]')
         motion_match = motion_match[2]
@@ -181,7 +122,7 @@ class WABillScraper(BillScraper):
             except:
                 continue
             
-            day = self.clean_string(splitted_date[1])
+            day = clean_string(splitted_date[1])
 
             if(last_month > month):
                 current_year = current_year + 1
@@ -189,8 +130,61 @@ class WABillScraper(BillScraper):
             bill.add_action('upper', action_text.text_content(), dt.datetime.strptime(str(month) + '/' + day + '/' + str(current_year), '%m/%d/%Y'))
     
     
-    def scrape(self, chamber, year):
-        if (year < 2001):
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, session):
+        sep = '<h1>House</h1>'
+            
+        if chamber == 'upper':
+            after = False
+            reg = '[5-9]'
+        else:
+            after = True
+            reg = '[1-4]'
+        
+        year = str(year_from_session(session))
+                
+        with self.lxml_context("http://apps.leg.wa.gov/billinfo/dailystatus.aspx?year=" + year, sep, after) as page:
+            for element, attribute, link, pos in page.iterlinks():
+                if re.search("bill=" + reg + "[0-9]{3}", link) != None:
+                    bill_page_url = "http://apps.leg.wa.gov/billinfo/" + link
+                    with self.lxml_context(bill_page_url) as bill_page:
+                        raw_title = bill_page.cssselect('title')
+                        split_title = string.split(raw_title[0].text_content(), ' ')
+                        bill_id = split_title[0] + ' ' + split_title[1]
+                        bill_id = bill_id.strip()
+                        session = split_title[3].strip()
 
-        self.scrape_year(year, chamber)
+                        title_element = bill_page.get_element_by_id("ctl00_ContentPlaceHolder1_lblSubTitle")
+                        title = title_element.text_content()
+
+                        bill = Bill(session, chamber, bill_id, title)
+                        bill.add_source(bill_page_url)
+                
+                        self.scrape_actions(bill_page, bill)
+                
+                        for element, attribute, link, pos in bill_page.iterlinks():
+                            if re.search("billdocs", link) != None:
+                                if re.search("Amendments", link) != None:
+                                    bill.add_document("Amendment: " + element.text_content(), link)    
+                                elif re.search("Bills", link) != None:
+                                    bill.add_version(element.text_content(), link) 
+                                else:
+                                    bill.add_document(element.text_content(), link)
+                            elif re.search("senators|representatives", link) != None:
+                                with self.lxml_context(link) as senator_page:
+                                    try:
+                                        name_tuple = self.scrape_legislator_name(senator_page)
+                                        bill.add_sponsor('primary', name_tuple[0])
+                                    except:
+                                        pass
+                            elif re.search("ShowRollCall", link) != None:
+                                match = re.search("([0-9]+,[0-9]+)", link)
+                                match = match.group(0)
+                                match = match.split(',')
+                                id1 = match[0]
+                                id2 = match[1]
+                                url = votes_url(id1, id2)
+                                with self.lxml_context(url) as vote_page:
+                                    self.scrape_votes(vote_page, bill, url)
+                                    
+                        self.save_bill(bill)
+                        

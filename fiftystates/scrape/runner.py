@@ -6,6 +6,8 @@ import os
 import sys
 from optparse import make_option, OptionParser
 
+import validictory
+
 from fiftystates.scrape import NoDataForPeriod, JSONDateEncoder
 
 try:
@@ -33,7 +35,8 @@ def main():
             scraper_type: bills, legislators, committees, votes
         """
         mod_path = 'fiftystates.scrape.%s.%s' % (state, scraper_type)
-        scraper_name = '%s%sScraper' % (state.upper(), scraper_type[:-1].capitalize())
+        scraper_name = '%s%sScraper' % (state.upper(),
+                                        scraper_type[:-1].capitalize())
 
         # make or clear directory for this type
         path = os.path.join(output_dir, scraper_type)
@@ -71,7 +74,7 @@ def main():
         elif scraper_type in ('legislators', 'committees'):
             if not terms:
                 latest_term = metadata['terms'][-1]['name']
-                print 'No term specified using latest "%s"' % latest_term
+                print 'No term specified, using latest "%s"' % latest_term
                 times = [latest_term]
             else:
                 times = terms
@@ -111,6 +114,9 @@ def main():
                     default=False,
                     help="be verbose (use multiple times for more"\
                         "debugging information)"),
+        make_option('--strict', action='store_true', dest='strict',
+                    default=False, help="fail immediately when encountering a"\
+                        "validation warning"),
         make_option('-d', '--output_dir', action='store', dest='output_dir',
                     help='output directory'),
         make_option('-n', '--no_cache', action='store_true', dest='no_cache',
@@ -140,16 +146,27 @@ def main():
                         datefmt="%H:%M:%S",
                        )
 
+    # make output dir if it doesn't exist
     output_dir = options.output_dir or os.path.join('data', state)
-
-    # write metadata
-    mod_name = 'fiftystates.scrape.%s' % state
-    metadata = __import__(mod_name, fromlist=['metadata']).metadata
     try:
         os.makedirs(output_dir)
     except OSError, e:
         if e.errno != 17:
             raise e
+
+    # write metadata
+    mod_name = 'fiftystates.scrape.%s' % state
+    metadata = __import__(mod_name, fromlist=['metadata']).metadata
+
+    try:
+        schema_path = os.path.join(os.path.split(__file__)[0],
+                                   '../../schemas/metadata.json')
+        schema = json.load(open(schema_path))
+        validictory.validate(metadata, schema)
+    except ValueError, e:
+        logging.getLogger('fiftystates').warning('metadata validation error: ' +
+                                                 str(e))
+
     with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
         json.dump(metadata, f, cls=JSONDateEncoder)
 
@@ -192,6 +209,7 @@ def main():
     opts = {'output_dir': output_dir,
             'no_cache': options.no_cache,
             'requests_per_minute': options.rpm,
+            'strict_validation': options.strict,
             # cache_dir, error_dir
         }
 

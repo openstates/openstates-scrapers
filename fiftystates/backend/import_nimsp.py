@@ -62,7 +62,7 @@ def import_nimsp_ids(state_abbrev):
         if len(results) == 1:
             leg['nimsp_candidate_id'] = int(
                 results[0].imsp_candidate_id)
-            db.legislators.save(leg)
+            db.legislators.save(leg, safe=True)
         else:
             print "Too many results for %s" % name.encode('asii', 'replace')
 

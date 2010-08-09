@@ -57,7 +57,7 @@ class MELegislatorScraper(LegislatorScraper):
                         if party == "V":
                             name = "Vacant"
 
-                        leg = Legislator(term_name, chamber, district, name, firstname, lastname, middlename, party, district_name = district_name)
+                        leg = Legislator(term_name, chamber, str(district), name, firstname, lastname, middlename, party, district_name = district_name)
                         leg.add_source(rep_url)
                         self.save_legislator(leg)
 
@@ -102,7 +102,7 @@ class MELegislatorScraper(LegislatorScraper):
                 else:
                     phone = phone[1:4] + phone[6:9] + phone[10:14]            
 
-                leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party, suffix = suffix, resident_county = resident_county, mailing_address= mailing_address, mailing_city = mailing_city, mailing_state = mailing_state, mail_zip = mail_zip, phone = phone, email= email, disctict_name = district_name)
+                leg = Legislator(term_name, chamber, str(district), full_name, first_name, last_name, middle_name, party, suffix = suffix, resident_county = resident_county, mailing_address= mailing_address, mailing_city = mailing_city, mailing_state = mailing_state, mail_zip = mail_zip, phone = phone, email= email, disctict_name = district_name)
 
                 leg.add_source(fileurl)
                 self.save_legislator(leg) 

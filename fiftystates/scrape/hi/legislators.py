@@ -1,29 +1,19 @@
+from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from fiftystates.scrape.hi.utils import year_from_session, legs_url
 
 import lxml.html
-import contextlib, itertools
+import contextlib
 
 class HILegislatorScraper(LegislatorScraper):
     state = 'hi'
     
-    # From the itertools docs's recipe section 
-    def grouper(self, n, iterable, fillvalue=None):
-        "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
-        args = [iter(iterable)] * n
-        return itertools.izip_longest(fillvalue=fillvalue, *args) 
-    
     @contextlib.contextmanager
-    def lxml_context(self, url, sep=None, sep_after=True):
+    def lxml_context(self, url):
         try:
             body = self.urlopen(url)
         except:
             body = self.urlopen("http://www.google.com")
-        
-        if sep != None: 
-            if sep_after == True:
-                before, itself, body = body.rpartition(sep)
-            else:
-                body, itself, after = body.rpartition(sep)    
         
         elem = lxml.html.fromstring(body)
         
@@ -34,17 +24,13 @@ class HILegislatorScraper(LegislatorScraper):
             #self.show_error(url, body)
             raise
 
-
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, session):
         # All other years are stored in a pdf
-        # http://www.capitol.hawaii.gov/session2009/misc/statehood.pdf
-        if int(year) != 2009:
-            return
+        # http://www.capitol.hawaii.gov/session2009/misc/statehood.pdf  
+        if year_from_session(session) != 2009:
+            raise NoDataForPeriod(session)
         
-        if chamber == 'upper':
-            legislators_page_url = "http://www.capitol.hawaii.gov/site1/info/direct/sendir.asp"
-        else: 
-            legislators_page_url = "http://www.capitol.hawaii.gov/site1/info/direct/repdir.asp"
+        legislators_page_url = legs_url(chamber)
             
         with self.lxml_context(legislators_page_url) as legislators_page: 
             legislators_table = legislators_page.cssselect('table')
@@ -58,8 +44,8 @@ class HILegislatorScraper(LegislatorScraper):
             legislators_data = self.grouper(3, legislators_data)
             
             for name_and_party, district, email in legislators_data:
-                for element, attribute, link, pos in name_and_party.iterlinks():
-                    source = "http://www.capitol.hawaii.gov" + link      
+                element, attribute, link, pos = name_and_party.iterlinks().next()
+                source = "http://www.capitol.hawaii.gov" + link      
                 
                 name_and_party = name_and_party.cssselect('td')
                 name_and_party = name_and_party[0]
@@ -82,7 +68,7 @@ class HILegislatorScraper(LegislatorScraper):
                 # Remove white space
                 email = email.lstrip()
 
-                leg = Legislator(year, chamber, district, "",
+                leg = Legislator(session, chamber, district, name,
                                  "", "", "", party,
                                  official_email=email)
                 leg.add_source(source)

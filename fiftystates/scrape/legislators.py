@@ -10,6 +10,15 @@ from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
 
 
 class LegislatorScraper(Scraper):
+
+    def _get_schema(self):
+        schema_path = os.path.join(os.path.split(__file__)[0],
+                                   '../../schemas/legislator.json')
+        schema = json.load(open(schema_path))
+        terms = [t['name'] for t in self.metadata['terms']]
+        schema['properties']['roles']['items']['properties']['term']['enum'] = terms
+        return schema
+
     def scrape(self, chamber, year):
         """
         Grab all the legislators who served in a given year. Must be
@@ -33,6 +42,9 @@ class LegislatorScraper(Scraper):
 
         person['state'] = self.state
 
+        # call validation
+        self.validate_json(person)
+
         role = person['roles'][0]
         filename = "%s_%s.json" % (role['term'],
                                    person['full_name'])
@@ -51,6 +63,9 @@ class LegislatorScraper(Scraper):
 
         role = legislator['roles'][0]
         legislator['state'] = self.state
+
+        # call validation
+        self.validate_json(legislator)
 
         filename = "%s_%s_%s_%s.json" % (role['term'],
                                          role['chamber'],
