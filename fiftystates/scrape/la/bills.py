@@ -3,6 +3,7 @@ import re
 import tempfile
 import datetime
 
+from fiftystates.scrape import ScrapeError
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.utils import pdf_to_lxml
@@ -48,7 +49,16 @@ class LABillScraper(BillScraper):
                 "string(//*[starts-with(text(), 'Summary: ')])")
             summary = summary.replace('Summary: ', '')
 
-            bill = Bill(session, chamber, bill_id, summary)
+            match = re.match(r"^([^:]+): ([^(]+)", summary)
+
+            if match:
+                subjects = [match.group(1).strip()]
+                title = match.group(2).strip()
+            else:
+                raise ScrapeError("Bad title")
+
+            bill = Bill(session, chamber, bill_id, title,
+                        subjects=subjects)
             bill.add_source(bill_url)
 
             history_link = page.xpath("//a[text() = 'History']")[0]
@@ -141,7 +151,6 @@ class LABillScraper(BillScraper):
                     conf['upper'] = names
                     bill['conference_committee'] = conf
 
-
                 bill.add_action(chamber, action, date, type=atype)
 
     def scrape_authors(self, bill, url):
@@ -191,10 +200,20 @@ class LABillScraper(BillScraper):
             return
 
         chamber = {'Senate': 'upper', 'House': 'lower'}[match.group(1)]
-        motion = match.group(2)
+        motion = match.group(2).strip()
+
+        if motion.startswith('FINAL PASSAGE'):
+            type = 'passage'
+        elif motion.startswith('AMENDMENT'):
+            type = 'amendment'
+        elif 'ON 3RD READINT' in motion:
+            type = 'reading:3'
+        else:
+            type = 'other'
 
         vote = Vote(chamber, None, motion, None,
                     None, None, None)
+        vote['type'] = type
         vote.add_source(url)
 
         with self.urlopen(url) as text:

@@ -7,9 +7,9 @@ import lxml.html
 class LACommitteeScraper(CommitteeScraper):
     state = 'md'
 
-    def scrape(self, chamber, year):
-        if year != '2009':
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, term):
+        if term != self.metadata['terms'][-1]['name']:
+            raise NoDataForPeriod(term)
 
         if chamber == 'upper':
             self.scrape_senate()
@@ -58,6 +58,9 @@ class LACommitteeScraper(CommitteeScraper):
                 cells = row.xpath('td')
 
                 name = cells[0].xpath('string()').strip()
+
+                if name.startswith('Vacant'):
+                    continue
 
                 font = cells[1].xpath('font')[0]
                 committees = []

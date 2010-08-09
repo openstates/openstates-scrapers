@@ -10,9 +10,9 @@ import lxml.html
 class LALegislatorScraper(LegislatorScraper):
     state = 'la'
 
-    def scrape(self, chamber, year):
-        if year != '2009':
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, term):
+        if term != self.metadata['terms'][-1]['name']:
+            raise NoDataForPeriod(term)
 
         list_url = "http://www.legis.state.la.us/bios.htm"
         with self.urlopen(list_url) as text:
@@ -29,11 +29,11 @@ class LALegislatorScraper(LegislatorScraper):
                 leg_url = a.attrib['href']
                 if chamber == 'upper':
                     try:
-                        self.scrape_senator(name, year, leg_url)
+                        self.scrape_senator(name, term, leg_url)
                     except Exception as e:
                         print e
                 else:
-                    self.scrape_rep(name, year, leg_url)
+                    self.scrape_rep(name, term, leg_url)
 
     def scrape_rep(self, name, term, url):
         # special case names that confuses name_tools

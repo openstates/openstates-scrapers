@@ -16,9 +16,8 @@ class NCCommitteeScraper(CommitteeScraper):
                     continue
                 mtype, members = row.getchildren()
                 if mtype.text == 'Members':
-                    members = members.text_content().split(', ')
-                    for m in members:
-                        committee.add_member(m)
+                    for m in members.getchildren():
+                        committee.add_member(m.text)
                 else:
                     committee.add_member(members.text_content(), mtype.text)
 

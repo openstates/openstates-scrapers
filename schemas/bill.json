@@ -26,7 +26,7 @@
         "type": {"type": "array", "items": {"type": "string", "enum":
             ["bill:introduced", "bill:passed", "bill:failed", "bill:signed",
              "amendment:introduced", "amendment:passed", "amendment:failed",
-             "amendment:amended", "amendment:withdrawn", "committee:referred",
+             "amendment:amended", "amendment:withdrawn", "committee:referred", "committee:failed",
              "committee:passed", "committee:passed:favorable",
              "committee:passed:unfavorable", "veto", "veto:line-item", "other"]
              }}

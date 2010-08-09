@@ -15,7 +15,7 @@ Links
    Public API Documentation <http://code.google.com/p/openstates/wiki/API>
    python client library <http://github.com/sunlightlabs/python-fiftystates>
    Contributor's Guide <http://code.google.com/p/openstates/wiki/Contributing>
-   State by State Status <http://fiftystates-dev.sunlightlabs.com/status/>
+   State by State Status <http://openstates.sunlightlabs.com/status/>
    Issue Tracker <http://code.google.com/p/openstates/issues/list>
    Code on GitHub <http://github.com/sunlightlabs/fiftystates>
    Google Group <http://groups.google.com/group/fifty-state-project>
