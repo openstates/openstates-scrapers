@@ -40,10 +40,15 @@ class Command(BaseCommand):
                    "argument.")
             sys.exit(1)
 
-        self.dump_json()
+        if len(args) > 1:
+            filename = args[1]
+        else:
+            filename = self.state_abbrev + '.zip'
 
-    def dump_json(self):
-        zip = zipfile.ZipFile('%s.zip' % self.state_abbrev, 'w')
+        self.dump_json(filename)
+
+    def dump_json(self, filename):
+        zip = zipfile.ZipFile(filename, 'w')
 
         for bill in db.bills.find({'state': self.state_abbrev}):
             path = "/api/%s/%s/%s/bills/%s" % (
