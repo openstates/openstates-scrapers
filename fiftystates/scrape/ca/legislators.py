@@ -53,10 +53,11 @@ class CALegislatorScraper(LegislatorScraper):
             middle_name = legislator.middle_initial or ''
             suffixes = legislator.name_suffix or ''
 
-            leg = Legislator(term, chamber, district, full_name.decode('utf8'),
-                             first_name=first_name.decode('utf8'),
-                             last_name=last_name.decode('utf8'),
-                             middle_name=middle_name.decode('utf8'),
+            leg = Legislator(term, chamber, district,
+                             full_name.decode('utf8').strip(),
+                             first_name=first_name.decode('utf8').strip(),
+                             last_name=last_name.decode('utf8').strip(),
+                             middle_name=middle_name.decode('utf8').strip(),
                              party=party,
-                             suffixes=suffixes.decode('utf8'))
+                             suffixes=suffixes.decode('utf8').strip())
             self.save_legislator(leg)
