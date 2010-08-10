@@ -17,24 +17,26 @@ class LABillScraper(BillScraper):
 
     def scrape(self, chamber, year):
         year = int(year)
-        abbr = {'upper': 'SB', 'lower': 'HB'}
+        types = {'upper': ['SB', 'SCR'], 'lower': ['HB', 'HCR']}
         for session in internal_sessions[year]:
             s_id = re.findall('\/(\w+)\.htm', session[0])[0]
 
             # Fake it until we can make it
-            bill_number = 1
-            failures = 0
-            while failures < 5:
-                bill_url = ('http://www.legis.state.la.us/billdata/'
-                            'byinst.asp?sessionid=%s&billtype=%s&billno=%d' % (
-                        s_id, abbr[chamber], bill_number))
+            for abbr in types[chamber]:
+                bill_number = 1
+                failures = 0
+                while failures < 5:
+                    bill_url = ('http://www.legis.state.la.us/billdata/'
+                                'byinst.asp?sessionid=%s&billtype=%s'
+                                '&billno=%d' % (
+                                    s_id, abbr, bill_number))
 
-                if self.scrape_bill(bill_url, chamber, session[1]):
-                    failures = 0
-                else:
-                    failures += 1
+                    if self.scrape_bill(bill_url, chamber, session[1]):
+                        failures = 0
+                    else:
+                        failures += 1
 
-                bill_number += 1
+                    bill_number += 1
 
     def scrape_bill(self, bill_url, chamber, session):
         with self.urlopen(bill_url) as text:
@@ -59,8 +61,16 @@ class LABillScraper(BillScraper):
             else:
                 raise ScrapeError("Bad title")
 
+            if bill_id.startswith('SB') or bill_id.startswith('HB'):
+                bill_type = 'bill'
+            elif bill_id.startswtih('SCR') or bill_id.startswith('HCR'):
+                bill_type = 'concurrent resolution'
+            else:
+                raise ScrapeError("Invalid bill ID format: %s" % bill_id)
+
             bill = Bill(session, chamber, bill_id, title,
                         subjects=subjects)
+            bill['type'] = bill_type
             bill.add_source(bill_url)
 
             history_link = page.xpath("//a[text() = 'History']")[0]
