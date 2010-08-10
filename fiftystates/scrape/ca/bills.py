@@ -26,11 +26,8 @@ class CABillScraper(BillScraper):
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
-    def scrape(self, chamber, year):
-        session = "%s%d" % (year, int(year) + 1)
-        if session not in [s_ for t in metadata['terms']
-                           for s_ in t['sessions']]:
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, session):
+        self.validate_session(session)
 
         if chamber == 'upper':
             measure_abbr = 'SB'

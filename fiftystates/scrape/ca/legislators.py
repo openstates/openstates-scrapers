@@ -10,8 +10,8 @@ from sqlalchemy import create_engine
 class CALegislatorScraper(LegislatorScraper):
     state = 'ca'
 
-    def __init__(self, host='localhost', user='', pw='', db='capublic',
-                 **kwargs):
+    def __init__(self, metadata, host='localhost', user='', pw='',
+                 db='capublic', **kwargs):
         super(CALegislatorScraper, self).__init__(metadata, **kwargs)
         if user and pw:
             conn_str = 'mysql://%s:%s@' % (user, pw)
@@ -23,15 +23,8 @@ class CALegislatorScraper(LegislatorScraper):
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
-    def scrape(self, chamber, year):
-        term = "%s%d" % (year, int(year) + 1)
-        found = False
-        for t in metadata['terms']:
-            if t['name'] == term:
-                found = True
-                break
-        if not found:
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, term):
+        self.validate_term(term)
 
         if chamber == 'upper':
             house_type = 'S'
