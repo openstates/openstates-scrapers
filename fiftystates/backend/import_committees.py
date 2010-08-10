@@ -32,7 +32,8 @@ def import_committees(state, data_dir):
     if not paths:
         # Not standalone committees
         for legislator in db.legislators.find({
-            'roles': {'$elemMatch': {'term': current_term}}}):
+            'roles': {'$elemMatch': {'term': current_term,
+                                     'state': state}}}):
 
             for role in legislator['roles']:
                 if (role['type'] == 'committee member' and
