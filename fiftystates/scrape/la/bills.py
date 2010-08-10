@@ -3,6 +3,7 @@ import re
 import tempfile
 import datetime
 
+from fiftystates.scrape import ScrapeError
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.utils import pdf_to_lxml
@@ -48,7 +49,18 @@ class LABillScraper(BillScraper):
                 "string(//*[starts-with(text(), 'Summary: ')])")
             summary = summary.replace('Summary: ', '')
 
-            bill = Bill(session, chamber, bill_id, summary)
+            match = re.match(r"^([^:]+): "
+                             r"((\(Constitutional Amendment\) )?[^(]+)",
+                             summary)
+
+            if match:
+                subjects = [match.group(1).strip()]
+                title = match.group(2).strip()
+            else:
+                raise ScrapeError("Bad title")
+
+            bill = Bill(session, chamber, bill_id, title,
+                        subjects=subjects)
             bill.add_source(bill_url)
 
             history_link = page.xpath("//a[text() = 'History']")[0]
@@ -140,7 +152,6 @@ class LABillScraper(BillScraper):
                     conf = bill.get('conference_committee', {})
                     conf['upper'] = names
                     bill['conference_committee'] = conf
-
 
                 bill.add_action(chamber, action, date, type=atype)
 
