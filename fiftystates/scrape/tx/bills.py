@@ -8,6 +8,7 @@ from fiftystates.scrape.tx.utils import chamber_name, parse_ftp_listing
 from fiftystates.scrape.bills import BillScraper, Bill
 
 import lxml.etree
+import urllib2
 
 
 class TXBillScraper(BillScraper):
