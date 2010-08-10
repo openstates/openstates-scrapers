@@ -198,6 +198,12 @@ class MDBillScraper(BillScraper):
             self.parse_bill_documents(doc, bill)    # documents and versions
             self.parse_bill_votes(doc, bill)        # votes
 
+            # subjects
+            subjects = []
+            for subj in doc.xpath('//a[contains(@href, "/subjects/")]'):
+                subjects.append(subj.text.split('-see also-')[0])
+            bill['subjects'] = subjects
+
             # add bill to collection
             self.save_bill(bill)
 
