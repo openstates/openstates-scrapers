@@ -63,7 +63,7 @@ class LABillScraper(BillScraper):
 
             if bill_id.startswith('SB') or bill_id.startswith('HB'):
                 bill_type = ['bill']
-            elif bill_id.startswtih('SCR') or bill_id.startswith('HCR'):
+            elif bill_id.startswith('SCR') or bill_id.startswith('HCR'):
                 bill_type = ['concurrent resolution']
             else:
                 raise ScrapeError("Invalid bill ID format: %s" % bill_id)
