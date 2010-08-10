@@ -12,7 +12,7 @@ class CALegislatorScraper(LegislatorScraper):
 
     def __init__(self, host='localhost', user='', pw='', db='capublic',
                  **kwargs):
-        super(CALegislatorScraper, self).__init__(**kwargs)
+        super(CALegislatorScraper, self).__init__(metadata, **kwargs)
         if user and pw:
             conn_str = 'mysql://%s:%s@' % (user, pw)
         else:
