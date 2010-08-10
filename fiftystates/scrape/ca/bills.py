@@ -29,18 +29,28 @@ class CABillScraper(BillScraper):
     def scrape(self, chamber, session):
         self.validate_session(session)
 
+        bill_types = {'B': 'bill',
+                      'CR': 'concurrent resolution',
+                      'JR': 'joint resolution'}
+
+        for abbr, type in bill_types.items():
+            if chamber == 'upper':
+                abbr = "S" + abbr
+            else:
+                abbr = "A" + abbr
+
+            self.scrape_bill_type(self, chamber, session, type, abbr)
+
+    def scrape_bill_type(self, chamber, session, bill_type, type_abbr):
         if chamber == 'upper':
-            measure_abbr = 'SB'
             chamber_name = 'SENATE'
-            house_type = 'S'
         else:
-            measure_abbr = 'AB'
             chamber_name = 'ASSEMBLY'
-            house_type = 'A'
+
 
         bills = self.session.query(CABill).filter_by(
             session_year=session).filter_by(
-            measure_type=measure_abbr)
+            measure_type=type_abbr)
 
         for bill in bills:
             bill_session = session
@@ -56,7 +66,8 @@ class CABillScraper(BillScraper):
 
             fsbill = Bill(bill_session, chamber, bill_id,
                           version.title,
-                          short_title=version.short_title)
+                          short_title=version.short_title,
+                          type=[bill_type])
 
             for author in version.authors:
                 if author.house == chamber_name:
