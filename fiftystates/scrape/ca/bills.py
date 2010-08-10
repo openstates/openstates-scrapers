@@ -121,8 +121,7 @@ class CABillScraper(BillScraper):
                     vote_chamber = 'upper'
                     vote_location = ' '.join(full_loc.split(' ')[1:])
                 else:
-                    vote_chamber = ''
-                    vote_location = full_loc
+                    raise ScrapeError("Bad location: %s" % full_loc)
 
                 motion = vote.motion.motion_text or ''
 
@@ -139,8 +138,10 @@ class CABillScraper(BillScraper):
                               result,
                               vote.ayes, vote.noes, vote.abstain,
                               threshold=vote.threshold,
-                              location=vote_location
                               type=vtype)
+
+                if vote_location != 'Floor':
+                    fsvote['committee'] = vote_location
 
                 for record in vote.votes:
                     if record.vote_code == 'AYE':
