@@ -8,8 +8,8 @@ import lxml.html
 class CACommitteeScraper(CommitteeScraper):
     state = 'ca'
 
-    def scrape(self, chamber, year):
-        if chamber != 'lower' or year != '2009':
+    def scrape(self, chamber, term):
+        if chamber != 'lower' or term != '20092010':
             return
 
         list_url = 'http://www.assembly.ca.gov/acs/comDir.asp'
