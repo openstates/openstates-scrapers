@@ -18,6 +18,9 @@ class TXBillScraper(BillScraper):
     def scrape(self, chamber, session):
         self.validate_session(session)
 
+        if len(session) == 2:
+            session = "%sR" % session
+
         for btype in ['bills', 'concurrent_resolutions',
                       'joint_resolutions', 'resolutions']:
             billdirs_path = '/bills/%s/billhistory/%s_%s/' % (
