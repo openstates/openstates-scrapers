@@ -228,14 +228,12 @@ class TXVoteScraper(VoteScraper):
     state = 'tx'
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
 
-    def scrape(self, chamber, year):
-        if year != '2009':
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, session):
+        self.validate_session(session)
 
-        for session in ['81R', '811']:
-            self.scrape_session(chamber, session)
+        if len(session) == 2:
+            session = "%sR" % session
 
-    def scrape_session(self, chamber, session):
         journal_root = urlparse.urljoin(self._ftp_root, ("/journals/" +
                                                          session +
                                                          "/html/"),
