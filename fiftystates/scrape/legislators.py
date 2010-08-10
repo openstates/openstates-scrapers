@@ -78,7 +78,8 @@ class LegislatorScraper(Scraper):
 
 
 class Person(FiftystatesObject):
-    def __init__(self, full_name, **kwargs):
+    def __init__(self, full_name, first_name='', last_name='',
+                 middle_name='', **kwargs):
         """
         Create a Person.
 
@@ -86,9 +87,16 @@ class Person(FiftystatesObject):
         be used when dealing with state legislators.
 
         :param full_name: the person's full name
+        :param first_name: the first name of this legislator (if specified)
+        :param last_name: the last name of this legislator (if specified)
+        :param middle_name: a middle name or initial of this legislator
+          (if specified)
         """
         super(Person, self).__init__('person', **kwargs)
         self['full_name'] = full_name
+        self['first_name'] = first_name
+        self['last_name'] = last_name
+        self['middle_name'] = middle_name
         self['roles'] = []
 
     def add_role(self, role, term, start_date=None, end_date=None,
@@ -133,10 +141,9 @@ class Legislator(Person):
         Any additional keyword arguments will be associated with this
         Legislator and stored in the database.
         """
-        super(Legislator, self).__init__(full_name, **kwargs)
+        super(Legislator, self).__init__(full_name, first_name,
+                                         last_name, middle_name,
+                                         **kwargs)
         #self['type'] = 'legislator'
         self.add_role('member', term, chamber=chamber, district=district,
                       party=party)
-        self['first_name'] = first_name
-        self['last_name'] = last_name
-        self['middle_name'] = middle_name
