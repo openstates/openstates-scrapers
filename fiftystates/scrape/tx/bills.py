@@ -2,6 +2,7 @@ from __future__ import with_statement
 import urlparse
 import datetime as dt
 
+from fiftystates.scrape import ScrapeError
 from fiftystates.scrape.tx import metadata
 from fiftystates.scrape.tx.utils import chamber_name, parse_ftp_listing
 from fiftystates.scrape.bills import BillScraper, Bill
@@ -13,31 +14,23 @@ class TXBillScraper(BillScraper):
     state = 'tx'
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
 
-    def scrape(self, chamber, year):
-        for t in metadata['terms']:
-            if t['start_year'] == int(year):
-                sessions = t['sessions']
-                break
-        else:
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, session):
+        self.validate_session(session)
 
-        for session in sessions:
-            if len(session) == 2:
-                session = session + "R"
-            self.scrape_session(chamber, session)
+        for btype in ['bills', 'concurrent_resolutions',
+                      'joint_resolutions', 'resolutions']:
+            billdirs_path = '/bills/%s/billhistory/%s_%s/' % (
+                session, chamber_name(chamber), btype)
+            billdirs_url = urlparse.urljoin(self._ftp_root, billdirs_path)
 
-    def scrape_session(self, chamber, session):
-        billdirs_path = '/bills/%s/billhistory/%s_bills/' % (
-            session, chamber_name(chamber))
-        billdirs_url = urlparse.urljoin(self._ftp_root, billdirs_path)
-
-        with self.urlopen(billdirs_url) as bill_dirs:
-            for dir in parse_ftp_listing(bill_dirs):
-                bill_url = urlparse.urljoin(billdirs_url, dir) + '/'
-                with self.urlopen(bill_url) as bills:
-                    for history in parse_ftp_listing(bills):
-                        self.scrape_bill(chamber, session,
-                                         urlparse.urljoin(bill_url, history))
+            with self.urlopen(billdirs_url) as bill_dirs:
+                for dir in parse_ftp_listing(bill_dirs):
+                    bill_url = urlparse.urljoin(billdirs_url, dir) + '/'
+                    with self.urlopen(bill_url) as bills:
+                        for history in parse_ftp_listing(bills):
+                            self.scrape_bill(chamber, session,
+                                             urlparse.urljoin(bill_url,
+                                                              history))
 
     def scrape_bill(self, chamber, session, url):
         with self.urlopen(url) as data:
@@ -70,7 +63,18 @@ class TXBillScraper(BillScraper):
         if session[2] == 'R':
             session = session[0:2]
 
-        bill = Bill(session, chamber, bill_id, bill_title)
+        if bill_id[1] == 'B':
+            bill_type = ['bill']
+        elif bill_id[1] == 'R':
+            bill_type = ['resolution']
+        elif bill_id[1:3] == 'CR':
+            bill_type = ['concurrent resolution']
+        elif bill_id[1:3] == 'JR':
+            bill_type = ['joint resolution']
+        else:
+            raise ScrapeError("Invalid bill_id: %s" % bill_id)
+
+        bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
 
         for action in root.findall('actions/action'):
             act_date = dt.datetime.strptime(action.findtext('date'),
