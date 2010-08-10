@@ -133,7 +133,9 @@ class CABillScraper(BillScraper):
                               vote.vote_date_time,
                               motion,
                               result,
-                              vote.ayes, vote.noes, vote.abstain,
+                              int(vote.ayes),
+                              int(vote.noes),
+                              int(vote.abstain),
                               threshold=vote.threshold,
                               type=vtype)
 
