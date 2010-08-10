@@ -131,9 +131,9 @@ class Scraper(scrapelib.Scraper):
 
 
 class FiftystatesObject(dict):
-    def __init__(self, type, **kwargs):
+    def __init__(self, _type, **kwargs):
         super(FiftystatesObject, self).__init__()
-        self['_type'] = type
+        self['_type'] = _type
         self['sources'] = []
         self.update(kwargs)
 
