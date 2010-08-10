@@ -44,14 +44,18 @@ class TXBillScraper(BillScraper):
             bill_num = int(bill['bill_id'].split()[1])
             long_bill_id = "%s%05d" % (bill_prefix, bill_num)
 
-            with self.urlopen(versions_url) as versions_list:
-                bill.add_source(versions_url)
-                for version in parse_ftp_listing(versions_list):
-                    if version.startswith(long_bill_id):
-                        version_name = version.split('.')[0]
-                        version_url = urlparse.urljoin(versions_url + '/',
-                                                       version)
-                        bill.add_version(version_name, version_url)
+            try:
+                with self.urlopen(versions_url) as versions_list:
+                    bill.add_source(versions_url)
+                    for version in parse_ftp_listing(versions_list):
+                        if version.startswith(long_bill_id):
+                            version_name = version.split('.')[0]
+                            version_url = urlparse.urljoin(versions_url + '/',
+                                                           version)
+                            bill.add_version(version_name, version_url)
+            except urllib2.URLError:
+                # Sometimes the text is missing
+                pass
 
             self.save_bill(bill)
 
