@@ -13,8 +13,8 @@ from sqlalchemy import create_engine
 class CABillScraper(BillScraper):
     state = 'ca'
 
-    def __init__(self, host='localhost', user='', pw='', db='capublic',
-                 **kwargs):
+    def __init__(self, metadata, host='localhost', user='', pw='',
+                 db='capublic', **kwargs):
         super(CABillScraper, self).__init__(metadata, **kwargs)
         if user and pw:
             conn_str = 'mysql://%s:%s@' % (user, pw)
