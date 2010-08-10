@@ -35,6 +35,11 @@ classifiers = {
     r'Conference Committee|Passed Enrolled|Special Order|Senate Concur|Motion|Laid Over|Hearing|Committee Amendment|Assigned a chapter': 'other',
 }
 
+vote_classifiers = {
+    r'third': 'passage',
+    r'fla|amend|amd': 'amendment',
+}
+
 def _classify_action(action):
     if not action:
         return None
@@ -128,6 +133,10 @@ class MDBillScraper(BillScraper):
                     # motion
                     box = vote_doc.xpath('//td[@colspan=3]/font[@size=-1]/text()')
                     params['motion'] = box[-1]
+                    params['type'] = 'other'
+                    for regex, vtype in vote_classifiers.iteritems():
+                        if re.findall(regex, params['motion'], re.IGNORECASE):
+                            params['type'] = vtype
 
                     # counts
                     bs = vote_doc.xpath('//td[@width="20%"]/font/b/text()')
