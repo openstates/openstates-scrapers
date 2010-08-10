@@ -35,6 +35,11 @@ classifiers = {
     r'Conference Committee|Passed Enrolled|Special Order|Senate Concur|Motion|Laid Over|Hearing|Committee Amendment|Assigned a chapter': 'other',
 }
 
+vote_classifiers = {
+    r'third': 'passage',
+    r'fla|amend|amd': 'amendment',
+}
+
 def _classify_action(action):
     if not action:
         return None
@@ -46,8 +51,6 @@ def _classify_action(action):
 
 BASE_URL = "http://mlis.state.md.us"
 BILL_URL = BASE_URL + "/%s/billfile/%s%04d.htm" # year, session, bill_type, number
-
-MOTION_RE = re.compile(r"(?P<motion>[\w\s]+) \((?P<yeas>\d{1,3})-(?P<nays>\d{1,3})\)")
 
 class MDBillScraper(BillScraper):
     state = 'md'
@@ -126,25 +129,26 @@ class MDBillScraper(BillScraper):
                 vote_url = BASE_URL + href
                 with self.urlopen(vote_url) as vote_html:
                     vote_doc = lxml.html.fromstring(vote_html)
+
                     # motion
-                    for a in vote_doc.cssselect('a'):
-                         if 'motions' in a.get('href'):
-                            match = MOTION_RE.match(a.text)
-                            if match:
-                                motion = match.groupdict().get('motion', '').strip()
-                                params['passed'] = 'Passed' in motion or 'Adopted' in motion
-                                params['motion'] = motion
-                                break
-                    # ugh
-                    bs = vote_doc.cssselect('b')[:5]
-                    yeas = int(bs[0].text.split()[0])
-                    nays = int(bs[1].text.split()[0])
-                    excused = int(bs[2].text.split()[0])
-                    not_voting = int(bs[3].text.split()[0])
-                    absent = int(bs[4].text.split()[0])
+                    box = vote_doc.xpath('//td[@colspan=3]/font[@size=-1]/text()')
+                    params['motion'] = box[-1]
+                    params['type'] = 'other'
+                    for regex, vtype in vote_classifiers.iteritems():
+                        if re.findall(regex, params['motion'], re.IGNORECASE):
+                            params['type'] = vtype
+
+                    # counts
+                    bs = vote_doc.xpath('//td[@width="20%"]/font/b/text()')
+                    yeas = int(bs[0].split()[0])
+                    nays = int(bs[1].split()[0])
+                    excused = int(bs[2].split()[0])
+                    not_voting = int(bs[3].split()[0])
+                    absent = int(bs[4].split()[0])
                     params['yes_count'] = yeas
                     params['no_count'] = nays
                     params['other_count'] = excused + not_voting + absent
+                    params['passed'] = yeas > nays
 
                     # date
                     # parse the following format: March 23, 2009 8:44 PM
@@ -181,10 +185,8 @@ class MDBillScraper(BillScraper):
         url = BILL_URL % (session_url, bill_type, number)
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
-            # title
-            # find <a name="Title">, get parent dt, get parent dl, then get dd within dl
-            title = doc.cssselect('a[name=Title]')[0] \
-                .getparent().getparent().cssselect('dd')[0].text.strip()
+            # find <a name="Title">, get parent dt, get parent dl, then dd n dl
+            title = doc.xpath('//a[@name="Title"][1]/../../dd[1]/text()')[0].strip()
 
             # create the bill object now that we have the title
             print "%s %d %s" % (bill_type, number, title)
