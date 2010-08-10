@@ -39,7 +39,7 @@ class CABillScraper(BillScraper):
             else:
                 abbr = "A" + abbr
 
-            self.scrape_bill_type(self, chamber, session, type, abbr)
+            self.scrape_bill_type(chamber, session, type, abbr)
 
     def scrape_bill_type(self, chamber, session, bill_type, type_abbr):
         if chamber == 'upper':
