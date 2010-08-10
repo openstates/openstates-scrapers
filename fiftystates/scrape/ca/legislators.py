@@ -47,11 +47,14 @@ class CALegislatorScraper(LegislatorScraper):
             elif party == 'REP':
                 party = 'Republican'
 
-            leg = Legislator(term, chamber, district,
-                             legislator.legislator_name,
-                             first_name=legislator.first_name or '',
-                             last_name=legislator.last_name or '',
-                             middle_name=legislator.middle_initial or '',
-                             party=party,
-                             suffixes=legislator.name_suffix)
+            full_name = legislator.legislator_name.decode('utf8')
+            first_name = legislator.first_name.decode('utf8') or ''
+            last_name = legislator.last_name.decode('utf8') or ''
+            middle_name = legislator.middle_initial.decode('utf8') or ''
+            suffixes = legislator.name_suffix.decode('utf8') or ''
+
+            leg = Legislator(term, chamber, district, full_name,
+                             first_name=first_name, last_name=last_name,
+                             middle_name=middle_name, party=party,
+                             suffixes=suffixes)
             self.save_legislator(leg)
