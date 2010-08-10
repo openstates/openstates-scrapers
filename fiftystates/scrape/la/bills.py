@@ -62,15 +62,18 @@ class LABillScraper(BillScraper):
                 raise ScrapeError("Bad title")
 
             if bill_id.startswith('SB') or bill_id.startswith('HB'):
-                bill_type = 'bill'
+                bill_type = ['bill']
             elif bill_id.startswtih('SCR') or bill_id.startswith('HCR'):
-                bill_type = 'concurrent resolution'
+                bill_type = ['concurrent resolution']
             else:
                 raise ScrapeError("Invalid bill ID format: %s" % bill_id)
 
+            if title.startswith("(Constitutional Amendment)"):
+                bill_type.append('constitutional amendment')
+                title = title.replace('(Constitutional Amendment) ', '')
+
             bill = Bill(session, chamber, bill_id, title,
-                        subjects=subjects)
-            bill['type'] = bill_type
+                        subjects=subjects, type=bill_type)
             bill.add_source(bill_url)
 
             history_link = page.xpath("//a[text() = 'History']")[0]
