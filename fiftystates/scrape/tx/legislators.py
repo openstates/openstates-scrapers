@@ -11,9 +11,10 @@ import lxml.html
 class TXLegislatorScraper(LegislatorScraper):
     state = 'tx'
 
-    def scrape(self, chamber, year):
-        if year != '2009':
-            raise NoDataForPeriod
+    def scrape(self, chamber, term):
+        if term != '81':
+            # Data only available for current term
+            raise NoDataForPeriod(term)
 
         if chamber == 'upper':
             chamber_type = 'S'
@@ -30,9 +31,9 @@ class TXLegislatorScraper(LegislatorScraper):
                                       li.attrib['onclick']).group(1)
                 member_url = ("http://www.legdir.legis.state.tx.us/" +
                               member_url)
-                self.scrape_member(chamber, year, member_url)
+                self.scrape_member(chamber, term, member_url)
 
-    def scrape_member(self, chamber, year, member_url):
+    def scrape_member(self, chamber, term, member_url):
         with self.urlopen(member_url) as page:
             root = lxml.html.fromstring(page)
             root.make_links_absolute(member_url)
@@ -60,9 +61,9 @@ class TXLegislatorScraper(LegislatorScraper):
 
             if type == 'Lt. Gov.':
                 leg = Person(full_name)
-                leg.add_role('Lt. Governor', '81', party=party)
+                leg.add_role('Lt. Governor', term, party=party)
             else:
-                leg = Legislator('81', chamber, district, full_name,
+                leg = Legislator(term, chamber, district, full_name,
                                  party=party, photo_url=photo_url)
 
             leg.add_source(member_url)
@@ -73,7 +74,7 @@ class TXLegislatorScraper(LegislatorScraper):
 
             for br in comm_div.xpath('*/br'):
                 if br.tail:
-                    leg.add_role('committee member', '81', chamber=chamber,
+                    leg.add_role('committee member', term, chamber=chamber,
                                  committee=clean_committee_name(br.tail))
 
             if type == 'Lt. Gov.':
