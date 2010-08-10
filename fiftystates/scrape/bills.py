@@ -82,6 +82,13 @@ class Bill(FiftystatesObject):
         self['actions'] = []
         self['documents'] = []
 
+        if not 'type' in kwargs or not kwargs['type']:
+            self['type'] = ['bill']
+        elif isinstance(kwargs['type'], basestring):
+            self['type'] = [kwargs['type']]
+        else:
+            self['type'] = list(kwargs['type'])
+
     def add_sponsor(self, type, name, **kwargs):
         """
         Associate a sponsor with this bill.
