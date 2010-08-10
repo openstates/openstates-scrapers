@@ -1,5 +1,6 @@
 metadata = dict(
     name='California',
+    abbreviation='ca',
     legislature_name='California State Legislature',
     lower_chamber_name='Assembly',
     upper_chamber_name='Senate',
