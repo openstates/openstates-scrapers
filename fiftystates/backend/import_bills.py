@@ -22,6 +22,25 @@ import pymongo
 import argparse
 
 
+def ensure_indexes():
+    db.bills.ensure_index([('state', pymongo.ASCENDING),
+                           ('session', pymongo.ASCENDING),
+                           ('chamber', pymongo.ASCENDING),
+                           ('bill_id', pymongo.ASCENDING)])
+    db.bills.ensure_index([('state', pymongo.ASCENDING),
+                           ('session', pymongo.ASCENDING),
+                           ('chamber', pymongo.ASCENDING),
+                           ('keywords', pymongo.ASCENDING)])
+    db.bills.ensure_index([('state', pymongo.ASCENDING),
+                           ('session', pymongo.ASCENDING),
+                           ('chamber', pymongo.ASCENDING),
+                           ('type', pymongo.ASCENDING)])
+    db.bills.ensure_index([('state', pymongo.ASCENDING),
+                           ('session', pymongo.ASCENDING),
+                           ('chamber', pymongo.ASCENDING),
+                           ('sponsors', pymongo.ASCENDING)])
+
+
 def import_bills(state, data_dir):
     data_dir = os.path.join(data_dir, state)
     pattern = os.path.join(data_dir, 'bills', '*.json')
@@ -57,6 +76,8 @@ def import_bills(state, data_dir):
         else:
             data['keywords'] = list(keywordize(data['title']))
             update(bill, data, db.bills)
+
+    ensure_indexes()
 
 
 if __name__ == '__main__':

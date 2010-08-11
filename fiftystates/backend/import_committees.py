@@ -20,6 +20,12 @@ import argparse
 import name_tools
 
 
+def ensure_indexes():
+    db.committees.ensure_index([('state', pymongo.ASCENDING),
+                                ('committee', pymongo.ASCENDING),
+                                ('subcommittee', pymongo.ASCENDING)])
+
+
 def import_committees(state, data_dir):
     data_dir = os.path.join(data_dir, state)
     pattern = os.path.join(data_dir, 'committees', '*.json')
@@ -128,6 +134,8 @@ def import_committees(state, data_dir):
                 db.legislators.save(legislator, safe=True)
 
         db.committees.save(committee, safe=True)
+
+    ensure_indexes()
 
 
 if __name__ == '__main__':
