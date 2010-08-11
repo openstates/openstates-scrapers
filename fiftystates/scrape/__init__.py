@@ -127,7 +127,7 @@ class Scraper(scrapelib.Scraper):
         for t in self.metadata['terms']:
             if term == t['name']:
                 return True
-        return NoDataForPeriod(session)
+        raise NoDataForPeriod(session)
 
 
 class FiftystatesObject(dict):
