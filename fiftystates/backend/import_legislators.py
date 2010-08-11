@@ -23,6 +23,7 @@ import name_tools
 
 
 def ensure_indexes():
+    db.legislators.ensure_index('_all_ids', pymongo.ASCENDING)
     db.legislators.ensure_index([('roles.state', pymongo.ASCENDING),
                                  ('roles.type', pymongo.ASCENDING),
                                  ('roles.term', pymongo.ASCENDING),
