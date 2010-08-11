@@ -28,7 +28,9 @@
              "amendment:introduced", "amendment:passed", "amendment:failed",
              "amendment:amended", "amendment:withdrawn", "committee:referred", "committee:failed",
              "committee:passed", "committee:passed:favorable",
-             "committee:passed:unfavorable", "veto", "veto:line-item", "other"]
+             "committee:passed:unfavorable", "veto", "veto:line-item",
+             "veto:override", "veto:override:passed", "veto:override:failed",
+             "other"]
              }}
     }}},
     "votes": {"type": "array", "items": {"type": "object", "properties": {
