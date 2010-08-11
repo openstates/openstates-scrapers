@@ -90,6 +90,7 @@ class CABillScraper(BillScraper):
                                    date=version.bill_version_action_date,
                                    title=version.title,
                                    short_title=version.short_title,
+                                   subject=[subject],
                                    type=type)
 
             fsbill['title'] = title
