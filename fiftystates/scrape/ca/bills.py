@@ -52,22 +52,46 @@ class CABillScraper(BillScraper):
             session_year=session).filter_by(
             measure_type=type_abbr)
 
+
         for bill in bills:
             bill_session = session
             if bill.session_num != '0':
                 bill_session += ' Special Session %s' % bill.session_num
 
             bill_id = bill.short_bill_id
-            version = self.session.query(CABillVersion).filter_by(
-                bill=bill).filter(CABillVersion.bill_xml != None).first()
-            if not version:
-                # not enough data to import
-                continue
 
-            fsbill = Bill(bill_session, chamber, bill_id,
-                          version.title,
-                          short_title=version.short_title,
-                          type=[bill_type])
+            fsbill = Bill(bill_session, chamber, bill_id, '')
+
+            title = None
+            short_title = None
+            type = None
+            for version in self.session.query(CABillVersion).filter_by(
+                bill=bill).filter(CABillVersion.bill_xml != None):
+
+                title = version.title
+                short_title = version.short_title
+                type = [bill_type]
+
+                if version.appropriation == 'Yes':
+                    type.append('appropriation')
+                if version.fiscal_committee == 'Yes':
+                    type.append('fiscal committee')
+                if version.local_program == 'Yes':
+                    type.append('local program')
+                if version.urgency == 'Yes':
+                    type.append('urgency')
+                if version.taxlevy == 'Yes':
+                    type.append('tax levy')
+
+                fsbill.add_version(version.bill_version_id,
+                                   version.bill_version_action_date,
+                                   title=version.title,
+                                   short_title=version.short_title,
+                                   type=type)
+
+            fsbill['title'] = title
+            fsbill['short_title'] = short_title
+            fsbill['type'] = type
 
             for author in version.authors:
                 if author.house == chamber_name:
