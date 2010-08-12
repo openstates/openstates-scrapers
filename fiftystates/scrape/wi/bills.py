@@ -9,6 +9,31 @@ from fiftystates.scrape.utils import convert_pdf
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 
+motion_classifiers = {
+    '(Assembly|Senate)( substitute)? amendment': 'amendment',
+    'Report (passage|concurrence)': 'passage',
+    'Report (adoption|introduction and adoption) of Senate( Substitute)? Amendment': 'amendment',
+    'Report Assembly( Substitute)? Amendment': 'amendment',
+    'Read a third time': 'passage',
+    'Adopted': 'passage'
+}
+
+action_classifiers = {
+    '(Senate|Assembly)( substitute)? amendment .* offered': 'amendment:introduced',
+    '(Senate|Assembly)( substitute)? amendment .* rejected': 'amendment:rejected',
+    '(Senate|Assembly)( substitute)? amendment .* adopted': 'amendment:passed',
+    '(Senate|Assembly)( substitute)? amendment .* laid on table': 'amendment:tabled',
+    '(Senate|Assembly)( substitute)? amendment .* withdrawn': 'amendment:withdrawn',
+    'Report (passage|concurrence).* recommended': 'committee:passed:favorable',
+    'Report approved by the Governor': 'governor:signed',
+    '.+ (withdrawn|added) as a co(author|sponsor)': 'other',
+    'Read (first time )?and referred to committee': 'committee:referred',
+    'Read a third time and (passed|concurred)': 'bill:passed',
+    'Adopted': 'bill:passed',
+    'Presented to the Governor': 'governor:received',
+}
+
+
 class WIBillScraper(BillScraper):
     state = 'wi'
 
@@ -139,9 +164,17 @@ class WIBillScraper(BillScraper):
         # "___________                      __________________________________________"
         #    11
         sane = sane.strip()[11:]  #take out the date and house
-        if sane.find('..') != -1: 
+        if sane.find('..') != -1:
             sane = sane[0:sane.find(' ..')]  #clear out bookkeeping
-        bill.add_action(actor, sane, date)
+
+        # classify actions
+        atype = 'other'
+        for regex, type in action_classifiers.iteritems():
+            if re.match(regex, sane):
+                atype = type
+                break
+        bill.add_action(actor, sane, date, type=atype)
+
         for doc in line.findall('a'):
             # have this treat amendments better, as they show up like "1" or "3" now..
             bill.add_document(doc.text_content(), doc.get('href'))
@@ -152,7 +185,14 @@ class WIBillScraper(BillScraper):
     def add_vote(self, bill, chamber, date, line, text):
         votes = re.findall(r'Ayes (\d+)\, Noes (\d+)', text)
         (yes, no) = int(votes[0][0]), int(votes[0][1])
-        v = Vote(chamber, date, text, yes > no, yes, no, 0)
+
+        vtype = 'other'
+        for regex, type in motion_classifiers.iteritems():
+            if re.match(regex, text):
+                vtype = type
+                break
+
+        v = Vote(chamber, date, text, yes > no, yes, no, 0, type=vtype)
 
         # commented due to discovery of vote PDF mismatches -JPT, 7/22/10
         #link = line.xpath('//a[contains(@href, "/votes/")]')
