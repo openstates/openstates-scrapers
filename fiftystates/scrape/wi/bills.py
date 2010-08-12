@@ -27,7 +27,7 @@ action_classifiers = {
     'Report (passage|concurrence).* recommended': 'committee:passed:favorable',
     'Report approved by the Governor': 'governor:signed',
     '.+ (withdrawn|added) as a co(author|sponsor)': 'other',
-    'Read (first time )?and referred to committee': 'committee:referred',
+    'R(ead (first time )?and r)?eferred to committee': 'committee:referred',
     'Read a third time and (passed|concurred)': 'bill:passed',
     'Adopted': 'bill:passed',
     'Presented to the Governor': 'governor:received',
