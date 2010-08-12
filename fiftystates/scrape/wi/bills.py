@@ -20,7 +20,7 @@ motion_classifiers = {
 
 action_classifiers = {
     '(Senate|Assembly)( substitute)? amendment .* offered': 'amendment:introduced',
-    '(Senate|Assembly)( substitute)? amendment .* rejected': 'amendment:rejected',
+    '(Senate|Assembly)( substitute)? amendment .* rejected': 'amendment:failed',
     '(Senate|Assembly)( substitute)? amendment .* adopted': 'amendment:passed',
     '(Senate|Assembly)( substitute)? amendment .* laid on table': 'amendment:tabled',
     '(Senate|Assembly)( substitute)? amendment .* withdrawn': 'amendment:withdrawn',
