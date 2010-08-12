@@ -65,6 +65,7 @@ class CABillScraper(BillScraper):
             title = None
             short_title = None
             type = None
+            subject = None
             for version in self.session.query(CABillVersion).filter_by(
                 bill=bill).filter(CABillVersion.bill_xml != None):
 
@@ -83,15 +84,19 @@ class CABillScraper(BillScraper):
                 if version.taxlevy == 'Yes':
                     type.append('tax levy')
 
+                subject = version.subject
+
                 fsbill.add_version(version.bill_version_id, '',
                                    date=version.bill_version_action_date,
                                    title=version.title,
                                    short_title=version.short_title,
+                                   subject=[subject],
                                    type=type)
 
             fsbill['title'] = title
             fsbill['short_title'] = short_title
             fsbill['type'] = type
+            fsbill['subjects'] = [subject]
 
             for author in version.authors:
                 if author.house == chamber_name:

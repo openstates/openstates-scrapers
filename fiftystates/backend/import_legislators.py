@@ -22,6 +22,20 @@ import argparse
 import name_tools
 
 
+def ensure_indexes():
+    db.legislators.ensure_index('_all_ids', pymongo.ASCENDING)
+    db.legislators.ensure_index([('roles.state', pymongo.ASCENDING),
+                                 ('roles.type', pymongo.ASCENDING),
+                                 ('roles.term', pymongo.ASCENDING),
+                                 ('roles.chamber', pymongo.ASCENDING),
+                                 ('full_name', pymongo.ASCENDING),
+                                 ('first_name', pymongo.ASCENDING),
+                                 ('last_name', pymongo.ASCENDING),
+                                 ('middle_name', pymongo.ASCENDING),
+                                 ('suffixes', pymongo.ASCENDING)],
+                                name='role_and_name_parts')
+
+
 def import_legislators(state, data_dir):
     data_dir = os.path.join(data_dir, state)
     pattern = os.path.join(data_dir, 'legislators', '*.json')
@@ -82,6 +96,9 @@ def import_legislator(data):
         insert_with_id(data)
     else:
         update(leg, data, db.legislators)
+
+    ensure_indexes()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
