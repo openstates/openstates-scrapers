@@ -41,10 +41,6 @@
         "chamber": {"type": "string", "enum": ["upper", "lower"]},
         "date": {"type": "datetime"},
         "motion": {"type": "string"},
-        "type": {"type": "string", "enum": [
-            "reading:1", "reading:2", "passage", "amendment", "veto_override",
-            "other"]
-        },
         "passed": {"type": "boolean"},
         "yes_count": {"type": "integer", "minimum": 0},
         "yes_votes": {"type": "array", "items": {"type": "string"}},
