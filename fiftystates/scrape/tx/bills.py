@@ -115,7 +115,7 @@ class TXBillScraper(BillScraper):
             elif desc.startswith('Received from the'):
                 type = 'bill:introduced'
             elif desc.startswith('Signed by the Governor'):
-                type = 'bill:signed'
+                type = 'governor:signed'
             elif desc == 'Filed':
                 type = 'bill:introduced'
             else:
