@@ -30,8 +30,8 @@ classifiers = {
     r'Third Reading Passed': 'bill:passed',
     r'Third Reading Failed': 'bill:failed',
     r'Unfavorable': 'committee:passed:unfavorable',
-    r'Vetoed': 'veto',
-    r'Approved by the Governor': 'bill:signed',
+    r'Vetoed': 'governor:vetoed',
+    r'Approved by the Governor': 'governor:signed',
     r'Conference Committee|Passed Enrolled|Special Order|Senate Concur|Motion|Laid Over|Hearing|Committee Amendment|Assigned a chapter': 'other',
 }
 
