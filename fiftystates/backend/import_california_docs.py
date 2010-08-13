@@ -32,7 +32,7 @@ def import_docs(user='', pw='', host='localhost', db='capublic'):
                               ('query', query),
                               ('update', update),
                               ('new', True),
-                              ('upsert', True)]))['seq']
+                              ('upsert', True)]))['value']['seq']
 
         doc_id = "%s%08d" % seq
         print "Saving: %s" % doc_id
