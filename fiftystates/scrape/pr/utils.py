@@ -18,8 +18,11 @@ def between_keywords(key1, key2, str):
     right_part = str.split(key1)[0]
     return right_part.split(key2)[1]
 
+def doc_link_url(doc_link_part):
+    return 'http://www.camaraderepresentantes.org' + doc_link_part  
+
 def legislators_url(chamber):
-    if 'upper':
+    if chamber == 'upper':
         return ('http://www.senadopr.us/senadores/Pages/Senadores%20Acumulacion.aspx',
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20I.aspx',
                                 'http://www.senadopr.us/Pages/Senadores%20Distrito%20II.aspx',
@@ -40,3 +43,6 @@ def committees_url(chamber):
     else:
         return {'permanent':'http://www.camaraderepresentantes.org/comisiones.asp',
                 'special':'http://www.camaraderepresentantes.org/comisiones3.asp'}
+
+def year_from_session(session):
+    return int(session.split()[0])
