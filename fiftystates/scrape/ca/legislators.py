@@ -59,5 +59,8 @@ class CALegislatorScraper(LegislatorScraper):
                              last_name=last_name.decode('utf8').strip(),
                              middle_name=middle_name.decode('utf8').strip(),
                              party=party,
-                             suffixes=suffixes.decode('utf8').strip())
+                             suffixes=suffixes.decode('utf8').strip(),
+                             s)
+            leg['roles'][0]['active'] = legislator.active_flg == 'Y'
+
             self.save_legislator(leg)
