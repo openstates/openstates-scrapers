@@ -13,21 +13,15 @@ class PRCommitteeScraper(CommitteeScraper):
     def lxml_context(self, url):
         try:
             body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com") 
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
+            elem = lxml.html.fromstring(body)
             yield elem
+            
         except:
-            print "FAIL"
-            #self.show_error(url, body)
-            raise
+            self.warning('Couldnt open url: ' + url)
     
     def scrape(self, chamber, term):
         # Data available for this term only
-        if term != '2010-2011':
+        if term != '2010':
             raise NoDataForPeriod(term)  
 
         if chamber == "upper":
