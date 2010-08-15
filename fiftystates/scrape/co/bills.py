@@ -14,15 +14,11 @@ class COBillScraper(BillScraper):
     def lxml_context(self, url):
         try:
             body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
+            elem = lxml.html.fromstring(body)
             yield elem
+            
         except:
-            raise
+            self.warning('Couldnt open url: ' + url)
         
     def scrape_votes(self, link, chamber, bill):
         with self.lxml_context(link) as votes_page:
@@ -145,8 +141,7 @@ class COBillScraper(BillScraper):
                 votes_page_element = row_elements[7]
                 element, attribute, link, pos = votes_page_element.iterlinks().next()
                 frame_link = base_url() + link.split('?Open&target=')[1]
-                
-                self.scrape_votes(link, chamber, bill)
+                self.scrape_votes(frame_link, chamber, bill)
                                 
                         
                            

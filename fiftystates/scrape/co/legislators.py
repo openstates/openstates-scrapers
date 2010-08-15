@@ -12,29 +12,20 @@ class COLegislatorScraper(LegislatorScraper):
     def lxml_context(self, url):
         try:
             body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")    
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
+            elem = lxml.html.fromstring(body)
             yield elem
+            
         except:
-            print "FAIL"
-            #self.show_error(url, body)
-            raise
+            self.warning('Couldnt open url: ' + url)
 
     def scrape(self, chamber, session):
         # Legislator data only available for the current session
-        year = year_from_session(session)
-
-        if year != 2009:
+        if year_from_session(session) != 2009:
             raise NoDataForPeriod(session)
-        
-        url = legs_url(chamber)
-            
-        with self.lxml_context(url) as page:
+
+        with self.lxml_context(legs_url(chamber)) as page:
             # Iterate through legislator names
+            page.make_links_absolute(base_url())
             for element, attribute, link, pos in page.iterlinks():
                 with self.lxml_context(link) as legislator_page:
                     leg_elements = legislator_page.cssselect('b')
