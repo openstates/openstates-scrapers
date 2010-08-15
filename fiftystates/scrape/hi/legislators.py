@@ -12,17 +12,11 @@ class HILegislatorScraper(LegislatorScraper):
     def lxml_context(self, url):
         try:
             body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
+            elem = lxml.html.fromstring(body)
             yield elem
+            
         except:
-            print "FAIL"
-            #self.show_error(url, body)
-            raise
+            self.warning('Couldnt open url: ' + url)
 
     def scrape(self, chamber, session):
         # All other years are stored in a pdf

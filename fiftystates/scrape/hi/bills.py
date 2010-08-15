@@ -13,16 +13,12 @@ class HIBillScraper(BillScraper):
     def lxml_context(self, url):
         try:
             body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
+            elem = lxml.html.fromstring(body)
             yield elem
+            
         except:
-            raise
-    
+            self.warning('Couldnt open url: ' + url)
+            
     def scrape_votes(self, vote_text, vote_url, house, date, bill):
         votes_parts = vote_text.split(";")
         voters = []

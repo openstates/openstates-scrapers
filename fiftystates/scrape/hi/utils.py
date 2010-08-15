@@ -5,7 +5,7 @@ def versions_page(type, bill_number):
                          + type + bill_number + '&showtext=on&currpage=1'
 
 def year_from_session(session):
-    return int(session.split()[0])
+    return int(session.split()[0].split('-')[0])
 
 def legs_url(chamber):
     if chamber == 'upper':
