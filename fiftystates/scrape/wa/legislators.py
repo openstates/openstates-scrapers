@@ -1,6 +1,6 @@
 from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.wa.utils import separate_name, legs_url, year_from_session
+from fiftystates.scrape.wa.utils import separate_name, legs_url, year_from_session, house_url
 
 import lxml.html
 import re, contextlib
@@ -12,24 +12,20 @@ class WALegislatorScraper(LegislatorScraper):
     def lxml_context(self, url):
         try:
             body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com") 
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
+            elem = lxml.html.fromstring(body)
             yield elem
+            
         except:
-            raise
+            self.warning('Couldnt open url: ' + url)
           
     def scrape(self, chamber, session):
         if year_from_session(session) != 2009:
             raise NoDataForPeriod(session)
         
         if chamber == 'upper':
-            self.scrape_legislator_data("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx", 'upper')
+            self.scrape_legislator_data('upper', session)
         else:
-            self.scrape_legislator_data("http://www.leg.wa.gov/house/representatives/Pages/default.aspx", 'lower')
+            self.scrape_legislator_data('lower', session)
                        
     def scrape_legislator_name(self, senator_page):
         name_element = senator_page.get_element_by_id("ctl00_PlaceHolderMain_lblMemberName")
@@ -40,8 +36,8 @@ class WALegislatorScraper(LegislatorScraper):
 
         return separate_name(full_name)
         
-    def scrape_legislator_data(self, url, chamber):
-        with self.lxml_context(url) as page:
+    def scrape_legislator_data(self, url, chamber, session):
+        with self.lxml_context(house_url(url)) as page:
             legislator_table = page.get_element_by_id("ctl00_PlaceHolderMain_dlMembers")
             legislators = legislator_table.cssselect('a')
             for legislator in legislators:
@@ -68,7 +64,7 @@ class WALegislatorScraper(LegislatorScraper):
                     district_element = legislator_page.get_element_by_id("ctl00_PlaceHolderMain_hlDistrict")
                     district = district_element.text_content()        
                
-                    legislator = Legislator('2009-2010', chamber, district, full_name, "", "", "", party)
+                    legislator = Legislator(session, chamber, district, full_name, "", "", "", party)
                     legislator.add_source(legislator_page_url)
                     self.save_legislator(legislator)
         

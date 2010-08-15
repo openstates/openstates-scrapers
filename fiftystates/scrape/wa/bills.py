@@ -15,22 +15,20 @@ class WABillScraper(BillScraper):
     def lxml_context(self, url, sep=None, sep_after=True):
         try:
             body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")
+            
+            if sep != None: 
+                if sep_after == True:
+                    before, itself, body = body.rpartition(sep)
+                else:
+                    body, itself, after = body.rpartition(sep)    
         
-        if sep != None: 
-            if sep_after == True:
-                before, itself, body = body.rpartition(sep)
-            else:
-                body, itself, after = body.rpartition(sep)    
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
+            elem = lxml.html.fromstring(body)
             yield elem
+        
         except:
+            self.warning('Couldnt open url: ' + url)
             raise
-       
+        
     def scrape_votes(self, vote_page, bill, url): 
         date_match = re.search("[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}", vote_page.text_content())
         date_match = date_match.group(0)
@@ -151,7 +149,6 @@ class WABillScraper(BillScraper):
                         split_title = string.split(raw_title[0].text_content(), ' ')
                         bill_id = split_title[0] + ' ' + split_title[1]
                         bill_id = bill_id.strip()
-                        session = split_title[3].strip()
 
                         title_element = bill_page.get_element_by_id("ctl00_ContentPlaceHolder1_lblSubTitle")
                         title = title_element.text_content()

@@ -29,6 +29,12 @@ def separate_name(full_name):
   
     return full_name, first_name, middle_name, last_name 
 
+def house_url(chamber):
+    if chamber == "upper":
+        return "http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx"
+    else:
+        return "http://www.leg.wa.gov/house/representatives/Pages/default.aspx"
+
 def legs_url(chamber, name_for_url):
     if chamber == 'upper':
         return "http://www.leg.wa.gov/senate/senators/Pages/" + name_for_url + ".aspx"
