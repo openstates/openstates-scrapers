@@ -118,7 +118,6 @@ def record_votes(root):
                 continue
 
             motion = get_motion(m)
-            type = get_type(motion)
 
             vote = Vote(None, None, motion, True,
                         yes_count, no_count, other_count)
@@ -128,7 +127,7 @@ def record_votes(root):
             vote['method'] = 'record'
             vote['record'] = m.group('record')
             vote['filename'] = m.group('record')
-            vote['type'] = type
+            vote['type'] = get_type(motion)
 
             for name in names(el):
                 vote.yes(name)
@@ -180,6 +179,7 @@ def viva_voce_votes(root):
             vote['method'] = 'viva voce'
             vote['filename'] = record
             vote['record'] = record
+            vote['type'] = get_type(motion)
             yield vote
             continue
 
@@ -208,7 +208,6 @@ def viva_voce_votes(root):
                 continue
 
             motion = get_motion(m)
-            type = get_type(motion)
 
             record = str(uuid.uuid1())
             vote = Vote(None, None, motion, True, 0, 0, 0)
@@ -218,7 +217,7 @@ def viva_voce_votes(root):
             vote['method'] = 'viva voce'
             vote['filename'] = record
             vote['record'] = record
-            vote['type'] = type
+            vote['type'] = get_type(motion)
 
             yield vote
             continue
