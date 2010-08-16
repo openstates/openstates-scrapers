@@ -36,8 +36,8 @@ class WALegislatorScraper(LegislatorScraper):
 
         return separate_name(full_name)
         
-    def scrape_legislator_data(self, url, chamber, session):
-        with self.lxml_context(house_url(url)) as page:
+    def scrape_legislator_data(self, chamber, session):
+        with self.lxml_context(house_url(chamber)) as page:
             legislator_table = page.get_element_by_id("ctl00_PlaceHolderMain_dlMembers")
             legislators = legislator_table.cssselect('a')
             for legislator in legislators:
