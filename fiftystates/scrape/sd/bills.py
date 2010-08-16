@@ -143,6 +143,8 @@ class SDBillScraper(BillScraper):
                 type = 'passage'
             elif motion == 'Concurred in amendments':
                 type = 'amendment'
+            elif motion == 'Veto override':
+                type = 'veto_override'
             else:
                 type = 'other'
 
