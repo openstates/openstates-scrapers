@@ -1,11 +1,14 @@
 from fiftystates import settings
 
 import mongokit
+import gridfs
 
 conn = mongokit.Connection(getattr(settings, 'MONGO_HOST', 'localhost'),
                           getattr(settings, 'MONGO_PORT', 27017))
 
 db = conn[getattr(settings, 'MONGO_DATABASE', 'fiftystates')]
+
+fs = gridfs.GridFS(db, collection="documents")
 
 __metadata = {}
 

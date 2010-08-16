@@ -6,11 +6,13 @@ from piston.emitters import Emitter
 
 from fiftystates.site.api.handlers import *
 from fiftystates.site.api.emitters import LoggingJSONEmitter
+from fiftystates.site.api.views import document
 
 if getattr(settings, 'USE_LOCKSMITH', False):
     from locksmith.auth.authentication import PistonKeyAuthentication
     authorizer = PistonKeyAuthentication()
-    Emitter.register('json', LoggingJSONEmitter, 'application/json; charset=utf-8')
+    Emitter.register('json', LoggingJSONEmitter,
+                     'application/json; charset=utf-8')
 else:
     authorizer = None
 
@@ -41,4 +43,5 @@ urlpatterns = patterns('',
     url(r'^legislators/search/$', legsearch_handler),
     url(r'^bills/latest/$', latest_bills_handler),
     url(r'^bills/search/$', bill_search_handler),
+    url(r'^documents/(?P<id>[A-Z]{2,2}D\d{8,8})/$', document),
 )
