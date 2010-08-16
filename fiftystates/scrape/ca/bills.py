@@ -135,7 +135,7 @@ class CABillScraper(BillScraper):
                     type.append('governor:signed')
 
                 if 'Item veto' in act_str:
-                    type.append('veto:line-item')
+                    type.append('governor:vetoed:line-item')
 
                 if not type:
                     type = ['other']
