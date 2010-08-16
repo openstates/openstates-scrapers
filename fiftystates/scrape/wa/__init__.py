@@ -10,7 +10,7 @@ status = dict(
 )
 
 metadata = dict(
-    state_name='Washington',
+    name='Washington',
     abbreviation='wa',
     legislature_name='Washington State Legislature',
     upper_chamber_name='Senate',

@@ -10,7 +10,7 @@ status = dict(
 )
 
 metadata = dict(
-    state_name='Hawaii',
+    name='Hawaii',
     abbreviation='hi',
     legislature_name='Hawaii State Legislature',
     upper_chamber_name='Senate',
