@@ -140,7 +140,7 @@ class LABillScraper(BillScraper):
                     atype.append('committee:referred')
 
                 if action.startswith('Signed by the Governor.'):
-                    atype.append('bill:signed')
+                    atype.append('governor:signed')
 
                 if 'Amendments proposed' in action:
                     atype.append('amendment:introduced')
