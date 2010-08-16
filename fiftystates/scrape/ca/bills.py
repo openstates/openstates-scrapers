@@ -62,10 +62,10 @@ class CABillScraper(BillScraper):
 
             fsbill = Bill(bill_session, chamber, bill_id, '')
 
-            title = None
-            short_title = None
-            type = None
-            subject = None
+            title = ''
+            short_title = ''
+            type = ['bill']
+            subject = ''
             for version in self.session.query(CABillVersion).filter_by(
                 bill=bill).filter(CABillVersion.bill_xml != None):
 
@@ -132,7 +132,7 @@ class CABillScraper(BillScraper):
                     type.append('bill:passed')
 
                 if 'Approved by Governor' in act_str:
-                    type.append('bill:signed')
+                    type.append('governor:signed')
 
                 if 'Item veto' in act_str:
                     type.append('veto:line-item')

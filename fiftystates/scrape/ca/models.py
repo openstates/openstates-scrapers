@@ -70,15 +70,13 @@ class CABillVersion(Base):
 
     @property
     def title(self):
-        texts = self.xml.xpath("//*[local-name() = 'Title']//text()")
-        title = ''.join(texts).strip()
-        return title
+        text = self.xml.xpath("string(//*[local-name() = 'Title'])") or ''
+        return text.strip()
 
     @property
     def short_title(self):
-        texts = self.xml.xpath("//*[local-name() = 'Subject']//text()")
-        title = ''.join(texts).strip()
-        return title
+        text = self.xml.xpath("string(//*[local-name() = 'Subject'])") or ''
+        return text.strip()
 
 
 class CABillVersionAuthor(Base):
