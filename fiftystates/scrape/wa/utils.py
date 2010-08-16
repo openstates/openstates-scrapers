@@ -43,3 +43,12 @@ def legs_url(chamber, name_for_url):
 
 def votes_url(id1, id2):
     return "http://flooractivityext.leg.wa.gov/rollcall.aspx?id=" + id1 + "&bienId=" +id2
+
+def separate_content(content, sep, sep_after=True):
+    if sep_after == True:
+        before, itself, body = content.rpartition(sep)
+    else:
+        body, itself, after = content.rpartition(sep)    
+        
+    return body
+    

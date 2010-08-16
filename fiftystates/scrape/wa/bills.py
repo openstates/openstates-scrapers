@@ -1,33 +1,15 @@
 from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.wa.utils import clean_string, year_from_session, votes_url
+from fiftystates.scrape.wa.utils import clean_string, year_from_session, votes_url, separate_content
 
 
 import lxml.html
-import re, string, contextlib
+import re, string
 import datetime as dt
 
 class WABillScraper(BillScraper):
     state = 'wa'
-    
-    @contextlib.contextmanager
-    def lxml_context(self, url, sep=None, sep_after=True):
-        try:
-            body = self.urlopen(url)
-            
-            if sep != None: 
-                if sep_after == True:
-                    before, itself, body = body.rpartition(sep)
-                else:
-                    body, itself, after = body.rpartition(sep)    
-        
-            elem = lxml.html.fromstring(body)
-            yield elem
-        
-        except:
-            self.warning('Couldnt open url: ' + url)
-            raise
         
     def scrape_votes(self, vote_page, bill, url): 
         date_match = re.search("[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}", vote_page.text_content())
@@ -140,11 +122,15 @@ class WABillScraper(BillScraper):
         
         year = str(year_from_session(session))
                 
-        with self.lxml_context("http://apps.leg.wa.gov/billinfo/dailystatus.aspx?year=" + year, sep, after) as page:
+        with self.urlopen("http://apps.leg.wa.gov/billinfo/dailystatus.aspx?year=" + year) as page_html:
+            page = lxml.html.fromstring(page_html)
+            page = separate_content(page, sep)
+            
             for element, attribute, link, pos in page.iterlinks():
                 if re.search("bill=" + reg + "[0-9]{3}", link) != None:
                     bill_page_url = "http://apps.leg.wa.gov/billinfo/" + link
-                    with self.lxml_context(bill_page_url) as bill_page:
+                    with self.urlopen(bill_page_url) as bill_page_html:
+                        bill_page = lxml.html.fromstring(bill_page_html)
                         raw_title = bill_page.cssselect('title')
                         split_title = string.split(raw_title[0].text_content(), ' ')
                         bill_id = split_title[0] + ' ' + split_title[1]
@@ -167,7 +153,8 @@ class WABillScraper(BillScraper):
                                 else:
                                     bill.add_document(element.text_content(), link)
                             elif re.search("senators|representatives", link) != None:
-                                with self.lxml_context(link) as senator_page:
+                                with self.urlopen(link) as senator_page_html:
+                                    senator_page = lxml.html.fromstring(senator_page_html)
                                     try:
                                         name_tuple = self.scrape_legislator_name(senator_page)
                                         bill.add_sponsor('primary', name_tuple[0])
@@ -180,7 +167,8 @@ class WABillScraper(BillScraper):
                                 id1 = match[0]
                                 id2 = match[1]
                                 url = votes_url(id1, id2)
-                                with self.lxml_context(url) as vote_page:
+                                with self.urlopen(url) as vote_page_html:
+                                    vote_page = lxml.html.fromstring(vote_page_html)
                                     self.scrape_votes(vote_page, bill, url)
                                     
                         self.save_bill(bill)

@@ -1,47 +1,27 @@
-from fiftystates.scrape import ScrapeError, NoDataForYear
+from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.ore.utils import bills_url, base_url, year_from_session
 
 import lxml.html
-import re, contextlib, itertools, urllib
+import re
 import datetime as dt
 
-class ORBillScraper(BillScraper):
+class OREBillScraper(BillScraper):
     state = 'or'
-       
-    @contextlib.contextmanager
-    def lxml_context(self, url, sep=None, sep_after=True):
-        try:
-            body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")
-        
-        if sep != None: 
-            if sep_after == True:
-                before, itself, body = body.rpartition(sep)
-            else:
-                body, itself, after = body.rpartition(sep)    
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
-            yield elem
-        except:
-            raise
-        
-    def clean_space(self, str):
-        new_str = ' '.join(str.split())
-        return new_str
-                    
-    def scrape(self, chamber, year):    
-        bills_link = 'http://www.leg.state.or.us/bills_laws/billsinfo.htm'
+         
+    def scrape(self, chamber, session):    
+        bills_link = bills_url()
         bills_sessions_pages = []
         
-        with self.lxml_context(bills_link) as bills_page:
+        with self.urlopen(bills_link) as bills_page_html:
+            bills_page = lxml.html.fromstring(bills_page_html)
             for element, attribute, link, pos in bills_page.iterlinks():
                 match = re.search("..(/measures[0-9]{2}s?.html)", link)
                 if match != None:
-                    bills_sessions_pages.append("http://www.leg.state.or.us" + match.group(1))
+                    bills_sessions_pages.append(base_url() + match.group(1))
+                    
+        year = year_from_session(session)
         
         shortened_year = int(year) % 100
         
@@ -58,7 +38,8 @@ class ORBillScraper(BillScraper):
         bill_pages_directory = []
      
         for pfy in pages_for_year:
-            with self.lxml_context(pfy) as year_bills_page:
+            with self.urlopen(pfy) as year_bills_page_html:
+                year_bills_page = lxml.html.fromstring(year_bills_page_html)
                 for element, attribute, link, pos in year_bills_page.iterlinks():
                     if chamber == 'upper':
                         link_part = 'senmh'
@@ -69,15 +50,14 @@ class ORBillScraper(BillScraper):
                     match = re.search(regex, link)
 
                     if match != None:
-                        measure_pages.append("http://www.leg.state.or.us/" + match.group(0))
-                        bill_pages_directory.append("http://www.leg.state.or.us/" + match.group(1) + "/measures/main.html")
+                        measure_pages.append(base_url() + match.group(0))
+                        bill_pages_directory.append(base_url() + match.group(1) + "/measures/main.html")
                         
-        bill_pages = [] 
-        
-                 
+        bill_pages = []           
              
         for bp in bill_pages_directory:
-            with self.lxml_context(bp) as bills_page:
+            with self.urlopen(bp) as bills_page_html:
+                bills_page = lxml.html.fromstring(bills_page_html)
                 for element, attribute, link, pos in bills_page.iterlinks():
                     if re.search(' +.html +', link)!= None:
                         continue
@@ -97,7 +77,8 @@ class ORBillScraper(BillScraper):
         bills_dict = {}
 
         for bp in bill_pages:
-            with self.lxml_context(bp) as bills_page:
+            with self.urlopen(bp) as bills_page_html:
+                bills_page = lxml.html.fromstring(bills_page_html)
                 bills = bills_page.cssselect('a')
                 for b in bills:
                     bill_description = b.text_content()
@@ -127,7 +108,8 @@ class ORBillScraper(BillScraper):
         bill_info = {}
         
         for mp in measure_pages:  
-            with self.lxml_context(mp) as measure_page:
+            with self.urlopen(mp) as measure_page_html:
+                measure_page = lxml.html.fromstring(measure_page_html)
                 measures = measure_page.text_content()
                 lines = measures.split('\n')
                 

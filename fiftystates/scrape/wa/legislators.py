@@ -3,20 +3,10 @@ from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.wa.utils import separate_name, legs_url, year_from_session, house_url
 
 import lxml.html
-import re, contextlib
+import re
 
 class WALegislatorScraper(LegislatorScraper):
     state = 'wa'
-    
-    @contextlib.contextmanager
-    def lxml_context(self, url):
-        try:
-            body = self.urlopen(url)
-            elem = lxml.html.fromstring(body)
-            yield elem
-            
-        except:
-            self.warning('Couldnt open url: ' + url)
           
     def scrape(self, chamber, session):
         if year_from_session(session) != 2009:
@@ -37,7 +27,8 @@ class WALegislatorScraper(LegislatorScraper):
         return separate_name(full_name)
         
     def scrape_legislator_data(self, chamber, session):
-        with self.lxml_context(house_url(chamber)) as page:
+        with self.urlopen(house_url(chamber)) as page_html:
+            page = lxml.html.fromstring(page_html)
             legislator_table = page.get_element_by_id("ctl00_PlaceHolderMain_dlMembers")
             legislators = legislator_table.cssselect('a')
             for legislator in legislators:
@@ -48,7 +39,8 @@ class WALegislatorScraper(LegislatorScraper):
         
                 legislator_page_url = legs_url(chamber, name_for_url)
 
-                with self.lxml_context(legislator_page_url) as legislator_page:
+                with self.urlopen(legislator_page_url) as legislator_page_html:
+                    legislator_page = lxml.html.fromstring(legislator_page_html)
                     try:
                         full_name, first_name, middle_name, last_name = self.scrape_legislator_name(legislator_page)
                     except:

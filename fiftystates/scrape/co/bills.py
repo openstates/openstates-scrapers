@@ -4,24 +4,15 @@ from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.co.utils import grouper, bills_url, year_from_session, base_url
 
 import lxml.html
-import re, contextlib
+import re
 import datetime as dt
 
 class COBillScraper(BillScraper):
     state = 'co'
-    
-    @contextlib.contextmanager
-    def lxml_context(self, url):
-        try:
-            body = self.urlopen(url)
-            elem = lxml.html.fromstring(body)
-            yield elem
-            
-        except:
-            self.warning('Couldnt open url: ' + url)
         
     def scrape_votes(self, link, chamber, bill):
-        with self.lxml_context(link) as votes_page:
+        with self.urlopen(link) as votes_page_html:
+            votes_page = lxml.html.fromstring(votes_page_html)
             page_tables = votes_page.cssselect('table')
             votes_table = page_tables[0]
             votes_elements = votes_table.cssselect('td')
@@ -53,7 +44,8 @@ class COBillScraper(BillScraper):
                 bill.add_vote(vote)
        
     def scrape_versions(self, link, bill):
-        with self.lxml_context(link) as versions_page:
+        with self.urlopen(link) as versions_page_html:
+                versions_page = lxml.html.fromstring(versions_page_html)
                 page_tables = versions_page.cssselect('table')
                 versions_table = page_tables[1]
                 rows = versions_table.cssselect('tr')
@@ -68,7 +60,8 @@ class COBillScraper(BillScraper):
                             bill.add_version(version_name, link)
     
     def scrape_actions(self, link, bill):
-        with self.lxml_context(link) as actions_page:
+        with self.urlopen(link) as actions_page_html:
+                actions_page = lxml.html.fromstring(actions_page_html) 
                 page_elements = actions_page.cssselect('b')
                 actions_element = page_elements[3]
                 actions = actions_element.text_content().split('\n')
@@ -92,7 +85,8 @@ class COBillScraper(BillScraper):
     def scrape(self, chamber, session):   
         year = year_from_session(session)
         url = bills_url(year)
-        with self.lxml_context(url) as bills_page:
+        with self.urlopen(url) as bills_page_html:
+            bills_page = lxml.html.fromstring(bills_page_html)
             table_rows = bills_page.cssselect('tr')
             # Eliminate empty rows
             table_rows = table_rows[0:len(table_rows):2]

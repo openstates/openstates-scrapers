@@ -3,20 +3,10 @@ from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.pr.utils import legislators_url, year_from_session
 
 import lxml.html
-import re, contextlib
+import re
 
 class PRLegislatorScraper(LegislatorScraper):
     state = 'pr'
-    
-    @contextlib.contextmanager
-    def lxml_context(self, url):
-        try:
-            body = self.urlopen(url)
-            elem = lxml.html.fromstring(body)
-            yield elem
-            
-        except:
-            self.warning('Couldnt open url: ' + url)
 
     def scrape(self, chamber, session):
         # Data available for this session only
@@ -32,7 +22,8 @@ class PRLegislatorScraper(LegislatorScraper):
         legislator_pages_dir = legislators_url('upper')
         
         for counter, leg_page_dir in enumerate(legislator_pages_dir):
-            with self.lxml_context(leg_page_dir) as leg_page:
+            with self.urlopen(leg_page_dir) as leg_page_html:
+                leg_page = lxml.html.fromstring(leg_page_html)
                 tables = leg_page.cssselect('table')
                 legislators_table = tables[62]
                 leg_data = legislators_table.cssselect('tr')
@@ -65,7 +56,8 @@ class PRLegislatorScraper(LegislatorScraper):
     def scrape_house(self, session):
         legislator_pages_dir = legislators_url('lower')
         
-        with self.lxml_context(legislator_pages_dir) as leg_page:
+        with self.urlopen(legislator_pages_dir) as leg_page_html:
+                leg_page = lxml.html.fromstring(leg_page_html)
                 tables = leg_page.cssselect("table")
                 leg_dist_table = tables[4]
                 leg_acu_table = tables[5]

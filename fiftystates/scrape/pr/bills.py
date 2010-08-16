@@ -4,22 +4,11 @@ from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.pr.utils import grouper, doc_link_url, year_from_session
 
 import lxml.html
-import contextlib
 import datetime as dt
 
 class PRBillScraper(BillScraper):
     state = 'pr'
     
-    @contextlib.contextmanager
-    def lxml_context(self, url):
-        try:
-            body = self.urlopen(url)
-            elem = lxml.html.fromstring(body)
-            yield elem
-            
-        except:
-            self.warning('Couldnt open url: ' + url)
-               
     def scrape(self, chamber, session):    
         bill_search_url = 'http://www.camaraderepresentantes.org/cr_buscar.asp'
         bill_types = {'Project':'P', 'Resolution':'R', \

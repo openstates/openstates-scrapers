@@ -3,20 +3,9 @@ from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.hi.utils import year_from_session, legs_url, base_url, grouper
 
 import lxml.html
-import contextlib
 
 class HILegislatorScraper(LegislatorScraper):
     state = 'hi'
-    
-    @contextlib.contextmanager
-    def lxml_context(self, url):
-        try:
-            body = self.urlopen(url)
-            elem = lxml.html.fromstring(body)
-            yield elem
-            
-        except:
-            self.warning('Couldnt open url: ' + url)
 
     def scrape(self, chamber, session):
         # All other years are stored in a pdf
@@ -26,8 +15,8 @@ class HILegislatorScraper(LegislatorScraper):
         
         legislators_page_url = legs_url(chamber)
             
-        with self.urlopen(legislators_page_url) as legislators_page_str: 
-            legislators_page = lxml.html.fromstring(legislators_page_str)
+        with self.urlopen(legislators_page_url) as legislators_page_html: 
+            legislators_page = lxml.html.fromstring(legislators_page_html)
             legislators_table = legislators_page.cssselect('table')
             # Get the first table
             legislators_table = legislators_table[0]

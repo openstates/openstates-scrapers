@@ -4,21 +4,11 @@ from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.hi.utils import *
 
 import lxml.html
-import re, contextlib
+import re
 import datetime as dt
 
 class HIBillScraper(BillScraper):
     state = 'hi'
-    
-    @contextlib.contextmanager
-    def lxml_context(self, url):
-        try:
-            body = self.urlopen(url)
-            elem = lxml.html.fromstring(body)
-            yield elem
-            
-        except:
-            self.warning('Couldnt open url: ' + url)
             
     def scrape_votes(self, vote_text, vote_url, house, date, bill):
         votes_parts = vote_text.split(";")
@@ -74,8 +64,8 @@ class HIBillScraper(BillScraper):
     def scrape_session_2009(self, chamber, session):
         url, type = bills_url(chamber)
                     
-        with self.urlopen(url) as page_str:
-            page = lxml.html.fromstring(page_str)
+        with self.urlopen(url) as page_html:
+            page = lxml.html.fromstring(page_html)
             for element, attribute, link, pos in page.iterlinks():         
                 if re.search("billtype=" + type + "&billnumber=[0-9]+", link) != None:
                     bill_page_url = bill_url(link)
@@ -124,7 +114,8 @@ class HIBillScraper(BillScraper):
                                                            
                             bill.add_action(actor, action_text, action_date)
                         
-                        with self.lxml_context(versions_page_url(type, bill_number)) as versions_page:
+                        with self.urlopen(versions_page_url(type, bill_number)) as versions_page_html:
+                            versions_page = lxml.html.fromstring(versions_page_html)
                             versions_elements = versions_page.cssselect('span[class="searchtitle"]')
                             for ve in versions_elements:
                                 element_text = ve.text_content()
