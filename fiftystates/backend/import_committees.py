@@ -16,6 +16,7 @@ from fiftystates.backend import db
 from fiftystates.backend.utils import (base_arg_parser, prepare_obj, update,
                                        insert_with_id)
 
+import pymongo
 import argparse
 import name_tools
 
