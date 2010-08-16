@@ -42,5 +42,19 @@ def import_docs(user='', pw='', host='localhost', db_name='capublic'):
         fs.put(version.bill_xml, _id=doc_id, content_type='text/xml',
                metadata={"ca_version_id": version.bill_version_id})
 
+        bill = db.bills.find_one({'versions.name': version.bill_version_id})
+        if not bill:
+            print "Couldn't find bill for %s" % version.bill_version_id
+            continue
+
+        for v in bill['versions']:
+            if v['name'] == version.bill_version_id:
+                v['url'] = ("http://openstates.sunlightlabs.com/api/"
+                            "documents/%s/" % doc_id)
+                break
+
+        db.bills.save(bill, safe=True)
+
+
 if __name__ == '__main__':
     import_docs()
