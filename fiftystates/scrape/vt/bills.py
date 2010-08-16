@@ -51,7 +51,7 @@ def action_type(action):
     elif action.endswith('and passed'):
         return 'bill:passed'
     elif action.startswith('signed by governor'):
-        return 'bill:signed'
+        return 'governor:signed'
 
     return 'other'
 
