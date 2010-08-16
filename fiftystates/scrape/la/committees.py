@@ -5,7 +5,7 @@ import lxml.html
 
 
 class LACommitteeScraper(CommitteeScraper):
-    state = 'md'
+    state = 'la'
 
     def scrape(self, chamber, term):
         if term != self.metadata['terms'][-1]['name']:
