@@ -61,7 +61,7 @@ class SDBillScraper(BillScraper):
                 if action.startswith('First read'):
                     atypes.append('bill:introduced')
                 elif action.startswith('Signed by Governor'):
-                    atypes.append('bill:signed')
+                    atypes.append('governor:signed')
 
                 match = re.match(r'(.*) Do Pass( Amended)?, (Passed|Failed)',
                                  action)
@@ -81,9 +81,9 @@ class SDBillScraper(BillScraper):
                     atypes.append('amendment:passed')
 
                 if 'Veto override, Passed' in action:
-                    atypes.append('veto:override:passed')
+                    atypes.append('bill:veto_override:passed')
                 elif 'Veto override, Failed' in action:
-                    atypes.append('veto:override:failed')
+                    atypes.append('bill:veto_override:failed')
 
                 match = re.match("First read in (Senate|House)", action)
                 if match:
