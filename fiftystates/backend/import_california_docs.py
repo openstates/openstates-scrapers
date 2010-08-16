@@ -39,7 +39,7 @@ def import_docs(user='', pw='', host='localhost', db_name='capublic'):
         doc_id = "CAD%08d" % seq
         print "Saving: %s" % doc_id
 
-        fs.put(version.bill_xml, _id=doc_id,
+        fs.put(version.bill_xml, _id=doc_id, content_type='text/xml',
                metadata={"ca_version_id": version.bill_version_id})
 
 if __name__ == '__main__':
