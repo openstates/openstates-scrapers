@@ -118,32 +118,6 @@ class LegislatorSearchHandler(FiftyStateHandler):
         return list(db.legislators.find(filter))
 
 
-class DistrictHandler(FiftyStateHandler):
-    fields = ('chamber', 'session', 'name', 'legislators')
-    model = District
-
-    @classmethod
-    def legislators(cls, model):
-        legislators = db.legislators.find(
-            {'state': model.state_abbrev,
-             'roles': {'$elemMatch': {
-                        'term': model.session,
-                        'district': model.name,
-                        'chamber': model.chamber}}})
-
-        return list(legislators)
-
-    def read(self, request, state, session, chamber, district):
-        try:
-            district = District.objects.get(state_abbrev__iexact=state,
-                                            chamber__iexact=chamber,
-                                            name=district)
-            district.session = session
-            return district
-        except District.DoesNotExist:
-            return rc.NOT_HERE
-
-
 class DistrictGeoHandler(FiftyStateHandler):
     def read(self, request, state, session, chamber):
         try:
@@ -159,41 +133,6 @@ class DistrictGeoHandler(FiftyStateHandler):
             resp = rc.BAD_REQUEST
             resp.write(": Need lat and long parameters")
             return resp
-
-
-class LatestBillsHandler(FiftyStateHandler):
-    def read(self, request):
-        try:
-            updated_since = request.GET['updated_since']
-        except KeyError:
-            resp = rc.BAD_REQUEST
-            resp.write(": updated_since parameter required")
-            return resp
-
-        try:
-            state = request.GET['state']
-        except KeyError:
-            resp = rc.BAD_REQUEST
-            resp.write(": state parameter required")
-            return resp
-
-        try:
-            updated_since = datetime.datetime.strptime(updated_since,
-                                                       "%Y-%m-%d %H:%M")
-        except ValueError:
-            try:
-                updated_since = datetime.datetime.strptime(updated_since,
-                                                           "%Y-%m-%d")
-            except ValueError:
-                resp = rc.BAD_REQUEST
-                resp.write(": invalid updated_since parameter."
-                           " Please supply a date in YYYY-MM-DD format.")
-                return resp
-
-        bills = db.bills.find({'updated_at': {'$gte': updated_since},
-                               'state': state.lower()})
-
-        return list(bills)
 
 
 class BillSearchHandler(FiftyStateHandler):
