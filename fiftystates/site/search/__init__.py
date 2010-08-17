@@ -26,7 +26,8 @@ def keywordize(str):
     return words
 
 
-def bill_query(str, params, all=True, limit=None, skip=None, sort=None):
+def bill_query(str, params, fields=None, all=True, limit=None, skip=None,
+               sort=None):
     keywords = list(keywordize(str))
 
     filter = {}
@@ -41,7 +42,7 @@ def bill_query(str, params, all=True, limit=None, skip=None, sort=None):
         if value:
             filter[key] = value
 
-    cursor = db.bills.find(filter)
+    cursor = db.bills.find(filter, fields)
 
     if limit:
         cursor.limit(limit)

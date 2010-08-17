@@ -99,13 +99,15 @@ class BillHandler(FiftyStateHandler):
 class BillSearchHandler(FiftyStateHandler):
     def read(self, request):
 
-        bill_fields = {'votes': 0, 'actions': 0, 'sources': 0}
+        bill_fields = {'votes': 0, 'actions': 0, 'sources': 0,
+                       'documents': 0, 'versions': 0, 'sponsors': 0,
+                       'keywords': 0}
 
         query = request.GET.get('q')
 
         # if a query is provided dispatch to the full text search
         if query:
-            return search.bill_query(query, request.GET)
+            return search.bill_query(query, request.GET, bill_fields)
 
         # normal mongo search logic
         _filter = _build_mongo_filter(request, ('state', 'chamber',
