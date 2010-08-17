@@ -86,7 +86,7 @@ class BillHandler(FiftyStateHandler):
                                   'bill_id': bill_id})
 
 
-class StateHandler(FiftyStateHandler):
+class MetadataHandler(FiftyStateHandler):
     def read(self, request, state):
         """
         Get metadata about a state legislature.
