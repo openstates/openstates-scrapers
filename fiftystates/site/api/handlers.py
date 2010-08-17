@@ -115,6 +115,13 @@ class LegislatorSearchHandler(FiftyStateHandler):
         return list(db.legislators.find(_filter))
 
 
+class CommitteeSearchHandler(FiftyStateHandler):
+    def read(self, request):
+        _filter = _build_mongo_filter(request, ('committee', 'subcommittee',
+                                                'chamber', 'state'))
+        return list(db.committees.find(_filter))
+
+
 class DistrictGeoHandler(FiftyStateHandler):
     def read(self, request, state, session, chamber):
         try:

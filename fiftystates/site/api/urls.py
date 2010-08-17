@@ -19,6 +19,7 @@ else:
 bill_handler = Resource(BillHandler, authentication=authorizer)
 state_handler = Resource(StateHandler, authentication=authorizer)
 committee_handler = Resource(CommitteeHandler, authentication=authorizer)
+committee_search_handler = Resource(CommitteeHandler, authentication=authorizer)
 legislator_handler = Resource(LegislatorHandler, authentication=authorizer)
 legsearch_handler = Resource(LegislatorSearchHandler,
                              authentication=authorizer)
@@ -46,5 +47,5 @@ urlpatterns = patterns('',
     #url(r'^v1/legislators/geo/$', district_geo_handler),
 
     url(r'^v1/committees/(?P<id>[A-Z]{2,2}C\d{6,6})/$', committee_handler),
-    #url(r'^v1/committees/$', committee_search_handler),
+    url(r'^v1/committees/$', committee_search_handler),
 )
