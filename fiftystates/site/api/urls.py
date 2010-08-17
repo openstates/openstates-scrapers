@@ -37,7 +37,7 @@ urlpatterns = patterns('',
     url(r'^documents/(?P<id>[A-Z]{2,2}D\d{8,8})/$', document),
 
     # v1 urls
-    url(r'^v1/metadata/(?P<state>[a-zA-Z]{2,2})/$', state_handler),
+    url(r'^v1/metadata/(?P<state>[a-zA-Z]{2,2})/$', metadata_handler),
 
     url(r'^v1/bills/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/'
         r'(?P<chamber>upper|lower)/(?P<bill_id>.+)/$', bill_handler),
