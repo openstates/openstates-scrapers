@@ -122,15 +122,18 @@ class CommitteeSearchHandler(FiftyStateHandler):
         return list(db.committees.find(_filter))
 
 
-class DistrictGeoHandler(FiftyStateHandler):
-    def read(self, request, state, session, chamber):
+class LegislatorGeoHandler(FiftyStateHandler):
+    def read(self, request):
         try:
-            district = District.lat_long(request.GET['lat'],
-                                         request.GET['long']).get(
-                state_abbrev=state,
-                chamber=chamber)
-            district.session = session
-            return district
+            districts = District.lat_long(request.GET['lat'],
+                                          request.GET['long'])
+            filters = []
+            for d in districts:
+                filters.append({'state': d.state_abbrev,
+                                'roles': {'$elemMatch': {'district':d.name,
+                                                         'chamber':d.chamber}}}
+                              )
+            return list(db.legislators.find({'$or': filters}))
         except District.DoesNotExist:
             return rc.NOT_HERE
         except KeyError:
