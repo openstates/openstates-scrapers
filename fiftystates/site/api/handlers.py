@@ -11,6 +11,19 @@ from piston.utils import rc
 from piston.handler import BaseHandler, HandlerMetaClass
 
 
+def _build_mongo_filter(request, keys, icase=True):
+    # We use regex queries to get case insensitive search - this
+    # means they won't use any indexes for now. Real case insensitive
+    # queries are coming eventually:
+    # http://jira.mongodb.org/browse/SERVER-90
+    _filter = {}
+    for key in keys:
+        value = request.GET.get(key)
+        if value:
+            _filter[key] = re.compile('^%s$' % value, re.IGNORECASE)
+    return _filter
+
+
 class FiftyStateHandlerMetaClass(HandlerMetaClass):
     """
     Scrubs internal fields (those starting with '_') from Handler results
@@ -58,17 +71,6 @@ class FiftyStateHandlerMetaClass(HandlerMetaClass):
 
         return new_cls
 
-def _build_mongo_filter(request, keys, icase=True):
-    # We use regex queries to get case insensitive search - this
-    # means they won't use any indexes for now. Real case insensitive
-    # queries are coming eventually:
-    # http://jira.mongodb.org/browse/SERVER-90
-    _filter = {}
-    for key in keys:
-        value = request.GET.get(key)
-        if value:
-            _filter[key] = re.compile('^%s$' % value, re.IGNORECASE)
-    return _filter
 
 class FiftyStateHandler(BaseHandler):
     """
@@ -76,14 +78,6 @@ class FiftyStateHandler(BaseHandler):
     """
     __metaclass__ = FiftyStateHandlerMetaClass
     allowed_methods = ('GET',)
-
-
-class BillHandler(FiftyStateHandler):
-    def read(self, request, state, session, chamber, bill_id):
-        return db.bills.find_one({'state': state.lower(),
-                                  'session': session,
-                                  'chamber': chamber.lower(),
-                                  'bill_id': bill_id})
 
 
 class MetadataHandler(FiftyStateHandler):
@@ -94,52 +88,12 @@ class MetadataHandler(FiftyStateHandler):
         return db.metadata.find_one({'_id': state.lower()})
 
 
-class CommitteeHandler(FiftyStateHandler):
-    def read(self, request, id):
-        return db.committees.find_one({'_all_ids': id})
-
-
-class LegislatorHandler(FiftyStateHandler):
-    def read(self, request, id):
-        return db.legislators.find_one({'_all_ids': id})
-
-
-class LegislatorSearchHandler(FiftyStateHandler):
-    def read(self, request):
-        _filter = _build_mongo_filter(request, ('state', 'first_name',
-                                               'last_name'))
-        elemMatch = _build_mongo_filter(request, ('chamber', 'term',
-                                                  'district', 'party'))
-        _filter['roles'] = {'$elemMatch': elemMatch}
-
-        return list(db.legislators.find(_filter))
-
-
-class CommitteeSearchHandler(FiftyStateHandler):
-    def read(self, request):
-        _filter = _build_mongo_filter(request, ('committee', 'subcommittee',
-                                                'chamber', 'state'))
-        return list(db.committees.find(_filter))
-
-
-class LegislatorGeoHandler(FiftyStateHandler):
-    def read(self, request):
-        try:
-            districts = District.lat_long(request.GET['lat'],
-                                          request.GET['long'])
-            filters = []
-            for d in districts:
-                filters.append({'state': d.state_abbrev,
-                                'roles': {'$elemMatch': {'district':d.name,
-                                                         'chamber':d.chamber}}}
-                              )
-            return list(db.legislators.find({'$or': filters}))
-        except District.DoesNotExist:
-            return rc.NOT_HERE
-        except KeyError:
-            resp = rc.BAD_REQUEST
-            resp.write(": Need lat and long parameters")
-            return resp
+class BillHandler(FiftyStateHandler):
+    def read(self, request, state, session, chamber, bill_id):
+        return db.bills.find_one({'state': state.lower(),
+                                  'session': session,
+                                  'chamber': chamber.lower(),
+                                  'bill_id': bill_id})
 
 
 class BillSearchHandler(FiftyStateHandler):
@@ -177,4 +131,52 @@ class BillSearchHandler(FiftyStateHandler):
                     return resp
 
         return list(db.bills.find(_filter))
+
+
+class LegislatorHandler(FiftyStateHandler):
+    def read(self, request, id):
+        return db.legislators.find_one({'_all_ids': id})
+
+
+class LegislatorSearchHandler(FiftyStateHandler):
+    def read(self, request):
+        _filter = _build_mongo_filter(request, ('state', 'first_name',
+                                               'last_name'))
+        elemMatch = _build_mongo_filter(request, ('chamber', 'term',
+                                                  'district', 'party'))
+        _filter['roles'] = {'$elemMatch': elemMatch}
+
+        return list(db.legislators.find(_filter))
+
+
+class LegislatorGeoHandler(FiftyStateHandler):
+    def read(self, request):
+        try:
+            districts = District.lat_long(request.GET['lat'],
+                                          request.GET['long'])
+            filters = []
+            for d in districts:
+                filters.append({'state': d.state_abbrev,
+                                'roles': {'$elemMatch': {'district':d.name,
+                                                         'chamber':d.chamber}}}
+                              )
+            return list(db.legislators.find({'$or': filters}))
+        except District.DoesNotExist:
+            return rc.NOT_HERE
+        except KeyError:
+            resp = rc.BAD_REQUEST
+            resp.write(": Need lat and long parameters")
+            return resp
+
+
+class CommitteeHandler(FiftyStateHandler):
+    def read(self, request, id):
+        return db.committees.find_one({'_all_ids': id})
+
+
+class CommitteeSearchHandler(FiftyStateHandler):
+    def read(self, request):
+        _filter = _build_mongo_filter(request, ('committee', 'subcommittee',
+                                                'chamber', 'state'))
+        return list(db.committees.find(_filter))
 

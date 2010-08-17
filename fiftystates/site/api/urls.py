@@ -16,17 +16,17 @@ if getattr(settings, 'USE_LOCKSMITH', False):
 else:
     authorizer = None
 
-bill_handler = Resource(BillHandler, authentication=authorizer)
 metadata_handler = Resource(MetadataHandler, authentication=authorizer)
-committee_handler = Resource(CommitteeHandler, authentication=authorizer)
-committee_search_handler = Resource(CommitteeSearchHandler,
-                                    authentication=authorizer)
+bill_handler = Resource(BillHandler, authentication=authorizer)
+bill_search_handler = Resource(BillSearchHandler, authentication=authorizer)
 legislator_handler = Resource(LegislatorHandler, authentication=authorizer)
 legsearch_handler = Resource(LegislatorSearchHandler,
                              authentication=authorizer)
 legislator_geo_handler = Resource(LegislatorGeoHandler,
                                   authentication=authorizer)
-bill_search_handler = Resource(BillSearchHandler, authentication=authorizer)
+committee_handler = Resource(CommitteeHandler, authentication=authorizer)
+committee_search_handler = Resource(CommitteeSearchHandler,
+                                    authentication=authorizer)
 
 urlpatterns = patterns('',
     url(r'^(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/'
