@@ -34,14 +34,28 @@ urlpatterns = patterns('',
         r'(?P<chamber>upper|lower)/bills/(?P<bill_id>.+)/$', bill_handler),
     url(r'^(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/'
         r'(?P<chamber>upper|lower)/districts/geo/$', district_geo_handler),
-    url(r'^(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/'
-        r'(?P<chamber>upper|lower)/districts/(?P<district>.+)/$',
-        district_handler),
+    #url(r'^(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/'
+    #    r'(?P<chamber>upper|lower)/districts/(?P<district>.+)/$',
+    #    district_handler),
     url(r'^(?P<state>[a-zA-Z]{2,2})/$', state_handler),
     url(r'^committees/(?P<id>[A-Z]{2,2}C\d{6,6})/$', committee_handler),
     url(r'^legislators/(?P<id>[A-Z]{2,2}L\d{6,6})/$', legislator_handler),
     url(r'^legislators/search/$', legsearch_handler),
-    url(r'^bills/latest/$', latest_bills_handler),
+    #url(r'^bills/latest/$', latest_bills_handler),
     url(r'^bills/search/$', bill_search_handler),
     url(r'^documents/(?P<id>[A-Z]{2,2}D\d{8,8})/$', document),
+
+    # v1 urls
+    url(r'^v1/metadata/(?P<state>[a-zA-Z]{2,2})/$', state_handler),
+
+    url(r'^v1/bills/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/'
+        r'(?P<chamber>upper|lower)/(?P<bill_id>.+)/$', bill_handler),
+    #url(r'^v1/bills/$', bill_search_handler),
+
+    url(r'^v1/legislators/(?P<id>[A-Z]{2,2}L\d{6,6})/$', legislator_handler),
+    url(r'^v1/legislators/$', legsearch_handler),
+    url(r'^v1/legislators/geo/$', district_geo_handler),
+
+    url(r'^v1/committees/(?P<id>[A-Z]{2,2}C\d{6,6})/$', committee_handler),
+    #url(r'^v1/committees/$', committee_search_handler),
 )
