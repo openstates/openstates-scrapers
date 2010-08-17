@@ -58,6 +58,17 @@ class FiftyStateHandlerMetaClass(HandlerMetaClass):
 
         return new_cls
 
+def _build_mongo_filter(request, keys, icase=True):
+    # We use regex queries to get case insensitive search - this
+    # means they won't use any indexes for now. Real case insensitive
+    # queries are coming eventually:
+    # http://jira.mongodb.org/browse/SERVER-90
+    _filter = {}
+    for key in keys:
+        value = request.GET.get(key)
+        if value:
+            _filter[key] = re.compile('^%s$' % value, re.IGNORECASE)
+    return _filter
 
 class FiftyStateHandler(BaseHandler):
     """
@@ -95,27 +106,13 @@ class LegislatorHandler(FiftyStateHandler):
 
 class LegislatorSearchHandler(FiftyStateHandler):
     def read(self, request):
-        # We use regex queries to get case insensitive search - this
-        # means they won't use any indexes for now. Real case insensitive
-        # queries are coming eventually:
-        # http://jira.mongodb.org/browse/SERVER-90
-        filter = {}
+        _filter = _build_mongo_filter(request, ('state', 'first_name',
+                                               'last_name'))
+        elemMatch = _build_mongo_filter(request, ('chamber', 'term',
+                                                  'district', 'party'))
+        _filter['roles'] = {'$elemMatch': elemMatch}
 
-        for key in ('state', 'first_name', 'last_name'):
-            value = request.GET.get(key)
-            if value:
-                filter[key] = re.compile("^%s$" % value, re.IGNORECASE)
-
-        elemMatch = {}
-        for key in ('chamber', 'term', 'district', 'party'):
-            value = request.GET.get(key)
-            if value:
-                elemMatch[key] = re.compile("^%s$" % value,
-                                            re.IGNORECASE)
-
-        filter['roles'] = {'$elemMatch': elemMatch}
-
-        return list(db.legislators.find(filter))
+        return list(db.legislators.find(_filter))
 
 
 class DistrictGeoHandler(FiftyStateHandler):
@@ -137,9 +134,9 @@ class DistrictGeoHandler(FiftyStateHandler):
 
 class BillSearchHandler(FiftyStateHandler):
     def read(self, request):
-        try:
-            query = request.GET['q']
-        except KeyError:
+
+        query = request.GET.get('q')
+        if not query:
             resp = rc.BAD_REQUEST
             resp.write(": Need a query string")
             return resp
