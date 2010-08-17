@@ -5,7 +5,7 @@ from piston.resource import Resource
 from piston.emitters import Emitter
 
 from fiftystates.site.api.handlers import *
-from fiftystates.site.api.emitters import LoggingJSONEmitter
+from fiftystates.site.api.emitters import LoggingJSONEmitter, LoggingXMLEmitter
 from fiftystates.site.api.views import document
 
 if getattr(settings, 'USE_LOCKSMITH', False):
@@ -13,6 +13,8 @@ if getattr(settings, 'USE_LOCKSMITH', False):
     authorizer = PistonKeyAuthentication()
     Emitter.register('json', LoggingJSONEmitter,
                      'application/json; charset=utf-8')
+    Emitter.register('xml', LoggingXMLEmitter,
+                     'text/xml; charset=utf-8')
 else:
     authorizer = None
 
