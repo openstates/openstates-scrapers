@@ -1,16 +1,16 @@
-====================================
-Open State Project API: Bill Methods
-====================================
+================
+Bill API Methods
+================
 
-There are three endpoints pertaining to bills:
-    * single bill lookup
-    * search
-    * date-based lookup
+.. contents::
+   :depth: 2
+   :local:
 
-All three methods return bill objects which have several fields in common:
 
 Bill Fields
 ===========
+
+Both methods return bill objects consisting of the following fields:
 
 ``title``
     The title given to the bill by the state legislature
@@ -22,6 +22,8 @@ Bill Fields
     The chamber this bill was introduced in (e.g. 'upper', 'lower')
 ``bill_id``
     The identifier given to this bill by the state legislature (e.g. 'AB6667')
+``updated_at``
+    Timestamp representing when bill was last updated in our system.
 ``actions``
     A list of legislative actions performed on this bill. Each action will be an object with at least the following fields:
     * ``date``: The date/time the action was performed
@@ -46,20 +48,111 @@ Bill Fields
     * ``url``: The URL for an official source of this version of the bill text
     * ``name``: A name for this version of the bill text
 
-Single Bill Lookup
-==================
+.. note::
+    ``actions``, ``sponsors``, ``votes``, ``versions`` are excluded by default in the search API
+
+
+Bill Search
+===========
+
+Search bills, either by keyword or by properties such as updated date or session.
+
+Parameters
+^^^^^^^^^^
+
+When searching either a keyword (``q``) parameter is required or a ``state`` and ``session``.
+All other parameters are optional and can be combined as needed.
+
+``q``
+    the keyword string to lookup
+``state``
+    filter results by given state (two-letter abbreviation)
+``session``
+    filter results by given session
+``chamber``
+    filter results by given chamber ('upper' or 'lower')
+``updated_since``
+    only return bills that have been updated since a given date, YYYY-MM-DD format
+
+URL Format
+^^^^^^^^^^
+
+http://openstates.sunlightlabs.com/api/v1/bills/search/?:SEARCH-PARAMS:&apikey=YOUR_API_KEY
+
+Example
+^^^^^^^
+
+http://openstates.sunlightlabs.com/api/v1/bills/search/?q=agriculture&state=vt&chamber=upper&apikey=YOUR_API_KEY
+
+::
+
+    [
+        {
+            "title": "AN ACT RELATING TO AGRICULTURAL FUNDING EDUCATION AND OUTREACH", 
+            "created_at": "2010-07-09 16:16:10", 
+            "updated_at": "2010-08-16 18:10:17", 
+            "chamber": "upper", 
+            "state": "vt", 
+            "session": "2009-2010", 
+            "type": [ "bill" ], 
+            "bill_id": "S.0132"
+        }, 
+        {
+            "title": "AN ACT RELATING TO THE VERMONT AGRICULTURAL ADVISORY BOARD", 
+            "created_at": "2010-07-09 16:16:13", 
+            "updated_at": "2010-08-16 18:10:17", 
+            "chamber": "upper", 
+            "state": "vt", 
+            "session": "2009-2010", 
+            "type": [ "bill" ], 
+            "bill_id": "S.0208"
+        }, 
+        {
+            "title": "AN ACT RELATING TO PUBLIC HEALTH AND PREVENTIVE HEALTH SERVICES FOR AGRICULTURAL AND FOOD SERVICE WORKERS", 
+            "created_at": "2010-07-09 16:16:09", 
+            "updated_at": "2010-08-16 18:10:17", 
+            "chamber": "upper", 
+            "state": "vt", 
+            "session": "2009-2010", 
+            "type": [ "bill" ], 
+            "bill_id": "S.0116"
+        }, 
+        {
+            "title": "AN ACT RELATING TO THE USE OF TRANSFER OF DEVELOPMENT RIGHTS FOR OFF-SITE MITIGATION OF PRIMARY AGRICULTURAL SOILS", 
+            "created_at": "2010-07-09 16:16:14", 
+            "updated_at": "2010-08-16 18:10:17", 
+            "chamber": "upper", 
+            "state": "vt", 
+            "session": "2009-2010", 
+            "type": [ "bill" ], 
+            "bill_id": "S.0233"
+        }, 
+        {
+            "title": "AN ACT RELATING TO AGRICULTURAL DEVELOPMENT, INCLUDING AGENCY POSITIONS AND CREATION OF DEVELOPMENT BOARD; ESTABLISHMENT OF LIVESTOCK CARE STANDARDS; OPERATION OF COMMERCIAL SLAUGHTER FACILITIES; ANIMAL RESCUE ORGANIZATIONS; AND HEALTH CERTIFICATES FOR IMPORTATION OF CERTAIN ANIMALS", 
+            "created_at": "2010-07-09 16:16:18", 
+            "updated_at": "2010-08-16 18:10:18", 
+            "chamber": "upper", 
+            "state": "vt", 
+            "session": "2009-2010", 
+            "type": [ "bill" ], 
+            "bill_id": "S.0295"
+        }
+    ]
+
+Bill Lookup
+===========
 
 This endpoint exists to get all information about a bill given its state/session/chamber and Open State Project id.
 
 URL Format
 ^^^^^^^^^^
 
-http://openstates.sunlightlabs.com/api/:STATE-ABBREV:/:SESSION:/:CHAMBER:/bills/:BILL-ID:/?apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/bills/:STATE-ABBREV:/:SESSION:/:CHAMBER:/:BILL-ID:/?apikey=YOUR_API_KEY
 
 Example
 ^^^^^^^
 
-http://openstates.sunlightlabs.com/api/ca/20092010/lower/bills/AB667/?apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/bills/ca/20092010/lower/AB667/?apikey=YOUR_API_KEY
 
 ::
 
@@ -155,61 +248,4 @@ http://openstates.sunlightlabs.com/api/ca/20092010/lower/bills/AB667/?apikey=YOU
         ], 
         "bill_id": "AB667"
     }
-
-
-Bill Search
------------
-
-Endpoint to search bills by keywords, optionally faceting on a number of fields.
-
-Parameters
-^^^^^^^^^^
-
-``q`` (**required**)
-    the keyword string to lookup
-``state`` (*optional*)
-    filter results by given state (two-letter abbreviation)
-``session`` (*optional*)
-    filter results by given session
-``chamber`` (*optional*)
-    filter results by given chamber ('upper' or 'lower')
-``updated_since`` (*optional*)
-    only return bills that have been updated since a given date, YYYY-MM-DD format
-
-Returns a list of bills containing the same fields returned a simple lookup.
-
-.. note::
-    Will only return the first 20 matching bills. If no bills match, an empty list is returned.
-
-URL Format
-^^^^^^^^^^
-
-http://openstates.sunlightlabs.com/api/bills/search/?:SEARCH-PARAMS:&apikey=YOUR_API_KEY
-
-Example
-^^^^^^^
-
-http://openstates.sunlightlabs.com/api/bills/search/?q=agriculture&state=vt&apikey=YOUR_API_KEY
-
-
-Latest Bills
-------------
-
-Get all bills updated since a certain time.
-
-Parameters
-^^^^^^^^^^
-
-``updated_since``
-    how far back to search, in YYYY-MM-DD format
-``state``
-    the state to search (two-letter abbreviation)
-
-URL Format
-^^^^^^^^^^
-    http://openstates.sunlightlabs.com/api/bills/latest/?updated_since=:TIMESTAMP:&state=:STATE-ABBREV:&apikey=YOUR_API_KEY
-
-Example
-^^^^^^^
-    http://openstates.sunlightlabs.com/api/bills/latest/?updated_since=2010-04-01&state=sd&apikey=YOUR_API_KEY
 
