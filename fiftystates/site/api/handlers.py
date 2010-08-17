@@ -99,6 +99,8 @@ class BillHandler(FiftyStateHandler):
 class BillSearchHandler(FiftyStateHandler):
     def read(self, request):
 
+        bill_fields = {'votes': 0, 'actions': 0, 'sources': 0}
+
         query = request.GET.get('q')
 
         # if a query is provided dispatch to the full text search
@@ -130,7 +132,7 @@ class BillSearchHandler(FiftyStateHandler):
                     " Please supply a date in YYYY-MM-DD format.")
                     return resp
 
-        return list(db.bills.find(_filter))
+        return list(db.bills.find(_filter, bill_fields))
 
 
 class LegislatorHandler(FiftyStateHandler):
@@ -140,13 +142,15 @@ class LegislatorHandler(FiftyStateHandler):
 
 class LegislatorSearchHandler(FiftyStateHandler):
     def read(self, request):
+        legislator_fields = {'roles': 0, 'sources': 0}
+
         _filter = _build_mongo_filter(request, ('state', 'first_name',
                                                'last_name'))
         elemMatch = _build_mongo_filter(request, ('chamber', 'term',
                                                   'district', 'party'))
         _filter['roles'] = {'$elemMatch': elemMatch}
 
-        return list(db.legislators.find(_filter))
+        return list(db.legislators.find(_filter, legislator_fields))
 
 
 class LegislatorGeoHandler(FiftyStateHandler):
@@ -176,7 +180,9 @@ class CommitteeHandler(FiftyStateHandler):
 
 class CommitteeSearchHandler(FiftyStateHandler):
     def read(self, request):
+        committee_fields = {'members': 0, 'sources': 0}
+
         _filter = _build_mongo_filter(request, ('committee', 'subcommittee',
                                                 'chamber', 'state'))
-        return list(db.committees.find(_filter))
+        return list(db.committees.find(_filter, committee_fields))
 
