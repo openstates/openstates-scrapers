@@ -143,9 +143,35 @@ class BillSearchHandler(FiftyStateHandler):
     def read(self, request):
 
         query = request.GET.get('q')
-        if not query:
+
+        # if a query is provided dispatch to the full text search
+        if query:
+            return search.bill_query(query, request.GET)
+
+        # normal mongo search logic
+        _filter = _build_mongo_filter(request, ('state', 'chamber',
+                                                'session'))
+
+        if 'state' not in _filter or 'session' not in _filter:
             resp = rc.BAD_REQUEST
-            resp.write(": Need a query string")
+            resp.write(": Need a query string or state & session")
             return resp
 
-        return search.bill_query(query, request.GET)
+        # process updated_since
+        since = request.GET.get('updated_since')
+        if since:
+            try:
+                _filter['since'] = datetime.datetime.strptime(since,
+                                                          "%Y-%m-%d %H:%M")
+            except ValueError:
+                try:
+                    _filter['since'] = datetime.datetime.strptime(since,
+                                                               "%Y-%m-%d")
+                except ValueError:
+                    resp = rc.BAD_REQUEST
+                    resp.write(": invalid updated_since parameter."
+                    " Please supply a date in YYYY-MM-DD format.")
+                    return resp
+
+        return list(db.bills.find(_filter))
+
