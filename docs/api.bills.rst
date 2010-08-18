@@ -77,12 +77,12 @@ All other parameters are optional and can be combined as needed.
 URL Format
 ^^^^^^^^^^
 
-http://openstates.sunlightlabs.com/api/v1/bills/search/?:SEARCH-PARAMS:&apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/bills/?:SEARCH-PARAMS:&apikey=YOUR_API_KEY
 
 Example
 ^^^^^^^
 
-http://openstates.sunlightlabs.com/api/v1/bills/search/?q=agriculture&state=vt&chamber=upper&apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/bills/?q=agriculture&state=vt&chamber=upper&apikey=YOUR_API_KEY
 
 ::
 
@@ -142,7 +142,7 @@ http://openstates.sunlightlabs.com/api/v1/bills/search/?q=agriculture&state=vt&c
 Bill Lookup
 ===========
 
-This endpoint exists to get all information about a bill given its state/session/chamber and Open State Project id.
+This endpoint exists to get all information about a bill given its state/session/chamber and bill id.
 
 URL Format
 ^^^^^^^^^^

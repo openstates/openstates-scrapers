@@ -24,3 +24,4 @@ Methods
     State Metadata <api.metadata>
     Bill Methods <api.bills>
     Legislator Methods <api.legislators>
+    Committee Methods <api.committees>

@@ -52,12 +52,12 @@ Parameters
 URL format
 ----------
 
-http://openstates.sunlightlabs.com/api/v1/legislators/search/?:SEARCH-PARAMS:&apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/legislators/?:SEARCH-PARAMS:&apikey=YOUR_API_KEY
 
 Example
 -------
 
-http://openstates.sunlightlabs.com/api/v1/legislators/search/?state=ca&party=democrat&first_name=Bob&apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/legislators/?state=ca&party=democrat&first_name=Bob&apikey=YOUR_API_KEY
 
 ::
 
