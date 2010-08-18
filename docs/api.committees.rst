@@ -24,6 +24,7 @@ Committee methods return objects with the following fields:
     Timestamp representing when bill was last updated in our system.
 ``members``
     Listing of all committee members.
+
     ``legislator``
         Name of legislator (as captured from source).
     ``role``
