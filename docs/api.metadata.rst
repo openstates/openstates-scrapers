@@ -28,11 +28,12 @@ Metadata Fields
     The title used to refer to members of the 'upper' chamber (if applicable)
 ``lower_chamber_title``
     The title used to refer to members of the 'lower' chamber (if applicable)
-``sessions``
-    A list of sessions that we have data available for. Each session will be an object with the following fields:
+``terms``
+    A list of terms that we have data available for. Each session will be an object with the following fields:
     * ``start_year``: The year in which this session began.
     * ``end_year``: The year in which this session ended.
     * ``name``: The name of this session.
+    * ``sessions``: List of sessions that took place inside the given term.
 
 URL format
 ----------
@@ -43,7 +44,7 @@ http://openstates.sunlightlabs.com/api/v1/metadata/:STATE-ABBREV:/?apikey=YOUR_A
 Example
 -------
 
-http://openstates.sunlightlabs.com/api/v1/metadta/ca/?apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/metadata/ca/?apikey=YOUR_API_KEY
 
 ::
 

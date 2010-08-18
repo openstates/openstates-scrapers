@@ -28,6 +28,10 @@ All legislator methods return Legislator objects consisting of the following fie
 .. note::
     Roles are not included in the response in legislator search.
 
+.. note::
+    Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See :ref:`extrafields`)
+
+
 Legislator Search
 =================
 

@@ -36,6 +36,9 @@ Committee methods return objects with the following fields:
 .. note::
    ``members`` are not included in the committee search API results
 
+.. note::
+    Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See :ref:`extrafields`)
+
 
 Committee Lookup
 ================

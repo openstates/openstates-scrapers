@@ -49,7 +49,10 @@ Both methods return bill objects consisting of the following fields:
     * ``name``: A name for this version of the bill text
 
 .. note::
-    ``actions``, ``sponsors``, ``votes``, ``versions`` are excluded by default in the search API
+    ``actions``, ``sponsors``, ``votes``, ``versions`` are not returned via the search API.
+
+.. note::
+    Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See :ref:`extrafields`)
 
 
 Bill Search
