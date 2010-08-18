@@ -38,7 +38,7 @@ Metadata Fields
 URL format
 ----------
 
-http://openstates.sunlightlabs.com/api/v1/metadata/:STATE-ABBREV:/?apikey=YOUR_API_KEY
+:samp:`http://openstates.sunlightlabs.com/api/v1/metadata/{STATE-ABBREV}/?apikey={YOUR_API_KEY}`
 
 
 Example

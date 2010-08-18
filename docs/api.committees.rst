@@ -48,7 +48,7 @@ Get all information about a committee given its Open State Project id.
 URL Format
 ^^^^^^^^^^
 
-http://openstates.sunlightlabs.com/api/v1/committee/:COMMITTEE-ID:/?apikey=YOUR_API_KEY
+:samp:`http://openstates.sunlightlabs.com/api/v1/committee/{COMMITTEE-ID}/?apikey={YOUR_API_KEY}`
 
 Example
 ^^^^^^^
@@ -119,7 +119,7 @@ Parameters
 URL Format
 ^^^^^^^^^^
 
-http://openstates.sunlightlabs.com/api/v1/committees/?:SEARCH-PARAMS:&apikey=YOUR_API_KEY
+:samp:`http://openstates.sunlightlabs.com/api/v1/committees/?{SEARCH-PARAMS}&apikey={YOUR_API_KEY}`
 
 Example
 ^^^^^^^

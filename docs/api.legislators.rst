@@ -56,7 +56,7 @@ Parameters
 URL format
 ----------
 
-http://openstates.sunlightlabs.com/api/v1/legislators/?:SEARCH-PARAMS:&apikey=YOUR_API_KEY
+:samp:`http://openstates.sunlightlabs.com/api/v1/legislators/?{SEARCH-PARAMS}&apikey={YOUR_API_KEY}`
 
 Example
 -------
@@ -91,7 +91,7 @@ Lookup all available data for a legislator given their Open State Project ``leg_
 URL Format
 ----------
 
-http://openstates.sunlightlabs.com/api/v1/legislators/:LEG_ID:/?apikey=YOUR_API_KEY
+:samp:`http://openstates.sunlightlabs.com/api/v1/legislators/{LEG_ID}/?apikey={YOUR_API_KEY}`
 
 Example
 -------
@@ -173,7 +173,7 @@ Parameters
 URL Format
 ----------
 
-http://openstates.sunlightlabs.com/api/v1/legislators/geo/?lat=:LATITUDE:&long=:LONGITUDE:&apikey=YOUR_API_KEY
+:samp:`http://openstates.sunlightlabs.com/api/v1/legislators/geo/?lat={LATITUDE}&long={LONGITUDE}&apikey={YOUR_API_KEY}`
 
 Example
 -------

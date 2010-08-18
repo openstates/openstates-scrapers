@@ -80,7 +80,7 @@ All other parameters are optional and can be combined as needed.
 URL Format
 ^^^^^^^^^^
 
-http://openstates.sunlightlabs.com/api/v1/bills/?:SEARCH-PARAMS:&apikey=YOUR_API_KEY
+:samp:`http://openstates.sunlightlabs.com/api/v1/bills/?{SEARCH-PARAMS}&apikey={YOUR_API_KEY}`
 
 Example
 ^^^^^^^
@@ -150,7 +150,7 @@ This endpoint exists to get all information about a bill given its state/session
 URL Format
 ^^^^^^^^^^
 
-http://openstates.sunlightlabs.com/api/v1/bills/:STATE-ABBREV:/:SESSION:/:CHAMBER:/:BILL-ID:/?apikey=YOUR_API_KEY
+:samp:`http://openstates.sunlightlabs.com/api/v1/bills/{STATE-ABBREV}/{SESSION}/{CHAMBER}/{BILL-ID}h?apikey={YOUR_API_KEY}`
 
 Example
 ^^^^^^^
