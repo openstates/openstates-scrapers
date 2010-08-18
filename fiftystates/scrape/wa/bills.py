@@ -123,8 +123,7 @@ class WABillScraper(BillScraper):
         year = str(year_from_session(session))
                 
         with self.urlopen("http://apps.leg.wa.gov/billinfo/dailystatus.aspx?year=" + year) as page_html:
-            page = lxml.html.fromstring(page_html)
-            page = separate_content(page, sep)
+            page = lxml.html.fromstring(separate_content(page_html, sep))
             
             for element, attribute, link, pos in page.iterlinks():
                 if re.search("bill=" + reg + "[0-9]{3}", link) != None:
