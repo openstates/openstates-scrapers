@@ -12,6 +12,8 @@ Committee Fields
 
 Committee methods return objects with the following fields:
 
+``id``
+    Open State Project Committee ID.
 ``committee``
     Name of committee.
 ``subcommittee``
@@ -58,6 +60,7 @@ http://openstates.sunlightlabs.com/api/v1/committee/MDC000065/?apikey=YOUR_API_K
 ::
 
     {
+        "id": "MDC000065",
         "committee": "HOUSE FACILITIES COMMITTEE",
         "sources": [
             {
@@ -130,137 +133,155 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
 
     [
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "ALCOHOLIC BEVERAGES SUBCOMMITTEE",
             "committee": "EDUCATION, HEALTH & ENVIRONMENTAL AFFAIRS COMMITTEE",
-            "subcommittee": "ALCOHOLIC BEVERAGES SUBCOMMITTEE"
+            "id": "MDC000009"
         },
         {
-            "chamber": "upper",
-            "state": "md",
             "updated_at": "2010-08-12 23:25:16",
+            "chamber": "upper",
+            "state": "md",
+            "subcommittee": null,
             "committee": "SPECIAL COMMITTEE ON SUBSTANCE ABUSE",
-            "subcommittee": null
+            "id": "MDC000019"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": null,
             "committee": "RULES COMMITTEE",
-            "subcommittee": null
+            "id": "MDC000001"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": null,
             "committee": "JUDICIAL PROCEEDINGS COMMITTEE",
-            "subcommittee": null
+            "id": "MDC000002"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": null,
             "committee": "BUDGET & TAXATION COMMITTEE",
-            "subcommittee": null
+            "id": "MDC000003"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "CAPITAL BUDGET SUBCOMMITTEE",
             "committee": "BUDGET & TAXATION COMMITTEE",
-            "subcommittee": "CAPITAL BUDGET SUBCOMMITTEE"
+            "id": "MDC000004"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "HEALTH, EDUCATION & HUMAN RESOURCES SUBCOMMITTEE",
             "committee": "BUDGET & TAXATION COMMITTEE",
-            "subcommittee": "HEALTH, EDUCATION & HUMAN RESOURCES SUBCOMMITTEE"
+            "id": "MDC000005"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "PENSIONS SUBCOMMITTEE",
             "committee": "BUDGET & TAXATION COMMITTEE",
-            "subcommittee": "PENSIONS SUBCOMMITTEE"
+            "id": "MDC000006"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "PUBLIC SAFETY, TRANSPORTATION & ENVIRONMENT SUBCOMMITTEE",
             "committee": "BUDGET & TAXATION COMMITTEE",
-            "subcommittee": "PUBLIC SAFETY, TRANSPORTATION & ENVIRONMENT SUBCOMMITTEE"
+            "id": "MDC000007"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": null,
             "committee": "EDUCATION, HEALTH & ENVIRONMENTAL AFFAIRS COMMITTEE",
-            "subcommittee": null
+            "id": "MDC000008"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "BASE REALIGNMENT & CLOSURE (BRAC) SUBCOMMITTEE",
             "committee": "EDUCATION, HEALTH & ENVIRONMENTAL AFFAIRS COMMITTEE",
-            "subcommittee": "BASE REALIGNMENT & CLOSURE (BRAC) SUBCOMMITTEE"
+            "id": "MDC000010"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "EDUCATION SUBCOMMITTEE",
             "committee": "EDUCATION, HEALTH & ENVIRONMENTAL AFFAIRS COMMITTEE",
-            "subcommittee": "EDUCATION SUBCOMMITTEE"
+            "id": "MDC000011"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "ENVIRONMENT SUBCOMMITTEE",
             "committee": "EDUCATION, HEALTH & ENVIRONMENTAL AFFAIRS COMMITTEE",
-            "subcommittee": "ENVIRONMENT SUBCOMMITTEE"
+            "id": "MDC000012"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "ETHICS & ELECTION LAW SUBCOMMITTEE",
             "committee": "EDUCATION, HEALTH & ENVIRONMENTAL AFFAIRS COMMITTEE",
-            "subcommittee": "ETHICS & ELECTION LAW SUBCOMMITTEE"
+            "id": "MDC000013"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "HEALTH SUBCOMMITTEE",
             "committee": "EDUCATION, HEALTH & ENVIRONMENTAL AFFAIRS COMMITTEE",
-            "subcommittee": "HEALTH SUBCOMMITTEE"
+            "id": "MDC000014"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": null,
             "committee": "FINANCE COMMITTEE",
-            "subcommittee": null
+            "id": "MDC000015"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "HEALTH SUBCOMMITTEE",
             "committee": "FINANCE COMMITTEE",
-            "subcommittee": "HEALTH SUBCOMMITTEE"
+            "id": "MDC000016"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": "TRANSPORTATION SUBCOMMITTEE",
             "committee": "FINANCE COMMITTEE",
-            "subcommittee": "TRANSPORTATION SUBCOMMITTEE"
+            "id": "MDC000017"
         },
         {
+            "updated_at": "2010-08-12 23:25:15",
             "chamber": "upper",
             "state": "md",
-            "updated_at": "2010-08-12 23:25:15",
+            "subcommittee": null,
             "committee": "EXECUTIVE NOMINATIONS COMMITTEE",
-            "subcommittee": null
+            "id": "MDC000018"
         }
     ]
-
