@@ -2,8 +2,9 @@
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from votesmart import votesmart, VotesmartApiError
 from fiftystates import settings
+import os
 
-votesmart.apikey = settings.VOTESMART_API_KEY
+votesmart.apikey = os.environ.get('VOTESMART_API_KEY', settings.VOTESMART_API_KEY)
 
 
 class NYLegislatorScraper(LegislatorScraper):
