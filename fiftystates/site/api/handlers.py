@@ -37,7 +37,8 @@ class FiftyStateHandlerMetaClass(HandlerMetaClass):
 
             def clean(obj):
                 if isinstance(obj, dict):
-                    if obj.get('_type') == 'person' and '_id' in obj:
+                    if (obj.get('_type') in ('person', 'committee') and
+                        '_id' in obj):
                         obj['id'] = obj['_id']
 
                     for key, value in obj.items():
