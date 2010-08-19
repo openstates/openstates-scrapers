@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# The Fifty State Project documentation build configuration file, created by
+# The Open State Project documentation build configuration file, created by
 # sphinx-quickstart on Thu May 27 17:01:19 2010.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -22,7 +22,10 @@ sys.path.append(os.path.abspath('..'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.intersphinx', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.pngmath', 'sphinx.ext.ifconfig']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
+              'sphinx.ext.intersphinx', 'sphinx.ext.todo',
+              'sphinx.ext.coverage', 'sphinx.ext.pngmath',
+              'sphinx.ext.ifconfig']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -37,7 +40,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'The Fifty State Project'
+project = u'The Open State Project'
 copyright = u'2010, Sunlight Labs'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -103,7 +106,7 @@ html_theme_options = {'nosidebar': True}
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = 'The Fifty State Project'
+html_title = 'The Open State Project'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
@@ -158,7 +161,7 @@ html_static_path = ['_static']
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'TheFiftyStateProjectdoc'
+htmlhelp_basename = 'TheOpenStateProjectdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -172,7 +175,7 @@ htmlhelp_basename = 'TheFiftyStateProjectdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'TheFiftyStateProject.tex', u'The Fifty State Project Documentation',
+  ('index', 'TheOpenStateProject.tex', u'The Open State Project Documentation',
    u'Sunlight Labs', 'manual'),
 ]
 
