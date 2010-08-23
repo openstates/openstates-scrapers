@@ -56,6 +56,8 @@ class NYCommitteeScraper(CommitteeScraper):
     def scrape_senate(self):
         """Scrape Senate Committees"""
         for name, comm in nyss_openlegislation.models.committees.items():
+            name = name.title().replace('And', 'and')
+
             committee = Committee('upper', name)
 
             for member in comm.members:
