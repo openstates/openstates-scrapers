@@ -13,6 +13,20 @@ base_arg_parser.add_argument('state', type=str,
                              help=('the two-letter abbreviation of the '
                                    'state to import'))
 
+standard_fields = dict(
+    bill=set(('state', 'session', 'chamber', 'bill_id', 'title', 'actions',
+             'votes', 'sponsors', 'sources', 'documents', 'keywords')),
+    person=set(('state', 'full_name', 'first_name', 'last_name', 'middle_name',
+                'suffixes', 'roles', 'sources')),
+    committees=set(('state', 'chamber', 'committee', 'subcommittee', 'members',
+                   'sources')),
+    metadata=set(('name', 'abbreviation', 'legislature_name',
+                  'upper_chamber_name', 'lower_chamber_name',
+                  'upper_chamber_term', 'lower_chamber_term',
+                  'upper_chamber_title', 'lower_chamber_title',
+                  'terms')),
+    )
+
 
 def keywordize(str):
     """
@@ -99,10 +113,10 @@ def update(old, new, coll):
         coll.save(old, safe=True)
 
 
-def prepare_obj(obj):
+def convert_timestamps(obj):
     """
-    Convert timestamps in the scraper output to datetimes so that they
-    will be saved as Mongo datetimes, and standardize some other fields.
+    Convert unix timestamps in the scraper output to python datetimes
+    so that they will be saved properly as Mongo datetimes.
     """
     for source in obj.get('sources', []):
         source['retrieved'] = timestamp_to_dt(source['retrieved'])
@@ -125,12 +139,15 @@ def prepare_obj(obj):
     if 'date' in obj:
         obj['date'] = timestamp_to_dt(obj['date'])
 
-    # If we are handling a legislator and the scraped data
-    # includes both 'first_name' and 'last_name' fields, then use them.
-    # If one or both of these fields is missing, then run the name_tools
-    # splitting code to generate them.
+    return obj
+
+
+def split_name(obj):
+    """
+    If the supplied legislator/person object is missing 'first_name'
+    or 'last_name' then use name_tools to split.
+    """
     if obj['_type'] in ('person', 'legislator'):
-        split_name = False
         for key in ('first_name', 'last_name'):
             if key not in obj or not obj[key]:
                 # Need to split
@@ -139,3 +156,32 @@ def prepare_obj(obj):
                 break
 
     return obj
+
+
+def make_plus_fields(obj):
+    """
+    Add a '+' to the key of non-standard fields.
+    """
+    # It would be cool to use the validictory schemas to determine
+    # standard fields instead of the standard_fields dict
+    fields = standard_fields.get(obj['_type'], set())
+    new_obj = {}
+    for key, value in obj.iteritems():
+        if key in fields or key.startswith('_'):
+            new_obj[key] = value
+        else:
+            new_obj['+%s' % key] = value
+
+    return new_obj
+
+
+def prepare_obj(obj):
+    """
+    Clean up scraped objects in preparation for MongoDB.
+    """
+    convert_timestamps(obj)
+
+    if obj['_type'] in ('persion', 'legislator'):
+        split_name(obj)
+
+    return make_plus_fields(obj)
