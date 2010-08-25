@@ -1,9 +1,9 @@
 from fiftystates import settings
 
-import mongokit
+import pymongo
 import gridfs
 
-conn = mongokit.Connection(getattr(settings, 'MONGO_HOST', 'localhost'),
+conn = pymongo.Connection(getattr(settings, 'MONGO_HOST', 'localhost'),
                           getattr(settings, 'MONGO_PORT', 27017))
 
 db = conn[getattr(settings, 'MONGO_DATABASE', 'fiftystates')]
