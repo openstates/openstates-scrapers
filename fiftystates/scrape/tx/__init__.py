@@ -1,3 +1,5 @@
+import datetime
+
 metadata = dict(
     name='Texas',
     abbreviation='tx',
@@ -13,4 +15,10 @@ metadata = dict(
          'sessions': ['81', '811'],
          'start_year': 2009, 'end_year': 2010},
         ],
+    session_details={
+        '81': {'start_date': datetime.date(2009, 1, 13),
+               'end_date': datetime.date(2009, 6, 1)},
+        '811': {'start_date': datetime.date(2009, 7, 1),
+                'end_Date': datetime.date(2009, 7, 10)},
+        },
     )
