@@ -169,6 +169,9 @@ class CABillScraper(BillScraper):
                 else:
                     vtype = 'other'
 
+                motion = re.sub(r'(\w+) Extraordinary Session', '', motion)
+                motion = re.sub(r'\s+', ' ', motion)
+
                 fsvote = Vote(vote_chamber,
                               vote.vote_date_time,
                               motion,
