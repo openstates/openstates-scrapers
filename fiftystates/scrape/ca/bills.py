@@ -170,8 +170,11 @@ class CABillScraper(BillScraper):
                     vtype = 'other'
 
                 motion = motion.strip()
-                motion = re.sub(r'(\w+)( Extraordinary)? Session$', '', motion)
-                motion = re.sub(r'^(Senate|Assembly) ', '', motion)
+                motion = re.sub(r'(\w+)( Extraordinary)? Session$', '', motion,
+                                flags=re.IGNORECASE)
+                motion = re.sub(r'^(Senate|Assembly) ', '', motion,
+                                flags=re.IGNORECASE)
+                motion = re.sub(r'^(SCR|SB|AB)\s?\d+ \w+  ', '', motion)
 
                 motion = re.sub(r'\s+', ' ', motion)
 
