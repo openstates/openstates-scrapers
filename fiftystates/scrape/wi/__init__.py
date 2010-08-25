@@ -1,3 +1,5 @@
+import datetime
+
 metadata = {
     'abbreviation': 'wi',
     'name': 'Wisconsin',
@@ -36,7 +38,11 @@ metadata = {
                       'Dec 2009 Special Session',
                       '2009 Regular Session'],
          'start_year': 2009, 'end_year': 2010 },
-    ]
+    ],
+    'session_details': {
+        '2009 Regular Session': {'start_date': datetime.date(2009,1,13),
+                                 'end_date': datetime.date(2011,1,3)}
+    }
 }
 
 """
