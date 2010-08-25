@@ -1,3 +1,5 @@
+import datetime
+
 metadata = dict(
     name='North Carolina',
     abbreviation='nc',
@@ -49,4 +51,11 @@ metadata = dict(
          'sessions': ['2009'],
          'start_year': 2009, 'end_year': 2010},
         ],
-    )
+    sesssion_details={
+        '2001': {'start_date': datetime.date(2001,1,24) },
+        '2003': {'start_date': datetime.date(2003,1,29) },
+        '2005': {'start_date': datetime.date(2005,1,26) },
+        '2007': {'start_date': datetime.date(2007,1,24) },
+        '2009': {'start_date': datetime.date(2009,1,28) },
+    }
+)
