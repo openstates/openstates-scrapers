@@ -181,7 +181,7 @@ def prepare_obj(obj):
     """
     convert_timestamps(obj)
 
-    if obj['_type'] in ('persion', 'legislator'):
+    if obj['_type'] in ('person', 'legislator'):
         split_name(obj)
 
     return make_plus_fields(obj)
