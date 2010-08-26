@@ -15,13 +15,24 @@ base_arg_parser.add_argument('state', type=str,
                              help=('the two-letter abbreviation of the '
                                    'state to import'))
 
-# load standard fields from files
+def _get_property_dict(schema):
+    """ given a schema object produce a nested dictionary of fields """
+    pdict = {}
+    for k, v in schema['properties'].iteritems():
+        pdict[k] = {}
+        if 'items' in v and 'properties' in v['items']:
+            pdict[k] = _get_property_dict(v['items'])
+        elif 'properties' in v:
+            pdict[k] = _get_property_dict(v)
+    return pdict
+
+# load standard fields from schema files
 standard_fields = {}
 for _type in ('bill', 'person', 'committee', 'metadata', 'vote'):
     fname = os.path.join(os.path.split(__file__)[0],
                          '../../schemas/%s.json' % _type)
     schema = json.load(open(fname))
-    standard_fields[_type] = set(schema['properties'].keys())
+    standard_fields[_type] = _get_property_dict(schema)
 
 
 def keywordize(str):
@@ -153,22 +164,36 @@ def split_name(obj):
 
     return obj
 
+def _make_plus_helper(obj, fields):
+    """ add a + prefix to any fields in obj that aren't in fields """
+    new_obj = {}
+
+    for key, value in obj.iteritems():
+        if key in fields or key.startswith('_'):
+            # if there's a subschema apply it to a list or subdict
+            if fields.get(key):
+                if isinstance(value, list):
+                    value = [_make_plus_helper(item, fields[key])
+                             for item in value]
+                elif isinstance(value, dict):
+                    value = _make_plus_helper(value, fields[key])
+
+            # assign the value (modified potentially) to the new_obj
+            new_obj[key] = value
+        else:
+            # values not in the fields dict get a +
+            new_obj['+%s' % key] = value
+
+    return new_obj
 
 def make_plus_fields(obj):
     """
     Add a '+' to the key of non-standard fields.
-    """
-    # It would be cool to use the validictory schemas to determine
-    # standard fields instead of the standard_fields dict
-    fields = standard_fields.get(obj['_type'], set())
-    new_obj = {}
-    for key, value in obj.iteritems():
-        if key in fields or key.startswith('_'):
-            new_obj[key] = value
-        else:
-            new_obj['+%s' % key] = value
 
-    return new_obj
+    dispatch to recursive _make_plus_helper based on _type field
+    """
+    fields = standard_fields.get(obj['_type'], dict())
+    return _make_plus_helper(obj, fields)
 
 
 def prepare_obj(obj):
