@@ -22,8 +22,6 @@ def _get_property_dict(schema):
         pdict[k] = {}
         if 'items' in v and 'properties' in v['items']:
             pdict[k] = _get_property_dict(v['items'])
-        elif 'properties' in v:
-            pdict[k] = _get_property_dict(v)
     return pdict
 
 # load standard fields from schema files
@@ -175,9 +173,6 @@ def _make_plus_helper(obj, fields):
                 if isinstance(value, list):
                     value = [_make_plus_helper(item, fields[key])
                              for item in value]
-                elif isinstance(value, dict):
-                    value = _make_plus_helper(value, fields[key])
-
             # assign the value (modified potentially) to the new_obj
             new_obj[key] = value
         else:
