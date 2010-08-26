@@ -57,6 +57,8 @@ class LALegislatorScraper(LegislatorScraper):
                 party = "Democrat"
             elif "Republican&nbsp;District" in text:
                 party = "Republican"
+            elif "Independent&nbsp;District" in text:
+                party = "Independent"
             else:
                 party = "Other"
 
@@ -75,6 +77,9 @@ class LALegislatorScraper(LegislatorScraper):
 
             party = page.xpath(
                 "//b[text() = 'Party']")[0].getnext().tail.strip()
+
+            if party == 'No Party (Independent)':
+                party = 'Independent'
 
             leg = Legislator(term, 'upper', district, name, party=party)
             leg.add_source(url)
