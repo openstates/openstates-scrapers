@@ -44,10 +44,11 @@ class VTLegislatorScraper(LegislatorScraper):
                 email = tr.xpath("string(td[10])")
 
                 party = tr.xpath("string(td[5])")
-                party = {'D': 'Democrat',
+                party = {'D': 'Democratic',
                          'R': 'Republican',
                          'I': 'Independent',
-                         'P': 'Progressive'}.get(party, party)
+                         'P': 'Progressive',
+                         'X': 'Progressive'}.get(party, party)
 
                 leg = Legislator(term, chamber, district, full_name,
                                  first_name=first_name,
