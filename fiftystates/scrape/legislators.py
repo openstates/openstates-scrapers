@@ -13,7 +13,7 @@ class LegislatorScraper(Scraper):
 
     def _get_schema(self):
         schema_path = os.path.join(os.path.split(__file__)[0],
-                                   '../../schemas/legislator.json')
+                                   '../../schemas/person.json')
         schema = json.load(open(schema_path))
         terms = [t['name'] for t in self.metadata['terms']]
         schema['properties']['roles']['items']['properties']['term']['enum'] = terms
