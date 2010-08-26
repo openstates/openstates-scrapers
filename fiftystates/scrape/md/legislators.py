@@ -36,9 +36,9 @@ class MDLegislatorScraper(LegislatorScraper):
                     first_name = names[1].strip()
                     # TODO: try to trim first name to remove middle initial
                     if len(names) > 2:
-                        suffix = names[2]
+                        suffixes = [names[2]]
                     else:
-                        suffix = None
+                        suffixes = []
 
                     # handle details
                     details = detail_text.strip()
@@ -47,6 +47,6 @@ class MDLegislatorScraper(LegislatorScraper):
                     leg = Legislator('2007-2010', chamber, district,
                                      ' '.join((first_name, last_name)),
                                      first_name, last_name, '',
-                                     party, suffix=suffix,
+                                     party, suffixes=suffixes,
                                      url='http://www.msa.md.gov'+link)
                     self.save_legislator(leg)
