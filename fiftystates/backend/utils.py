@@ -18,7 +18,7 @@ standard_fields = dict(
              'votes', 'sponsors', 'sources', 'documents', 'keywords')),
     person=set(('state', 'full_name', 'first_name', 'last_name', 'middle_name',
                 'suffixes', 'roles', 'sources')),
-    committees=set(('state', 'chamber', 'committee', 'subcommittee', 'members',
+    committee=set(('state', 'chamber', 'committee', 'subcommittee', 'members',
                    'sources')),
     metadata=set(('name', 'abbreviation', 'legislature_name',
                   'upper_chamber_name', 'lower_chamber_name',
