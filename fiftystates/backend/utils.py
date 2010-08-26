@@ -1,5 +1,7 @@
+import os
 import re
 import time
+import json
 import datetime
 
 from fiftystates.backend import db
@@ -13,19 +15,13 @@ base_arg_parser.add_argument('state', type=str,
                              help=('the two-letter abbreviation of the '
                                    'state to import'))
 
-standard_fields = dict(
-    bill=set(('state', 'session', 'chamber', 'bill_id', 'title', 'actions',
-             'votes', 'sponsors', 'sources', 'documents', 'keywords')),
-    person=set(('state', 'full_name', 'first_name', 'last_name', 'middle_name',
-                'suffixes', 'roles', 'sources')),
-    committee=set(('state', 'chamber', 'committee', 'subcommittee', 'members',
-                   'sources')),
-    metadata=set(('name', 'abbreviation', 'legislature_name',
-                  'upper_chamber_name', 'lower_chamber_name',
-                  'upper_chamber_term', 'lower_chamber_term',
-                  'upper_chamber_title', 'lower_chamber_title',
-                  'terms')),
-    )
+# load standard fields from files
+standard_fields = {}
+for _type in ('bill', 'person', 'committee', 'metadata', 'vote'):
+    fname = os.path.join(os.path.split(__file__)[0],
+                         '../../schemas/%s.json' % _type)
+    schema = json.load(open(fname))
+    standard_fields[_type] = set(schema['properties'].keys())
 
 
 def keywordize(str):
