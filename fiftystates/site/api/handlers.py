@@ -102,7 +102,7 @@ class BillSearchHandler(FiftyStateHandler):
 
         bill_fields = {'votes': 0, 'actions': 0, 'sources': 0,
                        'documents': 0, 'versions': 0, 'sponsors': 0,
-                       'keywords': 0}
+                       '_keywords': 0}
 
         query = request.GET.get('q')
 

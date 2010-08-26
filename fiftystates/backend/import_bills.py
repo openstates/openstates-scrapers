@@ -30,7 +30,7 @@ def ensure_indexes():
     db.bills.ensure_index([('state', pymongo.ASCENDING),
                            ('session', pymongo.ASCENDING),
                            ('chamber', pymongo.ASCENDING),
-                           ('keywords', pymongo.ASCENDING)])
+                           ('_keywords', pymongo.ASCENDING)])
     db.bills.ensure_index([('state', pymongo.ASCENDING),
                            ('session', pymongo.ASCENDING),
                            ('chamber', pymongo.ASCENDING),
@@ -71,10 +71,10 @@ def import_bills(state, data_dir):
         if not bill:
             data['created_at'] = datetime.datetime.now()
             data['updated_at'] = data['created_at']
-            data['keywords'] = list(keywordize(data['title']))
+            data['_keywords'] = list(keywordize(data['title']))
             insert_with_id(data)
         else:
-            data['keywords'] = list(keywordize(data['title']))
+            data['_keywords'] = list(keywordize(data['title']))
             update(bill, data, db.bills)
 
     ensure_indexes()

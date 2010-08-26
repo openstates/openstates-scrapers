@@ -33,9 +33,9 @@ def bill_query(str, params, fields=None, all=True, limit=None, skip=None,
     filter = {}
 
     if all:
-        filter['keywords'] = {'$all': keywords}
+        filter['_keywords'] = {'$all': keywords}
     else:
-        filter['keywords'] = {'$in': keywords}
+        filter['_keywords'] = {'$in': keywords}
 
     for key in ('state', 'session', 'chamber'):
         value = params.get(key)
