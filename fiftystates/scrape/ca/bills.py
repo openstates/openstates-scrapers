@@ -170,12 +170,13 @@ class CABillScraper(BillScraper):
                     vtype = 'other'
 
                 motion = motion.strip()
-                motion = re.sub(r'(\w+)( Extraordinary)? Session$', '', motion,
-                                flags=re.IGNORECASE)
-                motion = re.sub(r'^(Senate|Assembly) ', '', motion,
-                                flags=re.IGNORECASE)
-                motion = re.sub(r'^(SCR|SB|AB)\s?\d+ \w+  ', '', motion)
 
+                # Why did it take until 2.7 to get a flags argument on re.sub?
+                motion = re.compile(r'(\w+)( Extraordinary)? Session$',
+                                    re.IGNORECASE).sub('', motion)
+                motion = re.compile(r'^(Senate|Assembly) ',
+                                    re.IGNORECASE).sub('', motion)
+                motion = re.sub(r'^(SCR|SB|AB)\s?\d+ \w+  ', '', motion)
                 motion = re.sub(r'\s+', ' ', motion)
 
                 fsvote = Vote(vote_chamber,
