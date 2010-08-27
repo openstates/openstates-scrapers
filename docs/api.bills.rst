@@ -22,6 +22,8 @@ Both methods return bill objects consisting of the following fields:
     The chamber this bill was introduced in (e.g. 'upper', 'lower')
 ``bill_id``
     The identifier given to this bill by the state legislature (e.g. 'AB6667')
+``type``
+    Bill type (see http://code.google.com/p/openstates/wiki/Categorization#Bills for details)
 ``updated_at``
     Timestamp representing when bill was last updated in our system.
 ``actions``
@@ -29,7 +31,7 @@ Both methods return bill objects consisting of the following fields:
     * ``date``: The date/time the action was performed
     * ``actor``: The chamber, person, committee, etc. responsible for this action
     * ``action``: A textual description of the action performed
-    * ``type``: A normalized type for the action TODO: list action types
+    * ``type``: A normalized type for the action, see http://code.google.com/p/openstates/wiki/Categorization#Bill_Actions for details.
 ``sponsors``
     A list of sponsors of this bill. Each sponsor will be an object with at least the following fields:
 
@@ -44,7 +46,7 @@ Both methods return bill objects consisting of the following fields:
     * ``yes_count``, ``no_count``, ``other_count``: The number of 'yes', 'no', and other votes
     * ``yes_votes``, ``no_votes``, ``other_votes``: The legislators voting 'yes', 'no', and other
     * ``passed``: Whether or not the vote passed
-    * ``type``: The normalized type for the vote TODO: list vote types
+    * ``type``: The normalized type for the vote. See http://code.google.com/p/openstates/wiki/Categorization#Vote_Types for details.
 ``versions``
     A list of versions of the text of this bill. Each version will be an object with at least the following fields:
 
