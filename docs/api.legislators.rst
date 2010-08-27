@@ -34,7 +34,7 @@ All legislator methods return Legislator objects consisting of the following fie
       * ``retrieved``: time at which the source was last retrieved
 
 .. note::
-    ``roles`` and ``sources`` are not included in the legislator search response.
+    ``sources`` are not included in the legislator search response.
 
 .. note::
     Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See :ref:`extrafields`)
