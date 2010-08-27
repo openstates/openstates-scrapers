@@ -163,12 +163,16 @@ This endpoint exists to get all information about a bill given its state/session
 URL Format
 ^^^^^^^^^^
 
+:samp:`http://openstates.sunlightlabs.com/api/v1/bills/{STATE-ABBREV}/{SESSION}/{BILL-ID}h?apikey={YOUR_API_KEY}`
+
+alternatively, if BILL-ID is ambiguous, chamber may be prepended as part of the path:
+
 :samp:`http://openstates.sunlightlabs.com/api/v1/bills/{STATE-ABBREV}/{SESSION}/{CHAMBER}/{BILL-ID}h?apikey={YOUR_API_KEY}`
 
 Example
 ^^^^^^^
 
-http://openstates.sunlightlabs.com/api/v1/bills/ca/20092010/lower/AB667/?apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/bills/ca/20092010/AB667/?apikey=YOUR_API_KEY
 
 ::
 
