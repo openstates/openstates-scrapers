@@ -14,16 +14,14 @@ Committee methods return objects with the following fields:
 
 ``id``
     Open State Project Committee ID.
-``committee``
-    Name of committee.
-``subcommittee``
-    Name of subcommittee (null if record describes a top level committee).
 ``chamber``
     Associated chamber (upper or lower).
 ``state``
     State abbreviation (eg. ny).
-``updated_at``
-    Timestamp representing when bill was last updated in our system.
+``committee``
+    Name of committee.
+``subcommittee``
+    Name of subcommittee (null if record describes a top level committee).
 ``members``
     Listing of all committee members.
 
@@ -34,9 +32,16 @@ Committee methods return objects with the following fields:
         charimanship or other special status)
     ``leg_id``
         Legislator's Open State Project ID
+``sources``
+    List of sources that this data was collected from.
+
+    ``url``
+        URL of the source
+    ``retrieved``
+        time at which the source was last retrieved
 
 .. note::
-   ``members`` are not included in the committee search API results
+   ``members`` and ``sources`` are not included in the committee search API results
 
 .. note::
     Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See :ref:`extrafields`)

@@ -13,11 +13,11 @@ Bill Fields
 Both methods return bill objects consisting of the following fields:
 
 ``title``
-    The title given to the bill by the state legislature
+    The title given to the bill by the state legislature.
 ``state``
-    The state this bill is from
+    The state this bill is from.
 ``session``
-    The session this bill was introduced in
+    The session this bill was introduced in.
 ``chamber``
     The chamber this bill was introduced in (e.g. 'upper', 'lower')
 ``bill_id``
@@ -29,6 +29,7 @@ Both methods return bill objects consisting of the following fields:
     * ``date``: The date/time the action was performed
     * ``actor``: The chamber, person, committee, etc. responsible for this action
     * ``action``: A textual description of the action performed
+    * ``type``: A normalized type for the action TODO: list action types
 ``sponsors``
     A list of sponsors of this bill. Each sponsor will be an object with at least the following fields:
 
@@ -41,12 +42,24 @@ Both methods return bill objects consisting of the following fields:
     * ``chamber``: The chamber that the vote was taken in
     * ``motion``: The motion being voted on
     * ``yes_count``, ``no_count``, ``other_count``: The number of 'yes', 'no', and other votes
+    * ``yes_votes``, ``no_votes``, ``other_votes``: The legislators voting 'yes', 'no', and other
     * ``passed``: Whether or not the vote passed
+    * ``type``: The normalized type for the vote TODO: list vote types
 ``versions``
     A list of versions of the text of this bill. Each version will be an object with at least the following fields:
 
     * ``url``: The URL for an official source of this version of the bill text
     * ``name``: A name for this version of the bill text
+``documents``
+    A list of documents related to this bill. Each document will be an object with at least the following fields:
+
+    * ``url``: The URL for an official source of this document
+    * ``name``: A name for this document (eg. 'Fiscal Statement', 'Education Committee Report')
+``sources``
+    List of sources that this data was collected from.
+
+    * ``url``: URL of the source
+    * ``retrieved``: time at which the source was last retrieved
 
 .. note::
     ``actions``, ``sponsors``, ``votes``, ``versions`` are not returned via the search API.

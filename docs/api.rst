@@ -35,5 +35,6 @@ You may notice that the fields documented methods are sometimes a subset of the 
 
 Many times as part of our scraping process we take in data that is available for a given state and is either not available or does not have an analog in other states.  Instead of artificially limiting the data we provide to the smallest common subset we make this extra data available.
 
-If you are using the API to get data for multiple states it is best to restrict your usage to the fields documented here, if you are only interested in data for a small subset of our available states it might make sense to take a more in depth look at the API responses for the state in question to see what extra data we are able to provide.
+To make it clear which fields can be relied on and which are perhaps specific to a state or subset of states we prefix non-standard fields with a ``+``.
 
+If you are using the API to get data for multiple states it is best to restrict your usage to the fields documented here, if you are only interested in data for a small subset of our available states it might make sense to take a more in depth look at the API responses for the state in question to see what extra data we are able to provide.

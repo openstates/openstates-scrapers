@@ -16,17 +16,25 @@ All legislator methods return Legislator objects consisting of the following fie
   * ``first_name``
   * ``last_name``
   * ``middle_name``
-  * ``suffix``
-  * ``party``
+  * ``suffixes``
+  * ``state``
   * ``roles``: A list of objects representing roles this legislator has served in. Each object will contain at least the following fields:
 
-    * ``state``
-    * ``session``
     * ``chamber``
     * ``district``
+    * ``party``
+    * ``role``   (description of role)
+    * ``term``
+    * ``start_date``  (blank if not known)
+    * ``end_date``    (blank if not known)
+  * ``sources``
+    List of sources that this data was collected from.
+
+      * ``url``: URL of the source
+      * ``retrieved``: time at which the source was last retrieved
 
 .. note::
-    Roles are not included in the response in legislator search.
+    ``roles`` and ``sources`` are not included in the legislator search response.
 
 .. note::
     Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See :ref:`extrafields`)

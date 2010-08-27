@@ -34,6 +34,15 @@ Metadata Fields
     * ``end_year``: The year in which this session ended.
     * ``name``: The name of this session.
     * ``sessions``: List of sessions that took place inside the given term.
+``session_details``
+    Optional extra details about sessions.
+
+    If present will be a dictionary with keys corresponding to ``sessions`` and values are dictionaries
+    of extra metadata about a session.
+
+    Fields that may be present include ``start_date`` and ``end_date``.
+
+
 
 URL format
 ----------
