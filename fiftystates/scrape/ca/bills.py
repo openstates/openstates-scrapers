@@ -177,6 +177,7 @@ class CABillScraper(BillScraper):
                 motion = re.compile(r'^(Senate|Assembly) ',
                                     re.IGNORECASE).sub('', motion)
                 motion = re.sub(r'^(SCR|SB|AB)\s?\d+ \w+  ', '', motion)
+                motion = re.sub(r' \(\w+\)$', '', motion)
                 motion = re.sub(r'\s+', ' ', motion)
 
                 fsvote = Vote(vote_chamber,
