@@ -11,8 +11,10 @@
     "roles": {"type": "array", "items": {"type": "object", "properties": {
         "chamber": {"type": "string", "enum": ["upper", "lower"],
                 "optional": true},
+        "state": {"type": "string", "minLength": 2, "maxLength": 2},
         "term": {"type": "string"},
         "role": {"type": "string"},
+        "committee": {"type": "string", "optional": true},
         "district": {"type": "string", "optional": true},
         "party": {"type": "string", "optional": true},
         "start_date": {"type": ["string", "datetime", "null"]},

@@ -18,7 +18,8 @@
     }}},
     "sponsors": {"type": "array", "items": {"type": "object", "properties": {
         "type": {"type": "string"},
-        "name": {"type": "string"}
+        "name": {"type": "string"},
+        "chamber": {"type": "string"}
     }}},
     "actions": {"type": "array", "items": {"type": "object", "properties": {
         "action": {"type": "string"},
