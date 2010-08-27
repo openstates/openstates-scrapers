@@ -7,7 +7,7 @@
     "first_name": {"type": "string"},
     "middle_name": {"type": "string"},
     "last_name": {"type": "string"},
-    "suffixes": {"type": "array", "items": {"type": "string"}},
+    "suffixes": {"type": "string"},
     "roles": {"type": "array", "items": {"type": "object", "properties": {
         "chamber": {"type": "string", "enum": ["upper", "lower"],
                 "optional": true},

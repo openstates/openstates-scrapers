@@ -36,9 +36,9 @@ class MDLegislatorScraper(LegislatorScraper):
                     first_name = names[1].strip()
                     # TODO: try to trim first name to remove middle initial
                     if len(names) > 2:
-                        suffixes = [names[2]]
+                        suffixes = names[2]
                     else:
-                        suffixes = []
+                        suffixes = ''
 
                     # handle details
                     details = detail_text.strip()
