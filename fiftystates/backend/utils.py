@@ -113,6 +113,12 @@ def update(old, new, coll):
             old[key] = value
             changed = True
 
+        # remove old +key field if this field no longer has a +
+        plus_key = '+%s' % key
+        if plus_key in old:
+            del old[plus_key]
+            changed = True
+
     if changed:
         old['updated_at'] = datetime.datetime.now()
         coll.save(old, safe=True)
