@@ -43,7 +43,7 @@ urlpatterns = patterns('',
     url(r'^v1/metadata/(?P<state>[a-zA-Z]{2,2})/$', metadata_handler),
 
     url(r'^v1/bills/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/'
-        r'(?P<chamber>upper|lower)/(?P<bill_id>.+)/$', bill_handler),
+        r'((?P<chamber>upper|lower)/)?(?P<bill_id>.+)/$', bill_handler),
     url(r'^v1/bills/$', bill_search_handler),
 
     url(r'^v1/legislators/(?P<id>[A-Z]{2,2}L\d{6,6})/$', legislator_handler),

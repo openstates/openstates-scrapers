@@ -90,11 +90,12 @@ class MetadataHandler(FiftyStateHandler):
 
 
 class BillHandler(FiftyStateHandler):
-    def read(self, request, state, session, chamber, bill_id):
-        return db.bills.find_one({'state': state.lower(),
-                                  'session': session,
-                                  'chamber': chamber.lower(),
-                                  'bill_id': bill_id})
+    def read(self, request, state, session, bill_id, chamber=None):
+        query = {'state': state.lower(), 'session': session,
+                 'bill_id': bill_id}
+        if chamber:
+            query['chamber'] = chamber.lower()
+        return db.bills.find_one(query)
 
 
 class BillSearchHandler(FiftyStateHandler):
