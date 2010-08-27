@@ -7,6 +7,7 @@
     "chamber": {"type": "string", "enum": ["upper", "lower"]},
     "bill_id": {"type": "string"},
     "title": {"type": "string"},
+    "type": {"type": "array", "items": {"type": "string"}},
     "versions": {"type": "array", "items": {"type": "object", "properties": {
         "name": {"type": "string"},
         "url": {"type": "string"}
