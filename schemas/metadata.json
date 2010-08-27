@@ -18,7 +18,7 @@
         "sessions": {"type": "array", "minItems": 1, "items": {"type": "string"}}
       } }
     },
-    "session_details": { "type": "object", "additionalProperties": { "type": "object",
+    "session_details": { "type": "object", "optional": "true", "additionalProperties": { "type": "object",
         "properties": {
             "start_date": {"type": "datetime"},
             "end_date": {"type": "datetime"}
