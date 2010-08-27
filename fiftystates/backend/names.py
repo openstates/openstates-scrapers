@@ -109,34 +109,38 @@ class NameMatcher(object):
         forms = set()
         forms.add(name['full_name'].replace('.', ''))
         forms.add(name['last_name'])
-        forms.add("%s, %s" % (name['last_name'], name['first_name']))
-        forms.add("%s %s" % (name['first_name'], name['last_name']))
-        forms.add("%s %s" % (name['first_name'][0], name['last_name']))
-        forms.add("%s, %s" % (name['last_name'], name['first_name'][0]))
-        forms.add("%s (%s)" % (name['last_name'], name['first_name']))
-        forms.add("%s (%s)" % (name['last_name'], name['first_name'][0][0]))
 
-        if len(name['middle_name']) > 0:
-            forms.add("%s, %s %s" % (name['last_name'], name['first_name'],
-                                     name['middle_name']))
-            forms.add("%s, %s %s" % (name['last_name'],
-                                     name['first_name'][0],
-                                     name['middle_name']))
-            forms.add("%s %s %s" % (name['first_name'],
-                                    name['middle_name'],
-                                    name['last_name']))
-            forms.add("%s, %s %s" % (name['last_name'],
-                                     name['first_name'][0],
-                                     name['middle_name'][0]))
-            forms.add("%s %s %s" % (name['first_name'],
-                                    name['middle_name'][0],
-                                    name['last_name']))
-            forms.add("%s, %s %s" % (name['last_name'],
-                                     name['first_name'],
-                                     name['middle_name'][0]))
-            forms.add("%s, %s.%s." % (name['last_name'],
-                                      name['first_name'][0],
-                                     name['middle_name'][0]))
+
+        if name['first_name']:
+            forms.add("%s, %s" % (name['last_name'], name['first_name']))
+            forms.add("%s %s" % (name['first_name'], name['last_name']))
+            forms.add("%s, %s" % (name['last_name'], name['first_name'][0]))
+            forms.add("%s (%s)" % (name['last_name'], name['first_name']))
+            forms.add("%s %s" % (name['first_name'][0], name['last_name']))
+            forms.add("%s (%s)" % (name['last_name'], name['first_name'][0]))
+
+            if name['middle_name']:
+                forms.add("%s, %s %s" % (name['last_name'], name['first_name'],
+                                         name['middle_name']))
+                forms.add("%s, %s %s" % (name['last_name'],
+                                         name['first_name'][0],
+                                         name['middle_name']))
+                forms.add("%s %s %s" % (name['first_name'],
+                                        name['middle_name'],
+                                        name['last_name']))
+                forms.add("%s, %s %s" % (name['last_name'],
+                                         name['first_name'][0],
+                                         name['middle_name'][0]))
+                forms.add("%s %s %s" % (name['first_name'],
+                                        name['middle_name'][0],
+                                        name['last_name']))
+                forms.add("%s, %s %s" % (name['last_name'],
+                                         name['first_name'],
+                                         name['middle_name'][0]))
+                forms.add("%s, %s.%s." % (name['last_name'],
+                                          name['first_name'][0],
+                                          name['middle_name'][0]))
+
 
         for form in forms:
             form = form.replace('.', '').lower()
