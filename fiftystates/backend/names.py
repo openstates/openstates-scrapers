@@ -110,7 +110,6 @@ class NameMatcher(object):
         forms.add(name['full_name'].replace('.', ''))
         forms.add(name['last_name'])
 
-
         if name['first_name']:
             forms.add("%s, %s" % (name['last_name'], name['first_name']))
             forms.add("%s %s" % (name['first_name'], name['last_name']))
