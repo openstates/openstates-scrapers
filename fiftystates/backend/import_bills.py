@@ -28,6 +28,11 @@ def ensure_indexes():
                            ('chamber', pymongo.ASCENDING),
                            ('bill_id', pymongo.ASCENDING)])
     db.bills.ensure_index([('state', pymongo.ASCENDING),
+                           ('_current_term', pymongo.ASCENDING),
+                           ('_current_session', pymongo.ASCENDING),
+                           ('chamber', pymongo.ASCENDING),
+                           ('keywords', pymongo.ASCENDING)])
+    db.bills.ensure_index([('state', pymongo.ASCENDING),
                            ('session', pymongo.ASCENDING),
                            ('chamber', pymongo.ASCENDING),
                            ('_keywords', pymongo.ASCENDING)])
@@ -44,6 +49,7 @@ def ensure_indexes():
 def import_bills(state, data_dir):
     data_dir = os.path.join(data_dir, state)
     pattern = os.path.join(data_dir, 'bills', '*.json')
+
     for path in glob.iglob(pattern):
         with open(path) as f:
             data = prepare_obj(json.load(f))
@@ -77,7 +83,31 @@ def import_bills(state, data_dir):
             data['_keywords'] = list(keywordize(data['title']))
             update(bill, data, db.bills)
 
+    populate_current_fields(state)
     ensure_indexes()
+
+
+def populate_current_fields(state):
+    """
+    Set/update _current_term and _current_session fields on all bills
+    from the given state.
+    """
+    meta = db.metadata.find_one({'_id': state})
+    current_term = meta['terms'][-1]
+    current_session = current_term['sessions'][-1]
+
+    for bill in db.bills.find({'state': state}):
+        if bill['session'] == current_session:
+            bill['_current_session'] = True
+        else:
+            bill['_current_session'] = False
+
+        if bill['session'] in current_term['sessions']:
+            bill['_current_term'] = True
+        else:
+            bill['_current_term'] = False
+
+        db.bills.save(bill, safe=True)
 
 
 if __name__ == '__main__':
