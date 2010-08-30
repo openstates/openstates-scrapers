@@ -45,6 +45,37 @@ def import_legislators(state, data_dir):
 
         import_legislator(data)
 
+    activate_legislators(state)
+
+
+def activate_legislators(state):
+    """
+    Sets the 'active' flag on legislators and populates top-level
+    district/chamber/party fields for currently serving legislators.
+    """
+    meta = db.metadata.find_one({'_id': state})
+    current_term = meta['terms'][-1]['name']
+
+    for legislator in db.legislators.find({'roles': {'$elemMatch':
+                                                     {'state': state,
+                                                      'type': 'member'}}}):
+        active_role = legislator['roles'][0]
+
+        if (active_role['term'] == current_term
+            and not active_role['end_date']):
+
+            legislator['active'] = True
+            legislator['party'] = active_role['party']
+            legislator['district'] = active_role['district']
+            legislator['chamber'] = active_role['chamber']
+        else:
+            legislator['active'] = False
+            del legislator['district']
+            del legislator['chamber']
+            del legislator['party']
+
+        db.legislators.save(legislator, safe=True)
+
 
 def import_legislator(data):
     # Rename 'role' -> 'type'
