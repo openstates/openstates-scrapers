@@ -176,11 +176,12 @@ class CABillScraper(BillScraper):
                                     re.IGNORECASE).sub('', motion)
                 motion = re.compile(r'^(Senate|Assembly) ',
                                     re.IGNORECASE).sub('', motion)
-                motion = re.sub(r'^(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+  ',
+                motion = re.sub(r'^(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+\.?  ',
                                 '', motion)
                 motion = re.sub(r' \(\w+\)$', '', motion)
-                motion = re.sub(r'(SCR|SB|AB|AJR|ACR)\s?\d+ \w+$', '', motion)
-                motion = re.sub(r'(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+ '
+                motion = re.sub(r'(SCR|SB|AB|AJR|ACR)\s?\d+ \w+\.?$',
+                                '', motion)
+                motion = re.sub(r'(SCR|SJR|SB|AB|AJR|ACR)\s?\d+ \w+\.? '
                                 r'Urgency Clause$',
                                 '(Urgency Clause)', motion)
                 motion = re.sub(r'\s+', ' ', motion)
