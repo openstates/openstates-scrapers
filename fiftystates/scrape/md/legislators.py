@@ -47,6 +47,6 @@ class MDLegislatorScraper(LegislatorScraper):
                     leg = Legislator('2007-2010', chamber, district,
                                      ' '.join((first_name, last_name)),
                                      first_name, last_name, '',
-                                     party, suffixes=suffixes,
-                                     url='http://www.msa.md.gov'+link)
+                                     party, suffixes=suffixes)
+                    leg.add_source(url='http://www.msa.md.gov'+link)
                     self.save_legislator(leg)
