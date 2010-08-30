@@ -179,6 +179,8 @@ class CABillScraper(BillScraper):
                 motion = re.sub(r'^(SCR|SB|AB)\s?\d+ \w+  ', '', motion)
                 motion = re.sub(r' \(\w+\)$', '', motion)
                 motion = re.sub('(SCR|SB|AB)\s?\d+ \w+$', '', motion)
+                motion = re.sub('(SCR|SB|AB)\s?\d+ \w+ Urgency Clause$',
+                                '(Urgency Clause)', motion)
                 motion = re.sub(r'\s+', ' ', motion)
 
                 fsvote = Vote(vote_chamber,
