@@ -8,7 +8,7 @@ metadata = dict(
     upper_chamber_name='Senate',
     lower_chamber_title='Assemblymember',
     upper_chamber_title='Senator',
-    lower_chamber_term=3,
+    lower_chamber_term=2,
     upper_chamber_term=4,
     terms=[
         {'name': '20092010',
