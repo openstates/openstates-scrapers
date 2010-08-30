@@ -11,7 +11,8 @@
     "roles": {"type": "array", "items": {"type": "object", "properties": {
         "chamber": {"type": "string", "enum": ["upper", "lower"],
                 "optional": true},
-        "state": {"type": "string", "minLength": 2, "maxLength": 2},
+        "state": {"type": "string", "minLength": 2, "maxLength": 2,
+                "optional": true},
         "term": {"type": "string"},
         "role": {"type": "string"},
         "committee": {"type": "string", "optional": true},
