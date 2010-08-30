@@ -32,13 +32,14 @@ class WILegislatorScraper(LegislatorScraper):
                                          party=party)
                         leg.add_source(rep_url)
 
-                        leg = self.add_committees(leg, rep_url, term)
+                        leg = self.add_committees(leg, rep_url, term, chamber)
                         self.save_legislator(leg)
 
-    def add_committees(self, legislator, rep_url, term):
+    def add_committees(self, legislator, rep_url, term, chamber):
         url = 'http://legis.wi.gov/w3asp/contact/' + rep_url + '&display=committee'
         body = unicode(self.urlopen(url), 'latin-1')
         cmts = lxml.html.fromstring(body).cssselect("#ctl00_C_lblCommInfo a")
         for c in map(lambda x: x.text_content().split('(')[0], list(cmts)):
-            legislator.add_role('committee member', term, committee=c.strip())
+            legislator.add_role('committee member', term, committee=c.strip(),
+                                chamber=chamber)
         return legislator
