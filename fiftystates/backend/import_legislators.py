@@ -62,8 +62,8 @@ def activate_legislators(state):
         active_role = legislator['roles'][0]
 
         if (active_role['term'] == current_term
-            and not active_role['end_date']):
-
+            and (not active_role['end_date']
+                 or active_role['end_date'] > datetime.date.today())):
             legislator['active'] = True
             legislator['party'] = active_role['party']
             legislator['district'] = active_role['district']
