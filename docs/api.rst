@@ -13,6 +13,8 @@ The Open State Project provides a RESTful API for accessing state legislative in
   * An API key is required and can be obtained via http://services.sunlightlabs.com/
   * There is a `Python client library <http://github.com/sunlightlabs/python-openstates>`_ available.
 
+The current status of various state data in the API can be obtained via the :doc:`api.status` page.
+
 All changes to the API will be announced on the `Open State Project Google Group <http://groups.google.com/group/fifty-state-project/>`_ and documented in the :doc:`api.changelog`.
 
 Methods
