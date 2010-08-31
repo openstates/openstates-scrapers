@@ -85,8 +85,13 @@ All other parameters are optional and can be combined as needed.
     the keyword string to lookup
 ``state``
     filter results by given state (two-letter abbreviation)
-``session``
-    filter results by given session
+``search_window``
+    a string representing what time period to search across. Pass 'session'
+    to search bills from the state's current or most recent legislative session,
+    'term' to search the current or most recent term, 'all' to search as far back
+    as the Open State Project has data for, or supply 'session:SESSION_NAME' or
+    'term:TERM_NAME' (e.g. 'session:2009' or 'term:2009-2010') to search a
+    specific session or term.
 ``chamber``
     filter results by given chamber ('upper' or 'lower')
 ``updated_since``
