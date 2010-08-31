@@ -121,6 +121,8 @@ class BillSearchHandler(FiftyStateHandler):
                 _filter['_current_session'] = True
             elif search_window == 'term':
                 _filter['_current_term'] = True
+            elif search_window.startswith('session:'):
+                _filter['session'] = search_window.split('session:')[1]
             elif search_window == 'all':
                 pass
             else:
