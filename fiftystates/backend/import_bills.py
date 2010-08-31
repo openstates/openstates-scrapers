@@ -84,17 +84,42 @@ def import_bills(state, data_dir):
 
         data['_term'] = sessions[data['session']]
 
+        # Merge any version titles into the alternate_titles list
+        alt_titles = set(data['alternate_titles'])
+        for version in data['versions']:
+            if 'title' in version:
+                alt_titles.add(version['title'])
+            if '+short_title' in version:
+                alt_titles.add(version['+short_title'])
+        try:
+            # Make sure the primary title isn't included in the
+            # alternate title list
+            alt_titles.remove(data['title'])
+        except KeyError:
+            pass
+        data['alternate_titles'] = list(alt_titles)
+
         if not bill:
             data['created_at'] = datetime.datetime.now()
             data['updated_at'] = data['created_at']
-            data['_keywords'] = list(keywordize(data['title']))
+            data['_keywords'] = list(bill_keywords(data))
             insert_with_id(data)
         else:
-            data['_keywords'] = list(keywordize(data['title']))
+            data['_keywords'] = list(bill_keywords(data))
             update(bill, data, db.bills)
 
     populate_current_fields(state)
     ensure_indexes()
+
+
+def bill_keywords(bill):
+    """
+    Get the keyword set for all of a bill's titles.
+    """
+    keywords = keywordize(bill['title'])
+    for title in bill['alternate_titles']:
+        keywords = keywords.union(keywordize(title))
+    return keywords
 
 
 def populate_current_fields(state):

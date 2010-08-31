@@ -81,6 +81,7 @@ class Bill(FiftystatesObject):
         self['versions'] = []
         self['actions'] = []
         self['documents'] = []
+        self['alternate_titles'] = []
 
         if not 'type' in kwargs or not kwargs['type']:
             self['type'] = ['bill']
@@ -160,3 +161,9 @@ class Bill(FiftystatesObject):
         Associate a :class:`pyutils.legislation.Vote` object with this bill.
         """
         self['votes'].append(vote)
+
+    def add_title(self, title):
+        """
+        Associate an alternate title with this bill.
+        """
+        self['alternate_titles'].append(title)
