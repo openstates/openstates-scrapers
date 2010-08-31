@@ -50,6 +50,14 @@ def import_bills(state, data_dir):
     data_dir = os.path.join(data_dir, state)
     pattern = os.path.join(data_dir, 'bills', '*.json')
 
+    meta = db.metadata.find_one({'_id': state})
+
+    # Build a session to term mapping
+    sessions = {}
+    for term in meta['terms']:
+        for session in term['sessions']:
+            sessions[session] = term['name']
+
     for path in glob.iglob(pattern):
         with open(path) as f:
             data = prepare_obj(json.load(f))
@@ -73,6 +81,8 @@ def import_bills(state, data_dir):
                     svlist.append({'name': svote, 'leg_id': id})
 
                 vote[vtype] = svlist
+
+        data['_term'] = sessions[data['session']]
 
         if not bill:
             data['created_at'] = datetime.datetime.now()
