@@ -167,6 +167,14 @@ class LegislatorSearchHandler(FiftyStateHandler):
                                                   'district', 'party'))
         _filter['roles'] = {'$elemMatch': elemMatch}
 
+        active = request.GET.get('active')
+        if not active and 'term' not in request.GET:
+            # Default to only searching active legislators if no term
+            # is supplied
+            _filter['active'] = True
+        elif active:
+            _filter['active'] = (active.lower() == 'true')
+
         return list(db.legislators.find(_filter, legislator_fields))
 
 
