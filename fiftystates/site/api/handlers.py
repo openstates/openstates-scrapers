@@ -105,20 +105,29 @@ class BillSearchHandler(FiftyStateHandler):
                        'documents': 0, 'versions': 0, 'sponsors': 0,
                        '_keywords': 0}
 
-        query = request.GET.get('q')
-
-        # if a query is provided dispatch to the full text search
-        if query:
-            return search.bill_query(query, request.GET, bill_fields)
-
         # normal mongo search logic
-        _filter = _build_mongo_filter(request, ('state', 'chamber',
-                                                'session'))
+        _filter = _build_mongo_filter(request, ('state', 'chamber'))
 
-        if 'state' not in _filter or 'session' not in _filter:
-            resp = rc.BAD_REQUEST
-            resp.write(": Need a query string or state & session")
-            return resp
+        # process full-text query
+        query = request.GET.get('q')
+        if query:
+            keywords = list(search.keywordize(query))
+            _filter['_keywords'] = {'$all': keywords}
+
+        # process search_window
+        search_window = request.GET.get('search_window', '').lower()
+        if search_window:
+            if search_window == 'session':
+                _filter['_current_session'] = True
+            elif search_window == 'term':
+                _filter['_current_term'] = True
+            elif search_window == 'all':
+                pass
+            else:
+                resp = rc.BAD_REQUEST
+                resp.write(": invalid search_window. Valid choices are "
+                           "'term', 'session' or 'all'")
+                return resp
 
         # process updated_since
         since = request.GET.get('updated_since')
