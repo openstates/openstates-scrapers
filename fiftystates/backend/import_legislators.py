@@ -70,9 +70,11 @@ def activate_legislators(state):
             legislator['chamber'] = active_role['chamber']
         else:
             legislator['active'] = False
-            del legislator['district']
-            del legislator['chamber']
-            del legislator['party']
+            for key in ('district', 'chamber', 'party'):
+                try:
+                    del legislator[key]
+                except KeyError:
+                    pass
 
         db.legislators.save(legislator, safe=True)
 
