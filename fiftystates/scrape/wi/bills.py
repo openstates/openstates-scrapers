@@ -62,11 +62,14 @@ class WIBillScraper(BillScraper):
     def scrape_regular(self, chamber, session):
         types = {'lower': ['ab', 'ajr', 'ar', 'ap'],
                  'upper': ['sb', 'sjr', 'sr', 'sp']}
+        bill_types = {'b': 'bill', 'r': 'resolution',
+                      'jr': 'joint resolution', 'p': 'petition' }
         year = session[0:4]
 
         for t in types[chamber]:
             url = 'http://www.legis.state.wi.us/%s/data/%s_list.html' % (year,
                                                                          t)
+            bill_type = [bill_types[t[1:]]]
 
             try:
                 with self.urlopen(url) as data:
@@ -78,7 +81,9 @@ class WIBillScraper(BillScraper):
                         bill_id = link.text
                         link = link.get('href')
                         title = row.xpath('td[2]/text()')[0][13:]
-                        bill = Bill(session, chamber, bill_id, title)
+
+                        bill = Bill(session, chamber, bill_id, title,
+                                    type=bill_type)
                         self.scrape_bill_history(bill, link)
             except scrapelib.HTTPError, e:
                 if e.response.code == 404:

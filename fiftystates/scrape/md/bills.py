@@ -190,7 +190,14 @@ class MDBillScraper(BillScraper):
 
             # create the bill object now that we have the title
             print "%s %d %s" % (bill_type, number, title)
-            bill = Bill(session, chamber, "%s %d" % (bill_type, number), title)
+
+            if 'B' in bill_type:
+                _type = ['bill']
+            elif 'J' in bill_type:
+                _type = ['joint resolution']
+
+            bill = Bill(session, chamber, "%s %d" % (bill_type, number), title,
+                        type=_type)
             bill.add_source(url)
 
             self.parse_bill_sponsors(doc, bill)     # sponsors
