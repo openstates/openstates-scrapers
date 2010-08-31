@@ -101,9 +101,9 @@ class BillHandler(FiftyStateHandler):
 class BillSearchHandler(FiftyStateHandler):
     def read(self, request):
 
-        bill_fields = {'votes': 0, 'actions': 0, 'sources': 0,
-                       'documents': 0, 'versions': 0, 'sponsors': 0,
-                       '_keywords': 0}
+        bill_fields = {'title': 1, 'created_at': 1, 'updated_at': 1,
+                       'bill_id': 1, 'type': 1, 'state': 1,
+                       'session': 1, 'chamber': 1}
 
         # normal mongo search logic
         _filter = _build_mongo_filter(request, ('state', 'chamber'))
