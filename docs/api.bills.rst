@@ -106,53 +106,53 @@ http://openstates.sunlightlabs.com/api/v1/bills/?q=agriculture&state=vt&chamber=
 
     [
         {
-            "title": "AN ACT RELATING TO AGRICULTURAL FUNDING EDUCATION AND OUTREACH", 
-            "created_at": "2010-07-09 16:16:10", 
-            "updated_at": "2010-08-16 18:10:17", 
-            "chamber": "upper", 
-            "state": "vt", 
-            "session": "2009-2010", 
-            "type": [ "bill" ], 
+            "title": "AN ACT RELATING TO AGRICULTURAL FUNDING EDUCATION AND OUTREACH",
+            "created_at": "2010-07-09 16:16:10",
+            "updated_at": "2010-08-16 18:10:17",
+            "chamber": "upper",
+            "state": "vt",
+            "session": "2009-2010",
+            "type": [ "bill" ],
             "bill_id": "S.0132"
-        }, 
+        },
         {
-            "title": "AN ACT RELATING TO THE VERMONT AGRICULTURAL ADVISORY BOARD", 
-            "created_at": "2010-07-09 16:16:13", 
-            "updated_at": "2010-08-16 18:10:17", 
-            "chamber": "upper", 
-            "state": "vt", 
-            "session": "2009-2010", 
-            "type": [ "bill" ], 
+            "title": "AN ACT RELATING TO THE VERMONT AGRICULTURAL ADVISORY BOARD",
+            "created_at": "2010-07-09 16:16:13",
+            "updated_at": "2010-08-16 18:10:17",
+            "chamber": "upper",
+            "state": "vt",
+            "session": "2009-2010",
+            "type": [ "bill" ],
             "bill_id": "S.0208"
-        }, 
+        },
         {
-            "title": "AN ACT RELATING TO PUBLIC HEALTH AND PREVENTIVE HEALTH SERVICES FOR AGRICULTURAL AND FOOD SERVICE WORKERS", 
-            "created_at": "2010-07-09 16:16:09", 
-            "updated_at": "2010-08-16 18:10:17", 
-            "chamber": "upper", 
-            "state": "vt", 
-            "session": "2009-2010", 
-            "type": [ "bill" ], 
+            "title": "AN ACT RELATING TO PUBLIC HEALTH AND PREVENTIVE HEALTH SERVICES FOR AGRICULTURAL AND FOOD SERVICE WORKERS",
+            "created_at": "2010-07-09 16:16:09",
+            "updated_at": "2010-08-16 18:10:17",
+            "chamber": "upper",
+            "state": "vt",
+            "session": "2009-2010",
+            "type": [ "bill" ],
             "bill_id": "S.0116"
-        }, 
+        },
         {
-            "title": "AN ACT RELATING TO THE USE OF TRANSFER OF DEVELOPMENT RIGHTS FOR OFF-SITE MITIGATION OF PRIMARY AGRICULTURAL SOILS", 
-            "created_at": "2010-07-09 16:16:14", 
-            "updated_at": "2010-08-16 18:10:17", 
-            "chamber": "upper", 
-            "state": "vt", 
-            "session": "2009-2010", 
-            "type": [ "bill" ], 
+            "title": "AN ACT RELATING TO THE USE OF TRANSFER OF DEVELOPMENT RIGHTS FOR OFF-SITE MITIGATION OF PRIMARY AGRICULTURAL SOILS",
+            "created_at": "2010-07-09 16:16:14",
+            "updated_at": "2010-08-16 18:10:17",
+            "chamber": "upper",
+            "state": "vt",
+            "session": "2009-2010",
+            "type": [ "bill" ],
             "bill_id": "S.0233"
-        }, 
+        },
         {
-            "title": "AN ACT RELATING TO AGRICULTURAL DEVELOPMENT, INCLUDING AGENCY POSITIONS AND CREATION OF DEVELOPMENT BOARD; ESTABLISHMENT OF LIVESTOCK CARE STANDARDS; OPERATION OF COMMERCIAL SLAUGHTER FACILITIES; ANIMAL RESCUE ORGANIZATIONS; AND HEALTH CERTIFICATES FOR IMPORTATION OF CERTAIN ANIMALS", 
-            "created_at": "2010-07-09 16:16:18", 
-            "updated_at": "2010-08-16 18:10:18", 
-            "chamber": "upper", 
-            "state": "vt", 
-            "session": "2009-2010", 
-            "type": [ "bill" ], 
+            "title": "AN ACT RELATING TO AGRICULTURAL DEVELOPMENT, INCLUDING AGENCY POSITIONS AND CREATION OF DEVELOPMENT BOARD; ESTABLISHMENT OF LIVESTOCK CARE STANDARDS; OPERATION OF COMMERCIAL SLAUGHTER FACILITIES; ANIMAL RESCUE ORGANIZATIONS; AND HEALTH CERTIFICATES FOR IMPORTATION OF CERTAIN ANIMALS",
+            "created_at": "2010-07-09 16:16:18",
+            "updated_at": "2010-08-16 18:10:18",
+            "chamber": "upper",
+            "state": "vt",
+            "session": "2009-2010",
+            "type": [ "bill" ],
             "bill_id": "S.0295"
         }
     ]
@@ -178,96 +178,115 @@ http://openstates.sunlightlabs.com/api/v1/bills/ca/20092010/AB667/?apikey=YOUR_A
 
 ::
 
-    {
-        "votes": [
-            {
-                "other_count": 0, 
-                "threshold": "1/2", 
-                "passed": true, 
-                "other_votes": [], 
-                "yes_count": 7, 
-                "yes_votes": [
-                    {
-                        "leg_id": "CAL000086", 
-                        "name": "Arambula"
-                    }, 
-                    {
-                        "leg_id": "CAL000066", 
-                        "name": "Caballero"
-                    }, 
-                    ...
-                ], 
-                "motion": "Do pass, to Consent Calendar.", 
-                "chamber": "lower", 
-                "sources": [], 
-                "committee": "Local Government", 
-                "date": "2009-05-13 00:00:00", 
-                "type": "other", 
-                "no_count": 0, 
-                "no_votes": []
-            }, 
-            ...
-        ], 
-        "documents": [], 
-        "title": "An act to amend Section 104830 of, and to add Section 104762 to, the Health and Safety Code, relating to oral health.", 
-        "created_at": "2010-07-09 17:28:10", 
-        "versions": [
-            {
-                "name": "20090AB66795CHP", 
-                "title": "An act to amend Section 1750.1 of the Business and Professions Code, and to amend Section 104830 of, and to add Section 104762 to, the Health and Safety Code, relating to oral health.", 
-                "url": "", 
-                "short_title": "Topical fluoride application.", 
-                "date": 1249516800.0, 
-                "type": [
-                    "bill", 
-                    "fiscal committee"
-                ], 
-                "subject": [
-                    "Topical fluoride application."
-                ]
-            }, 
-            ...
-        ], 
-        "updated_at": "2010-08-11 17:02:49", 
-        "short_title": "Topical flouride application.", 
-        "sponsors": [
-            {
-                "leg_id": "CAL000044", 
-                "type": "LEAD_AUTHOR", 
-                "name": "Block"
-            }
-        ], 
-        "chamber": "lower", 
-        "state": "ca", 
-        "session": "20092010", 
-        "sources": [], 
-        "actions": [
-            {
-                "date": "2009-04-02 00:00:00", 
-                "action": "From committee chair, with author's amendments:  Amend, and re-refer to Com. on  HEALTH. Read second time and amended.", 
-                "type": [
-                    "other"
-                ], 
-                "actor": "lower (E&E Engrossing)"
-            }, 
-            {
-                "date": "2009-04-13 00:00:00", 
-                "action": "Re-referred to Com. on  HEALTH.", 
-                "type": [
-                    "other"
-                ], 
-                "actor": "lower (Committee CX08)"
-            }, 
-        ], 
-        "keywords": [ "code", "safeti", "amend", "section", "relat", "104830", 
-            "add", "health", "104762", "act", "oral" ], 
-        "type": [
-            "bill", 
-            "fiscal committee"
-        ], 
-        "subjects": [
-            "Topical flouride application."
-        ], 
-        "bill_id": "AB667"
-    }
+   {
+       "+short_title": "Topical flouride application.",
+       "votes": [
+           {
+               "other_count": 0,
+               "+threshold": "1/2",
+               "other_votes": [],
+               "yes_count": 7,
+               "committee": "Local Government",
+               "yes_votes": [
+                   {
+                       "leg_id": "CAL000086",
+                       "name": "Arambula"
+                   },
+                   {
+                       "leg_id": "CAL000066",
+                       "name": "Caballero"
+                   },
+                   {
+                       "leg_id": "CAL000090",
+                       "name": "Davis"
+                   },
+                   {
+                       "leg_id": "CAL000122",
+                       "name": "Duvall"
+                   },
+                   {
+                       "leg_id": "CAL000065",
+                       "name": "Knight"
+                   },
+                   {
+                       "leg_id": "CAL000100",
+                       "name": "Krekorian"
+                   },
+                   {
+                       "leg_id": "CAL000058",
+                       "name": "Skinner"
+                   }
+               ],
+               "motion": "Do pass, to Consent Calendar.",
+               "chamber": "lower",
+               "sources": [],
+               "passed": true,
+               "date": "2009-05-13 00:00:00",
+               "type": "other",
+               "no_count": 0,
+               "no_votes": []
+           },
+           ...
+       ],
+       "documents": [],
+       "title": "An act to amend Section 104830 of, and to add Section 104762 to, the Health and Safety Code, relating to oral health.",
+       "+subjects": [
+           "Topical flouride application."
+       ],
+       "versions": [
+           {
+               "+short_title": "Topical fluoride application.",
+               "name": "20090AB66795CHP",
+               "+type": [
+                   "bill",
+                   "fiscal committee"
+               ],
+               "url": "",
+               "+title": "An act to amend Section 1750.1 of the Business and Professions Code, and to amend Section 104830 of, and to add Section 104762 to, the Health and Safety Code, relating to oral health.",
+               "+subject": [
+                   "Topical fluoride application."
+               ],
+               "+date": 1249516800.0
+           },
+           ...
+       ],
+       "updated_at": "2010-08-31 14:59:45",
+       "actions": [
+           {
+               "date": "2009-04-02 00:00:00",
+               "action": "From committee chair, with author's amendments:  Amend, and re-refer to Com. on  HEALTH. Read second time and amended.",
+               "type": [
+                   "other"
+               ],
+               "actor": "lower (E&E Engrossing)"
+           },
+           {
+               "date": "2009-04-13 00:00:00",
+               "action": "Re-referred to Com. on  HEALTH.",
+               "type": [
+                   "other"
+               ],
+               "actor": "lower (Committee CX08)"
+           },
+           ...
+       ],
+       "sponsors": [
+           {
+               "chamber": "lower",
+               "leg_id": "CAL000044",
+               "type": "LEAD_AUTHOR",
+               "name": "Block"
+           }
+       ],
+       "sources": [],
+       "state": "ca",
+       "session": "20092010",
+       "chamber": "lower",
+       "type": [
+           "bill",
+           "fiscal committee"
+       ],
+       "created_at": "2010-07-09 17:28:10",
+       "bill_id": "AB667"
+   }
 
