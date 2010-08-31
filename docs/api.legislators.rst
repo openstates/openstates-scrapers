@@ -54,12 +54,14 @@ Parameters
     Filter by name
 ``chamber``
     Filter by legislator's chamber, i.e. 'upper' or 'lower'.
+``active``
+    Restrict the search to currently-active legislators (the default) - 'true' or 'false'.
 ``term``
     Filter by legislators who served during a certain term.
 ``district``
     Filter by legislative district.
 ``party``
-    Filter by the legislator's party, e.g. 'Democrat' or 'Republican'.
+    Filter by the legislator's party, e.g. 'Democratic' or 'Republican'.
 
 URL format
 ----------
@@ -69,7 +71,7 @@ URL format
 Example
 -------
 
-http://openstates.sunlightlabs.com/api/v1/legislators/?state=ca&party=democrat&first_name=Bob&apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/legislators/?state=ca&party=democratic&first_name=Bob&active=true&apikey=YOUR_API_KEY
 
 ::
 
