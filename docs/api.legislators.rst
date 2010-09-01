@@ -208,6 +208,7 @@ Example
 http://openstates.sunlightlabs.com/api/v1/legislators/geo/?lat=-78.76648&long=35.81336&apikey=YOUR_API_KEY
 
 ::
+
     [
         {
             "created_at": "2010-08-03 17:14:48",
