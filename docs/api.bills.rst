@@ -28,6 +28,7 @@ Both methods return bill objects consisting of the following fields:
     Timestamp representing when bill was last updated in our system.
 ``actions``
     A list of legislative actions performed on this bill. Each action will be an object with at least the following fields:
+
     * ``date``: The date/time the action was performed
     * ``actor``: The chamber, person, committee, etc. responsible for this action
     * ``action``: A textual description of the action performed
@@ -40,6 +41,7 @@ Both methods return bill objects consisting of the following fields:
     * ``type``: The type of sponsorship (state specific, examples include 'Primary Sponsor', 'Co-Sponsor')
 ``votes``
     A list of votes relating to this bill. Each vote will be an object with at least the following fields:
+
     * ``date``: The date/time the vote was taken
     * ``chamber``: The chamber that the vote was taken in
     * ``motion``: The motion being voted on
@@ -64,7 +66,7 @@ Both methods return bill objects consisting of the following fields:
     * ``retrieved``: time at which the source was last retrieved
 
 .. note::
-    ``actions``, ``sponsors``, ``votes``, ``versions`` are not returned via the search API.
+    ``actions``, ``sponsors``, ``votes``, ``versions``, ``documents``, and ``sources`` are not returned via the search API.
 
 .. note::
     Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See :ref:`extrafields`)

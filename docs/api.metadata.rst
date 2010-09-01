@@ -65,6 +65,7 @@ http://openstates.sunlightlabs.com/api/v1/metadata/ca/?apikey=YOUR_API_KEY
             {
                 "end_year": 2010,
                 "start_year": 2009,
+                "+start_date": 1228089600.0,
                 "name": "20092010",
                 "sessions": [
                     "20092010",
@@ -83,7 +84,12 @@ http://openstates.sunlightlabs.com/api/v1/metadata/ca/?apikey=YOUR_API_KEY
         "upper_chamber_term": 4,
         "abbreviation": "ca",
         "upper_chamber_name": "Senate",
+        "session_details": {
+            "20092010": {
+                "start_date": 1228089600.0
+            }
+        },
         "legislature_name": "California State Legislature",
-        "lower_chamber_term": 3
+        "lower_chamber_term": 2
     }
 

@@ -55,55 +55,55 @@ Get all information about a committee given its Open State Project id.
 URL Format
 ^^^^^^^^^^
 
-:samp:`http://openstates.sunlightlabs.com/api/v1/committee/{COMMITTEE-ID}/?apikey={YOUR_API_KEY}`
+:samp:`http://openstates.sunlightlabs.com/api/v1/committees/{COMMITTEE-ID}/?apikey={YOUR_API_KEY}`
 
 Example
 ^^^^^^^
 
-http://openstates.sunlightlabs.com/api/v1/committee/MDC000065/?apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/committees/MDC000065/?apikey=YOUR_API_KEY
 
 ::
 
     {
-        "id": "MDC000065",
-        "committee": "HOUSE FACILITIES COMMITTEE",
-        "sources": [
-            {
-                "url": "http://www.msa.md.gov/msa/mdmanual/06hse/html/com/sfacil.html",
-                "retrieved": "2010-08-12 23:24:54"
-            }
-        ],
-        "updated_at": "2010-08-12 23:25:18",
-        "chamber": "lower",
-        "state": "md",
-        "subcommittee": null,
         "members": [
             {
-                "leg_id": "MDL000123",
+                "leg_id": "MDL000313",
                 "role": "member",
                 "legislator": "Carolyn J. Krysiak"
             },
             {
-                "leg_id": "MDL000120",
+                "leg_id": "MDL000310",
                 "role": "member",
                 "legislator": "Ruth M. Kirk"
             },
             {
-                "leg_id": "MDL000129",
+                "leg_id": "MDL000319",
                 "role": "member",
                 "legislator": "Mary Ann Love"
             },
             {
-                "leg_id": "MDL000144",
+                "leg_id": "MDL000334",
                 "role": "member",
                 "legislator": "LeRoy E. Myers, Jr."
             },
             {
-                "leg_id": "MDL000152",
+                "leg_id": "MDL000342",
                 "role": "member",
                 "legislator": "Shane E. Pendergrass"
             }
-        ]
+        ],
+        "sources": [
+            {
+                "url": "http://www.msa.md.gov/msa/mdmanual/06hse/html/com/sfacil.html",
+                "retrieved": "2010-08-31 16:52:52"
+            }
+        ],
+        "updated_at": "2010-08-31 16:53:19",
+        "chamber": "lower",
+        "state": "md",
+        "subcommittee": null,
+        "committee": "HOUSE FACILITIES COMMITTEE",
+        "id": "MDC000065"
     }
 
 
@@ -138,7 +138,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
 
     [
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "ALCOHOLIC BEVERAGES SUBCOMMITTEE",
@@ -146,7 +146,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000009"
         },
         {
-            "updated_at": "2010-08-12 23:25:16",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": null,
@@ -154,7 +154,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000019"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": null,
@@ -162,7 +162,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000001"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": null,
@@ -170,7 +170,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000002"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": null,
@@ -178,7 +178,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000003"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "CAPITAL BUDGET SUBCOMMITTEE",
@@ -186,7 +186,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000004"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "HEALTH, EDUCATION & HUMAN RESOURCES SUBCOMMITTEE",
@@ -194,7 +194,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000005"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "PENSIONS SUBCOMMITTEE",
@@ -202,7 +202,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000006"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "PUBLIC SAFETY, TRANSPORTATION & ENVIRONMENT SUBCOMMITTEE",
@@ -210,7 +210,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000007"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": null,
@@ -218,7 +218,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000008"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "BASE REALIGNMENT & CLOSURE (BRAC) SUBCOMMITTEE",
@@ -226,7 +226,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000010"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "EDUCATION SUBCOMMITTEE",
@@ -234,7 +234,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000011"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "ENVIRONMENT SUBCOMMITTEE",
@@ -242,7 +242,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000012"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "ETHICS & ELECTION LAW SUBCOMMITTEE",
@@ -250,7 +250,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000013"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "HEALTH SUBCOMMITTEE",
@@ -258,7 +258,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000014"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": null,
@@ -266,7 +266,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000015"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "HEALTH SUBCOMMITTEE",
@@ -274,7 +274,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000016"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": "TRANSPORTATION SUBCOMMITTEE",
@@ -282,7 +282,7 @@ http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&api
             "id": "MDC000017"
         },
         {
-            "updated_at": "2010-08-12 23:25:15",
+            "updated_at": "2010-08-31 16:53:16",
             "chamber": "upper",
             "state": "md",
             "subcommittee": null,

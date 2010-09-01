@@ -33,7 +33,7 @@ Current Ready States
 Experimental States (orange)
 ----------------------------
 
-States marked experimental are lower priority when it comes to bug fixes, but are still believed by us to have high quality data available.
+States marked experimental are lower priority when it comes to bug fixes, but are still believed by us to have high quality data available.  Also we may not have added some of our added-value fields (bill/vote/action types, alternate legislator ids, etc.).
 
 We encourage you to experiment with experimental states and not be shy about reporting bugs in the `the Open State Project issue tracker <http://code.google.com/p/openstates/issues/list>`_.  (Just be aware that it may be slightly longer before we are able to address issues with experimental states.)
 
@@ -41,6 +41,7 @@ Generally we try to run experimental state scrapers as often as ready states, th
 
 Current Experimental States
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Nevada
 * North Carolina
 * Pennsylvania
 * South Dakota
