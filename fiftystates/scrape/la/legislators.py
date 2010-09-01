@@ -54,7 +54,7 @@ class LALegislatorScraper(LegislatorScraper):
             district = re.search("district(\d+).pdf", district).group(1)
 
             if "Democrat&nbsp;District" in text:
-                party = "Democrat"
+                party = "Democratic"
             elif "Republican&nbsp;District" in text:
                 party = "Republican"
             elif "Independent&nbsp;District" in text:

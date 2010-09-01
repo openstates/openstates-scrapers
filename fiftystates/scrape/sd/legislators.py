@@ -53,6 +53,9 @@ class SDLegislatorScraper(LegislatorScraper):
             party = page.xpath("string(//span[contains(@id, 'Party')])")
             party = party.strip()
 
+            if party == 'Democrat':
+                party = 'Democratic'
+
             district = page.xpath("string(//span[contains(@id, 'District')])")
             district = district.strip().lstrip('0')
 
