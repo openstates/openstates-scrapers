@@ -159,7 +159,7 @@ class LegislatorHandler(FiftyStateHandler):
 
 class LegislatorSearchHandler(FiftyStateHandler):
     def read(self, request):
-        legislator_fields = {'sources': 0}
+        legislator_fields = {'sources': 0, 'roles': 0}
 
         _filter = _build_mongo_filter(request, ('state', 'first_name',
                                                'last_name'))
