@@ -12,6 +12,7 @@ Links
   * `State by State Status <http://openstates.sunlightlabs.com/status/>`_
   * `Google Group <http://groups.google.com/group/fifty-state-project>`_
   * `Issue Tracker <http://code.google.com/p/openstates/issues/list>`_
+  * IRC: #openstates on irc.freenode.net
 
 Use Our Data
 ------------
