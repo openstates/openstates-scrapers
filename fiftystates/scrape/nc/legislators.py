@@ -23,7 +23,7 @@ class NCLegislatorScraper(LegislatorScraper):
 
                 party = party.text_content()
                 if party == 'Dem':
-                    party = 'Democrat'
+                    party = 'Democratic'
                 elif party == 'Rep':
                     party = 'Republican'
 
