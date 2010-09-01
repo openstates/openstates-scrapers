@@ -43,7 +43,7 @@ class CALegislatorScraper(LegislatorScraper):
             party = legislator.party
 
             if party == 'DEM':
-                party = 'Democrat'
+                party = 'Democratic'
             elif party == 'REP':
                 party = 'Republican'
 
