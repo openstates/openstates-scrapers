@@ -11,6 +11,13 @@ from piston.utils import rc
 from piston.handler import BaseHandler, HandlerMetaClass
 
 
+_chamber_aliases = {
+    'assembly': 'lower',
+    'house': 'lower',
+    'senate': 'upper',
+    }
+
+
 def _build_mongo_filter(request, keys, icase=True):
     # We use regex queries to get case insensitive search - this
     # means they won't use any indexes for now. Real case insensitive
@@ -20,7 +27,11 @@ def _build_mongo_filter(request, keys, icase=True):
     for key in keys:
         value = request.GET.get(key)
         if value:
-            _filter[key] = re.compile('^%s$' % value, re.IGNORECASE)
+            if key == 'chamber':
+                value = value.lower()
+                _filter[key] = _chamber_aliases.get(value, value)
+            else:
+                _filter[key] = re.compile('^%s$' % value, re.IGNORECASE)
     return _filter
 
 
