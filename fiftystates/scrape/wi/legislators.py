@@ -4,6 +4,9 @@ import re
 
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
+
+PARTY_DICT = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
+
 class WILegislatorScraper(LegislatorScraper):
     state = 'wi'
 
@@ -25,6 +28,7 @@ class WILegislatorScraper(LegislatorScraper):
                     legpart = re.findall(r'([\w\-\,\s\.]+)\s+\(([\w])\)', list(row)[0].text_content())
                     if legpart:
                         full_name, party = legpart[0]
+                        party = PARTY_DICT[party]
 
                         district = str(int(list(row)[2].text_content()))
 

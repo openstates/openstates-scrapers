@@ -5,6 +5,8 @@ import lxml.html
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 
+PARTY_DICT = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
+
 class MDLegislatorScraper(LegislatorScraper):
     state = 'md'
 
@@ -43,6 +45,7 @@ class MDLegislatorScraper(LegislatorScraper):
                     # handle details
                     details = detail_text.strip()
                     party, district = detail_re.match(details).groups()
+                    party = PARTY_DICT[party]
 
                     leg = Legislator('2007-2010', chamber, district,
                                      ' '.join((first_name, last_name)),
