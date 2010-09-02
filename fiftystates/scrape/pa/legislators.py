@@ -11,13 +11,12 @@ import lxml.html
 class PALegislatorScraper(LegislatorScraper):
     state = 'pa'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term):
         # Pennsylvania doesn't make member lists easily available
         # for previous sessions, unfortunately
-        if int(year) < 2009:
+        if term != '2009-2010':
             raise NoDataForPeriod(year)
 
-        term = "%s-%d" % (year, int(year) + 1)
         leg_list_url = legislators_url(chamber)
 
         with self.urlopen(leg_list_url) as page:
