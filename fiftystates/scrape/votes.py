@@ -37,7 +37,7 @@ class VoteScraper(Scraper):
 
 class Vote(FiftystatesObject):
     def __init__(self, chamber, date, motion, passed,
-                 yes_count, no_count, other_count, type, **kwargs):
+                 yes_count, no_count, other_count, type='other', **kwargs):
         """
         Create a new :obj:`Vote`.
 
