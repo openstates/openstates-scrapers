@@ -178,7 +178,7 @@ class PABillScraper(BillScraper):
 
             if motion == 'FINAL PASSAGE':
                 type = 'passage'
-            elif re.match('CONCUR(RENCE)? IN \w+ AMENDMENTS'):
+            elif re.match(r'CONCUR(RENCE)? IN \w+ AMENDMENTS', motion):
                 type = 'amendment'
             else:
                 type = 'other'
