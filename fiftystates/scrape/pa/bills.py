@@ -156,6 +156,16 @@ class PABillScraper(BillScraper):
 
             motion = page.xpath("//div[@class='font8text']")[3].text.strip()
 
+            if motion == 'FP':
+                motion = 'FINAL PASSAGE'
+
+            if motion == 'FINAL PASSAGE':
+                type = 'passage'
+            elif re.match('CONCUR(RENCE)? IN \w+ AMENDMENTS'):
+                type = 'amendment'
+            else:
+                type = 'other'
+
             yeas = int(page.xpath("//div[text() = 'YEAS']")[0].getnext().text)
             nays = int(page.xpath("//div[text() = 'NAYS']")[0].getnext().text)
             lve = int(page.xpath("//div[text() = 'LVE']")[0].getnext().text)
@@ -164,7 +174,8 @@ class PABillScraper(BillScraper):
 
             passed = yeas > (nays + other)
 
-            vote = Vote(chamber, date, motion, passed, yeas, nays, other)
+            vote = Vote(chamber, date, motion, passed, yeas, nays, other,
+                        type=type)
 
             for span in page.xpath("//span[text() = 'Y' or text() = 'N'"
                                    "or text() = 'X' or text() = 'E']"):
