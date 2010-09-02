@@ -1,6 +1,11 @@
+import re
 import lxml.html
 
 from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.votes import Vote
+
+def extract_int(text):
+    return int(text.replace(u'\xc2', '').strip())
 
 
 class DCBillScraper(BillScraper):
@@ -56,7 +61,54 @@ class DCBillScraper(BillScraper):
                     # TODO: convert dates
                     bill.add_action(actor, action, date)
 
-        return bill
+            # votes
+            vote_tds = doc.xpath('//td[starts-with(@id, "VoteTypeRepeater")]')
+            for td in vote_tds:
+                vote_type = td.text
+                vote_type_id = re.search(r"LoadVotingInfo\(this\.id, '(\d)'",
+                                         td.get('onclick')).groups()[0]
+                self.scrape_vote(bill, vote_type_id, vote_type)
+
+        self.save_bill(bill)
+
+
+    def scrape_vote(self, bill, vote_type_id, vote_type):
+        base_url = 'http://www.dccouncil.washington.dc.us/lims/voting.aspx?VoteTypeID=%s&LegID=%s'
+        url = base_url % (vote_type_id, bill['bill_id'])
+
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
+
+            vote_date = doc.get_element_by_id('VoteDate')
+
+            # check if voice vote / approved boxes have an 'x'
+            voice = (doc.xpath('//span[@id="VoteTypeVoice"]/b/text()')[0] ==
+                     'x')
+            passed = (doc.xpath('//span[@id="VoteResultApproved"]/b/text()')[0]
+                      == 'x')
+
+            yes_count = extract_int(doc.xpath(
+                '//span[@id="VoteCount1"]/b/text()')[0])
+            no_count = extract_int(doc.xpath(
+                '//span[@id="VoteCount2"]/b/text()')[0])
+            other_count = 13 - (yes_count+no_count)   # a bit lazy
+
+            vote = Vote('upper', vote_date, vote_type, passed, yes_count,
+                        no_count, other_count, voice_vote=voice)
+
+            vote.add_source(url)
+
+            # members are only text on page in a <u> tag
+            for member_u in doc.xpath('//u'):
+                member = member_u.text
+                vote_text = member_u.xpath('../../i/text()')[0]
+                if 'YES' in vote_text:
+                    vote.yes(member)
+                elif 'NO' in vote_text:
+                    vote.no(member)
+                else:
+                    vote.other(member)
+        bill.add_vote(vote)
 
 
     def scrape(self, chamber, session):
