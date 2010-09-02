@@ -38,6 +38,6 @@ class DCLegislatorScraper(LegislatorScraper):
                         party = 'Independent'
 
                     legislator = Legislator(term, 'upper', district, name,
-                                            party=party, website=website)
+                                            party=party)
                     legislator.add_source(leg_url)
                 self.save_legislator(legislator)
