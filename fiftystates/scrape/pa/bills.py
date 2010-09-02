@@ -151,7 +151,7 @@ class PABillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'rc_view')]"):
+            for link in page.xpath("//a[contains(@href, 'rc_view_action2')]"):
                 vote = self.parse_roll_call(link.attrib['href'])
                 # bill.add_vote(vote)
 
