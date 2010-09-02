@@ -9,6 +9,7 @@ def extract_int(text):
     return int(text.replace(u'\xc2', '').strip())
 
 def convert_date(text):
+    text = text.strip()
     short_date = re.match('\d{2}-\d{2}-\d{2}', text)
     if short_date:
         return datetime.datetime.strptime(short_date.group(), '%m-%d-%y')
@@ -52,8 +53,6 @@ class DCBillScraper(BillScraper):
             actions = {
                 'Introduction': 'DateIntroduction',
                 'Committee Action': 'DateCommitteeAction',
-#                'Report Filed': 'ReportFiled',
-#                'COW Action': 'COWAction',
                 'First Vote': 'DateFirstVote',
                 'Final Vote': 'DateFinalVote',
                 'Third Vote': 'DateThirdVote',
@@ -71,8 +70,21 @@ class DCBillScraper(BillScraper):
             for action, elem_id in actions.iteritems():
                 date = doc.get_element_by_id(elem_id).text
                 if date:
-                    actor = 'mayor' if action.endswith('by Mayor') else 'upper'
-                    if date != 'Not Signed':
+
+                    # special actions that may occur
+                    if date.startswith('WITHDRAWN'):
+                         # trim WITHDRAWN BY XXXXXXXXX, 12-02-04
+                        actor, date = date[13:].split(', ')
+                        bill.add_action(actor, 'Withdrawn', convert_date(date))
+                    elif date.startswith('TABLED'):
+                        date = date.split(' ')[-1]
+                        bill.add_action('upper', 'Tabled', date)
+
+                    # actions that mean nothing happened
+                    elif date not in ('Not Signed', 'NOT CONSIDERED',
+                                      'NOTCONSIDERED'):
+                        actor = ('mayor' if action.endswith('by Mayor')
+                                 else 'upper')
                         date = convert_date(date)
                         if not isinstance(date, datetime.datetime):
                             self.warning('could not convert %s %s bill: %s' %
