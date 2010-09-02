@@ -41,19 +41,37 @@ def clean_action(action):
 
 def action_type(action):
     action = action.lower()
+    atypes = []
 
     if re.match('^read (the )?first time', action):
-        return 'bill:introduced'
+        atypes.append('bill:introduced')
     elif re.search('.*proposal of amendment(; text)?$', action):
-        return 'amendment:introduced'
+        atypes.append('amendment:introduced')
     elif action.endswith('proposal of amendment concurred in'):
-        return 'amendment:passed'
+        atypes.append('amendment:passed')
     elif action.endswith('and passed'):
-        return 'bill:passed'
+        atypes.append('bill:passed')
     elif action.startswith('signed by governor'):
-        return 'governor:signed'
+        atypes.append('governor:signed')
 
-    return 'other'
+    if 'reported favorably' in action or 'favorable report' in action:
+        atypes.append('committee:passed:favorable')
+
+    if 'reported unfavorably' in action or 'unfavorable report' in action:
+        atypes.append('committee:passed:unfavorable')
+
+    if 'reported without recommendation' in action:
+        atypes.append('committee:passed')
+
+    if re.match(r'(re)?committed to committee', action):
+        atypes.append('committee:referred')
+
+    if 'motion to amend bill agreed to' in action:
+        atypes.append('amendment:passed')
+
+    if atypes:
+        return atypes
+    return ['other']
 
 
 class VTBillScraper(BillScraper):
