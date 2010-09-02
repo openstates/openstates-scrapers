@@ -30,7 +30,7 @@ class PALegislatorScraper(LegislatorScraper):
                 if party == 'R':
                     party = 'Republican'
                 elif party == 'D':
-                    party = 'Democrat'
+                    party = 'Democratic'
 
                 legislator = Legislator(term, chamber, district,
                                         full_name, party=party)
