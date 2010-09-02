@@ -1,4 +1,5 @@
 import re
+import datetime
 import lxml.html
 
 from fiftystates.scrape.bills import BillScraper, Bill
@@ -6,6 +7,16 @@ from fiftystates.scrape.votes import Vote
 
 def extract_int(text):
     return int(text.replace(u'\xc2', '').strip())
+
+def convert_date(text):
+    short_date = re.match('\d{2}-\d{2}-\d{2}', text)
+    if short_date:
+        return datetime.datetime.strptime(short_date.group(), '%m-%d-%y')
+
+    try:
+        return datetime.datetime.strptime(text, '%A, %B %d, %Y')
+    except ValueError:
+        return text
 
 
 class DCBillScraper(BillScraper):
@@ -26,19 +37,23 @@ class DCBillScraper(BillScraper):
 
             # sponsors
             introduced_by = doc.get_element_by_id('IntroducedBy').text
-            requested_by = doc.get_element_by_id('RequestedBy').text
-            cosponsored_by = doc.get_element_by_id('CoSponsoredBy').text
             bill.add_sponsor('primary', introduced_by)
+
+            requested_by = doc.get_element_by_id('RequestedBy').text
             if requested_by:
                 bill.add_sponsor('requestor', requested_by)
-            for cosponsor in cosponsored_by.split(','):
-                bill.add_sponsor('cosponsor', cosponsor)
 
+            cosponsored_by = doc.get_element_by_id('CoSponsoredBy').text
+            if cosponsored_by:
+                for cosponsor in cosponsored_by.split(','):
+                    bill.add_sponsor('cosponsor', cosponsor)
+
+            # actions
             actions = {
                 'Introduction': 'DateIntroduction',
                 'Committee Action': 'DateCommitteeAction',
-                'Report Filed': 'ReportFiled',
-                'COW Action': 'COWAction',
+#                'Report Filed': 'ReportFiled',
+#                'COW Action': 'COWAction',
                 'First Vote': 'DateFirstVote',
                 'Final Vote': 'DateFinalVote',
                 'Third Vote': 'DateThirdVote',
@@ -53,13 +68,16 @@ class DCBillScraper(BillScraper):
                 'Re-transmitted to Congress': 'DateReTransmitted',
             }
 
-            # actions
             for action, elem_id in actions.iteritems():
                 date = doc.get_element_by_id(elem_id).text
                 if date:
                     actor = 'mayor' if action.endswith('by Mayor') else 'upper'
-                    # TODO: convert dates
-                    bill.add_action(actor, action, date)
+                    if date != 'Not Signed':
+                        date = convert_date(date)
+                        if not isinstance(date, datetime.datetime):
+                            self.warning('could not convert %s %s bill: %s' %
+                                         (action, date, bill['bill_id']))
+                        bill.add_action(actor, action, date)
 
             # votes
             vote_tds = doc.xpath('//td[starts-with(@id, "VoteTypeRepeater")]')
@@ -79,7 +97,7 @@ class DCBillScraper(BillScraper):
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
 
-            vote_date = doc.get_element_by_id('VoteDate')
+            vote_date = convert_date(doc.get_element_by_id('VoteDate').text)
 
             # check if voice vote / approved boxes have an 'x'
             voice = (doc.xpath('//span[@id="VoteTypeVoice"]/b/text()')[0] ==
