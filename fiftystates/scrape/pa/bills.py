@@ -152,15 +152,36 @@ class PABillScraper(BillScraper):
             page.make_links_absolute(url)
 
             for link in page.xpath("//a[contains(@href, 'rc_view_action2')]"):
-                vote = self.parse_roll_call(link.attrib['href'])
-                # bill.add_vote(vote)
+                date_str = link.xpath("../../../td")[0].text.strip()
+                date = datetime.datetime.strptime(date_str, "%m/%d/%Y")
+                vote = self.parse_roll_call(link.attrib['href'], chamber, date)
+                bill.add_vote(vote)
 
-    def parse_roll_call(self, url):
+    def parse_roll_call(self, url, chamber, date):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
 
-            date = page.xpath(
-                "//div[@class='font8text']")[1].text.split(',', 1)[1].strip()
+            motion = page.xpath("//div[@class='font8text']")[3].text.strip()
 
-            # TODO: parse PA's horrible new roll-call vote pages
-            return None
+            yeas = int(page.xpath("//div[text() = 'YEAS']")[0].getnext().text)
+            nays = int(page.xpath("//div[text() = 'NAYS']")[0].getnext().text)
+            lve = int(page.xpath("//div[text() = 'LVE']")[0].getnext().text)
+            nv = int(page.xpath("//div[text() = 'N/V']")[0].getnext().text)
+            other = lve + nv
+
+            passed = yeas > (nays + other)
+
+            vote = Vote(chamber, date, motion, passed, yeas, nays, other)
+
+            for span in page.xpath("//span[text() = 'Y' or text() = 'N'"
+                                   "or text() = 'X' or text() = 'E']"):
+                name = span.getnext().text.strip()
+
+                if span.text == 'Y':
+                    vote.yes(name)
+                elif span.text == 'N':
+                    vote.no(name)
+                else:
+                    vote.other(name)
+
+            return vote
