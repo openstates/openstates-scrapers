@@ -45,13 +45,17 @@ def action_type(action):
 
     if re.match('^read (the )?first time', action):
         atypes.append('bill:introduced')
-    elif re.search('.*proposal of amendment(; text)?$', action):
-        atypes.append('amendment:introduced')
-    elif action.endswith('proposal of amendment concurred in'):
+
+    if 'proposal of amendment concurred in' in action:
         atypes.append('amendment:passed')
-    elif action.endswith('and passed'):
+
+    if re.match(r'proposal of amendment by .* agreed to', action):
+        atypes.append('amendment:passed')
+
+    if action.endswith('and passed'):
         atypes.append('bill:passed')
-    elif action.startswith('signed by governor'):
+
+    if action.startswith('signed by governor'):
         atypes.append('governor:signed')
 
     if 'reported favorably' in action or 'favorable report' in action:
@@ -68,6 +72,9 @@ def action_type(action):
 
     if 'motion to amend bill agreed to' in action:
         atypes.append('amendment:passed')
+
+    if 'read 3rd time & passed' in action:
+        atypes.append('bill:passed')
 
     if atypes:
         return atypes
