@@ -20,21 +20,14 @@ def action_type(action):
 class PABillScraper(BillScraper):
     state = 'pa'
 
-    def scrape(self, chamber, year):
-        term = None
-        for t in metadata['terms']:
-            if t['name'] == "%s-%d" % (year, int(year) + 1):
-                term = t
-                break
-        else:
-            raise NoDataForYear(year)
+    def scrape(self, chamber, session):
+        self.validate_session(session)
 
-        for session in term['sessions']:
-            match = re.search("#(\d+)", session)
-            if match:
-                self.scrape_session(chamber, session, int(match.group(1)))
-            else:
-                self.scrape_session(chamber, session)
+        match = re.search("#(\d+)", session)
+        if match:
+            self.scrape_session(chamber, session, int(match.group(1)))
+        else:
+            self.scrape_session(chamber, session)
 
     def scrape_session(self, chamber, session, special=0):
         url = bill_list_url(chamber, session, special)
