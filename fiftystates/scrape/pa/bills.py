@@ -13,10 +13,6 @@ from fiftystates.scrape.pa.utils import (bill_abbr, start_year,
 import lxml.html
 
 
-def action_type(action):
-    return 'other'
-
-
 class PABillScraper(BillScraper):
     state = 'pa'
 
@@ -115,8 +111,29 @@ class PABillScraper(BillScraper):
                 continue
 
             action = match.group(1)
+
+            type = []
+
+            if action.startswith('Referred to'):
+                type.append('committee:referred')
+            elif action.startswith('Amended on'):
+                type.append('amendment:passed')
+            elif action.startswith('Approved by the Governor'):
+                type.append('bill:signed')
+
+            if action == 'Final passage':
+                type.append('bill:passed')
+
+            if re.match('concurred in (House|Senate) amendments', action):
+                if re.match(', as amended by the (House|Senate)', action):
+                    type.append('amendment:amended')
+                type.append('amendment:passed')
+
+            if not type:
+                type = ['other']
+
             date = parse_action_date(match.group(2))
-            bill.add_action(chamber, action, date, type=action_type(action))
+            bill.add_action(chamber, action, date, type=type)
 
     def parse_votes(self, bill, url):
         bill.add_source(url)
