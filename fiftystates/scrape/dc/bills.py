@@ -38,7 +38,8 @@ class DCBillScraper(BillScraper):
 
             # sponsors
             introduced_by = doc.get_element_by_id('IntroducedBy').text
-            bill.add_sponsor('primary', introduced_by)
+            if introduced_by:
+                bill.add_sponsor('primary', introduced_by)
 
             requested_by = doc.get_element_by_id('RequestedBy').text
             if requested_by:
@@ -72,13 +73,23 @@ class DCBillScraper(BillScraper):
                 if date:
 
                     # special actions that may occur
-                    if date.startswith('WITHDRAWN'):
-                         # trim WITHDRAWN BY XXXXXXXXX, 12-02-04
+                    if date.startswith('WITHDRAWN BY'):
+                        # trim WITHDRAWN BY XXXXXXXXX, 12-02-04
                         actor, date = date[13:].split(', ')
                         bill.add_action(actor, 'Withdrawn', convert_date(date))
                     elif date.startswith('TABLED'):
-                        date = date.split(' ')[-1]
+                        date = convert_date(date.split(' ')[-1])
                         bill.add_action('upper', 'Tabled', date)
+                    elif date.startswith('DEEMED APPROVED'):
+                        date = convert_date(date.split(', ')[-1])
+                        bill.add_action('upper',
+                                    'Deemed Approved Without Council Action',
+                                        date)
+                    elif date.startswith('DEEMED DISAPPROVED'):
+                        date = convert_date(date.split(', ')[-1])
+                        bill.add_action('upper',
+                                'Deemed Disapproved Without Council Action',
+                                        date)
 
                     # actions that mean nothing happened
                     elif date not in ('Not Signed', 'NOT CONSIDERED',
