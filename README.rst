@@ -5,7 +5,7 @@ Links
 
 * `Open State Project API <http://openstates.sunlightlabs.com/api.html>`_
 * `python-openstates: Python API Client <http://github.com/sunlightlabs/python-openstates/>`_
-* `Code on GitHub <http://github.com/sunlightlabs/fiftystates/>`_
+* `Code on GitHub <http://github.com/sunlightlabs/openstates/>`_
 * `Contributing Guidelines <http://code.google.com/p/openstates/wiki/Contributing>`_
 * `Open State Project Google Group <http://groups.google.com/group/fifty-state-project>`_
 * `Sunlight Labs <http://sunlightlabs.com>`_

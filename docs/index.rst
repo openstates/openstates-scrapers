@@ -24,7 +24,7 @@ Contribute
 ----------
 
   * `Contributor's Guide <http://code.google.com/p/openstates/wiki/Contributing>`_
-  * `Code on GitHub <http://github.com/sunlightlabs/fiftystates>`_
+  * `Code on GitHub <http://github.com/sunlightlabs/openstates>`_
   * :doc:`Writing Scrapers <scrapers>`
 
 
