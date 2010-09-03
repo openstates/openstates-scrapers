@@ -9,10 +9,9 @@ def extract_int(text):
     return int(text.replace(u'\xc2', '').strip())
 
 def convert_date(text):
-    text = text.strip()
-    short_date = re.match('\d{2}-\d{2}-\d{2}', text)
+    short_date = re.findall('\d{1,2}-\d{1,2}-\d{2}', text)
     if short_date:
-        return datetime.datetime.strptime(short_date.group(), '%m-%d-%y')
+        return datetime.datetime.strptime(short_date[0], '%m-%d-%y')
 
     try:
         return datetime.datetime.strptime(text, '%A, %B %d, %Y')
@@ -68,39 +67,35 @@ class DCBillScraper(BillScraper):
                 'Re-transmitted to Congress': 'DateReTransmitted',
             }
 
+            subactions = {
+                'WITHDRAWN BY': 'Withdrawn',
+                'TABLED': 'Tabled',
+                'DEEMED APPROVED': 'Deemed approved without council action',
+                'DEEMED DISAPPROVED': 'Deemed disapproved without council action',
+            }
+
             for action, elem_id in actions.iteritems():
                 date = doc.get_element_by_id(elem_id).text
                 if date:
 
-                    # special actions that may occur
-                    if date.startswith('WITHDRAWN BY'):
-                        # trim WITHDRAWN BY XXXXXXXXX, 12-02-04
-                        actor, date = date[13:].split(', ')
-                        bill.add_action(actor, 'Withdrawn', convert_date(date))
-                    elif date.startswith('TABLED'):
-                        date = convert_date(date.split(' ')[-1])
-                        bill.add_action('upper', 'Tabled', date)
-                    elif date.startswith('DEEMED APPROVED'):
-                        date = convert_date(date.split(', ')[-1])
-                        bill.add_action('upper',
-                                    'Deemed Approved Without Council Action',
-                                        date)
-                    elif date.startswith('DEEMED DISAPPROVED'):
-                        date = convert_date(date.split(', ')[-1])
-                        bill.add_action('upper',
-                                'Deemed Disapproved Without Council Action',
-                                        date)
+                    # check if the action starts with a subaction prefix
+                    for prefix, sub_action in subactions.iteritems():
+                        if date.startswith(prefix):
+                            bill.add_action('upper', sub_action,
+                                            convert_date(date))
+                            break
 
                     # actions that mean nothing happened
-                    elif date not in ('Not Signed', 'NOT CONSIDERED',
+                    else:
+                        if date not in ('Not Signed', 'NOT CONSIDERED',
                                       'NOTCONSIDERED'):
-                        actor = ('mayor' if action.endswith('by Mayor')
-                                 else 'upper')
-                        date = convert_date(date)
-                        if not isinstance(date, datetime.datetime):
-                            self.warning('could not convert %s %s bill: %s' %
-                                         (action, date, bill['bill_id']))
-                        bill.add_action(actor, action, date)
+                            actor = ('mayor' if action.endswith('by Mayor')
+                                     else 'upper')
+                            date = convert_date(date)
+                            if not isinstance(date, datetime.datetime):
+                                self.warning('could not convert %s %s [%s]' %
+                                             (action, date, bill['bill_id']))
+                            bill.add_action(actor, action, date)
 
             # votes
             vote_tds = doc.xpath('//td[starts-with(@id, "VoteTypeRepeater")]')
