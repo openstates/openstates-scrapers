@@ -15,7 +15,7 @@ class PALegislatorScraper(LegislatorScraper):
         # Pennsylvania doesn't make member lists easily available
         # for previous sessions, unfortunately
         if term != '2009-2010':
-            raise NoDataForPeriod(year)
+            raise NoDataForPeriod(term)
 
         leg_list_url = legislators_url(chamber)
 
