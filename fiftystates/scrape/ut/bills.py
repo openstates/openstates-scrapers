@@ -14,21 +14,9 @@ class UTBillScraper(BillScraper):
     soup_parser = html5lib.HTMLParser(
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
-    def scrape(self, chamber, year):
-        found = False
-        for session in metadata['sessions']:
-            if session['name'] == year:
-                found = True
-                sub_sessions = session['sub_sessions']
-                break
-        if not found:
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, session):
+        self.validate_session(session)
 
-        self.scrape_session(chamber, year)
-        for sub_session in sub_sessions:
-            self.scrape_session(chamber, sub_session)
-
-    def scrape_session(self, chamber, session):
         if chamber == "lower":
             bill_abbr = "HB"
         else:
