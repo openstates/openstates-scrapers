@@ -16,7 +16,7 @@ def convert_date(text):
     try:
         return datetime.datetime.strptime(text, '%A, %B %d, %Y')
     except ValueError:
-        return text
+        return None
 
 
 class DCBillScraper(BillScraper):
@@ -81,8 +81,9 @@ class DCBillScraper(BillScraper):
                     # check if the action starts with a subaction prefix
                     for prefix, sub_action in subactions.iteritems():
                         if date.startswith(prefix):
-                            bill.add_action('upper', sub_action,
-                                            convert_date(date))
+                            date = convert_date(date)
+                            if date:
+                                bill.add_action('upper', sub_action, date)
                             break
 
                     # actions that mean nothing happened
@@ -95,7 +96,8 @@ class DCBillScraper(BillScraper):
                             if not isinstance(date, datetime.datetime):
                                 self.warning('could not convert %s %s [%s]' %
                                              (action, date, bill['bill_id']))
-                            bill.add_action(actor, action, date)
+                            else:
+                                bill.add_action(actor, action, date)
 
             # votes
             vote_tds = doc.xpath('//td[starts-with(@id, "VoteTypeRepeater")]')
