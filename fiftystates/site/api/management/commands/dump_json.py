@@ -3,6 +3,7 @@ import sys
 import time
 import zipfile
 import datetime
+import urllib2
 
 try:
     import json
@@ -32,26 +33,40 @@ class FiftyStateEncoder(json.JSONEncoder):
             return str(obj)
         return json.JSONEncoder.default(self, obj)
 
+def api_url(path):
+    return ("http://openstates.sunlightlabs.com/api/v1/" + path +
+            "/?apikey=" + settings.SUNLIGHT_SERVICES_KEY)
 
 def dump_json(state, filename):
     zip = zipfile.ZipFile(filename, 'w')
 
+    base_url = "http://openstates.sunlightlabs.com/api/v1/"
+
     for bill in db.bills.find({'state': state}):
-        path = "/api/%s/%s/%s/bills/%s" % (state, bill['session'],
+        path = "api/%s/%s/%s/bills/%s" % (state, bill['session'],
                                            bill['chamber'],
                                            bill['bill_id'])
 
-        zip.writestr(path, json.dumps(bill, cls=FiftyStateEncoder))
+        url = api_url("bills/%s/%s/%s/%s" % (state,
+                                             bill['session'],
+                                             bill['chamber'],
+                                             bill['bill_id']))
+
+        print url
+
+        zip.writestr(path, urllib2.urlopen(url).read())
 
     for legislator in db.legislators.find({'state': state}):
-        path = '/api/legislators/%s' % legislator['_id']
+        path = 'api/legislators/%s' % legislator['_id']
+        url = api_url("legislators/" + legislator['_id'])
 
-        zip.writestr(path, json.dumps(legislator, cls=FiftyStateEncoder))
+        zip.writestr(path, urllib2.urlopen(url).read())
 
     for committee in db.committees.find({'state': state}):
-        path = '/api/committees/%s' % committee['_id']
+        path = 'api/committees/%s' % committee['_id']
+        url = api_url("committees/" + committee['_id'])
 
-        zip.writestr(path, json.dumps(committee, cls=FiftyStateEncoder))
+        zip.writestr(path, urllib2.urlopen(url).read())
 
     zip.close()
 
