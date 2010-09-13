@@ -92,10 +92,10 @@ def import_committees(state, data_dir):
             update(committee, data, db.committees)
 
         for member in committee['members']:
-            if not member['legislator']:
+            if not member['name']:
                 continue
 
-            (pre, first, last, suff) = name_tools.split(member['legislator'])
+            (pre, first, last, suff) = name_tools.split(member['name'])
 
             found = db.legislators.find({
                     'first_name': first,
@@ -104,11 +104,11 @@ def import_committees(state, data_dir):
                                              'state': state}}})
 
             if found.count() > 1:
-                print "Too many matches for %s" % member['legislator'].encode(
+                print "Too many matches for %s" % member['name'].encode(
                     'ascii', 'ignore')
                 continue
             elif found.count() == 0:
-                print "No matches for %s" % member['legislator'].encode(
+                print "No matches for %s" % member['name'].encode(
                     'ascii', 'ignore')
                 continue
 

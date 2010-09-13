@@ -8,7 +8,7 @@
     "chamber": {"type": "string", "enum": ["upper", "lower", "joint"]},
     "members": {"type": "array", "items": {"type": "object", "properties": {
         "role": {"type": "string"},
-        "legislator": {"type": "string"}
+        "name": {"type": "string"}
     }}},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
         "url": {"type": "string"},
