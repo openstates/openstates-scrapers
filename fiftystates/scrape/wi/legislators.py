@@ -43,7 +43,12 @@ class WILegislatorScraper(LegislatorScraper):
         url = 'http://legis.wi.gov/w3asp/contact/' + rep_url + '&display=committee'
         body = unicode(self.urlopen(url), 'latin-1')
         cmts = lxml.html.fromstring(body).cssselect("#ctl00_C_lblCommInfo a")
-        for c in map(lambda x: x.text_content().split('(')[0], list(cmts)):
-            legislator.add_role('committee member', term, committee=c.strip(),
-                                chamber=chamber)
+        for c in cmts:
+            c = c.text_content().split('(')[0].strip()
+            if 'Joint' in c or 'Special' in c:
+                c_chamber = 'joint'
+            else:
+                c_chamber = chamber
+            legislator.add_role('committee member', term, committee=c,
+                                chamber=c_chamber)
         return legislator
