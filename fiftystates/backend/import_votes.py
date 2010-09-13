@@ -37,7 +37,11 @@ def import_votes(state, data_dir):
             continue
 
         del data['bill_id']
-        del data['filename']
+
+        try:
+            del data['filename']
+        except KeyError:
+            pass
 
         for vtype in ('yes_votes', 'no_votes', 'other_votes'):
             svlist = []
