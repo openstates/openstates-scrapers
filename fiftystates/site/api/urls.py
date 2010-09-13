@@ -13,8 +13,8 @@ if getattr(settings, 'USE_LOCKSMITH', False):
     authorizer = PistonKeyAuthentication()
     Emitter.register('json', LoggingJSONEmitter,
                      'application/json; charset=utf-8')
-    Emitter.register('xml', LoggingXMLEmitter,
-                     'text/xml; charset=utf-8')
+    # disable XML output
+    Emitter.unregister('xml')
 else:
     authorizer = None
 
