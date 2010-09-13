@@ -87,10 +87,15 @@ class LACommitteeScraper(CommitteeScraper):
                         mtype = 'ex officio'
                         comm_name = comm_name.replace(', Ex Officio', '')
 
+                    if comm_name.startswith('Joint'):
+                        chamber = 'joint'
+                    else:
+                        chamber = 'lower'
+
                     try:
                         committee = comm_cache[comm_name]
                     except KeyError:
-                        committee = Committee('lower', comm_name)
+                        committee = Committee(chamber, comm_name)
                         comm_cache[comm_name] = committee
 
                     committee.add_member(name, mtype)
