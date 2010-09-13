@@ -30,5 +30,13 @@ metadata = dict(
     session_details={
         '20092010': {'start_date': datetime.date(2008, 12, 1),
                      'type': 'primary'},
+        '20092010 Special Session 1': {'type': 'special'},
+        '20092010 Special Session 2': {'type': 'special'},
+        '20092010 Special Session 3': {'type': 'special'},
+        '20092010 Special Session 4': {'type': 'special'},
+        '20092010 Special Session 5': {'type': 'special'},
+        '20092010 Special Session 6': {'type': 'special'},
+        '20092010 Special Session 7': {'type': 'special'},
+        '20092010 Special Session 8': {'type': 'special'},
         },
     )
