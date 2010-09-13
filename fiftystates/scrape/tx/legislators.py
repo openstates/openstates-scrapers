@@ -74,8 +74,18 @@ class TXLegislatorScraper(LegislatorScraper):
 
             for br in comm_div.xpath('*/br'):
                 if br.tail:
-                    leg.add_role('committee member', term, chamber=chamber,
-                                 committee=clean_committee_name(br.tail))
+                    name = clean_committee_name(br.tail)
+
+                    if name.startswith('Appropriation-S/C on '):
+                        sub = name.replace('Appropriations-S/C on ', '')
+                        leg.add_role('committee member', term,
+                                     chamber=chamber,
+                                     committee='Appropriations',
+                                     subcommittee=sub)
+                    else:
+                        leg.add_role('committee member', term,
+                                     chamber=chamber,
+                                     committee=name)
 
             if type == 'Lt. Gov.':
                 self.save_person(leg)
