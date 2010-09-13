@@ -53,5 +53,5 @@ class Committee(FiftystatesObject):
         self['members'] = kwargs.get('members', [])
 
     def add_member(self, legislator, role='member', **kwargs):
-        self['members'].append(dict(legislator=legislator, role=role,
+        self['members'].append(dict(name=legislator, role=role,
                                     **kwargs))
