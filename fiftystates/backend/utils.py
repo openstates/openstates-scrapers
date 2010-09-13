@@ -147,7 +147,7 @@ def convert_timestamps(obj):
     for vote in obj.get('votes', []):
         vote['date'] = timestamp_to_dt(vote['date'])
 
-        for source in obj.get('sources', []):
+        for source in vote.get('sources', []):
             source['retrieved'] = timestamp_to_dt(source['retrieved'])
 
     if 'date' in obj:
