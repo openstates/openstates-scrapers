@@ -9,6 +9,7 @@ metadata = dict(
     upper_chamber_term=2,
     lower_chamber_term=2,
     terms=[],
+    session_details={},
 )
 
 # Populate 'sessions' and 'session_details'
@@ -19,3 +20,4 @@ for year in [y for y in xrange(1987, 2010) if y % 2]:
             start_year=year,
             end_year=year + 1,
             sessions=[term]))
+    metadata['session_details'][term] = {'type': 'primary'}
