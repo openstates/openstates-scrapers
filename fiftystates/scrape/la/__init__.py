@@ -54,6 +54,8 @@ metadata = {
     'terms': list(reversed(terms)),
     'session_details': {
         '2009': {'start_date': datetime.date(2010, 4, 27),
-                 'end_date': datetime.date(2010, 6, 24)},
+                 'end_date': datetime.date(2010, 6, 24),
+                 'type': 'primary'},
         '2010': {'start_date': datetime.date(2010, 3, 29),
-                 'end_date': datetime.date(2010, 6, 21)}}}
+                 'end_date': datetime.date(2010, 6, 21),
+                 'type': 'primary'}}}

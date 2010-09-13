@@ -28,6 +28,7 @@ metadata = dict(
          },
         ],
     session_details={
-        '20092010': {'start_date': datetime.date(2008, 12, 1)},
+        '20092010': {'start_date': datetime.date(2008, 12, 1),
+                     'type': 'primary'},
         },
     )
