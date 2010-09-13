@@ -18,7 +18,14 @@ class CACommitteeScraper(CommitteeScraper):
             list_page.make_links_absolute(list_url)
 
             for a in list_page.xpath('//ul/a'):
-                comm = Committee('lower', a.text.strip())
+                name = a.text.strip()
+
+                if name.startswith('Joint'):
+                    comm_chamber = 'joint'
+                else:
+                    comm_chamber = 'lower'
+
+                comm = Committee(comm_chamber, a.text.strip())
                 self.scrape_committee_members(comm, a.attrib['href'])
                 self.save_committee(comm)
 
