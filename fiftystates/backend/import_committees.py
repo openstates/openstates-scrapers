@@ -136,7 +136,27 @@ def import_committees(state, data_dir):
 
         db.committees.save(committee, safe=True)
 
+    link_parents(state)
+
     ensure_indexes()
+
+
+def link_parents(state):
+    for comm in db.committees.find({'state': state}):
+        sub = comm.get('subcommittee')
+        if not sub:
+            comm['parent_id'] = None
+        else:
+            parent = db.committees.find_one({'state': state,
+                                             'chamber': comm['chamber'],
+                                             'committee': comm['committee']})
+            if not parent:
+                print "Failed finding parent for: %s" % sub
+                comm['parent_id'] = None
+            else:
+                comm['parent_id'] = parent['_id']
+
+        db.committees.save(comm)
 
 
 if __name__ == '__main__':
