@@ -15,4 +15,9 @@ metadata = dict(
                  '2009-2010',
                  '2009-2010 Special Session #1 (Transportation)']),
         ],
+    session_details={
+        '2009-2010': {'type': 'primary'},
+        '2009-2010 Special Session #1 (Transportation)': {
+            'type': 'special'},
+        }
     )
