@@ -77,6 +77,9 @@ class LACommitteeScraper(CommitteeScraper):
                     if comm_name.endswith(', Chairman'):
                         mtype = 'chairman'
                         comm_name = comm_name.replace(', Chairman', '')
+                    elif comm_name.endswith(', Co-Chairmain'):
+                        mtype = 'co-chairmain'
+                        comm_name = comm_name.replace(', Co-Chairmain', '')
                     elif comm_name.endswith(', Vice Chair'):
                         mtype = 'vice chair'
                         comm_name = comm_name.replace(', Vice Chair', '')
