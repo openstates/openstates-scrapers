@@ -34,10 +34,11 @@ def import_committees(state):
                                 ('votesmart_id', pymongo.ASCENDING)])
 
     types = {'upper': 'S'}
-    if state['lower_chamber_name'].startswith('House'):
-        types['lower'] = 'H'
-    else:
-        types['lower'] = 'S'
+    if 'lower_chamber_name' in state:
+        if state['lower_chamber_name'].startswith('House'):
+            types['lower'] = 'H'
+        else:
+            types['lower'] = 'S'
 
     for chamber, typeId in types.items():
         for committee in votesmart.committee.getCommitteesByTypeState(
@@ -87,10 +88,12 @@ def import_committee_ids(state):
 
 def import_legislator_ids(state):
     offices = {'upper': 9}
-    if state['lower_chamber_name'].startswith('House'):
-        offices['lower'] = 8
-    else:
-        offices['lower'] = 7
+
+    if 'lower_chamber_name' in state:
+        if state['lower_chamber_name'].startswith('House'):
+            offices['lower'] = 8
+        else:
+            offices['lower'] = 7
 
     current_term = state['terms'][-1]['name']
 
