@@ -10,7 +10,13 @@ class Command(BaseCommand):
             writer = csv.writer(f)
             writer.writerow(["State", "Chamber", "Committee Name",
                              "Subcommittee Name", "OSP ID", "Votesmart ID"])
-            for committee in db.committees.find():
+
+            if args:
+                query = {'state': {'$in': args}}
+            else:
+                query = {}
+
+            for committee in db.committees.find(query):
                 if committee.get('votesmart_id'):
                     continue
 
