@@ -20,22 +20,11 @@ from django.core.management.base import BaseCommand, make_option
 from django.contrib.redirects.models import Redirect
 from django.conf import settings
 
-class FiftyStateEncoder(json.JSONEncoder):
-    """
-    JSONEncoder that encodes datetime objects as Unix timestamps
-    and Mongo ObjectIDs as hex encoded strings.
-    """
-
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            return time.mktime(obj.timetuple())
-        if isinstance(obj, pymongo.objectid.ObjectId):
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
 
 def api_url(path):
     return ("http://openstates.sunlightlabs.com/api/v1/" + path +
             "/?apikey=" + settings.SUNLIGHT_SERVICES_KEY)
+
 
 def dump_json(state, filename):
     zip = zipfile.ZipFile(filename, 'w')
@@ -51,8 +40,6 @@ def dump_json(state, filename):
                                              bill['session'],
                                              bill['chamber'],
                                              bill['bill_id']))
-
-        print url
 
         zip.writestr(path, urllib2.urlopen(url).read())
 
