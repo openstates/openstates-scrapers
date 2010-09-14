@@ -20,6 +20,9 @@ class CACommitteeScraper(CommitteeScraper):
             for a in list_page.xpath('//ul/a'):
                 name = a.text.strip()
 
+                if re.search(r' X\d$', name):
+                    continue
+
                 if name.startswith('Joint'):
                     comm_chamber = 'joint'
                 else:
