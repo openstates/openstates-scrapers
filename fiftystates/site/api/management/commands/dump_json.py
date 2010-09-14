@@ -33,9 +33,7 @@ class APIValidator(validictory.SchemaValidator):
 
 
 def api_url(path):
-    return ("http://localhost:8000/api/v1/" +
-#    return ("http://openstates.sunlightlabs.com/api/v1/" +
-
+    return ("http://openstates.sunlightlabs.com/api/v1/" +
             urllib.quote(path) +
             "/?apikey=" + settings.SUNLIGHT_SERVICES_KEY)
 
