@@ -8,8 +8,8 @@
    "middle_name": {"type": "string"},
    "suffixes": {"type": "string"},
    "active": {"type": "boolean"},
-   "created_at": {"type": "string"},
-   "updated_at": {"type": "string"},
+   "created_at": {"type": "datetime"},
+   "updated_at": {"type": "datetime"},
    "roles": {"type": "array", "items": {"type": "object", "properties": {
      "chamber": {"type": "string", "enum": ["upper", "lower", "joint"],
          "optional": true},
@@ -21,12 +21,12 @@
      "subcommittee": {"type": ["string", "null"], "optional": true},
      "district": {"type": "string", "optional": true},
      "party": {"type": "string", "optional": true},
-     "start_date": {"type": ["string", "null"], "optional": true},
-     "end_date": {"type": ["string", "null"], "optional": true}
+     "start_date": {"type": ["datetime", "null"], "optional": true},
+     "end_date": {"type": ["datetime", "null"], "optional": true}
    }}},
    "sources": {"type": "array", "items": {"type": "object", "properties": {
      "url": {"type": "string"},
-     "retrieved": {"type": "string"}
+     "retrieved": {"type": "datetime"}
    }}},
    "votesmart_id": {"type": ["null", "string"], "optional": true},
    "nimsp_candidate_id": {"type": ["number", "null"], "optional": true},

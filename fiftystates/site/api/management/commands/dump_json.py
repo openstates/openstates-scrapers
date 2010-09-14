@@ -1,3 +1,4 @@
+import re
 import os
 import sys
 import time
@@ -21,6 +22,14 @@ import validictory
 from django.core.management.base import BaseCommand, make_option
 from django.contrib.redirects.models import Redirect
 from django.conf import settings
+
+
+class APIValidator(validictory.SchemaValidator):
+    def validate_type_datetime(self, val):
+        if not isinstance(val, basestring):
+            return False
+
+        return re.match(r'^\d{4}-\d\d-\d\d( \d\d:\d\d:\d\d)?$', val)
 
 
 def api_url(path):
@@ -61,7 +70,8 @@ def dump_json(state, filename):
                                              bill['bill_id']))
 
         response = urllib2.urlopen(url).read()
-        validictory.validate(json.loads(response), bill_schema)
+        validictory.validate(json.loads(response), bill_schema,
+                             validator_cls=APIValidator)
 
         zip.writestr(path, urllib2.urlopen(url).read())
 
@@ -70,7 +80,8 @@ def dump_json(state, filename):
         url = api_url("legislators/" + legislator['_id'])
 
         response = urllib2.urlopen(url).read()
-        validictory.validate(json.loads(response), legislator_schema)
+        validictory.validate(json.loads(response), legislator_schema,
+                             validator_cls=APIValidator)
 
         zip.writestr(path, response)
 
@@ -79,7 +90,8 @@ def dump_json(state, filename):
         url = api_url("committees/" + committee['_id'])
 
         response = urllib2.urlopen(url).read()
-        validictory.validate(json.loads(response), committee_schema)
+        validictory.validate(json.loads(response), committee_schema,
+                             validator_cls=APIValidator)
 
         zip.writestr(path, response)
 

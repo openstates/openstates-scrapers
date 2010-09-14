@@ -8,6 +8,8 @@
     "title": {"type": "string"},
     "type": {"type": "array", "items": {"type": "string"}},
     "alternate_titles": {"type": "array", "items": {"type": "string"}},
+    "created_at": {"type": "datetime"},
+    "updated_at": {"type": "datetime"},
     "versions": {"type": "array", "items": {"type": "object", "properties": {
         "name": {"type": "string"},
         "url": {"type": "string"},
@@ -20,14 +22,15 @@
     "sponsors": {"type": "array", "items": {"type": "object", "properties": {
         "type": {"type": "string"},
         "name": {"type": "string"},
-        "chamber": {"type": "string"},
+        "chamber": {"type": "string", "enum": ["upper", "lower",
+          "join"]},
         "leg_id": {"type": ["string", "null"],
           "pattern": "^[A-Z]{2}L\\d{6}$"}
     }}},
     "actions": {"type": "array", "items": {"type": "object", "properties": {
         "action": {"type": "string"},
         "actor": {"type": "string"},
-        "date": {"type": "string"},
+        "date": {"type": "datetime"},
         "type": {"type": "array", "items": {"type": "string", "enum":
             ["bill:introduced", "bill:passed", "bill:failed",
              "bill:veto_override:passed", "bill:veto_override:failed",
@@ -44,7 +47,7 @@
     "votes": {"type": "array", "items": {"type": "object", "properties": {
         "chamber": {"type": "string", "enum": ["upper", "lower"]},
         "committee": {"type": "string", "optional": "true"},
-        "date": {"type": "string"},
+        "date": {"type": "datetime"},
         "motion": {"type": "string"},
         "passed": {"type": "boolean"},
         "yes_count": {"type": "integer", "minimum": 0},
@@ -73,7 +76,7 @@
         },
         "sources": {"type": "array", "items": {"type": "object", "properties": {
             "url": {"type": "string"},
-            "retrieved": {"type": "string"}
+            "retrieved": {"type": "datetime"}
         }}},
         "type": {"type": "string", "optional": true,
                  "enum": ["passage", "reading", "reading:1", "reading:2",
@@ -81,7 +84,7 @@
     }}},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
         "url": {"type": "string"},
-        "retrieved": {"type": "string"}
+        "retrieved": {"type": "datetime"}
     }}}
  }
 }
