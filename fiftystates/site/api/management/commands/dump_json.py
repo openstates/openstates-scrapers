@@ -69,12 +69,12 @@ def upload(state, filename):
         year -= 1
 
     s3_bucket = 'data.openstates.sunlightlabs.com'
-    s3_path = '%s-%02d-%s.zip' % (year, month, state)
-    s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
     n = 1
+    s3_path = '%s-%02d-%s-r%d.zip' % (year, month, state, n)
+    s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
     while Redirect.objects.filter(new_path=s3_url).count():
-        s3_path = '%s-%02d-%s-update%s.zip' % (year, month, state, n)
+        s3_path = '%s-%02d-%s-r%d.zip' % (year, month, state, n)
         s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
         n += 1
 
