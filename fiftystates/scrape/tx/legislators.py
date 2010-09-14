@@ -76,7 +76,7 @@ class TXLegislatorScraper(LegislatorScraper):
                 if br.tail:
                     name = clean_committee_name(br.tail)
 
-                    if name.startswith('Appropriation-S/C on '):
+                    if name.startswith('Appropriations-S/C on '):
                         sub = name.replace('Appropriations-S/C on ', '')
                         leg.add_role('committee member', term,
                                      chamber=chamber,
