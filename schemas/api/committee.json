@@ -4,7 +4,7 @@
     "id": {"type": "string", "pattern": "^[A-Z]{2}C\\d{6}$"},
     "committee": {"type": "string"},
     "subcommittee": {"type": ["null", "string"]},
-    "state": {"type": "string", "minLength": 2, "maxLength": 2},
+    "state": {"type": "string", "pattern": "^[a-z]{2}$"},
     "chamber": {"type": "string", "enum": ["upper", "lower", "joint"]},
     "parent_id": {"type": ["string", "null"],
       "pattern": "^[A-Z]{2}C\\d{6}$", "optional": true},

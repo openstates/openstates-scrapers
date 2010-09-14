@@ -2,7 +2,7 @@
  "type": "object",
  "properties": {
    "name": {"type": "string"},
-   "abbreviation": {"type": "string", "minLength": 2, "maxLength": 2},
+   "abbreviation": {"type": "string", "pattern": "^[a-z]{2}$"},
    "legislature_name": {"type": "string"},
    "lower_chamber_name": {"type": "string"},
    "upper_chamber_name": {"type": "string"},

@@ -1,7 +1,7 @@
 {"description": "API bill response",
  "type": "object",
  "properties": {
-    "state": {"type": "string", "minLength": 2, "maxLength": 2},
+    "state": {"type": "string", "pattern": "^[a-z]{2}$"},
     "session": {"type": "string"},
     "chamber": {"type": "string", "enum": ["upper", "lower"]},
     "bill_id": {"type": "string"},
