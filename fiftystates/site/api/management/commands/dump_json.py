@@ -16,6 +16,7 @@ from fiftystates.backend import db
 import pymongo
 import boto
 from boto.s3.key import Key
+import validictory
 
 from django.core.management.base import BaseCommand, make_option
 from django.contrib.redirects.models import Redirect
@@ -23,7 +24,9 @@ from django.conf import settings
 
 
 def api_url(path):
-    return ("http://openstates.sunlightlabs.com/api/v1/" +
+    return ("http://localhost:8000/api/v1/" +
+#    return ("http://openstates.sunlightlabs.com/api/v1/" +
+
             urllib.quote(path) +
             "/?apikey=" + settings.SUNLIGHT_SERVICES_KEY)
 
@@ -31,7 +34,21 @@ def api_url(path):
 def dump_json(state, filename):
     zip = zipfile.ZipFile(filename, 'w')
 
-    base_url = "http://openstates.sunlightlabs.com/api/v1/"
+    cwd = os.path.split(__file__)[0]
+
+    with open(os.path.join(cwd,
+                           "../../../../../schemas/api/bill.json")) as f:
+        bill_schema = json.load(f)
+
+    with open(os.path.join(cwd,
+                           "../../../../../schemas/"
+                           "api/legislator.json")) as f:
+        legislator_schema = json.load(f)
+
+    with open(os.path.join(cwd,
+                           "../../../../../schemas/"
+                           "api/committee.json")) as f:
+        committee_schema = json.load(f)
 
     for bill in db.bills.find({'state': state}):
         path = "api/%s/%s/%s/bills/%s" % (state, bill['session'],
@@ -43,19 +60,28 @@ def dump_json(state, filename):
                                              bill['chamber'],
                                              bill['bill_id']))
 
+        response = urllib2.urlopen(url).read()
+        validictory.validate(json.loads(response), bill_schema)
+
         zip.writestr(path, urllib2.urlopen(url).read())
 
     for legislator in db.legislators.find({'state': state}):
         path = 'api/legislators/%s' % legislator['_id']
         url = api_url("legislators/" + legislator['_id'])
 
-        zip.writestr(path, urllib2.urlopen(url).read())
+        response = urllib2.urlopen(url).read()
+        validictory.validate(json.loads(response), legislator_schema)
+
+        zip.writestr(path, response)
 
     for committee in db.committees.find({'state': state}):
         path = 'api/committees/%s' % committee['_id']
         url = api_url("committees/" + committee['_id'])
 
-        zip.writestr(path, urllib2.urlopen(url).read())
+        response = urllib2.urlopen(url).read()
+        validictory.validate(json.loads(response), committee_schema)
+
+        zip.writestr(path, response)
 
     zip.close()
 
