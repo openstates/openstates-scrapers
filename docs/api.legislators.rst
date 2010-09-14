@@ -23,15 +23,18 @@ All legislator methods return Legislator objects consisting of the following fie
   * ``party``
   * ``active``
   * ``photo_url``
-  * ``roles``: A list of objects representing roles this legislator has served in. Each object will contain at least the following fields:
+  * ``roles``: A list of objects representing roles this legislator
+    has held. Each role will contain at least the ``type`` and
+    ``term`` roles:
 
+    * ``type`` the type of role - e.g. "member", "committee member",
+      "Lt. Governor"
+    * ``term`` the term the role was held during
     * ``chamber``
     * ``district``
     * ``party``
-    * ``role``   (description of role)
+    * ``committee``
     * ``term``
-    * ``start_date``  (blank if not known)
-    * ``end_date``    (blank if not known)
   * ``sources``
     List of sources that this data was collected from.
 
