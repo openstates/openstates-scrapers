@@ -29,7 +29,7 @@
      "retrieved": {"type": "datetime"}
    }}},
    "votesmart_id": {"type": ["null", "string"], "optional": true},
-   "nimsp_candidate_id": {"type": ["number", "null"], "optional": true},
+   "nimsp_candidate_id": {"type": ["integer", "null"], "optional": true},
    "state": {"type": "string", "optional": true},
    "district": {"type": "string", "optional": true},
    "chamber": {"type": "string", "optional": true},
