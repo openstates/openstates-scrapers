@@ -9,9 +9,9 @@ import lxml.html
 class PACommitteeScraper(CommitteeScraper):
     state = 'pa'
 
-    def scrape(self, chamber, year):
-        if year != '2009':
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, term):
+        if term != '2009-2010':
+            raise NoDataForPeriod(term)
 
         if chamber == 'upper':
             url = ('http://www.legis.state.pa.us/cfdocs/legis/'
