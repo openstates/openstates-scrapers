@@ -150,6 +150,13 @@ def convert_timestamps(obj):
         for source in vote.get('sources', []):
             source['retrieved'] = timestamp_to_dt(source['retrieved'])
 
+    for details in obj.get('session_details', {}).values():
+        if 'start_date' in details:
+            details['start_date'] = timestamp_to_dt(details['start_date'])
+
+        if 'end_date' in details:
+            details['end_date'] = timestamp_to_dt(details['end_date'])
+
     if 'date' in obj:
         obj['date'] = timestamp_to_dt(obj['date'])
 
