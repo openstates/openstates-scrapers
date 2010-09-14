@@ -21,7 +21,8 @@
         "type": {"type": "string"},
         "name": {"type": "string"},
         "chamber": {"type": "string"},
-        "leg_id": {"type": ["string", "null"]}
+        "leg_id": {"type": ["string", "null"],
+          "pattern": "^[A-Z]{2}L\\d{6}$"}
     }}},
     "actions": {"type": "array", "items": {"type": "object", "properties": {
         "action": {"type": "string"},
@@ -49,21 +50,24 @@
         "yes_count": {"type": "integer", "minimum": 0},
         "yes_votes": {"type": "array", "items":
           {"type": "object", "properties": {
-            "leg_id": {"type": ["string", "null"]},
+            "leg_id": {"type": ["string", "null"],
+              "pattern": "^[A-Z]{2}L\\d{6}$"},
             "name": {"type": "string"}
           }}
         },
         "no_count": {"type": "integer", "minimum": 0},
         "no_votes": {"type": "array", "items":
           {"type": "object", "properties": {
-            "leg_id": {"type": ["string", "null"]},
+            "leg_id": {"type": ["string", "null"],
+              "pattern": "^[A-Z]{2}L\\d{6}$"},
             "name": {"type": "string"}
           }}
         },
         "other_count": {"type": "integer", "minimum": 0},
         "other_votes": {"type": "array", "items":
           {"type": "object", "properties": {
-            "leg_id": {"type": ["string", "null"]},
+            "leg_id": {"type": ["string", "null"],
+              "pattern": "^[A-Z]{2}L\\d{6}$"},
             "name": {"type": "string"}
           }}
         },
