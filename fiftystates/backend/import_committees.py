@@ -106,10 +106,12 @@ def import_committees(state, data_dir):
             if found.count() > 1:
                 print "Too many matches for %s" % member['name'].encode(
                     'ascii', 'ignore')
+                member['leg_id'] = None
                 continue
             elif found.count() == 0:
                 print "No matches for %s" % member['name'].encode(
                     'ascii', 'ignore')
+                member['leg_id'] = None
                 continue
 
             legislator = found[0]
