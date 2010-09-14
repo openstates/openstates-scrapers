@@ -28,10 +28,7 @@ class LALegislatorScraper(LegislatorScraper):
                 name = a.text.strip().decode('utf8')
                 leg_url = a.attrib['href']
                 if chamber == 'upper':
-                    try:
-                        self.scrape_senator(name, term, leg_url)
-                    except Exception as e:
-                        print e
+                    self.scrape_senator(name, term, leg_url)
                 else:
                     self.scrape_rep(name, term, leg_url)
 
@@ -75,8 +72,11 @@ class LALegislatorScraper(LegislatorScraper):
 
             district = re.search(r'District (\d+)', district).group(1)
 
-            party = page.xpath(
-                "//b[text() = 'Party']")[0].getnext().tail.strip()
+            try:
+                party = page.xpath(
+                    "//b[text() = 'Party']")[0].getnext().tail.strip()
+            except IndexError:
+                party = 'N/A'
 
             if party == 'No Party (Independent)':
                 party = 'Independent'
