@@ -1,14 +1,18 @@
 {"description": "API committee response",
  "type": "object",
  "properties": {
+    "id": {"type": "string", "pattern": "^[A-Z]{2}C\\d{6}$"},
     "committee": {"type": "string"},
     "subcommittee": {"type": ["null", "string"]},
     "state": {"type": "string", "minLength": 2, "maxLength": 2},
     "chamber": {"type": "string", "enum": ["upper", "lower", "joint"]},
+    "parent_id": {"type": ["string", "null"],
+      "pattern": "^[A-Z]{2}C\\d{6}$", "optional": true},
     "members": {"type": "array", "items": {"type": "object", "properties": {
         "role": {"type": "string"},
         "name": {"type": "string"},
-        "leg_id": {"type": ["string", "null"]}
+        "leg_id": {"type": ["string", "null"],
+          "pattern": "^[A-Z]{2}L\\d{6}$"}
     }}},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
         "url": {"type": "string"},
