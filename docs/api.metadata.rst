@@ -57,39 +57,63 @@ http://openstates.sunlightlabs.com/api/v1/metadata/ca/?apikey=YOUR_API_KEY
 
 ::
 
-    {
-        "lower_chamber_title": "Assemblymember",
-        "lower_chamber_name": "Assembly",
-        "upper_chamber_title": "Senator",
-        "terms": [
-            {
-                "end_year": 2010,
-                "start_year": 2009,
-                "+start_date": 1228089600.0,
-                "name": "20092010",
-                "sessions": [
-                    "20092010",
-                    "20092010 Special Session 1",
-                    "20092010 Special Session 2",
-                    "20092010 Special Session 3",
-                    "20092010 Special Session 4",
-                    "20092010 Special Session 5",
-                    "20092010 Special Session 6",
-                    "20092010 Special Session 7",
-                    "20092010 Special Session 8"
-                ]
-            }
-        ],
-        "name": "California",
-        "upper_chamber_term": 4,
-        "abbreviation": "ca",
-        "upper_chamber_name": "Senate",
-        "session_details": {
-            "20092010": {
-                "start_date": 1228089600.0
-            }
-        },
-        "legislature_name": "California State Legislature",
-        "lower_chamber_term": 2
-    }
-
+ {
+     "lower_chamber_title": "Assemblymember",
+     "lower_chamber_name": "Assembly",
+     "upper_chamber_title": "Senator",
+     "terms": [
+         {
+             "end_year": 2010,
+             "start_year": 2009,
+             "+start_date": 1228089600.0,
+             "name": "20092010",
+             "sessions": [
+                 "20092010",
+                 "20092010 Special Session 1",
+                 "20092010 Special Session 2",
+                 "20092010 Special Session 3",
+                 "20092010 Special Session 4",
+                 "20092010 Special Session 5",
+                 "20092010 Special Session 6",
+                 "20092010 Special Session 7",
+                 "20092010 Special Session 8"
+             ]
+         }
+     ],
+     "name": "California",
+     "upper_chamber_term": 4,
+     "abbreviation": "ca",
+     "upper_chamber_name": "Senate",
+     "session_details": {
+         "20092010 Special Session 5": {
+             "type": "special"
+         },
+         "20092010 Special Session 4": {
+             "type": "special"
+         },
+         "20092010 Special Session 7": {
+             "type": "special"
+         },
+         "20092010 Special Session 6": {
+             "type": "special"
+         },
+         "20092010 Special Session 1": {
+             "type": "special"
+         },
+         "20092010 Special Session 3": {
+             "type": "special"
+         },
+         "20092010 Special Session 2": {
+             "type": "special"
+         },
+         "20092010": {
+             "type": "primary",
+             "start_date": "2008-12-01 00:00:00"
+         },
+         "20092010 Special Session 8": {
+             "type": "special"
+         }
+     },
+     "legislature_name": "California State Legislature",
+     "lower_chamber_term": 2
+ }
