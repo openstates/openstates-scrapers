@@ -4,9 +4,9 @@
     "_type": {"type": "string", "enum":["person"]},
     "full_name": {"type": "string", "minLength": 1},
     "state": {"type": "string", "minLength": 2, "maxLength": 2},
-    "first_name": {"type": "string"},
+    "first_name": {"type": "string", "blank": true},
     "middle_name": {"type": "string", "blank": true},
-    "last_name": {"type": "string"},
+    "last_name": {"type": "string", "blank": true},
     "suffixes": {"type": "string", "optional": "true", "blank": true},
     "roles": {"type": "array", "items": {"type": "object", "properties": {
         "chamber": {"type": "string", "enum": ["upper", "lower", "joint"],
