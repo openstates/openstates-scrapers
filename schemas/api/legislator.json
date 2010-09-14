@@ -1,0 +1,38 @@
+{"description": "legislator API response",
+ "type": "object",
+ "properties": {
+   "id": {"type": "string"},
+   "full_name": {"type": "string"},
+   "first_name": {"type": "string"},
+   "last_name": {"type": "string"},
+   "middle_name": {"type": "string"},
+   "suffixes": {"type": "string"},
+   "active": {"type": "boolean"},
+   "votesmart_id": {"type": ["null", "string"]},
+   "nimsp_candidate_id": {"type": ["number", "null"]},
+   "created_at": {"type": "string"},
+   "updated_at": {"type": "string"},
+   "roles": {"type": "array", "items": {"type": "object", "properties": {
+     "chamber": {"type": "string", "enum": ["upper", "lower", "joint"],
+         "optional": true},
+     "state": {"type": "string", "minLength": 2, "maxLength": 2,
+       "optional": true},
+     "term": {"type": "string"},
+     "type": {"type": "string"},
+     "committee": {"type": "string", "optional": true},
+     "subcommittee": {"type": "string", "optional": true},
+     "district": {"type": "string", "optional": true},
+     "party": {"type": "string", "optional": true},
+     "start_date": {"type": ["string", "null"]},
+     "end_date": {"type": ["string", "null"]}
+   }}},
+   "sources": {"type": "array", "items": {"type": "object", "properties": {
+     "url": {"type": "string"},
+     "retrieved": {"type": "string"}
+   }}},
+   "state": {"type": "string", "optional": true},
+   "district": {"type": "string", "optional": true},
+   "chamber": {"type": "string", "optional": true},
+   "party": {"type": "string", "optional": true},
+   "photo_url": {"type": "string", "optional": true}
+}}
