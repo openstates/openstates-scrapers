@@ -4,6 +4,7 @@ import time
 import zipfile
 import datetime
 import urllib2
+import urllib
 
 try:
     import json
@@ -22,7 +23,8 @@ from django.conf import settings
 
 
 def api_url(path):
-    return ("http://openstates.sunlightlabs.com/api/v1/" + path +
+    return ("http://openstates.sunlightlabs.com/api/v1/" +
+            urllib.quote(path) +
             "/?apikey=" + settings.SUNLIGHT_SERVICES_KEY)
 
 
