@@ -1,12 +1,20 @@
+import os
+
 from fiftystates import settings
 
 import pymongo
 import gridfs
 
-conn = pymongo.Connection(getattr(settings, 'MONGO_HOST', 'localhost'),
-                          getattr(settings, 'MONGO_PORT', 27017))
+host = os.environ.get('OPENSTATES_MONGO_HOST',
+                      getattr(settings, 'MONGO_HOST', 'localhost'))
+port = int(os.environ.get('OPENSTATES_MONGO_PORT',
+                      getattr(settings, 'MONGO_PORT', 27017)))
+db_name = os.environ.get('OPENSTATES_MONGO_DATABASE',
+                         getattr(settings, 'MONGO_DATABASE',
+                                 'fiftystates'))
 
-db = conn[getattr(settings, 'MONGO_DATABASE', 'fiftystates')]
+conn = pymongo.Connection(host, port)
+db = conn[db_name]
 
 fs = gridfs.GridFS(db, collection="documents")
 
