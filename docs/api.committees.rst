@@ -21,7 +21,10 @@ Committee methods return objects with the following fields:
 ``committee``
     Name of committee.
 ``subcommittee``
-    Name of subcommittee (null if record describes a top level committee).
+    Name of subcommittee (null if record describes a top level
+    committee).
+``parent_id``
+    For subcommittees, the committee ID of its parent. ``null`` otherwise.
 ``members``
     Listing of all committee members.
 
