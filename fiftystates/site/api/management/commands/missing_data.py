@@ -20,9 +20,10 @@ class Command(BaseCommand):
                 if committee.get('votesmart_id'):
                     continue
 
-                writer.writerow([committee['state'],
-                                 committee['chamber'],
-                                 committee['committee'],
-                                 committee['subcommittee'],
-                                 committee['_id'],
-                                 ""])
+                writer.writerow([
+                    committee['state'],
+                    committee['chamber'],
+                    committee['committee'].encode('ascii', 'replace'),
+                    committee['subcommittee'].encode('ascii', 'replace'),
+                    committee['_id'],
+                    ""])
