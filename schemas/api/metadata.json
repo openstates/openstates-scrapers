@@ -22,8 +22,8 @@
      "additionalProperties": { "type": "object",
        "properties": {
          "type": {"type": "string"},
-         "start_date": {"type": "string", "optional": true},
-         "end_date": {"type": "string", "optional": true}
+         "start_date": {"type": "datetime", "optional": true},
+         "end_date": {"type": "datetime", "optional": true}
        }
      }
    }
