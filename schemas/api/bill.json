@@ -1,0 +1,83 @@
+{"description": "API bill response",
+ "type": "object",
+ "properties": {
+    "state": {"type": "string", "minLength": 2, "maxLength": 2},
+    "session": {"type": "string"},
+    "chamber": {"type": "string", "enum": ["upper", "lower"]},
+    "bill_id": {"type": "string"},
+    "title": {"type": "string"},
+    "type": {"type": "array", "items": {"type": "string"}},
+    "alternate_titles": {"type": "array", "items": {"type": "string"}},
+    "versions": {"type": "array", "items": {"type": "object", "properties": {
+        "name": {"type": "string"},
+        "url": {"type": "string"},
+        "title": {"type": "string", "optional": true}
+    }}},
+    "documents": {"type": "array", "items": {"type": "object", "properties": {
+        "name": {"type": "string"},
+        "url": {"type": "string"}
+    }}},
+    "sponsors": {"type": "array", "items": {"type": "object", "properties": {
+        "type": {"type": "string"},
+        "name": {"type": "string"},
+        "chamber": {"type": "string"},
+        "leg_id": {"type": ["string", "null"]}
+    }}},
+    "actions": {"type": "array", "items": {"type": "object", "properties": {
+        "action": {"type": "string"},
+        "actor": {"type": "string"},
+        "date": {"type": "string"},
+        "type": {"type": "array", "items": {"type": "string", "enum":
+            ["bill:introduced", "bill:passed", "bill:failed",
+             "bill:veto_override:passed", "bill:veto_override:failed",
+             "governor:received", "governor:signed", "governor:vetoed",
+             "governor:vetoed:line-item",
+             "amendment:introduced", "amendment:passed", "amendment:failed",
+             "amendment:tabled", "amendment:amended", "amendment:withdrawn",
+             "committee:referred", "committee:failed",
+             "committee:passed", "committee:passed:favorable",
+             "committee:passed:unfavorable",
+             "other"]
+             }}
+    }}},
+    "votes": {"type": "array", "items": {"type": "object", "properties": {
+        "chamber": {"type": "string", "enum": ["upper", "lower"]},
+        "committee": {"type": "string", "optional": "true"},
+        "date": {"type": "string"},
+        "motion": {"type": "string"},
+        "passed": {"type": "boolean"},
+        "yes_count": {"type": "integer", "minimum": 0},
+        "yes_votes": {"type": "array", "items":
+          {"type": "object", "properties": {
+            "leg_id": {"type": ["string", "null"]},
+            "name": {"type": "string"}
+          }}
+        },
+        "no_count": {"type": "integer", "minimum": 0},
+        "no_votes": {"type": "array", "items":
+          {"type": "object", "properties": {
+            "leg_id": {"type": ["string", "null"]},
+            "name": {"type": "string"}
+          }}
+        },
+        "other_count": {"type": "integer", "minimum": 0},
+        "other_votes": {"type": "array", "items":
+          {"type": "object", "properties": {
+            "leg_id": {"type": ["string", "null"]},
+            "name": {"type": "string"}
+          }}
+        },
+        "sources": {"type": "array", "items": {"type": "object", "properties": {
+            "url": {"type": "string"},
+            "retrieved": {"type": "string"}
+        }}},
+        "type": {"type": "string", "optional": true,
+                 "enum": ["passage", "reading", "reading:1", "reading:2",
+                          "reading:3", "veto_override", "amendment", "other"]}
+    }}},
+    "sources": {"type": "array", "items": {"type": "object", "properties": {
+        "url": {"type": "string"},
+        "retrieved": {"type": "string"}
+    }}}
+ }
+}
