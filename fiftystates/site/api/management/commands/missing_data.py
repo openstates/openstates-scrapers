@@ -24,6 +24,7 @@ class Command(BaseCommand):
                     committee['state'],
                     committee['chamber'],
                     committee['committee'].encode('ascii', 'replace'),
-                    committee['subcommittee'].encode('ascii', 'replace'),
+                    commitee.get('subcommittee', '').encode(
+                        'ascii', 'replace'),
                     committee['_id'],
                     ""])
