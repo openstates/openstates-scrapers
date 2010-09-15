@@ -53,4 +53,8 @@ class CACommitteeScraper(CommitteeScraper):
                 else:
                     mtype = 'member'
 
+                if not name:
+                    self.warning("Empty member name")
+                    continue
+
                 committee.add_member(name, mtype)
