@@ -93,6 +93,10 @@ class CABillScraper(BillScraper):
                                    subject=[subject],
                                    type=type)
 
+            if not title:
+                self.warning("Couldn't find title for %s, skipping" % bill_id)
+                continue
+
             fsbill['title'] = title
             fsbill['short_title'] = short_title
             fsbill['type'] = type
