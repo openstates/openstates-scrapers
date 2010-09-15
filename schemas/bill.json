@@ -11,7 +11,7 @@
     "alternate_titles": {"type": "array", "items": {"type": "string"}},
     "versions": {"type": "array", "items": {"type": "object", "properties": {
         "name": {"type": "string"},
-        "url": {"type": "string"},
+        "url": {"type": "string", "blank": true},
         "title": {"type": "string", "optional": true}
     }}},
     "documents": {"type": "array", "items": {"type": "object", "properties": {
