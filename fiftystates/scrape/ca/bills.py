@@ -186,6 +186,10 @@ class CABillScraper(BillScraper):
                                 '(Urgency Clause)', motion)
                 motion = re.sub(r'\s+', ' ', motion)
 
+                if not motion:
+                    self.warning("Got blank motion on vote for %s" % bill_id)
+                    continue
+
                 fsvote = Vote(vote_chamber,
                               vote.vote_date_time,
                               motion,
