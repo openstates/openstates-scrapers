@@ -11,7 +11,8 @@ Legislator Fields
 
 All legislator methods return Legislator objects consisting of the following fields:
 
-  * ``leg_id``: A permanent, unique identifier for this legislator within the Fifty State Project system.
+  * ``leg_id``: A permanent, unique identifier for this legislator
+    within the Open State Project system.
   * ``full_name``
   * ``first_name``
   * ``last_name``

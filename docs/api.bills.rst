@@ -36,7 +36,7 @@ Both methods return bill objects consisting of the following fields:
 ``sponsors``
     A list of sponsors of this bill. Each sponsor will be an object with at least the following fields:
 
-    * ``leg_id``: A Fifty State Project legislator ID (see :ref:``legislator lookup <leg-lookup>``)
+    * ``leg_id``: An Open State Project legislator ID (see :ref:``legislator lookup <leg-lookup>``)
     * ``full_name``: The name of the sponsor
     * ``type``: The type of sponsorship (state specific, examples include 'Primary Sponsor', 'Co-Sponsor')
 ``votes``
