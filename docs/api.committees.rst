@@ -15,7 +15,7 @@ Committee methods return objects with the following fields:
 ``id``
     Open State Project Committee ID.
 ``chamber``
-    Associated chamber (upper or lower).
+    Associated chamber (``upper``, ``lower``, or ``joint``).
 ``state``
     State abbreviation (eg. ny).
 ``committee``
@@ -123,7 +123,7 @@ Parameters
 ``subcommittee``
     name of a subcommittee
 ``chamber``
-    filter results by given chamber (upper or lower)
+    filter results by given chamber (``upper``, ``lower`` or ``joint``)
 ``state``
     return committees for a given state (eg. ny)
 
