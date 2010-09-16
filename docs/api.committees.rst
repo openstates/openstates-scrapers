@@ -26,7 +26,7 @@ Committee methods return objects with the following fields:
 ``parent_id``
     For subcommittees, the committee ID of its parent. ``null`` otherwise.
 ``members``
-    Listing of all committee members.
+    Listing of the current committee membership.
 
     ``legislator``
         Name of legislator (as captured from source).
