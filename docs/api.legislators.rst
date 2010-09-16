@@ -17,12 +17,10 @@ All legislator methods return Legislator objects consisting of the following fie
   * ``last_name``
   * ``middle_name``
   * ``suffixes``
-  * ``state``
-  * ``chamber``
-  * ``district``
-  * ``party``
-  * ``active``
   * ``photo_url``
+  * ``active`` Whether this legislator is currently serving
+  * ``state``, ``chamber``, ``district``, ``party`` (only present if the legislator is
+    currently serving)
   * ``roles``: A list of objects representing roles this legislator
     has held. Each role will contain at least the ``type`` and
     ``term`` roles:
