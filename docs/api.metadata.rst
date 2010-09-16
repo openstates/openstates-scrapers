@@ -40,7 +40,9 @@ Metadata Fields
     If present will be a dictionary with keys corresponding to ``sessions`` and values are dictionaries
     of extra metadata about a session.
 
-    Fields that may be present include ``start_date`` and ``end_date``.
+    Fields that may be present include ``start_date`` and
+    ``end_date``, as well as ``type`` indicating whether the session
+    was a normally scheduled or special session.
 
 
 
