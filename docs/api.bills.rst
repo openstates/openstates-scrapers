@@ -15,7 +15,7 @@ Both methods return bill objects consisting of the following fields:
 ``title``
     The title given to the bill by the state legislature.
 ``state``
-    The state this bill is from.
+    The 2-letter abbreviation of the state this bill is from (e.g. ``ny``).
 ``session``
     The session this bill was introduced in.
 ``chamber``

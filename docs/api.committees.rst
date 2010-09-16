@@ -17,7 +17,7 @@ Committee methods return objects with the following fields:
 ``chamber``
     Associated chamber (``upper``, ``lower``, or ``joint``).
 ``state``
-    State abbreviation (eg. ny).
+    State abbreviation (eg. ``ny``).
 ``committee``
     Name of committee.
 ``subcommittee``
@@ -125,7 +125,7 @@ Parameters
 ``chamber``
     filter results by given chamber (``upper``, ``lower`` or ``joint``)
 ``state``
-    return committees for a given state (eg. ny)
+    return committees for a given state (eg. ``ny``)
 
 URL Format
 ^^^^^^^^^^
