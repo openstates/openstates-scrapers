@@ -23,7 +23,11 @@ Both methods return bill objects consisting of the following fields:
 ``bill_id``
     The identifier given to this bill by the state legislature (e.g. 'AB6667')
 ``type``
-    Bill type (see http://code.google.com/p/openstates/wiki/Categorization#Bills for details)
+    Bill type (see
+    http://code.google.com/p/openstates/wiki/Categorization#Bills for
+    details)
+``alternate_titles``
+    A list of alternate titles that this bill is/was known by, if available.
 ``updated_at``
     Timestamp representing when bill was last updated in our system.
 ``actions``
@@ -66,7 +70,8 @@ Both methods return bill objects consisting of the following fields:
     * ``retrieved``: time at which the source was last retrieved
 
 .. note::
-    ``actions``, ``sponsors``, ``votes``, ``versions``, ``documents``, and ``sources`` are not returned via the search API.
+    ``actions``, ``sponsors``, ``votes``, ``versions``, ``documents``,
+    ``alternate_title`` and ``sources`` are not returned via the search API.
 
 .. note::
     Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See :ref:`extrafields`)
