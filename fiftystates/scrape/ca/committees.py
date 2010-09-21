@@ -19,11 +19,13 @@ class CACommitteeScraper(CommitteeScraper):
             self.scrape_lower_committees(term)
 
     def scrape_upper_committees(self, term):
-        urls = [
+        types = {
+            'standing':
             'http://www.sen.ca.gov/~newsen/committees/standing.htp',
-            'http://www.sen.ca.gov/~newsen/committees/Select.HTP']
+            'select':
+            'http://www.sen.ca.gov/~newsen/committees/Select.HTP'}
 
-        for url in urls:
+        for type, url in types.items():
             with self.urlopen(url) as page:
                 page = lxml.html.fromstring(page)
                 page.make_links_absolute(url)
@@ -31,7 +33,14 @@ class CACommitteeScraper(CommitteeScraper):
                 search = '//a[contains(@href, "PROFILE.HTM")]'
                 for a in page.xpath(search):
                     name = a.text.strip()
+
+                    if type == 'select':
+                        name = 'Select Committee on ' + name
+                    else:
+                        name = 'Committee on ' + name
+
                     comm = Committee('upper', name)
+                    comm['type'] = type
                     self.scrape_upper_committee_members(
                         comm, a.attrib['href'])
                     self.save_committee(comm)
