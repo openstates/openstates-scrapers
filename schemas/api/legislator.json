@@ -34,5 +34,5 @@
    "district": {"type": "string", "optional": true},
    "chamber": {"type": "string", "optional": true},
    "party": {"type": "string", "optional": true},
-   "photo_url": {"type": "string", "optional": true}
+   "photo_url": {"type": "string", "optional": true, "blank": true}
 }}
