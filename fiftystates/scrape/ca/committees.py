@@ -1,4 +1,5 @@
 import re
+import urllib2
 
 from fiftystates.scrape.committees import CommitteeScraper, Committee
 
@@ -9,9 +10,55 @@ class CACommitteeScraper(CommitteeScraper):
     state = 'ca'
 
     def scrape(self, chamber, term):
-        if chamber != 'lower' or term != '20092010':
+        if term != '20092010':
             return
 
+        if chamber == 'upper':
+            self.scrape_upper_committees(term)
+        else:
+            self.scrape_lower_committees(term)
+
+    def scrape_upper_committees(self, term):
+        urls = [
+            'http://www.sen.ca.gov/~newsen/committees/standing.htp',
+            'http://www.sen.ca.gov/~newsen/committees/Select.HTP']
+
+        for url in urls:
+            with self.urlopen(url) as page:
+                page = lxml.html.fromstring(page)
+                page.make_links_absolute(url)
+
+                search = '//a[contains(@href, "PROFILE.HTM")]'
+                for a in page.xpath(search):
+                    name = a.text.strip()
+                    comm = Committee('upper', name)
+                    self.scrape_upper_committee_members(
+                        comm, a.attrib['href'])
+                    self.save_committee(comm)
+
+    def scrape_upper_committee_members(self, comm, url):
+        # Senate committee pages are being served up with
+        # an incorrect Content-Length header that confuses
+        # httplib/httplib2, so fall back to urllib2
+        page = urllib2.urlopen(url).read()
+        page = lxml.html.fromstring(page)
+
+        for a in page.xpath('//a[contains(@href, "district")]'):
+            name = a.text.strip()
+            name = name.replace('Senator ', '')
+
+            if name.endswith(' (Chair)'):
+                mtype = 'chair'
+                name = name.replace(' (Chair)', '')
+            elif name.endswith(' (Vice-Chair)'):
+                mtype = 'vice-chair'
+                name = name.replace(' (Vice-Chair)', '')
+            else:
+                mtype = 'member'
+
+            comm.add_member(name, mtype)
+
+    def scrape_lower_committees(self, term):
         list_url = 'http://www.assembly.ca.gov/acs/comDir.asp'
         with self.urlopen(list_url) as list_page:
             list_page = lxml.html.fromstring(list_page)
@@ -29,10 +76,11 @@ class CACommitteeScraper(CommitteeScraper):
                     comm_chamber = 'lower'
 
                 comm = Committee(comm_chamber, a.text.strip())
-                self.scrape_committee_members(comm, a.attrib['href'])
+                self.scrape_lower_committee_members(comm,
+                                                    a.attrib['href'])
                 self.save_committee(comm)
 
-    def scrape_committee_members(self, committee, url):
+    def scrape_lower_committee_members(self, committee, url):
         # break out of frame
         url = url.replace('newcomframeset.asp', 'welcome.asp')
 
