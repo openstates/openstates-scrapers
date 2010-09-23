@@ -13,10 +13,12 @@ except:
     import simplejson as json
 
 from fiftystates import settings
+from fiftystates.utils import keywordize
 from fiftystates.backend import db
 from fiftystates.backend.names import get_legislator_id
-from fiftystates.backend.utils import (insert_with_id, keywordize,
-                                       update, prepare_obj, base_arg_parser)
+from fiftystates.backend.utils import (insert_with_id,
+                                       update, prepare_obj,
+                                       base_arg_parser)
 
 import pymongo
 import argparse

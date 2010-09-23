@@ -6,7 +6,6 @@ import datetime
 
 from fiftystates.backend import db
 
-import nltk
 import argparse
 import name_tools
 
@@ -14,6 +13,7 @@ base_arg_parser = argparse.ArgumentParser(add_help=False)
 base_arg_parser.add_argument('state', type=str,
                              help=('the two-letter abbreviation of the '
                                    'state to import'))
+
 
 def _get_property_dict(schema):
     """ given a schema object produce a nested dictionary of fields """
@@ -31,28 +31,6 @@ for _type in ('bill', 'person', 'committee', 'metadata', 'vote'):
                          '../../schemas/%s.json' % _type)
     schema = json.load(open(fname))
     standard_fields[_type] = _get_property_dict(schema)
-
-
-def keywordize(str):
-    """
-    Splits a string into words, removes common stopwords, stems and removes
-    duplicates.
-    """
-    sents = nltk.tokenize.sent_tokenize(str)
-
-    words = []
-    for sent in sents:
-        words.extend(nltk.tokenize.word_tokenize(sent))
-
-    stemmer = nltk.stem.porter.PorterStemmer()
-    stop_words = nltk.corpus.stopwords.words("english")
-    words = [stemmer.stem(word.lower()) for word in words if
-             (word.isalpha() or word.isdigit()) and
-             word.lower() not in stop_words]
-    words = set(words)
-
-    return words
-
 
 def insert_with_id(obj):
     """

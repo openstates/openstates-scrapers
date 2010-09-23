@@ -4,6 +4,7 @@ import datetime
 from fiftystates.backend import db
 from fiftystates.site import search
 from fiftystates.site.geo.models import District
+from fiftystates.utils import keywordize
 
 from django.http import HttpResponse
 
@@ -122,7 +123,7 @@ class BillSearchHandler(FiftyStateHandler):
         # process full-text query
         query = request.GET.get('q')
         if query:
-            keywords = list(search.keywordize(query))
+            keywords = list(keywordize(query))
             _filter['_keywords'] = {'$all': keywords}
 
         # process search_window
