@@ -195,3 +195,31 @@ def prepare_obj(obj):
         split_name(obj)
 
     return make_plus_fields(obj)
+
+
+__committee_ids = {}
+
+
+def get_committee_id(state, chamber, committee):
+    key = (state, chamber, committee)
+    if key in __committee_ids:
+        return __committee_ids[key]
+
+    comms = db.committees.find({'state': state,
+                               'chamber': chamber,
+                               'committee': committee,
+                               'subcommittee': None})
+
+    if comms.count() != 1:
+        comms = db.committees.find({'state': state,
+                                   'chamber': chamber,
+                                   'committee': ('Committee on ' +
+                                                 committee),
+                                   'subcommittee': None})
+
+    if comms and comms.count() == 1:
+        __committee_ids[key] = comms[0]['_id']
+    else:
+        __committee_ids[key] = None
+
+    return __committee_ids[key]

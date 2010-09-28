@@ -18,7 +18,8 @@ from fiftystates.backend import db
 from fiftystates.backend.names import get_legislator_id
 from fiftystates.backend.utils import (insert_with_id,
                                        update, prepare_obj,
-                                       base_arg_parser)
+                                       base_arg_parser,
+                                       get_committee_id)
 
 import pymongo
 import argparse
@@ -75,6 +76,12 @@ def import_bills(state, data_dir):
             sponsor['leg_id'] = id
 
         for vote in data['votes']:
+            if 'committee' in vote:
+                committee_id = get_committee_id(state,
+                                                vote['chamber'],
+                                                vote['committee'])
+                vote['committee_id'] = committee_id
+
             for vtype in ('yes_votes', 'no_votes', 'other_votes'):
                 svlist = []
                 for svote in vote[vtype]:
