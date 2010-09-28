@@ -79,6 +79,7 @@ def import_committees(state, data_dir):
             data = prepare_obj(json.load(f))
 
         spec = {'state': state,
+                'chamber': data['chamber'],
                 'committee': data['committee']}
         if 'subcommittee' in data:
             spec['subcommittee'] = data['subcommittee']
