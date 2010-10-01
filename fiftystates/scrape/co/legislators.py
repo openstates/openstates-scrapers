@@ -1,5 +1,6 @@
-from fiftystates.scrape import ScrapeError, NoDataForYear
+from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from fiftystates.scrape.co.utils import *
 
 import lxml.html
 import re, contextlib
@@ -8,39 +9,23 @@ class COLegislatorScraper(LegislatorScraper):
     state = 'co'
     
     @contextlib.contextmanager
-    def lxml_context(self, url, sep=None, sep_after=True):
+    def lxml_context(self, url):
         try:
             body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")
-        
-        if sep != None: 
-            if sep_after == True:
-                before, itself, body = body.rpartition(sep)
-            else:
-                body, itself, after = body.rpartition(sep)    
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
+            elem = lxml.html.fromstring(body)
             yield elem
-        except:
-            print "FAIL"
-            #self.show_error(url, body)
-            raise
-
-    def scrape(self, chamber, year):
-        # Legislator data only available for the current session
-        if year != '2009':
-            raise NoDataForYear(year)
-        
-        if chamber == "upper":
-            url = "http://www.leg.state.co.us/Clics/CLICS2010A/directory.nsf/MIWeb?OpenForm&chamber=Senate"
-        else:
-            url = "http://www.leg.state.co.us/Clics/CLICS2010A/directory.nsf/MIWeb?OpenForm&chamber=House"
             
-        with self.lxml_context(url) as page:
+        except:
+            self.warning('Couldnt open url: ' + url)
+
+    def scrape(self, chamber, session):
+        # Legislator data only available for the current session
+        if year_from_session(session) != 2009:
+            raise NoDataForPeriod(session)
+
+        with self.lxml_context(legs_url(chamber)) as page:
             # Iterate through legislator names
+            page.make_links_absolute(base_url())
             for element, attribute, link, pos in page.iterlinks():
                 with self.lxml_context(link) as legislator_page:
                     leg_elements = legislator_page.cssselect('b')
@@ -56,21 +41,15 @@ class COLegislatorScraper(LegislatorScraper):
                     if (email_match != None):
                         email = email_match.group(1)
                         
-                    form_page_url = "http://www.leg.state.co.us//clics/clics2010a/directory.nsf/d1325833be2cc8ec0725664900682205?SearchView"
-                    form_page = lxml.html.parse(form_page_url).getroot()
+                    form_page = lxml.html.parse(leg_form_url()).getroot()
                     form_page.forms[0].fields['Query'] = leg_name
                     result = lxml.html.parse(lxml.html.submit_form(form_page.forms[0])).getroot()
                     elements = result.cssselect('td')
                     party_letter = elements[7].text_content()
                     
-                    if party_letter == "D":
-                        party = "Republican"
-                    elif party_letter == "R":
-                        party = "Democrat"
-                    else:
-                        party = "Independent"
+                    party = party_name(party_letter)
                     
-                    leg = Legislator(year, chamber, district, leg_name,
+                    leg = Legislator(session, chamber, district, leg_name,
                                  "", "", "", party,
                                  official_email=email)
                     leg.add_source(link)

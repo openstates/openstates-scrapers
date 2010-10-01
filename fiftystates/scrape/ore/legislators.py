@@ -1,35 +1,17 @@
-from fiftystates.scrape import ScrapeError, NoDataForYear
+from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from fiftystates.scrape.ore.utils import chambers_url, legs_url, year_from_session
 
 import lxml.html
-import re, contextlib, csv, urllib
+import re, csv, urllib
 
-class ORLegislatorScraper(LegislatorScraper):
+class ORELegislatorScraper(LegislatorScraper):
     state = 'or'
-    
-    @contextlib.contextmanager
-    def lxml_context(self, url, sep=None, sep_after=True):
-        try:
-            body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")
-        
-        if sep != None: 
-            if sep_after == True:
-                before, itself, body = body.rpartition(sep)
-            else:
-                body, itself, after = body.rpartition(sep)    
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
-            yield elem
-        except:
-            print "FAIL"
-            #self.show_error(url, body)
-            raise
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, session):
+        if year_from_session(session) != 2010:
+            raise NoDataForPeriod(session)
+        
         if chamber == 'upper':
             url_piece = 'senate'
             url_piece2 = 'senator'
@@ -37,13 +19,12 @@ class ORLegislatorScraper(LegislatorScraper):
             url_piece = 'house'
             url_piece2 = 'representative'           
         
-        chamber_url = 'http://www.leg.state.or.us/' + url_piece + '/' + url_piece + '.csv'
+        chamber_url = chambers_url(url_piece)
         
         leg_reader = csv.reader(urllib.urlopen(chamber_url))
         
-        url = 'http://www.leg.state.or.us/servlet/XSLT?URL=members.xml&xslURL=members.xsl&member-type=' + url_piece2
-        
-        with self.lxml_context(url) as leg_page:
+        with self.urlopen(legs_url(url_piece2)) as leg_page_html:
+            leg_page = lxml.html.fromstring(leg_page_html)
             font_elements = leg_page.cssselect('font')
             names = {}
             for fe in font_elements:
@@ -58,7 +39,7 @@ class ORLegislatorScraper(LegislatorScraper):
         
         # Title,First Name,Last Name,Capitol Address,Capitol Phone,District Address,District Phone,Session Email
         for row, district, name_and_party in zip(leg_reader, district_matches, names.iteritems()):
-            leg = Legislator(year, chamber, district, name_and_party[0], row[1], row[2], "", name_and_party[1], \
+            leg = Legislator(session, chamber, district, name_and_party[0], row[1], row[2], "", name_and_party[1], \
                               capitol_address=row[3], capitol_phone=row[4], district_adress=row[5], \
                               district_phone=row[6], session_email=row[7])
             self.save_legislator(leg)

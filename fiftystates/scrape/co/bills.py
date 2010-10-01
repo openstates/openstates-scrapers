@@ -1,48 +1,24 @@
-from fiftystates.scrape import ScrapeError, NoDataForYear
+from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.co.utils import grouper, bills_url, year_from_session, base_url
 
 import lxml.html
-import re, contextlib, itertools
+import re
 import datetime as dt
 
 class COBillScraper(BillScraper):
     state = 'co'
-    
-    # From the itertools docs's recipe section 
-    def grouper(self, n, iterable, fillvalue=None):
-        "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
-        args = [iter(iterable)] * n
-        return itertools.izip_longest(fillvalue=fillvalue, *args) 
-    
-    @contextlib.contextmanager
-    def lxml_context(self, url, sep=None, sep_after=True):
-        try:
-            body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")
-        
-        if sep != None: 
-            if sep_after == True:
-                before, itself, body = body.rpartition(sep)
-            else:
-                body, itself, after = body.rpartition(sep)    
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
-            yield elem
-        except:
-            raise
         
     def scrape_votes(self, link, chamber, bill):
-        with self.lxml_context(link) as votes_page:
+        with self.urlopen(link) as votes_page_html:
+            votes_page = lxml.html.fromstring(votes_page_html)
             page_tables = votes_page.cssselect('table')
             votes_table = page_tables[0]
             votes_elements = votes_table.cssselect('td')
             # Eliminate table headings and unnecessary element
             votes_elements = votes_elements[3:len(votes_elements)]
-            ve = self.grouper(5, votes_elements)
+            ve = grouper(5, votes_elements)
             for actor, date, name_and_text, name, text in ve: 
                 if 'cow' in text.text_content() or 'COW' in text.text_content():
                     continue
@@ -68,22 +44,24 @@ class COBillScraper(BillScraper):
                 bill.add_vote(vote)
        
     def scrape_versions(self, link, bill):
-            with self.lxml_context(link) as versions_page:
-                    page_tables = versions_page.cssselect('table')
-                    versions_table = page_tables[1]
-                    rows = versions_table.cssselect('tr')
-                                   
-                    for row in rows:
-                        row_elements = row.cssselect('td')
-                        if (len(row_elements) > 1):
-                            version_name = row_elements[0].text_content()
-                            documents_links_element = row_elements[2]
-                            documents_links_element.make_links_absolute("http://www.leg.state.co.us")
-                            for element, attribute, link, pos in documents_links_element.iterlinks():
-                                bill.add_version(version_name, link)
+        with self.urlopen(link) as versions_page_html:
+                versions_page = lxml.html.fromstring(versions_page_html)
+                page_tables = versions_page.cssselect('table')
+                versions_table = page_tables[1]
+                rows = versions_table.cssselect('tr')
+                               
+                for row in rows:
+                    row_elements = row.cssselect('td')
+                    if (len(row_elements) > 1):
+                        version_name = row_elements[0].text_content()
+                        documents_links_element = row_elements[2]
+                        documents_links_element.make_links_absolute(base_url())
+                        for element, attribute, link, pos in documents_links_element.iterlinks():
+                            bill.add_version(version_name, link)
     
     def scrape_actions(self, link, bill):
-        with self.lxml_context(link) as actions_page:
+        with self.urlopen(link) as actions_page_html:
+                actions_page = lxml.html.fromstring(actions_page_html) 
                 page_elements = actions_page.cssselect('b')
                 actions_element = page_elements[3]
                 actions = actions_element.text_content().split('\n')
@@ -104,22 +82,19 @@ class COBillScraper(BillScraper):
                          
                     bill.add_action(actor, action, action_date_obj)
                     
-    def scrape(self, chamber, year):
-        # Data prior to 1997 is contained in pdfs
-        if year < '1997':
-            raise NoDataForYear(year)
-        
-        bills_url = "http://www.leg.state.co.us/CLICS/CLICS" + year + "A/csl.nsf/%28bf-1%29?OpenView&Count=2000"
-        with self.lxml_context(bills_url) as bills_page:
+    def scrape(self, chamber, session):   
+        year = year_from_session(session)
+        url = bills_url(year)
+        with self.urlopen(url) as bills_page_html:
+            bills_page = lxml.html.fromstring(bills_page_html)
             table_rows = bills_page.cssselect('tr')
             # Eliminate empty rows
             table_rows = table_rows[0:len(table_rows):2]
             for row in table_rows:
-                print "row"
                 row_elements = row.cssselect('td')
                 
                 bill_document = row_elements[0]
-                bill_document.make_links_absolute("http://www.leg.state.co.us")
+                bill_document.make_links_absolute(base_url())
                 
                 element, attribute, link, pos = bill_document.iterlinks().next()
                 bill_id = element.text_content().rstrip('.pdf')
@@ -132,7 +107,7 @@ class COBillScraper(BillScraper):
                 sponsors =  sponsors_match.group(1)
                 separated_sponsors = sponsors.split('--')
                 
-                bill = Bill(year, chamber, bill_id, title)
+                bill = Bill(session, chamber, bill_id, title)
                 bill.add_version('current', bill_document_link)
                 
                 if separated_sponsors[1] == '(NONE)':
@@ -144,7 +119,7 @@ class COBillScraper(BillScraper):
                
                 
                 versions_page_element = row_elements[2]
-                versions_page_element.make_links_absolute("http://www.leg.state.co.us")
+                versions_page_element.make_links_absolute(base_url())
                 element, attribute, link, pos = versions_page_element.iterlinks().next()
                 
                 bill.add_source(link)
@@ -153,15 +128,14 @@ class COBillScraper(BillScraper):
                       
                 actions_page_element = row_elements[3]
                 element, attribute, link, pos = actions_page_element.iterlinks().next()
-                frame_link = "http://www.leg.state.co.us" + link.split('?Open&target=')[1]
+                frame_link = base_url() + link.split('?Open&target=')[1]
                 
                 self.scrape_actions(frame_link, bill)
                 
                 votes_page_element = row_elements[7]
                 element, attribute, link, pos = votes_page_element.iterlinks().next()
-                frame_link = "http://www.leg.state.co.us" + link.split('?Open&target=')[1]
-                
-                self.scrape_votes(link, chamber, bill)
+                frame_link = base_url() + link.split('?Open&target=')[1]
+                self.scrape_votes(frame_link, chamber, bill)
                                 
                         
                            

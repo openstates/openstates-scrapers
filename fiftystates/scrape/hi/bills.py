@@ -1,36 +1,15 @@
 from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.hi.utils import *
 
 import lxml.html
-import re, contextlib
+import re
 import datetime as dt
-
-
 
 class HIBillScraper(BillScraper):
     state = 'hi'
-    
-    @contextlib.contextmanager
-    def lxml_context(self, url, sep=None, sep_after=True):
-        try:
-            body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")
-        
-        if sep != None: 
-            if sep_after == True:
-                before, itself, body = body.rpartition(sep)
-            else:
-                body, itself, after = body.rpartition(sep)    
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
-            yield elem
-        except:
-            raise
-    
+            
     def scrape_votes(self, vote_text, vote_url, house, date, bill):
         votes_parts = vote_text.split(";")
         voters = []
@@ -73,27 +52,25 @@ class HIBillScraper(BillScraper):
         
         bill.add_vote(vote)    
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, session):
+        year = year_from_session(session)
         session = "%s-%d" % (year, int(year) + 1)
 
-        if int(year) >= 2009:
+        if year >= 2009:
             self.scrape_session_2009(chamber, session)
         else:
             self.scrape_session_old(chamber, session)
 
     def scrape_session_2009(self, chamber, session):
-        if chamber == "upper":
-            url = "http://www.capitol.hawaii.gov/session2009/lists/RptIntroSB.aspx"
-            type = "HB"
-        else:
-            url = "http://www.capitol.hawaii.gov/session2009/lists/RptIntroSB.aspx"
-            type = "SB"
-            
-        with self.lxml_context(url) as page:
+        url, type = bills_url(chamber)
+                    
+        with self.urlopen(url) as page_html:
+            page = lxml.html.fromstring(page_html)
             for element, attribute, link, pos in page.iterlinks():         
                 if re.search("billtype=" + type + "&billnumber=[0-9]+", link) != None:
-                    bill_page_url = "http://www.capitol.hawaii.gov/session2009/lists/" + link
-                    with self.lxml_context(bill_page_url) as bill_page:
+                    bill_page_url = bill_url(link)
+                    with self.urlopen(bill_page_url) as bill_page_str:
+                        bill_page = lxml.html.fromstring(bill_page_str)
                         splitted_link = link.split("=")
                         bill_number = splitted_link[-1]
                         bill_id = bill_page.cssselect('a[class="headerlink"]')
@@ -110,6 +87,7 @@ class HIBillScraper(BillScraper):
                         action_elements = actions_table.cssselect('tr')
                         # first element is not an action element
                         action_elements.pop(0)
+                        
                         for ae in action_elements:
                             action_element_parts = ae.cssselect('td')
                             
@@ -136,18 +114,13 @@ class HIBillScraper(BillScraper):
                                                            
                             bill.add_action(actor, action_text, action_date)
                         
-                        versions_page_url = "http://www.capitol.hawaii.gov/session2009/getstatus.asp?query=" \
-                         + type + bill_number + "&showtext=on&currpage=1"
-                         
-                        with self.lxml_context(versions_page_url) as versions_page:
+                        with self.urlopen(versions_page_url(type, bill_number)) as versions_page_html:
+                            versions_page = lxml.html.fromstring(versions_page_html)
                             versions_elements = versions_page.cssselect('span[class="searchtitle"]')
                             for ve in versions_elements:
                                 element_text = ve.text_content()
-                                bill_version_url = "http://www.capitol.hawaii.gov/session2009/Bills/" + element_text
                                 version_name = element_text.rstrip("_.HTM")
-                                bill.add_version(version_name, bill_version_url)
-                            
-            
+                                bill.add_version(version_name, bill_version_url(element_text))
 
     def scrape_session_old(self, chamber, session):
         pass

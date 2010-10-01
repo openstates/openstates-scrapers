@@ -1,64 +1,22 @@
 from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from fiftystates.scrape.wa.utils import separate_name, legs_url, year_from_session, house_url
 
 import lxml.html
-import re, string, contextlib
+import re
 
 class WALegislatorScraper(LegislatorScraper):
     state = 'wa'
-    
-    def scrape(self, chamber, year):
-        if year != '2009':
-            raise NoDataForPeriod(year)
+          
+    def scrape(self, chamber, session):
+        if year_from_session(session) != 2009:
+            raise NoDataForPeriod(session)
         
         if chamber == 'upper':
-            self.scrape_legislator_data("http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx", 'upper')
+            self.scrape_legislator_data('upper', session)
         else:
-            self.scrape_legislator_data("http://www.leg.wa.gov/house/representatives/Pages/default.aspx", 'lower')
+            self.scrape_legislator_data('lower', session)
                        
-    @contextlib.contextmanager
-    def lxml_context(self, url, sep=None, sep_after=True):
-        try:
-            body = self.urlopen(url)
-        except:
-            body = self.urlopen("http://www.google.com")
-        
-        if sep != None: 
-            if sep_after == True:
-                before, itself, body = body.rpartition(sep)
-            else:
-                body, itself, after = body.rpartition(sep)    
-        
-        elem = lxml.html.fromstring(body)
-        
-        try:
-            yield elem
-        except:
-            raise
-        
-    def separate_name(self, full_name):
-        separated_full_name = string.split(full_name, ' ')
-
-        if len(separated_full_name) < 2:
-            raise
-        elif len(separated_full_name) == 2:
-            first_name = separated_full_name[0]
-            last_name = separated_full_name[1]
-            middle_name = ''
-        elif len(separated_full_name) == 3:
-            first_name = separated_full_name[0]
-            last_name = separated_full_name[2]
-            middle_name = separated_full_name[1]
-        else:
-            first_name = separated_full_name[0]
-            middle_name = separated_full_name[1]
-            last_name_list = separated_full_name[1:]
-            last_name = ""
-            for name in last_name_list:
-                last_name += name
-      
-        return full_name, first_name, middle_name, last_name 
-        
     def scrape_legislator_name(self, senator_page):
         name_element = senator_page.get_element_by_id("ctl00_PlaceHolderMain_lblMemberName")
         name_text = name_element.text_content()
@@ -66,24 +24,23 @@ class WALegislatorScraper(LegislatorScraper):
         full_name = full_name.replace('Rep.', ' ')
         full_name = full_name.strip()
 
-        return self.separate_name(full_name)
+        return separate_name(full_name)
         
-    def scrape_legislator_data(self, url, chamber):
-        with self.lxml_context(url) as page:
+    def scrape_legislator_data(self, chamber, session):
+        with self.urlopen(house_url(chamber)) as page_html:
+            page = lxml.html.fromstring(page_html)
             legislator_table = page.get_element_by_id("ctl00_PlaceHolderMain_dlMembers")
             legislators = legislator_table.cssselect('a')
             for legislator in legislators:
                 name = legislator.text_content()
-                full_name, first_name, middle_name, last_name = self.separate_name(name)
+                full_name, first_name, middle_name, last_name = separate_name(name)
                 name_for_url = last_name.lower()
                 name_for_url = re.sub("'", "", name_for_url)
         
-                if chamber == 'upper':
-                    legislator_page_url = "http://www.leg.wa.gov/senate/senators/Pages/" + name_for_url + ".aspx"
-                else: 
-                    legislator_page_url = "http://www.leg.wa.gov/house/representatives/Pages/" + name_for_url + ".aspx"
+                legislator_page_url = legs_url(chamber, name_for_url)
 
-                with self.lxml_context(legislator_page_url) as legislator_page:
+                with self.urlopen(legislator_page_url) as legislator_page_html:
+                    legislator_page = lxml.html.fromstring(legislator_page_html)
                     try:
                         full_name, first_name, middle_name, last_name = self.scrape_legislator_name(legislator_page)
                     except:
@@ -99,7 +56,7 @@ class WALegislatorScraper(LegislatorScraper):
                     district_element = legislator_page.get_element_by_id("ctl00_PlaceHolderMain_hlDistrict")
                     district = district_element.text_content()        
                
-                    legislator = Legislator('2009-2010', chamber, district, full_name, "", "", "", party)
+                    legislator = Legislator(session, chamber, district, full_name, "", "", "", party)
                     legislator.add_source(legislator_page_url)
                     self.save_legislator(legislator)
         
