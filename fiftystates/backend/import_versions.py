@@ -11,7 +11,7 @@ from fiftystates.backend import db, fs
 from fiftystates.backend.utils import base_arg_parser
 
 
-def put_document(doc, metadata):
+def put_document(doc, content_type, metadata):
     # Generate a new sequential ID for the document
     query = SON([('_id', 'ca')])
     update = SON([('$inc', SON([('seq', 1)]))])
@@ -24,7 +24,7 @@ def put_document(doc, metadata):
     id = "%sD%08d" % (metadata['bill']['state'].upper(), seq)
     logging.info("Saving as %s" % id)
 
-    fs.put(doc, _id=id, metadata=metadata)
+    fs.put(doc, _id=id, content_type=content_type, metadata=metadata)
 
     return id
 
@@ -50,7 +50,10 @@ def import_versions(state, rpm=60):
                         'name': version['name'],
                         'url': version['url']}
 
-            version['document_id'] = put_document(doc, metadata)
+            content_type = doc.response.headers['content-type']
+
+            version['document_id'] = put_document(doc, content_type,
+                                                  metadata)
             bill_changed = True
 
         if bill_changed:
