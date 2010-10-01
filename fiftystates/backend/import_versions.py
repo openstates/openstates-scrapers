@@ -13,7 +13,7 @@ from fiftystates.backend.utils import base_arg_parser
 
 def put_document(doc, content_type, metadata):
     # Generate a new sequential ID for the document
-    query = SON([('_id', 'ca')])
+    query = SON([('_id', metadata['bill']['state'])])
     update = SON([('$inc', SON([('seq', 1)]))])
     seq = db.command(SON([('findandmodify', 'doc_ids'),
                           ('query', query),
