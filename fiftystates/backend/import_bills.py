@@ -94,7 +94,7 @@ def import_bills(state, data_dir):
         data['_term'] = sessions[data['session']]
 
         # Merge any version titles into the alternate_titles list
-        alt_titles = set(data['alternate_titles'])
+        alt_titles = set(data.get('alternate_titles', []))
         for version in data['versions']:
             if 'title' in version:
                 alt_titles.add(version['title'])
