@@ -2,9 +2,12 @@ import os
 import re
 import time
 import json
+import logging
 import datetime
 
-from fiftystates.backend import db
+from pymongo.son import SON
+
+from fiftystates.backend import db, fs
 
 import argparse
 import name_tools
@@ -227,3 +230,21 @@ def get_committee_id(state, chamber, committee):
         __committee_ids[key] = None
 
     return __committee_ids[key]
+
+
+def put_document(doc, content_type, metadata):
+    # Generate a new sequential ID for the document
+    query = SON([('_id', metadata['bill']['state'])])
+    update = SON([('$inc', SON([('seq', 1)]))])
+    seq = db.command(SON([('findandmodify', 'doc_ids'),
+                          ('query', query),
+                          ('update', update),
+                          ('new', True),
+                          ('upsert', True)]))['value']['seq']
+
+    id = "%sD%08d" % (metadata['bill']['state'].upper(), seq)
+    logging.info("Saving as %s" % id)
+
+    fs.put(doc, _id=id, content_type=content_type, metadata=metadata)
+
+    return id

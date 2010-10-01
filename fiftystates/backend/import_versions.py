@@ -8,25 +8,7 @@ from pymongo.son import SON
 import scrapelib
 
 from fiftystates.backend import db, fs
-from fiftystates.backend.utils import base_arg_parser
-
-
-def put_document(doc, content_type, metadata):
-    # Generate a new sequential ID for the document
-    query = SON([('_id', metadata['bill']['state'])])
-    update = SON([('$inc', SON([('seq', 1)]))])
-    seq = db.command(SON([('findandmodify', 'doc_ids'),
-                          ('query', query),
-                          ('update', update),
-                          ('new', True),
-                          ('upsert', True)]))['value']['seq']
-
-    id = "%sD%08d" % (metadata['bill']['state'].upper(), seq)
-    logging.info("Saving as %s" % id)
-
-    fs.put(doc, _id=id, content_type=content_type, metadata=metadata)
-
-    return id
+from fiftystates.backend.utils import base_arg_parser, put_document
 
 
 def import_versions(state, rpm=60):
