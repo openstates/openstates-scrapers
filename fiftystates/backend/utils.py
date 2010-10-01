@@ -13,6 +13,10 @@ base_arg_parser = argparse.ArgumentParser(add_help=False)
 base_arg_parser.add_argument('state', type=str,
                              help=('the two-letter abbreviation of the '
                                    'state to import'))
+base_arg_parser.add_argument('-v', '--verbose', action='count',
+                             dest='verbose', default=False,
+                             help=("be verbose (use multiple times for "
+                                   "more debugging information)"))
 
 
 def _get_property_dict(schema):
