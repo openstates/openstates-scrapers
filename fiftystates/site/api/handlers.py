@@ -2,7 +2,6 @@ import re
 import datetime
 
 from fiftystates.backend import db
-from fiftystates.site import search
 from fiftystates.site.geo.models import District
 from fiftystates.utils import keywordize
 
