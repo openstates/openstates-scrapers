@@ -222,3 +222,24 @@ class CommitteeSearchHandler(FiftyStateHandler):
                                                 'chamber', 'state'))
         return list(db.committees.find(_filter, committee_fields))
 
+
+class StatsHandler(FiftyStateHandler):
+    def read(self, request):
+        counts = {}
+        counts['total'] = {
+            'bills': db.bills.count(),
+            'legislators': db.legislators.count(),
+            'documents': db.documents.files.count(),
+            }
+
+        for meta in db.metadata.find():
+            state = meta['_id']
+            counts[state] = {
+                'bills': db.bills.find({'state': state}).count(),
+                'legislators': db.legislators.find({'state': state}).count(),
+                }
+
+        stats = db.command('dbStats')
+        stats['counts'] = counts
+
+        return stats
