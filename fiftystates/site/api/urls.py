@@ -31,14 +31,6 @@ committee_search_handler = Resource(CommitteeSearchHandler,
                                     authentication=authorizer)
 
 urlpatterns = patterns('',
-    url(r'^(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/'
-        r'(?P<chamber>upper|lower)/bills/(?P<bill_id>.+)/$', bill_handler),
-    url(r'^(?P<state>[a-zA-Z]{2,2})/$', metadata_handler),
-    url(r'^committees/(?P<id>[A-Z]{2,2}C\d{6,6})/$', committee_handler),
-    url(r'^legislators/(?P<id>[A-Z]{2,2}L\d{6,6})/$', legislator_handler),
-    url(r'^legislators/search/$', legsearch_handler),
-    url(r'^bills/search/$', bill_search_handler),
-
     # v1 urls
     url(r'^v1/metadata/(?P<state>[a-zA-Z]{2,2})/$', metadata_handler),
 
