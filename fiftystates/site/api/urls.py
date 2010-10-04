@@ -29,6 +29,7 @@ legislator_geo_handler = Resource(LegislatorGeoHandler,
 committee_handler = Resource(CommitteeHandler, authentication=authorizer)
 committee_search_handler = Resource(CommitteeSearchHandler,
                                     authentication=authorizer)
+stats_handler = Resource(StatsHandler, authentication=authorizer)
 
 urlpatterns = patterns('',
     # v1 urls
@@ -49,4 +50,6 @@ urlpatterns = patterns('',
     url(r'^v1/committees/$', committee_search_handler),
 
     url(r'^v1/documents/(?P<id>[A-Z]{2,2}D\d{8,8})/$', document),
+
+    url(r'^v1/stats/$', stats_handler),
 )

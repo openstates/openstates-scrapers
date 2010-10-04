@@ -2,7 +2,6 @@ import re
 import datetime
 
 from fiftystates.backend import db
-from fiftystates.site import search
 from fiftystates.site.geo.models import District
 from fiftystates.utils import keywordize
 
@@ -223,3 +222,29 @@ class CommitteeSearchHandler(FiftyStateHandler):
                                                 'chamber', 'state'))
         return list(db.committees.find(_filter, committee_fields))
 
+
+class StatsHandler(FiftyStateHandler):
+    def read(self, request):
+        counts = {}
+
+        # db.counts contains the output of a m/r run that generates
+        # per-state counts of bills and bill sub-objects
+        for count in db.counts.find():
+            val = count['value']
+            state = count['_id']
+
+            if state == 'total':
+                val['legislators'] = db.legislators.count()
+                val['documents'] = db.documents.files.count()
+            else:
+                val['legislators'] = db.legislators.find(
+                    {'roles.state': state}).count()
+                val['documents'] = db.documents.files.find(
+                    {'metadata.bill.state': state}).count()
+
+            counts[state] = val
+
+        stats = db.command('dbStats')
+        stats['counts'] = counts
+
+        return stats
