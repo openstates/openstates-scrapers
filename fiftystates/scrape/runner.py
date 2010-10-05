@@ -64,7 +64,7 @@ def main():
         # times: the list to iterate over for second scrape param
         if years:
             times = years
-        elif scraper_type in ('bills', 'votes'):
+        elif scraper_type in ('bills', 'votes', 'events'):
             if not sessions:
                 latest_session = metadata['terms'][-1]['sessions'][-1]
                 print 'No session specified, using latest "%s"' % latest_session
@@ -107,6 +107,8 @@ def main():
                     default=False, help="scrape committee data"),
         make_option('--votes', action='store_true', dest='votes',
                     default=False, help="scrape vote data"),
+        make_option('--events', action='store_true', dest='events',
+                     default=False, help='scrape event data'),
         make_option('--alldata', action='store_true', dest='alldata',
                     default=False, help="scrape all available types of data"),
 
@@ -200,8 +202,9 @@ def main():
         chambers = ['upper', 'lower']
 
     if not (options.bills or options.legislators or options.votes or
-            options.committees or options.alldata):
-        raise RunException("Must specify at least one of --bills, --legislators, --committees, --votes")
+            options.committees or options.events or options.alldata):
+        raise RunException("Must specify at least one of --bills, "
+                           "--legislators, --committees, --votes, --events")
 
     if not years and 'terms' not in metadata:
         raise RunException('metadata must include "terms"')
@@ -227,6 +230,8 @@ def main():
         _run_scraper('committees')
     if options.votes:
         _run_scraper('votes')
+    if options.events:
+        _run_scraper('events')
 
 
 if __name__ == '__main__':
