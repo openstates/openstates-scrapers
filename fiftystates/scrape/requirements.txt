@@ -1,6 +1,6 @@
 # Common requirements
--e git+http://github.com/sunlightlabs/scrapelib.git#egg=scrapelib
--e git+http://github.com/sunlightlabs/validictory.git#egg=validictory
+scrapelib>=0.3.0
+validictory>=0.4.2
 BeautifulSoup>=3.1
 html5lib
 lxml>=2.2
