@@ -6,8 +6,8 @@
    "session": {"type": "string"},
    "type": {"type": "string"},
    "description": {"type": "string"},
-   "datetime": {"type": "datetime"},
-   "end_datetime": {"type": ["string", "null"]},
+   "when": {"type": "datetime"},
+   "end": {"type": ["string", "null"]},
    "participants": {"type": "array", "items":
      {"type": "object", "properties": {
        "type": {"type": "string"},
