@@ -49,4 +49,7 @@ class TXEventScraper(EventScraper):
                               location=location)
                 event.add_participant('committee', title)
 
+                event['_guid'] = entry['guid']
+                event['link'] = entry['link']
+
                 self.save_event(event)
