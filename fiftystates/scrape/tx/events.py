@@ -52,4 +52,6 @@ class TXEventScraper(EventScraper):
                 event['_guid'] = entry['guid']
                 event['link'] = entry['link']
 
+                event.add_source(url)
+
                 self.save_event(event)
