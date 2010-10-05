@@ -30,7 +30,7 @@ class District(models.Model):
 
     @classmethod
     def lat_long(cls, lat, long):
-        pnt_wkt = 'POINT({0} {1})'.format(lat, long)
+        pnt_wkt = 'POINT({0} {1})'.format(long, lat)
         return cls.objects.filter(geom__contains=pnt_wkt)
 
 
