@@ -26,7 +26,7 @@ class EventScraper(Scraper):
     def save_event(self, event):
         event['state'] = self.state
 
-        self.log("save_event %s %s: %s" % (event['datetime'],
+        self.log("save_event %s %s: %s" % (event['when'],
                                            event['type'],
                                            event['description']))
 
@@ -38,14 +38,14 @@ class EventScraper(Scraper):
 
 
 class Event(FiftystatesObject):
-    def __init__(self, session, datetime, type,
-                 description, end_datetime=None, **kwargs):
+    def __init__(self, session, when, type,
+                 description, end=None, **kwargs):
         super(Event, self).__init__('event', **kwargs)
         self['session'] = session
-        self['datetime'] = datetime
+        self['when'] = when
         self['type'] = type
         self['description'] = description
-        self['end_datetime'] = end_datetime
+        self['end'] = end
         self['participants'] = []
         self.update(kwargs)
 
