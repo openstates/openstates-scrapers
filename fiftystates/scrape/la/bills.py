@@ -121,7 +121,7 @@ class LABillScraper(BillScraper):
             for row in action_table.xpath('tr')[1:]:
                 cells = row.xpath('td')
                 date = cells[0].text.strip()
-                date = datetime.datetime.strptime(date, '%m/%d/%Y')
+                date = datetime.datetime.strptime(date, '%m/%d/%Y').date()
 
                 chamber = cells[1].text.strip()
                 if chamber == 'S':

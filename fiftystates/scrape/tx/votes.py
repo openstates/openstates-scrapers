@@ -257,7 +257,8 @@ class TXVoteScraper(VoteScraper):
 
             title = root.find('head/title').text
             date_string = title.split('-')[0].strip()
-            date = datetime.datetime.strptime(date_string, "%A, %B %d, %Y")
+            date = datetime.datetime.strptime(
+                date_string, "%A, %B %d, %Y")).date()
 
             for vote in votes(root):
                 vote['date'] = date

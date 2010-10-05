@@ -121,8 +121,8 @@ def import_legislator(data):
             print "Invalid term: %s" % cur_role['term']
             sys.exit(1)
 
-        data['created_at'] = datetime.datetime.now()
-        data['updated_at'] = datetime.datetime.now()
+        data['created_at'] = datetime.datetime.utcnow()
+        data['updated_at'] = datetime.datetime.utcnow()
 
         insert_with_id(data)
     else:

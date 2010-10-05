@@ -1,5 +1,4 @@
 import re
-import datetime
 
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator

@@ -134,7 +134,7 @@ def import_committees(state, data_dir):
                 if 'subcommittee' in committee:
                     new_role['subcommittee'] = committee['subcommittee']
                 legislator['roles'].append(new_role)
-                legislator['updated_at'] = datetime.datetime.now()
+                legislator['updated_at'] = datetime.datetime.utcnow()
                 db.legislators.save(legislator, safe=True)
 
         db.committees.save(committee, safe=True)

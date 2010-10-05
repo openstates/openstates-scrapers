@@ -143,5 +143,5 @@ class FiftystatesObject(dict):
 
         :param url: the location of the source
         """
-        retrieved = retrieved or datetime.datetime.now()
+        retrieved = retrieved or datetime.datetime.utcnow()
         self['sources'].append(dict(url=url, retrieved=retrieved, **kwargs))

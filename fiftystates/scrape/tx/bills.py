@@ -86,7 +86,7 @@ class TXBillScraper(BillScraper):
 
         for action in root.findall('actions/action'):
             act_date = dt.datetime.strptime(action.findtext('date'),
-                                            "%m/%d/%Y")
+                                            "%m/%d/%Y").date()
 
             extra = {}
             extra['action_number'] = action.find('actionNumber').text

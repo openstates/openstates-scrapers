@@ -9,9 +9,13 @@ from fiftystates.scrape.ca.models import CABill, CABillVersion
 from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy import create_engine
 
+import pytz
+
 
 class CABillScraper(BillScraper):
     state = 'ca'
+
+    _tz = pytz.timezone('US/Pacific')
 
     def __init__(self, metadata, host='localhost', user='', pw='',
                  db='capublic', **kwargs):
@@ -86,12 +90,13 @@ class CABillScraper(BillScraper):
 
                 subject = version.subject
 
-                fsbill.add_version(version.bill_version_id, '',
-                                   date=version.bill_version_action_date,
-                                   title=version.title,
-                                   short_title=version.short_title,
-                                   subject=[subject],
-                                   type=type)
+                fsbill.add_version(
+                    version.bill_version_id, '',
+                    date=version.bill_version_action_date.date(),
+                    title=version.title,
+                    short_title=version.short_title,
+                    subject=[subject],
+                    type=type)
 
             if not title:
                 self.warning("Couldn't find title for %s, skipping" % bill_id)
@@ -144,7 +149,7 @@ class CABillScraper(BillScraper):
                 if not type:
                     type = ['other']
 
-                fsbill.add_action(actor, act_str, action.action_date,
+                fsbill.add_action(actor, act_str, action.action_date.date(),
                                   type=type)
 
             for vote in bill.votes:
@@ -195,7 +200,7 @@ class CABillScraper(BillScraper):
                     continue
 
                 fsvote = Vote(vote_chamber,
-                              vote.vote_date_time,
+                              self._tz.localize(vote.vote_date_time),
                               motion,
                               result,
                               int(vote.ayes),

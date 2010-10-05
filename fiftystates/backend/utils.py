@@ -105,7 +105,7 @@ def update(old, new, coll):
             changed = True
 
     if changed:
-        old['updated_at'] = datetime.datetime.now()
+        old['updated_at'] = datetime.datetime.utcnow()
         coll.save(old, safe=True)
 
 
