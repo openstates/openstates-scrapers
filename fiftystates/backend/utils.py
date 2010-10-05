@@ -145,6 +145,12 @@ def convert_timestamps(obj):
     if 'date' in obj:
         obj['date'] = timestamp_to_dt(obj['date'])
 
+    if 'when' in obj:
+        obj['when'] = timestamp_from_dt(obj['when'])
+
+    if 'end' in obj and obj['end']:
+        obj['end'] = timestamp_from_dt(obj['end'])
+
     return obj
 
 
