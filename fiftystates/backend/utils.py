@@ -33,7 +33,7 @@ def _get_property_dict(schema):
 
 # load standard fields from schema files
 standard_fields = {}
-for _type in ('bill', 'person', 'committee', 'metadata', 'vote'):
+for _type in ('bill', 'person', 'committee', 'metadata', 'vote', 'event'):
     fname = os.path.join(os.path.split(__file__)[0],
                          '../../schemas/%s.json' % _type)
     schema = json.load(open(fname))
@@ -146,10 +146,10 @@ def convert_timestamps(obj):
         obj['date'] = timestamp_to_dt(obj['date'])
 
     if 'when' in obj:
-        obj['when'] = timestamp_from_dt(obj['when'])
+        obj['when'] = timestamp_to_dt(obj['when'])
 
     if 'end' in obj and obj['end']:
-        obj['end'] = timestamp_from_dt(obj['end'])
+        obj['end'] = timestamp_to_dt(obj['end'])
 
     return obj
 
