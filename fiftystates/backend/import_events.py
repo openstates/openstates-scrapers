@@ -15,6 +15,7 @@ from fiftystates.backend import db
 from fiftystates.backend.names import get_legislator_id
 from fiftystates.backend.utils import (base_arg_parser, prepare_obj,
                                        update, get_committee_id)
+from fiftystates.scrape.events import Event
 
 import pymongo
 from pymongo.son import SON
@@ -75,7 +76,35 @@ def import_events(state, data_dir):
         else:
             update(event, data, db.events)
 
+    actions_to_events(state)
     ensure_indexes()
+
+
+def actions_to_events(state):
+    for bill in db.bills.find({'state': state}):
+        print "Converting %s actions to events" % bill['_id']
+
+        count = 1
+        for action in bill['actions']:
+            guid = "%s:action:%06d" % (bill['_id'], count)
+            count += 1
+
+            event = db.events.find_one({'state': state,
+                                        '_guid': guid})
+
+            description = "%s: %s" % (bill['bill_id'], action['action'])
+            data = Event(bill['session'], action['date'],
+                              'bill:action', description)
+            data.add_participant('actor', action['actor'])
+            data['_guid'] = guid
+            data['state'] = state
+
+            if not event:
+                data['created_at'] = datetime.datetime.utcnow()
+                data['updated_at'] = data['created_at']
+                _insert_with_id(data)
+            else:
+                update(event, data, db.events)
 
 
 if __name__ == '__main__':
