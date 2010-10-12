@@ -6,6 +6,7 @@
     "subcommittee": {"type": ["null", "string"]},
     "state": {"type": "string", "minLength": 2, "maxLength": 2},
     "chamber": {"type": "string", "enum": ["upper", "lower", "joint"]},
+    "type": {"type": "string", "optional": true},
     "members": {"type": "array", "items": {"type": "object", "properties": {
         "role": {"type": "string"},
         "name": {"type": "string"}
