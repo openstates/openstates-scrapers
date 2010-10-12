@@ -31,6 +31,9 @@ else:
     Resource = piston.resource.Resource
 
 Emitter.unregister('xml')
+Emitter.unregister('yaml')
+Emitter.unregister('django')
+Emitter.unregister('pickle')
 
 metadata_handler = Resource(MetadataHandler, authentication=authorizer)
 bill_handler = Resource(BillHandler, authentication=authorizer)
