@@ -5,6 +5,7 @@
    "state": {"type": "string", "minLength": 2, "maxLength": 2},
    "session": {"type": "string"},
    "type": {"type": "string"},
+   "location": {"type": "string"},
    "description": {"type": "string"},
    "when": {"type": "datetime"},
    "end": {"type": ["string", "null"]},
