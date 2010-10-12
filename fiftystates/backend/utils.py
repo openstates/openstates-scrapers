@@ -121,9 +121,12 @@ def convert_timestamps(obj):
         if value:
             obj[key] = timestamp_to_dt(value)
 
-    for key in ('sources', 'actions', 'votes', 'session_details'):
+    for key in ('sources', 'actions', 'votes'):
         for child in obj.get(key, []):
             convert_timestamps(child)
+
+    for details in obj.get('session_details', {}).values():
+        convert_timestamps(details)
 
     for role in obj.get('roles', []):
         convert_timestamps(role)
