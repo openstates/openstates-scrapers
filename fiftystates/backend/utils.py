@@ -39,6 +39,7 @@ for _type in ('bill', 'person', 'committee', 'metadata', 'vote', 'event'):
     schema = json.load(open(fname))
     standard_fields[_type] = _get_property_dict(schema)
 
+
 def insert_with_id(obj):
     """
     Generates a unique ID for the supplied legislator/committee/bill
@@ -142,14 +143,9 @@ def convert_timestamps(obj):
         if 'end_date' in details:
             details['end_date'] = timestamp_to_dt(details['end_date'])
 
-    if 'date' in obj:
-        obj['date'] = timestamp_to_dt(obj['date'])
-
-    if 'when' in obj:
-        obj['when'] = timestamp_to_dt(obj['when'])
-
-    if 'end' in obj and obj['end']:
-        obj['end'] = timestamp_to_dt(obj['end'])
+    for key in ('date', 'when', 'end'):
+        if key in obj:
+            obj[key] = timestamp_to_dt(obj[key])
 
     return obj
 
@@ -169,6 +165,7 @@ def split_name(obj):
 
     return obj
 
+
 def _make_plus_helper(obj, fields):
     """ add a + prefix to any fields in obj that aren't in fields """
     new_obj = {}
@@ -187,6 +184,7 @@ def _make_plus_helper(obj, fields):
             new_obj['+%s' % key] = value
 
     return new_obj
+
 
 def make_plus_fields(obj):
     """
