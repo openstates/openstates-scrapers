@@ -115,37 +115,19 @@ def convert_timestamps(obj):
     Convert unix timestamps in the scraper output to python datetimes
     so that they will be saved properly as Mongo datetimes.
     """
-    for source in obj.get('sources', []):
-        source['retrieved'] = timestamp_to_dt(source['retrieved'])
+    for key in ('date', 'when', 'end', 'start_date', 'end_date',
+                'retrieved'):
+        value = obj.get(key)
+        if value:
+            obj[key] = timestamp_to_dt(value)
 
-    for action in obj.get('actions', []):
-        action['date'] = timestamp_to_dt(action['date'])
+    for key in ('sources', 'actions', 'votes', 'session_details'):
+        for child in obj.get(key, []):
+            convert_timestamps(child)
 
     for role in obj.get('roles', []):
-        if role['start_date']:
-            role['start_date'] = timestamp_to_dt(role['start_date'])
-
-        if role['end_date']:
-            role['end_date'] = timestamp_to_dt(role['end_date'])
-
+        convert_timestamps(role)
         role['state'] = obj['state']
-
-    for vote in obj.get('votes', []):
-        vote['date'] = timestamp_to_dt(vote['date'])
-
-        for source in vote.get('sources', []):
-            source['retrieved'] = timestamp_to_dt(source['retrieved'])
-
-    for details in obj.get('session_details', {}).values():
-        if 'start_date' in details:
-            details['start_date'] = timestamp_to_dt(details['start_date'])
-
-        if 'end_date' in details:
-            details['end_date'] = timestamp_to_dt(details['end_date'])
-
-    for key in ('date', 'when', 'end'):
-        if key in obj:
-            obj[key] = timestamp_to_dt(obj[key])
 
     return obj
 
