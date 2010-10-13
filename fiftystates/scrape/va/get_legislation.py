@@ -12,40 +12,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.legislation import (LegislationScraper, NoDataForPeriod,
                                  Bill, Legislator, Vote)
 
-class VANameMatcher:
-    def wash(self, form):
-        return form.replace('.', '').lower().strip()
-
-    def __init__(self):
-        self.names = {}
-
-    def __setitem__(self, name, obj):
-        forms = set()
-        forms.add(name['full_name'])
-        forms.add(name['last_name'])
-        if len(name['middle_name']) > 0:
-            forms.add("%s, %s%s" % (name['last_name'], name['first_name'][0], name['middle_name'][0]))
-        else:
-            forms.add("%s, %s" % (name['last_name'], name['first_name'][0]))
-
-        for form in forms:
-            form = self.wash(form)
-            if form in self.names:
-                self.names[form] = None
-            else:
-                self.names[form] = obj
-
-    def __getitem__(self, name):
-        name = self.wash(name)
-        if name in self.names:
-            return self.names[name]
-        return None
 
 class VALegislationScraper(LegislationScraper):
     state = 'va'
     internal_sessions = {}
-    
-    
+
     def scrape_legislators(self,chamber,year):
         #[session_id]/mbr/MBR.HTM
         abbr = {'upper': 'S', 'lower': 'H'}
@@ -81,7 +52,7 @@ class VALegislationScraper(LegislationScraper):
                 last_name = name_parts[len(name_parts)-2]
             else:
                 last_name = last
-            
+
             if name_parts[1] == last_name:
                 middle_name = ''
             else:
@@ -98,10 +69,10 @@ class VALegislationScraper(LegislationScraper):
             middle_name = middle_name.replace('.', '')
             party = ex[0][1]
             district = ex[len(ex)-1]
-	
-            leg = Legislator(session=session, chamber=chamber, district=district, 
-	                                           full_name=name.strip(), first_name=first_name.strip(), last_name=last_name.strip(), 
-	                                           middle_name=middle_name.replace('.', '').strip(), party=abbr[party])
+
+            leg = Legislator(session=session, chamber=chamber, district=district,
+                                               full_name=name.strip(), first_name=first_name.strip(), last_name=last_name.strip(),
+                                               middle_name=middle_name.replace('.', '').strip(), party=abbr[party])
             leg.add_source(url)
             # [_,_,district,_]
             # so... yeah. not totally sure how I should handle legislators in subsessions
@@ -130,7 +101,7 @@ class VALegislationScraper(LegislationScraper):
                     with self.soup_context(url) as one_bill:
                         bill = Bill(session=session[1], chamber=chamber, bill_id=abill, title=bill_list[abill])
                         self.fetch_sponsors(bill, "http://leg1.state.va.us/cgi-bin/legp504.exe?%s+mbr+%s" % (session[0], abill.replace(' ', '')))
-                        
+
                         summary_sections = str(one_bill).split('<font color="#FF6633">')
                         for chunk in summary_sections:
                             if chunk.startswith('<html>'):
@@ -142,9 +113,9 @@ class VALegislationScraper(LegislationScraper):
                             elif chunk.startswith("<i>Full text"):
                                 self.fetch_versions(bill, self.unescape(chunk))
                             elif chunk.startswith("<i>Amendments"):
-                                self.fetch_amendments(bill, self.unescape(chunk)) 
+                                self.fetch_amendments(bill, self.unescape(chunk))
                             elif chunk.startswith("<i>Status"):
-                                self.fetch_actions(bill, one_bill)   
+                                self.fetch_actions(bill, one_bill)
                             else:
                                 pass
                         self.save_bill(bill)
@@ -178,7 +149,7 @@ class VALegislationScraper(LegislationScraper):
                     actor = abbr[status[1]]
                 else:
                     actor = status[1]
-                
+
                 vote_check = BeautifulSoup(line).findAll('a', href=re.compile('\+vot\+'))
                 if vote_check != []:
                     self.parse_vote(bill, actor, act_date, last_status, vote_check[0])
@@ -222,7 +193,7 @@ class VALegislationScraper(LegislationScraper):
                         vote.no(voter)
                     else:
                         vote.other(voter.strip())
-            vote['other_count'] = len(vote['other_votes'])			
+            vote['other_count'] = len(vote['other_votes'])
             vote['yes_count'] = len(vote['yes_votes'])
             vote['no_count'] = len(vote['no_votes'])
             vote['passed'] = (vote['yes_count'] > vote['no_count'])
@@ -263,49 +234,9 @@ class VALegislationScraper(LegislationScraper):
                 if len(next) > 0:
                     start = re.findall(r'\/cgi-bin/legp504.exe\?%s\+bil\+%s\*([\+\w\d]+)' % (session, bill_type), next[0]['href'])[0]
                 else:
-                    return internal_bills                
-
-    def scrape_metadata(self):
-        if not self.sleep:
-            raise Exception("You WILL get a temporary IP ban unless you use -s")
-        sessions = []
-        session_details = {}
-
-        with self.soup_context("http://leg1.state.va.us/") as session_page:
-            #<a href="/942/lis.htm">1994</a> <font face="arial" size=2>Special I<br>
-            #this html is a mess, but the text is consistent.. soooo....
-            titles = ['', 'Special Session I', 'Special Session II', 'Special Session III']
-            for ech in session_page.findAll('a', href=re.compile('([\d+])\/lis.htm')):
-                year = int(ech.string)
-                if not year in self.internal_sessions:
-                    self.internal_sessions[year] = []
-                    session_details[ech.string] = {'years': [year], 'sub_sessions':[] }
-                    sessions.append(ech.string)
-                c = len(session_details[ech.string]['sub_sessions'])
-                title = titles[c]
-                if title:
-                    session_details[ech.string]['sub_sessions'].append(title)
-                    self.internal_sessions[year].append((re.findall(r'[0-9]+', ech['href'])[0], "%d %s" % (year, title)))
-                else:
-                    self.internal_sessions[year].append((re.findall(r'[0-9]+', ech['href'])[0], ech.string))
-
-        return {
-            'state_name': 'Virginia',
-            'legislature_name': 'Virginia General Assembly',
-            'lower_chamber_name': 'House of Delegates',
-            'upper_chamber_name': 'Senate',
-            'lower_title': 'Delegate',
-            'upper_title': 'Senator',
-            'lower_term': 4,
-            'upper_term': 4,
-            'sessions': sessions,
-            'session_details': session_details
-        }    
+                    return internal_bills
 
     def unescape(self,s):
         # I'd never actually seen a \xa0 in the wild before, but it breaks regexes and splits in crazy ways
         # that took me AGES to track down
         return s.replace('&nbsp;', ' ')
-
-if __name__ == '__main__':
-    VALegislationScraper.run(matcher={'upper': VANameMatcher, 'lower': VANameMatcher})
