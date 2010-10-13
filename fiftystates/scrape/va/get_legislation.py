@@ -8,79 +8,9 @@ import random
 from BeautifulSoup import BeautifulSoup
 from htmlentitydefs import name2codepoint
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.legislation import (LegislationScraper, NoDataForPeriod,
-                                 Bill, Legislator, Vote)
-
 
 class VALegislationScraper(LegislationScraper):
     state = 'va'
-    internal_sessions = {}
-
-    def scrape_legislators(self,chamber,year):
-        #[session_id]/mbr/MBR.HTM
-        abbr = {'upper': 'S', 'lower': 'H'}
-        year = int(year)
-        if year not in self.internal_sessions:
-            raise NoDataForPeriod(year)
-        for session in self.internal_sessions[year]:
-            self.log(session[1])
-            with self.soup_context("http://leg1.state.va.us/%s/mbr/MBR.HTM" % session[0]) as member_page:
-                #<li><a href="/cgi-bin/legp504.exe?011+mbr+H102">L. Preston Bryant, Jr.</a>
-                for member in member_page.findAll('a', href=re.compile("exe\?%s\+mbr\+%s" % (session[0], abbr[chamber]))):
-                    self.fetch_member(member['href'], member.string, session[1], chamber)
-        pass
-
-
-    def fetch_member(self, url, name, session, chamber):
-        abbr = {'R': 'Republican', 'D': 'Democrat', 'I': 'Independent'}
-        url = "http://leg1.state.va.us/%s" % url
-        with self.soup_context(url) as member:
-            ex = member.findAll('table', text=re.compile(re.escape(name)))
-            if ex == []:
-                raise Exception("Parse error fetching member %s" % name)
-            else:
-                ex = ex[0].parent.nextSibling.nextSibling.string.split()
-
-            # Some people are "Joe X. Schmoe;Resigned". Fantastic.
-            name = re.split('\;|\(', name)[0]
-            # some other people are Joe X. Schmoe (resigned
-            name_parts = name.split()
-            first_name = name_parts[0]
-            last = name_parts[len(name_parts)-1]
-            if re.match(r'[IV]+$|\bJr\b\.$|\b(Sr)\b\.$', last):
-                last_name = name_parts[len(name_parts)-2]
-            else:
-                last_name = last
-
-            if name_parts[1] == last_name:
-                middle_name = ''
-            else:
-                middle_name = name_parts[1]
-
-            # Deal with the Van Houtens of the world
-            # also, watch out for their rugged Danish relatives...
-            if name_parts[1] == 'Van':
-                middle_name = ''
-                last_name = name_parts[1] + ' ' + last_name
-
-            last_name = last_name.replace(',','')
-
-            middle_name = middle_name.replace('.', '')
-            party = ex[0][1]
-            district = ex[len(ex)-1]
-
-            leg = Legislator(session=session, chamber=chamber, district=district,
-                                               full_name=name.strip(), first_name=first_name.strip(), last_name=last_name.strip(),
-                                               middle_name=middle_name.replace('.', '').strip(), party=abbr[party])
-            leg.add_source(url)
-            # [_,_,district,_]
-            # so... yeah. not totally sure how I should handle legislators in subsessions
-            # but I'll only add them if the matcher doesn't already know about them.
-            sanitized = leg['full_name'].replace('.', '').lower()
-            if self.matcher[chamber][sanitized] and self.matcher[chamber][sanitized][2] == district:
-                return
-            self.save_legislator(leg)
 
     def scrape_bills(self,chamber,year):
         #http://leg1.state.va.us/cgi-bin/legp504.exe?951+sum+HB246
