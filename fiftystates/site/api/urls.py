@@ -8,6 +8,7 @@ from fiftystates.site.api.handlers import *
 from fiftystates.site.api.views import document
 from fiftystates.site.api.models import LogEntry
 from fiftystates.site.api.emitters import OpenStateJSONEmitter
+from fiftystates.site.api.emitters import FeedEmitter, ICalendarEmitter
 
 if getattr(settings, 'USE_LOCKSMITH', False):
     from locksmith.auth.authentication import PistonKeyAuthentication
@@ -33,6 +34,9 @@ else:
 
 Emitter.register('json', OpenStateJSONEmitter,
                  'application/json; charset=utf-8')
+
+Emitter.register('rss', FeedEmitter, 'application/rss+xml')
+Emitter.register('ics', ICalendarEmitter, 'text/calendar')
 
 Emitter.unregister('xml')
 Emitter.unregister('yaml')
