@@ -45,28 +45,6 @@ class FiftyStateHandlerMetaClass(HandlerMetaClass):
             cls, name, bases, attrs)
 
         if hasattr(new_cls, 'read'):
-
-            def clean(obj):
-                if isinstance(obj, dict):
-                    if (obj.get('_type') in ('person', 'committee') and
-                        '_id' in obj):
-                        obj['id'] = obj['_id']
-
-                    for key, value in obj.items():
-                        if key.startswith('_'):
-                            del obj[key]
-                        else:
-                            obj[key] = clean(value)
-                elif isinstance(obj, list):
-                    obj = [clean(item) for item in obj]
-                elif hasattr(obj, '__dict__'):
-                    for key, value in obj.__dict__.items():
-                        if key.startswith('_'):
-                            del obj.__dict__[key]
-                        else:
-                            obj.__dict__[key] = clean(value)
-                return obj
-
             old_read = new_cls.read
 
             def new_read(*args, **kwargs):
@@ -77,7 +55,7 @@ class FiftyStateHandlerMetaClass(HandlerMetaClass):
                 if obj is None:
                     return rc.NOT_FOUND
 
-                return clean(obj)
+                return obj
 
             new_cls.read = new_read
 

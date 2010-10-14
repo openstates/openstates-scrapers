@@ -7,6 +7,7 @@ from piston.emitters import Emitter
 from fiftystates.site.api.handlers import *
 from fiftystates.site.api.views import document
 from fiftystates.site.api.models import LogEntry
+from fiftystates.site.api.emitters import OpenStateJSONEmitter
 
 if getattr(settings, 'USE_LOCKSMITH', False):
     from locksmith.auth.authentication import PistonKeyAuthentication
@@ -29,6 +30,9 @@ if getattr(settings, 'USE_LOCKSMITH', False):
 else:
     authorizer = None
     Resource = piston.resource.Resource
+
+Emitter.register('json', OpenStateJSONEmitter,
+                 'application/json; charset=utf-8')
 
 Emitter.unregister('xml')
 Emitter.unregister('yaml')
