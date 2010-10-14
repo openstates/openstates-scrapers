@@ -171,15 +171,18 @@ class LegislatorGeoHandler(FiftyStateHandler):
         try:
             districts = District.lat_long(request.GET['lat'],
                                           request.GET['long'])
+
             filters = []
             for d in districts:
                 filters.append({'state': d.state_abbrev,
-                                'roles': {'$elemMatch': {'district':d.name,
-                                                         'chamber':d.chamber}}}
-                              )
+                                'roles': {'$elemMatch': {
+                                    'district':d.name,
+                                    'chamber':d.chamber}}})
+
+            if not filters:
+                return []
+
             return list(db.legislators.find({'$or': filters}))
-        except District.DoesNotExist:
-            return rc.NOT_HERE
         except KeyError:
             resp = rc.BAD_REQUEST
             resp.write(": Need lat and long parameters")
