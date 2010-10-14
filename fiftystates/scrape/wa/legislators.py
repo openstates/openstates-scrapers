@@ -1,9 +1,45 @@
 from fiftystates.scrape import ScrapeError, NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.wa.utils import separate_name, legs_url, year_from_session, house_url
+from fiftystates.scrape.wa.utils import year_from_session
 
 import lxml.html
 import re
+import string
+
+def separate_name(full_name):
+    separated_full_name = string.split(full_name, ' ')
+
+    if len(separated_full_name) < 2:
+        raise
+    elif len(separated_full_name) == 2:
+        first_name = separated_full_name[0]
+        last_name = separated_full_name[1]
+        middle_name = ''
+    elif len(separated_full_name) == 3:
+        first_name = separated_full_name[0]
+        last_name = separated_full_name[2]
+        middle_name = separated_full_name[1]
+    else:
+        first_name = separated_full_name[0]
+        middle_name = separated_full_name[1]
+        last_name_list = separated_full_name[1:]
+        last_name = ""
+        for name in last_name_list:
+            last_name += name
+
+    return full_name, first_name, middle_name, last_name
+
+def house_url(chamber):
+    if chamber == "upper":
+        return "http://www.leg.wa.gov/Senate/Senators/Pages/default.aspx"
+    else:
+        return "http://www.leg.wa.gov/house/representatives/Pages/default.aspx"
+
+def legs_url(chamber, name_for_url):
+    if chamber == 'upper':
+        return "http://www.leg.wa.gov/senate/senators/Pages/" + name_for_url + ".aspx"
+    else:
+        return "http://www.leg.wa.gov/house/representatives/Pages/" + name_for_url + ".aspx"
 
 class WALegislatorScraper(LegislatorScraper):
     state = 'wa'
