@@ -5,6 +5,10 @@ from piston.emitters import Emitter
 
 
 class OpenStateJSONEmitter(Emitter):
+    """
+    Removes private fields (keys preceded by '_') recursively and
+    outputs as JSON, with datetimes converted to strings.
+    """
     def render(self, request):
         return json.dumps(self._clean(self.construct()),
                           cls=DateTimeAwareJSONEncoder,
@@ -12,6 +16,7 @@ class OpenStateJSONEmitter(Emitter):
 
     def _clean(self, obj):
         if isinstance(obj, dict):
+            # Expose the '_id' field as 'id' for certain object types
             if (obj.get('_type') in ('person',
                                      'committee',
                                      'event') and '_id' in obj):
