@@ -37,36 +37,13 @@ def _build_mongo_filter(request, keys, icase=True):
 
 class FiftyStateHandlerMetaClass(HandlerMetaClass):
     """
-    Scrubs internal fields (those starting with '_') from Handler results
-    and returns HTTP error if Handler result is None.
+    Returns 404 if Handler result is None.
     """
     def __new__(cls, name, bases, attrs):
         new_cls = super(FiftyStateHandlerMetaClass, cls).__new__(
             cls, name, bases, attrs)
 
         if hasattr(new_cls, 'read'):
-
-            def clean(obj):
-                if isinstance(obj, dict):
-                    if (obj.get('_type') in ('person', 'committee') and
-                        '_id' in obj):
-                        obj['id'] = obj['_id']
-
-                    for key, value in obj.items():
-                        if key.startswith('_'):
-                            del obj[key]
-                        else:
-                            obj[key] = clean(value)
-                elif isinstance(obj, list):
-                    obj = [clean(item) for item in obj]
-                elif hasattr(obj, '__dict__'):
-                    for key, value in obj.__dict__.items():
-                        if key.startswith('_'):
-                            del obj.__dict__[key]
-                        else:
-                            obj.__dict__[key] = clean(value)
-                return obj
-
             old_read = new_cls.read
 
             def new_read(*args, **kwargs):
@@ -77,7 +54,7 @@ class FiftyStateHandlerMetaClass(HandlerMetaClass):
                 if obj is None:
                     return rc.NOT_FOUND
 
-                return clean(obj)
+                return obj
 
             new_cls.read = new_read
 

@@ -1,22 +1,43 @@
 from django.conf import settings
 from django.conf.urls.defaults import *
 
-from piston.resource import Resource
+import piston.resource
 from piston.emitters import Emitter
 
 from fiftystates.site.api.handlers import *
-from fiftystates.site.api.emitters import LoggingJSONEmitter, LoggingXMLEmitter
 from fiftystates.site.api.views import document
+from fiftystates.site.api.models import LogEntry
+from fiftystates.site.api.emitters import OpenStateJSONEmitter
 
 if getattr(settings, 'USE_LOCKSMITH', False):
     from locksmith.auth.authentication import PistonKeyAuthentication
     authorizer = PistonKeyAuthentication()
-    Emitter.register('json', LoggingJSONEmitter,
-                     'application/json; charset=utf-8')
-    # disable XML output
-    Emitter.unregister('xml')
+
+    class Resource(piston.resource.Resource):
+        def __call__(self, request, *args, **kwargs):
+            resp = super(Resource, self).__call__(request, *args, **kwargs)
+
+            try:
+                LogEntry.objects.create(
+                    caller_key=request.apikey.key,
+                    method=self.handler.__class__.__name__,
+                    query_string=request.META['QUERY_STRING'],
+                )
+            except AttributeError:
+                pass
+
+            return resp
 else:
     authorizer = None
+    Resource = piston.resource.Resource
+
+Emitter.register('json', OpenStateJSONEmitter,
+                 'application/json; charset=utf-8')
+
+Emitter.unregister('xml')
+Emitter.unregister('yaml')
+Emitter.unregister('django')
+Emitter.unregister('pickle')
 
 metadata_handler = Resource(MetadataHandler, authentication=authorizer)
 bill_handler = Resource(BillHandler, authentication=authorizer)
