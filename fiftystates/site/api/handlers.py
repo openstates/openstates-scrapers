@@ -37,8 +37,7 @@ def _build_mongo_filter(request, keys, icase=True):
 
 class FiftyStateHandlerMetaClass(HandlerMetaClass):
     """
-    Scrubs internal fields (those starting with '_') from Handler results
-    and returns HTTP error if Handler result is None.
+    Returns 404 if Handler result is None.
     """
     def __new__(cls, name, bases, attrs):
         new_cls = super(FiftyStateHandlerMetaClass, cls).__new__(
