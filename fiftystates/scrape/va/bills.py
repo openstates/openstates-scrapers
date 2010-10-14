@@ -119,12 +119,17 @@ class VABillScraper(BillScraper):
                     bill.add_sponsor(name, type)
 
     def split_vote(self, block):
-        pieces = block.split('--')
-        # if there are only two pieces, there are no abstentions
-        if len(pieces) <= 2:
-            return []
+        if block:
+            block = block[0].text
+
+            pieces = block.split('--')
+            # if there are only two pieces, there are no abstentions
+            if len(pieces) <= 2:
+                return []
+            else:
+                return [x.strip() for x in pieces[1].split(', ')]
         else:
-            return [x.strip() for x in pieces[1].split(', ')]
+            return []
 
     def parse_vote(self, vote, url):
         url = BASE_URL + url
@@ -132,13 +137,9 @@ class VABillScraper(BillScraper):
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
 
-            yeas = doc.xpath('//p[contains(text(), "YEAS--")]')[0].text
-            nays = doc.xpath('//p[contains(text(), "NAYS--")]')[0].text
+            yeas = doc.xpath('//p[contains(text(), "YEAS--")]')
+            nays = doc.xpath('//p[contains(text(), "NAYS--")]')
             absts = doc.xpath('//p[contains(text(), "ABSTENTIONS")]')
-            if absts:
-                absts = absts[0].text
-            else:
-                absts = ''
             #no_votes = doc.xpath('//p[contains(text(), "NOT VOTING")]')[0].text
 
             map(vote.yes, self.split_vote(yeas))
