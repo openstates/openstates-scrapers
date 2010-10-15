@@ -60,7 +60,9 @@ class VABillScraper(BillScraper):
             doc = lxml.html.fromstring(html)
 
             # summary sections
-            bill['summary'] = doc.xpath('//h4[starts-with(text(), "SUMMARY")]/following-sibling::p/text()')[0]
+            summary = doc.xpath('//h4[starts-with(text(), "SUMMARY")]/following-sibling::p/text()')
+            if summary and summary[0].strip():
+                bill['summary'] = summary[0].strip()
 
             # versions
             for va in doc.xpath('//h4[text()="FULL TEXT"]/following-sibling::ul[1]/li/a[1]'):
