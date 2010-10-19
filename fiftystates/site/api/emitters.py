@@ -1,18 +1,17 @@
 import json
 
 from django.core.serializers.json import DateTimeAwareJSONEncoder
-from piston.emitters import Emitter
+from piston.emitters import JSONEmitter
 
 
-class OpenStateJSONEmitter(Emitter):
+class OpenStateJSONEmitter(JSONEmitter):
     """
     Removes private fields (keys preceded by '_') recursively and
     outputs as JSON, with datetimes converted to strings.
     """
-    def render(self, request):
-        return json.dumps(self._clean(self.construct()),
-                          cls=DateTimeAwareJSONEncoder,
-                          ensure_ascii=False, indent=4)
+
+    def construct(self):
+        return self._clean(super(OpenStateJSONEmitter, self).construct())
 
     def _clean(self, obj):
         if isinstance(obj, dict):
