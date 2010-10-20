@@ -68,7 +68,7 @@ class ALLegislationScraper(LegislationScraper):
              try:
                  bill_id = int(re.findall(r'BTN([0-9]+)', str(bill))[0])
              except:
-                 raise Exception("No bill found. Hopefully that means it's the end of the session") 
+                 raise Exception("No bill found. Hopefully that means it's the end of the session")
              title = bill.find("td", {'colspan': '7'}).string
              self.log("Starting parse of %s" % current_bill)
              #create our bill!
@@ -108,20 +108,20 @@ class ALLegislationScraper(LegislationScraper):
                            amend = "http://alisondb.legislature.state.al.us/acas/%s/%s" % (splitter[3], splitter[2])
                            bill.add_document(matter, amend)
 
-                       if roll != None: 
+                       if roll != None:
                           splitter = re.findall(r'voteSelected\(\'(\d*)\',\'(\d*)\',\'(\d*)\',\'(.*)\',\'(\d*)\'',str(roll))[0]
                           roll = "http://alisondb.legislature.state.al.us/acas/GetRollCallVoteResults.asp?MOID=%s&VOTE=%s&BODY=%s&SESS=%s" % (splitter[0], splitter[1], splitter[2], splitter[4])
                           with self.soup_context(roll) as votes:
                               vote_rows = votes.findAll('table', text='Member')[0].parent.parent.parent.findAll('tr')
-                              
+
                               yea_votes = int(votes.findAll('tr', text='Total Yea:')[0].parent.parent.findAll('td')[2].string)
                               nay_votes = int(votes.findAll('tr', text='Total Nay:')[0].parent.parent.findAll('td')[2].string)
                               abs_votes = int(votes.findAll('tr', text='Total Abs:')[0].parent.parent.findAll('td')[2].string)
                               p_votes   = len(votes.findAll('tr', text='P'))
-                              
+
                               #chamber, date, motion, passed, yes_count, no_count, other_count
                               vote = Vote(chamber, act_date, matter, (yea_votes > nay_votes), yea_votes, nay_votes, abs_votes + p_votes)
-                              
+
                               vote.add_source(roll)
                               for row in vote_rows:
                                   skip = str(row)
@@ -130,10 +130,10 @@ class ALLegislationScraper(LegislationScraper):
                                   html_layouts_are_awesome = row.findAll('td')
                                   if len(html_layouts_are_awesome) == 0:
                                       continue
-	
+
                                   (name, t) = html_layouts_are_awesome[0].string, html_layouts_are_awesome[2].string
                                   self.dumb_vote(vote, name, t)
-                                  
+
                                   if len(html_layouts_are_awesome) > 3:
                                       (name, t) = html_layouts_are_awesome[4].string, html_layouts_are_awesome[6].string
                                       self.dumb_vote(vote, name, t)
@@ -145,7 +145,7 @@ class ALLegislationScraper(LegislationScraper):
                            abs_votes = self.dumber_vote(a_votes)
                            vote = Vote(chamber, act_date, matter, (yea_votes > nay_votes), yea_votes, nay_votes, abs_votes)
                            bill.add_vote(vote)
-                       
+
                        bill.add_action(chamber, matter, act_date)
              self.save_bill(bill)
 
@@ -168,7 +168,7 @@ class ALLegislationScraper(LegislationScraper):
                     print e
                     break
         pass
-    
+
     def dumber_vote(self, v):
         if v is None:
             return None
@@ -181,36 +181,8 @@ class ALLegislationScraper(LegislationScraper):
         elif t == 'N':
             vote.no(name)
         else:
-	        vote.other(name)
+            vote.other(name)
 
-    def scrape_metadata(self):
-		#http://alisondb.legislature.state.al.us/acas/ACTIONSessionResultsFire.asp  -- sessions
-		sessions = []
-		session_details = {}
-		
-		with self.soup_context("http://alisondb.legislature.state.al.us/acas/ACTIONSessionResultsFire.asp") as session_page:
-			#<option value="1051">Regular Session 2010</option>
-			for option in session_page.find(id="Session").findAll('option'):
-				year = int(re.findall(r'[0-9]+', option.string)[0]) #Regular Session 2010
-				text = option.string.strip()
-				if not year in self.internal_sessions:
-					self.internal_sessions[year] = []
-					session_details[year] = {'years': [year], 'sub_sessions':[] }
-					sessions.append(year)
-				session_details[year]['sub_sessions'].append(text)
-				self.internal_sessions[year].append([option['value'], text])
-		return {
-	        'state_name': 'Alabama',
-	        'legislature_name': 'Alabama Legislature',
-	        'lower_chamber_name': 'House of Representatives',
-	        'upper_chamber_name': 'Senate',
-	        'lower_title': 'Representative',
-	        'upper_title': 'Senator',
-	        'lower_term': 4,
-	        'upper_term': 4,
-	        'sessions': sessions,
-	        'session_details': session_details
-	    }
     def unescape(self,s):
-		return re.sub('&(%s);' % '|'.join(name2codepoint), lambda m: unichr(name2codepoint[m.group(1)]), s)
-		
+        return re.sub('&(%s);' % '|'.join(name2codepoint), lambda m: unichr(name2codepoint[m.group(1)]), s)
+
