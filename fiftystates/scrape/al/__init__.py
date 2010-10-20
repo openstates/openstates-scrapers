@@ -1,15 +1,15 @@
 import datetime
 
 metadata =  {
-    'state_name': 'Alabama',
+    'name': 'Alabama',
     'abbreviation': 'al',
     'legislature_name': 'Alabama Legislature',
     'lower_chamber_name': 'House of Representatives',
     'upper_chamber_name': 'Senate',
-    'lower_title': 'Representative',
-    'upper_title': 'Senator',
-    'lower_term': 4,
-    'upper_term': 4,
+    'lower_chamber_title': 'Representative',
+    'upper_chamber_title': 'Senator',
+    'lower_chamber_term': 4,
+    'upper_chamber_term': 4,
     'terms': [
         {'name': '2007-2010',
          'sessions': ['Organization Session 2007',
