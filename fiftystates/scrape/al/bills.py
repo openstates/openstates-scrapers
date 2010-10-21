@@ -42,7 +42,7 @@ class ALBillScraper(BillScraper):
 
                 # pull bill_id out of script tag (gross)
                 bill_id = bill_id_re.search(button.text_content()).group()
-                btn_id = btn_re.search(button.text_content()).groups()[0]
+                oid = btn_re.search(button.text_content()).groups()[0]
 
                 sponsor = sponsor.text_content()
                 topic = topic.text_content()
@@ -50,17 +50,47 @@ class ALBillScraper(BillScraper):
                 com2 = com2.text_content()
                 desc = desc.text_content()
 
-                print bill_id, sponsor, topic, btn_id
+                bill = Bill(session, chamber, bill_id, desc, topic=topic)
+                bill.add_sponsor(sponsor, 'primary')
 
-                # get actions
-                # http://alisondb.legislature.state.al.us/acas/ACTIONHistoryResultsMac.asp?OID=%s&LABEL=%s
+                self.get_sponsors(bill, oid)
 
-                # fiscal notes
-                #url = "http://alisondb.legislature.state.al.us/acas/ACTIONFiscalNotesResults.asp?OID=%s&LABEL=%s%s" % (oID,bill_type,bill_number)
-
-                # sponsors
-                # url = "http://alisondb.legislature.state.al.us/acas/ACTIONSponsorsResultsMac.asp?OID=%s&LABEL=%s%s" % (oID,bill_type,bill_number)
+                self.get_actions(bill, oid)
 
 
-                # full text
-                # http://alisondb.legislature.state.al.us/acas/searchableinstruments/2003rs/resolutions/hjr374.htm
+    def get_actions(self, bill, oid):
+        url = 'http://alisondb.legislature.state.al.us/acas/ACTIONHistoryResultsMac.asp?OID=%s&LABEL=%s' % (oid, bill['bill_id'])
+
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
+
+            for row in doc.xpath('//tr[@valign="top"]'):
+                tds = row.xpath('td')
+                # date, amend/subst, matter, committee, nay, yea, abs, vote
+
+                # TODO: action parsing could be greatly improved
+                #   - it is unclear what it means when date is missing
+                #   - nothing done with amend/subst
+                #   - votes not handled yet
+                #   - actor isn't provided.. unclear what can be done
+
+                # only change date if it exists (actions w/o date get old date)
+                if tds[0].text_content():
+                    date = datetime.datetime.strptime(tds[0].text_content(),
+                                                      '%m/%d/%y')
+
+                bill.add_action(bill['chamber'], tds[2].text_content(), date)
+
+    def get_sponsors(self, bill, oid):
+        url = "http://alisondb.legislature.state.al.us/acas/ACTIONSponsorsResultsMac.asp?OID=%s&LABEL=%s" % (oid, bill['bill_id'])
+
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
+
+            raise Exception()
+
+    # full text
+    # http://alisondb.legislature.state.al.us/acas/searchableinstruments/2003rs/resolutions/hjr374.htm
+
+    #def getvote(moid, bill_type, bill_number, voteid, bodyoid, sessionid):
+    #    url = "http://alisondb.legislature.state.al.us/acas/GetRollCallVoteResults.asp?MOID=%s&VOTE=%s&BODY=%s&INST=%s%s&SESS=%s" % (moid,voteid,bodyoid,bill_type,bill_number,sessionid)
