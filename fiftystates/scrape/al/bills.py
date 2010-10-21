@@ -1,6 +1,7 @@
 from fiftystates.scrape.bills import BillScraper, Bill
 
 import re
+import datetime
 import lxml.html
 
 bill_id_re = re.compile('(H|S)B\d+')
@@ -50,16 +51,28 @@ class ALBillScraper(BillScraper):
                 com2 = com2.text_content()
                 desc = desc.text_content()
 
+                # create bill
                 bill = Bill(session, chamber, bill_id, desc, topic=topic)
                 bill.add_sponsor(sponsor, 'primary')
 
                 self.get_sponsors(bill, oid)
-
                 self.get_actions(bill, oid)
+
+                # craft bill URL
+                session_fragment = '2010rs'
+                type_fragment = 'bills'
+                bill_id_fragment = bill_id.lower()
+                bill_text_url = 'http://alisondb.legislature.state.al.us/acas/searchableinstruments/%s/%s/%s.htm' % (
+                    session_fragment, type_fragment, bill_id_fragment)
+                bill.add_version('bill text', bill_text_url)
+
+                self.save_bill(bill)
 
 
     def get_actions(self, bill, oid):
         url = 'http://alisondb.legislature.state.al.us/acas/ACTIONHistoryResultsMac.asp?OID=%s&LABEL=%s' % (oid, bill['bill_id'])
+
+        bill.add_source(url)
 
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
@@ -77,20 +90,21 @@ class ALBillScraper(BillScraper):
                 # only change date if it exists (actions w/o date get old date)
                 if tds[0].text_content():
                     date = datetime.datetime.strptime(tds[0].text_content(),
-                                                      '%m/%d/%y')
+                                                      '%m/%d/%Y')
 
                 bill.add_action(bill['chamber'], tds[2].text_content(), date)
 
     def get_sponsors(self, bill, oid):
         url = "http://alisondb.legislature.state.al.us/acas/ACTIONSponsorsResultsMac.asp?OID=%s&LABEL=%s" % (oid, bill['bill_id'])
 
+        bill.add_source(url)
+
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
+            # cosponsors in really weird table layout (likely to break)
+            for cs in doc.xpath('//table[2]/tr/td[2]/table/tr/td/text()'):
+                bill.add_sponsor(cs, 'cosponsor')
 
-            raise Exception()
-
-    # full text
-    # http://alisondb.legislature.state.al.us/acas/searchableinstruments/2003rs/resolutions/hjr374.htm
 
     #def getvote(moid, bill_type, bill_number, voteid, bodyoid, sessionid):
     #    url = "http://alisondb.legislature.state.al.us/acas/GetRollCallVoteResults.asp?MOID=%s&VOTE=%s&BODY=%s&INST=%s%s&SESS=%s" % (moid,voteid,bodyoid,bill_type,bill_number,sessionid)
