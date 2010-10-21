@@ -29,7 +29,7 @@ class BillScraper(Scraper):
 
     def save_bill(self, bill):
         """
-        Save a scraped :class:`pyutils.legislation.Bill` object. Only
+        Save a scraped :class:`~fiftystates.scrape.bills.Bill` object. Only
         call after all data for the given bill has been collected.
         """
         self.log("save_bill %s %s: %s" % (bill['chamber'],
@@ -158,7 +158,8 @@ class Bill(FiftystatesObject):
 
     def add_vote(self, vote):
         """
-        Associate a :class:`pyutils.legislation.Vote` object with this bill.
+        Associate a :class:`~fiftystates.scrape.votes.Vote` object with this
+        bill.
         """
         self['votes'].append(vote)
 

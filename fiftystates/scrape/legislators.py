@@ -24,19 +24,20 @@ class LegislatorScraper(Scraper):
         Grab all the legislators who served in a given year. Must be
         overridden by subclasses.
 
-        Should raise a :class:`NoDataForPeriod` exception if the year is invalid.
+        Should raise a :class:`NoDataForPeriod` exception if the year is
+        invalid.
         """
         raise NotImplementedError('LegislatorScrapers must define a '
                                   'scrape method')
 
     def save_person(self, person):
         """
-        Save a scraped :class:`pyutils.legislation.Person` object. Only
-        call after all data for the given person has been collected.
+        Save a scraped :class:`~fiftystates.scrape.legislators.Person` object.
+        Only call after all data for the given person has been collected.
 
         Should be used for non-legislator people (e.g. Governor, Lt. Gov).
-        To add :class:`pyutils.legislation.Legislator` objects call
-        :meth:`pyutils.legislation.save_legislator`.
+        To add :class:`~fiftystates.scrape.legislators.Legislator` objects call
+        :meth:`save_legislator`.
         """
         self.log("save_person: %s" % person['full_name'])
 
@@ -56,7 +57,9 @@ class LegislatorScraper(Scraper):
 
     def save_legislator(self, legislator):
         """
-        Save a scraped :class:`pyutils.legislation.Legislator` object.
+        Save a scraped :class:`~fiftystates.scrape.legislators.Legislator`
+        object.
+
         Only call after all data for the given legislator has been collected.
         """
         self.log("save_legislator: %s" % legislator['full_name'])
@@ -83,8 +86,8 @@ class Person(FiftystatesObject):
         """
         Create a Person.
 
-        Note: the :class:`pyutils.legislation.Legislator` class should
-        be used when dealing with state legislators.
+        Note: the :class:`~fiftystates.scrape.legislators.Legislator` class
+        should be used when dealing with state legislators.
 
         :param full_name: the person's full name
         :param first_name: the first name of this legislator (if specified)
