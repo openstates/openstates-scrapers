@@ -65,6 +65,6 @@
         "url": {"type": "string"},
         "retrieved": {"type": "datetime"}
     }}},
-    "subjects": {"type": "array", "items": {"type": "string"}}
+    "subjects": {"type": "array", "items": {"type": "string"}, "optional": true}
  }
 }
