@@ -7,7 +7,7 @@ from pymongo.son import SON
 import scrapelib
 
 from fiftystates.backend import db, fs
-from fiftystates.backend.utils import base_arg_parser, put_document
+from fiftystates.backend.utils import put_document
 
 
 def import_versions(state, rpm=60):
