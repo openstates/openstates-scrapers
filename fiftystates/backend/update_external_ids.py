@@ -1,6 +1,7 @@
 from fiftystates import settings
 from fiftystates.backend import db
 
+import datetime
 import argparse
 import name_tools
 import pymongo
@@ -12,62 +13,69 @@ from votesmart import votesmart, VotesmartApiError
 votesmart.apikey = getattr(settings, 'VOTESMART_API_KEY', '')
 
 def update_nimsp_ids(state):
-    state_abbrev = state['abbreviation']
 
-    office_ids = {'upper': 'S00'}
-    upper_office_id = 'S00'
-    if state['lower_chamber_name'].startswith('House'):
-        office_ids['lower'] = 'R00'
-    else:
-        office_ids['lower'] = 'R01'
-
+    abbrev = state['abbreviation']
     current_term = state['terms'][-1]['name']
-    year = state['terms'][-1]['start_year'] - 1
+
+    # the year calculation can be quite difficult. generally the story is that
+    # it'll be start_year-term.  but some states (NJ in particular) complicate
+    # the story by having variable terms
+
+    # the result? a fairly nasty hack
+
+    # start last year and try walking backwards
+    year = datetime.datetime.today().year - 1
+    upper_cands = lower_cands = None
+
+    # try and get lower_cands walking backwards one year at a time
+    while not lower_cands:
+        try:
+            lower_cands = nimsp.candidates.list(state=abbrev, office='R00',
+                                                year=year,
+                                                candidate_status='Won')
+        except NimspApiError:
+            try:
+                lower_cands = nimsp.candidates.list(state=abbrev, office='R01',
+                                                    year=year,
+                                                    candidate_status='Won')
+            except NimspApiError:
+                year -= 1
+
+    # do the same thing for upper_cands
+    while not upper_cands:
+        try:
+            upper_cands = nimsp.candidates.list(state=abbrev, office='S00',
+                                                year=year,
+                                                candidate_status='Won')
+        except NimspApiError:
+            year -= 1
+
 
     query = {'roles':
              {'$elemMatch': {
                 'type': 'member',
                 'term': current_term,
-                'state': state_abbrev}},
+                'state': abbrev}},
              'nimsp_candidate_id': None,
     }
 
     initial_count = db.legislators.find(query).count()
-    update_count = 0
 
-    for leg in db.legislators.find(query):
-        role = None
-        for r in leg['roles']:
-            if r['type'] == 'member' and r['term'] == current_term:
-                role = r
-                break
+    def _match(chamber, candidates):
+        updated = 0
+        for leg in db.legislators.find(dict(query, chamber=chamber)):
+            for cand in candidates:
+                if (cand.candidate_name.startswith(leg['last_name'].upper())
+                    and ('%03d' % int(leg['district'])) == cand.district):
+                    leg['nimsp_candidate_id'] = cand.imsp_candidate_id
+                    db.legislators.save(leg, safe=True)
+                    updated += 1
+        return updated
 
-        office_id = office_ids[role['chamber']]
+    updated = _match('upper', upper_cands)
+    updated += _match('lower', lower_cands)
 
-        # NIMSP is picky about LAST, FIRST name format
-        name = leg['last_name']
-        if 'suffix' in leg and leg['suffix']:
-            name += " " + leg['suffix'].replace(".", "")
-        name += ", " + leg['first_name'].replace(".", "")
-
-        try:
-            results = nimsp.candidates.list(
-                state=state_abbrev, office=office_id,
-                candidate_name=name, year=year,
-                candidate_status='WON')
-        except NimspApiError as e:
-            print "Failed matching %s" % name.encode('ascii', 'replace')
-            continue
-
-        if len(results) == 1:
-            leg['nimsp_candidate_id'] = int(
-                results[0].imsp_candidate_id)
-            db.legislators.save(leg, safe=True)
-            update_count += 1
-        else:
-            print "Too many results for %s" % name.encode('ascii', 'replace')
-
-    print 'Updated %s of %s missing NIMSP ids' % (update_count, initial_count)
+    print 'Updated %s of %s missing NIMSP ids' % (updated, initial_count)
 
 
 def update_votesmart_committees(state):
@@ -124,31 +132,32 @@ def update_votesmart_legislators(state):
              'votesmart_id': None,
             }
 
-    print '%s without votesmart id' % db.legislators.find(query).count()
+    updated = 0
+    initial_count = db.legislators.find(query).count()
 
-    upper_officials = votesmart.officials.getByOfficeState(9,
-                                                       state['_id'].upper())
-
+    # get officials
+    abbrev = state['_id'].upper()
+    upper_officials = votesmart.officials.getByOfficeState(9, abbrev)
     try:
-        lower_officials = votesmart.officials.getByOfficeState(8,
-                                                          state['_id'].upper())
+        lower_officials = votesmart.officials.getByOfficeState(8, abbrev)
     except VotesmartApiError:
-        lower_officials = votesmart.officials.getByOfficeState(7,
-                                                          state['_id'].upper())
+        lower_officials = votesmart.officials.getByOfficeState(7, abbrev)
 
     def _match(chamber, vsofficials):
+        updated = 0
         for unmatched in db.legislators.find(dict(query, chamber=chamber)):
-            print unmatched['district']
             for vso in vsofficials:
                 if (unmatched['district'] == vso.officeDistrictName and
                     unmatched['last_name'] == vso.lastName):
                     unmatched['votesmart_id'] = vso.candidateId
                     db.legislators.save(unmatched, safe=True)
+                    updated += 1
+        return updated
 
-    _match('upper', upper_officials)
-    _match('lower', lower_officials)
+    updated += _match('upper', upper_officials)
+    updated += _match('lower', lower_officials)
 
-    print '%s without votesmart id' % db.legislators.find(query).count()
+    print 'Updated %s of %s missing votesmart ids' % (updated, initial_count)
 
 
 
@@ -159,8 +168,8 @@ def update_missing_ids(state_abbrev):
             state_abbrev)
         sys.exit(1)
 
-    #print "Updating NIMSP ids..."
-    #update_nimsp_ids(state)
+    print "Updating NIMSP ids..."
+    update_nimsp_ids(state)
 
     #print "Updating PVS committee ids..."
     #update_votesmart_committees(state)
