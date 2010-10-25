@@ -114,47 +114,42 @@ def update_votesmart_committees(state):
 
 
 def update_votesmart_legislators(state):
-    offices = {'upper': 9}
-
-    if 'lower_chamber_name' in state:
-        if state['lower_chamber_name'].startswith('House'):
-            offices['lower'] = 8
-        else:
-            offices['lower'] = 7
-
     current_term = state['terms'][-1]['name']
 
-    for chamber, office in offices.items():
-        officials = votesmart.officials.getByOfficeState(
-            office, state['_id'].upper())
+    query = {'roles': {'$elemMatch':
+                       {'type': 'member',
+                        'state': state['abbreviation'],
+                        'term': current_term}
+                      },
+             'votesmart_id': None,
+            }
 
-        for official in officials:
-            legs = db.legislators.find(
-                {'roles': {'$elemMatch':
-                     {'type': 'member',
-                      'chamber': chamber,
-                      'district': official.officeDistrictName,
-                      'term': current_term}},
-                 'last_name': official.lastName,
-               })
+    print '%s without votesmart id' % db.legislators.find(query).count()
 
-            if legs.count() > 1:
-                print ("Too many matches for '%s'" % official).encode(
-                    'ascii', 'replace')
-            elif legs.count() == 0:
-                print ("No matches for '%s'" % official).encode(
-                    'ascii', 'replace')
-            else:
-                leg = legs[0]
+    upper_officials = votesmart.officials.getByOfficeState(9,
+                                                       state['_id'].upper())
 
-                for r in leg['roles']:
-                    if (r['type'] == 'member' and
-                        r['term'] == current_term):
+    try:
+        lower_officials = votesmart.officials.getByOfficeState(8,
+                                                          state['_id'].upper())
+    except VotesmartApiError:
+        lower_officials = votesmart.officials.getByOfficeState(7,
+                                                          state['_id'].upper())
 
-                        leg['votesmart_id'] = official.candidateId
-                        db.legislators.save(leg, safe=True)
+    def _match(chamber, vsofficials):
+        for unmatched in db.legislators.find(dict(query, chamber=chamber)):
+            print unmatched['district']
+            for vso in vsofficials:
+                if (unmatched['district'] == vso.officeDistrictName and
+                    unmatched['last_name'] == vso.lastName):
+                    unmatched['votesmart_id'] = vso.candidateId
+                    db.legislators.save(unmatched, safe=True)
 
-                        break
+    _match('upper', upper_officials)
+    _match('lower', lower_officials)
+
+    print '%s without votesmart id' % db.legislators.find(query).count()
+
 
 
 def update_missing_ids(state_abbrev):
@@ -164,11 +159,11 @@ def update_missing_ids(state_abbrev):
             state_abbrev)
         sys.exit(1)
 
-    print "Updating NIMSP ids..."
-    update_nimsp_ids(state)
+    #print "Updating NIMSP ids..."
+    #update_nimsp_ids(state)
 
-    print "Updating PVS committee ids..."
-    update_votesmart_committees(state)
+    #print "Updating PVS committee ids..."
+    #update_votesmart_committees(state)
 
     print "Updating PVS legislator ids..."
     update_votesmart_legislators(state)
