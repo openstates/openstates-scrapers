@@ -44,7 +44,7 @@ class NJLegislatorScraper(LegislatorScraper):
             full_name = full_name.replace('  ', ' ')
             full_name = full_name[0: len(full_name) - 1]
             
-            district = rec["district"]
+            district = int(rec["district"])
             party = rec["party"]
             if party == 'R':
                 party = "Republican"
