@@ -11,7 +11,7 @@ nimsp.apikey = getattr(settings, 'NIMSP_API_KEY', '')
 from votesmart import votesmart, VotesmartApiError
 votesmart.apikey = getattr(settings, 'VOTESMART_API_KEY', '')
 
-def import_nimsp_ids(state):
+def update_nimsp_ids(state):
     state_abbrev = state['abbreviation']
 
     office_ids = {'upper': 'S00'}
@@ -70,7 +70,7 @@ def import_nimsp_ids(state):
     print 'Updated %s of %s missing NIMSP ids' % (update_count, initial_count)
 
 
-def import_votesmart_committees(state):
+def update_votesmart_committees(state):
     db.committees.ensure_index([('state', pymongo.ASCENDING),
                                 ('chamber', pymongo.ASCENDING)])
     db.committees.ensure_index([('state', pymongo.ASCENDING),
@@ -113,7 +113,7 @@ def import_votesmart_committees(state):
             db.committees.save(data, safe=True)
 
 
-def import_votesmart_legislators(state):
+def update_votesmart_legislators(state):
     offices = {'upper': 9}
 
     if 'lower_chamber_name' in state:
@@ -165,13 +165,13 @@ def update_missing_ids(state_abbrev):
         sys.exit(1)
 
     print "Updating NIMSP ids..."
-    import_nimsp_ids(state)
+    update_nimsp_ids(state)
 
     print "Updating PVS committee ids..."
-    import_votesmart_committees(state)
+    update_votesmart_committees(state)
 
     print "Updating PVS legislator ids..."
-    import_votesmart_legislators(state)
+    update_votesmart_legislators(state)
 
 
 if __name__ == '__main__':

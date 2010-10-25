@@ -1,12 +1,5 @@
 #!/usr/bin/env python
-import os
-import sys
-import glob
-import json
-import datetime
-
 from fiftystates import settings
-from fiftystates.backend import db
 
 import argparse
 
@@ -17,7 +10,6 @@ from fiftystates.backend.committees import import_committees
 from fiftystates.backend.votes import import_votes
 from fiftystates.backend.events import import_events
 from fiftystates.backend.versions import import_versions
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
