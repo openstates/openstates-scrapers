@@ -6,6 +6,7 @@ import urllib2
 import datetime
 import contextlib
 from optparse import make_option, OptionParser
+from collections import defaultdict
 
 from fiftystates.scrape.validator import DatetimeValidator
 
@@ -49,8 +50,26 @@ class JSONDateEncoder(json.JSONEncoder):
 
         return json.JSONEncoder.default(self, obj)
 
+_scraper_registry = defaultdict(dict)
+
+class ScraperMeta(type):
+    """ register derived scrapers in a central registry """
+
+    def __new__(meta, classname, bases, classdict):
+        cls = type.__new__(meta, classname, bases, classdict)
+
+        state = getattr(cls, 'state', None)
+        scraper_type = getattr(cls, 'scraper_type', None)
+
+        if state and scraper_type:
+            _scraper_registry[state][scraper_type] = cls
+
+        return cls
+
 
 class Scraper(scrapelib.Scraper):
+
+    __metaclass__ = ScraperMeta
 
     def __init__(self, metadata, no_cache=False, output_dir=None,
                  strict_validation=None, **kwargs):

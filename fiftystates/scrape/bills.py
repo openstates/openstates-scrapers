@@ -11,6 +11,8 @@ from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
 
 class BillScraper(Scraper):
 
+    scraper_type = 'bills'
+
     def _get_schema(self):
         schema_path = os.path.join(os.path.split(__file__)[0],
                                    '../../schemas/bill.json')

@@ -11,6 +11,9 @@ from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
 
 
 class EventScraper(Scraper):
+
+    scraper_type = 'events'
+
     def _get_schema(self):
         schema_path = os.path.join(os.path.split(__file__)[0],
                                    '../../schemas/event.json')
