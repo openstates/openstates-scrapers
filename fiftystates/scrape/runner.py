@@ -6,7 +6,8 @@ import os
 import sys
 from optparse import make_option, OptionParser
 
-from fiftystates.scrape import NoDataForPeriod, JSONDateEncoder
+from fiftystates.scrape import (NoDataForPeriod, JSONDateEncoder,
+                                _scraper_registry)
 from fiftystates.scrape.validator import DatetimeValidator
 
 try:
@@ -28,15 +29,11 @@ class RunException(Exception):
             return self.msg
 
 def main():
-    def _run_scraper(scraper_type):
+    def _run_scraper(mod_path, scraper_type):
         """
             state: lower case two letter abbreviation of state
             scraper_type: bills, legislators, committees, votes
         """
-        mod_path = 'fiftystates.scrape.%s.%s' % (state, scraper_type)
-        scraper_name = '%s%sScraper' % (state.upper(),
-                                        scraper_type[:-1].capitalize())
-
         # make or clear directory for this type
         path = os.path.join(output_dir, scraper_type)
         try:
@@ -49,14 +46,18 @@ def main():
                     os.remove(f)
 
         try:
-            mod = __import__(mod_path, fromlist=[scraper_name])
-            ScraperClass = getattr(mod, scraper_name)
+            mod_path = '%s.%s' % (mod_path, scraper_type)
+            mod = __import__(mod_path)
         except ImportError, e:
             if not options.alldata:
                 raise RunException("could not import %s" % mod_path, e)
-        except AttributeError, e:
+
+        try:
+            ScraperClass = _scraper_registry[state][scraper_type]
+        except KeyError, e:
             if not options.alldata:
-                raise RunException("could not import %s" % scraper_name, e)
+                raise RunException("no %s %s scraper found" %
+                                   (state, scraper_type))
 
         scraper = ScraperClass(metadata, **opts)
 
@@ -113,10 +114,10 @@ def main():
 
         make_option('-v', '--verbose', action='count', dest='verbose',
                     default=False,
-                    help="be verbose (use multiple times for more"\
+                    help="be verbose (use multiple times for more"
                         "debugging information)"),
         make_option('--strict', action='store_true', dest='strict',
-                    default=False, help="fail immediately when encountering a"\
+                    default=False, help="fail immediately when encountering a"
                         "validation warning"),
         make_option('-d', '--output_dir', action='store', dest='output_dir',
                     help='output directory'),
@@ -129,9 +130,13 @@ def main():
     parser = OptionParser(option_list=option_list)
     options, spares = parser.parse_args()
 
+    # loading from module
     if len(spares) != 1:
-        raise RunException("Must pass a state abbreviation (eg. nc)")
-    state = spares[0]
+        raise RunException("Must pass a path to a metadata module (eg. nc)")
+    mod_name = spares[0]
+
+    metadata = __import__(mod_name, fromlist=['metadata']).metadata
+    state = metadata['abbreviation']
 
     # configure logger
     if options.verbose == 0:
@@ -156,9 +161,6 @@ def main():
             raise e
 
     # write metadata
-    mod_name = 'fiftystates.scrape.%s' % state
-    metadata = __import__(mod_name, fromlist=['metadata']).metadata
-
     try:
         schema_path = os.path.join(os.path.split(__file__)[0],
                                    '../../schemas/metadata.json')
@@ -167,8 +169,8 @@ def main():
         validator = DatetimeValidator()
         validator.validate(metadata, schema)
     except ValueError, e:
-        logging.getLogger('fiftystates').warning('metadata validation error: ' +
-                                                 str(e))
+        logging.getLogger('fiftystates').warning('metadata validation error: '
+                                                 + str(e))
 
     with open(os.path.join(output_dir, 'state_metadata.json'), 'w') as f:
         json.dump(metadata, f, cls=JSONDateEncoder)
@@ -224,15 +226,15 @@ def main():
         options.committees = True
 
     if options.bills:
-        _run_scraper('bills')
+        _run_scraper(mod_name, 'bills')
     if options.legislators:
-        _run_scraper('legislators')
+        _run_scraper(mod_name, 'legislators')
     if options.committees:
-        _run_scraper('committees')
+        _run_scraper(mod_name, 'committees')
     if options.votes:
-        _run_scraper('votes')
+        _run_scraper(mod_name, 'votes')
     if options.events:
-        _run_scraper('events')
+        _run_scraper(mod_name, 'events')
 
 
 if __name__ == '__main__':
