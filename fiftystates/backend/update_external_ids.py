@@ -1,7 +1,11 @@
+#!/usr/bin/env python
+
 from fiftystates import settings
 from fiftystates.backend import db
 
+import re
 import datetime
+
 import argparse
 import name_tools
 import pymongo
@@ -11,6 +15,14 @@ nimsp.apikey = getattr(settings, 'NIMSP_API_KEY', '')
 
 from votesmart import votesmart, VotesmartApiError
 votesmart.apikey = getattr(settings, 'VOTESMART_API_KEY', '')
+
+def _nimspize(iid):
+    match = re.match('(\d+)(.*)', iid)
+    if match:
+        n, rest = match.groups()
+        return '%03d%s' % (int(n), rest)
+    else:
+        return iid
 
 def update_nimsp_ids(state):
 
@@ -66,7 +78,7 @@ def update_nimsp_ids(state):
         for leg in db.legislators.find(dict(query, chamber=chamber)):
             for cand in candidates:
                 if (cand.candidate_name.startswith(leg['last_name'].upper())
-                    and ('%03d' % int(leg['district'])) == cand.district):
+                    and (_nimspize(leg['district']) == cand.district)):
                     leg['nimsp_candidate_id'] = cand.imsp_candidate_id
                     db.legislators.save(leg, safe=True)
                     updated += 1
