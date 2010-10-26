@@ -2,7 +2,6 @@
 from __future__ import with_statement
 import os
 import glob
-import logging
 import datetime
 
 try:
@@ -10,20 +9,18 @@ try:
 except ImportError:
     import simplejson as json
 
-from fiftystates import settings
 from fiftystates.backend import db
 from fiftystates.backend.names import get_legislator_id
-from fiftystates.backend.utils import base_arg_parser, prepare_obj
-
-import argparse
-
-_log = logging.getLogger('fiftystates')
+from fiftystates.backend.utils import prepare_obj
 
 
 def import_votes(state, data_dir):
     data_dir = os.path.join(data_dir, state)
     pattern = os.path.join(data_dir, 'votes', '*.json')
-    for path in glob.iglob(pattern):
+
+    paths = glob.glob(pattern)
+
+    for path in paths:
         with open(path) as f:
             data = prepare_obj(json.load(f))
 
@@ -62,23 +59,4 @@ def import_votes(state, data_dir):
 
         db.bills.save(bill, safe=True)
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        parents=[base_arg_parser],
-        description=("Import (separate file) votes from scraped "
-                     "legislative data."))
-
-    parser.add_argument('--data_dir', '-d', type=str,
-                        help="the base Fifty State data directory")
-
-    args = parser.parse_args()
-
-    if args.data_dir:
-        data_dir = args.data_dir
-    else:
-        data_dir = settings.FIFTYSTATES_DATA_DIR
-
-    _log.addHandler(logging.StreamHandler())
-
-    import_votes(args.state, data_dir)
+    print 'imported %s vote files' % len(paths)

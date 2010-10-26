@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 import sys
 import logging
-import argparse
 
 from pymongo.son import SON
 
 import scrapelib
 
 from fiftystates.backend import db, fs
-from fiftystates.backend.utils import base_arg_parser, put_document
+from fiftystates.backend.utils import put_document
 
 
 def import_versions(state, rpm=60):
@@ -40,23 +39,3 @@ def import_versions(state, rpm=60):
 
         if bill_changed:
             db.bills.save(bill)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        parents=[base_arg_parser],
-        description="Download and store copies of bill versions.")
-    parser.add_argument('-r', '--rpm', type=int, default=60,
-                        help=('maximum number of documents to download '
-                              'per minute'))
-    args = parser.parse_args()
-
-    verbosity = {0: logging.WARNING,
-                 1: logging.INFO}.get(args.verbose, logging.DEBUG)
-
-    logging.basicConfig(level=verbosity,
-                        format=("%(asctime)s %(name)s %(levelname)s " +
-                                args.state + " %(message)s"),
-                        datefmt="%H:%M:%S")
-
-    import_versions(args.state, args.rpm)
