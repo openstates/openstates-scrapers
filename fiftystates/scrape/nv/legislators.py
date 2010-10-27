@@ -92,7 +92,9 @@ class NVLegislatorScraper(LegislatorScraper):
                 addresspath = 'string(/html/body/table[%s]/tr/td/table[2]/tr/td[2])' % (numdistricts + 2)
                 address = root.xpath(addresspath)
 
-                leg = Legislator(term_name, chamber, district, full_name, first_name, last_name, middle_name, party, end_date = end_date, email = email, address = address)
+                leg = Legislator(term_name, chamber, district, full_name,
+                                 first_name, last_name, middle_name, party,
+                                 email=email, address=address)
                 leg.add_source(leg_url)
                 self.save_legislator(leg)
 
