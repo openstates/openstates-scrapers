@@ -2,6 +2,7 @@
 from __future__ import with_statement
 import os
 import glob
+import logging
 import datetime
 
 try:
@@ -13,6 +14,7 @@ from fiftystates.backend import db
 from fiftystates.backend.names import get_legislator_id
 from fiftystates.backend.utils import prepare_obj
 
+_log = logging.getLogger('fiftystates')
 
 def import_votes(state, data_dir):
     data_dir = os.path.join(data_dir, state)

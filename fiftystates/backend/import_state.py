@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-from fiftystates import settings
-
+import logging
 import argparse
+
+from fiftystates import settings
 
 from fiftystates.backend.metadata import import_metadata
 from fiftystates.backend.bills import import_bills
@@ -47,6 +48,18 @@ if __name__ == '__main__':
         data_dir = args.data_dir
     else:
         data_dir = settings.FIFTYSTATES_DATA_DIR
+
+    # configure logger
+    if args.verbose == 0:
+        verbosity = logging.WARNING
+    elif args.verbose == 1:
+        verbosity = logging.INFO
+    else:
+        verbosity = logging.DEBUG
+
+    logging.basicConfig(level=verbosity,
+                    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+                    datefmt="%H:%M:%S")
 
     # if any importers are specified, don't do all
     scrape_all = not any((args.bills, args.legislators, args.committees,
