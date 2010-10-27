@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 from __future__ import with_statement
 import os
-import re
 import sys
-import time
 import glob
 import datetime
 
@@ -12,13 +10,10 @@ try:
 except:
     import simplejson as json
 
-from fiftystates import settings
 from fiftystates.backend import db
-from fiftystates.backend.utils import (insert_with_id, update, prepare_obj,
-                                       base_arg_parser)
+from fiftystates.backend.utils import insert_with_id, update, prepare_obj
 
 import pymongo
-import argparse
 import name_tools
 
 
@@ -39,12 +34,14 @@ def ensure_indexes():
 def import_legislators(state, data_dir):
     data_dir = os.path.join(data_dir, state)
     pattern = os.path.join(data_dir, 'legislators', '*.json')
-    for path in glob.iglob(pattern):
+    paths = glob.glob(pattern)
+    for path in paths:
         with open(path) as f:
             data = prepare_obj(json.load(f))
 
         import_legislator(data)
 
+    print 'imported %s legislator files' % len(paths)
     activate_legislators(state)
 
 
@@ -129,21 +126,3 @@ def import_legislator(data):
         update(leg, data, db.legislators)
 
     ensure_indexes()
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        parents=[base_arg_parser],
-        description='Import scraped state legislators into a mongo databse.')
-
-    parser.add_argument('--data_dir', '-d', type=str,
-                        help='the base Fifty State data directory')
-
-    args = parser.parse_args()
-
-    if args.data_dir:
-        data_dir = args.data_dir
-    else:
-        data_dir = settings.FIFTYSTATES_DATA_DIR
-
-    import_legislators(args.state, data_dir)

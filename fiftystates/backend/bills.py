@@ -12,17 +12,14 @@ try:
 except:
     import simplejson as json
 
-from fiftystates import settings
 from fiftystates.utils import keywordize
 from fiftystates.backend import db
 from fiftystates.backend.names import get_legislator_id
 from fiftystates.backend.utils import (insert_with_id,
                                        update, prepare_obj,
-                                       base_arg_parser,
                                        get_committee_id)
 
 import pymongo
-import argparse
 
 
 def ensure_indexes():
@@ -61,7 +58,9 @@ def import_bills(state, data_dir):
         for session in term['sessions']:
             sessions[session] = term['name']
 
-    for path in glob.iglob(pattern):
+    paths = glob.glob(pattern)
+
+    for path in paths:
         with open(path) as f:
             data = prepare_obj(json.load(f))
 
@@ -117,6 +116,8 @@ def import_bills(state, data_dir):
             data['_keywords'] = list(bill_keywords(data))
             update(bill, data, db.bills)
 
+    print 'imported %s bill files' % len(paths)
+
     populate_current_fields(state)
     ensure_indexes()
 
@@ -152,21 +153,3 @@ def populate_current_fields(state):
             bill['_current_term'] = False
 
         db.bills.save(bill, safe=True)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        parents=[base_arg_parser],
-        description='Import scraped state legislation into a mongo databse.')
-
-    parser.add_argument('--data_dir', '-d', type=str,
-                        help='the base Fifty State data directory')
-
-    args = parser.parse_args()
-
-    if args.data_dir:
-        data_dir = args.data_dir
-    else:
-        data_dir = settings.FIFTYSTATES_DATA_DIR
-
-    import_bills(args.state, data_dir)

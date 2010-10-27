@@ -11,6 +11,8 @@ from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
 
 class LegislatorScraper(Scraper):
 
+    scraper_type = 'legislators'
+
     def _get_schema(self):
         schema_path = os.path.join(os.path.split(__file__)[0],
                                    '../../schemas/person.json')
