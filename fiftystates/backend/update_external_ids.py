@@ -89,50 +89,6 @@ def update_nimsp_ids(state):
 
     print 'Updated %s of %s missing NIMSP ids' % (updated, initial_count)
 
-
-def update_votesmart_committees(state):
-    db.committees.ensure_index([('state', pymongo.ASCENDING),
-                                ('chamber', pymongo.ASCENDING)])
-    db.committees.ensure_index([('state', pymongo.ASCENDING),
-                                ('votesmart_id', pymongo.ASCENDING)])
-
-    types = {'upper': 'S'}
-    if 'lower_chamber_name' in state:
-        if state['lower_chamber_name'].startswith('House'):
-            types['lower'] = 'H'
-        else:
-            types['lower'] = 'S'
-
-    for chamber, typeId in types.items():
-        for committee in votesmart.committee.getCommitteesByTypeState(
-            typeId=typeId, stateId=state['_id'].upper()):
-
-            committee_name = committee.name
-            subcommittee_name = None
-
-            if committee.parentId != "-1":
-                parent = votesmart.committee.getCommittee(committee.parentId)
-                subcommittee_name = committee_name
-                committee_name = parent.name
-
-            spec = {'state': state['_id'],
-                    'chamber': chamber,
-                    'committee': committee_name}
-            if subcommittee_name:
-                spec['subcommittee'] = subcommittee_name
-
-            data = db.committees.find_one(spec)
-
-            if not data:
-                print "No matches for '%s'" % (subcommittee_name or
-                                               committee_name)
-                continue
-
-            data['votesmart_id'] = committee.committeeId
-
-            db.committees.save(data, safe=True)
-
-
 def update_votesmart_legislators(state):
     current_term = state['terms'][-1]['name']
 
@@ -182,9 +138,6 @@ def update_missing_ids(state_abbrev):
 
     print "Updating NIMSP ids..."
     update_nimsp_ids(state)
-
-    #print "Updating PVS committee ids..."
-    #update_votesmart_committees(state)
 
     print "Updating PVS legislator ids..."
     update_votesmart_legislators(state)
