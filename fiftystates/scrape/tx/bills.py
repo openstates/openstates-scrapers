@@ -42,6 +42,8 @@ class TXBillScraper(BillScraper):
             bill.add_source(url)
 
             versions_url = url.replace('billhistory', 'billtext/html')
+            # URLs for versions inexplicably (H|S)(J|C) instead of (H|J)(CR|JR)
+            versions_url = versions_url.replace('JR', 'J').replace('CR', 'C')
             versions_url = '/'.join(versions_url.split('/')[0:-1])
 
             bill_prefix = bill['bill_id'].split()[0]
