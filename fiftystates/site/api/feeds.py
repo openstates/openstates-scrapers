@@ -33,7 +33,8 @@ class EventFeed(Feed):
             return author['participant']
 
     def item_link(self, item):
-        return 'http://google.com'
-        
+        return 'http://openstates.sunlightlabs.com/api/v1/events/%s/' % (
+            item['_id'])
+
     def item_pubdate(self, item):
         return item['when']
