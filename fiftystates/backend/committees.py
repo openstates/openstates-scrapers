@@ -54,6 +54,7 @@ def import_committees(state, data_dir):
                         committee = spec
                         committee['_type'] = 'committee'
                         committee['members'] = []
+                        committee['sources'] = []
                         insert_with_id(committee)
 
                     for member in committee['members']:
