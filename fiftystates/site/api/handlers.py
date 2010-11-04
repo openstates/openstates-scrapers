@@ -230,9 +230,12 @@ class StatsHandler(FiftyStateHandler):
 
 
 class EventsHandler(FiftyStateHandler):
-    def read(self, request, events=[]):
+    def read(self, request, id=None, events=[]):
         if events:
             return events
+
+        if id:
+            return db.events.find_one({'_id': id})
 
         spec = {}
 

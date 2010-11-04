@@ -77,7 +77,8 @@ urlpatterns = patterns('',
 
     url(r'^v1/documents/(?P<id>[A-Z]{2,2}D\d{8,8})/$', document),
 
-    url(r'^v1/events/', events_handler),
+    url(r'^v1/events/$', events_handler),
+    url(r'^v1/events/(?P<id>[A-Z]{2,2}E\d{8,8})/$', events_handler),
 
     url(r'^v1/stats/$', stats_handler),
 )
