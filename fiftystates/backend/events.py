@@ -91,7 +91,8 @@ def actions_to_events(state):
 
             description = "%s: %s" % (bill['bill_id'], action['action'])
             data = Event(bill['session'], action['date'],
-                              'bill:action', description)
+                         'bill:action', description,
+                         action_type=action['type'])
             data.add_participant('actor', action['actor'])
             data['_guid'] = guid
             data['state'] = state
