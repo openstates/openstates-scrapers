@@ -28,7 +28,7 @@
      "retrieved": {"type": "datetime"}
    }}},
    "votesmart_id": {"type": ["null", "string"], "optional": true},
-   "nimsp_candidate_id": {"type": ["integer", "null"], "optional": true},
+   "nimsp_candidate_id": {"type": ["string", "null"], "optional": true},
    "state": {"type": "string", "pattern": "^[a-z]{2}$",
      "optional": true},
    "district": {"type": "string", "optional": true},
