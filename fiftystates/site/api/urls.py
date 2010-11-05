@@ -8,6 +8,7 @@ from fiftystates.site.api.handlers import *
 from fiftystates.site.api.views import document
 from fiftystates.site.api.models import LogEntry
 from fiftystates.site.api.emitters import OpenStateJSONEmitter
+from fiftystates.site.api.emitters import FeedEmitter, ICalendarEmitter
 
 if getattr(settings, 'USE_LOCKSMITH', False):
     from locksmith.auth.authentication import PistonKeyAuthentication
@@ -34,6 +35,9 @@ else:
 Emitter.register('json', OpenStateJSONEmitter,
                  'application/json; charset=utf-8')
 
+Emitter.register('rss', FeedEmitter, 'application/rss+xml')
+Emitter.register('ics', ICalendarEmitter, 'text/calendar')
+
 Emitter.unregister('xml')
 Emitter.unregister('yaml')
 Emitter.unregister('django')
@@ -51,6 +55,7 @@ committee_handler = Resource(CommitteeHandler, authentication=authorizer)
 committee_search_handler = Resource(CommitteeSearchHandler,
                                     authentication=authorizer)
 stats_handler = Resource(StatsHandler, authentication=authorizer)
+events_handler = Resource(EventsHandler, authentication=authorizer)
 
 urlpatterns = patterns('',
     # v1 urls
@@ -71,6 +76,9 @@ urlpatterns = patterns('',
     url(r'^v1/committees/$', committee_search_handler),
 
     url(r'^v1/documents/(?P<id>[A-Z]{2,2}D\d{8,8})/$', document),
+
+    url(r'^v1/events/$', events_handler),
+    url(r'^v1/events/(?P<id>[A-Z]{2,2}E\d{8,8})/$', events_handler),
 
     url(r'^v1/stats/$', stats_handler),
 )

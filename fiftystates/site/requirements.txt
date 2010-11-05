@@ -2,3 +2,4 @@ Django==1.2.1
 django-piston==0.2.2
 psycopg2==2.2.1
 -e git://github.com/sunlightlabs/django-locksmith.git#egg=django-locksmith
+icalendar==2.1

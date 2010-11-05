@@ -4,6 +4,10 @@ from pymongo.code import Code
 
 
 def generate_statistics():
+    """
+    Use mongo's map/reduce to output state-by-state (and total) counts of
+    various Open State objects to the 'counts' collection.
+    """
     m = Code("""
     function () {
         var val = {'bills': 1,
@@ -28,6 +32,7 @@ def generate_statistics():
         return sums;
     }""")
 
+    # a finalizer to convert all counts from JS numbers (floats) to longs
     f = Code("""
     function (key, value) {
         for (var t in value) {
