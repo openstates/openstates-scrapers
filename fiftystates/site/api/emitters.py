@@ -4,7 +4,7 @@ import datetime
 from fiftystates.site.api.feeds import EventFeed
 
 from django.core.serializers.json import DateTimeAwareJSONEncoder
-from piston.emitters import JSONEmitter
+from piston.emitters import Emitter, JSONEmitter
 
 import icalendar
 
