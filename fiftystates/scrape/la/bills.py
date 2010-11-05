@@ -15,10 +15,9 @@ import lxml.html
 class LABillScraper(BillScraper):
     state = 'la'
 
-    def scrape(self, chamber, year):
-        year = int(year)
+    def scrape(self, chamber, session):
         types = {'upper': ['SB', 'SCR'], 'lower': ['HB', 'HCR']}
-        for session in internal_sessions[year]:
+        for session in internal_sessions[int(session)]:
             s_id = re.findall('\/(\w+)\.htm', session[0])[0]
 
             # Fake it until we can make it
