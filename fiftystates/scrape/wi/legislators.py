@@ -45,6 +45,10 @@ class WILegislatorScraper(LegislatorScraper):
         cmts = lxml.html.fromstring(body).cssselect("#ctl00_C_lblCommInfo a")
         for c in cmts:
             c = c.text_content().split('(')[0].strip()
+            # skip subcommittees -- they are broken
+            if 'Subcommittee' in c:
+                continue
+
             if 'Joint' in c or 'Special' in c:
                 c_chamber = 'joint'
             else:
