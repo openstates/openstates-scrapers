@@ -7,6 +7,8 @@ from fiftystates.utils import keywordize
 
 from django.http import HttpResponse
 
+import pymongo
+
 from piston.utils import rc
 from piston.handler import BaseHandler, HandlerMetaClass
 
@@ -228,3 +230,29 @@ class StatsHandler(FiftyStateHandler):
         stats['counts'] = counts
 
         return stats
+
+
+class EventsHandler(FiftyStateHandler):
+    def read(self, request, id=None, events=[]):
+        if events:
+            return events
+
+        if id:
+            return db.events.find_one({'_id': id})
+
+        spec = {}
+
+        for key in ('state', 'type'):
+            value = request.GET.get(key)
+            if not value:
+                continue
+
+            split = value.split(',')
+
+            if len(split) == 1:
+                spec[key] = value
+            else:
+                spec[key] = {'$in': split}
+
+        return list(db.events.find(spec).sort(
+            'when', pymongo.DESCENDING).limit(20))

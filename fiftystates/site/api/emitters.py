@@ -1,7 +1,12 @@
 import json
+import datetime
+
+from fiftystates.site.api.feeds import EventFeed
 
 from django.core.serializers.json import DateTimeAwareJSONEncoder
 from piston.emitters import JSONEmitter
+
+import icalendar
 
 
 class OpenStateJSONEmitter(JSONEmitter):
@@ -36,3 +41,70 @@ class OpenStateJSONEmitter(JSONEmitter):
                     obj.__dict__[key] = self._clean(value)
         return obj
 
+
+class FeedEmitter(Emitter):
+    """
+    Emits an RSS feed from a list of Open State 'event' objects.
+
+    Expects a list of Open State objects from the handler. Non-event
+    objects will be ignored.
+    """
+
+    def render(self, request):
+        return EventFeed()(request, self.construct())
+
+
+class ICalendarEmitter(Emitter):
+    """
+    Emits an iCalendar-format calendar from a list of Open State 'event'
+    object.
+
+    Expects a list of Open State objects from the handler. Non-event
+    objects will be ignored.
+    """
+
+    def render(self, request):
+        cal = icalendar.Calendar()
+        for obj in self.construct():
+            if obj.get('_type') != 'event':
+                # We can only serialize events
+                continue
+
+            event = icalendar.Event()
+
+            if obj['type'] == 'committee:meeting':
+                summary = "%s Committee Meeting" % (
+                    obj['participants'][0]['participant'])
+                event.add('dtstart', obj['when'])
+            elif obj['type'] == 'bill:action':
+                summary = obj['description']
+                event.add('dtstart', obj['when'].date())
+            else:
+                continue
+
+            event.add('summary', summary)
+
+            end = obj.get('end')
+            if not end:
+                end = obj['when'] + datetime.timedelta(hours=1)
+            event.add('dtend', end)
+
+            event.add('location', obj.get('location', 'Unknown'))
+            event['uid'] = obj['_id']
+
+            for participant in obj['participants']:
+                addr = icalendar.vCalAddress('MAILTO:noone@example.com')
+
+                cn = participant['participant']
+
+                if participant['type'] == 'committee':
+                    cn += ' Committee'
+
+                addr.params['cn'] = icalendar.vText(cn)
+                #addr.params['ROLE'] = icalendar.vText('COMMITTEE')
+                event.add('attendee', addr, encode=0)
+                event['organizer'] = addr
+
+            cal.add_component(event)
+
+        return cal.as_string()
