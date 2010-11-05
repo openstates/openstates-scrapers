@@ -22,7 +22,8 @@ class EventFeed(Feed):
         return item['description']
 
     def item_guid(self, item):
-        return item['_id']
+        return 'http://openstates.sunlightlabs.com/api/v1/events/%s/' % (
+            item['_id'])
 
     def item_author_name(self, item):
         author = item['participants'][0]
