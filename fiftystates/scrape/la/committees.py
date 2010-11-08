@@ -65,7 +65,8 @@ class LACommitteeScraper(CommitteeScraper):
                 font = cells[1].xpath('font')[0]
                 committees = []
 
-                committees.append(font.text.strip())
+                if font.text:
+                    committees.append(font.text.strip())
                 for br in font.xpath('br'):
                     if br.text:
                         committees.append(br.text.strip())
