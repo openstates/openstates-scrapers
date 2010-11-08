@@ -3,6 +3,7 @@ import datetime
 
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.votes import Vote
 
 import lxml.html
 
@@ -96,3 +97,51 @@ class FLBillScraper(BillScraper):
                 bill.add_version(version, link.attrib['href'])
 
             self.save_bill(bill)
+
+            # House Votes
+            for link in page.xpath("//a[contains(@href, 'votes/html/h')]"):
+                bill.add_vote(self.scrape_lower_vote(link.attrib['href']))
+
+    def scrape_lower_vote(self, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            table = page.xpath("/html/body/table/tr[3]/td/table/tr/td[3]/table/tr/td/table[3]")[0]
+
+            motion = ""
+            for part in ("Amendment Number", "Reading Number", "Floor Actions"):
+                motion += page.xpath("string(//*[contains(text(), '%s')])" %
+                                     part).strip() + " "
+
+            motion = motion.strip()
+
+            date = page.xpath(
+                'string(//*[contains(text(), "Date:")]/following-sibling::*)')
+            date = datetime.datetime.strptime(date, "%m/%d/%Y")
+
+            yeas = page.xpath('string(//*[contains(text(), "Yeas")])')
+            yeas = int(yeas.split(' - ')[1])
+
+            nays = page.xpath('string(//*[contains(text(), "Nays")])')
+            nays = int(nays.split(' - ')[1])
+
+            nv = page.xpath('string(//*[contains(text(), "Not Voting")])')
+            nv = int(nv.split(' - ')[1])
+
+            vote = Vote('lower', 'never', motion, date, yeas, nays, nv)
+            vote.add_source(url)
+
+            for tr in table.xpath("tr/td/table/tr"):
+                text = tr.xpath("string()")
+                text = re.sub(r"\s+", r" ", text)
+
+                name = " ".join(text.split()[1:])
+
+                if text[0] == "Y":
+                    vote.yes(name)
+                elif text[0] == "N":
+                    vote.no(name)
+                elif text[0] in ("-", "C"):
+                    vote.other(name)
+
+            return vote
