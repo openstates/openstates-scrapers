@@ -83,6 +83,8 @@ class FLBillScraper(BillScraper):
                         types.append('committee:failed')
                     if 'favorable by' in act_lower:
                         types.append('committee:passed:favorable')
+                    if 'amendment(s) adopted' in act_lower:
+                        types.append('amendment:passed')
 
                     bill.add_action(actor, act_text, date, type=types)
 
@@ -107,20 +109,26 @@ class FLBillScraper(BillScraper):
 
                 bill.add_version(version, link.attrib['href'])
 
-            self.save_bill(bill)
-
             # House Votes
             for link in page.xpath("//a[contains(@href, 'votes/html/h')]"):
                 bill.add_vote(self.scrape_lower_vote(link.attrib['href']))
+
+            # Senate Votes
+            for link in page.xpath("//a[contains(@href, 'votes/html/S')]"):
+                bill.add_vote(self.scrape_upper_vote(link.attrib['href']))
+
+            self.save_bill(bill)
 
     def scrape_lower_vote(self, url):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
 
-            table = page.xpath("/html/body/table/tr[3]/td/table/tr/td[3]/table/tr/td/table[3]")[0]
+            table = page.xpath("/html/body/table/tr[3]/td/table/tr/"
+                               "td[3]/table/tr/td/table[3]")[0]
 
             motion = ""
-            for part in ("Amendment Number", "Reading Number", "Floor Actions"):
+            for part in ("Amendment Number", "Reading Number",
+                         "Floor Actions"):
                 motion += page.xpath("string(//*[contains(text(), '%s')])" %
                                      part).strip() + " "
 
@@ -139,7 +147,9 @@ class FLBillScraper(BillScraper):
             nv = page.xpath('string(//*[contains(text(), "Not Voting")])')
             nv = int(nv.split(' - ')[1])
 
-            vote = Vote('lower', 'never', motion, date, yeas, nays, nv)
+            passed = yeas > (nays + nv)
+
+            vote = Vote('lower', date, motion, passed, yeas, nays, nv)
             vote.add_source(url)
 
             for tr in table.xpath("tr/td/table/tr"):
@@ -154,5 +164,45 @@ class FLBillScraper(BillScraper):
                     vote.no(name)
                 elif text[0] in ("-", "C"):
                     vote.other(name)
+
+            return vote
+
+    def scrape_upper_vote(self, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            text = page.xpath('string(//pre)')
+
+            motion = ""
+            motion += re.search(r'Amendment Number:\s([^\s]+)?',
+                                text, re.MULTILINE).group(0).strip()
+            motion += " " + re.search(r'Reading Number .:\s([^\s]+)?',
+                                      text, re.MULTILINE).group(0).strip()
+            motion += " " + re.search(r'Floor Actions ..:\s([^\s]+)?',
+                                      text, re.MULTILINE).group(0).strip()
+
+            yeas = int(re.search(r'Yeas\s-\s(\d+)', text,
+                                 re.MULTILINE).group(1))
+            nays = int(re.search(r'Nays\s-\s(\d+)', text,
+                                 re.MULTILINE).group(1))
+            nv = int(re.search(r'Not\sVoting\s-\s(\d+)', text,
+                               re.MULTILINE).group(1))
+
+            date = re.search(r'Date:\s(\d+/\d+/\d+)', text,
+                             re.MULTILINE).group(1)
+            date = datetime.datetime.strptime(date, '%m/%d/%Y')
+
+            passed = yeas > (nays + nv)
+
+            vote = Vote('upper', date, motion, passed, yeas, nays, nv)
+            vote.add_source(url)
+
+            pattern = r'_\s%s\s(\w+)'
+            for match in re.finditer(pattern % 'Y ', text, re.MULTILINE):
+                vote.yes(match.group(1))
+            for match in re.finditer(pattern % 'N ', text, re.MULTILINE):
+                vote.no(match.group(1))
+            for match in re.finditer(pattern % 'EX', text, re.MULTILINE):
+                vote.other(match.group(1))
 
             return vote
