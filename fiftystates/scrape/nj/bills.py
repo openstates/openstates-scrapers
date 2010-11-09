@@ -10,8 +10,100 @@ import scrapelib
 import zipfile
 import csv
 
+
 class NJBillScraper(BillScraper):
     state = 'nj'
+
+    _actions = {
+        'INT 1RA AWR 2RA': 'Introduced, 1st Reading without Reference, 2nd Reading',
+        'INT 1RS SWR 2RS': 'Introduced, 1st Reading without Reference, 2nd Reading',
+        'REP 2RA': 'Reported out of Assembly Committee, 2nd Reading',
+        'REP 2RS': 'Reported out of Senate Committee, 2nd Reading',
+        'REP/ACA 2RA': 'Reported out of Assembly Committee with Amendments, 2nd Reading',
+        'REP/SCA 2RS': 'Reported out of Senate Committee with Amendments, 2nd Reading',
+        'R/S SWR 2RS': 'Received in the Senate without Reference, 2nd Reading',
+        'R/A AWR 2RA': 'Received in the Assembly without Reference, 2nd Reading',
+        'R/A 2RAC': 'Received in the Assembly, 2nd Reading on Concurrence',
+        'R/S 2RSC': 'Received in the Senate, 2nd Reading on Concurrence',
+        'REP/ACS 2RA': 'Reported from Assembly Committee as a Substitute, 2nd Reading',
+        'REP/SCS 2RS': 'Reported from Senate Committee as a Substitute, 2nd Reading',
+        'AA 2RA': 'Assembly Floor Amendment Passed',
+        'SA 2RS': 'Senate Amendment',
+        'SUTC REVIEWED': 'Reviewed by the Sales Tax Reviewe Commission',
+        'PHBC REVIEWED': 'Reviewed by the Pension and Health Benefits Commission',
+        'SUB FOR': 'Substituted for',
+        'SUB BY': 'Substituted by',
+        'PA': 'Passed Assembly',
+        'PS': 'Passed Senate',
+        'PA PBH': 'Passed Assembly (Passed Both Houses)',
+        'PS PBH': 'Passed Senate (Passed Both Houses)',
+        'APP': 'Approved',
+        'AV R/A': 'Absolute Veto, Received in the Assembly',
+        'AV R/S': 'Absolute Veto, Received in the Senate',
+        'CV R/A': 'Conditional Veto, Received in the Assembly',
+        'CV R/S': 'Conditional Veto, Received in the Senate',
+        '2RSG': "2nd Reading on Concur with Governor's Recommendations",
+        'CV R/S 2RSG': "Conditional Veto, Received, 2nd Reading on Concur with Governor's Recommendations",
+        '1RAG': 'First Reading/Governor Recommendations Only',
+        '2RAG': "2nd Reading in the Assembly on Concur. w/Gov's Recommendations",
+        'R/S 2RSG': "Received in the Senate, 2nd Reading - Concur. w/Gov's Recommendations",
+        'R/A 2RAG': "Received in the Senate, 2nd Reading - Concur. w/Gov's Recommendations",
+        'REF SBA': 'Referred to Senate Budget and Appropriations Committee',
+        'REP REF AAP': 'Reported and Referred to Assembly Appropriations Committee',
+        'REP/ACA REF AAP': 'Reported out of Assembly Committee with Amendments and Referred to Assembly Appropriations Committee',
+        'RSND/V': 'Rescind Vote',
+        'SS 2RS': 'Senate Substitution',
+        'AS 2RA': 'Assembly Substitution',
+        'ER': 'Emergency Resolution',
+        'FSS': 'Filed with Secretary of State',
+        'LSTA': 'Lost in the Assembly',
+        'LSTS': 'Lost in the Senate',
+        'SEN COPY ON DESK': 'Placed on Desk in Senate',
+        'ASM COPY ON DESK': 'Placed on Desk in Assembly',
+        'COMB/W': 'Combined with',
+        'MOTION': 'Motion',
+        'PUBLIC HEARING': 'Public Hearing Held',
+        'W': 'Withdrawn from Consideration',
+    }
+
+    _com_actions = {
+        'INT 1RA REF': 'Introduced in, Referred to',
+        'INT 1RS REF': 'Introduced in the Senate, Referred to',
+        'R/S REF': 'Received in the Senate, Referred to',
+        'R/A REF': 'Received in the Assembly, Referred to',
+        'TRANS': 'Transferred to',
+        'RCM': 'Recommitted to',
+    }
+
+    def initialize_committees(self, year_abr):
+        chamber = {'A':'Assembly', 'S': 'Senate', '':''}
+
+        url = 'ftp://www.njleg.state.nj.us/ag/%sdata/COMMITT.DBF' % year_abr
+        COM_dbf, resp = self.urlretrieve(url)
+        com_db = dbf.Dbf(COM_dbf)
+
+        self._committees = {}
+
+        for com in com_db:
+            # map XYZ -> "Assembly/Senate _________ Committee"
+            self._committees[com['CODE']] = ' '.join((chamber[com['HOUSE']],
+                                                      com['DESCRIPTIO'],
+                                                      'Committee'))
+
+    def categorize_action(self, act_str):
+        if act_str in self._actions:
+            return self._actions[act_str]
+
+        for prefix, action in self._com_actions.iteritems():
+            if act_str.startswith(prefix):
+                last3 = act_str.rsplit(' ', 1)[-1]
+                com_name = self._committees[last3]
+                return action + ' ' + com_name
+
+        # warn about missing action
+        self.warn('unknown action: %s' % act_str)
+
+        return act_str
 
     def scrape(self, chamber, session):
 
@@ -20,6 +112,8 @@ class NJBillScraper(BillScraper):
             raise NoDataForPeriod(session)
         else:
             year_abr = ((session - 209) * 2) + 2000
+
+        self.initialize_committees(year_abr)
 
         self.scrape_bill_pages(session, year_abr)
 
@@ -118,9 +212,10 @@ class NJBillScraper(BillScraper):
                 vote_id = bill_id + "_" + action
                 vote_id = vote_id.replace(" ", "_")
                 passed = None
-                
+
                 if vote_id not in votes:
-                    votes[vote_id] = Vote(chamber, date, action, passed, None, None, None, bill_id = bill_id)
+                    votes[vote_id] = Vote(chamber, date, action, passed, None,
+                                          None, None, bill_id=bill_id)
                 if leg_vote == "Y":
                     votes[vote_id].yes(leg)
                 elif leg_vote == "N":
@@ -161,5 +256,8 @@ class NJBillScraper(BillScraper):
             date = rec["dateaction"]
             actor = rec["house"]
             comment = rec["comment"]
-            bill.add_action(actor, action, date, comment = comment)
+            action = self.categorize_action(action)
+            if comment:
+                action += (' ' + comment)
+            bill.add_action(actor, action, date)
             self.save_bill(bill)
