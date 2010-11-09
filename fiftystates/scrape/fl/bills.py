@@ -73,7 +73,18 @@ class FLBillScraper(BillScraper):
                     if not act_text:
                         continue
 
-                    bill.add_action(actor, act_text, date)
+                    types = []
+                    act_lower = act_text.lower()
+                    if act_lower.startswith('introduced'):
+                        types.append('bill:introduced')
+                    if 'referred to' in act_lower:
+                        types.append('committee:referred')
+                    if 'died in committee' in act_lower:
+                        types.append('committee:failed')
+                    if 'favorable by' in act_lower:
+                        types.append('committee:passed:favorable')
+
+                    bill.add_action(actor, act_text, date, type=types)
 
             # Sponsors
             primary_sponsor = re.search(r'by ([^;(\n]+;?|\w+)',
