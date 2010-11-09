@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.conf.urls.defaults import *
+from django.http import HttpResponse
 
 import piston.resource
 from piston.emitters import Emitter
@@ -12,7 +13,15 @@ from fiftystates.site.api.emitters import FeedEmitter, ICalendarEmitter
 
 if getattr(settings, 'USE_LOCKSMITH', False):
     from locksmith.auth.authentication import PistonKeyAuthentication
-    authorizer = PistonKeyAuthentication()
+
+    class Authorizer(PistonKeyAuthentication):
+        def challenge(self):
+            resp = HttpResponse("Authorization Required: \n"
+        "obtain a key at http://services.sunlightlabs.com/accounts/register/")
+            resp.status_code = 401
+            return resp
+
+    authorizer = Authorizer()
 
     class Resource(piston.resource.Resource):
         def __call__(self, request, *args, **kwargs):
