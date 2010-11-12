@@ -12,6 +12,11 @@ import pymongo
 from piston.utils import rc
 from piston.handler import BaseHandler, HandlerMetaClass
 
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
 
 _chamber_aliases = {
     'assembly': 'lower',
@@ -178,8 +183,8 @@ class LegislatorGeoHandler(FiftyStateHandler):
             for d in districts:
                 filters.append({'state': d.state_abbrev,
                                 'roles': {'$elemMatch': {
-                                    'district':d.name,
-                                    'chamber':d.chamber}}})
+                                    'district': d.name,
+                                    'chamber': d.chamber}}})
 
             if not filters:
                 return []
@@ -256,3 +261,84 @@ class EventsHandler(FiftyStateHandler):
 
         return list(db.events.find(spec).sort(
             'when', pymongo.DESCENDING).limit(20))
+
+
+class ReconciliationHandler(BaseHandler):
+    allowed_methods = ('GET', 'POST')
+
+    metadata = {
+        "name": "Open State Reconciliation Service",
+        "view": {
+            "url": "http://localhost:8000/api/v1/legislators/preview/{{id}}/",
+            },
+        "preview": {
+            "url": "http://localhost:8000/api/v1/legislators/preview/{{id}}/",
+            "width": 430,
+            "height": 300
+            },
+        "defaultTypes": [
+            {"id": "/openstates/legislator",
+             "name": "Legislator"}],
+        }
+
+    def read(self, request):
+        return self.reconcile(request)
+
+    def create(self, request):
+        return self.reconcile(request)
+
+    def reconcile(self, request):
+        query = request.GET.get('query') or request.POST.get('query')
+
+        if query:
+            if not query.startswith("{"):
+                query = '{"query": "%s"}' % query
+            query = json.loads(query)
+
+            return {"result": self.results(query)}
+
+        queries = request.GET.get('queries') or request.POST.get('queries')
+
+        if queries:
+            queries = json.loads(queries)
+            ret = {}
+            for key, value in queries.items():
+                ret[key] = {'result': self.results(value)}
+
+            return ret
+
+        # If no queries, return metadata
+        return self.metadata
+
+    def results(self, query):
+        pattern = re.compile(".*%s.*" % query['query'],
+                             re.IGNORECASE)
+
+        spec = {'full_name': pattern}
+        for prop in query.get('properties', []):
+            if prop['pid'] in ('state', 'chamber'):
+                spec[prop['pid']] = prop['v']
+
+        legislators = db.legislators.find(spec)
+
+        results = []
+        for leg in legislators:
+            if legislators.count() == 1:
+                match = True
+                score = 100
+            else:
+                match = False
+                if leg['last_name'] == query['query']:
+                    score = 90
+                else:
+                    score = 85
+
+            results.append({"id": leg['_id'],
+                            "name": leg['full_name'],
+                            "score": score,
+                            "match": match,
+                            "type": [
+                                {"id": "/openstates/legislator",
+                                 "name": "Legislator"}]})
+
+        return results
