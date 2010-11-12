@@ -1,55 +1,66 @@
 import re
+from collections import defaultdict
 
 from fiftystates.backend import db, metadata
 
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import render_to_response
+from django.utils.datastructures import SortedDict
 
 import pymongo
 
-
-def index(request):
-    raise Http404
-
+def keyfunc(obj):
+    try:
+        return int(obj['district'])
+    except ValueError:
+        return obj['district']
 
 def state_index(request, state):
     meta = metadata(state)
     if not meta:
         raise Http404
 
-    recent_bills = db.bills.find({'state': state.lower()}).sort(
-        'created_at', pymongo.DESCENDING).limit(20)
+    context = {}
+    context['metadata'] = SortedDict(sorted(meta.items()))
 
-    current_term = meta['terms'][-1]
+    # counts
+    context['upper_bill_count'] = db.bills.find({'state':state,
+                                                 'chamber': 'upper'}).count()
+    context['lower_bill_count'] = db.bills.find({'state':state,
+                                                 'chamber': 'lower'}).count()
+    context['bill_count'] = context['upper_bill_count'] + context['lower_bill_count']
+    context['ns_bill_count'] = db.bills.find({'state': state,
+                                           'sources': {'$size': 0}}).count()
 
-    upper = db.legislators.find({
-            'roles': {'$elemMatch':
-                          {'state': state,
-                           'term': current_term,
-                           'chamber': 'upper',
-                           'type': 'member',
-                           'district': {'$ne': '22'}}}}).sort('last_name')
+    # types
+    types = defaultdict(int)
+    action_types = defaultdict(int)
 
-    upper = list(upper)
-    for leg in upper:
-        leg['url'] = '/browse/people/%s/' % leg['_id']
+    for bill in db.bills.find({'state': state}, {'type':1, 'actions.type': 1}):
+        for t in bill['type']:
+            types[t] += 1
+        for a in bill['actions']:
+            for at in a['type']:
+                action_types[at] += 1
+    context['types'] = dict(types)
+    context['action_types'] = dict(action_types)
 
-    lower = db.legislators.find({
-            'roles': {'$elemMatch':
-                          {'state': state,
-                           'term': current_term,
-                           'chamber': 'lower',
-                           'type': 'member'}}}).sort('last_name')
+    # legislators
+    context['upper_leg_count'] = db.legislators.find({'state':state,
+                                                  'chamber':'upper'}).count()
+    context['lower_leg_count'] = db.legislators.find({'state':state,
+                                                  'chamber':'lower'}).count()
+    context['leg_count'] = context['upper_leg_count'] + context['lower_leg_count']
+    context['ns_leg_count'] = db.legislators.find({'state': state,
+                             'sources': {'$size': 0}}).count()
+    context['missing_pvs'] = db.legislators.find({'state': state,
+                             'votesmart_id': {'$exists':False}}).count()
+    context['missing_nimsp'] = db.legislators.find({'state': state,
+                             'nimsp_candidate_id': {'$exists':False}}).count()
 
-    lower = list(lower)
-    for leg in lower:
-        leg['url'] = '/browse/people/%s/' % leg['_id']
 
-    return render_to_response('state_index.html',
-                              {'recent_bills': recent_bills,
-                               'upper': list(upper),
-                               'lower': list(lower),
-                               'metadata': meta})
+
+    return render_to_response('state_index.html', context)
 
 
 def bill(request, state, session, chamber, id):
@@ -58,7 +69,7 @@ def bill(request, state, session, chamber, id):
     if chamber in ('house', 'assembly'):
         chamber = 'lower'
     elif chamber == 'senate':
-        chamber = 'lower'
+        chamber = 'upper'
 
     id = id.replace('-', ' ')
     bill = db.bills.find_one(dict(state=state.lower(),

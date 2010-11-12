@@ -1,46 +1,65 @@
 {% extends "base.html" %}
-{% load fs_helpers %}
 {% load humanize %}
 
-{% block title %}
-{{ metadata.state_name }} - The Fifty State Project
-{% endblock %}
-
 {% block content %}
-<h2>{{ metadata.state_name }}</h2>
+<h2>{{ metadata.name }}</h2>
 
-<div style="float: left;" class="recent_bills">
-  <h4 width="100%">Recently added bills:</h4>
-  <ul>
-    {% for bill in recent_bills %}
-      <li>
-        <a href="billlink">{{ bill.bill_id }}</a>
-        added {{ bill.created_at|naturalday }}
-      </li>
+<div style="float: left; padding-right: 3em;" class="metadata">
+    <h4 width="100%">Metadata</h4>
+    <dl>
+    {% for k, v in metadata.items %}
+    {% if k != "terms" and k != "session_details" %}
+    <dt>{{k}}</dt><dd>{{v}}</dd>
+    {% endif %}
     {% endfor %}
-  </ul>
+    </dl>
+
+    <h4 width="100%">Terms</h4>
+    <table>
+        <tr><th>Term</th><th>Start Year</th><th>End Year</th><th>Sessions</th></tr>
+        {% for term in metadata.terms %}
+        <tr><td>{{term.name}}</td><td>{{term.start_year}}</td><td>{{term.end_year}}</td>
+            <td><ul>{{term.sessions|unordered_list}}</ul></td>
+        </tr>
+        {% endfor %}
+    </table>
 </div>
 
-<div style="float: left;" class="upper_members">
-  <h4>{{ metadata.upper_title }}s ({{ upper|length }})</h4>
-  <ul>
-    {% for leg in upper %}
-      <li><a href="{{leg.url}}">{{ leg.full_name }}</a>,
-        District {{ leg.roles.0.district }}
-      </li>
-    {% endfor %}
-  </ul>
+<div style="float: left; padding-right: 3em;" class="bills">
+  <h4 width="100%">Bills</h4>
+  <dl>
+      <dt>Upper Chamber:</dt><dd>{{upper_bill_count}}</dd>
+      <dt>Lower Chamber:</dt><dd>{{lower_bill_count}}</dd>
+      <dt>Total Bills:</dt><dd>{{bill_count}}</dd>
+      <dt>Bills without sources:</dt><dd>{{ns_bill_count}}</dd>
+  </dl>
+  <h4 width="100%">Bill Types</h4>
+  <table>
+      <tr><th>Type</th><th>#</th></tr>
+      {% for name, num in types.iteritems %}
+      <tr><td>{{name}}</td><td>{{num}}</td></tr>
+      {% endfor %}
+  </table>
+  <h4 width="100%">Action Types</h4>
+  <table>
+      <tr><th>Type</th><th>#</th></tr>
+      {% for name, num in action_types.iteritems %}
+      <tr><td>{{name}}</td><td>{{num}}</td></tr>
+      {% endfor %}
+  </table>
+
 </div>
 
-<div style="float:left;" class="lower_members">
-  <h4>{{ metadata.lower_title }}s ({{ lower|length }})</h4>
-  <ul>
-    {% for leg in lower %}
-      <li><a href="{{leg.url}}">{{ leg.full_name }}</a>,
-        District {{ leg.roles.0.district }}
-      </li>
-    {% endfor %}
-  </ul>
+<div style="float:left;" class="legislators">
+    <h4 width="100%">Legislators</h4>
+    <dl>
+      <dt>Upper Chamber:</dt><dd>{{upper_leg_count}}</dd>
+      <dt>Lower Chamber:</dt><dd>{{lower_leg_count}}</dd>
+      <dt>Total Legislators:</dt><dd>{{leg_count}}</dd>
+      <dt>Legislators without sources:</dt><dd>{{ns_leg_count}}</dd>
+      <dt>Legislators without PVS id:</dt><dd>{{missing_pvs}}</dd>
+      <dt>Legislators without NIMSP id:</dt><dd>{{missing_nimsp}}</dd>
+    </dl>
 </div>
 
 {% endblock %}
