@@ -117,7 +117,7 @@ class LABillScraper(BillScraper):
 
             action_table = page.xpath("//td/b[text() = 'Action']/../../..")[0]
 
-            for row in action_table.xpath('tr')[1:]:
+            for row in reversed(action_table.xpath('tr')[1:]):
                 cells = row.xpath('td')
                 date = cells[0].text.strip()
                 date = datetime.datetime.strptime(date, '%m/%d/%Y').date()
