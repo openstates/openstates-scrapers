@@ -16,6 +16,10 @@ def document(request, id):
 
 
 def legislator_preview(request, id):
+    """
+    A table of basic legislator information for use with as an embedded
+    preview in Google Refine (especially w/ reconciliation).
+    """
     legislator = db.legislators.find_one({'_id': id})
 
     if not legislator:

@@ -264,6 +264,16 @@ class EventsHandler(FiftyStateHandler):
 
 
 class ReconciliationHandler(BaseHandler):
+    """
+    An endpoint compatible with the Google Refine 2.0 reconciliation API.
+
+    Given a query containing a legislator name along with some optional
+    filtering properties ("state", "chamber"), this handler will return
+    a list of possible matching legislators.
+
+    See http://code.google.com/p/google-refine/wiki/ReconciliationServiceApi
+    for the API specification.
+    """
     allowed_methods = ('GET', 'POST')
 
     metadata = {
@@ -291,12 +301,15 @@ class ReconciliationHandler(BaseHandler):
         query = request.GET.get('query') or request.POST.get('query')
 
         if query:
+            # If the query doesn't start with a '{' then it's a simple
+            # string that should be used as the query w/ no extra params
             if not query.startswith("{"):
                 query = '{"query": "%s"}' % query
             query = json.loads(query)
 
             return {"result": self.results(query)}
 
+        # Batch query mode
         queries = request.GET.get('queries') or request.POST.get('queries')
 
         if queries:
@@ -311,11 +324,15 @@ class ReconciliationHandler(BaseHandler):
         return self.metadata
 
     def results(self, query):
+        # Look for the query to be a substring of a legislator name
+        # (case-insensitive)
         pattern = re.compile(".*%s.*" % query['query'],
                              re.IGNORECASE)
 
         spec = {'full_name': pattern}
+
         for prop in query.get('properties', []):
+            # Allow filtering in state or chamber for now
             if prop['pid'] in ('state', 'chamber'):
                 spec[prop['pid']] = prop['v']
 

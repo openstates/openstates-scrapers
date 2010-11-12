@@ -6,11 +6,15 @@ from fiftystates.backend import db
 
 
 def dump_missing_leg_ids(state):
+    """
+    For a given state, find all of the sponsorships, votes and committee
+    memberships which are missing legislator IDs and output them to
+    CSV files.
+    """
     sponsor_csv = csv.writer(open('%s_missing_sponsor_leg_ids.csv' %
                                   state, 'w'))
     sponsor_csv.writerow(("State", "Session", "Chamber",
-                          "Bill ID", "Sponsor Type", "Legislator Name",
-                          "Legislator ID", "Committee ID"))
+                          "Bill ID", "Sponsor Type", "Legislator Name"))
 
     vote_csv = csv.writer(open("%s_missing_vote_leg_ids.csv" %
                                state, 'w'))
@@ -23,7 +27,7 @@ def dump_missing_leg_ids(state):
             if not sponsor['leg_id']:
                 sponsor_csv.writerow((state, bill['session'],
                                       bill['chamber'], bill['bill_id'],
-                                      sponsor['type'], sponsor['name'], ""))
+                                      sponsor['type'], sponsor['name']))
 
         i = 0
         for vote in bill['votes']:
