@@ -2,26 +2,53 @@
 {% load humanize %}
 
 {% block title %}
-{{ bill.state|upper }} {{ bill.bill_id }} - The Fifty State Project
+{{ bill.state|upper }} {{ bill.bill_id }}
 {% endblock %}
 
 {% block content %}
 <h3>{{bill.state|upper}} {{bill.bill_id}}
 <h4>{{bill.title}}</h4>
 
+<div class="metadata">
+    <dl>
+        {% if bill.alternate_titles %}
+        <dt>Alternate Titles</dt><dd><ul>{{bill.alternate_titles|unordered_list}}</ul></dd> 
+        {% endif %}
+        <dt>Type</dt><dd>{{bill.type|join:','}}</dd>
+        <dt>Session</dt><dd>{{bill.session}}</dd>
+        <dt>Chamber</dt><dd>{{bill.chamber}}</dd>
+
+        {# show plus fields #}
+        {% for k,v in bill.items %}
+        {% if "+" in k %}
+            <dt>{{k}}</dt><dd>{{v}}</dd>
+        {% endif %}
+        {% endfor %}
+    </dl>
+</div>
+
+<div class="sources">
+  <h4>Sources:</h4>
+  <ul>
+    {% for source in bill.sources %}
+    <li><a href="{{source.url}}">{{source.url}}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+
 <div class="sponsors">
-  <h4>Sponsored by:</h4>
+  <h4>Sponsors:</h4>
   <ul>
     {% for sponsor in bill.sponsors %}
-    <li><a href="/browse/people/{{sponsor.leg_id}}/">{{sponsor.name}}</a></li>
+    <li>{% if sponsor.leg_id %}<a href="/browse/people/{{sponsor.leg_id}}/">{% endif %}{{sponsor.name}}{% if sponsor.leg_id %}</a>{% endif %}</li>
     {% endfor %}
   </ul>
 </div>
 
 <div class="actions">
-  <h4>Legislative Actions:</h4>
+  <h4>Actions:</h4>
   <ul>
-    {% for action in bill.actions reversed %}
+    {% for action in bill.actions %}
     <li>
       <time datetime="{{action.date|date:"c"}}">{{ action.date|naturalday }}</time>
       <span class="actor">({{action.actor}})</span> {{action.action}}
@@ -32,11 +59,31 @@
 
 <div class="votes">
   <h4>Votes:</h4>
-  <ul>
+  {% if bill.votes %}
+  <table>
+      <tr>
+          <th>Motion</th>
+          <th>Chamber</th>
+          <th>Date</th>
+          <th>Result</th>
+          <th>Yes Votes</th>
+          <th>No Votes</th>
+          <th>Other Votes</th>
+      </tr>
     {% for vote in bill.votes %}
-    <li><a href="{{vote.id}}">: ({{vote.actor}}) {{vote.motion}}</a></li>
+    <tr><td>{{vote.motion}}</td>
+        <td>{{vote.chamber}}</td>
+        <td>{{vote.date|naturalday}}</td>
+        <td>{{vote.yes_count}}-{{vote.no_count}}-{{vote.other_count}} [{{vote.passed|yesno:"passed,failed"}}]</td>
+        <td>{% for v in vote.yes_votes %}{{v.name}},{%endfor%}</td>
+        <td>{% for v in vote.no_votes %}{{v.name}},{%endfor%}</td>
+        <td>{% for v in vote.other_votes %}{{v.name}},{%endfor%}</td>
+    </tr>
     {% endfor %}
-  </ul>
+</table>
+{% else %}
+    <b> 0 votes </b>
+{% endif %}
 </div>
 
 <div class="versions">
