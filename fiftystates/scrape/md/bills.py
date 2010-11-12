@@ -113,7 +113,7 @@ class MDBillScraper(BillScraper):
 
     def parse_bill_votes(self, doc, bill):
         params = {
-            'chamber': bill['chamber'],
+            'chamber': None,
             'date': None,
             'motion': None,
             'passed': None,
@@ -134,6 +134,10 @@ class MDBillScraper(BillScraper):
                     box = vote_doc.xpath('//td[@colspan=3]/font[@size=-1]/text()')
                     params['motion'] = box[-1]
                     params['type'] = 'other'
+                    if 'senate' in href:
+                        params['chamber'] = 'upper'
+                    else:
+                        params['chamber'] = 'lower'
                     for regex, vtype in vote_classifiers.iteritems():
                         if re.findall(regex, params['motion'], re.IGNORECASE):
                             params['type'] = vtype
