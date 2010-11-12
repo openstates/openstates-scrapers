@@ -1,10 +1,12 @@
 import re
+import random
 from collections import defaultdict
 
 from fiftystates.backend import db, metadata
 
 from django.http import HttpResponseRedirect, HttpResponse, Http404
-from django.shortcuts import render_to_response
+from django.views.decorators.cache import never_cache
+from django.shortcuts import render_to_response, redirect
 from django.utils.datastructures import SortedDict
 
 import pymongo
@@ -62,19 +64,18 @@ def state_index(request, state):
 
     return render_to_response('state_index.html', context)
 
+@never_cache
+def random_bill(request, state):
+    # latest session
+    session = metadata(state)['terms'][-1]['sessions'][-1]
+    bills = list(db.bills.find({'state':state.lower(), 'session': session}))
+    bill = random.choice(bills)
+    return render_to_response('bill.html', {'bill': bill})
 
-def bill(request, state, session, chamber, id):
-    chamber = chamber.lower()
-
-    if chamber in ('house', 'assembly'):
-        chamber = 'lower'
-    elif chamber == 'senate':
-        chamber = 'upper'
-
+def bill(request, state, session, id):
     id = id.replace('-', ' ')
     bill = db.bills.find_one(dict(state=state.lower(),
                                   session=session,
-                                  chamber=chamber,
                                   bill_id=re.compile('^%s' % id,
                                                      re.IGNORECASE)))
     if not bill:
