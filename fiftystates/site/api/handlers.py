@@ -12,6 +12,8 @@ import pymongo
 from piston.utils import rc
 from piston.handler import BaseHandler, HandlerMetaClass
 
+from jellyfish import levenshtein_distance
+
 try:
     import json
 except ImportError:
@@ -332,7 +334,7 @@ class ReconciliationHandler(BaseHandler):
         spec = {'full_name': pattern}
 
         for prop in query.get('properties', []):
-            # Allow filtering in state or chamber for now
+            # Allow filtering by state or chamber for now
             if prop['pid'] in ('state', 'chamber'):
                 spec[prop['pid']] = prop['v']
 
@@ -348,7 +350,14 @@ class ReconciliationHandler(BaseHandler):
                 if leg['last_name'] == query['query']:
                     score = 90
                 else:
-                    score = 85
+                    distance = levenshtein_distance(leg['full_name'].lower(),
+                                                    query['query'].lower())
+                    score = 100.0 / (1 + distance)
+
+            # Note: There's a bug in Refine that causes reconciliation
+            # scores to be overwritten if the same legislator is returned
+            # for multiple queries. see:
+            # http://code.google.com/p/google-refine/issues/detail?id=185
 
             results.append({"id": leg['_id'],
                             "name": leg['full_name'],
@@ -358,4 +367,4 @@ class ReconciliationHandler(BaseHandler):
                                 {"id": "/openstates/legislator",
                                  "name": "Legislator"}]})
 
-        return results
+        return sorted(results, cmp=lambda l, r: cmp(r['score'], l['score']))
