@@ -86,12 +86,8 @@ def bill(request, state, session, id):
 
 def legislator(request, id):
     leg = db.legislators.find_one({'_all_ids': id})
+    print id
     if not leg:
         raise Http404
-
-    for role in leg['roles']:
-        if role['type'] == 'member':
-            leg['active_role'] = role
-            break
-
-    return render_to_response('legislator.html', {'leg': leg})
+    return render_to_response('legislator.html', {'leg': leg,
+                                              'metadata': metadata(leg['state'])})
