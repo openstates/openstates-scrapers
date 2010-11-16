@@ -60,7 +60,18 @@ def state_index(request, state):
     context['missing_nimsp'] = db.legislators.find({'state': state,
                              'nimsp_candidate_id': {'$exists':False}}).count()
 
-
+    # committees
+    context['upper_com_count'] = db.committees.find({'state':state,
+                                                  'chamber':'upper'}).count()
+    context['lower_com_count'] = db.committees.find({'state':state,
+                                                  'chamber':'lower'}).count()
+    context['joint_com_count'] = db.committees.find({'state':state,
+                                                  'chamber':'joint'}).count()
+    context['com_count'] = (context['upper_com_count'] +
+                            context['lower_com_count'] +
+                            context['joint_com_count'])
+    context['ns_com_count'] = db.committees.find({'state': state,
+                             'sources': {'$size': 0}}).count()
 
     return render_to_response('state_index.html', context)
 
