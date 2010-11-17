@@ -84,8 +84,8 @@ def state_index(request, state):
 def random_bill(request, state):
     bill = None
     while not bill:
-        _id = '%sB%06d' % (state.upper(),
-                           random.randint(1, db.bills.find({'state':state.lower()})))
+        count = db.bills.find({'state':state.lower()}).count()
+        _id = '%sB%06d' % (state.upper(), random.randint(1, count))
         bill = db.bills.findone({'_id':_id})
 
     return render_to_response('bill.html', {'bill': bill})
