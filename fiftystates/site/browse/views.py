@@ -82,10 +82,12 @@ def state_index(request, state):
 
 @never_cache
 def random_bill(request, state):
-    # latest session
-    session = metadata(state)['terms'][-1]['sessions'][-1]
-    bills = list(db.bills.find({'state':state.lower(), 'session': session}))
-    bill = random.choice(bills)
+    bill = None
+    while not bill:
+        _id = '%sB%06d' % (state.upper(),
+                           random.randint(1, db.bills.find({'state':state.lower()})))
+        bill = db.bills.findone({'_id':_id})
+
     return render_to_response('bill.html', {'bill': bill})
 
 def bill(request, state, session, id):
