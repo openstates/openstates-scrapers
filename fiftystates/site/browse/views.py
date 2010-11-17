@@ -86,7 +86,7 @@ def random_bill(request, state):
     while not bill:
         count = db.bills.find({'state':state.lower()}).count()
         _id = '%sB%06d' % (state.upper(), random.randint(1, count))
-        bill = db.bills.findone({'_id':_id})
+        bill = db.bills.find_one({'_id':_id})
 
     return render_to_response('bill.html', {'bill': bill})
 
