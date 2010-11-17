@@ -37,6 +37,7 @@ def state_index(request, state):
     # types
     types = defaultdict(int)
     action_types = defaultdict(int)
+    total_actions = 0
 
     for bill in db.bills.find({'state': state}, {'type':1, 'actions.type': 1}):
         for t in bill['type']:
@@ -44,8 +45,12 @@ def state_index(request, state):
         for a in bill['actions']:
             for at in a['type']:
                 action_types[at] += 1
+                total_actions += 1
     context['types'] = dict(types)
     context['action_types'] = dict(action_types)
+    if total_actions:
+        context['action_cat_percent'] = ((total_actions-action_types['other'])/
+                                         float(total_actions)*100)
 
     # legislators
     context['upper_leg_count'] = db.legislators.find({'state':state,
