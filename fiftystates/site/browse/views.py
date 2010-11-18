@@ -37,6 +37,7 @@ def state_index(request, state):
     # types
     types = defaultdict(int)
     action_types = defaultdict(int)
+    total_actions = 0
 
     for bill in db.bills.find({'state': state}, {'type':1, 'actions.type': 1}):
         for t in bill['type']:
@@ -44,8 +45,12 @@ def state_index(request, state):
         for a in bill['actions']:
             for at in a['type']:
                 action_types[at] += 1
+                total_actions += 1
     context['types'] = dict(types)
     context['action_types'] = dict(action_types)
+    if total_actions:
+        context['action_cat_percent'] = ((total_actions-action_types['other'])/
+                                         float(total_actions)*100)
 
     # legislators
     context['upper_leg_count'] = db.legislators.find({'state':state,
@@ -60,16 +65,29 @@ def state_index(request, state):
     context['missing_nimsp'] = db.legislators.find({'state': state,
                              'nimsp_candidate_id': {'$exists':False}}).count()
 
-
+    # committees
+    context['upper_com_count'] = db.committees.find({'state':state,
+                                                  'chamber':'upper'}).count()
+    context['lower_com_count'] = db.committees.find({'state':state,
+                                                  'chamber':'lower'}).count()
+    context['joint_com_count'] = db.committees.find({'state':state,
+                                                  'chamber':'joint'}).count()
+    context['com_count'] = (context['upper_com_count'] +
+                            context['lower_com_count'] +
+                            context['joint_com_count'])
+    context['ns_com_count'] = db.committees.find({'state': state,
+                             'sources': {'$size': 0}}).count()
 
     return render_to_response('state_index.html', context)
 
 @never_cache
 def random_bill(request, state):
-    # latest session
-    session = metadata(state)['terms'][-1]['sessions'][-1]
-    bills = list(db.bills.find({'state':state.lower(), 'session': session}))
-    bill = random.choice(bills)
+    bill = None
+    while not bill:
+        count = db.bills.find({'state':state.lower()}).count()
+        _id = '%sB%06d' % (state.upper(), random.randint(1, count))
+        bill = db.bills.find_one({'_id':_id})
+
     return render_to_response('bill.html', {'bill': bill})
 
 def bill(request, state, session, id):
@@ -86,12 +104,8 @@ def bill(request, state, session, id):
 
 def legislator(request, id):
     leg = db.legislators.find_one({'_all_ids': id})
+    print id
     if not leg:
         raise Http404
-
-    for role in leg['roles']:
-        if role['type'] == 'member':
-            leg['active_role'] = role
-            break
-
-    return render_to_response('legislator.html', {'leg': leg})
+    return render_to_response('legislator.html', {'leg': leg,
+                                              'metadata': metadata(leg['state'])})
