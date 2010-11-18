@@ -16,7 +16,7 @@ class LABillScraper(BillScraper):
     state = 'la'
 
     def scrape(self, chamber, session):
-        types = {'upper': ['SB', 'SCR'], 'lower': ['HB', 'HCR']}
+        types = {'upper': ['SB', 'SR', 'SCR'], 'lower': ['HB', 'HR', 'HCR']}
         for session in internal_sessions[int(session)]:
             s_id = re.findall('\/(\w+)\.htm', session[0])[0]
 
@@ -62,6 +62,8 @@ class LABillScraper(BillScraper):
 
             if bill_id.startswith('SB') or bill_id.startswith('HB'):
                 bill_type = ['bill']
+            elif bill_id.startswith('SR') or bill_id.startswith('HR'):
+                bill_type = ['resolution']
             elif bill_id.startswith('SCR') or bill_id.startswith('HCR'):
                 bill_type = ['concurrent resolution']
             else:

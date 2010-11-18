@@ -40,7 +40,7 @@
   <h4>Sponsors:</h4>
   <ul>
     {% for sponsor in bill.sponsors %}
-    <li>{% if sponsor.leg_id %}<a href="/browse/people/{{sponsor.leg_id}}/">{% endif %}{{sponsor.name}}{% if sponsor.leg_id %}</a>{% endif %}</li>
+    <li>{% if sponsor.leg_id %}<a href="/browse/legislators/{{sponsor.leg_id}}/">{% endif %}{{sponsor.name}}{% if sponsor.leg_id %}</a>{% endif %}</li>
     {% endfor %}
   </ul>
 </div>
