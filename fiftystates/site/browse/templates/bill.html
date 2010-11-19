@@ -6,7 +6,9 @@
 {% endblock %}
 
 {% block content %}
-<h3>{{bill.state|upper}} {{bill.bill_id}}
+<a href="/browse/{{bill.state}}/{{bill.session}}/{{bill.bill_id}}">
+  <h3>{{bill.state|upper}} {{bill.bill_id}}</h3>
+</a>
 <h4>{{bill.title}}</h4>
 
 <div class="metadata">
