@@ -194,9 +194,9 @@ class VTBillScraper(BillScraper):
                 name = tr.xpath("string(td[1])").split(' of')[0]
 
                 type = tr.xpath("string(td[2])").strip()
-                if type == 'Yea':
+                if type.startswith('Yea'):
                     vote.yes(name)
-                elif type == 'Nay':
+                elif type.startswith('Nay'):
                     vote.no(name)
                 else:
                     vote.other(name)
