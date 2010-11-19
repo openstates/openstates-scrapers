@@ -100,11 +100,24 @@ def bill(request, state, session, id):
 
     return render_to_response('bill.html', {'bill': bill})
 
+def legislators(request, state):
+    upper_legs = db.legislators.find({'state': state.lower(),
+                                      'chamber': 'upper'})
+    lower_legs = db.legislators.find({'state': state.lower(),
+                                      'chamber': 'lower'})
+    upper_legs = sorted(upper_legs, key=keyfunc)
+    lower_legs = sorted(lower_legs, key=keyfunc)
+
+    return render_to_response('legislators.html', {
+        'upper_legs': upper_legs,
+        'lower_legs': lower_legs,
+        'metadata': metadata(state)
+    })
+
 
 def legislator(request, id):
     leg = db.legislators.find_one({'_all_ids': id})
-    print id
     if not leg:
         raise Http404
     return render_to_response('legislator.html', {'leg': leg,
-                                              'metadata': metadata(leg['state'])})
+                                          'metadata': metadata(leg['state'])})
