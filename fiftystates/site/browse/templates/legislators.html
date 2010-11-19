@@ -14,7 +14,7 @@
 </tr>
 {% for leg in upper_legs %}
 <tr>
-    <td><a href="">{{leg.first_name}} {{leg.last_name}}</a></td>
+    <td><a href="/browse/{{leg.state}}/legislators/{{leg.id}}/">{{leg.first_name}} {{leg.last_name}}</a></td>
     <td>{{leg.district}}</td>
     <td>{{leg.party}}</td>
 </tr>
@@ -32,7 +32,7 @@
 </tr>
 {% for leg in lower_legs %}
 <tr>
-    <td><a href="">{{leg.first_name}} {{leg.last_name}}</a></td>
+    <td><a href="/browse/{{leg.state}}/legislators/{{leg.id}}/">{{leg.first_name}} {{leg.last_name}}</a></td>
     <td>{{leg.district}}</td>
     <td>{{leg.party}}</td>
 </tr>
