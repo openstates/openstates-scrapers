@@ -94,8 +94,7 @@ def bill(request, state, session, id):
     id = id.replace('-', ' ')
     bill = db.bills.find_one(dict(state=state.lower(),
                                   session=session,
-                                  bill_id=re.compile('^%s' % id,
-                                                     re.IGNORECASE)))
+                                  bill_id=id.upper()))
     if not bill:
         raise Http404
 
