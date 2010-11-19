@@ -52,7 +52,8 @@ class ALBillScraper(BillScraper):
                 desc = desc.text_content()
 
                 # create bill
-                bill = Bill(session, chamber, bill_id, desc, topic=topic)
+                bill = Bill(session, chamber, bill_id, desc.strip(),
+                            topic=topic)
                 bill.add_sponsor(sponsor, 'primary')
 
                 self.get_sponsors(bill, oid)

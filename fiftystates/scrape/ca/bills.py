@@ -51,7 +51,6 @@ class CABillScraper(BillScraper):
         else:
             chamber_name = 'ASSEMBLY'
 
-
         bills = self.session.query(CABill).filter_by(
             session_year=session).filter_by(
             measure_type=type_abbr)
@@ -65,6 +64,20 @@ class CABillScraper(BillScraper):
             bill_id = bill.short_bill_id
 
             fsbill = Bill(bill_session, chamber, bill_id, '')
+
+            # Construct session for web query, going from '20092010' to '0910'
+            source_session = session[2:4] + session[6:8]
+
+            # Turn 'AB 10' into 'ab_10'
+            source_num = "%s_%s" % (bill.measure_type.lower(),
+                                    bill.measure_num)
+
+            # Construct a fake source url
+            source_url = ("http://www.leginfo.ca.gov/cgi-bin/postquery?"
+                          "bill_number=%s&sess=%s" %
+                          (source_num, source_session))
+
+            fsbill.add_source(source_url)
 
             title = ''
             short_title = ''
