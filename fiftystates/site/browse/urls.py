@@ -5,5 +5,6 @@ urlpatterns = patterns('fiftystates.site.browse.views',
     url(r'^(?P<state>[a-zA-Z]{2})/random_bill/$', 'random_bill'),
     url(r'^(?P<state>[a-zA-Z]{2})/(?P<session>.+)/(?P<id>.*)/$', 'bill',
         name='bill'),
+    url(r'^(?P<state>[a-zA-Z]{2})/legislators/$', 'legislators'),
     url(r'^legislators/(?P<id>.*)/$', 'legislator'),
 )

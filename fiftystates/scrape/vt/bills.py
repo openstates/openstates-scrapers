@@ -116,8 +116,13 @@ class VTBillScraper(BillScraper):
                                    "following-sibling::blockquote/a"):
                 bill.add_version(link.text, link.attrib['href'])
 
-            for b in page.xpath("//td[text()='Sponsor(s):']/../td[2]/b"):
-                bill.add_sponsor("sponsor", b.text)
+            more_sponsor_link = page.xpath("//a[text()='More Sponsors']")
+            if page.xpath("//a[text()='More Sponsors']"):
+                sponsor_url = more_sponsor_link[0].attrib['href']
+                self.scrape_sponsors(bill, sponsor_url)
+            else:
+                for b in page.xpath("//td[text()='Sponsor(s):']/../td[2]/b"):
+                    bill.add_sponsor("sponsor", b.text)
 
             for tr in page.xpath("""
             //b[text()='Detailed Status:']/
@@ -158,6 +163,17 @@ class VTBillScraper(BillScraper):
 
             self.save_bill(bill)
 
+    def scrape_sponsors(self, bill, url):
+        bill.add_source(url)
+
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            for td in page.xpath("//h3/following-sibling::"
+                                 "blockquote/table/tr/td"):
+                name = td.xpath("string()").strip()
+                bill.add_sponsor("sponsor", name)
+
     def scrape_vote(self, bill, chamber, url):
         with self.urlopen(url) as page:
             page = page.replace('&nbsp;', ' ')
@@ -194,9 +210,9 @@ class VTBillScraper(BillScraper):
                 name = tr.xpath("string(td[1])").split(' of')[0]
 
                 type = tr.xpath("string(td[2])").strip()
-                if type == 'Yea':
+                if type.startswith('Yea'):
                     vote.yes(name)
-                elif type == 'Nay':
+                elif type.startswith('Nay'):
                     vote.no(name)
                 else:
                     vote.other(name)
