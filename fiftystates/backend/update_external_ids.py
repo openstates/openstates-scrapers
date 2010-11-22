@@ -69,7 +69,7 @@ def update_transparencydata_legislators(state, sunlight_key):
 
     for leg in db.legislators.find(query):
         query = urllib.urlencode({'apikey': sunlight_key,
-                                  'search': leg['full_name']})
+                                  'search': leg['full_name'].encode('utf8')})
 	url = 'http://transparencydata.com/api/1.0/entities.json?' + query
         data = urllib2.urlopen(url).read()
         results = json.loads(data)
