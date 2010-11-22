@@ -15,9 +15,9 @@
         <dt>Votesmart ID</dt>
         <dd><a href="http://www.votesmart.org/bio.php?can_id={{leg.votesmart_id}}">{{leg.votesmart_id}}</a></dd>
     {% endif %}
-    {% if leg.nimsp_candidate_id %}
+    {% if leg.nimsp_id %}
         <dt>NIMSP ID</dt>
-        <dd><a href="http://www.followthemoney.org/database/StateGlance/candidate.phtml?c={{leg.nimsp_candidate_id}}">{{leg.nimsp_candidate_id}}</a></dd>
+        <dd><a href="http://www.followthemoney.org/database/uniquecandidate.phtml?uc={{leg.nimsp_id}}">{{leg.nimsp_id}}</a></dd>
     {% endif %}
 
     {% for k,v in leg.items %}
