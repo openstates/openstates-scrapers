@@ -4,6 +4,8 @@ from fiftystates import settings
 from fiftystates.backend import db
 
 import re
+import json
+import urllib, urllib2
 import datetime
 
 import argparse
@@ -51,7 +53,7 @@ def update_votesmart_legislators(state):
 
     print 'Updated %s of %s missing votesmart ids' % (updated, initial_count)
 
-def update_transparencydata_legislators(state):
+def update_transparencydata_legislators(state, sunlight_key):
     current_term = state['terms'][-1]['name']
     query = {'roles': {'$elemMatch':
                        {'type': 'member',
@@ -66,8 +68,10 @@ def update_transparencydata_legislators(state):
     state_abbrev = state['_id'].upper()
 
     for leg in db.legislators.find(query):
-        data = urllib2.urlopen('http://transparencydata.com/api/1.0/entities.json?apikey=%s&search=%s' % 
-                               (sunlight_apikey, leg['full_name']))
+        query = urllib.urlencode({'apikey': sunlight_key,
+                                  'search': leg['full_name']})
+	url = 'http://transparencydata.com/api/1.0/entities.json?' + query
+        data = urllib2.urlopen(url).read()
         results = json.loads(data)
         matches = []
         for result in results:
@@ -94,6 +98,9 @@ def update_missing_ids(state_abbrev, sunlight_key):
     print "Updating PVS legislator ids..."
     update_votesmart_legislators(state)
 
+    print "Updating TransparencyData ids..."
+    update_transparencydata_legislators(state, sunlight_key)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -114,6 +121,8 @@ if __name__ == '__main__':
         votesmart.apikey = args.votesmart_key
     if args.sunlight_key:
         sunlight_key = args.sunlight_key
+    else:
+        sunlight_key = None
 
     for state in args.states:
         update_missing_ids(state, sunlight_key)
