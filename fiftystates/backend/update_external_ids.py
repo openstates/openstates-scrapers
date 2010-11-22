@@ -51,9 +51,40 @@ def update_votesmart_legislators(state):
 
     print 'Updated %s of %s missing votesmart ids' % (updated, initial_count)
 
+def update_transparencydata_legislators(state):
+    current_term = state['terms'][-1]['name']
+    query = {'roles': {'$elemMatch':
+                       {'type': 'member',
+                        'state': state['abbreviation'],
+                        'term': current_term}
+                      },
+             'transparencydata_id': None
+            }
+
+    updated = 0
+    initial_count = db.legislators.find(query).count()
+    state_abbrev = state['_id'].upper()
+
+    for leg in db.legislators.find(query):
+        data = urllib2.urlopen('http://transparencydata.com/api/1.0/entities.json?apikey=%s&search=%s' % 
+                               (sunlight_apikey, leg['full_name']))
+        results = json.loads(data)
+        matches = []
+        for result in results:
+            if (result['state'] == state_abbrev and
+                result['seat'][6:] == leg['chamber'] and
+                result['type'] == 'politician'):
+                matches.append(result)
+
+        if len(matches) == 1:
+            leg['transparencydata_id'] = matches[0]['id']
+            db.legislators.save(leg, safe=True)
+            updated += 1
+
+    print 'Updated %s of %s missing transparencydata ids' % (updated, initial_count)
 
 
-def update_missing_ids(state_abbrev):
+def update_missing_ids(state_abbrev, sunlight_key):
     state = db.metadata.find_one({'_id': state_abbrev.lower()})
     if not state:
         print "State '%s' does not exist in the database." % (
@@ -74,12 +105,16 @@ if __name__ == '__main__':
                         help='states to update')
     parser.add_argument('--votesmart_key', type=str,
                         help='the Project Vote Smart API key to use')
+    parser.add_argument('--sunlight_key', type=str,
+                        help='the Sunlight API key to use')
 
     args = parser.parse_args()
 
     if args.votesmart_key:
         votesmart.apikey = args.votesmart_key
+    if args.sunlight_key:
+        sunlight_key = args.sunlight_key
 
     for state in args.states:
-        update_missing_ids(state)
+        update_missing_ids(state, sunlight_key)
 
