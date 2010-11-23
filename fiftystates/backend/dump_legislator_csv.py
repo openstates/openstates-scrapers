@@ -15,10 +15,10 @@ def check_state(state):
     })
 
     fields = ('_id', 'first_name', 'last_name', 'state', 'chamber', 'district',
-              'party', 'active', 'votesmart_id', 'nimsp_candidate_id')
+              'party', 'active', 'votesmart_id', 'transparencydata_id')
 
     uniques = {'office': set(), 'votesmart_id':set(),
-               'nimsp_candidate_id':set()}
+               'transparencydata_id': set()}
 
     writer = csv.DictWriter(open(state+'.csv', 'w'), fields)
 

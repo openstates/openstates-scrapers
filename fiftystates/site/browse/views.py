@@ -63,7 +63,7 @@ def state_index(request, state):
     context['missing_pvs'] = db.legislators.find({'state': state,
                              'votesmart_id': {'$exists':False}}).count()
     context['missing_nimsp'] = db.legislators.find({'state': state,
-                             'nimsp_candidate_id': {'$exists':False}}).count()
+                             'nimsp_id': {'$exists':False}}).count()
 
     # committees
     context['upper_com_count'] = db.committees.find({'state':state,
