@@ -56,8 +56,11 @@ class AKLegislatorScraper(LegislatorScraper):
 
             district = re.search(r'District ([\w\d]+)', info).group(1)
             party = re.search(r'Party: (.+) Toll-Free', info).group(1).strip()
+            email = re.search(r'Email: ([\w_]+@legis\.state\.ak\.us)',
+                              info).group(1)
 
-            leg = Legislator(term, chamber, district, name, party=party)
+            leg = Legislator(term, chamber, district, name, party=party,
+                             email=email)
             leg.add_source(url)
 
             self.save_legislator(leg)
