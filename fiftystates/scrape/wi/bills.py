@@ -207,9 +207,9 @@ class WIBillScraper(BillScraper):
             link = link[0].get('href')
             filename, resp = self.urlretrieve(link)
 
-            if 'av' in filename:
+            if 'av' in link:
                 self.add_house_votes(v, filename)
-            elif 'sv' in filename:
+            elif 'sv' in link:
                 self.add_senate_votes(v, filename)
 
         bill.add_vote(v)
