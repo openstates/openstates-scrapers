@@ -32,7 +32,7 @@ classifiers = {
     r'Unfavorable': 'committee:passed:unfavorable',
     r'Vetoed': 'governor:vetoed',
     r'Approved by the Governor': 'governor:signed',
-    r'Conference Committee|Passed Enrolled|Special Order|Senate Concur|Motion|Laid Over|Hearing|Committee Amendment|Assigned a chapter': 'other',
+    r'Conference Committee|Passed Enrolled|Special Order|Senate Concur|Motion|Laid Over|Hearing|Committee Amendment|Assigned a chapter|Second Reading|Returned Passed': 'other',
 }
 
 vote_classifiers = {
@@ -100,6 +100,7 @@ class MDBillScraper(BillScraper):
                                 if atype:
                                     bill.add_action(chamber, act, action_date,
                                                    type=atype)
+
                     except ValueError:
                         pass # probably trying to parse a bad entry
 
@@ -197,8 +198,7 @@ class MDBillScraper(BillScraper):
             # find <a name="Title">, get parent dt, get parent dl, then dd n dl
             title = doc.xpath('//a[@name="Title"][1]/../../dd[1]/text()')[0].strip()
 
-            # create the bill object now that we have the title
-            print "%s %d %s" % (bill_type, number, title)
+            #print "%s %d %s" % (bill_type, number, title)
 
             if 'B' in bill_type:
                 _type = ['bill']
