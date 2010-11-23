@@ -31,6 +31,7 @@ action_classifiers = {
     'Read a third time and (passed|concurred)': 'bill:passed',
     'Adopted': 'bill:passed',
     'Presented to the Governor': 'governor:received',
+    'Introduced by': 'bill:introduced',
 }
 
 
@@ -131,6 +132,7 @@ class WIBillScraper(BillScraper):
                 bill_sponsors = True
                 current_chamber = chambers[dm[2]]
                 action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
+                self.parse_action(bill, workdata, current_chamber, action_date)
                 continue
 
             if stop:
