@@ -50,11 +50,15 @@ def _classify_action(action):
             return type
     return None
 
+def _clean_sponsor(name):
+    if name.startswith('Delegate') or name.startswith('Senator'):
+        name = name.split(' ', 1)[1]
+    if ', District' in name:
+        name = name.rsplit(',', 1)[0]
+    return name
+
 BASE_URL = "http://mlis.state.md.us"
 BILL_URL = BASE_URL + "/%s/billfile/%s%04d.htm" # year, session, bill_type, number
-
-def _clean_sponsor(name):
-    return name.rsplit(',', 1)[0].split(' ', 1)[1]
 
 class MDBillScraper(BillScraper):
     state = 'md'
