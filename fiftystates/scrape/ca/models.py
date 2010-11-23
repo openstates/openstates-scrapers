@@ -34,8 +34,11 @@ class CABill(Base):
     actions = relation('CABillAction', backref=backref('bill'),
                         order_by="CABillAction.bill_history_id")
 
-    versions = relation('CABillVersion', backref=('bill'),
+    versions = relation('CABillVersion', backref=backref('bill'),
                         order_by='desc(CABillVersion.version_num)')
+
+    votes = relation('CAVoteSummary', backref=backref('bill'),
+                     order_by='CAVoteSummary.vote_date_time')
 
     @property
     def short_bill_id(self):
@@ -200,7 +203,6 @@ class CAVoteSummary(Base):
     trans_uid = Column(String(30))
     trans_update = Column(DateTime, primary_key=True)
 
-    bill = relation(CABill, backref=backref('votes'))
     motion = relation(CAMotion)
     location = relation(CALocation)
 
