@@ -90,7 +90,8 @@ class MDBillScraper(BillScraper):
 
                         # iterate over all dds following the dt
                         dcursor = dt
-                        while dcursor.getnext().tag == 'dd':
+                        while (dcursor.getnext() is not None and
+                               dcursor.getnext().tag == 'dd'):
                             dcursor = dcursor.getnext()
                             actions = dcursor.text_content().split('\r\n')
                             for act in actions:
