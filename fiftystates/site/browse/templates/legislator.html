@@ -19,6 +19,10 @@
         <dt>NIMSP ID</dt>
         <dd><a href="http://www.followthemoney.org/database/uniquecandidate.phtml?uc={{leg.nimsp_id}}">{{leg.nimsp_id}}</a></dd>
     {% endif %}
+    {% if leg.transparencydata_id %}
+        <dt>TransparencyData ID</dt>
+        <dd><a href="http://influenceexplorer.com/politician/id/{{leg.transparencydata_id}}?cycle=-1">{{leg.transparencydata_id}}</a></dd>
+    {% endif %}
 
     {% for k,v in leg.items %}
     {% if "+" in k %}
