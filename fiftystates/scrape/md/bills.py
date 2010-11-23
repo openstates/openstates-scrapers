@@ -27,12 +27,13 @@ classifiers = {
     r'Pre\-filed': 'bill:introduced',
     r'Re\-(referred|assigned)': 'committee:referred',
     r'Recommit to Committee': 'committee:referred',
+    r'Referred': 'committee:referred',
     r'Third Reading Passed': 'bill:passed',
     r'Third Reading Failed': 'bill:failed',
     r'Unfavorable': 'committee:passed:unfavorable',
     r'Vetoed': 'governor:vetoed',
     r'Approved by the Governor': 'governor:signed',
-    r'Conference Committee|Passed Enrolled|Special Order|Senate Concur|Motion|Laid Over|Hearing|Committee Amendment|Assigned a chapter|Second Reading|Returned Passed': 'other',
+    r'Conference Committee|Passed Enrolled|Special Order|Senate Concur|Motion|Laid Over|Hearing|Committee Amendment|Assigned a chapter|Second Reading|Returned Passed|House Concur|Chair ruled|Senate Refuses to Concur|Senate Requests': 'other',
 }
 
 vote_classifiers = {
@@ -75,7 +76,7 @@ class MDBillScraper(BillScraper):
                 chamber = 'lower'
             elif h5.text == 'Senate Action':
                 chamber = 'upper'
-            elif h5.text == 'Action after passage in Senate and House':
+            elif h5.text.startswith('Action after passage'):
                 chamber = 'governor'
             else:
                 break
