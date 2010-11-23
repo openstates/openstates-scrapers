@@ -31,6 +31,9 @@ class CABill(Base):
     current_house = Column(String(60))
     current_status = Column(String(60))
 
+    actions = relation('CABillAction', backref=backref('bill'),
+                        order_by="CABillAction.bill_history_id")
+
     @property
     def short_bill_id(self):
         return "%s%d" % (self.measure_type, self.measure_num)
@@ -118,8 +121,6 @@ class CABillAction(Base):
     secondary_location = Column(String(60))
     ternary_location = Column(String(60))
     end_status = Column(String(60))
-
-    bill = relation(CABill, backref=backref('actions'))
 
     @property
     def actor(self):
