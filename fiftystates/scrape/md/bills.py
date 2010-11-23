@@ -88,13 +88,17 @@ class MDBillScraper(BillScraper):
                                                                  '%m/%d')
                         action_date = action_date.replace(int(bill['session']))
 
-                        actions = dt.getnext().text_content().split('\r\n')
-                        for act in actions:
-                            act = act.strip()
-                            atype = _classify_action(act)
-                            if atype:
-                                bill.add_action(chamber, act, action_date,
-                                               type=atype)
+                        # iterate over all dds following the dt
+                        dcursor = dt
+                        while dcursor.getnext().tag == 'dd':
+                            dcursor = dcursor.getnext()
+                            actions = dcursor.text_content().split('\r\n')
+                            for act in actions:
+                                act = act.strip()
+                                atype = _classify_action(act)
+                                if atype:
+                                    bill.add_action(chamber, act, action_date,
+                                                   type=atype)
                     except ValueError:
                         pass # probably trying to parse a bad entry
 
