@@ -201,9 +201,65 @@ class WIBillScraper(BillScraper):
 
         v = Vote(chamber, date, text, yes > no, yes, no, 0, type=vtype)
 
-        # commented due to discovery of vote PDF mismatches -JPT, 7/22/10
-        #link = line.xpath('//a[contains(@href, "/votes/")]')
-        #if link:
-        #    link = link[0].get('href')
-        #    filename, resp = self.urlretrieve(link)
+        # fetch the vote itself
+        link = line.xpath('//a[contains(@href, "/votes/")]')
+        if link:
+            link = link[0].get('href')
+            filename, resp = self.urlretrieve(link)
+
+            if 'av' in filename:
+                self.add_house_votes(v, filename)
+            elif 'sv' in filename:
+                self.add_senate_votes(v, filename)
+
         bill.add_vote(v)
+
+
+    def add_senate_votes(self, vote, filename):
+        xml = convert_pdf(filename, 'xml')
+        doc = lxml.html.fromstring(xml)  # use lxml.html for text_content()
+
+        # what to do with the pieces
+        vfunc = None
+
+        for textitem in doc.xpath('//text'):
+
+            text = textitem.text_content().strip()
+
+            if text.startswith('AYES'):
+                vfunc = vote.yes
+            elif text.startswith('NAYS'):
+                vfunc = vote.no
+            elif text.startswith('NOT VOTING'):
+                vfunc = vote.other
+            elif text.startswith('SEQUENCE NO'):
+                vfunc = None
+            elif vfunc:
+                vfunc(text)
+
+
+    def add_house_votes(self, vote, filename):
+        xml = convert_pdf(filename, 'xml')
+        doc = lxml.html.fromstring(xml)  # use lxml.html for text_content()
+
+        # function to call on next legislator name
+        vfunc = None
+        name = ''
+
+        for textitem in doc.xpath('//text/text()'):
+            if textitem == 'N':
+                vfunc = vote.no
+                name = ''
+            elif textitem == 'Y':
+                vfunc = vote.yes
+                name = ''
+            elif textitem == 'x':
+                vfunc = vote.other
+                name = ''
+            elif textitem in ('R', 'D', 'I'):
+                vfunc(name)
+            else:
+                if name:
+                    name += ' ' + textitem
+                else:
+                    name = textitem
