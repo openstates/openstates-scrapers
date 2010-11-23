@@ -53,6 +53,9 @@ def _classify_action(action):
 BASE_URL = "http://mlis.state.md.us"
 BILL_URL = BASE_URL + "/%s/billfile/%s%04d.htm" # year, session, bill_type, number
 
+def _clean_sponsor(name):
+    return name.rsplit(',', 1)[0].split(' ', 1)[1]
+
 class MDBillScraper(BillScraper):
     state = 'md'
 
@@ -60,15 +63,15 @@ class MDBillScraper(BillScraper):
         sponsor_list = doc.cssselect('a[name=Sponlst]')
         if sponsor_list:
             # more than one bill sponsor exists
-            elems = sponsor_list[0] \
-                .getparent().getparent().getparent().cssselect('dd a')
+            elems = sponsor_list[0].getparent().getparent().getparent().cssselect('dd a')
             for elem in elems:
-                bill.add_sponsor('cosponsor', elem.text.strip())
+                bill.add_sponsor('cosponsor',
+                                 _clean_sponsor(elem.text.strip()))
         else:
             # single bill sponsor
             sponsor = doc.cssselect('a[name=Sponsors]')[0] \
                 .getparent().getparent().cssselect('dd a')[0].text.strip()
-            bill.add_sponsor('primary', sponsor)
+            bill.add_sponsor('primary', _clean_sponsor(sponsor))
 
     def parse_bill_actions(self, doc, bill):
         for h5 in doc.xpath('//h5'):
