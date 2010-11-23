@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import re
 import os
 import sys
@@ -44,16 +45,16 @@ def dump_json(state, filename):
     cwd = os.path.split(__file__)[0]
 
     with open(os.path.join(cwd,
-                           "../../../../../schemas/api/bill.json")) as f:
+                           "../..//schemas/api/bill.json")) as f:
         bill_schema = json.load(f)
 
     with open(os.path.join(cwd,
-                           "../../../../../schemas/"
+                           "../../schemas/"
                            "api/legislator.json")) as f:
         legislator_schema = json.load(f)
 
     with open(os.path.join(cwd,
-                           "../../../../../schemas/"
+                           "../../schemas/"
                            "api/committee.json")) as f:
         committee_schema = json.load(f)
 
@@ -134,27 +135,26 @@ def upload(state, filename):
     print 'redirect from %s to %s' % (redirect.old_path, redirect.new_path)
 
 
-class Command(BaseCommand):
+if __name__ == '__main__':
+    import argparse
 
-    option_list = BaseCommand.option_list + (
-        make_option('--upload', action='store_true', dest='upload',
-                    default=False, help='Upload created file'),
-    )
+    parser = argparse.ArgumentParser(
+        description=('Dump API contents of a given state to a zipped'
+                     ' directory of JSON files, optionally uploading'
+                     ' to S3 when done.'))
+    parser.add_argument('state', help=('the two-letter abbreviation of the'
+                                       ' state to import'))
+    parser.add_argument('--file', '-f',
+                        help='filename to output to (defaults to <state>.zip)')
+    parser.add_argument('--upload', '-u', action='store_true', default=False,
+                        help='upload the created archive to S3')
 
-    def handle(self, *args, **options):
-        try:
-            state = args[0].lower()
-        except IndexError:
-            print ("Please provide a state abbreviation as the first "
-                   "argument.")
-            sys.exit(1)
+    args = parser.parse_args()
 
-        if len(args) > 1:
-            filename = args[1]
-        else:
-            filename = state + '.zip'
+    if not args.file:
+        args.file = args.state + '.zip'
 
-        dump_json(state, filename)
+    dump_json(args.state, args.file)
 
-        if options.get('upload'):
-            upload(state, filename)
+    if args.upload:
+        upload(args.state, args.file)
