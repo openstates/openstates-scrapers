@@ -34,6 +34,9 @@ class CABill(Base):
     actions = relation('CABillAction', backref=backref('bill'),
                         order_by="CABillAction.bill_history_id")
 
+    versions = relation('CABillVersion', backref=('bill'),
+                        order_by='desc(CABillVersion.version_num)')
+
     @property
     def short_bill_id(self):
         return "%s%d" % (self.measure_type, self.measure_num)
@@ -60,9 +63,6 @@ class CABillVersion(Base):
     active_flg = Column(String(1))
     trans_uid = Column(String(30))
     trans_update = Column(DateTime)
-
-    bill = relation(CABill, backref=backref(
-            'versions', order_by=desc(bill_version_action_date)))
 
     @property
     def xml(self):
