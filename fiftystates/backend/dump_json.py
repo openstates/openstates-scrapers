@@ -13,16 +13,13 @@ try:
 except:
     import simplejson as json
 
+from fiftystates import settings
 from fiftystates.backend import db
 
 import pymongo
 import boto
 from boto.s3.key import Key
 import validictory
-
-from django.core.management.base import BaseCommand, make_option
-from django.contrib.redirects.models import Redirect
-from django.conf import settings
 
 
 class APIValidator(validictory.SchemaValidator):
