@@ -99,9 +99,6 @@ class Bill(FiftystatesObject):
         :param type: the type of sponsorship, e.g. 'primary', 'cosponsor'
         :param name: the name of the sponsor as provided by the state
         """
-        if 'chamber' not in kwargs:
-            kwargs['chamber'] = self['chamber']
-
         self['sponsors'].append(dict(type=type, name=name, **kwargs))
 
     def add_document(self, name, url, **kwargs):
