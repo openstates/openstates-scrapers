@@ -11,43 +11,53 @@ class AKLegislatorScraper(LegislatorScraper):
     state = 'ak'
 
     def scrape(self, chamber, term):
+        if term != '26':
+            raise NoDataForPeriod(term)
+
         if chamber == 'upper':
             chamber_abbr = 'S'
+            url = 'http://senate.legis.state.ak.us/'
+            search = 'senator'
         else:
             chamber_abbr = 'H'
-
-        url = ("http://www.legis.state.ak.us/"
-               "basis/commbr_info.asp?session=%s" % term)
+            url = 'http://house.legis.state.ak.us/'
+            search = 'rep'
 
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'get_mbr_info')]"):
-                if ("house=%s" % chamber_abbr) not in link.attrib['href']:
+            seen = set()
+            for link in page.xpath("//a[contains(@href, '%s')]" % search):
+                name = link.text
+
+                # Members of the leadership are linked twice three times:
+                # one image link and two text links. Don't double/triple
+                # scrape them
+                if not name or link.attrib['href'] in seen:
                     continue
+                seen.add(link.attrib['href'])
 
-                self.scrape_legislator(chamber, term, link.attrib['href'])
+                self.scrape_legislator(chamber, term,
+                                       link.xpath('string()').strip(),
+                                       link.attrib['href'])
 
-    def scrape_legislator(self, chamber, term, url):
+    def scrape_legislator(self, chamber, term, name, url):
         with self.urlopen(url) as page:
+            # Alaska fails at unicode, some of the pages have broken
+            # characters. They're not in data we care about so just
+            # replace them.
+            page = page.decode('utf8', 'replace')
             page = lxml.html.fromstring(page)
 
-            name = page.xpath('//h3')[1].text
             name = re.sub(r'\s+', ' ', name)
-            name = name.replace('Senator', '').replace('Representative', '')
-            name = name.strip()
 
-            code = re.search(r'member=([A-Z]{3,3})&', url).group(1)
+            info = page.xpath('string(//div[@id = "fullpage"])')
 
-            district = page.xpath("//td[starts-with(text(), 'District:')]")
-            district = district[0].text.replace("District:", "").strip()
+            district = re.search(r'District ([\w\d]+)', info).group(1)
+            party = re.search(r'Party: (.+) Toll-Free', info).group(1).strip()
 
-            party = page.xpath("//td[starts-with(text(), 'Party:')]")
-            party = party[0].text.replace("Party:", "").strip()
-
-            leg = Legislator(term, chamber, district, name, party=party,
-                             code=code)
+            leg = Legislator(term, chamber, district, name, party=party)
             leg.add_source(url)
 
             self.save_legislator(leg)
