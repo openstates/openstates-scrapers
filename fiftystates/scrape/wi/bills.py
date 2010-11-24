@@ -201,16 +201,24 @@ class WIBillScraper(BillScraper):
             if 'Ayes' in sane or 'Noes' in sane or 'Paired' in sane:
                 pass
             elif link_text == 'Fiscal estimate received':
-                bill.add_document('Fiscal estimate', link)
+                self.add_document(bill, 'Fiscal estimate', link)
             elif len(link_text) <= 3 and 'offered' in sane:
-                bill.add_document(sane.split(' offered')[0], link)
+                self.add_document(bill, sane.split(' offered')[0], link)
             elif link_text.startswith('Act'):
                 name = '%s Wisconsin %s' % (bill['session'], link_text)
-                bill.add_document(name, link)
+                self.add_document(bill, name, link)
             elif link_text == 'Printed engrossed':
-                bill.add_document('Engrossed Printing', link)
+                self.add_document(bill, 'Engrossed Printing', link)
             else:
-                bill.add_document(sane, link)
+                self.add_document(bill, sane, link)
+
+    def add_document(self, bill, name, link):
+        """ avoid adding duplicate documents """
+
+        for doc in bill['documents']:
+            if link == doc['url']:
+                return
+        bill.add_document(name, link)
 
     def add_vote(self, bill, chamber, date, line, text):
         votes = re.findall(r'Ayes (\d+)\, Noes (\d+)', text)
