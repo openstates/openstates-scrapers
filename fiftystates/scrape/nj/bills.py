@@ -198,7 +198,7 @@ class NJBillScraper(BillScraper):
             # name document based _doctype
             doc_name = self._doctypes[rec['doctype']]
             if rec['comment']:
-                doc_name += rec['comment']
+                doc_name += ' ' + rec['comment']
 
             if rec['doctype'] in self._version_types:
                 bill.add_version(doc_name, doc_url)
