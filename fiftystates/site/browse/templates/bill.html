@@ -102,7 +102,7 @@
   <h4>Documents:</h4>
   <ul>
     {% for doc in bill.documents %}
-    <li><a href="{{document.url}}">{{document.name}}</a></li>
+    <li><a href="{{doc.url}}">{{doc.name}}</a></li>
     {% endfor %}
   </ul>
 </div>
