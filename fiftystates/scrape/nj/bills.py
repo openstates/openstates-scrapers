@@ -75,6 +75,26 @@ class NJBillScraper(BillScraper):
         'RCM': 'Recommitted to',
     }
 
+    _doctypes = {
+        'FE':  'Legislative Fiscal Estimate',
+        'I':   'Introduced Version',
+        'S':   'Statement',
+        'V':   'Veto',
+        'FN':  'Fiscal Note',
+        'R':   'Reprint',
+        'FS':  'Floor Statement',
+        'TR':  'Technical Report',
+        'AL':  'Advance Law',
+        'PL':  'Pamphlet Law',
+        'RS':  'Reprint of Substitute',
+        'ACS': 'Assembly Committee Substitute',
+        'AS':  'Assembly Substitute',
+        'SCS': 'Senate Committee Substitute',
+        'SS':  'Senate Substitute',
+    }
+
+    _version_types = ('I', 'R', 'RS', 'ACS', 'AS', 'SCS', 'SS')
+
     def initialize_committees(self, year_abr):
         chamber = {'A':'Assembly', 'S': 'Senate', '':''}
 
@@ -161,7 +181,7 @@ class NJBillScraper(BillScraper):
         bill_document_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/BILLWP.DBF' % (year_abr)
         DOC_dbf, resp = self.urlretrieve(bill_document_url)
         bill_document_db = dbf.Dbf(DOC_dbf)
-        
+
         #print bill_document_db[2]
         for rec in bill_document_db:
             bill_type = rec["billtype"]
@@ -170,12 +190,20 @@ class NJBillScraper(BillScraper):
             bill = bill_dict[bill_id]
             document = rec["document"]
             document = document.split('\\')
-            doc_name = document[-1]
             document = document[-2] + "/" + document[-1]
             year = str(year_abr) + str((year_abr + 1))
             doc_url = "ftp://www.njleg.state.nj.us/%s" % year
             doc_url = doc_url + "/" + document
-            bill.add_document(doc_name, doc_url)
+
+            # name document based _doctype
+            doc_name = self._doctypes[rec['doctype']]
+            if rec['comment']:
+                doc_name += rec['comment']
+
+            if rec['doctype'] in self._version_types:
+                bill.add_version(doc_name, doc_url)
+            else:
+                bill.add_document(doc_name, doc_url)
 
         #Senate Votes
         file1 = 'A' + str(year_abr)
