@@ -24,6 +24,7 @@ class WILegislatorScraper(LegislatorScraper):
             for row in page.cssselect("#ctl00_C_dgLegData tr"):
                 if len(row.cssselect("td a")) > 0:
                     rep_url = list(row)[0].cssselect("a[href]")[0].get("href")
+                    rep_url = 'http://legis.wi.gov/w3asp/contact/' + rep_url
 
                     legpart = re.findall(r'([\w\-\,\s\.]+)\s+\(([\w])\)', list(row)[0].text_content())
                     if legpart:
@@ -40,7 +41,7 @@ class WILegislatorScraper(LegislatorScraper):
                         self.save_legislator(leg)
 
     def add_committees(self, legislator, rep_url, term, chamber):
-        url = 'http://legis.wi.gov/w3asp/contact/' + rep_url + '&display=committee'
+        url = rep_url + '&display=committee'
         body = unicode(self.urlopen(url), 'latin-1')
         cmts = lxml.html.fromstring(body).cssselect("#ctl00_C_lblCommInfo a")
         for c in cmts:
