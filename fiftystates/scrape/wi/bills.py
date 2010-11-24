@@ -91,10 +91,15 @@ class WIBillScraper(BillScraper):
                     self.log('No data for %s %s' % (year, t))
 
     def scrape_bill_history(self, bill, url):
-        body = self.urlopen(url)
         chambers = {'A': 'lower', 'S': 'upper'}
+        body = self.urlopen(url)
+        doc = lxml.html.fromstring(body)
 
-        page = lxml.html.fromstring(body).xpath('//pre')[0]
+        # first link on page is always official bill text
+        link = doc.xpath('//a')[0].get('href')
+        bill.add_version('Official Version', link)
+
+        page = doc.xpath('//pre')[0]
         # split the history into each line, exluding all blank lines and title
         history = [x for x in lxml.html.tostring(page).split('\n')
                    if len(x.strip()) > 0][2:-1]
