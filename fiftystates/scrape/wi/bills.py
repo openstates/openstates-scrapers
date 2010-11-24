@@ -182,12 +182,30 @@ class WIBillScraper(BillScraper):
                 break
         bill.add_action(actor, sane, date, type=atype)
 
-        for doc in line.findall('a'):
-            # have this treat amendments better, as they show up like "1" or "3" now..
-            bill.add_document(doc.text_content(), doc.get('href'))
+        # add documents
+        self.add_documents(bill, line, sane)
 
-        if sane.find('Ayes') != -1:
+        if 'Ayes' in sane:
             self.add_vote(bill, actor, date, line, sane)
+
+    def add_documents(self, bill, line, sane):
+        for a in line.findall('a'):
+            link_text = a.text_content()
+            link = a.get('href')
+
+            if 'Ayes' in sane or 'Noes' in sane or 'Paired' in sane:
+                pass
+            elif link_text == 'Fiscal estimate received':
+                bill.add_document('Fiscal estimate', link)
+            elif len(link_text) <= 3 and 'offered' in sane:
+                bill.add_document(sane.split(' offered')[0], link)
+            elif link_text.startswith('Act'):
+                name = '%s Wisconsin %s' % (bill['session'], link_text)
+                bill.add_document(name, link)
+            elif link_text == 'Printed engrossed':
+                bill.add_document('Engrossed Printing', link)
+            else:
+                bill.add_document(sane, link)
 
     def add_vote(self, bill, chamber, date, line, text):
         votes = re.findall(r'Ayes (\d+)\, Noes (\d+)', text)
