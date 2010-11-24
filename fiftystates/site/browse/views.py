@@ -47,7 +47,7 @@ def state_index(request, state):
             for at in a['type']:
                 action_types[at] += 1
                 total_actions += 1
-        versions += len(bill['versions'])
+        versions += len(bill.get('versions', []))
     context['versions'] = versions
 
     context['types'] = dict(types)
