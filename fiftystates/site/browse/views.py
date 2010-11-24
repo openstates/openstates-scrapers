@@ -40,7 +40,8 @@ def state_index(request, state):
     total_actions = 0
     versions = 0
 
-    for bill in db.bills.find({'state': state}, {'type':1, 'actions.type': 1}):
+    for bill in db.bills.find({'state': state}, {'type':1, 'actions.type': 1,
+                                                 'versions': 1}):
         for t in bill['type']:
             types[t] += 1
         for a in bill['actions']:
