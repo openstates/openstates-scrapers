@@ -223,6 +223,8 @@ class WIBillScraper(BillScraper):
         link = line.xpath('//a[contains(@href, "/votes/")]')
         if link:
             link = link[0].get('href')
+            v.add_source(link)
+
             filename, resp = self.urlretrieve(link)
 
             if 'av' in link:
@@ -246,10 +248,13 @@ class WIBillScraper(BillScraper):
 
             if text.startswith('AYES'):
                 vfunc = vote.yes
+                vote['yes_count'] = int(text.split(u' \u2212 ')[1])
             elif text.startswith('NAYS'):
                 vfunc = vote.no
+                vote['no_count'] = int(text.split(u' \u2212 ')[1])
             elif text.startswith('NOT VOTING'):
                 vfunc = vote.other
+                vote['other_count'] = int(text.split(u' \u2212 ')[1])
             elif text.startswith('SEQUENCE NO'):
                 vfunc = None
             elif vfunc:
@@ -257,6 +262,7 @@ class WIBillScraper(BillScraper):
 
 
     def add_house_votes(self, vote, filename):
+        vcount_re = re.compile('AYES.* (\d+).*NAYS.* (\d+).*NOT VOTING.* (\d+).* PAIRED.*(\d+)')
         xml = convert_pdf(filename, 'xml')
         doc = lxml.html.fromstring(xml)  # use lxml.html for text_content()
 
@@ -265,7 +271,12 @@ class WIBillScraper(BillScraper):
         name = ''
 
         for textitem in doc.xpath('//text/text()'):
-            if textitem == 'N':
+            if textitem.startswith('AYES'):
+                ayes, nays, nv, paired = vcount_re.match(textitem).groups()
+                vote['yes_count'] = int(ayes)
+                vote['no_count'] = int(nays)
+                vote['other_count'] = int(nv)+int(paired)
+            elif textitem == 'N':
                 vfunc = vote.no
                 name = ''
             elif textitem == 'Y':
