@@ -97,3 +97,14 @@
   </ul>
 </div>
 {% endblock %}
+
+
+<div class="documents">
+  <h4>Documents:</h4>
+  <ul>
+    {% for doc in bill.documents %}
+    <li><a href="{{document.url}}">{{document.name}}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
