@@ -13,26 +13,19 @@ class AKBillScraper(BillScraper):
     soup_parser = html5lib.HTMLParser(
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
-    def scrape(self, chamber, year):
-        # Data available for 1993 on
-        if int(year) < 1993 or int(year) > dt.date.today().year:
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, session):
+        for term in self.metadata['terms']:
+            if term['sessions'][0] == session:
+                year = str(term['start_year'])
+                year2 = str(term['end_year'])
+                break
+        else:
+            raise NoDataForPeriod(session)
 
-        # Expect first year of session (odd)
-        if int(year) % 2 != 1:
-            raise NoDataForPeriod(year)
-
-        self.scrape_session(chamber, year)
-
-    def scrape_session(self, chamber, year):
         if chamber == 'upper':
             bill_abbr = 'SB|SCR|SJR'
         elif chamber == 'lower':
             bill_abbr = 'HB|HCR|HJR'
-
-        # Sessions last 2 years, 1993-1994 was the 18th
-        session = str(18 + ((int(year) - 1993) / 2))
-        year2 = str(int(year) + 1)
 
         # Full calendar year
         date1 = '0101' + year[2:]

@@ -83,8 +83,9 @@ class CABillScraper(BillScraper):
             short_title = ''
             type = ['bill']
             subject = ''
-            for version in self.session.query(CABillVersion).filter_by(
-                bill=bill).filter(CABillVersion.bill_xml != None):
+            for version in bill.versions:
+                if not version.bill_xml:
+                    continue
 
                 title = version.title
                 short_title = version.short_title

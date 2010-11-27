@@ -51,7 +51,7 @@ class LABillScraper(BillScraper):
             summary = summary.replace('Summary: ', '')
 
             match = re.match(r"^([^:]+): "
-                             r"((\(Constitutional Amendment\) )?[^(]+)",
+                             r"((\(Constitutional [aA]mendment\) )?[^(]+)",
                              summary)
 
             if match:

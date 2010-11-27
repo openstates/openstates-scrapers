@@ -27,12 +27,13 @@ classifiers = {
     r'Pre\-filed': 'bill:introduced',
     r'Re\-(referred|assigned)': 'committee:referred',
     r'Recommit to Committee': 'committee:referred',
+    r'Referred': 'committee:referred',
     r'Third Reading Passed': 'bill:passed',
     r'Third Reading Failed': 'bill:failed',
     r'Unfavorable': 'committee:passed:unfavorable',
     r'Vetoed': 'governor:vetoed',
     r'Approved by the Governor': 'governor:signed',
-    r'Conference Committee|Passed Enrolled|Special Order|Senate Concur|Motion|Laid Over|Hearing|Committee Amendment|Assigned a chapter': 'other',
+    r'Conference Committee|Passed Enrolled|Special Order|Senate Concur|Motion|Laid Over|Hearing|Committee Amendment|Assigned a chapter|Second Reading|Returned Passed|House Concur|Chair ruled|Senate Refuses to Concur|Senate Requests': 'other',
 }
 
 vote_classifiers = {
@@ -49,6 +50,13 @@ def _classify_action(action):
             return type
     return None
 
+def _clean_sponsor(name):
+    if name.startswith('Delegate') or name.startswith('Senator'):
+        name = name.split(' ', 1)[1]
+    if ', District' in name:
+        name = name.rsplit(',', 1)[0]
+    return name
+
 BASE_URL = "http://mlis.state.md.us"
 BILL_URL = BASE_URL + "/%s/billfile/%s%04d.htm" # year, session, bill_type, number
 
@@ -59,15 +67,15 @@ class MDBillScraper(BillScraper):
         sponsor_list = doc.cssselect('a[name=Sponlst]')
         if sponsor_list:
             # more than one bill sponsor exists
-            elems = sponsor_list[0] \
-                .getparent().getparent().getparent().cssselect('dd a')
+            elems = sponsor_list[0].getparent().getparent().getparent().cssselect('dd a')
             for elem in elems:
-                bill.add_sponsor('cosponsor', elem.text.strip())
+                bill.add_sponsor('cosponsor',
+                                 _clean_sponsor(elem.text.strip()))
         else:
             # single bill sponsor
             sponsor = doc.cssselect('a[name=Sponsors]')[0] \
                 .getparent().getparent().cssselect('dd a')[0].text.strip()
-            bill.add_sponsor('primary', sponsor)
+            bill.add_sponsor('primary', _clean_sponsor(sponsor))
 
     def parse_bill_actions(self, doc, bill):
         for h5 in doc.xpath('//h5'):
@@ -75,7 +83,7 @@ class MDBillScraper(BillScraper):
                 chamber = 'lower'
             elif h5.text == 'Senate Action':
                 chamber = 'upper'
-            elif h5.text == 'Action after passage in Senate and House':
+            elif h5.text.startswith('Action after passage'):
                 chamber = 'governor'
             else:
                 break
@@ -88,13 +96,19 @@ class MDBillScraper(BillScraper):
                                                                  '%m/%d')
                         action_date = action_date.replace(int(bill['session']))
 
-                        actions = dt.getnext().text_content().split('\r\n')
-                        for act in actions:
-                            act = act.strip()
-                            atype = _classify_action(act)
-                            if atype:
-                                bill.add_action(chamber, act, action_date,
-                                               type=atype)
+                        # iterate over all dds following the dt
+                        dcursor = dt
+                        while (dcursor.getnext() is not None and
+                               dcursor.getnext().tag == 'dd'):
+                            dcursor = dcursor.getnext()
+                            actions = dcursor.text_content().split('\r\n')
+                            for act in actions:
+                                act = act.strip()
+                                atype = _classify_action(act)
+                                if atype:
+                                    bill.add_action(chamber, act, action_date,
+                                                   type=atype)
+
                     except ValueError:
                         pass # probably trying to parse a bad entry
 
@@ -192,8 +206,7 @@ class MDBillScraper(BillScraper):
             # find <a name="Title">, get parent dt, get parent dl, then dd n dl
             title = doc.xpath('//a[@name="Title"][1]/../../dd[1]/text()')[0].strip()
 
-            # create the bill object now that we have the title
-            print "%s %d %s" % (bill_type, number, title)
+            #print "%s %d %s" % (bill_type, number, title)
 
             if 'B' in bill_type:
                 _type = ['bill']

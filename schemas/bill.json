@@ -21,7 +21,8 @@
     "sponsors": {"type": "array", "items": {"type": "object", "properties": {
         "type": {"type": "string"},
         "name": {"type": "string"},
-        "chamber": {"type": "string"}
+        "chamber": {"type": "string", "enum": ["upper", "lower"],
+          "optional": true}
     }}},
     "actions": {"type": "array", "items": {"type": "object", "properties": {
         "action": {"type": "string"},
