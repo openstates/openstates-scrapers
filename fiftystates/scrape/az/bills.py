@@ -40,6 +40,7 @@ class AZBillScraper(BillScraper):
             root = html.fromstring(docs_for_bill)
             bill_title = root.xpath(
                             '//div[@class="ContentPageTitle"]')[1].text.strip()
+            b_type = self.get_bill_type(bill_id[:-4])
             # Depending on the progress the bill has made through the house
             # some table might not exist, the links that have javascript:Show****
             # have a table with related documents/calanders/agendas/versions
@@ -47,8 +48,7 @@ class AZBillScraper(BillScraper):
             # bill overview page where all of the actions are found.
             doc_section_links = root.xpath(
                                     '//a[contains(@href, "javascript:Show")]')
-            bill = Bill(session, chamber, bill_id, bill_title)
-            bill.type = self.get_bill_type(bill_id[:-4])
+            bill = Bill(session, chamber, bill_id, bill_title, type=b_type)
             bill.add_source(url)
             for link in doc_section_links:
                 link_id = utils.parse_link_id(link)
@@ -75,7 +75,7 @@ class AZBillScraper(BillScraper):
                             bill.add_document(fact_sheet,
                                              fact_sheet_url, type="fact sheet")
                 elif link_text in ('Show Senate Agendas', 'Show House Agendas'):
-                    agenda_type = 'House Agenda' if re.match('House', link_text) else 'Senate Agenda'
+                    agenda_type = 'House Agenda' if re.search('House', link_text) else 'Senate Agenda'
                     for tr in root.xpath(div_path)[2:]:
                         # the first row has only a comment
                         # the second row is the table header
@@ -92,7 +92,7 @@ class AZBillScraper(BillScraper):
                             bill.add_document(agenda_committee, 
                                                 agenda_html, type=agenda_type)
                 elif link_text in ('Show Senate Calendars',
-                                    'Show House Calendar'):
+                                    'Show House Calendars'):
                     cal_type = 'house calendar' if re.match('House', link_text) else 'senate calendar'
                     for tr in root.xpath(div_path)[2:]:
                         # the first row has only a comment
@@ -145,13 +145,12 @@ class AZBillScraper(BillScraper):
                 house = False if chamber == 'upper' else True
                 action = table.cssselect('td')[0].text_content().strip()[:-1]
                 if action == 'SPONSORS':
-                    if len(rows[0]) == 4:
-                        for row in rows:
-                            tds = row.cssselect('td')
-                            sponsors = [tds[i:i+2:] for i in range(1, len(tds), 2)]
-                            bill.add_sponsor(sponsors[0][1].text_content().strip(), 
-                                             sponsors[0][0].text_content().strip(),
-                                             sponsor_link=sponsors[0][0].xpath('string(a/@href)'))
+                    for row in rows:
+                        sponsors = row.xpath('//sponsor')
+                        for sponsor in sponsors:
+                            name = sponsor.text.strip()
+                            s_type = sponsor.getparent().getparent().getnext().text_content().strip()
+                            bill.add_sponsor(name, s_type)
                 elif action == 'COMMITTEES':
                     # the html for this table has meta tags that give the chamber
                     # and the committee abreviation
@@ -217,7 +216,6 @@ class AZBillScraper(BillScraper):
                         if row[0].text_content().strip() == 'Vote Detail':
                             if len(row.getchildren()) == 10:
                                 detail, date, ayes, nays, nv, exc, emer, rfe, two_thirds, result = [ x.text_content().strip() for x in row ]
-                                print action_url
                                 passed = True if result == 'PASSED' else False
                                 motion = action
                                 date = datetime.datetime.strptime(date, '%m/%d/%y') if date else ''
