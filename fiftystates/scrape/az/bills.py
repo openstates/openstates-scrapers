@@ -24,13 +24,19 @@ class AZBillScraper(BillScraper):
                       'SR': 'resolution',
                       'SCR': 'concurrent resolution',
                       'SCM': 'concurrent memorial',
+                      'SJR': 'joint resolution',
                       'HB': 'bill',
                       'HR': 'resolution',
                       'HCR': 'concurrent resolution',
                       'HCM': 'concurrent memorial',
+                      'HJR': 'joint resolution',
                       #'MIS': 'miscelanious' currently ignoring these odd ones
                   }
-        return bill_types[bill_id]
+        try:
+            return bill_types[bill_id]
+        except KeyError:
+            self.log("unkown bill type: " + bill_id)
+            return 'bill'
         
     def scrape_bill(self, chamber, session, bill_id):
         session_id = self.get_session_id(session)
@@ -150,7 +156,7 @@ class AZBillScraper(BillScraper):
                         for sponsor in sponsors:
                             name = sponsor.text.strip()
                             s_type = sponsor.getparent().getparent().getnext().text_content().strip()
-                            bill.add_sponsor(name, s_type)
+                            bill.add_sponsor(s_type, name)
                 elif action == 'COMMITTEES':
                     # the html for this table has meta tags that give the chamber
                     # and the committee abreviation
