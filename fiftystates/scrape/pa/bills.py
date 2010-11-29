@@ -119,7 +119,7 @@ class PABillScraper(BillScraper):
             elif action.startswith('Amended on'):
                 type.append('amendment:passed')
             elif action.startswith('Approved by the Governor'):
-                type.append('bill:signed')
+                type.append('governor:signed')
 
             if action == 'Final passage':
                 type.append('bill:passed')
