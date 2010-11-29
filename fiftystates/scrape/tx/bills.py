@@ -110,15 +110,13 @@ class TXBillScraper(BillScraper):
                 type = 'amendment:amended'
             elif desc == 'Amendment withdrawn':
                 type = 'amendment:withdrawn'
-            elif desc.startswith('Received by the Secretary of'):
-                type = 'bill:introduced'
             elif desc == 'Passed':
                 type = 'bill:passed'
             elif desc.startswith('Received from the'):
                 type = 'bill:introduced'
             elif desc.startswith('Signed by the Governor'):
                 type = 'governor:signed'
-            elif desc == 'Filed':
+            elif desc == 'Read first time':
                 type = 'bill:introduced'
             else:
                 type = 'other'
