@@ -53,7 +53,7 @@ def dump_missing_leg_ids(state):
             if not member['leg_id']:
                 comm_csv.writerow((state, committee['chamber'],
                                    committee['committee'].encode('ascii', 'replace'),
-                                   committee['subcommittee'].encode('ascii', 'replace'),
+                                   (committee['subcommittee'] or u'').encode('ascii', 'replace'),
                                    member['role'],
                                    member['name'].encode('ascii', 'replace')))
 
