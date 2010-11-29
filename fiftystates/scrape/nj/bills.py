@@ -22,64 +22,64 @@ class NJBillScraper(BillScraper):
     }
 
     _actions = {
-        'INT 1RA AWR 2RA': 'Introduced, 1st Reading without Reference, 2nd Reading',
-        'INT 1RS SWR 2RS': 'Introduced, 1st Reading without Reference, 2nd Reading',
-        'REP 2RA': 'Reported out of Assembly Committee, 2nd Reading',
-        'REP 2RS': 'Reported out of Senate Committee, 2nd Reading',
-        'REP/ACA 2RA': 'Reported out of Assembly Committee with Amendments, 2nd Reading',
-        'REP/SCA 2RS': 'Reported out of Senate Committee with Amendments, 2nd Reading',
-        'R/S SWR 2RS': 'Received in the Senate without Reference, 2nd Reading',
-        'R/A AWR 2RA': 'Received in the Assembly without Reference, 2nd Reading',
-        'R/A 2RAC': 'Received in the Assembly, 2nd Reading on Concurrence',
-        'R/S 2RSC': 'Received in the Senate, 2nd Reading on Concurrence',
-        'REP/ACS 2RA': 'Reported from Assembly Committee as a Substitute, 2nd Reading',
-        'REP/SCS 2RS': 'Reported from Senate Committee as a Substitute, 2nd Reading',
-        'AA 2RA': 'Assembly Floor Amendment Passed',
-        'SA 2RS': 'Senate Amendment',
-        'SUTC REVIEWED': 'Reviewed by the Sales Tax Reviewe Commission',
-        'PHBC REVIEWED': 'Reviewed by the Pension and Health Benefits Commission',
-        'SUB FOR': 'Substituted for',
-        'SUB BY': 'Substituted by',
-        'PA': 'Passed Assembly',
-        'PS': 'Passed Senate',
-        'PA PBH': 'Passed Assembly (Passed Both Houses)',
-        'PS PBH': 'Passed Senate (Passed Both Houses)',
-        'APP': 'Approved',
-        'AV R/A': 'Absolute Veto, Received in the Assembly',
-        'AV R/S': 'Absolute Veto, Received in the Senate',
-        'CV R/A': 'Conditional Veto, Received in the Assembly',
-        'CV R/S': 'Conditional Veto, Received in the Senate',
-        '2RSG': "2nd Reading on Concur with Governor's Recommendations",
-        'CV R/S 2RSG': "Conditional Veto, Received, 2nd Reading on Concur with Governor's Recommendations",
-        '1RAG': 'First Reading/Governor Recommendations Only',
-        '2RAG': "2nd Reading in the Assembly on Concur. w/Gov's Recommendations",
-        'R/S 2RSG': "Received in the Senate, 2nd Reading - Concur. w/Gov's Recommendations",
-        'R/A 2RAG': "Received in the Senate, 2nd Reading - Concur. w/Gov's Recommendations",
-        'REF SBA': 'Referred to Senate Budget and Appropriations Committee',
-        'REP REF AAP': 'Reported and Referred to Assembly Appropriations Committee',
-        'REP/ACA REF AAP': 'Reported out of Assembly Committee with Amendments and Referred to Assembly Appropriations Committee',
-        'RSND/V': 'Rescind Vote',
-        'SS 2RS': 'Senate Substitution',
-        'AS 2RA': 'Assembly Substitution',
-        'ER': 'Emergency Resolution',
-        'FSS': 'Filed with Secretary of State',
-        'LSTA': 'Lost in the Assembly',
-        'LSTS': 'Lost in the Senate',
-        'SEN COPY ON DESK': 'Placed on Desk in Senate',
-        'ASM COPY ON DESK': 'Placed on Desk in Assembly',
-        'COMB/W': 'Combined with',
-        'MOTION': 'Motion',
-        'PUBLIC HEARING': 'Public Hearing Held',
-        'W': 'Withdrawn from Consideration',
+        'INT 1RA AWR 2RA': ('Introduced, 1st Reading without Reference, 2nd Reading', 'bill:introduced'),
+        'INT 1RS SWR 2RS': ('Introduced, 1st Reading without Reference, 2nd Reading', 'bill:introduced'),
+        'REP 2RA': ('Reported out of Assembly Committee, 2nd Reading', 'committee:passed'),
+        'REP 2RS': ('Reported out of Senate Committee, 2nd Reading', 'committee:passed'),
+        'REP/ACA 2RA': ('Reported out of Assembly Committee with Amendments, 2nd Reading', 'committee:passed'),
+        'REP/SCA 2RS': ('Reported out of Senate Committee with Amendments, 2nd Reading', 'committee:passed'),
+        'R/S SWR 2RS': ('Received in the Senate without Reference, 2nd Reading', 'other'),
+        'R/A AWR 2RA': ('Received in the Assembly without Reference, 2nd Reading', 'other'),
+        'R/A 2RAC': ('Received in the Assembly, 2nd Reading on Concurrence', 'other'),
+        'R/S 2RSC': ('Received in the Senate, 2nd Reading on Concurrence', 'other'),
+        'REP/ACS 2RA': ('Reported from Assembly Committee as a Substitute, 2nd Reading', 'other'),
+        'REP/SCS 2RS': ('Reported from Senate Committee as a Substitute, 2nd Reading', 'other'),
+        'AA 2RA': ('Assembly Floor Amendment Passed', 'amendment:passed'),
+        'SA 2RS': ('Senate Amendment', 'amendment:passed'),
+        'SUTC REVIEWED': ('Reviewed by the Sales Tax Review Commission', 'other'),
+        'PHBC REVIEWED': ('Reviewed by the Pension and Health Benefits Commission', 'other'),
+        'SUB FOR': ('Substituted for', 'other'),
+        'SUB BY': ('Substituted by', 'other'),
+        'PA': ('Passed Assembly', 'bill:passed'),
+        'PS': ('Passed Senate', 'bill:passed'),
+        'PA PBH': ('Passed Assembly (Passed Both Houses)', 'bill:passed'),
+        'PS PBH': ('Passed Senate (Passed Both Houses)', 'bill:passed'),
+        'APP': ('Approved', 'governor:signed'),
+        'AV R/A': ('Absolute Veto, Received in the Assembly', 'governor:vetoed'),
+        'AV R/S': ('Absolute Veto, Received in the Senate', 'governor:vetoed'),
+        'CV R/A': ('Conditional Veto, Received in the Assembly', 'governor:vetoed'),
+        'CV R/S': ('Conditional Veto, Received in the Senate', 'governor:vetoed'),
+        '2RSG': ("2nd Reading on Concur with Governor's Recommendations", 'other'),
+        'CV R/S 2RSG': ("Conditional Veto, Received, 2nd Reading on Concur with Governor's Recommendations", 'other'),
+        '1RAG': ('First Reading/Governor Recommendations Only', 'other'),
+        '2RAG': ("2nd Reading in the Assembly on Concur. w/Gov's Recommendations", 'other'),
+        'R/S 2RSG': ("Received in the Senate, 2nd Reading - Concur. w/Gov's Recommendations", 'other'),
+        'R/A 2RAG': ("Received in the Senate, 2nd Reading - Concur. w/Gov's Recommendations", 'other'),
+        'REF SBA': ('Referred to Senate Budget and Appropriations Committee', 'committee:referred'),
+        'REP REF AAP': ('Reported and Referred to Assembly Appropriations Committee', 'committee:referred'),
+        'REP/ACA REF AAP': ('Reported out of Assembly Committee with Amendments and Referred to Assembly Appropriations Committee', 'committee:referred'),
+        'RSND/V': ('Rescind Vote', 'other'),
+        'SS 2RS': ('Senate Substitution', 'other'),
+        'AS 2RA': ('Assembly Substitution', 'other'),
+        'ER': ('Emergency Resolution', 'other'),
+        'FSS': ('Filed with Secretary of State', 'other'),
+        'LSTA': ('Lost in the Assembly', 'other'),
+        'LSTS': ('Lost in the Senate', 'other'),
+        'SEN COPY ON DESK': ('Placed on Desk in Senate', 'other'),
+        'ASM COPY ON DESK': ('Placed on Desk in Assembly', 'other'),
+        'COMB/W': ('Combined with', 'other'),
+        'MOTION': ('Motion', 'other'),
+        'PUBLIC HEARING': ('Public Hearing Held', 'other'),
+        'W': ('Withdrawn from Consideration', 'bill:withdrawn'),
     }
 
     _com_actions = {
-        'INT 1RA REF': 'Introduced in, Referred to',
-        'INT 1RS REF': 'Introduced in the Senate, Referred to',
-        'R/S REF': 'Received in the Senate, Referred to',
-        'R/A REF': 'Received in the Assembly, Referred to',
-        'TRANS': 'Transferred to',
-        'RCM': 'Recommitted to',
+        'INT 1RA REF': ('Introduced in the Assembly, Referred to', ['bill:introduced', 'committee:referred']),
+        'INT 1RS REF': ('Introduced in the Senate, Referred to', ['bill:introduced', 'committee:referred']),
+        'R/S REF': ('Received in the Senate, Referred to', 'committee:referred'),
+        'R/A REF': ('Received in the Assembly, Referred to', 'committee:referred'),
+        'TRANS': ('Transferred to', 'committee:referred'),
+        'RCM': ('Recommitted to', 'committee:referred'),
     }
 
     _doctypes = {
@@ -121,16 +121,17 @@ class NJBillScraper(BillScraper):
         if act_str in self._actions:
             return self._actions[act_str]
 
-        for prefix, action in self._com_actions.iteritems():
+        for prefix, act_pair in self._com_actions.iteritems():
             if act_str.startswith(prefix):
                 last3 = act_str.rsplit(' ', 1)[-1]
                 com_name = self._committees[last3]
-                return action + ' ' + com_name
+                action, acttype = act_pair
+                return (action + ' ' + com_name, acttype)
 
         # warn about missing action
         self.warn('unknown action: %s' % act_str)
 
-        return act_str
+        return (act_str, 'other')
 
     def scrape(self, chamber, session):
 
@@ -293,8 +294,8 @@ class NJBillScraper(BillScraper):
             date = rec["dateaction"]
             actor = rec["house"]
             comment = rec["comment"]
-            action = self.categorize_action(action)
+            action, atype = self.categorize_action(action)
             if comment:
                 action += (' ' + comment)
-            bill.add_action(actor, action, date)
+            bill.add_action(actor, action, date, type=atype)
             self.save_bill(bill)
