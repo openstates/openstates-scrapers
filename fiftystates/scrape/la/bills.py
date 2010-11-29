@@ -150,7 +150,7 @@ class LABillScraper(BillScraper):
                 if 'Amendments proposed' in action:
                     atype.append('amendment:introduced')
 
-                if 'finally passed' in action:
+                if 'finally passed' in action.lower():
                     atype.append('bill:passed')
 
                 match = re.match(r'House conferees appointed: (.*)', action)
