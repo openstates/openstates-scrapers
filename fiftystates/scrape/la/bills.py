@@ -134,8 +134,12 @@ class LABillScraper(BillScraper):
 
                 atype = []
 
-                if action.startswith('Prefiled'):
+                if (action.startswith("Introduced") or
+                    action.startswith("Read by title") or
+                    action.startswith("Received in the")):
+
                     atype.append('bill:introduced')
+
 
                 if 'referred to the committee' in action.lower():
                     atype.append('committee:referred')
