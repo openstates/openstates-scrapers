@@ -91,10 +91,15 @@ class WIBillScraper(BillScraper):
                     self.log('No data for %s %s' % (year, t))
 
     def scrape_bill_history(self, bill, url):
-        body = self.urlopen(url)
         chambers = {'A': 'lower', 'S': 'upper'}
+        body = self.urlopen(url)
+        doc = lxml.html.fromstring(body)
 
-        page = lxml.html.fromstring(body).xpath('//pre')[0]
+        # first link on page is always official bill text
+        link = doc.xpath('//a')[0].get('href')
+        bill.add_version('Official Version', link)
+
+        page = doc.xpath('//pre')[0]
         # split the history into each line, exluding all blank lines and title
         history = [x for x in lxml.html.tostring(page).split('\n')
                    if len(x.strip()) > 0][2:-1]
@@ -182,12 +187,38 @@ class WIBillScraper(BillScraper):
                 break
         bill.add_action(actor, sane, date, type=atype)
 
-        for doc in line.findall('a'):
-            # have this treat amendments better, as they show up like "1" or "3" now..
-            bill.add_document(doc.text_content(), doc.get('href'))
+        # add documents
+        self.add_documents(bill, line, sane)
 
-        if sane.find('Ayes') != -1:
+        if 'Ayes' in sane:
             self.add_vote(bill, actor, date, line, sane)
+
+    def add_documents(self, bill, line, sane):
+        for a in line.findall('a'):
+            link_text = a.text_content()
+            link = a.get('href')
+
+            if 'Ayes' in sane or 'Noes' in sane or 'Paired' in sane:
+                pass
+            elif link_text == 'Fiscal estimate received':
+                self.add_document(bill, 'Fiscal estimate', link)
+            elif len(link_text) <= 3 and 'offered' in sane:
+                self.add_document(bill, sane.split(' offered')[0], link)
+            elif link_text.startswith('Act'):
+                name = '%s Wisconsin %s' % (bill['session'], link_text)
+                self.add_document(bill, name, link)
+            elif link_text == 'Printed engrossed':
+                self.add_document(bill, 'Engrossed Printing', link)
+            else:
+                self.add_document(bill, sane, link)
+
+    def add_document(self, bill, name, link):
+        """ avoid adding duplicate documents """
+
+        for doc in bill['documents']:
+            if link == doc['url']:
+                return
+        bill.add_document(name, link)
 
     def add_vote(self, bill, chamber, date, line, text):
         votes = re.findall(r'Ayes (\d+)\, Noes (\d+)', text)
@@ -205,11 +236,13 @@ class WIBillScraper(BillScraper):
         link = line.xpath('//a[contains(@href, "/votes/")]')
         if link:
             link = link[0].get('href')
+            v.add_source(link)
+
             filename, resp = self.urlretrieve(link)
 
-            if 'av' in filename:
+            if 'av' in link:
                 self.add_house_votes(v, filename)
-            elif 'sv' in filename:
+            elif 'sv' in link:
                 self.add_senate_votes(v, filename)
 
         bill.add_vote(v)
@@ -228,10 +261,13 @@ class WIBillScraper(BillScraper):
 
             if text.startswith('AYES'):
                 vfunc = vote.yes
+                vote['yes_count'] = int(text.split(u' \u2212 ')[1])
             elif text.startswith('NAYS'):
                 vfunc = vote.no
+                vote['no_count'] = int(text.split(u' \u2212 ')[1])
             elif text.startswith('NOT VOTING'):
                 vfunc = vote.other
+                vote['other_count'] = int(text.split(u' \u2212 ')[1])
             elif text.startswith('SEQUENCE NO'):
                 vfunc = None
             elif vfunc:
@@ -239,6 +275,7 @@ class WIBillScraper(BillScraper):
 
 
     def add_house_votes(self, vote, filename):
+        vcount_re = re.compile('AYES.* (\d+).*NAYS.* (\d+).*NOT VOTING.* (\d+).* PAIRED.*(\d+)')
         xml = convert_pdf(filename, 'xml')
         doc = lxml.html.fromstring(xml)  # use lxml.html for text_content()
 
@@ -247,7 +284,12 @@ class WIBillScraper(BillScraper):
         name = ''
 
         for textitem in doc.xpath('//text/text()'):
-            if textitem == 'N':
+            if textitem.startswith('AYES'):
+                ayes, nays, nv, paired = vcount_re.match(textitem).groups()
+                vote['yes_count'] = int(ayes)
+                vote['no_count'] = int(nays)
+                vote['other_count'] = int(nv)+int(paired)
+            elif textitem == 'N':
                 vfunc = vote.no
                 name = ''
             elif textitem == 'Y':

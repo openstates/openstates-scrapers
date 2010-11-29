@@ -38,14 +38,19 @@ def state_index(request, state):
     types = defaultdict(int)
     action_types = defaultdict(int)
     total_actions = 0
+    versions = 0
 
-    for bill in db.bills.find({'state': state}, {'type':1, 'actions.type': 1}):
+    for bill in db.bills.find({'state': state}, {'type':1, 'actions.type': 1,
+                                                 'versions': 1}):
         for t in bill['type']:
             types[t] += 1
         for a in bill['actions']:
             for at in a['type']:
                 action_types[at] += 1
                 total_actions += 1
+        versions += len(bill.get('versions', []))
+    context['versions'] = versions
+
     context['types'] = dict(types)
     context['action_types'] = dict(action_types)
     if total_actions:
@@ -64,6 +69,8 @@ def state_index(request, state):
                              'votesmart_id': {'$exists':False}}).count()
     context['missing_nimsp'] = db.legislators.find({'state': state,
                              'nimsp_id': {'$exists':False}}).count()
+    context['missing_tdata'] = db.legislators.find({'state': state,
+                             'transparencydata_id': {'$exists':False}}).count()
 
     # committees
     context['upper_com_count'] = db.committees.find({'state':state,

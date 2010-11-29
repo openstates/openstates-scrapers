@@ -6,7 +6,10 @@ from fiftystates.backend import db
 def _extract(d, fields):
     rd = {}
     for f in fields:
-        rd[f] = d.get(f, None)
+        v = d.get(f, None)
+        if isinstance(v, (str, unicode)):
+            v = v.encode('utf8')
+        rd[f] = v
     return rd
 
 def check_state(state):
@@ -20,7 +23,7 @@ def check_state(state):
     uniques = {'office': set(), 'votesmart_id':set(),
                'transparencydata_id': set()}
 
-    writer = csv.DictWriter(open(state+'.csv', 'w'), fields)
+    writer = csv.DictWriter(open(state+'_legislators.csv', 'w'), fields)
 
     writer.writerow(dict(zip(fields, fields)))
 

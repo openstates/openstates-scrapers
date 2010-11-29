@@ -77,9 +77,9 @@
         <td>{{vote.chamber}}</td>
         <td>{{vote.date|naturalday}}</td>
         <td>{{vote.yes_count}}-{{vote.no_count}}-{{vote.other_count}} [{{vote.passed|yesno:"passed,failed"}}]</td>
-        <td>{% for v in vote.yes_votes %}{{v.name}},{%endfor%}</td>
-        <td>{% for v in vote.no_votes %}{{v.name}},{%endfor%}</td>
-        <td>{% for v in vote.other_votes %}{{v.name}},{%endfor%}</td>
+        <td style="color: #366300">{% for v in vote.yes_votes %}{{v.name}},{%endfor%}</td>
+        <td style="color: #630000">{% for v in vote.no_votes %}{{v.name}},{%endfor%}</td>
+        <td style="color: #363636">{% for v in vote.other_votes %}{{v.name}},{%endfor%}</td>
     </tr>
     {% endfor %}
 </table>
@@ -93,6 +93,16 @@
   <ul>
     {% for version in bill.versions %}
     <li><a href="{{version.url}}">{{version.name}}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+
+
+<div class="documents">
+  <h4>Documents:</h4>
+  <ul>
+    {% for doc in bill.documents %}
+    <li><a href="{{doc.url}}">{{doc.name}}</a></li>
     {% endfor %}
   </ul>
 </div>
