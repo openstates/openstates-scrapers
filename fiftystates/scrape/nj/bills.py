@@ -14,6 +14,13 @@ import csv
 class NJBillScraper(BillScraper):
     state = 'nj'
 
+    _bill_types = {
+        '': 'bill',
+        'R': 'resolution',
+        'JR': 'joint resolution',
+        'CR': 'concurrent resolution',
+    }
+
     _actions = {
         'INT 1RA AWR 2RA': 'Introduced, 1st Reading without Reference, 2nd Reading',
         'INT 1RS SWR 2RS': 'Introduced, 1st Reading without Reference, 2nd Reading',
@@ -154,7 +161,9 @@ class NJBillScraper(BillScraper):
                 chamber = "lower"
             else:
                 chamber = "upper"
-            bill = Bill(str(session), chamber, bill_id, title)
+
+            bill = Bill(str(session), chamber, bill_id, title,
+                        type=self._bill_types[bill_type[1:]])
             bill.add_source(main_bill_url)
             bill_dict[bill_id] = bill
 
