@@ -114,6 +114,9 @@ class TXBillScraper(BillScraper):
                 type = 'bill:passed'
             elif desc.startswith('Received from the'):
                 type = 'bill:introduced'
+            elif desc.startswith('Sent to the Governor'):
+                # But what if it gets lost in the mail?
+                type = 'governor:received'
             elif desc.startswith('Signed by the Governor'):
                 type = 'governor:signed'
             elif desc == 'Read first time':
