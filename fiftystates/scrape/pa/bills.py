@@ -103,6 +103,8 @@ class PABillScraper(BillScraper):
             elif action == 'In the Senate':
                 chamber = 'upper'
                 continue
+            elif action.startswith("(Remarks see"):
+                continue
 
             match = re.match(
                 r"(.*),\s+(\w+\.?\s+\d{1,2},\s+\d{4})( \(\d+-\d+\))?", action)
