@@ -202,8 +202,10 @@ class NJBillScraper(BillScraper):
             document = document.split('\\')
             document = document[-2] + "/" + document[-1]
             year = str(year_abr) + str((year_abr + 1))
-            doc_url = "ftp://www.njleg.state.nj.us/%s" % year
-            doc_url = doc_url + "/" + document
+
+            #doc_url = "ftp://www.njleg.state.nj.us/%s/%s" % (year, document)
+            htm_url = 'http://www.njleg.state.nj.us/%s/Bills/%s' % (year_abr,
+                document.replace('.DOC', '.HTM'))
 
             # name document based _doctype
             doc_name = self._doctypes[rec['doctype']]
@@ -211,9 +213,9 @@ class NJBillScraper(BillScraper):
                 doc_name += ' ' + rec['comment']
 
             if rec['doctype'] in self._version_types:
-                bill.add_version(doc_name, doc_url)
+                bill.add_version(doc_name, htm_url)
             else:
-                bill.add_document(doc_name, doc_url)
+                bill.add_document(doc_name, htm_url)
 
         #Senate Votes
         file1 = 'A' + str(year_abr)
