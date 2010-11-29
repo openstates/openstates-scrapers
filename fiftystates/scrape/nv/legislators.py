@@ -32,7 +32,7 @@ class NVLegislatorScraper(LegislatorScraper):
 
 
     def scrape_legislators(self, chamber, session, year, term_name):
-       
+
         sessionsuffix = 'th'
         if str(session)[-1] == '1':
             sessionsuffix = 'st'
@@ -45,7 +45,7 @@ class NVLegislatorScraper(LegislatorScraper):
         if session == 26:
             insert = str(session) + sessionsuffix + str(year) + "Special"
 
-        if chamber == 'upper':        
+        if chamber == 'upper':
             leg_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/legislators/Senators/slist.cfm'
             n = 22
         elif chamber == 'lower':
@@ -78,17 +78,19 @@ class NVLegislatorScraper(LegislatorScraper):
                     full_name = first_name + " " + middle_name + " " + last_name
                 else:
                     full_name = first_name + " " + last_name
-                 
+
                 partypath = 'string(/html/body/table[%s]/tr/td/table[1]/tr/td[3]/font)' % (numdistricts + 2)
                 party = root.xpath(partypath).split()[-1]
 
                 districtpath = 'string(/html/body/table[%s]/tr/td/table[1]/tr/td[4]/font)' % (numdistricts + 2)
                 district = root.xpath(districtpath)[11: len(root.xpath(districtpath))].strip()
-               
+                if district.startswith('No.'):
+                    district = district[3:]
+
                 termpath = 'string(/html/body/table[%s]/tr/td/table[2]/tr/td[5])' % (numdistricts + 2)
                 end_date = root.xpath(termpath)[12: 21]
                 email = root.xpath(termpath).split()[-1]
-                
+
                 addresspath = 'string(/html/body/table[%s]/tr/td/table[2]/tr/td[2])' % (numdistricts + 2)
                 address = root.xpath(addresspath)
 
