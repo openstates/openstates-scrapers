@@ -131,22 +131,25 @@ class LABillScraper(BillScraper):
                     chamber = 'lower'
 
                 action = cells[3].text.strip()
+                action_lower = action.lower()
 
                 atype = []
 
-                if action.startswith('Prefiled'):
-                    atype.append('bill:introduced')
+                if ("introduced in the" in action_lower or
+                    "read by title" in action_lower):
 
-                if 'referred to the committee' in action.lower():
+                    atype.append("bill:introduced")
+
+                if 'referred to the committee' in action_lower:
                     atype.append('committee:referred')
 
                 if action.startswith('Signed by the Governor.'):
                     atype.append('governor:signed')
 
-                if 'Amendments proposed' in action:
+                if 'amendments proposed' in action_lower:
                     atype.append('amendment:introduced')
 
-                if 'finally passed' in action:
+                if 'finally passed' in action_lower:
                     atype.append('bill:passed')
 
                 match = re.match(r'House conferees appointed: (.*)', action)

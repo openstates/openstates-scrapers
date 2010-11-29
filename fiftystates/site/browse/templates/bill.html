@@ -53,8 +53,10 @@
     {% for action in bill.actions %}
     <li>
       <time datetime="{{action.date|date:"c"}}">{{ action.date|naturalday }}</time>
-      <span class="actor">({{action.actor}})</span> {{action.action}}
-    </li>
+      <span class="actor">({{action.actor}})</span>
+     <span class="action_type">[{% for type in action.type %}{{type}},{% endfor %}]</span>
+      {{action.action}}
+   </li>
     {% endfor %}
   </ul>
 </div>
