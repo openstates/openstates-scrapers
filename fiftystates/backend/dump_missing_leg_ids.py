@@ -27,7 +27,8 @@ def dump_missing_leg_ids(state):
             if not sponsor['leg_id']:
                 sponsor_csv.writerow((state, bill['session'],
                                       bill['chamber'], bill['bill_id'],
-                                      sponsor['type'], sponsor['name']))
+                                      sponsor['type'],
+                                      sponsor['name'].encode('ascii', 'replace')))
 
         i = 0
         for vote in bill['votes']:
@@ -53,7 +54,8 @@ def dump_missing_leg_ids(state):
                 comm_csv.writerow((state, committee['chamber'],
                                    committee['committee'],
                                    committee['subcommittee'],
-                                   member['role'], member['name']))
+                                   member['role'],
+                                   member['name'].encode('ascii', 'replace')))
 
 
 if __name__ == '__main__':
