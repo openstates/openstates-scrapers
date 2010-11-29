@@ -12,20 +12,24 @@ base_url = 'http://www.azleg.gov/'
 class AZBillScraper(BillScraper):
     state = 'az'
     def get_session_id(self, session):
+        """
+        returns the session id for a given session
+        """
         return self.metadata['session_details'][session]['session_id']
         
-    docs = {
-        'Show Versions': ''
-    }
-        
     def get_bill_type(self, bill_id):
+        """
+        Returns the bill type from its abbreviation
+        """
         bill_types = {
                       'SB': 'bill',
+                      'SM': 'memorial',
                       'SR': 'resolution',
                       'SCR': 'concurrent resolution',
                       'SCM': 'concurrent memorial',
                       'SJR': 'joint resolution',
                       'HB': 'bill',
+                      'HM': 'memorial',
                       'HR': 'resolution',
                       'HCR': 'concurrent resolution',
                       'HCM': 'concurrent memorial',
@@ -97,8 +101,7 @@ class AZBillScraper(BillScraper):
                             agenda_html = tds[7].xpath('string(a/@href)').strip()
                             bill.add_document(agenda_committee, 
                                                 agenda_html, type=agenda_type)
-                elif link_text in ('Show Senate Calendars',
-                                    'Show House Calendars'):
+                elif link_text in ('Show Senate Calendars', 'Show House Calendars'):
                     cal_type = 'house calendar' if re.match('House', link_text) else 'senate calendar'
                     for tr in root.xpath(div_path)[2:]:
                         # the first row has only a comment
@@ -151,12 +154,11 @@ class AZBillScraper(BillScraper):
                 house = False if chamber == 'upper' else True
                 action = table.cssselect('td')[0].text_content().strip()[:-1]
                 if action == 'SPONSORS':
-                    for row in rows:
-                        sponsors = row.xpath('//sponsor')
-                        for sponsor in sponsors:
-                            name = sponsor.text.strip()
-                            s_type = sponsor.getparent().getparent().getnext().text_content().strip()
-                            bill.add_sponsor(s_type, name)
+                    sponsors = table.xpath('//sponsor')
+                    for sponsor in sponsors:
+                        name = sponsor.text.strip()
+                        s_type = sponsor.getparent().getparent().getnext().text_content().strip()
+                        bill.add_sponsor(s_type, name)
                 elif action == 'COMMITTEES':
                     # the html for this table has meta tags that give the chamber
                     # and the committee abreviation
@@ -270,7 +272,11 @@ class AZBillScraper(BillScraper):
         self.log("saved: " + bill['bill_id'])
                 
     def scrape(self, chamber, session):
-        session_id = self.get_session_id(session)
+        try:
+            session_id = self.get_session_id(session)
+        except KeyError:
+            raise NoDataForPeriod
+            
         chamber_letter = {'lower': 'H', 'upper': 'S'}[chamber]
         view = {'lower':'allhouse', 'upper':'allsenate'}[chamber]
         url = base_url + 'Bills.asp?view=%s&Session_ID=%s'
