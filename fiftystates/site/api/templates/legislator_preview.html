@@ -1,0 +1,32 @@
+<html>
+<head>
+  <title>{{ legislator.full_name }}</title>
+</head>
+<body>
+  <table>
+    <tr>
+      <td><b>Full Name:</b></td>
+      <td>{{ legislator.full_name }}</td>
+    </tr>
+    <tr>
+      <td><b>State:</b></td>
+      <td>{{legislator.state}}</td>
+    </tr>
+    <tr>
+      <td><b>Chamber:</b></td>
+      <td>{{ legislator.chamber }}</td>
+    </tr>
+    <tr>
+      <td><b>District:</b></td>
+      <td>{{ legislator.district }}</td>
+    </tr>
+    <tr>
+      <td><b>Party:</b></td>
+      <td>{{ legislator.party }}</td>
+    </tr>
+  </table>
+  {% if legislator.photo_url %}
+    <img src="{{ legislator.photo_url }}" />
+  {% endif %}
+</body>
+</html>
