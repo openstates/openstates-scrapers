@@ -11,6 +11,7 @@ Event Fields
 
 All event methods return Event objects consisting of at least the following fields:
 
+  * ``id``: An Open State Project event id, e.g. ``TXE00004925``
   * ``description``: A description of the event, e.g. 'Appropriations Committee Meeting'
   * ``when``: The date/time of the event, in UTC
   * ``end``: The end date/time of the event, in UTC, if available
@@ -106,3 +107,47 @@ http://openstates.sunlightlabs.com/api/v1/events/?state=tx&type=committee:meetin
     .
     .
     ]
+    
+    
+Event Lookup
+============
+
+Looks up information on a single legislative event given its Open State Project event ID.
+
+URL Format
+----------
+
+:samp:`http://openstates.sunlightlabs.com/api/v1/events/{EVENT_ID}/?apikey={YOUR_API_KEY}`
+
+Example
+-------
+
+http://openstates.sunlightlabs.com/api/v1/events/TXE00004925/?apikey=YOUR_API_KEY
+
+::
+
+    {
+        "end": null, 
+        "description": "Committee Meeting\nInsurance - 10/28/2010\nTime: 10:30 AM, Location: E1.026", 
+        "created_at": "2010-10-12 17:25:50", 
+        "when": "2010-10-28 16:30:00", 
+        "updated_at": "2010-10-12 17:25:50", 
+        "sources": [
+            {
+                "url": "http://www.capitol.state.tx.us/MyTLO/RSS/RSS.aspx?Type=upcomingmeetingshouse", 
+                "retrieved": "2010-10-12 16:09:27"
+            }
+        ], 
+        "state": "tx", 
+        "session": "811", 
+        "location": "E1.026", 
+        "type": "committee:meeting", 
+        "participants": [
+            {
+                "type": "committee", 
+                "participant": "Insurance"
+            }
+        ], 
+        "+link": "http://www.legis.state.tx.us/tlodocs/81R/schedules/html/C3202010102810301.htm", 
+        "id": "TXE00000091"
+    }
