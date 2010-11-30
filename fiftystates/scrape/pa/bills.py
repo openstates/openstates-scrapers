@@ -116,18 +116,19 @@ class PABillScraper(BillScraper):
 
             type = []
 
-            if action.startswith('Referred to'):
+            if action.startswith('INTRODUCED'):
+                type.append('bill:introduced')
+            elif action.startswith('Referred to'):
                 type.append('committee:referred')
             elif action.startswith('Amended on'):
                 type.append('amendment:passed')
             elif action.startswith('Approved by the Governor'):
                 type.append('governor:signed')
-
-            if action == 'Final passage':
+            elif action == 'Final passage':
                 type.append('bill:passed')
 
-            if re.match('concurred in (House|Senate) amendments', action):
-                if re.match(', as amended by the (House|Senate)', action):
+            if re.search('concurred in (House|Senate) amendments', action):
+                if re.search(', as amended by the (House|Senate)', action):
                     type.append('amendment:amended')
                 type.append('amendment:passed')
 
