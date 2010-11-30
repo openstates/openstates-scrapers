@@ -12,3 +12,5 @@ fabfile.py
 fiftystates.egg-info
 dist/
 MANIFEST
+*.class
+*.jar
