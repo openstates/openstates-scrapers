@@ -99,7 +99,7 @@ class VABillScraper(BillScraper):
                 link = va.get('href')
                 date = datetime.datetime.strptime(date, '%m/%d/%y')
 
-                bill.add_version(desc, link, date=date)
+                bill.add_version(desc, BASE_URL+link, date=date)
 
             # actions
             for ali in doc.xpath('//h4[text()="HISTORY"]/following-sibling::ul[1]/li'):
