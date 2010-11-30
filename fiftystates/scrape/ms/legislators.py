@@ -43,8 +43,11 @@ class MSLegislatorScraper(LegislatorScraper):
                 #Senate Chair is the Governor. Info has to be hard coded
                 chair_name = root.xpath('string(//chair_name)')
                 role = root.xpath('string(//chair_title)')
+                # TODO: if we're going to hardcode the governor, do it better
                 district = "Governor"
-                leg = Legislator(term_name, chamber, district, chair_name, first_name = "", last_name = "", middle_name = "", party = "Republican", role=role)
+                leg = Legislator(term_name, chamber, district, chair_name,
+                                 first_name="", last_name="", middle_name="",
+                                 party="Republican", role=role)
 
             protemp_name = root.xpath('string(//protemp_name)')
             protemp_link = root.xpath('string(//protemp_link)')
@@ -52,27 +55,35 @@ class MSLegislatorScraper(LegislatorScraper):
             self.scrape_details(chamber, term_name, protemp_name, protemp_link, role)
 
     def scrape_details(self, chamber, term, leg_name, leg_link, role):
-        url = 'http://billstatus.ls.state.ms.us/members/%s' % leg_link
-        with self.urlopen(url) as details_page:
-            details_page = details_page.decode('latin1').encode('utf8', 'ignore')
-            root = lxml.etree.fromstring(details_page, lxml.etree.HTMLParser())
-            party = root.xpath('string(//party)')
-            district = root.xpath('string(//district)')
-            first_name, middle_name, last_name = "", "", ""
+        try:
+            url = 'http://billstatus.ls.state.ms.us/members/%s' % leg_link
+            with self.urlopen(url) as details_page:
+                details_page = details_page.decode('latin1').encode('utf8', 'ignore')
+                root = lxml.etree.fromstring(details_page, lxml.etree.HTMLParser())
+                party = root.xpath('string(//party)')
+                district = root.xpath('string(//district)')
+                first_name, middle_name, last_name = "", "", ""
 
-            home_phone = root.xpath('string(//h_phone)')
-            bis_phone = root.xpath('string(//b_phone)')
-            capital_phone = root.xpath('string(//cap_phone)')
-            other_phone = root.xpath('string(//oth_phone)')
-            org_info = root.xpath('string(//org_info)')
-            email_name = root.xpath('string(//email_address)')
-            email = '%s@%s.ms.gov' % (email_name, chamber)
-            if party == 'D':
-                party = 'Democrat'
-            else:
-                party = 'Republican' 
+                home_phone = root.xpath('string(//h_phone)')
+                bis_phone = root.xpath('string(//b_phone)')
+                capital_phone = root.xpath('string(//cap_phone)')
+                other_phone = root.xpath('string(//oth_phone)')
+                org_info = root.xpath('string(//org_info)')
+                email_name = root.xpath('string(//email_address)')
+                email = '%s@%s.ms.gov' % (email_name, chamber)
+                if party == 'D':
+                    party = 'Democrat'
+                else:
+                    party = 'Republican' 
 
-            leg = Legislator(term, chamber, district, leg_name, first_name, last_name, middle_name, party, role=role, home_phone = home_phone, bis_phone = bis_phone, capital_phone=capital_phone, other_phone=other_phone, org_info=org_info, email=email)
-            leg.add_source(url)
-            self.save_legislator(leg)
-            
+                leg = Legislator(term, chamber, district, leg_name, first_name,
+                                 last_name, middle_name, party, role=role,
+                                 home_phone = home_phone, bis_phone=bis_phone,
+                                 capital_phone=capital_phone,
+                                 other_phone=other_phone, org_info=org_info,
+                                 email=email)
+                leg.add_source(url)
+                self.save_legislator(leg)
+        except scrapelib.HTTPError, e:
+            self.warning(str(e))
+
