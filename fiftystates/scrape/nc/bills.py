@@ -30,8 +30,18 @@ class NCBillScraper(BillScraper):
                                        style="text-align: center; font: bold"
                                        " 20px Arial; margin-top: 15px;"
                                        " margin-bottom: 8px;")[0].contents[0]
+        title_div_txt = bill_soup.findAll('div', id='title')[0].contents[0]
+        if 'Joint Resolution' in title_div_txt:
+            bill_type = 'joint resolution'
+            bill_id = bill_id[0] + 'JR' + bill_id[1:]
+        elif 'Resolution' in title_div_txt:
+            bill_type = 'resolution'
+            bill_id = bill_id[0] + 'R' + bill_id[1:]
+        elif 'Bill' in title_div_txt:
+            bill_type = 'bill'
+            bill_id = bill_id[0] + 'B' + bill_id[1:]
 
-        bill = Bill(session, chamber, bill_id, bill_title)
+        bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
         bill.add_source(bill_detail_url)
 
         # get all versions
