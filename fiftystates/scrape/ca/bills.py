@@ -237,6 +237,10 @@ class CABillScraper(BillScraper):
                     else:
                         fsvote.other(record.legislator_name)
 
+                # The abstain count field in CA's database includes
+                # vacancies, which we aren't interested in.
+                fsvote['other_count'] = len(fsvote['other_votes'])
+
                 fsbill.add_vote(fsvote)
 
             self.save_bill(fsbill)
