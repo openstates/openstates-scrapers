@@ -13,6 +13,31 @@ class VABillScraper(BillScraper):
     vote_strip_re = re.compile(r'(.+)\((\d{1,2})-Y (\d{1,2})-N\)')
     actor_map = {'House': 'lower', 'Senate': 'upper', 'Governor': 'governor'}
 
+    _action_classifiers = {
+        'Approved by Governor': 'governor:signed',
+        '\s*Amendment(s)? .+ agreed': 'amendment:passed',
+        '\s*Amendment(s)? .+ withdrawn': 'amendment:withdrawn',
+        '\s*Amendment(s)? .+ rejected': 'amendment:failed',
+        'Subject matter referred': 'committee:referred',
+        'Rereferred to': 'committee:referred',
+        'Referred to': 'committee:referred',
+        'Reported from': 'committee:passed',
+        'Read third time and passed': 'bill:passed',
+        'Read third time and agreed': 'bill:passed',
+        'Read third time and defeated': 'bill:failed',
+        'Presented': 'bill:introduced',
+        'Prefiled and ordered printed': 'bill:introduced',
+        'Presented and ordered printed': 'other',
+        'Renrolled bill text': 'other',
+        'Printed as engrossed': 'other',
+        'Engrossed by House': 'other',
+        'Enacted, Chapter': 'other',
+        'Committee substitute printed': 'other',
+        'Bill text as passed': 'other',
+        'Acts of Assembly': 'other',
+        'Substitute': 'other',
+    }
+
     def scrape(self, chamber, session):
         # internal id for the session, store on self so all methods have access
         self.site_id = self.metadata['session_details'][session]['site_id']
@@ -49,6 +74,7 @@ class VABillScraper(BillScraper):
                         bill_url = BASE_URL + link.get('href')
                         self.fetch_sponsors(bill)
                         self.scrape_bill_details(bill_url, bill)
+                        bill.add_source(bill_url)
                         self.save_bill(bill)
 
 
@@ -93,7 +119,15 @@ class VABillScraper(BillScraper):
                         self.parse_vote(vote, vote_url[0])
                     bill.add_vote(vote)
 
-                bill.add_action(actor, action, date)
+
+                # categorize actions
+                for pattern, atype in self._action_classifiers.iteritems():
+                    if re.match(pattern, action):
+                        break
+                else:
+                    atype = 'other'
+
+                bill.add_action(actor, action, date, type=atype)
 
 
     def fetch_sponsors(self, bill):
@@ -118,7 +152,7 @@ class VABillScraper(BillScraper):
                         type = 'primary'
                     else:
                         type = 'cosponsor'
-                    bill.add_sponsor(name, type)
+                    bill.add_sponsor(type, name)
 
     def split_vote(self, block):
         if block:
