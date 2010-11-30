@@ -160,6 +160,9 @@ class CABillScraper(BillScraper):
                 if 'Item veto' in act_str:
                     type.append('governor:vetoed:line-item')
 
+                if 'Vetoed by Governor' in act_str:
+                    type.append('governor:vetoed')
+
                 if not type:
                     type = ['other']
 
@@ -233,6 +236,10 @@ class CABillScraper(BillScraper):
                         fsvote.no(record.legislator_name)
                     else:
                         fsvote.other(record.legislator_name)
+
+                # The abstain count field in CA's database includes
+                # vacancies, which we aren't interested in.
+                fsvote['other_count'] = len(fsvote['other_votes'])
 
                 fsbill.add_vote(fsvote)
 

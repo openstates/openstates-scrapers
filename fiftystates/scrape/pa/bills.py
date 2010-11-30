@@ -120,10 +120,14 @@ class PABillScraper(BillScraper):
                 type.append('bill:introduced')
             elif action.startswith('Referred to'):
                 type.append('committee:referred')
+            elif action.startswith('Re-referred'):
+                type.append('committee:referred')
             elif action.startswith('Amended on'):
                 type.append('amendment:passed')
             elif action.startswith('Approved by the Governor'):
                 type.append('governor:signed')
+            elif action.startswith('Presented to the Governor'):
+                type.append('governor:received')
             elif action == 'Final passage':
                 type.append('bill:passed')
 
