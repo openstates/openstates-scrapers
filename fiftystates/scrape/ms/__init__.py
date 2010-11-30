@@ -1,5 +1,5 @@
 metadata = dict(
-    fuckname='Mississippi',
+    name='Mississippi',
     abbreviation='ms',
     legislature_name='Mississippi Legislature',
     upper_chamber_name='Senate',
@@ -9,7 +9,8 @@ metadata = dict(
     upper_chamber_term=4,
     lower_chamber_term=4,
     terms=[
-        {'name': '2008-2011', 'sessions': ['2008', '2009', '20091E', '20092E', '20093E', '2010', '20101E'], 'start_year': 2008, 'end_year': 2011},]
+        {'name': '2008-2011', 'sessions': ['2008', '2009', '20091E', '20092E',
+                                           '20093E', '20101E', '20102E',
+                                           '2010'],
+         'start_year': 2008, 'end_year': 2011},]
 )
-
-
