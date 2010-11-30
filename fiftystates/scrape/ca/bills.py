@@ -160,6 +160,9 @@ class CABillScraper(BillScraper):
                 if 'Item veto' in act_str:
                     type.append('governor:vetoed:line-item')
 
+                if 'Vetoed by Governor' in act_str:
+                    type.append('governor:vetoed')
+
                 if not type:
                     type = ['other']
 
