@@ -74,12 +74,14 @@ def update_transparencydata_legislators(state, sunlight_key):
         data = urllib2.urlopen(url).read()
         results = json.loads(data)
         matches = []
+        # it is possible for a legislator in the current term to be inactive 
+        # death, impeachment, scandal and swithcing chambers mid term are all
+        # valid reasons :)
         for result in results:
             if (result['state'] == state_abbrev and
-                result['seat'][6:] == leg['chamber'] and
+                result['seat'][6:] == leg['roles'][0]['chamber'] and
                 result['type'] == 'politician'):
                 matches.append(result)
-
         if len(matches) == 1:
             leg['transparencydata_id'] = matches[0]['id']
             db.legislators.save(leg, safe=True)
