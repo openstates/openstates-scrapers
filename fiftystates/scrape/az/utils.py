@@ -1,10 +1,13 @@
-from lxml import html, cssselect
+from lxml import etree
 import re, datetime
 doc_for_bills_url = 'http://www.azleg.gov/DocumentsForBill.asp?Bill_Number=%s&Session_ID=%s'
 base_url = 'http://www.azleg.gov/'
-select_session_url = 'http://avilrockroadorg/SelectSession.asp.html'
+select_session_url = 'http://www.azleg/SelectSession.asp.html'
 
 def parse_link_id(link):
+    """
+    extracts the div[@id] from the links on the DocumentsForBill pages
+    """
     return link.get('href')[link.get('href').find("'") + 1 : link.get('href').rfind("'")]
     
 def get_action(abbr):
@@ -28,7 +31,7 @@ def get_bill_type(bill_id):
         prefix = prefix[:-4]
     else:
         prefix = prefix[:-3]
-    if x in bill_types:
+    if bill_id in bill_types:
         return bill_types[prefix]
     else:
         return 'bill'
@@ -86,6 +89,9 @@ def img_check(elem):
         else:
             return 'N'
 def get_href(elem):
+    """
+    Unused was just going to be short hand
+    """
     href = elem.xpath('string(a/@href)')
     if href:
         return href
@@ -104,7 +110,7 @@ def get_session_details(s):
                      'end_date': datetime.date(%s)},
                  """
         for session in root.xpath('//session'):
-            session_type = 'primary' if re.find('Regular', session.get('Session_Full_Name')) else 'special'
+            session_type = 'primary' if re.search('Regular', session.get('Session_Full_Name')) else 'special'
             start_date = datetime.datetime.strptime(
                                               session.get('Session_Start_Date'),
                                               '%Y-%m-%dT%H:%M:%S')
