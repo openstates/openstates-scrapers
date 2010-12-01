@@ -11,6 +11,29 @@ class NCBillScraper(BillScraper):
     soup_parser = html5lib.HTMLParser(
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
+    _action_classifiers = {
+        'Vetoed': 'governor:vetoed',
+        'Signed by Gov': 'governor:signed',
+        'Withdrawn from ': 'bill:withdrawn',
+        'Ref to': 'committee:referred',
+        'Ref To': 'committee:referred',
+        'Rept Fav': 'committee:passed:favorable',
+        'Reptd Unfav': 'committee:passed:unfav',
+        'Pres. To Gov': 'other',
+        'Passed 3rd Reading': 'bill:passed',
+        'Passed 2nd & 3rd Reading': 'bill:passed',
+        'Failed 3rd Reading': 'bill:failed',
+        'Filed': 'bill:introduced',
+        'Concurred In': 'amendment:passed',
+        'Com Amend Adopted': 'amendment:passed',
+        'Became Law w/o Signature': 'other',
+        'Assigned To': 'committee:referred',
+        'Amendment Withdrawn': 'amendment:withdrawn',
+        'Amendment Offered': 'amendment:introduced',
+        'Amend Failed': 'amendment:failed',
+        'Amend Adopted': 'amendment:passed',
+    }
+
     def get_bill_info(self, session, bill_id):
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/'\
             'BillLookUp/BillLookUp.pl?bPrintable=true'\
@@ -88,7 +111,13 @@ class NCBillScraper(BillScraper):
             elif action.endswith('Gov.'):
                 actor = 'Governor'
 
-            bill.add_action(actor, action, act_date)
+            for pattern, atype in self._action_classifiers.iteritems():
+                if action.startswith(pattern):
+                    break
+            else:
+                atype = 'other'
+
+            bill.add_action(actor, action, act_date, type=atype)
 
         self.save_bill(bill)
 
