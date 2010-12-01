@@ -42,7 +42,7 @@ class AZBillScraper(BillScraper):
         try:
             return bill_types[bill_id]
         except KeyError:
-            self.debug('unknown bill type: ' + bill_id)
+            self.log('unknown bill type: ' + bill_id)
             return 'bill'
         
     def scrape_bill(self, chamber, session, bill_id):
@@ -282,7 +282,7 @@ class AZBillScraper(BillScraper):
                 date = rows[0][2].text_content().strip()
                 date = datetime.datetime.strptime(date, '%m/%d/%y')
                 action_type = 'governor:received' if sent_to[0] == 'G' else 'other'
-                bill.add_action(actor, action + " " + sent_to, date, 
+                bill.add_action(actor, "transmitted to " + sent_to, date, 
                                 type=action_type)
                 # See if the actor is the governor and whether he signed
                 # the bill or vetoed it
@@ -291,11 +291,11 @@ class AZBillScraper(BillScraper):
                     if row[0].text_content().strip() == 'ACTION:':
                         act = row[1].text_content().strip()
                         date = utils.get_date(row[2])
-                    elif row[0].text_content().strip() == 'CHAPTER':
+                    elif row[0].text_content().strip() == 'CHAPTER:':
                         chapter = row[1].text_content().strip()
-                    elif row[0].text_content().strip() == 'CHAPTERED VERSION':
+                    elif row[0].text_content().strip() == 'CHAPTERED VERSION:':
                         version = row[1].text_content.strip()
-                    elif row[0].text_content().strip() == 'TRANSMITTED VERSION':
+                    elif row[0].text_content().strip() == 'TRANSMITTED VERSION:':
                         version = row[1].text_content.strip()
                 if act and sent_to == 'GOVERNOR':
                     action_type = 'governor:signed' if act == 'SIGNED' else 'governor:vetoed'
@@ -306,7 +306,8 @@ class AZBillScraper(BillScraper):
                     else:
                         bill.add_action(sent_to.lower(), act, date, 
                                             type=action_type)
-                else:
+                elif sent_to = 'SECRETARY OF STATE':
+                    date = utils.get_date(rows[0][2])
                     bill.add_action(actor, 'transmitted to secratary of state',
                                     date, type='other', version=version) 
                     
