@@ -12,18 +12,26 @@ def get_action(abbr):
     get_action('PFCA W/FL') --> 
     'proper for consideration amended with recommendation for a floor amendment'
     """
-    return action[abbr]
+    try:
+        return common_abbrv[abbr]
+    except KeyError:
+        return 'other'
 
-def get_bill_type(bill_prefix):
+def get_bill_type(bill_id):
     """
     takes a bill prefix and returns a bill type.
     bill_id = sb1004
     get_bill_type(bill_id[:-4]) --> bill
     """
-    prefix = bill_prefix.lower()
-    for x in bill_types:
-        if x[0] == prefix:
-            return x[1]
+    prefix = bill_id.lower()
+    if re.match('\w{2,3}\d{4}', prefix):
+        prefix = prefix[:-4]
+    else:
+        prefix = prefix[:-3]
+    if x in bill_types:
+        return bill_types[prefix]
+    else:
+        return 'bill'
             
 def text_to_number(num):
     """
@@ -108,6 +116,19 @@ def get_session_details(s):
                                            start_date,
                                            end_date))
             
+def get_rows(rows, header):
+    """
+    takes the rows and header and returns a dict for each row with { key : <td> }
+    """
+    header = [x.text_content().strip() for x in header]
+    keyed_rows = []
+    for r in rows:
+        dict_row = {}
+        for k,v in zip(header, r.xpath('td')):
+            dict_row.update({k:v})
+        keyed_rows.append(dict_row)
+    return keyed_rows
+    
 def get_committee_name(abbrv, chamber):
     return com_names[chamber][abbrv]
     
@@ -180,7 +201,7 @@ common_abbrv = {
     'DP/PFC W/FL': 'do pass and proper for consideration with recommendation for a floor amendment',
     'DP/PFCA': 'do pass and proper for consideration amended',
     'DPA': 'do pass amended',
-    'DPA CORRECTED': 'DPA CORRECTED',
+    'DPA CORRECTED': 'do pass amended corrected',
     'DPA ON RECON': 'do pass amended on reconsideration',
     'DPA ON REREFER': 'do pass amended on rereferral',
     'DPA/PFC': 'do pass amended and proper for consideration',
@@ -234,13 +255,18 @@ BILL_TYPES = (
 )
 bill_types = {
     'sb': 'bill',
+    'sm': 'memorial',
     'sr': 'resolution',
     'scr': 'concurrent resolution',
     'scm': 'concurrent memorial',
+    'scj': 'joint resolution',
     'hb': 'bill',
+    'hm': 'memorial',
     'hr': 'resolution',
     'hcr': 'concurrent resolution',
     'hcm': 'concurrent memorial',
+    'hjr': 'joint resolution',
+    'mis': 'miscellaneous' 
 }
 word_key = (
     ('fifty', '50'),

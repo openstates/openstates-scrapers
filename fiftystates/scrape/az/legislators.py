@@ -22,7 +22,7 @@ class AZLegislatorScraper(LegislatorScraper):
         
     def get_session_for_term(self, term):
         return self.metadata['terms'][-1]['sessions'][-1]
-        
+                
     def scrape(self, chamber, term):
         session = self.get_session_for_term(term)
         try:
@@ -31,8 +31,9 @@ class AZLegislatorScraper(LegislatorScraper):
             raise NoDataForPeriod(session)
             
         body = {'lower': 'H', 'upper': 'S'}[chamber]
-        url = 'http://www.azleg.gov/MemberRoster.asp?Session_ID=%s&body=%s'
-        with self.urlopen(url % (session_id, body)) as page:
+        url = 'http://www.azleg.gov/MemberRoster.asp?Session_ID=%s&body=%s' % (
+                                                               session_id, body)
+        with self.urlopen(url) as page:
             root = html.fromstring(page)
             path = '//table[@id="%s"]/tr' % {'H': 'house', 'S': 'senate'}[body]
             roster = root.xpath(path)[1:]
@@ -60,24 +61,24 @@ class AZLegislatorScraper(LegislatorScraper):
                 room = room.text_content().strip()
                 phone = "602-" + phone.text_content().strip()
                 fax = "602-" + fax.text_content().strip()
-                
                 if vacated:
                     end_date = datetime.datetime.strptime(vacated, '%m/%d/%Y')
                     leg = Legislator( term, chamber, district, full_name=name,
-                                      party=party, end_date=vacated, url=link)
+                                      party=party, url=link)
+                    leg['roles'][0]['end_date'] = end_date
                 else:
                     leg = Legislator( term, chamber, district, full_name=name,
                                       party=party, phone=phone, fax=fax, room=room, 
                                       email=email, url=link)
+                
                 if position:
-                    leg.add_role(position, term, chamber=chamber, 
+                    leg.add_role( position, term, chamber=chamber, 
                                  district=district, party=party)
                       
                 leg.add_source(url)
                 
                 #Probably just get this from the committee scraper
                 #self.scrape_member_page(link, session, chamber, leg)
-                print "saved: " + leg['full_name']
                 self.save_legislator(leg)
                 
     def scrape_member_page(self, url, session, chamber, leg):
