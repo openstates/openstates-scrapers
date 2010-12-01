@@ -53,4 +53,9 @@ class VALegislatorScraper(LegislatorScraper):
             leg = Legislator(term, chamber, district, name.strip(),
                              party=party_map[party])
             leg.add_source(url)
+
+            for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
+                leg.add_role('committee member', term=term, chamber=chamber,
+                             committee=com)
+
             self.save_legislator(leg)
