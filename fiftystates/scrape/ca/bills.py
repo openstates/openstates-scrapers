@@ -12,6 +12,13 @@ from sqlalchemy import create_engine
 import pytz
 
 
+def clean_title(s):
+    # replace smart quote characters
+    s = re.sub(ur'[\u2018\u2019]', "'", s)
+    s = re.sub(ur'[\u201C\u201D]', '"', s)
+    return s
+
+
 class CABillScraper(BillScraper):
     state = 'ca'
 
@@ -87,8 +94,8 @@ class CABillScraper(BillScraper):
                 if not version.bill_xml:
                     continue
 
-                title = version.title
-                short_title = version.short_title
+                title = clean_title(version.title)
+                short_title = clean_title(version.short_title)
                 type = [bill_type]
 
                 if version.appropriation == 'Yes':
@@ -102,13 +109,13 @@ class CABillScraper(BillScraper):
                 if version.taxlevy == 'Yes':
                     type.append('tax levy')
 
-                subject = version.subject
+                subject = clean_title(version.subject)
 
                 fsbill.add_version(
                     version.bill_version_id, '',
                     date=version.bill_version_action_date.date(),
-                    title=version.title,
-                    short_title=version.short_title,
+                    title=title,
+                    short_title=short_title,
                     subject=[subject],
                     type=type)
 
