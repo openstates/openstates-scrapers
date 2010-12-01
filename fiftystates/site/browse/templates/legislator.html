@@ -51,3 +51,12 @@
   </ul>
 </div>
 {% endblock %}
+
+<div class="sources">
+  <h4>Sources:</h4>
+  <ul>
+    {% for source in leg.sources %}
+    <li><a href="{{source.url}}">{{source.url}}</a></li>
+    {% endfor %}
+  </ul>
+</div>
