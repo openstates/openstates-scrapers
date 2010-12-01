@@ -70,7 +70,7 @@ class VABillScraper(BillScraper):
                         # create a bill
                         desc = bill.xpath('text()')[0].strip()
                         bill_type = {'B': 'bill',
-                                     'J', 'joint resolution',
+                                     'J': 'joint resolution',
                                      'R': 'resolution'}[bill_id[1]]
                         bill = Bill(session, chamber, bill_id, desc,
                                     type=bill_type)
