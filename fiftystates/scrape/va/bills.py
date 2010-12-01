@@ -69,7 +69,11 @@ class VABillScraper(BillScraper):
                     else:
                         # create a bill
                         desc = bill.xpath('text()')[0].strip()
-                        bill = Bill(session, chamber, bill_id, desc)
+                        bill_type = {'B': 'bill',
+                                     'J', 'joint resolution',
+                                     'R': 'resolution'}[bill_id[1]]
+                        bill = Bill(session, chamber, bill_id, desc,
+                                    type=bill_type)
 
                         bill_url = BASE_URL + link.get('href')
                         self.fetch_sponsors(bill)
