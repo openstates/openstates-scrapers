@@ -206,7 +206,7 @@ class AZBillScraper(BillScraper):
                 date = utils.get_date(rows[x][1])
                 if x >= 3:
                     h_or_s = {'upper':'lower', 'lower': 'upper'}[chamber]
-                bill.add_action(h_or_s, action, date, type='other')
+                bill.add_action(h_or_s, action, date, concur=result, type='other')
             
             # transmit to house or senate
             rows = base_table.xpath(row_path % 'TRANSMIT TO')
@@ -214,7 +214,7 @@ class AZBillScraper(BillScraper):
                 action = row[0].text_content().strip()[:-1]
                 h_or_s = 'lower' if action.endswith('HOUSE') else 'upper'
                 date = utils.get_date(rows[0][1])
-                bill.add_action(h_or_s, action, date, concur=result, type='other')
+                bill.add_action(h_or_s, action, date, type='other')
             
             # Committee of the whole actions
             tables = base_table.xpath(table_path % 'COW ACTION')
