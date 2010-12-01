@@ -269,7 +269,9 @@ class AZBillScraper(BillScraper):
                     # as kwargs to sort them in scrap_votes
                     self.scrape_votes(actor, vote_url, bill, vote_date,
                                       passed=passed, motion='passage', **k_rows[0])
-                                      
+                else:
+                    date = utils.get_date(k_rows[0].pop('DATE'))
+                    bill.add_action(actor, action, date)
             # transmitted to Governor or secretary of the state
             # SoS if it goes to voters as a proposition
             table = base_table.xpath(table_path % 'TRANSMITTED TO')
@@ -279,10 +281,9 @@ class AZBillScraper(BillScraper):
                 # actor is the actor from the previous statement because it is 
                 # never transmitted to G or S without third or final read
                 sent_to = rows[0][1].text_content().strip()
-                date = rows[0][2].text_content().strip()
-                date = datetime.datetime.strptime(date, '%m/%d/%y')
+                date = utils.get_date(rows[0][2])
                 action_type = 'governor:received' if sent_to[0] == 'G' else 'other'
-                bill.add_action(actor, "transmitted to " + sent_to, date, 
+                bill.add_action(actor, "TRNASMITTED TO " + sent_to, date, 
                                 type=action_type)
                 # See if the actor is the governor and whether he signed
                 # the bill or vetoed it
@@ -294,9 +295,9 @@ class AZBillScraper(BillScraper):
                     elif row[0].text_content().strip() == 'CHAPTER:':
                         chapter = row[1].text_content().strip()
                     elif row[0].text_content().strip() == 'CHAPTERED VERSION:':
-                        version = row[1].text_content.strip()
+                        version = row[1].text_content().strip()
                     elif row[0].text_content().strip() == 'TRANSMITTED VERSION:':
-                        version = row[1].text_content.strip()
+                        version = row[1].text_content().strip()
                 if act and sent_to == 'GOVERNOR':
                     action_type = 'governor:signed' if act == 'SIGNED' else 'governor:vetoed'
                     if chapter:
@@ -306,7 +307,7 @@ class AZBillScraper(BillScraper):
                     else:
                         bill.add_action(sent_to.lower(), act, date, 
                                             type=action_type)
-                elif sent_to = 'SECRETARY OF STATE':
+                elif sent_to == 'SECRETARY OF STATE':
                     date = utils.get_date(rows[0][2])
                     bill.add_action(actor, 'transmitted to secratary of state',
                                     date, type='other', version=version) 
