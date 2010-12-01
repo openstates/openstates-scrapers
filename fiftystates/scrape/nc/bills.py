@@ -13,11 +13,11 @@ class NCBillScraper(BillScraper):
 
     _action_classifiers = {
         'Vetoed': 'governor:vetoed',
-        'Signed by Gov': 'governor:signed',
+        'Signed By Gov': 'governor:signed',
         'Withdrawn from ': 'bill:withdrawn',
-        'Ref to': 'committee:referred',
-        'Ref To': 'committee:referred',
-        'Rept Fav': 'committee:passed:favorable',
+        'Ref ': 'committee:referred',
+        'Re-ref ': 'committee:referred',
+        'Reptd Fav': 'committee:passed:favorable',
         'Reptd Unfav': 'committee:passed:unfav',
         'Pres. To Gov': 'other',
         'Passed 3rd Reading': 'bill:passed',
