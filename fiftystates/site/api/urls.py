@@ -6,7 +6,7 @@ import piston.resource
 from piston.emitters import Emitter
 
 from fiftystates.site.api.handlers import *
-from fiftystates.site.api.views import document
+from fiftystates.site.api.views import document, legislator_preview
 from fiftystates.site.api.models import LogEntry
 from fiftystates.site.api.emitters import OpenStateJSONEmitter
 from fiftystates.site.api.emitters import FeedEmitter, ICalendarEmitter
@@ -65,6 +65,8 @@ committee_search_handler = Resource(CommitteeSearchHandler,
                                     authentication=authorizer)
 stats_handler = Resource(StatsHandler, authentication=authorizer)
 events_handler = Resource(EventsHandler, authentication=authorizer)
+reconciliation_handler = Resource(ReconciliationHandler,
+                                  authentication=authorizer)
 
 urlpatterns = patterns('',
     # v1 urls
@@ -88,6 +90,10 @@ urlpatterns = patterns('',
 
     url(r'^v1/events/$', events_handler),
     url(r'^v1/events/(?P<id>[A-Z]{2,2}E\d{8,8})/$', events_handler),
+
+    url(r'^v1/legislators/reconcile/$', reconciliation_handler),
+    url(r'^v1/legislators/preview/(?P<id>[A-Z]{2,2}L\d{6,6})/$',
+        legislator_preview),
 
     url(r'^v1/stats/$', stats_handler),
 )

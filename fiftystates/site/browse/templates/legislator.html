@@ -1,14 +1,35 @@
 {% extends "base.html" %}
-{% load fs_helpers %}
 
-{% block title %}{{ leg.full_name }} - The Fifty State Project{% endblock %}
+{% block title %}{{ leg.full_name }}{% endblock %}
 
 {% block content %}
-<h3>{{ leg.active_role|leg_title }} {{ leg.full_name }}</h3>
+<h3>{% if leg.chamber == "lower" %} {{metadata.lower_chamber_title }}
+    {% else %} {{ metadata.upper_chamber_title}} {% endif %}
+    {{ leg.full_name }}</h3>
 <h4>
-  {{ leg.active_role.state|state_name }} {{ leg.active_role|short_chamber }}
-  District {{ leg.active_role.district }}
+{{leg.party}}, {{ metadata.name }}, District {{ leg.district }}
 </h4>
+
+<dl>
+    {% if leg.votesmart_id %}
+        <dt>Votesmart ID</dt>
+        <dd><a href="http://www.votesmart.org/bio.php?can_id={{leg.votesmart_id}}">{{leg.votesmart_id}}</a></dd>
+    {% endif %}
+    {% if leg.nimsp_id %}
+        <dt>NIMSP ID</dt>
+        <dd><a href="http://www.followthemoney.org/database/uniquecandidate.phtml?uc={{leg.nimsp_id}}">{{leg.nimsp_id}}</a></dd>
+    {% endif %}
+    {% if leg.transparencydata_id %}
+        <dt>TransparencyData ID</dt>
+        <dd><a href="http://influenceexplorer.com/politician/id/{{leg.transparencydata_id}}?cycle=-1">{{leg.transparencydata_id}}</a></dd>
+    {% endif %}
+
+    {% for k,v in leg.items %}
+    {% if "+" in k %}
+        <dt>{{k}}</dt><dd>{{v}}</dd>
+    {% endif %}
+    {% endfor %}
+</dl>
 
 <div class="roles">
   <h4>Legislative Roles:</h4>
@@ -16,7 +37,10 @@
     {% for role in leg.roles %}
       <li>
         {% if role.type == 'member' %}
-          {{ role.term }}: {{ role|leg_title }}, District {{ role.district }}
+        {{ role.term }}:
+        {% if leg.chamber == "lower" %} {{metadata.lower_chamber_title }}
+        {% else %} {{ metadata.upper_chamber_title}} {% endif %}
+        from District {{role.district}}
         {% endif %}
 
         {% if role.type == 'committee member' %}

@@ -103,6 +103,8 @@ class PABillScraper(BillScraper):
             elif action == 'In the Senate':
                 chamber = 'upper'
                 continue
+            elif action.startswith("(Remarks see"):
+                continue
 
             match = re.match(
                 r"(.*),\s+(\w+\.?\s+\d{1,2},\s+\d{4})( \(\d+-\d+\))?", action)
@@ -114,18 +116,23 @@ class PABillScraper(BillScraper):
 
             type = []
 
-            if action.startswith('Referred to'):
+            if action.startswith('INTRODUCED'):
+                type.append('bill:introduced')
+            elif action.startswith('Referred to'):
+                type.append('committee:referred')
+            elif action.startswith('Re-referred'):
                 type.append('committee:referred')
             elif action.startswith('Amended on'):
                 type.append('amendment:passed')
             elif action.startswith('Approved by the Governor'):
-                type.append('bill:signed')
-
-            if action == 'Final passage':
+                type.append('governor:signed')
+            elif action.startswith('Presented to the Governor'):
+                type.append('governor:received')
+            elif action == 'Final passage':
                 type.append('bill:passed')
 
-            if re.match('concurred in (House|Senate) amendments', action):
-                if re.match(', as amended by the (House|Senate)', action):
+            if re.search('concurred in (House|Senate) amendments', action):
+                if re.search(', as amended by the (House|Senate)', action):
                     type.append('amendment:amended')
                 type.append('amendment:passed')
 

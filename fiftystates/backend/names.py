@@ -91,8 +91,12 @@ class NameMatcher(object):
     >>> assert nm['Stephens, M J'] == None
     """
 
+    def _normalize(self, name):
+        return name.strip().lower().replace('.', '')
+
     def __init__(self):
-        self.names = {}
+        self._names = {}
+        self._codes = {}
 
     def __setitem__(self, name, obj):
         """
@@ -103,57 +107,70 @@ class NameMatcher(object):
         more than a few hundred legislators at a time so don't worry about
         it.
         """
+        if '_code' in name:
+            code = name['_code']
+            if code in self._codes:
+                raise ValueError("non-unique legislator code: %s" % code)
+            self._codes[code] = obj
+
         # We throw possible forms of this name into a set because we
         # don't want to try to add the same form twice for the same
         # name
         forms = set()
-        forms.add(name['full_name'].replace('.', ''))
-        forms.add(name['last_name'])
+
+        def add_form(form):
+            forms.add(self._normalize(form))
+
+        add_form(name['full_name'])
+        add_form(name['last_name'])
 
         if name['first_name']:
-            forms.add("%s, %s" % (name['last_name'], name['first_name']))
-            forms.add("%s %s" % (name['first_name'], name['last_name']))
-            forms.add("%s, %s" % (name['last_name'], name['first_name'][0]))
-            forms.add("%s (%s)" % (name['last_name'], name['first_name']))
-            forms.add("%s %s" % (name['first_name'][0], name['last_name']))
-            forms.add("%s (%s)" % (name['last_name'], name['first_name'][0]))
+            add_form("%s, %s" % (name['last_name'], name['first_name']))
+            add_form("%s %s" % (name['first_name'], name['last_name']))
+            add_form("%s, %s" % (name['last_name'], name['first_name'][0]))
+            add_form("%s (%s)" % (name['last_name'], name['first_name']))
+            add_form("%s %s" % (name['first_name'][0], name['last_name']))
+            add_form("%s (%s)" % (name['last_name'], name['first_name'][0]))
 
             if name['middle_name']:
-                forms.add("%s, %s %s" % (name['last_name'], name['first_name'],
+                add_form("%s, %s %s" % (name['last_name'], name['first_name'],
                                          name['middle_name']))
-                forms.add("%s, %s %s" % (name['last_name'],
+                add_form("%s, %s %s" % (name['last_name'],
                                          name['first_name'][0],
                                          name['middle_name']))
-                forms.add("%s %s %s" % (name['first_name'],
+                add_form("%s %s %s" % (name['first_name'],
                                         name['middle_name'],
                                         name['last_name']))
-                forms.add("%s, %s %s" % (name['last_name'],
+                add_form("%s, %s %s" % (name['last_name'],
                                          name['first_name'][0],
                                          name['middle_name'][0]))
-                forms.add("%s %s %s" % (name['first_name'],
+                add_form("%s %s %s" % (name['first_name'],
                                         name['middle_name'][0],
                                         name['last_name']))
-                forms.add("%s, %s %s" % (name['last_name'],
+                add_form("%s, %s %s" % (name['last_name'],
                                          name['first_name'],
                                          name['middle_name'][0]))
-                forms.add("%s, %s.%s." % (name['last_name'],
+                add_form("%s, %s.%s." % (name['last_name'],
                                           name['first_name'][0],
                                           name['middle_name'][0]))
 
-
         for form in forms:
-            form = form.replace('.', '').lower()
-            if form in self.names:
-                self.names[form] = None
+            form = self._normalize(form)
+            if form in self._names:
+                self._names[form] = None
             else:
-                self.names[form] = obj
+                self._names[form] = obj
+
 
     def __getitem__(self, name):
         """
         If this matcher has uniquely seen a matching name, return its
         value. Otherwise, return None.
         """
-        name = name.strip().replace('.', '').lower()
-        if name in self.names:
-            return self.names[name]
+        if name in self._codes:
+            return self._codes[name]
+
+        name = self._normalize(name)
+        if name in self._names:
+            return self._names[name]
         return None

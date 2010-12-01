@@ -16,7 +16,7 @@ class LABillScraper(BillScraper):
     state = 'la'
 
     def scrape(self, chamber, session):
-        types = {'upper': ['SB', 'SCR'], 'lower': ['HB', 'HCR']}
+        types = {'upper': ['SB', 'SR', 'SCR'], 'lower': ['HB', 'HR', 'HCR']}
         for session in internal_sessions[int(session)]:
             s_id = re.findall('\/(\w+)\.htm', session[0])[0]
 
@@ -51,7 +51,7 @@ class LABillScraper(BillScraper):
             summary = summary.replace('Summary: ', '')
 
             match = re.match(r"^([^:]+): "
-                             r"((\(Constitutional Amendment\) )?[^(]+)",
+                             r"((\(Constitutional [aA]mendment\) )?[^(]+)",
                              summary)
 
             if match:
@@ -62,6 +62,8 @@ class LABillScraper(BillScraper):
 
             if bill_id.startswith('SB') or bill_id.startswith('HB'):
                 bill_type = ['bill']
+            elif bill_id.startswith('SR') or bill_id.startswith('HR'):
+                bill_type = ['resolution']
             elif bill_id.startswith('SCR') or bill_id.startswith('HCR'):
                 bill_type = ['concurrent resolution']
             else:
@@ -129,22 +131,25 @@ class LABillScraper(BillScraper):
                     chamber = 'lower'
 
                 action = cells[3].text.strip()
+                action_lower = action.lower()
 
                 atype = []
 
-                if action.startswith('Prefiled'):
-                    atype.append('bill:introduced')
+                if ("introduced in the" in action_lower or
+                    "read by title" in action_lower):
 
-                if 'referred to the committee' in action.lower():
+                    atype.append("bill:introduced")
+
+                if 'referred to the committee' in action_lower:
                     atype.append('committee:referred')
 
                 if action.startswith('Signed by the Governor.'):
                     atype.append('governor:signed')
 
-                if 'Amendments proposed' in action:
+                if 'amendments proposed' in action_lower:
                     atype.append('amendment:introduced')
 
-                if 'finally passed' in action:
+                if 'finally passed' in action_lower:
                     atype.append('bill:passed')
 
                 match = re.match(r'House conferees appointed: (.*)', action)

@@ -12,7 +12,7 @@ Base = declarative_base()
 class CABill(Base):
     __tablename__ = "bill_tbl"
 
-    bill_id = Column(String(19), primary_key=True)
+    bill_id = Column(String(20), primary_key=True)
     session_year = Column(String(8))
     session_num = Column(String(2))
     measure_type = Column(String(4))
@@ -30,6 +30,15 @@ class CABill(Base):
     current_secondary_loc = Column(String(60))
     current_house = Column(String(60))
     current_status = Column(String(60))
+
+    actions = relation('CABillAction', backref=backref('bill'),
+                        order_by="CABillAction.bill_history_id")
+
+    versions = relation('CABillVersion', backref=backref('bill'),
+                        order_by='desc(CABillVersion.version_num)')
+
+    votes = relation('CAVoteSummary', backref=backref('bill'),
+                     order_by='CAVoteSummary.vote_date_time')
 
     @property
     def short_bill_id(self):
@@ -57,9 +66,6 @@ class CABillVersion(Base):
     active_flg = Column(String(1))
     trans_uid = Column(String(30))
     trans_update = Column(DateTime)
-
-    bill = relation(CABill, backref=backref(
-            'versions', order_by=desc(bill_version_action_date)))
 
     @property
     def xml(self):
@@ -119,8 +125,6 @@ class CABillAction(Base):
     ternary_location = Column(String(60))
     end_status = Column(String(60))
 
-    bill = relation(CABill, backref=backref('actions'))
-
     @property
     def actor(self):
         # TODO: replace committee codes w/ names
@@ -175,8 +179,8 @@ class CALocation(Base):
 
     session_year = Column(String(8), primary_key=True)
     location_code = Column(String(6), primary_key=True)
-    location_type = Column(String(1))
-    consent_calendar_code = Column(String(2))
+    location_type = Column(String(1), primary_key=True)
+    consent_calendar_code = Column(String(2), primary_key=True)
     description = Column(String(60))
     long_description = Column(String(200))
     active_flg = Column(String(1))
@@ -187,19 +191,18 @@ class CALocation(Base):
 class CAVoteSummary(Base):
     __tablename__ = "bill_summary_vote_tbl"
 
-    bill_id = Column(String(20), ForeignKey(CABill.bill_id))
-    location_code = Column(String(6), ForeignKey(CALocation.location_code))
+    bill_id = Column(String(20), ForeignKey(CABill.bill_id), primary_key=True)
+    location_code = Column(String(6), ForeignKey(CALocation.location_code), primary_key=True)
     vote_date_time = Column(DateTime, primary_key=True)
     vote_date_seq = Column(Integer, primary_key=True)
-    motion_id = Column(Integer, ForeignKey(CAMotion.motion_id))
+    motion_id = Column(Integer, ForeignKey(CAMotion.motion_id), primary_key=True)
     ayes = Column(Integer)
     noes = Column(Integer)
     abstain = Column(Integer)
     vote_result = Column(String(6))
     trans_uid = Column(String(30))
-    trans_update = Column(DateTime)
+    trans_update = Column(DateTime, primary_key=True)
 
-    bill = relation(CABill, backref=backref('votes'))
     motion = relation(CAMotion)
     location = relation(CALocation)
 
@@ -224,13 +227,17 @@ class CAVoteDetail(Base):
     __tablename__ = "bill_detail_vote_tbl"
 
     bill_id = Column(String(20), ForeignKey(CABill.bill_id),
-                     ForeignKey(CAVoteSummary.bill_id))
-    location_code = Column(String(6), ForeignKey(CAVoteSummary.location_code))
+                     ForeignKey(CAVoteSummary.bill_id), primary_key=True)
+    location_code = Column(String(6), ForeignKey(CAVoteSummary.location_code),
+                           primary_key=True)
     legislator_name = Column(String(50), primary_key=True)
-    vote_date_time = Column(DateTime, ForeignKey(CAVoteSummary.vote_date_time))
-    vote_date_seq = Column(Integer, ForeignKey(CAVoteSummary.vote_date_seq))
+    vote_date_time = Column(DateTime, ForeignKey(CAVoteSummary.vote_date_time),
+                            primary_key=True)
+    vote_date_seq = Column(Integer, ForeignKey(CAVoteSummary.vote_date_seq),
+                           primary_key=True)
     vote_code = Column(String(5), primary_key=True)
-    motion_id = Column(Integer, ForeignKey(CAVoteSummary.motion_id))
+    motion_id = Column(Integer, ForeignKey(CAVoteSummary.motion_id),
+                       primary_key=True)
     trans_uid = Column(String(30), primary_key=True)
     trans_update = Column(DateTime, primary_key=True)
 

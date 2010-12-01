@@ -35,8 +35,11 @@ class VTLegislatorScraper(LegislatorScraper):
                 middle_name = tr.xpath("string(td[8])")
                 last_name = tr.xpath("string(td[9])")
 
+                if first_name.endswith(" %s." % middle_name):
+                    first_name = first_name.split(" %s." % middle_name)[0]
+
                 if middle_name:
-                    full_name = "%s %s %s" % (first_name, middle_name,
+                    full_name = "%s %s. %s" % (first_name, middle_name,
                                               last_name)
                 else:
                     full_name = "%s %s" % (first_name, last_name)

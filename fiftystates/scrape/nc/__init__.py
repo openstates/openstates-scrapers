@@ -51,7 +51,7 @@ metadata = dict(
          'sessions': ['2009'],
          'start_year': 2009, 'end_year': 2010},
         ],
-    sesssion_details={
+    session_details={
         '2009': {'start_date': datetime.date(2009,1,28), 'type': 'primary'},
     }
 )
