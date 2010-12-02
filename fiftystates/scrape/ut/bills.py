@@ -102,9 +102,23 @@ class UTBillScraper(BillScraper):
                 action = '/'.join(split_action[1:]).strip()
 
             if action == 'Governor Signed':
-                actor = 'Governor'
+                actor = 'executive'
+                type = 'governor:signed'
+            elif action == 'Governor Vetoed':
+                actor = 'executive'
+                type = 'governor:vetoed'
+            elif action.startswith('1st reading'):
+                type = 'bill:introduced'
+            elif action == 'to Governor':
+                type = 'governor:received'
+            elif action == 'passed 3rd reading':
+                type = 'bill:passed'
+            elif action.startswith('passed 2nd & 3rd readings'):
+                type = 'bill:passed'
+            else:
+                type = 'other'
 
-            bill.add_action(actor, action, act_date)
+            bill.add_action(actor, action, act_date, type=type)
 
             # Check if this action is a vote
             links = row.findAll('a')
@@ -124,11 +138,11 @@ class UTBillScraper(BillScraper):
                                      '(\d+)(.*)',
                                     re.MULTILINE | re.DOTALL)
                 match = vote_re.search(vote_page)
-                yes_count = match.group(1)
-                no_count = match.group(3)
-                other_count = match.group(6)
+                yes_count = int(match.group(1))
+                no_count = int(match.group(3))
+                other_count = int(match.group(6))
 
-                if int(yes_count) > int(no_count):
+                if yes_count > no_count:
                     passed = True
                 else:
                     passed = False
@@ -150,8 +164,14 @@ class UTBillScraper(BillScraper):
                 no_votes = re.split('\s{2,}', match.group(4).strip())
                 other_votes = re.split('\s{2,}', match.group(7).strip())
 
-                map(vote.yes, yes_votes)
-                map(vote.no, no_votes)
-                map(vote.other, other_votes)
+                for yes in yes_votes:
+                    if yes:
+                        vote.yes(yes)
+                for no in no_votes:
+                    if no:
+                        vote.no(no)
+                for other in other_votes:
+                    if other:
+                        vote.other(other)
 
                 bill.add_vote(vote)
