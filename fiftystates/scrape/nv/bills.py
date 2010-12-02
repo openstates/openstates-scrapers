@@ -97,7 +97,7 @@ class NVBillScraper(BillScraper):
                         minutes_count = minutes_count + 1
 
                     self.scrape_actions(page, bill, "upper")
-                    self.scrape_votes(page, bill, "upper", insert, title, year)
+                    self.scrape_votes(page, bill, insert, year)
                     bill.add_source(page_path)
                     self.save_bill(bill)
 
@@ -160,7 +160,7 @@ class NVBillScraper(BillScraper):
 
 
                     self.scrape_actions(page, bill, "lower")
-                    self.scrape_votes(page, bill, "lower", insert, title, year)
+                    self.scrape_votes(page, bill, insert, year)
                     bill.add_source(page_path)
                     self.save_bill(bill)
 
@@ -222,11 +222,16 @@ class NVBillScraper(BillScraper):
                 action = el.xpath('string()')
                 bill.add_action(actor, action, date)
 
-    def scrape_votes(self, bill_page, bill, chamber, insert, motion, year):
+    def scrape_votes(self, bill_page, bill, insert, year):
         root = lxml.etree.fromstring(bill_page, lxml.etree.HTMLParser())
-        for href in root.xpath('//a[contains(text(), "Passage")]/@href'):
+        for link in root.xpath('//a[contains(text(), "Passage")]'):
+            motion = link.text
+            if 'Assembly' in motion:
+                chamber = 'lower'
+            else:
+                chamber = 'upper'
             vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
-                insert, href)
+                insert, link.get('href'))
             bill.add_source(vote_url)
             with self.urlopen(vote_url) as page:
                 page = page.decode("utf8").replace(u"\xa0", " ")
@@ -240,7 +245,7 @@ class NVBillScraper(BillScraper):
                 excused = int(root.xpath('string(/html/body/center/table/tr/td[3])').split()[0])
                 not_voting = int(root.xpath('string(/html/body/center/table/tr/td[4])').split()[0])
                 absent = int(root.xpath('string(/html/body/center/table/tr/td[5])').split()[0])
-                other_count = not_voting + absent
+                other_count = excused + not_voting + absent
                 passed = yes_count > no_count
 
                 vote = Vote(chamber, date, motion, passed, yes_count, no_count,
