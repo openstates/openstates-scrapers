@@ -100,6 +100,16 @@ class Scraper(scrapelib.Scraper):
         if 'requests_per_minute' not in kwargs:
             kwargs['requests_per_minute'] = None
 
+        if 'retry_attempts' not in kwargs:
+            kwargs['retry_attempts'] = getattr(settings,
+                                               'SCRAPELIB_RETRY_ATTEMPTS',
+                                               3)
+
+        if 'retry_wait_seconds' not in kwargs:
+            kwargs['retry_wait_seconds'] = getattr(settings,
+                                               'SCRAPELIB_RETRY_WAIT_SECONDS',
+                                                10)
+
         super(Scraper, self).__init__(**kwargs)
 
         if not hasattr(self, 'state'):

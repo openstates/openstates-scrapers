@@ -21,21 +21,25 @@ class VABillScraper(BillScraper):
         'Subject matter referred': 'committee:referred',
         'Rereferred to': 'committee:referred',
         'Referred to': 'committee:referred',
+        'Assigned ': 'committee:referred',
         'Reported from': 'committee:passed',
         'Read third time and passed': 'bill:passed',
         'Read third time and agreed': 'bill:passed',
+        'Passed (Senate|House)': 'bill:passed',
         'Read third time and defeated': 'bill:failed',
         'Presented': 'bill:introduced',
         'Prefiled and ordered printed': 'bill:introduced',
-        'Presented and ordered printed': 'other',
-        'Renrolled bill text': 'other',
-        'Printed as engrossed': 'other',
-        'Engrossed by House': 'other',
-        'Enacted, Chapter': 'other',
-        'Committee substitute printed': 'other',
-        'Bill text as passed': 'other',
-        'Acts of Assembly': 'other',
-        'Substitute': 'other',
+        #'Presented and ordered printed': 'other',
+        #'Renrolled bill text': 'other',
+        #'Printed as engrossed': 'other',
+        #'Engrossed by ': 'other',
+        #'Enacted, Chapter': 'other',
+        'Senators: ': None,
+        'Delegates: ': None,
+        'Committee substitute printed': None,
+        'Bill text as passed': None,
+        'Acts of Assembly': None,
+        #'Substitute': 'other',
     }
 
     def scrape(self, chamber, session):
@@ -69,7 +73,11 @@ class VABillScraper(BillScraper):
                     else:
                         # create a bill
                         desc = bill.xpath('text()')[0].strip()
-                        bill = Bill(session, chamber, bill_id, desc)
+                        bill_type = {'B': 'bill',
+                                     'J': 'joint resolution',
+                                     'R': 'resolution'}[bill_id[1]]
+                        bill = Bill(session, chamber, bill_id, desc,
+                                    type=bill_type)
 
                         bill_url = BASE_URL + link.get('href')
                         self.fetch_sponsors(bill)
@@ -113,7 +121,8 @@ class VABillScraper(BillScraper):
                 vrematch = self.vote_strip_re.match(action)
                 if vrematch:
                     action, y, n = vrematch.groups()
-                    vote = Vote(actor, date, action, y>n, int(y), int(n), 0)
+                    vote = Vote(actor, date, action, int(y) > int(n),
+                                int(y), int(n), 0)
                     vote_url = ali.xpath('a/@href')
                     if vote_url:
                         self.parse_vote(vote, vote_url[0])
@@ -127,7 +136,9 @@ class VABillScraper(BillScraper):
                 else:
                     atype = 'other'
 
-                bill.add_action(actor, action, date, type=atype)
+                # if matched a 'None' atype, don't add the action
+                if atype:
+                    bill.add_action(actor, action, date, type=atype)
 
 
     def fetch_sponsors(self, bill):

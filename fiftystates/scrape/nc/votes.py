@@ -60,7 +60,7 @@ class NCVoteScraper(VoteScraper):
                                       int(data[7])+int(data[8])+int(data[9]),
                                       bill_chamber=bill_chambers[data[3][0]],
                                       bill_id=data[3]+data[4], session=session,
-                                      filename=data[1]+data[0])
+                                      filename=data[1]+'seq_'+data[0])
 
         member_vote_file = zf.open(session + 'MemberVotes.txt')
         # 0: member id

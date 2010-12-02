@@ -46,6 +46,9 @@ Current Experimental States
 * Pennsylvania
 * South Dakota
 * Vermont
+* Virginia
+* New Jersey
+* Florida
 
 Unsupported States (grey)
 -------------------------
