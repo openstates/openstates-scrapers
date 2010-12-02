@@ -235,20 +235,16 @@ class NVBillScraper(BillScraper):
                 date = root.xpath('string(/html/body/center/font)').split()[-1]
                 date = date + "-" + str(year)
                 date = datetime.strptime(date, "%m-%d-%Y")
-                yes_count = root.xpath('string(/html/body/center/table/tr/td[1])').split()[0]
-                no_count = root.xpath('string(/html/body/center/table/tr/td[2])').split()[0]
-                excused = root.xpath('string(/html/body/center/table/tr/td[3])').split()[0]
-                not_voting = root.xpath('string(/html/body/center/table/tr/td[4])').split()[0]
-                absent = root.xpath('string(/html/body/center/table/tr/td[5])').split()[0]
-                other_count = 0    
-                if yes_count > no_count:
-                    passed = True
-                else:
-                    passed = False
+                yes_count = int(root.xpath('string(/html/body/center/table/tr/td[1])').split()[0])
+                no_count = int(root.xpath('string(/html/body/center/table/tr/td[2])').split()[0])
+                excused = int(root.xpath('string(/html/body/center/table/tr/td[3])').split()[0])
+                not_voting = int(root.xpath('string(/html/body/center/table/tr/td[4])').split()[0])
+                absent = int(root.xpath('string(/html/body/center/table/tr/td[5])').split()[0])
+                other_count = not_voting + absent
+                passed = yes_count > no_count
 
-                vote = Vote(chamber, date, motion, passed, int(yes_count),
-                            int(no_count), other_count,
-                            not_voting=int(not_voting), absent=int(absent))
+                vote = Vote(chamber, date, motion, passed, yes_count, no_count,
+                            other_count, not_voting=not_voting, absent=absent)
 
                 for el in root.xpath('/html/body/table[2]/tr'):
                     name = el.xpath('string(td[1])').strip()
