@@ -40,9 +40,9 @@ class NVBillScraper(BillScraper):
 
 
     def scrape_senate_bills(self, chamber, insert, session, year):
-
         doc_type = {2: 'bill', 4: 'resolution', 7: 'concurrent resolution',
                     8: 'joint resolution'}
+
         for docnum, bill_type in doc_type.iteritems():
             parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
             links = self.scrape_links(parentpage_url)
@@ -50,6 +50,7 @@ class NVBillScraper(BillScraper):
             for link in links:
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
+
                 with self.urlopen(page_path) as page:
                     page = page.decode("utf8").replace(u"\xa0", " ")
                     root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
@@ -94,7 +95,6 @@ class NVBillScraper(BillScraper):
                         minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Minutes"
                         bill.add_document(minutes_date, minutes_url)
                         minutes_count = minutes_count + 1
-
 
                     self.scrape_actions(page, bill, "upper")
                     self.scrape_votes(page, bill, "upper", insert, title, year)
@@ -147,7 +147,7 @@ class NVBillScraper(BillScraper):
                             bill.add_sponsor('primary', leg)
                     for leg in secondary:
                         bill.add_sponsor('cosponsor', leg)
-                    
+
                     minutes_count = 2
                     for mr in root.xpath('//table[4]/tr/td[3]/a'):
                         minutes =  mr.xpath("string(@href)")
@@ -165,15 +165,15 @@ class NVBillScraper(BillScraper):
                     self.save_bill(bill)
 
     def scrape_links(self, url):
-
         links = []
 
         with self.urlopen(url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
             path = '/html/body/div[@id="ScrollMe"]/table/tr[1]/td[1]/a'
             for mr in root.xpath(path):
-                web_end = mr.xpath('string(@href)')
-                links.append(web_end)
+                if '*' not in mr.text:
+                    web_end = mr.xpath('string(@href)')
+                    links.append(web_end)
         return links
 
 
@@ -224,11 +224,10 @@ class NVBillScraper(BillScraper):
 
     def scrape_votes(self, bill_page, bill, chamber, insert, motion, year):
         root = lxml.etree.fromstring(bill_page, lxml.etree.HTMLParser())
-        url_path = ('/html/body/div[@id="content"]/table[5]/tr/td/a')
-        for mr in root.xpath(url_path):
-            url_end = mr.xpath('string(@href)')
-            vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, url_end)
-            bill.add_source(vote_url)    
+        for href in root.xpath('//a[contains(text(), "Passage")]/@href'):
+            vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
+                insert, href)
+            bill.add_source(vote_url)
             with self.urlopen(vote_url) as page:
                 page = page.decode("utf8").replace(u"\xa0", " ")
                 root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
