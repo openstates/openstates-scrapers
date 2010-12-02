@@ -103,8 +103,15 @@ class UTBillScraper(BillScraper):
 
             if action == 'Governor Signed':
                 actor = 'Governor'
+                type = 'governor:signed'
+            elif action.startwsih('1st reading'):
+                type = 'bill:introduced'
+            elif action == 'to Governor':
+                type = 'governor:received'
+            elif action == 'passed 3rd reading':
+                type = 'bill:passed'
 
-            bill.add_action(actor, action, act_date)
+            bill.add_action(actor, action, act_date, type=type)
 
             # Check if this action is a vote
             links = row.findAll('a')
