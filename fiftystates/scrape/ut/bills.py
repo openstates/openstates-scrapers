@@ -110,6 +110,8 @@ class UTBillScraper(BillScraper):
                 type = 'governor:received'
             elif action == 'passed 3rd reading':
                 type = 'bill:passed'
+            else:
+                type = 'other'
 
             bill.add_action(actor, action, act_date, type=type)
 
