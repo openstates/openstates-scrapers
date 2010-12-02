@@ -12,15 +12,13 @@ class NVBillScraper(BillScraper):
     state = 'nv'
 
     def scrape(self, chamber, session):
-        self.save_errors=False
-
         if session.find('Special') != -1:
             year = session[0:4]
-        elif int(session) >= 71:    
+        elif int(session) >= 71:
             year = ((int(session) - 71) * 2) + 2001
         else:
             raise NoDataForPeriod(session)
-        
+
         sessionsuffix = 'th'
         if str(session)[-1] == '1':
             sessionsuffix = 'st'
@@ -43,9 +41,10 @@ class NVBillScraper(BillScraper):
 
     def scrape_senate_bills(self, chamber, insert, session, year):
 
-        doc_type = [2, 4, 7, 8]
-        for doc in doc_type:
-            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/HistListBills.cfm?DoctypeID=%s' % (insert, doc)
+        doc_type = {2: 'bill', 4: 'resolution', 7: 'concurrent resolution',
+                    8: 'joint resolution'}
+        for docnum, bill_type in doc_type.iteritems():
+            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
             links = self.scrape_links(parentpage_url)
             count = 0
             for link in links:
@@ -60,7 +59,8 @@ class NVBillScraper(BillScraper):
 
                     if insert.find('Special') != -1:
                         session = insert
-                    bill = Bill(session, chamber, bill_id, title)
+                    bill = Bill(session, chamber, bill_id, title,
+                                type=bill_type)
 
                     bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
                     text_url = "http://www.leg.state.nv.us" + bill_text
@@ -104,10 +104,11 @@ class NVBillScraper(BillScraper):
 
 
     def scrape_assem_bills(self, chamber, insert, session, year):
-        
-        doc_type = [1, 3, 5, 6]
-        for doc in doc_type:
-            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/HistListBills.cfm?DoctypeID=%s' % (insert, doc)
+
+        doc_type = {1: 'bill', 3: 'resolution', 5: 'concurrent resolution',
+                    6: 'joint resolution'}
+        for docnum, bill_type in doc_type.iteritems():
+            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
             links = self.scrape_links(parentpage_url)
             count = 0
             for link in links:
@@ -122,7 +123,8 @@ class NVBillScraper(BillScraper):
 
                     if insert.find('Special') != -1:
                         session = insert
-                    bill = Bill(session, chamber, bill_id, title)
+                    bill = Bill(session, chamber, bill_id, title,
+                                type=bill_type)
                     bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
                     text_url = "http://www.leg.state.nv.us" + bill_text
                     bill.add_version("Bill Text", text_url)
@@ -244,8 +246,10 @@ class NVBillScraper(BillScraper):
                     passed = True
                 else:
                     passed = False
-                
-                vote = Vote(chamber, date, motion, passed, int(yes_count), int(no_count), other_count, not_voting = int(not_voting), absent = int(absent))
+
+                vote = Vote(chamber, date, motion, passed, int(yes_count),
+                            int(no_count), other_count,
+                            not_voting=int(not_voting), absent=int(absent))
 
                 for el in root.xpath('/html/body/table[2]/tr'):
                     name = el.xpath('string(td[1])').strip()
@@ -254,7 +258,7 @@ class NVBillScraper(BillScraper):
                         full_name = full_name + part + " "
                     name = str(name)
                     vote_result = el.xpath('string(td[2])').split()[0]
-                        
+
                     if vote_result == 'Yea':
                         vote.yes(name)
                     elif vote_result == 'Nay':
