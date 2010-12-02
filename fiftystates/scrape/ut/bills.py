@@ -102,8 +102,11 @@ class UTBillScraper(BillScraper):
                 action = '/'.join(split_action[1:]).strip()
 
             if action == 'Governor Signed':
-                actor = 'Governor'
+                actor = 'executive'
                 type = 'governor:signed'
+            elif action == 'Governor Vetoed':
+                actor = 'executive'
+                type = 'governor:vetoed'
             elif action.startswith('1st reading'):
                 type = 'bill:introduced'
             elif action == 'to Governor':
