@@ -133,11 +133,11 @@ class UTBillScraper(BillScraper):
                                      '(\d+)(.*)',
                                     re.MULTILINE | re.DOTALL)
                 match = vote_re.search(vote_page)
-                yes_count = match.group(1)
-                no_count = match.group(3)
-                other_count = match.group(6)
+                yes_count = int(match.group(1))
+                no_count = int(match.group(3))
+                other_count = int(match.group(6))
 
-                if int(yes_count) > int(no_count):
+                if yes_count > no_count:
                     passed = True
                 else:
                     passed = False
