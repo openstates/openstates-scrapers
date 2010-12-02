@@ -104,7 +104,7 @@ class UTBillScraper(BillScraper):
             if action == 'Governor Signed':
                 actor = 'Governor'
                 type = 'governor:signed'
-            elif action.startwsih('1st reading'):
+            elif action.startswith('1st reading'):
                 type = 'bill:introduced'
             elif action == 'to Governor':
                 type = 'governor:received'
