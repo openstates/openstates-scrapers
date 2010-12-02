@@ -35,7 +35,7 @@ class SDBillScraper(BillScraper):
             for link in page.xpath("//a[contains(@href, 'Bill.aspx')]"):
                 bill_id = link.text.strip()
 
-                title = link.xpath("string(../td[2])").strip()
+                title = link.xpath("string(../../td[2])").strip()
 
                 self.scrape_bill(chamber, session, bill_id, title,
                                  link.attrib['href'])
