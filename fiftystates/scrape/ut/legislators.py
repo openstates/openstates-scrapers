@@ -1,13 +1,11 @@
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.ut import metadata
 
-import html5lib
+import lxml.html
 
 
 class UTLegislatorScraper(LegislatorScraper):
     state = 'ut'
-    soup_parser = html5lib.HTMLParser(
-        tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
     def scrape(self, chamber, term):
         self.validate_term(term)
@@ -18,21 +16,20 @@ class UTLegislatorScraper(LegislatorScraper):
             title = 'Senator'
 
         url = 'http://www.le.state.ut.us/asp/roster/roster.asp?year=%s' % term
-        leg_list = self.soup_parser(self.urlopen(url))
 
-        for row in leg_list.findAll('table')[1].findAll('tr')[1:]:
-            tds = row.findAll('td')
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
 
-            leg_title = tds[1].find(text=True)
-            if leg_title == title:
-                fullname = tds[0].find(text=True)
-                last_name = fullname.split(',')[0]
-                first_name = fullname.split(' ')[1]
-                if len(fullname.split(' ')) > 2:
-                    middle_name = fullname.split(' ')[2]
+            for row in page.xpath('//table[2]/tr')[1:]:
+                row_title = row.xpath('string(td[2])')
 
-                leg = Legislator(term, chamber, tds[3].find(text=True),
-                                 fullname, first_name, last_name,
-                                 middle_name, tds[2].find(text=True))
-                leg.add_source(url)
-                self.save_legislator(leg)
+                if row_title == title:
+                    full_name = row.xpath('string(td[1])')
+                    district = row.xpath('string(td[4])')
+                    party = row.xpath('string(td[3])')
+
+                    leg = Legislator(term, chamber, district,
+                                     full_name, '', '', '',
+                                     party)
+                    leg.add_source(url)
+                    self.save_legislator(leg)
