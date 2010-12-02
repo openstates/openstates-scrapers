@@ -117,7 +117,8 @@ class VABillScraper(BillScraper):
                 vrematch = self.vote_strip_re.match(action)
                 if vrematch:
                     action, y, n = vrematch.groups()
-                    vote = Vote(actor, date, action, y>n, int(y), int(n), 0)
+                    vote = Vote(actor, date, action, int(y) > int(n),
+                                int(y), int(n), 0)
                     vote_url = ali.xpath('a/@href')
                     if vote_url:
                         self.parse_vote(vote, vote_url[0])
