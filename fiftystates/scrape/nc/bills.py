@@ -18,7 +18,7 @@ class NCBillScraper(BillScraper):
         'Ref ': 'committee:referred',
         'Re-ref ': 'committee:referred',
         'Reptd Fav': 'committee:passed:favorable',
-        'Reptd Unfav': 'committee:passed:unfav',
+        'Reptd Unfav': 'committee:passed:unfavorable',
         'Pres. To Gov': 'other',
         'Passed 3rd Reading': 'bill:passed',
         'Passed 2nd & 3rd Reading': 'bill:passed',
