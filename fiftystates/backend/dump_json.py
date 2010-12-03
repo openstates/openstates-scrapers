@@ -108,7 +108,7 @@ def upload(state, filename):
     s3_path = '%s-%02d-%s-r%d.zip' % (year, month, state, n)
     s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
-    metadata = db.metadata.find({'state':state})
+    metadata = db.metadata.find_one({'_id':state})
     old_url = metadata.get('latest_dump_url')
 
     if s3_url == old_url:
@@ -142,6 +142,8 @@ if __name__ == '__main__':
                                        ' state to import'))
     parser.add_argument('--file', '-f',
                         help='filename to output to (defaults to <state>.zip)')
+    parser.add_argument('--nodump', action='store_true', default=False,
+                        help="don't run the dump, only upload")
     parser.add_argument('--upload', '-u', action='store_true', default=False,
                         help='upload the created archive to S3')
 
@@ -150,7 +152,8 @@ if __name__ == '__main__':
     if not args.file:
         args.file = args.state + '.zip'
 
-    dump_json(args.state, args.file)
+    if not args.nodump:
+        dump_json(args.state, args.file)
 
     if args.upload:
         upload(args.state, args.file)
