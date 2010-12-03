@@ -39,7 +39,7 @@ class SDBillScraper(BillScraper):
 
             for link in page.xpath("//a[contains(@href, 'Bill.aspx') and"
                                    " starts-with(., '%s')]" % bill_abbr):
-                bill_id = link.text.strip()
+                bill_id = link.text.strip().replace(u'\xa0', ' ')
 
                 title = link.xpath("string(../../td[2])").strip()
 
