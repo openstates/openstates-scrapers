@@ -68,9 +68,9 @@ class NJLegislatorScraper(LegislatorScraper):
             phone = rec["phone"]
 
             leg = Legislator(term_name, chamber, str(district), full_name,
-                             first_name, last_name, middle_name,
-                             suffixes=suffix,
-                             party, title=title, legal_position=legal_position,
+                             first_name, last_name, middle_name, party,
+                             suffixes=suffix, title=title,
+                             legal_position=legal_position,
                              leg_status=leg_status, address=address, city=city,
                              state=state, zipcode=zipcode, phone=phone)
             leg.add_source(file_url)
