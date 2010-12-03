@@ -55,7 +55,6 @@ def update_votesmart_legislators(state):
 
 def update_transparencydata_legislators(state, sunlight_key):
     current_term = state['terms'][-1]['name']
-    # here we are querying roles
     query = {'roles': {'$elemMatch':
                        {'type': 'member',
                         'state': state['abbreviation'],
@@ -76,17 +75,12 @@ def update_transparencydata_legislators(state, sunlight_key):
         data = urllib2.urlopen(url).read()
         results = json.loads(data)
         matches = []
-        # here we were trying to match against the person's chamber
-        # as opposed to the role's chamber
-        # was leg['chamber']
-        # should be leg['roles'][0]['chamber']
-        # because there is no guarantee that a given person will have a
-        # chamber atrribute
         for result in results:
             if (result['state'] == state_abbrev and
-                result['seat'][6:] == leg['roles'][0]['chamber'] and
+                result['seat'][6:] == leg['chamber'] and
                 result['type'] == 'politician'):
                 matches.append(result)
+
         if len(matches) == 1:
             leg['transparencydata_id'] = matches[0]['id']
             db.legislators.save(leg, safe=True)
@@ -133,4 +127,5 @@ if __name__ == '__main__':
 
     for state in args.states:
         update_missing_ids(state, sunlight_key)
+
 
