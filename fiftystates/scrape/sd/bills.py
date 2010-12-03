@@ -62,6 +62,11 @@ class SDBillScraper(BillScraper):
                 bill.add_version(link.xpath('string()').strip(),
                                  link.attrib['href'])
 
+            sponsor_links = page.xpath(
+                "//td[contains(@id, 'tdSponsors')]/a")
+            for link in sponsor_links:
+                bill.add_sponsor("sponsor", link.text)
+
             actor = chamber
             for row in page.xpath(
                 "//table[contains(@id, 'BillActions')]/tr")[6:]:
@@ -75,6 +80,7 @@ class SDBillScraper(BillScraper):
                     atypes.append('bill:introduced')
                 elif action.startswith('Signed by Governor'):
                     atypes.append('governor:signed')
+                    actor = 'executive'
 
                 match = re.match(r'(.*) Do Pass( Amended)?, (Passed|Failed)',
                                  action)
