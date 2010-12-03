@@ -9,10 +9,10 @@ urlpatterns = patterns('',
     (r'^api/locksmith/', include('locksmith.auth.urls')),
     (r'^api/', include('fiftystates.site.api.urls')),
     (r'^browse/', include('fiftystates.site.browse.urls')),
+    (r'^data/(?P<state>\w\w).zip$', 'fiftystates.site.api.views.data_zip'),
 )
 
 if settings.DEBUG:
-    print settings.MEDIA_ROOT
     urlpatterns += patterns('',
         (r'^media/(?P<path>.*)$', 'django.views.static.serve',
          {'document_root': settings.MEDIA_ROOT,
