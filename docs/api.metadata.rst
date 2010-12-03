@@ -28,6 +28,10 @@ Metadata Fields
     The title used to refer to members of the 'upper' chamber (if applicable)
 ``lower_chamber_title``
     The title used to refer to members of the 'lower' chamber (if applicable)
+``latest_dump_url``
+    URL pointing to a download of all data for the state
+``latest_dump_date``
+    datestamp of the file at ``latest_dump_url``
 ``terms``
     A list of terms that we have data available for. Each session will be an object with the following fields:
     * ``start_year``: The year in which this session began.
@@ -86,6 +90,8 @@ http://openstates.sunlightlabs.com/api/v1/metadata/ca/?apikey=YOUR_API_KEY
      "upper_chamber_term": 4,
      "abbreviation": "ca",
      "upper_chamber_name": "Senate",
+     "latest_dump_url": "http://data.openstates.sunlightlabs.com.s3.amazonaws.com/2010-11-ca-r1.zip",
+     "latest_dump_date": "2010-12-03 16:21:26",
      "session_details": {
          "20092010 Special Session 5": {
              "type": "special"
