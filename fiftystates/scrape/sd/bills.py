@@ -80,6 +80,7 @@ class SDBillScraper(BillScraper):
                     atypes.append('bill:introduced')
                 elif action.startswith('Signed by Governor'):
                     atypes.append('governor:signed')
+                    actor = 'executive'
 
                 match = re.match(r'(.*) Do Pass( Amended)?, (Passed|Failed)',
                                  action)
