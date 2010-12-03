@@ -28,11 +28,17 @@ class SDBillScraper(BillScraper):
         url = 'http://legis.state.sd.us/sessions/%s/BillList.aspx' % (
             session)
 
+        if chamber == 'upper':
+            bill_abbr = 'S'
+        else:
+            bill_abbr = 'H'
+
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'Bill.aspx')]"):
+            for link in page.xpath("//a[contains(@href, 'Bill.aspx') and"
+                                   " starts-with(., '%s')]" % bill_abbr):
                 bill_id = link.text.strip()
 
                 title = link.xpath("string(../../td[2])").strip()
