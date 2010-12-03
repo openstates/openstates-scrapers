@@ -39,7 +39,7 @@ class NCVoteScraper(VoteScraper):
         # 11: sponsor
         # 12: reading info
         # 13: info
-        # 15-20: not used
+        # 15-19: not used
         # 21: PASSED/FAILED
         # 22: legislative day
         vote_file = zf.open(session + 'Votes.txt')
@@ -54,7 +54,7 @@ class NCVoteScraper(VoteScraper):
                     self.log('skipping vote %s' % data[0])
                     continue
                 votes[data[0]] = Vote(chamber, date, data[13],
-                                      data[21] == 'PASSED',
+                                      data[20] == 'PASSED',
                                       int(data[5]),
                                       int(data[6]),
                                       int(data[7])+int(data[8])+int(data[9]),
