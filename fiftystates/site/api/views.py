@@ -1,10 +1,15 @@
 from fiftystates.backend import db, fs
 
 from django.http import HttpResponse, Http404
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 
 import gridfs
 
+def data_zip(request, state):
+    metadata = db.metadata.find_one({'_id': state})
+    if not metadata or 'latest_dump_url' not in metadata:
+        raise Http404
+    return redirect(metadata['latest_dump_url'])
 
 def document(request, id):
     try:
