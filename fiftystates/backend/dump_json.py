@@ -36,7 +36,7 @@ def api_url(path):
             "/?apikey=" + settings.SUNLIGHT_SERVICES_KEY)
 
 
-def dump_json(state, filename):
+def dump_json(state, filename, validate):
     zip = zipfile.ZipFile(filename, 'w')
 
     cwd = os.path.split(__file__)[0]
@@ -66,8 +66,9 @@ def dump_json(state, filename):
                                              bill['bill_id']))
 
         response = urllib2.urlopen(url).read()
-        validictory.validate(json.loads(response), bill_schema,
-                             validator_cls=APIValidator)
+        if validate:
+            validictory.validate(json.loads(response), bill_schema,
+                                 validator_cls=APIValidator)
 
         zip.writestr(path, urllib2.urlopen(url).read())
 
@@ -76,8 +77,9 @@ def dump_json(state, filename):
         url = api_url("legislators/" + legislator['_id'])
 
         response = urllib2.urlopen(url).read()
-        validictory.validate(json.loads(response), legislator_schema,
-                             validator_cls=APIValidator)
+        if validate:
+            validictory.validate(json.loads(response), legislator_schema,
+                                 validator_cls=APIValidator)
 
         zip.writestr(path, response)
 
@@ -86,8 +88,9 @@ def dump_json(state, filename):
         url = api_url("committees/" + committee['_id'])
 
         response = urllib2.urlopen(url).read()
-        validictory.validate(json.loads(response), committee_schema,
-                             validator_cls=APIValidator)
+        if validate:
+            validictory.validate(json.loads(response), committee_schema,
+                                 validator_cls=APIValidator)
 
         zip.writestr(path, response)
 
@@ -126,6 +129,7 @@ def upload(state, filename):
     k.set_acl('public-read')
 
     metadata['latest_dump_url'] = s3_url
+    metadata['latest_dump_date'] = datetime.datetime.now()
     db.metadata.save(metadata, safe=True)
 
     print 'uploaded to %s' % s3_url
@@ -144,6 +148,8 @@ if __name__ == '__main__':
                         help='filename to output to (defaults to <state>.zip)')
     parser.add_argument('--nodump', action='store_true', default=False,
                         help="don't run the dump, only upload")
+    parser.add_argument('--novalidate', action='store_true', default=False,
+                        help="don't run validation")
     parser.add_argument('--upload', '-u', action='store_true', default=False,
                         help='upload the created archive to S3')
 
@@ -153,7 +159,7 @@ if __name__ == '__main__':
         args.file = args.state + '.zip'
 
     if not args.nodump:
-        dump_json(args.state, args.file)
+        dump_json(args.state, args.file, not args.novalidate)
 
     if args.upload:
         upload(args.state, args.file)
