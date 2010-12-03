@@ -10,6 +10,7 @@ urlpatterns = patterns('',
     (r'^api/', include('fiftystates.site.api.urls')),
     (r'^browse/', include('fiftystates.site.browse.urls')),
     (r'^data/(?P<state>\w\w).zip$', 'fiftystates.site.api.views.data_zip'),
+    (r'^status/$', 'django.views.generic.simple.redirect_to', {'url':'http://spreadsheets.google.com/ccc?key=tzA6I1Rmqh09Vkt40dRs-Rg'}),
 )
 
 if settings.DEBUG:
