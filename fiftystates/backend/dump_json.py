@@ -102,15 +102,20 @@ def upload(state, filename):
         month = 12
         year -= 1
 
+    # build URL
     s3_bucket = 'data.openstates.sunlightlabs.com'
     n = 1
     s3_path = '%s-%02d-%s-r%d.zip' % (year, month, state, n)
     s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
-    while Redirect.objects.filter(new_path=s3_url).count():
+    metadata = db.metadata.find({'state':state})
+    old_url = metadata.get('latest_dump_url')
+
+    if s3_url == old_url:
+        old_num = re.match('.*?-r(\d*).zip', old_url).groups()[0]
+        n = int(old_num)+1
         s3_path = '%s-%02d-%s-r%d.zip' % (year, month, state, n)
         s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
-        n += 1
 
     # S3 upload
     s3conn = boto.connect_s3(settings.AWS_KEY, settings.AWS_SECRET)
@@ -120,16 +125,10 @@ def upload(state, filename):
     k.set_contents_from_filename(filename)
     k.set_acl('public-read')
 
-    # create/update redirects
-    old_path = '/data/%s.zip' % state
-    redirect, created = Redirect.objects.get_or_create(old_path=old_path,
-                                           defaults={'new_path':s3_url,
-                                                     'site_id': 1})
-    if not created:
-        redirect.new_path = s3_url
-        redirect.save()
+    metadata['latest_dump_url'] = s3_url
+    db.metadata.save(metadata, safe=True)
 
-    print 'redirect from %s to %s' % (redirect.old_path, redirect.new_path)
+    print 'uploaded to %s' % s3_url
 
 
 if __name__ == '__main__':
