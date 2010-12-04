@@ -28,12 +28,18 @@ class SDBillScraper(BillScraper):
         url = 'http://legis.state.sd.us/sessions/%s/BillList.aspx' % (
             session)
 
+        if chamber == 'upper':
+            bill_abbr = 'S'
+        else:
+            bill_abbr = 'H'
+
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'Bill.aspx')]"):
-                bill_id = link.text.strip()
+            for link in page.xpath("//a[contains(@href, 'Bill.aspx') and"
+                                   " starts-with(., '%s')]" % bill_abbr):
+                bill_id = link.text.strip().replace(u'\xa0', ' ')
 
                 title = link.xpath("string(../../td[2])").strip()
 
@@ -48,8 +54,20 @@ class SDBillScraper(BillScraper):
             bill = Bill(session, chamber, bill_id, title)
             bill.add_source(url)
 
-            actor = chamber
+            regex_ns = "http://exslt.org/regular-expressions"
+            version_links = page.xpath(
+                "//a[re:test(@href, 'Bill.aspx\?File=.*\.htm', 'i')]",
+                namespaces={'re': regex_ns})
+            for link in version_links:
+                bill.add_version(link.xpath('string()').strip(),
+                                 link.attrib['href'])
 
+            sponsor_links = page.xpath(
+                "//td[contains(@id, 'tdSponsors')]/a")
+            for link in sponsor_links:
+                bill.add_sponsor("sponsor", link.text)
+
+            actor = chamber
             for row in page.xpath(
                 "//table[contains(@id, 'BillActions')]/tr")[6:]:
 
@@ -62,6 +80,7 @@ class SDBillScraper(BillScraper):
                     atypes.append('bill:introduced')
                 elif action.startswith('Signed by Governor'):
                     atypes.append('governor:signed')
+                    actor = 'executive'
 
                 match = re.match(r'(.*) Do Pass( Amended)?, (Passed|Failed)',
                                  action)

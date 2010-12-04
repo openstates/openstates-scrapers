@@ -70,8 +70,8 @@ class MSBillScraper(BillScraper):
                     if passed_version.find("documents") != -1:
                         passed_version_url = "http://billstatus.ls.state.ms.us/" + passed_version
                         title = "As Passed the " + chamber
-                        bill.add_version(title, passed_version_url)                    
- 
+                        bill.add_version(title, passed_version_url)
+
                     asg_version = details_root.xpath('string(//asg_other)').replace("../../../../", "")
                     if asg_version.find("documents") != -1:
                         asg_version_url = "http://billstatus.ls.state.ms.us/" + asg_version
@@ -106,8 +106,11 @@ class MSBillScraper(BillScraper):
 
                         vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
                         if vote_url != "http://billstatus.ls.state.ms.us":
-                            vote =self.scrape_votes(vote_url, action, date, actor)
+                            vote = self.scrape_votes(vote_url, action, date, actor)
                             bill.add_vote(vote)
+                            bill.add_source(vote_url)
+
+                    bill.add_source(bill_details_url)
                     self.save_bill(bill)
 
     def scrape_votes(self, url, motion, date, chamber):
@@ -136,18 +139,18 @@ class MSBillScraper(BillScraper):
                     name = name.split()[0]
                 if len(name.split()) == 3:
                     name =  name.split()[0] + " " + name.split()[1]
-                
+
             if len(name) > 0 and name[0] == " ":
                 name = name[1: len(name)]
 
             if len(name.split()) > 3:
                 name = name.replace(" ", "")
 
-            if self.check_name(name, nays, other) == 1:
+            if self.check_name(name, nays, other) == 'yes':
                 yes_votes.append(name)
-            elif self.check_name(name, nays, other) == 2:
+            elif self.check_name(name, nays, other) == 'no':
                 no_votes.append(name)
-            elif self.check_name(name, nays, other) == 3:
+            elif self.check_name(name, nays, other) == 'other':
                 other_votes.append(name)
             else:
                 if name == "Nays":
@@ -165,14 +168,11 @@ class MSBillScraper(BillScraper):
         return vote
 
     def check_name(self, name, nays, other):
-
         if nays == False and other == False and name != "Total" and name != "Nays" and not re.match("\d{1,2}\.", name) and len(name) > 1:
-            name_type = 1
+            return 'yes'
         elif nays == True and other == False and name != "Total" and name.find("Absentor") == -1 and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
-            name_type = 2
+            return 'no'
         elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
-            name_type = 3
+            return 'other'
         else:
-            name_type = 0
-
-        return name_type
+            return None

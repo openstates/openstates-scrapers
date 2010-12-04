@@ -102,6 +102,7 @@ class Person(FiftystatesObject):
         self['first_name'] = first_name
         self['last_name'] = last_name
         self['middle_name'] = middle_name
+        self['suffixes'] = kwargs.get('suffixes', '')
         self['roles'] = []
 
     def add_role(self, role, term, start_date=None, end_date=None,

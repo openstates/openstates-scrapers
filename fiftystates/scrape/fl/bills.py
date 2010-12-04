@@ -51,8 +51,8 @@ class FLBillScraper(BillScraper):
             bill.add_source(url)
 
             hist = page.xpath("string(//pre[@class='billhistory'])").strip()
-            act_re = re.compile(r'^  (\d\d/\d\d/\d\d) (SENATE|HOUSE)'
-                                r'(.*\n(\s{16,16}.*\n){0,})',
+            act_re = re.compile(r'^\s+(\d\d/\d\d/\d\d) (SENATE|HOUSE)'
+                                r'([^\n]+\n?(\s{16,16}.*\n){0,})',
                                 re.MULTILINE)
 
             # Actions
