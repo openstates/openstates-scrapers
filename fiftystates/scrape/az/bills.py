@@ -191,10 +191,15 @@ class AZBillScraper(BillScraper):
                 action = row[0].text_content().strip()[:-1]
                 h_or_s = 'lower' if action.startswith('H') else 'upper'
                 a_type = 'other'
+                date = utils.get_date(row[1])
+                # bill:introduced
+                if action.endswith('FIRST READ') and h_or_s == chamber:
+                    a_type = 'bill:introduced'
+                    bill.add_action(chamber, action, date, type=a_type)
+                # committee:referred
                 if action in ('HOUSE FIRST READ', 'SENATE SECOND READ'):
                     a_type = 'committee:referred'
-                bill.add_action(h_or_s, action, utils.get_date(row[1]),
-                                    type=a_type)
+                bill.add_action(h_or_s, action, date, type=a_type)
             # majority|minority caucus
             rows = base_table.xpath(row_path % 'CAUCUS')
             for x in range(len(rows)):
