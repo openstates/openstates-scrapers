@@ -156,7 +156,7 @@ class AZBillScraper(BillScraper):
             house = False if chamber == 'upper' else True # chamber flag
             
             # committee assignments
-            rows = base_table.xpath(rows_path % 'COMMITTES:')
+            rows = base_table.xpath(rows_path % 'COMMITTEES:')
             #first row is the header
             for row in rows[1:]:
                 # First add the committee assigned action
