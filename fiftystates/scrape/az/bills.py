@@ -173,7 +173,7 @@ class AZBillScraper(BillScraper):
                 if vote_url:
                     date = utils.get_date(row[3])
                     motion = utils.get_action(row[5].text_content().strip())
-                    self.scrape_votes(vote_url, bill, actor, date,
+                    self.scrape_votes(actor, vote_url, bill, date,
                                         motion=motion, committee=committee)
                 elif len(row) == 5:
                     # probably senate rules committee
