@@ -12,7 +12,7 @@ from fiftystates.scrape.bills import BillScraper, Bill
 #   'session=%s' = legislative session. (See the 'year_mapping' data structure
 #                  later in this file)
 #   'bill=%s-%s' = Range Format: start-end (e.g. 1-10)
-BILL_SEARCH_URL = 'https://www.revisor.leg.state.mn.us/revisor/pages/search_status/status_results.php?body=%s&search=basic&session=%s&bill=%s-%s&bill_type=bill&submit_bill=GO&keyword_type=all=1&keyword_field_long=1&keyword_field_title=1&titleword='
+BILL_SEARCH_URL = 'https://www.revisor.mn.gov/revisor/pages/search_status/status_results.php?body=%s&search=basic&session=%s&bill=%s-%s&bill_type=bill&submit_bill=GO&keyword_type=all=1&keyword_field_long=1&keyword_field_title=1&titleword='
 
 # Base URL for the details of a given bill.
 BILL_DETAIL_URL_BASE = 'https://www.revisor.leg.state.mn.us/revisor/pages/search_status/'
@@ -217,12 +217,15 @@ class MNBillScraper(BillScraper):
 
         self.save_bill(bill)
 
-    def scrape_session(self, chamber, session, session_year, session_number, legislative_session):
+    def scrape(self, chamber, session):
         """Scrape all bills for a given chamber and a given session.
 
         This method uses the legislature's search page to collect all the bills
         for a given chamber and session.
         """
+        available_chambers = {'lower':'House', 'upper':'Senate'}
+        search_chamber = available_chambers[chamber]
+        search_session = self.metadata['session_details'][session]['site_id']
 
         # MN bill search page returns a maximum of 999 search results.
         # To get around that, make multiple search requests and combine the results.
@@ -234,7 +237,7 @@ class MNBillScraper(BillScraper):
             # The search form accepts number ranges for bill numbers.
             # Range Format: start-end
             # Query Param: 'bill='
-            url = BILL_SEARCH_URL % (chamber, session, min, max-1)
+            url = BILL_SEARCH_URL % (search_chamber, search_session, min, max-1)
             self.debug("Getting bill data from: %s" % url)
             with self.urlopen(url) as html:
                 soup = BeautifulSoup(html)
@@ -277,53 +280,10 @@ class MNBillScraper(BillScraper):
             # Alas, the House and the Senate do not link to the same place for
             # a given bill's "Bill Text".  Getting a URL to the list of bill
             # versions from the Senate requires an extra step here.
-            if chamber == 'Senate':
+            if search_chamber == 'Senate':
                 senate_bill_text_url = urlparse.urljoin(VERSION_URL_BASE, bill_version_list_url)
                 with self.urlopen(senate_bill_text_url) as senate_html:
                     senate_soup = BeautifulSoup(senate_html)
                     bill_version_list_url = self.extract_senate_bill_version_link(senate_soup)
             bill_version_list_url = urlparse.urljoin(VERSION_URL_BASE, bill_version_list_url)
-            self.get_bill_info(chamber, session, bill_details_url, bill_version_list_url)
-
-    def scrape(self, chamber, year):
-        """Initiates the scraping of all bills for a given chamber and year."""
-
-        # Minnesota legislative session value formula
-        # 2009 = '0862009'
-        # Bit       Value
-        # ---       -----
-        # 1         Session Number (session_number used in query params)
-        # 2-4       Legislative Session (i.e. 86th session)
-        # 4-8       YYYY four-digit year of the legislative session.
-        year_mapping = {
-            '1995': ('1791995',),
-            '1996': ('0791995',),
-            '1997': ('1801997', '2801997', '3801997'),
-            '1998': ('1801998', '0801997'),
-            '1999': ('0811999',),
-            '2000': ('0811999',),
-            '2001': ('0822001', '1822001'),
-            '2002': ('0822001', '1822002'),
-            '2003': ('0832003', '1832003'),
-            '2004': ('0832003',),
-            '2005': ('0842005',),
-            '2006': ('0842005',),
-            '2007': ('0852007', '1852007'),
-            '2008': ('0852007',),
-            '2009': ('0862009',),
-        }
-        available_chambers = {'lower':'House', 'upper':'Senate'}
-        chamber = available_chambers[chamber]
-
-        if year not in year_mapping:
-            raise NoDataForPeriod(year)
-
-        for session in year_mapping[year]:
-            session_year = year
-            # Unpacking MN session formula described above.
-            session_number = session[0]
-            legislative_session = session[1:3]
-            legislative_session_year = session[-4:]
-            self.debug("Scraping data for MN - Session: %s, Chamber: %s, Year: %s" % (session, chamber, year))
-            self.scrape_session(chamber, session, session_year, session_number, legislative_session)
-
+            self.get_bill_info(search_chamber, search_session, bill_details_url, bill_version_list_url)

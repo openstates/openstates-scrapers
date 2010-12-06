@@ -18,4 +18,9 @@ metadata = dict(
          'end_year': 2010
         }
     ],
+    session_details={
+        '2009-2010': {'site_id': '0862009', 'type':'primary'},
+        '2010 1st Special Session': {'site_id': '1862010', 'type':'special'},
+        '2010 2nd Special Session': {'site_id': '2862010', 'type':'special'},
+    }
 )
