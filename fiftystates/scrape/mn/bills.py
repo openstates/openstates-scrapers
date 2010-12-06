@@ -5,17 +5,9 @@ from BeautifulSoup import BeautifulSoup
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 
-# URL for searching the Minnesota Legislature bills.
-# The search form accepts number ranges for bill numbers.
-# The following query params should be substituted in this URL:
-#   'body=%s' = "House" or "Senate"
-#   'session=%s' = legislative session. (See the 'year_mapping' data structure
-#                  later in this file)
-#   'bill=%s-%s' = Range Format: start-end (e.g. 1-10)
-BILL_SEARCH_URL = 'https://www.revisor.mn.gov/revisor/pages/search_status/status_results.php?body=%s&search=basic&session=%s&bill=%s-%s&bill_type=bill&submit_bill=GO&keyword_type=all=1&keyword_field_long=1&keyword_field_title=1&titleword='
 
 # Base URL for the details of a given bill.
-BILL_DETAIL_URL_BASE = 'https://www.revisor.leg.state.mn.us/revisor/pages/search_status/'
+BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/revisor/pages/search_status/'
 
 # The versions of a bill use a different base URL.
 VERSION_URL_BASE = "https://www.revisor.mn.gov"
@@ -30,11 +22,9 @@ class MNBillScraper(BillScraper):
 
         Returns a string with the problem text removed/replaced.
         """
-        # coerce to string...
         text = str(text)
-        self.debug("Cleaning text: %s" % text)
         cleaned_text = text.replace('&nbsp;', '').strip()
-        self.debug("Cleaned text: %s" % cleaned_text)
+        #self.debug("Cleaned text: %s ~> %s" % (text, cleaned_text))
         return cleaned_text
 
     def extract_bill_id(self, soup):
@@ -223,27 +213,26 @@ class MNBillScraper(BillScraper):
         This method uses the legislature's search page to collect all the bills
         for a given chamber and session.
         """
-        available_chambers = {'lower':'House', 'upper':'Senate'}
-        search_chamber = available_chambers[chamber]
+        search_chamber = {'lower':'House', 'upper':'Senate'}[chamber]
         search_session = self.metadata['session_details'][session]['site_id']
 
         # MN bill search page returns a maximum of 999 search results.
         # To get around that, make multiple search requests and combine the results.
         # when setting the search_range, remember that 'range()' omits the last value.
-        search_range = range(0,10000, 900)
-        min = search_range[0]
         total_rows = list() # used to concatenate search results
-        for max in search_range[1:]:
-            # The search form accepts number ranges for bill numbers.
-            # Range Format: start-end
-            # Query Param: 'bill='
-            url = BILL_SEARCH_URL % (search_chamber, search_session, min, max-1)
-            self.debug("Getting bill data from: %s" % url)
+        stride = 900
+        start = 0
+        for start in xrange(0, 10000, stride):
+            # body: "House" or "Senate"
+            # session: legislative session id
+            # bill: Range start-end (e.g. 1-10)
+            url = 'https://www.revisor.mn.gov/revisor/pages/search_status/status_results.php?body=%s&session=%s&bill=%s-%s&bill_type=bill&submit_bill=GO' % (search_chamber, search_session, start, start+stride)
+
             with self.urlopen(url) as html:
                 soup = BeautifulSoup(html)
                 # Index into the table containing the bills .
                 rows = soup.findAll('table')[6].findAll('tr')[1:]
-                self.debug("Rows to process: %s" % str(len(rows)))
+                self.debug("found %s rows" % str(len(rows)))
                 # If there are no more results, then we've reached the
                 # total number of bills available for this session.
                 if len(rows) == 0:
@@ -251,8 +240,6 @@ class MNBillScraper(BillScraper):
                     break
                 else:
                     total_rows.extend(rows)
-                # increment min for next loop so we don't get duplicates.
-                min = max
 
         # Now that we have all the bills for a given session, process each row
         # of search results to harvest the details and versions of each bill.
