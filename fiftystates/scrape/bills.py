@@ -20,12 +20,13 @@ class BillScraper(Scraper):
         schema['properties']['session']['enum'] = self.all_sessions()
         return schema
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, session):
         """
-        Grab all the bills for a given chamber and year. Must be
+        Grab all the bills for a given chamber and session. Must be
         overridden by subclasses.
 
-        Should raise a :class:`NoDataForPeriod` exception if the year is invalid.
+        Should raise a :class:`NoDataForPeriod` exception if the session is
+        invalid.
         """
         raise NotImplementedError('BillScrapers must define a scrape method')
 
