@@ -67,7 +67,8 @@ def import_bills(state, data_dir):
             data = prepare_obj(json.load(f))
 
         # clean up bill_id
-        data['bill_id'] = bill_id_re.sub(r'\1 \2', data['bill_id'])
+        bill_id = data['bill_id'].replace('.', '')
+        data['bill_id'] = bill_id_re.sub(r'\1 \2', bill_id)
 
         bill = db.bills.find_one({'state': data['state'],
                                   'session': data['session'],
