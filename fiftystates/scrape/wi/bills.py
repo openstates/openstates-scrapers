@@ -66,7 +66,7 @@ class WIBillScraper(BillScraper):
         """
 
     def build_issue_index(self):
-        self.verbose('building WI issue index')
+        self.log('building WI issue index')
         self._subjects = defaultdict(list)
 
         n = 2
