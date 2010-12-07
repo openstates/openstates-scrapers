@@ -176,17 +176,22 @@ class AZBillScraper(BillScraper):
                     bill.add_action(h_or_s, action, date, type=a_type)
             # majority|minority caucus
             rows = base_table.xpath(row_path % 'CAUCUS')
-            for x in range(len(rows)):
-                h_or_s = chamber
-                action = rows[x][0].text_content().strip()
+            for row in rows:
+                h_or_s = row.xpath('ancestor::table[1]/preceding-sibling::' + 
+                              'table/tr/td/b[contains(text(), "TRANSMIT TO")]')
+                if h_or_s:
+                    # actor is the first B element
+                    h_or_s = h_or_s[0].text_content().strip()
+                    actor = 'upper' if h_or_s.endswith('SENATE:') else 'lower'
+                else:
+                    actor = chamber
+                action = row[0].text_content().strip()
                 if action.endswith(':'):
                     action = action[:-1]
-                result = rows[x][2].text_content().strip()
+                result = row[2].text_content().strip()
                 action = action + " CONCUR: " + result # majority caucus Y|N
-                date = utils.get_date(rows[x][1])
-                if x >= 3:
-                    h_or_s = {'upper':'lower', 'lower': 'upper'}[chamber]
-                bill.add_action(h_or_s, action, date, concur=result, type='other')
+                date = utils.get_date(row[1])
+                bill.add_action(actor, action, date, concur=result, type='other')
             
             # transmit to house or senate
             rows = base_table.xpath(row_path % 'TRANSMIT TO')
@@ -195,7 +200,7 @@ class AZBillScraper(BillScraper):
             # transmit_dates = []; transmit_dates.append({to_chamber:date});
             for row in rows:
                 action = row[0].text_content().strip()[:-1]
-                h_or_s = 'lower' if action.endswith('HOUSE') else 'upper'
+                h_or_s = 'upper' if action.endswith('HOUSE') else 'lower'
                 date = utils.get_date(row[1])
                 bill.add_action(h_or_s, action, date, type='other')
             
