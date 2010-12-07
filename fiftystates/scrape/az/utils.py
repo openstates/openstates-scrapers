@@ -9,29 +9,18 @@ def parse_link_id(link):
     extracts the div[@id] from the links on the DocumentsForBill pages
     """
     return link.get('href')[link.get('href').find("'") + 1 : link.get('href').rfind("'")]
-    
-def get_action(abbr):
-    """
-    get_action('PFCA W/FL') --> 
-    'proper for consideration amended with recommendation for a floor amendment'
-    """
-    try:
-        return common_abbrv[abbr]
-    except KeyError:
-        return 'other'
 
 def get_bill_type(bill_id):
     """
-    takes a bill prefix and returns a bill type.
-    bill_id = sb1004
-    get_bill_type(bill_id[:-4]) --> bill
+    bill_id = 'SJR2204'
+    get_bill_type(bill_id) --> 'joint resolution'
     """
     prefix = bill_id.lower()
     if re.match('\w{2,3}\d{4}', prefix):
         prefix = prefix[:-4]
     else:
         prefix = prefix[:-3]
-    if bill_id in bill_types:
+    if prefix in bill_types:
         return bill_types[prefix]
     else:
         return 'bill'
@@ -88,17 +77,12 @@ def img_check(elem):
             return 'Y'
         else:
             return 'N'
-def get_href(elem):
-    """
-    Unused was just going to be short hand
-    """
-    href = elem.xpath('string(a/@href)')
-    if href:
-        return href
-    else:
-        return elem.xpath('string(font/a/@href)')
         
 def get_session_details(s):
+    """
+    gets the session list and writes them to session_details.py
+    still needs some hand editing to insure that a primary session is default
+    """
     url = 'http://www.azleg.gov/xml/sessions.asp'
     with s.urlopen(url) as page:
         root = etree.fromstring(page)
@@ -136,7 +120,10 @@ def get_rows(rows, header):
     return keyed_rows
     
 def get_committee_name(abbrv, chamber):
-    return com_names[chamber][abbrv]
+    try:
+        return com_names[chamber][abbrv]
+    except KeyError:
+        return abbrv
     
 com_names = { 
     'lower': {
@@ -174,91 +161,7 @@ com_names = {
         'SUB APPROP TCJ': 'Appropriations Subcommittee on Transportation and Criminal Justice'
     }
 }
-common_abbrv = {
-    'AM C&P ON RECON': 'amended c&p on reconsideration',
-    'AM C&P ON REREF': 'amend c&p on rereferral',
-    'AMEND C&P': 'amended constitutional and in proper form',
-    'C&P': 'constitutional and in proper form',
-    'C&P AS AM BY AP': 'constitutional and in proper form as amended by the committee on App',
-    'C&P AS AM BY APPR': 'Constitutional and in proper form as amended by Appropriations',
-    'C&P AS AM BY EN': 'constitutional and in proper form as amended by the Committee on ENV',
-    'C&P AS AM BY GO': 'Constitutional and in proper form as amended by GovOp',
-    'C&P AS AM BY HE': 'C&P AS AM BY HE',
-    'C&P AS AM BY JU': 'constitutional and in proper form as amended by Jud',
-    'C&P AS AM BY TR': 'C&P AS AM BY TR',
-    'C&P AS AM BY WM': 'constitutional and in proper form as amended by the Committee on Way & Means',
-    'C&P AS AM GOVOP': 'Constitutional and in proper form as amended by Government Operations',
-    'C&P ON RECON': 'constitutional and in proper form on reconsideration',
-    'C&P ON REREF': 'constitutional and in proper form on rereferral',
-    'C&P W/FL': 'constitutional and in proper form with a floor amendment',
-    'CAUCUS': 'Caucus',
-    'CONCUR': 'rec to concur',
-    'CONCUR FAILED': 'motion to concur failed',
-    'DISC PETITION': 'discharge petition',
-    'DISC/HELD': 'Discussed and Held',
-    'DISC/ONLY': 'discussion only',
-    'DISC/S/C': 'discussd and assigned to subcommittee',
-    'DNP': 'do not pass',
-    'DP': 'do pass',
-    'DP ON RECON': 'do pass on reconsideration',
-    'DP ON REREFER': 'do passed on rereferral',
-    'DP W/MIN RPT': 'do pass with minority report',
-    'DP/PFC': 'do pass and proper for consideration',
-    'DP/PFC W/FL': 'do pass and proper for consideration with recommendation for a floor amendment',
-    'DP/PFCA': 'do pass and proper for consideration amended',
-    'DPA': 'do pass amended',
-    'DPA CORRECTED': 'do pass amended corrected',
-    'DPA ON RECON': 'do pass amended on reconsideration',
-    'DPA ON REREFER': 'do pass amended on rereferral',
-    'DPA/PFC': 'do pass amended and proper for consideration',
-    'DPA/PFC W/FL': 'do pass amended and proper for consideration with recommendation for a floor amendment',
-    'DPA/PFCA': 'do pass amended and proper for consideration amended',
-    'DPA/PFCA W/FL': 'do pass amended and proper for consideration with recommendation for a floor amendment',
-    'DPA/SE': 'do pass amended/strike-everything',
-    'DPA/SE CORRECTED': 'do pass amended/strike everything corrected',
-    'DPA/SE ON RECON': 'do pass amended/ strike everything on reconsideration',
-    'DPA/SE ON REREF': 'do pass amended/strike everything on rereferral',
-    'FAILED': 'failed to pass',
-    'FAILED BY S/V 0': 'failed by standing vote',
-    'FAILED ON RECON': 'failed ON RECONSIDERATION',
-    'FIRST': 'First Reading',
-    'FURTHER AMENDED': 'further amended',
-    'HELD': 'held',
-    'HELD 1 WK': 'held one week',
-    'HELD INDEF': 'held indefinitely',
-    'HELD ON RECON': 'held on reconsideration',
-    'None': 'No Action',
-    'NOT CONCUR': 'rec not concur',
-    'NOT HEARD': 'not heard',
-    'NOT IN ORDER': 'not in order',
-    'PASSED': 'Passed',
-    'PFC': 'proper for consideration',
-    'PFC W/FL': 'proper for consideration with recommendation for a floor amendment',
-    'PFCA': 'proper for consideration amended',
-    'PFCA W/FL': 'proper for consideration amended with recommendation for a floor amendment',
-    'POSTPONE INDEFI': 'postponed indefinitely',
-    'REC REREF TO COM': 'recommend rereferral to committee',
-    'RECOMMIT TO COM': 'recommit to committee',
-    'REMOVAL REQ': 'removal request from Rules Committee',
-    'REREF GOVOP': 'Rereferred to GovOp',
-    'REREF JUD': 'Rereferred to Judiciary',
-    'REREF WM': 'Rereferred to Ways & Means',
-    'RET FOR CON': 'returned for consideration',
-    'RET ON CAL': 'Retained on the Calendar',
-    'RETAINED': 'retained',
-    'RULE 8J PROPER': 'proper legislation and deemed not derogatory or insulting',
-    'S/C': 'subcommittee',
-    'S/C REPORTED': 'Subcommittee reported',
-    'W/D': 'withdrawn',
-}
-BILL_TYPES = (
-    ('SB', 'Senate Bill'),
-    ('SR', 'Senate Resolution'),
-    ('SCR', 'Senate Concurrent Resolution'),
-    ('HB', 'House Bill'),
-    ('HR', 'House Resolution'),
-    ('HCR', 'House Concurrent Resolution')
-)
+
 bill_types = {
     'sb': 'bill',
     'sm': 'memorial',

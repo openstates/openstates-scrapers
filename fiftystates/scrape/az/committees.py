@@ -45,14 +45,12 @@ class AZCommitteeScraper(CommitteeScraper):
                                                      'lower': 'H'}[chamber]
             for com in root.xpath(body):
                 c_id, name, short_name, sub = com.values()
-                print sub
                 if sub == '1':
-                    print sub
                     parent = name.split('Subcommittee')[0].strip()
                     name = name[name.index('Subcommittee'):]
                     
                     c = Committee(chamber, committee=parent, short_name=short_name, 
-                              sub_committee=name, session=session,
+                              subcommittee=name, session=session,
                               az_committee_id=c_id)
                 else:
                     c = Committee(chamber, name, short_name=short_name, 
