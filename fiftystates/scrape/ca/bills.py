@@ -132,6 +132,8 @@ class CABillScraper(BillScraper):
                 if author.house == chamber_name:
                     fsbill.add_sponsor(author.contribution, author.name)
 
+            introduced = False
+
             for action in bill.actions:
                 if not action.action:
                     # NULL action text seems to be an error on CA's part,
@@ -153,9 +155,13 @@ class CABillScraper(BillScraper):
 
                 act_str = action.action
                 if act_str.startswith('Introduced'):
+                    introduced = True
                     type.append('bill:introduced')
 
-                if 'To Com' in act_str:
+                if 'Read first time.' in act_str and not introduced:
+                    type.append('bill:introduced')
+
+                if 'To Com' in act_str or 'referred to' in act_str.lower():
                     type.append('committee:referred')
 
                 if 'Read third time.  Passed.' in act_str:
@@ -169,6 +175,9 @@ class CABillScraper(BillScraper):
 
                 if 'Vetoed by Governor' in act_str:
                     type.append('governor:vetoed')
+
+                if 'To Governor' in act_str:
+                    type.append('governor:received')
 
                 if not type:
                     type = ['other']
