@@ -21,31 +21,6 @@ class AZBillScraper(BillScraper):
         """
         return self.metadata['session_details'][session]['session_id']
         
-    def get_bill_type(self, bill_id):
-        """
-        Returns the bill type from its abbreviation
-        """
-        bill_types = {
-                      'SB': 'bill',
-                      'SM': 'memorial',
-                      'SR': 'resolution',
-                      'SCR': 'concurrent resolution',
-                      'SCM': 'concurrent memorial',
-                      'SJR': 'joint resolution',
-                      'HB': 'bill',
-                      'HM': 'memorial',
-                      'HR': 'resolution',
-                      'HCR': 'concurrent resolution',
-                      'HCM': 'concurrent memorial',
-                      'HJR': 'joint resolution',
-                      'MIS': 'miscellaneous' # currently ignoring these odd ones
-                  }
-        try:
-            return bill_types[bill_id]
-        except KeyError:
-            self.log('unknown bill type: ' + bill_id)
-            return 'bill'
-        
     def scrape_bill(self, chamber, session, bill_id):
         """
         Scrapes documents, actions, vote counts and votes for 
@@ -58,7 +33,7 @@ class AZBillScraper(BillScraper):
             root = html.fromstring(docs_for_bill)
             bill_title = root.xpath(
                             '//div[@class="ContentPageTitle"]')[1].text.strip()
-            b_type = self.get_bill_type(bill_id[:-4])
+            b_type = utils.get_bill_type(bill_id)
             bill = Bill(session, chamber, bill_id, bill_title, type=b_type)
             bill.add_source(url)
             path = '//tr[contains(td/font/text(), "%s")]'
@@ -157,13 +132,13 @@ class AZBillScraper(BillScraper):
             # committee assignments
             rows = base_table.xpath(rows_path % 'COMMITTEES:')
             #first row is the header
-            for row in rows[1:]:
+            for row in rows:
                 # First add the committee assigned action
                 meta_tag = row.cssselect('meta')[0]
-                h_or_s = meta_tag.get('content')[0] # @name is HCOMMITTEE OR SCOMMITTEE
+                h_or_s = meta_tag.get('name')[0] # @name is HCOMMITTEE OR SCOMMITTEE
                 committee = meta_tag.get('content') # @content is committee abbrv
                 #actor is house or senate referring the bill to committee
-                actor = 'lower' if h_or_s == 'H' else 'upper'
+                actor = 'lower' if h_or_s.lower() == 'h' else 'upper'
                 act = 'ASSIGNED TO COMMITTEE: ' + committee
                 date = utils.get_date(row[1])
                 bill.add_action(actor, act, date, type='committee:referred')
@@ -250,11 +225,19 @@ class AZBillScraper(BillScraper):
                                         motion=action, type=a_type, extra=act)
                 else:
                     bill.add_action(actor, action, date, type=a_type)
+            # AMMENDMENTS
+            # http://www.azleg.gov/FormatDocument.asp?inDoc=/legtext/49Leg/1r/bills/hb2240o.asp
                     
             # CONFERENCE COMMITTEE
             # http://www.azleg.gov/FormatDocument.asp?inDoc=/legtext/49Leg/2r/bills/hb2083o.asp
             # table = base_table.xpath(table_path % 'CONFERENCE COMMITTEE')
-               
+            
+            # MISCELLANEOUS MOTION
+            # http://www.azleg.gov/FormatDocument.asp?inDoc=/legtext/49Leg/1r/bills/hb2286o.asp
+            
+            # MOTION TO RECONSIDER
+            # SEE ABOVE
+            
             # house|senate final and third read
             tables = base_table.xpath(table_path % 'FINAL READ:')
             tables.extend(base_table.xpath(table_path % 'THIRD READ:'))
@@ -282,9 +265,9 @@ class AZBillScraper(BillScraper):
                     # from scrape votes and pass ammended and emergency
                     # as kwargs to sort them in scrap_votes
                     if action.endswith('THIRD READ:'):
-                        k_rows[0].update({ 'type' : ['passage', 'reading:3']})
+                        k_rows[0]['type'] = ['passage', 'reading:3']
                     else:
-                        k_rows[0].update({ 'type': 'passage'})
+                        k_rows[0]['type'] = ['passage']
                     self.scrape_votes(actor, vote_url, bill, vote_date,
                                       passed=passed, motion=action, **k_rows[0])
                 else:
@@ -357,14 +340,16 @@ class AZBillScraper(BillScraper):
         """
         o_args = {}
         passed = '' # to test if we need to compare vote counts later
-        o_args['type'] = kwargs.pop('type')
+        v_type = kwargs.pop('type')
         if 'passed' in kwargs:
-            passed = kwargs.pop('passed')
-            passed = {'PASSED': True, 'FAILED': False}[passed]
+            passed = {'PASSED': True, 'FAILED': False}[kwargs.pop('passed')]
         if 'AMEND' in kwargs:
             o_args['amended'] = kwargs.pop('AMEND').text_content().strip()
         if 'motion' in kwargs:
             motion = kwargs.pop('motion')
+        if 'committee' in kwargs:
+            o_args['committee'] = utils.get_committee_name(kwargs.pop('committee'),
+                                                            chamber)
         
         with self.urlopen(url) as vote_page:
             root = html.fromstring(vote_page)
@@ -388,8 +373,12 @@ class AZBillScraper(BillScraper):
                     o_count = o_count + v
             if passed == '':
                 passed = yes_count > no_count
+            if not motion.startswith('committee'):
+                a_type = { True:'bill:passed', False: 'bill:failed' }[passed]
+                bill.add_action(chamber, motion, date, type=a_type)
             vote = Vote(chamber, date, motion, passed, yes_count, no_count,
-                        o_count, **o_args)
+                        o_count, type=v_type, **o_args)
+            vote.add_source(url)
             # grab all the tables descendant tds
             tds = vote_table.xpath('descendant::td')
             # pair 'em up

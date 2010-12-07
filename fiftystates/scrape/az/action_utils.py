@@ -6,19 +6,23 @@ committee_actions = {
     ("REREF GOVOP", "REREF JUD",
      "REREF WM","DISC/S/C")          : "committee:referred",
     ("FAILED",)                      : "committee:failed",
-    ("PASSED", "C&P")                : "committee:passed",
+    ("PASSED", "C&P", "PFC",
+     "PFC W/FL")                     : "committee:passed",
     ("C&P AS AM BY AP",
      "C&P AS AM BY EN", "C&P AS AM BY APPROP",
      "C&P AS AM BY GO", "C&P AS AM BY HE",
      "C&P AS AM BY JU", "C&P AS AM BY TR",
      "C&P AS AM BY WM", "C&P AS AM BY GOVOP") : "committee:passed", # "committee:amended"],
+    ("AMEND C&P", "AM C&P ON RECON",
+     "AM C&P ON REREF", "PFCA W/FL",
+     "PFCA")                         : "committee:passed", # "committee:amended"
     ("DP", "DP ON RECON", 
      "DP ON REREFER", "DP W/MIN RPT",
      "DP/PFC", "DPA/PFC W/FL",
      "DP/PFCA")                      : "committee:passed:favorable",
     ("DPA", "DPA CORRECTED",
      "DPA ON RECON", "DPA ON REREFER",
-     "DPA/PFC", "DPA/PFCA",
+     "DPA/PFC", "DPA/PFCA", "DPA/SE",
      "DPA/PFC W/FL", "DPA/PFCA W/FL"): "committee:passed:favorable", # "committee:amended"],
     ("DNP")                          : "committee:passed:unfavorable",
     ("DISC/HELD", "HELD ON RECON",
@@ -48,7 +52,9 @@ generic_actions= {
     ("FURTHER AMENDED")             : "amendment:amended",
 #    ("AMENDMENT", "WITHDRAWN")       : "amendement:withdrawn",
     ("REREF GOVOP", "REREF JUD",
-     "REREF WM", "DISC/S/C")        : "committee:referred",
+     "REREF WM", "DISC/S/C",
+     "REC REREF TO COM", 
+     "RECOMMIT TO COM")             : "committee:referred",
     # THIRD READ AND FINAL READ
     ("THIRD READ:",)                : ["reading:3", "passage"],
     ("HOUSE FINAL READ:",
@@ -71,7 +77,20 @@ def get_action_type(abbrv, group="GENERIC"):
         if abbrv in key:
             return actions[key]
     return 'other'
-
+    
+###########################################################
+# get_action
+###########################################################
+def get_action(abbr):
+    """
+    get_action('PFCA W/FL') --> 
+    'proper for consideration amended with recommendation for a floor amendment'
+    """
+    try:
+        return common_abbrv[abbr].upper()
+    except KeyError:
+        return 'other'
+        
 ###########################################################
 # annottated abbreviations
 ###########################################################
