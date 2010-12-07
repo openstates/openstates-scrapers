@@ -67,8 +67,12 @@ class AZLegislatorScraper(LegislatorScraper):
                     email = ''
                 
                 room = room.text_content().strip()
-                phone = "602-" + phone.text_content().strip()
-                fax = "602-" + fax.text_content().strip()
+                phone = phone.text_content().strip()
+                if not phone.startswith('602'):
+                    phone = "602-" + phone
+                fax = fax.text_content().strip()
+                if not fax.startswith('602'):
+                    fax = "602-" + fax
                 if vacated:
                     end_date = datetime.datetime.strptime(vacated, '%m/%d/%Y')
                     leg = Legislator( term, chamber, district, full_name=name,
