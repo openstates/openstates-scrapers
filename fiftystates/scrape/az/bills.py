@@ -180,8 +180,8 @@ class AZBillScraper(BillScraper):
                 h_or_s = row.xpath('ancestor::table[1]/preceding-sibling::' + 
                               'table/tr/td/b[contains(text(), "TRANSMIT TO")]')
                 if h_or_s:
-                    # actor is the first B element
-                    h_or_s = h_or_s[0].text_content().strip()
+                    # actor is the last B element
+                    h_or_s = h_or_s[-1].text_content().strip()
                     actor = 'upper' if h_or_s.endswith('SENATE:') else 'lower'
                 else:
                     actor = chamber
@@ -210,8 +210,8 @@ class AZBillScraper(BillScraper):
                 h_or_s = rows[0].xpath('ancestor::table[1]/preceding-sibling::' + 
                               'table/tr/td/b[contains(text(), "TRANSMIT TO")]')
                 if h_or_s:
-                    # actor is the first B element
-                    h_or_s = h_or_s[0].text_content().strip()
+                    # actor is the last b element
+                    h_or_s = h_or_s[-1].text_content().strip()
                     actor = 'upper' if h_or_s.endswith('SENATE:') else 'lower'
                 else:
                     actor = chamber
@@ -254,7 +254,7 @@ class AZBillScraper(BillScraper):
                               'table/tr/td/b[contains(text(), "TRANSMIT TO")]')
                 if h_or_s:
                     # actor is the first B element
-                    h_or_s = h_or_s[0].text_content().strip()
+                    h_or_s = h_or_s[-1].text_content().strip()
                     actor = 'upper' if h_or_s[0].endswith('SENATE:') else 'lower'
                 else:
                     actor = chamber
