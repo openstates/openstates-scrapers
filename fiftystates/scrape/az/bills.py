@@ -150,7 +150,7 @@ class AZBillScraper(BillScraper):
                     a_type = get_action_type(act, 'COMMITTEES:')
                     bill.add_action(committee, act, date, type=a_type)
                     self.scrape_votes(actor, vote_url, bill, date,
-                                        motion='committee:passage', 
+                                        motion='committee: ' + act, 
                                         committee=committee, type=a_type)
                 elif len(row) == 5:
                     # probably senate rules committee
