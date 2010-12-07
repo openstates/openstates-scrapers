@@ -122,6 +122,7 @@ class NameMatcher(object):
             forms.add(self._normalize(form))
 
         add_form(name['full_name'])
+        add_form(name['_scraped_name'])
         add_form(name['last_name'])
 
         if name['first_name']:
