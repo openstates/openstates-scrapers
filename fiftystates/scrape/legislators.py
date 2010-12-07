@@ -21,9 +21,9 @@ class LegislatorScraper(Scraper):
         schema['properties']['roles']['items']['properties']['term']['enum'] = terms
         return schema
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term):
         """
-        Grab all the legislators who served in a given year. Must be
+        Grab all the legislators who served in a given term. Must be
         overridden by subclasses.
 
         Should raise a :class:`NoDataForPeriod` exception if the year is

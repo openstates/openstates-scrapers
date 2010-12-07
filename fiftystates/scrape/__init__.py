@@ -152,11 +152,17 @@ class Scraper(scrapelib.Scraper):
                 return True
         raise NoDataForPeriod(session)
 
-    def validate_term(self, term):
+    def validate_term(self, term, latest_only=False):
+        if latest_only:
+            if term == self.metadata['terms'][-1]['name']:
+                return True
+            else:
+                raise NoDataForPeriod(term)
+
         for t in self.metadata['terms']:
             if term == t['name']:
                 return True
-        raise NoDataForPeriod(session)
+        raise NoDataForPeriod(term)
 
 
 class FiftystatesObject(dict):

@@ -34,6 +34,7 @@ Metadata Fields
     datestamp of the file at ``latest_dump_url``
 ``terms``
     A list of terms that we have data available for. Each session will be an object with the following fields:
+
     * ``start_year``: The year in which this session began.
     * ``end_year``: The year in which this session ended.
     * ``name``: The name of this session.

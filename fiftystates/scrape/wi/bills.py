@@ -2,6 +2,7 @@ import datetime as dt
 import lxml.html
 import re
 from StringIO import StringIO
+from collections import defaultdict
 
 import scrapelib
 
@@ -38,6 +39,10 @@ action_classifiers = {
 class WIBillScraper(BillScraper):
     state = 'wi'
 
+    def __init__(self, *args, **kwargs):
+        super(WIBillScraper, self).__init__(*args, **kwargs)
+        self.build_issue_index()
+
     def scrape(self, chamber, session):
         if 'Regular' in session:
             self.scrape_regular(chamber, session)
@@ -59,6 +64,27 @@ class WIBillScraper(BillScraper):
         /2001/jr2: Jan 2002 Special Session
         /2001/my1: May 2001 Special Session
         """
+
+    def build_issue_index(self):
+        self.log('building WI issue index')
+        self._subjects = defaultdict(list)
+
+        n = 2
+        try:
+            while True:
+                url = 'http://nxt.legis.state.wi.us/nxt/gateway.dll/Session%%20Related/indxsubj/%s' % n
+                with self.urlopen(url) as html:
+                    doc = lxml.html.fromstring(html)
+                    title = doc.xpath('//title/text()')[0]
+                    links = doc.xpath('//a/text()')
+                    for link in links:
+                        if '-' in link:  # check that its a bill
+                            link = link.replace('-', ' ').strip()
+                            self._subjects[link].append(title)
+                n += 1
+                print n
+        except scrapelib.ScrapeError:
+            pass
 
     def scrape_regular(self, chamber, session):
         types = {'lower': ['ab', 'ajr', 'ar', 'ap'],
@@ -85,6 +111,7 @@ class WIBillScraper(BillScraper):
 
                         bill = Bill(session, chamber, bill_id, title,
                                     type=bill_type)
+                        bill['subjects'] = self._subjects[bill_id]
                         self.scrape_bill_history(bill, link)
             except scrapelib.HTTPError, e:
                 if e.response.code == 404:
