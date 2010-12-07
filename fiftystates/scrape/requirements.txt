@@ -1,5 +1,5 @@
 # Common requirements
-scrapelib>=0.3.0
+scrapelib>=0.4.0
 validictory>=0.4.2
 BeautifulSoup>=3.1
 html5lib
