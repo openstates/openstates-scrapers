@@ -107,11 +107,11 @@ class MSBillScraper(BillScraper):
                         bill.add_action(actor, action, date,
                                         action_num=action_num)
 
-                        vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
-                        #if vote_url != "http://billstatus.ls.state.ms.us":
-                            #vote = self.scrape_votes(vote_url, action, date, actor)
-                            #bill.add_vote(vote)
-                            #bill.add_source(vote_url)
+                        if act_vote:
+                            vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
+                            vote = self.scrape_votes(vote_url, action, date, actor)
+                            bill.add_vote(vote)
+                            bill.add_source(vote_url)
 
                     bill.add_source(bill_details_url)
                     self.save_bill(bill)
@@ -119,52 +119,51 @@ class MSBillScraper(BillScraper):
     def scrape_votes(self, url, motion, date, chamber):
         vote_pdf, resp = self.urlretrieve(url)
         text = convert_pdf(vote_pdf, 'text')
-        text = text.replace("Yeas--", ",Yeas, ")
-        text = text.replace("Nays--", ",Nays, ")
-        text = text.replace("Total--", ",Total, ")
-        text = text.replace("DISCLAIMER", ",DISCLAIMER,")
-        text = text.replace("--", ",")
-        text = text.replace("Absent or those not voting", ",Absentorthosenotvoting,")
+
+        # process PDF text
         passed = ('passed' in text) or ('concurred' in text)
-        split_text = text.split(",")
-        yea_mark = split_text.index("Yeas") + 1
-        end_mark = split_text.index("DISCLAIMER")
-        nays, other = False, False
+
         yes_votes = []
         no_votes = []
         other_votes = []
-        for num in range(yea_mark, end_mark):
-            name = split_text[num]
-            name = name.replace("\n", "")
+        cur_array = None
 
-            if name.find("(") != -1:
-                if len(name.split()) == 2:
-                    name = name.split()[0]
-                if len(name.split()) == 3:
-                    name =  name.split()[0] + " " + name.split()[1]
+        precursors = (
+            ('Yeas--', yes_votes),
+            ('Nays--', no_votes),
+            ('Absent or those not voting--', other_votes),
+            ('Absent and those not voting--', other_votes),
+            ('Present--', other_votes),
+            ('DISCLAIMER', None),
+        )
 
-            if len(name) > 0 and name[0] == " ":
-                name = name[1: len(name)]
+        for line in text.split('\n'):
+            for pc, arr in precursors:
+                if pc in line:
+                    cur_array = arr
+                    line = line.replace(pc, '')
 
-            if len(name.split()) > 3:
-                name = name.replace(" ", "")
+            print cur_array, line.split(',')
 
-            if self.check_name(name, nays, other) == 'yes':
-                yes_votes.append(name)
-            elif self.check_name(name, nays, other) == 'no':
-                no_votes.append(name)
-            elif self.check_name(name, nays, other) == 'other':
-                other_votes.append(name)
-            else:
-                if name == "Nays":
-                    nays = True
-                if name.find("Absent") != -1:
-                    nays = False
-                    other = True
+            for name in line.split(','):
+                name = name.strip()
+
+                # None or a Total indicate the end of a section
+                if name == 'None.':
+                    cur_array = None
+                match = re.match(r'(.+?)\. Total--.*', name)
+                if match:
+                    cur_array.append(match.groups()[0])
+                    cur_array = None
+                if cur_array is not None and name:
+                    cur_array.append(name)
+
+        # return vote object
         yes_count = len(yes_votes)
         no_count = len(no_votes)
         other_count = len(other_votes)
-        vote = Vote(chamber, date, motion, passed, yes_count, no_count, other_count)
+        vote = Vote(chamber, date, motion, passed, yes_count, no_count,
+                    other_count)
         vote['yes_votes'] = yes_votes
         vote['no_votes'] = no_votes
         vote['other_votes'] = other_votes
