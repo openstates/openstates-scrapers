@@ -71,6 +71,7 @@ class Vote(FiftystatesObject):
         self['yes_count'] = yes_count
         self['no_count'] = no_count
         self['other_count'] = other_count
+        self['type'] = type
         self['yes_votes'] = []
         self['no_votes'] = []
         self['other_votes'] = []
