@@ -108,10 +108,10 @@ class MSBillScraper(BillScraper):
                                         action_num=action_num)
 
                         vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
-                        if vote_url != "http://billstatus.ls.state.ms.us":
-                            vote = self.scrape_votes(vote_url, action, date, actor)
-                            bill.add_vote(vote)
-                            bill.add_source(vote_url)
+                        #if vote_url != "http://billstatus.ls.state.ms.us":
+                            #vote = self.scrape_votes(vote_url, action, date, actor)
+                            #bill.add_vote(vote)
+                            #bill.add_source(vote_url)
 
                     bill.add_source(bill_details_url)
                     self.save_bill(bill)
