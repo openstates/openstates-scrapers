@@ -14,9 +14,9 @@ class MSBillScraper(BillScraper):
         self.save_errors=False
         if int(session[0:4]) < 2008:
             raise NoDataForPeriod(session)
-        self.scrape_bills(session)
+        self.scrape_bills(chamber, session)
 
-    def scrape_bills(self, session):
+    def scrape_bills(self, chamber_to_scrape, session):
         url = 'http://billstatus.ls.state.ms.us/%s/pdf/all_measures/allmsrs.xml' % session
 
         with self.urlopen(url) as bill_dir_page:
@@ -27,6 +27,11 @@ class MSBillScraper(BillScraper):
                     chamber = "upper"
                 else:
                     chamber = "lower"
+
+                # just skip past bills that are of the wrong chamber
+                if chamber != chamber_to_scrape:
+                    continue
+
                 link = mr.xpath('string(actionlink)').replace("..", "")
                 main_doc = mr.xpath('string(measurelink)').replace("../../../", "")
                 main_doc_url = 'http://billstatus.ls.state.ms.us/%s' % main_doc
