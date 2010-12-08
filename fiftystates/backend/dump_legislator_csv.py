@@ -17,8 +17,9 @@ def check_state(state):
         'state': state,
     })
 
-    fields = ('_id', 'first_name', 'last_name', 'state', 'chamber', 'district',
-              'party', 'active', 'votesmart_id', 'transparencydata_id')
+    fields = ('_id', 'full_name', 'first_name', 'middle_name', 'last_name',
+              'suffixes', 'nickname', 'state', 'chamber', 'district', 'party',
+              'active', 'votesmart_id', 'transparencydata_id')
 
     uniques = {'office': set(), 'votesmart_id':set(),
                'transparencydata_id': set()}

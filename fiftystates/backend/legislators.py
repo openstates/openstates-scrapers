@@ -23,7 +23,7 @@ def ensure_indexes():
                                  ('roles.type', pymongo.ASCENDING),
                                  ('roles.term', pymongo.ASCENDING),
                                  ('roles.chamber', pymongo.ASCENDING),
-                                 ('full_name', pymongo.ASCENDING),
+                                 ('_scraped_name', pymongo.ASCENDING),
                                  ('first_name', pymongo.ASCENDING),
                                  ('last_name', pymongo.ASCENDING),
                                  ('middle_name', pymongo.ASCENDING),
@@ -38,6 +38,8 @@ def import_legislators(state, data_dir):
     for path in paths:
         with open(path) as f:
             data = prepare_obj(json.load(f))
+
+        data['_scraped_name'] = data['full_name']
 
         import_legislator(data)
 
@@ -93,7 +95,7 @@ def import_legislator(data):
 
     leg = db.legislators.find_one(
         {'state': data['state'],
-         'full_name': data['full_name'],
+         '_scraped_name': data['full_name'],
          'roles': {'$elemMatch': spec}})
 
     if not leg:
@@ -108,7 +110,7 @@ def import_legislator(data):
                 prev_term = term_names[index - 1]
                 spec['term'] = prev_term
                 prev_leg = db.legislators.find_one(
-                    {'full_name': data['full_name'],
+                    {'_scraped_name': data['full_name'],
                      'roles': {'$elemMatch': spec}})
 
                 if prev_leg:

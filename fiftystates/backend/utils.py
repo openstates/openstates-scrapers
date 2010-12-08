@@ -83,7 +83,14 @@ def update(old, new, coll):
         del new['votes']
 
     changed = False
+
+    locked_fields = old.get('_locked_fields', [])
+
     for key, value in new.items():
+
+        if key in locked_fields:
+            continue
+
         if old.get(key) != value:
             old[key] = value
             changed = True

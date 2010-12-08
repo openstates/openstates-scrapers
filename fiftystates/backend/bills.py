@@ -60,7 +60,7 @@ def import_bills(state, data_dir):
 
     paths = glob.glob(pattern)
 
-    bill_id_re = re.compile(r'([A-Z]*)\s*(\d+)')
+    bill_id_re = re.compile(r'([A-Z]*)\s*0*(\d+)')
 
     for path in paths:
         with open(path) as f:
