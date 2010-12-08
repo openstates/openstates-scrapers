@@ -2,8 +2,11 @@
 
 from fiftystates.backend import db
 import csv
+import argparse
 
-def process_file(filename, save=False):
+def process_file(state, save=False):
+
+    filename = state + '_legislators.csv'
 
     # print initial missing counts
     print 'missing pvs', db.legislators.find({'state':state,
@@ -15,9 +18,9 @@ def process_file(filename, save=False):
 
     for row in namefile:
         # get the legislator
-        leg = db.legislators.find_one({'leg_id': row['leg_id']})
+        leg = db.legislators.find_one({'leg_id': row['_id']})
         if not leg:
-            print 'no such leg:', row['leg_id']
+            print 'no such leg:', row['_id']
             continue
 
         # backwards compatibility, copy full_name into _scraped_name
@@ -39,7 +42,7 @@ def process_file(filename, save=False):
 
         # show what changed
         if changed:
-            print row['leg_id'], 'changed', ' '.join(changed)
+            print row['_id'], 'changed', ' '.join(changed)
 
         # reassemble full_name
         full_name = leg['first_name']
@@ -68,12 +71,12 @@ if __name__ == '__main__':
         description='load a CSV of legislator data'
     )
 
-    parser.add_argument('files', metavar='FILE', type='str', nargs='+',
-                        help='state files to load')
+    parser.add_argument('states', metavar='STATE', type=str, nargs='+',
+                        help='states to load (filenames should be xy_legislators.csv)')
     parser.add_argument('--save', action='store_true', default=False,
                         help='save changes to database')
 
     args = parser.parse_args()
 
-    for filename in args.files:
-        process_file(filename, args.save)
+    for state in args.states:
+        process_file(state, args.save)
