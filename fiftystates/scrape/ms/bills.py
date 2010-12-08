@@ -126,6 +126,8 @@ class MSBillScraper(BillScraper):
         yes_votes = []
         no_votes = []
         other_votes = []
+
+        # point at array to add names to
         cur_array = None
 
         precursors = (
@@ -133,29 +135,35 @@ class MSBillScraper(BillScraper):
             ('Nays--', no_votes),
             ('Absent or those not voting--', other_votes),
             ('Absent and those not voting--', other_votes),
+            ('Voting Present--', other_votes),
             ('Present--', other_votes),
             ('DISCLAIMER', None),
         )
 
         for line in text.split('\n'):
+            # check if the line starts with a precursor, switch to that array
             for pc, arr in precursors:
                 if pc in line:
                     cur_array = arr
                     line = line.replace(pc, '')
 
-            print cur_array, line.split(',')
-
+            # split names
             for name in line.split(','):
                 name = name.strip()
 
                 # None or a Total indicate the end of a section
-                if name == 'None.':
+                if 'None.' in name:
                     cur_array = None
                 match = re.match(r'(.+?)\. Total--.*', name)
                 if match:
                     cur_array.append(match.groups()[0])
                     cur_array = None
-                if cur_array is not None and name:
+
+                # append name if it looks ok
+                if cur_array is not None and name and 'Total--' not in name:
+                    # strip trailing .
+                    if name[-1] == '.':
+                        name = name[:-1]
                     cur_array.append(name)
 
         # return vote object
@@ -168,13 +176,3 @@ class MSBillScraper(BillScraper):
         vote['no_votes'] = no_votes
         vote['other_votes'] = other_votes
         return vote
-
-    def check_name(self, name, nays, other):
-        if nays == False and other == False and name != "Total" and name != "Nays" and not re.match("\d{1,2}\.", name) and len(name) > 1:
-            return 'yes'
-        elif nays == True and other == False and name != "Total" and name.find("Absentor") == -1 and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
-            return 'no'
-        elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
-            return 'other'
-        else:
-            return None
