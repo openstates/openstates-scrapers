@@ -41,7 +41,8 @@
              "amendment:tabled", "amendment:amended", "amendment:withdrawn",
              "committee:referred", "committee:failed",
              "committee:passed", "committee:passed:favorable",
-             "committee:passed:unfavorable",
+             "committee:passed:unfavorable", "bill:reading:1",
+             "bill:reading:2", "bill:reading:3",
              "other"]
              }}
     }}},
