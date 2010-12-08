@@ -82,19 +82,21 @@ class MSBillScraper(BillScraper):
                     for action in details_root.xpath('//history/action'):
                         action_num  = action.xpath('string(act_number)').strip()
                         action_num = int(action_num)
-                        action_desc = action.xpath('string(act_desc)')
                         act_vote = action.xpath('string(act_vote)').replace("../../../..", "")
-                        date = action_desc.split()[0] + "/" + session[0:4]
+                        action_desc = action.xpath('string(act_desc)')
+                        date, action_desc = action_desc.split(" ", 1)
+                        date = date + "/" + session[0:4]
                         date = datetime.strptime(date, "%m/%d/%Y")
-                        try:
-                            actor = action_desc.split()[2][1]
-                            if actor == "H":
-                                actor = "lower"
-                            else:
-                                actor = "upper"
-                        except:
-                            actor = "Executive"
-                        action = action_desc[10: len(action_desc)]
+
+                        if action_desc.startswith("(H)"):
+                            actor = "lower"
+                            action = action_desc[4:]
+                        elif action_desc.startswith("(S)"):
+                            actor = "upper"
+                            action = action_desc[4:]
+                        else:
+                            actor = "executive"
+                            action = action_desc
 
                         if action.find("Veto") != -1:
                             version_path = details_root.xpath("string(//veto_other)")
@@ -102,7 +104,8 @@ class MSBillScraper(BillScraper):
                             version_url = "http://billstatus.ls.state.ms.us/" + version_path
                             bill.add_document("Veto", version_url) 
 
-                        bill.add_action(actor, action, date, action_num=action_num)                        
+                        bill.add_action(actor, action, date,
+                                        action_num=action_num)
 
                         vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
                         if vote_url != "http://billstatus.ls.state.ms.us":
@@ -122,7 +125,7 @@ class MSBillScraper(BillScraper):
         text = text.replace("DISCLAIMER", ",DISCLAIMER,")
         text = text.replace("--", ",")
         text = text.replace("Absent or those not voting", ",Absentorthosenotvoting,")
-        passed = text.find("passed") != -1
+        passed = ('passed' in text) or ('concurred' in text)
         split_text = text.split(",")
         yea_mark = split_text.index("Yeas") + 1
         end_mark = split_text.index("DISCLAIMER")
