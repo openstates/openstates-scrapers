@@ -61,10 +61,11 @@ def process_file(state, save=False):
             leg['_locked_fields'] = locked
             db.legislators.save(leg, safe=True)
 
-            print 'missing pvs', db.legislators.find({'state':state,
-                                              'votesmart_id':None}).count()
-            print 'missing tdata', db.legislators.find({'state':state,
-                                        'transparencydata_id':None}).count()
+    if save:
+        print 'missing pvs', db.legislators.find({'state':state,
+                                          'votesmart_id':None}).count()
+        print 'missing tdata', db.legislators.find({'state':state,
+                                    'transparencydata_id':None}).count()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
