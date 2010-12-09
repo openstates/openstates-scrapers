@@ -11,7 +11,7 @@ def _combine_lines(lines):
     newlines = []
     lastline = '.'
     for line in lines:
-        if lastline and lastline[-1] in '.,:' and line[0] != '(':
+        if lastline and lastline[-1] in '.,:' and not line.startswith('('):
             newlines.append(line)
             lastline = line
         else:
