@@ -21,7 +21,7 @@ def _combine_lines(lines):
 class MSBillScraper(BillScraper):
     state = 'ms'
 
-    _action_types = {
+    _action_types = (
         ('Died in Committee', 'committee:failed'),
         ('Enrolled Bill Signed', 'other'),
         ('Immediate Release', 'other'),
@@ -40,7 +40,7 @@ class MSBillScraper(BillScraper):
         ('Partially Vetoed', 'governor:vetoed:line-item'),
         ('Title Suff Do', 'committee:passed'),
         ('Read the Third Time', 'bill:reading:3'),
-    }
+    )
 
     def scrape(self, chamber, session):
         self.save_errors=False
