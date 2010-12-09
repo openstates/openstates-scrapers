@@ -135,12 +135,14 @@ class BillSearchHandler(FiftyStateHandler):
         since = request.GET.get('updated_since')
         if since:
             try:
-                _filter['since'] = datetime.datetime.strptime(since,
-                                                          "%Y-%m-%d %H:%M")
+                _filter['updated_at'] = {'$gte': datetime.datetime.strptime(
+                    since,
+                    "%Y-%m-%d %H:%M")}
             except ValueError:
                 try:
-                    _filter['since'] = datetime.datetime.strptime(since,
-                                                               "%Y-%m-%d")
+                    _filter['updated_at'] = {'$gte': datetime.datetime.strptime(
+                        since,
+                        "%Y-%m-%d")}
                 except ValueError:
                     resp = rc.BAD_REQUEST
                     resp.write(": invalid updated_since parameter."
