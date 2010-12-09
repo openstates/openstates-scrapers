@@ -135,12 +135,12 @@ class BillSearchHandler(FiftyStateHandler):
         since = request.GET.get('updated_since')
         if since:
             try:
-                _filter['updated_at'] = {'$geq': datetime.datetime.strptime(
+                _filter['updated_at'] = {'$gte': datetime.datetime.strptime(
                     since,
                     "%Y-%m-%d %H:%M")}
             except ValueError:
                 try:
-                    _filter['updated_at'] = {'$geq': datetime.datetime.strptime(
+                    _filter['updated_at'] = {'$gte': datetime.datetime.strptime(
                         since,
                         "%Y-%m-%d")}
                 except ValueError:
