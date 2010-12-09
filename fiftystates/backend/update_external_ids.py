@@ -60,7 +60,8 @@ def update_transparencydata_legislators(state, sunlight_key):
                         'state': state['abbreviation'],
                         'term': current_term}
                       },
-             'transparencydata_id': None
+             'transparencydata_id': None,
+             'active': True,
             }
 
     updated = 0
@@ -126,4 +127,5 @@ if __name__ == '__main__':
 
     for state in args.states:
         update_missing_ids(state, sunlight_key)
+
 

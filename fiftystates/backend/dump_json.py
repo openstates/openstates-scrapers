@@ -36,7 +36,7 @@ def api_url(path):
             "/?apikey=" + settings.SUNLIGHT_SERVICES_KEY)
 
 
-def dump_json(state, filename):
+def dump_json(state, filename, validate):
     zip = zipfile.ZipFile(filename, 'w')
 
     cwd = os.path.split(__file__)[0]
@@ -66,8 +66,9 @@ def dump_json(state, filename):
                                              bill['bill_id']))
 
         response = urllib2.urlopen(url).read()
-        validictory.validate(json.loads(response), bill_schema,
-                             validator_cls=APIValidator)
+        if validate:
+            validictory.validate(json.loads(response), bill_schema,
+                                 validator_cls=APIValidator)
 
         zip.writestr(path, urllib2.urlopen(url).read())
 
@@ -76,8 +77,9 @@ def dump_json(state, filename):
         url = api_url("legislators/" + legislator['_id'])
 
         response = urllib2.urlopen(url).read()
-        validictory.validate(json.loads(response), legislator_schema,
-                             validator_cls=APIValidator)
+        if validate:
+            validictory.validate(json.loads(response), legislator_schema,
+                                 validator_cls=APIValidator)
 
         zip.writestr(path, response)
 
@@ -86,8 +88,9 @@ def dump_json(state, filename):
         url = api_url("committees/" + committee['_id'])
 
         response = urllib2.urlopen(url).read()
-        validictory.validate(json.loads(response), committee_schema,
-                             validator_cls=APIValidator)
+        if validate:
+            validictory.validate(json.loads(response), committee_schema,
+                                 validator_cls=APIValidator)
 
         zip.writestr(path, response)
 
@@ -102,15 +105,20 @@ def upload(state, filename):
         month = 12
         year -= 1
 
+    # build URL
     s3_bucket = 'data.openstates.sunlightlabs.com'
     n = 1
     s3_path = '%s-%02d-%s-r%d.zip' % (year, month, state, n)
     s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
-    while Redirect.objects.filter(new_path=s3_url).count():
+    metadata = db.metadata.find_one({'_id':state})
+    old_url = metadata.get('latest_dump_url')
+
+    if s3_url == old_url:
+        old_num = re.match('.*?-r(\d*).zip', old_url).groups()[0]
+        n = int(old_num)+1
         s3_path = '%s-%02d-%s-r%d.zip' % (year, month, state, n)
         s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
-        n += 1
 
     # S3 upload
     s3conn = boto.connect_s3(settings.AWS_KEY, settings.AWS_SECRET)
@@ -120,16 +128,11 @@ def upload(state, filename):
     k.set_contents_from_filename(filename)
     k.set_acl('public-read')
 
-    # create/update redirects
-    old_path = '/data/%s.zip' % state
-    redirect, created = Redirect.objects.get_or_create(old_path=old_path,
-                                           defaults={'new_path':s3_url,
-                                                     'site_id': 1})
-    if not created:
-        redirect.new_path = s3_url
-        redirect.save()
+    metadata['latest_dump_url'] = s3_url
+    metadata['latest_dump_date'] = datetime.datetime.now()
+    db.metadata.save(metadata, safe=True)
 
-    print 'redirect from %s to %s' % (redirect.old_path, redirect.new_path)
+    print 'uploaded to %s' % s3_url
 
 
 if __name__ == '__main__':
@@ -143,6 +146,10 @@ if __name__ == '__main__':
                                        ' state to import'))
     parser.add_argument('--file', '-f',
                         help='filename to output to (defaults to <state>.zip)')
+    parser.add_argument('--nodump', action='store_true', default=False,
+                        help="don't run the dump, only upload")
+    parser.add_argument('--novalidate', action='store_true', default=False,
+                        help="don't run validation")
     parser.add_argument('--upload', '-u', action='store_true', default=False,
                         help='upload the created archive to S3')
 
@@ -151,7 +158,8 @@ if __name__ == '__main__':
     if not args.file:
         args.file = args.state + '.zip'
 
-    dump_json(args.state, args.file)
+    if not args.nodump:
+        dump_json(args.state, args.file, not args.novalidate)
 
     if args.upload:
         upload(args.state, args.file)

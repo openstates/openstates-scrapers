@@ -1,6 +1,7 @@
 import re
 import datetime
 
+from fiftystates import settings
 from fiftystates.backend import db
 from fiftystates.site.geo.models import District
 from fiftystates.utils import keywordize
@@ -281,10 +282,12 @@ class ReconciliationHandler(BaseHandler):
     metadata = {
         "name": "Open State Reconciliation Service",
         "view": {
-            "url": "http://localhost:8000/api/v1/legislators/preview/{{id}}/",
+            "url": ("http://openstates.sunlightlabs.com/api/v1/legislators/"
+                    "preview/{{id}}/?apikey=%s" % settings.SUNLIGHT_SERVICES_KEY),
             },
         "preview": {
-            "url": "http://localhost:8000/api/v1/legislators/preview/{{id}}/",
+            "url": ("http://openstates.sunlightlabs.com/api/v1/legislators/"
+                    "preview/{{id}}/?apikey=%s" % settings.SUNLIGHT_SERVICES_KEY),
             "width": 430,
             "height": 300
             },

@@ -5,7 +5,7 @@ from django.http import HttpResponse
 import piston.resource
 from piston.emitters import Emitter
 
-from fiftystates.site.api.handlers import *
+from fiftystates.site.api import handlers
 from fiftystates.site.api.views import document, legislator_preview
 from fiftystates.site.api.models import LogEntry
 from fiftystates.site.api.emitters import OpenStateJSONEmitter
@@ -52,20 +52,27 @@ Emitter.unregister('yaml')
 Emitter.unregister('django')
 Emitter.unregister('pickle')
 
-metadata_handler = Resource(MetadataHandler, authentication=authorizer)
-bill_handler = Resource(BillHandler, authentication=authorizer)
-bill_search_handler = Resource(BillSearchHandler, authentication=authorizer)
-legislator_handler = Resource(LegislatorHandler, authentication=authorizer)
-legsearch_handler = Resource(LegislatorSearchHandler,
+metadata_handler = Resource(handlers.MetadataHandler,
+                            authentication=authorizer)
+bill_handler = Resource(handlers.BillHandler,
+                        authentication=authorizer)
+bill_search_handler = Resource(handlers.BillSearchHandler,
+                               authentication=authorizer)
+legislator_handler = Resource(handlers.LegislatorHandler,
+                              authentication=authorizer)
+legsearch_handler = Resource(handlers.LegislatorSearchHandler,
                              authentication=authorizer)
-legislator_geo_handler = Resource(LegislatorGeoHandler,
+legislator_geo_handler = Resource(handlers.LegislatorGeoHandler,
                                   authentication=authorizer)
-committee_handler = Resource(CommitteeHandler, authentication=authorizer)
-committee_search_handler = Resource(CommitteeSearchHandler,
+committee_handler = Resource(handlers.CommitteeHandler,
+                             authentication=authorizer)
+committee_search_handler = Resource(handlers.CommitteeSearchHandler,
                                     authentication=authorizer)
-stats_handler = Resource(StatsHandler, authentication=authorizer)
-events_handler = Resource(EventsHandler, authentication=authorizer)
-reconciliation_handler = Resource(ReconciliationHandler,
+stats_handler = Resource(handlers.StatsHandler,
+                         authentication=authorizer)
+events_handler = Resource(handlers.EventsHandler,
+                          authentication=authorizer)
+reconciliation_handler = Resource(handlers.ReconciliationHandler,
                                   authentication=authorizer)
 
 urlpatterns = patterns('',

@@ -20,7 +20,7 @@ class VoteScraper(Scraper):
         schema['properties']['session']['enum'] = self.all_sessions()
         return schema
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, session):
         raise NotImplementedYear('VoteScrapers must define a scrape method')
 
     def save_vote(self, vote):
@@ -71,6 +71,7 @@ class Vote(FiftystatesObject):
         self['yes_count'] = yes_count
         self['no_count'] = no_count
         self['other_count'] = other_count
+        self['type'] = type
         self['yes_votes'] = []
         self['no_votes'] = []
         self['other_votes'] = []

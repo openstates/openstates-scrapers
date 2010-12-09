@@ -125,6 +125,10 @@ def main():
                     help="don't use web page cache"),
         make_option('-r', '--rpm', action='store', type="int", dest='rpm',
                     default=60),
+        make_option('--retries', action='store', type="int", dest='retries',
+                    default=3),
+        make_option('--retry_wait', action='store', type="int",
+                    dest='retry_wait', default=10),
     )
 
     parser = OptionParser(option_list=option_list)
@@ -216,7 +220,9 @@ def main():
             'no_cache': options.no_cache,
             'requests_per_minute': options.rpm,
             'strict_validation': options.strict,
-            # cache_dir, error_dir
+            'retry_attempts': options.retries,
+            'retry_wait_seconds': options.retry_wait,
+            # TODO: cache_dir, error_dir
         }
 
     if options.alldata:

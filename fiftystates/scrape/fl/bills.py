@@ -51,8 +51,8 @@ class FLBillScraper(BillScraper):
             bill.add_source(url)
 
             hist = page.xpath("string(//pre[@class='billhistory'])").strip()
-            act_re = re.compile(r'^  (\d\d/\d\d/\d\d) (SENATE|HOUSE)'
-                                r'(.*\n(\s{16,16}.*\n){0,})',
+            act_re = re.compile(r'^\s+(\d\d/\d\d/\d\d) (SENATE|HOUSE|\s)'
+                                r'([^\n]+\n?(\s{16,16}.*\n){0,})',
                                 re.MULTILINE)
 
             # Actions
@@ -60,10 +60,13 @@ class FLBillScraper(BillScraper):
                 action = match.group(3).replace('\n', ' ')
                 action = re.sub(r'\s+', ' ', action).strip()
 
-                if match.group(2) == 'SENATE':
+                actor = match.group(2)
+                if actor == 'SENATE':
                     actor = 'upper'
-                else:
+                elif actor == 'HOUSE':
                     actor = 'lower'
+                else:
+                    actor = 'executive'
 
                 date = match.group(1)
                 date = datetime.datetime.strptime(date, "%m/%d/%y")

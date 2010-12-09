@@ -14,9 +14,9 @@ class MSBillScraper(BillScraper):
         self.save_errors=False
         if int(session[0:4]) < 2008:
             raise NoDataForPeriod(session)
-        self.scrape_bills(session)
+        self.scrape_bills(chamber, session)
 
-    def scrape_bills(self, session):
+    def scrape_bills(self, chamber_to_scrape, session):
         url = 'http://billstatus.ls.state.ms.us/%s/pdf/all_measures/allmsrs.xml' % session
 
         with self.urlopen(url) as bill_dir_page:
@@ -27,6 +27,11 @@ class MSBillScraper(BillScraper):
                     chamber = "upper"
                 else:
                     chamber = "lower"
+
+                # just skip past bills that are of the wrong chamber
+                if chamber != chamber_to_scrape:
+                    continue
+
                 link = mr.xpath('string(actionlink)').replace("..", "")
                 main_doc = mr.xpath('string(measurelink)').replace("../../../", "")
                 main_doc_url = 'http://billstatus.ls.state.ms.us/%s' % main_doc
@@ -70,8 +75,8 @@ class MSBillScraper(BillScraper):
                     if passed_version.find("documents") != -1:
                         passed_version_url = "http://billstatus.ls.state.ms.us/" + passed_version
                         title = "As Passed the " + chamber
-                        bill.add_version(title, passed_version_url)                    
- 
+                        bill.add_version(title, passed_version_url)
+
                     asg_version = details_root.xpath('string(//asg_other)').replace("../../../../", "")
                     if asg_version.find("documents") != -1:
                         asg_version_url = "http://billstatus.ls.state.ms.us/" + asg_version
@@ -82,19 +87,21 @@ class MSBillScraper(BillScraper):
                     for action in details_root.xpath('//history/action'):
                         action_num  = action.xpath('string(act_number)').strip()
                         action_num = int(action_num)
-                        action_desc = action.xpath('string(act_desc)')
                         act_vote = action.xpath('string(act_vote)').replace("../../../..", "")
-                        date = action_desc.split()[0] + "/" + session[0:4]
+                        action_desc = action.xpath('string(act_desc)')
+                        date, action_desc = action_desc.split(" ", 1)
+                        date = date + "/" + session[0:4]
                         date = datetime.strptime(date, "%m/%d/%Y")
-                        try:
-                            actor = action_desc.split()[2][1]
-                            if actor == "H":
-                                actor = "lower"
-                            else:
-                                actor = "upper"
-                        except:
-                            actor = "Executive"
-                        action = action_desc[10: len(action_desc)]
+
+                        if action_desc.startswith("(H)"):
+                            actor = "lower"
+                            action = action_desc[4:]
+                        elif action_desc.startswith("(S)"):
+                            actor = "upper"
+                            action = action_desc[4:]
+                        else:
+                            actor = "executive"
+                            action = action_desc
 
                         if action.find("Veto") != -1:
                             version_path = details_root.xpath("string(//veto_other)")
@@ -102,77 +109,75 @@ class MSBillScraper(BillScraper):
                             version_url = "http://billstatus.ls.state.ms.us/" + version_path
                             bill.add_document("Veto", version_url) 
 
-                        bill.add_action(actor, action, date, action_num=action_num)                        
+                        bill.add_action(actor, action, date,
+                                        action_num=action_num)
 
-                        vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
-                        if vote_url != "http://billstatus.ls.state.ms.us":
-                            vote =self.scrape_votes(vote_url, action, date, actor)
+                        if act_vote:
+                            vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
+                            vote = self.scrape_votes(vote_url, action, date, actor)
                             bill.add_vote(vote)
+                            bill.add_source(vote_url)
+
+                    bill.add_source(bill_details_url)
                     self.save_bill(bill)
 
     def scrape_votes(self, url, motion, date, chamber):
         vote_pdf, resp = self.urlretrieve(url)
         text = convert_pdf(vote_pdf, 'text')
-        text = text.replace("Yeas--", ",Yeas, ")
-        text = text.replace("Nays--", ",Nays, ")
-        text = text.replace("Total--", ",Total, ")
-        text = text.replace("DISCLAIMER", ",DISCLAIMER,")
-        text = text.replace("--", ",")
-        text = text.replace("Absent or those not voting", ",Absentorthosenotvoting,")
-        passed = text.find("passed") != -1
-        split_text = text.split(",")
-        yea_mark = split_text.index("Yeas") + 1
-        end_mark = split_text.index("DISCLAIMER")
-        nays, other = False, False
+
+        # process PDF text
+        passed = ('passed' in text) or ('concurred' in text)
+
         yes_votes = []
         no_votes = []
         other_votes = []
-        for num in range(yea_mark, end_mark):
-            name = split_text[num]
-            name = name.replace("\n", "")
 
-            if name.find("(") != -1:
-                if len(name.split()) == 2:
-                    name = name.split()[0]
-                if len(name.split()) == 3:
-                    name =  name.split()[0] + " " + name.split()[1]
-                
-            if len(name) > 0 and name[0] == " ":
-                name = name[1: len(name)]
+        # point at array to add names to
+        cur_array = None
 
-            if len(name.split()) > 3:
-                name = name.replace(" ", "")
+        precursors = (
+            ('Yeas--', yes_votes),
+            ('Nays--', no_votes),
+            ('Absent or those not voting--', other_votes),
+            ('Absent and those not voting--', other_votes),
+            ('Voting Present--', other_votes),
+            ('Present--', other_votes),
+            ('DISCLAIMER', None),
+        )
 
-            if self.check_name(name, nays, other) == 1:
-                yes_votes.append(name)
-            elif self.check_name(name, nays, other) == 2:
-                no_votes.append(name)
-            elif self.check_name(name, nays, other) == 3:
-                other_votes.append(name)
-            else:
-                if name == "Nays":
-                    nays = True
-                if name.find("Absent") != -1:
-                    nays = False
-                    other = True
+        for line in text.split('\n'):
+            # check if the line starts with a precursor, switch to that array
+            for pc, arr in precursors:
+                if pc in line:
+                    cur_array = arr
+                    line = line.replace(pc, '')
+
+            # split names
+            for name in line.split(','):
+                name = name.strip()
+
+                # None or a Total indicate the end of a section
+                if 'None.' in name:
+                    cur_array = None
+                match = re.match(r'(.+?)\. Total--.*', name)
+                if match:
+                    cur_array.append(match.groups()[0])
+                    cur_array = None
+
+                # append name if it looks ok
+                if cur_array is not None and name and 'Total--' not in name:
+                    # strip trailing .
+                    if name[-1] == '.':
+                        name = name[:-1]
+                    cur_array.append(name)
+
+        # return vote object
         yes_count = len(yes_votes)
         no_count = len(no_votes)
         other_count = len(other_votes)
-        vote = Vote(chamber, date, motion, passed, yes_count, no_count, other_count)
+        vote = Vote(chamber, date, motion, passed, yes_count, no_count,
+                    other_count)
         vote['yes_votes'] = yes_votes
         vote['no_votes'] = no_votes
         vote['other_votes'] = other_votes
         return vote
-
-    def check_name(self, name, nays, other):
-
-        if nays == False and other == False and name != "Total" and name != "Nays" and not re.match("\d{1,2}\.", name) and len(name) > 1:
-            name_type = 1
-        elif nays == True and other == False and name != "Total" and name.find("Absentor") == -1 and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
-            name_type = 2
-        elif nays == False and other == True and name != "Total" and not re.match("\d{1,2}\.", name) and len(name) > 1 and name.find("whowouldhave") == -1 and name.find("announced") == -1:
-            name_type = 3
-        else:
-            name_type = 0
-
-        return name_type

@@ -19,7 +19,7 @@ class CommitteeScraper(Scraper):
         schema = json.load(open(schema_path))
         return schema
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term):
         raise NotImplementedError('CommitteeScrapers must define a '
                                   'scrape method')
 

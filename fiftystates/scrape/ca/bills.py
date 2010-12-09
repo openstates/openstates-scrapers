@@ -12,6 +12,13 @@ from sqlalchemy import create_engine
 import pytz
 
 
+def clean_title(s):
+    # replace smart quote characters
+    s = re.sub(ur'[\u2018\u2019]', "'", s)
+    s = re.sub(ur'[\u201C\u201D]', '"', s)
+    return s
+
+
 class CABillScraper(BillScraper):
     state = 'ca'
 
@@ -87,8 +94,8 @@ class CABillScraper(BillScraper):
                 if not version.bill_xml:
                     continue
 
-                title = version.title
-                short_title = version.short_title
+                title = clean_title(version.title)
+                short_title = clean_title(version.short_title)
                 type = [bill_type]
 
                 if version.appropriation == 'Yes':
@@ -102,13 +109,13 @@ class CABillScraper(BillScraper):
                 if version.taxlevy == 'Yes':
                     type.append('tax levy')
 
-                subject = version.subject
+                subject = clean_title(version.subject)
 
                 fsbill.add_version(
                     version.bill_version_id, '',
                     date=version.bill_version_action_date.date(),
-                    title=version.title,
-                    short_title=version.short_title,
+                    title=title,
+                    short_title=short_title,
                     subject=[subject],
                     type=type)
 
@@ -124,6 +131,8 @@ class CABillScraper(BillScraper):
             for author in version.authors:
                 if author.house == chamber_name:
                     fsbill.add_sponsor(author.contribution, author.name)
+
+            introduced = False
 
             for action in bill.actions:
                 if not action.action:
@@ -146,9 +155,13 @@ class CABillScraper(BillScraper):
 
                 act_str = action.action
                 if act_str.startswith('Introduced'):
+                    introduced = True
                     type.append('bill:introduced')
 
-                if 'To Com' in act_str:
+                if 'Read first time.' in act_str and not introduced:
+                    type.append('bill:introduced')
+
+                if 'To Com' in act_str or 'referred to' in act_str.lower():
                     type.append('committee:referred')
 
                 if 'Read third time.  Passed.' in act_str:
@@ -159,6 +172,12 @@ class CABillScraper(BillScraper):
 
                 if 'Item veto' in act_str:
                     type.append('governor:vetoed:line-item')
+
+                if 'Vetoed by Governor' in act_str:
+                    type.append('governor:vetoed')
+
+                if 'To Governor' in act_str:
+                    type.append('governor:received')
 
                 if not type:
                     type = ['other']
@@ -233,6 +252,10 @@ class CABillScraper(BillScraper):
                         fsvote.no(record.legislator_name)
                     else:
                         fsvote.other(record.legislator_name)
+
+                # The abstain count field in CA's database includes
+                # vacancies, which we aren't interested in.
+                fsvote['other_count'] = len(fsvote['other_votes'])
 
                 fsbill.add_vote(fsvote)
 
