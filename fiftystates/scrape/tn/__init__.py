@@ -25,7 +25,7 @@ metadata = {
             'name': '101st General Assembly', 
             'start_year': 1999, 
             'end_year': 2000, 
-            'sessions': ['101st Regular Session', '1st Special Session', '2nd Special Session']
+            'sessions': ['101st Regular Session', '101st, 1st Special Session', '101st, 2nd Special Session']
         },
         {
             'name': '102nd General Assembly', 
