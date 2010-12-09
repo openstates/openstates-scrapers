@@ -7,6 +7,17 @@ from datetime import datetime
 import lxml.etree
 import re
 
+def _combine_lines(lines):
+    newlines = []
+    lastline = '.'
+    for line in lines:
+        if lastline[-1] in '.,:':
+            newlines.append(line)
+            lastline = line
+        else:
+            lastline = newlines[-1] = newlines[-1] + ' ' + line
+    return newlines
+
 class MSBillScraper(BillScraper):
     state = 'ms'
 
@@ -122,25 +133,27 @@ class MSBillScraper(BillScraper):
                     self.save_bill(bill)
 
     _vote_mapping = {
-        'Passed': ('Passage': True),
+        'Passed': ('Passage', True),
         'Adopted': ('Passage', True),
-        'Failed': ('Passage': False),
-        'Passed As Amended': ('Passage as Amended': True),
-        'Adopted As Amended': ('Passage as Amended': True),
-        'Appointment Confirmed': ('Appointment Confirmation': True),
-        'Conference Report Adopted': ('Adopt Conference Report': True),
-        'Conference Report Failed': ('Adopt Conference Report': False),
-        'Motion to Reconsider Tabled': ('Table Motion to Reconsider': True),
-        'Motion to Recnsdr Tabled Lost': ('Table Motion to Reconsider': False),
-        'Veto Sustained': ('Override Veto': False),
-        'Concurred in Amend From House': ('Concurrence in Amendment From House': True),
-        'Concurred in Amend From Senate': ('Concurrence in Amendment From Senate': True),
-        'Decline to Concur/Invite Conf': ('Decline to Concur': True),
-        'Decline Concur/Inv Conf Lost': ('Decline to Concur': False),
-        'Failed to Suspend Rules': ('Motion to Suspend Rules': False),
-        'Motion to Recommit Lost': ('Motion to Recommit': True),
-        'Reconsidered': ('Reconsideration': True),
+        'Failed': ('Passage', False),
+        'Passed As Amended': ('Passage as Amended', True),
+        'Adopted As Amended': ('Passage as Amended', True),
+        'Appointment Confirmed': ('Appointment Confirmation', True),
+        'Conference Report Adopted': ('Adopt Conference Report', True),
+        'Conference Report Failed': ('Adopt Conference Report', False),
+        'Motion to Reconsider Tabled': ('Table Motion to Reconsider', True),
+        'Motion to Recnsdr Tabled Lost': ('Table Motion to Reconsider', False),
+        'Veto Sustained': ('Override Veto', False),
+        'Concurred in Amend From House': ('Concurrence in Amendment From House', True),
+        'Concurred in Amend From Senate': ('Concurrence in Amendment From Senate', True),
+        'Decline to Concur/Invite Conf': ('Decline to Concur', True),
+        'Decline Concur/Inv Conf Lost': ('Decline to Concur', False),
+        'Failed to Suspend Rules': ('Motion to Suspend Rules', False),
+        'Motion to Recommit Lost': ('Motion to Recommit', True),
+        'Reconsidered': ('Reconsideration', True),
     }
+
+
 
     def scrape_votes(self, url, motion, date, chamber):
         vote_pdf, resp = self.urlretrieve(url)
@@ -167,7 +180,11 @@ class MSBillScraper(BillScraper):
             ('DISCLAIMER', None),
         )
 
-        for line in text.split('\n'):
+        # split lines on newline, recombine lines that don't end in punctuation
+        lines = _combine_lines(text.split('\n'))
+
+        for line in lines:
+
             # check if the line starts with a precursor, switch to that array
             for pc, arr in precursors:
                 if pc in line:
