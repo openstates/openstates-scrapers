@@ -11,7 +11,7 @@ def _combine_lines(lines):
     newlines = []
     lastline = '.'
     for line in lines:
-        if lastline.endswith(',') or lastline.endswith('.'):
+        if lastline[-1] in '.,:':
             newlines.append(line)
             lastline = line
         else:
