@@ -60,6 +60,9 @@ class MSBillScraper(BillScraper):
                 else:
                     chamber = "lower"
 
+                bill_type = {'B':'bill', 'C': 'concurrent resolution',
+                             'R': 'resolution', 'N': 'nomination'}[bill_id[1]]
+
                 # just skip past bills that are of the wrong chamber
                 if chamber != chamber_to_scrape:
                     continue
@@ -74,7 +77,8 @@ class MSBillScraper(BillScraper):
                     title = details_root.xpath('string(//shorttitle)')
                     longtitle = details_root.xpath('string(//longtitle)')
 
-                    bill = Bill(session, chamber, bill_id, title, longtitle = longtitle)
+                    bill = Bill(session, chamber, bill_id, title,
+                                type=bill_type, longtitle=longtitle)
 
                     #sponsors
                     main_sponsor = details_root.xpath('string(//p_name)').split()[0]
@@ -179,8 +183,6 @@ class MSBillScraper(BillScraper):
         'Motion to Recommit Lost': ('Motion to Recommit', True),
         'Reconsidered': ('Reconsideration', True),
     }
-
-
 
     def scrape_votes(self, url, motion, date, chamber):
         vote_pdf, resp = self.urlretrieve(url)
