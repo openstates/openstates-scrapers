@@ -6,6 +6,7 @@ import logging
 import datetime
 
 from pymongo.son import SON
+import pymongo
 
 from fiftystates.backend import db, fs
 
@@ -123,7 +124,7 @@ def convert_timestamps(obj):
 
     for term in obj.get('terms', []):
         convert_timestamps(term)
-    
+
     for details in obj.get('session_details', {}).values():
         convert_timestamps(details)
 
