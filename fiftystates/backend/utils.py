@@ -121,6 +121,9 @@ def convert_timestamps(obj):
         for child in obj.get(key, []):
             convert_timestamps(child)
 
+    for term in obj.get('terms', []):
+        convert_timestamps(term)
+    
     for details in obj.get('session_details', {}).values():
         convert_timestamps(details)
 
