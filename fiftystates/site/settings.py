@@ -88,6 +88,9 @@ INSTALLED_APPS = (
     'locksmith.auth',
 )
 
+DATE_FORMAT = 'Y-m-d'
+TIME_FORMAT = 'H:i:sO'
+DATETIME_FORMAT = 'Y-m-d H:i:sO'
 
 try:
     from local_settings import *

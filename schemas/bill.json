@@ -30,7 +30,7 @@
         "date": {"type": "datetime"},
         "type": {"type": "array", "items": {"type": "string", "enum":
             ["bill:introduced", "bill:passed", "bill:failed",
-             "bill:withdrawn",
+             "bill:withdrawn", "bill:substituted",
              "bill:veto_override:passed", "bill:veto_override:failed",
              "governor:received", "governor:signed", "governor:vetoed",
              "governor:vetoed:line-item",

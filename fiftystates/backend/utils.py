@@ -6,6 +6,7 @@ import logging
 import datetime
 
 from pymongo.son import SON
+import pymongo
 
 from fiftystates.backend import db, fs
 
@@ -121,6 +122,9 @@ def convert_timestamps(obj):
         for child in obj.get(key, []):
             convert_timestamps(child)
 
+    for term in obj.get('terms', []):
+        convert_timestamps(term)
+
     for details in obj.get('session_details', {}).values():
         convert_timestamps(details)
 
@@ -233,3 +237,12 @@ def put_document(doc, content_type, metadata):
     fs.put(doc, _id=id, content_type=content_type, metadata=metadata)
 
     return id
+
+
+def merge_legislators(old, new):
+    all_ids = set(old['_all_ids']).union(new['_all_ids'])
+    new['_all_ids'] = list(all_ids)
+    db.legislators.remove({'_id': new['_id']})
+    new['_id'] = old['_id']
+    new['leg_id'] = new['_id']
+    db.legislators.save(new)
