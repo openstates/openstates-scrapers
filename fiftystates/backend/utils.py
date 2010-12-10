@@ -240,4 +240,5 @@ def merge_legislators(old, new):
     new['_all_ids'] = list(all_ids)
     db.legislators.remove({'_id': new['_id']})
     new['_id'] = old['_id']
+    new['leg_id'] = new['_id']
     db.legislators.save(new)
