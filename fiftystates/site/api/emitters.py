@@ -3,10 +3,26 @@ import datetime
 
 from fiftystates.site.api.feeds import EventFeed
 
-from django.core.serializers.json import DateTimeAwareJSONEncoder
+from django.template import defaultfilters
 from piston.emitters import Emitter, JSONEmitter
 
 import icalendar
+
+
+class DateTimeAwareJSONEncoder(json.JSONEncoder):
+    # We wouldn't need this if django's stupid DateTimeAwareJSONEncoder
+    # used settings.DATETIME_FORMAT instead of hard coding its own
+    # format string.
+
+    def default(self, o):
+        if isinstance(o, datetime.datetime):
+            return defaultfilters.date(o, 'DATETIME_FORMAT')
+        elif isinstance(o, datetime.date):
+            return defaultfilters.date(o, 'DATE_FORMAT')
+        elif isinstance(o, datetime.time):
+            return defaultfilters.date(o, 'TIME_FORMAT')
+
+        return super(DateTimeAwareJSONEncoder, self).default(o)
 
 
 class OpenStateJSONEmitter(JSONEmitter):
@@ -14,6 +30,16 @@ class OpenStateJSONEmitter(JSONEmitter):
     Removes private fields (keys preceded by '_') recursively and
     outputs as JSON, with datetimes converted to strings.
     """
+
+    def render(self, request):
+        cb = request.GET.get('callback', None)
+        seria = json.dumps(self.construct(), cls=DateTimeAwareJSONEncoder,
+                           ensure_ascii=False, indent=4)
+
+        if cb:
+            return "%s(%s)" % (cb, seria)
+
+        return seria
 
     def construct(self):
         return self._clean(super(OpenStateJSONEmitter, self).construct())
