@@ -233,3 +233,10 @@ def put_document(doc, content_type, metadata):
     fs.put(doc, _id=id, content_type=content_type, metadata=metadata)
 
     return id
+
+
+def merge_legislators(old, new):
+    all_ids = set(old['_all_ids']).union(new['_all_ids'])
+    new['_all_ids'] = list(all_ids)
+    db.legislators.remove({'_id': old['_id']})
+    db.legislators.save(new)
