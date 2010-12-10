@@ -15,11 +15,7 @@ def get_bill_type(bill_id):
     bill_id = 'SJR2204'
     get_bill_type(bill_id) --> 'joint resolution'
     """
-    prefix = bill_id.lower()
-    if re.match('\w{2,3}\d{4}', prefix):
-        prefix = prefix[:-4]
-    else:
-        prefix = prefix[:-3]
+    prefix = re.match('([a-z]*)', bill_id.lower()).group()
     if prefix in bill_types:
         return bill_types[prefix]
     else:
