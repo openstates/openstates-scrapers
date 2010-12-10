@@ -66,9 +66,14 @@ def main():
             times = years
         elif scraper_type in ('bills', 'votes', 'events'):
             if not sessions:
-                latest_session = metadata['terms'][-1]['sessions'][-1]
-                print 'No session specified, using latest "%s"' % latest_session
-                times = [latest_session]
+                if not terms:
+                    latest_session = metadata['terms'][-1]['sessions'][-1]
+                    print 'No session specified, using latest "%s"' % latest_session
+                    times = [latest_session]
+                else:
+                    times = []
+                    for term in terms:
+                        times.extend(metadata['terms'][-1]['sessions'])
             else:
                 times = sessions
         elif scraper_type in ('legislators', 'committees'):
