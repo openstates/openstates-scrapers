@@ -1,4 +1,5 @@
 import re
+import datetime
 import urlparse
 from BeautifulSoup import BeautifulSoup
 
@@ -201,7 +202,8 @@ class MNBillScraper(BillScraper):
             bill_actions = self.extract_bill_actions(bill_soup, chamber)
             for action in bill_actions:
                 action_chamber = action['action_chamber']
-                action_date = action['action_date']
+                action_date = datetime.datetime.stprtime(action['action_date'],
+                                                         '%m/%d/%Y')
                 action_text = action['action_text']
                 bill.add_action(action_chamber, action_text, action_date)
 
