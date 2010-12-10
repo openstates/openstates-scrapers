@@ -169,10 +169,9 @@ class MDBillScraper(BillScraper):
                     params['passed'] = yeas > nays
 
                     # date
-                    # parse the following format: March 23, 2009 8:44 PM
-                    (date_elem, time_elem) = vote_doc.cssselect('table td font')[1:3]
-                    dt = "%s %s" % (date_elem.text.strip(), time_elem.text.strip())
-                    params['date'] = datetime.datetime.strptime(dt, '%B %d, %Y %I:%M %p')
+                    # parse the following format: March 23, 2009
+                    date_elem = vote_doc.xpath('//font[starts-with(text(), "Legislative Date")]')[0]
+                    params['date'] = datetime.datetime.strptime(date_elem.text[18:], '%B %d, %Y')
 
                     vote = Vote(**params)
 
