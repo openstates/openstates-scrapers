@@ -115,6 +115,20 @@ def get_rows(rows, header):
         keyed_rows.append(dict_row)
     return keyed_rows
     
+def get_actor(tr, chamber):
+    """
+    gets the actor of a given action based on presence of a 'TRANSMIT TO' action
+    """
+    h_or_s = tr.xpath('ancestor::table[1]/preceding-sibling::' + 
+                              'table/tr/td/b[contains(text(), "TRANSMIT TO")]')
+    if h_or_s:
+        # actor is the last B element
+        h_or_s = h_or_s[-1].text_content().strip()
+        actor = 'upper' if h_or_s.endswith('SENATE:') else 'lower'
+    else:
+        actor = chamber
+    return actor
+    
 def get_committee_name(abbrv, chamber):
     try:
         return com_names[chamber][abbrv]

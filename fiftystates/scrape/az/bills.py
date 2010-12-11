@@ -147,7 +147,8 @@ class AZBillScraper(BillScraper):
                     date = utils.get_date(row[3])
                     act = row[5].text_content().strip()
                     a_type = get_action_type(act, 'COMMITTEES:')
-                    bill.add_action(committee, act, date, type=a_type)
+                    bill.add_action(actor, committee + ":" + act, date, 
+                                                                    type=a_type)
                     self.scrape_votes(actor, vote_url, bill, date,
                                         motion='COMMITTEE: ' + act, 
                                         committee=committee, type='other')
@@ -175,7 +176,7 @@ class AZBillScraper(BillScraper):
                         a_type = ['bill:introduced', 'bill:reading:1']
                     else:
                         a_type = 'bill:reading:1'
-                    bill.add_action(chamber, action, date, type=a_type) 
+                    bill.add_action(h_or_s, action, date, type=a_type) 
                 else:
                     a_type = 'bill:reading:2'
                     bill.add_action(h_or_s, action, date, type=a_type)
@@ -183,14 +184,7 @@ class AZBillScraper(BillScraper):
             # majority|minority caucus
             rows = base_table.xpath(row_path % 'CAUCUS')
             for row in rows:
-                h_or_s = row.xpath('ancestor::table[1]/preceding-sibling::' + 
-                              'table/tr/td/b[contains(text(), "TRANSMIT TO")]')
-                if h_or_s:
-                    # actor is the last B element
-                    h_or_s = h_or_s[-1].text_content().strip()
-                    actor = 'upper' if h_or_s.endswith('SENATE:') else 'lower'
-                else:
-                    actor = chamber
+                actor = utils.get_actor(row, chamber)
                 action = row[0].text_content().strip()
                 if action.endswith(':'):
                     action = action[:-1]
@@ -210,14 +204,7 @@ class AZBillScraper(BillScraper):
             # Committee of the whole actions
             tables = base_table.xpath(table_path % 'COW ACTION')
             for rows in [ table.xpath('tr') for table in tables ]:
-                h_or_s = rows[0].xpath('ancestor::table[1]/preceding-sibling::' + 
-                              'table/tr/td/b[contains(text(), "TRANSMIT TO")]')
-                if h_or_s:
-                    # actor is the last b element
-                    h_or_s = h_or_s[-1].text_content().strip()
-                    actor = 'upper' if h_or_s.endswith('SENATE:') else 'lower'
-                else:
-                    actor = chamber
+                actor = utils.get_actor(rows[0], chamber)
                 action = rows[0][0].text_content().strip()
                 if action == 'SIT COW ACTION:': 
                     act = rows[0][3].text_content().strip()
@@ -251,14 +238,7 @@ class AZBillScraper(BillScraper):
                 # need to find out if third read took place in house or senate
                 # if an ancestor table contains 'TRANSMIT TO' then the action
                 # is taking place in that chamber, else it is in chamber
-                h_or_s = rows[0].xpath('ancestor::table[1]/preceding-sibling::' + 
-                              'table/tr/td/b[contains(text(), "TRANSMIT TO")]')
-                if h_or_s:
-                    # actor is the last B element
-                    h_or_s = h_or_s[-1].text_content().strip()
-                    actor = 'upper' if h_or_s.endswith('SENATE:') else 'lower'
-                else:
-                    actor = chamber
+                actor = utils.get_actor(rows[0], chamber)
                 # get a dict of keys from the header and values from the row
                 k_rows = utils.get_rows(rows[1:], rows[0])
                 action = rows[0][0].text_content().strip()
@@ -288,6 +268,7 @@ class AZBillScraper(BillScraper):
             # pretty sure there should only be one table
             for table in tables:
                 rows = table.xpath('tr')
+                actor = utils.get_actor(rows[0], chamber)
                 # actor is the actor from the previous statement because it is 
                 # never transmitted to G or S without third or final read
                 sent_to = rows[0][1].text_content().strip()
@@ -316,8 +297,14 @@ class AZBillScraper(BillScraper):
                                         chaptered_version=version)
                     else:
                         bill.add_action(sent_to.lower(), act, date, 
-                                            type=a_type) 
-                    
+                                            type=a_type)
+                                            
+            # this is probably only important for historical legislation
+            table = base_table.xpath(row_path % 'FINAL DISPOSITION')
+            if table:
+                disposition = table[0].xpath('string(tr/td[2]/text())').strip()
+                bill['final_disposition'] = disposition
+                
         self.save_bill(bill)
                 
     def scrape(self, chamber, session):
