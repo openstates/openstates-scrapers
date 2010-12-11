@@ -159,7 +159,8 @@ class AZBillScraper(BillScraper):
                         date = utils.get_date(row[1])
                     act = row[4].text_content().strip()
                     a_type = get_action_type(act, 'COMMITTEES:')
-                    bill.add_action(committee, act, date, type=a_type)
+                    bill.add_action(actor, committee + ":" + act, date, 
+                                                                    type=a_type)
             
             # house|senate first|second read|waived
             rows = base_table.xpath(row_path % 'FIRST READ:')
