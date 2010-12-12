@@ -64,6 +64,8 @@ class AZBillScraper(BillScraper):
                 tds = row.cssselect('td')
                 agenda_committee = tds[0].text_content().strip()
                 agenda_html = tds[7].xpath('string(a/@href)').strip()
+                if agenda_html == '':
+                    agenda_html = tds[6].xpath('string(a/@href)').strip()
                 bill.add_document(agenda_committee, agenda_html)
                 
             # House Calendars
@@ -301,9 +303,9 @@ class AZBillScraper(BillScraper):
                                             type=a_type)
                                             
             # this is probably only important for historical legislation
-            table = base_table.xpath(row_path % 'FINAL DISPOSITION')
-            if table:
-                disposition = table[0].xpath('string(tr/td[2]/text())').strip()
+            rows = base_table.xpath(row_path % 'FINAL DISPOSITION')
+            if rows:
+                disposition = rows[0][1].text_content().strip()
                 bill['final_disposition'] = disposition
                 
         self.save_bill(bill)
