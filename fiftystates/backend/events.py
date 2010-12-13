@@ -46,7 +46,7 @@ def _insert_with_id(event):
     return id
 
 
-def import_events(state, data_dir):
+def import_events(state, data_dir, import_actions=True):
     data_dir = os.path.join(data_dir, state)
     pattern = os.path.join(data_dir, 'events', '*.json')
 
@@ -73,7 +73,9 @@ def import_events(state, data_dir):
         else:
             update(event, data, db.events)
 
-    actions_to_events(state)
+    if import_actions:
+        actions_to_events(state)
+
     ensure_indexes()
 
 

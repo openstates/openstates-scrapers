@@ -6,7 +6,7 @@ import logging
 import datetime
 
 from pymongo.son import SON
-import pymongo
+import pymongo.errors
 
 from fiftystates.backend import db, fs
 
@@ -70,7 +70,7 @@ def insert_with_id(obj):
 
         try:
             return collection.insert(obj, safe=True)
-        except pymongo.DuplicateKeyError:
+        except pymongo.errors.DuplicateKeyError:
             continue
 
 
