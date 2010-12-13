@@ -130,7 +130,15 @@ class AZBillScraper(BillScraper):
                 # sponsor.xpath('string(ancestor::td[1]/following-sibling::td[1]/text())').strip()
                 s_type = sponsor.getparent().getparent().getnext().text_content().strip()
                 bill.add_sponsor(s_type, name)
-            
+                
+            #titles
+            table = base_table.xpath(table_path % 'TITLE')
+            if table:
+                for row in table[0].iterchildren('tr'):
+                    title = row[1].text_content().strip()
+                    if title != bill['title']:
+                        bill.add_title(title)
+                        
             # committee assignments
             rows = base_table.xpath(rows_path % 'COMMITTEES:')
             for row in rows:
