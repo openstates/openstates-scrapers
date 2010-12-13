@@ -32,9 +32,26 @@ class LAEventScraper(EventScraper):
             raise NoDataForPeriod(session)
 
         if chamber == 'lower':
-            self.scrape_house_schedule(session)
+            self.scrape_house_weekly_schedule(session)
 
-    def scrape_house_schedule(self, session):
+        self.scrape_committee_schedule(session, chamber)
+
+    def scrape_committee_schedule(self, session, chamber):
+        url = "http://www.legis.state.la.us/billdata/bycmte.asp"
+
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+
+            for link in page.xpath("//a[contains(@href, 'agenda.asp')]"):
+                self.scrape_meeting(self, session, chamber, link.attrib['href'])
+
+    def scrape_meeting(self, session, chamber, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+
+    def scrape_house_weekly_schedule(self, session):
         url = "http://house.louisiana.gov/H_Sched/Hse_Sched_Weekly.htm"
 
         with self.urlopen(url) as page:
