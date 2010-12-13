@@ -46,13 +46,17 @@ class LAEventScraper(EventScraper):
 
                 committee = link.xpath("string(../../../td[1])").strip()
 
-                when = link.xpath("string(../../../td[2])").strip()
-                when = parse_datetime(when, session)
+                when_and_where = link.xpath("string(../../../td[2])").strip()
+
+                location = when_and_where.split(',')[-1]
+                when = parse_datetime(when_and_where, session)
+
+
 
                 description = 'Committee Meeting: %s' % committee
 
                 event = Event(session, when, 'committee:meeting',
-                              description)
+                              description, location=location)
                 event.add_participant('committee', committee)
                 event['link'] = guid
 
