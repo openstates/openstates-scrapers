@@ -83,6 +83,13 @@
         <td style="color: #630000">{% for v in vote.no_votes %}{{v.name}},{%endfor%}</td>
         <td style="color: #363636">{% for v in vote.other_votes %}{{v.name}},{%endfor%}</td>
     </tr>
+    {% if vote.sources %}
+    <tr><td colspan=7><ul>
+        {% for source in vote.sources %}
+        <li><a href="{{source.url}}">{{source.url}}</a></li>
+        {% endfor %}
+    </ul></td><tr>
+    {% endif %}
     {% endfor %}
 </table>
 {% else %}
