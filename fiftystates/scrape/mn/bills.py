@@ -132,7 +132,7 @@ class MNBillScraper(BillScraper):
                 note_column = self.cleanup_text(cols[2].contents[0])
 
                 # skip non-actions (don't have date)
-                if action_text in ('Chapter number', 'See also',
+                if action_text in ('Chapter number', 'See also', 'See',
                                    'Effective date', 'Secretary of State'):
                     continue
 
@@ -148,6 +148,8 @@ class MNBillScraper(BillScraper):
                         continue
 
                 bill_action['action_text'] = action_text
+                if note_column:
+                    action_text += ' ' + note_column
                 bill_action['action_chamber'] = current_chamber
                 bill_action['action_date'] = action_date
                 bill_actions.append(bill_action)
@@ -198,11 +200,12 @@ class MNBillScraper(BillScraper):
             # MN uses "Primary Author" to name a bill's primary sponsor.
             # Everyone else listed will be added as a 'cosponsor'.
             sponsors = self.extract_bill_sponsors(bill_soup)
-            primary_sponsor = sponsors[0]
-            cosponsors = sponsors[1:]
-            bill.add_sponsor('primary', primary_sponsor)
-            for leg in cosponsors:
-                bill.add_sponsor('cosponsor', leg)
+            if sponsors:
+                primary_sponsor = sponsors[0]
+                cosponsors = sponsors[1:]
+                bill.add_sponsor('primary', primary_sponsor)
+                for leg in cosponsors:
+                    bill.add_sponsor('cosponsor', leg)
 
             # Add Actions performed on the bill.
             bill_actions = self.extract_bill_actions(bill_soup, chamber)
@@ -238,7 +241,6 @@ class MNBillScraper(BillScraper):
                 soup = BeautifulSoup(html)
                 # Index into the table containing the bills .
                 rows = soup.findAll('table')[6].findAll('tr')[1:]
-                self.debug("found %s rows" % str(len(rows)))
                 # If there are no more results, then we've reached the
                 # total number of bills available for this session.
                 if len(rows) == 0:

@@ -19,8 +19,10 @@ metadata = dict(
         }
     ],
     session_details={
-        '2009-2010': {'site_id': '0862009', 'type':'primary'},
-        '2010 1st Special Session': {'site_id': '1862010', 'type':'special'},
+        '2009-2010': {'site_id': '0862009', 'type':'primary',
+            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls86.asp'},
+        '2010 1st Special Session': {'site_id': '1862010', 'type':'special',
+             'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8620101.asp'},
         '2010 2nd Special Session': {'site_id': '2862010', 'type':'special'},
     }
 )
