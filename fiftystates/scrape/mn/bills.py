@@ -119,39 +119,45 @@ class MNBillScraper(BillScraper):
         """
 
         bill_actions = list()
-        action_tables = soup.findAll('table', attrs={'summary' : 'Actions'})
-        # First, process the actions taken by the current chamber.
-        current_chamber_action_table = action_tables[0]
-        current_chamber_action_rows = current_chamber_action_table.findAll('tr')
-        for row in current_chamber_action_rows[1:]:
-            bill_action = dict()
-            cols = row.findAll('td')
-            action_date = self.cleanup_text(cols[0].contents[0])
-            action_text = self.cleanup_text(cols[1].contents[0])
-            bill_action['action_date'] = action_date
-            bill_action['action_text'] = action_text
-            bill_action['action_chamber'] = current_chamber
-            bill_actions.append(bill_action)
+        action_tables = soup.findAll('table', attrs={'summary' : 'Actions'})[:2]
 
-        # if there are more than one action_table, then the other chamber has
-        # taken action on the bill.
-        # Toggle the current chamber
-        if current_chamber == 'upper':
-            current_chamber = 'lower'
-        else:
-            current_chamber = 'upper'
-        if len(action_tables) > 1:
-            current_chamber_action_table = action_tables[1]
-            current_chamber_action_rows = current_chamber_action_table.findAll('tr')
-            for row in current_chamber_action_rows[1:]:
+        for cur_table in action_tables:
+
+            cur_table = action_tables[0]
+            for row in cur_table.findAll('tr')[1:]:
                 bill_action = dict()
                 cols = row.findAll('td')
                 action_date = self.cleanup_text(cols[0].contents[0])
                 action_text = self.cleanup_text(cols[1].contents[0])
-                bill_action['action_date'] = action_date
+                note_column = self.cleanup_text(cols[2].contents[0])
+
+                # skip non-actions (don't have date)
+                if action_text in ('Chapter number', 'See also',
+                                   'Effective date', 'Secretary of State'):
+                    continue
+
+                try:
+                    action_date = datetime.datetime.strptime(action_date,
+                                                             '%m/%d/%Y')
+                except ValueError:
+                    try:
+                        action_date = datetime.datetime.strptime(note_column,
+                                                                 '%m/%d/%y')
+                    except ValueError:
+                        self.warning('ACTION without date: %s' % action_text)
+                        continue
+
                 bill_action['action_text'] = action_text
                 bill_action['action_chamber'] = current_chamber
+                bill_action['action_date'] = action_date
                 bill_actions.append(bill_action)
+
+            # if there's a second table, toggle the current chamber
+            if current_chamber == 'upper':
+                current_chamber = 'lower'
+            else:
+                current_chamber = 'upper'
+
         self.debug("Actions Found for this bill: %d" % len(bill_actions))
         return bill_actions
 
@@ -201,11 +207,9 @@ class MNBillScraper(BillScraper):
             # Add Actions performed on the bill.
             bill_actions = self.extract_bill_actions(bill_soup, chamber)
             for action in bill_actions:
-                action_chamber = action['action_chamber']
-                action_date = datetime.datetime.stprtime(action['action_date'],
-                                                         '%m/%d/%Y')
-                action_text = action['action_text']
-                bill.add_action(action_chamber, action_text, action_date)
+                bill.add_action(action['action_chamber'],
+                                action['action_text'],
+                                action['action_date'])
 
         self.save_bill(bill)
 
@@ -275,4 +279,4 @@ class MNBillScraper(BillScraper):
                     senate_soup = BeautifulSoup(senate_html)
                     bill_version_list_url = self.extract_senate_bill_version_link(senate_soup)
             bill_version_list_url = urlparse.urljoin(VERSION_URL_BASE, bill_version_list_url)
-            self.get_bill_info(search_chamber, search_session, bill_details_url, bill_version_list_url)
+            self.get_bill_info(search_chamber, session, bill_details_url, bill_version_list_url)
