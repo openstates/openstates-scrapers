@@ -26,6 +26,9 @@ def import_votes(state, data_dir):
         with open(path) as f:
             data = prepare_obj(json.load(f))
 
+        # clean up bill_id, needs to match the one already in the database
+        data['bill_id'] = fix_bill_id(data['bill_id'])
+
         bill = db.bills.find_one({'state': state,
                                   'chamber': data['bill_chamber'],
                                   'session': data['session'],
