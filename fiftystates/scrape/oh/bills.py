@@ -7,157 +7,71 @@ from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import VoteScraper, Vote
 from datetime import datetime
 import xlrd
-import urllib
 import lxml.etree
 
 
 class OHBillScraper(BillScraper):
     state = 'oh'
+
     def scrape(self, chamber, session):
 
         if int(session) < 128:
             raise NoDataForPeriod(year)
 
-        if chamber == 'lower':
-            self.scrape_house_bills(session)
-        elif chamber == 'upper':
-            self.scrape_senate_bills(session)
+        base_url = 'http://www.lsc.state.oh.us/status%s/' % session
 
-    def scrape_house_bills(self, session):
+        bill_types = {'lower': ['hb', 'hjr', 'hcr'],
+                      'upper': ['sb', 'sjr', 'scr']}
 
-        house_bills_url = 'http://www.lsc.state.oh.us/status%s/hb.xls' % session
-        house_jointres_url = 'http://www.lsc.state.oh.us/status%s/hjr.xls' % session
-        house_concurres_url = 'http://www.lsc.state.oh.us/status%s/hcr.xls' % session
-        files = (house_bills_url, house_jointres_url, house_concurres_url)
-
-        for house_file in files:
-
-            house_bills_file = urllib.urlopen(house_file).read()
-            f = open('oh_bills.xls','w')
-            f.write(house_bills_file)
-            f.close()
-        
-        
-            wb = xlrd.open_workbook('oh_bills.xls')
-            sh = wb.sheet_by_index(0)
-        
-            house_file = str(house_file)
-            if len(str(house_file)) == 44:
-                file_type = house_file[len(house_file) - 7:len(house_file)-4]
-            else:
-                file_type = house_file[len(house_file) - 6:len(house_file)-4]
+        for bill_type in bill_types[chamber]:
+            # open file
+            url = base_url + '%s.xls' % bill_type
+            fname, resp = self.urlretrieve(url)
+            sh = xlrd.open_workbook(fname).sheet_by_index(0)
 
             for rownum in range(1, sh.nrows):
-            
-                bill_id = file_type + str(int(rownum))
-                bill_title = str(sh.cell(rownum, 3).value) 
-                bill = Bill( session, 'lower', bill_id, bill_title)
-                bill.add_sponsor( 'primary', str(sh.cell(rownum, 1).value) )
-
-                if sh.cell(rownum, 2).value is not '':
-                    bill.add_sponsor( 'cosponsor', str(sh.cell(rownum, 2).value) )
-
-                actor = ""
-
-                #Actions - starts column after bill title
-                for colnum in range( 4, sh.ncols - 1):
-            
-                    coltitle = str(sh.cell(0, colnum).value)
-                    cell = sh.cell(rownum, colnum)              
-
-                    if len(coltitle) != 0:
-
-                        if coltitle.split()[0] == 'House':
-                            actor = "lower"
-                        elif coltitle.split()[0] == 'Senate':
-                            actor = "upper"
-                        elif coltitle.split()[-1] == 'Governor':
-                            actor = "governor"
-                        else:
-                            actor = actor
- 
-                    action = str(sh.cell( 0, colnum).value)
-                    date = cell.value
-                    
-                    if type(cell.value) == float:
-                        date = str(xlrd.xldate_as_tuple(date, 0))
-                        date = datetime.strptime(date, "(%Y, %m, %d, %H, %M, %S)")
-                        bill.add_action(actor, action, date)    
-
-                bill.add_source(house_file)
-                self.scrape_votes(bill, file_type, rownum, session)
-
-                self.save_bill(bill)
-
-
-    def scrape_senate_bills(self, session):
-
-        senate_bills_url = 'http://www.lsc.state.oh.us/status%s/sb.xls' % session
-        senate_jointres_url = 'http://www.lsc.state.oh.us/status%s/sjr.xls' % session
-        senate_concurres_url = 'http://www.lsc.state.oh.us/status%s/scr.xls' % session
-        files = [senate_bills_url, senate_jointres_url, senate_concurres_url]
-
-        for senate_file in files:
-
-            senate_bills_file = urllib.urlopen(senate_file).read()
-            f = open('oh_bills.xls','w')
-            f.write(senate_bills_file)
-            f.close()
-
-            wb = xlrd.open_workbook('oh_bills.xls')
-            sh = wb.sheet_by_index(0)
-
-            senate_file = str(senate_file)
-            if len(str(senate_file)) == 44:
-                file_type = senate_file[len(senate_file) - 7:len(senate_file)-4]
-            else:
-                file_type = senate_file[len(senate_file) - 6:len(senate_file)-4]
-
-            for rownum in range(1, sh.nrows):
-
-                bill_id = file_type + str(int(rownum))
+                bill_id = '%s %s' % (bill_type.upper(), rownum)
                 bill_title = str(sh.cell(rownum, 3).value)
-                bill = Bill( session, 'upper', bill_id, bill_title)
-                bill.add_sponsor( 'primary', str(sh.cell(rownum, 1).value) )
+                bill = Bill(session, chamber, bill_id, bill_title)
+                bill.add_source(url)
+                bill.add_sponsor('primary', str(sh.cell(rownum, 1).value))
 
-                if sh.cell(rownum, 2).value is not '':
-                    bill.add_sponsor( 'cosponsor', str(sh.cell(rownum, 2).value) )
+                # add cosponsor
+                if sh.cell(rownum, 2).value:
+                    bill.add_sponsor('cosponsor',
+                                     str(sh.cell(rownum, 2).value))
 
                 actor = ""
 
                 #Actions - starts column after bill title
-                for colnum in range( 4, sh.ncols - 1):
+                for colnum in range(4, sh.ncols - 1):
 
-                    coltitle = str(sh.cell(0, colnum).value)
+                    action = str(sh.cell(0, colnum).value)
                     cell = sh.cell(rownum, colnum)
-
-                    if len(coltitle) != 0:
-
-                        if coltitle.split()[0] == 'House':
-                            actor = "lower"
-                        elif coltitle.split()[0] == 'Senate':
-                            actor = "upper"
-                        elif coltitle.split()[0] == 'Gov.':
-                            actor = "governor"
-                        elif coltitle.split()[-1] == 'Gov.':
-                            actor = "governor"
-                        elif coltitle.split()[-1] == 'Governor':
-                            actor = "governor"
-                        else:
-                            actor = actor
-
-                    action = str(sh.cell( 0, colnum).value)
                     date = cell.value
 
-                    if type(cell.value) == float:
+                    if len(action) != 0:
+                        if action.split()[0] == 'House':
+                            actor = "lower"
+                        elif action.split()[0] == 'Senate':
+                            actor = "upper"
+                        elif action.split()[-1] == 'Governor':
+                            actor = "governor"
+                        elif action.split()[0] == 'Gov.':
+                            actor = "governor"
+                        elif action.split()[-1] == 'Gov.':
+                            actor = "governor"
+
+                    if type(date) == float:
                         date = str(xlrd.xldate_as_tuple(date, 0))
-                        date = datetime.strptime(date, "(%Y, %m, %d, %H, %M, %S)")
+                        date = datetime.strptime(date,
+                                                 "(%Y, %m, %d, %H, %M, %S)")
                         bill.add_action(actor, action, date)
 
-                bill.add_source(senate_file)
+                # get votes
                 self.scrape_votes(bill, file_type, rownum, session)
-
                 self.save_bill(bill)
+
 
     def scrape_votes(self, bill, file_type, number, session):
         vote_url = 'http://www.legislature.state.oh.us/votes.cfm?ID=' + session + '_' + file_type + '_' + str(number)
