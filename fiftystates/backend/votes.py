@@ -12,7 +12,7 @@ except ImportError:
 
 from fiftystates.backend import db
 from fiftystates.backend.names import get_legislator_id
-from fiftystates.backend.utils import prepare_obj
+from fiftystates.backend.utils import prepare_obj, fix_bill_id
 
 _log = logging.getLogger('fiftystates')
 
