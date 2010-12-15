@@ -7,7 +7,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
+from fiftystates.scrape import Scraper, SourcedObject, JSONDateEncoder
 
 
 class EventScraper(Scraper):
@@ -40,7 +40,7 @@ class EventScraper(Scraper):
             json.dump(event, f, cls=JSONDateEncoder)
 
 
-class Event(FiftystatesObject):
+class Event(SourcedObject):
     def __init__(self, session, when, type,
                  description, end=None, **kwargs):
         super(Event, self).__init__('event', **kwargs)

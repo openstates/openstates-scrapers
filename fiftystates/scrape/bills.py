@@ -6,7 +6,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
+from fiftystates.scrape import Scraper, SourcedObject, JSONDateEncoder
 
 
 class BillScraper(Scraper):
@@ -49,7 +49,7 @@ class BillScraper(Scraper):
             json.dump(bill, f, cls=JSONDateEncoder)
 
 
-class Bill(FiftystatesObject):
+class Bill(SourcedObject):
     """
     This represents a state bill or resolution.
     It is just a dict with some required fields and a few
