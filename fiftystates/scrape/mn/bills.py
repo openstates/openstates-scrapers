@@ -122,8 +122,6 @@ class MNBillScraper(BillScraper):
         action_tables = soup.findAll('table', attrs={'summary' : 'Actions'})[:2]
 
         for cur_table in action_tables:
-
-            cur_table = action_tables[0]
             for row in cur_table.findAll('tr')[1:]:
                 bill_action = dict()
                 cols = row.findAll('td')
@@ -179,6 +177,8 @@ class MNBillScraper(BillScraper):
             bill_id = self.extract_bill_id(bill_soup)
             bill_title =  self.extract_bill_title(bill_soup)
             bill = Bill(session, chamber, bill_id, bill_title)
+            bill.add_source(bill_detail_url)
+            bill.add_source(version_list_url)
 
         # Get all versions of the bill.
         # Versions of a bill are on a separate page, linked to from the column
