@@ -295,10 +295,10 @@ class NJBillScraper(BillScraper, DBFMixin):
         # Subjects
         subject_url, subject_db = self.get_dbf(year_abr, 'BILLSUBJ')
         for rec in subject_db:
-            bill_id = rec['billtype'] + str(bill_number)
+            bill_id = rec['billtype'] + str(int(rec['billnumber']))
             bill = bill_dict.get(bill_id)
             if bill:
-                bill.setdefault('subjects', []).append(rec['SUBJECTKEY'])
+                bill.setdefault('subjects', []).append(rec['subjectkey'])
             else:
                 self.warning('invalid bill id in BILLSUBJ.DBF: %s' % bill_id)
 
