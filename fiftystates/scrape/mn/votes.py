@@ -17,7 +17,8 @@ class MNVoteScraper(VoteScraper):
         self.validate_session(session)
         votes_url = self.metadata['session_details'][session].get('votes_url')
         if not votes_url:
-            raise NoDataForPeriod(session)
+            self.warning('no house votes URL for %s', session)
+            return
         with self.urlopen(votes_url) as html:
             doc = lxml.html.fromstring(html)
             prefix = {'lower': 'H', 'upper': 'S'}[chamber]
