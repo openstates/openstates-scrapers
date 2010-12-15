@@ -35,7 +35,13 @@ class MNVoteScraper(VoteScraper):
                 self.scrape_vote(chamber, session, bill_id, vote_url)
 
     def scrape_vote(self, chamber, session, bill_id, vote_url):
+        NO_VOTE_URL = 'http://www.house.leg.state.mn.us/votes/novotefound.asp'
         with self.urlopen(vote_url) as html:
+
+            # sometimes the link is broken, will redirect to NO_VOTE_URL
+            if html.response.url == NO_VOTE_URL:
+                return
+
             doc = lxml.html.fromstring(html)
             paragraphs = doc.xpath('//h1/following-sibling::p')
 
