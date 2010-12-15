@@ -18,9 +18,9 @@ class OHBillScraper(BillScraper):
         if int(session) < 128:
             raise NoDataForPeriod(year)
 
-        if chamber == 'upper':
+        if chamber == 'lower':
             self.scrape_house_bills(session)
-        elif chamber == 'lower':
+        elif chamber == 'upper':
             self.scrape_senate_bills(session)
 
     def scrape_house_bills(self, session):
@@ -51,7 +51,7 @@ class OHBillScraper(BillScraper):
             
                 bill_id = file_type + str(int(rownum))
                 bill_title = str(sh.cell(rownum, 3).value) 
-                bill = Bill( session, 'upper', bill_id, bill_title)
+                bill = Bill( session, 'lower', bill_id, bill_title)
                 bill.add_sponsor( 'primary', str(sh.cell(rownum, 1).value) )
 
                 if sh.cell(rownum, 2).value is not '':
@@ -68,11 +68,11 @@ class OHBillScraper(BillScraper):
                     if len(coltitle) != 0:
 
                         if coltitle.split()[0] == 'House':
-                            actor = "upper"
-                        elif coltitle.split()[0] == 'Senate':
                             actor = "lower"
+                        elif coltitle.split()[0] == 'Senate':
+                            actor = "upper"
                         elif coltitle.split()[-1] == 'Governor':
-                            actor = "Governor"
+                            actor = "governor"
                         else:
                             actor = actor
  
@@ -117,7 +117,7 @@ class OHBillScraper(BillScraper):
 
                 bill_id = file_type + str(int(rownum))
                 bill_title = str(sh.cell(rownum, 3).value)
-                bill = Bill( session, 'lower', bill_id, bill_title)
+                bill = Bill( session, 'upper', bill_id, bill_title)
                 bill.add_sponsor( 'primary', str(sh.cell(rownum, 1).value) )
 
                 if sh.cell(rownum, 2).value is not '':
@@ -134,15 +134,15 @@ class OHBillScraper(BillScraper):
                     if len(coltitle) != 0:
 
                         if coltitle.split()[0] == 'House':
-                            actor = "upper"
-                        elif coltitle.split()[0] == 'Senate':
                             actor = "lower"
+                        elif coltitle.split()[0] == 'Senate':
+                            actor = "upper"
                         elif coltitle.split()[0] == 'Gov.':
-                            actor = "Governor"
+                            actor = "governor"
                         elif coltitle.split()[-1] == 'Gov.':
-                            actor = "Governor"
+                            actor = "governor"
                         elif coltitle.split()[-1] == 'Governor':
-                            actor = "Governor"
+                            actor = "governor"
                         else:
                             actor = actor
 
