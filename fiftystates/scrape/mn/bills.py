@@ -2,10 +2,10 @@ import re
 import datetime
 import urlparse
 from BeautifulSoup import BeautifulSoup
+import lxml.html
 
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
-
 
 # Base URL for the details of a given bill.
 BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/revisor/pages/search_status/'
@@ -27,29 +27,6 @@ class MNBillScraper(BillScraper):
         cleaned_text = text.replace('&nbsp;', '').strip()
         #self.debug("Cleaned text: %s ~> %s" % (text, cleaned_text))
         return cleaned_text
-
-    def extract_bill_id(self, soup):
-        """Extract the ID of a bill from a Bill Status page."""
-        # The bill name is in a table that has an attribute 'summary'
-        # with a value of 'Show Doc Names'.
-        doc_name_table = soup.find('table', attrs={"summary" : "Show Doc Names"})
-        bill_id_raw = doc_name_table.td.contents[0]
-        bill_id = re.search(r'Bill Name:\s+([H|S]F\d+)', bill_id_raw)
-        if bill_id is not None:
-            bill_id = bill_id.groups()[0]
-            self.debug("Found bill ID: %s" % bill_id)
-        return bill_id
-
-    def extract_bill_title(self, soup):
-        """Extract the title of a bill from a Bill Status page."""
-        # The bill title is in a table that has an attribute 'summary'
-        # with a value of 'Short Description'.
-        short_summary_table = soup.find('table', attrs={"summary" : "Short Description"})
-        # The 'Short Summary' table has only one <td> which contains the
-        # bill title inside a <font> element.
-        bill_title = short_summary_table.td.font.contents[0]
-        self.debug("Found Bill Title: %s" % bill_title)
-        return bill_title
 
     def extract_senate_bill_version_link(self, soup):
         """Extract the link which points to the version information for a
@@ -94,19 +71,7 @@ class MNBillScraper(BillScraper):
         self.debug("Found Bill Versions: %d" % len(bill_versions))
         return bill_versions
 
-    def extract_bill_sponsors(self, soup):
-        """Extract the primary and cosponsors for a given bill."""
-        bill_sponsors = list()
-        sponsors_table = soup.find('table', attrs={'summary' : 'Show Authors'})
-        # Sponsors' names are links within the sponsors_table table.
-        sponsors_links = sponsors_table.findAll('a')
-        for link in sponsors_links:
-            sponsor_name = link.contents[0]
-            bill_sponsors.append(sponsor_name)
-        self.debug("Sponsors Found for this bill: %d" % len(bill_sponsors))
-        return bill_sponsors
-
-    def extract_bill_actions(self, soup, current_chamber):
+    def extract_bill_actions(self, doc, current_chamber):
         """Extract the actions taken on a bill.
         A bill can have actions taken from either chamber.  The current
         chamber's actions will be the first table of actions. The other
@@ -119,15 +84,19 @@ class MNBillScraper(BillScraper):
         """
 
         bill_actions = list()
-        action_tables = soup.findAll('table', attrs={'summary' : 'Actions'})[:2]
+        action_tables = doc.xpath('//table[@summary="Actions"]')
 
         for cur_table in action_tables:
-            for row in cur_table.findAll('tr')[1:]:
+            for row in cur_table.xpath('tr')[1:]:
                 bill_action = dict()
-                cols = row.findAll('td')
-                action_date = self.cleanup_text(cols[0].contents[0])
-                action_text = self.cleanup_text(cols[1].contents[0])
-                note_column = self.cleanup_text(cols[2].contents[0])
+
+                # split up columns
+                (date_col, action_col, desc_col, text_col,
+                 page_col, rc_col) = row.xpath('td')
+
+                action_date = date_col.text_content().strip()
+                action_text = action_col.text_content().strip()
+                description = desc_col.text_content().strip()
 
                 # skip non-actions (don't have date)
                 if action_text in ('Chapter number', 'See also', 'See',
@@ -139,15 +108,15 @@ class MNBillScraper(BillScraper):
                                                              '%m/%d/%Y')
                 except ValueError:
                     try:
-                        action_date = datetime.datetime.strptime(note_column,
+                        action_date = datetime.datetime.strptime(description,
                                                                  '%m/%d/%y')
                     except ValueError:
                         self.warning('ACTION without date: %s' % action_text)
                         continue
 
                 bill_action['action_text'] = action_text
-                if note_column:
-                    action_text += ' ' + note_column
+                if description:
+                    action_text += ' ' + description
                 bill_action['action_chamber'] = current_chamber
                 bill_action['action_date'] = action_date
                 bill_actions.append(bill_action)
@@ -158,7 +127,6 @@ class MNBillScraper(BillScraper):
             else:
                 current_chamber = 'upper'
 
-        self.debug("Actions Found for this bill: %d" % len(bill_actions))
         return bill_actions
 
     def get_bill_info(self, chamber, session, bill_detail_url, version_list_url):
@@ -172,10 +140,10 @@ class MNBillScraper(BillScraper):
             chamber = 'upper'
 
         with self.urlopen(bill_detail_url) as bill_html:
-            bill_soup = BeautifulSoup(bill_html)
+            doc = lxml.html.fromstring(bill_html)
 
-            bill_id = self.extract_bill_id(bill_soup)
-            bill_title =  self.extract_bill_title(bill_soup)
+            bill_id = doc.xpath('//title/text()')[0].split()[0]
+            bill_title = doc.xpath('//font[@size=-1]/text()')[0]
             bill = Bill(session, chamber, bill_id, bill_title)
             bill.add_source(bill_detail_url)
             bill.add_source(version_list_url)
@@ -196,19 +164,18 @@ class MNBillScraper(BillScraper):
                 version_url = urlparse.urljoin(VERSION_URL_BASE, version['url'])
                 bill.add_version(version_name, version_url)
 
-            # grab primary and cosponsors
-            # MN uses "Primary Author" to name a bill's primary sponsor.
-            # Everyone else listed will be added as a 'cosponsor'.
-            sponsors = self.extract_bill_sponsors(bill_soup)
+            # grab sponsors
+            # TODO: determine if first is always the sole primary sponsor?
+            sponsors = doc.xpath('//table[@summary="Show Authors"]/descendant::a/text()')
             if sponsors:
-                primary_sponsor = sponsors[0]
-                cosponsors = sponsors[1:]
+                primary_sponsor = sponsors[0].strip()
                 bill.add_sponsor('primary', primary_sponsor)
+                cosponsors = sponsors[1:]
                 for leg in cosponsors:
-                    bill.add_sponsor('cosponsor', leg)
+                    bill.add_sponsor('cosponsor', leg.strip())
 
             # Add Actions performed on the bill.
-            bill_actions = self.extract_bill_actions(bill_soup, chamber)
+            bill_actions = self.extract_bill_actions(doc, chamber)
             for action in bill_actions:
                 bill.add_action(action['action_chamber'],
                                 action['action_text'],
