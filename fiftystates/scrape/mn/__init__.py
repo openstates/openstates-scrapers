@@ -15,7 +15,8 @@ metadata = dict(
          'sessions': ['2009-2010', '2010 1st Special Session',
                       '2010 2nd Special Session'],
          'start_year': 2009,
-         'end_year': 2010
+         'end_year': 2010,
+         'biennium': '86',
         }
     ],
     session_details={
