@@ -27,7 +27,7 @@ class MNLegislatorScraper(LegislatorScraper):
 
         for n in xrange(1, sheet.nrows):
             (district, fname, lname, addr, phone, _, party,
-             home_addr, home_city, home_zip, _) = sheet.row_values(n)
+             home_addr, home_city, home_zip) = sheet.row_values(n)
 
             leg = Legislator(term, 'lower', district, '%s %s' % (fname, lname),
                              first_name=fname, last_name=lname,
