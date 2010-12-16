@@ -11,6 +11,25 @@ import lxml.html
 class NVBillScraper(BillScraper):
     state = 'nv'
 
+    _classifiers = (
+        ('Approved by the Governor', 'governor:signed'),
+        ('Bill read. Veto not sustained', 'bill:veto_override:passed'),
+        ('Bill read. Veto sustained', 'bill:veto_override:failed'),
+        ('Enrolled and delivered to Governor', 'governor:received'),
+        ('From committee: .+? adopted', 'committee:passed'),
+        ('From committee: .+? pass', 'committee:passed'),
+        ('Prefiled. Referred', ['bill:introduced', 'committee:referred']),
+        ('Read first time. Referred', ['bill:reading:1', 'committee:referred']),
+        ('Read first time.', 'bill:reading:1'),
+        ('Read second time.', 'bill:reading:2'),
+        ('Read third time. Lost', ['bill:failed', 'bill:reading:3']),
+        ('Read third time. Passed', ['bill:passed', 'bill:reading:3']),
+        ('Read third time.', 'bill:reading:3'),
+        ('Rereferred', 'committee:referred'),
+        ('Resolution read and adopted', 'bill:passed'),
+        ('Vetoed by the Governor', 'governor:vetoed')
+    )
+
     def scrape(self, chamber, session):
         if session.find('Special') != -1:
             year = session[0:4]
@@ -220,7 +239,22 @@ class NVBillScraper(BillScraper):
             action_path = '/html/body/div[@id="content"]/table[%s]/tr/td/ul/li' % (count)
             for el in root.xpath(action_path):
                 action = el.text_content().strip()
-                bill.add_action(actor, action, date)
+
+                # catch chamber changes
+                if action.startswith('In Assembly'):
+                    actor = 'lower'
+                elif action.startswith('In Senate'):
+                    actor = 'upper'
+                elif 'Governor' in action:
+                    actor = 'executive'
+
+                action_type = 'other'
+                for pattern, atype in self._classifiers:
+                    if re.match(pattern, action):
+                        action_type = atype
+                        break
+
+                bill.add_action(actor, action, date, type=action_type)
 
     def scrape_votes(self, bill_page, bill, insert, year):
         root = lxml.html.fromstring(bill_page)
