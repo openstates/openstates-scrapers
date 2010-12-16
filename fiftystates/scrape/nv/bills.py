@@ -115,7 +115,7 @@ class NVBillScraper(BillScraper):
                         bill.add_document(minutes_date, minutes_url)
                         minutes_count = minutes_count + 1
 
-                    self.scrape_actions(page, bill, "upper")
+                    self.scrape_actions(root, bill, "upper")
                     self.scrape_votes(page, bill, insert, year)
                     bill.add_source(page_path)
                     self.save_bill(bill)
@@ -227,17 +227,15 @@ class NVBillScraper(BillScraper):
 
         return primary, sponsors
 
-    def scrape_actions(self, page, bill, actor):
-        root = lxml.html.fromstring(page)
+    def scrape_actions(self, root, bill, actor):
         path = '/html/body/div[@id="content"]/table/tr/td/p[1]'
         count = 6
         for mr in root.xpath(path):
-            date = mr.xpath('string()')
+            date = mr.text_content().strip()
             date = date.split()[0] + " " + date.split()[1] + " " + date.split()[2]
             date = datetime.strptime(date, "%b %d, %Y")
             count = count + 1
-            action_path = '/html/body/div[@id="content"]/table[%s]/tr/td/ul/li' % (count)
-            for el in root.xpath(action_path):
+            for el in mr.xpath('../../following-sibling::tr[1]/td/ul/li'):
                 action = el.text_content().strip()
 
                 # catch chamber changes
