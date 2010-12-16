@@ -15,6 +15,29 @@ VERSION_URL_BASE = "https://www.revisor.mn.gov"
 class MNBillScraper(BillScraper):
     state = 'mn'
 
+    _categorizers = (
+        ('Introduction and first reading, referred to',
+         ['bill:introduced', 'committee:referred']),
+        ('Introduction and first reading', 'bill:introduced'),
+        ('Referred (by Chair )?to', 'committee:referred'),
+        ('Second reading', 'bill:reading:2'),
+        ('Comm(ittee)? report: (T|t)o pass( as amended)? and re-refer(red)? to',
+         ['committee:passed', 'committee:referred']),
+        ('Comm(ittee)? report: (T|t)o pass( as amended)?', 'committee:passed'),
+        ('Third reading Passed', 'bill:passed'),
+        ('Bill was passed', 'bill:passed'),
+        ('Third reading', 'bill:reading:3'),
+        ("Governor('s action )?Approval", 'governor:signed'),
+        ("(V|v)eto", 'governor:vetoed'),
+        ("Presented to Governor", 'governor:received'),
+        ("Amended", 'amendment:passed'),
+        ("Amendments offered", 'amendment:introduced'),
+        (" repassed ", 'bill:passed'),
+        (" re-referred ", 'committee:referred'),
+        ("Received from", "bill:introduced"),
+    )
+
+
     def extract_bill_actions(self, doc, current_chamber):
         """Extract the actions taken on a bill.
         A bill can have actions taken from either chamber.  The current
@@ -58,11 +81,20 @@ class MNBillScraper(BillScraper):
                         self.warning('ACTION without date: %s' % action_text)
                         continue
 
+                # categorize actions
+                action_type = 'other'
+                for pattern, atype in self._categorizers:
+                    if re.match(pattern, action_text):
+                        action_type = atype
+                        print action_text, action_type
+                        break
+
                 if description:
                     action_text += ' ' + description
                 bill_action['action_text'] = action_text
                 bill_action['action_chamber'] = current_chamber
                 bill_action['action_date'] = action_date
+                bill_action['action_type'] = action_type
                 bill_actions.append(bill_action)
 
             # if there's a second table, toggle the current chamber
@@ -106,7 +138,8 @@ class MNBillScraper(BillScraper):
             for action in bill_actions:
                 bill.add_action(action['action_chamber'],
                                 action['action_text'],
-                                action['action_date'])
+                                action['action_date'],
+                                type=action['action_type'])
 
         # Get all versions of the bill.
         # Versions of a bill are on a separate page, linked to from the column
