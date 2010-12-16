@@ -178,7 +178,7 @@ class NVBillScraper(BillScraper):
                         minutes_count = minutes_count + 1
 
 
-                    self.scrape_actions(page, bill, "lower")
+                    self.scrape_actions(root, bill, "lower")
                     self.scrape_votes(page, bill, insert, year)
                     bill.add_source(page_path)
                     self.save_bill(bill)
