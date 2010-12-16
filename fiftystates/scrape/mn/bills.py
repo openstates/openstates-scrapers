@@ -16,18 +16,6 @@ VERSION_URL_BASE = "https://www.revisor.mn.gov"
 class MNBillScraper(BillScraper):
     state = 'mn'
 
-    def cleanup_text(self, text):
-        """Remove junk from text that MN puts in for formatting their tables.
-        Removes surrounding whitespace.
-        Replaces any '&nbsp;' chars with spaces.
-
-        Returns a string with the problem text removed/replaced.
-        """
-        text = str(text)
-        cleaned_text = text.replace('&nbsp;', '').strip()
-        #self.debug("Cleaned text: %s ~> %s" % (text, cleaned_text))
-        return cleaned_text
-
     def extract_senate_bill_version_link(self, soup):
         """Extract the link which points to the version information for a
         given bill.
@@ -43,33 +31,6 @@ class MNBillScraper(BillScraper):
         bill_version_link = version_link.a.attrs[0][1]
         self.debug("Found Bill Version Link: %s" % bill_version_link)
         return bill_version_link
-
-    def extract_bill_versions(self, soup):
-        """Extract all versions of a given bill.
-
-        Returns a list of dicts with 'name' and 'url' keys for each version
-        found.
-        """
-        bill_versions = list()
-        # A table of all versions of a bill exists in a table
-        # which has a 'summary' attribute with a value of ''.
-        versions_table = soup.find('table', attrs={'summary' : ''})
-        table_rows = versions_table.findAll('tr')
-        for row in table_rows:
-            cols = row.findAll('td')
-            # if the row has more than one column of info, then there's a bill version
-            # in there.
-            if len(cols) > 1:
-                # The version_name and version_url we are looking for are in the
-                # first column of the table.
-                bill_version = dict()
-                bill_version_column = cols[0]
-                bill_version['name'] = self.cleanup_text(bill_version_column.a.contents[0])
-                bill_version['url'] = bill_version_column.a.attrs[0][1]
-                bill_versions.append(bill_version)
-                del bill_version
-        self.debug("Found Bill Versions: %d" % len(bill_versions))
-        return bill_versions
 
     def extract_bill_actions(self, doc, current_chamber):
         """Extract the actions taken on a bill.
@@ -146,23 +107,6 @@ class MNBillScraper(BillScraper):
             bill_title = doc.xpath('//font[@size=-1]/text()')[0]
             bill = Bill(session, chamber, bill_id, bill_title)
             bill.add_source(bill_detail_url)
-            bill.add_source(version_list_url)
-
-        # Get all versions of the bill.
-        # Versions of a bill are on a separate page, linked to from the column
-        # labeled, "Bill Text", on the search results page.
-
-        with self.urlopen(version_list_url) as version_html:
-            version_soup = BeautifulSoup(version_html)
-
-            # MN bills can have multiple versions.  Get them all, and loop over
-            # the results, adding each one.
-            self.debug("Extracting bill versions from: " + version_list_url)
-            bill_versions = self.extract_bill_versions(version_soup)
-            for version in bill_versions:
-                version_name = version['name']
-                version_url = urlparse.urljoin(VERSION_URL_BASE, version['url'])
-                bill.add_version(version_name, version_url)
 
             # grab sponsors
             # TODO: determine if first is always the sole primary sponsor?
@@ -180,6 +124,15 @@ class MNBillScraper(BillScraper):
                 bill.add_action(action['action_chamber'],
                                 action['action_text'],
                                 action['action_date'])
+
+        # Get all versions of the bill.
+        # Versions of a bill are on a separate page, linked to from the column
+        # labeled, "Bill Text", on the search results page.
+        with self.urlopen(version_list_url) as version_html:
+            version_doc = lxml.html.fromstring(version_html)
+            for v in doc.xpath('//a[starts-with(@href, "/bin/getbill.php")]'):
+                version_url = urlparse.urljoin(VERSION_URL_BASE, v.get('href'))
+                bill.add_version(v.text.strip(), version_url)
 
         self.save_bill(bill)
 
