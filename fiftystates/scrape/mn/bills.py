@@ -165,7 +165,7 @@ class MNBillScraper(BillScraper):
                 session_year = search_session[1:5]
                 session_number = search_session[0]
                 bill_id = bill_details_link.text_content()
-                bill_version_url = 'https://www.revisor.mn.gov/bin/getbill.php'
+                bill_version_url = 'https://www.revisor.mn.gov/bin/getbill.php' \
                 '?session_year=%s&session_number=%s&number=%s&version=list' % (
                     session_year, session_number, bill_id)
             else:
