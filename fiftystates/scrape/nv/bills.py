@@ -219,7 +219,7 @@ class NVBillScraper(BillScraper):
             count = count + 1
             action_path = '/html/body/div[@id="content"]/table[%s]/tr/td/ul/li' % (count)
             for el in root.xpath(action_path):
-                action = el.xpath('string()')
+                action = el.text_content().strip()
                 bill.add_action(actor, action, date)
 
     def scrape_votes(self, bill_page, bill, insert, year):
