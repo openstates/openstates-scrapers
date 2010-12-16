@@ -70,6 +70,7 @@ class MNBillScraper(BillScraper):
                                    'Effective date', 'Secretary of State'):
                     continue
 
+                # dates are really inconsistent here
                 try:
                     action_date = datetime.datetime.strptime(action_date,
                                                              '%m/%d/%Y')
@@ -78,8 +79,13 @@ class MNBillScraper(BillScraper):
                         action_date = datetime.datetime.strptime(description,
                                                                  '%m/%d/%y')
                     except ValueError:
-                        self.warning('ACTION without date: %s' % action_text)
-                        continue
+                        try:
+                            action_date = datetime.datetime.strptime(
+                                description, '%m/%d/%Y')
+                        except ValueError:
+                            self.warning('ACTION without date: %s' %
+                                         action_text)
+                            continue
 
                 # categorize actions
                 action_type = 'other'
