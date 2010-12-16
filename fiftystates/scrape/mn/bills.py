@@ -206,7 +206,7 @@ class MNBillScraper(BillScraper):
 
             # senate version link goes to wrong place, forge it
             if search_chamber == 'Senate':
-                session_year = search_session[1:5]
+                session_year = search_session[-4:]
                 session_number = search_session[0]
                 bill_id = bill_details_link.text_content()
                 bill_version_url = 'https://www.revisor.mn.gov/bin/getbill.php' \
