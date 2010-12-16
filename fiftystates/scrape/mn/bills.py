@@ -58,9 +58,9 @@ class MNBillScraper(BillScraper):
                         self.warning('ACTION without date: %s' % action_text)
                         continue
 
-                bill_action['action_text'] = action_text
                 if description:
                     action_text += ' ' + description
+                bill_action['action_text'] = action_text
                 bill_action['action_chamber'] = current_chamber
                 bill_action['action_date'] = action_date
                 bill_actions.append(bill_action)
@@ -128,9 +128,7 @@ class MNBillScraper(BillScraper):
         search_chamber = {'lower':'House', 'upper':'Senate'}[chamber]
         search_session = self.metadata['session_details'][session]['site_id']
 
-        # MN bill search page returns a maximum of 999 search results.
-        # To get around that, make multiple search requests and combine the results.
-        # when setting the search_range, remember that 'range()' omits the last value.
+        # MN bill search page returns a maximum of 999 search results
         total_rows = list() # used to concatenate search results
         stride = 900
         start = 0
