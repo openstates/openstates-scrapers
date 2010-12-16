@@ -86,7 +86,6 @@ class MNBillScraper(BillScraper):
                 for pattern, atype in self._categorizers:
                     if re.match(pattern, action_text):
                         action_type = atype
-                        print action_text, action_type
                         break
 
                 if description:
@@ -120,7 +119,9 @@ class MNBillScraper(BillScraper):
 
             bill_id = doc.xpath('//title/text()')[0].split()[0]
             bill_title = doc.xpath('//font[@size=-1]/text()')[0]
-            bill = Bill(session, chamber, bill_id, bill_title)
+            bill_type = {'F': 'bill', 'R':'resolution',
+                         'C': 'concurrent resolution'}[bill_id[1]]
+            bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
             bill.add_source(bill_detail_url)
 
             # grab sponsors
@@ -146,7 +147,7 @@ class MNBillScraper(BillScraper):
         # labeled, "Bill Text", on the search results page.
         with self.urlopen(version_list_url) as version_html:
             version_doc = lxml.html.fromstring(version_html)
-            for v in doc.xpath('//a[starts-with(@href, "/bin/getbill.php")]'):
+            for v in version_doc.xpath('//a[starts-with(@href, "/bin/getbill.php")]'):
                 version_url = urlparse.urljoin(VERSION_URL_BASE, v.get('href'))
                 bill.add_version(v.text.strip(), version_url)
 
@@ -165,23 +166,30 @@ class MNBillScraper(BillScraper):
         total_rows = list() # used to concatenate search results
         stride = 900
         start = 0
-        for start in xrange(0, 10000, stride):
-            # body: "House" or "Senate"
-            # session: legislative session id
-            # bill: Range start-end (e.g. 1-10)
-            url = 'https://www.revisor.mn.gov/revisor/pages/search_status/status_results.php?body=%s&session=%s&bill=%s-%s&bill_type=bill&submit_bill=GO' % (search_chamber, search_session, start, start+stride)
 
-            with self.urlopen(url) as html:
-                doc = lxml.html.fromstring(html)
+        # get total list of rows
+        search_url = ('https://www.revisor.mn.gov/revisor/pages/search_status/'
+                      'status_results.php?body=%s&session=%s&bill=%s-%s'
+                      '&bill_type=%s&submit_bill=GO')
+        for bill_type in ('bill', 'concurrent', 'resolution'):
+            for start in xrange(0, 10000, stride):
+                # body: "House" or "Senate"
+                # session: legislative session id
+                # bill: Range start-end (e.g. 1-10)
+                url = search_url % (search_chamber, search_session, start,
+                                    start+stride, bill_type)
 
-                # get table containing bills
-                rows = doc.xpath('//table[@width="80%"]/tr')[1:]
-                total_rows.extend(rows)
+                with self.urlopen(url) as html:
+                    doc = lxml.html.fromstring(html)
 
-                # out of rows
-                if len(rows) == 0:
-                    self.debug("Total Bills Found: %d" % len(total_rows))
-                    break
+                    # get table containing bills
+                    rows = doc.xpath('//table[@width="80%"]/tr')[1:]
+                    total_rows.extend(rows)
+
+                    # out of rows
+                    if len(rows) == 0:
+                        self.debug("Total Bills Found: %d" % len(total_rows))
+                        break
 
         # process each row
         for row in total_rows:
@@ -190,8 +198,7 @@ class MNBillScraper(BillScraper):
             bill_details_url = urlparse.urljoin(BILL_DETAIL_URL_BASE,
                                                 bill_details_link.get('href'))
 
-            # the Senate bill_version_link is to a single version
-            # we can forge the link
+            # senate version link goes to wrong place, forge it
             if search_chamber == 'Senate':
                 session_year = search_session[1:5]
                 session_number = search_session[0]
