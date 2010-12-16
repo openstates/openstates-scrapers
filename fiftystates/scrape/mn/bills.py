@@ -1,7 +1,6 @@
 import re
 import datetime
 import urlparse
-from BeautifulSoup import BeautifulSoup
 import lxml.html
 
 from fiftystates.scrape import NoDataForPeriod
@@ -15,22 +14,6 @@ VERSION_URL_BASE = "https://www.revisor.mn.gov"
 
 class MNBillScraper(BillScraper):
     state = 'mn'
-
-    def extract_senate_bill_version_link(self, soup):
-        """Extract the link which points to the version information for a
-        given bill.
-        """
-        # The "Bill Text" link for the Senate points you to a page of the
-        # current draft of the bill.  At the top of this page there is a table
-        # containing links for "Authors and Status", "List Versions", and a
-        # PDF file for the bill. This method retreives the 'href' attribute
-        # for the "List Versions" link.
-        table = soup.find('table', attrs={"summary" : ""})
-        rows = table.findAll("td")
-        version_link = rows[2]
-        bill_version_link = version_link.a.attrs[0][1]
-        self.debug("Found Bill Version Link: %s" % bill_version_link)
-        return bill_version_link
 
     def extract_bill_actions(self, doc, current_chamber):
         """Extract the actions taken on a bill.
@@ -158,47 +141,38 @@ class MNBillScraper(BillScraper):
             url = 'https://www.revisor.mn.gov/revisor/pages/search_status/status_results.php?body=%s&session=%s&bill=%s-%s&bill_type=bill&submit_bill=GO' % (search_chamber, search_session, start, start+stride)
 
             with self.urlopen(url) as html:
-                soup = BeautifulSoup(html)
-                # Index into the table containing the bills .
-                rows = soup.findAll('table')[6].findAll('tr')[1:]
-                # If there are no more results, then we've reached the
-                # total number of bills available for this session.
+                doc = lxml.html.fromstring(html)
+
+                # get table containing bills
+                rows = doc.xpath('//table[@width="80%"]/tr')[1:]
+                total_rows.extend(rows)
+
+                # out of rows
                 if len(rows) == 0:
                     self.debug("Total Bills Found: %d" % len(total_rows))
                     break
-                else:
-                    total_rows.extend(rows)
 
-        # Now that we have all the bills for a given session, process each row
-        # of search results to harvest the details and versions of each bill.
+        # process each row
         for row in total_rows:
-            # The second column of the row contains a link pointing to
-            # the status page for the bill.
-            # The fourth column of the row contains a link labeled, "Bill Text",
-            # pointing to a list of versions of the bill.
-            cols = row.findAll('td')
-            bill_details_column = cols[1]
-            bill_versions_column = cols[3]
-            try:
-                # Extract the 'href' attribute value.
-                bill_details_url = bill_details_column.a.attrs[0][1]
-                bill_details_url = urlparse.urljoin(BILL_DETAIL_URL_BASE, bill_details_url)
-            except:
-                self.warning('Bad bill_details_column: %s' % bill_details_column)
-                continue
-            try:
-                # Extract the 'href' attribute value.
-                bill_version_list_url = bill_versions_column.a.attrs[0][1]
-            except:
-                self.warning('Bad bill_versions_column: %s' % bill_versions_column)
-                continue
-            # Alas, the House and the Senate do not link to the same place for
-            # a given bill's "Bill Text".  Getting a URL to the list of bill
-            # versions from the Senate requires an extra step here.
+            # second column: status link
+            bill_details_link = row.xpath('td[2]/a')[0]
+            bill_details_url = urlparse.urljoin(BILL_DETAIL_URL_BASE,
+                                                bill_details_link.get('href'))
+
+            # the Senate bill_version_link is to a single version
+            # we can forge the link
             if search_chamber == 'Senate':
-                senate_bill_text_url = urlparse.urljoin(VERSION_URL_BASE, bill_version_list_url)
-                with self.urlopen(senate_bill_text_url) as senate_html:
-                    senate_soup = BeautifulSoup(senate_html)
-                    bill_version_list_url = self.extract_senate_bill_version_link(senate_soup)
-            bill_version_list_url = urlparse.urljoin(VERSION_URL_BASE, bill_version_list_url)
-            self.get_bill_info(search_chamber, session, bill_details_url, bill_version_list_url)
+                session_year = search_session[1:5]
+                session_number = search_session[0]
+                bill_id = bill_details_link.text_content()
+                bill_version_url = 'https://www.revisor.mn.gov/bin/getbill.php'
+                '?session_year=%s&session_number=%s&number=%s&version=list' % (
+                    session_year, session_number, bill_id)
+            else:
+                # fourth column: version link (only right for House)
+                bill_version_url = row.xpath('td[4]/a/@href')[0]
+                bill_version_url = urlparse.urljoin(VERSION_URL_BASE,
+                                                    bill_version_url)
+
+            self.get_bill_info(search_chamber, session, bill_details_url,
+                               bill_version_url)
