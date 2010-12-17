@@ -1,7 +1,9 @@
 import datetime as dt
 import re
+from collections import defaultdict
 
 import html5lib
+import lxml.html
 
 from fiftystates.scrape.bills import BillScraper, Bill
 
@@ -33,6 +35,29 @@ class NCBillScraper(BillScraper):
         'Amend Failed': 'amendment:failed',
         'Amend Adopted': 'amendment:passed',
     }
+
+    def is_latest_session(self, session):
+        return self.metadata['terms'][-1]['sessions'][-1] == session
+
+    def build_subject_map(self):
+        self.subject_map = defaultdict(list)
+        cur_subject = None
+
+        letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+        for letter in letters:
+            url = 'http://www.ncga.state.nc.us/gascripts/Reports/keywords.pl?Letter=' + letter
+            with self.urlopen(url) as html:
+                doc = lxml.html.fromstring(html)
+                for td in doc.xpath('//td[@class="tableText"]'):
+                    if td.get('style') == 'font-weight: bold;':
+                        cur_subject = td.text_content()
+                    else:
+                        bill_link = td.xpath('a/text()')
+                        if bill_link:
+                            self.subject_map[bill_link[0]].append(cur_subject)
+
+        return self.subject_map
 
     def get_bill_info(self, session, bill_id):
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/'\
@@ -119,6 +144,8 @@ class NCBillScraper(BillScraper):
 
             bill.add_action(actor, action, act_date, type=atype)
 
+        if self.is_latest_session(session):
+            bill['subjects'] = self.subject_map[bill_id]
         self.save_bill(bill)
 
     def scrape(self, chamber, session):
@@ -129,6 +156,9 @@ class NCBillScraper(BillScraper):
 
         data = self.urlopen(url)
         soup = self.soup_parser(data)
+
+        if self.is_latest_session(session):
+            self.build_subject_map()
 
         for row in soup.findAll('table')[6].findAll('tr')[1:]:
             td = row.find('td')
