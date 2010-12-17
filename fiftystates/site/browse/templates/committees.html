@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{metadata.name}} committees{% endblock %}
+
+{% block content %}
+
+<div style="float: left; padding-right: 3em;">
+    <h3 width="100%">{{metadata.upper_chamber_name}} Committees </h3>
+    <table>
+    <tr>
+        <td>Committee</td>
+        <td>Members</td>
+        <td>Sources</td>
+    </tr>
+    {% for com in upper_coms %}
+    <tr>
+        <td> {{com.committee}}
+             {% if com.subcommittee %} : {{com.subcommittee}} {% endif %}
+        </td>
+        <td> <ul>
+            {%for m in com.members %}
+                <li>{{ m.name }} ({{m.role}})</li>
+            {% endfor %}
+        </ul> </td>
+        <td> <ul>
+            {%for s in com.sources %}
+                <li><a href="{{s.url}}">{{s.url}}</a></li>
+            {% endfor %}
+        </ul> </td>
+    </tr>
+    {% endfor %}
+    </table>
+</div>
+
+<div style="float: left; padding-right: 3em;">
+    <h3 width="100%">{{metadata.lower_chamber_name}} Committees </h3>
+    <table>
+    <tr>
+        <td>Committee</td>
+        <td>Members</td>
+        <td>Sources</td>
+    </tr>
+    {% for com in lower_coms %}
+    <tr>
+        <td> {{com.committee}}
+             {% if com.subcommittee %} : {{com.subcommittee}} {% endif %}
+        </td>
+        <td> <ul>
+            {%for m in com.members %}
+                <li>{{ m.name }} ({{m.role}})</li>
+            {% endfor %}
+        </ul> </td>
+        <td> <ul>
+            {%for s in com.sources %}
+                <li><a href="{{s.url}}">{{s.url}}</a></li>
+            {% endfor %}
+        </ul> </td>
+    </tr>
+    {% endfor %}
+    </table>
+</div>
+
+
+<div style="float: left; padding-right: 3em;">
+    <h3 width="100%">Joint Committees </h3>
+    <table>
+    <tr>
+        <td>Committee</td>
+        <td>Members</td>
+        <td>Sources</td>
+    </tr>
+    {% for com in joint_coms %}
+    <tr>
+        <td> {{com.committee}}
+             {% if com.subcommittee %} : {{com.subcommittee}} {% endif %}
+        </td>
+        <td> <ul>
+            {%for m in com.members %}
+                <li>{{ m.name }} ({{m.role}})</li>
+            {% endfor %}
+        </ul> </td>
+        <td> <ul>
+            {%for s in com.sources %}
+                <li><a href="{{s.url}}">{{s.url}}</a></li>
+            {% endfor %}
+        </ul> </td>
+    </tr>
+    {% endfor %}
+    </table>
+</div>
+
+
+{% endblock %}
