@@ -136,9 +136,9 @@ def committees(request, state):
                                       'chamber': 'lower'})
     joint_coms = db.committees.find({'state': state.lower(),
                                       'chamber': 'joint'})
-    upper_coms = sorted(upper_coms, key=keyfunc)
-    lower_coms = sorted(lower_coms, key=keyfunc)
-    joint_coms = sorted(joint_coms, key=keyfunc)
+    upper_coms = sorted(upper_coms)
+    lower_coms = sorted(lower_coms)
+    joint_coms = sorted(joint_coms)
 
     return render_to_response('committees.html', {
         'upper_coms': upper_coms,
