@@ -19,7 +19,7 @@
         </td>
         <td> <ul>
             {%for m in com.members %}
-            <li>{% if m.leg_id %}<a href="/browse/legislators/{{leg.leg_id}}/"> {%endif%}
+            <li>{% if m.leg_id %}<a href="/browse/legislators/{{m.leg_id}}/"> {%endif%}
                 {{ m.name }}
                 {% if m.leg_id %}</a> {%endif%}
             ({{m.role}})
@@ -51,7 +51,7 @@
         </td>
         <td> <ul>
             {%for m in com.members %}
-            <li>{% if m.leg_id %}<a href="/browse/legislators/{{leg.leg_id}}/"> {%endif%}
+            <li>{% if m.leg_id %}<a href="/browse/legislators/{{m.leg_id}}/"> {%endif%}
                 {{ m.name }}
                 {% if m.leg_id %}</a> {%endif%}
             ({{m.role}})
@@ -84,7 +84,7 @@
         </td>
         <td> <ul>
             {%for m in com.members %}
-            <li>{% if m.leg_id %}<a href="/browse/legislators/{{leg.leg_id}}/"> {%endif%}
+            <li>{% if m.leg_id %}<a href="/browse/legislators/{{m.leg_id}}/"> {%endif%}
                 {{ m.name }}
                 {% if m.leg_id %}</a> {%endif%}
             ({{m.role}})
