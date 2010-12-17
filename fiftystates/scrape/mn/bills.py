@@ -28,7 +28,7 @@ class MNBillScraper(BillScraper):
         ('Bill was passed', 'bill:passed'),
         ('Third reading', 'bill:reading:3'),
         ("Governor('s action )?Approval", 'governor:signed'),
-        ("(V|v)eto", 'governor:vetoed'),
+        (".+? (V|v)eto", 'governor:vetoed'),
         ("Presented to Governor", 'governor:received'),
         ("Amended", 'amendment:passed'),
         ("Amendments offered", 'amendment:introduced'),
@@ -97,7 +97,10 @@ class MNBillScraper(BillScraper):
                 if description:
                     action_text += ' ' + description
                 bill_action['action_text'] = action_text
-                bill_action['action_chamber'] = current_chamber
+                if action_type.startswith('governor'):
+                    bill_action['action_chamber'] = 'executive'
+                else:
+                    bill_action['action_chamber'] = current_chamber
                 bill_action['action_date'] = action_date
                 bill_action['action_type'] = action_type
                 bill_actions.append(bill_action)
@@ -131,7 +134,6 @@ class MNBillScraper(BillScraper):
             bill.add_source(bill_detail_url)
 
             # grab sponsors
-            # TODO: determine if first is always the sole primary sponsor?
             sponsors = doc.xpath('//table[@summary="Show Authors"]/descendant::a/text()')
             if sponsors:
                 primary_sponsor = sponsors[0].strip()
