@@ -128,3 +128,21 @@ def legislator(request, id):
         raise Http404
     return render_to_response('legislator.html', {'leg': leg,
                                           'metadata': metadata(leg['state'])})
+
+def committees(request, state):
+    upper_coms = db.committees.find({'state': state.lower(),
+                                      'chamber': 'upper'})
+    lower_coms = db.committees.find({'state': state.lower(),
+                                      'chamber': 'lower'})
+    joint_coms = db.committees.find({'state': state.lower(),
+                                      'chamber': 'joint'})
+    upper_coms = sorted(upper_coms)
+    lower_coms = sorted(lower_coms)
+    joint_coms = sorted(joint_coms)
+
+    return render_to_response('committees.html', {
+        'upper_coms': upper_coms,
+        'lower_coms': lower_coms,
+        'joint_coms': joint_coms,
+        'metadata': metadata(state)
+    })
