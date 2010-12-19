@@ -147,19 +147,19 @@ class AZBillScraper(BillScraper):
                     rows = table.xpath('tr')
                     for row in rows:
                         action = row[0].text_content().strip()[:-1]
-                        h_or_s = 'lower' if action.startswith('H') else 'upper'
+                        actor = 'lower' if action.startswith('H') else 'upper'
                         date = utils.get_date(row[1])
                         # bill:introduced
                         if (action.endswith('FIRST READ') or 
                             action.endswith('FIRST WAIVED')):
-                            if h_or_s == chamber:
+                            if actor == chamber:
                                 a_type = ['bill:introduced', 'bill:reading:1']
                             else:
                                 a_type = 'bill:reading:1'
-                            bill.add_action(h_or_s, action, date, type=a_type) 
+                            bill.add_action(actor, action, date, type=a_type) 
                         else:
                             a_type = 'bill:reading:2'
-                            bill.add_action(h_or_s, action, date, type=a_type)
+                            bill.add_action(actor, action, date, type=a_type)
                     continue
                             
                 elif action == 'COMMITTEES:':
@@ -172,7 +172,7 @@ class AZBillScraper(BillScraper):
                         committee = meta_tag.get('content') # @content is committee abbrv
                         #actor is house or senate referring the bill to committee
                         actor = 'lower' if h_or_s.lower() == 'h' else 'upper'
-                        act = 'ASSIGNED TO COMMITTEE: ' + committee
+                        act = 'assigned to committee: ' + committee
                         date = utils.get_date(row[1])
                         bill.add_action(actor, act, date, type='committee:referred')
                         # now lets see if there is a vote
@@ -184,7 +184,7 @@ class AZBillScraper(BillScraper):
                             bill.add_action(actor, committee + ":" + act, date, 
                                             type=a_type)
                             self.scrape_votes(actor, vote_url, bill, date,
-                                                motion='COMMITTEE: ' + act, 
+                                                motion='committee: ' + act, 
                                                 committee=committee, 
                                                 type='other')
                         elif len(row) == 5:
@@ -206,7 +206,8 @@ class AZBillScraper(BillScraper):
                         if action.endswith(':'):
                             action = action[:-1]
                         result = row[2].text_content().strip()
-                        action = action + " CONCUR: " + result # majority caucus Y|N
+                        # majority caucus Y|N
+                        action = action + " concur: " + result 
                         date = utils.get_date(row[1])
                         bill.add_action(actor, action, date, concur=result,
                                         type='other')
@@ -217,9 +218,9 @@ class AZBillScraper(BillScraper):
                     rows = table.xpath('tr')
                     for row in rows:
                         action = row[0].text_content().strip()[:-1]
-                        h_or_s = 'upper' if action.endswith('HOUSE') else 'lower'
+                        actor = 'upper' if action.endswith('HOUSE') else 'lower'
                         date = utils.get_date(row[1])
-                        bill.add_action(h_or_s, action, date, type='other')
+                        bill.add_action(actor, action, date, type='other')
                     continue
                 
                 # Committee of the whole actions
@@ -241,7 +242,7 @@ class AZBillScraper(BillScraper):
                                                 extra=act)
                     continue
                 # AMMENDMENTS
-                elif 'AMMENDMENTS' in action:
+                elif 'AMENDMENTS' in action:
                     for row in table.xpath('tr')[1:]:
                         act = row.text_content().strip()
                         if 'passed' in act:
@@ -453,8 +454,7 @@ class AZBillScraper(BillScraper):
                     new_list.append(out_of_order.pop(o_index))
                     
         if out_of_order != []:
-            print "Unable to sort " + bill['bill_id']
-            print out_of_order
+            self.log("Unable to sort " + bill['bill_id'])
             return bill
         else:
             bill['actions'] = new_list
