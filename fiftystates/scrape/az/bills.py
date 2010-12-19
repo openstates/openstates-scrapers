@@ -138,9 +138,10 @@ class AZBillScraper(BillScraper):
                     if title != bill['title']:
                         bill.add_title(title)
             
-            #action_tables = root.xpath('/html/body/div/table/tr[3]/td[4]/table/tr/td/table/tr/td/table')
             for table in base_table.xpath('tr/td/table'):
                 action = table.xpath('string(tr[1]/td[1])').strip()
+                if action == '':
+                    action = table.xpath('string(tr[1])').strip()
                 if (action.endswith('FIRST READ:') or 
                     action.endswith('SECOND READ:') or 'WAIVED' in action):
                     
@@ -241,16 +242,18 @@ class AZBillScraper(BillScraper):
                                                 motion=action, type='other', 
                                                 extra=act)
                     continue
-                # AMMENDMENTS
+                # AMENDMENTS
                 elif 'AMENDMENTS' in action:
-                    for row in table.xpath('tr')[1:]:
+                    rows = table.xpath('tr')[1:]
+                    for row in rows:
                         act = row.text_content().strip()
                         if 'passed' in act:
-                            a_type = 'ammendment:passed'
+                            a_type = 'amendment:passed'
                         elif 'failed' in act:
-                            a_type = 'ammendment:failed'
+                            a_type = 'amendment:failed'
                         else:
                             a_type = 'other'
+                        # actor and date will same as previous action
                         bill.add_action(actor, act, date, type=a_type)
                     continue
             # CONFERENCE COMMITTEE
