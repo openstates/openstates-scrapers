@@ -264,7 +264,7 @@ class AZBillScraper(BillScraper):
                 # MOTION TO RECONSIDER
                 elif action == 'MOTION TO RECONSIDER:':
                     date = utils.get_date(table[1][1])
-                    action = table[3][1].text_content().strip()
+                    action = table[-1][1].text_content().strip()
                     bill.add_action(actor, action, date, type='other')
                     continue
                     
@@ -292,7 +292,6 @@ class AZBillScraper(BillScraper):
                             pass_fail = {'PASSED': 'bill:passed',
                                             'FAILED': 'bill:failed'}[passed]
                             a_type.append(pass_fail)
-                            print pass_fail
                             bill.add_action(actor, action, vote_date, 
                                             type=a_type)
                             row['type'] = 'passage'
