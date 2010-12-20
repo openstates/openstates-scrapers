@@ -307,7 +307,8 @@ class AZBillScraper(BillScraper):
                                                 **row)
                         else:
                             date = utils.get_date(row.pop('DATE'))
-                            bill.add_action(actor, action, date, type=a_type)
+                            if date:
+                                bill.add_action(actor, action, date, type=a_type)
                     continue
                 elif 'TRANSMITTED TO' in action:
                     # transmitted to Governor or secretary of the state
