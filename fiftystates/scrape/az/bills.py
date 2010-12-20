@@ -264,8 +264,15 @@ class AZBillScraper(BillScraper):
                 # MOTION TO RECONSIDER
                 elif action == 'MOTION TO RECONSIDER:':
                     date = utils.get_date(table[1][1])
-                    action = table[-1][1].text_content().strip()
-                    bill.add_action(actor, action, date, type='other')
+                    if table[1][0].text_content().strip() == 'Vote Detail':
+                        vote_url = table[1][0].xpath('string(a/@href)')
+                        bill.add_action(actor, action, date, type=a_type)
+                        self.scrape_votes(actor, vote_url, bill, vote_date,
+                                          motion='motion to reconsider', 
+                                            type='other')
+                    else:
+                        action = table[-1][1].text_content().strip()
+                        bill.add_action(actor, action, date, type='other')
                     continue
                     
                 elif (action.endswith('FINAL READ:') or 
@@ -379,6 +386,10 @@ class AZBillScraper(BillScraper):
             o_args['amended'] = kwargs.pop('AMEND').text_content().strip()
         if 'motion' in kwargs:
             motion = kwargs.pop('motion')
+        if 'EMER' in kwargs and kwargs['EMER'].text_content().strip():
+            o_args['EMER'] = kwargs.pop('EMER').text_content().strip()
+        if '2/3 VOTE' in kwargs and kwargs['2/3 VOTE'].text_content().strip():
+            o_args['2/3 VOTE'] = kwargs.pop('2/3 VOTE').text_content().strip()
         if 'committee' in kwargs:
             o_args['committee'] = utils.get_committee_name(kwargs.pop('committee'),
                                                             chamber)
@@ -405,6 +416,18 @@ class AZBillScraper(BillScraper):
                     o_count = o_count + v
             if passed == '':
                 passed = yes_count > no_count
+                if 'committee' not in o_args:
+                    if chamber == 'upper' and passed:
+                        if 'EMER' in o_args or '2/3 VOTE' in o_args:
+                            passed = yes_count > 20
+                        else:
+                            passed = yes_count > 16
+                    elif chamber == 'lower' and passed:
+                        if 'EMER' in o_args or '2/3 VOTE' in o_args:
+                            passed = yes_count > 40
+                        else:
+                            passed = yes_count > 31
+                            
             vote = Vote(chamber, date, motion, passed, yes_count, no_count,
                         o_count, type=v_type, **o_args)
             vote.add_source(url)
