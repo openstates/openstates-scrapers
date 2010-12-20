@@ -264,15 +264,16 @@ class AZBillScraper(BillScraper):
                 # MOTION TO RECONSIDER
                 elif action == 'MOTION TO RECONSIDER:':
                     date = utils.get_date(table[1][1])
-                    if table[1][0].text_content().strip() == 'Vote Detail':
-                        vote_url = table[1][0].xpath('string(a/@href)')
-                        bill.add_action(actor, action, date, type=a_type)
-                        self.scrape_votes(actor, vote_url, bill, vote_date,
-                                          motion='motion to reconsider', 
-                                            type='other')
-                    else:
-                        action = table[-1][1].text_content().strip()
-                        bill.add_action(actor, action, date, type='other')
+                    if date:
+                        if table[1][0].text_content().strip() == 'Vote Detail':
+                            vote_url = table[1][0].xpath('string(a/@href)')
+                            bill.add_action(actor, action, date, type=a_type)
+                            self.scrape_votes(actor, vote_url, bill, vote_date,
+                                              motion='motion to reconsider', 
+                                                type='other')
+                        else:
+                            action = table[-1][1].text_content().strip()
+                            bill.add_action(actor, action, date, type='other')
                     continue
                     
                 elif (action.endswith('FINAL READ:') or 
