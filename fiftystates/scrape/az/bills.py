@@ -258,13 +258,16 @@ class AZBillScraper(BillScraper):
                     continue
             # CONFERENCE COMMITTEE
             # http://www.azleg.gov/FormatDocument.asp?inDoc=/legtext/49Leg/2r/bills/hb2083o.asp
-            # table = base_table.xpath(table_path % 'CONFERENCE COMMITTEE')
             
-            # MISCELLANEOUS MOTION
-            # http://www.azleg.gov/FormatDocument.asp?inDoc=/legtext/49Leg/1r/bills/hb2286o.asp
-            
-            # MOTION TO RECONSIDER
-            # SEE ABOVE
+                # MISCELLANEOUS MOTION
+                
+                # MOTION TO RECONSIDER
+                elif action == 'MOTION TO RECONSIDER:':
+                    date = utils.get_date(table[1][1])
+                    action = table[3][1].text_content().strip()
+                    bill.add_action(actor, action, date, type='other')
+                    continue
+                    
                 elif (action.endswith('FINAL READ:') or 
                       action.endswith('THIRD READ:')):
                     # house|senate final and third read
