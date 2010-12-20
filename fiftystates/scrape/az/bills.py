@@ -276,27 +276,29 @@ class AZBillScraper(BillScraper):
                     # get a dict of keys from the header and values from the row
                     k_rows = utils.get_rows(rows[1:], rows[0])
                     action = rows[0][0].text_content().strip()
-                    a_type = [get_action_type(action, 'Generic')]
-                    if rows[1][0].text_content().strip() == 'Vote Detail':
-                        vote_url = k_rows[0].pop(action).xpath('string(a/@href)')
-                        vote_date = utils.get_date(k_rows[0].pop('DATE'))
-                        passed = k_rows[0].pop('RESULT').text_content().strip()
-                        # leaves vote counts, ammended, emergency, two-thirds
-                        # and possibly rfe left in k_rows. get the vote counts 
-                        # from scrape votes and pass ammended and emergency
-                        # as kwargs to sort them in scrap_votes
-                        pass_fail = {'PASSED': 'bill:passed',
-                                        'FAILED': 'bill:failed'}[passed]
-                        a_type.append(pass_fail)
-                        bill.add_action(actor, action, vote_date, 
-                                        type=a_type)
-                        k_rows[0]['type'] = 'passage'
-                        self.scrape_votes(actor, vote_url, bill, vote_date,
-                                            passed=passed, motion=action, 
-                                            **k_rows[0])
-                    else:
-                        date = utils.get_date(k_rows[0].pop('DATE'))
-                        bill.add_action(actor, action, date, type=a_type)
+                    for row in k_rows:
+                        a_type = [get_action_type(action, 'Generic')]
+                        if row[action].text_content().strip() == 'Vote Detail':
+                            vote_url = row.pop(action).xpath('string(a/@href)')
+                            vote_date = utils.get_date(row.pop('DATE'))
+                            passed = row.pop('RESULT').text_content().strip()
+                            # leaves vote counts, ammended, emergency, two-thirds
+                            # and possibly rfe left in k_rows. get the vote counts 
+                            # from scrape votes and pass ammended and emergency
+                            # as kwargs to sort them in scrap_votes
+                            pass_fail = {'PASSED': 'bill:passed',
+                                            'FAILED': 'bill:failed'}[passed]
+                            a_type.append(pass_fail)
+                            print pass_fail
+                            bill.add_action(actor, action, vote_date, 
+                                            type=a_type)
+                            row['type'] = 'passage'
+                            self.scrape_votes(actor, vote_url, bill, vote_date,
+                                                passed=passed, motion=action, 
+                                                **row)
+                        else:
+                            date = utils.get_date(row.pop('DATE'))
+                            bill.add_action(actor, action, date, type=a_type)
                     continue
                 elif 'TRANSMITTED TO' in action:
                     # transmitted to Governor or secretary of the state
