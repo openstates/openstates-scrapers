@@ -56,7 +56,7 @@ def get_date(elem):
     try:
         return_date = datetime.datetime.strptime(elem.text_content().strip(), '%m/%d/%y')
     except ValueError:
-        return_date = elem.text_content().strip() or ''
+        return_date = ''
     return return_date
     
 def img_check(elem):
