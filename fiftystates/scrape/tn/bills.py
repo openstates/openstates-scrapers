@@ -1,5 +1,6 @@
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
+from fiftystates.scrape.votes import Vote
 
 import datetime
 import lxml.html
@@ -63,7 +64,7 @@ class TNBillScraper(BillScraper):
             sponsor = sponsor.replace('*','').strip()
             bill.add_sponsor('primary',sponsor)
             
-            # Co-sponsors unavailable for scraping (loaded in via AJAX)
+            # Co-sponsors unavailable for scraping (loaded into page via AJAX)
             
             # Full summary doc
             summary = page.xpath("//span[@id='lblBillSponsor']/a")[0]
@@ -77,5 +78,55 @@ class TNBillScraper(BillScraper):
                 action_taken = ar.xpath("td")[0].text
                 action_date = datetime.datetime.strptime(ar.xpath("td")[1].text.strip(), '%m/%d/%Y')
                 bill.add_action(chamber, action_taken, action_date)
-            
+
+            votes_link = page.xpath("//span[@id='lblBillVotes']/a")
+            if(len(votes_link) > 0):
+                votes_link = votes_link[0].get('href')
+                bill = self.scrape_votes(bill, sponsor, 'http://wapp.capitol.tn.gov/apps/Billinfo/%s' % (votes_link,))
+
+
             self.save_bill(bill)
+
+
+    def scrape_votes(self, bill, sponsor, link):
+        with self.urlopen(link) as page:
+            page = lxml.html.fromstring(page)
+            raw_vote_data = page.xpath("//span[@id='lblVoteData']")[0].text_content()
+            raw_vote_data = raw_vote_data.strip().split('%s by %s - ' % (bill['bill_id'], sponsor))[1:]
+            for raw_vote in raw_vote_data:
+                raw_vote = raw_vote.split(u'\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0')
+                motion = raw_vote[0]
+
+                vote_date = re.search('(\d+/\d+/\d+)', motion)
+                if vote_date:
+                    vote_date = datetime.datetime.strptime(vote_date.group(), '%m/%d/%Y') 
+
+                passed = ('Passed' in motion) or ('Adopted' in raw_vote[1])
+                vote_regex = re.compile('\d+$')
+                yes_count = None
+                no_count = None
+                other_count = 0
+                
+                for v in raw_vote[1:]:
+                    if v.startswith('Ayes...') and vote_regex.search(v):
+                        yes_count = int(vote_regex.search(v).group())
+                    elif v.startswith('Noes...') and vote_regex.search(v):
+                        no_count = int(vote_regex.search(v).group())
+
+                if yes_count and no_count:
+                    passed = yes_count > no_count
+                else:
+                    yes_count = no_count = 0
+
+                #print "Motion: %s" % (motion,)
+                #print "Date: %s" % (vote_date,)
+                #print "Passed: %s" % (passed,)
+                #print "Yes: %s" % (yes_count,)
+                #print "No: %s" % (no_count,)
+                #print '------------'
+
+                vote = Vote(bill['chamber'], vote_date, motion, passed, yes_count, no_count, other_count) 
+                vote.add_source(link)
+                bill.add_vote(vote)
+
+        return bill
