@@ -1,17 +1,16 @@
 from datetime import datetime
 from fiftystates.scrape.nj import metadata
-from fiftystates.scrape.nj.utils import chamber_name
+from fiftystates.scrape.nj.utils import chamber_name, DBFMixin
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import VoteScraper, Vote
 
 import lxml.etree
-from dbfpy import dbf
 import scrapelib
 import zipfile
 import csv
 
 
-class NJBillScraper(BillScraper):
+class NJBillScraper(BillScraper, DBFMixin):
     state = 'nj'
 
     _bill_types = {
@@ -105,9 +104,7 @@ class NJBillScraper(BillScraper):
     def initialize_committees(self, year_abr):
         chamber = {'A':'Assembly', 'S': 'Senate', '':''}
 
-        url = 'ftp://www.njleg.state.nj.us/ag/%sdata/COMMITT.DBF' % year_abr
-        COM_dbf, resp = self.urlretrieve(url)
-        com_db = dbf.Dbf(COM_dbf)
+        com_url, com_db = self.get_dbf(year_abr, 'COMMITT')
 
         self._committees = {}
 
@@ -129,7 +126,7 @@ class NJBillScraper(BillScraper):
                 return (action + ' ' + com_name, acttype)
 
         # warn about missing action
-        self.warn('unknown action: %s' % act_str)
+        self.warning('unknown action: %s' % act_str)
 
         return (act_str, 'other')
 
@@ -146,11 +143,13 @@ class NJBillScraper(BillScraper):
         self.scrape_bill_pages(session, year_abr)
 
     def scrape_bill_pages(self, session, year_abr):
+        """ assemble information on a bill from a number of DBF files
+        """
 
         #Main Bill information
-        main_bill_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/MAINBILL.DBF' % (year_abr)
-        MAINBILL_dbf, resp = self.urlretrieve(main_bill_url)
-        main_bill_db = dbf.Dbf(MAINBILL_dbf)
+        main_bill_url, main_bill_db = self.get_dbf(year_abr, 'MAINBILL')
+
+        # keep a dictionary of bills (mapping bill_id to Bill obj)
         bill_dict = {}
 
         for rec in main_bill_db:
@@ -169,9 +168,7 @@ class NJBillScraper(BillScraper):
             bill_dict[bill_id] = bill
 
         #Sponsors
-        bill_sponsors_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/BILLSPON.DBF' % (year_abr)
-        SPONSORS_dbf, resp = self.urlretrieve(bill_sponsors_url)
-        bill_sponsors_db = dbf.Dbf(SPONSORS_dbf)
+        bill_sponsors_url, bill_sponsors_db = self.get_dbf(year_abr, 'BILLSPON')
 
         for rec in bill_sponsors_db:
             bill_type = rec["billtype"]
@@ -188,9 +185,7 @@ class NJBillScraper(BillScraper):
 
 
         #Documents
-        bill_document_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/BILLWP.DBF' % (year_abr)
-        DOC_dbf, resp = self.urlretrieve(bill_document_url)
-        bill_document_db = dbf.Dbf(DOC_dbf)
+        bill_document_url, bill_document_db = self.get_dbf(year_abr, 'BILLWP')
 
         #print bill_document_db[2]
         for rec in bill_document_db:
@@ -280,12 +275,8 @@ class NJBillScraper(BillScraper):
                 bill.add_vote(vote)
 
         #Actions
-        bill_action_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/BILLHIST.DBF' % (year_abr)
-        ACTION_dbf, resp = self.urlretrieve(bill_action_url)
-        bill_action_db = dbf.Dbf(ACTION_dbf)
-        bill.add_source(bill_sponsors_url)
-        bill.add_source(bill_document_url)
-        bill.add_source(bill_action_url)
+        bill_action_url, bill_action_db = self.get_dbf(year_abr, 'BILLHIST')
+
 
         for rec in bill_action_db:
             bill_type = rec["billtype"]
@@ -300,4 +291,22 @@ class NJBillScraper(BillScraper):
             if comment:
                 action += (' ' + comment)
             bill.add_action(actor, action, date, type=atype)
+
+        # Subjects
+        subject_url, subject_db = self.get_dbf(year_abr, 'BILLSUBJ')
+        for rec in subject_db:
+            bill_id = rec['billtype'] + str(int(rec['billnumber']))
+            bill = bill_dict.get(bill_id)
+            if bill:
+                bill.setdefault('subjects', []).append(rec['subjectkey'])
+            else:
+                self.warning('invalid bill id in BILLSUBJ.DBF: %s' % bill_id)
+
+        # save all bills at the end
+        for bill in bill_dict.itervalues():
+            # add sources
+            bill.add_source(bill_sponsors_url)
+            bill.add_source(bill_document_url)
+            bill.add_source(bill_action_url)
+            bill.add_source(subject_url)
             self.save_bill(bill)

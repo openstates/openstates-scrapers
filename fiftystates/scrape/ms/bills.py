@@ -7,8 +7,40 @@ from datetime import datetime
 import lxml.etree
 import re
 
+def _combine_lines(lines):
+    newlines = []
+    lastline = '.'
+    for line in lines:
+        if lastline and lastline[-1] in '.,:' and not line.startswith('('):
+            newlines.append(line)
+            lastline = line
+        else:
+            lastline = newlines[-1] = newlines[-1] + ' ' + line
+    return newlines
+
 class MSBillScraper(BillScraper):
     state = 'ms'
+
+    _action_types = (
+        ('Died in Committee', 'committee:failed'),
+        ('Enrolled Bill Signed', 'other'),
+        ('Immediate Release', 'other'),
+        ('Passed', 'bill:passed'),
+        ('Adopted', 'bill:passed'),
+        ('Amended', 'amendment:passed'),
+        ('Failed', 'bill:failed'),
+        ('Committee Substitute Adopted', 'bill:substituted'),
+        ('Amendment Failed', 'amendment:failed'),
+        ('Amendment Withdrawn', 'amendment:withdrawn'),
+        ('Referred To', 'committee:referred'),
+        ('Rereferred To', 'committee:referred'),
+        ('Transmitted To', 'bill:introduced'),
+        ('Approved by Governor', 'governor:signed'),
+        ('Vetoed', 'governor:vetoed'),
+        ('Partially Vetoed', 'governor:vetoed:line-item'),
+        ('Title Suff Do', 'committee:passed'),
+        ('Read the Third Time', 'bill:reading:3'),
+    )
 
     def scrape(self, chamber, session):
         self.save_errors=False
@@ -28,6 +60,9 @@ class MSBillScraper(BillScraper):
                 else:
                     chamber = "lower"
 
+                bill_type = {'B':'bill', 'C': 'concurrent resolution',
+                             'R': 'resolution', 'N': 'nomination'}[bill_id[1]]
+
                 # just skip past bills that are of the wrong chamber
                 if chamber != chamber_to_scrape:
                     continue
@@ -42,7 +77,8 @@ class MSBillScraper(BillScraper):
                     title = details_root.xpath('string(//shorttitle)')
                     longtitle = details_root.xpath('string(//longtitle)')
 
-                    bill = Bill(session, chamber, bill_id, title, longtitle = longtitle)
+                    bill = Bill(session, chamber, bill_id, title,
+                                type=bill_type, longtitle=longtitle)
 
                     #sponsors
                     main_sponsor = details_root.xpath('string(//p_name)').split()[0]
@@ -109,7 +145,13 @@ class MSBillScraper(BillScraper):
                             version_url = "http://billstatus.ls.state.ms.us/" + version_path
                             bill.add_document("Veto", version_url) 
 
-                        bill.add_action(actor, action, date,
+                        atype = 'other'
+                        for prefix, prefix_type in self._action_types:
+                            if action.startswith(prefix):
+                                atype = prefix_type
+                                break
+
+                        bill.add_action(actor, action, date, type=atype,
                                         action_num=action_num)
 
                         if act_vote:
@@ -121,12 +163,34 @@ class MSBillScraper(BillScraper):
                     bill.add_source(bill_details_url)
                     self.save_bill(bill)
 
+    _vote_mapping = {
+        'Passed': ('Passage', True),
+        'Adopted': ('Passage', True),
+        'Failed': ('Passage', False),
+        'Passed As Amended': ('Passage as Amended', True),
+        'Adopted As Amended': ('Passage as Amended', True),
+        'Appointment Confirmed': ('Appointment Confirmation', True),
+        'Conference Report Adopted': ('Adopt Conference Report', True),
+        'Conference Report Failed': ('Adopt Conference Report', False),
+        'Motion to Reconsider Tabled': ('Table Motion to Reconsider', True),
+        'Motion to Recnsdr Tabled Lost': ('Table Motion to Reconsider', False),
+        'Veto Sustained': ('Override Veto', False),
+        'Concurred in Amend From House': ('Concurrence in Amendment From House', True),
+        'Concurred in Amend From Senate': ('Concurrence in Amendment From Senate', True),
+        'Decline to Concur/Invite Conf': ('Decline to Concur', True),
+        'Decline Concur/Inv Conf Lost': ('Decline to Concur', False),
+        'Failed to Suspend Rules': ('Motion to Suspend Rules', False),
+        'Motion to Recommit Lost': ('Motion to Recommit', True),
+        'Reconsidered': ('Reconsideration', True),
+    }
+
     def scrape_votes(self, url, motion, date, chamber):
         vote_pdf, resp = self.urlretrieve(url)
         text = convert_pdf(vote_pdf, 'text')
 
+        motion, passed = self._vote_mapping[motion]
+
         # process PDF text
-        passed = ('passed' in text) or ('concurred' in text)
 
         yes_votes = []
         no_votes = []
@@ -145,7 +209,11 @@ class MSBillScraper(BillScraper):
             ('DISCLAIMER', None),
         )
 
-        for line in text.split('\n'):
+        # split lines on newline, recombine lines that don't end in punctuation
+        lines = _combine_lines(text.split('\n'))
+
+        for line in lines:
+
             # check if the line starts with a precursor, switch to that array
             for pc, arr in precursors:
                 if pc in line:

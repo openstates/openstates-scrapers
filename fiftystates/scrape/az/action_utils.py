@@ -22,9 +22,12 @@ committee_actions = {
      "DP/PFCA")                      : "committee:passed:favorable",
     ("DPA", "DPA CORRECTED",
      "DPA ON RECON", "DPA ON REREFER",
-     "DPA/PFC", "DPA/PFCA", "DPA/SE",
-     "DPA/PFC W/FL", "DPA/PFCA W/FL"): "committee:passed:favorable", # "committee:amended"],
-    ("DNP")                          : "committee:passed:unfavorable",
+     "DPA/PFC", "DPA/PFC W/FL",
+     "DPA/PFCA", "DPA/PFCA W/FL"): "committee:passed:favorable", # "committee:amended"],
+    ("DNP",)                         : "committee:passed:unfavorable",
+    ("DPA/SE", "DPA/SE ON RECON",
+     "DPA/SE ON REREF")              : ["committee:passed:favorable",
+                                        "bill:substituted"],
     ("DISC/HELD", "HELD ON RECON",
      "HELD", "HELD 1 WK",
      "HELD INDEF")                   : "other", # "committee:held"]
@@ -56,15 +59,17 @@ generic_actions= {
      "REC REREF TO COM", 
      "RECOMMIT TO COM")             : "committee:referred",
     # THIRD READ AND FINAL READ
-    ("THIRD READ:",)                : ["reading:3", "passage"],
+    ("THIRD READ:",)                : "bill:reading:3",
+    ("DPA/SE", "DPA/SE ON RECON",
+     "DPA/SE ON REREF")              : "bill:substituted",
     ("HOUSE FINAL READ:",
-     "SENATE FINAL READ:")          : 'passage',
+     "SENATE FINAL READ:")          : "other",
 }
 
 ###########################################################
 # get_action_type()
 ###########################################################
-def get_action_type(abbrv, group="GENERIC"):
+def get_action_type(abbrv, group=None):
     """
     best attempt at classifying committee actions
     """

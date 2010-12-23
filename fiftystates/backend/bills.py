@@ -17,7 +17,8 @@ from fiftystates.backend import db
 from fiftystates.backend.names import get_legislator_id
 from fiftystates.backend.utils import (insert_with_id,
                                        update, prepare_obj,
-                                       get_committee_id)
+                                       get_committee_id,
+                                       fix_bill_id)
 
 import pymongo
 
@@ -60,15 +61,12 @@ def import_bills(state, data_dir):
 
     paths = glob.glob(pattern)
 
-    bill_id_re = re.compile(r'([A-Z]*)\s*0*(\d+)')
-
     for path in paths:
         with open(path) as f:
             data = prepare_obj(json.load(f))
 
         # clean up bill_id
-        bill_id = data['bill_id'].replace('.', '')
-        data['bill_id'] = bill_id_re.sub(r'\1 \2', bill_id)
+        data['bill_id'] = fix_bill_id(data['bill_id'])
 
         bill = db.bills.find_one({'state': data['state'],
                                   'session': data['session'],

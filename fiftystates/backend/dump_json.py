@@ -129,7 +129,7 @@ def upload(state, filename):
     k.set_acl('public-read')
 
     metadata['latest_dump_url'] = s3_url
-    metadata['latest_dump_date'] = datetime.datetime.now()
+    metadata['latest_dump_date'] = datetime.datetime.utcnow()
     db.metadata.save(metadata, safe=True)
 
     print 'uploaded to %s' % s3_url

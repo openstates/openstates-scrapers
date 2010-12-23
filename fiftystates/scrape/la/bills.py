@@ -7,7 +7,7 @@ from fiftystates.scrape import ScrapeError
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 from fiftystates.scrape.utils import pdf_to_lxml
-from fiftystates.scrape.la import metadata, internal_sessions
+from fiftystates.scrape.la import metadata
 
 import lxml.html
 
@@ -17,25 +17,25 @@ class LABillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         types = {'upper': ['SB', 'SR', 'SCR'], 'lower': ['HB', 'HR', 'HCR']}
-        for session in internal_sessions[int(session)]:
-            s_id = re.findall('\/(\w+)\.htm', session[0])[0]
 
-            # Fake it until we can make it
-            for abbr in types[chamber]:
-                bill_number = 1
-                failures = 0
-                while failures < 5:
-                    bill_url = ('http://www.legis.state.la.us/billdata/'
-                                'byinst.asp?sessionid=%s&billtype=%s'
-                                '&billno=%d' % (
-                                    s_id, abbr, bill_number))
+        s_id = session[-3:-1] + "rs"
 
-                    if self.scrape_bill(bill_url, chamber, session[1]):
-                        failures = 0
-                    else:
-                        failures += 1
+        # Fake it until we can make it
+        for abbr in types[chamber]:
+            bill_number = 1
+            failures = 0
+            while failures < 5:
+                bill_url = ('http://www.legis.state.la.us/billdata/'
+                            'byinst.asp?sessionid=%s&billtype=%s'
+                            '&billno=%d' % (
+                                s_id, abbr, bill_number))
 
-                    bill_number += 1
+                if self.scrape_bill(bill_url, chamber, session):
+                    failures = 0
+                else:
+                    failures += 1
+
+                bill_number += 1
 
     def scrape_bill(self, bill_url, chamber, session):
         with self.urlopen(bill_url) as text:

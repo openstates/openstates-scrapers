@@ -41,14 +41,16 @@ Generally we try to run experimental state scrapers as often as ready states, th
 
 Current Experimental States
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Florida
+* Minnesota
+* Mississippi
 * Nevada
+* New Jersey
 * North Carolina
 * Pennsylvania
 * South Dakota
 * Vermont
 * Virginia
-* New Jersey
-* Florida
 
 Unsupported States (grey)
 -------------------------

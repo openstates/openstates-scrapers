@@ -6,7 +6,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
+from fiftystates.scrape import Scraper, SourcedObject, JSONDateEncoder
 
 
 class CommitteeScraper(Scraper):
@@ -45,9 +45,17 @@ class CommitteeScraper(Scraper):
             json.dump(committee, f, cls=JSONDateEncoder)
 
 
-class Committee(FiftystatesObject):
+class Committee(SourcedObject):
     def __init__(self, chamber, committee, subcommittee=None,
                  **kwargs):
+        """
+        Create a Committee.
+
+        :param chamber: the chamber this committee is associated with ('upper',
+            'lower', or 'joint')
+        :param committee: the name of the committee
+        :param subcommittee: the name of the subcommittee (optional)
+        """
         super(Committee, self).__init__('committee', **kwargs)
         self['chamber'] = chamber
         self['committee'] = committee
@@ -55,5 +63,12 @@ class Committee(FiftystatesObject):
         self['members'] = kwargs.get('members', [])
 
     def add_member(self, legislator, role='member', **kwargs):
+        """
+        Add a member to the committee object.
+
+        :param legislator: name of the legislator
+        :param role: role that legislator holds in the committee
+            (eg. chairman) default: 'member'
+        """
         self['members'].append(dict(name=legislator, role=role,
                                     **kwargs))

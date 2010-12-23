@@ -6,6 +6,7 @@ import logging
 import datetime
 
 from pymongo.son import SON
+import pymongo.errors
 
 from fiftystates.backend import db, fs
 
@@ -69,7 +70,7 @@ def insert_with_id(obj):
 
         try:
             return collection.insert(obj, safe=True)
-        except pymongo.DuplicateKeyError:
+        except pymongo.errors.DuplicateKeyError:
             continue
 
 
@@ -120,6 +121,9 @@ def convert_timestamps(obj):
     for key in ('sources', 'actions', 'votes'):
         for child in obj.get(key, []):
             convert_timestamps(child)
+
+    for term in obj.get('terms', []):
+        convert_timestamps(term)
 
     for details in obj.get('session_details', {}).values():
         convert_timestamps(details)
@@ -233,3 +237,19 @@ def put_document(doc, content_type, metadata):
     fs.put(doc, _id=id, content_type=content_type, metadata=metadata)
 
     return id
+
+
+def merge_legislators(old, new):
+    all_ids = set(old['_all_ids']).union(new['_all_ids'])
+    new['_all_ids'] = list(all_ids)
+    db.legislators.remove({'_id': new['_id']})
+    new['_id'] = old['_id']
+    new['leg_id'] = new['_id']
+    db.legislators.save(new)
+
+# fixing bill ids
+_bill_id_re = re.compile(r'([A-Z]*)\s*0*(\d+)')
+def fix_bill_id(bill_id):
+    bill_id = bill_id.replace('.', '')
+    return _bill_id_re.sub(r'\1 \2', bill_id)
+

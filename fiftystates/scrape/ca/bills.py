@@ -109,7 +109,8 @@ class CABillScraper(BillScraper):
                 if version.taxlevy == 'Yes':
                     type.append('tax levy')
 
-                subject = clean_title(version.subject)
+                if version.subject:
+                    subject = clean_title(version.subject)
 
                 fsbill.add_version(
                     version.bill_version_id, '',

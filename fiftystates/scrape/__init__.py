@@ -165,9 +165,9 @@ class Scraper(scrapelib.Scraper):
         raise NoDataForPeriod(term)
 
 
-class FiftystatesObject(dict):
+class SourcedObject(dict):
     def __init__(self, _type, **kwargs):
-        super(FiftystatesObject, self).__init__()
+        super(SourcedObject, self).__init__()
         self['_type'] = _type
         self['sources'] = []
         self.update(kwargs)

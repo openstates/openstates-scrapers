@@ -6,7 +6,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from fiftystates.scrape import Scraper, FiftystatesObject, JSONDateEncoder
+from fiftystates.scrape import Scraper, SourcedObject, JSONDateEncoder
 
 
 class VoteScraper(Scraper):
@@ -37,7 +37,7 @@ class VoteScraper(Scraper):
             json.dump(vote, f, cls=JSONDateEncoder)
 
 
-class Vote(FiftystatesObject):
+class Vote(SourcedObject):
     def __init__(self, chamber, date, motion, passed,
                  yes_count, no_count, other_count, type='other', **kwargs):
         """

@@ -12,7 +12,7 @@ except ImportError:
 
 from fiftystates.backend import db
 from fiftystates.backend.names import get_legislator_id
-from fiftystates.backend.utils import prepare_obj
+from fiftystates.backend.utils import prepare_obj, fix_bill_id
 
 _log = logging.getLogger('fiftystates')
 
@@ -25,6 +25,9 @@ def import_votes(state, data_dir):
     for path in paths:
         with open(path) as f:
             data = prepare_obj(json.load(f))
+
+        # clean up bill_id, needs to match the one already in the database
+        data['bill_id'] = fix_bill_id(data['bill_id'])
 
         bill = db.bills.find_one({'state': state,
                                   'chamber': data['bill_chamber'],

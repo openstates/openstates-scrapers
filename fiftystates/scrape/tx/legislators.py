@@ -53,6 +53,20 @@ class TXLegislatorScraper(LegislatorScraper):
             district = td.xpath('string(//div[3])').strip()
             district = district.replace('District ', '')
 
+            addrs = {}
+            for atype, text in (('capital_address', 'Capitol address:'),
+                                ('district_address', 'District address:')):
+                aspan = root.xpath("//span[. = '%s']" % text)
+                addrs[atype] = None
+
+                if aspan:
+                    addrs[atype] = aspan[0].tail
+                    elem = aspan[0].getnext()
+                    while elem and elem.tag == 'br':
+                        if elem.tail:
+                            addrs[atype] += "\n" + elem.tail
+                        elem = elem.getnext()
+
             party = td.xpath('string(//div[4])').strip()[0]
             if party == 'D':
                 party = 'Democratic'
@@ -61,10 +75,11 @@ class TXLegislatorScraper(LegislatorScraper):
 
             if type == 'Lt. Gov.':
                 leg = Person(full_name)
-                leg.add_role('Lt. Governor', term, party=party)
+                leg.add_role('Lt. Governor', term, party=party, **addrs)
             else:
                 leg = Legislator(term, chamber, district, full_name,
-                                 party=party, photo_url=photo_url)
+                                 party=party, photo_url=photo_url,
+                                 **addrs)
 
             leg.add_source(member_url)
 

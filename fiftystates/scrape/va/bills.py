@@ -1,5 +1,6 @@
 import re
 import datetime
+from collections import defaultdict
 
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
@@ -42,9 +43,29 @@ class VABillScraper(BillScraper):
         #'Substitute': 'other',
     }
 
+    def build_subject_map(self):
+        url = 'http://lis.virginia.gov/cgi-bin/legp604.exe?%s+sbj+SBJ' % self.site_id
+        link_xpath = '//ul[@class="linkSect"]/li/a'
+        self.subject_map = defaultdict(list)
+
+        # loop over list of all issue pages
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
+            for link in doc.xpath(link_xpath):
+                issue_name = link.text
+
+                # open up issue page and get all bill links
+                with self.urlopen('http://lis.virginia.gov' + link.get('href')) as issue_html:
+                    idoc = lxml.html.fromstring(issue_html)
+                    for ilink in idoc.xpath(link_xpath):
+                        self.subject_map[ilink.text].append(issue_name)
+
+
     def scrape(self, chamber, session):
         # internal id for the session, store on self so all methods have access
         self.site_id = self.metadata['session_details'][session]['site_id']
+
+        self.build_subject_map()
 
         # used for skipping bills from opposite chamber
         start_letter = 'H' if chamber == 'lower' else 'S'
@@ -82,6 +103,7 @@ class VABillScraper(BillScraper):
                         bill_url = BASE_URL + link.get('href')
                         self.fetch_sponsors(bill)
                         self.scrape_bill_details(bill_url, bill)
+                        bill['subjects'] = self.subject_map[bill_id]
                         bill.add_source(bill_url)
                         self.save_bill(bill)
 
