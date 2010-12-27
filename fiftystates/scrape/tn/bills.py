@@ -84,7 +84,7 @@ class TNBillScraper(BillScraper):
                 votes_link = votes_link[0].get('href')
                 bill = self.scrape_votes(bill, sponsor, 'http://wapp.capitol.tn.gov/apps/Billinfo/%s' % (votes_link,))
 
-
+            print bill
             self.save_bill(bill)
 
 
@@ -103,15 +103,23 @@ class TNBillScraper(BillScraper):
 
                 passed = ('Passed' in motion) or ('Adopted' in raw_vote[1])
                 vote_regex = re.compile('\d+$')
+                aye_regex = re.compile('^.+voting aye were: (.+) -')
+                no_regex = re.compile('^.+voting no were: (.+) -')
                 yes_count = None
                 no_count = None
                 other_count = 0
+                ayes = []
+                nos = []
                 
                 for v in raw_vote[1:]:
                     if v.startswith('Ayes...') and vote_regex.search(v):
                         yes_count = int(vote_regex.search(v).group())
                     elif v.startswith('Noes...') and vote_regex.search(v):
                         no_count = int(vote_regex.search(v).group())
+                    elif aye_regex.search(v):
+                        ayes = aye_regex.search(v).groups()[0].split(', ')
+                    elif no_regex.search(v):
+                        nos = no_regex.search(v).groups()[0].split(', ')
 
                 if yes_count and no_count:
                     passed = yes_count > no_count
@@ -127,6 +135,10 @@ class TNBillScraper(BillScraper):
 
                 vote = Vote(bill['chamber'], vote_date, motion, passed, yes_count, no_count, other_count) 
                 vote.add_source(link)
+                for a in ayes:
+                    vote.yes(a)
+                for n in nos:
+                    vote.no(n)
                 bill.add_vote(vote)
 
         return bill
