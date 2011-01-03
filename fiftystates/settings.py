@@ -17,3 +17,8 @@ FIFTYSTATES_ERROR_DIR = os.path.abspath(os.path.join(os.path.abspath(
 NIMSP_API_KEY = ''
 VOTESMART_API_KEY = ''
 SUNLIGHT_SERVICES_KEY = ''
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
