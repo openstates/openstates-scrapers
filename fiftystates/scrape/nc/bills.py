@@ -57,8 +57,6 @@ class NCBillScraper(BillScraper):
                         if bill_link:
                             self.subject_map[bill_link[0]].append(cur_subject)
 
-        return self.subject_map
-
     def get_bill_info(self, session, bill_id):
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/'\
             'BillLookUp/BillLookUp.pl?bPrintable=true'\
@@ -81,13 +79,13 @@ class NCBillScraper(BillScraper):
         title_div_txt = bill_soup.findAll('div', id='title')[0].contents[0]
         if 'Joint Resolution' in title_div_txt:
             bill_type = 'joint resolution'
-            bill_id = bill_id[0] + 'JR' + bill_id[1:]
+            bill_id = bill_id[0] + 'JR ' + bill_id[1:]
         elif 'Resolution' in title_div_txt:
             bill_type = 'resolution'
-            bill_id = bill_id[0] + 'R' + bill_id[1:]
+            bill_id = bill_id[0] + 'R ' + bill_id[1:]
         elif 'Bill' in title_div_txt:
             bill_type = 'bill'
-            bill_id = bill_id[0] + 'B' + bill_id[1:]
+            bill_id = bill_id[0] + 'B ' + bill_id[1:]
 
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
         bill.add_source(bill_detail_url)
@@ -145,7 +143,8 @@ class NCBillScraper(BillScraper):
             bill.add_action(actor, action, act_date, type=atype)
 
         if self.is_latest_session(session):
-            bill['subjects'] = self.subject_map[bill_id]
+            subj_key = bill_id[0] + ' ' + bill_id.split(' ')[-1]
+            bill['subjects'] = self.subject_map[subj_key]
         self.save_bill(bill)
 
     def scrape(self, chamber, session):
