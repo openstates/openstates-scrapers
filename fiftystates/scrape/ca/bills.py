@@ -1,6 +1,7 @@
 import re
 import datetime
 
+from fiftystates import settings
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
@@ -29,6 +30,12 @@ class CABillScraper(BillScraper):
     def __init__(self, metadata, host='localhost', user='', pw='',
                  db='capublic', **kwargs):
         super(CABillScraper, self).__init__(metadata, **kwargs)
+
+        if not user:
+            user = getattr(settings, 'MYSQL_USER', '')
+        if not password:
+            pw = getattr(settings, 'MYSQL_PASSWORD', '')
+
         if user and pw:
             conn_str = 'mysql://%s:%s@' % (user, pw)
         else:
