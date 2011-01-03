@@ -33,7 +33,7 @@ class CABillScraper(BillScraper):
 
         if not user:
             user = getattr(settings, 'MYSQL_USER', '')
-        if not password:
+        if not pw:
             pw = getattr(settings, 'MYSQL_PASSWORD', '')
 
         if user and pw:
