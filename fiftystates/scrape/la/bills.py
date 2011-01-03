@@ -18,7 +18,7 @@ class LABillScraper(BillScraper):
     def scrape(self, chamber, session):
         types = {'upper': ['SB', 'SR', 'SCR'], 'lower': ['HB', 'HR', 'HCR']}
 
-        s_id = session[-3:-1] + "rs"
+        s_id = session[2:4] + "rs"
 
         # Fake it until we can make it
         for abbr in types[chamber]:
@@ -119,15 +119,17 @@ class LABillScraper(BillScraper):
 
             action_table = page.xpath("//td/b[text() = 'Action']/../../..")[0]
 
+            chamber = ''
+
             for row in reversed(action_table.xpath('tr')[1:]):
                 cells = row.xpath('td')
                 date = cells[0].text.strip()
                 date = datetime.datetime.strptime(date, '%m/%d/%Y').date()
 
-                chamber = cells[1].text.strip()
-                if chamber == 'S':
+                chamber_abbr = (cells[1].text or '').strip()
+                if chamber_abbr == 'S':
                     chamber = 'upper'
-                elif chamber == 'H':
+                elif chamber_abbr == 'H':
                     chamber = 'lower'
 
                 action = cells[3].text.strip()
@@ -245,6 +247,14 @@ class LABillScraper(BillScraper):
             vote_type = None
             total_re = re.compile('^Total--(\d+)$')
             body = html.xpath('string(/html/body)')
+
+            date_match = re.search('%s (\d{4,4})' % bill['bill_id'], body)
+            date = date_match.group(1)
+            month = int(date[0:2])
+            day = int(date[2:4])
+            date = datetime.date(int(bill['session']), month, day)
+            vote['date'] = date
+
             for line in body.replace(u'\xa0', '\n').split('\n'):
                 line = line.replace('&nbsp;', '').strip()
                 if not line:
