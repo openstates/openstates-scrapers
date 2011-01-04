@@ -49,7 +49,7 @@ class AZCommitteeScraper(CommitteeScraper):
                     parent = name.split('Subcommittee')[0].strip()
                     name = name[name.index('Subcommittee'):]
                     
-                    c = Committee(chamber, committee=parent, short_name=short_name, 
+                    c = Committee(chamber, parent, short_name=short_name, 
                               subcommittee=name, session=session,
                               az_committee_id=c_id)
                 else:
@@ -66,9 +66,10 @@ class AZCommitteeScraper(CommitteeScraper):
                 self.save_committee(c)
             
     def scrape_com_info(self, session, session_id, committee_id, committee):
-        url = base_url + 'CommitteeInfo.asp?Committee_ID=%s&Session_ID=%s'
+        url = base_url + 'CommitteeInfo.asp?Committee_ID=%s&Session_ID=%s' % (committee_id, 
+                                                                    session_id)
         
-        with self.urlopen(url % (committee_id, session_id)) as page:
+        with self.urlopen(url) as page:
             committee.add_source(url)
             root = html.fromstring(page)
             p = '//table/tr/td[1]/a/ancestor::tr[1]'
@@ -80,9 +81,9 @@ class AZCommitteeScraper(CommitteeScraper):
                 committee.add_member(name, role)
                 
     def scrape_index(self, chamber, session, session_id, committee_type):
-        url = base_url + 'xml/committees.asp?session=%s&type=%s'
-        
-        with self.urlopen(url % (session_id, committee_type)) as page:
+        url = base_url + 'xml/committees.asp?session=%s&type=%s' % (session_id,
+                                                                 committee_type)
+        with self.urlopen(url) as page:
             root = etree.fromstring(page, etree.XMLParser(recover=True))
             
             body = '//body[@Body="%s"]/committee' % {'upper': 'S',

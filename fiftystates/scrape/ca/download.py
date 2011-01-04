@@ -1,5 +1,76 @@
+import os
 import re
+import os.path
+import zipfile
 import datetime
+import tempfile
+import scrapelib
+
+from fiftystates import settings
+from fiftystates.backend import db
+
+def get_latest():
+    """
+    Get and load the latest SQL dumps from the California legislature.
+    """
+    scraper = scrapelib.Scraper()
+
+    meta = db.metadata.find_one({'_id': 'ca'})
+    last_update = meta['_last_update']
+
+    base_url = "ftp://www.leginfo.ca.gov/pub/bill/"
+    with scraper.urlopen(base_url) as page:
+        next_day = last_update + datetime.timedelta(days=1)
+
+        while next_day.date() < datetime.date.today():
+            for f in parse_directory_listing(page):
+                if (re.match(r'pubinfo_(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\.zip',
+                             f['filename'])
+                    and f['mtime'].date() == next_day.date()):
+
+                    url = base_url + f['filename']
+                    print "Getting %s" % url
+                    get_and_load(url)
+
+                    meta['_last_update'] = next_day
+                    db.metadata.save(meta, safe=True)
+                    break
+            else:
+                print "Couldn't find entry for %s" % str(next_day.date())
+                break
+
+            next_day = next_day + datetime.timedelta(days=1)
+
+
+def get_and_load(url):
+    cmd_path = os.path.dirname(__file__
+    data_dir = getattr(settings, 'CA_DATA_DIR',
+                       os.path.expanduser('~/ext/capublic/'))
+    zip_path = download(url)
+    print zip_path
+    extract(zip_path, data_dir)
+    os.system("%s localhost %s %s %s" % (os.path.join(cmd_path, "load_data"),
+                                         settings.MYSQL_USER,
+                                         settings.MYSQL_PASSWORD,
+                                         data_dir))
+    os.system("%s %s" % (os.path.join(cmd_path, "cleanup"), data_dir))
+
+
+def download(url):
+    scraper = scrapelib.Scraper()
+    with scraper.urlopen(url) as resp:
+        (fd, path) = tempfile.mkstemp('.zip')
+
+        with os.fdopen(fd, 'wb') as w:
+            w.write(resp)
+
+        return path
+
+
+def extract(path, directory):
+    with zipfile.ZipFile(path, 'r') as z:
+        z.extractall(directory)
+
 
 def parse_directory_listing(s):
     """
@@ -32,3 +103,6 @@ def parse_directory_listing(s):
 
         yield entry
 
+
+if __name__ == '__main__':
+    get_latest()

@@ -1,3 +1,4 @@
+from fiftystates import settings
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
 from fiftystates.scrape.ca import metadata
@@ -13,6 +14,13 @@ class CALegislatorScraper(LegislatorScraper):
     def __init__(self, metadata, host='localhost', user='', pw='',
                  db='capublic', **kwargs):
         super(CALegislatorScraper, self).__init__(metadata, **kwargs)
+
+        if not user:
+            user = getattr(settings, 'MYSQL_USER', '')
+        if not pw:
+            pw = getattr(settings, 'MYSQL_PASSWORD', '')
+
+
         if user and pw:
             conn_str = 'mysql://%s:%s@' % (user, pw)
         else:
