@@ -178,6 +178,8 @@ class CABillScraper(BillScraper):
                 type = []
 
                 act_str = action.action
+                act_str = re.sub(r'\s+', ' ', act_str)
+
                 if act_str.startswith('Introduced'):
                     introduced = True
                     type.append('bill:introduced')
