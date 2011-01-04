@@ -12,7 +12,7 @@ metadata = {
             "sessions": [
                 "2009"
             ],
-            '_ids': ['10rs'],
+            '_ids': ['09rs'],
         },
         {
             "end_year": 2010,
@@ -21,7 +21,7 @@ metadata = {
             "sessions": [
                 "2010"
             ],
-            '_ids': ['09rs'],
+            '_ids': ['10rs'],
         }
     ],
     "name": "Louisiana",
