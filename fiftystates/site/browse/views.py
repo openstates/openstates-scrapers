@@ -20,6 +20,7 @@ def keyfunc(obj):
 def all_states(request):
     states = []
     for meta in db.metadata.find():
+        state = {}
         state['id'] = meta['_id']
         state['name'] = meta['name']
         state['bills'] = db.bills.find({'state':state['id']}).count()
