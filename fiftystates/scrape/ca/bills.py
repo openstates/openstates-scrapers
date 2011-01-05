@@ -127,10 +127,13 @@ class CABillScraper(BillScraper):
                 date = version.bill_version_action_date.date()
 
                 url = ''
-                scraped_version = scraped_versions[i]
-                if scraped_version[0] == date:
-                    url = scraped_version[1]
-                    i += 1
+                try:
+                    scraped_version = scraped_versions[i]
+                    if scraped_version[0] == date:
+                        url = scraped_version[1]
+                        i += 1
+                except IndexError:
+                    pass
 
                 fsbill.add_version(
                     version.bill_version_id, url,
@@ -175,6 +178,8 @@ class CABillScraper(BillScraper):
                 type = []
 
                 act_str = action.action
+                act_str = re.sub(r'\s+', ' ', act_str)
+
                 if act_str.startswith('Introduced'):
                     introduced = True
                     type.append('bill:introduced')
