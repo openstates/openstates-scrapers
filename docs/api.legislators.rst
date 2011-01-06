@@ -202,12 +202,12 @@ Parameters
 URL Format
 ----------
 
-:samp:`http://openstates.sunlightlabs.com/api/v1/legislators/geo/?lat={LATITUDE}&long={LONGITUDE}&apikey={YOUR_API_KEY}`
+:samp:`http://openstates.sunlightlabs.com/api/v1/legislators/geo/?long={LONGITUDE}&lat={LATITUDE}&apikey={YOUR_API_KEY}`
 
 Example
 -------
 
-http://openstates.sunlightlabs.com/api/v1/legislators/geo/?lat=-78.76648&long=35.81336&apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/legislators/geo/?long=-78.76648&lat=35.81336&apikey=YOUR_API_KEY
 
 ::
 

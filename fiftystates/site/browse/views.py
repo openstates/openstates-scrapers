@@ -17,6 +17,18 @@ def keyfunc(obj):
     except ValueError:
         return obj['district']
 
+def all_states(request):
+    states = []
+    for meta in db.metadata.find():
+        state = {}
+        state['id'] = meta['_id']
+        state['name'] = meta['name']
+        state['bills'] = db.bills.find({'state':state['id']}).count()
+        state['legislators'] = db.legislators.find({'state':state['id']}).count()
+        states.append(state)
+
+    return render_to_response('index.html', {'states': states})
+
 def state_index(request, state):
     meta = metadata(state)
     if not meta:
