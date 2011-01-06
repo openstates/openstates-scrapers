@@ -45,7 +45,7 @@ metadata = {
     'session_details': {
         '2009 Regular Session': {'start_date': datetime.date(2009,1,13),
                                  'end_date': datetime.date(2011,1,3),
-                                 'type': 'primary'}
+                                 'type': 'primary'},
         '2011 Regular Session': {'start_date': datetime.date(2009,1,11),
                                  'end_date': datetime.date(2013,1,7),
                                  'type': 'primary'}
