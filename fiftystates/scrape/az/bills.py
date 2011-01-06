@@ -247,10 +247,14 @@ class AZBillScraper(BillScraper):
                     rows = table.xpath('tr')[1:]
                     for row in rows:
                         act = row.text_content().strip()
-                        if 'passed' in act:
+                        if act == '':
+                            continue
+                        if 'passed' in act or 'adopted' in act:
                             a_type = 'amendment:passed'
                         elif 'failed' in act:
                             a_type = 'amendment:failed'
+                        elif 'withdrawn' in act:
+                            a_type = 'amendment:withdrawn'
                         else:
                             a_type = 'other'
                         # actor and date will same as previous action
@@ -415,7 +419,7 @@ class AZBillScraper(BillScraper):
                     no_count = int(v)
                 else:
                     o_args.update({str(k):v})
-                    o_count = o_count + v
+                    o_count += int(v)
             if passed == '':
                 passed = yes_count > no_count
                 if 'committee' not in o_args:
