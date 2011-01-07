@@ -37,7 +37,7 @@ def import_legislators(state, data_dir):
     paths = glob.glob(pattern)
     for path in paths:
         with open(path) as f:
-            import_legislator(json.load(data))
+            import_legislator(json.load(f))
 
     print 'imported %s legislator files' % len(paths)
 
