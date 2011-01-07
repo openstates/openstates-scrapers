@@ -8,7 +8,7 @@ class VTLegislatorScraper(LegislatorScraper):
     state = 'vt'
 
     def scrape(self, chamber, term):
-        if term != '2009-2010':
+        if term != '2011-2012':
             raise NoDataForPeriod(term)
 
         # What Vermont claims are Word and Excel files are actually

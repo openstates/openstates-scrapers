@@ -10,7 +10,7 @@ class PACommitteeScraper(CommitteeScraper):
     state = 'pa'
 
     def scrape(self, chamber, term):
-        if term != '2009-2010':
+        if term != '2011-2012':
             raise NoDataForPeriod(term)
 
         if chamber == 'upper':

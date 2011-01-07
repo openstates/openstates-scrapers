@@ -37,11 +37,7 @@ def import_legislators(state, data_dir):
     paths = glob.glob(pattern)
     for path in paths:
         with open(path) as f:
-            data = prepare_obj(json.load(f))
-
-        data['_scraped_name'] = data['full_name']
-
-        import_legislator(data)
+            import_legislator(json.load(f))
 
     print 'imported %s legislator files' % len(paths)
 
@@ -119,6 +115,9 @@ def get_next_term(state, term):
 
 
 def import_legislator(data):
+    data = prepare_obj(data)
+    data['_scraped_name'] = data['full_name']
+
     # Rename 'role' -> 'type'
     for role in data['roles']:
         if 'role' in role:
