@@ -14,7 +14,7 @@ class PALegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, term):
         # Pennsylvania doesn't make member lists easily available
         # for previous sessions, unfortunately
-        if term != '2009-2010':
+        if term != '2011-2012':
             raise NoDataForPeriod(term)
 
         leg_list_url = legislators_url(chamber)
