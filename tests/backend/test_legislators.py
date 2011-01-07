@@ -122,3 +122,52 @@ def test_get_previous_term():
 def test_get_next_term():
     next_term = legislators.get_next_term('ex', '2009-2010')
     assert next_term == '2011-2012'
+
+
+@with_setup(setup_func)
+def test_import_legislator():
+    leg1 = {'_type': 'person', 'state': 'ex',
+            'full_name': 'T. Rex Hagan',
+            'roles': [{'role': 'member', 'chamber': 'upper', 'state': 'ex',
+                       'term': '2009-2010', 'district': '1',
+                       'party': 'Democrat',
+                       'start_date': None, 'end_date': None}]}
+    leg1_roles = leg1['roles']
+
+    leg2 = {'_type': 'person', 'state': 'ex',
+            'full_name': 'T. Rex Hagan',
+            'roles': [{'role': 'member', 'chamber': 'upper', 'state': 'ex',
+                       'term': '2011-2012', 'district': '1',
+                       'party': 'Democrat',
+                       'start_date': None, 'end_date': None}]}
+
+    leg3 = {'_type': 'person', 'state': 'ex',
+            'full_name': 'Joe Heck',
+            'roles': [{'role': 'member', 'chamber': 'upper', 'state': 'ex',
+                       'term': '2009-2010', 'district': '2',
+                       'party': 'Democrat',
+                       'start_date': None, 'end_date': None}]}
+
+    leg4 = {'_type': 'person', 'state': 'ex',
+            'full_name': 'Bob Dold',
+            'roles': [{'role': 'member', 'chamber': 'upper', 'state': 'ex',
+                       'term': '2011-2012', 'district': '2',
+                       'party': 'Democrat',
+                       'start_date': None, 'end_date': None}]}
+
+
+    legislators.import_legislator(leg1)
+    assert db.legislators.count() == 1
+
+    legislators.import_legislator(leg2)
+    t_rex = db.legislators.find_one({'_scraped_name': 'T. Rex Hagan'})
+    assert db.legislators.count() == 1
+    assert t_rex['roles'][0]['term'] == '2011-2012'
+    assert '2009-2010' in t_rex['old_roles']
+
+    legislators.import_legislator(leg3)
+    assert db.legislators.count() == 2
+
+
+    legislators.import_legislator(leg4)
+    assert db.legislators.count() == 3
