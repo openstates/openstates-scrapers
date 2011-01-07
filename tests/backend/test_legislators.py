@@ -110,3 +110,15 @@ def test_deactivate_legislators():
     assert leg2['party'] == 'Democrat'
     assert leg2['roles'] == leg2_roles
     assert 'old_roles' not in leg2
+
+
+@with_setup(setup_func)
+def test_get_previous_term():
+    prev = legislators.get_previous_term('ex', '2011-2012')
+    assert prev == '2009-2010'
+
+
+@with_setup(setup_func)
+def test_get_next_term():
+    next_term = legislators.get_next_term('ex', '2009-2010')
+    assert next_term == '2011-2012'
