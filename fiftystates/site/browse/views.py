@@ -29,7 +29,7 @@ def all_states(request):
 
     return render_to_response('index.html', {'states': states})
 
-def _bill_stats_for_session(session):
+def _bill_stats_for_session(state, session):
     context = {}
     context['upper_bill_count'] = db.bills.find({'state':state,
                                                  'session':session,
@@ -77,7 +77,7 @@ def state_index(request, state):
     latest_session = meta['terms'][-1]['sessions'][-1]
     context['session'] = latest_session
 
-    context.update(_bill_stats_for_session(latest_session))
+    context.update(_bill_stats_for_session(state, latest_session))
 
     # legislators
     context['upper_leg_count'] = db.legislators.find({'state':state,
