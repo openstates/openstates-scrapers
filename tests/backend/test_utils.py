@@ -1,4 +1,7 @@
 import re
+import time
+import datetime
+
 from nose.tools import with_setup
 
 from fiftystates.backend import db, utils
@@ -25,10 +28,35 @@ def test_insert_with_id():
     assert db.legislators.find_one({'_id': id2})
 
 
-def test_convert_timestamps():
-    import time
-    import datetime
+@with_setup(db.bills.drop)
+def test_update():
+    dt = datetime.datetime.utcnow()
+    obj1 = {'_type': 'bill', 'state': 'ex', 'field1': 'stuff',
+            'field2': 'original', '_locked_fields': 'field2',
+            'created_at': dt, 'updated_at': dt}
 
+    id1 = utils.insert_with_id(obj1)
+    obj1 = db.bills.find_one(id1)
+
+    # Updating a bill with itself shouldn't cause 'updated_at' to be changed
+    utils.update(obj1, obj1, db.bills)
+    obj2 = db.bills.find_one({'_id': id1})
+    assert obj2['created_at'] == obj2['updated_at']
+    assert obj1['updated_at'] == obj2['updated_at']
+
+    utils.update(obj1, {'_type': 'bill', 'field1': 'more stuff',
+                        'field2': 'a change', 'state': 'ex'},
+                 db.bills)
+    obj2 = db.bills.find_one({'_id': id1})
+    assert obj2['created_at'] != obj2['updated_at']
+    assert obj1['updated_at'] != obj2['updated_at']
+    assert obj2['field1'] == 'more stuff'
+
+    # make sure locked fields don't get overwritten
+    assert obj2['field2'] == 'original'
+
+
+def test_convert_timestamps():
     dt = datetime.datetime.now().replace(microsecond=0)
     ts = time.mktime(dt.utctimetuple())
 
