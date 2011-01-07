@@ -85,6 +85,7 @@ def deactivate_legislators(state, current_term):
             leg['old_roles'] = {}
 
         leg['old_roles'][leg['roles'][0]['term']] = leg['roles']
+        leg['roles'] = []
         leg['active'] = False
 
         for key in ('district', 'chamber', 'party'):
