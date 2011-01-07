@@ -120,6 +120,21 @@ def state_index(request, state):
 
     return render_to_response('state_index.html', context)
 
+def bills(request, state):
+    meta = metadata(state)
+    if not meta:
+        raise Http404
+
+    sessions = []
+    for term in metadata['terms']:
+        for session in term['sessions']:
+            stats = _bill_stats_for_session(state, session)
+            stats['session'] = session
+            sessions.append(stats)
+
+    return render_to_response('bills.html', {'sessions': sessions})
+
+
 @never_cache
 def random_bill(request, state):
     meta = metadata(state)
