@@ -116,7 +116,7 @@ class PABillScraper(BillScraper):
 
             type = []
 
-            if action.startswith('INTRODUCED'):
+            if action.lower().startswith('Introduced'):
                 type.append('bill:introduced')
             elif action.startswith('Referred to'):
                 type.append('committee:referred')
