@@ -8,16 +8,16 @@ metadata = dict(
     lower_chamber_title='Representative',
     upper_chamber_term=2,
     lower_chamber_term=2,
-    terms=[],
-    session_details={},
+    terms=[{'name': '2009-2010',
+            'start_year': 2009,
+            'end_year': 2010,
+            'sessions': ['2009-2010']},
+           {'name': '2011-2012',
+            'start_year': 2011,
+            'end_year': 2012,
+            'sessions': ['2011-2012']},
+           ],
+    session_details={'2009-2010': {'type': 'primary'},
+                     '2011-2012': {'type': 'primary'},
+                     },
 )
-
-# Populate 'sessions' and 'session_details'
-for year in [y for y in xrange(1987, 2010) if y % 2]:
-    term = "%d-%d" % (year, year + 1)
-    metadata['terms'].append(dict(
-            name=term,
-            start_year=year,
-            end_year=year + 1,
-            sessions=[term]))
-    metadata['session_details'][term] = {'type': 'primary'}
