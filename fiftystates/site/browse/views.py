@@ -46,7 +46,7 @@ def _bill_stats_for_session(state, session):
     total_actions = 0
     versions = 0
 
-    for bill in db.bills.find({'state': state, 'session':latest_session},
+    for bill in db.bills.find({'state': state, 'session':session},
                               {'type':1, 'actions.type': 1, 'versions': 1}):
         for t in bill['type']:
             types[t] += 1
