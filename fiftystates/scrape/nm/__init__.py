@@ -64,4 +64,4 @@ def get_session_details():
                 metadata['sessions'].append(session_year)
                 metadata['session_details'][session_year] = dict(years = session_year, sub_sessions = [sub_session_name])
 
-get_session_details()
+#get_session_details()
