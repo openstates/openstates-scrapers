@@ -78,3 +78,25 @@ def test_convert_timestamps():
 
     # also modifies obj in place
     assert obj == expect
+
+
+def test_make_plus_fields():
+    bill = {'_type': 'bill', 'bill_id': 'AB 123',
+            'title': 'An Awesome Bill',
+            'extra_field': 'this is not normal',
+            'actions': [{'actor': 'Tom Cruise',
+                         'action': 'hero',
+                         'date': 'now',
+                         'superfluous': 42}]}
+
+    expect = {'_type': 'bill', 'bill_id': 'AB 123',
+               'title': 'An Awesome Bill',
+               '+extra_field': 'this is not normal',
+               'actions': [{'actor': 'Tom Cruise',
+                            'action': 'hero',
+                            'date': 'now',
+                            '+superfluous': 42}]}
+
+    plussed = utils.make_plus_fields(bill)
+
+    assert plussed == expect
