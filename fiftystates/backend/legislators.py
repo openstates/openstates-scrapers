@@ -44,36 +44,55 @@ def import_legislators(state, data_dir):
         import_legislator(data)
 
     print 'imported %s legislator files' % len(paths)
-    activate_legislators(state)
+
+    meta = db.metadata.find_one({'_id': state})
+    current_term = meta['terms'][-1]['name']
+
+    activate_legislators(state, current_term)
+    deactivate_legislators(state, current_term)
 
 
-def activate_legislators(state):
+def activate_legislators(state, current_term):
     """
     Sets the 'active' flag on legislators and populates top-level
     district/chamber/party fields for currently serving legislators.
     """
     meta = db.metadata.find_one({'_id': state})
-    current_term = meta['terms'][-1]['name']
 
     for legislator in db.legislators.find({'roles': {'$elemMatch':
                                                      {'state': state,
-                                                      'type': 'member'}}}):
+                                                      'type': 'member',
+                                                      'term': current_term}}}):
         active_role = legislator['roles'][0]
 
-        if active_role['term'] == current_term and not active_role['end_date']:
+        if not active_role['end_date']:
             legislator['active'] = True
             legislator['party'] = active_role['party']
             legislator['district'] = active_role['district']
             legislator['chamber'] = active_role['chamber']
-        else:
-            legislator['active'] = False
-            for key in ('district', 'chamber', 'party'):
-                try:
-                    del legislator[key]
-                except KeyError:
-                    pass
 
         db.legislators.save(legislator, safe=True)
+
+
+def deactivate_legislators(state, current_term):
+    for leg in db.legislators.find(
+        {'roles': {'$elemMatch':
+                   {'term': {'$ne': current_term},
+                    'type': 'member',
+                    'state': state}}}):
+
+        if 'old_roles' not in leg:
+            leg['old_roles'] = {}
+
+        leg['old_roles'][leg['roles'][0]['term']] = leg['roles']
+        leg['active'] = False
+
+        for key in ('district', 'chamber', 'party'):
+            if key in leg:
+                del leg[key]
+
+        leg['updated_at'] = datetime.datetime.utcnow()
+        db.legislators.save(leg, safe=True)
 
 
 def get_previous_term(state, term):
@@ -111,7 +130,8 @@ def import_legislator(data):
     next_term = get_next_term(data['state'], term)
 
     spec = {'state': data['state'],
-            'type': cur_role['type']}
+            'type': cur_role['type'],
+            'term': {'$in': [term, prev_term, next_term]}}
     if 'district' in cur_role:
         spec['district'] = cur_role['district']
     if 'chamber' in cur_role:
@@ -128,7 +148,7 @@ def import_legislator(data):
 
         if leg['roles'][0]['term'] == prev_term:
             # Move to old
-            leg['old_roles'][leg['roles'][0]['term']] = leg['roles'][0]
+            leg['old_roles'][leg['roles'][0]['term']] = leg['roles']
         elif leg['roles'][0]['term'] == next_term:
             leg['old_roles'][term] = data['roles']
             data['roles'] = leg['roles']
