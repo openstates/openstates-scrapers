@@ -81,28 +81,28 @@ def state_index(request, state):
 
     # legislators
     context['upper_leg_count'] = db.legislators.find({'state':state,
-                                                      'active': 1,
+                                                      'active': True,
                                                   'chamber':'upper'}).count()
     context['lower_leg_count'] = db.legislators.find({'state':state,
-                                                      'active': 1,
+                                                      'active': True,
                                                   'chamber':'lower'}).count()
     context['lower_leg_count'] = db.legislators.find({'state':state,
-                                                      'active': 1,
+                                                      'active': True,
                                                   'chamber':'lower'}).count()
     context['leg_count'] = context['upper_leg_count'] + context['lower_leg_count']
     context['inactive_leg_count'] = db.legislators.find({'state': state,
-                                                         'active': 0}).count()
+                                                         'active': False}).count()
     context['ns_leg_count'] = db.legislators.find({'state': state,
-                             'active': 1,
+                             'active': True,
                              'sources': {'$size': 0}}).count()
     context['missing_pvs'] = db.legislators.find({'state': state,
-                             'active': 1,
+                             'active': True,
                              'votesmart_id': {'$exists':False}}).count()
     context['missing_nimsp'] = db.legislators.find({'state': state,
-                             'active': 1,
+                             'active': True,
                              'nimsp_id': {'$exists':False}}).count()
     context['missing_tdata'] = db.legislators.find({'state': state,
-                             'active': 1,
+                             'active': True,
                              'transparencydata_id': {'$exists':False}}).count()
 
     # committees
@@ -146,10 +146,10 @@ def bill(request, state, session, id):
 
 def legislators(request, state):
     upper_legs = db.legislators.find({'state': state.lower(),
-                                      'active': 1,
+                                      'active': True,
                                       'chamber': 'upper'})
     lower_legs = db.legislators.find({'state': state.lower(),
-                                      'active': 1,
+                                      'active': True,
                                       'chamber': 'lower'})
     upper_legs = sorted(upper_legs, key=keyfunc)
     lower_legs = sorted(lower_legs, key=keyfunc)
