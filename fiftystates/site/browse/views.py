@@ -126,13 +126,14 @@ def bills(request, state):
         raise Http404
 
     sessions = []
-    for term in metadata['terms']:
+    for term in meta['terms']:
         for session in term['sessions']:
             stats = _bill_stats_for_session(state, session)
             stats['session'] = session
             sessions.append(stats)
 
-    return render_to_response('bills.html', {'sessions': sessions})
+    return render_to_response('bills.html', {'sessions': sessions,
+                                             'metadata': meta})
 
 
 @never_cache
