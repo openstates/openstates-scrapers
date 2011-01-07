@@ -22,7 +22,7 @@ metadata = dict(
          'sessions': ['2011-2012'],
          'start_year': 2011,
          'end_year': 2012,
-         'biennum': '87',
+         'biennium': '87',
         },
     ],
     session_details={
