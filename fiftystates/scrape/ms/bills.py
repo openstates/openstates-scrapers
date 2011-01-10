@@ -184,6 +184,7 @@ class MSBillScraper(BillScraper):
         'Motion to Recommit Lost': ('Motion to Recommit', True),
         'Reconsidered': ('Reconsideration', True),
         'Motion to Concur Failed': ('Motion to Concur', False),
+        'Recommitted to Committee': ('Recommit to Committee', True),
     }
 
     def scrape_votes(self, url, motion, date, chamber):
