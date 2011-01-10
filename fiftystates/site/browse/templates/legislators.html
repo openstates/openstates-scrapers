@@ -46,16 +46,18 @@
 <table>
 <tr>
     <td>Name</td>
-    <td>Chamber</td>
-    <td>District</td>
-    <td>Party</td>
+    <td>Old Roles</td>
 </tr>
 {% for leg in inactive_legs %}
 <tr>
     <td><a href="/browse/legislators/{{leg.leg_id}}/">{{leg.first_name}} {{leg.last_name}}</a></td>
-    <td>{{leg.old_roles.0.chamber}}</td>
-    <td>{{leg.old_roles.0.district}}</td>
-    <td>{{leg.old_roles.0.party}}</td>
+    <td>
+        <dl>
+            {% for k,v in leg.old_roles %}
+            <dt>k</dt>
+            <dd>{{v.0.chamber}} {{v.0.district}} {{v.0.party}}</dd>
+        </dl>
+    </td>
 </tr>
 {% endfor %}
 </table>
