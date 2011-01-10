@@ -175,6 +175,7 @@ def legislators(request, state):
     return render_to_response('legislators.html', {
         'upper_legs': upper_legs,
         'lower_legs': lower_legs,
+        'active': active,
         'metadata': metadata(state)
     })
 
