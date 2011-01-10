@@ -80,6 +80,24 @@ def test_convert_timestamps():
     assert obj == expect
 
 
+def test_split_name():
+    obj = {'_type': 'person', 'full_name': 'Michael Stephens'}
+    expect = {'_type': 'person', 'full_name': 'Michael Stephens',
+              'first_name': 'Michael', 'last_name': 'Stephens',
+              'suffixes': ''}
+    assert utils.split_name(obj) == expect
+
+    # Don't overwrite existing first/last name
+    obj = {'_type': 'person', 'full_name': 'Michael Stephens',
+           'first_name': 'Another', 'last_name': 'Name',
+           'suffixes': ''}
+    assert utils.split_name(obj) == obj
+
+    # Don't try to split name for non-people
+    obj = {'_type': 'not_a_person', 'full_name': 'A Name'}
+    assert utils.split_name(obj) == obj
+
+
 def test_make_plus_fields():
     bill = {'_type': 'bill', 'bill_id': 'AB 123',
             'title': 'An Awesome Bill',
@@ -100,3 +118,12 @@ def test_make_plus_fields():
     plussed = utils.make_plus_fields(bill)
 
     assert plussed == expect
+
+
+def test_fix_bill_id():
+    expect = 'AB 74'
+    bill_ids = ['A.B. 74', 'A.B.74', 'AB74', 'AB 0074',
+                'AB074', 'A.B.074', 'A.B. 074', 'A.B\t074']
+
+    for bill_id in bill_ids:
+        assert utils.fix_bill_id(bill_id) == expect

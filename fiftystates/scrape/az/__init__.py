@@ -86,6 +86,12 @@ metadata = dict(
          ],
          'start_year': 2009, 'end_year': 2010
         },
+        {'name': '50',
+         'sessions': [
+            'Fiftieth Legislature - First Regular Session',
+         ],
+         'start_year': 2011, 'end_year': 2012
+        }
         ],
         session_details={
         'Forty-second Legislature - First Regular Session':
@@ -264,5 +270,9 @@ metadata = dict(
             {'type': 'primary', 'session_id': 93,
              'start_date': datetime.date(2010,1,11),
              'end_date': datetime.date(2010,4,29)},
+        'Fiftieth Legislature - First Regular Session':
+            {'type': 'primary', 'session_id': 102,
+             'start_date': datetime.date(2011,1,10)},
+             #'end_date': datetime.date()},
     }
     )
