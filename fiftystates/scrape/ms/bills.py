@@ -183,6 +183,7 @@ class MSBillScraper(BillScraper):
         'Failed to Suspend Rules': ('Motion to Suspend Rules', False),
         'Motion to Recommit Lost': ('Motion to Recommit', True),
         'Reconsidered': ('Reconsideration', True),
+        'Motion to Concur Failed': ('Motion to Concur', False),
     }
 
     def scrape_votes(self, url, motion, date, chamber):
