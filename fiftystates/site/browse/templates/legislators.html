@@ -50,7 +50,7 @@
     <td>District</td>
     <td>Party</td>
 </tr>
-{% for leg in lower_legs %}
+{% for leg in inactive_legs %}
 <tr>
     <td><a href="/browse/legislators/{{leg.leg_id}}/">{{leg.first_name}} {{leg.last_name}}</a></td>
     <td>{{leg.old_roles.0.chamber}}</td>
