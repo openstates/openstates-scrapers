@@ -55,7 +55,7 @@ class FLLegislatorScraper(LegislatorScraper):
 
                 party = link.xpath('string(../../td[3])').strip()
                 if party == 'D':
-                    party = 'Democrat'
+                    party = 'Democratic'
                 elif party == 'R':
                     party = 'Republican'
 
