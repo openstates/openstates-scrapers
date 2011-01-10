@@ -20,12 +20,21 @@ class AZCommitteeScraper(CommitteeScraper):
         return self.parties[abbr]
         
     def get_session_for_term(self, term):
-        return self.metadata['terms'][-1]['sessions'][-1]
-        
+        # ideally this should be either first or second regular session
+        # and probably first and second when applicable
+        for t in self.metadata['terms']:
+            if t['name'] == term:
+                session = t['sessions'][-1]
+                if re.search('Regular', session):
+                    return session
+                else:
+                    return t['sessions'][0]
+                    
     def get_session_id(self, session):
         return self.metadata['session_details'][session]['session_id']
         
     def scrape(self, chamber, term):
+        self.validate_term(term)
         session = self.get_session_for_term(term)
         try:
             session_id = self.get_session_id(session)
