@@ -171,6 +171,7 @@ def legislators(request, state):
                                          'active': False})
     upper_legs = sorted(upper_legs, key=keyfunc)
     lower_legs = sorted(lower_legs, key=keyfunc)
+    inactive_legs = sorted(inactive_legs, key=lambda x: x['last_name'])
 
     return render_to_response('legislators.html', {
         'upper_legs': upper_legs,
