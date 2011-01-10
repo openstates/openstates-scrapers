@@ -38,7 +38,6 @@ class NCBillScraper(BillScraper):
 
     def build_subject_map(self):
         self.subject_map = defaultdict(list)
-        return
         cur_subject = None
 
         letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
