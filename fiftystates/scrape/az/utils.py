@@ -73,12 +73,27 @@ def img_check(elem):
             return 'Y'
         else:
             return 'N'
-        
+            
 def get_session_details(s):
     """
     gets the session list and writes them to session_details.py
     still needs some hand editing to insure that a primary session is default
     """
+    def get_date(d):
+        if d:
+            d = datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S').date()
+            return '%d, %d, %d' % (d.year, d.month, d.day)
+        else:
+            return ''
+            
+    def sort2(x):
+        try:
+            d = datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S').date()
+        except TypeError:
+            d = datetime.datetime.today().date()
+        print d
+        return d.toordinal()
+        
     url = 'http://www.azleg.gov/xml/sessions.asp'
     with s.urlopen(url) as page:
         root = etree.fromstring(page)
@@ -89,18 +104,19 @@ def get_session_details(s):
                      'start_date': datetime.date(%s),
                      'end_date': datetime.date(%s)},
                  """
-        for session in root.xpath('//session'):
+        sessions = root.xpath('//session')
+        sessions = sorted(sessions, key=lambda x: x.get('Sine_Die_Date') or
+                                               "%s" % datetime.datetime.today())
+        for session in sessions:
             session_type = 'primary' if re.search('Regular', session.get('Session_Full_Name')) else 'special'
-            start_date = datetime.datetime.strptime(
-                                              session.get('Session_Start_Date'),
-                                              '%Y-%m-%dT%H:%M:%S')
-            end_date = datetime.datetime.strptime(session.get('Sine_Die_Day'),
-                                                  '%Y-%m-%dT%H:%M:%S')
+            start_date = get_date(session.get('Session_Start_Date', None))
+            end_date = get_date(session.get('Sine_Die_Date', None))
             session_file.write(detail % ( session.get('Session_Full_Name'),
                                            session_type,
                                            session.get('Session_ID'),
                                            start_date,
                                            end_date))
+        return sessions
             
 def get_rows(rows, header):
     """
