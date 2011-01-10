@@ -161,11 +161,13 @@ def bill(request, state, session, id):
     return render_to_response('bill.html', {'bill': bill})
 
 def legislators(request, state):
+    active = request.GET.get('active', True)
+
     upper_legs = db.legislators.find({'state': state.lower(),
-                                      'active': True,
+                                      'active': active,
                                       'chamber': 'upper'})
     lower_legs = db.legislators.find({'state': state.lower(),
-                                      'active': True,
+                                      'active': active,
                                       'chamber': 'lower'})
     upper_legs = sorted(upper_legs, key=keyfunc)
     lower_legs = sorted(lower_legs, key=keyfunc)
