@@ -78,11 +78,13 @@ class NVLegislatorScraper(LegislatorScraper):
 
                 partypath = 'string(//table[%s]/tr/td/table[1]/tr/td[3])' % row_index
                 party = root.xpath(partypath).split()[-1]
+                if party == 'Democrat':
+                    party = 'Democratic'
 
                 districtpath = 'string(//table[%s]/tr/td/table[1]/tr/td[4])' % row_index
                 district = root.xpath(districtpath)[11: len(root.xpath(districtpath))].strip()
                 if district.startswith('No.'):
-                    district = district[3:]
+                    district = district[3:].strip()
 
                 termpath = 'string(//table[%s]/tr/td/table[2]/tr/td[5])' % row_index
                 end_date = root.xpath(termpath)[12: 21]
