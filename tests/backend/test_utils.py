@@ -100,3 +100,12 @@ def test_make_plus_fields():
     plussed = utils.make_plus_fields(bill)
 
     assert plussed == expect
+
+
+def test_fix_bill_id():
+    expect = 'AB 74'
+    bill_ids = ['A.B. 74', 'A.B.74', 'AB74', 'AB 0074',
+                'AB074', 'A.B.074', 'A.B. 074', 'A.B\t074']
+
+    for bill_id in bill_ids:
+        assert utils.fix_bill_id(bill_id) == expect
