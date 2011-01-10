@@ -79,6 +79,8 @@ class LALegislatorScraper(LegislatorScraper):
 
             if party == 'No Party (Independent)':
                 party = 'Independent'
+            elif party == 'Democrat':
+                party = 'Democratic'
 
             leg = Legislator(term, 'upper', district, name, party=party)
             leg.add_source(url)
