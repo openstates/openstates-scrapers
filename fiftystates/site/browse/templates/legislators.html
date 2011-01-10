@@ -41,4 +41,24 @@
 </table>
 </div>
 
+<div style="float: left; padding-right: 3em;">
+<h3 width="100%"> inactive legislators </h3>
+<table>
+<tr>
+    <td>Name</td>
+    <td>Chamber</td>
+    <td>District</td>
+    <td>Party</td>
+</tr>
+{% for leg in lower_legs %}
+<tr>
+    <td><a href="/browse/legislators/{{leg.leg_id}}/">{{leg.first_name}} {{leg.last_name}}</a></td>
+    <td>{{leg.old_roles.0.chamber}}</td>
+    <td>{{leg.old_roles.0.district}}</td>
+    <td>{{leg.old_roles.0.party}}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+
 {% endblock %}
