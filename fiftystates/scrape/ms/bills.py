@@ -81,17 +81,18 @@ class MSBillScraper(BillScraper):
                                 type=bill_type, longtitle=longtitle)
 
                     #sponsors
-                    main_sponsor = details_root.xpath('string(//p_name)').split()[0]
-                    main_sponsor_link = details_root.xpath('string(//p_link)').replace(" ", "_")
-                    main_sponsor_url =  'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, main_sponsor_link)
-                    type = "Primary sponsor"
-                    bill.add_sponsor(type, main_sponsor, main_sponsor_url = main_sponsor_url)
+                    main_sponsor = details_root.xpath('string(//p_name)').split()
+                    if main_sponsor:
+                        main_sponsor = main_sponsor[0]
+                        main_sponsor_link = details_root.xpath('string(//p_link)').replace(" ", "_")
+                        main_sponsor_url =  'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, main_sponsor_link)
+                        type = "primary"
+                        bill.add_sponsor(type, main_sponsor, main_sponsor_url = main_sponsor_url)
                     for author in details_root.xpath('//authors/additional'):
                         leg = author.xpath('string(co_name)').replace(" ", "_")
                         leg_url = 'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, leg)
-                        type = "additional sponsor"
+                        type = "cosponsor"
                         bill.add_sponsor(type, leg, leg_url=leg_url)
-
 
                     #Versions 
                     curr_version = details_root.xpath('string(//current_other)').replace("../../../../", "")
