@@ -161,7 +161,7 @@ def bill(request, state, session, id):
     return render_to_response('bill.html', {'bill': bill})
 
 def legislators(request, state):
-    active = request.GET.get('active', True)
+    active = bool(int(request.GET.get('active', True)))
 
     upper_legs = db.legislators.find({'state': state.lower(),
                                       'active': active,
