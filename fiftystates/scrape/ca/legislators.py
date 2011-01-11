@@ -25,7 +25,7 @@ class CALegislatorScraper(LegislatorScraper):
             conn_str = 'mysql://%s:%s@' % (user, pw)
         else:
             conn_str = 'mysql://'
-        conn_str = '%s%s/%s?charset=utf8&unix_socket=/tmp/mysql.sock' % (
+        conn_str = '%s%s/%s?charset=utf8' % (
             conn_str, host, db)
         self.engine = create_engine(conn_str)
         self.Session = sessionmaker(bind=self.engine)
