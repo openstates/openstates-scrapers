@@ -28,8 +28,9 @@ class SDLegislatorScraper(LegislatorScraper):
             self.scrape_legislators(chamber, term)
 
     def scrape_legislators(self, chamber, term):
+        year = term[0:4]
         url = "http://legis.state.sd.us/sessions/%s/MemberMenu.aspx" % (
-            term)
+            year)
 
         if chamber == 'upper':
             search = 'Senate Members'
