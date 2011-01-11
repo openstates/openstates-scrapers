@@ -146,7 +146,7 @@ def random_bill(request, state):
     spec = {'state':state.lower(), 'session':latest_session} 
 
     count = db.bills.find(spec).count()
-    bill = db.bills.find(spec)[random.randint(0, count)]
+    bill = db.bills.find(spec)[random.randint(0, count - 1)]
 
     return render_to_response('bill.html', {'bill': bill})
 
