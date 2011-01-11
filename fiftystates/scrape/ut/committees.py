@@ -29,7 +29,7 @@ class UTCommitteeScraper(CommitteeScraper):
                 comm = Committee(chamber, comm_name)
 
                 for mbr_link in comm_link.xpath(
-                    "../../../font[2]/a[contains(@href, 'members')]"):
+                    "../../../font[2]/a[not(contains(@href, 'mailto'))]"):
 
                     name = mbr_link.text.strip()
 
