@@ -3,8 +3,6 @@
 {% block title %}{{ leg.full_name }}{% endblock %}
 
 {% block content %}
-<h3>{% if leg.chamber == "lower" %} {{metadata.lower_chamber_title }}
-    {% else %} {{ metadata.upper_chamber_title}} {% endif %}
     {{ leg.full_name }}</h3>
 <h4>
 {{leg.party}}, {{ metadata.name }}, District {{ leg.district }}
@@ -38,7 +36,7 @@
       <li>
         {% if role.type == 'member' %}
         {{ role.term }}:
-        {% if leg.chamber == "lower" %} {{metadata.lower_chamber_title }}
+        {% if role.chamber == "lower" %} {{metadata.lower_chamber_title }}
         {% else %} {{ metadata.upper_chamber_title}} {% endif %}
         from District {{role.district}}
         {% endif %}
@@ -59,7 +57,7 @@
       <li>
         {% if role.type == 'member' %}
         {{ role.term }}:
-        {% if leg.chamber == "lower" %} {{metadata.lower_chamber_title }}
+        {% if role.chamber == "lower" %} {{metadata.lower_chamber_title }}
         {% else %} {{ metadata.upper_chamber_title}} {% endif %}
         from District {{role.district}}
         {% endif %}
