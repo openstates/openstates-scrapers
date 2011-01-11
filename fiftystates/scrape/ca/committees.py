@@ -1,6 +1,7 @@
 import re
 import urllib2
 
+from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
@@ -10,8 +11,8 @@ class CACommitteeScraper(CommitteeScraper):
     state = 'ca'
 
     def scrape(self, chamber, term):
-        if term != '20092010':
-            return
+        if term != '20112012':
+            raise NoDataForPeriod(term)
 
         if chamber == 'upper':
             self.scrape_upper_committees(term)
