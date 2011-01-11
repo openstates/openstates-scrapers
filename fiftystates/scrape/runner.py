@@ -69,20 +69,25 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
     scraper = ScraperClass(metadata, **opts)
 
     # times: the list to iterate over for second scrape param
-    if options.years:
-        times = options.years
-    elif scraper_type in ('bills', 'votes', 'events'):
+    if scraper_type in ('bills', 'votes', 'events'):
         if not options.sessions:
-            if not options.terms:
+            if options.terms:
+                times = []
+                for term in options.terms:
+                    scraper.validate_term(term)
+                    for metaterm in metadata['terms']:
+                        if term == metaterm['name']:
+                            times.extend(metaterm['sessions'])
+            else:
                 latest_session = metadata['terms'][-1]['sessions'][-1]
                 print 'No session specified, using latest "%s"' % latest_session
                 times = [latest_session]
-            else:
-                times = []
-                for term in terms:
-                    times.extend(metadata['terms'][-1]['sessions'])
         else:
             times = sessions
+
+        # validate sessions
+        for time in times:
+            scraper.validate_session(time)
     elif scraper_type in ('legislators', 'committees'):
         if not options.terms:
             latest_term = metadata['terms'][-1]['name']
@@ -90,6 +95,10 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
             times = [latest_term]
         else:
             times = terms
+
+        # validate terms
+        for time in times:
+            scraper.validate_term(time)
 
     # run scraper against year/session/term
     for time in times:
@@ -201,12 +210,7 @@ def main():
     options.sessions = set(options.sessions or [])
 
     if options.years:
-        if options.sessions:
-            raise RunException('cannot specify years and sessions')
-        else:
-            print 'use of -y, --years, --all is deprecated'
-    else:
-        options.years = []
+        raise RunException('use of --years is no longer supported')
 
     # determine chambers
     chambers = []
@@ -222,9 +226,6 @@ def main():
             options.committees or options.events or options.alldata):
         raise RunException("Must specify at least one of --bills, "
                            "--legislators, --committees, --votes, --events")
-
-    if not options.years and 'terms' not in metadata:
-        raise RunException('metadata must include "terms"')
 
     if options.alldata:
         options.bills = True
