@@ -83,7 +83,7 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
                 print 'No session specified, using latest "%s"' % latest_session
                 times = [latest_session]
         else:
-            times = sessions
+            times = options.sessions
 
         # validate sessions
         for time in times:
