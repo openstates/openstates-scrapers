@@ -12,7 +12,7 @@ class TXLegislatorScraper(LegislatorScraper):
     state = 'tx'
 
     def scrape(self, chamber, term):
-        if term != '81':
+        if term != '82':
             # Data only available for current term
             raise NoDataForPeriod(term)
 
