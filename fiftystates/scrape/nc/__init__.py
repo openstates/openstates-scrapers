@@ -50,8 +50,12 @@ metadata = dict(
         {'name': '2009-2010',
          'sessions': ['2009'],
          'start_year': 2009, 'end_year': 2010},
+        {'name': '2011-2012',
+         'sessions': ['2011'],
+         'start_year': 2011, 'end_year': 2012},
         ],
     session_details={
         '2009': {'start_date': datetime.date(2009,1,28), 'type': 'primary'},
+        '2011': {'start_date': datetime.date(2011,1,26), 'type': 'primary'},
     }
 )
