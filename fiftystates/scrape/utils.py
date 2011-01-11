@@ -7,6 +7,7 @@ def convert_pdf(filename, type='xml'):
     pipe = subprocess.Popen(commands[type], stdout=subprocess.PIPE,
                             close_fds=True).stdout
     data = pipe.read()
+    pipe.close()
     return data
 
 def pdf_to_lxml(filename, type='html'):

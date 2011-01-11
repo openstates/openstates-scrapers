@@ -171,10 +171,12 @@ class MSBillScraper(BillScraper):
         'Passed As Amended': ('Passage as Amended', True),
         'Adopted As Amended': ('Passage as Amended', True),
         'Appointment Confirmed': ('Appointment Confirmation', True),
+        'Committee Substitute Adopted': ('Adopt Committee Substitute', True),
         'Conference Report Adopted': ('Adopt Conference Report', True),
         'Conference Report Failed': ('Adopt Conference Report', False),
         'Motion to Reconsider Tabled': ('Table Motion to Reconsider', True),
         'Motion to Recnsdr Tabled Lost': ('Table Motion to Reconsider', False),
+        'Veto Overridden': ('Override Veto', True),
         'Veto Sustained': ('Override Veto', False),
         'Concurred in Amend From House': ('Concurrence in Amendment From House', True),
         'Concurred in Amend From Senate': ('Concurrence in Amendment From Senate', True),
@@ -191,7 +193,11 @@ class MSBillScraper(BillScraper):
         vote_pdf, resp = self.urlretrieve(url)
         text = convert_pdf(vote_pdf, 'text')
 
-        motion, passed = self._vote_mapping[motion]
+        if motion in self._vote_mapping:
+            motion, passed = self._vote_mapping[motion]
+        else:
+            passed = False
+            self.warning('unknown vote type: ' + motion)
 
         # process PDF text
 
