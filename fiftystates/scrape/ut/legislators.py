@@ -40,6 +40,9 @@ class UTLegislatorScraper(LegislatorScraper):
                     district = row.xpath('string(td[4])')
                     party = row.xpath('string(td[3])')
 
+                    if party == "Democrat":
+                        party = "Democratic"
+
                     # The UT legislator list still shows incumbents that
                     # lost or retired (as of Jan 11 2011)
                     if term == '2011-2012':
