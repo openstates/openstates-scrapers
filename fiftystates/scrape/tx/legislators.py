@@ -49,6 +49,7 @@ class TXLegislatorScraper(LegislatorScraper):
             type = td.xpath('string(//div[1]/strong)').strip()
 
             full_name = td.xpath('string(//div[2]/strong)').strip()
+            full_name = re.sub(r'\s+', ' ', full_name)
 
             district = td.xpath('string(//div[3])').strip()
             district = district.replace('District ', '')
