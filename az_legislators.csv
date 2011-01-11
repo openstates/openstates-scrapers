@@ -1,0 +1,98 @@
+_id,first_name,last_name,state,chamber,district,party,active,votesmart_id,transparencydata_id
+AZL000028,Jonathan,Paton,az,,,,False,,
+AZL000034,Jim,Waring,az,,,,False,,
+AZL000036,Kirk,Adams,az,lower,19,Republican,True,58680,0483a55ba05f42ee8aac079962cfe9e8
+AZL000037,Frank,Antenori,az,,,,False,,
+AZL000006,Frank,Antenori,az,upper,30,Republican,True,65963,6f475e18e2ef48578e8db372601a3558
+AZL000009,"Robert ""Bob""",Burns,az,upper,9,Republican,True,2988,
+AZL000012,Jorge Luis,Garcia,az,,,,False,,
+AZL000013,Maria,Garcia,az,upper,27,Democrat,True,128449,
+AZL000014,Pamela,Gorman,az,,,,False,,
+AZL000020,John,Huppenthal,az,upper,20,Republican,True,3092,
+AZL000039,Ray,Barnes,az,lower,7,Republican,True,28144,
+AZL000052,Sam,Crump,az,,,,False,,
+AZL000067,David,Lujan,az,lower,15,Democrat,True,28452,
+AZL000081,Doug,Quelland,az,,,,False,,
+AZL000088,Andrew M.,Tobin,az,lower,1,Republican,True,68079,
+AZL000089,Anna,Tovar,az,lower,13,Democrat,True,110962,41cf32e23e6849909ecfb913c3685ca8
+AZL000070,Barbara,McGuire,az,lower,23,Democrat,True,68094,22879f038d2f429ba6ea7a6f7f4e61a1
+AZL000074,Ben R.,Miranda,az,lower,16,Democrat,True,123736,
+AZL000079,Daniel,Patterson,az,lower,29,Democrat,True,28385,b2fa5408c8e8475392956cf6866967e3
+AZL000084,David,Schapira,az,lower,17,Democrat,True,67616,
+AZL000087,David W.,Stevens,az,lower,25,Republican,True,28200,
+AZL000072,Eric,Meyer,az,lower,11,Democrat,True,110671,91c53872a9a54716884b8819dee86ff0
+AZL000080,Frank,Pratt,az,lower,23,Republican,True,28269,36f8d92871ab48578148103d0c8469d9
+AZL000093,Jerry,Weiers,az,lower,12,Republican,True,28116,1179532de7db4de6843b043d7a8ba511
+AZL000069,John,McComish,az,lower,20,Republican,True,28306,
+AZL000096,Kimberly,Yee,az,lower,10,Republican,True,123695,7dfbd3c2cdd246f791c8c75895ba14a3
+AZL000086,Kyrsten,Sinema,az,lower,15,Democrat,True,28338,
+AZL000082,Michele,Reagan,az,lower,8,Republican,True,28505,
+AZL000071,Nancy,McLain,az,lower,3,Republican,True,28437,0544eb2e6ad8421b950c192d141d4b8a
+AZL000097,Nancy Young,Wright,az,lower,26,Democrat,True,,f4c355cdf5c8474cbae86ded0d9b0e1e
+AZL000091,Rae,Waters,az,lower,20,Democrat,True,106543,fa277cb995314da4b8b4f80824eb60d7
+AZL000076,Rick,Murphy,az,lower,9,Republican,True,28372,
+AZL000075,Steve B.,Montenegro,az,lower,12,Republican,True,106507,
+AZL000095,Steven B.,Yarbrough,az,lower,21,Republican,True,28091,
+AZL000077,Warde V.,Nichols,az,lower,21,Republican,True,28390,13d399b1e425402cb9f1ed7600186d7d
+AZL000026,Richard,Miranda,az,upper,13,Democrat,True,16357,65f5c0293c9a488a870c7b488f8a8430
+AZL000019,Jack W.,Harper,az,upper,4,Republican,True,28418,
+AZL000032,Jay,Tibshraeny,az,upper,21,Republican,True,28203,0193aa4b168f4997a62e35d5464370eb
+AZL000001,Paula,Aboud,az,upper,28,Democrat,True,28356,2e3b31b79c3c4eabaf6f2fde05b9cb83
+AZL000022,Barbara,Leff,az,upper,11,Republican,True,13557,
+AZL000023,Linda,Lopez,az,upper,29,Democrat,True,28453,530159b27a7249b29e9ae02fcfe6988d
+AZL000033,Thayer,Verschoor,az,upper,22,Republican,True,28343,
+AZL000008,Ed,Bunch,az,upper,7,Republican,True,117859,
+AZL000011,Ken,Cheuvront,az,upper,15,Democrat,True,2957,6c7d66763c5f48eeb2b39d3db9037302
+AZL000002,Amanda,Aguirre,az,upper,24,Democrat,True,28423,fb2909039bdf4305a743f620f60a9304
+AZL000004,Sylvia,Allen,az,upper,5,Republican,True,28166,434d86a19a234574a4eb5930b9f8c6da
+AZL000021,Leah Landrum,Taylor,az,upper,16,Democrat,True,,
+AZL000025,Al,Melvin,az,upper,26,Republican,True,68078,79d538dfa4de48a5aaf2df39b5ceb331
+AZL000027,John,Nelson,az,upper,12,Republican,True,28147,162580e4a04641ee99a7e405c923319c
+AZL000007,David,Braswell,az,upper,6,Republican,True,117858,858b9b98423740879fb6d81b7b51f7ce
+AZL000017,Linda,Gray,az,upper,10,Republican,True,12305,550bdd2139ef45099f00b3fbc04e8ad2
+AZL000031,Rebecca,Rios,az,upper,23,Democrat,True,3107,71e483e07ae2462680e3e4e16a42a03d
+AZL000016,Chuck,Gray,az,upper,19,Republican,True,28189,a8d0531f604140719037683e4dd93c2b
+AZL000024,Debbie McCune,Davis,az,upper,14,Democrat,True,,
+AZL000030,Steve,Pierce,az,upper,1,Republican,True,106395,d6c6cffa3ba94601870591ab21be0026
+AZL000003,Carolyn S.,Allen,az,upper,8,Republican,True,3050,b5ad6a641c594d96a184d5fae4fd6863
+AZL000005,"Manuel V. ""Manny""",Alvarez,az,upper,25,Democrat,True,28104,ee222f6614354ced88d5165b9dc2afea
+AZL000010,Meg Burton,Cahill,az,upper,17,Democrat,True,,0f238954c21a40e6b37ce9948beec465
+AZL000015,Ron,Gould,az,upper,3,Republican,True,28217,766d601c7fdb4ef68459de35263987e8
+AZL000018,Albert,Hale,az,upper,2,Democrat,True,28152,36c65d5a789c45c8ade5c3d0d1e84855
+AZL000050,Steve,Court,az,lower,18,Republican,True,106532,1d8d9ba5140d45ca96e4f87da66f1d5c
+AZL000051,Rich,Crandall,az,lower,19,Republican,True,66837,
+AZL000060,Matt,Heinz,az,lower,29,Democrat,True,123875,c1d3d26144884d7f845746ff4eb68c7a
+AZL000062,Russell L.,Jones,az,lower,24,Republican,True,28207,
+AZL000063,John,Kavanagh,az,lower,8,Republican,True,68209,21bfc200f35740939b86e4c633db5aaf
+AZL000048,Cloves C.,Campbell,az,lower,16,Democrat,True,65672,
+AZL000073,Robert,Meza,az,lower,14,Democrat,True,52960,
+AZL000046,Olivia Cajero,Bedford,az,lower,27,Democrat,True,,
+AZL000061,Laurin,Hendrix,az,lower,22,Republican,True,106551,c12158ae93c843bc8fb7cc811c57bac4
+AZL000064,Bill,Konopnicki,az,lower,5,Republican,True,28412,
+AZL000058,Doris,Goodale,az,lower,3,Republican,True,66062,cf0c93125efb42d5a5ddfd9adbf3793e
+AZL000057,Martha,Garcia,az,lower,13,Democrat,True,28428,292d5a221c0e4305990569213025c8f6
+AZL000068,Lucy,Mason,az,lower,1,Republican,True,28212,4b3a35cf0d604b538b782e39eecc5b50
+AZL000047,Chad,Campbell,az,lower,14,Democrat,True,66157,c9875ee66a0d4088995855f6f384bf14
+AZL000054,Adam,Driggs,az,lower,11,Republican,True,66237,
+AZL000059,David,Gowan,az,lower,30,Republican,True,28241,09d1962d936b461dab461f20f9dfde3b
+AZL000035,Edward,Ableser,az,lower,17,Democrat,True,28313,
+AZL000040,Nancy K.,Barto,az,lower,7,Republican,True,58371,
+AZL000043,David,Bradley,az,lower,28,Democrat,True,28472,
+AZL000066,Phil,Lopes,az,lower,27,Democrat,True,28265,50b05ef94d1e454fbb647d0f91ba02bb
+AZL000038,Cecil P.,Ash,az,lower,18,Republican,True,106529,
+AZL000056,Patricia V.,Fleming,az,lower,25,Democrat,True,65164,
+AZL000053,Christopher,Deschene,az,lower,2,Democrat,True,106462,
+AZL000078,Lynne,Pancrazi,az,lower,24,Democrat,True,68098,899638e52f9e4558ae757467ad11577d
+AZL000042,Tom,Boone,az,lower,4,Republican,True,28123,8d8108c37bec46f6afdd831aa1164038
+AZL000065,Debbie,Lesko,az,lower,9,Republican,True,106483,71801cb3018f4c83a29b6f85be02ac1d
+AZL000094,Vic,Williams,az,lower,26,Republican,True,106645,33cb9d233b924c0d89f403d3b9c021aa
+AZL000041,Andy,Biggs,az,lower,22,Republican,True,28088,
+AZL000045,Judy M.,Burges,az,lower,4,Republican,True,28099,97b343ad133a454a81155f00f6c69423
+AZL000055,Steve,Farley,az,lower,28,Democrat,True,68105,d66d6ae783054de29adaf0d4552d5e53
+AZL000083,Amanda A.,Reeve,az,lower,6,Republican,True,119229,
+AZL000090,Ted,Vogt,az,lower,30,Republican,True,119443,fabeae570894461a8f2802438cde9bb2
+AZL000044,Jack A.,Brown,az,lower,5,Democrat,True,2997,c4d09af1a49f4560804ed88d1ae9af71
+AZL000049,Tom,Chabin,az,lower,2,Democrat,True,98184,657d5c86ef7c4a6c9b28df1056dba783
+AZL000029,Russell,Pearce,az,upper,18,Republican,True,28448,a9a38f1700334033b369356f99dbc451
+AZL000092,Jim,Weiers,az,lower,10,Republican,True,3113,
+AZL000085,Carl,Seel,az,lower,6,Republican,True,66888,0c0567f48ec444c5b2b83e6a8c8253cf

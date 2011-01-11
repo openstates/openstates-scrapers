@@ -10,12 +10,14 @@ class UTLegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, term):
         self.validate_term(term)
 
+        year = term[0:4]
+
         if chamber == 'lower':
             title = 'Representative'
         else:
             title = 'Senator'
 
-        url = 'http://www.le.state.ut.us/asp/roster/roster.asp?year=%s' % term
+        url = 'http://www.le.state.ut.us/asp/roster/roster.asp?year=%s' % year
 
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
