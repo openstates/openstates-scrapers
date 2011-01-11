@@ -193,11 +193,12 @@ class MSBillScraper(BillScraper):
         vote_pdf, resp = self.urlretrieve(url)
         text = convert_pdf(vote_pdf, 'text')
 
-        if motion in self._vote_mapping:
-            motion, passed = self._vote_mapping[motion]
-        else:
-            passed = False
-            self.warning('unknown vote type: ' + motion)
+        # this way we get a key error on a missing vote type
+        #if motion in self._vote_mapping:
+        motion, passed = self._vote_mapping[motion]
+        #else:
+        #    passed = True
+        #   self.warning('unknown vote type: ' + motion)
 
         # process PDF text
 
