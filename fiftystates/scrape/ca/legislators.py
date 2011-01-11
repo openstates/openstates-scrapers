@@ -1,3 +1,5 @@
+import os
+
 from fiftystates import settings
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
@@ -16,16 +18,17 @@ class CALegislatorScraper(LegislatorScraper):
         super(CALegislatorScraper, self).__init__(metadata, **kwargs)
 
         if not user:
-            user = getattr(settings, 'MYSQL_USER', '')
+            user = os.environ.get('MYSQL_USER',
+                                  getattr(settings, 'MYSQL_USER', ''))
         if not pw:
-            pw = getattr(settings, 'MYSQL_PASSWORD', '')
-
+            pw = os.environ.get('MYSQL_PASSWORD',
+                                getattr(settings, 'MYSQL_PASSWORD', ''))
 
         if user and pw:
             conn_str = 'mysql://%s:%s@' % (user, pw)
         else:
             conn_str = 'mysql://'
-        conn_str = '%s%s/%s?charset=utf8&unix_socket=/tmp/mysql.sock' % (
+        conn_str = '%s%s/%s?charset=utf8' % (
             conn_str, host, db)
         self.engine = create_engine(conn_str)
         self.Session = sessionmaker(bind=self.engine)
