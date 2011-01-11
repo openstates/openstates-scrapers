@@ -1,4 +1,5 @@
 import re
+import os
 import datetime
 
 from fiftystates import settings
@@ -32,9 +33,11 @@ class CABillScraper(BillScraper):
         super(CABillScraper, self).__init__(metadata, **kwargs)
 
         if not user:
-            user = getattr(settings, 'MYSQL_USER', '')
+            user = os.environ.get('MYSQL_USER',
+                                  getattr(settings, 'MYSQL_USER', ''))
         if not pw:
-            pw = getattr(settings, 'MYSQL_PASSWORD', '')
+            pw = os.environ.get('MYSQL_PASSWORD',
+                                getattr(settings, 'MYSQL_PASSWORD', ''))
 
         if user and pw:
             conn_str = 'mysql://%s:%s@' % (user, pw)
