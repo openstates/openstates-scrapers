@@ -36,6 +36,9 @@ class INBillScraper(BillScraper):
             action_link = page.xpath("//a[contains(@href, 'getActions')]")[0]
             self.scrape_actions(bill, action_link.attrib['href'])
 
+            intro_link = page.xpath("//a[contains(., 'Introduced Bill')]")[0]
+            bill.add_version("Introduced Bill", intro_link.attrib['href'])
+
             self.save_bill(bill)
 
     def scrape_actions(self, bill, url):
