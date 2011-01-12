@@ -47,6 +47,13 @@ class INBillScraper(BillScraper):
 
             bill.add_source(url)
 
+            slist = page.xpath("//strong[contains(., 'Authors:')]")[0]
+            slist = slist.tail.split(',')
+            for sponsor in slist:
+                name = sponsor.strip()
+                if name:
+                    bill.add_sponsor(name, 'author')
+
             act_table = page.xpath("//table")[1]
 
             for row in act_table.xpath("tr")[1:]:
