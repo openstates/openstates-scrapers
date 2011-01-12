@@ -94,7 +94,7 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
             print 'No term specified, using latest "%s"' % latest_term
             times = [latest_term]
         else:
-            times = terms
+            times = options.terms
 
         # validate terms
         for time in times:
