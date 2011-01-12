@@ -44,7 +44,7 @@ class MDLegislatorScraper(LegislatorScraper):
                     party, district = detail_re.match(details).groups()
                     party = PARTY_DICT[party]
 
-                    leg = Legislator('2007-2010', chamber, district,
+                    leg = Legislator(term, chamber, district,
                                      ' '.join((first_name, last_name)),
                                      first_name, last_name, '',
                                      party, suffixes=suffixes)
