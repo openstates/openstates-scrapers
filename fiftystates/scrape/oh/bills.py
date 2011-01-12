@@ -17,7 +17,7 @@ class OHBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         if int(session) < 128:
-            raise NoDataForPeriod(year)
+            raise NoDataForPeriod(session)
 
         base_url = 'http://www.lsc.state.oh.us/status%s/' % session
 
