@@ -62,17 +62,28 @@ class OHBillScraper(BillScraper):
                         elif action.split()[0] == 'Senate':
                             actor = "upper"
                         elif action.split()[-1] == 'Governor':
-                            actor = "governor"
+                            actor = "executive"
                         elif action.split()[0] == 'Gov.':
-                            actor = "governor"
+                            actor = "executive"
                         elif action.split()[-1] == 'Gov.':
-                            actor = "governor"
+                            actor = "executive"
+
+                    if action in ('House Intro.', 'Senate Intro.'):
+                        atype = ['bill:introduced']
+                    elif action == '3rd Consideration':
+                        atype = ['bill:reading:3']
+                    elif action == 'Sent to Gov.':
+                        atype = ['governor:received']
+                    elif action == 'Signed By Governor':
+                        atype = ['governor:signed']
+                    else:
+                        atype = ['other']
 
                     if type(date) == float:
                         date = str(xlrd.xldate_as_tuple(date, 0))
                         date = datetime.datetime.strptime(
                             date, "(%Y, %m, %d, %H, %M, %S)")
-                        bill.add_action(actor, action, date)
+                        bill.add_action(actor, action, date, type=atype)
 
                 self.scrape_votes(bill, bill_type, rownum, session)
                 self.save_bill(bill)
