@@ -68,7 +68,7 @@ class OHBillScraper(BillScraper):
                         elif action.split()[-1] == 'Gov.':
                             actor = "executive"
 
-                    if action in ('House Intro.', 'Senate Intro.'):
+                    if action in ('House Intro. Date', 'Senate Intro. Date'):
                         atype = ['bill:introduced']
                     elif action == '3rd Consideration':
                         atype = ['bill:reading:3']
