@@ -205,6 +205,8 @@ class MDBillScraper(BillScraper):
             # find <a name="Title">, get parent dt, get parent dl, then dd n dl
             title = doc.xpath('//a[@name="Title"][1]/../../dd[1]/text()')[0].strip()
 
+            synopsis = doc.xpath('//font[@size="3"]/p/text()')[0].strip()
+
             #print "%s %d %s" % (bill_type, number, title)
 
             if 'B' in bill_type:
@@ -213,7 +215,7 @@ class MDBillScraper(BillScraper):
                 _type = ['joint resolution']
 
             bill = Bill(session, chamber, "%s %d" % (bill_type, number), title,
-                        type=_type)
+                        type=_type, synopsis=synopsis)
             bill.add_source(url)
 
             self.parse_bill_sponsors(doc, bill)     # sponsors
