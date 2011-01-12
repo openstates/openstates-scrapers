@@ -3,6 +3,7 @@ from __future__ import with_statement
 import urlparse
 import datetime
 
+from fiftystates.scrape import ScrapeError
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
 
@@ -16,7 +17,7 @@ class OHBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         if int(session) < 128:
-            raise NoDataForPeriod(year)
+            raise NoDataForPeriod(session)
 
         base_url = 'http://www.lsc.state.oh.us/status%s/' % session
 
@@ -61,17 +62,28 @@ class OHBillScraper(BillScraper):
                         elif action.split()[0] == 'Senate':
                             actor = "upper"
                         elif action.split()[-1] == 'Governor':
-                            actor = "governor"
+                            actor = "executive"
                         elif action.split()[0] == 'Gov.':
-                            actor = "governor"
+                            actor = "executive"
                         elif action.split()[-1] == 'Gov.':
-                            actor = "governor"
+                            actor = "executive"
+
+                    if action in ('House Intro. Date', 'Senate Intro. Date'):
+                        atype = ['bill:introduced']
+                    elif action == '3rd Consideration':
+                        atype = ['bill:reading:3']
+                    elif action == 'Sent to Gov.':
+                        atype = ['governor:received']
+                    elif action == 'Signed By Governor':
+                        atype = ['governor:signed']
+                    else:
+                        atype = ['other']
 
                     if type(date) == float:
                         date = str(xlrd.xldate_as_tuple(date, 0))
                         date = datetime.datetime.strptime(
                             date, "(%Y, %m, %d, %H, %M, %S)")
-                        bill.add_action(actor, action, date)
+                        bill.add_action(actor, action, date, type=atype)
 
                 self.scrape_votes(bill, bill_type, rownum, session)
                 self.save_bill(bill)
@@ -81,96 +93,51 @@ class OHBillScraper(BillScraper):
                     session + '_' + bill_type + '_' + str(number))
 
         with self.urlopen(vote_url) as page:
-            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+            page = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
-            save_date = None
-            for el in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2]'
-                                 '[@class="bigPanel"]/blockquote/font/table'):
+            for jlink in page.xpath("//a[contains(@href, 'JournalText')]"):
+                date = datetime.datetime.strptime(jlink.text,
+                                                  "%m/%d/%Y").date()
 
-                for mr in root.xpath('/html/body/table/tr[3]/td/table/tr[1]'
-                                     '/td[2][@class="bigPanel"]/blockquote/'
-                                     'font/table/tr[position() > 1]'):
+                details = jlink.xpath("string(../../../td[2])")
 
-                    yes_count = 0
-                    yes_placement = 0
-                    no_count = 0
-                    no_placement = 0
+                chamber = details.split(" - ")[0]
+                if chamber == 'House':
+                    chamber = 'lower'
+                elif chamber == 'Senate':
+                    chamber = 'upper'
+                else:
+                    raise ScrapeError("Bad chamber: %s" % chamber)
 
-                    date = mr.xpath('string(td/font/a)')
-                    date = date.lstrip()
-                    date = date.rstrip()
-                    info = mr.xpath('string(td[2]/font)')
+                motion = details.split(" - ")[1].split("\n")[0].strip()
 
-                    # makes sure that date is saved
-                    if len(date.split()) > 0:
-                        date = datetime.datetime.strptime(date, "%m/%d/%Y")
-                        save_date = date
+                vote_row = jlink.xpath("../../..")[0].getnext()
 
-                    if info.split()[0] == 'Yeas':
-                        yes_count = info.split()[2]
+                yea_div = vote_row.xpath(
+                    "td/font/div[contains(@id, 'Yea')]")[0]
+                yeas = []
+                for td in yea_div.xpath("table/tr/td"):
+                    name = td.xpath("string()")
+                    if name:
+                        yeas.append(name)
 
-                        # no votes
-                        for voter in range(3, len(info.split())):
-                            if info.split()[voter] == '-':
-                                no_count = info.split()[voter + 1]
-                                no_placement = voter + 2
-                                yes_placement = voter - 2
+                no_div = vote_row.xpath(
+                    "td/font/div[contains(@id, 'Nay')]")[0]
+                nays = []
+                for td in no_div.xpath("table/tr/td"):
+                    name = td.xpath("string()")
+                    if name:
+                        nays.append(name)
 
-                    # motion and chamber
-                    if info.split()[-1] == 'details':
-                        motion = info[0:-10]
-                        motion = motion.lstrip()
-                        motion = motion.rstrip()
-                        chamber = motion.split()[0]
+                yes_count = len(yeas)
+                no_count = len(nays)
 
-                        if chamber == "Senate":
-                            chamber = "upper"
-                        else:
-                            chamber = "lower"
+                vote = Vote(chamber, date, motion, yes_count > no_count,
+                            yes_count, no_count, 0)
 
-                    if yes_count > no_count:
-                        passed = True
-                    else:
-                        passed = False
+                for yes in yeas:
+                    vote.yes(yes)
+                for no in nays:
+                    vote.no(no)
 
-                    vote = Vote(chamber, save_date, motion, passed,
-                                int(yes_count), int(no_count), 0)
-
-                    for voters in range(3, yes_placement):
-                        legis = ""
-                        initials = 0
-
-                        # check to see if the next name is actually an initial
-                        if len(info.split()[voters + 1]) < 2:
-                            legis = (legis + info.split()[voters] + " " +
-                                     info.split()[voters + 1])
-                        elif len(info.split()[voters]) < 2:
-                            initials = 1
-                        else:
-                            legis = legis + info.split()[voters]
-
-                        if initials < 1:
-                            vote.yes(legis)
-
-                    for voters in range(no_placement, len(info.split())):
-                        legis = ""
-                        initials = 0
-
-                        # check to see if the next name is actually an initial
-                        if ((info.split()[voters] != info.split()[-1]) and
-                            (len(info.split()[voters + 1]) < 2)):
-
-                            legis = (legis + info.split()[voters] + " " +
-                                     info.split()[voters + 1])
-                        elif len(info.split()[voters]) < 2:
-                            initals = 1
-                        else:
-                            legis = legis + info.split()[voters]
-
-                        if initials < 1:
-                            vote.no(legis)
-
-                    # ignore rid of blank votes
-                    if yes_count > 0 or no_count > 0:
-                        vote.add_source(vote_url)
-                        bill.add_vote(vote)
+                bill.add_vote(vote)
