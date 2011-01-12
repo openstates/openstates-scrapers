@@ -50,10 +50,13 @@ class OHLegislatorScraper(LegislatorScraper):
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
             for el in root.xpath('//table[@class="fullWidth"]/tr/td'):
-
                 sen_link = el.xpath('a[@class="senatorLN"]')[1]
+
                 full_name = sen_link.text
                 full_name = full_name[0:-2]
+                if full_name == 'To Be Announced':
+                    continue
+
                 district = el.xpath('string(h3)').split()[1]
 
                 party = el.xpath('string(a[@class="senatorLN"]/span)')
