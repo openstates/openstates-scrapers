@@ -86,7 +86,7 @@ class OHBillScraper(BillScraper):
 
             for jlink in page.xpath("//a[contains(@href, 'JournalText')]"):
                 date = datetime.datetime.strptime(jlink.text,
-                                                  "%d/%m/%Y").date()
+                                                  "%m/%d/%Y").date()
 
                 details = jlink.xpath("string(../../../td[2])")
 
