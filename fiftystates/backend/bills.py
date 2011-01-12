@@ -68,6 +68,10 @@ def import_bills(state, data_dir):
         # clean up bill_id
         data['bill_id'] = fix_bill_id(data['bill_id'])
 
+        subjects = data.pop('subjects', None)
+        if subjects:
+            data['scraped_subjects'] = subjects
+
         bill = db.bills.find_one({'state': data['state'],
                                   'session': data['session'],
                                   'chamber': data['chamber'],
