@@ -36,8 +36,14 @@ class INBillScraper(BillScraper):
             action_link = page.xpath("//a[contains(@href, 'getActions')]")[0]
             self.scrape_actions(bill, action_link.attrib['href'])
 
-            intro_link = page.xpath("//a[contains(., 'Introduced Bill')]")[0]
-            bill.add_version("Introduced Bill", intro_link.attrib['href'])
+            version_path = "//a[contains(., '%s')]"
+            for version_type in ('Introduced Bill', 'House Bill',
+                                 'Senate Bill', 'Engrossed Bill',
+                                 'Enrolled Act'):
+                path = version_path % version_type
+                links = page.xpath(path)
+                if links:
+                    bill.add_version(version_type, links[0].attrib['href'])
 
             for doc_link in page.xpath("//a[contains(@href, 'FISCAL')]"):
                 num = doc_link.text.strip().split("(")[0]
