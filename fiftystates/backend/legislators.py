@@ -47,6 +47,8 @@ def import_legislators(state, data_dir):
     activate_legislators(state, current_term)
     deactivate_legislators(state, current_term)
 
+    ensure_indexes()
+
 
 def activate_legislators(state, current_term):
     """
