@@ -52,6 +52,7 @@ class AZLegislatorScraper(LegislatorScraper):
                 name, district, party, email, room, phone, fax = row.getchildren()
                 
                 link = name.xpath('string(a/@href)')
+                link = "http://www.azleg.gov" + link
                 if len(name) == 1:
                     name = name.text_content().strip()
                 else:
