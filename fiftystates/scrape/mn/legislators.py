@@ -1,8 +1,6 @@
-
 from fiftystates.scrape.legislators import Legislator, LegislatorScraper
 from fiftystates.scrape import NoDataForPeriod
 
-import xlrd
 import lxml.html
 
 class MNLegislatorScraper(LegislatorScraper):
@@ -18,23 +16,6 @@ class MNLegislatorScraper(LegislatorScraper):
             self.scrape_house(term)
         else:
             self.scrape_senate(term)
-
-    def scrape_house_xls(self, term):
-        xls_url = 'http://www.house.leg.state.mn.us/members/meminfo.xls'
-
-        fname, resp = self.urlretrieve(xls_url)
-        sheet = xlrd.open_workbook(fname).sheet_by_index(0)
-
-        for n in xrange(1, sheet.nrows):
-            (district, fname, lname, addr, phone, _, party,
-             home_addr, home_city, home_zip) = sheet.row_values(n)
-
-            leg = Legislator(term, 'lower', district, '%s %s' % (fname, lname),
-                             first_name=fname, last_name=lname,
-                             party=self._parties[party], office_address=addr,
-                             office_phone=phone)
-            leg.add_source(xls_url)
-            self.save_legislator(leg)
 
     def scrape_house(self, term):
         url = 'http://www.house.leg.state.mn.us/members/housemembers.asp'
