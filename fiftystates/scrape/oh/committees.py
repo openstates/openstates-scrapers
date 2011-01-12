@@ -78,7 +78,7 @@ class OHCommitteeScraper(CommitteeScraper):
 
                 comm_name = name
                 comm_name = comm_name.replace("-", " ")
-                comm_name = comm_name.capitalize()
+                comm_name = comm_name.title()
                 committee = Committee(chamber, comm_name)
                 committee.add_source(comm_url)
 
