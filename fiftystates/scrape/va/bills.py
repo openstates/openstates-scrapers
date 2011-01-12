@@ -195,7 +195,7 @@ class VABillScraper(BillScraper):
 
     def split_vote(self, block):
         if block:
-            block = block[0].text
+            block = block[0].text.replace('\r\n', ' ')
 
             pieces = block.split('--')
             # if there are only two pieces, there are no abstentions
