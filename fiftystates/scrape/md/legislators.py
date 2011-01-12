@@ -15,10 +15,7 @@ class MDLegislatorScraper(LegislatorScraper):
                 'upper': "http://www.msa.md.gov/msa/mdmanual/05sen/html/senal.html"}
         detail_re = re.compile('\((R|D)\), (?:Senate President, )?(?:House Speaker, )?District (\w+)')
 
-        self.validate_term(term)
-
-        if term != '2007-2010':
-            raise NoDataForPeriod(term)
+        self.validate_term(term, latest_only=True)
 
         with self.urlopen(urls[chamber]) as html:
             doc = lxml.html.fromstring(html)
