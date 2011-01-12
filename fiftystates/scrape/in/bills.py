@@ -39,6 +39,11 @@ class INBillScraper(BillScraper):
             intro_link = page.xpath("//a[contains(., 'Introduced Bill')]")[0]
             bill.add_version("Introduced Bill", intro_link.attrib['href'])
 
+            for doc_link in page.xpath("//a[contains(@href, 'FISCAL')]"):
+                num = doc_link.text.strip().split("(")[0]
+                bill.add_document("Fiscal Impact Statement #%s" % num,
+                                  doc_link.attrib['href'])
+
             self.save_bill(bill)
 
     def scrape_actions(self, bill, url):
