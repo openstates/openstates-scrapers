@@ -29,9 +29,9 @@ class OHCommitteeScraper(CommitteeScraper):
                         'committeeId=%d' % comm_id)
 
             with self.urlopen(comm_url) as page:
-                root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+                page = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
-                comm_name = root.xpath(
+                comm_name = page.xpath(
                     'string(//table/tr[@class="committeeHeader"]/td)')
                 comm_name = comm_name.replace("/", " ")
 
@@ -39,20 +39,13 @@ class OHCommitteeScraper(CommitteeScraper):
                     chamber = "joint"
 
                 committee = Committee(chamber, comm_name)
-
-                path = ('/html/body[@id="bd"]/div[@id="ja-wrapper"]'
-                        '/div[@id="ja-containerwrap-f"]/div'
-                        '[@id="ja-container"]/div[@id="ja-mainbody-f"]/'
-                        'div[@id="ja-contentwrap"]/div[@id="ja-content"]/'
-                        'table/tr[position() >=3]')
-
-                for el in root.xpath(path):
-                    rep1 = el.xpath('string(td[1]/a)')
-                    rep2 = el.xpath('string(td[4]/a)')
-                    committee.add_member(rep1)
-                    committee.add_member(rep2)
-
                 committee.add_source(comm_url)
+
+                for link in page.xpath("//a[contains(@href, 'district')]"):
+                    name = link.text
+                    if name and name.strip():
+                        committee.add_member(name.strip())
+
                 self.save_committee(committee)
 
     def scrape_senate_comm(self, chamber, term):
@@ -86,7 +79,8 @@ class OHCommitteeScraper(CommitteeScraper):
                     sen_name = el.xpath('string(a[@class="senatorLN"])')
                     mark = sen_name.find('(')
                     full_name = sen_name[0:mark]
-                    if len(full_name) != 0:
+                    full_name = full_name.strip()
+                    if full_name:
                         committee.add_member(full_name)
 
                 self.save_committee(committee)
