@@ -1,12 +1,13 @@
 from __future__ import with_statement
+
 import urlparse
-import datetime as dt
-from fiftystates.scrape.oh import metadata
-from fiftystates.scrape.oh.utils import chamber_name, parse_ftp_listing
+import datetime
+
 from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import VoteScraper, Vote
-from datetime import datetime
+from fiftystates.scrape.votes import Vote
+
 import xlrd
+import scrapelib
 import lxml.etree
 
 
@@ -14,7 +15,6 @@ class OHBillScraper(BillScraper):
     state = 'oh'
 
     def scrape(self, chamber, session):
-
         if int(session) < 128:
             raise NoDataForPeriod(year)
 
@@ -24,9 +24,15 @@ class OHBillScraper(BillScraper):
                       'upper': ['sb', 'sjr', 'scr']}
 
         for bill_type in bill_types[chamber]:
-            # open file
             url = base_url + '%s.xls' % bill_type
-            fname, resp = self.urlretrieve(url)
+
+            try:
+                fname, resp = self.urlretrieve(url)
+            except scrapelib.HTTPError:
+                # if there haven't yet been any bills of a given type
+                # then the excel url for that type will 404
+                continue
+
             sh = xlrd.open_workbook(fname).sheet_by_index(0)
 
             for rownum in range(1, sh.nrows):
@@ -43,9 +49,8 @@ class OHBillScraper(BillScraper):
 
                 actor = ""
 
-                #Actions - starts column after bill title
+                # Actions start column after bill title
                 for colnum in range(4, sh.ncols - 1):
-
                     action = str(sh.cell(0, colnum).value)
                     cell = sh.cell(rownum, colnum)
                     date = cell.value
@@ -64,97 +69,99 @@ class OHBillScraper(BillScraper):
 
                     if type(date) == float:
                         date = str(xlrd.xldate_as_tuple(date, 0))
-                        date = datetime.strptime(date,
-                                                 "(%Y, %m, %d, %H, %M, %S)")
+                        date = datetime.datetime.strptime(
+                            date, "(%Y, %m, %d, %H, %M, %S)")
                         bill.add_action(actor, action, date)
 
-                # get votes
                 self.scrape_votes(bill, bill_type, rownum, session)
                 self.save_bill(bill)
 
-
     def scrape_votes(self, bill, bill_type, number, session):
-        vote_url = 'http://www.legislature.state.oh.us/votes.cfm?ID=' + session + '_' + bill_type + '_' + str(number)
+        vote_url = ('http://www.legislature.state.oh.us/votes.cfm?ID=' +
+                    session + '_' + bill_type + '_' + str(number))
+
         with self.urlopen(vote_url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
-            
+
             save_date = None
-            for el in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2][@class="bigPanel"]/blockquote/font/table'):
-                for mr in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2][@class="bigPanel"]/blockquote/font/table/tr[position() > 1]'):
-                    
+            for el in root.xpath('/html/body/table/tr[3]/td/table/tr[1]/td[2]'
+                                 '[@class="bigPanel"]/blockquote/font/table'):
+
+                for mr in root.xpath('/html/body/table/tr[3]/td/table/tr[1]'
+                                     '/td[2][@class="bigPanel"]/blockquote/'
+                                     'font/table/tr[position() > 1]'):
+
                     yes_count = 0
                     yes_placement = 0
                     no_count = 0
-                    no_placement = 0 
+                    no_placement = 0
 
                     date = mr.xpath('string(td/font/a)')
                     date = date.lstrip()
                     date = date.rstrip()
-                    info = mr.xpath('string(td[2]/font)')  
+                    info = mr.xpath('string(td[2]/font)')
 
-                    #makes sure that date is saved 
+                    # makes sure that date is saved
                     if len(date.split()) > 0:
-                        date = datetime.strptime(date, "%m/%d/%Y")
+                        date = datetime.datetime.strptime(date, "%m/%d/%Y")
                         save_date = date
 
-                    #figures out the number of votes for each way
-                    #also figures out placement of yes and no voters starts for later iteration
                     if info.split()[0] == 'Yeas':
-                                                
-                        #yes votes
                         yes_count = info.split()[2]
 
-                        #no votes
+                        # no votes
                         for voter in range(3, len(info.split())):
-                           if info.split()[voter] == '-':
-                            no_count = info.split()[voter + 1]
-                            no_placement = voter + 2
-                            yes_placement = voter - 2
-                                 
-                    #motion and chamber
+                            if info.split()[voter] == '-':
+                                no_count = info.split()[voter + 1]
+                                no_placement = voter + 2
+                                yes_placement = voter - 2
+
+                    # motion and chamber
                     if info.split()[-1] == 'details':
-                        motion = info[0:len(info)-10]
+                        motion = info[0:-10]
                         motion = motion.lstrip()
                         motion = motion.rstrip()
                         chamber = motion.split()[0]
-                        
+
                         if chamber == "Senate":
                             chamber = "upper"
                         else:
                             chamber = "lower"
 
-                    #pass or not (only by which has more. need to see look up how they are passed)
                     if yes_count > no_count:
                         passed = True
                     else:
                         passed = False
 
-                    vote = Vote(chamber, save_date, motion, passed, int(yes_count), int(no_count), other_count = 0)
+                    vote = Vote(chamber, save_date, motion, passed,
+                                int(yes_count), int(no_count), 0)
 
-                    #adding in yea voters
                     for voters in range(3, yes_placement):
                         legis = ""
-                        initials = 0                        
+                        initials = 0
 
-                        #checks to see if the next name is actually an initial
-                        if len(info.split()[voters+1]) < 2:
-                            legis = legis + info.split()[voters] + " " + info.split()[voters + 1]
+                        # check to see if the next name is actually an initial
+                        if len(info.split()[voters + 1]) < 2:
+                            legis = (legis + info.split()[voters] + " " +
+                                     info.split()[voters + 1])
                         elif len(info.split()[voters]) < 2:
                             initials = 1
                         else:
                             legis = legis + info.split()[voters]
-                        
+
                         if initials < 1:
                             vote.yes(legis)
-                    
-                    #adding in no voters
+
                     for voters in range(no_placement, len(info.split())):
-                        legis = ""                                         
+                        legis = ""
                         initials = 0
 
-                        #checks to see if the next name is actually an initial
-                        if (info.split()[voters] != info.split()[-1]) and (len(info.split()[voters+1]) < 2):
-                            legis = legis + info.split()[voters] + " " + info.split()[voters + 1]
+                        # check to see if the next name is actually an initial
+                        if ((info.split()[voters] != info.split()[-1]) and
+                            (len(info.split()[voters + 1]) < 2)):
+
+                            legis = (legis + info.split()[voters] + " " +
+                                     info.split()[voters + 1])
                         elif len(info.split()[voters]) < 2:
                             initals = 1
                         else:
@@ -162,8 +169,8 @@ class OHBillScraper(BillScraper):
 
                         if initials < 1:
                             vote.no(legis)
-                    
-                    #gets rid of blank votes
+
+                    # ignore rid of blank votes
                     if yes_count > 0 or no_count > 0:
                         vote.add_source(vote_url)
-                        bill.add_vote(vote)   
+                        bill.add_vote(vote)
