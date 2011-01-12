@@ -43,22 +43,28 @@ class VABillScraper(BillScraper):
         #'Substitute': 'other',
     }
 
+    link_xpath = '//ul[@class="linkSect"]/li/a'
+
+    def get_page_bills(self, issue_name, href):
+        with self.urlopen('http://lis.virginia.gov' + href) as issue_html:
+            idoc = lxml.html.fromstring(issue_html)
+            for ilink in idoc.xpath(self.link_xpath):
+                self.subject_map[ilink.text].append(issue_name)
+
+        more_links = idoc.xpath('//a/b[text()="More..."]/../@href')
+        if more_links:
+            self.get_page_bills(issue_name, more_links[0])
+
     def build_subject_map(self):
         url = 'http://lis.virginia.gov/cgi-bin/legp604.exe?%s+sbj+SBJ' % self.site_id
-        link_xpath = '//ul[@class="linkSect"]/li/a'
         self.subject_map = defaultdict(list)
 
         # loop over list of all issue pages
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
-            for link in doc.xpath(link_xpath):
-                issue_name = link.text
-
-                # open up issue page and get all bill links
-                with self.urlopen('http://lis.virginia.gov' + link.get('href')) as issue_html:
-                    idoc = lxml.html.fromstring(issue_html)
-                    for ilink in idoc.xpath(link_xpath):
-                        self.subject_map[ilink.text].append(issue_name)
+            for link in doc.xpath(self.link_xpath):
+                # get bills from page
+                self.get_page_bills(link.text, link.get('href'))
 
 
     def scrape(self, chamber, session):
@@ -189,7 +195,7 @@ class VABillScraper(BillScraper):
 
     def split_vote(self, block):
         if block:
-            block = block[0].text
+            block = block[0].text.replace('\r\n', ' ')
 
             pieces = block.split('--')
             # if there are only two pieces, there are no abstentions
