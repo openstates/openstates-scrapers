@@ -162,6 +162,10 @@ def main():
         raise RunException("Must pass a path to a metadata module (eg. nc)")
     mod_name = spares[0]
 
+    # set up search path
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__),
+                                    '../../openstates'))
+
     metadata = __import__(mod_name, fromlist=['metadata']).metadata
     state = metadata['abbreviation']
 
