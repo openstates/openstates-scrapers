@@ -39,6 +39,7 @@ class INCommitteeScraper(CommitteeScraper):
             committee.add_source(url)
 
             for member in mlist.split(','):
+                member = re.sub(r'R\.M\.(M\.)?$', '', member.strip())
                 committee.add_member(member.strip())
 
             chair = page.xpath("//strong[contains(., 'Chair:')]")[0]

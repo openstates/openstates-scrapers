@@ -52,6 +52,7 @@ class CACommitteeScraper(CommitteeScraper):
         # httplib/httplib2, so fall back to urllib2
         page = urllib2.urlopen(url).read()
         page = lxml.html.fromstring(page)
+        comm.add_source(url)
 
         for a in page.xpath('//a[contains(@href, "district")]'):
             name = a.text.strip()
@@ -94,6 +95,7 @@ class CACommitteeScraper(CommitteeScraper):
     def scrape_lower_committee_members(self, committee, url):
         # break out of frame
         url = url.replace('newcomframeset.asp', 'welcome.asp')
+        committee.add_source(url)
 
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
