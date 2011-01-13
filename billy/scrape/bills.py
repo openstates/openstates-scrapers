@@ -6,7 +6,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from fiftystates.scrape import Scraper, SourcedObject, JSONDateEncoder
+from billy.scrape import Scraper, SourcedObject, JSONDateEncoder
 
 
 class BillScraper(Scraper):
@@ -32,7 +32,7 @@ class BillScraper(Scraper):
 
     def save_bill(self, bill):
         """
-        Save a scraped :class:`~fiftystates.scrape.bills.Bill` object. Only
+        Save a scraped :class:`~billy.scrape.bills.Bill` object. Only
         call after all data for the given bill has been collected.
         """
         self.log("save_bill %s %s: %s" % (bill['chamber'],
@@ -158,7 +158,7 @@ class Bill(SourcedObject):
 
     def add_vote(self, vote):
         """
-        Associate a :class:`~fiftystates.scrape.votes.Vote` object with this
+        Associate a :class:`~billy.scrape.votes.Vote` object with this
         bill.
         """
         self['votes'].append(vote)

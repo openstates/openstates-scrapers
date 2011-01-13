@@ -6,7 +6,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from fiftystates.scrape import Scraper, SourcedObject, JSONDateEncoder
+from billy.scrape import Scraper, SourcedObject, JSONDateEncoder
 
 
 class VoteScraper(Scraper):

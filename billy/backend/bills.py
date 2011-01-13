@@ -12,10 +12,10 @@ try:
 except:
     import simplejson as json
 
-from fiftystates.utils import keywordize
-from fiftystates.backend import db
-from fiftystates.backend.names import get_legislator_id
-from fiftystates.backend.utils import (insert_with_id,
+from billy.utils import keywordize
+from billy.backend import db
+from billy.backend.names import get_legislator_id
+from billy.backend.utils import (insert_with_id,
                                        update, prepare_obj,
                                        get_committee_id,
                                        fix_bill_id)

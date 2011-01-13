@@ -10,9 +10,9 @@ try:
 except:
     import simplejson as json
 
-from fiftystates.backend import db
-from fiftystates.backend.names import get_legislator_id
-from fiftystates.backend.utils import prepare_obj, update, insert_with_id
+from billy.backend import db
+from billy.backend.names import get_legislator_id
+from billy.backend.utils import prepare_obj, update, insert_with_id
 
 import pymongo
 import name_tools

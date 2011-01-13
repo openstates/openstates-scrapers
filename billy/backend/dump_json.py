@@ -13,8 +13,8 @@ try:
 except:
     import simplejson as json
 
-from fiftystates import settings
-from fiftystates.backend import db
+from billy import settings
+from billy.backend import db
 
 import pymongo
 import boto

@@ -5,11 +5,11 @@ from django.http import HttpResponse
 import piston.resource
 from piston.emitters import Emitter
 
-from fiftystates.site.api import handlers
-from fiftystates.site.api.views import document, legislator_preview
-from fiftystates.site.api.models import LogEntry
-from fiftystates.site.api.emitters import OpenStateJSONEmitter
-from fiftystates.site.api.emitters import FeedEmitter, ICalendarEmitter
+from billy.site.api import handlers
+from billy.site.api.views import document, legislator_preview
+from billy.site.api.models import LogEntry
+from billy.site.api.emitters import OpenStateJSONEmitter
+from billy.site.api.emitters import FeedEmitter, ICalendarEmitter
 
 if getattr(settings, 'USE_LOCKSMITH', False):
     from locksmith.auth.authentication import PistonKeyAuthentication

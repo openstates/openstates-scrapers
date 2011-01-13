@@ -10,11 +10,11 @@ try:
 except ImportError:
     import simplejson as json
 
-from fiftystates.backend import db
-from fiftystates.backend.names import get_legislator_id
-from fiftystates.backend.utils import prepare_obj, fix_bill_id
+from billy.backend import db
+from billy.backend.names import get_legislator_id
+from billy.backend.utils import prepare_obj, fix_bill_id
 
-_log = logging.getLogger('fiftystates')
+_log = logging.getLogger('billy')
 
 def import_votes(state, data_dir):
     data_dir = os.path.join(data_dir, state)

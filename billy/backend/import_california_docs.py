@@ -1,5 +1,5 @@
-from fiftystates.backend import db
-from fiftystates.scrape.ca.models import CABillVersion
+from billy.backend import db
+from billy.scrape.ca.models import CABillVersion
 
 from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy import create_engine

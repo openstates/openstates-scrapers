@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from fiftystates import settings
-from fiftystates.backend import db
+from billy import settings
+from billy.backend import db
 
 import re
 import json

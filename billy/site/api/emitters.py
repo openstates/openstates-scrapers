@@ -1,7 +1,7 @@
 import json
 import datetime
 
-from fiftystates.site.api.feeds import EventFeed
+from billy.site.api.feeds import EventFeed
 
 from django.template import defaultfilters
 from piston.emitters import Emitter, JSONEmitter

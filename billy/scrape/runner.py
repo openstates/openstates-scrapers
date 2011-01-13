@@ -6,9 +6,9 @@ import os
 import sys
 from optparse import make_option, OptionParser
 
-from fiftystates.scrape import (NoDataForPeriod, JSONDateEncoder,
+from billy.scrape import (NoDataForPeriod, JSONDateEncoder,
                                 _scraper_registry)
-from fiftystates.scrape.validator import DatetimeValidator
+from billy.scrape.validator import DatetimeValidator
 
 try:
     import json
@@ -196,7 +196,7 @@ def main():
         validator = DatetimeValidator()
         validator.validate(metadata, schema)
     except ValueError, e:
-        logging.getLogger('fiftystates').warning('metadata validation error: '
+        logging.getLogger('billy').warning('metadata validation error: '
                                                  + str(e))
 
     with open(os.path.join(options.output_dir, 'state_metadata.json'), 'w') as f:

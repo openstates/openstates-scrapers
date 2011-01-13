@@ -6,7 +6,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from fiftystates.scrape import Scraper, SourcedObject, JSONDateEncoder
+from billy.scrape import Scraper, SourcedObject, JSONDateEncoder
 
 
 class LegislatorScraper(Scraper):
@@ -34,11 +34,11 @@ class LegislatorScraper(Scraper):
 
     def save_person(self, person):
         """
-        Save a scraped :class:`~fiftystates.scrape.legislators.Person` object.
+        Save a scraped :class:`~billy.scrape.legislators.Person` object.
         Only call after all data for the given person has been collected.
 
         Should be used for non-legislator people (e.g. Governor, Lt. Gov).
-        To add :class:`~fiftystates.scrape.legislators.Legislator` objects call
+        To add :class:`~billy.scrape.legislators.Legislator` objects call
         :meth:`save_legislator`.
         """
         self.log("save_person: %s" % person['full_name'])
@@ -59,7 +59,7 @@ class LegislatorScraper(Scraper):
 
     def save_legislator(self, legislator):
         """
-        Save a scraped :class:`~fiftystates.scrape.legislators.Legislator`
+        Save a scraped :class:`~billy.scrape.legislators.Legislator`
         object.
 
         Only call after all data for the given legislator has been collected.
@@ -88,7 +88,7 @@ class Person(SourcedObject):
         """
         Create a Person.
 
-        Note: the :class:`~fiftystates.scrape.legislators.Legislator` class
+        Note: the :class:`~billy.scrape.legislators.Legislator` class
         should be used when dealing with state legislators.
 
         :param full_name: the person's full name

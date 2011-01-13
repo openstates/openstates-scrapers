@@ -24,7 +24,7 @@ class District(models.Model):
 
     @permalink
     def get_absolute_url(self):
-        return ('fiftystates.site.geo.views.district_kml', (),
+        return ('billy.site.geo.views.district_kml', (),
                 {'state': self.state_abbrev, 'chamber': self.chamber,
                  'name': self.name})
 

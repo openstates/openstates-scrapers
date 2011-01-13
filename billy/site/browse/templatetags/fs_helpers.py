@@ -1,4 +1,4 @@
-from fiftystates.backend import db, metadata
+from billy.backend import db, metadata
 
 from django import template
 from django.template.defaultfilters import stringfilter

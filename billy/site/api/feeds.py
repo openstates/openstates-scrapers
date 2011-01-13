@@ -1,4 +1,4 @@
-from fiftystates.backend import db
+from billy.backend import db
 
 from django.contrib.syndication.views import Feed
 

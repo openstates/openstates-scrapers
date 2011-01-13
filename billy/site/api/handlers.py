@@ -1,10 +1,10 @@
 import re
 import datetime
 
-from fiftystates import settings
-from fiftystates.backend import db
-from fiftystates.site.geo.models import District
-from fiftystates.utils import keywordize
+from billy import settings
+from billy.backend import db
+from billy.site.geo.models import District
+from billy.utils import keywordize
 
 from django.http import HttpResponse
 

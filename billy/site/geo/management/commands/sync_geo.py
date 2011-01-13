@@ -4,7 +4,7 @@ import urllib2
 import zipfile
 from cStringIO import StringIO
 
-from fiftystates.site.geo.models import (District, state_nums,
+from billy.site.geo.models import (District, state_nums,
                                          upper_district_mapping,
                                          lower_district_mapping)
 

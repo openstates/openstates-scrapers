@@ -1,6 +1,6 @@
 import os
 
-from fiftystates import settings
+from billy import settings
 
 import pymongo
 import gridfs

@@ -5,7 +5,7 @@ import csv
 import argparse
 from collections import defaultdict
 
-from fiftystates.backend import db, metadata
+from billy.backend import db, metadata
 
 SUBJECTS = ['Agriculture and Food',
             'Animal Rights and Wildlife Issues',

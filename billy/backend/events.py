@@ -10,10 +10,10 @@ try:
 except:
     import simplejson as json
 
-from fiftystates.backend import db
-from fiftystates.backend.names import get_legislator_id
-from fiftystates.backend.utils import prepare_obj, update, get_committee_id
-from fiftystates.scrape.events import Event
+from billy.backend import db
+from billy.backend.names import get_legislator_id
+from billy.backend.utils import prepare_obj, update, get_committee_id
+from billy.scrape.events import Event
 
 import pymongo
 from pymongo.son import SON

@@ -6,7 +6,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from fiftystates.scrape import Scraper, SourcedObject, JSONDateEncoder
+from billy.scrape import Scraper, SourcedObject, JSONDateEncoder
 
 
 class CommitteeScraper(Scraper):
@@ -25,7 +25,7 @@ class CommitteeScraper(Scraper):
 
     def save_committee(self, committee):
         """
-        Save a scraped :class:`~fiftystates.scrape.committees.Committee` object.
+        Save a scraped :class:`~billy.scrape.committees.Committee` object.
         Only call after all data for the given committee has been collected.
         """
         name = committee['committee']

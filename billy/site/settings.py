@@ -61,16 +61,13 @@ MIDDLEWARE_CLASSES = (
     'locksmith.auth.middleware.APIKeyMiddleware',
 )
 
-ROOT_URLCONF = 'fiftystates.site.urls'
+ROOT_URLCONF = 'billy.site.urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or
     # "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    "/home/fiftystates_site/fiftystates_site/fiftystates/templates/",
-    "/home/fiftystates_site/fiftystates_site/state_geo/templates/",
-    "/home/fiftystates_site/fiftystates_site/status/templates/",
 )
 
 INSTALLED_APPS = (
@@ -82,9 +79,9 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'django.contrib.humanize',
     'django.contrib.gis',
-    'fiftystates.site.api',
-    'fiftystates.site.geo',
-    'fiftystates.site.browse',
+    'billy.site.api',
+    'billy.site.geo',
+    'billy.site.browse',
     'locksmith.auth',
 )
 

@@ -1,4 +1,4 @@
-from fiftystates.site.geo.models import District
+from billy.site.geo.models import District
 
 from django.contrib.gis import admin
 

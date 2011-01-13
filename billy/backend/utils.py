@@ -8,7 +8,7 @@ import datetime
 from pymongo.son import SON
 import pymongo.errors
 
-from fiftystates.backend import db, fs
+from billy.backend import db, fs
 
 import name_tools
 

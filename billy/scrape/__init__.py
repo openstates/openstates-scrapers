@@ -8,14 +8,14 @@ import contextlib
 from optparse import make_option, OptionParser
 from collections import defaultdict
 
-from fiftystates.scrape.validator import DatetimeValidator
+from billy.scrape.validator import DatetimeValidator
 
 try:
     import json
 except ImportError:
     import simplejson as json
 
-from fiftystates import settings
+from billy import settings
 
 import scrapelib
 
@@ -125,7 +125,7 @@ class Scraper(scrapelib.Scraper):
         self.follow_robots = False
 
         # logging convenience methods
-        self.logger = logging.getLogger("fiftystates")
+        self.logger = logging.getLogger("billy")
         self.log = self.logger.info
         self.debug = self.logger.debug
         self.warning = self.logger.warning

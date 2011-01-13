@@ -2,15 +2,15 @@
 import logging
 import argparse
 
-from fiftystates import settings
+from billy import settings
 
-from fiftystates.backend.metadata import import_metadata
-from fiftystates.backend.bills import import_bills
-from fiftystates.backend.legislators import import_legislators
-from fiftystates.backend.committees import import_committees
-from fiftystates.backend.votes import import_votes
-from fiftystates.backend.events import import_events
-from fiftystates.backend.versions import import_versions
+from billy.backend.metadata import import_metadata
+from billy.backend.bills import import_bills
+from billy.backend.legislators import import_legislators
+from billy.backend.committees import import_committees
+from billy.backend.votes import import_votes
+from billy.backend.events import import_events
+from billy.backend.versions import import_versions
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

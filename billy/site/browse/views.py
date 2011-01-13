@@ -2,7 +2,7 @@ import re
 import random
 from collections import defaultdict
 
-from fiftystates.backend import db, metadata
+from billy.backend import db, metadata
 
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.views.decorators.cache import never_cache

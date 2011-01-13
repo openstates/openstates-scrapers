@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from fiftystates.backend import db
+from billy.backend import db
 from pymongo.code import Code
 
 
