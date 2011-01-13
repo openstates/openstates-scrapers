@@ -97,7 +97,7 @@ def deactivate_legislators(state, current_term):
 def get_previous_term(state, term):
     meta = db.metadata.find_one({'_id': state})
     t1 = meta['terms'][0]
-    for t2 in meta['terms']:
+    for t2 in meta['terms'][1:]:
         if t2['name'] == term:
             return t1['name']
         t1 = t2

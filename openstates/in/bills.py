@@ -31,7 +31,10 @@ class INBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            title = page.xpath("//br")[8].tail.strip()
+            title = page.xpath("//br")[8].tail
+            if not title:
+                return
+            title = title.strip()
 
             bill = Bill(session, chamber, bill_id, title)
             bill.add_source(url)
