@@ -1,6 +1,7 @@
 from nose.tools import with_setup
 
-from fiftystates.backend import db, names
+from billy import db
+from billy.importers import names
 
 
 def setup_func():

@@ -4,7 +4,8 @@ import datetime
 
 from nose.tools import with_setup
 
-from fiftystates.backend import db, utils
+from billy import db
+from billy.importers import utils
 
 
 @with_setup(db.legislators.drop)

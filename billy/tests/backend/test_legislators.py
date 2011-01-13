@@ -2,7 +2,8 @@ import datetime
 
 from nose.tools import with_setup
 
-from fiftystates.backend import db, legislators, utils
+from billy import db
+from billy.importers import legislators, utils
 
 
 def setup_func():
