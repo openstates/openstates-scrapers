@@ -66,6 +66,7 @@ class INBillScraper(BillScraper):
                     bill.add_sponsor(name, 'author')
 
             act_table = page.xpath("//table")[1]
+            read_yet = False
 
             for row in act_table.xpath("tr")[1:]:
                 date = row.xpath("string(td[1])").strip()
@@ -79,4 +80,14 @@ class INBillScraper(BillScraper):
 
                 action = row.xpath("string(td[4])").strip()
 
-                bill.add_action(chamber, action, date)
+                atype = []
+
+                if action.startswith('First reading:'):
+                    if not read_yet:
+                        atype.append('bill:introduced')
+                        read_yet = True
+                    atype.append('bill:reading:1')
+                if 'referred to' in action:
+                    atype.append('committee:referred')
+
+                bill.add_action(chamber, action, date, type=atype)
