@@ -11,6 +11,7 @@ except:
     import simplejson as json
 
 from fiftystates.backend import db
+from fiftystates.backend.names import get_legislator_id
 from fiftystates.backend.utils import prepare_obj, update, insert_with_id
 
 import pymongo
@@ -29,6 +30,7 @@ def import_committees(state, data_dir):
 
     meta = db.metadata.find_one({'_id': state})
     current_term = meta['terms'][-1]['name']
+    current_session = meta['terms'][-1]['sessions'][-1]
 
     paths = glob.glob(pattern)
 
@@ -95,26 +97,19 @@ def import_committees(state, data_dir):
 
             (pre, first, last, suff) = name_tools.split(member['name'])
 
-            found = db.legislators.find({
-                    'first_name': first,
-                    'last_name': last,
-                    'roles': {'$elemMatch': {'term': current_term,
-                                             'state': state}}})
+            leg_id = get_legislator_id(state, current_session,
+                                       data['chamber'],
+                                       member['name'])
 
-            if found.count() > 1:
-                print "Too many matches for %s" % member['name'].encode(
-                    'ascii', 'ignore')
-                member['leg_id'] = None
-                continue
-            elif found.count() == 0:
+            if not leg_id:
                 print "No matches for %s" % member['name'].encode(
                     'ascii', 'ignore')
                 member['leg_id'] = None
                 continue
 
-            legislator = found[0]
+            legislator = db.legislators.find_one({'_id': leg_id})
 
-            member['leg_id'] = legislator['_id']
+            member['leg_id'] = leg_id
 
             for role in legislator['roles']:
                 if (role['type'] == 'committee member' and
