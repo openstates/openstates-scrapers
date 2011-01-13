@@ -1,4 +1,5 @@
 import datetime
+from collections import defaultdict
 
 from fiftystates.scrape.bills import BillScraper, Bill
 
@@ -9,6 +10,8 @@ class INBillScraper(BillScraper):
     state = 'in'
 
     def scrape(self, chamber, session):
+        self.build_subject_mapping(session)
+
         url = ("http://www.in.gov/apps/lsa/session/billwatch/billinfo"
                "?year=%s&session=1&request=all" % session)
 
@@ -49,6 +52,8 @@ class INBillScraper(BillScraper):
                 num = doc_link.text.strip().split("(")[0]
                 bill.add_document("Fiscal Impact Statement #%s" % num,
                                   doc_link.attrib['href'])
+
+            bill['subjects'] = self.subjects[bill_id]
 
             self.save_bill(bill)
 
@@ -91,3 +96,25 @@ class INBillScraper(BillScraper):
                     atype.append('committee:referred')
 
                 bill.add_action(chamber, action, date, type=atype)
+
+    def build_subject_mapping(self, session):
+        self.subjects = defaultdict(list)
+
+        url = ("http://www.in.gov/apps/lsa/session/billwatch/billinfo"
+               "?year=%s&session=1&request=getSubjectList" % session)
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+
+            for link in page.xpath("//a[contains(@href, 'getSubject')]"):
+                subject = link.text.strip()
+
+                self.scrape_subject(subject, link.attrib['href'])
+
+    def scrape_subject(self, subject, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            for link in page.xpath("//a[contains(@href, 'getBill')]"):
+                self.subjects[link.text.strip()].append(subject)
+
