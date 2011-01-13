@@ -1,3 +1,4 @@
+import re
 from fiftystates.backend import db
 
 __matchers = {}
@@ -9,6 +10,8 @@ def get_legislator_id(state, session, chamber, name):
     except KeyError:
         matcher = init_name_matcher(state, session, chamber)
         __matchers[(state, session, chamber)] = matcher
+
+    name = re.sub(r'^(Senator|Representative) ', '', name)
 
     return matcher[name]
 
