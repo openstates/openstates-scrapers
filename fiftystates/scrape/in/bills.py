@@ -68,10 +68,17 @@ class INBillScraper(BillScraper):
 
             slist = page.xpath("//strong[contains(., 'Authors:')]")[0]
             slist = slist.tail.split(',')
+            sponsors = []
             for sponsor in slist:
                 name = sponsor.strip()
-                if name:
-                    bill.add_sponsor('author', name)
+                if not name:
+                    continue
+                if name == 'Jr.':
+                    sponsors[-1] = sponsors[-1] + ", Jr."
+                else:
+                    sponsors.append(name)
+            for sponsor in sponsors:
+                bill.add_sponsor('author', sponsor)
 
             act_table = page.xpath("//table")[1]
             read_yet = False
