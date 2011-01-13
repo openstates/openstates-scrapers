@@ -34,7 +34,7 @@ class INBillScraper(BillScraper):
             title = page.xpath("//br")[8].tail
             if not title:
                 return
-            title = title.strip
+            title = title.strip()
 
             bill = Bill(session, chamber, bill_id, title)
             bill.add_source(url)
