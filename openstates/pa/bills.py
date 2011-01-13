@@ -1,11 +1,11 @@
 import re
 import datetime
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import Vote
-from fiftystates.scrape.pa import metadata
-from fiftystates.scrape.pa.utils import (bill_abbr, start_year,
+from billy.scrape import NoDataForPeriod
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from openstates.pa import metadata
+from openstates.pa.utils import (bill_abbr, start_year,
                                          parse_action_date,
                                          bill_list_url, history_url, info_url,
                                          vote_url)

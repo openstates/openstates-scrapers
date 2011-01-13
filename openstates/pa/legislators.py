@@ -1,9 +1,9 @@
 import re
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.pa import metadata
-from fiftystates.scrape.pa.utils import legislators_url
+from billy.scrape import NoDataForPeriod
+from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.pa import metadata
+from openstates.pa.utils import legislators_url
 
 import lxml.html
 

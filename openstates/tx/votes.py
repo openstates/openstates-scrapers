@@ -3,8 +3,8 @@ import uuid
 import urlparse
 import datetime
 
-from fiftystates.scrape.votes import VoteScraper, Vote
-from fiftystates.scrape.tx.utils import parse_ftp_listing
+from billy.scrape.votes import VoteScraper, Vote
+from openstates.tx.utils import parse_ftp_listing
 
 import lxml.etree
 

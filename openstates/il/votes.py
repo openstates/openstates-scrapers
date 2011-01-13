@@ -14,7 +14,7 @@ from urllib import urlretrieve
 import csv
 from util import get_soup
 
-from fiftystates.scrape.votes import Vote
+from billy.scrape.votes import Vote
 
 EXPECTED_VOTE_CODES = ['Y','N','E','NV','A','P','-']
 DOCUMENT_TYPES = ['EO', 'HB', 'HJR', 'HJRCA', 'HR', 'JSR', 'SB', 'SJR', 'SJRCA', 'SR']

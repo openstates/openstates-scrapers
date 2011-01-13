@@ -1,4 +1,4 @@
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
 def get_surrounding_block(doc, key):

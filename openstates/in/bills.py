@@ -1,7 +1,7 @@
 import datetime
 from collections import defaultdict
 
-from fiftystates.scrape.bills import BillScraper, Bill
+from billy.scrape.bills import BillScraper, Bill
 
 import lxml.html
 

@@ -2,9 +2,9 @@ import datetime
 import html5lib
 import re
 
-from fiftystates.scrape import NoDataForPeriod, ScrapeError
-from fiftystates.scrape.bills import Bill, BillScraper
-from fiftystates.scrape.nd import metadata
+from billy.scrape import NoDataForPeriod, ScrapeError
+from billy.scrape.bills import Bill, BillScraper
+from openstates.nd import metadata
 
 class NDBillScraper(BillScraper):
     """

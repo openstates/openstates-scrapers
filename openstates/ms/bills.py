@@ -1,8 +1,8 @@
-from fiftystates.scrape.ms import metadata
-from fiftystates.scrape.ms.utils import chamber_name, parse_ftp_listing
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import VoteScraper, Vote
-from fiftystates.scrape.utils import convert_pdf
+from openstates.ms import metadata
+from openstates.ms.utils import chamber_name, parse_ftp_listing
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import VoteScraper, Vote
+from billy.scrape.utils import convert_pdf
 from datetime import datetime
 import lxml.etree
 import re

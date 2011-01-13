@@ -1,6 +1,6 @@
-from fiftystates.scrape import ScrapeError, NoDataForPeriod
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.wa.utils import year_from_session
+from billy.scrape import ScrapeError, NoDataForPeriod
+from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.wa.utils import year_from_session
 
 import lxml.html
 import re

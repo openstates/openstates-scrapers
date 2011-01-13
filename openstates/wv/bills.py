@@ -5,7 +5,7 @@ import datetime as dt
 import urllib2
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape.bills import BillScraper, Bill
+from billy.scrape.bills import BillScraper, Bill
 
 def cleansource(data):
     '''Remove some irregularities from WV's HTML.

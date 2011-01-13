@@ -1,10 +1,10 @@
 import re
 from datetime import datetime
 
-from fiftystates.scrape.nv import metadata
-from fiftystates.scrape.nv.utils import chamber_name, parse_ftp_listing
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import VoteScraper, Vote
+from openstates.nv import metadata
+from openstates.nv.utils import chamber_name, parse_ftp_listing
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import VoteScraper, Vote
 
 import lxml.html
 

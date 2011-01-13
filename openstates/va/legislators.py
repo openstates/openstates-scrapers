@@ -1,4 +1,4 @@
-from fiftystates.scrape.legislators import Legislator, LegislatorScraper
+from billy.scrape.legislators import Legislator, LegislatorScraper
 
 import re
 import lxml.html

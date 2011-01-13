@@ -1,7 +1,7 @@
 import re
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.committees import CommitteeScraper, Committee
+from billy.scrape import NoDataForPeriod
+from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
 

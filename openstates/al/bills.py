@@ -1,4 +1,4 @@
-from fiftystates.scrape.bills import BillScraper, Bill
+from billy.scrape.bills import BillScraper, Bill
 
 import re
 import datetime

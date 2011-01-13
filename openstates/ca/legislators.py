@@ -1,10 +1,10 @@
 import os
 
-from fiftystates import settings
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.ca import metadata
-from fiftystates.scrape.ca.models import CALegislator
+from billy import settings
+from billy.scrape import NoDataForPeriod
+from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.ca import metadata
+from openstates.ca.models import CALegislator
 
 from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy import create_engine

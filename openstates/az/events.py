@@ -1,5 +1,5 @@
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.events import EventScraper, Event
+from billy.scrape import NoDataForPeriod
+from billy.scrape.events import EventScraper, Event
 
 from lxml import html
 import datetime, re

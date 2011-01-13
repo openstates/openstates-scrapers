@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from billy.scrape.legislators import LegislatorScraper, Legislator
 from votesmart import votesmart, VotesmartApiError
-from fiftystates import settings
+from billy import settings
 import os
 
-from nyss_openlegislation.models import senators
+from nyss_billyslation.models import senators
 
 votesmart.apikey = os.environ.get('VOTESMART_API_KEY', settings.VOTESMART_API_KEY)
 

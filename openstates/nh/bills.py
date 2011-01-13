@@ -3,8 +3,8 @@ import urllib
 import re
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.bills import Bill, BillScraper
+from billy.scrape import NoDataForPeriod
+from billy.scrape.bills import Bill, BillScraper
 
 class NHBillScraper(BillScraper):
 

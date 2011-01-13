@@ -1,7 +1,7 @@
-from fiftystates.scrape.me import metadata
-from fiftystates.scrape.me.utils import chamber_name
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import VoteScraper, Vote
+from openstates.me import metadata
+from openstates.me.utils import chamber_name
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import VoteScraper, Vote
 from datetime import datetime
 import lxml.etree
 

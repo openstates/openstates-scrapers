@@ -3,8 +3,8 @@ import string
 
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape.bills import Bill, BillScraper
-from fiftystates.scrape.votes import Vote
+from billy.scrape.bills import Bill, BillScraper
+from billy.scrape.votes import Vote
 
 class CTBillScraper(BillScraper):
     #some constants

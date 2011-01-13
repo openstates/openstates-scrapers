@@ -1,8 +1,8 @@
 import re
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.legislators import Legislator, LegislatorScraper
+from billy.scrape import NoDataForPeriod
+from billy.scrape.legislators import Legislator, LegislatorScraper
 
 def split_name(full_name):
     last_name = full_name.split(',')[0]

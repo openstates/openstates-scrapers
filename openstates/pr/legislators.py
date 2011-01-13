@@ -1,6 +1,6 @@
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.pr.utils import legislators_url, year_from_session
+from billy.scrape import NoDataForPeriod
+from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.pr.utils import legislators_url, year_from_session
 
 import lxml.html
 import re

@@ -1,8 +1,8 @@
 import re
 import datetime
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.committees import Committee, CommitteeScraper
+from billy.scrape import NoDataForPeriod
+from billy.scrape.committees import Committee, CommitteeScraper
 import lxml.html
 
 def fix_whitespace(s):

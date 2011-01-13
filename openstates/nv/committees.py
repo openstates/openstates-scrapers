@@ -1,9 +1,9 @@
 import re
 import datetime
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.committees import CommitteeScraper, Committee
-from fiftystates.scrape.nv.utils import clean_committee_name
+from billy.scrape import NoDataForPeriod
+from billy.scrape.committees import CommitteeScraper, Committee
+from openstates.nv.utils import clean_committee_name
 
 import lxml.etree
 

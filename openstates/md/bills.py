@@ -6,10 +6,10 @@ import re
 import lxml.html
 from scrapelib import HTTPError
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import Vote
-from fiftystates.scrape.md import metadata
+from billy.scrape import NoDataForPeriod
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from openstates.md import metadata
 
 CHAMBERS = {
     'upper': ('SB','SJ'),

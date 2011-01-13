@@ -2,9 +2,9 @@ import datetime
 import re
 import html5lib
 
-from fiftystates.scrape import NoDataForPeriod, ScrapeError
-from fiftystates.scrape.legislators import Legislator, LegislatorScraper
-from fiftystates.scrape.nd import metadata
+from billy.scrape import NoDataForPeriod, ScrapeError
+from billy.scrape.legislators import Legislator, LegislatorScraper
+from openstates.nd import metadata
 
 class NDLegislatorScraper(LegislatorScraper):
     """

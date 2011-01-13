@@ -4,7 +4,7 @@ from collections import defaultdict
 
 import lxml.html
 
-from fiftystates.scrape.bills import BillScraper, Bill
+from billy.scrape.bills import BillScraper, Bill
 
 class NCBillScraper(BillScraper):
 

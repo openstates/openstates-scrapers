@@ -5,9 +5,9 @@ from urlparse import urljoin,urlsplit
 from util import get_soup, get_text, elem_name, standardize_chamber
 import votes
 
-from fiftystates.scrape.il import year2session
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import Vote
+from openstates.il import year2session
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 
 BASE_LEGISLATION_URL = "http://ilga.gov/legislation/default.asp?GA=%s"

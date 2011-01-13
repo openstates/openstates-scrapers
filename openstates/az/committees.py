@@ -1,7 +1,7 @@
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.committees import CommitteeScraper, Committee
+from billy.scrape import NoDataForPeriod
+from billy.scrape.committees import CommitteeScraper, Committee
 from lxml import etree, html
-from fiftystates.scrape.az import utils
+from openstates.az import utils
 from scrapelib import HTTPError
 import re, datetime
 

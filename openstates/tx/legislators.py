@@ -1,9 +1,9 @@
 import re
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.legislators import (LegislatorScraper, Legislator,
+from billy.scrape import NoDataForPeriod
+from billy.scrape.legislators import (LegislatorScraper, Legislator,
                                             Person)
-from fiftystates.scrape.tx.utils import clean_committee_name
+from openstates.tx.utils import clean_committee_name
 
 import lxml.html
 

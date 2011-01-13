@@ -2,7 +2,7 @@ import datetime
 import lxml.html
 import re
 
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from billy.scrape.legislators import LegislatorScraper, Legislator
 
 
 PARTY_DICT = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}

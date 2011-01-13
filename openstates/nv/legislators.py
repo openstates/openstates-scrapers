@@ -2,9 +2,9 @@ import re
 import urlparse
 import datetime
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.nv.utils import clean_committee_name
+from billy.scrape import NoDataForPeriod
+from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.nv.utils import clean_committee_name
 
 import lxml.etree
 import urllib

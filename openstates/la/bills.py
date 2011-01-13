@@ -3,11 +3,11 @@ import re
 import tempfile
 import datetime
 
-from fiftystates.scrape import ScrapeError
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import Vote
-from fiftystates.scrape.utils import pdf_to_lxml
-from fiftystates.scrape.la import metadata
+from billy.scrape import ScrapeError
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from billy.scrape.utils import pdf_to_lxml
+from openstates.la import metadata
 
 import lxml.html
 

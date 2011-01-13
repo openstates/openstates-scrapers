@@ -4,8 +4,8 @@ from urlparse import urljoin
 import re
 from util import get_text
 
-from fiftystates.scrape.il import year2session
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from openstates.il import year2session
+from billy.scrape.legislators import LegislatorScraper, Legislator
 
 MEMBER_LIST_URL = {
     'upper': 'http://ilga.gov/senate/default.asp?GA=%s',

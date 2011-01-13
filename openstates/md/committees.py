@@ -1,6 +1,6 @@
 import lxml.html
 
-from fiftystates.scrape.committees import CommitteeScraper, Committee
+from billy.scrape.committees import CommitteeScraper, Committee
 
 class MDCommitteeScraper(CommitteeScraper):
 

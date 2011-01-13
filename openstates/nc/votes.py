@@ -1,7 +1,7 @@
 from zipfile import ZipFile
 import datetime
 
-from fiftystates.scrape.votes import VoteScraper, Vote
+from billy.scrape.votes import VoteScraper, Vote
 
 class NCVoteScraper(VoteScraper):
     state = 'nc'

@@ -1,9 +1,9 @@
 import urlparse
 import lxml.etree
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.ms.utils import clean_committee_name
+from billy.scrape import NoDataForPeriod
+from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.ms.utils import clean_committee_name
 
 import scrapelib
 

@@ -1,10 +1,10 @@
 import lxml.html
 import datetime as dt
-from fiftystates.scrape import NoDataForPeriod
+from billy.scrape import NoDataForPeriod
 
-from fiftystates.scrape.committees import CommitteeScraper, Committee
+from billy.scrape.committees import CommitteeScraper, Committee
 
-import nyss_openlegislation.models
+import nyss_billyslation.models
 
 
 class NYCommitteeScraper(CommitteeScraper):
@@ -55,7 +55,7 @@ class NYCommitteeScraper(CommitteeScraper):
 
     def scrape_senate(self):
         """Scrape Senate Committees"""
-        for name, comm in nyss_openlegislation.models.committees.items():
+        for name, comm in nyss_billyslation.models.committees.items():
             name = name.title().replace('And', 'and')
 
             committee = Committee('upper', name)

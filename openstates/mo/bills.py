@@ -4,8 +4,8 @@ import urllib2
 
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.bills import BillScraper, Bill
+from billy.scrape import NoDataForPeriod
+from billy.scrape.bills import BillScraper, Bill
 
 from utils import (clean_text, house_get_actor_from_action,
                    senate_get_actor_from_action)

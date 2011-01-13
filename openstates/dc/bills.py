@@ -2,8 +2,8 @@ import re
 import datetime
 import lxml.html
 
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import Vote
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 def extract_int(text):
     return int(text.replace(u'\xc2', '').strip())

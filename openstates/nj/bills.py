@@ -1,8 +1,8 @@
 from datetime import datetime
-from fiftystates.scrape.nj import metadata
-from fiftystates.scrape.nj.utils import chamber_name, DBFMixin
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import VoteScraper, Vote
+from openstates.nj import metadata
+from openstates.nj.utils import chamber_name, DBFMixin
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import VoteScraper, Vote
 
 import lxml.etree
 import scrapelib

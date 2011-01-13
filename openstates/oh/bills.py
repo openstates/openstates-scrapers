@@ -3,9 +3,9 @@ from __future__ import with_statement
 import urlparse
 import datetime
 
-from fiftystates.scrape import ScrapeError
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import Vote
+from billy.scrape import ScrapeError
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 import xlrd
 import scrapelib

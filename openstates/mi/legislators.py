@@ -1,6 +1,6 @@
 import re
 
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from billy.scrape.legislators import LegislatorScraper, Legislator
 
 from BeautifulSoup import BeautifulSoup
 

@@ -4,9 +4,9 @@ import datetime as dt
 from BeautifulSoup import BeautifulSoup
 import html5lib
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.ky import metadata
+from billy.scrape import NoDataForPeriod
+from billy.scrape.bills import BillScraper, Bill
+from openstates.ky import metadata
 
 def chamber_abbr(chamber):
     if chamber == 'upper':

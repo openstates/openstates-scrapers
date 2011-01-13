@@ -1,10 +1,10 @@
 import re
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import Vote
-from fiftystates.scrape.az import utils
-from fiftystates.scrape.az.action_utils import get_action_type
+from billy.scrape import NoDataForPeriod
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from openstates.az import utils
+from openstates.az.action_utils import get_action_type
 
 from lxml import html
 

@@ -3,8 +3,8 @@ import datetime
 import urlparse
 import lxml.html
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.bills import BillScraper, Bill
+from billy.scrape import NoDataForPeriod
+from billy.scrape.bills import BillScraper, Bill
 
 # Base URL for the details of a given bill.
 BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/revisor/pages/search_status/'

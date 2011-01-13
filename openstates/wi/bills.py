@@ -6,9 +6,9 @@ from collections import defaultdict
 
 import scrapelib
 
-from fiftystates.scrape.utils import convert_pdf
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import Vote
+from billy.scrape.utils import convert_pdf
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 motion_classifiers = {
     '(Assembly|Senate)( substitute)? amendment': 'amendment',

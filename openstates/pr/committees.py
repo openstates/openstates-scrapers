@@ -1,8 +1,8 @@
 import lxml.html
 import contextlib
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.committees import CommitteeScraper, Committee
-from fiftystates.scrape.pr.utils import committees_url, grouper,\
+from billy.scrape import NoDataForPeriod
+from billy.scrape.committees import CommitteeScraper, Committee
+from openstates.pr.utils import committees_url, grouper,\
     clean_newline, clean_space, between_keywords
 
 

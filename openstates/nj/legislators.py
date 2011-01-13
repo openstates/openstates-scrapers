@@ -2,9 +2,9 @@ import re
 import urlparse
 import htmlentitydefs
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.nj.utils import clean_committee_name
+from billy.scrape import NoDataForPeriod
+from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.nj.utils import clean_committee_name
 
 import scrapelib
 from dbfpy import dbf

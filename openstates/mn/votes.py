@@ -2,8 +2,8 @@ import re
 import datetime
 import itertools
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.votes import VoteScraper, Vote
+from billy.scrape import NoDataForPeriod
+from billy.scrape.votes import VoteScraper, Vote
 import lxml.html
 
 class MNVoteScraper(VoteScraper):

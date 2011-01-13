@@ -2,10 +2,10 @@ from __future__ import with_statement
 import urlparse
 import datetime as dt
 
-from fiftystates.scrape import ScrapeError
-from fiftystates.scrape.tx import metadata
-from fiftystates.scrape.tx.utils import chamber_name, parse_ftp_listing
-from fiftystates.scrape.bills import BillScraper, Bill
+from billy.scrape import ScrapeError
+from openstates.tx import metadata
+from openstates.tx.utils import chamber_name, parse_ftp_listing
+from billy.scrape.bills import BillScraper, Bill
 
 import lxml.etree
 import urllib2

@@ -4,7 +4,7 @@ import lxml.html
 import contextlib
 import datetime
 
-from fiftystates.scrape.bills import BillScraper, Bill
+from billy.scrape.bills import BillScraper, Bill
 
 class GABillScraper(BillScraper):
     """

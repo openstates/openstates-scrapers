@@ -2,10 +2,10 @@ import os
 import re
 from datetime import datetime
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import Vote
-from fiftystates.scrape.mt import metadata
+from billy.scrape import NoDataForPeriod
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from openstates.mt import metadata
 
 import html5lib
 import lxml.html

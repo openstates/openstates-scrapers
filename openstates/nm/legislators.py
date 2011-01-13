@@ -2,9 +2,9 @@ from __future__ import with_statement
 
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.nm.utils import get_abs_url
+from billy.scrape import NoDataForPeriod
+from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.nm.utils import get_abs_url
 
 
 class NMLegislatorScraper(LegislatorScraper):

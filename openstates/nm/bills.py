@@ -3,10 +3,10 @@ import re
 
 from BeautifulSoup import BeautifulSoup
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.nm import metadata
-from fiftystates.scrape.nm.utils import get_abs_url
+from billy.scrape import NoDataForPeriod
+from billy.scrape.bills import BillScraper, Bill
+from openstates.nm import metadata
+from openstates.nm.utils import get_abs_url
 
 DATE_RE = re.compile(r'\((?P<date>.*)\)')
 

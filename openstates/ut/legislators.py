@@ -1,5 +1,5 @@
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
-from fiftystates.scrape.ut import metadata
+from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.ut import metadata
 
 import lxml.html
 

@@ -1,8 +1,8 @@
 import datetime
 
-from fiftystates.scrape import NoDataForPeriod
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.votes import Vote
+from billy.scrape import NoDataForPeriod
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 
 class EXBillScraper(BillScraper):

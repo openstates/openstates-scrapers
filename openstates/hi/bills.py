@@ -1,7 +1,7 @@
-from fiftystates.scrape import ScrapeError, NoDataForPeriod
-from fiftystates.scrape.votes import Vote
-from fiftystates.scrape.bills import BillScraper, Bill
-from fiftystates.scrape.hi.utils import BASE_URL, year_from_session
+from billy.scrape import ScrapeError, NoDataForPeriod
+from billy.scrape.votes import Vote
+from billy.scrape.bills import BillScraper, Bill
+from openstates.hi.utils import BASE_URL, year_from_session
 
 import lxml.html
 import re
