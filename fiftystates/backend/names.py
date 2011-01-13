@@ -68,7 +68,8 @@ class NameMatcher(object):
 
     >>> nm = NameMatcher()
     >>> nm[{'full_name': 'Michael J. Stephens', 'first_name': 'Michael', \
-            'last_name': 'Stephens', 'middle_name': 'J'}] = 1
+            'last_name': 'Stephens', 'middle_name': 'J', \
+            '_scraped_name': 'Michael J. Stephens'}] = 1
     >>> assert nm['Michael J. Stephens'] == 1
     >>> assert nm['Stephens'] == 1
     >>> assert nm['Michael Stephens'] == 1
@@ -79,7 +80,8 @@ class NameMatcher(object):
     Add a similar name:
 
     >>> nm[{'full_name': 'Mike J. Stephens', 'first_name': 'Mike', \
-            'last_name': 'Stephens', 'middle_name': 'Joseph'}] = 2
+            'last_name': 'Stephens', 'middle_name': 'Joseph', \
+            '_scraped_name': 'Mike J. Stephens'}] = 2
 
     Unique:
 
