@@ -5,7 +5,8 @@ import csv
 import argparse
 from collections import defaultdict
 
-from billy.backend import db, metadata
+from billy import db
+from billy.utils import metadata
 
 SUBJECTS = ['Agriculture and Food',
             'Animal Rights and Wildlife Issues',

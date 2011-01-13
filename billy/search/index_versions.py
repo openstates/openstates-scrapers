@@ -9,8 +9,8 @@ import urllib
 import urllib2_file
 import urllib2
 
-from billy.backend import db, fs
-from billy.backend.utils import base_arg_parser
+from billy import db, fs
+from billy.utils import base_arg_parser
 
 
 def import_versions(state, solr_url="http://localhost:8983/solr/"):

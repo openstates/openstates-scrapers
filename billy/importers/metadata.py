@@ -7,8 +7,8 @@ try:
 except ImportError:
     import simplejson as json
 
-from billy.backend import db
-from billy.backend.utils import prepare_obj
+from billy import db
+from billy.importers.utils import prepare_obj
 
 PRESERVED_FIELDS = ('latest_dump_url', 'latest_dump_date')
 

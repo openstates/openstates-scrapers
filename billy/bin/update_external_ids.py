@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from billy import settings
-from billy.backend import db
+from billy import db
 
 import re
 import json

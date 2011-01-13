@@ -4,7 +4,7 @@ import argparse
 import pymongo
 
 from billy import settings
-from billy.backend import db
+from billy import db
 
 from votesmart import votesmart, VotesmartApiError
 votesmart.apikey = getattr(settings, 'VOTESMART_API_KEY', '')

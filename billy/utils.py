@@ -1,6 +1,11 @@
 import re
 import jellyfish
 
+from billy import db
+
+# metadata cache
+__metadata = {}
+
 # Adapted from NLTK's english stopwords
 stop_words = [
     'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves',
@@ -38,3 +43,14 @@ def keywordize(str):
                 for word in tokenize(str)
                 if (word.isalpha() or word.isdigit()) and
                 word.lower() not in stop_words])
+
+def metadata(state):
+    """
+    Grab the metadata for the given state (two-letter abbreviation).
+    """
+    # This data should change very rarely and is queried very often so
+    # cache it here
+    state = state.lower()
+    if state in __metadata:
+        return __metadata[state]
+    return db.metadata.find_one({'_id': state})

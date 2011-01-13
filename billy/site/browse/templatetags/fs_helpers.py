@@ -1,4 +1,5 @@
-from billy.backend import db, metadata
+from billy import db
+from billy.utils import metadata
 
 from django import template
 from django.template.defaultfilters import stringfilter

@@ -10,9 +10,9 @@ try:
 except:
     import simplejson as json
 
-from billy.backend import db
-from billy.backend.names import get_legislator_id
-from billy.backend.utils import prepare_obj, update, get_committee_id
+from billy import db
+from billy.importers.names import get_legislator_id
+from billy.importers.utils import prepare_obj, update, get_committee_id
 from billy.scrape.events import Event
 
 import pymongo

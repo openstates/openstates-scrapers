@@ -13,9 +13,9 @@ except:
     import simplejson as json
 
 from billy.utils import keywordize
-from billy.backend import db
-from billy.backend.names import get_legislator_id
-from billy.backend.utils import (insert_with_id,
+from billy import db
+from billy.importers.names import get_legislator_id
+from billy.importers.utils import (insert_with_id,
                                        update, prepare_obj,
                                        get_committee_id,
                                        fix_bill_id)

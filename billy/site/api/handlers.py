@@ -2,7 +2,7 @@ import re
 import datetime
 
 from billy import settings
-from billy.backend import db
+from billy import db
 from billy.site.geo.models import District
 from billy.utils import keywordize
 

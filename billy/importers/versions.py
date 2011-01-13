@@ -6,8 +6,8 @@ from pymongo.son import SON
 
 import scrapelib
 
-from billy.backend import db, fs
-from billy.backend.utils import put_document
+from billy import db, fs
+from billy.importers.utils import put_document
 
 
 def import_versions(state, rpm=60):

@@ -2,7 +2,7 @@
 import csv
 import argparse
 
-from billy.backend import db
+from billy import db
 
 
 def dump_missing_leg_ids(state):

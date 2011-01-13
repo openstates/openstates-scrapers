@@ -1,5 +1,5 @@
 import re
-from billy.backend import db
+from billy import db
 
 __matchers = {}
 

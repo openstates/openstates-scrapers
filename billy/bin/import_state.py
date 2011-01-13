@@ -4,13 +4,13 @@ import argparse
 
 from billy import settings
 
-from billy.backend.metadata import import_metadata
-from billy.backend.bills import import_bills
-from billy.backend.legislators import import_legislators
-from billy.backend.committees import import_committees
-from billy.backend.votes import import_votes
-from billy.backend.events import import_events
-from billy.backend.versions import import_versions
+from billy.importers.metadata import import_metadata
+from billy.importers.bills import import_bills
+from billy.importers.legislators import import_legislators
+from billy.importers.committees import import_committees
+from billy.importers.votes import import_votes
+from billy.importers.events import import_events
+from billy.importers.versions import import_versions
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

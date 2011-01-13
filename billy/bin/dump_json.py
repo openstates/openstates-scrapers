@@ -14,7 +14,7 @@ except:
     import simplejson as json
 
 from billy import settings
-from billy.backend import db
+from billy import db
 
 import pymongo
 import boto

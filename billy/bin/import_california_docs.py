@@ -1,4 +1,4 @@
-from billy.backend import db
+from billy import db
 from billy.scrape.ca.models import CABillVersion
 
 from sqlalchemy.orm import sessionmaker, relation, backref

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from billy.backend import db
+from billy import db
 from pymongo.code import Code
 
 

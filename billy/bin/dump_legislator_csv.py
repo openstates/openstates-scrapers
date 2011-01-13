@@ -2,7 +2,7 @@
 import csv
 import argparse
 
-from billy.backend import db
+from billy import db
 
 def _extract(d, fields):
     rd = {}

@@ -4,7 +4,7 @@ Print a breakdown of action count by date for a given state.
 """
 import datetime
 
-from billy.backend import db
+from billy import db
 
 
 m = """
