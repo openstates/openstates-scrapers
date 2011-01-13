@@ -68,7 +68,7 @@ class INBillScraper(BillScraper):
             for sponsor in slist:
                 name = sponsor.strip()
                 if name:
-                    bill.add_sponsor(name, 'author')
+                    bill.add_sponsor('author', name)
 
             act_table = page.xpath("//table")[1]
             read_yet = False
