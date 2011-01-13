@@ -57,6 +57,8 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
         if not options.alldata:
             raise RunException("no %s %s scraper found" %
                                (state, scraper_type))
+        else:
+            return
 
     opts = {'output_dir': options.output_dir,
             'no_cache': options.no_cache,
