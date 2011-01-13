@@ -105,7 +105,7 @@ if __name__ == '__main__':
     )
 
     default_dir = os.path.join(os.path.dirname(__file__),
-                           '../manual_data/subjects')
+                           '../../manual_data/subjects')
 
     parser.add_argument('state', type=str, help='state to process')
     parser.add_argument('-d', type=str, help='directory of subject csvs',
