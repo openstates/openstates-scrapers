@@ -54,6 +54,9 @@ SUBJECTS = ['Agriculture and Food',
 
 def categorize_subjects(state, data_dir, process_all):
     categorizer = defaultdict(set)
+    categories_per_bill = defaultdict(int)
+    uncategorized = defaultdict(int)
+
     reader = csv.reader(open(os.path.join(data_dir, state+'.csv')))
 
     # build category mapping
@@ -73,9 +76,27 @@ def categorize_subjects(state, data_dir, process_all):
     for bill in db.bills.find(spec):
         subjects = set()
         for ss in bill.get('scraped_subjects', []):
-            subjects.update(categorizer[ss])
+            categories = categorizer[ss]
+            if not categories:
+                uncategorized[ss] += 1
+            subjects.update(categories)
         bill['subjects'] = list(subjects)
+
+        # increment # of bills with # of subjects
+        categories_per_bill[len(subjects)] += 1
+
         db.bills.save(bill)
+
+    print 'Categories per bill'
+    print '-------------------'
+    for ncats, total in sorted(categories_per_bill.items()):
+        print '%s categories: %s bills' % (ncats, total)
+
+    print 'Uncategorized'
+    print '-------------'
+    subjects_i = sorted([(v,k) for k,v in uncategorized.items()], reverse=True)
+    for n, category in subjects_i:
+        print '%s,%s' % (n, category)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
