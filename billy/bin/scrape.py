@@ -231,7 +231,8 @@ def main():
     if not (options.bills or options.legislators or options.votes or
             options.committees or options.events or options.alldata):
         raise RunException("Must specify at least one of --bills, "
-                           "--legislators, --committees, --votes, --events")
+                           "--legislators, --committees, --votes, --events, "
+                           "--alldata")
 
     if options.alldata:
         options.bills = True

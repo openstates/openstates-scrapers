@@ -41,8 +41,16 @@ if __name__ == '__main__':
                         help='scrape event data')
     parser.add_argument('--versions', action='store_true',
                         help='pull down copies of bill versions')
+    parser.add_argument('--alldata', action='store_true', dest='alldata',
+                        default=False, help="import all available data")
 
     args = parser.parse_args()
+
+    if not (args.bills or args.legislators or args.votes or args.committees or
+            args.events or args.versions or args.alldata):
+        raise Exception("Must specify at least one type: --bills, "
+                           "--legislators, --committees, --votes, --events, "
+                           "--versions,  --alldata")
 
     if args.data_dir:
         data_dir = args.data_dir
@@ -61,23 +69,19 @@ if __name__ == '__main__':
                     format="%(asctime)s %(name)s %(levelname)s %(message)s",
                     datefmt="%H:%M:%S")
 
-    # if any importers are specified, don't do all
-    scrape_all = not any((args.bills, args.legislators, args.committees,
-                          args.votes, args.events, args.versions))
-
     # always import metadata
     import_metadata(args.state, data_dir)
 
-    if args.legislators or scrape_all:
+    if args.legislators or args.alldata:
         import_legislators(args.state, data_dir)
-    if args.bills or scrape_all:
+    if args.bills or args.alldata:
         import_bills(args.state, data_dir)
-    if args.committees or scrape_all:
+    if args.committees or args.alldata:
         import_committees(args.state, data_dir)
-    if args.votes or scrape_all:
+    if args.votes or args.alldata:
         import_votes(args.state, data_dir)
 
-    # events and versions currently excluded from scrape_all
+    # events and versions currently excluded from --alldata
     if args.events:
         import_events(args.state, data_dir)
     if args.versions:
