@@ -43,6 +43,12 @@ def get_latest():
 
 
 def get_and_load(url):
+    user = os.environ.get('MYSQL_USER', getattr(settings, 'MYSQL_USER',
+                                                ''))
+    password = os.environ.get('MYSQL_PASSWORD', getattr(settings,
+                                                        'MYSQL_PASSWORD',
+                                                        ''))
+
     cmd_path = os.path.dirname(__file__)
     data_dir = getattr(settings, 'CA_DATA_DIR',
                        os.path.expanduser('~/ext/capublic/'))
@@ -50,9 +56,7 @@ def get_and_load(url):
     print zip_path
     extract(zip_path, data_dir)
     os.system("%s localhost %s %s %s" % (os.path.join(cmd_path, "load_data"),
-                                         settings.MYSQL_USER,
-                                         settings.MYSQL_PASSWORD,
-                                         data_dir))
+                                         user, password, data_dir))
     os.system("%s %s" % (os.path.join(cmd_path, "cleanup"), data_dir))
 
 
