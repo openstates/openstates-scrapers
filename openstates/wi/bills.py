@@ -47,7 +47,8 @@ class WIBillScraper(BillScraper):
         if 'Regular' in session:
             self.scrape_regular(chamber, session)
         else:
-            raise NoDataForPeriod(session)
+            pass
+            #raise NoDataForPeriod(session)
 
         """
         TODO: scrape special sessions
