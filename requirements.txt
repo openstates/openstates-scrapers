@@ -1,5 +1,5 @@
--r fiftystates/backend/requirements.txt
--r fiftystates/site/requirements.txt
--r fiftystates/scrape/requirements.txt
+-r billy/importers/requirements.txt
+-r billy/site/requirements.txt
+-r billy/scrape/requirements.txt
 
 nose
