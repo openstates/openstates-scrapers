@@ -53,12 +53,13 @@ def get_and_load(url):
     data_dir = getattr(settings, 'CA_DATA_DIR',
                        os.path.expanduser('~/ext/capublic/'))
     zip_path = download(url)
-    print zip_path
     extract(zip_path, data_dir)
+
     os.system("%s localhost %s %s %s" % (os.path.join(cmd_path, "load_data"),
                                          user, password, data_dir))
     os.system("%s %s" % (os.path.join(cmd_path, "cleanup"), data_dir))
 
+    os.remove(zip_path)
 
 def download(url):
     scraper = scrapelib.Scraper()
