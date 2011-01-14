@@ -68,8 +68,9 @@ def download(url):
 
 
 def extract(path, directory):
-    with zipfile.ZipFile(path, 'r') as z:
-        z.extractall(directory)
+    z = zipfile.ZipFile(path, 'r')
+    z.extractall(directory)
+    z.close()
 
 
 def parse_directory_listing(s):
