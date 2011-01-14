@@ -69,7 +69,7 @@ def activate_legislators(state, current_term):
             legislator['district'] = active_role['district']
             legislator['chamber'] = active_role['chamber']
 
-        leg['updated_at'] = datetime.datetime.utcnow()
+        legislator['updated_at'] = datetime.datetime.utcnow()
         db.legislators.save(legislator, safe=True)
 
 
