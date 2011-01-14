@@ -29,7 +29,7 @@ def init_name_matcher(state, session, chamber):
     else:
         raise Exception("bad session: " + session)
 
-    if chamber and chamber != 'both':
+    if chamber and chamber not in ('both', 'joint'):
         elemMatch['chamber'] = chamber
 
     for legislator in db.legislators.find({
