@@ -38,6 +38,10 @@ def insert_with_id(obj):
     if hasattr(obj, '_id'):
         raise ValueError("object already has '_id' field")
 
+    # add created_at/updated_at on insert
+    obj['created_at'] = datetime.datetime.utcnow()
+    obj['updated_at'] = obj['created_at']
+
     if obj['_type'] == 'person' or obj['_type'] == 'legislator':
         collection = db.legislators
         id_type = 'L'
