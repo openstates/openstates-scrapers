@@ -16,7 +16,7 @@ class EventScraper(Scraper):
 
     def _get_schema(self):
         schema_path = os.path.join(os.path.split(__file__)[0],
-                                   '../../schemas/event.json')
+                                   '../schemas/event.json')
 
         with open(schema_path) as f:
             schema = json.load(f)

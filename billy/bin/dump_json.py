@@ -41,18 +41,13 @@ def dump_json(state, filename, validate):
 
     cwd = os.path.split(__file__)[0]
 
-    with open(os.path.join(cwd,
-                           "../..//schemas/api/bill.json")) as f:
+    with open(os.path.join(cwd, "../schemas/api/bill.json")) as f:
         bill_schema = json.load(f)
 
-    with open(os.path.join(cwd,
-                           "../../schemas/"
-                           "api/legislator.json")) as f:
+    with open(os.path.join(cwd, "../schemas/api/legislator.json")) as f:
         legislator_schema = json.load(f)
 
-    with open(os.path.join(cwd,
-                           "../../schemas/"
-                           "api/committee.json")) as f:
+    with open(os.path.join(cwd, "../schemas/api/committee.json")) as f:
         committee_schema = json.load(f)
 
     for bill in db.bills.find({'state': state}):

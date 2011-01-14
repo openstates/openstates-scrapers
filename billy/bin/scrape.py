@@ -196,7 +196,7 @@ def main():
     # write metadata
     try:
         schema_path = os.path.join(os.path.split(__file__)[0],
-                                   '../../schemas/metadata.json')
+                                   '../schemas/metadata.json')
         schema = json.load(open(schema_path))
 
         validator = DatetimeValidator()

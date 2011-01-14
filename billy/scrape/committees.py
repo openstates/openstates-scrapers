@@ -15,7 +15,7 @@ class CommitteeScraper(Scraper):
 
     def _get_schema(self):
         schema_path = os.path.join(os.path.split(__file__)[0],
-                                   '../../schemas/committee.json')
+                                   '../schemas/committee.json')
         schema = json.load(open(schema_path))
         return schema
 
