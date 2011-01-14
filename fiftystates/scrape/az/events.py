@@ -142,10 +142,16 @@ class AZEventScraper(EventScraper):
             bill_list = div.xpath('//p[contains(a/@name, "Agenda_Bills")]'
                                     '/following-sibling::table[1]')
             if bill_list:
-                bill_list = [tr[1].text_content().strip() + " " + 
+                try: 
+                    bill_list = [tr[1].text_content().strip() + " " + 
                              tr[3].text_content().strip().replace("\r\n", "") 
                              for tr in bill_list[0].xpath('tr')
                              if tr.text_content().strip()]
+                except IndexError:
+                    bill_list = [tr.text_content().strip().replace("\r\n", "") 
+                                for tr in bill_list[0].getchildren()
+                                if tr.text_content().strip()]
+                                
                 bill_list = ",\n".join(bill_list)
                 description = description + bill_list
             return (description, member_list, meeting_type, other)
