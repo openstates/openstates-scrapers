@@ -32,6 +32,7 @@ class AZLegislatorScraper(LegislatorScraper):
                     return t['sessions'][0]
                 
     def scrape(self, chamber, term):
+        self.validate_term(term)
         session = self.get_session_for_term(term)
         try:
             session_id = self.get_session_id(session)
@@ -51,6 +52,7 @@ class AZLegislatorScraper(LegislatorScraper):
                 name, district, party, email, room, phone, fax = row.getchildren()
                 
                 link = name.xpath('string(a/@href)')
+                link = "http://www.azleg.gov" + link
                 if len(name) == 1:
                     name = name.text_content().strip()
                 else:

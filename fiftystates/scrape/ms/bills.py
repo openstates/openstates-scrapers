@@ -81,17 +81,18 @@ class MSBillScraper(BillScraper):
                                 type=bill_type, longtitle=longtitle)
 
                     #sponsors
-                    main_sponsor = details_root.xpath('string(//p_name)').split()[0]
-                    main_sponsor_link = details_root.xpath('string(//p_link)').replace(" ", "_")
-                    main_sponsor_url =  'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, main_sponsor_link)
-                    type = "Primary sponsor"
-                    bill.add_sponsor(type, main_sponsor, main_sponsor_url = main_sponsor_url)
+                    main_sponsor = details_root.xpath('string(//p_name)').split()
+                    if main_sponsor:
+                        main_sponsor = main_sponsor[0]
+                        main_sponsor_link = details_root.xpath('string(//p_link)').replace(" ", "_")
+                        main_sponsor_url =  'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, main_sponsor_link)
+                        type = "primary"
+                        bill.add_sponsor(type, main_sponsor, main_sponsor_url = main_sponsor_url)
                     for author in details_root.xpath('//authors/additional'):
                         leg = author.xpath('string(co_name)').replace(" ", "_")
                         leg_url = 'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, leg)
-                        type = "additional sponsor"
+                        type = "cosponsor"
                         bill.add_sponsor(type, leg, leg_url=leg_url)
-
 
                     #Versions 
                     curr_version = details_root.xpath('string(//current_other)').replace("../../../../", "")
@@ -170,10 +171,12 @@ class MSBillScraper(BillScraper):
         'Passed As Amended': ('Passage as Amended', True),
         'Adopted As Amended': ('Passage as Amended', True),
         'Appointment Confirmed': ('Appointment Confirmation', True),
+        'Committee Substitute Adopted': ('Adopt Committee Substitute', True),
         'Conference Report Adopted': ('Adopt Conference Report', True),
         'Conference Report Failed': ('Adopt Conference Report', False),
         'Motion to Reconsider Tabled': ('Table Motion to Reconsider', True),
         'Motion to Recnsdr Tabled Lost': ('Table Motion to Reconsider', False),
+        'Veto Overridden': ('Override Veto', True),
         'Veto Sustained': ('Override Veto', False),
         'Concurred in Amend From House': ('Concurrence in Amendment From House', True),
         'Concurred in Amend From Senate': ('Concurrence in Amendment From Senate', True),
@@ -182,13 +185,20 @@ class MSBillScraper(BillScraper):
         'Failed to Suspend Rules': ('Motion to Suspend Rules', False),
         'Motion to Recommit Lost': ('Motion to Recommit', True),
         'Reconsidered': ('Reconsideration', True),
+        'Motion to Concur Failed': ('Motion to Concur', False),
+        'Recommitted to Committee': ('Recommit to Committee', True),
     }
 
     def scrape_votes(self, url, motion, date, chamber):
         vote_pdf, resp = self.urlretrieve(url)
         text = convert_pdf(vote_pdf, 'text')
 
+        # this way we get a key error on a missing vote type
+        #if motion in self._vote_mapping:
         motion, passed = self._vote_mapping[motion]
+        #else:
+        #    passed = True
+        #   self.warning('unknown vote type: ' + motion)
 
         # process PDF text
 

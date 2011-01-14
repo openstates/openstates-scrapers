@@ -92,7 +92,8 @@ class AZBillScraper(BillScraper):
                 tds = row.cssselect('td')
                 amendment_title = tds[1].text_content().strip()
                 amendment_link = tds[2].xpath('string(font/a/@href)')
-                bill.add_document(amendment_title, amendment_link, type='amendment')
+                bill.add_document(amendment_title, amendment_link, 
+                                  type='amendment')
             
             # videos
             # http://azleg.granicus.com/MediaPlayer.php?view_id=13&clip_id=7684
@@ -119,8 +120,6 @@ class AZBillScraper(BillScraper):
             root = html.fromstring(action_page)
             base_table = root.xpath('//table[@class="ContentAreaBackground"]')[0]
             # common xpaths
-            rows_path = '//tr[contains(td/b/text(), "%s")]/following-sibling::tr' 
-            row_path = '//tr[contains(td/b/text(), "%s")]'
             table_path = '//table[contains(tr/td/b/text(), "%s")]'
             
             #sponsors
@@ -138,184 +137,227 @@ class AZBillScraper(BillScraper):
                     title = row[1].text_content().strip()
                     if title != bill['title']:
                         bill.add_title(title)
-                        
-            # committee assignments
-            rows = base_table.xpath(rows_path % 'COMMITTEES:')
-            for row in rows:
-                # First add the committee assigned action
-                meta_tag = row.cssselect('meta')[0]
-                h_or_s = meta_tag.get('name')[0] # @name is HCOMMITTEE OR SCOMMITTEE
-                committee = meta_tag.get('content') # @content is committee abbrv
-                #actor is house or senate referring the bill to committee
-                actor = 'lower' if h_or_s.lower() == 'h' else 'upper'
-                act = 'ASSIGNED TO COMMITTEE: ' + committee
-                date = utils.get_date(row[1])
-                bill.add_action(actor, act, date, type='committee:referred')
-                # now lets see if there is a vote
-                vote_url = row[0].xpath('string(a/@href)')
-                if vote_url:
-                    date = utils.get_date(row[3])
-                    act = row[5].text_content().strip()
-                    a_type = get_action_type(act, 'COMMITTEES:')
-                    bill.add_action(actor, committee + ":" + act, date, 
-                                                                    type=a_type)
-                    self.scrape_votes(actor, vote_url, bill, date,
-                                        motion='COMMITTEE: ' + act, 
-                                        committee=committee, type='other')
-                elif len(row) == 5:
-                    # probably senate rules committee
-                    date = utils.get_date(row[3])
-                    if date == '':
-                        date = utils.get_date(row[1])
-                    act = row[4].text_content().strip()
-                    a_type = get_action_type(act, 'COMMITTEES:')
-                    bill.add_action(actor, committee + ":" + act, date, 
-                                                                    type=a_type)
             
-            # house|senate first|second read|waived
-            rows = base_table.xpath(row_path % 'FIRST READ:')
-            rows.extend(base_table.xpath(row_path % 'SECOND READ:'))
-            rows.extend(base_table.xpath(row_path % 'WAIVED:'))
-            for row in rows:
-                action = row[0].text_content().strip()[:-1]
-                h_or_s = 'lower' if action.startswith('H') else 'upper'
-                date = utils.get_date(row[1])
-                # bill:introduced
-                if (action.endswith('FIRST READ') or 
-                    action.endswith('FIRST WAIVED')):
-                    if h_or_s == chamber:
-                        a_type = ['bill:introduced', 'bill:reading:1']
-                    else:
-                        a_type = 'bill:reading:1'
-                    bill.add_action(h_or_s, action, date, type=a_type) 
-                else:
-                    a_type = 'bill:reading:2'
-                    bill.add_action(h_or_s, action, date, type=a_type)
+            for table in base_table.xpath('tr/td/table'):
+                action = table.xpath('string(tr[1]/td[1])').strip()
+                if action == '':
+                    action = table.xpath('string(tr[1])').strip()
+                if (action.endswith('FIRST READ:') or 
+                    action.endswith('SECOND READ:') or 'WAIVED' in action):
                     
-            # majority|minority caucus
-            rows = base_table.xpath(row_path % 'CAUCUS')
-            for row in rows:
-                actor = utils.get_actor(row, chamber)
-                action = row[0].text_content().strip()
-                if action.endswith(':'):
-                    action = action[:-1]
-                result = row[2].text_content().strip()
-                action = action + " CONCUR: " + result # majority caucus Y|N
-                date = utils.get_date(row[1])
-                bill.add_action(actor, action, date, concur=result, type='other')
+                    rows = table.xpath('tr')
+                    for row in rows:
+                        action = row[0].text_content().strip()[:-1]
+                        actor = 'lower' if action.startswith('H') else 'upper'
+                        date = utils.get_date(row[1])
+                        # bill:introduced
+                        if (action.endswith('FIRST READ') or 
+                            action.endswith('FIRST WAIVED')):
+                            if actor == chamber:
+                                a_type = ['bill:introduced', 'bill:reading:1']
+                            else:
+                                a_type = 'bill:reading:1'
+                            bill.add_action(actor, action, date, type=a_type) 
+                        else:
+                            a_type = 'bill:reading:2'
+                            bill.add_action(actor, action, date, type=a_type)
+                    continue
+                            
+                elif action == 'COMMITTEES:':
+                    # committee assignments
+                    rows = table.xpath('tr')[1:]
+                    for row in rows:
+                        # First add the committee assigned action
+                        meta_tag = row.cssselect('meta')[0]
+                        h_or_s = meta_tag.get('name')[0] # @name is HCOMMITTEE OR SCOMMITTEE
+                        committee = meta_tag.get('content') # @content is committee abbrv
+                        #actor is house or senate referring the bill to committee
+                        actor = 'lower' if h_or_s.lower() == 'h' else 'upper'
+                        act = 'assigned to committee: ' + committee
+                        date = utils.get_date(row[1])
+                        bill.add_action(actor, act, date, type='committee:referred')
+                        # now lets see if there is a vote
+                        vote_url = row[0].xpath('string(a/@href)')
+                        if vote_url:
+                            date = utils.get_date(row[3])
+                            act = row[5].text_content().strip()
+                            a_type = get_action_type(act, 'COMMITTEES:')
+                            bill.add_action(actor, committee + ":" + act, date, 
+                                            type=a_type)
+                            self.scrape_votes(actor, vote_url, bill, date,
+                                                motion='committee: ' + act, 
+                                                committee=committee, 
+                                                type='other')
+                        elif len(row) == 5:
+                            # probably senate rules committee
+                            date = utils.get_date(row[3])
+                            if date == '':
+                                date = utils.get_date(row[1])
+                            act = row[4].text_content().strip()
+                            a_type = get_action_type(act, 'COMMITTEES:')
+                            bill.add_action(actor, committee + ":" + act, date, 
+                                            type=a_type)
+                    continue
+                    
+                elif 'CAUCUS' in action:
+                    rows = table.xpath('tr')[0:2]
+                    for row in rows:
+                        actor = utils.get_actor(row, chamber)
+                        action = row[0].text_content().strip()
+                        if action.endswith(':'):
+                            action = action[:-1]
+                        result = row[2].text_content().strip()
+                        # majority caucus Y|N
+                        action = action + " concur: " + result 
+                        date = utils.get_date(row[1])
+                        bill.add_action(actor, action, date, concur=result,
+                                        type='other')
+                    continue
                 
             # transmit to house or senate
-            rows = base_table.xpath(row_path % 'TRANSMIT TO')
-            for row in rows:
-                action = row[0].text_content().strip()[:-1]
-                h_or_s = 'upper' if action.endswith('HOUSE') else 'lower'
-                date = utils.get_date(row[1])
-                bill.add_action(h_or_s, action, date, type='other')
+                elif 'TRANSMIT TO' in action:
+                    rows = table.xpath('tr')
+                    for row in rows:
+                        action = row[0].text_content().strip()[:-1]
+                        actor = 'upper' if action.endswith('HOUSE') else 'lower'
+                        date = utils.get_date(row[1])
+                        bill.add_action(actor, action, date, type='other')
+                    continue
                 
-            # Committee of the whole actions
-            tables = base_table.xpath(table_path % 'COW ACTION')
-            for rows in [ table.xpath('tr') for table in tables ]:
-                actor = utils.get_actor(rows[0], chamber)
-                action = rows[0][0].text_content().strip()
-                if action == 'SIT COW ACTION:': 
-                    act = rows[0][3].text_content().strip()
-                    date = utils.get_date(rows[0][1])
-                else:
-                    act = rows[1][2].text_content().strip()
-                    date = utils.get_date(rows[1][1])
-                action = action + " " + act # COW ACTION 1 DPA
-                bill.add_action(actor, action, date, type='other')
-                if rows[1][0].text_content().strip() == 'Vote Detail':
-                    vote_url = rows[1][0].xpath('string(a/@href)')
-                    self.scrape_votes(actor, vote_url, bill, date, 
-                                         motion=action, type='other', extra=act)
-            # AMMENDMENTS
-            # http://www.azleg.gov/FormatDocument.asp?inDoc=/legtext/49Leg/1r/bills/hb2240o.asp
-                    
+                # Committee of the whole actions
+                elif 'COW ACTION' in action:
+                    rows = table.xpath('tr')
+                    actor = utils.get_actor(rows[0], chamber)
+                    if 'SIT COW ACTION' in action: 
+                        act = rows[0][-1].text_content().strip()
+                        date = utils.get_date(rows[0][1])
+                    else:
+                        act = rows[1][2].text_content().strip()
+                        date = utils.get_date(rows[1][1])
+                    action = action + " " + act # COW ACTION 1 DPA
+                    bill.add_action(actor, action, date, type='other')
+                    if rows[1][0].text_content().strip() == 'Vote Detail':
+                        vote_url = rows[1][0].xpath('string(a/@href)')
+                        self.scrape_votes(actor, vote_url, bill, date, 
+                                                motion=action, type='other', 
+                                                extra=act)
+                    continue
+                # AMENDMENTS
+                elif 'AMENDMENTS' in action:
+                    rows = table.xpath('tr')[1:]
+                    for row in rows:
+                        act = row.text_content().strip()
+                        if act == '':
+                            continue
+                        if 'passed' in act or 'adopted' in act:
+                            a_type = 'amendment:passed'
+                        elif 'failed' in act:
+                            a_type = 'amendment:failed'
+                        elif 'withdrawn' in act:
+                            a_type = 'amendment:withdrawn'
+                        else:
+                            a_type = 'other'
+                        # actor and date will same as previous action
+                        bill.add_action(actor, act, date, type=a_type)
+                    continue
             # CONFERENCE COMMITTEE
             # http://www.azleg.gov/FormatDocument.asp?inDoc=/legtext/49Leg/2r/bills/hb2083o.asp
-            # table = base_table.xpath(table_path % 'CONFERENCE COMMITTEE')
             
-            # MISCELLANEOUS MOTION
-            # http://www.azleg.gov/FormatDocument.asp?inDoc=/legtext/49Leg/1r/bills/hb2286o.asp
-            
-            # MOTION TO RECONSIDER
-            # SEE ABOVE
-            
-            # house|senate final and third read
-            tables = base_table.xpath(table_path % 'FINAL READ:')
-            tables.extend(base_table.xpath(table_path % 'THIRD READ:'))
-            for rows in [ table.xpath('tr') for table in tables ]:
-                # need to find out if third read took place in house or senate
-                # if an ancestor table contains 'TRANSMIT TO' then the action
-                # is taking place in that chamber, else it is in chamber
-                actor = utils.get_actor(rows[0], chamber)
-                # get a dict of keys from the header and values from the row
-                k_rows = utils.get_rows(rows[1:], rows[0])
-                action = rows[0][0].text_content().strip()
-                a_type = [get_action_type(action, 'Generic')]
-                if rows[1][0].text_content().strip() == 'Vote Detail':
-                    vote_url = k_rows[0].pop(action).xpath('string(a/@href)')
-                    vote_date = utils.get_date(k_rows[0].pop('DATE'))
-                    passed = k_rows[0].pop('RESULT').text_content().strip()
-                    # leaves vote counts, ammended, emergency, two-thirds
-                    # and possibly rfe left in k_rows. get the vote counts 
-                    # from scrape votes and pass ammended and emergency
-                    # as kwargs to sort them in scrap_votes
-                    pass_fail = {'PASSED': 'bill:passed',
-                                 'FAILED': 'bill:failed'}[passed]
-                    a_type.append(pass_fail)
-                    bill.add_action(actor, action, vote_date, type=a_type)
-                    k_rows[0]['type'] = 'passage'
-                    self.scrape_votes(actor, vote_url, bill, vote_date,
-                                      passed=passed, motion=action, **k_rows[0])
-                else:
-                    date = utils.get_date(k_rows[0].pop('DATE'))
-                    bill.add_action(actor, action, date, type=a_type)
+                # MISCELLANEOUS MOTION
+                
+                # MOTION TO RECONSIDER
+                elif action == 'MOTION TO RECONSIDER:':
+                    date = utils.get_date(table[1][1])
+                    if date:
+                        if table[1][0].text_content().strip() == 'Vote Detail':
+                            vote_url = table[1][0].xpath('string(a/@href)')
+                            bill.add_action(actor, action, date, type=a_type)
+                            self.scrape_votes(actor, vote_url, bill, vote_date,
+                                              motion='motion to reconsider', 
+                                                type='other')
+                        else:
+                            action = table[-1][1].text_content().strip()
+                            bill.add_action(actor, action, date, type='other')
+                    continue
                     
-            # transmitted to Governor or secretary of the state
-            # SoS if it goes to voters as a proposition and memorials, etc
-            tables = base_table.xpath(table_path % 'TRANSMITTED TO')
-            # pretty sure there should only be one table
-            for table in tables:
-                rows = table.xpath('tr')
-                actor = utils.get_actor(rows[0], chamber)
-                # actor is the actor from the previous statement because it is 
-                # never transmitted to G or S without third or final read
-                sent_to = rows[0][1].text_content().strip()
-                date = utils.get_date(rows[0][2])
-                a_type = 'governor:received' if sent_to[0] == 'G' else 'other'
-                bill.add_action(actor, "TRANSMITTED TO " + sent_to, date, 
-                                type=a_type)
-                # See if the actor is the governor and whether he signed
-                # the bill or vetoed it
-                act, date, chapter, version = '', '', '', ''
-                for row in rows[1:]:
-                    if row[0].text_content().strip() == 'ACTION:':
-                        act = row[1].text_content().strip()
-                        date = utils.get_date(row[2])
-                    elif row[0].text_content().strip() == 'CHAPTER:':
-                        chapter = row[1].text_content().strip()
-                    elif row[0].text_content().strip() == 'CHAPTERED VERSION:':
-                        version = row[1].text_content().strip()
-                    elif row[0].text_content().strip() == 'TRANSMITTED VERSION:':
-                        version = row[1].text_content().strip()
-                if act and sent_to == 'GOVERNOR':
-                    a_type = 'governor:signed' if act == 'SIGNED' else 'governor:vetoed'
-                    if chapter:
-                        bill.add_action(sent_to.lower(), act, date, 
-                                        type=a_type, chapter=chapter, 
-                                        chaptered_version=version)
-                    else:
-                        bill.add_action(sent_to.lower(), act, date, 
+                elif (action.endswith('FINAL READ:') or 
+                      action.endswith('THIRD READ:')):
+                    # house|senate final and third read
+                    rows = table.xpath('tr')
+                    # need to find out if third read took place in house or senate
+                    # if an ancestor table contains 'TRANSMIT TO' then the action
+                    # is taking place in that chamber, else it is in chamber
+                    actor = utils.get_actor(rows[0], chamber)
+                    # get a dict of keys from the header and values from the row
+                    k_rows = utils.get_rows(rows[1:], rows[0])
+                    action = rows[0][0].text_content().strip()
+                    for row in k_rows:
+                        a_type = [get_action_type(action, 'Generic')]
+                        if row[action].text_content().strip() == 'Vote Detail':
+                            vote_url = row.pop(action).xpath('string(a/@href)')
+                            vote_date = utils.get_date(row.pop('DATE'))
+                            passed = row.pop('RESULT').text_content().strip()
+                            # leaves vote counts, ammended, emergency, two-thirds
+                            # and possibly rfe left in k_rows. get the vote counts 
+                            # from scrape votes and pass ammended and emergency
+                            # as kwargs to sort them in scrap_votes
+                            pass_fail = {'PASSED': 'bill:passed',
+                                            'FAILED': 'bill:failed'}[passed]
+                            a_type.append(pass_fail)
+                            bill.add_action(actor, action, vote_date, 
                                             type=a_type)
+                            row['type'] = 'passage'
+                            self.scrape_votes(actor, vote_url, bill, vote_date,
+                                                passed=passed, motion=action, 
+                                                **row)
+                        else:
+                            date = utils.get_date(row.pop('DATE'))
+                            if date:
+                                bill.add_action(actor, action, date, type=a_type)
+                    continue
+                elif 'TRANSMITTED TO' in action:
+                    # transmitted to Governor or secretary of the state
+                    # SoS if it goes to voters as a proposition and memorials, etc
+                    rows = table.xpath('tr')
+                    actor = utils.get_actor(rows[0], chamber)
+                    # actor is the actor from the previous statement because it is 
+                    # never transmitted to G or S without third or final read
+                    sent_to = rows[0][1].text_content().strip()
+                    date = utils.get_date(rows[0][2])
+                    a_type = 'governor:received' if sent_to[0] == 'G' else 'other'
+                    bill.add_action(actor, "TRANSMITTED TO " + sent_to, date, 
+                                    type=a_type)
+                    # See if the actor is the governor and whether he signed
+                    # the bill or vetoed it
+                    act, date, chapter, version = '', '', '', ''
+                    for row in rows[1:]:
+                        if row[0].text_content().strip() == 'ACTION:':
+                            act = row[1].text_content().strip()
+                            date = utils.get_date(row[2])
+                        elif row[0].text_content().strip() == 'CHAPTER:':
+                            chapter = row[1].text_content().strip()
+                        elif row[0].text_content().strip() == 'CHAPTERED VERSION:':
+                            version = row[1].text_content().strip()
+                        elif row[0].text_content().strip() == 'TRANSMITTED VERSION:':
+                            version = row[1].text_content().strip()
+                    if act and sent_to == 'GOVERNOR':
+                        a_type = 'governor:signed' if act == 'SIGNED' else 'governor:vetoed'
+                        if chapter:
+                            bill.add_action(sent_to.lower(), act, date, 
+                                            type=a_type, chapter=chapter, 
+                                            chaptered_version=version)
+                        else:
+                            bill.add_action(sent_to.lower(), act, date, 
+                                                type=a_type)
+                    continue
                                             
             # this is probably only important for historical legislation
-            rows = base_table.xpath(row_path % 'FINAL DISPOSITION')
-            if rows:
-                disposition = rows[0][1].text_content().strip()
-                bill['final_disposition'] = disposition
-                
+                elif 'FINAL DISPOSITION' in action:
+                    rows = table.xpath('tr')
+                    if rows:
+                        disposition = rows[0][1].text_content().strip()
+                        bill['final_disposition'] = disposition
+        bill = self.sort_bill_actions(bill)
         self.save_bill(bill)
                 
     def scrape(self, chamber, session):
@@ -350,6 +392,10 @@ class AZBillScraper(BillScraper):
             o_args['amended'] = kwargs.pop('AMEND').text_content().strip()
         if 'motion' in kwargs:
             motion = kwargs.pop('motion')
+        if 'EMER' in kwargs and kwargs['EMER'].text_content().strip():
+            o_args['EMER'] = kwargs.pop('EMER').text_content().strip()
+        if '2/3 VOTE' in kwargs and kwargs['2/3 VOTE'].text_content().strip():
+            o_args['2/3 VOTE'] = kwargs.pop('2/3 VOTE').text_content().strip()
         if 'committee' in kwargs:
             o_args['committee'] = utils.get_committee_name(kwargs.pop('committee'),
                                                             chamber)
@@ -373,9 +419,21 @@ class AZBillScraper(BillScraper):
                     no_count = int(v)
                 else:
                     o_args.update({str(k):v})
-                    o_count = o_count + v
+                    o_count += int(v)
             if passed == '':
                 passed = yes_count > no_count
+                if 'committee' not in o_args:
+                    if chamber == 'upper' and passed:
+                        if 'EMER' in o_args or '2/3 VOTE' in o_args:
+                            passed = yes_count > 20
+                        else:
+                            passed = yes_count > 16
+                    elif chamber == 'lower' and passed:
+                        if 'EMER' in o_args or '2/3 VOTE' in o_args:
+                            passed = yes_count > 40
+                        else:
+                            passed = yes_count > 31
+                            
             vote = Vote(chamber, date, motion, passed, yes_count, no_count,
                         o_count, type=v_type, **o_args)
             vote.add_source(url)
@@ -395,3 +453,45 @@ class AZBillScraper(BillScraper):
                 else:
                     vote.other(name)
             bill.add_vote(vote)
+            
+    def sort_bill_actions(self, bill):
+        actions = bill['actions']
+        actions_list = []
+        out_of_order = []
+        new_list = []
+        if not actions:
+            return bill
+        action_date = actions[0]['date']
+        actions_list.append(actions[0])
+        # seperate the actions that are out of order
+        for action in actions[1:]:
+            if action['date'] < action_date:
+                out_of_order.append(action)
+            else:
+                actions_list.append(action)
+                action_date = action['date']
+        action_date = actions_list[0]['date']
+
+
+        for action in actions_list:
+            # this takes care of the actions in beween
+            for act in out_of_order:
+                if act['date'] < action_date:
+                    o_index = out_of_order.index(act)
+                    new_list.append(out_of_order.pop(o_index))
+                if act['date'] >= action_date and act['date'] < action['date']:
+                    o_index = out_of_order.index(act)
+                    new_list.append(out_of_order.pop(o_index))
+            new_list.append(action)
+            
+            for act in out_of_order:
+                if act['date'] == action['date']:
+                    o_index = out_of_order.index(act)
+                    new_list.append(out_of_order.pop(o_index))
+                    
+        if out_of_order != []:
+            self.log("Unable to sort " + bill['bill_id'])
+            return bill
+        else:
+            bill['actions'] = new_list
+            return bill

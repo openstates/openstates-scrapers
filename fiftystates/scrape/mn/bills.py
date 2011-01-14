@@ -16,6 +16,7 @@ class MNBillScraper(BillScraper):
     state = 'mn'
 
     _categorizers = (
+        ('Introduced', 'bill:introduced'),
         ('Introduction and first reading, referred to',
          ['bill:introduced', 'committee:referred']),
         ('Introduction and first reading', 'bill:introduced'),
@@ -97,10 +98,18 @@ class MNBillScraper(BillScraper):
                 if description:
                     action_text += ' ' + description
                 bill_action['action_text'] = action_text
-                if action_type.startswith('governor'):
-                    bill_action['action_chamber'] = 'executive'
+                if isinstance(action_type, list):
+                    for atype in action_type:
+                        if atype.startswith('governor'):
+                            bill_action['action_chamber'] = 'executive'
+                            break
+                    else:
+                        bill_action['action_chamber'] = current_chamber
                 else:
-                    bill_action['action_chamber'] = current_chamber
+                    if action_type.startswith('governor'):
+                        bill_action['action_chamber'] = 'executive'
+                    else:
+                        bill_action['action_chamber'] = current_chamber
                 bill_action['action_date'] = action_date
                 bill_action['action_type'] = action_type
                 bill_actions.append(bill_action)

@@ -19,7 +19,7 @@ class SDBillScraper(BillScraper):
         return headers
 
     def scrape(self, chamber, session):
-        if session != '2010':
+        if session != '2011':
             raise NoDataForPeriod(session)
 
         self.scrape_bills(chamber, session)

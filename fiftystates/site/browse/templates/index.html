@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Open State Project DataBrowse</h2>
+
+<table>
+    <tr>
+        <th>State</th>
+        <th>Legislators</th>
+        <th>Bills</th>
+    </tr>
+
+    {% for state in states %}
+    <tr>
+        <td><a href="{{state.id}}/">{{state.name}}</a></td>
+        <td>{{state.legislators}}</td>
+        <td>{{state.bills}}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

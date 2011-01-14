@@ -37,46 +37,89 @@ def import_legislators(state, data_dir):
     paths = glob.glob(pattern)
     for path in paths:
         with open(path) as f:
-            data = prepare_obj(json.load(f))
-
-        data['_scraped_name'] = data['full_name']
-
-        import_legislator(data)
+            import_legislator(json.load(f))
 
     print 'imported %s legislator files' % len(paths)
-    activate_legislators(state)
+
+    meta = db.metadata.find_one({'_id': state})
+    current_term = meta['terms'][-1]['name']
+
+    activate_legislators(state, current_term)
+    deactivate_legislators(state, current_term)
+
+    ensure_indexes()
 
 
-def activate_legislators(state):
+def activate_legislators(state, current_term):
     """
     Sets the 'active' flag on legislators and populates top-level
     district/chamber/party fields for currently serving legislators.
     """
     meta = db.metadata.find_one({'_id': state})
-    current_term = meta['terms'][-1]['name']
 
     for legislator in db.legislators.find({'roles': {'$elemMatch':
                                                      {'state': state,
-                                                      'type': 'member'}}}):
+                                                      'type': 'member',
+                                                      'term': current_term}}}):
         active_role = legislator['roles'][0]
 
-        if active_role['term'] == current_term and not active_role['end_date']:
+        if not active_role['end_date']:
             legislator['active'] = True
             legislator['party'] = active_role['party']
             legislator['district'] = active_role['district']
             legislator['chamber'] = active_role['chamber']
-        else:
-            legislator['active'] = False
-            for key in ('district', 'chamber', 'party'):
-                try:
-                    del legislator[key]
-                except KeyError:
-                    pass
 
         db.legislators.save(legislator, safe=True)
 
 
+def deactivate_legislators(state, current_term):
+    for leg in db.legislators.find(
+        {'roles': {'$elemMatch':
+                   {'term': {'$ne': current_term},
+                    'type': 'member',
+                    'state': state}}}):
+
+        if 'old_roles' not in leg:
+            leg['old_roles'] = {}
+
+        leg['old_roles'][leg['roles'][0]['term']] = leg['roles']
+        leg['roles'] = []
+        leg['active'] = False
+
+        for key in ('district', 'chamber', 'party'):
+            if key in leg:
+                del leg[key]
+
+        leg['updated_at'] = datetime.datetime.utcnow()
+        db.legislators.save(leg, safe=True)
+
+
+def get_previous_term(state, term):
+    meta = db.metadata.find_one({'_id': state})
+    t1 = meta['terms'][0]
+    for t2 in meta['terms'][1:]:
+        if t2['name'] == term:
+            return t1['name']
+        t1 = t2
+
+    return None
+
+
+def get_next_term(state, term):
+    meta = db.metadata.find_one({'_id': state})
+    t1 = meta['terms'][0]
+    for t2 in meta['terms'][1:]:
+        if t1['name'] == term:
+            return t2['name']
+        t1 = t2
+
+    return None
+
+
 def import_legislator(data):
+    data = prepare_obj(data)
+    data['_scraped_name'] = data['full_name']
+
     # Rename 'role' -> 'type'
     for role in data['roles']:
         if 'role' in role:
@@ -84,10 +127,13 @@ def import_legislator(data):
             del role['role']
 
     cur_role = data['roles'][0]
+    term = cur_role['term']
+    prev_term = get_previous_term(data['state'], term)
+    next_term = get_next_term(data['state'], term)
 
     spec = {'state': data['state'],
-            'term': cur_role['term'],
-            'type': cur_role['type']}
+            'type': cur_role['type'],
+            'term': {'$in': [term, prev_term, next_term]}}
     if 'district' in cur_role:
         spec['district'] = cur_role['district']
     if 'chamber' in cur_role:
@@ -98,33 +144,17 @@ def import_legislator(data):
          '_scraped_name': data['full_name'],
          'roles': {'$elemMatch': spec}})
 
-    if not leg:
-        metadata = db.metadata.find_one({'_id': data['state']})
+    if leg:
+        if 'old_roles' not in leg:
+            leg['old_roles'] = {}
 
-        term_names = [t['name'] for t in metadata['terms']]
+        if leg['roles'][0]['term'] == prev_term:
+            # Move to old
+            leg['old_roles'][leg['roles'][0]['term']] = leg['roles']
+        elif leg['roles'][0]['term'] == next_term:
+            leg['old_roles'][term] = data['roles']
+            data['roles'] = leg['roles']
 
-        try:
-            index = term_names.index(cur_role['term'])
-
-            if index > 0:
-                prev_term = term_names[index - 1]
-                spec['term'] = prev_term
-                prev_leg = db.legislators.find_one(
-                    {'_scraped_name': data['full_name'],
-                     'roles': {'$elemMatch': spec}})
-
-                if prev_leg:
-                    update(prev_leg, data, db.legislators)
-                    return
-        except ValueError:
-            print "Invalid term: %s" % cur_role['term']
-            sys.exit(1)
-
-        data['created_at'] = datetime.datetime.utcnow()
-        data['updated_at'] = datetime.datetime.utcnow()
-
-        insert_with_id(data)
-    else:
         update(leg, data, db.legislators)
-
-    ensure_indexes()
+    else:
+        insert_with_id(data)

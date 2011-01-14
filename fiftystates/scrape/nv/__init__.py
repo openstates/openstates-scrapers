@@ -24,9 +24,13 @@ metadata = dict(
         {'name': '2009-2010', 'start_year': 2009, 'end_year': 2010,
          'sessions': ['2010Special26', '75']
         },
+        {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
+         'sessions': ['76']
+        }
     ],
     session_details= {
         '2010Special26': {'type':'special'},
         '75': {'type': 'primary'},
+        '76': {'type': 'primary'},
     }
 )

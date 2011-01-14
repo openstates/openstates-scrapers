@@ -49,7 +49,7 @@ class NJLegislatorScraper(LegislatorScraper):
             if party == 'R':
                 party = "Republican"
             elif party == 'D':
-                party = "Democrat"
+                party = "Democratic"
             else:
                 party = party
             chamber = rec["house"]

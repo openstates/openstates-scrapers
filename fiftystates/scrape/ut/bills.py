@@ -53,7 +53,14 @@ class UTBillScraper(BillScraper):
             header = page.xpath('//h3/br')[0].tail.replace('&nbsp;', ' ')
             title, primary_sponsor = header.split(' -- ')
 
-            bill = Bill(session, chamber, bill_id, title)
+            if bill_id.startswith('H.B.') or bill_id.startswith('S.B.'):
+                bill_type = ['bill']
+            elif bill_id.startswith('H.C.R.') or bill_id.startswith('S.C.R.'):
+                bill_type = ['concurrent resolution']
+            elif bill_id.startswith('H.J.R.') or bill_id.startswith('S.J.R.'):
+                bill_type = ['joint resolution']
+
+            bill = Bill(session, chamber, bill_id, title, type=bill_type)
             bill.add_sponsor('primary', primary_sponsor)
             bill.add_source(url)
 

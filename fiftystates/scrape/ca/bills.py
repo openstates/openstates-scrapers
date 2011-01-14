@@ -1,5 +1,8 @@
 import re
+import os
+import datetime
 
+from fiftystates import settings
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
 from fiftystates.scrape.votes import Vote
@@ -10,6 +13,7 @@ from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy import create_engine
 
 import pytz
+import lxml.html
 
 
 def clean_title(s):
@@ -27,11 +31,19 @@ class CABillScraper(BillScraper):
     def __init__(self, metadata, host='localhost', user='', pw='',
                  db='capublic', **kwargs):
         super(CABillScraper, self).__init__(metadata, **kwargs)
+
+        if not user:
+            user = os.environ.get('MYSQL_USER',
+                                  getattr(settings, 'MYSQL_USER', ''))
+        if not pw:
+            pw = os.environ.get('MYSQL_PASSWORD',
+                                getattr(settings, 'MYSQL_PASSWORD', ''))
+
         if user and pw:
             conn_str = 'mysql://%s:%s@' % (user, pw)
         else:
             conn_str = 'mysql://'
-        conn_str = '%s%s/%s?charset=utf8&unix_socket=/tmp/mysql.sock' % (
+        conn_str = '%s%s/%s?charset=utf8' % (
             conn_str, host, db)
         self.engine = create_engine(conn_str)
         self.Session = sessionmaker(bind=self.engine)
@@ -86,10 +98,13 @@ class CABillScraper(BillScraper):
 
             fsbill.add_source(source_url)
 
+            scraped_versions = self.scrape_site_versions(bill, source_url)
+
             title = ''
             short_title = ''
             type = ['bill']
             subject = ''
+            i = 0
             for version in bill.versions:
                 if not version.bill_xml:
                     continue
@@ -112,9 +127,20 @@ class CABillScraper(BillScraper):
                 if version.subject:
                     subject = clean_title(version.subject)
 
+                date = version.bill_version_action_date.date()
+
+                url = ''
+                try:
+                    scraped_version = scraped_versions[i]
+                    if scraped_version[0] == date:
+                        url = scraped_version[1]
+                        i += 1
+                except IndexError:
+                    pass
+
                 fsbill.add_version(
-                    version.bill_version_id, '',
-                    date=version.bill_version_action_date.date(),
+                    version.bill_version_id, url,
+                    date=date,
                     title=title,
                     short_title=short_title,
                     subject=[subject],
@@ -155,6 +181,8 @@ class CABillScraper(BillScraper):
                 type = []
 
                 act_str = action.action
+                act_str = re.sub(r'\s+', ' ', act_str)
+
                 if act_str.startswith('Introduced'):
                     introduced = True
                     type.append('bill:introduced')
@@ -261,3 +289,21 @@ class CABillScraper(BillScraper):
                 fsbill.add_vote(fsvote)
 
             self.save_bill(fsbill)
+
+    def scrape_site_versions(self, bill, source_url):
+        with self.urlopen(source_url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(source_url)
+
+            versions = []
+
+            for link in page.xpath("//a[contains(@href, '.pdf')]"):
+                date = link.xpath("string(../../td[2])").strip(" -")
+                date = datetime.datetime.strptime(
+                    date, '%m/%d/%Y').date()
+
+                versions.append((date, link.attrib['href']))
+
+            versions.reverse()
+
+            return versions

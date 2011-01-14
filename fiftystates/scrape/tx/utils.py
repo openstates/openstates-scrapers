@@ -17,7 +17,7 @@ def clean_committee_name(comm_name):
 
 def parse_ftp_listing(text):
     lines = text.strip().split('\r\n')
-    return (' '.join(line.split()[3:]) for line in lines)
+    return (' '.join(line.split()[3:]) for line in lines if line)
 
 
 def chamber_name(chamber):

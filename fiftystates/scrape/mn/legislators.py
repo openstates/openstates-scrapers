@@ -1,8 +1,6 @@
-
 from fiftystates.scrape.legislators import Legislator, LegislatorScraper
 from fiftystates.scrape import NoDataForPeriod
 
-import xlrd
 import lxml.html
 
 class MNLegislatorScraper(LegislatorScraper):
@@ -20,22 +18,33 @@ class MNLegislatorScraper(LegislatorScraper):
             self.scrape_senate(term)
 
     def scrape_house(self, term):
-        xls_url = 'http://www.house.leg.state.mn.us/members/meminfo.xls'
+        url = 'http://www.house.leg.state.mn.us/members/housemembers.asp'
+        office_addr = ''' State Office Building,
+100 Rev. Dr. Martin Luther King Jr. Blvd.
+Saint Paul, Minnesota 55155'''
 
-        fname, resp = self.urlretrieve(xls_url)
-        sheet = xlrd.open_workbook(fname).sheet_by_index(0)
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
 
-        for n in xrange(1, sheet.nrows):
-            (district, fname, lname, addr, phone, _, party,
-             home_addr, home_city, home_zip) = sheet.row_values(n)
+            # skip first header row
+            for row in doc.xpath('//tr')[1:]:
+                tds = [td.text_content().strip() for td in row.xpath('td')]
+                if len(tds) == 5:
+                    district = tds[0]
+                    name, party = tds[1].rsplit(' ', 1)
+                    if party == '(R)':
+                        party = 'Republican'
+                    elif party == '(DFL)':
+                        party = 'Democratic-Farmer-Labor'
+                    addr = tds[2] + office_addr
+                    phone = tds[3]
+                    email = tds[4]
 
-            leg = Legislator(term, 'lower', district, '%s %s' % (fname, lname),
-                             first_name=fname, last_name=lname,
-                             party=self._parties[party], office_address=addr,
-                             office_phone=phone)
-            leg.add_source(xls_url)
-            self.save_legislator(leg)
-
+                leg = Legislator(term, 'lower', district, name,
+                                 party=party, office_address=addr,
+                                 office_phone=phone, email=email)
+                leg.add_source(url)
+                self.save_legislator(leg)
 
     def scrape_senate(self, term):
         url = 'http://www.senate.leg.state.mn.us/members/member_list.php'

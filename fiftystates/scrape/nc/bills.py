@@ -2,7 +2,6 @@ import datetime as dt
 import re
 from collections import defaultdict
 
-import html5lib
 import lxml.html
 
 from fiftystates.scrape.bills import BillScraper, Bill
@@ -10,8 +9,6 @@ from fiftystates.scrape.bills import BillScraper, Bill
 class NCBillScraper(BillScraper):
 
     state = 'nc'
-    soup_parser = html5lib.HTMLParser(
-        tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
     _action_classifiers = {
         'Vetoed': 'governor:vetoed',
@@ -59,93 +56,95 @@ class NCBillScraper(BillScraper):
 
     def get_bill_info(self, session, bill_id):
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/'\
-            'BillLookUp/BillLookUp.pl?bPrintable=true'\
-            '&Session=%s&BillID=%s&votesToView=all' % (
+            'BillLookUp/BillLookUp.pl?Session=%s&BillID=%s' % (
             session, bill_id)
 
-        # parse the bill data page, finding the latest html text
         if bill_id[0] == 'H':
             chamber = 'lower'
         else:
             chamber = 'upper'
 
-        bill_data = self.urlopen(bill_detail_url)
-        bill_soup = self.soup_parser(bill_data)
+        # parse the bill data page, finding the latest html text
+        with self.urlopen(bill_detail_url) as data:
+            doc = lxml.html.fromstring(data)
 
-        bill_title = bill_soup.findAll('div',
-                                       style="text-align: center; font: bold"
-                                       " 20px Arial; margin-top: 15px;"
-                                       " margin-bottom: 8px;")[0].contents[0]
-        title_div_txt = bill_soup.findAll('div', id='title')[0].contents[0]
-        if 'Joint Resolution' in title_div_txt:
-            bill_type = 'joint resolution'
-            bill_id = bill_id[0] + 'JR ' + bill_id[1:]
-        elif 'Resolution' in title_div_txt:
-            bill_type = 'resolution'
-            bill_id = bill_id[0] + 'R ' + bill_id[1:]
-        elif 'Bill' in title_div_txt:
-            bill_type = 'bill'
-            bill_id = bill_id[0] + 'B ' + bill_id[1:]
+            title_div_txt = doc.xpath('//div[@id="title"]/text()')[0]
+            if 'Joint Resolution' in title_div_txt:
+                bill_type = 'joint resolution'
+                bill_id = bill_id[0] + 'JR ' + bill_id[1:]
+            elif 'Resolution' in title_div_txt:
+                bill_type = 'resolution'
+                bill_id = bill_id[0] + 'R ' + bill_id[1:]
+            elif 'Bill' in title_div_txt:
+                bill_type = 'bill'
+                bill_id = bill_id[0] + 'B ' + bill_id[1:]
 
-        bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
-        bill.add_source(bill_detail_url)
+            title_style_xpath = '//div[@style="text-align: center; font: bold 20px Arial; margin-top: 15px; margin-bottom: 8px;"]/text()'
+            bill_title = doc.xpath(title_style_xpath)[0]
 
-        # get all versions
-        links = bill_soup.findAll('a', href=re.compile(
-                '/Sessions/%s/Bills/\w+/HTML' % session[0:4]))
+            bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
+            bill.add_source(bill_detail_url)
 
-        for link in links:
-            version_name = link.parent.previousSibling.previousSibling
-            version_name = version_name.contents[0].replace('&nbsp;', ' ')
-            version_name = version_name.replace(u'\u00a0', ' ')
-
-            version_url = 'http://www.ncga.state.nc.us' + link['href']
-            bill.add_version(version_name, version_url)
-
-        # figure out which table has sponsor data
-        sponsor_table = bill_soup.findAll('th', text='Sponsors',
-                                          limit=1)[0].findParents(
-            'table', limit=1)[0]
-
-        sponsor_rows = sponsor_table.findAll('tr')
-        for leg in sponsor_rows[1].td.findAll('a'):
-            bill.add_sponsor('primary',
-                             leg.contents[0].replace(u'\u00a0', ' '))
-        for leg in sponsor_rows[2].td.findAll('a'):
-            bill.add_sponsor('cosponsor',
-                             leg.contents[0].replace(u'\u00a0', ' '))
-
-        action_table = bill_soup.findAll('th', text='Chamber',
-                                         limit=1)[0].findParents(
-            'table', limit=1)[0]
-
-        for row in action_table.findAll('tr'):
-            cells = row.findAll('td')
-            if len(cells) != 3:
-                continue
-
-            act_date, actor, action = map(lambda x: self.flatten(x), cells)
-            act_date = dt.datetime.strptime(act_date, '%m/%d/%Y')
-
-            if actor == 'Senate':
-                actor = 'upper'
-            elif actor == 'House':
-                actor = 'lower'
-            elif action.endswith('Gov.'):
-                actor = 'Governor'
-
-            for pattern, atype in self._action_classifiers.iteritems():
-                if action.startswith(pattern):
-                    break
+            # skip first PDF link (duplicate link to cur version)
+            if chamber == 'lower':
+                link_xpath = '//a[contains(@href, "/Bills/House/PDF/")]'
             else:
-                atype = 'other'
+                link_xpath = '//a[contains(@href, "/Bills/Senate/PDF/")]'
+            for vlink in doc.xpath(link_xpath)[1:]:
+                # get the name from the PDF link...
+                version_name = vlink.text.replace(u'\xa0', ' ')
+                # but neighboring span with anchor inside has the HTML version
+                version_url = vlink.xpath('./following-sibling::span/a/@href')
+                version_url = 'http://www.ncga.state.nc.us' + version_url[0]
+                bill.add_version(version_name, version_url)
 
-            bill.add_action(actor, action, act_date, type=atype)
+            # sponsors
+            pri_td = doc.xpath('//th[text()="Primary:"]/following-sibling::td')
+            for leg in pri_td[0].text.split('; '):
+                leg = leg.strip()
+                if leg:
+                    bill.add_sponsor('primary',
+                                     leg.replace(u'\xa0', ' '))
 
-        if self.is_latest_session(session):
-            subj_key = bill_id[0] + ' ' + bill_id.split(' ')[-1]
-            bill['subjects'] = self.subject_map[subj_key]
-        self.save_bill(bill)
+            # cosponsors
+            co_td = doc.xpath('//th[text()="Co:"]/following-sibling::td')
+            for leg in co_td[0].text.split('; '):
+                leg = leg.strip()
+                if leg and leg != 'N/A':
+                    bill.add_sponsor('cosponsor',
+                                     leg.replace(u'\xa0', ' '))
+
+            # actions
+            action_tr_xpath = '//td[starts-with(text(),"History")]/../../tr'
+            # skip two header rows
+            for row in doc.xpath(action_tr_xpath)[2:]:
+                tds = row.xpath('td')
+                act_date = tds[0].text
+                actor = tds[1].text or ''
+                action = tds[2].text.strip()
+
+                act_date = dt.datetime.strptime(act_date, '%m/%d/%Y')
+
+                if actor == 'Senate':
+                    actor = 'upper'
+                elif actor == 'House':
+                    actor = 'lower'
+                elif action.endswith('Gov.'):
+                    actor = 'governor'
+
+                for pattern, atype in self._action_classifiers.iteritems():
+                    if action.startswith(pattern):
+                        break
+                else:
+                    atype = 'other'
+
+                bill.add_action(actor, action, act_date, type=atype)
+
+            if self.is_latest_session(session):
+                subj_key = bill_id[0] + ' ' + bill_id.split(' ')[-1]
+                bill['subjects'] = self.subject_map[subj_key]
+
+            self.save_bill(bill)
 
     def scrape(self, chamber, session):
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
@@ -153,27 +152,11 @@ class NCBillScraper(BillScraper):
             'displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (
             session, chamber)
 
-        data = self.urlopen(url)
-        soup = self.soup_parser(data)
-
         if self.is_latest_session(session):
             self.build_subject_map()
 
-        for row in soup.findAll('table')[6].findAll('tr')[1:]:
-            td = row.find('td')
-            bill_id = td.a.contents[0]
-            self.get_bill_info(session, bill_id)
-
-    def flatten(self, tree):
-
-        def squish(tree):
-            if tree.string:
-                s = tree.string
-            else:
-                s = map(lambda x: self.flatten(x), tree.contents)
-            if len(s) == 1:
-                s = s[0]
-            return s
-
-        return ''.join(squish(tree)).strip()
-
+        with self.urlopen(url) as data:
+            doc = lxml.html.fromstring(data)
+            for row in doc.xpath('//table[@cellpadding=3]/tr')[1:]:
+                bill_id = row.xpath('td[1]/a/text()')[0]
+                self.get_bill_info(session, bill_id)

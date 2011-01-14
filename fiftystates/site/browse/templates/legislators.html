@@ -3,6 +3,7 @@
 {% block title %}{{metadata.name}} legislators{% endblock %}
 
 {% block content %}
+<h1>{{metadata.name}} legislators</h1>
 
 <div style="float: left; padding-right: 3em;">
 <h3 width="100%"> {{metadata.upper_chamber_title}}s </h3>
@@ -35,6 +36,29 @@
     <td><a href="/browse/legislators/{{leg.leg_id}}/">{{leg.first_name}} {{leg.last_name}}</a></td>
     <td>{{leg.district}}</td>
     <td>{{leg.party}}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+
+<div style="float: left; padding-right: 3em;">
+<h3 width="100%"> inactive legislators </h3>
+<table>
+<tr>
+    <td>Name</td>
+    <td>Old Roles</td>
+</tr>
+{% for leg in inactive_legs %}
+<tr>
+    <td><a href="/browse/legislators/{{leg.leg_id}}/">{{leg.first_name}} {{leg.last_name}}</a></td>
+    <td>
+        <dl>
+            {% for k,v in leg.old_roles.iteritems %}
+            <dt>{{k}}</dt>
+            <dd>{{v.0.chamber}} {{v.0.district}} {{v.0.party}}</dd>
+            {% endfor %}
+        </dl>
+    </td>
 </tr>
 {% endfor %}
 </table>

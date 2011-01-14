@@ -22,8 +22,7 @@ All legislator methods return Legislator objects consisting of the following fie
   * ``active`` Whether this legislator is currently serving
   * ``state``, ``chamber``, ``district``, ``party`` (only present if the legislator is
     currently serving)
-  * ``roles``: A list of objects representing roles this legislator
-    has held. Each role will contain at least the ``type`` and
+  * ``roles``: A list of objects representing roles this legislator currently holds. Each role will contain at least the ``type`` and
     ``term`` roles:
 
     * ``type`` the type of role - e.g. "member", "committee member",
@@ -34,6 +33,7 @@ All legislator methods return Legislator objects consisting of the following fie
     * ``party``
     * ``committee``
     * ``term``
+  * ``old_roles``: A dictionary mapping term names for past terms to lists of roles held.
   * ``sources``
     List of sources that this data was collected from.
 
@@ -202,12 +202,12 @@ Parameters
 URL Format
 ----------
 
-:samp:`http://openstates.sunlightlabs.com/api/v1/legislators/geo/?lat={LATITUDE}&long={LONGITUDE}&apikey={YOUR_API_KEY}`
+:samp:`http://openstates.sunlightlabs.com/api/v1/legislators/geo/?long={LONGITUDE}&lat={LATITUDE}&apikey={YOUR_API_KEY}`
 
 Example
 -------
 
-http://openstates.sunlightlabs.com/api/v1/legislators/geo/?lat=-78.76648&long=35.81336&apikey=YOUR_API_KEY
+http://openstates.sunlightlabs.com/api/v1/legislators/geo/?long=-78.76648&lat=35.81336&apikey=YOUR_API_KEY
 
 ::
 

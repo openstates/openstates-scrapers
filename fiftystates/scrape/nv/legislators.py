@@ -25,11 +25,7 @@ class NVLegislatorScraper(LegislatorScraper):
         else:
             raise NoDataForPeriod(term_name)
 
-        if chamber == 'upper':
-            self.scrape_legislators(chamber, session, year, term_name)
-        elif chamber == 'lower':
-            self.scrape_legislators(chamber, session, year, term_name)
-
+        self.scrape_legislators(chamber, session, year, term_name)
 
     def scrape_legislators(self, chamber, session, year, term_name):
 
@@ -47,18 +43,19 @@ class NVLegislatorScraper(LegislatorScraper):
 
         if chamber == 'upper':
             leg_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/legislators/Senators/slist.cfm'
-            n = 22
+            num_districts = 22
         elif chamber == 'lower':
             leg_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/legislators/Assembly/alist.cfm'
-            n = 43
+            num_districts = 43
 
         with self.urlopen(leg_url) as page:
             page = page.replace("&nbsp;", " ")
-            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())        
+            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
             #Going through the districts
-            for numdistricts in range(1, n):
-                namepath = 'string(/html/body/table[%s]/tr/td/table[1]/tr/td[2]/font/a)' % (numdistricts + 2)
+            for row_index in range(3, num_districts+2):
+                print row_index
+                namepath = 'string(//table[%s]/tr/td/table[1]/tr/td[2])' % row_index
                 last_name = root.xpath(namepath).split()[0]
                 last_name = last_name[0 : len(last_name) - 1]
                 middle_name = ''
@@ -79,19 +76,21 @@ class NVLegislatorScraper(LegislatorScraper):
                 else:
                     full_name = first_name + " " + last_name
 
-                partypath = 'string(/html/body/table[%s]/tr/td/table[1]/tr/td[3]/font)' % (numdistricts + 2)
+                partypath = 'string(//table[%s]/tr/td/table[1]/tr/td[3])' % row_index
                 party = root.xpath(partypath).split()[-1]
+                if party == 'Democrat':
+                    party = 'Democratic'
 
-                districtpath = 'string(/html/body/table[%s]/tr/td/table[1]/tr/td[4]/font)' % (numdistricts + 2)
+                districtpath = 'string(//table[%s]/tr/td/table[1]/tr/td[4])' % row_index
                 district = root.xpath(districtpath)[11: len(root.xpath(districtpath))].strip()
                 if district.startswith('No.'):
-                    district = district[3:]
+                    district = district[3:].strip()
 
-                termpath = 'string(/html/body/table[%s]/tr/td/table[2]/tr/td[5])' % (numdistricts + 2)
+                termpath = 'string(//table[%s]/tr/td/table[2]/tr/td[5])' % row_index
                 end_date = root.xpath(termpath)[12: 21]
                 email = root.xpath(termpath).split()[-1]
 
-                addresspath = 'string(/html/body/table[%s]/tr/td/table[2]/tr/td[2])' % (numdistricts + 2)
+                addresspath = 'string(//table[%s]/tr/td/table[2]/tr/td[2])' % row_index
                 address = root.xpath(addresspath)
 
                 leg = Legislator(term_name, chamber, district, full_name,

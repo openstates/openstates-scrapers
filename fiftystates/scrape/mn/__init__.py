@@ -17,7 +17,13 @@ metadata = dict(
          'start_year': 2009,
          'end_year': 2010,
          'biennium': '86',
-        }
+        },
+        {'name': '2011-2012',
+         'sessions': ['2011-2012'],
+         'start_year': 2011,
+         'end_year': 2012,
+         'biennium': '87',
+        },
     ],
     session_details={
         '2009-2010': {'site_id': '0862009', 'type':'primary',
@@ -25,5 +31,7 @@ metadata = dict(
         '2010 1st Special Session': {'site_id': '1862010', 'type':'special',
              'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8620101.asp'},
         '2010 2nd Special Session': {'site_id': '2862010', 'type':'special'},
+        '2011-2012': {'site_id': '0872011', 'type':'primary',
+            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls87.asp'},
     }
 )

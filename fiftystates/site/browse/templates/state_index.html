@@ -26,7 +26,7 @@
 </div>
 
 <div style="float: left; padding-right: 3em;" class="bills">
-<h4 width="100%">Bills <a href="random_bill/">(random bill)</a></h4>
+    <h4 width="100%">Bills for Latest Session [{{session}}] <a href="random_bill/">(random bill)</a></h4>
   <dl>
       <dt>Upper Chamber:</dt><dd>{{upper_bill_count}}</dd>
       <dt>Lower Chamber:</dt><dd>{{lower_bill_count}}</dd>
@@ -57,7 +57,8 @@
     <dl>
       <dt>Upper Chamber:</dt><dd>{{upper_leg_count}}</dd>
       <dt>Lower Chamber:</dt><dd>{{lower_leg_count}}</dd>
-      <dt>Total Legislators:</dt><dd>{{leg_count}}</dd>
+      <dt>Total Active Legislators:</dt><dd>{{leg_count}}</dd>
+      <dt>Inactive Legislators:</dt><dd>{{inactive_leg_count}}</dd>
       <dt>Legislators without sources:</dt><dd>{{ns_leg_count}}</dd>
       <dt>Legislators without PVS id:</dt><dd>{{missing_pvs}}</dd>
       <dt>Legislators without NIMSP id:</dt><dd>{{missing_nimsp}}</dd>

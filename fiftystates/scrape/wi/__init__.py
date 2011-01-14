@@ -37,11 +37,17 @@ metadata = {
          'sessions': ['June 2009 Special Session',
                       'Dec 2009 Special Session',
                       '2009 Regular Session'],
-         'start_year': 2009, 'end_year': 2010 },
+         'start_year': 2009, 'end_year': 2010},
+        {'name': '2011-2012',
+         'sessions': ['2011 Regular Session'],
+         'start_year': 2011, 'end_year': 2011},
     ],
     'session_details': {
         '2009 Regular Session': {'start_date': datetime.date(2009,1,13),
                                  'end_date': datetime.date(2011,1,3),
+                                 'type': 'primary'},
+        '2011 Regular Session': {'start_date': datetime.date(2009,1,11),
+                                 'end_date': datetime.date(2013,1,7),
                                  'type': 'primary'}
     }
 }

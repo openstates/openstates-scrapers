@@ -14,10 +14,15 @@ metadata = dict(
              sessions=[
                  '2009-2010',
                  '2009-2010 Special Session #1 (Transportation)']),
+        dict(name='2011-2012', start_year=2011,
+             end_year=2012,
+             sessions=[
+                 '2011-2012']),
         ],
     session_details={
         '2009-2010': {'type': 'primary'},
         '2009-2010 Special Session #1 (Transportation)': {
             'type': 'special'},
+        '2011-2012': {'type': 'primary'},
         }
     )

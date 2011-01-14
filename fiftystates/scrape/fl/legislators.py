@@ -10,7 +10,7 @@ class FLLegislatorScraper(LegislatorScraper):
     state = 'fl'
 
     def scrape(self, chamber, term):
-        if term != '2010':
+        if term != '2011-2012':
             raise NoDataForPeriod(term)
 
         if chamber == 'upper':
@@ -55,7 +55,7 @@ class FLLegislatorScraper(LegislatorScraper):
 
                 party = link.xpath('string(../../td[3])').strip()
                 if party == 'D':
-                    party = 'Democrat'
+                    party = 'Democratic'
                 elif party == 'R':
                     party = 'Republican'
 

@@ -15,10 +15,7 @@ class MDLegislatorScraper(LegislatorScraper):
                 'upper': "http://www.msa.md.gov/msa/mdmanual/05sen/html/senal.html"}
         detail_re = re.compile('\((R|D)\), (?:Senate President, )?(?:House Speaker, )?District (\w+)')
 
-        self.validate_term(term)
-
-        if term != '2007-2010':
-            raise NoDataForPeriod(term)
+        self.validate_term(term, latest_only=True)
 
         with self.urlopen(urls[chamber]) as html:
             doc = lxml.html.fromstring(html)
@@ -47,7 +44,7 @@ class MDLegislatorScraper(LegislatorScraper):
                     party, district = detail_re.match(details).groups()
                     party = PARTY_DICT[party]
 
-                    leg = Legislator('2007-2010', chamber, district,
+                    leg = Legislator(term, chamber, district,
                                      ' '.join((first_name, last_name)),
                                      first_name, last_name, '',
                                      party, suffixes=suffixes)

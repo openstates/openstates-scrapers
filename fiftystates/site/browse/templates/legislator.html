@@ -3,8 +3,6 @@
 {% block title %}{{ leg.full_name }}{% endblock %}
 
 {% block content %}
-<h3>{% if leg.chamber == "lower" %} {{metadata.lower_chamber_title }}
-    {% else %} {{ metadata.upper_chamber_title}} {% endif %}
     {{ leg.full_name }}</h3>
 <h4>
 {{leg.party}}, {{ metadata.name }}, District {{ leg.district }}
@@ -32,24 +30,46 @@
 </dl>
 
 <div class="roles">
-  <h4>Legislative Roles:</h4>
+  <h4>Current Roles:</h4>
   <ul>
     {% for role in leg.roles %}
       <li>
         {% if role.type == 'member' %}
         {{ role.term }}:
-        {% if leg.chamber == "lower" %} {{metadata.lower_chamber_title }}
+        {% if role.chamber == "lower" %} {{metadata.lower_chamber_title }}
         {% else %} {{ metadata.upper_chamber_title}} {% endif %}
         from District {{role.district}}
         {% endif %}
 
         {% if role.type == 'committee member' %}
-          {{ role.session }}: member of the {{ role.committee }} Committee
+          member of the {{ role.committee }} Committee
         {% endif %}
       </li>
     {% endfor %}
   </ul>
 </div>
+
+{% for session, roles in leg.old_roles.iteritems %}
+<div class="roles">
+    <h4>{{session}} Roles:</h4>
+  <ul>
+    {% for role in roles %}
+      <li>
+        {% if role.type == 'member' %}
+        {{ role.term }}:
+        {% if role.chamber == "lower" %} {{metadata.lower_chamber_title }}
+        {% else %} {{ metadata.upper_chamber_title}} {% endif %}
+        from District {{role.district}}
+        {% endif %}
+
+        {% if role.type == 'committee member' %}
+          member of the {{ role.committee }} Committee
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endfor %}
 
 <div class="sources">
   <h4>Sources:</h4>
