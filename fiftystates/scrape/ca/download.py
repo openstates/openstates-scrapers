@@ -51,7 +51,7 @@ def get_and_load(url):
 
     cmd_path = os.path.dirname(__file__)
     data_dir = getattr(settings, 'CA_DATA_DIR',
-                       os.path.expanduser('~/ext/capublic/'))
+                       '/projects/openstates/ext/capublic/')
     zip_path = download(url)
     extract(zip_path, data_dir)
 
