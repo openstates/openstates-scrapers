@@ -84,7 +84,6 @@ class TNBillScraper(BillScraper):
                 votes_link = votes_link[0].get('href')
                 bill = self.scrape_votes(bill, sponsor, 'http://wapp.capitol.tn.gov/apps/Billinfo/%s' % (votes_link,))
 
-            print bill
             self.save_bill(bill)
 
 
@@ -126,12 +125,6 @@ class TNBillScraper(BillScraper):
                 else:
                     yes_count = no_count = 0
 
-                #print "Motion: %s" % (motion,)
-                #print "Date: %s" % (vote_date,)
-                #print "Passed: %s" % (passed,)
-                #print "Yes: %s" % (yes_count,)
-                #print "No: %s" % (no_count,)
-                #print '------------'
 
                 vote = Vote(bill['chamber'], vote_date, motion, passed, yes_count, no_count, other_count) 
                 vote.add_source(link)
