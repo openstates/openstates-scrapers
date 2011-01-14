@@ -43,18 +43,23 @@ def get_latest():
 
 
 def get_and_load(url):
+    user = os.environ.get('MYSQL_USER', getattr(settings, 'MYSQL_USER',
+                                                ''))
+    password = os.environ.get('MYSQL_PASSWORD', getattr(settings,
+                                                        'MYSQL_PASSWORD',
+                                                        ''))
+
     cmd_path = os.path.dirname(__file__)
     data_dir = getattr(settings, 'CA_DATA_DIR',
-                       os.path.expanduser('~/ext/capublic/'))
+                       '/projects/openstates/ext/capublic/')
     zip_path = download(url)
-    print zip_path
     extract(zip_path, data_dir)
+
     os.system("%s localhost %s %s %s" % (os.path.join(cmd_path, "load_data"),
-                                         settings.MYSQL_USER,
-                                         settings.MYSQL_PASSWORD,
-                                         data_dir))
+                                         user, password, data_dir))
     os.system("%s %s" % (os.path.join(cmd_path, "cleanup"), data_dir))
 
+    os.remove(zip_path)
 
 def download(url):
     scraper = scrapelib.Scraper()
@@ -68,8 +73,9 @@ def download(url):
 
 
 def extract(path, directory):
-    with zipfile.ZipFile(path, 'r') as z:
-        z.extractall(directory)
+    z = zipfile.ZipFile(path, 'r')
+    z.extractall(directory)
+    z.close()
 
 
 def parse_directory_listing(s):
