@@ -51,14 +51,10 @@ def dump_json(state, filename, validate):
         committee_schema = json.load(f)
 
     for bill in db.bills.find({'state': state}):
-        path = "api/%s/%s/%s/bills/%s" % (state, bill['session'],
+        path = "bills/%s/%s/%s/%s" % (state, bill['session'],
                                            bill['chamber'],
                                            bill['bill_id'])
-
-        url = api_url("bills/%s/%s/%s/%s" % (state,
-                                             bill['session'],
-                                             bill['chamber'],
-                                             bill['bill_id']))
+        url = api_url(path)
 
         response = urllib2.urlopen(url).read()
         if validate:
@@ -68,8 +64,8 @@ def dump_json(state, filename, validate):
         zip.writestr(path, urllib2.urlopen(url).read())
 
     for legislator in db.legislators.find({'state': state}):
-        path = 'api/legislators/%s' % legislator['_id']
-        url = api_url("legislators/" + legislator['_id'])
+        path = 'legislators/%s' % legislator['_id']
+        url = api_url(path)
 
         response = urllib2.urlopen(url).read()
         if validate:
@@ -79,8 +75,8 @@ def dump_json(state, filename, validate):
         zip.writestr(path, response)
 
     for committee in db.committees.find({'state': state}):
-        path = 'api/committees/%s' % committee['_id']
-        url = api_url("committees/" + committee['_id'])
+        path = 'committees/%s' % committee['_id']
+        url = api_url(path)
 
         response = urllib2.urlopen(url).read()
         if validate:
