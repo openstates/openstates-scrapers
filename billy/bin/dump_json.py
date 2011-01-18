@@ -16,10 +16,11 @@ except:
 from billy import settings
 from billy import db
 
-import pymongo
 import boto
-from boto.s3.key import Key
+import pymongo
+import scrapelib
 import validictory
+from boto.s3.key import Key
 
 
 class APIValidator(validictory.SchemaValidator):
@@ -37,6 +38,8 @@ def api_url(path):
 
 
 def dump_json(state, filename, validate):
+    scraper = scrapelib.Scraper(requests_per_minute=600)
+
     zip = zipfile.ZipFile(filename, 'w')
 
     cwd = os.path.split(__file__)[0]
@@ -56,18 +59,18 @@ def dump_json(state, filename, validate):
                                            bill['bill_id'])
         url = api_url(path)
 
-        response = urllib2.urlopen(url).read()
+        response = scraper.urlopen(url)
         if validate:
             validictory.validate(json.loads(response), bill_schema,
                                  validator_cls=APIValidator)
 
-        zip.writestr(path, urllib2.urlopen(url).read())
+        zip.writestr(path, scraper.urlopen(url))
 
     for legislator in db.legislators.find({'state': state}):
         path = 'legislators/%s' % legislator['_id']
         url = api_url(path)
 
-        response = urllib2.urlopen(url).read()
+        response = scraper.urlopen(url)
         if validate:
             validictory.validate(json.loads(response), legislator_schema,
                                  validator_cls=APIValidator)
@@ -78,7 +81,7 @@ def dump_json(state, filename, validate):
         path = 'committees/%s' % committee['_id']
         url = api_url(path)
 
-        response = urllib2.urlopen(url).read()
+        response = scraper.urlopen(url)
         if validate:
             validictory.validate(json.loads(response), committee_schema,
                                  validator_cls=APIValidator)
