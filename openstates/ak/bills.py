@@ -198,7 +198,9 @@ class AKBillScraper(BillScraper):
                 vote_list, vote_type = vote_list[9:], vote.other
             if vote_type:
                 for name in vote_list.split(','):
-                    vote_type(name.strip())
+                    name = name.strip()
+                    if name:
+                        vote_type(name)
 
         vote.add_source(url)
         return vote
