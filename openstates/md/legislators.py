@@ -7,6 +7,8 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 
 PARTY_DICT = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
 
+BASE_URL = 'http://www.msa.md.gov'
+
 class MDLegislatorScraper(LegislatorScraper):
     state = 'md'
 
@@ -48,5 +50,13 @@ class MDLegislatorScraper(LegislatorScraper):
                                      ' '.join((first_name, last_name)),
                                      first_name, last_name, '',
                                      party, suffixes=suffixes)
-                    leg.add_source(url='http://www.msa.md.gov'+link)
+                    leg_url = BASE_URL+link
+                    leg.add_source(url=leg_url)
+
+                    with self.urlopen(leg_url) as leg_html:
+                        leg_doc = lxml.html.fromstring(leg_html)
+                        img_src = leg_doc.xpath('//img[@align="left"]/@src')
+                        if img_src:
+                            leg['photo_url'] = BASE_URL + img_src[0]
+
                     self.save_legislator(leg)
