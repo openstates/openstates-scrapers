@@ -101,7 +101,7 @@ class CACommitteeScraper(CommitteeScraper):
             page = lxml.html.fromstring(page)
 
             for a in page.xpath('//tr/td/font/a'):
-                if re.match('^(mailto:|javascript:)', a.attrib['href']):
+                if re.match('^(mailto:)', a.attrib['href']):
                     continue
 
                 name = a.xpath('string(ul)').strip()
