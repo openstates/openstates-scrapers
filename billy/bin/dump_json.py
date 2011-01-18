@@ -36,7 +36,6 @@ _base_url = getattr(settings, 'OPENSTATES_API_BASE_URL',
 
 def api_url(path):
     return "%s%s/?apikey=%s" % (_base_url, urllib.quote(path),
-                                "/?apikey=",
                                 settings.SUNLIGHT_SERVICES_KEY)
 
 
