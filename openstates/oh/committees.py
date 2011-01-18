@@ -83,4 +83,5 @@ class OHCommitteeScraper(CommitteeScraper):
                     if full_name:
                         committee.add_member(full_name)
 
-                self.save_committee(committee)
+                if committee['members']:
+                    self.save_committee(committee)
