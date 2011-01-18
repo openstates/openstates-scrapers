@@ -95,7 +95,24 @@ class AKBillScraper(BillScraper):
                         self.log("Failed parsing vote at %s" %
                                  cols[1].a['href'])
 
-                bill.add_action(act_chamber, action, act_date)
+                atype = []
+                if 'READ THE FIRST TIME' in action:
+                    atype.append('bill:introduced')
+                    atype.append('bill:reading:1')
+
+                if 'READ THE SECOND TIME' in action:
+                    atype.append('bill:reading:2')
+
+                if 'READ THE THIRD TIME' in action:
+                    atype.append('bill:reading:3')
+
+                if 'TRANSMITTED TO GOVERNOR' in action:
+                    atype.append('governor:received')
+
+                if 'SIGNED INTO LAW' in action:
+                    atype.append('governor:signed')
+
+                bill.add_action(act_chamber, action, act_date, type=atype)
 
             # Get subjects
             bill['subjects'] = []
