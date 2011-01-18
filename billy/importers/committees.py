@@ -34,6 +34,10 @@ def import_committees(state, data_dir):
 
     paths = glob.glob(pattern)
 
+    for committee in db.committees.find({'state': state}):
+        committee['members'] = []
+        db.committees.save(committee)
+
     if not paths:
         # Not standalone committees
         for legislator in db.legislators.find({
