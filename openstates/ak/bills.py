@@ -13,6 +13,27 @@ class AKBillScraper(BillScraper):
     soup_parser = html5lib.HTMLParser(
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
+    _fiscal_dept_mapping = {
+        'ADM': 'ADMINISTRATION',
+        'CED': 'COMMERCE, COMMUNITY & ECONOMIC DEVELOPMENT',
+        'COR': 'CORRECTIONS',
+        'CRT': 'COURT SYSTEM',
+        'EED': 'EDUCATION AND EARLY DEVELOPMENT',
+        'DEC': 'ENVIRONMENTAL CONSERVATION ',
+        'DFG': 'FISH AND GAME',
+        'GOV': 'GOVERNOR\'S OFFICE',
+        'DHS': 'HEALTH AND SOCIAL SERVICES',
+        'LWF': 'LABOR AND WORKFORCE DEVELOPMENT',
+        'LAW': 'LAW',
+        'LEG': 'LEGISLATIVE AGENCY',
+        'MVA': 'MILITARY AND VETERANS\' AFFAIRS',
+        'DNR': 'NATURAL RESOURCES',
+        'DPS': 'PUBLIC SAFETY',
+        'REV': 'REVENUE',
+        'DOT': 'TRANSPORTATION AND PUBLIC FACILITIES',
+        'UA': 'UNIVERSITY OF ALASKA',
+        'ALL': 'ALL DEPARTMENTS'}
+
     def scrape(self, chamber, session):
         for term in self.metadata['terms']:
             if term['sessions'][0] == session:
@@ -95,22 +116,7 @@ class AKBillScraper(BillScraper):
                         self.log("Failed parsing vote at %s" %
                                  cols[1].a['href'])
 
-                atype = []
-                if 'READ THE FIRST TIME' in action:
-                    atype.append('bill:introduced')
-                    atype.append('bill:reading:1')
-
-                if 'READ THE SECOND TIME' in action:
-                    atype.append('bill:reading:2')
-
-                if 'READ THE THIRD TIME' in action:
-                    atype.append('bill:reading:3')
-
-                if 'TRANSMITTED TO GOVERNOR' in action:
-                    atype.append('governor:received')
-
-                if 'SIGNED INTO LAW' in action:
-                    atype.append('governor:signed')
+                action, atype = self.clean_action(action)
 
                 bill.add_action(act_chamber, action, act_date, type=atype)
 
@@ -174,3 +180,38 @@ class AKBillScraper(BillScraper):
 
         vote.add_source(url)
         return vote
+
+    def clean_action(self, action):
+        # Clean up some acronyms
+        match = re.match(r'^FN(\d+): (ZERO|INDETERMINATE)?\((\w+)\)', action)
+        if match:
+            num = match.group(1)
+
+            if match.group(2) == 'ZERO':
+                impact = 'NO FISCAL IMPACT'
+            elif match.group(2) == 'INDETERMINATE':
+                impact = 'INDETERMINATE FISCAL IMPACT'
+            else:
+                impact = ''
+
+            dept = match.group(3)
+            dept = self._fiscal_dept_mapping.get(dept, dept)
+
+            action = "FISCAL NOTE %s: %s (%s)" % (num, impact, dept)
+
+        action = re.sub(r'\s+', ' ', action)
+
+        atype = []
+        if 'READ THE FIRST TIME' in action:
+            atype.append('bill:introduced')
+            atype.append('bill:reading:1')
+        if 'READ THE SECOND TIME' in action:
+            atype.append('bill:reading:2')
+        if 'READ THE THIRD TIME' in action:
+            atype.append('bill:reading:3')
+        if 'TRANSMITTED TO GOVERNOR' in action:
+            atype.append('governor:received')
+        if 'SIGNED INTO LAW' in action:
+            atype.append('governor:signed')
+
+        return action, atype
