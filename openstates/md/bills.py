@@ -94,7 +94,11 @@ class MDBillScraper(BillScraper):
                     try:
                         action_date = datetime.datetime.strptime(action_date,
                                                                  '%m/%d')
-                        action_date = action_date.replace(int(bill['session']))
+                        # no actions after June?, decrement the year on these
+                        year = int(bill['session'])
+                        if action_date.month > 6:
+                            year -= 1
+                        action_date = action_date.replace(year)
 
                         # iterate over all dds following the dt
                         dcursor = dt
@@ -111,6 +115,7 @@ class MDBillScraper(BillScraper):
 
                     except ValueError:
                         pass # probably trying to parse a bad entry
+
 
     def parse_bill_documents(self, doc, bill):
         for elem in doc.cssselect('b'):

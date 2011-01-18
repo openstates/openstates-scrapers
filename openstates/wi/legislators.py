@@ -29,6 +29,11 @@ class WILegislatorScraper(LegislatorScraper):
                     legpart = re.findall(r'([\w\-\,\s\.]+)\s+\(([\w])\)', list(row)[0].text_content())
                     if legpart:
                         full_name, party = legpart[0]
+
+                        # skip if the legislator is vacant (occurred in 2011 session)
+                        if full_name == 'Vacant':
+                            continue
+
                         party = PARTY_DICT[party]
 
                         district = str(int(list(row)[2].text_content()))

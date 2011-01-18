@@ -57,6 +57,8 @@ def import_committees(state, data_dir):
                         committee['_type'] = 'committee'
                         committee['members'] = []
                         committee['sources'] = []
+                        if 'subcommittee' not in committee:
+                            committee['subcommittee'] = None
                         insert_with_id(committee)
 
                     for member in committee['members']:
