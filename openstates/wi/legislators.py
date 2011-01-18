@@ -53,7 +53,7 @@ class WILegislatorScraper(LegislatorScraper):
 
             img = doc.xpath('//img[@id="ctl00_C_picHere"]/@src')
             if img:
-                legislator['photo_url'] = img
+                legislator['photo_url'] = img[0]
 
             cmts = doc.cssselect("#ctl00_C_lblCommInfo a")
             for c in cmts:
