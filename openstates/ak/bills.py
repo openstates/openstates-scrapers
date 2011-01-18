@@ -245,13 +245,13 @@ class AKBillScraper(BillScraper):
             atype.append('governor:received')
         if 'SIGNED INTO LAW' in action:
             atype.append('governor:signed')
-
         if 'DO PASS' in action:
             atype.append('committee:passed')
         if 'DO NOT PASS' in action:
             atype.append('committee:failed')
-
         if action.startswith('PASSED'):
             atype.append('bill:passed')
+        if 'REFERRED TO' in action:
+            atype.append('committee:referred')
 
         return action, atype
