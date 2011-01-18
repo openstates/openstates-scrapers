@@ -34,6 +34,27 @@ class AKBillScraper(BillScraper):
         'UA': 'UNIVERSITY OF ALASKA',
         'ALL': 'ALL DEPARTMENTS'}
 
+    _comm_vote_type = {
+        'DP': 'DO PASS',
+        'DNP': 'DO NOT PASS',
+        'NR': 'NO RECOMMENDATION',
+        'AM': 'AMEND'}
+
+    _comm_mapping = {
+        'CRA': 'COMMUNITY & REGIONAL AFFAIRS',
+        'EDC': 'EDUCATION',
+        'FIN': 'FINANCE',
+        'HSS': 'HEALTH & SOCIAL SERVICES',
+        'JUD': 'JUDICIARY',
+        'L&C': 'LABOR & COMMERCE',
+        'RES': 'RESOURCES',
+        'RLS': 'RULES',
+        'STA': 'STATE AFFAIRS',
+        'TRA': 'TRANSPORTATION'}
+
+    _comm_re = re.compile(r'^(%s)\s' % '|'.join(_comm_mapping.keys()))
+    _current_comm = None
+
     def scrape(self, chamber, session):
         for term in self.metadata['terms']:
             if term['sessions'][0] == session:
@@ -92,6 +113,7 @@ class AKBillScraper(BillScraper):
                 bill.add_sponsor('committee', spons_str.strip())
 
             # Get actions
+            self._current_comm = None
             act_rows = info_page.findAll('table', 'myth')[1].findAll('tr')[1:]
             for row in act_rows:
                 cols = row.findAll('td')
@@ -198,6 +220,16 @@ class AKBillScraper(BillScraper):
             dept = self._fiscal_dept_mapping.get(dept, dept)
 
             action = "FISCAL NOTE %s: %s (%s)" % (num, impact, dept)
+
+        match = self._comm_re.match(action)
+        if match:
+            self._current_comm = match.group(1)
+
+        match = re.match(r'^(DP|DNP|NR|AM):\s(.*)$', action)
+        if match:
+            vtype = self._comm_vote_type[match.group(1)]
+
+            action = "%s %s: %s" % (self._current_comm, vtype, match.group(2))
 
         action = re.sub(r'\s+', ' ', action)
 
