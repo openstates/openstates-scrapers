@@ -31,10 +31,13 @@ class APIValidator(validictory.SchemaValidator):
         return re.match(r'^\d{4}-\d\d-\d\d( \d\d:\d\d:\d\d)?$', val)
 
 
+_base_url = getattr(settings, 'OPENSTATES_API_BASE_URL',
+                    "http://openstates.sunlightlabs.com/api/v1/")
+
 def api_url(path):
-    return ("http://openstates.sunlightlabs.com/api/v1/" +
-            urllib.quote(path) +
-            "/?apikey=" + settings.SUNLIGHT_SERVICES_KEY)
+    return "%s%s/?apikey=%s" % (_base_url, urllib.quote(path),
+                                "/?apikey=",
+                                settings.SUNLIGHT_SERVICES_KEY)
 
 
 def dump_json(state, filename, validate):
