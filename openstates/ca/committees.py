@@ -44,7 +44,11 @@ class CACommitteeScraper(CommitteeScraper):
                     comm['type'] = type
                     self.scrape_upper_committee_members(
                         comm, a.attrib['href'])
-                    self.save_committee(comm)
+
+                    # don't save committees which haven't been assigned
+                    # members yet
+                    if comm['members']:
+                        self.save_committee(comm)
 
     def scrape_upper_committee_members(self, comm, url):
         # Senate committee pages are being served up with
@@ -90,7 +94,9 @@ class CACommitteeScraper(CommitteeScraper):
                 comm = Committee(comm_chamber, name)
                 self.scrape_lower_committee_members(comm,
                                                     a.attrib['href'])
-                self.save_committee(comm)
+
+                if comm['members']:
+                    self.save_committee(comm)
 
     def scrape_lower_committee_members(self, committee, url):
         # break out of frame
