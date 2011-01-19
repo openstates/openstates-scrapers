@@ -104,13 +104,20 @@ class AKBillScraper(BillScraper):
                 spons_str)
             if sponsors_match:
                 sponsors = sponsors_match.group(2).split(',')
-                bill.add_sponsor('primary', sponsors[0].strip())
+                sponsor = sponsors[0].strip()
+
+                if sponsor:
+                    bill.add_sponsor('primary', sponsors[0])
 
                 for sponsor in sponsors[1:]:
-                    bill.add_sponsor('cosponsor', sponsor.strip())
+                    sponsor = sponsor.strip()
+                    if sponsor:
+                        bill.add_sponsor('cosponsor', sponsor)
             else:
                 # Committee sponsorship
-                bill.add_sponsor('committee', spons_str.strip())
+                spons_str = spons_str.strip()
+                if spons_str:
+                    bill.add_sponsor('committee', spons_str)
 
             # Get actions
             self._current_comm = None
@@ -198,7 +205,9 @@ class AKBillScraper(BillScraper):
                 vote_list, vote_type = vote_list[9:], vote.other
             if vote_type:
                 for name in vote_list.split(','):
-                    vote_type(name.strip())
+                    name = name.strip()
+                    if name:
+                        vote_type(name)
 
         vote.add_source(url)
         return vote

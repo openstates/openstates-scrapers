@@ -45,6 +45,6 @@ class AKCommitteeScraper(CommitteeScraper):
                 mtype = link.xpath("string(../preceding-sibling::td[1])")
                 mtype = mtype.strip(": \r\n\t").lower()
 
-                comm.add_member(member)
+                comm.add_member(member, mtype)
 
-            self.save_committee(comm, mtype)
+            self.save_committee(comm)
