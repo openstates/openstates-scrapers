@@ -30,7 +30,7 @@ def process_file(state, save=False):
         # check columns
         changed = []
         keys = ('first_name', 'middle_name', 'last_name', 'suffixes',
-                'nickname', 'votesmart_id', 'transparencydata_id')
+                'nickname', 'votesmart_id', 'transparencydata_id', 'photo_url')
         for key in keys:
             fileval = (row[key] or '').strip()
             dbval = leg.get(key, '')
