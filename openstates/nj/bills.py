@@ -162,6 +162,10 @@ class NJBillScraper(BillScraper, DBFMixin):
             else:
                 chamber = "upper"
 
+            # some bills have a blank title.. just skip it
+            if not title:
+                continue
+
             bill = Bill(str(session), chamber, bill_id, title,
                         type=self._bill_types[bill_type[1:]])
             bill.add_source(main_bill_url)
