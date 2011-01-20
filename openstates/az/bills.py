@@ -184,7 +184,7 @@ class AZBillScraper(BillScraper):
                             a_type = get_action_type(act, 'COMMITTEES:')
                             act = get_verbose_action(act)
                             bill.add_action(actor, 
-                                            utils.get_committee_name(committee) + ":" + act,
+                                            utils.get_committee_name(committee, actor) + ":" + act,
                                             date, type=a_type, abbrv=committee)
                             self.scrape_votes(actor, vote_url, bill, date,
                                                 motion='committee: ' + act, 
@@ -199,7 +199,7 @@ class AZBillScraper(BillScraper):
                             a_type = get_action_type(act, 'COMMITTEES:')
                             act = get_verbose_action(act)
                             bill.add_action(actor, 
-                                            utils.get_committee_name(committee) + ":" + act, date, 
+                                            utils.get_committee_name(committee, actor) + ":" + act, date, 
                                             type=a_type, abbrv=committee)
                     continue
                     
