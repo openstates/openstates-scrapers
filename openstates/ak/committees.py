@@ -38,6 +38,7 @@ class AKCommitteeScraper(CommitteeScraper):
                 chamber = 'joint'
 
             comm = Committee(chamber, name)
+            comm.add_source(url)
 
             for link in page.xpath("//a[contains(@href, 'member=')]"):
                 member = link.text.strip()
