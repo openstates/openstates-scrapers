@@ -17,12 +17,3 @@ BILLY_ERROR_DIR = os.path.abspath(os.path.join(os.path.abspath(
 SCRAPELIB_TIMEOUT = 600
 SCRAPELIB_RETRY_ATTEMPTS = 3
 SCRAPELIB_RETRY_WAIT_SECONDS = 20
-
-NIMSP_API_KEY = ''
-VOTESMART_API_KEY = ''
-SUNLIGHT_SERVICES_KEY = ''
-
-try:
-    from billy_settings import *
-except ImportError:
-    pass
