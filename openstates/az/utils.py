@@ -96,42 +96,42 @@ def get_committee_name(abbrv, chamber):
     except KeyError:
         return abbrv
     
-com_names = { 
-    'lower': {
-        'APPROP': 'Appropriations',
-        'BI': 'Banking and Insurance',
-        'COM': 'Commerce',
-        'ED': 'Education',
-        'ENV': 'Environment',
-        'GOV': 'Government',
-        'HHS': 'Health and Human Services',
-        'JUD': 'Judiciary',
-        'MAPS': 'Military Affairs and Public Safety',
-        'NRRA': 'Natural Resources and Rural Affairs',
-        'PERER': 'Public Employees, Retirement and Entitlement Reform',
-        'RULES': 'Rules',
-        'TI': 'Transportation and Infrastructure',
-        'WE': 'Water and Energy',
-        'WM': 'Ways and Means'
-    },
-    'upper' : {
-        'APPROP': 'Appropriations',
-        'CED': 'Commerce and Economic Development',
-        'ED': 'Education Accountability and Reform',
-        'FIN': 'Finance',
-        'GOV': 'Government Institutions',
-        'HEALTH': 'Healthcare and Medical Liability Reform',
-        'JUD': 'Judiciary',
-        'NRIPD': 'Natural Resources, Infrastructure and Public Debt',
-        'PSHS': 'Public Safety and Human Services',
-        'RRD': 'Retirement and Rural Development',
-        'RULES': 'Rules',
-        'VMA': 'Veterans and Military Affairs',
-        'SUB APPROP ENR': 'Appropriations Subcommittee on Education and Natural Resources',
-        'SUB APPROP H&W': 'Appropriations Subcommittee on Health and Welfare',
-        'SUB APPROP TCJ': 'Appropriations Subcommittee on Transportation and Criminal Justice'
-    }
-}
+com_names = {
+    'lower': {'APPROP': 'Appropriations',
+              'AW': 'Agriculture and Water',
+              'BI': 'Banking and Insurance',
+              'COM': 'Commerce',
+              'ED': 'Education',
+              'ENR': 'Energy and Natural Resources',
+              'ENV': 'Environment',
+              'ERA': 'Employment and Regulatory Affairs',
+              'GOV': 'Government',
+              'HEIR': 'Higher Education, Innovation and Reform',
+              'HHS': 'Health and Human Services',
+              'JUD': 'Judiciary',
+              'MAPS': 'Military Affairs and Public Safety',
+              'RULES': 'Rules',
+              'TI': 'Technology and Infrastructure',
+              'TRANS': 'Transportation',
+              'WM': 'Ways and Means'},
+    'upper': {'APPROP': 'Appropriations',
+              'BI': 'Banking and Insurance',
+              'BSFSS': 'Border Security, Federalism and States Sovereignty',
+              'CE': 'Commerce and Energy',
+              'ED': 'Education',
+              'EDJC': 'Economic Development and Jobs Creation',
+              'FIN': 'Finance',
+              'GR': 'Government Reform',
+              'HMLR': 'Healthcare and Medical Liability Reform',
+              'JUD': 'Judiciary',
+              'NRT': 'Natural Resources and Transportation',
+              'PSHS': 'Public Safety and Human Services',
+              'RULES': 'Rules',
+              'SUB APPROP HW': 'Appropriations',
+              'SUB APPROP RIEN': 'Appropriations',
+              'SUB APPROP TCJ': 'Appropriations',
+              'VMA': 'Veterans and Military Affairs',
+              'WLRD': 'Water, Land Use and Rural Development'}}
 
 bill_types = {
     'sb': 'bill',

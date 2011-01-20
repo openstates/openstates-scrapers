@@ -173,7 +173,7 @@ class AZBillScraper(BillScraper):
                         committee = meta_tag.get('content') # @content is committee abbrv
                         #actor is house or senate referring the bill to committee
                         actor = 'lower' if h_or_s.lower() == 'h' else 'upper'
-                        act = 'assigned to committee: ' + committee
+                        act = 'assigned to committee: ' + utils.get_committee_name(committee, actor)
                         date = utils.get_date(row[1])
                         bill.add_action(actor, act, date, type='committee:referred')
                         # now lets see if there is a vote
@@ -183,8 +183,9 @@ class AZBillScraper(BillScraper):
                             act = row[5].text_content().strip()
                             a_type = get_action_type(act, 'COMMITTEES:')
                             act = get_verbose_action(act)
-                            bill.add_action(actor, committee + ":" + act, date, 
-                                            type=a_type)
+                            bill.add_action(actor, 
+                                            utils.get_committee_name(committee) + ":" + act,
+                                            date, type=a_type, abbrv=committee)
                             self.scrape_votes(actor, vote_url, bill, date,
                                                 motion='committee: ' + act, 
                                                 committee=committee, 
@@ -197,8 +198,9 @@ class AZBillScraper(BillScraper):
                             act = row[4].text_content().strip()
                             a_type = get_action_type(act, 'COMMITTEES:')
                             act = get_verbose_action(act)
-                            bill.add_action(actor, committee + ":" + act, date, 
-                                            type=a_type)
+                            bill.add_action(actor, 
+                                            utils.get_committee_name(committee) + ":" + act, date, 
+                                            type=a_type, abbrv=committee)
                     continue
                     
                 elif 'CAUCUS' in action:
