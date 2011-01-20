@@ -2,7 +2,7 @@
 import logging
 import argparse
 
-from billy import settings
+from billy.conf import settings
 
 from billy.importers.metadata import import_metadata
 from billy.importers.bills import import_bills
@@ -52,10 +52,7 @@ if __name__ == '__main__':
                            "--legislators, --committees, --votes, --events, "
                            "--versions,  --alldata")
 
-    if args.data_dir:
-        data_dir = args.data_dir
-    else:
-        data_dir = settings.FIFTYSTATES_DATA_DIR
+    data_dir = args.data_dir or settings.BILLY_DATA_DIR
 
     # configure logger
     if args.verbose == 0:

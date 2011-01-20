@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from billy import settings
+from billy.conf import settings
 from billy import db
 
 import re

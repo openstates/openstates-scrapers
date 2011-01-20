@@ -3,7 +3,7 @@ import argparse
 
 import pymongo
 
-from billy import settings
+from billy.conf import settings
 from billy import db
 
 from votesmart import votesmart, VotesmartApiError

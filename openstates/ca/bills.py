@@ -2,7 +2,7 @@ import re
 import os
 import datetime
 
-from billy import settings
+from billy.conf import settings
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote

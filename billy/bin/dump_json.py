@@ -13,7 +13,7 @@ try:
 except:
     import simplejson as json
 
-from billy import settings
+from billy.conf import settings
 from billy import db
 
 import boto
