@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from billy.conf import settings
+from billy.conf import settings, base_arg_parser
 from billy import db
 
 import re
@@ -105,27 +105,21 @@ def update_missing_ids(state_abbrev, sunlight_key):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        add_help=False,
         description=('attempt to match legislators with ids in other'
-                     'relevant APIs'))
+                     'relevant APIs'),
+        parents=[base_arg_parser],
+    )
 
     parser.add_argument('states', metavar='STATE', type=str, nargs='+',
                         help='states to update')
-    parser.add_argument('--votesmart_key', type=str,
-                        help='the Project Vote Smart API key to use')
-    parser.add_argument('--sunlight_key', type=str,
-                        help='the Sunlight API key to use')
 
     args = parser.parse_args()
 
-    if args.votesmart_key:
-        votesmart.apikey = args.votesmart_key
-    if args.sunlight_key:
-        sunlight_key = args.sunlight_key
-    else:
-        sunlight_key = None
+    settings.update(args)
+
+    votesmart.apikey = settings.VOTESMART_API_KEY
 
     for state in args.states:
-        update_missing_ids(state, sunlight_key)
+        update_missing_ids(state, settings.SUNLIGHT_SERVICES_KEY)
 
 

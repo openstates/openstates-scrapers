@@ -6,6 +6,7 @@ import argparse
 from collections import defaultdict
 
 from billy import db
+from billy.conf import settings, base_arg_parser
 from billy.utils import metadata
 
 SUBJECTS = ['Agriculture and Food',
@@ -102,16 +103,17 @@ def categorize_subjects(state, data_dir, process_all):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='apply subject categorization for bills for a given state',
+        parents=[base_arg_parser],
     )
 
     default_dir = os.path.join(os.path.dirname(__file__),
                            '../../manual_data/subjects')
 
     parser.add_argument('state', type=str, help='state to process')
-    parser.add_argument('-d', type=str, help='directory of subject csvs',
-                        dest='data_dir', default=default_dir)
     parser.add_argument('--all', help='update all sessions',
                         action='store_true', default=False)
     args = parser.parse_args()
 
-    categorize_subjects(args.state, args.data_dir, args.all)
+    settings.update(args)
+
+    categorize_subjects(args.state, settings.BILLY_DATA_DIR, args.all)

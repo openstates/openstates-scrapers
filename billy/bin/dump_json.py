@@ -13,7 +13,7 @@ try:
 except:
     import simplejson as json
 
-from billy.conf import settings
+from billy.conf import settings, base_arg_parser
 from billy import db
 
 import boto
@@ -137,7 +137,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=('Dump API contents of a given state to a zipped'
                      ' directory of JSON files, optionally uploading'
-                     ' to S3 when done.'))
+                     ' to S3 when done.'),
+        parents=[base_arg_parser],
+    )
     parser.add_argument('state', help=('the two-letter abbreviation of the'
                                        ' state to import'))
     parser.add_argument('--file', '-f',
@@ -150,6 +152,8 @@ if __name__ == '__main__':
                         help='upload the created archive to S3')
 
     args = parser.parse_args()
+
+    settings.update(args)
 
     if not args.file:
         args.file = args.state + '.zip'
