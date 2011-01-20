@@ -2,7 +2,7 @@
 import logging
 import argparse
 
-from billy import settings
+from billy.conf import base_arg_parser, settings
 
 from billy.importers.metadata import import_metadata
 from billy.importers.bills import import_bills
@@ -14,18 +14,13 @@ from billy.importers.versions import import_versions
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        add_help=False,
-        description=('Import scraped state data into database.'))
+        description='Import scraped state data into database.',
+        parents=[base_arg_parser],
+    )
 
     parser.add_argument('state', type=str,
                         help=('the two-letter abbreviation of the '
                               'state to import'))
-    parser.add_argument('-v', '--verbose', action='count',
-                        dest='verbose', default=False,
-                        help=("be verbose (use multiple times for "
-                              "more debugging information)"))
-    parser.add_argument('--data_dir', '-d', type=str,
-                        help='the base Fifty State data directory')
     parser.add_argument('-r', '--rpm', type=int, default=60,
                         help=('maximum number of documents to download '
                               'per minute'))
@@ -52,10 +47,9 @@ if __name__ == '__main__':
                            "--legislators, --committees, --votes, --events, "
                            "--versions,  --alldata")
 
-    if args.data_dir:
-        data_dir = args.data_dir
-    else:
-        data_dir = settings.FIFTYSTATES_DATA_DIR
+    settings.update(args)
+
+    data_dir = settings.BILLY_DATA_DIR
 
     # configure logger
     if args.verbose == 0:

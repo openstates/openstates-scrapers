@@ -15,7 +15,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from billy import settings
+from billy.conf import settings
 
 import scrapelib
 
@@ -78,7 +78,7 @@ class Scraper(scrapelib.Scraper):
 
         :param metadata: metadata for this state
         :param no_cache: if True, will ignore any cached downloads
-        :param output_dir: the Fifty State data directory to use
+        :param output_dir: the data directory to use
         :param strict_validation: exit immediately if validation fails
         """
 
@@ -86,29 +86,22 @@ class Scraper(scrapelib.Scraper):
         if no_cache:
             kwargs['cache_dir'] = None
         elif 'cache_dir' not in kwargs:
-            kwargs['cache_dir'] = getattr(settings, 'FIFTYSTATES_CACHE_DIR',
-                                          None)
+            kwargs['cache_dir'] = settings.BILLY_CACHE_DIR
 
         if 'error_dir' not in kwargs:
-            kwargs['error_dir'] = getattr(settings, 'FIFTYSTATES_ERROR_DIR',
-                                          None)
+            kwargs['error_dir'] = settings.BILLY_ERROR_DIR
 
         if 'timeout' not in kwargs:
-            kwargs['timeout'] = getattr(settings, 'SCRAPELIB_TIMEOUT',
-                                        600)
+            kwargs['timeout'] = settings.SCRAPELIB_TIMEOUT
 
         if 'requests_per_minute' not in kwargs:
             kwargs['requests_per_minute'] = None
 
         if 'retry_attempts' not in kwargs:
-            kwargs['retry_attempts'] = getattr(settings,
-                                               'SCRAPELIB_RETRY_ATTEMPTS',
-                                               3)
+            kwargs['retry_attempts'] = settings.SCRAPELIB_RETRY_ATTEMPTS
 
         if 'retry_wait_seconds' not in kwargs:
-            kwargs['retry_wait_seconds'] = getattr(settings,
-                                               'SCRAPELIB_RETRY_WAIT_SECONDS',
-                                                10)
+            kwargs['retry_wait_seconds'] = settings.SCRAPELIB_RETRY_WAIT_SECONDS
 
         super(Scraper, self).__init__(**kwargs)
 

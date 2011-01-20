@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from billy import db
+from billy.conf import settings, base_arg_parser
 import csv
 import argparse
 
@@ -69,7 +70,8 @@ def process_file(state, save=False):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='load a CSV of legislator data'
+        description='load a CSV of legislator data',
+        base_arg_parser=[base_arg_parser],
     )
 
     parser.add_argument('states', metavar='STATE', type=str, nargs='+',
@@ -78,6 +80,8 @@ if __name__ == '__main__':
                         help='save changes to database')
 
     args = parser.parse_args()
+
+    settings.update(args)
 
     for state in args.states:
         process_file(state, args.save)

@@ -3,7 +3,7 @@ import csv
 import argparse
 
 from billy import db
-
+from billy.conf import settings, base_arg_parser
 
 def dump_missing_leg_ids(state):
     """
@@ -60,10 +60,14 @@ def dump_missing_leg_ids(state):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="dump a CSV of missing leg_id's")
+        description="dump a CSV of missing leg_id's",
+        parents=[base_arg_parser],
+    )
     parser.add_argument('states', metavar='STATE', type=str, nargs='+',
                         help='states to dump')
     args = parser.parse_args()
+
+    settings.update(args)
 
     for state in args.states:
         dump_missing_leg_ids(state)

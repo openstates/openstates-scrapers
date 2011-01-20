@@ -3,6 +3,7 @@ import csv
 import argparse
 
 from billy import db
+from billy.conf import settings, base_arg_parser
 
 def _extract(d, fields):
     rd = {}
@@ -52,13 +53,16 @@ def check_state(state):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='get a CSV of legislator data'
+        description='get a CSV of legislator data',
+        parents=[base_arg_parser],
     )
 
     parser.add_argument('states', metavar='STATE', type=str, nargs='+',
                         help='states to dump')
 
     args = parser.parse_args()
+
+    settings.update(args)
 
     for state in args.states:
         check_state(state)

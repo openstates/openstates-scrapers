@@ -3,7 +3,7 @@ import argparse
 
 import pymongo
 
-from billy import settings
+from billy.conf import settings, base_arg_parser
 from billy import db
 
 from votesmart import votesmart, VotesmartApiError
@@ -58,18 +58,18 @@ def dump_committees(state):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='get two CSVs of committee data'
+        description='get two CSVs of committee data',
+        parents=[base_arg_parser],
     )
 
     parser.add_argument('states', metavar='STATE', type=str, nargs='+',
                         help='states to dump')
-    parser.add_argument('--votesmart_key', type=str,
-                        help='the Project Vote Smart API key to use')
 
     args = parser.parse_args()
 
-    if args.votesmart_key:
-        votesmart.apikey = args.votesmart_key
+    settings.update(args)
+
+    votesmart.apikey = settings.VOTESMART_API_KEY
 
     for state in args.states:
         dump_committees(state)

@@ -1,6 +1,6 @@
 import os
 
-from billy import settings
+from billy.conf import settings
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.ca import metadata

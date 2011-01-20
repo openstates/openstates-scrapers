@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from votesmart import votesmart, VotesmartApiError
-from billy import settings
+from billy.conf import settings
 import os
 
 from nyss_billyslation.models import senators

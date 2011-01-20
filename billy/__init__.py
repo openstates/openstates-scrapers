@@ -2,7 +2,7 @@ __import__('pkg_resources').declare_namespace(__name__)
 
 import os
 
-from billy import settings
+from billy.conf import settings
 
 class LazyDb(object):
 
@@ -14,13 +14,9 @@ class LazyDb(object):
         if not self._db:
             import pymongo
 
-            host = os.environ.get('OPENSTATES_MONGO_HOST',
-                                  getattr(settings, 'MONGO_HOST', 'localhost'))
-            port = int(os.environ.get('OPENSTATES_MONGO_PORT',
-                                  getattr(settings, 'MONGO_PORT', 27017)))
-            db_name = os.environ.get('OPENSTATES_MONGO_DATABASE',
-                                     getattr(settings, 'MONGO_DATABASE',
-                                             'fiftystates'))
+            host = settings.MONGO_HOST
+            port = settings.MONGO_PORT
+            db_name = settings.MONGO_DATABASE
 
             conn = pymongo.Connection(host, port)
             self._db = conn[db_name]
