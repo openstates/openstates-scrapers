@@ -91,16 +91,18 @@ class AKBillScraper(BillScraper):
                 'font').contents[0].strip()
 
             if bill_id.startswith('HB') or bill_id.startswith('SB'):
-                btype = 'bill'
+                btype = ['bill']
             elif bill_id.startswith('SJR') or bill_id.startswith('HJR'):
-                btype = 'joint resolution'
+                btype = ['joint resolution']
             elif bill_id.startswith('SR') or bill_id.startswith('HR'):
-                btype = 'resolution'
+                btype = ['resolution']
             elif bill_id.startswith('SCR') or bill_id.startswith('HCR'):
-                btype = 'concurrent resolution'
+                btype = ['concurrent resolution']
 
-            bill = Bill(session, chamber, bill_id, bill_name.strip(),
-                        type=btype)
+            if re.match(r'CONST\.? AM:', bill_name):
+                btype.append('constitutional amendment')
+
+            bill = Bill(session, chamber, bill_id, bill_name, type=btype)
 
             # Get the bill info page and strip malformed t
             info_url = "http://www.legis.state.ak.us/basis/%s" % link['href']
