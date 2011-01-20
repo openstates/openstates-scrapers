@@ -16,10 +16,11 @@ except:
 from billy import settings
 from billy import db
 
-import pymongo
 import boto
-from boto.s3.key import Key
+import pymongo
+import scrapelib
 import validictory
+from boto.s3.key import Key
 
 
 class APIValidator(validictory.SchemaValidator):
@@ -30,13 +31,17 @@ class APIValidator(validictory.SchemaValidator):
         return re.match(r'^\d{4}-\d\d-\d\d( \d\d:\d\d:\d\d)?$', val)
 
 
+_base_url = getattr(settings, 'OPENSTATES_API_BASE_URL',
+                    "http://openstates.sunlightlabs.com/api/v1/")
+
 def api_url(path):
-    return ("http://openstates.sunlightlabs.com/api/v1/" +
-            urllib.quote(path) +
-            "/?apikey=" + settings.SUNLIGHT_SERVICES_KEY)
+    return "%s%s/?apikey=%s" % (_base_url, urllib.quote(path),
+                                settings.SUNLIGHT_SERVICES_KEY)
 
 
 def dump_json(state, filename, validate):
+    scraper = scrapelib.Scraper(requests_per_minute=600)
+
     zip = zipfile.ZipFile(filename, 'w')
 
     cwd = os.path.split(__file__)[0]
@@ -51,27 +56,23 @@ def dump_json(state, filename, validate):
         committee_schema = json.load(f)
 
     for bill in db.bills.find({'state': state}):
-        path = "api/%s/%s/%s/bills/%s" % (state, bill['session'],
+        path = "bills/%s/%s/%s/%s" % (state, bill['session'],
                                            bill['chamber'],
                                            bill['bill_id'])
+        url = api_url(path)
 
-        url = api_url("bills/%s/%s/%s/%s" % (state,
-                                             bill['session'],
-                                             bill['chamber'],
-                                             bill['bill_id']))
-
-        response = urllib2.urlopen(url).read()
+        response = scraper.urlopen(url)
         if validate:
             validictory.validate(json.loads(response), bill_schema,
                                  validator_cls=APIValidator)
 
-        zip.writestr(path, urllib2.urlopen(url).read())
+        zip.writestr(path, scraper.urlopen(url))
 
     for legislator in db.legislators.find({'state': state}):
-        path = 'api/legislators/%s' % legislator['_id']
-        url = api_url("legislators/" + legislator['_id'])
+        path = 'legislators/%s' % legislator['_id']
+        url = api_url(path)
 
-        response = urllib2.urlopen(url).read()
+        response = scraper.urlopen(url)
         if validate:
             validictory.validate(json.loads(response), legislator_schema,
                                  validator_cls=APIValidator)
@@ -79,10 +80,10 @@ def dump_json(state, filename, validate):
         zip.writestr(path, response)
 
     for committee in db.committees.find({'state': state}):
-        path = 'api/committees/%s' % committee['_id']
-        url = api_url("committees/" + committee['_id'])
+        path = 'committees/%s' % committee['_id']
+        url = api_url(path)
 
-        response = urllib2.urlopen(url).read()
+        response = scraper.urlopen(url)
         if validate:
             validictory.validate(json.loads(response), committee_schema,
                                  validator_cls=APIValidator)

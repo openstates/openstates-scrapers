@@ -16,11 +16,12 @@ def _extract(d, fields):
 def check_state(state):
     legislators = db.legislators.find({
         'state': state,
+        'active': True,
     })
 
     fields = ('_id', 'full_name', 'first_name', 'middle_name', 'last_name',
               'suffixes', 'nickname', 'state', 'chamber', 'district', 'party',
-              'active', 'votesmart_id', 'transparencydata_id')
+              'active', 'votesmart_id', 'transparencydata_id', 'photo_url')
 
     uniques = {'office': set(), 'votesmart_id':set(),
                'transparencydata_id': set()}
@@ -34,16 +35,16 @@ def check_state(state):
         writer.writerow(_extract(leg, fields))
 
         # check unique office
-        if leg['active']:
-            office = '-'.join((leg['chamber'], leg['district']))
-            if office in uniques['office']:
-                print 'Duplicates for office: %s' % office
-            uniques['office'].add(office)
+        #if leg['active']:
+        #    office = '-'.join((leg['chamber'], leg['district']))
+        #    if office in uniques['office']:
+        #        print 'Duplicates for office: %s' % office
+        #    uniques['office'].add(office)
 
         # check other uniques
         for field in uniques.iterkeys():
-            if field == 'office':
-                pass
+            #if field == 'office':
+            #    pass
             if leg.get(field, None):
                 if leg[field] in uniques[field]:
                     print 'duplicate for %s=%s' % (field, leg[field])

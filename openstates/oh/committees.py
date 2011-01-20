@@ -33,7 +33,10 @@ class OHCommitteeScraper(CommitteeScraper):
 
                 comm_name = page.xpath(
                     'string(//table/tr[@class="committeeHeader"]/td)')
-                comm_name = comm_name.replace("/", " ")
+                comm_name = comm_name.replace("/", " ").strip()
+
+                if not comm_name:
+                    continue
 
                 if comm_id < 92:
                     chamber = "joint"
@@ -83,4 +86,5 @@ class OHCommitteeScraper(CommitteeScraper):
                     if full_name:
                         committee.add_member(full_name)
 
-                self.save_committee(committee)
+                if committee['members']:
+                    self.save_committee(committee)

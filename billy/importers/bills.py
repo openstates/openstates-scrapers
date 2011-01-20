@@ -116,8 +116,6 @@ def import_bills(state, data_dir):
         data['alternate_titles'] = list(alt_titles)
 
         if not bill:
-            data['created_at'] = datetime.datetime.utcnow()
-            data['updated_at'] = data['created_at']
             data['_keywords'] = list(bill_keywords(data))
             insert_with_id(data)
         else:

@@ -11,7 +11,7 @@ class AKLegislatorScraper(LegislatorScraper):
     state = 'ak'
 
     def scrape(self, chamber, term):
-        if term != '26':
+        if term != '27':
             raise NoDataForPeriod(term)
 
         if chamber == 'upper':

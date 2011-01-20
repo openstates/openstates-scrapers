@@ -47,7 +47,8 @@ class WIBillScraper(BillScraper):
         if 'Regular' in session:
             self.scrape_regular(chamber, session)
         else:
-            raise NoDataForPeriod(session)
+            pass
+            #raise NoDataForPeriod(session)
 
         """
         TODO: scrape special sessions
@@ -193,8 +194,9 @@ class WIBillScraper(BillScraper):
             if r.find('cosponsored by') != -1:
                 sponsor_type = 'cosponsor'
                 r = re.split(r'cosponsored by \w+', r)[1]
-            bill.add_sponsor(sponsor_type, r.strip(),
-                             chamber=leg_chamber[sponsor_type])
+            if r.strip():
+                bill.add_sponsor(sponsor_type, r.strip(),
+                                 chamber=leg_chamber[sponsor_type])
 
     def parse_action(self, bill, line, actor, date):
         line = lxml.html.fromstring(line)

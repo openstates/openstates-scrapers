@@ -36,6 +36,7 @@ Saint Paul, Minnesota 55155'''
                         party = 'Republican'
                     elif party == '(DFL)':
                         party = 'Democratic-Farmer-Labor'
+                    leg_url = 'http://www.house.leg.state.mn.us/members/' + row.xpath('td[2]/p/a/@href')[0]
                     addr = tds[2] + office_addr
                     phone = tds[3]
                     email = tds[4]
@@ -43,10 +44,19 @@ Saint Paul, Minnesota 55155'''
                 leg = Legislator(term, 'lower', district, name,
                                  party=party, office_address=addr,
                                  office_phone=phone, email=email)
+
+                # add photo_url
+                with self.urlopen(leg_url) as leg_html:
+                    leg_doc = lxml.html.fromstring(leg_html)
+                    img_src = leg_doc.xpath('//img[contains(@src, "memberimg")]/@src')
+                    if img_src:
+                        leg['photo_url'] = img_src[0]
+
                 leg.add_source(url)
                 self.save_legislator(leg)
 
     def scrape_senate(self, term):
+        BASE_URL = 'http://www.senate.leg.state.mn.us/'
         url = 'http://www.senate.leg.state.mn.us/members/member_list.php'
 
         with self.urlopen(url) as html:
@@ -59,6 +69,7 @@ Saint Paul, Minnesota 55155'''
                     party = tds[1].text_content()
                     name_a = tds[2].xpath('a')[0]
                     name = name_a.text.strip()
+                    leg_url = BASE_URL + name_a.get('href')
                     addr, phone = tds[3].text_content().split(u'\xa0\xa0')
                     email = tds[4].text_content()
 
@@ -68,6 +79,12 @@ Saint Paul, Minnesota 55155'''
 
                     if '@' in email:
                         leg['email'] = email
+
+                    with self.urlopen(leg_url) as leg_html:
+                        leg_doc = lxml.html.fromstring(leg_html)
+                        img_src = leg_doc.xpath('//img[@height=164]/@src')
+                        if img_src:
+                            leg['photo_url'] = BASE_URL + img_src[0]
 
                     leg.add_source(url)
 

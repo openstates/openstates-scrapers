@@ -9,7 +9,7 @@ errors/*
 *.pid
 *.swp
 fabfile.py
-fiftystates.egg-info
+*.egg-info
 dist/
 MANIFEST
 *.class

@@ -7,6 +7,7 @@
     "first_name": {"type": "string", "blank": true},
     "middle_name": {"type": "string", "blank": true},
     "last_name": {"type": "string", "blank": true},
+    "photo_url": {"type": "string", "blank": true, "optional": true},
     "suffixes": {"type": "string", "optional": "true", "blank": true},
     "roles": {"type": "array", "items": {"type": "object", "properties": {
         "chamber": {"type": "string", "enum": ["upper", "lower", "joint"],

@@ -6,9 +6,9 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from openstates.pa import metadata
 from openstates.pa.utils import (bill_abbr, start_year,
-                                         parse_action_date,
-                                         bill_list_url, history_url, info_url,
-                                         vote_url)
+                                 parse_action_date,
+                                 bill_list_url, history_url, info_url,
+                                 vote_url)
 
 import lxml.html
 
@@ -37,10 +37,16 @@ class PABillScraper(BillScraper):
 
     def parse_bill(self, chamber, session, special, link):
         bill_num = link.text.strip()
-        bill_type = re.search('type=(B|R|)', link.attrib['href']).group(1)
-        bill_id = "%s%s %s" % (bill_abbr(chamber), bill_type, bill_num)
+        type_abbr = re.search('type=(B|R|)', link.attrib['href']).group(1)
 
-        url = info_url(chamber, session, special, bill_type, bill_num)
+        if type_abbr == 'B':
+            btype = ['bill']
+        elif type_abbr == 'R':
+            btype = ['resolution']
+
+        bill_id = "%s%s %s" % (bill_abbr(chamber), type_abbr, bill_num)
+
+        url = info_url(chamber, session, special, type_abbr, bill_num)
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
@@ -49,16 +55,16 @@ class PABillScraper(BillScraper):
                 "//td[text() = 'Short Title:']/following-sibling::td")[0]
             title = title.text.strip()
 
-            bill = Bill(session, chamber, bill_id, title)
+            bill = Bill(session, chamber, bill_id, title, type=btype)
             bill.add_source(url)
 
             self.parse_bill_versions(bill, page)
 
             self.parse_history(bill, history_url(chamber, session, special,
-                                                 bill_type, bill_num))
+                                                 type_abbr, bill_num))
 
             self.parse_votes(bill, vote_url(chamber, session, special,
-                                            bill_type, bill_num))
+                                            type_abbr, bill_num))
 
             self.save_bill(bill)
 
@@ -88,7 +94,9 @@ class PABillScraper(BillScraper):
             else:
                 sponsor_type = 'cosponsor'
 
-            bill.add_sponsor(sponsor_type, link.text.strip())
+            name = link.text.strip().title()
+
+            bill.add_sponsor(sponsor_type, name)
 
     def parse_actions(self, bill, page):
         chamber = bill['chamber']
@@ -129,6 +137,8 @@ class PABillScraper(BillScraper):
             elif action.startswith('Presented to the Governor'):
                 type.append('governor:received')
             elif action == 'Final passage':
+                type.append('bill:passed')
+            elif action == 'Adopted' and bill['type'] == ['resolution']:
                 type.append('bill:passed')
 
             if re.search('concurred in (House|Senate) amendments', action):
@@ -189,6 +199,9 @@ class PABillScraper(BillScraper):
                 type = 'amendment'
             else:
                 type = 'other'
+
+            if not motion:
+                motion = 'Unknown'
 
             yeas = int(page.xpath("//div[text() = 'YEAS']")[0].getnext().text)
             nays = int(page.xpath("//div[text() = 'NAYS']")[0].getnext().text)

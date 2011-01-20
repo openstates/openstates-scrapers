@@ -21,12 +21,15 @@ def test_insert_with_id():
 
     id1 = utils.insert_with_id(obj1)
     assert re.match(id_re, id1)
-    assert db.legislators.find_one({'_id': id1})
+    found = db.legislators.find_one({'_id': id1})
+    assert found['_all_ids'] == [id1]
 
     id2 = utils.insert_with_id(obj2)
     assert re.match(id_re, id2)
     assert id2 != id1
-    assert db.legislators.find_one({'_id': id2})
+    found = db.legislators.find_one({'_id': id2})
+    assert found
+    assert found['_all_ids'] == [id2]
 
 
 @with_setup(db.bills.drop)

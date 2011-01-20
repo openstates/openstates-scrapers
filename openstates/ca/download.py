@@ -6,8 +6,8 @@ import datetime
 import tempfile
 import scrapelib
 
-from billy import settings
-from billy.backend import db
+from billy import db, settings
+
 
 def get_latest():
     """

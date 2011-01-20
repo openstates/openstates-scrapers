@@ -43,8 +43,9 @@ def action_type(action):
     action = action.lower()
     atypes = []
 
-    if re.match('^read (the )?first time', action):
+    if re.match('^read (the )?(first|1st) time', action):
         atypes.append('bill:introduced')
+        atypes.append('bill:reading:1')
 
     if 'proposal of amendment concurred in' in action:
         atypes.append('amendment:passed')
@@ -68,6 +69,9 @@ def action_type(action):
         atypes.append('committee:passed')
 
     if re.match(r'(re)?committed to committee', action):
+        atypes.append('committee:referred')
+
+    if 'referred to' in action:
         atypes.append('committee:referred')
 
     if 'motion to amend bill agreed to' in action:

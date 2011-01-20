@@ -9,8 +9,12 @@ class VALegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, term):
         abbr = {'upper': 'S', 'lower': 'H'}
 
-        # TODO: figure out the best way to get all legislators for a term
-        self.scrape_for_session(chamber, '2010', term)
+        sessions = []
+        for t in self.metadata['terms']:
+            if t['name'] == term:
+                session = t['sessions'][-1]
+
+        self.scrape_for_session(chamber, session, term)
 
     def scrape_for_session(self, chamber, session, term):
         site_id = self.metadata['session_details'][session]['site_id']

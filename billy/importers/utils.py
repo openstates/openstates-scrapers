@@ -38,6 +38,10 @@ def insert_with_id(obj):
     if hasattr(obj, '_id'):
         raise ValueError("object already has '_id' field")
 
+    # add created_at/updated_at on insert
+    obj['created_at'] = datetime.datetime.utcnow()
+    obj['updated_at'] = obj['created_at']
+
     if obj['_type'] == 'person' or obj['_type'] == 'legislator':
         collection = db.legislators
         id_type = 'L'
@@ -51,19 +55,17 @@ def insert_with_id(obj):
     id_reg = re.compile('^%s%s' % (obj['state'].upper(), id_type))
 
     # Find the next available _id and insert
+    id_prefix = '%s%s' % (obj['state'].upper(), id_type)
+    cursor = collection.find({'_id': id_reg}).sort('_id', -1).limit(1)
+
+    try:
+        new_id = int(cursor.next()['_id'][3:]) + 1
+    except StopIteration:
+        new_id = 1
+
     while True:
-        cursor = collection.find({'_id': id_reg}).sort('_id', -1).limit(1)
-
-        try:
-            prev_id = cursor.next()['_id']
-            obj['_id'] = "%s%06d" % (prev_id[0:3], int(prev_id[3:]) + 1)
-        except StopIteration:
-            obj['_id'] = "%s%s000001" % (obj['state'].upper(), id_type)
-
-        all_ids = obj.get('_all_ids', [])
-        if obj['_id'] not in all_ids:
-            all_ids.append(obj['_id'])
-        obj['_all_ids'] = all_ids
+        obj['_id'] = '%s%06d' % (id_prefix, new_id)
+        obj['_all_ids'] = [obj['_id']]
 
         if obj['_type'] in ['person', 'legislator']:
             obj['leg_id'] = obj['_id']
@@ -71,7 +73,7 @@ def insert_with_id(obj):
         try:
             return collection.insert(obj, safe=True)
         except pymongo.errors.DuplicateKeyError:
-            continue
+            new_id += 1
 
 
 def timestamp_to_dt(timestamp):

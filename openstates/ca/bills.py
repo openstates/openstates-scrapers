@@ -187,8 +187,11 @@ class CABillScraper(BillScraper):
                     introduced = True
                     type.append('bill:introduced')
 
-                if 'Read first time.' in act_str and not introduced:
-                    type.append('bill:introduced')
+                if 'Read first time.' in act_str:
+                    if not introduced:
+                        type.append('bill:introduced')
+                        introduced = True
+                    type.append('bill:reading:1')
 
                 if 'To Com' in act_str or 'referred to' in act_str.lower():
                     type.append('committee:referred')
@@ -207,6 +210,9 @@ class CABillScraper(BillScraper):
 
                 if 'To Governor' in act_str:
                     type.append('governor:received')
+
+                if 'Read second time' in act_str:
+                    type.append('bill:reading:2')
 
                 if not type:
                     type = ['other']

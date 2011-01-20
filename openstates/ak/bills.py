@@ -13,6 +13,48 @@ class AKBillScraper(BillScraper):
     soup_parser = html5lib.HTMLParser(
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
+    _fiscal_dept_mapping = {
+        'ADM': 'ADMINISTRATION',
+        'CED': 'COMMERCE, COMMUNITY & ECONOMIC DEVELOPMENT',
+        'COR': 'CORRECTIONS',
+        'CRT': 'COURT SYSTEM',
+        'EED': 'EDUCATION AND EARLY DEVELOPMENT',
+        'DEC': 'ENVIRONMENTAL CONSERVATION ',
+        'DFG': 'FISH AND GAME',
+        'GOV': 'GOVERNOR\'S OFFICE',
+        'DHS': 'HEALTH AND SOCIAL SERVICES',
+        'LWF': 'LABOR AND WORKFORCE DEVELOPMENT',
+        'LAW': 'LAW',
+        'LEG': 'LEGISLATIVE AGENCY',
+        'MVA': 'MILITARY AND VETERANS\' AFFAIRS',
+        'DNR': 'NATURAL RESOURCES',
+        'DPS': 'PUBLIC SAFETY',
+        'REV': 'REVENUE',
+        'DOT': 'TRANSPORTATION AND PUBLIC FACILITIES',
+        'UA': 'UNIVERSITY OF ALASKA',
+        'ALL': 'ALL DEPARTMENTS'}
+
+    _comm_vote_type = {
+        'DP': 'DO PASS',
+        'DNP': 'DO NOT PASS',
+        'NR': 'NO RECOMMENDATION',
+        'AM': 'AMEND'}
+
+    _comm_mapping = {
+        'CRA': 'COMMUNITY & REGIONAL AFFAIRS',
+        'EDC': 'EDUCATION',
+        'FIN': 'FINANCE',
+        'HSS': 'HEALTH & SOCIAL SERVICES',
+        'JUD': 'JUDICIARY',
+        'L&C': 'LABOR & COMMERCE',
+        'RES': 'RESOURCES',
+        'RLS': 'RULES',
+        'STA': 'STATE AFFAIRS',
+        'TRA': 'TRANSPORTATION'}
+
+    _comm_re = re.compile(r'^(%s)\s' % '|'.join(_comm_mapping.keys()))
+    _current_comm = None
+
     def scrape(self, chamber, session):
         for term in self.metadata['terms']:
             if term['sessions'][0] == session:
@@ -47,7 +89,20 @@ class AKBillScraper(BillScraper):
             bill_id = link.contents[0].replace(' ', '')
             bill_name = link.parent.parent.findNext('td').find(
                 'font').contents[0].strip()
-            bill = Bill(session, chamber, bill_id, bill_name.strip())
+
+            if bill_id.startswith('HB') or bill_id.startswith('SB'):
+                btype = ['bill']
+            elif bill_id.startswith('SJR') or bill_id.startswith('HJR'):
+                btype = ['joint resolution']
+            elif bill_id.startswith('SR') or bill_id.startswith('HR'):
+                btype = ['resolution']
+            elif bill_id.startswith('SCR') or bill_id.startswith('HCR'):
+                btype = ['concurrent resolution']
+
+            if re.match(r'CONST\.? AM:', bill_name):
+                btype.append('constitutional amendment')
+
+            bill = Bill(session, chamber, bill_id, bill_name, type=btype)
 
             # Get the bill info page and strip malformed t
             info_url = "http://www.legis.state.ak.us/basis/%s" % link['href']
@@ -62,15 +117,23 @@ class AKBillScraper(BillScraper):
                 spons_str)
             if sponsors_match:
                 sponsors = sponsors_match.group(2).split(',')
-                bill.add_sponsor('primary', sponsors[0].strip())
+                sponsor = sponsors[0].strip()
+
+                if sponsor:
+                    bill.add_sponsor('primary', sponsors[0])
 
                 for sponsor in sponsors[1:]:
-                    bill.add_sponsor('cosponsor', sponsor.strip())
+                    sponsor = sponsor.strip()
+                    if sponsor:
+                        bill.add_sponsor('cosponsor', sponsor)
             else:
                 # Committee sponsorship
-                bill.add_sponsor('committee', spons_str.strip())
+                spons_str = spons_str.strip()
+                if spons_str:
+                    bill.add_sponsor('committee', spons_str)
 
             # Get actions
+            self._current_comm = None
             act_rows = info_page.findAll('table', 'myth')[1].findAll('tr')[1:]
             for row in act_rows:
                 cols = row.findAll('td')
@@ -95,7 +158,9 @@ class AKBillScraper(BillScraper):
                         self.log("Failed parsing vote at %s" %
                                  cols[1].a['href'])
 
-                bill.add_action(act_chamber, action, act_date)
+                action, atype = self.clean_action(action)
+
+                bill.add_action(act_chamber, action, act_date, type=atype)
 
             # Get subjects
             bill['subjects'] = []
@@ -153,7 +218,62 @@ class AKBillScraper(BillScraper):
                 vote_list, vote_type = vote_list[9:], vote.other
             if vote_type:
                 for name in vote_list.split(','):
-                    vote_type(name.strip())
+                    name = name.strip()
+                    if name:
+                        vote_type(name)
 
         vote.add_source(url)
         return vote
+
+    def clean_action(self, action):
+        # Clean up some acronyms
+        match = re.match(r'^FN(\d+): (ZERO|INDETERMINATE)?\((\w+)\)', action)
+        if match:
+            num = match.group(1)
+
+            if match.group(2) == 'ZERO':
+                impact = 'NO FISCAL IMPACT'
+            elif match.group(2) == 'INDETERMINATE':
+                impact = 'INDETERMINATE FISCAL IMPACT'
+            else:
+                impact = ''
+
+            dept = match.group(3)
+            dept = self._fiscal_dept_mapping.get(dept, dept)
+
+            action = "FISCAL NOTE %s: %s (%s)" % (num, impact, dept)
+
+        match = self._comm_re.match(action)
+        if match:
+            self._current_comm = match.group(1)
+
+        match = re.match(r'^(DP|DNP|NR|AM):\s(.*)$', action)
+        if match:
+            vtype = self._comm_vote_type[match.group(1)]
+
+            action = "%s %s: %s" % (self._current_comm, vtype, match.group(2))
+
+        action = re.sub(r'\s+', ' ', action)
+
+        atype = []
+        if 'READ THE FIRST TIME' in action:
+            atype.append('bill:introduced')
+            atype.append('bill:reading:1')
+        if 'READ THE SECOND TIME' in action:
+            atype.append('bill:reading:2')
+        if 'READ THE THIRD TIME' in action:
+            atype.append('bill:reading:3')
+        if 'TRANSMITTED TO GOVERNOR' in action:
+            atype.append('governor:received')
+        if 'SIGNED INTO LAW' in action:
+            atype.append('governor:signed')
+        if 'DO PASS' in action:
+            atype.append('committee:passed')
+        if 'DO NOT PASS' in action:
+            atype.append('committee:failed')
+        if action.startswith('PASSED'):
+            atype.append('bill:passed')
+        if 'REFERRED TO' in action:
+            atype.append('committee:referred')
+
+        return action, atype

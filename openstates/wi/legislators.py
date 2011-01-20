@@ -29,6 +29,11 @@ class WILegislatorScraper(LegislatorScraper):
                     legpart = re.findall(r'([\w\-\,\s\.]+)\s+\(([\w])\)', list(row)[0].text_content())
                     if legpart:
                         full_name, party = legpart[0]
+
+                        # skip if the legislator is vacant (occurred in 2011 session)
+                        if full_name == 'Vacant':
+                            continue
+
                         party = PARTY_DICT[party]
 
                         district = str(int(list(row)[2].text_content()))
@@ -42,18 +47,25 @@ class WILegislatorScraper(LegislatorScraper):
 
     def add_committees(self, legislator, rep_url, term, chamber):
         url = rep_url + '&display=committee'
-        body = unicode(self.urlopen(url), 'latin-1')
-        cmts = lxml.html.fromstring(body).cssselect("#ctl00_C_lblCommInfo a")
-        for c in cmts:
-            c = c.text_content().split('(')[0].strip()
-            # skip subcommittees -- they are broken
-            if 'Subcommittee' in c:
-                continue
+        with self.urlopen(url) as body:
+            body = unicode(body, 'latin-1')
+            doc = lxml.html.fromstring(body)
 
-            if 'Joint' in c or 'Special' in c:
-                c_chamber = 'joint'
-            else:
-                c_chamber = chamber
-            legislator.add_role('committee member', term, committee=c,
-                                chamber=c_chamber)
-        return legislator
+            img = doc.xpath('//img[@id="ctl00_C_picHere"]/@src')
+            if img:
+                legislator['photo_url'] = img[0]
+
+            cmts = doc.cssselect("#ctl00_C_lblCommInfo a")
+            for c in cmts:
+                c = c.text_content().split('(')[0].strip()
+                # skip subcommittees -- they are broken
+                if 'Subcommittee' in c:
+                    continue
+
+                if 'Joint' in c or 'Special' in c:
+                    c_chamber = 'joint'
+                else:
+                    c_chamber = chamber
+                legislator.add_role('committee member', term, committee=c,
+                                    chamber=c_chamber)
+            return legislator
