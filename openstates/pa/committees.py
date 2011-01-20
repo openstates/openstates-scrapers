@@ -54,6 +54,8 @@ class PACommitteeScraper(CommitteeScraper):
                                                 subcommittee_name)]
                     except KeyError:
                         committee = Committee(chamber, committee_name)
+                        committee.add_source(url)
+
                         if subcommittee_name:
                             committee['subcommittee'] = subcommittee_name
 
