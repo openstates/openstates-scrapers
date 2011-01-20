@@ -138,6 +138,8 @@ class PABillScraper(BillScraper):
                 type.append('governor:received')
             elif action == 'Final passage':
                 type.append('bill:passed')
+            elif action == 'Adopted' and bill['type'] == ['resolution']:
+                type.append('bill:passed')
 
             if re.search('concurred in (House|Senate) amendments', action):
                 if re.search(', as amended by the (House|Senate)', action):
