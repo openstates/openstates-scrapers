@@ -6,6 +6,7 @@ html5lib
 lxml>=2.2
 feedparser>=4.1
 pytz>=2010l
+argparse==1.1
 
 # Required for Michigan
 #PdfMiner>=20091219

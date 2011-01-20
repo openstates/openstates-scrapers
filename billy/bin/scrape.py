@@ -4,8 +4,9 @@ import glob
 import logging
 import os
 import sys
-from optparse import make_option, OptionParser
+import argparse
 
+from billy.conf import settings, base_arg_parser
 from billy.scrape import (NoDataForPeriod, JSONDateEncoder,
                                 _scraper_registry)
 from billy.scrape.validator import DatetimeValidator
@@ -64,8 +65,8 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
             'no_cache': options.no_cache,
             'requests_per_minute': options.rpm,
             'strict_validation': options.strict,
-            'retry_attempts': options.retries,
-            'retry_wait_seconds': options.retry_wait,
+            'retry_attempts': settings.SCRAPELIB_RETRY_ATTEMPTS,
+            'retry_wait_seconds': settings.SCRAPELIB_RETRY_WAIT_SECONDS,
             # TODO: cache_dir, error_dir?
         }
     scraper = ScraperClass(metadata, **opts)
@@ -110,71 +111,59 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
 
 def main():
 
-    option_list = (
-        make_option('-y', '--year', action='append', dest='years',
-                    help='deprecated'),
-
-        make_option('-s', '--session', action='append', dest='sessions',
-                    help='session(s) to scrape'),
-        make_option('-t', '--term', action='append', dest='terms',
-                    help='term(s) to scrape'),
-
-        make_option('--upper', action='store_true', dest='upper',
-                    default=False, help='scrape upper chamber'),
-        make_option('--lower', action='store_true', dest='lower',
-                    default=False, help='scrape lower chamber'),
-
-        make_option('--bills', action='store_true', dest='bills',
-                    default=False, help="scrape bill data"),
-        make_option('--legislators', action='store_true', dest='legislators',
-                    default=False, help="scrape legislator data"),
-        make_option('--committees', action='store_true', dest='committees',
-                    default=False, help="scrape committee data"),
-        make_option('--votes', action='store_true', dest='votes',
-                    default=False, help="scrape vote data"),
-        make_option('--events', action='store_true', dest='events',
-                     default=False, help='scrape event data'),
-        make_option('--alldata', action='store_true', dest='alldata',
-                    default=False, help="scrape all available types of data"),
-
-        make_option('-v', '--verbose', action='count', dest='verbose',
-                    default=False,
-                    help="be verbose (use multiple times for more"
-                        "debugging information)"),
-        make_option('--strict', action='store_true', dest='strict',
-                    default=False, help="fail immediately when encountering a"
-                        "validation warning"),
-        make_option('-d', '--output_dir', action='store', dest='output_dir',
-                    help='output directory'),
-        make_option('-n', '--no_cache', action='store_true', dest='no_cache',
-                    help="don't use web page cache"),
-        make_option('-r', '--rpm', action='store', type="int", dest='rpm',
-                    default=60),
-        make_option('--retries', action='store', type="int", dest='retries',
-                    default=3),
-        make_option('--retry_wait', action='store', type="int",
-                    dest='retry_wait', default=10),
+    parser = argparse.ArgumentParser(
+        description='Scrape data for state, saving data to disk.',
+        parents=[base_arg_parser],
     )
 
-    parser = OptionParser(option_list=option_list)
-    options, spares = parser.parse_args()
+    parser.add_argument('state', type=str,
+                        help='state scraper module (eg. nc)')
+    parser.add_argument('-s', '--session', action='append', dest='sessions',
+                        help='session(s) to scrape')
+    parser.add_argument('-t', '--term', action='append', dest='terms',
+                        help='term(s) to scrape')
+    parser.add_argument('--upper', action='store_true', dest='upper',
+                        default=False, help='scrape upper chamber')
+    parser.add_argument('--lower', action='store_true', dest='lower',
+                        default=False, help='scrape lower chamber')
+    parser.add_argument('--bills', action='store_true', dest='bills',
+                        default=False, help="scrape bill data")
+    parser.add_argument('--legislators', action='store_true',
+                        dest='legislators', default=False,
+                        help="scrape legislator data")
+    parser.add_argument('--committees', action='store_true', dest='committees',
+                        default=False, help="scrape committee data")
+    parser.add_argument('--votes', action='store_true', dest='votes',
+                        default=False, help="scrape vote data")
+    parser.add_argument('--events', action='store_true', dest='events',
+                        default=False, help='scrape event data')
+    parser.add_argument('--alldata', action='store_true', dest='alldata',
+                        default=False,
+                        help="scrape all available types of data")
+    parser.add_argument('--strict', action='store_true', dest='strict',
+                        default=False, help="fail immediately when"
+                        "encountering validation warning")
+    parser.add_argument('-n', '--no_cache', action='store_true',
+                        dest='no_cache', help="don't use web page cache")
+    parser.add_argument('-r', '--rpm', action='store', type=int, dest='rpm',
+                        default=60),
 
-    # loading from module
-    if len(spares) != 1:
-        raise RunException("Must pass a path to a metadata module (eg. nc)")
-    mod_name = spares[0]
+    args = parser.parse_args()
+
+    settings.update(args)
 
     # set up search path
     sys.path.insert(0, os.path.join(os.path.dirname(__file__),
                                     '../../openstates'))
 
-    metadata = __import__(mod_name, fromlist=['metadata']).metadata
+    # get metadata
+    metadata = __import__(args.state, fromlist=['metadata']).metadata
     state = metadata['abbreviation']
 
     # configure logger
-    if options.verbose == 0:
+    if args.verbose == 0:
         verbosity = logging.WARNING
-    elif options.verbose == 1:
+    elif args.verbose == 1:
         verbosity = logging.INFO
     else:
         verbosity = logging.DEBUG
@@ -185,10 +174,10 @@ def main():
                         datefmt="%H:%M:%S",
                        )
 
-    # make output dir if it doesn't exist
-    options.output_dir = options.output_dir or os.path.join('data', state)
+    # make output dir
+    args.output_dir = os.path.join(settings.BILLY_DATA_DIR, state)
     try:
-        os.makedirs(options.output_dir)
+        os.makedirs(args.output_dir)
     except OSError, e:
         if e.errno != 17:
             raise e
@@ -205,51 +194,47 @@ def main():
         logging.getLogger('billy').warning('metadata validation error: '
                                                  + str(e))
 
-    with open(os.path.join(options.output_dir, 'state_metadata.json'), 'w') as f:
+    with open(os.path.join(args.output_dir, 'state_metadata.json'), 'w') as f:
         json.dump(metadata, f, cls=JSONDateEncoder)
 
     # determine time period to run for
-    if options.terms:
+    if args.terms:
         for term in metadata['terms']:
-            if term in options.terms:
-                options.sessions.extend(term['sessions'])
-    options.sessions = set(options.sessions or [])
-
-    if options.years:
-        raise RunException('use of --years is no longer supported')
+            if term in args.terms:
+                args.sessions.extend(term['sessions'])
+    args.sessions = set(args.sessions or [])
 
     # determine chambers
-    chambers = []
-    if options.upper:
-        chambers.append('upper')
-    if options.lower:
-        chambers.append('lower')
-    if not chambers:
-        chambers = ['upper', 'lower']
-    options.chambers = chambers
+    args.chambers = []
+    if args.upper:
+        args.chambers.append('upper')
+    if args.lower:
+        args.chambers.append('lower')
+    if not args.chambers:
+        args.chambers = ['upper', 'lower']
 
-    if not (options.bills or options.legislators or options.votes or
-            options.committees or options.events or options.alldata):
+    if not (args.bills or args.legislators or args.votes or
+            args.committees or args.events or args.alldata):
         raise RunException("Must specify at least one of --bills, "
                            "--legislators, --committees, --votes, --events, "
                            "--alldata")
 
-    if options.alldata:
-        options.bills = True
-        options.legislators = True
-        options.votes = True
-        options.committees = True
+    if args.alldata:
+        args.bills = True
+        args.legislators = True
+        args.votes = True
+        args.committees = True
 
-    if options.bills:
-        _run_scraper(mod_name, state, 'bills', options, metadata)
-    if options.legislators:
-        _run_scraper(mod_name, state, 'legislators', options, metadata)
-    if options.committees:
-        _run_scraper(mod_name, state, 'committees', options, metadata)
-    if options.votes:
-        _run_scraper(mod_name, state, 'votes', options, metadata)
-    if options.events:
-        _run_scraper(mod_name, state, 'events', options, metadata)
+    if args.bills:
+        _run_scraper(args.state, state, 'bills', args, metadata)
+    if args.legislators:
+        _run_scraper(args.state, state, 'legislators', args, metadata)
+    if args.committees:
+        _run_scraper(args.state, state, 'committees', args, metadata)
+    if args.votes:
+        _run_scraper(args.state, state, 'votes', args, metadata)
+    if args.events:
+        _run_scraper(args.state, state, 'events', args, metadata)
 
 
 if __name__ == '__main__':
