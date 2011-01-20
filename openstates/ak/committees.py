@@ -21,9 +21,9 @@ class AKCommitteeScraper(CommitteeScraper):
             chamber_abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
             for link in page.xpath("//a[contains(@href, 'comm=')]"):
-                name = link.text.strip()
+                name = link.text.strip().title()
 
-                if name.startswith('CONFERENCE COMMITTEE'):
+                if name.startswith('Conference Committee'):
                     continue
 
                 url = link.attrib['href']
