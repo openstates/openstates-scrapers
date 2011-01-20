@@ -6,9 +6,9 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from openstates.pa import metadata
 from openstates.pa.utils import (bill_abbr, start_year,
-                                         parse_action_date,
-                                         bill_list_url, history_url, info_url,
-                                         vote_url)
+                                 parse_action_date,
+                                 bill_list_url, history_url, info_url,
+                                 vote_url)
 
 import lxml.html
 
@@ -189,6 +189,9 @@ class PABillScraper(BillScraper):
                 type = 'amendment'
             else:
                 type = 'other'
+
+            if not motion:
+                motion = 'Unknown'
 
             yeas = int(page.xpath("//div[text() = 'YEAS']")[0].getnext().text)
             nays = int(page.xpath("//div[text() = 'NAYS']")[0].getnext().text)
