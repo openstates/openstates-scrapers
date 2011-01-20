@@ -37,10 +37,16 @@ class PABillScraper(BillScraper):
 
     def parse_bill(self, chamber, session, special, link):
         bill_num = link.text.strip()
-        bill_type = re.search('type=(B|R|)', link.attrib['href']).group(1)
-        bill_id = "%s%s %s" % (bill_abbr(chamber), bill_type, bill_num)
+        type_abbr = re.search('type=(B|R|)', link.attrib['href']).group(1)
 
-        url = info_url(chamber, session, special, bill_type, bill_num)
+        if type_abbr == 'B':
+            btype = ['bill']
+        elif type_abbr == 'R':
+            btype = ['resolution']
+
+        bill_id = "%s%s %s" % (bill_abbr(chamber), type_abbr, bill_num)
+
+        url = info_url(chamber, session, special, type_abbr, bill_num)
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
@@ -49,16 +55,16 @@ class PABillScraper(BillScraper):
                 "//td[text() = 'Short Title:']/following-sibling::td")[0]
             title = title.text.strip()
 
-            bill = Bill(session, chamber, bill_id, title)
+            bill = Bill(session, chamber, bill_id, title, type=btype)
             bill.add_source(url)
 
             self.parse_bill_versions(bill, page)
 
             self.parse_history(bill, history_url(chamber, session, special,
-                                                 bill_type, bill_num))
+                                                 type_abbr, bill_num))
 
             self.parse_votes(bill, vote_url(chamber, session, special,
-                                            bill_type, bill_num))
+                                            type_abbr, bill_num))
 
             self.save_bill(bill)
 
@@ -88,7 +94,9 @@ class PABillScraper(BillScraper):
             else:
                 sponsor_type = 'cosponsor'
 
-            bill.add_sponsor(sponsor_type, link.text.strip())
+            name = link.text.strip().title()
+
+            bill.add_sponsor(sponsor_type, name)
 
     def parse_actions(self, bill, page):
         chamber = bill['chamber']
