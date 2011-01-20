@@ -89,7 +89,18 @@ class AKBillScraper(BillScraper):
             bill_id = link.contents[0].replace(' ', '')
             bill_name = link.parent.parent.findNext('td').find(
                 'font').contents[0].strip()
-            bill = Bill(session, chamber, bill_id, bill_name.strip())
+
+            if bill_id.startswith('HB') or bill_id.startswith('SB'):
+                btype = 'bill'
+            elif bill_id.startswith('SJR') or bill_id.startswith('HJR'):
+                btype = 'joint resolution'
+            elif bill_id.startswith('SR') or bill_id.startswith('HR'):
+                btype = 'resolution'
+            elif bill_id.startswith('SCR') or bill_id.startswith('HCR'):
+                btype = 'concurrent resolution'
+
+            bill = Bill(session, chamber, bill_id, bill_name.strip(),
+                        type=btype)
 
             # Get the bill info page and strip malformed t
             info_url = "http://www.legis.state.ak.us/basis/%s" % link['href']
