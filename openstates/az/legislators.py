@@ -26,7 +26,7 @@ class AZLegislatorScraper(LegislatorScraper):
         for t in self.metadata['terms']:
             if t['name'] == term:
                 session = t['sessions'][-1]
-                if re.search('Regular', session):
+                if re.search('regular', session):
                     return session
                 else:
                     return t['sessions'][0]

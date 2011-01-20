@@ -20,33 +20,17 @@ def get_bill_type(bill_id):
         return bill_types[prefix]
     else:
         return 'bill'
-            
-def text_to_number(num):
-    """
-    Takes 'Forty-SiXth' and returns 46
-    """
-    num = num.lower().replace('-', ' ').split()
-    total = 0
-    for x in num:
-        for y in word_key:
-            if x == y[0]:
-                total = total + int(y[1])
-    return total
     
 def legislature_to_number(leg):
     """
     Takes a full session and splits it down to the values for 
     FormatDocument.asp.
     
-    session = 'Forty-ninth Legislature - First Special Session'
+    session = '49th-1st-regular'
     legislature_to_number(session) --> '49Leg/1s'
     """
-    l = leg.lower().replace('-', ' ').split()
-    session = [x[1] for y in l for x in word_key if x[0] == y]
-    if len(session) == 4:
-        return '%dLeg/%s%s' % (int(session[0]) + int(session[1]), session[2], session[3])
-    else:
-        return '%sLeg/%s%s' % (session[0], session[1], session[2])
+    l = leg.lower().split('-')
+    return '%sLeg/%s%s' % (l[0][0:2], l[1][0], l[2][0])
         
 def get_date(elem):
     """
@@ -73,50 +57,6 @@ def img_check(elem):
             return 'Y'
         else:
             return 'N'
-            
-def get_session_details(s):
-    """
-    gets the session list and writes them to session_details.py
-    still needs some hand editing to insure that a primary session is default
-    """
-    def get_date(d):
-        if d:
-            d = datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S').date()
-            return '%d, %d, %d' % (d.year, d.month, d.day)
-        else:
-            return ''
-            
-    def sort2(x):
-        try:
-            d = datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S').date()
-        except TypeError:
-            d = datetime.datetime.today().date()
-        print d
-        return d.toordinal()
-        
-    url = 'http://www.azleg.gov/xml/sessions.asp'
-    with s.urlopen(url) as page:
-        root = etree.fromstring(page)
-        session_file = open('session_details.py', 'w')
-        detail = """
-                 '%s':
-                    {'type': '%s', 'session_id': %s,
-                     'start_date': datetime.date(%s),
-                     'end_date': datetime.date(%s)},
-                 """
-        sessions = root.xpath('//session')
-        sessions = sorted(sessions, key=lambda x: x.get('Sine_Die_Date') or
-                                               "%s" % datetime.datetime.today())
-        for session in sessions:
-            session_type = 'primary' if re.search('Regular', session.get('Session_Full_Name')) else 'special'
-            start_date = get_date(session.get('Session_Start_Date', None))
-            end_date = get_date(session.get('Sine_Die_Date', None))
-            session_file.write(detail % ( session.get('Session_Full_Name'),
-                                           session_type,
-                                           session.get('Session_ID'),
-                                           start_date,
-                                           end_date))
-        return sessions
             
 def get_rows(rows, header):
     """
@@ -156,42 +96,42 @@ def get_committee_name(abbrv, chamber):
     except KeyError:
         return abbrv
     
-com_names = { 
-    'lower': {
-        'APPROP': 'Appropriations',
-        'BI': 'Banking and Insurance',
-        'COM': 'Commerce',
-        'ED': 'Education',
-        'ENV': 'Environment',
-        'GOV': 'Government',
-        'HHS': 'Health and Human Services',
-        'JUD': 'Judiciary',
-        'MAPS': 'Military Affairs and Public Safety',
-        'NRRA': 'Natural Resources and Rural Affairs',
-        'PERER': 'Public Employees, Retirement and Entitlement Reform',
-        'RULES': 'Rules',
-        'TI': 'Transportation and Infrastructure',
-        'WE': 'Water and Energy',
-        'WM': 'Ways and Means'
-    },
-    'upper' : {
-        'APPROP': 'Appropriations',
-        'CED': 'Commerce and Economic Development',
-        'ED': 'Education Accountability and Reform',
-        'FIN': 'Finance',
-        'GOV': 'Government Institutions',
-        'HEALTH': 'Healthcare and Medical Liability Reform',
-        'JUD': 'Judiciary',
-        'NRIPD': 'Natural Resources, Infrastructure and Public Debt',
-        'PSHS': 'Public Safety and Human Services',
-        'RRD': 'Retirement and Rural Development',
-        'RULES': 'Rules',
-        'VMA': 'Veterans and Military Affairs',
-        'SUB APPROP ENR': 'Appropriations Subcommittee on Education and Natural Resources',
-        'SUB APPROP H&W': 'Appropriations Subcommittee on Health and Welfare',
-        'SUB APPROP TCJ': 'Appropriations Subcommittee on Transportation and Criminal Justice'
-    }
-}
+com_names = {
+    'lower': {'APPROP': 'Appropriations',
+              'AW': 'Agriculture and Water',
+              'BI': 'Banking and Insurance',
+              'COM': 'Commerce',
+              'ED': 'Education',
+              'ENR': 'Energy and Natural Resources',
+              'ENV': 'Environment',
+              'ERA': 'Employment and Regulatory Affairs',
+              'GOV': 'Government',
+              'HEIR': 'Higher Education, Innovation and Reform',
+              'HHS': 'Health and Human Services',
+              'JUD': 'Judiciary',
+              'MAPS': 'Military Affairs and Public Safety',
+              'RULES': 'Rules',
+              'TI': 'Technology and Infrastructure',
+              'TRANS': 'Transportation',
+              'WM': 'Ways and Means'},
+    'upper': {'APPROP': 'Appropriations',
+              'BI': 'Banking and Insurance',
+              'BSFSS': 'Border Security, Federalism and States Sovereignty',
+              'CE': 'Commerce and Energy',
+              'ED': 'Education',
+              'EDJC': 'Economic Development and Jobs Creation',
+              'FIN': 'Finance',
+              'GR': 'Government Reform',
+              'HMLR': 'Healthcare and Medical Liability Reform',
+              'JUD': 'Judiciary',
+              'NRT': 'Natural Resources and Transportation',
+              'PSHS': 'Public Safety and Human Services',
+              'RULES': 'Rules',
+              'SUB APPROP HW': 'Appropriations',
+              'SUB APPROP RIEN': 'Appropriations',
+              'SUB APPROP TCJ': 'Appropriations',
+              'VMA': 'Veterans and Military Affairs',
+              'WLRD': 'Water, Land Use and Rural Development'}}
 
 bill_types = {
     'sb': 'bill',
@@ -208,22 +148,3 @@ bill_types = {
     'hjr': 'joint resolution',
     'mis': 'miscellaneous' 
 }
-word_key = (
-    ('fifty', '50'),
-    ('fiftieth', '50'),
-    ('forty', '40'),
-    ('first', '1'),
-    ('second', '2'),
-    ('third', '3'),
-    ('fourth', '4'),
-    ('fifth', '5'),
-    ('sixth', '6'),
-    ('seventh', '7'),
-    ('eighth', '8'),
-    ('ninth', '9'),
-    ('tenth', '10'),
-    ('eleventh', '11'),
-    ('twelth', '12'),
-    ('regular', 'r'),
-    ('special', 's'),
-)

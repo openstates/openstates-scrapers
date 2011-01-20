@@ -64,14 +64,24 @@ class UTBillScraper(BillScraper):
             bill.add_sponsor('primary', primary_sponsor)
             bill.add_source(url)
 
-            status_link = page.xpath('//a[contains(@href, "billsta")]')[0]
-            self.parse_status(bill, status_link.attrib['href'])
-
             for link in page.xpath(
                 '//a[contains(@href, "bills/") and text() = "HTML"]'):
 
                 name = link.getprevious().tail.strip()
                 bill.add_version(name, link.attrib['href'])
+
+            for link in page.xpath(
+                "//a[contains(@href, 'fnotes') and text() = 'HTML']"):
+
+                bill.add_document("Fiscal Note", link.attrib['href'])
+
+            subjects = []
+            for link in page.xpath("//a[contains(@href, 'RelatedBill')]"):
+                subjects.append(link.text.strip())
+            bill['subjects'] = subjects
+
+            status_link = page.xpath('//a[contains(@href, "billsta")]')[0]
+            self.parse_status(bill, status_link.attrib['href'])
 
             self.save_bill(bill)
 
