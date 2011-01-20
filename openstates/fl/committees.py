@@ -31,7 +31,7 @@ class FLCommitteeScraper(CommitteeScraper):
                     continue
 
                 if 'Subcommittee on' in comm_name:
-                    comm_name, sub_name = comm_name.split('Subcommittee on')
+                    comm_name, sub_name = comm_name.split(' Subcommittee on ')
                 else:
                     comm_name, sub_name = comm_name, None
 
