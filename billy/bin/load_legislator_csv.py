@@ -71,7 +71,7 @@ def process_file(state, save=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='load a CSV of legislator data',
-        base_arg_parser=[base_arg_parser],
+        parents=[base_arg_parser],
     )
 
     parser.add_argument('states', metavar='STATE', type=str, nargs='+',
