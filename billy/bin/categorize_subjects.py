@@ -104,6 +104,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='apply subject categorization for bills for a given state',
         parents=[base_arg_parser],
+        conflict_handler='resolve',
     )
 
     default_dir = os.path.join(os.path.dirname(__file__),
@@ -112,8 +113,10 @@ if __name__ == '__main__':
     parser.add_argument('state', type=str, help='state to process')
     parser.add_argument('--all', help='update all sessions',
                         action='store_true', default=False)
+    parser.add_argument('-d', '--data_dir', help='directory of subject csvs',
+                        dest='data_dir', default=default_dir)
     args = parser.parse_args()
 
     settings.update(args)
 
-    categorize_subjects(args.state, settings.BILLY_DATA_DIR, args.all)
+    categorize_subjects(args.state, args.data_dir, args.all)
