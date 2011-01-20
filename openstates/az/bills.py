@@ -4,7 +4,7 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from openstates.az import utils
-from openstates.az.action_utils import get_action_type
+from openstates.az.action_utils import get_action_type, get_verbose_action
 
 from lxml import html
 
@@ -182,6 +182,7 @@ class AZBillScraper(BillScraper):
                             date = utils.get_date(row[3])
                             act = row[5].text_content().strip()
                             a_type = get_action_type(act, 'COMMITTEES:')
+                            act = get_verbose_action(act)
                             bill.add_action(actor, committee + ":" + act, date, 
                                             type=a_type)
                             self.scrape_votes(actor, vote_url, bill, date,
@@ -195,6 +196,7 @@ class AZBillScraper(BillScraper):
                                 date = utils.get_date(row[1])
                             act = row[4].text_content().strip()
                             a_type = get_action_type(act, 'COMMITTEES:')
+                            act = get_verbose_action(act)
                             bill.add_action(actor, committee + ":" + act, date, 
                                             type=a_type)
                     continue
@@ -208,7 +210,7 @@ class AZBillScraper(BillScraper):
                             action = action[:-1]
                         result = row[2].text_content().strip()
                         # majority caucus Y|N
-                        action = action + " concur: " + result 
+                        action = action + " recommends to concur: " + result 
                         date = utils.get_date(row[1])
                         bill.add_action(actor, action, date, concur=result,
                                         type='other')
@@ -234,7 +236,7 @@ class AZBillScraper(BillScraper):
                     else:
                         act = rows[1][2].text_content().strip()
                         date = utils.get_date(rows[1][1])
-                    action = action + " " + act # COW ACTION 1 DPA
+                    action = action + " " + get_verbose_action(act) # COW ACTION 1 DPA
                     bill.add_action(actor, action, date, type='other')
                     if rows[1][0].text_content().strip() == 'Vote Detail':
                         vote_url = rows[1][0].xpath('string(a/@href)')
@@ -272,7 +274,7 @@ class AZBillScraper(BillScraper):
                         if table[1][0].text_content().strip() == 'Vote Detail':
                             vote_url = table[1][0].xpath('string(a/@href)')
                             bill.add_action(actor, action, date, type=a_type)
-                            self.scrape_votes(actor, vote_url, bill, vote_date,
+                            self.scrape_votes(actor, vote_url, bill, date,
                                               motion='motion to reconsider', 
                                                 type='other')
                         else:
@@ -381,7 +383,13 @@ class AZBillScraper(BillScraper):
         """
         Scrapes the votes from a vote detail page with the legislator's names
         this handles all of the votes and expects the following keyword
-        arguments: motion ... hmm I guess thats it :)
+        arguments: motion
+        an Arizona Vote object will have the following additional fields:
+        additional vote counts:
+            +not_voting, +excused, +absent, +present
+        additional vote lists
+            +NV, +EX, +AB, +P
+        this depends on the chamber and the committee
         """
         o_args = {}
         passed = '' # to test if we need to compare vote counts later
@@ -451,6 +459,10 @@ class AZBillScraper(BillScraper):
                 elif v == 'N':
                     vote.no(name)
                 else:
+                    if v in vote:
+                        vote[v].append(name)
+                    else:
+                        vote[v] = [name]
                     vote.other(name)
             bill.add_vote(vote)
             
@@ -462,6 +474,7 @@ class AZBillScraper(BillScraper):
         if not actions:
             return bill
         action_date = actions[0]['date']
+        actions[0]['action'] = actions[0]['action'].lower()
         actions_list.append(actions[0])
         # seperate the actions that are out of order
         for action in actions[1:]:
@@ -470,6 +483,7 @@ class AZBillScraper(BillScraper):
             else:
                 actions_list.append(action)
                 action_date = action['date']
+            action['action'] = action['action'].lower()
         action_date = actions_list[0]['date']
 
 

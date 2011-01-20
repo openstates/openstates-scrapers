@@ -86,15 +86,15 @@ def get_action_type(abbrv, group=None):
 ###########################################################
 # get_action
 ###########################################################
-def get_action(abbr):
+def get_verbose_action(abbr):
     """
     get_action('PFCA W/FL') --> 
     'proper for consideration amended with recommendation for a floor amendment'
     """
     try:
-        return common_abbrv[abbr].upper()
+        return common_abbrv[abbr]
     except KeyError:
-        return 'other'
+        return abbr
         
 ###########################################################
 # annottated abbreviations
@@ -102,19 +102,19 @@ def get_action(abbr):
 
 common_abbrv = {
     # amended
-    'AM C&P ON RECON': 'amended c&p on reconsideration',
-    'AM C&P ON REREF': 'amend c&p on rereferral',
+    'AM C&P ON RECON': 'amended constitutional and in proper form on reconsideration',
+    'AM C&P ON REREF': 'amended constitutional and in proper form on rereferral',
     'AMEND C&P': 'amended constitutional and in proper form',
     
     'C&P': 'constitutional and in proper form',
     # amended
     'C&P AS AM BY AP': 'constitutional and in proper form as amended by the committee on App',
-    'C&P AS AM BY APPR': 'Constitutional and in proper form as amended by Appropriations',
+    'C&P AS AM BY APPR': 'constitutional and in proper form as amended by Appropriations',
     'C&P AS AM BY EN': 'constitutional and in proper form as amended by the Committee on ENV',
-    'C&P AS AM BY GO': 'Constitutional and in proper form as amended by GovOp',
-    'C&P AS AM BY HE': 'C&P AS AM BY HE',
+    'C&P AS AM BY GO': 'constitutional and in proper form as amended by GovOp',
+    'C&P AS AM BY HE': 'constitutional and in proper form as amended by HE',
     'C&P AS AM BY JU': 'constitutional and in proper form as amended by Jud',
-    'C&P AS AM BY TR': 'C&P AS AM BY TR',
+    'C&P AS AM BY TR': 'constitutional and in proper form as amended by TR',
     'C&P AS AM BY WM': 'constitutional and in proper form as amended by the Committee on Way & Means',
     'C&P AS AM GOVOP': 'Constitutional and in proper form as amended by Government Operations',
     # reconsideration
@@ -127,10 +127,10 @@ common_abbrv = {
     # of the whole or third read is not good.
     'CAUCUS': 'Caucus',
     #
-    'CONCUR': 'rec to concur',
+    'CONCUR': 'recommend to concur',
     'CONCUR FAILED': 'motion to concur failed',
     'DISC PETITION': 'discharge petition',
-    'DISC/HELD': 'Discussed and Held',
+    'DISC/HELD': 'discussed and held',
     'DISC/ONLY': 'discussion only',
     'DISC/S/C': 'discussd and assigned to subcommittee',
     # committee:passed:unfavorable
@@ -160,7 +160,7 @@ common_abbrv = {
     # failed #
     'FAILED': 'failed to pass',
     'FAILED BY S/V 0': 'failed by standing vote', # does this mean there is no vote?
-    'FAILED ON RECON': 'failed ON RECONSIDERATION', # after a succesful motion to reconsider
+    'FAILED ON RECON': 'failed on reconsideration', # after a succesful motion to reconsider
     # in the house a bill is first read and assigned to committee #
     'FIRST': 'First Reading',
     # amendment amended??? or just another amendment? #
@@ -194,19 +194,19 @@ common_abbrv = {
     # not sure when this would take place? I would like to see it in action
     'REMOVAL REQ': 'removal request from Rules Committee',
     # committee:refered
-    'REREF GOVOP': 'Rereferred to GovOp',
-    'REREF JUD': 'Rereferred to Judiciary',
-    'REREF WM': 'Rereferred to Ways & Means',
+    'REREF GOVOP': 'rereferred to GovOp',
+    'REREF JUD': 'rereferred to Judiciary',
+    'REREF WM': 'rereferred to Ways & Means',
     
     'RET FOR CON': 'returned for consideration',
     
-    'RET ON CAL': 'Retained on the Calendar',
+    'RET ON CAL': 'retained on the Calendar',
     'RETAINED': 'retained',
     
     'RULE 8J PROPER': 'proper legislation and deemed not derogatory or insulting',
     
     'S/C': 'subcommittee',
-    'S/C REPORTED': 'Subcommittee reported',
+    'S/C REPORTED': 'subcommittee reported',
     
     'W/D': 'withdrawn',
 }
