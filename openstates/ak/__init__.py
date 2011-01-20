@@ -11,5 +11,7 @@ metadata = dict(
     terms=[
         dict(name='26', sessions=['26'],
              start_year=2009, end_year=2010),
+        dict(name='27', sessions=['27'],
+             start_year=2011, end_year=2012),
         ],
     )
