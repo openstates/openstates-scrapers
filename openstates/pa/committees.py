@@ -38,16 +38,19 @@ class PACommitteeScraper(CommitteeScraper):
                     subcommittee_name = None
                     role = 'member'
 
-                    rest = link.xpath('string(../i)')
+                    rest = link.getnext().text
                     if rest:
                         match = re.match(r',\s+(Subcommittee on .*)\s+-',
                                          rest)
 
                         if match:
                             subcommittee_name = match.group(1)
-                            role = rest.split('-')[1].strip()
+                            role = rest.split('-')[1].strip().lower()
                         else:
-                            role = rest.replace(', ', '').strip()
+                            role = rest.replace(', ', '').strip().lower()
+
+                        if role == 'chairman':
+                            role = 'chair'
 
                     try:
                         committee = committees[(chamber, committee_name,
