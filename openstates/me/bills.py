@@ -61,7 +61,7 @@ class MEBillScraper(BillScraper):
     def scrape_bill(self, bill, url):
         session_id = (int(bill['session']) - 124) + 8
         url = ("http://www.mainelegislature.org/LawMakerWeb/summary.asp"
-               "?paper=SP0010&SessionID=%d" % session_id)
+               "?paper=%s&SessionID=%d" % (bill['bill_id'], session_id))
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
