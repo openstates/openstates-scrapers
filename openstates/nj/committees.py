@@ -30,7 +30,7 @@ class NJCommitteeScraper(CommitteeScraper):
 
         members_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/COMEMB.DBF' % (year_abr)
         comm_info_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/COMMITT.DBF' % (year_abr)
-     
+
         COMEMB_dbf, resp = self.urlretrieve(members_url)
         COMMIT_dbf, resp2 = self.urlretrieve(comm_info_url)
 
@@ -48,21 +48,24 @@ class NJCommitteeScraper(CommitteeScraper):
             contact_info = name_rec["phone"]
 
             if abrv[0] == "A":
-                chamber = "upper"
-            elif abrv[0] == "S":
                 chamber = "lower"
+            elif abrv[0] == "S":
+                chamber = "upper"
 
-            comm = Committee(chamber, comm_name, comm_type = comm_type, aide = aide, contact_info = contact_info)
+            comm = Committee(chamber, comm_name, comm_type = comm_type,
+                             aide = aide, contact_info = contact_info)
             comm.add_source(members_url)
             comm.add_source(comm_info_url)
             comm_dictionary[abrv] = comm
 
         #Committee Member Database
         for member_rec in members_db:
-            abr = member_rec["code"]
-            comm_name = comm_dictionary[abr]
-            
-            leg = member_rec["member"]            
-            comm_name.add_member(leg)
-            
-            self.save_committee(comm_name) 
+            # assignment=P means they are active, assignment=R means removed
+            if member_rec['assignment'] == 'P':
+                abr = member_rec["code"]
+                comm_name = comm_dictionary[abr]
+
+                leg = member_rec["member"]
+                comm_name.add_member(leg)
+
+                self.save_committee(comm_name)
