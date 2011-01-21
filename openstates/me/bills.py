@@ -68,7 +68,8 @@ class MEBillScraper(BillScraper):
             bill.add_source(url)
 
             sponsor = page.xpath("string(//td[text() = 'Sponsored by ']/b)")
-            bill.add_sponsor('sponsor', sponsor)
+            if sponsor:
+                bill.add_sponsor('sponsor', sponsor)
 
             docket_link = page.xpath("//a[contains(@href, 'dockets.asp')]")[0]
             self.scrape_actions(bill, docket_link.attrib['href'])
