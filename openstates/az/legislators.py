@@ -8,7 +8,7 @@ class AZLegislatorScraper(LegislatorScraper):
     state = 'az'
     parties = {
         'R': 'Republican',
-        'D': 'Democrat',
+        'D': 'Democratic',
         'L': 'Libertarian',
         'I': 'Independant',
         'G': 'Green'
