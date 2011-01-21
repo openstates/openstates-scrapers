@@ -54,7 +54,7 @@ class MNCommitteeScraper(CommitteeScraper):
                     name = row
 
                 # add the member
-                com.add_member(name, role)
+                com.add_member(name.strip(), role)
 
             com.add_source(link)
             self.save_committee(com)
@@ -80,6 +80,9 @@ class MNCommitteeScraper(CommitteeScraper):
 
                         # name is tail string of last element
                         name = ltable.text_content()
+                        text = ltable.text
+                        if text and name != text:
+                            name = name.replace(text, '')
 
                         # role is inside a nested b tag
                         role = ltable.xpath('b/*/text()')
