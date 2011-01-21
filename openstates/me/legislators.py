@@ -83,15 +83,19 @@ class MELegislatorScraper(LegislatorScraper):
 
                 # extra stuff that is easy to grab
                 resident_county = sh.cell(rownum, 8).value
-                mailing_address = sh.cell(rownum, 9).value
-                mailing_city = sh.cell(rownum, 10).value
-                mailing_state = sh.cell(rownum, 11).value
-                mailing_zip = sh.cell(rownum, 12).value
+                street_addr = sh.cell(rownum, 9).value
+                city = sh.cell(rownum, 10).value
+                state = sh.cell(rownum, 11).value
+                zip_code = sh.cell(rownum, 12).value
+
+                address = "%s\n%s, %s %s" % (street_addr, city, state,
+                                             zip_code)
+
                 phone = str(sh.cell(rownum, 13).value)
                 email = str(sh.cell(rownum, 14).value)
 
                 # For matching up legs with votes
-                district_name = mailing_city
+                district_name = city
 
                 if phone.find("-") == -1:
                     phone = phone[0: len(phone) - 2]
@@ -102,11 +106,8 @@ class MELegislatorScraper(LegislatorScraper):
                                  first_name, last_name, middle_name,
                                  party, suffix=suffix,
                                  resident_county=resident_county,
-                                 mailing_address=mailing_address,
-                                 mailing_city=mailing_city,
-                                 mailing_state=mailing_state,
-                                 mailing_zip=mailing_zip,
-                                 phone=phone,
+                                 office_address=address,
+                                 office_phone=phone,
                                  email=email,
                                  disctict_name=district_name)
                 leg.add_source(url)
