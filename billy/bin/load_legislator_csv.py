@@ -33,7 +33,7 @@ def process_file(state, save=False):
         keys = ('first_name', 'middle_name', 'last_name', 'suffixes',
                 'nickname', 'votesmart_id', 'transparencydata_id', 'photo_url')
         for key in keys:
-            fileval = (row[key] or '').strip()
+            fileval = (row[key].decode('utf-8') or u'').strip()
             dbval = leg.get(key, '')
             if fileval != dbval:
                 leg[key] = fileval
@@ -50,10 +50,10 @@ def process_file(state, save=False):
         #if leg.get('nickname'):
         #    full_name += ' "%s"' % leg['nickname']
         if leg['middle_name']:
-            full_name += ' %s' % leg['middle_name']
-        full_name += ' %s' % leg['last_name']
+            full_name += u' %s' % leg['middle_name']
+        full_name += u' %s' % leg['last_name']
         if leg['suffixes']:
-            full_name += ' %s' % leg['suffixes']
+            full_name += u' %s' % leg['suffixes']
         leg['full_name'] = full_name
 
         if save:
