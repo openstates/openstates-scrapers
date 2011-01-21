@@ -1,126 +1,158 @@
+import datetime
+
 from openstates.me import metadata
 from openstates.me.utils import chamber_name
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import VoteScraper, Vote
-from datetime import datetime
-import lxml.etree
+
+import lxml.html
+
 
 class MEBillScraper(BillScraper):
     state = 'me'
 
     def scrape(self, chamber, session):
-        session = int(session)
-        if session < 121:
+        if int(session) < 121:
             raise NoDataForPeriod(session)
-        session_id = (int(session) - 124) + 8
 
-        if str(session)[-1] == "1":
-            session_abr = str(session) + "st"
-        elif str(session)[-1] == "2":
-            session_abr = str(session) + "nd"
-        elif str(session)[-1] == "3":
-            session_abr = str(session) + "rd"
+        if session[-1] == "1":
+            session_abbr = session + "st"
+        elif session[-1] == "2":
+            session_abbr = session + "nd"
+        elif session[-1] == "3":
+            session_abbr = session + "rd"
         else:
-            session_abr = str(session) + "th"
-        
-        self.scrape_bill(session, session_id, session_abr)
+            session_abbr = session + "th"
 
-    def scrape_bill(self, session, session_id, session_abr):
-        main_directory_url = 'http://www.mainelegislature.org/legis/bills/bills_%s/billtexts/' % session_abr
+        self.scrape_session(session, session_abbr, chamber)
 
-        with self.urlopen(main_directory_url) as main_directory_page:
-            root = lxml.etree.fromstring(main_directory_page, lxml.etree.HTMLParser())
-            main_dir_links = root.xpath('//tr/td/ul/li//@href')
-            for link in main_dir_links:
-                dir_url = 'http://www.mainelegislature.org/legis/bills/bills_%s/billtexts/%s' % (session_abr, link)
-                with self.urlopen(dir_url) as dir_page:
-                    root = lxml.etree.fromstring(dir_page, lxml.etree.HTMLParser())
-                    count = 1
-                    for mr in root.xpath('/html/body/dl/dt/big/a[1]'):
-                        ld = mr.xpath('string()')
-                        ld = ld.replace(",", "")
-                        ld = ld.split()[1]
-                        bill_id_path = 'string(/html/body/dl/dt[%s]/big/a[2])' % count
-                        bill_id = root.xpath(bill_id_path)
-                        title_path = 'string(/html/body/dl/dd[%s]/font)' % count
-                        title = root.xpath(title_path)
-                        count = count + 1
-                        self.scrape_bill_info(session, ld, session_id, bill_id, title)
+    def scrape_session(self, session, session_abbr, chamber):
+        url = ('http://www.mainelegislature.org/legis/bills/bills_%s'
+               '/billtexts/' % session_abbr)
 
-    def scrape_bill_info(self, session, ld, session_id, bill_id, title):
-        bill_info_url  = 'http://www.mainelegislature.org/LawMakerWeb/summary.asp?LD=%s&SessionID=%s' % (ld, session_id)
-        with self.urlopen(bill_info_url) as bill_sum_page:
-            root = lxml.etree.fromstring(bill_sum_page, lxml.etree.HTMLParser())
-            sponsor = root.xpath('string(//tr[3]/td[1]/b[1])')
-            if bill_id[0] == "S":
-                chamber = "upper"
-            else:
-                chamber = "lower"
-            bill = Bill(str(session), chamber, bill_id, title)
-            bill.add_source(bill_info_url)
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
-            #Actions
-            actions_url_addon = root.xpath('string(//table/tr[3]/td/a/@href)')
-            actions_url = 'http://www.mainelegislature.org/LawMakerWeb/%s' % actions_url_addon
-            bill.add_source(actions_url)
-            with self.urlopen(actions_url) as actions_page:
-                root2 = lxml.etree.fromstring(actions_page, lxml.etree.HTMLParser())
-                count = 2
-                for mr in root2.xpath("//td[2]/table[2]/tr[position() > 1]/td[1]"):
-                    date = mr.xpath('string()')
-                    date = datetime.strptime(date, "%m/%d/%Y")
-                    actor_path = "string(//td[2]/table/tr[%s]/td[2])" % count
-                    actor = root2.xpath(actor_path)
-                    action_path = "string(//td[2]/table/tr[%s]/td[3])" % count
-                    action = root2.xpath(action_path)
-                    count = count + 1
-                    if actor == "House":
-                        actor = "lower"
-                    else:
-                        actor = "upper"
-                    bill.add_action(actor, action, date)
-            #Votes
-            votes_url_addon = root.xpath('string(//table/tr[9]/td/a/@href)')
-            votes_url = 'http://www.mainelegislature.org/LawMakerWeb/%s' % votes_url_addon
-            bill.add_source(votes_url)
-            with self.urlopen(votes_url) as votes_page:
-                vote_root = lxml.etree.fromstring(votes_page, lxml.etree.HTMLParser())
-                for mr in vote_root.xpath('//table[position() > 1]/tr/td/a'):
-                    vote_detail_addon = mr.xpath('string(@href)')
-                    vote_detail_url = 'http://www.mainelegislature.org/LawMakerWeb/%s' % vote_detail_addon
-                    bill.add_source(vote_detail_url)
-                    with self.urlopen(vote_detail_url) as vote_detail_page:
-                        detail_root = lxml.etree.fromstring(vote_detail_page, lxml.etree.HTMLParser())
-                        date = detail_root.xpath('string(//table[2]//tr[2]/td[3])')
-                        try:
-                            date = datetime.strptime(date, "%B %d, %Y")
-                        except:
-                            date = datetime.strptime(date, "%b. %d, %Y")
-                        motion = detail_root.xpath('string(//table[2]//tr[3]/td[3])')
-                        passed = detail_root.xpath('string(//table[2]//tr[5]/td[3])') == 'PREVAILS'
-                        yes_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
-                        no_count = detail_root.xpath('string(//table[2]//tr[7]/td[3])')
-                        absent_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
-                        excused_count = detail_root.xpath('string(//table[2]//tr[6]/td[3])')
-                        other_count = 0
+            for link in page.xpath("//tr/td/ul/li//@href"):
+                self.scrape_session_directory(session, chamber, link)
 
-                        if votes_url.find('House') != -1:
-                            chamber = "lower"
-                        else:
-                            chamber = "upper"
+    def scrape_session_directory(self, session, chamber, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
-                        vote = Vote(chamber, date, motion, passed, int(yes_count), int(no_count), other_count, absent_count = int(absent_count), excused_count = int(excused_count))
+            for link in page.xpath("//big/a[2]"):
+                bill_id = link.text
+                title = link.xpath("string(../../following-sibling::dd[1])")
 
-                        for member in detail_root.xpath('//table[3]/tr[position() > 1]'):
-                            leg = member.xpath('string(td[2])')
-                            party = member.xpath('string(td[3])')
-                            leg_vote = member.xpath('string(td[4])')
+                if bill_id.startswith('SP'):
+                    bill_chamber = 'upper'
+                elif bill_id.startswith('HP'):
+                    bill_chamber = 'lower'
 
-                            if leg_vote == "Y":
-                                vote.yes(leg)
-                            elif leg_vote == "N":
-                                vote.no(leg)
-                            else:
-                                vote.other(leg)
-                        bill.add_vote(vote)
-            self.save_bill(bill)
+                if chamber != bill_chamber:
+                    continue
+
+                bill = Bill(session, chamber, bill_id, title)
+                self.scrape_bill(bill, link.attrib['href'])
+                self.save_bill(bill)
+
+    def scrape_bill(self, bill, url):
+        session_id = (int(bill['session']) - 124) + 8
+        url = ("http://www.mainelegislature.org/LawMakerWeb/summary.asp"
+               "?paper=SP0010&SessionID=%d" % session_id)
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+            bill.add_source(url)
+
+            sponsor = page.xpath("string(//td[text() = 'Sponsored by ']/b)")
+            bill.add_sponsor('sponsor', sponsor)
+
+            docket_link = page.xpath("//a[contains(@href, 'dockets.asp')]")[0]
+            self.scrape_actions(bill, docket_link.attrib['href'])
+
+            votes_link = page.xpath("//a[contains(@href, 'rollcalls.asp')]")[0]
+            self.scrape_votes(bill, votes_link.attrib['href'])
+
+    def scrape_votes(self, bill, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+
+            path = "//div/a[contains(@href, 'rollcall.asp')]"
+            for link in page.xpath(path):
+                motion = link.text.strip()
+                url = link.attrib['href']
+
+                self.scrape_vote(bill, motion, url)
+
+    def scrape_vote(self, bill, motion, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            yeas_cell = page.xpath("//td[text() = 'Yeas (Y):']")[0]
+            yes_count = int(yeas_cell.xpath("string(following-sibling::td)"))
+
+            nays_cell = page.xpath("//td[text() = 'Nays (N):']")[0]
+            no_count = int(nays_cell.xpath("string(following-sibling::td)"))
+
+            abs_cell = page.xpath("//td[text() = 'Absent (X):']")[0]
+            abs_count = int(abs_cell.xpath("string(following-sibling::td)"))
+
+            ex_cell = page.xpath("//td[text() = 'Excused (E):']")[0]
+            ex_count = int(ex_cell.xpath("string(following-sibling::td)"))
+
+            other_count = abs_count + ex_count
+
+            if 'chamber=House' in url:
+                chamber = 'lower'
+            elif 'chamber=Senate' in url:
+                chamber = 'upper'
+
+            date_cell = page.xpath("//td[text() = 'Date:']")[0]
+            date = date_cell.xpath("string(following-sibling::td)")
+            date = datetime.datetime.strptime(date, "%B %d, %Y")
+
+            vote = Vote(chamber, date, motion,
+                        yes_count > (no_count + other_count),
+                        yes_count, no_count, other_count)
+            vote.add_source(url)
+
+            member_cell = page.xpath("//td[text() = 'Member']")[0]
+            for row in member_cell.xpath("../../tr")[1:]:
+                name = row.xpath("string(td[2])")
+                name = name.split(" of ")[0]
+
+                vtype = row.xpath("string(td[4])")
+                if vtype == 'Y':
+                    vote.yes(name)
+                elif vtype == 'N':
+                    vote.no(name)
+                elif vtype == 'X' or vtype == 'E':
+                    vote.other(name)
+
+            bill.add_vote(vote)
+
+    def scrape_actions(self, bill, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            bill.add_source(url)
+
+            path = "//b[. = 'Date']/../../../following-sibling::tr"
+            for row in page.xpath(path):
+                date = row.xpath("string(td[1])")
+                date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
+
+                chamber = row.xpath("string(td[2])").strip()
+                if chamber == 'Senate':
+                    chamber = 'upper'
+                elif chamber == 'House':
+                    chamber = 'lower'
+
+                action = row.xpath("string(td[3])").strip()
+                if action == 'Unfinished Business':
+                    continue
+
+                bill.add_action(chamber, action, date)
