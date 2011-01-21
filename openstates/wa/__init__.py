@@ -1,14 +1,3 @@
-status = dict(
-    bills=True,
-    bill_versions=True,
-    sponsors=True,
-    actions=True,
-    votes=True,
-    legislators=True,
-    contributors=['Gabriel J. Perez-Irizarry'],
-    notes="",
-)
-
 metadata = dict(
     name='Washington',
     abbreviation='wa',
