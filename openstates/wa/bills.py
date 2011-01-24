@@ -53,7 +53,7 @@ class WABillScraper(BillScraper):
                 namespaces=self._ns).lower()
 
             if bill_type == 'Gubernatorial Appointment':
-                continue
+                return
 
             bill = Bill(session, chamber, bill_id, title,
                         type=[bill_type])
