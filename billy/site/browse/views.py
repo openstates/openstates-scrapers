@@ -24,9 +24,39 @@ def all_states(request):
         state = {}
         state['id'] = meta['_id']
         state['name'] = meta['name']
-        state['bills'] = db.bills.find({'state':state['id']}).count()
-        state['legislators'] = db.legislators.find({'state':state['id']}).count()
+        counts = db.counts.find({'_id': state['id']})
+        s_spec = {'state': state['id']}
+        state['bills'] = counts['bills']
+        state['legislators'] = db.legislators.find(s_spec).count()
+        state['committees'] = db.committees.find(s_spec).count()
+        state['votes'] = counts['votes']
+        state['bill_types'] = len(db.bills.distinct('type', s_spec)) > 1
+        state['introduced'] = db.bills.find({'state': state['id'],
+                                             'actions.type': 'bill:introduced'}).count()
+        actions = 0
+        other_actions = 0
+        for bill in db.bills.find(s_spec):
+            for action in bill['actions']:
+                if action['type'] == ['other']:
+                    other_actions += 1
+                actions += 1
+        state['typed_actions'] = float(actions-other_actions)/actions
+        state['versions'] = counts['versions']
+
+        missing_bill_sources = db.bills.find({'state': state['id'],
+                                              'sources': {'$size': 0}}).count()
+        missing_leg_sources = db.legislators.find({'state': state['id'],
+                                              'sources': {'$size': 0}}).count()
+        state['missing_sources'] = ''
+        if missing_bill_sources:
+            state['missing_sources'] += 'bills'
+        if missing_leg_sources:
+            state['missing_sources'] += ' legislators'
+        
+
         states.append(state)
+
+    states.sort(key=lambda x:x['_id'])
 
     return render_to_response('index.html', {'states': states})
 
@@ -66,6 +96,20 @@ def _bill_stats_for_session(state, session):
 
     return context
 
+
+def _get_state_leg_id_stats(state):
+    context = {}
+    context['missing_pvs'] = db.legislators.find({'state': state,
+                             'active': True,
+                             'votesmart_id': {'$exists':False}}).count()
+    context['missing_nimsp'] = db.legislators.find({'state': state,
+                             'active': True,
+                             'nimsp_id': {'$exists':False}}).count()
+    context['missing_tdata'] = db.legislators.find({'state': state,
+                             'active': True,
+                             'transparencydata_id': {'$exists':False}}).count()
+    return context
+
 def state_index(request, state):
     meta = metadata(state)
     if not meta:
@@ -96,15 +140,7 @@ def state_index(request, state):
     context['ns_leg_count'] = db.legislators.find({'state': state,
                              'active': True,
                              'sources': {'$size': 0}}).count()
-    context['missing_pvs'] = db.legislators.find({'state': state,
-                             'active': True,
-                             'votesmart_id': {'$exists':False}}).count()
-    context['missing_nimsp'] = db.legislators.find({'state': state,
-                             'active': True,
-                             'nimsp_id': {'$exists':False}}).count()
-    context['missing_tdata'] = db.legislators.find({'state': state,
-                             'active': True,
-                             'transparencydata_id': {'$exists':False}}).count()
+    context.update(_get_state_leg_id_stats(state))
 
     # committees
     context['upper_com_count'] = db.committees.find({'state':state,
