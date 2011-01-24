@@ -62,6 +62,12 @@ class WABillScraper(BillScraper):
                                  namespaces=self._ns).strip("() \t\r\n")
             bill.add_sponsor('sponsor', sponsor)
 
+            chamber_name = {'lower': 'House', 'upper': 'Senate'}[chamber]
+            version_url = ("http://www.leg.wa.gov/pub/billinfo/2011-12/"
+                           "Htm/Bills/%s Bills/%s.htm" % (chamber_name,
+                                                          bill_num))
+            bill.add_version('Text', version_url)
+
             self.scrape_actions(bill)
 
             self.save_bill(bill)
