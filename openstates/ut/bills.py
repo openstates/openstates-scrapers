@@ -55,6 +55,8 @@ class UTBillScraper(BillScraper):
 
             if bill_id.startswith('H.B.') or bill_id.startswith('S.B.'):
                 bill_type = ['bill']
+            elif bill_id.startswith('H.R.') or bill_id.startswith('S.R.'):
+                bill_type = ['resolution']
             elif bill_id.startswith('H.C.R.') or bill_id.startswith('S.C.R.'):
                 bill_type = ['concurrent resolution']
             elif bill_id.startswith('H.J.R.') or bill_id.startswith('S.J.R.'):
