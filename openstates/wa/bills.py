@@ -64,8 +64,9 @@ class WABillScraper(BillScraper):
 
             chamber_name = {'lower': 'House', 'upper': 'Senate'}[chamber]
             version_url = ("http://www.leg.wa.gov/pub/billinfo/2011-12/"
-                           "Htm/Bills/%s Bills/%s.htm" % (chamber_name,
-                                                          bill_num))
+                           "Htm/Bills/%s %ss/%s.htm" % (chamber_name,
+                                                        bill_type.title(),
+                                                        bill_num))
             bill.add_version('Text', version_url)
 
             self.scrape_actions(bill)
