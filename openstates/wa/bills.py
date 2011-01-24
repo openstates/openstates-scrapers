@@ -52,7 +52,7 @@ class WABillScraper(BillScraper):
                 "string(wa:ShortLegislationType/wa:LongLegislationType)",
                 namespaces=self._ns).lower()
 
-            if bill_type == 'Gubernatorial Appointment':
+            if bill_type == 'gubernatorial appointment':
                 return
 
             bill = Bill(session, chamber, bill_id, title,
