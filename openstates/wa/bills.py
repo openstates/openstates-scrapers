@@ -22,13 +22,17 @@ class WABillScraper(BillScraper):
 
                 bill_id = leg_info.xpath("string(wa:BillId)",
                                          namespaces=self._ns)
+                bill_num = int(bill_id.split()[1])
 
-                if bill_id.startswith('H') and chamber == 'upper':
-                    continue
-                elif bill_id.startswith('S') and chamber == 'lower':
-                    continue
+                # Senate bills are numbered starting at 5000,
+                # House at 1000
+                if bill_num > 5000:
+                    bill_chamber = 'upper'
+                else:
+                    bill_chamber = 'lower'
 
-                self.scrape_bill(chamber, session, bill_id)
+                if bill_chamber == chamber:
+                    self.scrape_bill(chamber, session, bill_id)
 
     def scrape_bill(self, chamber, session, bill_id):
         biennium = "%s-%s" % (session[0:4], session[7:9])
