@@ -34,5 +34,8 @@
    "district": {"type": "string", "optional": true},
    "chamber": {"type": "string", "optional": true},
    "party": {"type": "string", "optional": true},
-   "photo_url": {"type": "string", "optional": true, "blank": true}
+   "photo_url": {"type": "string", "optional": true, "blank": true},
+   "office_phone": {"type": "string", "blank": true, "optional": true},
+   "office_address": {"type": "string", "blank": true, "optional": true},
+   "email": {"type": "string", "blank": true, "optional": true}
 }}

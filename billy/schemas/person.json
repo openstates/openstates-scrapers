@@ -23,6 +23,9 @@
         "start_date": {"type": ["string", "datetime", "null"]},
         "end_date": {"type": ["string", "datetime", "null"]}
     }}},
+    "office_phone": {"type": "string", "blank": true, "optional": true},
+    "office_address": {"type": "string", "blank": true, "optional": true},
+    "email": {"type": "string", "blank": true, "optional": true},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
         "url": {"type": "string"},
         "retrieved": {"type": "datetime"}
