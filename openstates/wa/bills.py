@@ -106,11 +106,13 @@ class WABillScraper(BillScraper):
                 if action.startswith('Third reading, passed'):
                     chamber = {'upper': 'lower', 'lower': 'upper'}[chamber]
                     atype.append('bill:passed')
+                    atype.append('bill:reading:3')
 
                 actor = chamber
 
                 if action.startswith('First reading'):
                     atype.append('bill:introduced')
+                    atype.append('bill:reading:1')
                 elif action.startswith('Governor signed'):
                     actor = 'executive'
                     atype.append('governor:signed')
