@@ -70,6 +70,7 @@ class OHBillScraper(BillScraper):
 
                     if action in ('House Intro. Date', 'Senate Intro. Date'):
                         atype = ['bill:introduced']
+                        action = action.replace('Intro. Date', 'Introduced')
                     elif action == '3rd Consideration':
                         atype = ['bill:reading:3']
                     elif action == 'Sent to Gov.':
