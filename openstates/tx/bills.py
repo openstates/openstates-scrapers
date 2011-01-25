@@ -1,4 +1,4 @@
-from __future__ import with_statement
+import re
 import urlparse
 import datetime as dt
 
@@ -103,29 +103,32 @@ class TXBillScraper(BillScraper):
             desc = action.findtext('description').strip()
 
             if desc == 'Amended':
-                type = 'amendment:passed'
+                atype = 'amendment:passed'
             elif desc == 'Amendment(s) offered':
-                type = 'amendment:introduced'
+                atype = 'amendment:introduced'
             elif desc == 'Amendment amended':
-                type = 'amendment:amended'
+                atype = 'amendment:amended'
             elif desc == 'Amendment withdrawn':
-                type = 'amendment:withdrawn'
+                atype = 'amendment:withdrawn'
             elif desc == 'Passed':
-                type = 'bill:passed'
-            elif desc.startswith('Received from the'):
-                type = 'bill:introduced'
+                atype = 'bill:passed'
+            elif re.match(r'^Received (by|from) the', desc):
+                atype = 'bill:introduced'
             elif desc.startswith('Sent to the Governor'):
                 # But what if it gets lost in the mail?
-                type = 'governor:received'
+                atype = 'governor:received'
             elif desc.startswith('Signed by the Governor'):
-                type = 'governor:signed'
+                atype = 'governor:signed'
             elif desc == 'Read first time':
-                type = 'bill:introduced'
+                atype = ['bill:introduced', 'bill:reading:1']
+                introduced = True
+            elif desc == 'Read & adopted':
+                atype = 'bill_passed'
             else:
-                type = 'other'
+                atype = 'other'
 
             bill.add_action(actor, action.findtext('description'),
-                            act_date, type=type, **extra)
+                            act_date, type=atype, **extra)
 
         for author in root.findtext('authors').split(' | '):
             if author != "":
