@@ -66,8 +66,11 @@ class OHLegislatorScraper(LegislatorScraper):
                 elif party == "R":
                     party = "Republican"
 
+                office_phone = el.xpath("b[text() = 'Phone']")[0].tail
+                office_phone = office_phone.strip(' :')
+
                 leg = Legislator(term, chamber, district, full_name,
-                        '', '', '', party)
+                        '', '', '', party, office_phone=office_phone)
                 leg.add_source(sen_url)
 
                 self.save_legislator(leg)
