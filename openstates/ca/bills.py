@@ -104,12 +104,14 @@ class CABillScraper(BillScraper):
             short_title = ''
             type = ['bill']
             subject = ''
+            all_titles = set()
             i = 0
             for version in bill.versions:
                 if not version.bill_xml:
                     continue
 
                 title = clean_title(version.title)
+                all_titles.add(title)
                 short_title = clean_title(version.short_title)
                 type = [bill_type]
 
@@ -154,6 +156,11 @@ class CABillScraper(BillScraper):
             fsbill['short_title'] = short_title
             fsbill['type'] = type
             fsbill['subjects'] = [subject]
+
+            # We don't want the current title in alternate_titles
+            all_titles.remove(title)
+
+            fsbill['alternate_titles'] = list(all_titles)
 
             for author in version.authors:
                 if author.house == chamber_name:
