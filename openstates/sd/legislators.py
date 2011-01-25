@@ -68,8 +68,12 @@ class SDLegislatorScraper(LegislatorScraper):
             photo_url = page.xpath(
                 "//img[contains(@id, 'imgMember')]")[0].attrib['src']
 
+            office_phone = page.xpath(
+                "string(//span[contains(@id, 'CapitolPhone')])").strip()
+
             legislator = Legislator(term, chamber, district, name,
                                     party=party, occupation=occupation,
-                                    photo_url=photo_url)
+                                    photo_url=photo_url,
+                                    office_phone=office_phone)
             legislator.add_source(url)
             self.save_legislator(legislator)
