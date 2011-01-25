@@ -125,6 +125,9 @@ class WABillScraper(BillScraper):
                 elif action == 'Adopted.':
                     atype.append('bill:passed')
 
+                if 'Floor amendment(s) adopted' in action:
+                    atype.append('amendment:passed')
+
                 if 'referred' in action.lower():
                     atype.append('committee:referred')
 
