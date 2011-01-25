@@ -78,6 +78,7 @@ class SDBillScraper(BillScraper):
                 atypes = []
                 if action.startswith('First read'):
                     atypes.append('bill:introduced')
+                    atypes.append('bill:reading:1')
                 elif action.startswith('Signed by Governor'):
                     atypes.append('governor:signed')
                     actor = 'executive'
