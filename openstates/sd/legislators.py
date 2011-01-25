@@ -50,6 +50,7 @@ class SDLegislatorScraper(LegislatorScraper):
     def scrape_legislator(self, name, chamber, term, url):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
             party = page.xpath("string(//span[contains(@id, 'Party')])")
             party = party.strip()
@@ -64,7 +65,11 @@ class SDLegislatorScraper(LegislatorScraper):
                 "string(//span[contains(@id, 'Occupation')])")
             occupation = occupation.strip()
 
+            photo_url = page.xpath(
+                "//img[contains(@id, 'imgMember')]")[0].attrib['src']
+
             legislator = Legislator(term, chamber, district, name,
-                                    party=party, occupation=occupation)
+                                    party=party, occupation=occupation,
+                                    photo_url=photo_url)
             legislator.add_source(url)
             self.save_legislator(legislator)
