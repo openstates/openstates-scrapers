@@ -36,7 +36,8 @@ class WACommitteeScraper(CommitteeScraper):
                                      namespaces=self._ns)
                 phone = comm.xpath("string(wa:Phone)", namespaces=self._ns)
 
-                comm = Committee(chamber, name)
+                comm = Committee(chamber, name, _code=comm_id,
+                                 office_phone=phone)
                 self.scrape_members(comm, agency)
                 self.save_committee(comm)
 
