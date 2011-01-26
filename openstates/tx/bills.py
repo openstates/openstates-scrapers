@@ -123,7 +123,7 @@ class TXBillScraper(BillScraper):
                 atype = ['bill:introduced', 'bill:reading:1']
                 introduced = True
             elif desc == 'Read & adopted':
-                atype = 'bill_passed'
+                atype = 'bill:passed'
             else:
                 atype = 'other'
 
