@@ -250,3 +250,18 @@ class CAVoteDetail(Base):
                          CAVoteSummary.vote_date_seq == vote_date_seq,
                          CAVoteSummary.motion_id == motion_id),
         backref=backref('votes'))
+
+
+class CACommitteeHearing(Base):
+    __tablename__ = "committee_hearing_tbl"
+
+    bill_id = Column(String(20), ForeignKey(CABill.bill_id),
+                     ForeignKey(CAVoteSummary.bill_id), primary_key=True)
+    committee_type = Column(String(2), primary_key=True)
+    committee_nr = Column(Integer, primary_key=True)
+    hearing_date = Column(DateTime, primary_key=True)
+    location_code = Column(String(6), primary_key=True)
+    trans_uid = Column(String(30), primary_key=True)
+    trans_update_date = Column(DateTime, primary_key=True)
+
+    bill = relation(CABill, backref=backref('committee_hearings'))
