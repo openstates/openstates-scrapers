@@ -17,6 +17,8 @@ metadata = dict(
          'start_year': 2007, 'end_year': 2008},
         {'name': '2009-2010', 'sessions': ['18'],
          'start_year': 2009, 'end_year': 2010},
+        {'name': '2011-2012', 'sessions': ['19'],
+         'start_year': 2010, 'end_year': 2012},
         ],
     sesssion_details={
 #        '18': {'start_date': datetime.date(2001,1,24) },
