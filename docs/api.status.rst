@@ -15,7 +15,7 @@ State Status
 Ready States (green)
 --------------------
 
-States considered ready have high quality scrapers that are run regularly while the chamber in question is in session.  
+States considered ready have high quality scrapers that are run regularly while the chamber in question is in session.
 
 Issues reported with ready states are considered of high priority.  If you encounter issues using data from these states please report them on `the Open State Project issue tracker <http://code.google.com/p/openstates/issues/list>`_.
 
@@ -41,6 +41,7 @@ Generally we try to run experimental state scrapers as often as ready states, th
 
 Current Experimental States
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Arizona
 * Florida
 * Minnesota
 * Mississippi
@@ -49,6 +50,7 @@ Current Experimental States
 * North Carolina
 * Pennsylvania
 * South Dakota
+* Utah
 * Vermont
 * Virginia
 
