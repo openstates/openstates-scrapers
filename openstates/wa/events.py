@@ -15,7 +15,9 @@ class WAEventScraper(EventScraper):
     _ns = {'wa': "http://WSLWebServices.leg.wa.gov/"}
 
     def scrape(self, chamber, session):
-        url = "http://wslwebservices.leg.wa.gov/CommitteeMeetingService.asmx/GetCommitteeMeetings?beginDate=2011-01-10T00:00:00&endDate=2012-01-10T00:00:00"
+        url = ("http://wslwebservices.leg.wa.gov/CommitteeMeetingService"
+               ".asmx/GetCommitteeMeetings?beginDate=2011-01-10T00:00:00"
+               "&endDate=2012-01-10T00:00:00")
 
         expected_agency = {'upper': 'Senate', 'lower': 'House'}[chamber]
 
@@ -56,4 +58,12 @@ class WAEventScraper(EventScraper):
 
                 event = Event(session, dt, 'committee:meeting',
                               desc, location=location, _guid=guid)
+
+                for comm_part in meeting.xpath(
+                    "wa:Committees/wa:Committee", namespaces=self._ns):
+
+                    event.add_participant('committee',
+                                          comm_part.xpath("string(wa:Name)",
+                                                          namespaces=self._ns))
+
                 self.save_event(event)
