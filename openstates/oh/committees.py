@@ -74,13 +74,8 @@ class OHCommitteeScraper(CommitteeScraper):
             with self.urlopen(comm_url) as page:
                 root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
-                comm_name = name
-                if comm_name.startswith('agriculture'):
-                    comm_name = ("Agriculture, Environment and "
-                                 "Natural Resources")
-                else:
-                    comm_name = comm_name.replace("-", " ")
-                    comm_name = comm_name.title()
+                comm_name = root.xpath(
+                    "string(//div[@class='contentheading'])")
 
                 committee = Committee(chamber, comm_name)
                 committee.add_source(comm_url)
