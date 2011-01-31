@@ -52,16 +52,18 @@ class OHCommitteeScraper(CommitteeScraper):
                 self.save_committee(committee)
 
     def scrape_senate_comm(self, chamber, term):
-        committees = ["agriculture", "education",
+        committees = ["agriculture-environment-and-natural-resources",
+                      "education",
                       "energy-and-public-utilities",
-                      "environment-and-natural-resources",
-                      "finance-and-financial-institutions",
-                      "government-oversight",
+                      "finance",
+                      "financial-institutions",
+                      "government-oversight-and-reform",
                       "health-human-services-and-aging",
                       "highways-and-transportation",
                       "insurance-commerce-and-labor",
                       "judiciary-civil-justice",
-                      "judiciary-criminal-justice", "reference", "rules",
+                      "judiciary-criminal-justice",
+                      "rules-and-reference",
                       "state-and-local-government-and-veterans-affairs",
                       "ways-and-means-and-economic-development"]
 
@@ -73,8 +75,13 @@ class OHCommitteeScraper(CommitteeScraper):
                 root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
                 comm_name = name
-                comm_name = comm_name.replace("-", " ")
-                comm_name = comm_name.title()
+                if comm_name.startswith('agriculture'):
+                    comm_name = ("Agriculture, Environment and "
+                                 "Natural Resources")
+                else:
+                    comm_name = comm_name.replace("-", " ")
+                    comm_name = comm_name.title()
+
                 committee = Committee(chamber, comm_name)
                 committee.add_source(comm_url)
 
