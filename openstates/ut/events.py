@@ -1,0 +1,51 @@
+import os
+import re
+import datetime
+
+from billy.scrape.events import EventScraper, Event
+
+import pytz
+import lxml.html
+
+
+class UTEventScraper(EventScraper):
+    state = 'ut'
+
+    _tz = pytz.timezone('US/Mountain')
+
+    def scrape(self, chamber, session):
+        for month in xrange(1, 13):
+            self.scrape_month(chamber, session, month)
+
+    def scrape_month(self, chamber, session, month):
+        url = ("http://le.utah.gov/asp/interim/"
+               "Cal.asp?year=2011&month=%d" % month)
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            day = 1
+            for td in page.xpath("//td[@bgcolor='#FFFFCC']"):
+                for link in td.xpath("//a[contains(@href, 'Commit.asp')]"):
+                    comm = link.xpath("string()").strip()
+
+                    if chamber == 'upper' and not comm.startswith('Senate'):
+                        continue
+                    elif chamber == 'lower' and not comm.startswith('House'):
+                        continue
+
+                    time_loc = link.xpath("string(preceding-sibling::a[1])")
+
+                    time, location = re.match(
+                        r"(\d+:\d+ [AP]M)(.*)$", time_loc).groups()
+
+                    when = datetime.datetime.strptime(
+                        "%d %d 2011 %s" % (month, day, time),
+                        "%m %d %Y %H:%M %p")
+
+                    event = Event(session, when, 'committee:meeting',
+                                  'Committee Meeting\n%s' % comm,
+                                  location=location)
+                    event.add_source(url)
+                    self.save_event(event)
+
+                day += 1
