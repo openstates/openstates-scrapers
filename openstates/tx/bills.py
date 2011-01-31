@@ -38,6 +38,9 @@ class TXBillScraper(BillScraper):
 
     def scrape_bill(self, chamber, session, url):
         with self.urlopen(url) as data:
+            if "Bill does not exist." in data:
+                return
+
             bill = self.parse_bill_xml(chamber, session, data)
             bill.add_source(url)
 

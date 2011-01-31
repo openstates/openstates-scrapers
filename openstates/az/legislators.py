@@ -69,6 +69,13 @@ class AZLegislatorScraper(LegislatorScraper):
                     email = ''
                 
                 room = room.text_content().strip()
+                if chamber == 'lower':
+                    address = "House of Representatives\n"
+                else:
+                    address = "Senate\n"
+                address = address + "1700 West Washington\n" + room  \
+                                  + "\nPhoenix, AZ 85007"
+                
                 phone = phone.text_content().strip()
                 if not phone.startswith('602'):
                     phone = "602-" + phone
@@ -82,7 +89,8 @@ class AZLegislatorScraper(LegislatorScraper):
                     leg['roles'][0]['end_date'] = end_date
                 else:
                     leg = Legislator( term, chamber, district, full_name=name,
-                                      party=party, phone=phone, fax=fax, room=room, 
+                                      party=party, office_phone=phone,
+                                      office_fax=fax, office_address=address,
                                       email=email, url=link)
                 
                 if position:
