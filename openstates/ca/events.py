@@ -58,6 +58,9 @@ class CAEventScraper(EventScraper):
             bills_discussed[(location, date)].append(hearing.bill_id)
 
         for ((location, date), bills) in bills_discussed.iteritems():
+            bills = ["%s %s" % re.match(r'\d+([^\d]+)(\d+)', bill).groups()
+                     for bill in bills]
+
             desc = 'Committee Meeting\n%s\nDiscussed: %s' % (location,
                                                              ', '.join(bills))
 
