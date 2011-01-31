@@ -22,6 +22,7 @@ class UTEventScraper(EventScraper):
                "Cal.asp?year=2011&month=%d" % month)
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
             day = 1
             for td in page.xpath("//td[@bgcolor='#FFFFCC']"):
@@ -44,7 +45,8 @@ class UTEventScraper(EventScraper):
 
                     event = Event(session, when, 'committee:meeting',
                                   'Committee Meeting\n%s' % comm,
-                                  location=location)
+                                  location=location,
+                                  _guid=link.attrib['href'])
                     event.add_source(url)
                     self.save_event(event)
 
