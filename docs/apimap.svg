@@ -26,7 +26,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -312,13 +312,10 @@
      d="M 259.49836,310.10509 L 175.74933,298.23284 L 196.33694,185.69149 L 243.11725,194.43663 L 241.63245,205.06705 L 239.32083,218.23971 L 247.12852,219.16808 L 263.53504,220.97287 L 271.74601,221.82851 L 259.49836,310.10509 z"
      sodipodi:nodetypes="cccccccccc" />
   <path
-     style="fill:#000000;stroke:#ffffff;stroke-opacity:1;fill-opacity:0;stroke-width:0.75000000000000000;stroke-miterlimit:4;stroke-dasharray:none"
+     style="fill:#ff9955;stroke:#ffffff;stroke-opacity:1;fill-opacity:1;stroke-width:0.75000000000000000;stroke-miterlimit:4;stroke-dasharray:none"
      id="AZ"
      d="M 144.9112,382.62909 L 142.28419,384.78742 L 141.96087,386.24237 L 142.44585,387.21233 L 161.36012,397.88192 L 173.48466,405.47996 L 188.19576,414.04797 L 205.00845,424.07092 L 217.29465,426.49583 L 242.24581,429.20074 L 259.50142,310.07367 L 175.76579,298.15642 L 172.6734,314.56888 L 171.06711,314.58419 L 169.35244,317.21335 L 166.83759,317.09903 L 165.58017,314.35556 L 162.8367,314.01263 L 161.9222,312.86952 L 161.00772,312.86952 L 160.09322,313.44108 L 158.14993,314.46988 L 158.03563,321.44286 L 157.80699,323.15753 L 157.23545,335.73177 L 155.7494,337.90368 L 155.17784,341.21871 L 157.92131,346.1341 L 159.17873,351.96398 L 159.97892,352.99278 L 161.00772,353.56434 L 160.8934,355.85056 L 159.29305,357.22229 L 155.86371,358.93696 L 153.92042,360.88026 L 152.43437,364.53821 L 151.86281,369.4536 L 149.00503,372.19707 L 146.94743,372.88294 L 147.08312,373.71282 L 146.62587,375.42749 L 147.08312,376.22767 L 150.74108,376.79921 L 150.16952,379.54269 L 148.68347,381.7146 L 144.9112,382.62909 z"
-     sodipodi:nodetypes="cccccccccccccccccccccccccccccccccccccccccccccc"
-     inkscape:export-filename="/home/james/code/sunlight/openstates/docs/_static/apimap.png"
-     inkscape:export-xdpi="90"
-     inkscape:export-ydpi="90" />
+     sodipodi:nodetypes="cccccccccccccccccccccccccccccccccccccccccccccc" />
   <path
      style="fill:#ff9955;stroke:#ffffff;stroke-opacity:1;fill-opacity:1;stroke-width:0.75000000000000000;stroke-miterlimit:4;stroke-dasharray:none"
      id="NV"
