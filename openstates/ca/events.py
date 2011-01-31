@@ -1,6 +1,7 @@
 import os
 import re
 import datetime
+from collections import defaultdict
 
 from billy.conf import settings
 from billy.scrape.events import EventScraper, Event
@@ -40,7 +41,8 @@ class CAEventScraper(EventScraper):
         self.session = self.Session()
 
     def scrape(self, chamber, session):
-        seen = set()
+        bills_discussed = defaultdict(list)
+
         for hearing in self.session.query(CACommitteeHearing):
             location = self.session.query(CALocation).filter_by(
                 location_code=hearing.location_code)[0].description
@@ -53,11 +55,11 @@ class CAEventScraper(EventScraper):
             if event_chamber != chamber:
                 continue
 
-            if (location, date) in seen:
-                continue
-            seen.add((location, date))
+            bills_discussed[(location, date)].append(hearing.bill_id)
 
-            desc = 'Committee Meeting\n%s' % location
+        for ((location, date), bills) in bills_discussed.iteritems():
+            desc = 'Committee Meeting\n%s\nDiscussed: %s' % (location,
+                                                             ', '.join(bills))
 
             event = Event(session, date, 'committee:meeting', desc,
                           location=location)
