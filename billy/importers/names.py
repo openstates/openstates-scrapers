@@ -1,4 +1,7 @@
 import re
+import csv
+import os.path
+
 from billy import db
 
 __matchers = {}
@@ -11,9 +14,7 @@ def get_legislator_id(state, session, chamber, name):
         matcher = init_name_matcher(state, session, chamber)
         __matchers[(state, session, chamber)] = matcher
 
-    name = re.sub(r'^(Senator|Representative) ', '', name)
-
-    return matcher[name]
+    return matcher.match(name)
 
 
 def init_name_matcher(state, session, chamber):
@@ -37,7 +38,11 @@ def init_name_matcher(state, session, chamber):
         if 'middle_name' not in legislator:
             legislator['middle_name'] = ''
 
-        matcher[legislator] = legislator['_id']
+        matcher.learn(legislator)
+
+    manual_path = os.path.join(os.path.dirname(__file__),
+                               "../../manual_data/leg_ids/%s.csv" % state)
+    matcher.learn_manual_matches(manual_path)
 
     return matcher
 
@@ -97,13 +102,25 @@ class NameMatcher(object):
     """
 
     def _normalize(self, name):
+        name = re.sub(r'^(Senator|Representative) ', '', name)
         return name.strip().lower().replace('.', '')
 
     def __init__(self):
         self._names = {}
         self._codes = {}
+        self._manual = {}
 
-    def __setitem__(self, name, obj):
+    def learn_manual_matches(self, path):
+        try:
+            with open(path) as f:
+                reader = csv.reader(f)
+
+                for (term, name, leg_id) in reader:
+                    self._manual[name] = leg_id
+        except IOError:
+            pass
+
+    def learn(self, legislator):
         """
         Expects a dictionary with full_name, first_name, last_name and
         middle_name elements as key.
@@ -112,6 +129,8 @@ class NameMatcher(object):
         more than a few hundred legislators at a time so don't worry about
         it.
         """
+        name, obj = legislator, legislator['_id']
+
         if '_code' in name:
             code = name['_code']
             if code in self._codes:
@@ -168,15 +187,20 @@ class NameMatcher(object):
                 self._names[form] = obj
 
 
-    def __getitem__(self, name):
+    def match(self, name):
         """
         If this matcher has uniquely seen a matching name, return its
         value. Otherwise, return None.
         """
-        if name in self._codes:
+        try:
+            return self._manual[name]
+        except KeyError:
+            pass
+
+        try:
             return self._codes[name]
+        except KeyError:
+            pass
 
         name = self._normalize(name)
-        if name in self._names:
-            return self._names[name]
-        return None
+        return self._names.get(name, None)
