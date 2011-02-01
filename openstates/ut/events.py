@@ -26,6 +26,36 @@ class UTEventScraper(EventScraper):
 
             day = 1
             for td in page.xpath("//td[@bgcolor='#FFFFCC']"):
+                for font in td.xpath(
+                    "//font[contains(text(), 'Floor Time')]"):
+
+                    match = re.search(
+                        "(\d+:\d+ [AP]M)-(\d+:\d+ [AP]M) (House|Senate) "
+                        "Chamber", font.text)
+
+                    if not match:
+                        continue
+
+                    chamber_name = match.group(3)
+                    ev_chamber = {'Senate': 'upper',
+                               'House': 'lower'}[chamber_name]
+                    if ev_chamber != chamber:
+                        continue
+
+                    start = datetime.datetime.strptime(
+                        "%d %d 2011 %s" % (month, day, match.group(1)),
+                        "%m %d %Y %H:%M %p")
+                    end = datetime.datetime.strptime(
+                        "%d %d 2011 %s" % (month, day, match.group(2)),
+                        "%m %d %Y %H:%M %p")
+
+                    event = Event(session, start, 'floor_time',
+                                  '%s Floor Time' % chamber_name,
+                                  '%s Chamber' % chamber_name,
+                                  end=end)
+                    event.add_source(url)
+                    self.save_event(event)
+
                 for link in td.xpath("//a[contains(@href, 'Commit.asp')]"):
                     comm = link.xpath("string()").strip()
 
