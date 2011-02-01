@@ -38,7 +38,7 @@ class OHCommitteeScraper(CommitteeScraper):
                 if comm_id < 92:
                     chamber = "joint"
 
-                committee = Committee('lower', comm_name)
+                committee = Committee(chamber, comm_name)
                 committee.add_source(comm_url)
 
                 for link in page.xpath("//a[contains(@href, 'district')]"):
