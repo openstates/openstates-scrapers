@@ -100,7 +100,7 @@ class NCBillScraper(BillScraper):
 
             # sponsors
             pri_td = doc.xpath('//th[text()="Primary:"]/following-sibling::td')
-            for leg in pri_td[0].text.split('; '):
+            for leg in pri_td[0].text_content().split('; '):
                 leg = leg.strip()
                 if leg:
                     bill.add_sponsor('primary',
@@ -108,7 +108,7 @@ class NCBillScraper(BillScraper):
 
             # cosponsors
             co_td = doc.xpath('//th[text()="Co:"]/following-sibling::td')
-            for leg in co_td[0].text.split('; '):
+            for leg in co_td[0].text_content().split('; '):
                 leg = leg.strip()
                 if leg and leg != 'N/A':
                     bill.add_sponsor('cosponsor',
