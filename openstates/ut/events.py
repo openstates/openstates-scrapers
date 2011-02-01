@@ -15,11 +15,11 @@ class UTEventScraper(EventScraper):
 
     def scrape(self, chamber, session):
         for month in xrange(1, 13):
-            self.scrape_month(chamber, session, month)
+            self.scrape_month(chamber, session, int(session), month,)
 
-    def scrape_month(self, chamber, session, month):
+    def scrape_month(self, chamber, session, year, month):
         url = ("http://le.utah.gov/asp/interim/"
-               "Cal.asp?year=2011&month=%d" % month)
+               "Cal.asp?year=%d&month=%d" % (year, month))
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
@@ -43,10 +43,10 @@ class UTEventScraper(EventScraper):
                         continue
 
                     start = datetime.datetime.strptime(
-                        "%d %d 2011 %s" % (month, day, match.group(1)),
+                        "%d %d %d %s" % (month, day, year, match.group(1)),
                         "%m %d %Y %H:%M %p")
                     end = datetime.datetime.strptime(
-                        "%d %d 2011 %s" % (month, day, match.group(2)),
+                        "%d %d %d %s" % (month, day, year, match.group(2)),
                         "%m %d %Y %H:%M %p")
 
                     event = Event(session, start, 'floor_time',
