@@ -61,9 +61,12 @@ class WAEventScraper(EventScraper):
 
                 for comm_part in meeting.xpath(
                     "wa:Committees/wa:Committee", namespaces=self._ns):
+                    name = comm_part.xpath("string(wa:Name)",
+                                           namespaces=self._ns)
+                    agency = comm_part.xpath("string(wa:Agency)",
+                                             namespaces=self._ns)
+                    name = "%s %s Committee" % (agency, name)
 
-                    event.add_participant('committee',
-                                          comm_part.xpath("string(wa:Name)",
-                                                          namespaces=self._ns))
+                    event.add_participant('committee', name)
 
                 self.save_event(event)
