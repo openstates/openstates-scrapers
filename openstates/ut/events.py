@@ -34,8 +34,13 @@ class UTEventScraper(EventScraper):
                     elif chamber == 'lower' and not comm.startswith('House'):
                         continue
 
-                    time_loc = link.xpath("string(preceding-sibling::a[1])")
+                    preceding_link = link.xpath("preceding-sibling::a[1]")[0]
+                    if (preceding_link.getnext().xpath("string()") ==
+                        ' CANCELED'):
 
+                        continue
+
+                    time_loc = preceding_link.xpath("string()")
                     time, location = re.match(
                         r"(\d+:\d+ [AP]M)(.*)$", time_loc).groups()
 
