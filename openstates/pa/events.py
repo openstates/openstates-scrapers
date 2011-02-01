@@ -38,7 +38,7 @@ class PAEventScraper(EventScraper):
 
                     try:
                         dt = datetime.datetime.strptime(
-                            dt, "%A, %B %d, %Y %H:%M %p")
+                            dt, "%A, %B %d, %Y %I:%M %p")
                         dt = self._tz.localize(dt)
                     except ValueError:
                         break

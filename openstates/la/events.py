@@ -12,7 +12,7 @@ def parse_datetime(s, year):
 
     match = re.match(r"[A-Z][a-z]{2,2} \d+, \d\d:\d\d (AM|PM)", s)
     if match:
-        dt = datetime.datetime.strptime(match.group(0), "%b %d, %H:%M %p")
+        dt = datetime.datetime.strptime(match.group(0), "%b %d, %I:%M %p")
 
     match = re.match(r"[A-Z][a-z]{2,2} \d+", s)
     if match:

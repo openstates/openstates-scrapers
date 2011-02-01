@@ -44,10 +44,10 @@ class UTEventScraper(EventScraper):
 
                     start = datetime.datetime.strptime(
                         "%d %d %d %s" % (month, day, year, match.group(1)),
-                        "%m %d %Y %H:%M %p")
+                        "%m %d %Y %I:%M %p")
                     end = datetime.datetime.strptime(
                         "%d %d %d %s" % (month, day, year, match.group(2)),
-                        "%m %d %Y %H:%M %p")
+                        "%m %d %Y %I:%M %p")
 
                     event = Event(session, start, 'floor_time',
                                   '%s Floor Time' % chamber_name,
@@ -76,7 +76,7 @@ class UTEventScraper(EventScraper):
 
                     when = datetime.datetime.strptime(
                         "%d %d 2011 %s" % (month, day, time),
-                        "%m %d %Y %H:%M %p")
+                        "%m %d %Y %I:%M %p")
 
                     event = Event(session, when, 'committee:meeting',
                                   'Committee Meeting\n%s' % comm,
