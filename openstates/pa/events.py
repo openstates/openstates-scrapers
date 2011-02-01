@@ -50,7 +50,7 @@ class PAEventScraper(EventScraper):
                     location = re.sub(r'\s+', ' ', location)
 
                     event = Event(session, dt, 'committee:meeting',
-                                  desc, location=location)
+                                  desc, location)
                     event.add_source(url)
                     self.save_event(event)
 
