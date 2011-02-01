@@ -9,42 +9,23 @@ __matchers = {}
 
 def get_legislator_id(state, session, chamber, name):
     try:
-        matcher = __matchers[(state, session, chamber)]
+        matcher = __matchers[(state, session)]
     except KeyError:
-        matcher = init_name_matcher(state, session, chamber)
-        __matchers[(state, session, chamber)] = matcher
+        metadata = db.metadata.find_one({'_id': state})
+        term = None
+        for term in metadata['terms']:
+            if session in term['sessions']:
+                break
+        else:
+            raise Exception("bad session: " + session)
 
-    return matcher.match(name)
+        matcher = NameMatcher(state, term['name'])
+        __matchers[(state, session)] = matcher
 
+    if chamber == 'both' or chamber == 'joint':
+        chamber = None
 
-def init_name_matcher(state, session, chamber):
-    matcher = NameMatcher()
-
-    elemMatch = {'state': state, 'type': 'member'}
-
-    metadata = db.metadata.find_one({'_id': state})
-    for term in metadata['terms']:
-        if session in term['sessions']:
-            elemMatch['term'] = term['name']
-            break
-    else:
-        raise Exception("bad session: " + session)
-
-    if chamber and chamber not in ('both', 'joint'):
-        elemMatch['chamber'] = chamber
-
-    for legislator in db.legislators.find({
-            'roles': {'$elemMatch': elemMatch}}):
-        if 'middle_name' not in legislator:
-            legislator['middle_name'] = ''
-
-        matcher.learn(legislator)
-
-    manual_path = os.path.join(os.path.dirname(__file__),
-                               "../../manual_data/leg_ids/%s.csv" % state)
-    matcher.learn_manual_matches(manual_path)
-
-    return matcher
+    return matcher.match(name, chamber)
 
 
 class NameMatcher(object):
@@ -52,7 +33,7 @@ class NameMatcher(object):
     Match various forms of a name, provided they uniquely identify
     a person from everyone else we've seen.
 
-    Given the name object:
+    Given a legislator with the name:
      {'full_name': 'Michael J. Stephens', 'first_name': 'Michael',
       'last_name': 'Stephens', 'middle_name': 'Joseph'}
     we will match these forms:
@@ -69,58 +50,65 @@ class NameMatcher(object):
      Michael Joseph Stephens
      Stephens (M)
 
-    Tests:
-
-    >>> nm = NameMatcher()
-    >>> nm[{'full_name': 'Michael J. Stephens', 'first_name': 'Michael', \
-            'last_name': 'Stephens', 'middle_name': 'J', \
-            '_scraped_name': 'Michael J. Stephens'}] = 1
-    >>> assert nm['Michael J. Stephens'] == 1
-    >>> assert nm['Stephens'] == 1
-    >>> assert nm['Michael Stephens'] == 1
-    >>> assert nm['Stephens, M'] == 1
-    >>> assert nm['Stephens, Michael'] == 1
-    >>> assert nm['Stephens, M J'] == 1
-
-    Add a similar name:
-
-    >>> nm[{'full_name': 'Mike J. Stephens', 'first_name': 'Mike', \
-            'last_name': 'Stephens', 'middle_name': 'Joseph', \
-            '_scraped_name': 'Mike J. Stephens'}] = 2
-
-    Unique:
-
-    >>> assert nm['Mike J. Stephens'] == 2
-    >>> assert nm['Mike Stephens'] == 2
-    >>> assert nm['Michael Stephens'] == 1
-
-    Not unique anymore:
-
-    >>> assert nm['Stephens'] == None
-    >>> assert nm['Stephens, M'] == None
-    >>> assert nm['Stephens, M J'] == None
+    If we add a second legislator with the name:
+     {'full_name': 'Matthew J. Stephens', 'first_name': 'Matthew',
+      'last_name': 'Stephens', 'middle_name': 'Joseph'}
+    Then the forms
+     Stephens, M
+     Stephens, M J
+     M Stephens
+     M J Stephens
+     Stephens (M)
+    are no longer unique and will not be matched with either legislator.
     """
 
-    def _normalize(self, name):
-        name = re.sub(r'^(Senator|Representative) ', '', name)
-        return name.strip().lower().replace('.', '')
+    def __init__(self, state, term):
+        self._names = {'upper': {}, 'lower': {}, None: {}}
+        self._codes = {'upper': {}, 'lower': {}, None: {}}
+        self._manual = {'upper': {}, 'lower': {}, None: {}}
+        self._state = state
+        self._term = term
 
-    def __init__(self):
-        self._names = {}
-        self._codes = {}
-        self._manual = {}
+        elemMatch = {'state': state, 'type': 'member'}
 
-    def learn_manual_matches(self, path):
+        for legislator in db.legislators.find({
+            '$or': [{'roles': {'$elemMatch': elemMatch}},
+                    {'old_roles': {'$elemMatch': elemMatch}}]}):
+
+            if 'middle_name' not in legislator:
+                legislator['middle_name'] = ''
+
+            self._learn(legislator)
+
+        self._learn_manual_matches()
+
+    def _learn_manual_matches(self):
+        path = os.path.join(os.path.dirname(__file__),
+                            "../../manual_data/leg_ids/%s.csv" %
+                            self._state)
         try:
             with open(path) as f:
                 reader = csv.reader(f)
 
-                for (term, name, leg_id) in reader:
-                    self._manual[name] = leg_id
+                for (term, chamber, name, leg_id) in reader:
+                    if term == self._term:
+                        self._manual[chamber][name] = leg_id
+                        self._manual[None][name] = leg_id
         except IOError:
             pass
 
-    def learn(self, legislator):
+    def _normalize(self, name):
+        """
+        Normalizes a legislator name by stripping titles from the front,
+        converting to lowercase and removing punctuation.
+        """
+        name = re.sub(
+            r'^(Senator|Representative|Assembly(member|man|woman)) ',
+            '',
+            name)
+        return name.strip().lower().replace('.', '')
+
+    def _learn(self, legislator):
         """
         Expects a dictionary with full_name, first_name, last_name and
         middle_name elements as key.
@@ -131,11 +119,22 @@ class NameMatcher(object):
         """
         name, obj = legislator, legislator['_id']
 
+        role = legislator['roles'][0]
+        if role['term'] == self._term:
+            chamber = role['chamber']
+        else:
+            try:
+                chamber = legislator['old_roles'][self._term][0]['chamber']
+            except KeyError:
+                raise ValueError("no role in legislator for term %s" %
+                                 self._term)
+
         if '_code' in name:
             code = name['_code']
-            if code in self._codes:
+            if code in self._codes[chamber] or code in self._codes[None]:
                 raise ValueError("non-unique legislator code: %s" % code)
-            self._codes[code] = obj
+            self._codes[chamber][code] = obj
+            self._codes[None][code] = obj
 
         # We throw possible forms of this name into a set because we
         # don't want to try to add the same form twice for the same
@@ -181,26 +180,35 @@ class NameMatcher(object):
 
         for form in forms:
             form = self._normalize(form)
-            if form in self._names:
-                self._names[form] = None
+            if form in self._names[chamber]:
+                self._names[chamber][form] = None
             else:
-                self._names[form] = obj
+                self._names[chamber][form] = obj
+
+            if form in self._names[None]:
+                self._names[None][form] = None
+            else:
+                self._names[None][form] = obj
 
 
-    def match(self, name):
+    def match(self, name, chamber=None):
         """
         If this matcher has uniquely seen a matching name, return its
         value. Otherwise, return None.
+
+        If chamber is set then the search will be limited to legislators
+        with matching chamber. If chamber is None then the search
+        will be cross-chamber.
         """
         try:
-            return self._manual[name]
+            return self._manual[chamber][name]
         except KeyError:
             pass
 
         try:
-            return self._codes[name]
+            return self._codes[chamber][name]
         except KeyError:
             pass
 
         name = self._normalize(name)
-        return self._names.get(name, None)
+        return self._names[chamber].get(name, None)
