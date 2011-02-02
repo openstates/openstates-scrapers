@@ -20,7 +20,7 @@ def keyfunc(obj):
 
 def all_states(request):
     states = []
-    for meta in db.metadata.find():
+    for meta in list(db.metadata.find()) + [{'_id':'total', 'name':'total'}]:
         state = {}
         state['id'] = meta['_id']
         state['name'] = meta['name']
@@ -34,30 +34,31 @@ def all_states(request):
         state['subjects'] = float(counts['subjects'])/counts['bills']*100
         state['sponsor_ids'] = float(counts['idd_sponsors'])/counts['sponsors']*100
         state['voter_ids'] = float(counts['idd_voters'])/counts['voters']*100
-        state['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
-        state['legislators'] = db.legislators.find(s_spec).count()
-        state['committees'] = db.committees.find(s_spec).count()
-        id_counts = _get_state_leg_id_stats(state['id'])
-        active_legs = db.legislators.find({'state':state['id'],
-                                           'active':True}).count()
-        state['external_ids'] = (1-(float(id_counts['missing_pvs'] +
-                                        #id_counts['missing_nimsp'] +
-                                        id_counts['missing_tdata']) /
-                                   (active_legs*2)))*100
 
-        missing_bill_sources = db.bills.find({'state': state['id'],
-                                              'sources': {'$size': 0}}).count()
-        missing_leg_sources = db.legislators.find({'state': state['id'],
-                                              'sources': {'$size': 0}}).count()
-        state['missing_sources'] = ''
-        if missing_bill_sources:
-            state['missing_sources'] += 'bills'
-        if missing_leg_sources:
-            state['missing_sources'] += ' legislators'
+        if state['id'] != 'total':
+            state['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
+            state['legislators'] = db.legislators.find(s_spec).count()
+            state['committees'] = db.committees.find(s_spec).count()
+            id_counts = _get_state_leg_id_stats(state['id'])
+            active_legs = db.legislators.find({'state':state['id'],
+                                               'active':True}).count()
+            state['external_ids'] = (1-(float(id_counts['missing_pvs'] +
+                                            #id_counts['missing_nimsp'] +
+                                            id_counts['missing_tdata']) /
+                                       (active_legs*2)))*100
+            missing_bill_sources = db.bills.find({'state': state['id'],
+                                                  'sources': {'$size': 0}}).count()
+            missing_leg_sources = db.legislators.find({'state': state['id'],
+                                                  'sources': {'$size': 0}}).count()
+            state['missing_sources'] = ''
+            if missing_bill_sources:
+                state['missing_sources'] += 'bills'
+            if missing_leg_sources:
+                state['missing_sources'] += ' legislators'
 
         states.append(state)
 
-    states.sort(key=lambda x:x['id'])
+    states.sort(key=lambda x:x['id'] if x['id'] != 'total' else 'zz')
 
     return render_to_response('index.html', {'states': states})
 
