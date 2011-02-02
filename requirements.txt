@@ -1,5 +1,4 @@
--r billy/importers/requirements.txt
+-r billy/requirements.txt
 -r billy/site/requirements.txt
--r billy/scrape/requirements.txt
 
 nose
