@@ -18,11 +18,11 @@ def generate_statistics():
                    'versions': this.versions.length};
 
         for(var i=0; i < this.actions.length; ++i) {
-            if(this.actions[i]["type"] != ["other"]) {
+            if(this.actions[i]["type"] != "other") {
                 val['categorized']++;
             }
             for(var j=0; j < this.actions[i].length; ++j) {
-                if(this.actions[i][j]["type"] == "bill:introduced") {
+                if(this.actions[i]["type"][j] == "bill:introduced") {
                     val['introduced'] = 1;
                 }
             }
