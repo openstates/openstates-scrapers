@@ -37,6 +37,10 @@ class NCBillScraper(BillScraper):
         return self.metadata['terms'][-1]['sessions'][-1] == session
 
     def build_subject_map(self):
+        # don't scan subject list twice in one run
+        if hasattr(self, 'subject_map'):
+            return
+
         self.subject_map = defaultdict(list)
         cur_subject = None
 
