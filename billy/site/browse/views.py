@@ -24,7 +24,7 @@ def all_states(request):
         state = {}
         state['id'] = meta['_id']
         state['name'] = meta['name']
-        counts = db.counts.find_one({'_id': state['id']})
+        counts = db.counts.find_one({'_id': state['id']})['value']
         s_spec = {'state': state['id']}
         state['bills'] = counts['bills']
         state['legislators'] = db.legislators.find(s_spec).count()
