@@ -40,7 +40,7 @@ def all_states(request):
         state['external_ids'] = (1-(float(id_counts['missing_pvs'] +
                                         #id_counts['missing_nimsp'] +
                                         id_counts['missing_tdata']) /
-                                   active_legs))*100
+                                   (active_legs*2)))*100
 
         missing_bill_sources = db.bills.find({'state': state['id'],
                                               'sources': {'$size': 0}}).count()
