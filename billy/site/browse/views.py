@@ -27,21 +27,13 @@ def all_states(request):
         counts = db.counts.find_one({'_id': state['id']})['value']
         s_spec = {'state': state['id']}
         state['bills'] = counts['bills']
+        state['votes'] = counts['votes']
+        state['introduced'] = float(counts['introduced'])/float(counts['bills'])
+        state['introduced'] = float(counts['categorized'])/float(counts['actions'])
+        state['versions'] = counts['versions']
+        state['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
         state['legislators'] = db.legislators.find(s_spec).count()
         state['committees'] = db.committees.find(s_spec).count()
-        state['votes'] = counts['votes']
-        state['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
-        state['introduced'] = db.bills.find({'state': state['id'],
-                                             'actions.type': 'bill:introduced'}).count()
-        actions = 0
-        other_actions = 0
-        for bill in db.bills.find(s_spec):
-            for action in bill['actions']:
-                if action['type'] == ['other']:
-                    other_actions += 1
-                actions += 1
-        state['typed_actions'] = float(actions-other_actions)/actions
-        state['versions'] = counts['versions']
 
         missing_bill_sources = db.bills.find({'state': state['id'],
                                               'sources': {'$size': 0}}).count()
@@ -52,7 +44,6 @@ def all_states(request):
             state['missing_sources'] += 'bills'
         if missing_leg_sources:
             state['missing_sources'] += ' legislators'
-        
 
         states.append(state)
 

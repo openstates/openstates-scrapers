@@ -11,16 +11,30 @@ def generate_statistics():
     m = Code("""
     function () {
         var val = {'bills': 1,
+                   'introduced': 0,
+                   'categorized': 0,
                    'actions': this.actions.length,
                    'votes': this.votes.length,
                    'versions': this.versions.length};
+
+        for(var i=0; i < this.actions.length; ++i) {
+            if(this.actions[i] != ["other"]) {
+                val['categorized']++;
+            }
+            for(var j=0; j < this.actions[i].length; ++j) {
+                if(this.actions[i][j] == "bill:introduced") {
+                    val['introduced'] = 1;
+                }
+            }
+        }
         emit(this['state'], val);
         emit('total', val);
     }""")
 
     r = Code("""
     function (key, values) {
-        sums = {'bills': 0, 'actions': 0, 'votes': 0, 'versions': 0};
+        sums = {'bills': 0, 'actions': 0, 'votes': 0, 'versions': 0,
+                'introduced': 0, 'categorized': 0};
         for (var i in values) {
             value = values[i];
 
