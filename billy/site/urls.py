@@ -4,8 +4,6 @@ from django.contrib import admin
 
 
 urlpatterns = patterns('',
-    (r'^admin/doc/', include('django.contrib.admindocs.urls')),
-    (r'^admin/', include(admin.site.urls)),
     (r'^api/locksmith/', include('locksmith.auth.urls')),
     (r'^api/', include('billy.site.api.urls')),
     (r'^browse/', include('billy.site.browse.urls')),
