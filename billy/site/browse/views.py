@@ -32,6 +32,8 @@ def all_states(request):
         state['introduced'] = float(counts['introduced'])/counts['bills']*100
         state['typed_actions'] = float(counts['categorized'])/counts['actions']*100
         state['subjects'] = float(counts['subjects'])/counts['bills']*100
+        state['sponsor_ids'] = float(counts['idd_sponsors'])/counts['sponsors']*100
+        state['voter_ids'] = float(counts['idd_voters'])/counts['voters']*100
         state['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
         state['legislators'] = db.legislators.find(s_spec).count()
         state['committees'] = db.committees.find(s_spec).count()

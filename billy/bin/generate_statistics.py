@@ -13,6 +13,8 @@ def generate_statistics():
         var val = {'bills': 1,
                    'introduced': 0,
                    'categorized': 0,
+                   'voters': 0,
+                   'idd_voters': 0,
                    'actions': this.actions.length,
                    'votes': this.votes.length,
                    'versions': this.versions.length};
@@ -22,6 +24,7 @@ def generate_statistics():
              val['subjects'] = 0;
         }
 
+        // count how many actions are categorized & introduced
         for(var i=0; i < this.actions.length; ++i) {
             if(this.actions[i]["type"] != "other") {
                 val['categorized']++;
@@ -32,6 +35,43 @@ def generate_statistics():
                 }
             }
         }
+
+        // check sponsor leg_ids
+        val['sponsors'] = this.sponsors.length;
+        val['idd_sponsors'] = 0;
+
+        for(var i=0; i < this.sponsors.length; ++i) {
+             if(this.sponsors[i]['leg_id']) {
+                 val['idd_sponsors'] += 1;
+             }
+        }
+
+        // go through yes/no/other votes and count voter leg_ids
+        for(var i=0; i < this.votes.length; ++i) {
+            for(var j=0; j < this.votes[i]["yes_votes"].length; ++j) {
+                val['voters'] += 1;
+                if(this.votes[i]["yes_votes"][j]["leg_id"]) {
+                    val['idd_voters'] += 1;
+                }
+            }
+        }
+        for(var i=0; i < this.votes.length; ++i) {
+            for(var j=0; j < this.votes[i]["no_votes"].length; ++j) {
+                val['voters'] += 1;
+                if(this.votes[i]["no_votes"][j]["leg_id"]) {
+                    val['idd_voters'] += 1;
+                }
+            }
+        }
+        for(var i=0; i < this.votes.length; ++i) {
+            for(var j=0; j < this.votes[i]["other_votes"].length; ++j) {
+                val['voters'] += 1;
+                if(this.votes[i]["other_votes"][j]["leg_id"]) {
+                    val['idd_voters'] += 1;
+                }
+            }
+        }
+
         emit(this['state'], val);
         emit('total', val);
     }""")
@@ -39,7 +79,9 @@ def generate_statistics():
     r = Code("""
     function (key, values) {
         sums = {'bills': 0, 'actions': 0, 'votes': 0, 'versions': 0,
-                'subjects': 0, 'introduced': 0, 'categorized': 0};
+                'subjects': 0, 'introduced': 0, 'categorized': 0,
+                'voters': 0, 'idd_voters': 0,
+                'sponsors': 0, 'idd_sponsors': 0};
         for (var i in values) {
             value = values[i];
 
