@@ -30,7 +30,7 @@ def all_states(request):
         state['legislators'] = db.legislators.find(s_spec).count()
         state['committees'] = db.committees.find(s_spec).count()
         state['votes'] = counts['votes']
-        state['bill_types'] = len(db.bills.distinct('type', s_spec)) > 1
+        state['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
         state['introduced'] = db.bills.find({'state': state['id'],
                                              'actions.type': 'bill:introduced'}).count()
         actions = 0
