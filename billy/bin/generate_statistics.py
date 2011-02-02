@@ -17,7 +17,7 @@ def generate_statistics():
                    'votes': this.votes.length,
                    'versions': this.versions.length};
         if(this.hasOwnProperty('subjects')) {
-             val['subjects'] = this.subjects.length;
+             val['subjects'] = 1;
         } else {
              val['subjects'] = 0;
         }

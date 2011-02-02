@@ -28,9 +28,10 @@ def all_states(request):
         s_spec = {'state': state['id']}
         state['bills'] = counts['bills']
         state['votes'] = counts['votes']
-        state['introduced'] = float(counts['introduced'])/float(counts['bills'])*100
-        state['typed_actions'] = float(counts['categorized'])/float(counts['actions'])*100
         state['versions'] = counts['versions']
+        state['introduced'] = float(counts['introduced'])/counts['bills']*100
+        state['typed_actions'] = float(counts['categorized'])/counts['actions']*100
+        state['subjects'] = float(counts['subjects'])/counts['bills']*100
         state['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
         state['legislators'] = db.legislators.find(s_spec).count()
         state['committees'] = db.committees.find(s_spec).count()
