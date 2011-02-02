@@ -34,6 +34,13 @@ def all_states(request):
         state['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
         state['legislators'] = db.legislators.find(s_spec).count()
         state['committees'] = db.committees.find(s_spec).count()
+        id_counts = _get_state_leg_id_stats(state['id'])
+        active_legs = db.legislators.find({'state':state['id'],
+                                           'active':True}).count()
+        state['external_ids'] = (1-(float(id_counts['missing_pvs'] +
+                                        #id_counts['missing_nimsp'] +
+                                        id_counts['missing_tdata']) /
+                                   active_legs))*100
 
         missing_bill_sources = db.bills.find({'state': state['id'],
                                               'sources': {'$size': 0}}).count()

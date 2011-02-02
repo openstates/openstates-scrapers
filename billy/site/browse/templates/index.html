@@ -21,6 +21,7 @@
         <th>% Introduced</th>
         <th>Actions w/ Types</th>
         <th>Missing Sources</th>
+        <th>External IDs</th>
     </tr>
 
     {% for state in states %}
@@ -34,7 +35,7 @@
             {{state.committees}}</td>
         <td class="{{state.votes|yesno:"good,bad"}}">
             {{state.votes}}</td>
-        <td class="{{state.version|yesno:"good,bad"}}">
+        <td class="{{state.versions|yesno:"good,bad"}}">
             {{state.versions}}</td>
         <td class="{{state.bill_types|yesno:"good,bad"}}">
             {{state.bill_types}}</td>
@@ -50,6 +51,17 @@
             {% endif %}
             >{{state.introduced|floatformat}}</td>
         <td
+            {% if state.external_ids < 75 %}
+            class="bad"
+            {% else %}
+                {% if state.external_ids < 98 %}
+                class="warning"
+                {% else %}
+                class="good"
+                {% endif %}
+            {% endif %}
+            >{{state.external_ids|floatformat}}</td>
+        <td
             {% if state.typed_actions < 33 %}
             class="bad"
             {% else %}
@@ -60,7 +72,7 @@
                 {% endif %}
             {% endif %}
             >{{state.typed_actions|floatformat}}</td>
-        <td class="{{state.missing_sources|yesno:"good,bad"}}">
+        <td class="{{state.missing_sources|yesno:"bad,good"}}">
            {{state.missing_sources}}</td>
     </tr>
     {% endfor %}
