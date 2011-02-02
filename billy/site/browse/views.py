@@ -56,7 +56,7 @@ def all_states(request):
 
         states.append(state)
 
-    states.sort(key=lambda x:x['_id'])
+    states.sort(key=lambda x:x['id'])
 
     return render_to_response('index.html', {'states': states})
 
