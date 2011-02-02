@@ -21,7 +21,7 @@ def generate_statistics():
             if(this.actions[i]["type"] != "other") {
                 val['categorized']++;
             }
-            for(var j=0; j < this.actions[i].length; ++j) {
+            for(var j=0; j < this.actions[i]["type"].length; ++j) {
                 if(this.actions[i]["type"][j] == "bill:introduced") {
                     val['introduced'] = 1;
                 }
