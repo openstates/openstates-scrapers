@@ -28,15 +28,15 @@
         <td><a href="{{state.id}}/">{{state.name}}</a></td>
         <td class="{{state.legislators|yesno:"good,bad"}}">
             {{state.legislators}}</td>
-        <td class="{{state.legislators|yesno:"good,bad"}}">
+        <td class="{{state.bills|yesno:"good,bad"}}">
             {{state.bills}}</td>
-        <td class="{{state.legislators|yesno:"good,bad"}}">
+        <td class="{{state.committees|yesno:"good,bad"}}">
             {{state.committees}}</td>
-        <td class="{{state.legislators|yesno:"good,bad"}}">
+        <td class="{{state.votes|yesno:"good,bad"}}">
             {{state.votes}}</td>
-        <td class="{{state.legislators|yesno:"good,bad"}}">
+        <td class="{{state.version|yesno:"good,bad"}}">
             {{state.versions}}</td>
-        <td class="{{state.legislators|yesno:"good,bad"}}">
+        <td class="{{state.bill_types|yesno:"good,bad"}}">
             {{state.bill_types}}</td>
         <td
             {% if state.introduced < 50 %}
@@ -60,7 +60,7 @@
                 {% endif %}
             {% endif %}
             >{{state.typed_actions|floatformat}}</td>
-        <td class="{{state.legislators|yesno:"good,bad"}}">
+        <td class="{{state.missing_sources|yesno:"good,bad"}}">
            {{state.missing_sources}}</td>
     </tr>
     {% endfor %}
