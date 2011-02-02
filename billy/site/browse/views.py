@@ -29,7 +29,6 @@ def all_states(request):
         state['bills'] = counts['bills']
         state['votes'] = counts['votes']
         state['versions'] = counts['versions']
-        state['introduced'] = float(counts['introduced'])/counts['bills']*100
         state['typed_actions'] = float(counts['categorized'])/counts['actions']*100
         state['subjects'] = float(counts['subjects'])/counts['bills']*100
         state['sponsor_ids'] = float(counts['idd_sponsors'])/counts['sponsors']*100

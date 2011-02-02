@@ -19,7 +19,6 @@
         <th>Versions</th>
         <th>Bill Types</th>
         <th>Bills w/ Subjects</th>
-        <th>% Introduced</th>
         <th>Actions w/ Types</th>
         <th>Sponsor leg_ids</th>
         <th>Vote leg_ids</th>
@@ -53,7 +52,6 @@
                 {% endif %}
             {% endif %}
             >{{state.subjects|floatformat}}</td>
-        <td>{{state.introduced|floatformat}}</td>
         <td
             {% if state.typed_actions < 25 %}
             class="bad"
