@@ -16,6 +16,11 @@ def generate_statistics():
                    'actions': this.actions.length,
                    'votes': this.votes.length,
                    'versions': this.versions.length};
+        if(this.hasOwnProperty('subjects')) {
+             val['subjects'] = this.subjects.length;
+        } else {
+             val['subjects'] = 0;
+        }
 
         for(var i=0; i < this.actions.length; ++i) {
             if(this.actions[i]["type"] != "other") {
@@ -34,7 +39,7 @@ def generate_statistics():
     r = Code("""
     function (key, values) {
         sums = {'bills': 0, 'actions': 0, 'votes': 0, 'versions': 0,
-                'introduced': 0, 'categorized': 0};
+                'subjects': 0, 'introduced': 0, 'categorized': 0};
         for (var i in values) {
             value = values[i];
 
