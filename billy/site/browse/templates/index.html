@@ -8,6 +8,13 @@
         <th>State</th>
         <th>Legislators</th>
         <th>Bills</th>
+        <th>Committees</th>
+        <th>Votes</th>
+        <th>Versions</th>
+        <th>Bill Types</th>
+        <th>% Introduced</th>
+        <th>Actions w/ Types</th>
+        <th>Missing Sources</th>
     </tr>
 
     {% for state in states %}
@@ -15,6 +22,13 @@
         <td><a href="{{state.id}}/">{{state.name}}</a></td>
         <td>{{state.legislators}}</td>
         <td>{{state.bills}}</td>
+        <td>{{state.committees}}</td>
+        <td>{{state.votes}}</td>
+        <td>{{state.versions}}</td>
+        <td>{{state.bill_types}}</td>
+        <td>{{state.introduced}}</td>
+        <td>{{state.typed_actions}}</td>
+        <td>{{state.missing_sources}}</td>
     </tr>
     {% endfor %}
 </table>
