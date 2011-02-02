@@ -94,17 +94,12 @@ def dump_json(state, filename, validate):
 
 
 def upload(state, filename):
-    date = datetime.date.today()
-    year = date.year
-    month = date.month - 1
-    if month == 0:
-        month = 12
-        year -= 1
+    today = datetime.date.today()
 
     # build URL
     s3_bucket = 'data.openstates.sunlightlabs.com'
     n = 1
-    s3_path = '%s-%02d-%s-r%d.zip' % (year, month, state, n)
+    s3_path = '%s-%02d-%s-r%d.zip' % (today.year, today.month, state, n)
     s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
     metadata = db.metadata.find_one({'_id':state})
@@ -113,7 +108,7 @@ def upload(state, filename):
     if s3_url == old_url:
         old_num = re.match('.*?-r(\d*).zip', old_url).groups()[0]
         n = int(old_num)+1
-        s3_path = '%s-%02d-%s-r%d.zip' % (year, month, state, n)
+        s3_path = '%s-%02d-%s-r%d.zip' % (today.year, today.month, state, n)
         s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
     # S3 upload
