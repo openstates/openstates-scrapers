@@ -29,21 +29,25 @@ def process_file(state, save=False):
             leg['_scraped_name'] = leg['full_name']
 
         # check columns
-        changed = []
-        keys = ('first_name', 'middle_name', 'last_name', 'suffixes',
-                'nickname', 'votesmart_id', 'transparencydata_id', 'photo_url')
+        changed = {}
+        keys = set(['first_name', 'middle_name', 'last_name', 'suffixes',
+                   'nickname', 'votesmart_id', 'transparencydata_id',
+                   'photo_url'])
+        keys.intersection_update(namefile.fieldnames)
         for key in keys:
             fileval = (row[key].decode('utf-8') or u'').strip()
             dbval = leg.get(key, '')
             if fileval != dbval:
+                changed[key] = dbval
                 leg[key] = fileval
-                changed.append(key)
             if key in leg:
                 leg[key] = leg[key].strip()
 
         # show what changed
         if changed:
-            print row['_id'], 'changed', ' '.join(changed)
+            print row['_id']
+            for k,v in changed.iteritems():
+                print '  %s [%s --> %s]' % (k, v, row[k])
 
         # reassemble full_name
         full_name = leg['first_name']
@@ -58,7 +62,7 @@ def process_file(state, save=False):
 
         if save:
             locked = list(set(leg.get('_locked_fields', []) +
-                              changed + ['full_name']))
+                              changed.keys() + ['full_name']))
             leg['_locked_fields'] = locked
             db.legislators.save(leg, safe=True)
 
