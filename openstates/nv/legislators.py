@@ -54,7 +54,6 @@ class NVLegislatorScraper(LegislatorScraper):
 
             #Going through the districts
             for row_index in range(3, num_districts+2):
-                print row_index
                 namepath = 'string(//table[%s]/tr/td/table[1]/tr/td[2])' % row_index
                 last_name = root.xpath(namepath).split()[0]
                 last_name = last_name[0 : len(last_name) - 1]
@@ -82,7 +81,7 @@ class NVLegislatorScraper(LegislatorScraper):
                     party = 'Democratic'
 
                 districtpath = 'string(//table[%s]/tr/td/table[1]/tr/td[4])' % row_index
-                district = root.xpath(districtpath)[11: len(root.xpath(districtpath))].strip()
+                district = root.xpath(districtpath).strip()[11:]
                 if district.startswith('No.'):
                     district = district[3:].strip()
 
