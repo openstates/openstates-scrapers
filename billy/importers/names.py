@@ -69,11 +69,12 @@ class NameMatcher(object):
         self._state = state
         self._term = term
 
-        elemMatch = {'state': state, 'type': 'member'}
+        roles_elemMatch = {'state': state, 'type': 'member', 'term': term}
+        old_roles_query = {'old_roles.%s' % term: {'$exists': True}}
 
         for legislator in db.legislators.find({
-            '$or': [{'roles': {'$elemMatch': elemMatch}},
-                    {'old_roles': {'$elemMatch': elemMatch}}]}):
+            '$or': [{'roles': {'$elemMatch': roles_elemMatch}},
+                    old_roles_query]}):
 
             if 'middle_name' not in legislator:
                 legislator['middle_name'] = ''
