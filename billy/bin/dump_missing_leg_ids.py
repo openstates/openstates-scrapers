@@ -54,7 +54,7 @@ def dump_missing_leg_ids(state, detailed=False):
                     if not v['leg_id']:
                         missing.add((bill['state'],
                                      _session_to_term(state, bill['session']),
-                                     bill['chamber'],
+                                     vote['chamber'],
                                      v['name'].encode('ascii', 'replace')))
 
                         if detailed:

@@ -41,7 +41,7 @@ class WIBillScraper(BillScraper):
 
     def __init__(self, *args, **kwargs):
         super(WIBillScraper, self).__init__(*args, **kwargs)
-        self.build_issue_index()
+        #self.build_issue_index()
 
     def scrape(self, chamber, session):
         if 'Regular' in session:
@@ -112,7 +112,7 @@ class WIBillScraper(BillScraper):
 
                         bill = Bill(session, chamber, bill_id, title,
                                     type=bill_type)
-                        bill['subjects'] = self._subjects[bill_id]
+                        #bill['subjects'] = self._subjects[bill_id]
                         self.scrape_bill_history(bill, link)
             except scrapelib.HTTPError, e:
                 if e.response.code == 404:
