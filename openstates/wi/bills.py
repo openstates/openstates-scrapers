@@ -41,7 +41,8 @@ class WIBillScraper(BillScraper):
 
     def __init__(self, *args, **kwargs):
         super(WIBillScraper, self).__init__(*args, **kwargs)
-        self.build_issue_index()
+        #self.build_issue_index()
+        self._subjects = {}
 
     def scrape(self, chamber, session):
         if 'Regular' in session:
