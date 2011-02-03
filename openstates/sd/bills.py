@@ -19,12 +19,6 @@ class SDBillScraper(BillScraper):
         return headers
 
     def scrape(self, chamber, session):
-        if session != '2011':
-            raise NoDataForPeriod(session)
-
-        self.scrape_bills(chamber, session)
-
-    def scrape_bills(self, chamber, session):
         url = 'http://legis.state.sd.us/sessions/%s/BillList.aspx' % (
             session)
 
@@ -42,6 +36,10 @@ class SDBillScraper(BillScraper):
                 bill_id = link.text.strip().replace(u'\xa0', ' ')
 
                 title = link.xpath("string(../../td[2])").strip()
+
+                if not title:
+                    import pdb
+                    pdb.set_trace()
 
                 self.scrape_bill(chamber, session, bill_id, title,
                                  link.attrib['href'])
