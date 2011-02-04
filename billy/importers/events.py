@@ -73,8 +73,8 @@ def import_events(state, data_dir, import_actions=True):
         else:
             update(event, data, db.events)
 
-    if import_actions:
-        actions_to_events(state)
+#    if import_actions:
+#        actions_to_events(state)
 
     ensure_indexes()
 
@@ -93,7 +93,7 @@ def actions_to_events(state):
 
             description = "%s: %s" % (bill['bill_id'], action['action'])
             data = Event(bill['session'], action['date'],
-                         'bill:action', description,
+                         'bill:action', description, location=action['actor'],
                          action_type=action['type'])
             data.add_participant('actor', action['actor'])
             data['_guid'] = guid
