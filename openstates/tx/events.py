@@ -29,7 +29,10 @@ class TXEventScraper(EventScraper):
             feed = feedparser.parse(page)
 
             for entry in feed['entries']:
-                title, date = entry['title'].split(' - ')
+                try:
+                    title, date = entry['title'].split(' - ')
+                except ValueError:
+                    continue
 
                 time = re.match('Time: (\d+:\d+ (A|P)M)',
                                 entry['description']).group(1)
