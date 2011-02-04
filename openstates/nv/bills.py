@@ -31,7 +31,7 @@ class NVBillScraper(BillScraper):
     )
 
     def scrape(self, chamber, session):
-        if session.find('Special') != -1:
+        if 'Special' in session:
             year = session[0:4]
         elif int(session) >= 71:
             year = ((int(session) - 71) * 2) + 2001
@@ -46,9 +46,8 @@ class NVBillScraper(BillScraper):
         elif str(session)[-1] == '3':
             sessionsuffix = 'rd'
 
-        if session.find('Special') != -1:
-            session = session[-2: len(session)]
-            insert = str(session) + sessionsuffix + str(year) + "Special"
+        if 'Special' in session:
+            insert = session[-2:] + sessionsuffix + str(year) + "Special"
         else:
             insert = str(session) + sessionsuffix + str(year)
 
@@ -77,8 +76,6 @@ class NVBillScraper(BillScraper):
                     bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
                     title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
 
-                    if insert.find('Special') != -1:
-                        session = insert
                     bill = Bill(session, chamber, bill_id, title,
                                 type=bill_type)
 
@@ -140,8 +137,6 @@ class NVBillScraper(BillScraper):
                     bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
                     title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
 
-                    if insert.find('Special') != -1:
-                        session = insert
                     bill = Bill(session, chamber, bill_id, title,
                                 type=bill_type)
                     bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")

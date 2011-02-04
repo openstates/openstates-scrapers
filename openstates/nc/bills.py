@@ -133,8 +133,8 @@ class NCBillScraper(BillScraper):
                     actor = 'upper'
                 elif actor == 'House':
                     actor = 'lower'
-                elif action.endswith('Gov.'):
-                    actor = 'governor'
+                else:
+                    actor = 'executive'
 
                 for pattern, atype in self._action_classifiers.iteritems():
                     if action.startswith(pattern):
