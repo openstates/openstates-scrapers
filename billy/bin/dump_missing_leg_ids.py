@@ -18,7 +18,7 @@ def dump_missing_leg_ids(state, detailed=False):
     CSV files.
     """
     missing_csv = csv.writer(open('%s_missing_leg_ids.csv' % state, 'w'))
-    missing_csv.writerow(('state', 'term', 'chamber', 'name'))
+    missing_csv.writerow(('term', 'chamber', 'name'))
     missing = set()
 
     if detailed:
@@ -36,8 +36,7 @@ def dump_missing_leg_ids(state, detailed=False):
     for bill in db.bills.find({'state': state}):
         for sponsor in bill['sponsors']:
             if not sponsor['leg_id']:
-                missing.add((bill['state'],
-                             _session_to_term(state, bill['session']),
+                missing.add((_session_to_term(state, bill['session']),
                              bill['chamber'],
                              sponsor['name'].encode('ascii', 'replace')))
 
@@ -52,8 +51,7 @@ def dump_missing_leg_ids(state, detailed=False):
             for vtype in ('yes', 'no', 'other'):
                 for v in vote["%s_votes" % vtype]:
                     if not v['leg_id']:
-                        missing.add((bill['state'],
-                                     _session_to_term(state, bill['session']),
+                        missing.add((_session_to_term(state, bill['session']),
                                      vote['chamber'],
                                      v['name'].encode('ascii', 'replace')))
 
@@ -76,7 +74,7 @@ def dump_missing_leg_ids(state, detailed=False):
     for committee in db.committees.find({'state': state}):
         for member in committee['members']:
             if not member['leg_id']:
-                missing.add((committee['state'], committee.get('term', ''),
+                missing.add((committee.get('term', ''),
                              committee['chamber'],
                              member['name'].encode('ascii', 'replace')))
 
