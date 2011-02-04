@@ -6,13 +6,14 @@ Scraping
 
 All scrapers that can be run with :program:`scrape.py` utilize these classes.
 
-A state scraper is comprised mainly of classes derived from :class:`~billy.scrape.bills.BillScraper`,
+A state scraper is implementing by providing classes derived from :class:`~billy.scrape.bills.BillScraper`,
 :class:`~billy.scrape.legislators.LegislatorScraper`, :class:`~billy.scrape.votes.VoteScraper`, and
 :class:`~billy.scrape.committees.CommitteeScraper`.
 
-The Scraper classes have a :meth:`scrape` method that when overridden is responsible for creating
+Derived scraper classes should override the :meth:`scrape` method that that is responsible for creating
 :class:`~billy.scrape.bills.Bill`, :class:`~billy.scrape.legislators.Legislator`,
 :class:`~billy.scrape.votes.Vote`, and :class:`~billy.scrape.committees.Committee` objects as appropriate.
+
 
 .. module:: billy.scrape
 
@@ -21,6 +22,32 @@ billy.scrape
 
 Scraper
 -------
+
+The most useful on the base :class:`Scraper` class is ``urlopen(url, method='GET', body=None)``.
+``Scraper.urlopen`` opens a URL and returns a string-like object that can then be
+parsed by a library like `lxml <http://codespeak.net/lxml>`_.
+
+This method provides advantages over built-in urlopen methods in that the underlying :class:`Scraper` class can be configured to support rate-limiting, caching, and provides robust error handling.
+
+.. note::
+    For advanced usage see `scrapelib <http://github.com/sunlightlabs/scrapelib/>`_ which provides the basis for :class:`billy.scrape.Scraper`.
+
+Logging
+=======
+
+The base class also configures a `python logger <http://docs.python.org/library/logging.html>`_ instance and provides several shortcuts for logging at various log levels:
+
+``log(msg, *args, **kwargs)``
+    log a message with level ``logging.INFO``
+``debug(msg, *args, **kwargs)``
+    log a message with level ``logging.DEBUG``
+``warning(msg, *args, **kwargs)``
+    log a message with level ``logging.WARNING``
+
+.. note::
+    It is also possible to access the ``self.logger`` object directly.
+
+
 
 .. autoclass:: billy.scrape.Scraper
    :members: __init__, urlopen, validate_session, validate_term

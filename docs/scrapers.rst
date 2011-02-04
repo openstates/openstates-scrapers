@@ -6,29 +6,6 @@ All scrapers inherit from :class:`billy.scrape.Scraper`, which provides
 basic functionality that derived scrapers will use. All derived scrapers must implement
 a :func:`scrape` method.
 
-The most useful on the base :class:`Scraper` class is ``urlopen(url, method='GET', body=None)``.
-``Scraper.urlopen`` opens a URL and returns a string-like object that can then be
-parsed by a library like `lxml <http://codespeak.net/lxml>`_.
-
-This method provides advantages over built-in urlopen methods in that the underlying :class:`Scraper` class can be configured to support rate-limiting, caching, and provides robust error handling.
-
-.. note::
-    For advanced usage see `scrapelib <http://github.com/sunlightlabs/scrapelib/>`_ which provides the basis for :class:`billy.scrape.Scraper`.
-
-Logging
-=======
-
-The base class also configures a `python logger <http://docs.python.org/library/logging.html>`_ instance and provides several shortcuts for logging at various log levels:
-
-``log(msg, *args, **kwargs)``
-    log a message with level ``logging.INFO``
-``debug(msg, *args, **kwargs)``
-    log a message with level ``logging.DEBUG``
-``warning(msg, *args, **kwargs)``
-    log a message with level ``logging.WARNING``
-
-.. note::
-    It is also possible to access the ``self.logger`` object directly.
 
 Bills
 =====
