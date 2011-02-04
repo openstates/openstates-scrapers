@@ -61,7 +61,7 @@ def vote_csv(state, session, chamber):
         except KeyError:
             party = leg['party']
 
-        row = [leg['full_name'], party]
+        row = [leg['full_name'].encode('ascii', 'replace'), party]
         for vote in vs:
             row.append(str(vote))
 
