@@ -146,7 +146,7 @@ class SDBillScraper(BillScraper):
             motion = ', '.join(header.split(', ')[2:]).strip()
             if not motion:
                 # If we can't detect a motion, skip this vote
-                continue
+                return
 
             yes_count = int(
                 page.xpath("string(//td[contains(@id, 'tdAyes')])"))
