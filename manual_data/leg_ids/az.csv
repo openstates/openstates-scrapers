@@ -1,9 +1,7 @@
 "state","term","chamber","name","id"
 "az",49,"upper","COURT","AZL000050"
 "az",49,"lower","LOPEZ","AZL000023"
-"az",49,"lower","GARCIA M",
 "az",50,"upper","MIRANDA C","AZL000164"
-"az",49,"upper","WEIERS J",
 "az",49,"lower","Steve M. Gallardo","AZL000107"
 "az",49,"upper","CAMPBELL CL","AZL000048"
 "az",50,"lower","MIRANDA R","AZL000026"
@@ -17,7 +15,6 @@
 "az",49,"lower","HUPPENTHAL","AZL000020"
 "az",50,"lower","MIRANDA C","AZL000164"
 "az",49,"upper","GRAY C","AZL000016"
-"az",49,"upper","GARCIA",
 "az",49,"upper","YOUNG WRIGHT","AZL000097"
 "az",50,"lower","SMITH D","AZL000176"
 "az",49,"upper","SCHAPIRA","AZL000084"
@@ -27,10 +24,8 @@
 "az",49,"upper","BARNES","AZL000039"
 "az",50,"upper","SMITH D","AZL000176"
 "az",49,"upper","SEEL","AZL000085"
-"az",49,"lower","WEIERS J",
 "az",49,"upper","SINEMA","AZL000086"
 "az",49,"lower","PEARCE R","AZL000029"
-"az",49,"upper","GARCIA M",
 "az",49,"lower","MELVIN","AZL000025"
 "az",49,"lower","BURTON CAHILL","AZL000010"
 "az",49,"upper","ALLEN S","AZL000004"
@@ -39,12 +34,10 @@
 "az",49,"upper","MURPHY","AZL000076"
 "az",50,"upper","PEARCE R","AZL000029"
 "az",49,"lower","GRAY L","AZL000017"
-"az",50,"upper","GRAY",
 "az",49,"upper","FARLEY","AZL000055"
 "az",49,"upper","DESCHENE","AZL000053"
 "az",50,"upper","PIERCE S","AZL000030"
 "az",49,"lower","PIERCE S","AZL000030"
-"az",49,"upper","WEIERS JP",
 "az",49,"upper","KONOPNICKI","AZL000064"
 "az",49,"upper","WILLIAMS","AZL000094"
 "az",49,"upper","MEZA","AZL000073"
@@ -60,14 +53,11 @@
 "az",49,"upper","KAVANAGH","AZL000063"
 "az",49,"upper","STEVENS","AZL000087"
 "az",49,"upper","PIERCE S","AZL000030"
-"az",50,"upper","SMITH",
 "az",49,"upper","MASON","AZL000068"
 "az",49,"lower","GOULD","AZL000015"
 "az",49,"upper","REAGAN","AZL000082"
 "az",49,"lower","ALLEN S","AZL000004"
-"az",50,"lower","WEIERS JP",
 "az",49,"upper","BARTO","AZL000040"
-"az",50,"lower","WEIERS J",
 "az",49,"upper","MCGUIRE","AZL000070"
 "az",49,"upper","PEARCE R","AZL000029"
 "az",49,"upper","ALLEN C","AZL000003"
@@ -79,7 +69,6 @@
 "az",49,"upper","NICHOLS","AZL000077"
 "az",49,"lower","AGUIRRE","AZL000002"
 "az",49,"upper","MIRANDA B","AZL000074"
-"az",50,"lower","GRAY",
 "az",50,"lower","PEARCE R","AZL000029"
 "az",49,"lower","LEFF","AZL000022"
 "az",49,"lower","GRAY C","AZL000016"
@@ -93,7 +82,6 @@
 "az",49,"upper","PRATT","AZL000080"
 "az",49,"lower","BRASWELL","AZL000007"
 "az",49,"lower","Russell L. Jones","AZL000062"
-"az",50,"lower","SMITH",
 "az",49,"upper","BURTON CAHILL","AZL000010"
 "az",49,"lower","MIRANDA B","AZL000074"
 "az",49,"lower","BUNCH","AZL000008"
@@ -109,11 +97,9 @@
 "az",49,"upper","ADAMS","AZL000129"
 "az",50,"lower","PIERCE S","AZL000030"
 "az",49,"upper","BURGES","AZL000045"
-"az",50,"upper","WEIERS J",
 "az",49,"upper","MONTENEGRO","AZL000075"
 "az",49,"upper","LUJAN","AZL000067"
 "az",49,"lower","HARPER","AZL000019"
-"az",49,"lower","WEIERS JP",
 "az",49,"upper","GOODALE","AZL000058"
 "az",49,"lower","ALVAREZ","AZL000005"
 "az",49,"upper","PATTERSON","AZL000079"
