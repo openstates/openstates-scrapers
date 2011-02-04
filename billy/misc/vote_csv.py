@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import csv
 import sys
 
@@ -68,8 +69,13 @@ def vote_csv(state, session, chamber):
 
 
 if __name__ == '__main__':
-    state = sys.argv[1]
-    session = sys.argv[2]
-    chamber = sys.argv[3]
+    import argparse
 
-    vote_csv(state, session, chamber)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('state')
+    parser.add_argument('session')
+    parser.add_argument('chamber')
+    args = parser.parse_args()
+
+
+    vote_csv(args.state, args.session, args.chamber)
