@@ -25,15 +25,16 @@ class BillScraper(Scraper):
         Grab all the bills for a given chamber and session. Must be
         overridden by subclasses.
 
-        Should raise a :class:`NoDataForPeriod` exception if the session is
-        invalid.
+        Should raise a :class:`NoDataForPeriod` exception if it is
+        not possible to scrape bills for the given session.
         """
         raise NotImplementedError('BillScrapers must define a scrape method')
 
     def save_bill(self, bill):
         """
-        Save a scraped :class:`~billy.scrape.bills.Bill` object. Only
-        call after all data for the given bill has been collected.
+        Save a scraped :class:`~billy.scrape.bills.Bill` object.
+
+        Should be called after all data for the given bill has been collected.
         """
         self.log("save_bill %s %s: %s" % (bill['chamber'],
                                           bill['session'],
@@ -51,11 +52,10 @@ class BillScraper(Scraper):
 
 class Bill(SourcedObject):
     """
-    This represents a state bill or resolution.
-    It is just a dict with some required fields and a few
-    convenience methods. Any key/value pairs stored in it besides the
-    required fields will be saved and stored in the backend database
-    for later use.
+    Object representing a piece of legislation.
+
+    See :class:`~billy.scrape.SourcedObject` for notes on
+    extra attributes/fields.
     """
 
     def __init__(self, session, chamber, bill_id, title, **kwargs):
@@ -111,7 +111,6 @@ class Bill(SourcedObject):
         :param name: a name given to the document, e.g.
                      'Fiscal Note for Amendment LCO 6544'
         :param url: link to location of document or file
-
 
         If multiple formats of a document are provided, a good rule of
         thumb is to prefer text, followed by html, followed by pdf/word/etc.

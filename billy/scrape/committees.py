@@ -26,7 +26,6 @@ class CommitteeScraper(Scraper):
     def save_committee(self, committee):
         """
         Save a scraped :class:`~billy.scrape.committees.Committee` object.
-        Only call after all data for the given committee has been collected.
         """
         name = committee['committee']
         if 'subcommittee' in committee:

@@ -140,12 +140,11 @@ class Legislator(Person):
           (if specified)
         :param party: the party this legislator belongs to (if specified)
 
-        Note: please only provide the first_name, middle_name and last_name
-        parameters if they are listed on the state's web site; do not
-        try to split the legislator's full name into components yourself.
+        .. note::
 
-        Any additional keyword arguments will be associated with this
-        Legislator and stored in the database.
+            please only provide the first_name, middle_name and last_name
+            parameters if they are listed on the state's web site; do not
+            try to split the legislator's full name into components yourself.
         """
         super(Legislator, self).__init__(full_name, first_name,
                                          last_name, middle_name,

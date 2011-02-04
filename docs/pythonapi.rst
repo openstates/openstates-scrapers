@@ -1,21 +1,45 @@
 .. _pythonapi:
 
-========================
-Python Scraper Interface
-========================
+========
+Scraping
+========
+
+All scrapers that can be run with :program:`scrape.py` utilize these classes.
+
+A state scraper is comprised mainly of classes derived from :class:`~billy.scrape.bills.BillScraper`,
+:class:`~billy.scrape.legislators.LegislatorScraper`, :class:`~billy.scrape.votes.VoteScraper`, and
+:class:`~billy.scrape.committees.CommitteeScraper`.
+
+The Scraper classes have a :meth:`scrape` method that when overridden is responsible for creating
+:class:`~billy.scrape.bills.Bill`, :class:`~billy.scrape.legislators.Legislator`,
+:class:`~billy.scrape.votes.Vote`, and :class:`~billy.scrape.committees.Committee` objects as appropriate.
+
+.. module:: billy.scrape
+
+billy.scrape
+============
 
 Scraper
 -------
 
 .. autoclass:: billy.scrape.Scraper
-   :members: __init__, urlopen
+   :members: __init__, urlopen, validate_session, validate_term
+
+SourcedObject
+-------------
+
+.. autoclass:: billy.scrape.SourcedObject
+    :members: add_source
 
 Exceptions
-==========
+----------
 
 .. autoclass:: billy.scrape.ScrapeError
 
 .. autoclass:: billy.scrape.NoDataForPeriod
+
+
+.. module:: billy.scrape.bills
 
 Bills
 =====
@@ -28,8 +52,11 @@ BillScraper
 Bill
 ----
 .. autoclass:: billy.scrape.bills.Bill
-   :members: __init__, add_action, add_sponsor, add_version, add_vote,
-             add_source
+   :members: __init__, add_action, add_sponsor, add_vote, add_title,
+             add_version, add_document, add_source
+
+
+.. module:: billy.scrape.votes
 
 Votes
 =====
@@ -43,6 +70,9 @@ Vote
 ----
 .. autoclass:: billy.scrape.votes.Vote
    :members: __init__, yes, no, other, add_source
+
+
+.. module:: billy.scrape.legislators
 
 Legislators
 ===========
@@ -61,6 +91,9 @@ Legislator
 ----------
 .. autoclass:: billy.scrape.legislators.Legislator
    :members: __init__, add_source
+
+
+.. module:: billy.scrape.committees
 
 Committees
 ==========
