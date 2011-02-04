@@ -1,3 +1,5 @@
+import re
+
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
@@ -28,12 +30,12 @@ class VTLegislatorScraper(LegislatorScraper):
                 elif row_chamber == 'H' and chamber == 'upper':
                     continue
 
-                district = tr.xpath("string(td[6])")
+                district = tr.xpath("string(td[7])")
                 district = district.replace('District', '').strip()
 
-                first_name = tr.xpath("string(td[7])")
-                middle_name = tr.xpath("string(td[8])")
-                last_name = tr.xpath("string(td[9])")
+                first_name = tr.xpath("string(td[8])")
+                middle_name = tr.xpath("string(td[9])")
+                last_name = tr.xpath("string(td[10])")
 
                 if first_name.endswith(" %s." % middle_name):
                     first_name = first_name.split(" %s." % middle_name)[0]
@@ -44,14 +46,10 @@ class VTLegislatorScraper(LegislatorScraper):
                 else:
                     full_name = "%s %s" % (first_name, last_name)
 
-                email = tr.xpath("string(td[10])")
+                email = tr.xpath("string(td[11])")
 
-                party = tr.xpath("string(td[5])")
-                party = {'D': 'Democratic',
-                         'R': 'Republican',
-                         'I': 'Independent',
-                         'P': 'Progressive',
-                         'X': 'Progressive'}.get(party, party)
+                party = tr.xpath("string(td[6])")
+                party = re.sub(r'Democrat\b', 'Democratic', party)
 
                 leg = Legislator(term, chamber, district, full_name,
                                  first_name=first_name,
