@@ -27,6 +27,7 @@ Methods
     Bill Methods <api.bills>
     Legislator Methods <api.legislators>
     Committee Methods <api.committees>
+    Event Methods <api.events>
 
 .. _extrafields:
 
