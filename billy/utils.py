@@ -54,3 +54,13 @@ def metadata(state):
     if state in __metadata:
         return __metadata[state]
     return db.metadata.find_one({'_id': state})
+
+
+def term_for_session(state, session):
+    meta = metadata(state)
+
+    for term in meta['terms']:
+        if session in term['sessions']:
+            return term['name']
+
+    raise ValueError("no such session")
