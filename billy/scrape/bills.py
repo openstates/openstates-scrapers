@@ -131,7 +131,7 @@ class Bill(SourcedObject):
         """
         self['versions'].append(dict(name=name, url=url, **kwargs))
 
-    def add_action(self, actor, action, date, **kwargs):
+    def add_action(self, actor, action, date, type=None, **kwargs):
         """
         Add an action that was performed on this bill.
 
@@ -143,17 +143,19 @@ class Bill(SourcedObject):
         :param action: a string representing the action performed, e.g.
                        'Introduced', 'Signed by the Governor', 'Amended'
         :param date: the date/time this action was performed.
+        :param type: a type classification for this action
         """
 
-        if not 'type' in kwargs or not kwargs['type']:
-            kwargs['type'] = ['other']
-        elif isinstance(kwargs['type'], basestring):
-            kwargs['type'] = [kwargs['type']]
-        elif not isinstance(kwargs['type'], list):
-            kwargs['type'] = list(kwargs['type'])
+        if not type:
+            type = ['other']
+        elif isinstance(type, basestring):
+            type = [type]
+        elif not isinstance(type, list):
+            type = list(type)
 
         self['actions'].append(dict(actor=actor, action=action,
-                                    date=date, **kwargs))
+                                    date=date, type=type,
+                                    **kwargs))
 
     def add_vote(self, vote):
         """
