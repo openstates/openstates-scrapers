@@ -73,6 +73,13 @@ Bills
 
 BillScraper
 -----------
+
+``BillScraper`` implementations should gather and save :class:`~billy.scrape.bills.Bill` objects.
+
+Sometimes it is easiest to also gather :class:`~billy.scrape.votes.Vote` objects in a BillScraper as well,
+these can be attached to :class:`~billy.scrape.bills.Bill` objects via the :meth:`add_vote` method.
+
+
 .. autoclass:: billy.scrape.bills.BillScraper
    :members: scrape, save_bill
 
@@ -90,6 +97,11 @@ Votes
 
 VoteScraper
 -----------
+
+``VoteScraper`` implementations should gather and save :class:`~billy.scrape.votes.Vote` objects.
+
+If a state's ``BillScraper`` gathers votes it is not necessary to provide a ``VoteScraper`` implementation.
+
 .. autoclass:: billy.scrape.votes.VoteScraper
    :members: scrape, save_vote
 
@@ -103,6 +115,10 @@ Vote
 
 Legislators
 ===========
+
+``LegislatorScraper`` implementations should gather and save :class:`~billy.scrape.legislators.Legislator` objects.
+
+Sometimes it is easiest to also gather committee memberships at the same time as legislators.  Committee memberships can can be attached to :class:`~billy.scrape.legislators.Legislator` objects via the :meth:`add_role` method.
 
 LegislatorScraper
 -----------------
@@ -124,6 +140,10 @@ Legislator
 
 Committees
 ==========
+
+``CommitteeScraper`` implementations should gather and save :class:`~billy.scrape.committees.Committee` objects.
+
+If a state's ``LegislatorScraper`` gathers committee memberships it is not necessary to provide a ``CommitteeScraper`` implementation.
 
 CommitteeScraper
 ----------------
