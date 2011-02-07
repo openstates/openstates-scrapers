@@ -1,10 +1,8 @@
-.. _pythonapi:
+.. _scrapers:
 
-========
-Scraping
-========
-
-All scrapers that can be run with :program:`scrape.py` utilize these classes.
+================
+Writing Scrapers
+================
 
 A state scraper is implementing by providing classes derived from :class:`~billy.scrape.bills.BillScraper`,
 :class:`~billy.scrape.legislators.LegislatorScraper`, :class:`~billy.scrape.votes.VoteScraper`, and
@@ -14,6 +12,12 @@ Derived scraper classes should override the :meth:`scrape` method that that is r
 :class:`~billy.scrape.bills.Bill`, :class:`~billy.scrape.legislators.Legislator`,
 :class:`~billy.scrape.votes.Vote`, and :class:`~billy.scrape.committees.Committee` objects as appropriate.
 
+Example state scraper directory structure::
+
+    ./ex/__init__.py      # metadata for "ex" state scraper
+    ./ex/bills.py         # contains EXBillScraper (also scrapes Votes)
+    ./ex/legislators.py   # contains EXLegislatorScraper
+    ./ex/committees.py    # contains EXCommitteeScraper
 
 .. module:: billy.scrape
 

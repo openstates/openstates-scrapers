@@ -34,4 +34,3 @@ Contribute
 
    api
    scrapers
-   pythonapi
