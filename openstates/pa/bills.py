@@ -188,7 +188,10 @@ class PABillScraper(BillScraper):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
 
-            motion = page.xpath("//div[@class='font8text']")[3].text.strip()
+            motion_div = page.xpath("//div[@class='font8text']")[3]
+            motion = motion_div.text.strip()
+            if not motion:
+                motion = motion_div.getnext().tail.strip()
 
             if motion == 'FP':
                 motion = 'FINAL PASSAGE'
