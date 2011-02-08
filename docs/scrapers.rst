@@ -1,10 +1,31 @@
-***************
-Scraping Basics
-***************
+.. _scrapers:
 
-All scrapers inherit from :class:`billy.scrape.Scraper`, which provides
-basic functionality that derived scrapers will use. All derived scrapers must implement
-a :func:`scrape` method.
+================
+Writing Scrapers
+================
+
+A state scraper is implementing by providing classes derived from :class:`~billy.scrape.bills.BillScraper`,
+:class:`~billy.scrape.legislators.LegislatorScraper`, :class:`~billy.scrape.votes.VoteScraper`, and
+:class:`~billy.scrape.committees.CommitteeScraper`.
+
+Derived scraper classes should override the :meth:`scrape` method that that is responsible for creating
+:class:`~billy.scrape.bills.Bill`, :class:`~billy.scrape.legislators.Legislator`,
+:class:`~billy.scrape.votes.Vote`, and :class:`~billy.scrape.committees.Committee` objects as appropriate.
+
+Example state scraper directory structure::
+
+    ./ex/__init__.py      # metadata for "ex" state scraper
+    ./ex/bills.py         # contains EXBillScraper (also scrapes Votes)
+    ./ex/legislators.py   # contains EXLegislatorScraper
+    ./ex/committees.py    # contains EXCommitteeScraper
+
+.. module:: billy.scrape
+
+billy.scrape
+============
+
+Scraper
+-------
 
 The most useful on the base :class:`Scraper` class is ``urlopen(url, method='GET', body=None)``.
 ``Scraper.urlopen`` opens a URL and returns a string-like object that can then be
@@ -30,54 +51,110 @@ The base class also configures a `python logger <http://docs.python.org/library/
 .. note::
     It is also possible to access the ``self.logger`` object directly.
 
+
+
+.. autoclass:: billy.scrape.Scraper
+   :members: __init__, urlopen, validate_session, validate_term
+
+SourcedObject
+-------------
+
+.. autoclass:: billy.scrape.SourcedObject
+    :members: add_source
+
+Exceptions
+----------
+
+.. autoclass:: billy.scrape.ScrapeError
+
+.. autoclass:: billy.scrape.NoDataForPeriod
+
+
+.. module:: billy.scrape.bills
+
 Bills
 =====
 
-Each ``xy/bills.py`` should define a ``XYBillScraper`` that derives from
-:class:`billy.scrape.bills.BillScraper` and implements the ``scrape(chamber, session)``
-method.
+BillScraper
+-----------
 
-As your ``scrape`` method gathers bills, it should create :class:`billy.scrape.bills.Bill`
-objects and call ``self.save_bill`` when it has added all related actions/sources to a bill.
+``BillScraper`` implementations should gather and save :class:`~billy.scrape.bills.Bill` objects.
 
-Sometimes it is easiest to also add votes to bills at this time, to add a vote that took place on a specific motion create :class:`billy.scrape.votes.Vote` objects and attach them using a Bill's ``add_vote`` method.
+Sometimes it is easiest to also gather :class:`~billy.scrape.votes.Vote` objects in a BillScraper as well,
+these can be attached to :class:`~billy.scrape.bills.Bill` objects via the :meth:`add_vote` method.
+
+
+.. autoclass:: billy.scrape.bills.BillScraper
+   :members: scrape, save_bill
+
+Bill
+----
+.. autoclass:: billy.scrape.bills.Bill
+   :members: __init__, add_action, add_sponsor, add_vote, add_title,
+             add_version, add_document, add_source
+
+
+.. module:: billy.scrape.votes
 
 Votes
 =====
 
-Some sites store votes separately from bills so scraping them together is counterintuitive.  In these
-cases you can provide a ``xy/votes.py`` containing a ``XYVoteScraper`` that derives from
-:class:`billy.scrape.bills.VoteScraper` and implements the ``scrape(chamber, session)``
-method.
+VoteScraper
+-----------
 
-As your ``scrape`` method gathers votes, it should create :class:`billy.scrape.votes.Vote`
-objects and save them with ``self.save_vote``.
+``VoteScraper`` implementations should gather and save :class:`~billy.scrape.votes.Vote` objects.
 
-.. note::
-    If your ``XYBillScraper`` gathers votes you should not provide a ``XYVoteScraper``.
+If a state's ``BillScraper`` gathers votes it is not necessary to provide a ``VoteScraper`` implementation.
 
+.. autoclass:: billy.scrape.votes.VoteScraper
+   :members: scrape, save_vote
+
+Vote
+----
+.. autoclass:: billy.scrape.votes.Vote
+   :members: __init__, yes, no, other, add_source
+
+
+.. module:: billy.scrape.legislators
 
 Legislators
 ===========
 
-Each ``xy/legislators.py`` should define a ``XYLegislatorScraper`` that derives from
-:class:`billy.scrape.legislators.LegislatorScraper` and implements the ``scrape(chamber, term)`` method.
+``LegislatorScraper`` implementations should gather and save :class:`~billy.scrape.legislators.Legislator` objects.
 
-Your ``scrape`` method should create :class:`billy.scrape.legislators.Legislator`
-objects and call ``self.save_legislator`` on them.
+Sometimes it is easiest to also gather committee memberships at the same time as legislators.  Committee memberships can can be attached to :class:`~billy.scrape.legislators.Legislator` objects via the :meth:`add_role` method.
 
-In many cases it is not possible to retrieve legislators prior to the current session, in these cases it is acceptable to raise a :class:`billy.scrape.NoDataForPeriod` exception.
+LegislatorScraper
+-----------------
+.. autoclass:: billy.scrape.legislators.LegislatorScraper
+   :members: scrape, save_legislator
+
+Person
+------
+.. autoclass:: billy.scrape.legislators.Person
+   :members: __init__, add_role
+
+Legislator
+----------
+.. autoclass:: billy.scrape.legislators.Legislator
+   :members: __init__, add_source
+
+
+.. module:: billy.scrape.committees
 
 Committees
 ==========
 
-Each ``xy/committees.py`` should define a ``XYCommitteeScraper`` that derives from :class:`billy.scrape.committees.CommitteeScraper` and implements the ``scrape(chamber, term)`` method.
+``CommitteeScraper`` implementations should gather and save :class:`~billy.scrape.committees.Committee` objects.
 
-Your ``scrape`` method should create :class:`billy.scrape.committee.Committee`
-objects and call ``self.save_committee`` on them.
+If a state's ``LegislatorScraper`` gathers committee memberships it is not necessary to provide a ``CommitteeScraper`` implementation.
 
-In many cases it is not possible to retrieve committees prior to the current session,
-in these cases it is acceptable to raise a :class:`billy.scrape.NoDataForPeriod` exception.
+CommitteeScraper
+----------------
+.. autoclass:: billy.scrape.committees.CommitteeScraper
+   :members: scrape, save_committee
 
-.. note::
-    If your ``XYLegislatorScraper`` gathers committees you should not provide a ``XYCommitteeScraper``.
+Committee
+---------
+.. autoclass:: billy.scrape.committees.Committee
+   :members: __init__, add_member

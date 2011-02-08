@@ -68,6 +68,11 @@ class ScraperMeta(type):
 
 
 class Scraper(scrapelib.Scraper):
+    """ Base class for all Scrapers
+
+    Provides several useful methods for retrieving URLs and checking
+    arguments against metadata.
+    """
 
     __metaclass__ = ScraperMeta
 
@@ -140,12 +145,27 @@ class Scraper(scrapelib.Scraper):
         return sessions
 
     def validate_session(self, session):
+        """ Check that a session is present in the metadata dictionary.
+
+        raises :exc:`~billy.scrape.NoDataForPeriod` if session is invalid
+
+        :param session:  string representing session to check
+        """
         for t in self.metadata['terms']:
             if session in t['sessions']:
                 return True
         raise NoDataForPeriod(session)
 
     def validate_term(self, term, latest_only=False):
+        """ Check that a term is present in the metadata dictionary.
+
+        raises :exc:`~billy.scrape.NoDataForPeriod` if term is invalid
+
+        :param term:        string representing term to check
+        :param latest_only: if True, will raise exception if term is not
+                            the current term (default: False)
+        """
+
         if latest_only:
             if term == self.metadata['terms'][-1]['name']:
                 return True
@@ -159,6 +179,18 @@ class Scraper(scrapelib.Scraper):
 
 
 class SourcedObject(dict):
+    """ Base object used for data storage.
+
+    Base class for :class:`~billy.scrape.bills.Bill`,
+    :class:`~billy.scrape.legislators.Legislator`,
+    :class:`~billy.scrape.votes.Vote`,
+    and :class:`~billy.scrape.committees.Committee`.
+
+    SourcedObjects work like a dictionary.  It is possible
+    to add extra data beyond the required fields by assigning to the
+    `SourcedObject` instance like a dictionary.
+    """
+
     def __init__(self, _type, **kwargs):
         super(SourcedObject, self).__init__()
         self['_type'] = _type

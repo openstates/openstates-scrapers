@@ -25,15 +25,16 @@ class BillScraper(Scraper):
         Grab all the bills for a given chamber and session. Must be
         overridden by subclasses.
 
-        Should raise a :class:`NoDataForPeriod` exception if the session is
-        invalid.
+        Should raise a :class:`NoDataForPeriod` exception if it is
+        not possible to scrape bills for the given session.
         """
         raise NotImplementedError('BillScrapers must define a scrape method')
 
     def save_bill(self, bill):
         """
-        Save a scraped :class:`~billy.scrape.bills.Bill` object. Only
-        call after all data for the given bill has been collected.
+        Save a scraped :class:`~billy.scrape.bills.Bill` object.
+
+        Should be called after all data for the given bill has been collected.
         """
         self.log("save_bill %s %s: %s" % (bill['chamber'],
                                           bill['session'],
@@ -51,11 +52,10 @@ class BillScraper(Scraper):
 
 class Bill(SourcedObject):
     """
-    This represents a state bill or resolution.
-    It is just a dict with some required fields and a few
-    convenience methods. Any key/value pairs stored in it besides the
-    required fields will be saved and stored in the backend database
-    for later use.
+    Object representing a piece of legislation.
+
+    See :class:`~billy.scrape.SourcedObject` for notes on
+    extra attributes/fields.
     """
 
     def __init__(self, session, chamber, bill_id, title, **kwargs):
@@ -112,7 +112,6 @@ class Bill(SourcedObject):
                      'Fiscal Note for Amendment LCO 6544'
         :param url: link to location of document or file
 
-
         If multiple formats of a document are provided, a good rule of
         thumb is to prefer text, followed by html, followed by pdf/word/etc.
         """
@@ -132,7 +131,7 @@ class Bill(SourcedObject):
         """
         self['versions'].append(dict(name=name, url=url, **kwargs))
 
-    def add_action(self, actor, action, date, **kwargs):
+    def add_action(self, actor, action, date, type=None, **kwargs):
         """
         Add an action that was performed on this bill.
 
@@ -144,17 +143,19 @@ class Bill(SourcedObject):
         :param action: a string representing the action performed, e.g.
                        'Introduced', 'Signed by the Governor', 'Amended'
         :param date: the date/time this action was performed.
+        :param type: a type classification for this action
         """
 
-        if not 'type' in kwargs or not kwargs['type']:
-            kwargs['type'] = ['other']
-        elif isinstance(kwargs['type'], basestring):
-            kwargs['type'] = [kwargs['type']]
-        elif not isinstance(kwargs['type'], list):
-            kwargs['type'] = list(kwargs['type'])
+        if not type:
+            type = ['other']
+        elif isinstance(type, basestring):
+            type = [type]
+        elif not isinstance(type, list):
+            type = list(type)
 
         self['actions'].append(dict(actor=actor, action=action,
-                                    date=date, **kwargs))
+                                    date=date, type=type,
+                                    **kwargs))
 
     def add_vote(self, vote):
         """

@@ -21,9 +21,21 @@ class VoteScraper(Scraper):
         return schema
 
     def scrape(self, chamber, session):
-        raise NotImplementedYear('VoteScrapers must define a scrape method')
+        """
+        Grab all votes for a given chamber and session.  Must be overridden
+        by subclasses.
+
+        Should raise a :class:`NoDataForPeriod` exception if it is not
+        possible to scrape votes for the provided session.
+        """
+        raise NotImplementedError('VoteScrapers must define a scrape method')
 
     def save_vote(self, vote):
+        """
+        Save a scraped :class:`~billy.scrape.votes.Vote` object.
+
+        Should be called after all data for the given vote is collected.
+        """
         filename = vote["filename"] + ".json"
 
         self.log("save_vote %s %s: %s '%s'" % (vote['session'],
@@ -52,6 +64,7 @@ class Vote(SourcedObject):
         :param no_count: the number of 'no' votes
         :param other_count: the number of abstentions, 'present' votes,
           or anything else not covered by 'yes' or 'no'.
+        :param type: vote type classification
 
         Any additional keyword arguments will be associated with this
         vote and stored in the database.
