@@ -19,14 +19,17 @@ class FLLegislatorScraper(LegislatorScraper):
             self.scrape_reps(term)
 
     def scrape_senators(self, term):
-        url = ("http://www.flsenate.gov/Legislators/"
-               "index.cfm?Mode=Member%20Pages&Submenu=1&Tab=legislators")
-
+        url = "http://www.flsenate.gov/Senators/"
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, '/legislators')]"):
-                name = re.sub(r"\s+", " ", link.text).strip()
+            for link in page.xpath("//a[contains(@href, 'Senators/s')]"):
+                name = link.text.strip()
+                name = re.sub(r'\s+', ' ', name)
+
+                if name == 'Vacant':
+                    continue
 
                 # Special case - name_tools gets confused
                 # by 'JD', thinking it is a suffix instead of a first name
@@ -35,12 +38,13 @@ class FLLegislatorScraper(LegislatorScraper):
                 elif name == 'Vacant':
                     name = 'Vacant Seat'
 
-                district = link.xpath('string(../../td[2])').strip()
-                party = link.xpath('string(../../td[3])').strip()
+                district = link.xpath("string(../../td[1])")
+                party = link.xpath("string(../../td[2])")
 
                 leg = Legislator(term, 'upper', district, name,
                                  party=party)
                 leg.add_source(url)
+
                 self.save_legislator(leg)
 
     def scrape_reps(self, term):
