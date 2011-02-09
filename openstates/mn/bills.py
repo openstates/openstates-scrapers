@@ -1,6 +1,7 @@
 import re
 import datetime
 import urlparse
+from collections import defaultdict
 import lxml.html
 
 from billy.scrape import NoDataForPeriod
@@ -38,6 +39,29 @@ class MNBillScraper(BillScraper):
         ("Received from", "bill:introduced"),
     )
 
+    def get_bill_topics(self, chamber, session):
+        search_chamber = {'lower':'House', 'upper':'Senate'}[chamber]
+        search_session = {'2009-2010': '0862009',
+                          '2010 1st Special Session': '1862010',
+                          '2010 2nd Special Session': '2862010',
+                          '2011-2012': '0872011'}[session]
+        self._subject_mapping = defaultdict(list)
+
+        url = '%sstatus_search.php?body=%s&search=topic&session=%s' % (
+            BILL_DETAIL_URL_BASE, search_chamber, search_session)
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
+            # skip first one ('--- All ---')
+            for option in doc.xpath('//select[@name="topic[]"]/option')[1:]:
+                # Subjects look like "Name of Subject (##)" -- split off the #
+                subject = option.text.rsplit(' (')[0]
+                value = option.get('value')
+                opt_url = '%sstatus_results.php?body=%s&search=topic&session=%s&topic[]=%s' % (
+                    BILL_DETAIL_URL_BASE, search_chamber, search_session, value)
+                with self.urlopen(opt_url) as opt_html:
+                    opt_doc = lxml.html.fromstring(opt_html)
+                    for bill in opt_doc.xpath('//table[@width="80%"]/tr/td[2]/a/font/text()'):
+                        self._subject_mapping[bill].append(subject)
 
     def extract_bill_actions(self, doc, current_chamber):
         """Extract the actions taken on a bill.
@@ -140,6 +164,7 @@ class MNBillScraper(BillScraper):
             bill_type = {'F': 'bill', 'R':'resolution',
                          'C': 'concurrent resolution'}[bill_id[1]]
             bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
+            bill['subjects'] = self._subject_mapping[bill_id]
             bill.add_source(bill_detail_url)
 
             # grab sponsors
@@ -178,6 +203,8 @@ class MNBillScraper(BillScraper):
         """
         search_chamber = {'lower':'House', 'upper':'Senate'}[chamber]
         search_session = self.metadata['session_details'][session]['site_id']
+
+        self.get_bill_topics(chamber, session)
 
         # MN bill search page returns a maximum of 999 search results
         total_rows = list() # used to concatenate search results
