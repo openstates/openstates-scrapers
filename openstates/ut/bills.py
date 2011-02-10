@@ -118,13 +118,26 @@ class UTBillScraper(BillScraper):
                     actor = 'executive'
                     type = 'governor:vetoed'
                 elif action.startswith('1st reading'):
-                    type = 'bill:introduced'
+                    type = ['bill:introduced', 'bill:reading:1']
                 elif action == 'to Governor':
                     type = 'governor:received'
                 elif action == 'passed 3rd reading':
                     type = 'bill:passed'
                 elif action.startswith('passed 2nd & 3rd readings'):
                     type = 'bill:passed'
+                elif action == 'to standing committee':
+                    comm_link = row.xpath("td[3]/font/font/a")[0]
+                    comm = re.match(
+                        r"writetxt\('(.*)'\)",
+                        comm_link.attrib['onmouseover']).group(1)
+                    action = "to " + comm
+                    type = 'committee:referred'
+                elif action == '2nd reading':
+                    type = 'bill:reading:2'
+                elif action == '3rd reading':
+                    type = 'bill:reading:3'
+                elif action == 'failed':
+                    type = 'bill:failed'
                 else:
                     type = 'other'
 
