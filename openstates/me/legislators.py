@@ -70,29 +70,29 @@ class MELegislatorScraper(LegislatorScraper):
         sh = wb.sheet_by_index(0)
 
         for rownum in xrange(1, sh.nrows):
-                district = str(int(sh.cell(rownum, 1).value))
-                first_name = sh.cell(rownum, 3).value
-                middle_name = sh.cell(rownum, 4).value
-                last_name = sh.cell(rownum, 5).value
-                suffix = sh.cell(rownum, 6).value
+                district = str(int(sh.cell(rownum, 2).value))
+                first_name = sh.cell(rownum, 4).value
+                middle_name = sh.cell(rownum, 5).value
+                last_name = sh.cell(rownum, 6).value
+                suffix = sh.cell(rownum, 7).value
                 full_name = (first_name + " " + middle_name + " " +
                              last_name + " " + suffix)
                 full_name = re.sub(r'\s+', ' ', full_name).strip()
 
-                party = sh.cell(rownum, 7).value
+                party = sh.cell(rownum, 8).value
 
                 # extra stuff that is easy to grab
-                resident_county = sh.cell(rownum, 8).value
-                street_addr = sh.cell(rownum, 9).value
-                city = sh.cell(rownum, 10).value
-                state = sh.cell(rownum, 11).value
-                zip_code = sh.cell(rownum, 12).value
+                resident_county = sh.cell(rownum, 9).value
+                street_addr = sh.cell(rownum, 10).value
+                city = sh.cell(rownum, 11).value
+                state = sh.cell(rownum, 12).value
+                zip_code = sh.cell(rownum, 13).value
 
                 address = "%s\n%s, %s %s" % (street_addr, city, state,
                                              zip_code)
 
-                phone = str(sh.cell(rownum, 13).value)
-                email = str(sh.cell(rownum, 14).value)
+                phone = str(sh.cell(rownum, 14).value)
+                email = str(sh.cell(rownum, 15).value)
 
                 # For matching up legs with votes
                 district_name = city
