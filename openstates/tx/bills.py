@@ -113,7 +113,7 @@ class TXBillScraper(BillScraper):
                 atype = 'amendment:amended'
             elif desc == 'Amendment withdrawn':
                 atype = 'amendment:withdrawn'
-            elif desc == 'Passed':
+            elif desc == 'Passed' or desc == 'Adopted':
                 atype = 'bill:passed'
             elif re.match(r'^Received (by|from) the', desc):
                 atype = 'bill:introduced'
@@ -127,6 +127,8 @@ class TXBillScraper(BillScraper):
                 introduced = True
             elif desc == 'Read & adopted':
                 atype = 'bill:passed'
+            elif desc.startswith('Referred to'):
+                atype = 'committee:referred'
             else:
                 atype = 'other'
 
