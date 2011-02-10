@@ -153,7 +153,7 @@ class MEBillScraper(BillScraper):
                     chamber = 'lower'
 
                 action = row.xpath("string(td[3])").strip()
-                if action == 'Unfinished Business':
+                if action == 'Unfinished Business' or not action:
                     continue
 
                 bill.add_action(chamber, action, date)
