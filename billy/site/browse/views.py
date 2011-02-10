@@ -65,7 +65,7 @@ def all_states(request):
 
     states.sort(key=lambda x:x['id'] if x['id'] != 'total' else 'zz')
 
-    return render_to_response('index.html', {'states': states})
+    return render_to_response('billy/index.html', {'states': states})
 
 def _bill_stats_for_session(state, session):
     context = {}
@@ -162,7 +162,7 @@ def state_index(request, state):
     context['ns_com_count'] = db.committees.find({'state': state,
                              'sources': {'$size': 0}}).count()
 
-    return render_to_response('state_index.html', context)
+    return render_to_response('billy/state_index.html', context)
 
 def bills(request, state):
     meta = metadata(state)
@@ -176,8 +176,8 @@ def bills(request, state):
             stats['session'] = session
             sessions.append(stats)
 
-    return render_to_response('bills.html', {'sessions': sessions,
-                                             'metadata': meta})
+    return render_to_response('billy/bills.html',
+                              {'sessions': sessions, 'metadata': meta})
 
 
 @never_cache
@@ -192,7 +192,7 @@ def random_bill(request, state):
     count = db.bills.find(spec).count()
     bill = db.bills.find(spec)[random.randint(0, count - 1)]
 
-    return render_to_response('bill.html', {'bill': bill})
+    return render_to_response('billy/bill.html', {'bill': bill})
 
 def bill(request, state, session, id):
     id = id.replace('-', ' ')
@@ -202,7 +202,7 @@ def bill(request, state, session, id):
     if not bill:
         raise Http404
 
-    return render_to_response('bill.html', {'bill': bill})
+    return render_to_response('billy/bill.html', {'bill': bill})
 
 def legislators(request, state):
     upper_legs = db.legislators.find({'state': state.lower(),
@@ -217,7 +217,7 @@ def legislators(request, state):
     lower_legs = sorted(lower_legs, key=keyfunc)
     inactive_legs = sorted(inactive_legs, key=lambda x: x['last_name'])
 
-    return render_to_response('legislators.html', {
+    return render_to_response('billy/legislators.html', {
         'upper_legs': upper_legs,
         'lower_legs': lower_legs,
         'inactive_legs': inactive_legs,
@@ -228,7 +228,7 @@ def legislator(request, id):
     leg = db.legislators.find_one({'_all_ids': id})
     if not leg:
         raise Http404
-    return render_to_response('legislator.html', {'leg': leg,
+    return render_to_response('billy/legislator.html', {'leg': leg,
                                           'metadata': metadata(leg['state'])})
 
 def committees(request, state):
@@ -242,7 +242,7 @@ def committees(request, state):
     lower_coms = sorted(lower_coms)
     joint_coms = sorted(joint_coms)
 
-    return render_to_response('committees.html', {
+    return render_to_response('billy/committees.html', {
         'upper_coms': upper_coms,
         'lower_coms': lower_coms,
         'joint_coms': joint_coms,
