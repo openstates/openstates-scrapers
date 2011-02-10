@@ -114,7 +114,10 @@ class MEBillScraper(BillScraper):
 
             date_cell = page.xpath("//td[text() = 'Date:']")[0]
             date = date_cell.xpath("string(following-sibling::td)")
-            date = datetime.datetime.strptime(date, "%B %d, %Y")
+            try:
+                date = datetime.datetime.strptime(date, "%B %d, %Y")
+            except ValueError:
+                date = datetime.datetime.strptime(date, "%b. %d, %Y")
 
             vote = Vote(chamber, date, motion,
                         yes_count > (no_count + other_count),
