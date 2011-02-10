@@ -63,7 +63,7 @@ class TXLegislatorScraper(LegislatorScraper):
                 if aspan:
                     addrs[atype] = aspan[0].tail
                     elem = aspan[0].getnext()
-                    while elem and elem.tag == 'br':
+                    while elem is not None and elem.tag == 'br':
                         if elem.tail:
                             addrs[atype] += "\n" + elem.tail
                         elem = elem.getnext()
