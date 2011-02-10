@@ -1,0 +1,69 @@
+/*
+ * YUI Resect CSS version: 2.2.2 
+ * Copyright (c) 2007, Yahoo! Inc. All rights reserved.
+ * Licensed under the BSD License: http://developer.yahoo.net/yui/license.txt
+ */
+body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,form,fieldset,input,textarea,optgroup,button,p,blockquote,th,td{margin:0;padding:0;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}table{border-collapse:collapse;border-spacing:0;}caption,th{text-align:left;}ol,ul{list-style:none;}fieldset,img{border:0;}input,textarea,select,optgroup,option,button{font-family:inherit;font-size:100%;}button,input {width: auto;overflow: visible;}optgroup,address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal;}q:before,q:after{content:'';}abbr,acronym {border:0;}
+dl li{list-style: none;}
+
+.sf_mini_header {
+	background: url('../images/sf_mini_nav_bg.jpg') center top no-repeat;
+	background-color: #b7d2ef;
+	height: 41px;
+	width: 100%;
+}
+
+.sf_mini_header_nav_wrapper{
+	width: 960px;
+	height: 41px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.sf_mini_header_nav_wrapper h1{
+	background: url('../images/sf_mini_logo.png') top left no-repeat;
+	background-color: transparent;
+	text-indent: -9999px;
+	width: 158px;
+	height: 41px;
+	float: left;
+	padding-right: 30px;
+}
+
+.sf_mini_header_nav_wrapper{
+	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+	font-size: 11px;
+	font-weight: 400;
+	font-style:	normal;
+	color: #494442;
+	text-transform: uppercase;
+}
+
+.sf_mini_header_nav_wrapper li{
+	float: left;
+	padding: 18px 35px 0 0;
+}
+
+.sf_mini_header_nav_wrapper a{
+	text-decoration: none;
+	color: #494442;
+	
+}
+
+.sf_mini_header_nav_wrapper a:hover{
+	font-weight: bold;
+	color: #2F4867;
+}
+
+.sf_mini_header_nav_wrapper .about{
+	width: 40px;
+}
+.sf_mini_header_nav_wrapper .blog{
+	width: 40px;
+}
+.sf_mini_header_nav_wrapper .projects{
+	width: 65px;
+}
+.sf_mini_header_nav_wrapper .contact{
+	width: 40px;
+}
