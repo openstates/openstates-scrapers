@@ -88,20 +88,19 @@ class TXLegislatorScraper(LegislatorScraper):
                                   '/following-sibling::div'
                                   '[@class="rcwcontent"]')[0]
 
-            for br in comm_div.xpath('*/br'):
-                if br.tail:
-                    name = clean_committee_name(br.tail)
+            for link in comm_div.xpath('*/a'):
+                name = clean_committee_name(link.text)
 
-                    if name.startswith('Appropriations-S/C on '):
-                        sub = name.replace('Appropriations-S/C on ', '')
-                        leg.add_role('committee member', term,
-                                     chamber=chamber,
-                                     committee='Appropriations',
-                                     subcommittee=sub)
-                    else:
-                        leg.add_role('committee member', term,
-                                     chamber=chamber,
-                                     committee=name)
+                if name.startswith('Appropriations-S/C on '):
+                    sub = name.replace('Appropriations-S/C on ', '')
+                    leg.add_role('committee member', term,
+                                 chamber=chamber,
+                                 committee='Appropriations',
+                                 subcommittee=sub)
+                else:
+                    leg.add_role('committee member', term,
+                                 chamber=chamber,
+                                 committee=name)
 
             if type == 'Lt. Gov.':
                 self.save_person(leg)
