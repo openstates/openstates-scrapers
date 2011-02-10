@@ -24,19 +24,20 @@ def all_states(request):
         state = {}
         state['id'] = meta['_id']
         state['name'] = meta['name']
-        counts = db.counts.find_one({'_id': state['id']})['value']
-        s_spec = {'state': state['id']}
-        state['bills'] = counts['bills']
-        state['votes'] = counts['votes']
-        state['versions'] = counts['versions']
-        if counts['actions']:
-            state['typed_actions'] = float(counts['categorized'])/counts['actions']*100
-        if counts['bills']:
-            state['subjects'] = float(counts['subjects'])/counts['bills']*100
-        if counts['sponsors']:
-            state['sponsor_ids'] = float(counts['idd_sponsors'])/counts['sponsors']*100
-        if counts['voters']:
-            state['voter_ids'] = float(counts['idd_voters'])/counts['voters']*100
+        counts = db.counts.find_one({'_id': state['id']}).get('value')
+        if counts:
+            s_spec = {'state': state['id']}
+            state['bills'] = counts['bills']
+            state['votes'] = counts['votes']
+            state['versions'] = counts['versions']
+            if counts['actions']:
+                state['typed_actions'] = float(counts['categorized'])/counts['actions']*100
+            if counts['bills']:
+                state['subjects'] = float(counts['subjects'])/counts['bills']*100
+            if counts['sponsors']:
+                state['sponsor_ids'] = float(counts['idd_sponsors'])/counts['sponsors']*100
+            if counts['voters']:
+                state['voter_ids'] = float(counts['idd_voters'])/counts['voters']*100
 
         if state['id'] != 'total':
             state['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
