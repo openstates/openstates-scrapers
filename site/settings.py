@@ -16,7 +16,7 @@ USE_I18N = False
 
 MEDIA_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                           'media/'))
-MEDIA_URL = ''
+MEDIA_URL = '/media/'
 ADMIN_MEDIA_PREFIX = '/admin_media/'
 
 # Make this unique, and don't share it with anybody.
@@ -29,6 +29,16 @@ TEMPLATE_LOADERS = (
 
 TEMPLATE_DIRS = (os.path.abspath(os.path.join(os.path.dirname(__file__),
                                               'templates')),)
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    "django.contrib.auth.context_processors.auth",
+    "django.core.context_processors.debug",
+    "django.core.context_processors.i18n",
+    "django.core.context_processors.media",
+    "django.core.context_processors.static",
+    "django.contrib.messages.context_processors.messages",
+    "django.core.context_processors.request",
+)
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
@@ -44,6 +54,7 @@ INSTALLED_APPS = (
     'billy.site.geo',
     'billy.site.browse',
     'locksmith.auth',
+    'mediasync',
 )
 
 DATE_FORMAT = 'Y-m-d'

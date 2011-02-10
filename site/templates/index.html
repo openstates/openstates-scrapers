@@ -1,7 +1,8 @@
+{% load media %}
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="css/main.css" media="screen" title="no title" charset="utf-8">
+    <link rel="stylesheet" href="{% media_url %}/css/main.css" media="screen" title="no title" charset="utf-8">
 
 <script src="http://use.typekit.com/xau7dem.js"></script>
 <script>try{Typekit.load();}catch(e){}</script>
@@ -17,7 +18,7 @@
                 <h1 id="logo">
                     <a href="/"> OpenStates </a>
                 </h1>
-                    <img class="arrow" src="images/header_arrow.png" alt="Header Arrow" />
+                <img class="arrow" src="{% media_url %}/images/header_arrow.png" alt="Header Arrow" />
                 <p class="intro">
                     The Open State Project gathers legislative data directly from the states and makes it available in a common format for interested developers, through a <a href="/docs/api.html">RESTful API</a> and <a href="/docs/api.html">regular bulk downloads.</a>  Join our <a href="http://groups.google.com/group/fifty-state-project">Google Group</a> to get involved.
                 </p>
@@ -60,7 +61,7 @@
                 </div>
                 <div class="clear">
                 </div>
-                <img src="/images/openstatesmap.png" id="map" alt="OpenstatesMap" />
+                <img src="{% media_url %}/images/openstatesmap.png" id="map" alt="OpenstatesMap" />
             </div>
             <div class="main-right">
                 <div class="contribute">
@@ -107,7 +108,7 @@
         </div>
         <div id="join">
             <div id="join-borders">
-                <img id="sf-product" src="images/sf_product_badge.png" alt="Sf Product Badge" />
+                <img id="sf-product" src="{% media_url %}/images/sf_product_badge.png" alt="Sf Product Badge" />
                 <div class="join-left">
                         <h3>
                             Like this Project and Want to Discover Others Like It?
