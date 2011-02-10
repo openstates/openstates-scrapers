@@ -53,9 +53,9 @@
 </g>
 <g id="Arizona_1_">
 	<radialGradient id="SVGID_5_" cx="97.6973" cy="162.6724" r="28.333" gradientUnits="userSpaceOnUse">
-		<stop  offset="0" style="stop-color:#D5D6C3;stop-opacity:0.6"/>
-		<stop  offset="0.9447" style="stop-color:#D5D6C3;stop-opacity:0.9779"/>
-		<stop  offset="1" style="stop-color:#D5D6C3"/>
+		<stop  offset="0" style="stop-color:#75AFA5;stop-opacity:0.6"/>
+		<stop  offset="0.9447" style="stop-color:#75AFA5;stop-opacity:0.9779"/>
+		<stop  offset="1" style="stop-color:#75AFA5"/>
 	</radialGradient>
 	<polygon fill="url(#SVGID_5_)" points="79.789,158.708 79.909,157.504 77.505,152.096 79.249,140.943 80.809,140.018 
 		82.252,141.339 84.238,139.836 85.619,132.203 123.719,138.032 116.748,193.142 100.345,190.917 71.675,174.512 	"/>
@@ -73,9 +73,9 @@
 </g>
 <g id="Utah_1_">
 	<radialGradient id="SVGID_7_" cx="107.4253" cy="109.3286" r="24.469" gradientUnits="userSpaceOnUse">
-		<stop  offset="0" style="stop-color:#D5D6C3;stop-opacity:0.6"/>
-		<stop  offset="0.9447" style="stop-color:#D5D6C3;stop-opacity:0.9779"/>
-		<stop  offset="1" style="stop-color:#D5D6C3"/>
+		<stop  offset="0" style="stop-color:#75AFA5;stop-opacity:0.6"/>
+		<stop  offset="0.9447" style="stop-color:#75AFA5;stop-opacity:0.9779"/>
+		<stop  offset="1" style="stop-color:#75AFA5"/>
 	</radialGradient>
 	<polygon fill="url(#SVGID_7_)" points="85.911,130.602 94.565,82.226 115.006,85.712 113.564,95.863 128.94,97.85 124.011,136.432 
 		113.494,135.052 103.339,133.548 92.942,131.867 	"/>
@@ -186,9 +186,9 @@
 </g>
 <g id="Minnesota_1_">
 	<radialGradient id="SVGID_18_" cx="244.5625" cy="48.3867" r="26.8238" gradientUnits="userSpaceOnUse">
-		<stop  offset="0" style="stop-color:#D5D6C3;stop-opacity:0.6"/>
-		<stop  offset="0.9447" style="stop-color:#D5D6C3;stop-opacity:0.9779"/>
-		<stop  offset="1" style="stop-color:#D5D6C3"/>
+		<stop  offset="0" style="stop-color:#75AFA5;stop-opacity:0.6"/>
+		<stop  offset="0.9447" style="stop-color:#75AFA5;stop-opacity:0.9779"/>
+		<stop  offset="1" style="stop-color:#75AFA5"/>
 	</radialGradient>
 	<polygon fill="url(#SVGID_18_)" points="219.415,22.901 227.904,22.94 232.832,22.818 232.915,19.985 234.913,20.291 
 		236.295,25.518 242.249,27.235 246.993,26.179 256.749,31.402 260.165,29.402 261.357,29.244 261.838,30.447 266.285,30.025 
@@ -461,9 +461,9 @@
 </g>
 <g id="New_Jersey_1_">
 	<radialGradient id="SVGID_43_" cx="388.6987" cy="91.9517" r="9.0585" gradientUnits="userSpaceOnUse">
-		<stop  offset="0" style="stop-color:#75AFA5;stop-opacity:0.75"/>
-		<stop  offset="0.9447" style="stop-color:#75AFA5;stop-opacity:0.9862"/>
-		<stop  offset="1" style="stop-color:#75AFA5"/>
+		<stop  offset="0" style="stop-color:#A5B765;stop-opacity:0.75"/>
+		<stop  offset="0.9447" style="stop-color:#A5B765;stop-opacity:0.9862"/>
+		<stop  offset="1" style="stop-color:#A5B765"/>
 	</radialGradient>
 	<polygon fill="url(#SVGID_43_)" points="384.252,96.248 386.117,94.927 386.117,94.327 388.217,91.559 384.432,88.496 
 		383.71,86.812 384.371,85.611 383.591,84.411 385.813,80.203 392.304,82.307 392.125,84.95 390.984,86.212 390.984,87.955 
