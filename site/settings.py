@@ -27,12 +27,15 @@ TEMPLATE_LOADERS = (
     'django.template.loaders.app_directories.load_template_source',
 )
 
+TEMPLATE_DIRS = (os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                              'templates')),)
+
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'locksmith.auth.middleware.APIKeyMiddleware',
 )
 
-ROOT_URLCONF = 'billy.site.urls'
+ROOT_URLCONF = 'urls'
 
 INSTALLED_APPS = (
     'django.contrib.humanize',

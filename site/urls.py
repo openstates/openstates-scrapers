@@ -9,6 +9,8 @@ urlpatterns = patterns('',
     (r'^browse/', include('billy.site.browse.urls')),
     (r'^data/(?P<state>\w\w).zip$', 'billy.site.api.views.data_zip'),
     (r'^status/$', 'django.views.generic.simple.redirect_to', {'url':'http://spreadsheets.google.com/ccc?key=tzA6I1Rmqh09Vkt40dRs-Rg'}),
+    (r'^$', 'django.views.generic.simple.direct_to_template', 
+     {'template':'index.html'}),
 )
 
 if settings.DEBUG:
