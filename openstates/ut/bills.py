@@ -136,6 +136,8 @@ class UTBillScraper(BillScraper):
                     type = 'bill:reading:2'
                 elif action == '3rd reading':
                     type = 'bill:reading:3'
+                elif action == 'failed':
+                    type = 'bill:failed'
                 else:
                     type = 'other'
 
