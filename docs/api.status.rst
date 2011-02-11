@@ -2,15 +2,14 @@
 API Status
 ==========
 
-This page will always reflect the latest official status of states in the API.  States are either categorized as ready (green), experimental (orange), or unsupported (grey).
-
+This page will always reflect the latest official status of states in the API.  States are either categorized as ready (green), experimental (blue), or unsupported (grey).
 
 State Status
 ============
 
-.. image:: /_static/apimap.png
-    :width: 576
-    :height: 352
+.. image:: http://s3.amazonaws.com/assets.sunlightlabs.com/openstates/v1/images/openstatesmap.png
+    :width: 570
+    :height: 441
 
 Ready States (green)
 --------------------
@@ -27,26 +26,27 @@ Current Ready States
 * California
 * Louisiana
 * Maryland
+* New Jersey
 * Texas
 * Wisconsin
 
-Experimental States (orange)
+Experimental States (blue)
 ----------------------------
 
-States marked experimental are lower priority when it comes to bug fixes, but are still believed by us to have high quality data available.  Also we may not have added some of our added-value fields (bill/vote/action types, alternate legislator ids, etc.).
+States marked experimental are more likely to have minor data quality issues.  These states still have high quality data but there may be an identified problem with obtaining nightly updates or a certain type of data (such as roll call votes) may be unavailable.  Also we may not have added some of our added-value fields (bill/vote/action types, alternate legislator ids, etc.).
 
-We encourage you to experiment with experimental states and not be shy about reporting bugs in the `the Open State Project issue tracker <http://code.google.com/p/openstates/issues/list>`_.  (Just be aware that it may be slightly longer before we are able to address issues with experimental states.)
+We encourage you to use data from these states and not be shy about reporting bugs in the `the Open State Project issue tracker <http://code.google.com/p/openstates/issues/list>`_.
 
 Generally we try to run experimental state scrapers as often as ready states, though there may be brief periods where the data is not updated daily.
 
 Current Experimental States
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Alaska
 * Arizona
 * Florida
 * Minnesota
 * Mississippi
 * Nevada
-* New Jersey
 * North Carolina
 * Pennsylvania
 * South Dakota
