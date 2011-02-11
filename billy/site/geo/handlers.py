@@ -1,4 +1,4 @@
-from billy.api.handlers import FiftyStateHandler
+from billy.site.api.handlers import FiftyStateHandler
 from billy.site.geo.models import District
 from billy import db
 
