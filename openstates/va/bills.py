@@ -90,7 +90,7 @@ class VABillScraper(BillScraper):
                     bill_id = str(link.text_content())
 
                     # check if this is the 'More...' link
-                    if bill_id.starts_with('More'):
+                    if bill_id.startswith('More'):
                         url = BASE_URL + link.get('href')
 
                     # skip bills from the other chamber
