@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from billy import db
 from billy.scrape.ca.models import CABillVersion
 

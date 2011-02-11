@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 from billy import db
 from billy.conf import settings, base_arg_parser
