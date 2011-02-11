@@ -11,6 +11,10 @@ urlpatterns = patterns('',
     (r'^status/$', 'django.views.generic.simple.redirect_to', {'url':'http://spreadsheets.google.com/ccc?key=tzA6I1Rmqh09Vkt40dRs-Rg'}),
     (r'^$', 'django.views.generic.simple.direct_to_template', 
      {'template':'index.html'}),
+    #(r'^comtest$', 'django.views.generic.simple.direct_to_template', 
+    # {'template':'committees.html'}),
+    (r'^contributing/$', 'django.views.generic.simple.direct_to_template',
+     {'template':'contributing.html'}),
 )
 
 if settings.DEBUG:

@@ -1,0 +1,146 @@
+{% load media %}
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{% media_url %}/css/main.css" media="screen" title="no title" charset="utf-8">
+    <script src="http://use.typekit.com/xau7dem.js"></script>
+    <script>try{Typekit.load();}catch(e){}</script>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="header-shadow"></div>
+        <header role="banner">
+            <div class="header-home">
+                <h1 id="logo">
+                    <a href="/">
+                OpenStates
+                    </a>
+                </h1>
+                <img class="arrow" src="{% media_url %}/images/header_arrow.png" alt="Header Arrow" />
+
+            </div>
+            <div class="header-ribbon header-ribbon-all">
+                <span class="tag1">
+                    Gathering <span id="orange">&amp;</span> Sharing <span id="light">State Legislative Data</span>
+                </span>
+
+            </div>
+
+            <div class="clear">
+            </div>
+        </header>
+
+
+        <ul class="breadcrumb">
+            <li class="home">
+                <a href="">Open States</a>
+            </li>
+            <li>
+                <a href="">API</a>
+            </li>
+            <li class="live">
+                <a href="">Committee API Methods</a>
+            </li>
+        </ul>
+        <div class="main">
+            <div class="main-left content">
+                {% block content %}
+                {% endblock content %}
+            </div>
+            <div class="main-right">
+                <div class="contribute">
+                        <h3>
+                        Contribute
+                        </h3>
+
+                        <ul>
+                            <li>
+                            <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href=" ">Contributors Guide</a>
+                            </li>
+                            <li>
+                                <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href=" ">Code on GitHub</a>
+                            </li>
+                            <li>
+                                <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href=" ">Writing Scrapers</a>
+                            </li>
+                        </ul>
+                </div>
+                <div class="use">
+                        <h3>
+                            Use Our Data
+                        </h3>
+
+                        <ul>
+                            <li>
+                            <img src="{% media_url %}/images/use_bullet.png" alt="Use Bullet" /><a href=" ">Open State Project</a>
+                            </li>
+                            <li class="live-section">
+                                <img src="{% media_url %}/images/use_bullet_live.png" alt="Use Bullet Live" />  <a href="api.html">API</a>
+                            </li>
+                            <li>
+                                <img src="{% media_url %}/images/use_bullet.png" alt="Use Bullet" /><a href=" ">Python Client Library</a>
+                            </li>
+                        </ul>
+                </div>
+                <div class="join-side">
+                    <img id="sf-product" src="{% media_url %}/images/sf_product_badge.png" alt="Sf Product Badge" />
+
+                    <h3>
+                        Like this Project and Want to Discover Others Like It?
+                    </h3>
+                    <p>
+                        Join the Sunlight Foundation's open government community to learn more.
+                    </p>
+                    <form class="join-right" action="#" method="post" id="mailinglistform">
+                        <ul>
+                            <li>
+                                <input class="transparent" type="email" name="email" id="id_email" placeholder="your email address">
+                            </li>
+                            <li>
+
+                                <input class="transparent" type="text" name="zipcode" id="id_zipcode" placeholder="your zip code" pattern="[0-9]{5}" maxlength="5">
+                            </li>
+                            <li>
+                                <button id="joinBtn" type="submit">
+                                    <span>submit</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </form>
+                </div>
+            </div>
+            <div class="clear">
+            </div>
+        </div>
+    </div>
+<footer role="contentinfo">
+        <div class="wrapper">
+                <a class="foundation" href="http://www.sunlightfoundation.com">
+                    Sunlight Foundation
+                </a>
+            <div class="resources">
+                    <h3>
+                        Resources:
+                    </h3>
+                    <ul>
+                        <li>
+                            <a href="/status/">State by State Status</a>
+                        </li>
+                        <li>
+                            <a href=" ">Google Group</a>
+                        </li>
+                        <li>
+                            <a href=" ">Issue Tracker</a>
+                        </li>
+                    </ul>
+                <div class="clear">
+                </div>
+            </div>
+            <small id="about">Founded in 2006, the Sunlight Foundation is a non-partisan non-profit that uses cutting-edge technology and ideas to make government transparent and accountable. Visit <a href=" ">SunlightFoundation.com</a> to learn more.
+            </small>
+            <div class="clear"> </div>
+
+        </footer>
+</body>
+</html>
