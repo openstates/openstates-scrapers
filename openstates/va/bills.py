@@ -87,7 +87,7 @@ class VABillScraper(BillScraper):
                 bills = doc.xpath('//ul[@class="linkSect"]/li')
                 for bill in bills:
                     link = bill.getchildren()[0]
-                    bill_id = link.text_content()
+                    bill_id = str(link.text_content())
 
                     # check if this is the 'More...' link
                     if bill_id.starts_with('More'):
