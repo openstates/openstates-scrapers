@@ -1,11 +1,14 @@
 #!/usr/bin/env python
+import os
 import csv
 import sys
+import tempfile
+import subprocess
 
 from billy import db, utils
 
 
-def vote_csv(state, session, chamber):
+def vote_csv(state, session, chamber, out=sys.stdout):
     term = utils.term_for_session(state, session)
 
     votes = {}
@@ -51,7 +54,7 @@ def vote_csv(state, session, chamber):
             for leg_id in set(votes.keys()) - seen:
                 votes[leg_id].append(9)
 
-    out = csv.writer(sys.stdout)
+    out = csv.writer(out)
 
     for (leg_id, vs) in votes.iteritems():
         leg = legislators[leg_id]
@@ -61,11 +64,39 @@ def vote_csv(state, session, chamber):
         except KeyError:
             party = leg['party']
 
-        row = [leg['full_name'].encode('ascii', 'replace'), party]
+        row = [leg['full_name'].encode('ascii', 'replace'), leg['leg_id'],
+               party]
         for vote in vs:
             row.append(str(vote))
 
         out.writerow(row)
+
+
+def wnominate(state, session, chamber, polarity, r_bin="R"):
+    (fd, filename) = tempfile.mkstemp('.csv')
+    with os.fdopen(fd, 'w') as out:
+        vote_csv(state, session, chamber, out)
+
+    (result_fd, result_filename) = tempfile.mkstemp('.csv')
+    os.close(result_fd)
+
+    r_src_path = os.path.join(os.path.dirname(__file__), 'calc_wnominate.R')
+
+    with open('/dev/null', 'w') as devnull:
+        subprocess.check_call([r_bin, "-f", r_src_path, "--args",
+                               filename, result_filename, polarity],
+                              stdout=devnull, stderr=devnull)
+
+    results = {}
+    with open(result_filename) as f:
+        c = csv.DictReader(f)
+        for row in c:
+            results[row['leg_id']] = float(row['coord1D'])
+
+    os.remove(filename)
+    os.remove(result_filename)
+
+    return results
 
 
 if __name__ == '__main__':
@@ -75,7 +106,7 @@ if __name__ == '__main__':
     parser.add_argument('state')
     parser.add_argument('session')
     parser.add_argument('chamber')
+    parser.add_argument('polarity')
     args = parser.parse_args()
 
-
-    vote_csv(args.state, args.session, args.chamber)
+    wnominate(args.state, args.session, args.chamber, args.polarity)

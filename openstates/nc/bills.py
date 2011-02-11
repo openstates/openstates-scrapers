@@ -104,18 +104,22 @@ class NCBillScraper(BillScraper):
 
             # sponsors
             pri_td = doc.xpath('//th[text()="Primary:"]/following-sibling::td')
-            pri_text = pri_td[0].text_content().replace(u'\xa0', ' ').split()
+            pri_text = pri_td[0].text_content().replace(u'\xa0', ' ').split('; ')
             for leg in pri_text:
                 leg = leg.strip()
                 if leg:
+                    if leg[-1] == ';':
+                        leg = leg[:-1]
                     bill.add_sponsor('primary', leg)
 
             # cosponsors
             co_td = doc.xpath('//th[text()="Co:"]/following-sibling::td')
-            co_text = co_td[0].text_content().replace(u'\xa0', ' ').split()
+            co_text = co_td[0].text_content().replace(u'\xa0', ' ').split('; ')
             for leg in co_text:
                 leg = leg.strip()
                 if leg and leg != 'N/A':
+                    if leg[-1] == ';':
+                        leg = leg[:-1]
                     bill.add_sponsor('cosponsor', leg)
 
             # actions

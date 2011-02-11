@@ -19,7 +19,8 @@ def generate_leg_indexes(state, term, chamber):
     return leg_indexes
 
 
-def generate_adjacency_matrix(state, session, chamber, leg_indexes):
+def generate_adjacency_matrix(state, session, chamber, leg_indexes,
+                              primary_sponsor_type='primary'):
     size = len(leg_indexes)
     matrix = numpy.zeros((size, size))
 
@@ -27,7 +28,7 @@ def generate_adjacency_matrix(state, session, chamber, leg_indexes):
                                'chamber': chamber}):
         try:
             for author in bill['sponsors']:
-                if author['type'] == 'LEAD_AUTHOR':
+                if author['type'] == primary_sponsor_type:
                     primary_sponsor_id = leg_indexes[author['leg_id']]
                     break
             else:
@@ -37,8 +38,8 @@ def generate_adjacency_matrix(state, session, chamber, leg_indexes):
         except IndexError:
             continue
 
-        for sponsor in bill['sponsors'][0:]:
-            if sponsor['type'] == 'LEAD_AUTHOR':
+        for sponsor in bill['sponsors'][1:]:
+            if sponsor['type'] == primary_sponsor_type:
                 continue
 
             try:
@@ -46,7 +47,7 @@ def generate_adjacency_matrix(state, session, chamber, leg_indexes):
             except KeyError:
                 continue
 
-            matrix[primary_sponsor_id, sponsor_id] = 1
+            matrix[primary_sponsor_id, sponsor_id] += 1
 
     return matrix
 
