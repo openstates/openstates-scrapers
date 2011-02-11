@@ -5,8 +5,13 @@
     <title>Open State Project: freeing state legislative information</title>
     <link rel="stylesheet" href="{% media_url %}/css/main.css" media="screen" title="no title" charset="utf-8">
     <script src="http://use.typekit.com/xau7dem.js"></script>
+    <script src="{% media_url %}/js/jquery-1.5.min.js"></script>
+    <script src="{% media_url %}/js/jquery.placeholder.js"></script>
     <script>try{Typekit.load();}catch(e){}</script>
     <script type="text/javascript">
+        $(function() {
+            $('input[placeholder],textarea[placeholder]').placeholder();
+        });
 
       var _gaq = _gaq || [];
       _gaq.push(['_setAccount', 'UA-1265484-77']);
