@@ -3,7 +3,6 @@ import datetime
 
 from django.conf import settings
 from billy import db
-from billy.site.geo.models import District
 from billy.utils import keywordize
 
 from django.http import HttpResponse
@@ -178,29 +177,6 @@ class LegislatorSearchHandler(FiftyStateHandler):
         return list(db.legislators.find(_filter, legislator_fields))
 
 
-class LegislatorGeoHandler(FiftyStateHandler):
-    def read(self, request):
-        try:
-            districts = District.lat_long(request.GET['lat'],
-                                          request.GET['long'])
-
-            filters = []
-            for d in districts:
-                filters.append({'state': d.state_abbrev,
-                                'roles': {'$elemMatch': {
-                                    'district': d.name,
-                                    'chamber': d.chamber}}})
-
-            if not filters:
-                return []
-
-            return list(db.legislators.find({'$or': filters}))
-        except KeyError:
-            resp = rc.BAD_REQUEST
-            resp.write(": Need lat and long parameters")
-            return resp
-
-
 class CommitteeHandler(FiftyStateHandler):
     def read(self, request, id):
         return db.committees.find_one({'_all_ids': id})
@@ -280,16 +256,17 @@ class ReconciliationHandler(BaseHandler):
     for the API specification.
     """
     allowed_methods = ('GET', 'POST')
+    key = getattr(settings, 'SUNLIGHT_SERVICES_KEY', 'no-key')
 
     metadata = {
         "name": "Open State Reconciliation Service",
         "view": {
             "url": ("http://openstates.sunlightlabs.com/api/v1/legislators/"
-                    "preview/{{id}}/?apikey=%s" % settings.SUNLIGHT_SERVICES_KEY),
+                    "preview/{{id}}/?apikey=%s" % key),
             },
         "preview": {
             "url": ("http://openstates.sunlightlabs.com/api/v1/legislators/"
-                    "preview/{{id}}/?apikey=%s" % settings.SUNLIGHT_SERVICES_KEY),
+                    "preview/{{id}}/?apikey=%s" % key),
             "width": 430,
             "height": 300
             },

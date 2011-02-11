@@ -62,8 +62,6 @@ legislator_handler = Resource(handlers.LegislatorHandler,
                               authentication=authorizer)
 legsearch_handler = Resource(handlers.LegislatorSearchHandler,
                              authentication=authorizer)
-legislator_geo_handler = Resource(handlers.LegislatorGeoHandler,
-                                  authentication=authorizer)
 committee_handler = Resource(handlers.CommitteeHandler,
                              authentication=authorizer)
 committee_search_handler = Resource(handlers.CommitteeSearchHandler,
@@ -88,7 +86,6 @@ urlpatterns = patterns('',
 
     url(r'^v1/legislators/(?P<id>[A-Z]{2,2}L\d{6,6})/$', legislator_handler),
     url(r'^v1/legislators/$', legsearch_handler),
-    url(r'^v1/legislators/geo/$', legislator_geo_handler),
 
     url(r'^v1/committees/(?P<id>[A-Z]{2,2}C\d{6,6})/$', committee_handler),
     url(r'^v1/committees/$', committee_search_handler),
@@ -104,3 +101,12 @@ urlpatterns = patterns('',
 
     url(r'^v1/stats/$', stats_handler),
 )
+
+if 'billy.site.geo' in settings.INSTALLED_APPS:
+    from billy.geo.handlers import LegislatorGeoHandler
+    legislator_geo_handler = Resource(LegislatorGeoHandler,
+                                      authentication=authorizer)
+    urlpatterns += patterns('',
+        url(r'^v1/legislators/geo/$', legislator_geo_handler),
+    )
+
