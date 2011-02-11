@@ -8,9 +8,9 @@ This page will always reflect the latest official status of states in the API.  
 State Status
 ============
 
-.. image:: /_static/apimap.png
-    :width: 576
-    :height: 352
+.. image:: http://s3.amazonaws.com/assets.sunlightlabs.com/openstates/v1/images/openstatesmap.png
+    :width: 570
+    :height: 441
 
 Ready States (green)
 --------------------
@@ -27,6 +27,7 @@ Current Ready States
 * California
 * Louisiana
 * Maryland
+* New Jersey
 * Texas
 * Wisconsin
 
@@ -41,12 +42,12 @@ Generally we try to run experimental state scrapers as often as ready states, th
 
 Current Experimental States
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Alaska
 * Arizona
 * Florida
 * Minnesota
 * Mississippi
 * Nevada
-* New Jersey
 * North Carolina
 * Pennsylvania
 * South Dakota
