@@ -5,7 +5,7 @@ argparse==1.1
 lxml>=2.2
 feedparser>=4.1
 pytz>=2010l
-scrapelib>=0.4.1
+scrapelib>=0.4.3
 validictory>=0.6.1
 
 # billy.importers requirements
