@@ -72,7 +72,7 @@ def vote_csv(state, session, chamber, out=sys.stdout):
         out.writerow(row)
 
 
-def wnominate(state, session, chamber, polarity, r_bin="R64"):
+def wnominate(state, session, chamber, polarity, r_bin="R"):
     (fd, filename) = tempfile.mkstemp('.csv')
     with os.fdopen(fd, 'w') as out:
         vote_csv(state, session, chamber, out)
