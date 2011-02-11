@@ -4,7 +4,7 @@ html, body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pr
 abbr, address, cite, code, del, dfn, em, img, ins, kbd, q, samp,
 small, strong, sub, sup, var, b, i, dl, dt, dd, ol, ul, li,
 fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td,
-article, aside, canvas, details, figcaption, figure,  footer, header, hgroup, 
+article, aside, canvas, details, figcaption, figure,  footer, header, hgroup,
 menu, nav, section, summary, time, mark, audio, video {
   margin:0;
   padding:0;
@@ -13,8 +13,8 @@ menu, nav, section, summary, time, mark, audio, video {
   font-size:100%;
   vertical-align:baseline;
   background:transparent;
-}                  
-article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { 
+}
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
     display:block;
 }
 nav ul { list-style:none; }
@@ -32,7 +32,7 @@ hr { display:block; height:1px; border:0; border-top:1px solid #ccc; margin:1em 
 input, select { vertical-align:middle; }
 
 
-body { font:13px/1.231 sans-serif; *font-size:small; } 
+body { font:13px/1.231 sans-serif; *font-size:small; }
 select, input, textarea, button { font:99% sans-serif; }
 pre, code, kbd, samp { font-family: monospace, sans-serif; }
 
@@ -48,15 +48,15 @@ a:hover { color: #4f4843; }
 ul, ol { margin-left: 1.8em; }
 ol { list-style-type: decimal; }
 
-nav ul, nav li { margin: 0; } 
+nav ul, nav li { margin: 0; }
 small { font-size: 85%; line-height: 1.5;}
 strong, th { font-weight: bold; }
-td, td img { vertical-align: top; } 
+td, td img { vertical-align: top; }
 sub { vertical-align: sub; font-size: smaller; }
 sup { vertical-align: super; font-size: smaller; }
 pre {  padding: 15px;  white-space: pre;  white-space: pre-wrap;  white-space: pre-line;  word-wrap: break-word; }
-textarea { overflow: auto; } 
-.ie6 legend, .ie7 legend { margin-left: -7px; } 
+textarea { overflow: auto; }
+.ie6 legend, .ie7 legend { margin-left: -7px; }
 input[type="radio"] { vertical-align: text-bottom; }
 input[type="checkbox"] { vertical-align: bottom; }
 .ie7 input[type="checkbox"] { vertical-align: baseline; }
@@ -65,21 +65,21 @@ label, input[type=button], input[type=submit], button { cursor: pointer; }
 button, input, select, textarea { margin: 0; }
 input:valid, textarea:valid   {  }
 input:invalid, textarea:invalid { border-radius: 1px;  -moz-box-shadow: 0px 0px 5px red; -webkit-box-shadow: 0px 0px 5px red;  box-shadow: 0px 0px 5px red; }
-.no-boxshadow input:invalid, 
+.no-boxshadow input:invalid,
 .no-boxshadow textarea:invalid { background-color: #f0dddd; }
 
 ::-moz-selection{ background: #bec0b2; color:#fff; text-shadow: none; }
-::selection { background:#FF5E99; color:#fff; text-shadow: none; } 
-a:link { -webkit-tap-highlight-color: #FF5E99; } 
+::selection { background:#FF5E99; color:#fff; text-shadow: none; }
+a:link { -webkit-tap-highlight-color: #FF5E99; }
 
 button {  width: auto; overflow: visible; }
 .ie7 img { -ms-interpolation-mode: bicubic; }
 
 .ir { display: block; text-indent: -999em; overflow: hidden; background-repeat: no-repeat; text-align: left; direction: ltr; }
-.hidden { display: none; visibility: hidden; } 
+.hidden { display: none; visibility: hidden; }
 .visuallyhidden { position: absolute !important; clip: rect(1px 1px 1px 1px);  clip: rect(1px, 1px, 1px, 1px); }
 .invisible { visibility: hidden; }
-.clearfix:before, .clearfix:after {  content: "\0020"; display: block; height: 0; visibility: hidden;    } 
+.clearfix:before, .clearfix:after {  content: "\0020"; display: block; height: 0; visibility: hidden;    }
 .clearfix:after { clear: both; }
 .clearfix { zoom: 1; }
 
@@ -109,7 +109,7 @@ body{
     height: 13px;
     position: absolute;
     padding-right: 958px;
-    
+
 }
 p{
     line-height: 1.6;
@@ -120,7 +120,7 @@ dl{
 dd{
     padding: 0 0 0 30px;
     margin-bottom: 20px;
-    
+
 }
 dd, dt{
     line-height: 1.6;
@@ -153,8 +153,8 @@ header[role="banner"]{
     background: url('../images/header_shadow.png') top right no-repeat;
     padding-right: 0;
     width: 960px;
-    
-    
+
+
 }
 .header-home{
     width: 673px;
@@ -168,7 +168,7 @@ h1{
     width: 490px;
     height: 55px;
     margin: 65px 0 0 40px;
-    
+
 }
 h1 a{
     background: url('../images/openstateslogo.png')top center no-repeat;
@@ -177,7 +177,7 @@ h1 a{
     height: 55px;
     display: block;
     border-bottom: none;
-    
+
 }
 h2{
     font-family: "museo-slab-1","museo-slab-2", Georgia, "Times New Roman", Times, serif;
@@ -303,7 +303,7 @@ li.home{
 .content{
     padding-right: 40px;
     width: 593px;
-    margin-bottom: 60px;    
+    margin-bottom: 60px;
 }
 .content li{
     line-height: 1.6;
@@ -323,7 +323,7 @@ li.home{
 
 #map{
     margin-top: 30px;
-    width: 570px; 
+    width: 570px;
     height: 441px;
 }
 .map-intro{
@@ -337,7 +337,7 @@ li.home{
     font-size: 125%;
     font-weight: 500;
     text-transform: uppercase;
-    margin-bottom: 40px;
+    margin-bottom: 18px;
     color:#6E6965;
 }
 .map-key{
@@ -356,22 +356,22 @@ li.home{
     background: url('../images/experimental.png') center left no-repeat;
     padding-left: 35px;
     margin-left: -35px;
-    
+
 }
 #ready{
     background: url('../images/ready.png') center left no-repeat;
     padding-left: 35px;
     margin-left: -35px;
-        
+
 }
 .main-right{
     float: left;
     background: url('../images/dropshadow_left.png') center left no-repeat;
     width: 283px;
-    padding-left: 15px; 
+    padding-left: 15px;
     margin-left: -15px;
     border-right: 2px solid #eeefdb;
-    
+
 }
 .main-right a{
     color: #d57028;
@@ -411,7 +411,7 @@ li.home{
     height: 13px;
 }
 
-li.live-section{ 
+li.live-section{
     background: url('../images/live_section.png') top center no-repeat ;
     width: 252px;
     height: 41px;
@@ -421,7 +421,7 @@ li.live-section{
 }
 .live-section a{
     color: #6e6965;
-    
+
 }
 .live-section a:hover{
     color: #6e6965;
@@ -429,7 +429,7 @@ li.live-section{
 .use{
     background: url('../images/use.png') top left no-repeat;
     background-color: #f2f6e2;
-    padding: 11px 40px 30px 40px;   
+    padding: 11px 40px 30px 40px;
 }
 .use li{
 }
@@ -453,7 +453,7 @@ li.live-section{
     float: left;
     width: 87px;
     height: 87px;
-    margin: 30px 0 30px 30px;   
+    margin: 30px 0 30px 30px;
 }
 .join-left{
     float: left;
@@ -471,8 +471,10 @@ li.live-section{
     font-size: 91%;
 }
 .join-left h3{
+    font-family: "museo-slab-1","museo-slab-2", Georgia, "Times New Roman", Times, serif;
     margin: 10px 0 10px 0;
-    font-size: 100%;
+    font-size: 98%;
+    color: #6E6965;
 }
 .join-right{
     float: left;
@@ -481,14 +483,14 @@ li.live-section{
     width: 215px;
     border-left: 1px solid #e1e2cf;
     padding-left: 35px;
-    
+
 }
 .join-space{
     float: left;
     margin: 30px 0 10px 0;
     width: 1px;
     height: 85px;
-    
+
 }
 
 .use h3{
@@ -526,7 +528,7 @@ input, textarea{
     text-indent: -9999em;
 }
 #joinBtn:hover {
-    background: url('../images/join_button.png') center bottom no-repeat;   
+    background: url('../images/join_button.png') center bottom no-repeat;
     width: 82px;
     height: 23px;
 }
@@ -545,7 +547,7 @@ input, textarea{
 
 .join-right ul{
     margin-left: 0;
-    
+
 }
 .join-side{
     background:  url('../images/join_right_sun_shadow.png') top left no-repeat;
@@ -573,7 +575,7 @@ input, textarea{
 .join-side .join-right{
     border: none;
     margin: 0 0 0 0 ;
-    
+
 }
 
 #orange{
@@ -599,7 +601,7 @@ footer>.wrapper{
     height: 100px;
     border-right: 1px solid #c0c1af;
     padding: 0 60px;
-    text-indent: -9999em;   
+    text-indent: -9999em;
     border-bottom: none;
 
 }
@@ -615,17 +617,20 @@ footer>.wrapper{
     background: url('../images/bg_resources.png') center right no-repeat;
     width: 664px;
     height: 70px;
-    padding: 30px 0 0 40px; 
+    padding: 30px 0 0 40px;
     border-left: 1px solid #eeefdb;
 }
 
 .resources h3{
+    font-family: "museo-slab-1","museo-slab-2", Georgia, "Times New Roman", Times, serif;
+    font-size: 125%;
+    color: #6E6965;
     float: left;
     padding: 11px 0 0 60px;
 }
 .resources li{
     float: left;
-    padding: 17px 0 0 32px;
+    padding: 15px 0 0 32px;
 }
 .resources a{
     color: #d57028;
