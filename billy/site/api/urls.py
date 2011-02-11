@@ -103,7 +103,7 @@ urlpatterns = patterns('',
 )
 
 if 'billy.site.geo' in settings.INSTALLED_APPS:
-    from billy.geo.handlers import LegislatorGeoHandler
+    from billy.site.geo.handlers import LegislatorGeoHandler
     legislator_geo_handler = Resource(LegislatorGeoHandler,
                                       authentication=authorizer)
     urlpatterns += patterns('',
