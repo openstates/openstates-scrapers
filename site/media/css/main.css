@@ -334,11 +334,12 @@ li.home{
     margin-bottom: 15px;
     line-height: 1.5;
     font-family: "museo-slab-1","museo-slab-2", Georgia, "Times New Roman", Times, serif;
-    font-size: 125%;
+    font-size: 123%;
     font-weight: 500;
     text-transform: uppercase;
     margin-bottom: 18px;
     color:#6E6965;
+	letter-spacing: normal;
 }
 .map-key{
     background: url('../images/map_key.png') top left no-repeat;
@@ -468,12 +469,12 @@ li.live-section{
     font-family: "museo-slab-1","museo-slab-2", Georgia, "Times New Roman", Times, serif;
     font-weight: 100;
     font-style: italic;
-    font-size: 91%;
+    font-size: 89%;
 }
 .join-left h3{
     font-family: "museo-slab-1","museo-slab-2", Georgia, "Times New Roman", Times, serif;
     margin: 10px 0 10px 0;
-    font-size: 98%;
+    font-size: 96%;
     color: #6E6965;
 }
 .join-right{
@@ -517,6 +518,8 @@ input, textarea{
     color:#494442;
     font-style: oblique;
     margin: 4px;
+	font-size: 80%;
+	height: 16px;
 }
 #joinBtn {
     background: url('../images/join_button.png')center top no-repeat;
@@ -532,7 +535,12 @@ input, textarea{
     width: 82px;
     height: 23px;
 }
-
+.placeholder{
+    font-style: oblique;
+	padding: 10px 0 0 12px;
+	font-size: 80%;
+	color:#bec0b2;
+}
 
 #id_email{
     width: 193px;
