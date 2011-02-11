@@ -153,8 +153,6 @@ header[role="banner"]{
     background: url('../images/header_shadow.png') top right no-repeat;
     padding-right: 0;
     width: 960px;
-
-
 }
 .header-home{
     width: 673px;
@@ -162,8 +160,7 @@ header[role="banner"]{
     float: left;
     padding: 0 0;
 }
-header[role="banner"] a{
-}
+
 h1{
     width: 490px;
     height: 55px;
@@ -171,13 +168,12 @@ h1{
 
 }
 h1 a{
-    background: url('../images/openstateslogo.png')top center no-repeat;
+    background: url('../images/openstateslogo.png') left top no-repeat;
     text-indent: -9999em;
     width: 490px;
     height: 55px;
     display: block;
     border-bottom: none;
-
 }
 h2{
     font-family: "museo-slab-1","museo-slab-2", Georgia, "Times New Roman", Times, serif;
@@ -522,7 +518,7 @@ input, textarea{
 	height: 16px;
 }
 #joinBtn {
-    background: url('../images/join_button.png')center top no-repeat;
+    background: url('../images/join_button.png') left top no-repeat;
     width: 82px;
     height: 23px;
     border: none;
@@ -586,7 +582,7 @@ input, textarea{
 
 }
 
-#orange{
+.orange{
     color: #d57028;
 }
 #light{

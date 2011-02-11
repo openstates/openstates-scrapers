@@ -1,9 +1,14 @@
 {% load media %}
+
 <!DOCTYPE html>
 <html>
 <head>
     <title>Open State Project: freeing state legislative information</title>
-    <link rel="stylesheet" href="{% media_url %}/css/main.css" media="screen" title="no title" charset="utf-8">
+    <link rel="stylesheet" href="{% media_url %}/css/main.css" media="screen" title="no title" charset="utf-8"/>
+	<!--[if IE 7]>{% css "css/buggy_7.css" %}<![endif]-->
+
+	
+	<!--[if IE 7]><script src="{% media_url %}/js/html5.js"></script><![endif]-->
     <script src="http://use.typekit.com/xau7dem.js"></script>
     <script src="{% media_url %}/js/jquery-1.5.min.js"></script>
     <script src="{% media_url %}/js/jquery.placeholder.js"></script>
@@ -33,7 +38,7 @@
         <header role="banner">
             <div class="header-home">
                 <h1 id="logo">
-                    <a href="/"> OpenStates </a>
+                	<a href="/">OpenStates</a>
                 </h1>
                 <img class="arrow" src="{% media_url %}/images/header_arrow.png" alt="Header Arrow" />
                 <p class="intro">
@@ -42,14 +47,14 @@
             </div>
             <div class="header-ribbon">
                 <span class="tag1">
-                    Gathering <span id="orange">&</span> Sharing <span id="light">State Legislative Data</span>
+                    Gathering <span class="orange">&</span> Sharing <span id="light">State Legislative Data</span>
                 </span>
                 <ul class="tag2">
-                    <li><span id="orange">&#42;</span> Bills</li>
-                    <li><span id="orange">&#42;</span> Legislators <span id="orange">&#42;</span></li> 
-                    <li class="committees"><span id="orange">&#42;</span> Committees <span id="orange">&#42;</span></li> 
-                    <li><span id="orange">&#42;</span> Votes </li>
-                    <li><span id="orange">&#42;</span> Schedules <span id="orange">&#42;</span></li>
+                    <li><span class="orange">&#42;</span> Bills</li>
+                    <li><span class="orange">&#42;</span> Legislators <span class="orange">&#42;</span></li> 
+                    <li class="committees"><span id="orange">&#42;</span> Committees <span class="orange">&#42;</span></li> 
+                    <li><span class="orange">&#42;</span> Votes </li>
+                    <li><span class="orange">&#42;</span> Schedules <span class="orange">&#42;</span></li>
                 </ul>
             </div>
             
@@ -159,7 +164,7 @@
             </div>
         </div>
     </div>
-        <footer role="contentinfo">
+        <footer role="contentinfo" class="footer">
         <div class="wrapper">
                 <a class="foundation" href="http://www.sunlightfoundation.com">
                     Sunlight Foundation

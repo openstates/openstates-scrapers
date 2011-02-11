@@ -1,0 +1,22 @@
+
+.join-left h3{
+
+    font-size: 89%;
+}
+#about {
+    font-size: 83%;
+
+}
+.resources h3{
+    font-size: 115%;
+}
+#joinBtn{
+	text-indent: -9999em;
+	display: block;
+	margin-top: -13px;
+
+}
+
+#id_zipcode{
+    width: 106px;
+}
