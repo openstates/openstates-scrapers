@@ -1,36 +1,16 @@
 The Open State Project
 =======================
 
-The Open State Project collects and makes available data about state legislative activities, including bill summaries, votes, sponsorships, legislators, and committees. This data is gathered directly from the states and made available in a common format for interested developers, through a :doc:`RESTful API <api>` and regular data dumps. To make working with the API easier, a `Python client library <http://github.com/sunlightlabs/python-openstates/>`_ is available.
+The `Open State Project <http://openstates.sunlightlabs.com>`_ is powered by ``billy``, a python package designed around the needs of the project that handles all aspects of extracting, cleaning, and providing legislative information.
 
-Because most states do not make their legislative data publicly available in structured formats, we need
-to write scrapers to parse information from their publicly-facing websites. This is a large task and one we can always use help on. View our `contributors' guide <http://code.google.com/p/openstates/wiki/Contributing>`_ for information on getting started with the project.
-
-Links
-=====
-
-  * `State by State Status <http://openstates.sunlightlabs.com/status/>`_
-  * `Google Group <http://groups.google.com/group/fifty-state-project>`_
-  * `Issue Tracker <http://code.google.com/p/openstates/issues/list>`_
-  * IRC: #openstates on irc.freenode.net
-
-Use Our Data
-------------
-
-  * :doc:`api`
-  * `Python client library <http://github.com/sunlightlabs/python-openstates>`_
-
-Contribute
-----------
-
-  * `Contributor's Guide <http://code.google.com/p/openstates/wiki/Contributing>`_
-  * `Code on GitHub <http://github.com/sunlightlabs/openstates>`_
-  * :doc:`Writing Scrapers <scrapers>`
-
-
+Documentation
+-------------
 
 .. toctree::
-   :hidden:
+   :maxdepth: 2
 
    api
+   api.changelog
    scrapers
+   configuration
+   scripts
