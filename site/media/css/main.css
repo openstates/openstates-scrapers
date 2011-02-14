@@ -661,3 +661,7 @@ footer>.wrapper{
 .note-title{
     font-weight: bold;
 }
+pre{
+	padding-top: 0;
+	white-space: inherit;
+}
