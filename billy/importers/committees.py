@@ -72,7 +72,7 @@ def import_committees(state, data_dir):
                         committee['members'].append(
                             {'name': legislator['full_name'],
                              'leg_id': legislator['leg_id'],
-                             'role': 'member'})
+                             'role': role.get('position') or 'member'})
                         db.committees.save(committee, safe=True)
 
                         role['committee_id'] = committee['_id']
