@@ -666,3 +666,59 @@ footer>.wrapper{
 .note-title{
     font-weight: bold;
 }
+
+.social-links li {
+float:left;
+height:16px;
+margin-bottom:15px;
+padding-left:25px;
+list-style-type: none;
+display: block;
+padding-right: 35px ;
+}
+.social-facebook {
+	background-image:url("../images/social_sprites.png");
+	background-position:left -188px;
+	background-repeat:no-repeat;
+}
+.social-facebook:hover {
+	background-position:left -52px;
+}
+.social-twitter {
+	background-image:url("../images/social_sprites.png");
+	background-position:left -103px;
+	background-repeat:no-repeat;
+}
+.social-twitter:hover {
+	background-position:left -1px;
+}
+.social-flickr {
+	background-image:url("../images/social_sprites.png");
+	background-position:left -171px;
+	background-repeat:no-repeat;
+}
+.social-flickr:hover {
+	background-position:left -35px;
+}
+.social-youtube {
+	background-image:url("../images/social_sprites.png");
+	background-position:left -137px;
+	background-repeat:no-repeat;
+}
+.social-youtube:hover {
+	background-position:left -86px;
+}
+.social-delicious {
+	background-image:url("../images/social_sprites.png");
+	background-position:left -120px;
+	background-repeat:no-repeat;
+}
+.social-delicious:hover {
+	background-position:left -18px;
+}
+.content .join-social>ul > li {
+	list-style-type:none;
+}
+.content .join-social>ul {
+	margin-left: 0;
+}

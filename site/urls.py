@@ -15,6 +15,10 @@ urlpatterns = patterns('',
     # {'template':'committees.html'}),
     (r'^contributing/$', 'django.views.generic.simple.direct_to_template',
      {'template':'contributing.html'}),
+    #(r'^comtest$', 'django.views.generic.simple.direct_to_template', 
+    # {'template':'thankyou.html'}),
+    (r'^thankyou/$', 'django.views.generic.simple.direct_to_template',
+     {'template':'thankyou.html'}),
 )
 
 if settings.DEBUG:
