@@ -41,5 +41,8 @@ class NVCommitteeScraper(CommitteeScraper):
     def scrape_comm_members(self, chamber, committee, url):
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
-            for name in doc.xpath('//li/a/text()'):
-                committee.add_member(name.strip())
+            for li in doc.xpath('//li'):
+                pieces = li.text_content().split(' - ')
+                name = pieces[0].strip()
+                role = pieces[1] if len(pieces) == 2 else 'member'
+                committee.add_member(name, role)
