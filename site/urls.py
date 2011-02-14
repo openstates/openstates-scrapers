@@ -8,13 +8,14 @@ urlpatterns = patterns('',
     (r'^api/', include('billy.site.api.urls')),
     (r'^browse/', include('billy.site.browse.urls')),
     (r'^data/(?P<state>\w\w).zip$', 'billy.site.api.views.data_zip'),
-    (r'^status/$', 'django.views.generic.simple.redirect_to', {'url':'http://spreadsheets.google.com/ccc?key=tzA6I1Rmqh09Vkt40dRs-Rg'}),
-    (r'^$', 'django.views.generic.simple.direct_to_template', 
+    (r'^status/$', 'django.views.generic.simple.redirect_to',
+     {'url':'http://spreadsheets.google.com/ccc?key=tzA6I1Rmqh09Vkt40dRs-Rg'}),
+    (r'^$', 'django.views.generic.simple.direct_to_template',
      {'template':'index.html'}),
-    #(r'^comtest$', 'django.views.generic.simple.direct_to_template', 
-    # {'template':'committees.html'}),
     (r'^contributing/$', 'django.views.generic.simple.direct_to_template',
      {'template':'contributing.html'}),
+    (r'^thanks/$', 'django.views.generic.simple.direct_to_template',
+     {'template':'thankyou.html'}),
 )
 
 if settings.DEBUG:

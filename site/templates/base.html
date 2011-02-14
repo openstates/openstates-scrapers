@@ -1,0 +1,66 @@
+{% load media %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Open State Project: freeing state legislative information</title>
+    <meta name="keywords" content="Sunlight, Sunlight Foundation, Government Transparency, Bills, Legislators, Committees, Votes, Schedules, Developers, State, Open States" /> 
+    <meta name="description" content="The Open State Project gathers legislative data directly from the states and makes it available in a common format for interested developers." />
+    <link rel="stylesheet" href="{% media_url %}/css/main.css" media="screen" title="no title" charset="utf-8"/>
+    <!--[if IE 7]>{% css "css/buggy_7.css" %}<![endif]-->
+    <!--[if IE 7]><script src="{% media_url %}/js/html5.js"></script><![endif]-->
+    <script src="http://use.typekit.com/xau7dem.js"></script>
+    <script src="{% media_url %}/js/jquery-1.5.min.js"></script>
+    <script src="{% media_url %}/js/jquery.placeholder.js"></script>
+    <script>try{Typekit.load();}catch(e){}</script>
+    <script type="text/javascript">
+        $(function() {
+            $('input[placeholder],textarea[placeholder]').placeholder();
+        });
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-1265484-77']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+</head>
+<body>
+    {% block body %}
+    {% endblock body %}
+
+    <footer role="contentinfo" class="footer">
+    <div class="wrapper">
+            <a class="foundation" href="http://www.sunlightfoundation.com">
+                Sunlight Foundation
+            </a>
+        <div class="resources">
+                <h3>    
+                    Resources:
+                </h3>
+                <ul>
+                    <li>
+                        <a href="http://groups.google.com/group/fifty-state-project">Google Group</a>
+                    </li>
+                    <li>
+                        <a href="/status/">State by State Status</a>
+                    </li>
+                    <li>
+                        <a href="http://code.google.com/p/openstates/issues/list">Issue Tracker</a>
+                    </li>
+                </ul>
+            <div class="clear">
+            </div>
+        </div>
+        <small id="about">Founded in 2006, the Sunlight Foundation is a non-partisan non-profit that uses cutting-edge technology and ideas to make government transparent and accountable. Visit <a href="http://sunlightfoundation.com">SunlightFoundation.com</a> to learn more.
+        </small>
+        <div class="clear"> </div>
+    </div>
+    </footer>
+</body>
+</html>
