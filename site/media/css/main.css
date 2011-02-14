@@ -531,12 +531,16 @@ input, textarea{
     width: 82px;
     height: 23px;
 }
-.placeholder{
+.placeholder-for-input{
     font-style: oblique;
 	padding: 10px 0 0 12px;
 	font-size: 80%;
 	color:#bec0b2;
 }
+.join-side .placeholder-for-input{
+	padding: 6px 0 0 12px;
+}
+
 
 #id_email{
     width: 193px;
