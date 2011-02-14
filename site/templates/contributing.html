@@ -81,13 +81,18 @@
     <p>All state scrapers should exist within a subdirectory of <code>openstates/</code> with the two letter postal abbreviation of your state (ie. wy for wyoming).
 
     <p>All code specific to a state should be within this directory, common files are:
-    <ul>
-        <li> <code>__init__.py</code>: When starting a new state you should first create an <code>__init__.py</code> that contains a MetadataDictionary.
-        <li> <code>bills.py</code>: <a href="http://openstates.sunlightlabs.com/docs/scrapers.html#bills">Scraping of bills</a>, including sponsorship information, actions, and (optionally) votes. <strong>Required</strong>
-        <li> <code>legislators.py</code>: <a href="http://openstates.sunlightlabs.com/docs/scrapers.html#legislators">Scraping of legislators</a>, optionally may scrape committees as well. <strong>Required</strong>
-        <li> <code>committees.py</code>: <a href="http://openstates.sunlightlabs.com/docs/scrapers.html#legislators">Scraping of committees</a>.  (<em>Only required if legislators.py does not include scraping committees.</em>)
-        <li> <code>votes.py</code>: <a href="http://openstates.sunlightlabs.com/scrapers.html#votes">Scraping of votes</a>. (<em>Only required if bills.py does not include scraping votes.</em>)
-    </ul>
+    <dl>
+        <dt> <code>__init__.py</code>:</dt> 
+		<dd>When starting a new state you should first create an <code>__init__.py</code> that contains a MetadataDictionary.</dd>
+        <dt> <code>bills.py</code>:</dt> 
+		<dd><a href="http://openstates.sunlightlabs.com/docs/scrapers.html#bills">Scraping of bills</a>, including sponsorship information, actions, and (optionally) votes. <strong>Required</strong></dd>
+        <dt> <code>legislators.py</code>:</dt> 
+		<dd><a href="http://openstates.sunlightlabs.com/docs/scrapers.html#legislators">Scraping of legislators</a>, optionally may scrape committees as well. <strong>Required</strong></dd>
+        <dt> <code>committees.py</code>:</dt> 
+		<dd><a href="http://openstates.sunlightlabs.com/docs/scrapers.html#legislators">Scraping of committees</a>.  (<em>Only required if legislators.py does not include scraping committees.</em>)</dd>
+        <dt> <code>votes.py</code>:</dt>
+		<dd><a href="http://openstates.sunlightlabs.com/scrapers.html#votes">Scraping of votes</a>. (<em>Only required if bills.py does not include scraping votes.</em>)</dd>
+    </dl>
 
     <p> When implementing these files be sure to refer to the <a href="http://openstates.sunlightlabs.com/scrapers.html">scraper documentation</a>.</p>
 

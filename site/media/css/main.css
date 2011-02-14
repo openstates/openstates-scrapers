@@ -54,7 +54,7 @@ strong, th { font-weight: bold; }
 td, td img { vertical-align: top; }
 sub { vertical-align: sub; font-size: smaller; }
 sup { vertical-align: super; font-size: smaller; }
-pre {  padding: 15px;  white-space: pre;  white-space: pre-wrap;  white-space: pre-line;  word-wrap: break-word; }
+pre {  padding: 0 15px 15px 30px;  white-space: inherit;  word-wrap: break-word; }
 textarea { overflow: auto; }
 .ie6 legend, .ie7 legend { margin-left: -7px; }
 input[type="radio"] { vertical-align: text-bottom; }
@@ -568,6 +568,7 @@ input, textarea{
     text-align: center;
     padding: 0 40px;
     margin-bottom: 25px;
+color:#6E6965;
 }
 .join-side p{
     text-align: center;
@@ -660,8 +661,4 @@ footer>.wrapper{
 }
 .note-title{
     font-weight: bold;
-}
-pre{
-	padding-top: 0;
-	white-space: inherit;
 }

@@ -14,9 +14,11 @@
 	text-indent: -9999em;
 	display: block;
 	margin-top: -13px;
-
 }
 
 #id_zipcode{
     width: 106px;
+}
+.join-side #joinBtn{
+	margin-top: -29px;
 }
