@@ -107,6 +107,7 @@ class DCBillScraper(BillScraper):
                                          td.get('onclick')).groups()[0]
                 self.scrape_vote(bill, vote_type_id, vote_type)
 
+        bill['actions'] = sorted(bill['actions'], key=lambda b:b['date'])
         self.save_bill(bill)
 
 
@@ -140,9 +141,9 @@ class DCBillScraper(BillScraper):
             for member_u in doc.xpath('//u'):
                 member = member_u.text
                 vote_text = member_u.xpath('../../i/text()')[0]
-                if 'YES' in vote_text:
+                if 'Yes' in vote_text:
                     vote.yes(member)
-                elif 'NO' in vote_text:
+                elif 'No' in vote_text:
                     vote.no(member)
                 else:
                     vote.other(member)
