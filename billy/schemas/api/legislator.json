@@ -21,7 +21,8 @@
      "district": {"type": "string", "optional": true},
      "party": {"type": "string", "optional": true},
      "start_date": {"type": ["datetime", "null"], "optional": true},
-     "end_date": {"type": ["datetime", "null"], "optional": true}
+     "end_date": {"type": ["datetime", "null"], "optional": true},
+     "position": {"type": "string", "optional": true},
    }}},
    "sources": {"type": "array", "items": {"type": "object", "properties": {
      "url": {"type": "string"},
