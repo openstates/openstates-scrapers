@@ -21,7 +21,8 @@ class TXEventScraper(EventScraper):
 
     def scrape_committee_upcoming(self, session, chamber):
         chamber_name = {'upper': 'senate',
-                        'lower': 'house'}[chamber]
+                        'lower': 'house',
+                        'other': 'joint'}[chamber]
         url = ("http://www.capitol.state.tx.us/MyTLO/RSS/RSS.aspx?"
                "Type=upcomingmeetings%s" % chamber_name)
 
@@ -34,8 +35,13 @@ class TXEventScraper(EventScraper):
                 except ValueError:
                     continue
 
-                time = re.match('Time: (\d+:\d+ (A|P)M)',
-                                entry['description']).group(1)
+                try:
+                    time = re.match('Time: (\d+:\d+ (A|P)M)',
+                                    entry['description']).group(1)
+                except AttributeError:
+                    # There are a few broken events in their feeds
+                    # sometimes
+                    continue
 
                 when = "%s %s" % (date, time)
                 when = datetime.datetime.strptime(when, '%m/%d/%Y %I:%M %p')

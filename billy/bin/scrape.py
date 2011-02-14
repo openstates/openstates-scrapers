@@ -107,6 +107,8 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
     for time in times:
         for chamber in options.chambers:
             scraper.scrape(chamber, time)
+        if scraper_type == 'events' and len(options.chambers) == 2:
+            scraper.scrape('other', time)
 
 
 def main():
