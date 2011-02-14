@@ -1,13 +1,6 @@
+{% extends "base.html" %}
 {% load media %}
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="{% media_url %}/css/main.css" media="screen" title="no title" charset="utf-8">
-    <script src="http://use.typekit.com/xau7dem.js"></script>
-    <script>try{Typekit.load();}catch(e){}</script>
-</head>
-
-<body>
+{% block body %}
     <div class="wrapper">
         <div class="header-shadow"></div>
         <header role="banner">
@@ -34,14 +27,10 @@
 
         <ul class="breadcrumb">
             <li class="home">
-                <a href="">Open States</a>
+                <a href="/">Open States</a>
             </li>
-            <li>
-                <a href="">API</a>
-            </li>
-            <li class="live">
-                <a href="">Committee API Methods</a>
-            </li>
+            {% block breadcrumb %}
+            {% endblock %}
         </ul>
         <div class="main">
             <div class="main-left content">
@@ -56,13 +45,13 @@
 
                         <ul>
                             <li>
-                            <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href=" ">Contributors Guide</a>
+                            <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="/contributing/">Contributors Guide</a>
                             </li>
                             <li>
-                                <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href=" ">Code on GitHub</a>
+                                <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="http://github.com/sunlightlabs/openstates/">Code on GitHub</a>
                             </li>
                             <li>
-                                <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href=" ">Writing Scrapers</a>
+                                <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="/docs/scrapers.html">Writing Scrapers</a>
                             </li>
                         </ul>
                 </div>
@@ -73,13 +62,13 @@
 
                         <ul>
                             <li>
-                            <img src="{% media_url %}/images/use_bullet.png" alt="Use Bullet" /><a href=" ">Open State Project</a>
-                            </li>
-                            <li class="live-section">
-                                <img src="{% media_url %}/images/use_bullet_live.png" alt="Use Bullet Live" />  <a href="api.html">API</a>
+                                <img src="{% media_url %}/images/use_bullet.png" alt="Use Bullet" />  <a href="/docs/api.html">Open States API</a>
                             </li>
                             <li>
-                                <img src="{% media_url %}/images/use_bullet.png" alt="Use Bullet" /><a href=" ">Python Client Library</a>
+                                <img src="{% media_url %}/images/use_bullet.png" alt="Use Bullet" /><a href="http://github.com/sunlightlabs/python-openstates">Python Client Library</a>
+                            </li>
+                            <li>
+                                <img src="{% media_url %}/images/use_bullet.png" alt="Use Bullet" /><a href="http://code.google.com/p/openstates/issue/list">Issue Tracker</a>
                             </li>
                         </ul>
                 </div>
@@ -114,33 +103,4 @@
             </div>
         </div>
     </div>
-<footer role="contentinfo">
-        <div class="wrapper">
-                <a class="foundation" href="http://www.sunlightfoundation.com">
-                    Sunlight Foundation
-                </a>
-            <div class="resources">
-                    <h3>
-                        Resources:
-                    </h3>
-                    <ul>
-                        <li>
-                            <a href="/status/">State by State Status</a>
-                        </li>
-                        <li>
-                            <a href=" ">Google Group</a>
-                        </li>
-                        <li>
-                            <a href=" ">Issue Tracker</a>
-                        </li>
-                    </ul>
-                <div class="clear">
-                </div>
-            </div>
-            <small id="about">Founded in 2006, the Sunlight Foundation is a non-partisan non-profit that uses cutting-edge technology and ideas to make government transparent and accountable. Visit <a href=" ">SunlightFoundation.com</a> to learn more.
-            </small>
-            <div class="clear"> </div>
-
-        </footer>
-</body>
-</html>
+{% endblock body %}
