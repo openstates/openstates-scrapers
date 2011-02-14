@@ -96,7 +96,9 @@ def update(old, new, coll):
 
         if old.get(key) != value:
             old[key] = value
-            changed = True
+
+            if key != 'sources':
+                changed = True
 
         # remove old +key field if this field no longer has a +
         plus_key = '+%s' % key
