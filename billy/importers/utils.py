@@ -85,7 +85,11 @@ def update(old, new, coll):
     if 'votes' in new and not new['votes']:
         del new['votes']
 
-    changed = False
+    # need_save = something has changed
+    # updated = the updated_at field needs bumping
+    # (we don't bump updated_at if only the sources list has changed, but
+    #  we still update the object)
+    need_save, updated = False, False
 
     locked_fields = old.get('_locked_fields', [])
 
@@ -97,17 +101,20 @@ def update(old, new, coll):
         if old.get(key) != value:
             old[key] = value
 
+            need_save = True
             if key != 'sources':
-                changed = True
+                updated = True
 
         # remove old +key field if this field no longer has a +
         plus_key = '+%s' % key
         if plus_key in old:
             del old[plus_key]
-            changed = True
+            need_save, updated = True, True
 
-    if changed:
+    if updated:
         old['updated_at'] = datetime.datetime.utcnow()
+
+    if need_save:
         coll.save(old, safe=True)
 
 

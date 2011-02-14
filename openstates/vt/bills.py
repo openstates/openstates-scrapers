@@ -89,6 +89,9 @@ class VTBillScraper(BillScraper):
     state = 'vt'
 
     def scrape(self, chamber, session):
+        if session != '2011-2012':
+            raise NoDataForPeriod(session)
+
         if chamber == 'lower':
             bill_abbr = "H."
         else:
@@ -131,7 +134,7 @@ class VTBillScraper(BillScraper):
             for tr in page.xpath("""
             //b[text()='Detailed Status:']/
             following-sibling::blockquote[1]/table/tr""")[1:]:
-                action = tr.xpath("string(td[2])").strip()
+                action = tr.xpath("string(td[3])").strip()
 
                 match = re.search('(to|by) Governor on (.*)', action)
                 if match:
