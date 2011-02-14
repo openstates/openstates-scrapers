@@ -89,6 +89,15 @@ class TXLegislatorScraper(LegislatorScraper):
                                   '[@class="rcwcontent"]')[0]
 
             for link in comm_div.xpath('*/a'):
+                name = link.text
+
+                if '(Vice Chair)' in name:
+                    mtype = 'vice chair'
+                elif '(Chair)' in name:
+                    mtype = 'chair'
+                else:
+                    mtype = 'member'
+
                 name = clean_committee_name(link.text)
 
                 if name.startswith('Appropriations-S/C on '):
@@ -96,11 +105,13 @@ class TXLegislatorScraper(LegislatorScraper):
                     leg.add_role('committee member', term,
                                  chamber=chamber,
                                  committee='Appropriations',
-                                 subcommittee=sub)
+                                 subcommittee=sub,
+                                 position=mtype)
                 else:
                     leg.add_role('committee member', term,
                                  chamber=chamber,
-                                 committee=name)
+                                 committee=name,
+                                 position=mtype)
 
             if type == 'Lt. Gov.':
                 self.save_person(leg)
