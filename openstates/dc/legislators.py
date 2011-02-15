@@ -10,34 +10,40 @@ class DCLegislatorScraper(LegislatorScraper):
     state = 'dc'
 
     def scrape(self, chamber, term):
-        # this beautiful page is loaded from the council page via AJAX
-        url = 'http://www.dccouncil.washington.dc.us/include/linkedpage.aspx?linkedpage=2&page=17'
+        urls = ['http://www.dccouncil.washington.dc.us/chairman',
+                'http://www.dccouncil.washington.dc.us/chairprotempore',
+                'http://www.dccouncil.washington.dc.us/at-largemembers',
+                'http://www.dccouncil.washington.dc.us/wardmembers']
 
         # do nothing if they're trying to get a lower chamber
         if chamber == 'lower':
             return
 
-        with self.urlopen(url) as data:
-            base_doc = lxml.html.fromstring(data)
+        for url in urls:
 
-            for link in base_doc.xpath('//a'):
-                leg_url = 'http://www.dccouncil.washington.dc.us/' + link.get('href')
-                with self.urlopen(leg_url) as leg_html:
-                    doc = lxml.html.fromstring(leg_html)
-                    name = link.text
+            with self.urlopen(url) as data:
+                doc = lxml.html.fromstring(data)
 
-                    # Name, District
-                    title = doc.get_element_by_id('PageTitle')
-                    district = title.text.rsplit(', ')[-1]
+                for link in doc.xpath('//div[@style="padding-right: 5px;"]/a'):
+                    leg_url = ('http://www.dccouncil.washington.dc.us/' +
+                               link.get('href'))
+                    with self.urlopen(leg_url) as leg_html:
+                        ldoc = lxml.html.fromstring(leg_html)
+                        name = link.text
 
-                    # party
-                    party = get_surrounding_block(doc, 'Political Affiliation')
-                    if 'Democratic' in party:
-                        party = 'Democratic'
-                    else:
-                        party = 'Independent'
+                        # Name, District
+                        title = ldoc.get_element_by_id('PageTitle')
+                        district = title.text.rsplit(', ')[-1]
 
-                    legislator = Legislator(term, 'upper', district, name,
-                                            party=party)
-                    legislator.add_source(leg_url)
-                self.save_legislator(legislator)
+                        # party
+                        party = get_surrounding_block(ldoc,
+                                                      'Political Affiliation')
+                        if 'Democratic' in party:
+                            party = 'Democratic'
+                        else:
+                            party = 'Independent'
+
+                        legislator = Legislator(term, 'upper', district, name,
+                                                party=party)
+                        legislator.add_source(leg_url)
+                    self.save_legislator(legislator)
