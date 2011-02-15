@@ -22,7 +22,7 @@
 
     {% for state in states %}
     <tr>
-        <td>{{state._id|upper}}</td>
+        <td>{{state.id|upper}}</td>
         <td class="{{state.legislators|yesno:"good,bad"}}">
             {{state.legislators}}</td>
         <td class="{{state.bills|yesno:"good,bad"}}">
@@ -50,7 +50,7 @@
 
     {% for state in states %}
     <tr>
-        <td>{{state._id|upper}}</td>
+        <td>{{state.id|upper}}</td>
         <td class="{{state.bill_types|yesno:"good,bad"}}">
             {{state.bill_types}}</td>
         <td
