@@ -38,7 +38,8 @@ class DCBillScraper(BillScraper):
             # sponsors
             introduced_by = doc.get_element_by_id('IntroducedBy').text
             if introduced_by:
-                bill.add_sponsor('primary', introduced_by)
+                for sponsor in introduced_by.split(', '):
+                    bill.add_sponsor('primary', sponsor)
 
             requested_by = doc.get_element_by_id('RequestedBy').text
             if requested_by:
@@ -165,5 +166,6 @@ class DCBillScraper(BillScraper):
             # skip first row
             for row in rows[1:]:
                 bill_id, title, _ = row.xpath('td/text()')
+                title = title.replace(u'\xe2\x80\x99', "'")  # smart apostrophe
                 bill = Bill(session, 'upper', bill_id, title)
                 self.scrape_bill(bill)
