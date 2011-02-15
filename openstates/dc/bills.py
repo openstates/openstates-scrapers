@@ -51,40 +51,41 @@ class DCBillScraper(BillScraper):
                     bill.add_sponsor('cosponsor', cosponsor)
 
             # actions
-            actions = {
-                'Introduction': 'DateIntroduction',
-                'Committee Action': 'DateCommitteeAction',
-                'First Vote': 'DateFirstVote',
-                'Final Vote': 'DateFinalVote',
-                'Third Vote': 'DateThirdVote',
-                'Reconsideration': 'DateReconsideration',
-                'Transmitted to Mayor': 'DateTransmittedMayor',
-                'Signed by Mayor': 'DateSigned',
-                'Returned by Mayor': 'DateReturned',
-                'Veto Override': 'DateOverride',
-                'Enacted': 'DateEnactment',
-                'Vetoed by Mayor': 'DateVeto',
-                'Transmitted to Congress': 'DateTransmittedCongress',
-                'Re-transmitted to Congress': 'DateReTransmitted',
-            }
+            actions = (
+                ('Introduction', 'DateIntroduction', 'bill:introduced'),
+                ('Committee Action', 'DateCommitteeAction', 'other'),
+                ('First Vote', 'DateFirstVote', 'bill:reading:1'),
+                ('Final Vote', 'DateFinalVote', 'bill:'),
+                ('Third Vote', 'DateThirdVote', ['bill:reading:3']),
+                ('Reconsideration', 'DateReconsideration', 'other'),
+                ('Transmitted to Mayor', 'DateTransmittedMayor', 'governor:received'),
+                ('Signed by Mayor', 'DateSigned', 'governor:signed'),
+                ('Returned by Mayor', 'DateReturned', 'other'),
+                ('Veto Override', 'DateOverride', 'bill:veto_override:passed'),
+                ('Enacted', 'DateEnactment', 'other'),
+                ('Vetoed by Mayor', 'DateVeto', 'governor:vetoed'),
+                ('Transmitted to Congress', 'DateTransmittedCongress', 'other'),
+                ('Re-transmitted to Congress', 'DateReTransmitted', 'other'),
+            )
 
-            subactions = {
-                'WITHDRAWN BY': 'Withdrawn',
-                'TABLED': 'Tabled',
-                'DEEMED APPROVED': 'Deemed approved without council action',
-                'DEEMED DISAPPROVED': 'Deemed disapproved without council action',
-            }
+            subactions = (
+                ('WITHDRAWN BY', 'Withdrawn', 'bill:withdrawn'),
+                ('TABLED', 'Tabled', 'other'),
+                ('DEEMED APPROVED', 'Deemed approved without council action', 'bill:passed'),
+                ('DEEMED DISAPPROVED', 'Deemed disapproved without council action', 'bill:failed'),
+            )
 
-            for action, elem_id in actions.iteritems():
+            for action, elem_id, atype in actions:
                 date = doc.get_element_by_id(elem_id).text
                 if date:
 
                     # check if the action starts with a subaction prefix
-                    for prefix, sub_action in subactions.iteritems():
+                    for prefix, sub_action, subatype in subactions:
                         if date.startswith(prefix):
                             date = convert_date(date)
                             if date:
-                                bill.add_action('upper', sub_action, date)
+                                bill.add_action('upper', sub_action, date,
+                                                type=subatype)
                             break
 
                     # actions that mean nothing happened
@@ -98,7 +99,7 @@ class DCBillScraper(BillScraper):
                                 self.warning('could not convert %s %s [%s]' %
                                              (action, date, bill['bill_id']))
                             else:
-                                bill.add_action(actor, action, date)
+                                bill.add_action(actor, action, date, type=atype)
 
             # votes
             vote_tds = doc.xpath('//td[starts-with(@id, "VoteTypeRepeater")]')
@@ -150,7 +151,6 @@ class DCBillScraper(BillScraper):
                     vote.other(member)
         bill.add_vote(vote)
 
-
     def scrape(self, chamber, session):
         self.validate_session(session)
 
@@ -167,5 +167,21 @@ class DCBillScraper(BillScraper):
             for row in rows[1:]:
                 bill_id, title, _ = row.xpath('td/text()')
                 title = title.replace(u'\xe2\x80\x99', "'")  # smart apostrophe
-                bill = Bill(session, 'upper', bill_id, title)
+
+                if bill_id.startswith('B'):
+                    type = 'bill'
+                elif bill_id.startswith('CA'):
+                    type = 'contract'
+                elif bill_id.startswith('PR'):
+                    type = 'resolution'
+                # don't collect these
+                elif (bill_id.startswith('GBM') or
+                      bill_id.startswith('HFA') or
+                      bill_id.startswith('IG')):
+                    continue
+                else:
+                    # will break if type isn't known
+                    raise ValueError('unknown bill type: %s' % bill_id)
+
+                bill = Bill(session, 'upper', bill_id, title, type=type)
                 self.scrape_bill(bill)
