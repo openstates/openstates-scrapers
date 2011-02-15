@@ -50,7 +50,6 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     'django.contrib.gis',
     'billy.site.api',
-    'billy.site.geo',
     'billy.site.browse',
     'locksmith.auth',
     'mediasync',
