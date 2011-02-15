@@ -55,7 +55,7 @@ class DCBillScraper(BillScraper):
                 ('Introduction', 'DateIntroduction', 'bill:introduced'),
                 ('Committee Action', 'DateCommitteeAction', 'other'),
                 ('First Vote', 'DateFirstVote', 'bill:reading:1'),
-                ('Final Vote', 'DateFinalVote', 'bill:'),
+                ('Final Vote', 'DateFinalVote', 'bill:reading:3'),
                 ('Third Vote', 'DateThirdVote', ['bill:reading:3']),
                 ('Reconsideration', 'DateReconsideration', 'other'),
                 ('Transmitted to Mayor', 'DateTransmittedMayor', 'governor:received'),
