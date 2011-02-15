@@ -354,6 +354,9 @@ class ReconciliationHandler(BaseHandler):
 
 
 class LegislatorGeoHandler(FiftyStateHandler):
+    base_url = getattr(settings, 'BOUNDARY_SERVICE_URL',
+                       'http://localhost:8001/1.0/')
+
     def read(self, request):
         try:
             latitude, longitude = request.GET['lat'], request.GET['long']
@@ -362,7 +365,8 @@ class LegislatorGeoHandler(FiftyStateHandler):
             resp.write(': Need lat and long parameters')
             return resp
 
-        url = "http://localhost:8001/1.0/boundary/?contains=%s,%s&sets=sldl,sldu" % (latitude, longitude)
+        url = "%sboundary/?contains=%s,%s&sets=sldl,sldu" % (
+            self.base_url, latitude, longitude)
 
         resp = json.load(urllib2.urlopen(url))
 
