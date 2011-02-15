@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>State Status</h2>
+
+<style type="text/css">
+    td.good { background-color: #b0ff66; }
+    td.bad { background-color: #fc7c7d; }
+    td.warning { background-color: #fcde7c; }
+</style>
+
+<h3> Scraped Data </h3>
+<table border=1>
+    <tr>
+        <th>State</th>
+        <th>Legislators</th>
+        <th>Bills</th>
+        <th>Committees</th>
+        <th>Votes</th>
+        <th>Versions</th>
+    </tr>
+
+    {% for state in states %}
+    <tr>
+        <td><a href="{{state.id}}/">{{state.name}}</a></td>
+        <td class="{{state.legislators|yesno:"good,bad"}}">
+            {{state.legislators}}</td>
+        <td class="{{state.bills|yesno:"good,bad"}}">
+            {{state.bills}}</td>
+        <td class="{{state.committees|yesno:"good,bad"}}">
+            {{state.committees}}</td>
+        <td class="{{state.votes|yesno:"good,bad"}}">
+            {{state.votes}}</td>
+        <td class="{{state.versions|yesno:"good,bad"}}">
+            {{state.versions}}</td>
+    {% endfor %}
+</table>
+
+<h3>Categorized Data</h3>
+<table border=1>
+    <tr>
+        <th>Bill Types</th>
+        <th>Bills w/ Subjects</th>
+        <th>Actions w/ Types</th>
+        <th>Sponsor leg_ids</th>
+        <th>Vote leg_ids</th>
+        <th>External IDs</th>
+        <th>Missing Sources</th>
+    </tr>
+
+    {% for state in states %}
+    <tr>
+        <td class="{{state.bill_types|yesno:"good,bad"}}">
+            {{state.bill_types}}</td>
+        <td
+            {% if state.subjects < 50 %}
+            class="bad"
+            {% else %}
+                {% if state.subjects < 90 %}
+                class="warning"
+                {% else %}
+                class="good"
+                {% endif %}
+            {% endif %}
+            >{{state.subjects|floatformat}}</td>
+        <td
+            {% if state.typed_actions < 25 %}
+            class="bad"
+            {% else %}
+                {% if state.typed_actions < 50 %}
+                class="warning"
+                {% else %}
+                class="good"
+                {% endif %}
+            {% endif %}
+            >{{state.typed_actions|floatformat}}</td>
+        <td
+            {% if state.sponsor_ids < 75 %}
+            class="bad"
+            {% else %}
+                {% if state.sponsor_ids < 95 %}
+                class="warning"
+                {% else %}
+                class="good"
+                {% endif %}
+            {% endif %}
+            >{{state.sponsor_ids|floatformat}}</td>
+        <td
+            {% if state.voter_ids < 75 %}
+            class="bad"
+            {% else %}
+                {% if state.voter_ids < 95 %}
+                class="warning"
+                {% else %}
+                class="good"
+                {% endif %}
+            {% endif %}
+            >{{state.voter_ids|floatformat}}</td>
+        <td
+            {% if state.external_ids < 75 %}
+            class="bad"
+            {% else %}
+                {% if state.external_ids < 98 %}
+                class="warning"
+                {% else %}
+                class="good"
+                {% endif %}
+            {% endif %}
+            >{{state.external_ids|floatformat}}</td>
+        <td class="{{state.missing_sources|yesno:"bad,good"}}">
+           {{state.missing_sources}}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

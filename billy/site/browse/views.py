@@ -18,7 +18,7 @@ def keyfunc(obj):
     except ValueError:
         return obj['district']
 
-def all_states(request):
+def all_states(request, template='billy/index.html'):
     states = []
     for meta in list(db.metadata.find()) + [{'_id':'total', 'name':'total'}]:
         state = {}
@@ -65,7 +65,7 @@ def all_states(request):
 
     states.sort(key=lambda x:x['id'] if x['id'] != 'total' else 'zz')
 
-    return render_to_response('billy/index.html', {'states': states})
+    return render_to_response(template, {'states': states})
 
 def _bill_stats_for_session(state, session):
     context = {}

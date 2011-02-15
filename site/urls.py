@@ -16,6 +16,8 @@ urlpatterns = patterns('',
      {'template':'contributing.html'}),
     (r'^thanks/$', 'django.views.generic.simple.direct_to_template',
      {'template':'thankyou.html'}),
+    (r'^status-test/$', 'billy.site.browse.views.all_states',
+     {'template':'status.html'}),
 )
 
 if settings.DEBUG:
