@@ -131,3 +131,5 @@ def test_fix_bill_id():
 
     for bill_id in bill_ids:
         assert utils.fix_bill_id(bill_id) == expect
+
+    assert utils.fix_bill_id('PR19-0041') == 'PR 19-0041'

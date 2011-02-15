@@ -259,7 +259,7 @@ def merge_legislators(old, new):
     db.legislators.save(new)
 
 # fixing bill ids
-_bill_id_re = re.compile(r'([A-Z]*)\s*0*(\d+)')
+_bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
 def fix_bill_id(bill_id):
     bill_id = bill_id.replace('.', '')
     return _bill_id_re.sub(r'\1 \2', bill_id)
