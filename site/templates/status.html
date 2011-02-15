@@ -22,7 +22,7 @@
 
     {% for state in states %}
     <tr>
-        <td>{{state.name|upper}}</td>
+        <td>{{state._id|upper}}</td>
         <td class="{{state.legislators|yesno:"good,bad"}}">
             {{state.legislators}}</td>
         <td class="{{state.bills|yesno:"good,bad"}}">
@@ -46,12 +46,11 @@
         <th>Sponsor leg_ids</th>
         <th>Vote leg_ids</th>
         <th>External IDs</th>
-        <th>Missing Sources</th>
     </tr>
 
     {% for state in states %}
     <tr>
-        <td>{{state.name|upper}}</td>
+        <td>{{state._id|upper}}</td>
         <td class="{{state.bill_types|yesno:"good,bad"}}">
             {{state.bill_types}}</td>
         <td
@@ -109,8 +108,6 @@
                 {% endif %}
             {% endif %}
             >{{state.external_ids|floatformat}}</td>
-        <td class="{{state.missing_sources|yesno:"bad,good"}}">
-           {{state.missing_sources}}</td>
     </tr>
     {% endfor %}
 </table>
