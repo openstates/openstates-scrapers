@@ -22,7 +22,7 @@
 
     {% for state in states %}
     <tr>
-        <td><a href="{{state.id}}/">{{state.name}}</a></td>
+        <td>{{state.name|upper}}</td>
         <td class="{{state.legislators|yesno:"good,bad"}}">
             {{state.legislators}}</td>
         <td class="{{state.bills|yesno:"good,bad"}}">
@@ -39,6 +39,7 @@
 <h3>Categorized Data</h3>
 <table border=1>
     <tr>
+        <th>State</th>
         <th>Bill Types</th>
         <th>Bills w/ Subjects</th>
         <th>Actions w/ Types</th>
@@ -50,6 +51,7 @@
 
     {% for state in states %}
     <tr>
+        <td>{{state.name|upper}}</td>
         <td class="{{state.bill_types|yesno:"good,bad"}}">
             {{state.bill_types}}</td>
         <td
