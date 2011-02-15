@@ -195,7 +195,6 @@ def random_bill(request, state):
     return render_to_response('billy/bill.html', {'bill': bill})
 
 def bill(request, state, session, id):
-    id = id.replace('-', ' ')
     bill = db.bills.find_one(dict(state=state.lower(),
                                   session=session,
                                   bill_id=id.upper()))
