@@ -124,10 +124,11 @@ class NameMatcher(object):
             chamber = legislator['roles'][0]['chamber']
         else:
             try:
-                chamber = legislator['old_roles'][self._term][0]['chamber']
+                chamber = legislator['old_roles'][self._term][0].get('chamber')
             except KeyError:
-                raise ValueError("no role in legislator for term %s" %
-                                 self._term)
+                raise ValueError("no role in legislator %s [%s] for term %s" %
+                                 (legislator['full_name'], legislator['_id'],
+                                   self._term))
 
         if '_code' in name:
             code = name['_code']
