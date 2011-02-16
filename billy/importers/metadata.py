@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import with_statement
 import os
+import datetime
 
 try:
     import json
@@ -10,7 +11,7 @@ except ImportError:
 from billy import db
 from billy.importers.utils import prepare_obj
 
-PRESERVED_FIELDS = ('latest_dump_url', 'latest_dump_date')
+PRESERVED_FIELDS = ('latest_dump_url', 'latest_dump_date',)
 
 def import_metadata(state, data_dir):
     preserved = {}
@@ -27,4 +28,7 @@ def import_metadata(state, data_dir):
 
     data['_id'] = state
     data.update(preserved)
+
+    data['latest_update'] = datetime.datetime.utcnow()
+
     db.metadata.save(data, safe=True)
