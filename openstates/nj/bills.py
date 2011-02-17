@@ -216,38 +216,53 @@ class NJBillScraper(BillScraper, DBFMixin):
             else:
                 bill.add_document(doc_name, htm_url)
 
-        #Senate Votes
-        file1 = 'A' + str(year_abr)
-        file2 = 'A' + str(year_abr + 1)
-        file3 = 'S' + str(year_abr)
-        file4 = 'S' + str(year_abr + 1)
-        if str(year_abr) != '2010':
-            vote_info_list = [file1, file2, file3, file4]
-        else:
-            vote_info_list = [file1, file3]
-        for bill_vote_file in vote_info_list:
-            s_vote_url = 'ftp://www.njleg.state.nj.us/votes/%s.zip' % bill_vote_file
+        # Votes
+        next_year = int(year_abr)+1
+        vote_info_list = ['A%s' % year_abr,
+                          'A%s' % next_year,
+                          'S%s' % year_abr,
+                          'S%s' % next_year,
+                          'CA%s-%s' % (year_abr, next_year),
+                          'CS%s-%s' % (year_abr, next_year),
+                         ]
+
+        for filename in vote_info_list:
+            s_vote_url = 'ftp://www.njleg.state.nj.us/votes/%s.zip' % filename
             s_vote_zip, resp = self.urlretrieve(s_vote_url)
             zipedfile = zipfile.ZipFile(s_vote_zip)
-            vfile = "%s.txt" % bill_vote_file
+            vfile = "%s.txt" % filename
             vote_file = zipedfile.open(vfile, 'U')
             vdict_file = csv.DictReader(vote_file)
 
             votes = {}
-            if bill_vote_file[0] == "A":
+            if filename.startswith('A') or filename.startswith('CA'):
                 chamber = "lower"
             else:
                 chamber = "upper"
 
-            for rec in vdict_file:
-                bill_id = rec["Bill"]
-                bill_id = bill_id.strip()
-                leg = rec["Full_Name"]
+            if filename.startswith('C'):
+                vote_file_type = 'committee'
+            else:
+                vote_file_type = 'chamber'
 
-                date = rec["Session_Date"]
+            for rec in vdict_file:
+
+                if vote_file_type == 'chamber':
+                    bill_id = rec["Bill"].strip()
+                    leg = rec["Full_Name"]
+
+                    date = rec["Session_Date"]
+                    action = rec["Action"]
+                    leg_vote = rec["Legislator_Vote"]
+                else:
+                    bill_id = '%s%s' % (rec['Bill_Type'], rec['Bill_Number'])
+                    leg = rec['Name']
+                    date = rec['Agenda_Date'].split()[0]    # drop time portion
+                    action = rec['BillAction']
+                    leg_vote = rec['LegislatorVote'][0:1]   # first char (Y/N)
+                                                          # [0:1] to respect ''
+
                 date = datetime.strptime(date, "%m/%d/%Y")
-                action = rec["Action"]
-                leg_vote = rec["Legislator_Vote"]
                 vote_id = bill_id + "_" + action
                 vote_id = vote_id.replace(" ", "_")
                 passed = None
