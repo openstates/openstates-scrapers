@@ -1,13 +1,56 @@
 {% extends "flatpage.html" %}
 
-{% block content %}
-<h2>State Status</h2>
-
+{% block extrahead %}
 <style type="text/css">
     td.good { background-color: #b0ff66; }
     td.bad { background-color: #fc7c7d; }
     td.warning { background-color: #fcde7c; }
 </style>
+{% endblock %}
+
+{% block content %}
+<h2>State Status</h2>
+
+<p> Supported states are either considered to be "ready" or "experimental" depending on how reliable the source data is and how thoroughly
+we've vetted and cleaned up the scraped data.  All active states have high quality data, but you may find that experimental states
+have incomplete data where we haven't been able to identify a source or done manual reconciliation of ids.<p>
+
+<p>If you encounter issues using data from any state please report them on the <a href="http://code.google.com/p/openstates/issues/list">
+    Open State Project Issue Tracker</a>.
+
+<h4>Ready States</h4>
+<ul>
+    <li>California</li>
+    <li>Louisiana</li>
+    <li>Maryland</li>
+    <li>New Jersey</li>
+    <li>Texas</li>
+    <li>Wisconsin</li>
+</ul>
+
+<h4>Experimental States</h4>
+<ul>
+   <li>Alaska</li>
+   <li>Arizona</li>
+   <li>Florida</li>
+   <li>Minnesota</li>
+   <li>Mississippi</li>
+   <li>Nevada</li>
+   <li>North Carolina</li>
+   <li>Pennsylvania</li>
+   <li>South Dakota</li>
+   <li>Utah</li>
+   <li>Vermont</li>
+   <li>Virginia</li>
+   <li>Washington, DC</li>
+</ul>
+
+<h4> Unsupported States <h4>
+<p> The remaining states that are grey are not yet in our API.  If you are interested in contributing
+visit the <a href="/contributing/">Contributor's Guide</a> that will guide you through obtaining the source
+and <a href="http://groups.google.com/group/fifty-state-project">speaking with project developers</a> 
+that can help you determine what work needs to be done for the state of your choosing.</p>
+
 
 <h3> Scraped Data </h3>
 <table border=1>
