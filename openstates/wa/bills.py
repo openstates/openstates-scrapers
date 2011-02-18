@@ -58,10 +58,6 @@ class WABillScraper(BillScraper):
             bill = Bill(session, chamber, bill_id, title,
                         type=[bill_type])
 
-            sponsor = page.xpath("string(wa:Sponsor)",
-                                 namespaces=self._ns).strip("() \t\r\n")
-            bill.add_sponsor('sponsor', sponsor)
-
             chamber_name = {'lower': 'House', 'upper': 'Senate'}[chamber]
             version_url = ("http://www.leg.wa.gov/pub/billinfo/2011-12/"
                            "Htm/Bills/%s %ss/%s.htm" % (chamber_name,
@@ -69,9 +65,25 @@ class WABillScraper(BillScraper):
                                                         bill_num))
             bill.add_version(bill_id, version_url)
 
+            self.scrape_sponsors(bill)
             self.scrape_actions(bill)
 
             self.save_bill(bill)
+
+    def scrape_sponsors(self, bill):
+        bill_id = bill['bill_id'].replace(' ', '%20')
+        session = bill['session']
+        biennium = "%s-%s" % (session[0:4], session[7:9])
+
+        url = "%s/GetSponsors?biennium=%s&billId=%s" % (
+            self._base_url, biennium, bill_id)
+
+        with self.urlopen(url) as page:
+            page = lxml.etree.fromstring(page)
+
+            for sponsor in page.xpath("//wa:Sponsor/wa:Name",
+                                      namespaces=self._ns):
+                bill.add_sponsor('sponsor', sponsor.text)
 
     def scrape_actions(self, bill):
         bill_id = bill['bill_id'].replace(' ', '%20')
