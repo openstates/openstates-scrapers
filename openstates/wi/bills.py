@@ -43,29 +43,6 @@ class WIBillScraper(BillScraper):
         super(WIBillScraper, self).__init__(*args, **kwargs)
         #self.build_issue_index()
 
-    def scrape(self, chamber, session):
-        if 'Regular' in session:
-            self.scrape_regular(chamber, session)
-        else:
-            pass
-            #raise NoDataForPeriod(session)
-
-        """
-        TODO: scrape special sessions
-        /2009/DE9: Dec 2009 Special Session
-        /2009/JN9: June 2009 Special Session
-        /2007/AP8: April 2008 Special Session
-        /2007/MR8: March 2008 Special Session
-        /2007/de7: Dec 2007 Special Session
-        /2007/oc7: Oct 2007 Special Session
-        /2007/jr7: Jan 2007 Special Session
-        /2005/jr5: Jan 2005 Special Session
-        /2003/jr3: Jan 2003 Special Session
-        /2001/my2: May 2002 Special Session
-        /2001/jr2: Jan 2002 Special Session
-        /2001/my1: May 2001 Special Session
-        """
-
     def build_issue_index(self):
         self.log('building WI issue index')
         self._subjects = defaultdict(list)
@@ -87,36 +64,56 @@ class WIBillScraper(BillScraper):
         except scrapelib.ScrapeError:
             pass
 
-    def scrape_regular(self, chamber, session):
+    def scrape(self, chamber, session):
         types = {'lower': ['ab', 'ajr', 'ar', 'ap'],
                  'upper': ['sb', 'sjr', 'sr', 'sp']}
-        bill_types = {'b': 'bill', 'r': 'resolution',
-                      'jr': 'joint resolution', 'p': 'petition' }
-        year = session[0:4]
+        base_url = 'http://www.legis.state.wi.us/%s/data/%s_list.html'
+        year = None
+        for term in self.metadata['terms']:
+            if session in term['sessions']:
+                year = term['name'][0:4]
+                break
 
-        for t in types[chamber]:
-            url = 'http://www.legis.state.wi.us/%s/data/%s_list.html' % (year,
-                                                                         t)
-            bill_type = [bill_types[t[1:]]]
+        if 'Regular' in session:
+            for t in types[chamber]:
+                url =  base_url % (year, t)
+                self.scrape_bill_list(chamber, session, url)
+        else:
+            site_id = self.metadata['session_details'][session]['site_id']
+            url = base_url % (year, site_id)
+            self.scrape_bill_list(chamber, session, url)
 
-            try:
-                with self.urlopen(url) as data:
-                    doc = lxml.html.fromstring(data)
-                    doc.make_links_absolute(url)
-                    rows = doc.xpath('//tr')
-                    for row in rows[1:]:
-                        link = row.xpath('td[1]/a')[0]
-                        bill_id = link.text
-                        link = link.get('href')
-                        title = row.xpath('td[2]/text()')[0][13:]
+    def scrape_bill_list(self, chamber, session, url):
+        bill_types = {'B': 'bill', 'R': 'resolution',
+                      'JR': 'joint resolution', 'P': 'petition' }
 
-                        bill = Bill(session, chamber, bill_id, title,
-                                    type=bill_type)
-                        #bill['subjects'] = self._subjects[bill_id]
-                        self.scrape_bill_history(bill, link)
-            except scrapelib.HTTPError, e:
-                if e.response.code == 404:
-                    self.log('No data for %s %s' % (year, t))
+        try:
+            with self.urlopen(url) as data:
+                doc = lxml.html.fromstring(data)
+                doc.make_links_absolute(url)
+                rows = doc.xpath('//tr')
+                for row in rows[1:]:
+                    link = row.xpath('td[1]/a')[0]
+                    bill_id = link.text
+                    link = link.get('href')
+                    title = row.xpath('td[2]/text()')[0][13:]
+
+                    # first part of bill_id with first char stripped off
+                    prefix = bill_id.split()[0]
+
+                    # skip bills from other chamber (for special sessions)
+                    bill_chamber = 'lower' if prefix[0] == 'A' else 'upper'
+                    if bill_chamber != chamber:
+                        continue
+                    bill_type = bill_types[prefix[1:]]
+
+                    bill = Bill(session, chamber, bill_id, title,
+                                type=bill_type)
+                    #bill['subjects'] = self._subjects[bill_id]
+                    self.scrape_bill_history(bill, link)
+        except scrapelib.HTTPError, e:
+            if e.response.code == 404:
+                self.log('No data for %s' % url)
 
     def scrape_bill_history(self, bill, url):
         chambers = {'A': 'lower', 'S': 'upper'}

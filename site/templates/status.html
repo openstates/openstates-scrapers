@@ -1,115 +1,82 @@
 {% extends "flatpage.html" %}
 
 {% block content %}
-<h2>State Status</h2>
+<h2>Project Status</h2>
 
-<style type="text/css">
-    td.good { background-color: #b0ff66; }
-    td.bad { background-color: #fc7c7d; }
-    td.warning { background-color: #fcde7c; }
-</style>
+<p> As of February 18th, 2011 we have data for 18 states and the District of Columbia.  </p> 
 
-<h3> Scraped Data </h3>
-<table border=1>
-    <tr>
-        <th>State</th>
-        <th>Legislators</th>
-        <th>Bills</th>
-        <th>Committees</th>
-        <th>Votes</th>
-        <th>Versions</th>
-    </tr>
+<p> States are denoted as either "ready" or "experimental" depending on how
+reliable the source data is and how thoroughly we've vetted and cleaned up the
+scraped data.  We do our best to provide high quality data for all states,
+but you are more likely to find incomplete data where we haven't been able to
+identify a source or done manual reconciliation of ids when using experimental
+states.
+<p>
 
-    {% for state in states %}
-    <tr>
-        <td>{{state.id|upper}}</td>
-        <td class="{{state.legislators|yesno:"good,bad"}}">
-            {{state.legislators}}</td>
-        <td class="{{state.bills|yesno:"good,bad"}}">
-            {{state.bills}}</td>
-        <td class="{{state.committees|yesno:"good,bad"}}">
-            {{state.committees}}</td>
-        <td class="{{state.votes|yesno:"good,bad"}}">
-            {{state.votes}}</td>
-        <td class="{{state.versions|yesno:"good,bad"}}">
-            {{state.versions}}</td>
-    {% endfor %}
-</table>
+<p>If you are curious about the specific status of state data check below
+for any <a href="#state-specific">state specific issues</a> or ask on
+<a href="http://groups.google.com/group/fifty-state-project">the Open States
+google group</a>.</p>
 
-<h3>Categorized Data</h3>
-<table border=1>
-    <tr>
-        <th>State</th>
-        <th>Bill Types</th>
-        <th>Bills w/ Subjects</th>
-        <th>Actions w/ Types</th>
-        <th>Sponsor leg_ids</th>
-        <th>Vote leg_ids</th>
-        <th>External IDs</th>
-    </tr>
+<p>If you encounter issues using data from any state please let us know via the
+<a href="http://code.google.com/p/openstates/issues/list">
+Open State Project Issue Tracker</a>.
 
-    {% for state in states %}
-    <tr>
-        <td>{{state.id|upper}}</td>
-        <td class="{{state.bill_types|yesno:"good,bad"}}">
-            {{state.bill_types}}</td>
-        <td
-            {% if state.subjects < 50 %}
-            class="bad"
-            {% else %}
-                {% if state.subjects < 90 %}
-                class="warning"
-                {% else %}
-                class="good"
-                {% endif %}
-            {% endif %}
-            >{{state.subjects|floatformat}}</td>
-        <td
-            {% if state.typed_actions < 25 %}
-            class="bad"
-            {% else %}
-                {% if state.typed_actions < 50 %}
-                class="warning"
-                {% else %}
-                class="good"
-                {% endif %}
-            {% endif %}
-            >{{state.typed_actions|floatformat}}</td>
-        <td
-            {% if state.sponsor_ids < 75 %}
-            class="bad"
-            {% else %}
-                {% if state.sponsor_ids < 95 %}
-                class="warning"
-                {% else %}
-                class="good"
-                {% endif %}
-            {% endif %}
-            >{{state.sponsor_ids|floatformat}}</td>
-        <td
-            {% if state.voter_ids < 75 %}
-            class="bad"
-            {% else %}
-                {% if state.voter_ids < 95 %}
-                class="warning"
-                {% else %}
-                class="good"
-                {% endif %}
-            {% endif %}
-            >{{state.voter_ids|floatformat}}</td>
-        <td
-            {% if state.external_ids < 75 %}
-            class="bad"
-            {% else %}
-                {% if state.external_ids < 98 %}
-                class="warning"
-                {% else %}
-                class="good"
-                {% endif %}
-            {% endif %}
-            >{{state.external_ids|floatformat}}</td>
-    </tr>
-    {% endfor %}
-</table>
+<h3> State Status </h3>
+
+<img src="http://s3.amazonaws.com/assets.sunlightlabs.com/openstates/v1/images/openstatesmap.png" id="map" alt="OpenstatesMap" />
+
+<h4> Ready States </h4>
+<p> Green states are those that we've identified as having the highest quality
+data.  Currently this includes California, Louisiana, Maryland, New Jersey,
+Texas, and Wisconsin.</p>
+
+<h4> Experimental States </h4>
+<p> Blue states are those that we support but have not yet promoted to ready
+status.  Alaska, Arizona, Florida, Minnesota, Mississippi, Nevada,
+North Carolina, Pennsylvania, South Dakota, Utah, Vermont, Virginia,
+and Washington DC fall in this category.</p>
+
+<h4> Unsupported States </h4>
+<p> The remaining states (gray on the map)  are not yet in our API.
+If you are interested in contributing visit the
+<a href="/contributing/">Contributor's Guide</a> that will guide you through
+obtaining the source and
+<a href="http://groups.google.com/group/fifty-state-project">speaking with
+project developers</a> that can help you determine what work needs to be done
+for the state of your choosing.</p>
+
+<a name="state-specific"><h3> State-specific Issues </h3></a>
+
+<a name="CA"><h4>California</h4></a>
+<ul>
+    <li>At this time, we are collecting California's data from a provided SQL
+    database and are unable to provide standard source URLs for legislators.
+    </li>
+</ul>
+
+<a name="DC"><h4>District of Columbia</h4></a>
+<ul>
+    <li>DC does not have a uniform source for committee memberships and so we
+    currently do not provide committee information.</li>
+</ul>
+
+<a name="FL"><h4>Florida</h4></a>
+<ul>
+    <li>We currently do not have a reliable source for Florida committee
+    information.</li>
+</ul>
+
+<a name="MN"><h4>Minnesota</h4></a>
+<ul>
+    <li>Minnesota does not provide legislator roll calls for the current
+    session so we are lacking votes for 2011.</li>
+</ul>
+
+<a name="SD"><h4>South Dakota</h4></a>
+<ul>
+    <li>We currently do not have a reliable source for South Dakota committee
+    information.</li>
+</ul>
 
 {% endblock %}
