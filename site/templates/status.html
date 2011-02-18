@@ -52,7 +52,7 @@
     <tr>
         <td>{{state.id|upper}}</td>
         <td class="{{state.bill_types|yesno:"good,bad"}}">
-            {{state.bill_types}}</td>
+            {{state.bill_types|yesno}}</td>
         <td
             {% if state.subjects < 50 %}
             class="bad"
@@ -63,7 +63,7 @@
                 class="good"
                 {% endif %}
             {% endif %}
-            >{{state.subjects|floatformat}}</td>
+            >{{state.subjects|floatformat}}%</td>
         <td
             {% if state.typed_actions < 25 %}
             class="bad"
@@ -74,7 +74,7 @@
                 class="good"
                 {% endif %}
             {% endif %}
-            >{{state.typed_actions|floatformat}}</td>
+            >{{state.typed_actions|floatformat}}%</td>
         <td
             {% if state.sponsor_ids < 75 %}
             class="bad"
@@ -85,7 +85,7 @@
                 class="good"
                 {% endif %}
             {% endif %}
-            >{{state.sponsor_ids|floatformat}}</td>
+            >{{state.sponsor_ids|floatformat}}%</td>
         <td
             {% if state.voter_ids < 75 %}
             class="bad"
@@ -96,7 +96,7 @@
                 class="good"
                 {% endif %}
             {% endif %}
-            >{{state.voter_ids|floatformat}}</td>
+            >{{state.voter_ids|floatformat}}%</td>
         <td
             {% if state.external_ids < 75 %}
             class="bad"
@@ -107,8 +107,23 @@
                 class="good"
                 {% endif %}
             {% endif %}
-            >{{state.external_ids|floatformat}}</td>
+            >{{state.external_ids|floatformat}}%</td>
     </tr>
+
+    <dl>
+        <dt>Bill Types</dt>
+        <dd>Are we adding a <code>type</code> field to bill objects. (See <a href="/categorization/">categorization</a>.)
+        <dt>Bills w/ Subjects</dt>
+        <dd>Do bills have a subjects attribute?  (in many cases this is not possible due to no subject information on the primary source)</dd>
+        <dt>Actions w/ Types</dt>
+        <dd>What % of bill actions are we able to match to one of our action types? (See <a href="/categorization/">categorization</a>.)
+        <dt>Sponsor leg_ids</dt>
+        <dd>What % of bill sponsors are we able to match to a legislator in our data? (may be &lt; 100% due to non-legislator sponsors)</dd>
+        <dt>Vote leg_ids</dt>
+        <dd>What % of votes on bills are we able to tie to a legislator in our data?</dd>
+        <dt>External IDs</dt>
+        <dd>What % of Project Vote Smart/TransparencyData.org ids have we found?</dd>
+    </dl>
     {% endfor %}
 </table>
 
