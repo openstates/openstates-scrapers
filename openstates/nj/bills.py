@@ -81,6 +81,17 @@ class NJBillScraper(BillScraper, DBFMixin):
         'RCM': ('Recommitted to', 'committee:referred'),
     }
 
+    _com_vote_motions = {
+        'r w/o rec.': 'Reported without recommendation',
+        'r w/o rec. ACS': 'Reported without recommendation out of Assembly committee as a substitute',
+        'r w/o rec. Sca': 'Reported without recommendation out of Senate committee with amendments',
+        'r/ACS': 'Reported out of Assembly committee as a substitute',
+        'r/Aca': 'Reported out of Assembly committee with amendments',
+        'r/SCS': 'Reported out of Senate committee as a substitute',
+        'r/Sca': 'Reported out of Senate committee with amendments',
+        'r/favorably': 'Reported favorably out of committee',
+    }
+
     _doctypes = {
         'FE':  'Legislative Fiscal Estimate',
         'I':   'Introduced Version',
@@ -257,19 +268,24 @@ class NJBillScraper(BillScraper, DBFMixin):
                 else:
                     bill_id = '%s%s' % (rec['Bill_Type'], rec['Bill_Number'])
                     leg = rec['Name']
-                    date = rec['Agenda_Date'].split()[0]    # drop time portion
-                    action = rec['BillAction']
-                    leg_vote = rec['LegislatorVote'][0:1]   # first char (Y/N)
-                                                          # [0:1] to respect ''
+                    # drop time portion
+                    date = rec['Agenda_Date'].split()[0]
+                    # make motion readable
+                    action = self._com_vote_motions[rec['BillAction']]
+                    # first char (Y/N) use [0:1] to ignore ''
+                    leg_vote = rec['LegislatorVote'][0:1]
 
                 date = datetime.strptime(date, "%m/%d/%Y")
-                vote_id = bill_id + "_" + action
+                vote_id = '_'.join((bill_id, chamber, action))
                 vote_id = vote_id.replace(" ", "_")
-                passed = None
 
                 if vote_id not in votes:
-                    votes[vote_id] = Vote(chamber, date, action, passed, None,
+                    votes[vote_id] = Vote(chamber, date, action, None, None,
                                           None, None, bill_id=bill_id)
+                if vote_file_type == 'committee':
+                    votes[vote_id]['committee'] = self._committees[
+                        rec['Committee_House']]
+
                 if leg_vote == "Y":
                     votes[vote_id].yes(leg)
                 elif leg_vote == "N":
