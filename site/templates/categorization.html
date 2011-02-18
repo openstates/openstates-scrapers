@@ -1,0 +1,168 @@
+{% extends "flatpage.html" %}
+
+{% block content %}
+<h2>Categorization</h2>
+
+<p>
+One of the ways that we add value to the data we provide is by attempting to categorize bills, actions, and votes across states.
+</p>
+
+<h3>Bill Types</h3>
+<p>Most state legislatures deal with more than bills.  Despite the name of the bill objects in our data we take in all types of legislation that a state might produce.  Generally looking at the bill_id will help you determine the type of legislation, but to make things easier across states we provide a <code>"type"</code> field on bills.
+
+<p>
+Possible values:
+<ul>
+    <li>bill</li>
+    <li>resolution</li>
+    <li>joint resolution</li>
+    <li>concurrent resolution</li>
+    <li>constitutional amendment</li>
+</ul>
+States with additional types might make use of additional types such as:
+<ul>
+    <li>contract</li>
+    <li>nomination</li>
+    <li>memorial</li>
+    <li>...</li>
+</ul>
+</p>
+
+<h3>Action Types</h3>
+<p>Although most states follow very similar parlimentary procedure the names that their bill status systems use
+for various actions almost never match up.  To make analysis and the building of certain types of tools easier
+we attempt to categorize about 30 types of common actions.  In using our data you'll find these values in the
+<code>"type"</code> field of actions.
+</p>
+
+<p>
+Possible values:
+<dl>
+    <dt>bill:introduced</dt>
+    <dd>Bill is introduced or prefiled</dd>
+    <dt>bill:passed</dt>
+    <dd>Bill has passed a chamber</dd>
+    <dt>bill:failed</dt>
+    <dd>Bill has failed to pass a chamber</dd>
+    <dt>bill:withdrawn</dt>
+    <dd>Bill has been withdrawn from consideration</dd>
+    <dt>bill:veto_override:passed</dt>
+    <dd>The chamber attempted a veto override and succeeded</dd>
+    <dt>bill:veto_override:failed</dt>
+    <dd>The chamber attempted a veto override and failed</dd>
+    <dt>bill:reading:1</dt>
+    <dd>A bill has undergone its first reading</dd>
+    <dt>bill:reading:2</dt>
+    <dd>A bill has undergone its second reading</dd>
+    <dt>bill:reading:3</dt>
+    <dd>A bill has undergone its third (or final) reading</dd>
+    <dt>governor:received</dt>
+    <dd>The bill has been transmitted to the governor for consideration</dd>
+    <dt>governor:signed</dt>
+    <dd>The bill has signed into law by the governor</dd>
+    <dt>governor:vetoed</dt>
+    <dd>The bill has been vetoed by the governor</dd>
+    <dt>governor:vetoed:line-item</dt>
+    <dd>The governor has issued a line-item (partial) veto</dd>
+    <dt>amendment:introduced</dt>
+    <dd>An amendment has been offered on the bill</dd>
+    <dt>amendment:passed</dt>
+    <dd>The bill has been amended</dd>
+    <dt>amendment:failed</dt>
+    <dd>An offered amendment has failed</dd>
+    <dt>amendment:amended</dt>
+    <dd>An offered amendment has been amended (seen in Texas)</dd>
+    <dt>amendment:withdrawn</dt>
+    <dd>An offered amendment has been withdrawn</dd>
+    <dt>committee:referred</dt>
+    <dd>The bill has been referred to a committee</dd>
+    <dt>committee:passed</dt>
+    <dd>The bill has been passed out of a committee</dd>
+    <dt>committee:passed:favorable</dt>
+    <dd>The bill has been passed out of a committee with a favorable report</dd>
+    <dt>committee:passed:unfavorable</dt>
+    <dd>The bill has been passed out of a committee with an unfavorable report</dd>
+    <dt>committee:failed</dt>
+    <dd>The bill has failed to make it out of committee</dd>
+    <dt>other</dt>
+    <dd>All other actions will have a type of "other"</dd>
+</dl>
+</p>
+
+<h3>Vote Types</h3>
+<p>Similarly to actions, we make an effort to categorize the motion being voted upon.  You'll find these values in the <code>"type"</code> field of vote objects.</p>
+
+<p>
+Possible values:
+<dl>
+    <dt>passage<dt>
+    <dd>This is a vote to pass (either out of committee or a chamber)</dd>
+    <dt>amendment</dt>
+    <dd>Vote on amending a bill</dd>
+    <dt>veto_override</dt>
+    <dd>Vote to override an executive veto</dd>
+    <dt>reading:1</dt>
+    <dd>Vote on a first reading</dd>
+    <dt>reading:2</dt>
+    <dd>Vote on a second reading</dd>
+    <dt>other</dt>
+    <dd>All other votes</dd>
+</dl>
+</p>
+
+<h3>Subjects</h3>
+<p> Many states provide a list of subject areas for individual pieces of legislation.  We've made an attempt to map these to a comprehensive set of subjects.</p>
+
+<p>If you're using the API data you'll find these in the <code>"subjects"</code> field if we've been able to categorize a state's bills.  If you're interested in the state's native categories those can be found in <code>"scraped_subjects"</code>.
+
+<p>
+Possible values:
+<ul>
+   <li>Agriculture and Food</li>
+   <li>Animal Rights and Wildlife Issues</li>
+   <li>Arts and Humanities</li>
+   <li>Budget, Spending, and Taxes</li>
+   <li>Business and Consumers</li>
+   <li>Campaign Finance and Election Issues</li>
+   <li>Civil Liberties and Civil Rights</li>
+   <li>Commerce</li>
+   <li>Crime</li>
+   <li>Drugs</li>
+   <li>Education</li>
+   <li>Energy</li>
+   <li>Environmental</li>
+   <li>Executive Branch</li>
+   <li>Family and Children Issues</li>
+   <li>Federal, State, and Local Relations</li>
+   <li>Gambling and Gaming</li>
+   <li>Government Reform</li>
+   <li>Guns</li>
+   <li>Health</li>
+   <li>Housing and Property</li>
+   <li>Immigration</li>
+   <li>Indigenous Peoples</li>
+   <li>Insurance</li>
+   <li>Judiciary</li>
+   <li>Labor and Employment</li>
+   <li>Legal Issues</li>
+   <li>Legislative Affairs</li>
+   <li>Military</li>
+   <li>Municipal and County Issues</li>
+   <li>Other</li>
+   <li>Public Services</li>
+   <li>Recreation</li>
+   <li>Reproductive Issues</li>
+   <li>Resolutions</li>
+   <li>Science and Medical Research</li>
+   <li>Senior Issues</li>
+   <li>Sexual Orientation and Gender Issues</li>
+   <li>Social Issues</li>
+   <li>State Agencies</li>
+   <li>Technology and Communication</li>
+   <li>Trade</li>
+   <li>Transportation</li>
+   <li>Welfare and Poverty</li>
+</ul>
+</p>
+
+{% endblock %}

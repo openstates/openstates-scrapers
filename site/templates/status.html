@@ -110,6 +110,8 @@
             >{{state.external_ids|floatformat}}%</td>
     </tr>
 
+    {% endfor %}
+</table>
     <dl>
         <dt>Bill Types</dt>
         <dd>Are we adding a <code>type</code> field to bill objects. (See <a href="/categorization/">categorization</a>.)
@@ -124,7 +126,5 @@
         <dt>External IDs</dt>
         <dd>What % of Project Vote Smart/TransparencyData.org ids have we found?</dd>
     </dl>
-    {% endfor %}
-</table>
 
 {% endblock %}
