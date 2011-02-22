@@ -1,5 +1,6 @@
 import datetime as dt
 import lxml.html
+import os
 import re
 from StringIO import StringIO
 from collections import defaultdict
@@ -270,6 +271,8 @@ class WIBillScraper(BillScraper):
                 self.add_house_votes(v, filename)
             elif 'sv' in link:
                 self.add_senate_votes(v, filename)
+
+            os.remove(filename)
 
         bill.add_vote(v)
 
