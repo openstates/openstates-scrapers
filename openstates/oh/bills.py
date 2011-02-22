@@ -109,7 +109,6 @@ class OHBillScraper(BillScraper):
             piece = '/bills.cfm?ID=%s_%s_%s' % (session, prefix.upper(),
                                                 number)
 
-
         def _get_html_version(url):
             doc = lxml.html.fromstring(url)
             name = doc.xpath('//font[@size="2"]/a/text()')[0]
@@ -117,6 +116,11 @@ class OHBillScraper(BillScraper):
             bill.add_version(name, base_url + link)
 
         with self.urlopen(base_url + piece) as html:
+            # pass over missing bills - (unclear why this happens)
+            if 'could not be found.' in html:
+                self.warning('missing page: %s' % url)
+                return
+
             _get_html_version(html)
             doc = lxml.html.fromstring(html)
             for a in doc.xpath('//a[starts-with(@href, "/bills.cfm")]/@href'):
