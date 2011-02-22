@@ -15,6 +15,9 @@ class WAEventScraper(EventScraper):
     _ns = {'wa': "http://WSLWebServices.leg.wa.gov/"}
 
     def scrape(self, chamber, session):
+        if chamber == 'other':
+            return
+
         start_date = "%s-01-10T00:00:00" % session[0:4]
         end_date = "%d-01-10T00:00:00" % (int(session[5:10]) + 1)
 
