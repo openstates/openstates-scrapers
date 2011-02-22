@@ -8,7 +8,7 @@ import lxml.etree
 import scrapelib
 import zipfile
 import csv
-
+import os
 
 class NJBillScraper(BillScraper, DBFMixin):
     state = 'nj'
@@ -292,6 +292,9 @@ class NJBillScraper(BillScraper, DBFMixin):
                     votes[vote_id].no(leg)
                 else:
                     votes[vote_id].other(leg)
+
+            # remove temp file
+            os.remove(s_vote_zip)
 
             #Counts yes/no/other votes and saves overall vote
             for vote in votes.itervalues():
