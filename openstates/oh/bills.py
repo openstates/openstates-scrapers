@@ -102,7 +102,13 @@ class OHBillScraper(BillScraper):
     def scrape_versions(self, bill, prefix, number, session):
         base_url = 'http://www.legislature.state.oh.us'
 
-        piece = '/bills.cfm?ID=%s_%s_%s' % (session, prefix.upper(), number)
+        if 'r' in prefix:
+            piece = '/res.cfm?ID=%s_%s_%s' % (session, prefix.upper(),
+                                                number)
+        else:
+            piece = '/bills.cfm?ID=%s_%s_%s' % (session, prefix.upper(),
+                                                number)
+
 
         def _get_html_version(url):
             doc = lxml.html.fromstring(url)
