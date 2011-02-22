@@ -4,36 +4,28 @@ import htmlentitydefs
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.nj.utils import clean_committee_name
+from openstates.nj.utils import clean_committee_name, DBFMixin
 
 import scrapelib
 from dbfpy import dbf
 
-class NJLegislatorScraper(LegislatorScraper):
+class NJLegislatorScraper(LegislatorScraper, DBFMixin):
     state = 'nj'
 
     def scrape(self, chamber, term_name):
         self.save_errors=False
 
         year = int(term_name[0:4])
-        if year < 2000:
-            raise NoDataForPeriod(term_name)
-        else:
-            year_abr = year
-
-        session = ((int(year) - 2010)/2) + 214
+        session = (year - 2010)/2 + 214
 
         if chamber == 'upper':
-            self.scrape_legislators(year_abr, session, term_name)
+            self.scrape_legislators(year, session, term_name)
         elif chamber == 'lower':
-            self.scrape_legislators(year_abr, session, term_name)
+            self.scrape_legislators(year, session, term_name)
 
     def scrape_legislators(self, year_abr, session, term_name):
 
-        file_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/ROSTER.DBF' % (year_abr)
-
-        ROSTER_dbf, resp = self.urlretrieve(file_url)
-        db = dbf.Dbf(ROSTER_dbf)        
+        file_url, db = self.get_dbf(year_abr, 'ROSTER')
 
         for rec in db:
             first_name = rec["firstname"]

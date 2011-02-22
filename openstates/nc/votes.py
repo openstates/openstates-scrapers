@@ -1,5 +1,6 @@
-from zipfile import ZipFile
+import os
 import datetime
+from zipfile import ZipFile
 
 from billy.scrape.votes import VoteScraper, Vote
 
@@ -89,3 +90,7 @@ class NCVoteScraper(VoteScraper):
 
         for vote in votes.itervalues():
             self.save_vote(vote)
+
+        # remove file
+        zf.close()
+        os.remove(fname)

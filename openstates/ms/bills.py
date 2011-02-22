@@ -5,6 +5,7 @@ from billy.scrape.votes import VoteScraper, Vote
 from billy.scrape.utils import convert_pdf
 from datetime import datetime
 import lxml.etree
+import os
 import re
 
 def _combine_lines(lines):
@@ -192,6 +193,7 @@ class MSBillScraper(BillScraper):
     def scrape_votes(self, url, motion, date, chamber):
         vote_pdf, resp = self.urlretrieve(url)
         text = convert_pdf(vote_pdf, 'text')
+        os.remove(vote_pdf)
 
         # this way we get a key error on a missing vote type
         #if motion in self._vote_mapping:

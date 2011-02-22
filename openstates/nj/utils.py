@@ -1,6 +1,6 @@
+import os
 import re
 from dbfpy import dbf
-
 
 def clean_committee_name(comm_name):
     comm_name = comm_name.strip()
@@ -37,4 +37,5 @@ class DBFMixin(object):
         dbf_file, resp = self.urlretrieve(url)
         db = dbf.Dbf(dbf_file)
         self.dbfcache[url] = db
+        os.remove(dbf_file)
         return url, db
