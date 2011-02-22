@@ -15,11 +15,14 @@ class WAEventScraper(EventScraper):
     _ns = {'wa': "http://WSLWebServices.leg.wa.gov/"}
 
     def scrape(self, chamber, session):
+        if chamber == 'other':
+            return
+
         start_date = "%s-01-10T00:00:00" % session[0:4]
         end_date = "%d-01-10T00:00:00" % (int(session[5:10]) + 1)
 
         url = ("http://wslwebservices.leg.wa.gov/CommitteeMeetingService"
-x               ".asmx/GetCommitteeMeetings?beginDate=%s"
+               ".asmx/GetCommitteeMeetings?beginDate=%s"
                "&endDate=%s" % (start_date, end_date))
 
         expected_agency = {'upper': 'Senate', 'lower': 'House'}[chamber]
