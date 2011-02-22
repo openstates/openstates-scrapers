@@ -33,20 +33,27 @@ class WABillScraper(BillScraper):
                 else:
                     bill_chamber = 'lower'
 
-                if bill_chamber == chamber:
-                    bill = self.scrape_bill(chamber, session, bill_id)
-                    bill['alternate_bill_ids'] = []
+                if bill_chamber != chamber:
+                    continue
 
-                    if bill_id[0:3] in ('SSB', 'SHB'):
-                        # Merge substitute bills with the original
-                        self.log("Merging bill %s with %s" % (
-                            bill_id, prev_bill['bill_id']))
-                        prev_bill['actions'].extend(bill['actions'])
-                        prev_bill['alternate_bill_ids'].append(bill_id)
-                        self.save_bill(prev_bill)
-                    else:
-                        self.save_bill(bill)
-                        prev_bill = bill
+                if bill_id[0:3] in ('SSB', 'SHB'):
+                    # Merge committee substitutes with original bills.
+                    # All the actions for the substitute should have been
+                    # grabbed when we got the original, so just make
+                    # note that there is an alternate ID. We may
+                    # want to add the committee as a sponsor at some
+                    # point too.
+                    self.log("Merging %s with %s" % (
+                        bill_id, prev_bill['bill_id']))
+                    prev_bill['alternate_bill_ids'].append(bill_id)
+                    self.save_bill(prev_bill)
+                    continue
+
+                bill = self.scrape_bill(chamber, session, bill_id)
+                bill['alternate_bill_ids'] = []
+                self.save_bill(bill)
+
+                prev_bill = bill
 
     def scrape_bill(self, chamber, session, bill_id):
         biennium = "%s-%s" % (session[0:4], session[7:9])
