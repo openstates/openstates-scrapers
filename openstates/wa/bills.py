@@ -4,12 +4,21 @@ from billy.scrape.bills import BillScraper, Bill
 
 import lxml.etree
 
+NS = {'wa': "http://WSLWebServices.leg.wa.gov/"}
+
+
+def xpath(elem, path):
+    """
+    A helper to run xpath with the proper namespaces for the Washington
+    Legislative API.
+    """
+    return elem.xpath(path, namespaces=NS)
+
 
 class WABillScraper(BillScraper):
     state = 'wa'
 
     _base_url = 'http://wslwebservices.leg.wa.gov/legislationservice.asmx'
-    _ns = {'wa': "http://WSLWebServices.leg.wa.gov/"}
 
     def scrape(self, chamber, session):
         url = "%s/GetLegislationByYear?year=%s" % (self._base_url,
@@ -19,11 +28,8 @@ class WABillScraper(BillScraper):
         with self.urlopen(url) as page:
             page = lxml.etree.fromstring(page)
 
-            for leg_info in page.xpath(
-                "//wa:LegislationInfo", namespaces=self._ns):
-
-                bill_id = leg_info.xpath("string(wa:BillId)",
-                                         namespaces=self._ns)
+            for leg_info in xpath(page, "//wa:LegislationInfo"):
+                bill_id = xpath(leg_info, "string(wa:BillId)")
                 bill_num = int(bill_id.split()[1])
 
                 # Senate bills are numbered starting at 5000,
@@ -63,15 +69,15 @@ class WABillScraper(BillScraper):
                "=%s" % (self._base_url, biennium, bill_num))
 
         with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page).xpath("//wa:Legislation",
-                                                     namespaces=self._ns)[0]
+            page = lxml.etree.fromstring(page)
+            page = xpath(page, "//wa:Legislation")[0]
 
-            title = page.xpath("string(wa:LongDescription)",
-                               namespaces=self._ns)
+            title = xpath(page, "string(wa:LongDescription)")
 
-            bill_type = page.xpath(
-                "string(wa:ShortLegislationType/wa:LongLegislationType)",
-                namespaces=self._ns).lower()
+            bill_type = xpath(
+                page,
+                "string(wa:ShortLegislationType/wa:LongLegislationType)")
+            bill_type = bill_type.lower()
 
             if bill_type == 'gubernatorial appointment':
                 return
@@ -107,8 +113,7 @@ class WABillScraper(BillScraper):
         with self.urlopen(url) as page:
             page = lxml.etree.fromstring(page)
 
-            for sponsor in page.xpath("//wa:Sponsor/wa:Name",
-                                      namespaces=self._ns):
+            for sponsor in xpath(page, "//wa:Sponsor/wa:Name"):
                 bill.add_sponsor('sponsor', sponsor.text)
 
     def scrape_actions(self, bill):
@@ -129,14 +134,9 @@ class WABillScraper(BillScraper):
         with self.urlopen(url) as page:
             page = lxml.etree.fromstring(page)
 
-            for status in page.xpath("//wa:LegislativeStatus",
-                                     namespaces=self._ns):
-
-                action = status.xpath("string(wa:HistoryLine)",
-                                      namespaces=self._ns).strip()
-
-                date = status.xpath("string(wa:ActionDate)",
-                                    namespaces=self._ns).split("T")[0]
+            for status in xpath(page, "//wa:LegislativeStatus"):
+                action = xpath(status, "string(wa:HistoryLine)").strip()
+                date = xpath(status, "string(wa:ActionDate)").split("T")[0]
                 date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
 
                 atype = []
