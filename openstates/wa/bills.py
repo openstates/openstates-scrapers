@@ -1,6 +1,7 @@
 import datetime
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 import lxml.etree
 
@@ -99,6 +100,7 @@ class WABillScraper(BillScraper):
 
             self.scrape_sponsors(bill)
             self.scrape_actions(bill)
+            self.scrape_votes(bill)
 
             return bill
 
@@ -170,3 +172,50 @@ class WABillScraper(BillScraper):
                     atype.append('committee:referred')
 
                 bill.add_action(actor, action, date, type=atype)
+
+
+    def scrape_votes(self, bill):
+        session = bill['session']
+        biennium = "%s-%s" % (session[0:4], session[7:9])
+        bill_num = bill['bill_id'].split()[1]
+
+        url = ("http://wslwebservices.leg.wa.gov/legislationservice.asmx/"
+               "GetRollCalls?billNumber=%s&biennium=%s" % (
+                   bill_num, biennium))
+        with self.urlopen(url) as page:
+            page = lxml.etree.fromstring(page)
+
+            for rc in xpath(page, "//wa:RollCall"):
+                motion = xpath(rc, "string(wa:Motion)")
+
+                date = xpath(rc, "string(wa:VoteDate)").split("T")[0]
+                date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+
+                yes_count = int(xpath(rc, "string(wa:YeaVotes/wa:Count)"))
+                no_count = int(xpath(rc, "string(wa:NayVotes/wa:Count)"))
+                abs_count = int(
+                    xpath(rc, "string(wa:AbsentVotes/wa:Count)"))
+                ex_count = int(
+                    xpath(rc, "string(wa:ExcusedVotes/wa:Count)"))
+
+                other_count = abs_count + ex_count
+
+                agency = xpath(rc, "string(wa:Agency)")
+                chamber = {'House': 'lower', 'Senate': 'upper'}[agency]
+
+                vote = Vote(chamber, date, motion,
+                            yes_count > (no_count + other_count),
+                            yes_count, no_count, other_count)
+
+                for sv in xpath(rc, "wa:Votes/wa:Vote"):
+                    name = xpath(sv, "string(wa:Name)")
+                    vtype = xpath(sv, "string(wa:VOte)")
+
+                    if vtype == 'Yea':
+                        vote.yes(name)
+                    elif vtype == 'Nay':
+                        vote.no(name)
+                    else:
+                        vote.other(name)
+
+                bill.add_vote(vote)
