@@ -118,7 +118,7 @@ class OHBillScraper(BillScraper):
         with self.urlopen(base_url + piece) as html:
             # pass over missing bills - (unclear why this happens)
             if 'could not be found.' in html:
-                self.warning('missing page: %s' % url)
+                self.warning('missing page: %s' % base_url + piece)
                 return
 
             _get_html_version(html)
