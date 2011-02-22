@@ -1,5 +1,6 @@
 from __future__ import with_statement
 
+import os
 import urlparse
 import datetime
 
@@ -21,11 +22,15 @@ class OHBillScraper(BillScraper):
 
         base_url = 'http://www.lsc.state.oh.us/status%s/' % session
 
-        bill_types = {'lower': ['hb', 'hjr', 'hcr'],
-                      'upper': ['sb', 'sjr', 'scr']}
+        bill_types = {'lower': [('hb','bill'),
+                                ('hjr','joint resolution'),
+                                ('hcr','concurrent resolution')],
+                      'upper': [('sb','bill'),
+                                ('sjr','joint resolution'),
+                                ('scr','concurrent resolution')]}
 
-        for bill_type in bill_types[chamber]:
-            url = base_url + '%s.xls' % bill_type
+        for bill_prefix, bill_type in bill_types[chamber]:
+            url = base_url + '%s.xls' % bill_prefix
 
             try:
                 fname, resp = self.urlretrieve(url)
@@ -36,10 +41,14 @@ class OHBillScraper(BillScraper):
 
             sh = xlrd.open_workbook(fname).sheet_by_index(0)
 
+            # once workbook is open, we can remove tempfile
+            os.remove(fname)
+
             for rownum in range(1, sh.nrows):
-                bill_id = '%s %s' % (bill_type.upper(), rownum)
+                bill_id = '%s %s' % (bill_prefix.upper(), rownum)
                 bill_title = str(sh.cell(rownum, 3).value)
-                bill = Bill(session, chamber, bill_id, bill_title)
+                bill = Bill(session, chamber, bill_id, bill_title,
+                            type=bill_type)
                 bill.add_source(url)
                 bill.add_sponsor('primary', str(sh.cell(rownum, 1).value))
 
@@ -86,12 +95,12 @@ class OHBillScraper(BillScraper):
                             date, "(%Y, %m, %d, %H, %M, %S)")
                         bill.add_action(actor, action, date, type=atype)
 
-                self.scrape_votes(bill, bill_type, rownum, session)
+                self.scrape_votes(bill, bill_prefix, rownum, session)
                 self.save_bill(bill)
 
-    def scrape_votes(self, bill, bill_type, number, session):
+    def scrape_votes(self, bill, bill_prefix, number, session):
         vote_url = ('http://www.legislature.state.oh.us/votes.cfm?ID=' +
-                    session + '_' + bill_type + '_' + str(number))
+                    session + '_' + bill_prefix + '_' + str(number))
 
         with self.urlopen(vote_url) as page:
             page = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
@@ -140,5 +149,7 @@ class OHBillScraper(BillScraper):
                     vote.yes(yes)
                 for no in nays:
                     vote.no(no)
+
+                vote.add_source(vote_url)
 
                 bill.add_vote(vote)
