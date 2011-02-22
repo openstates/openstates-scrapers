@@ -33,6 +33,10 @@ class WABillScraper(BillScraper):
                 bill_id = xpath(leg_info, "string(wa:BillId)")
                 bill_num = int(bill_id.split()[1])
 
+                # Skip gubernatorial appointments
+                if bill_num > 9000:
+                    continue
+
                 # Senate bills are numbered starting at 5000,
                 # House at 1000
                 if bill_num > 5000:
