@@ -86,6 +86,11 @@ class WABillScraper(BillScraper):
                                                         bill_num))
             bill.add_version(bill_id, version_url)
 
+            fake_source = ("http://apps.leg.wa.gov/billinfo/"
+                           "summary.aspx?bill=%s&year=%s" % (
+                               bill_num, session[0:4]))
+            bill.add_source(fake_source)
+
             self.scrape_sponsors(bill)
             self.scrape_actions(bill)
 
