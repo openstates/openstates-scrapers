@@ -112,8 +112,10 @@ class OHBillScraper(BillScraper):
         def _get_html_version(url):
             doc = lxml.html.fromstring(url)
             name = doc.xpath('//font[@size="2"]/a/text()')[0]
-            link = doc.xpath('//a[text()="(.html format)"]')[0].get('href')
-            bill.add_version(name, base_url + link)
+            links = doc.xpath('//a[text()="(.html format)"]')
+            if links:
+                link = links[0].get('href')
+                bill.add_version(name, base_url + link)
 
         with self.urlopen(base_url + piece) as html:
             # pass over missing bills - (unclear why this happens)
