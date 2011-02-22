@@ -14,6 +14,8 @@ class WABillScraper(BillScraper):
     def scrape(self, chamber, session):
         url = "%s/GetLegislationByYear?year=%s" % (self._base_url,
                                                    session[0:4])
+
+        prev_bill = None
         with self.urlopen(url) as page:
             page = lxml.etree.fromstring(page)
 
@@ -32,7 +34,19 @@ class WABillScraper(BillScraper):
                     bill_chamber = 'lower'
 
                 if bill_chamber == chamber:
-                    self.scrape_bill(chamber, session, bill_id)
+                    bill = self.scrape_bill(chamber, session, bill_id)
+                    bill['alternate_bill_ids'] = []
+
+                    if bill_id[0:3] in ('SSB', 'SHB'):
+                        # Merge substitute bills with the original
+                        self.log("Merging bill %s with %s" % (
+                            bill_id, prev_bill['bill_id']))
+                        prev_bill['actions'].extend(bill['actions'])
+                        prev_bill['alternate_bill_ids'].append(bill_id)
+                        self.save_bill(prev_bill)
+                    else:
+                        self.save_bill(bill)
+                        prev_bill = bill
 
     def scrape_bill(self, chamber, session, bill_id):
         biennium = "%s-%s" % (session[0:4], session[7:9])
@@ -68,7 +82,7 @@ class WABillScraper(BillScraper):
             self.scrape_sponsors(bill)
             self.scrape_actions(bill)
 
-            self.save_bill(bill)
+            return bill
 
     def scrape_sponsors(self, bill):
         bill_id = bill['bill_id'].replace(' ', '%20')
