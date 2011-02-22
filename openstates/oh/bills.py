@@ -10,7 +10,7 @@ from billy.scrape.votes import Vote
 
 import xlrd
 import scrapelib
-import lxml.etree
+import lxml.html
 
 
 class OHBillScraper(BillScraper):
@@ -96,14 +96,33 @@ class OHBillScraper(BillScraper):
                         bill.add_action(actor, action, date, type=atype)
 
                 self.scrape_votes(bill, bill_prefix, rownum, session)
+                self.scrape_versions(bill, bill_prefix, rownum, session)
                 self.save_bill(bill)
+
+    def scrape_versions(self, bill, prefix, number, session):
+        base_url = 'http://www.legislature.state.oh.us'
+
+        piece = '/bills.cfm?ID=%s_%s_%s' % (session, prefix.upper(), number)
+
+        def _get_html_version(url):
+            doc = lxml.html.fromstring(url)
+            name = doc.xpath('//font[@size="2"]/a/text()')[0]
+            link = doc.xpath('//a[text()="(.html format)"]')[0].get('href')
+            bill.add_version(name, base_url + link)
+
+        with self.urlopen(base_url + piece) as html:
+            _get_html_version(html)
+            doc = lxml.html.fromstring(html)
+            for a in doc.xpath('//a[starts-with(@href, "/bills.cfm")]/@href'):
+                if a != piece:
+                    _get_html_version(self.urlopen(base_url + a))
 
     def scrape_votes(self, bill, bill_prefix, number, session):
         vote_url = ('http://www.legislature.state.oh.us/votes.cfm?ID=' +
                     session + '_' + bill_prefix + '_' + str(number))
 
         with self.urlopen(vote_url) as page:
-            page = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+            page = lxml.html.fromstring(page)
 
             for jlink in page.xpath("//a[contains(@href, 'JournalText')]"):
                 date = datetime.datetime.strptime(jlink.text,
