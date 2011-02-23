@@ -286,6 +286,7 @@ class AKBillScraper(BillScraper):
 
         match = re.match('^REFERRED TO (.*)$', action)
         if match:
+            comms = match.group(1).title().replace(' And ', ' and ')
             action = "REFERRED TO %s" % match.group(1).title()
 
         action = re.sub(r'\s+', ' ', action)
