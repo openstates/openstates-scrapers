@@ -284,10 +284,14 @@ class AKBillScraper(BillScraper):
                 self._comm_mapping[match.group(1)],
                 self._comm_mapping[match.group(2)])
 
+        match = re.match('^([A-Z]{3,3})$', action)
+        if match:
+            action = 'REFERRED TO %s' % self._comm_mapping[action]
+
         match = re.match('^REFERRED TO (.*)$', action)
         if match:
             comms = match.group(1).title().replace(' And ', ' and ')
-            action = "REFERRED TO %s" % match.group(1).title()
+            action = "REFERRED TO %s" % comms
 
         action = re.sub(r'\s+', ' ', action)
 
