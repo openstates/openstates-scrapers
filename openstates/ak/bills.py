@@ -194,8 +194,8 @@ class AKBillScraper(BillScraper):
 
         tally = re.findall('Y(\d+) N(\d+)\s*(?:\w(\d+))*\s*(?:\w(\d+))*'
                            '\s*(?:\w(\d+))*', action)[0]
-        yes, no, o1, o2, o3 = map(lambda x: 0 if x == '' else int(x), tally)
-        yes, no, other = int(yes), int(no), (int(o1) + int(o2) + int(o3))
+        yes, no, o1, o2, o3 = [0 if not x else int(x) for x in tally]
+        other = o1 + o2 + o3
 
         votes = info_page.findAll('pre', text=re.compile('Yeas'),
                                   limit=1)[0].split('\n\n')
