@@ -50,7 +50,20 @@ class AKBillScraper(BillScraper):
         'RES': 'Resources',
         'RLS': 'Rules',
         'STA': 'State Affairs',
-        'TRA': 'Transportation'}
+        'TRA': 'Transportation',
+        'EDT':'	Economic Development, Trade & Tourism',
+        'ENE': 'Energy',
+        'FSH': 'Fisheries',
+        'MLV': 'Military & Veterans',
+        'WTR': 'World Trade',
+        'ARR': 'Administrative Regulation Review',
+        'ASC': 'Armed Services Committee',
+        'BUD': 'Legislative Budget & Audit',
+        'ECR': 'Higher Education/Career Readiness Task Force',
+        'EFF': 'Education Fuding District Cost Factor Committee',
+        'ETH': 'Select Committee on Legislative Ethics',
+        'LEC': 'Legislative Council',
+}
 
     _comm_re = re.compile(r'^(%s)\s' % '|'.join(_comm_mapping.keys()))
     _current_comm = None
