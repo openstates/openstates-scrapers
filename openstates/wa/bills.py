@@ -34,7 +34,7 @@ class WABillScraper(BillScraper):
                 bill_num = int(bill_id.split()[1])
 
                 # Skip gubernatorial appointments
-                if bill_num > 9000:
+                if bill_num >= 9000:
                     continue
 
                 # Senate bills are numbered starting at 5000,
