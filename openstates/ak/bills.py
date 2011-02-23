@@ -129,6 +129,13 @@ class AKBillScraper(BillScraper):
             else:
                 # Committee sponsorship
                 spons_str = spons_str.strip()
+
+                if re.match(r' BY REQUEST OF THE GOVERNOR$', spons_str):
+                    spons_str = re.sub(r' BY REQUEST OF THE GOVERNOR$',
+                                       '', spons_str).title()
+                    spons_str = (spons_str +
+                                 " Committee (by request of the governor)")
+
                 if spons_str:
                     bill.add_sponsor('committee', spons_str)
 
