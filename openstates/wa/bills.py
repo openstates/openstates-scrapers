@@ -1,19 +1,10 @@
 import datetime
 
+from .utils import xpath
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
 import lxml.etree
-
-NS = {'wa': "http://WSLWebServices.leg.wa.gov/"}
-
-
-def xpath(elem, path):
-    """
-    A helper to run xpath with the proper namespaces for the Washington
-    Legislative API.
-    """
-    return elem.xpath(path, namespaces=NS)
 
 
 class WABillScraper(BillScraper):
@@ -176,7 +167,6 @@ class WABillScraper(BillScraper):
                     atype.append('committee:referred')
 
                 bill.add_action(actor, action, date, type=atype)
-
 
     def scrape_votes(self, bill):
         session = bill['session']
