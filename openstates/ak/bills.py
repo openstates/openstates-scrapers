@@ -180,6 +180,12 @@ class AKBillScraper(BillScraper):
 
                 action, atype = self.clean_action(action)
 
+                match = re.match('^Prefile released (\d+/\d+/\d+)$', action)
+                if match:
+                    action = 'Prefile released'
+                    act_date = dt.datetime.strptime(match.group(1),
+                                                    '%m/%d/%y')
+
                 bill.add_action(act_chamber, action, act_date, type=atype)
 
             # Get subjects
