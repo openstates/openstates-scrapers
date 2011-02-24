@@ -102,8 +102,25 @@ class INBillScraper(BillScraper):
                         atype.append('bill:introduced')
                         read_yet = True
                     atype.append('bill:reading:1')
+                if action.startswith('Second reading:'):
+                    atype.append('bill:reading:2')
+                if action.startswith('Third reading:'):
+                    if action.startswith('Third reading: passed'):
+                        atype.append('bill:passed')
+                    atype.append('bill:reading:3')
                 if 'referred to' in action:
                     atype.append('committee:referred')
+                if action.startswith('Referred to Committee'):
+                    atype.append('committee:referred')
+                if action.startswith('Reassigned to'):
+                    atype.append('committee:referred')
+
+                match = re.match(r'Amendment \d+ \(.*\), (prevailed|failed)')
+                if match:
+                    if match.group(1) == 'prevailed':
+                        atype.append('amendment:passed')
+                    else:
+                        atype.append('amendment:failed')
 
                 bill.add_action(chamber, action, date, type=atype)
 
