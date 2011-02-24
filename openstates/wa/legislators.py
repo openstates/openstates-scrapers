@@ -4,6 +4,7 @@ from .utils import xpath
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.etree
+import lxml.html
 
 
 class WALegislatorScraper(LegislatorScraper):
@@ -34,8 +35,21 @@ class WALegislatorScraper(LegislatorScraper):
                 leg_id = xpath(member, "string(wa:Id)")
                 phone = xpath(member, "string(wa:Phone)")
 
+                last = xpath(member, "string(wa:LastName)")
+                last = last.lower().replace(' ', '')
+                leg_url = ("http://www.leg.wa.gov/senate/senators/"
+                           "Pages/%s.aspx" % last)
+                with self.urlopen(leg_url) as leg_page:
+                    leg_page = lxml.html.fromstring(leg_page)
+                    leg_page.make_links_absolute(leg_url)
+
+                    photo_link = leg_page.xpath(
+                        "//a[contains(@href, 'publishingimages')]")[0]
+                    photo_url = photo_link.attrib['href']
+
                 leg = Legislator(term, chamber, district,
                                  name, '', '', '', party, email=email,
-                                 _code=leg_id, office_phone=phone)
+                                 _code=leg_id, office_phone=phone,
+                                 photo_url=photo_url)
 
                 self.save_legislator(leg)
