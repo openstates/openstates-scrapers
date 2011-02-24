@@ -93,7 +93,7 @@ class INBillScraper(BillScraper):
                 elif chamber == 'H':
                     chamber = 'lower'
 
-                action = row.xpath("string(td[4])").strip()
+                action = row.xpath("string(td[4])").strip(' ;\t\n')
 
                 atype = []
 
