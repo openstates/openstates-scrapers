@@ -37,8 +37,14 @@ class WALegislatorScraper(LegislatorScraper):
 
                 last = xpath(member, "string(wa:LastName)")
                 last = last.lower().replace(' ', '')
-                leg_url = ("http://www.leg.wa.gov/senate/senators/"
-                           "Pages/%s.aspx" % last)
+
+                if chamber == 'upper':
+                    leg_url = ("http://www.leg.wa.gov/senate/senators/"
+                               "Pages/%s.aspx" % last)
+                else:
+                    leg_url = ("http://www.leg.wa.gov/house/"
+                               "representatives/Pages/%s.aspx" % last)
+
                 with self.urlopen(leg_url) as leg_page:
                     leg_page = lxml.html.fromstring(leg_page)
                     leg_page.make_links_absolute(leg_url)
