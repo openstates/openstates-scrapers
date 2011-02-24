@@ -475,9 +475,9 @@
 <g id="Washington_DC_1_">
 	
 		<radialGradient id="SVGID_41_" cx="426.8633" cy="249.3145" r="1.1876" gradientTransform="matrix(1 0 0 -1 0 342)" gradientUnits="userSpaceOnUse">
-		<stop  offset="0" style="stop-color:#D5D6C3;stop-opacity:0.6"/>
-		<stop  offset="0.9447" style="stop-color:#D5D6C3;stop-opacity:0.9779"/>
-		<stop  offset="1" style="stop-color:#D5D6C3"/>
+		<stop  offset="0" style="stop-color:#75AFA5;stop-opacity:0.6"/>
+		<stop  offset="0.9447" style="stop-color:#75AFA5;stop-opacity:0.9779"/>
+		<stop  offset="1" style="stop-color:#75AFA5"/>
 	</radialGradient>
 	<polygon fill="url(#SVGID_41_)" points="425.842,91.923 426.901,91.351 427.884,92.006 427.117,94.019 427.008,93.111 
 		426.574,92.33 	"/>
