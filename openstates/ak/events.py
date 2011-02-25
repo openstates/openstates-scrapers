@@ -38,6 +38,7 @@ class AKEventScraper(EventScraper):
 
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
             path = "//font[starts-with(., '(H)') or starts-with(., '(S)')]"
             for font in page.xpath(path):
@@ -57,6 +58,13 @@ class AKEventScraper(EventScraper):
 
                 description = "Committee Meeting\n"
                 description += comm
+
+                links = font.xpath(
+                    "../../td/font/a[contains(@href, 'get_documents')]")
+                if links:
+                    agenda_link = links[0]
+                    print agenda_link
+                    event['link'] = agenda_link.attrib['href']
 
                 event = Event(session, when, 'committee:meeting',
                               description, location=where)
