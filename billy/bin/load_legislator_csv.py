@@ -35,7 +35,8 @@ def process_file(state, save=False):
                    'photo_url'])
         keys.intersection_update(namefile.fieldnames)
         for key in keys:
-            fileval = (row[key].decode('utf-8') or u'').strip()
+            row[key] = row[key].decode('utf-8')
+            fileval = (row[key] or u'').strip()
             dbval = leg.get(key, '')
             if fileval != dbval:
                 changed[key] = dbval
@@ -47,8 +48,7 @@ def process_file(state, save=False):
         if changed:
             print row['_id']
             for k,v in changed.iteritems():
-                print ('  %s [%s --> %s]' % (k, v, row[k])).encode(
-                    'ascii', 'replace')
+                print '  %s [%s --> %s]' % (k, v, row[k])
 
         # reassemble full_name
         full_name = leg['first_name']
