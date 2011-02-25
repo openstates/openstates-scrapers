@@ -47,7 +47,8 @@ def process_file(state, save=False):
         if changed:
             print row['_id']
             for k,v in changed.iteritems():
-                print '  %s [%s --> %s]' % (k, v, row[k])
+                print ('  %s [%s --> %s]' % (k, v, row[k])).encode(
+                    'ascii', 'replace')
 
         # reassemble full_name
         full_name = leg['first_name']
