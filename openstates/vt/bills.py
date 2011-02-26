@@ -47,6 +47,9 @@ def action_type(action):
         atypes.append('bill:introduced')
         atypes.append('bill:reading:1')
 
+    if 'read second time' in action:
+        atypes.append('bill:reading:2')
+
     if 'proposal of amendment concurred in' in action:
         atypes.append('amendment:passed')
 
@@ -55,6 +58,9 @@ def action_type(action):
 
     if action.endswith('and passed'):
         atypes.append('bill:passed')
+
+    if action.startswith('read third time'):
+        atypes.append('bill:reading:3')
 
     if action.startswith('signed by governor'):
         atypes.append('governor:signed')
@@ -79,6 +85,10 @@ def action_type(action):
 
     if 'read 3rd time & passed' in action:
         atypes.append('bill:passed')
+        atypes.append('bill:reading:3')
+
+    if re.match(r'^floor amendment by (.*) agreed to$', action):
+        atypes.append('amendment:passed')
 
     if atypes:
         return atypes

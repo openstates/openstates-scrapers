@@ -122,6 +122,11 @@ class SDBillScraper(BillScraper):
 
                 bill.add_action(actor, action, date, type=atypes)
 
+            subjects = []
+            for link in page.xpath("//a[contains(@href, 'Keyword')]"):
+                subjects.append(link.text.strip())
+            bill['subjects'] = subjects
+
             self.save_bill(bill)
 
     def scrape_vote(self, bill, date, url):
