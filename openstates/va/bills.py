@@ -12,7 +12,8 @@ class VABillScraper(BillScraper):
     state = 'va'
 
     vote_strip_re = re.compile(r'(.+)\((\d{1,2})-Y (\d{1,2})-N\)')
-    actor_map = {'House': 'lower', 'Senate': 'upper', 'Governor': 'governor'}
+    actor_map = {'House': 'lower', 'Senate': 'upper', 'Governor': 'governor',
+                 'Conference': 'conference'}
 
     _action_classifiers = {
         'Approved by Governor': 'governor:signed',
