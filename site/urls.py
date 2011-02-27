@@ -16,6 +16,8 @@ urlpatterns = patterns('',
      {'template':'thankyou.html'}),
     (r'^categorization/$', 'django.views.generic.simple.direct_to_template',
      {'template':'categorization.html'}),
+    (r'^api/$', 'django.views.generic.simple.direct_to_template',
+     {'template':'api.html'}),
     (r'^status/$', 'django.views.generic.simple.direct_to_template',
      {'template':'status.html'}),
 )
