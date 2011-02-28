@@ -248,7 +248,7 @@ class WIBillScraper(BillScraper):
         bill.add_document(name, link)
 
     def add_vote(self, bill, chamber, date, line, text):
-        votes = re.findall(r'Ayes (\d+)\, Noes (\d+)', text)
+        votes = re.findall(r'Ayes (\d+)\, N(?:oes|ays) (\d+)', text)
         (yes, no) = int(votes[0][0]), int(votes[0][1])
 
         vtype = 'other'
