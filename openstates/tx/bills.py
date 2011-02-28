@@ -119,7 +119,8 @@ class TXBillScraper(BillScraper):
             elif desc == 'Passed' or desc == 'Adopted':
                 atype = 'bill:passed'
             elif re.match(r'^Received (by|from) the', desc):
-                atype = 'bill:introduced'
+                if 'Secretary of the Senate' not in desc:
+                    atype = 'bill:introduced'
             elif desc.startswith('Sent to the Governor'):
                 # But what if it gets lost in the mail?
                 atype = 'governor:received'
