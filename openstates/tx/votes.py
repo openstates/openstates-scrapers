@@ -1,3 +1,4 @@
+import os
 import re
 import uuid
 import urlparse
@@ -87,14 +88,14 @@ def get_type(motion):
         return 'other'
 
 
-def votes(root):
-    for vote in record_votes(root):
+def votes(root, session):
+    for vote in record_votes(root, session):
         yield vote
-    for vote in viva_voce_votes(root):
+    for vote in viva_voce_votes(root, session):
         yield vote
 
 
-def record_votes(root):
+def record_votes(root, session):
     for el in root.xpath(u'//p[starts-with(., "Yeas \u2014")]'):
         text = ''.join(el.getprevious().itertext())
         text.replace('\n', ' ')
@@ -123,7 +124,7 @@ def record_votes(root):
                         yes_count, no_count, other_count)
             vote['bill_id'] = bill_id
             vote['bill_chamber'] = bill_chamber
-            vote['session'] = '81'
+            vote['session'] = session
             vote['method'] = 'record'
             vote['record'] = m.group('record')
             vote['filename'] = m.group('record')
@@ -149,7 +150,7 @@ def record_votes(root):
             pass
 
 
-def viva_voce_votes(root):
+def viva_voce_votes(root, session):
     prev_id = None
     for el in root.xpath(u'//p[starts-with(., "All Members are deemed")]'):
         text = ''.join(el.getprevious().itertext())
@@ -175,7 +176,7 @@ def viva_voce_votes(root):
             vote = Vote(None, None, motion, True, 0, 0, 0)
             vote['bill_id'] = bill_id
             vote['bill_chamber'] = bill_chamber
-            vote['session'] = '81'
+            vote['session'] = session
             vote['method'] = 'viva voce'
             vote['filename'] = record
             vote['record'] = record
@@ -213,7 +214,7 @@ def viva_voce_votes(root):
             vote = Vote(None, None, motion, True, 0, 0, 0)
             vote['bill_id'] = bill_id
             vote['bill_chamber'] = bill_chamber
-            vote['session'] = '81'
+            vote['session'] = session
             vote['method'] = 'viva voce'
             vote['filename'] = record
             vote['record'] = record
@@ -245,22 +246,30 @@ class TXVoteScraper(VoteScraper):
 
         with self.urlopen(journal_root) as listing:
             for name in parse_ftp_listing(listing):
-                if not name.startswith('81'):
+                if not name.startswith(session):
                     continue
                 url = urlparse.urljoin(journal_root, name)
-                self.scrape_journal(url, chamber)
+                self.scrape_journal(url, chamber, session)
 
-    def scrape_journal(self, url, chamber):
+    def scrape_journal(self, url, chamber, session):
         with self.urlopen(url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
             clean_journal(root)
 
-            title = root.find('head/title').text
-            date_string = title.split('-')[0].strip()
-            date = datetime.datetime.strptime(
-                date_string, "%A, %B %d, %Y").date()
+            if chamber == 'lower':
+                title = root.find('head/title')
+                title = title.text.replace(u'\u2014', '-')
+                date_string = title.split('-')[0].strip()
+                date = datetime.datetime.strptime(
+                    date_string, "%A, %B %d, %Y").date()
+            else:
+                fname = os.path.split(urlparse.urlparse(url).path)[-1]
+                date = re.match(r'%sSJ(\d\d-\d\d).*\.htm' % session,
+                                fname).group(1)
+                date = datetime.datetime.strptime(date + " 2011",
+                                                  "%m-%d %Y").date()
 
-            for vote in votes(root):
+            for vote in votes(root, session):
                 vote['date'] = date
                 vote['chamber'] = chamber
                 vote.add_source(url)
