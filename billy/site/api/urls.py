@@ -12,7 +12,7 @@ from billy.site.api.emitters import OpenStateJSONEmitter
 from billy.site.api.emitters import FeedEmitter, ICalendarEmitter
 
 if getattr(settings, 'USE_LOCKSMITH', False):
-    from locksmith.auth.authentication import PistonKeyAuthentication
+    from locksmith.mongoauth.authentication import PistonKeyAuthentication
 
     class Authorizer(PistonKeyAuthentication):
         def challenge(self):
