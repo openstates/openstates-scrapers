@@ -105,6 +105,9 @@ class TXBillScraper(BillScraper):
 
             desc = action.findtext('description').strip()
 
+            if desc == 'Scheduled for public hearing on . . .':
+                continue
+
             if desc == 'Amended':
                 atype = 'amendment:passed'
             elif desc == 'Amendment(s) offered':
