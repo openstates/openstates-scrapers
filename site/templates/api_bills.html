@@ -1,6 +1,15 @@
 {% extends "flatpage.html" %}
 {% load markup_tags %}
 
+{% block breadcrumb %}
+<li class="home">
+    <a href="/api/">API</a>
+</li>
+<li class="live">
+<a href="">Bills</a>
+</li>
+{% endblock %}
+
 {% block content %}
 
 <h2> Bill API </h2>
@@ -81,7 +90,7 @@ Both methods return bill objects consisting of the following fields:
     ``alternate_title`` and ``sources`` are not returned via the search API.
 
 .. note::
-    Keep in mind that these documented fields may be a subset of the fields provided for a given state.  (See `extra fields </api/#extra-fields">`_.)
+    Keep in mind that these documented fields may be a subset of the fields provided for a given state.  (See `extra fields </api/#extra-fields>`_.)
 
 
 Bill Search

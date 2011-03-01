@@ -1,6 +1,16 @@
 {% extends "flatpage.html" %}
 {% load markup_tags %}
 
+{% block breadcrumb %}
+<li class="home">
+    <a href="/api/">API</a>
+</li>
+<li class="live">
+<a href="">Legislators</a>
+</li>
+{% endblock %}
+
+
 {% block content %}
 
 <h2>Legislator API</h2>
@@ -55,7 +65,7 @@ All legislator methods return Legislator objects consisting of the following fie
     ``sources``, ``roles`` and ``old_roles`` are not included in the legislator search response.
 
 .. note::
-    Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See `extra fields </api/#extrafields">`_.)
+    Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See `extra fields </api/#extra-fields>`_.)
 
 
 Legislator Search

@@ -24,7 +24,10 @@
             </div>
         </header>
 
-
+        <ul class="breadcrumb">
+            {% block breadcrumb %}
+            {% endblock %}
+        </ul>
         <div class="main">
             <div class="main-left content">
                 {% block content %}

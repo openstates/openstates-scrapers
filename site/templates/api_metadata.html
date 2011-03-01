@@ -1,6 +1,16 @@
 {% extends "flatpage.html" %}
 {% load markup_tags %}
 
+{% block breadcrumb %}
+<li class="home">
+    <a href="/api/">API</a>
+</li>
+<li class="live">
+<a href="">Metadata</a>
+</li>
+{% endblock %}
+
+
 {% block content %}
 
 <h2> Metadata API </h2>

@@ -1,6 +1,15 @@
 {% extends "flatpage.html" %}
 {% load markup_tags %}
 
+{% block breadcrumb %}
+<li class="home">
+    <a href="/api/">API</a>
+</li>
+<li class="live">
+<a href="">Committees</a>
+</li>
+{% endblock %}
+
 {% block content %}
 
 <h2>Committee API</h2>
@@ -56,7 +65,7 @@ Committee methods return objects with the following fields:
    ``members`` and ``sources`` are not included in the committee search API results
 
 .. note::
-    Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See `extra fields </api/#extra-fields">`_.)
+    Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See `extra fields </api/#extra-fields>`_.)
 
 
 Committee Lookup
