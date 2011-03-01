@@ -41,7 +41,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
-    'locksmith.auth.middleware.APIKeyMiddleware',
+    'locksmith.mongoauth.middleware.APIKeyMiddleware',
 )
 
 ROOT_URLCONF = 'urls'
@@ -51,7 +51,7 @@ INSTALLED_APPS = (
     'django.contrib.gis',
     'billy.site.api',
     'billy.site.browse',
-    'locksmith.auth',
+    'locksmith.mongoauth',
     'mediasync',
 )
 

@@ -2,13 +2,13 @@ import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
-from openstates.nv.utils import clean_committee_name
+from openstates.nv.utils import clean_committee_name, DBFMixin
 
 import lxml.etree
 from dbfpy import dbf
 import scrapelib
 
-class NJCommitteeScraper(CommitteeScraper):
+class NJCommitteeScraper(CommitteeScraper, DBFMixin):
     state = 'nj'
 
     def scrape(self, chamber, term_name):
@@ -28,14 +28,8 @@ class NJCommitteeScraper(CommitteeScraper):
 
     def scrape_committees(self, year_abr, session):
 
-        members_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/COMEMB.DBF' % (year_abr)
-        comm_info_url = 'ftp://www.njleg.state.nj.us/ag/%sdata/COMMITT.DBF' % (year_abr)
-
-        COMEMB_dbf, resp = self.urlretrieve(members_url)
-        COMMIT_dbf, resp2 = self.urlretrieve(comm_info_url)
-
-        members_db = dbf.Dbf(COMEMB_dbf)
-        info_db = dbf.Dbf(COMMIT_dbf)
+        members_url, members_db = self.get_dbf(year_abr, 'COMEDB')
+        comm_info_url, info_db = self.get_dbf(year_abr, 'COMMITT')
 
         comm_dictionary = {}
 

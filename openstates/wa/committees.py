@@ -1,5 +1,6 @@
 import urllib
 
+from .utils import xpath
 from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.etree
@@ -9,7 +10,6 @@ class WACommitteeScraper(CommitteeScraper):
     state = 'wa'
 
     _base_url = 'http://wslwebservices.leg.wa.gov/CommitteeService.asmx'
-    _ns = {'wa': "http://WSLWebServices.leg.wa.gov/"}
 
     def _make_headers(self, url):
         headers = super(WACommitteeScraper, self)._make_headers(url)
@@ -24,17 +24,16 @@ class WACommitteeScraper(CommitteeScraper):
         with self.urlopen(url) as page:
             page = lxml.etree.fromstring(page)
 
-            for comm in page.xpath("//wa:Committee", namespaces=self._ns):
-                agency = comm.xpath("string(wa:Agency)", namespaces=self._ns)
+            for comm in xpath(page, "//wa:Committee"):
+                agency = xpath(comm, "string(wa:Agency)")
                 comm_chamber = {'House': 'lower', 'Senate': 'upper'}[agency]
                 if comm_chamber != chamber:
                     continue
 
-                name = comm.xpath("string(wa:Name)", namespaces=self._ns)
-                comm_id = comm.xpath("string(wa:Id)", namespaces=self._ns)
-                acronym = comm.xpath("string(wa:Acronym)",
-                                     namespaces=self._ns)
-                phone = comm.xpath("string(wa:Phone)", namespaces=self._ns)
+                name = xpath(comm, "string(wa:Name)")
+                comm_id = xpath(comm, "string(wa:Id)")
+                acronym = xpath(comm, "string(wa:Acronym)")
+                phone = xpath(comm, "string(wa:Phone)")
 
                 comm = Committee(chamber, name, _code=comm_id,
                                  office_phone=phone)
@@ -60,6 +59,6 @@ class WACommitteeScraper(CommitteeScraper):
         with self.urlopen(self._base_url, method='POST', body=body) as page:
             page = lxml.etree.fromstring(page)
 
-            for member in page.xpath("//wa:Member", namespaces=self._ns):
-                name = member.xpath("string(wa:Name)", namespaces=self._ns)
+            for member in xpath(page, "//wa:Member"):
+                name = xpath(member, "string(wa:Name)")
                 comm.add_member(name)

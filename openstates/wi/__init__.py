@@ -35,20 +35,23 @@ metadata = {
         # 'start_year': 2007, 'end_year': 2008 },
         {'name': '2009-2010',
          'sessions': ['June 2009 Special Session',
-                      'Dec 2009 Special Session',
+                      'December 2009 Special Session',
                       '2009 Regular Session'],
          'start_year': 2009, 'end_year': 2010},
         {'name': '2011-2012',
-         'sessions': ['2011 Regular Session'],
+         'sessions': ['2011 Regular Session', 'January 2011 Special Session'],
          'start_year': 2011, 'end_year': 2011},
     ],
     'session_details': {
         '2009 Regular Session': {'start_date': datetime.date(2009,1,13),
                                  'end_date': datetime.date(2011,1,3),
                                  'type': 'primary'},
+        'June 2009 Special Session': {'type': 'special', 'site_id': 'jn9'},
+        'December 2009 Special Session': {'type': 'special', 'site_id': 'de9'},
         '2011 Regular Session': {'start_date': datetime.date(2009,1,11),
                                  'end_date': datetime.date(2013,1,7),
-                                 'type': 'primary'}
+                                 'type': 'primary'},
+        'January 2011 Special Session': {'type': 'special', 'site_id': 'jr1'},
     }
 }
 

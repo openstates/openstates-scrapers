@@ -20,7 +20,7 @@ def generate_leg_indexes(state, term, chamber):
 
 
 def generate_adjacency_matrix(state, session, chamber, leg_indexes,
-                              primary_sponsor_type='primary'):
+                              primary_sponsor_type='LEAD_AUTHOR'):
     size = len(leg_indexes)
     matrix = numpy.zeros((size, size))
 
@@ -52,27 +52,50 @@ def generate_adjacency_matrix(state, session, chamber, leg_indexes,
     return matrix
 
 
-def pagerank(state, session, chamber, d_factor=0.85):
-    term = utils.term_for_session(state, session)
+def pagerank(matrix, d_factor=0.85):
+    """
+    Calculate the pagerank vector of a given adjacency matrix (using
+    the power method).
 
-    leg_indexes = generate_leg_indexes(state, term, chamber)
-    M = generate_adjacency_matrix(state, session, chamber,
-                                  leg_indexes)
-    size = len(leg_indexes)
+    :param matrix: an adjacency matrix
+    :param d_factor: the damping factor
+    """
+    size = len(matrix)
+    epsilon = 0.0001
+    matrix = matrix.copy()
 
-    # Scale each column of the adjacency matrix
+    # Divide each column by its number of outgoing links
     for i in xrange(0, size):
-        col_sum = M[:,i].sum()
+        col_sum = matrix[:,i].sum()
         if col_sum:
-            M[:,i] = M[:,i] / col_sum
+            matrix[:,i] /= col_sum
 
     e = ((1.0 - d_factor) / size) * numpy.ones((size, size))
+    matrix = d_factor * matrix + e
 
     result = numpy.ones(size) / size
+    prev = numpy.ones(size) / size
+    iteration = 0
 
-    for i in xrange(0, 100):
-        result = numpy.dot(d_factor * M + e, result)
+    while True:
+        result = numpy.dot(matrix, result)
         result /= result.sum()
+        diff = numpy.abs(result - prev).sum()
+        print "Iteration %d, change %f" % (iteration, diff)
+        if diff < epsilon:
+            break
+        prev = result
+        iteration += 1
+
+    return result
+
+
+def legislator_pagerank(state, session, chamber, d_factor=0.85):
+    term = utils.term_for_session(state, session)
+    leg_indexes = generate_leg_indexes(state, term, chamber)
+    adjacency_matrix = generate_adjacency_matrix(state, session,
+                                                 chamber, leg_indexes)
+    result = pagerank(adjacency_matrix, d_factor)
 
     for leg_id in leg_indexes.keys():
         leg_indexes[leg_id] = result[leg_indexes[leg_id]]
@@ -91,7 +114,7 @@ if __name__ == '__main__':
     parser.add_argument('chamber')
     args = parser.parse_args()
 
-    pr = pagerank(args.state, args.session, args.chamber)
+    pr = legislator_pagerank(args.state, args.session, args.chamber)
     out = csv.writer(sys.stdout)
 
     for (leg_id, value) in pr.iteritems():

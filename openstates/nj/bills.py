@@ -8,7 +8,7 @@ import lxml.etree
 import scrapelib
 import zipfile
 import csv
-
+import os
 
 class NJBillScraper(BillScraper, DBFMixin):
     state = 'nj'
@@ -79,6 +79,17 @@ class NJBillScraper(BillScraper, DBFMixin):
         'R/A REF': ('Received in the Assembly, Referred to', 'committee:referred'),
         'TRANS': ('Transferred to', 'committee:referred'),
         'RCM': ('Recommitted to', 'committee:referred'),
+    }
+
+    _com_vote_motions = {
+        'r w/o rec.': 'Reported without recommendation',
+        'r w/o rec. ACS': 'Reported without recommendation out of Assembly committee as a substitute',
+        'r w/o rec. Sca': 'Reported without recommendation out of Senate committee with amendments',
+        'r/ACS': 'Reported out of Assembly committee as a substitute',
+        'r/Aca': 'Reported out of Assembly committee with amendments',
+        'r/SCS': 'Reported out of Senate committee as a substitute',
+        'r/Sca': 'Reported out of Senate committee with amendments',
+        'r/favorably': 'Reported favorably out of committee',
     }
 
     _doctypes = {
@@ -216,51 +227,74 @@ class NJBillScraper(BillScraper, DBFMixin):
             else:
                 bill.add_document(doc_name, htm_url)
 
-        #Senate Votes
-        file1 = 'A' + str(year_abr)
-        file2 = 'A' + str(year_abr + 1)
-        file3 = 'S' + str(year_abr)
-        file4 = 'S' + str(year_abr + 1)
-        if str(year_abr) != '2010':
-            vote_info_list = [file1, file2, file3, file4]
-        else:
-            vote_info_list = [file1, file3]
-        for bill_vote_file in vote_info_list:
-            s_vote_url = 'ftp://www.njleg.state.nj.us/votes/%s.zip' % bill_vote_file
+        # Votes
+        next_year = int(year_abr)+1
+        vote_info_list = ['A%s' % year_abr,
+                          'A%s' % next_year,
+                          'S%s' % year_abr,
+                          'S%s' % next_year,
+                          'CA%s-%s' % (year_abr, next_year),
+                          'CS%s-%s' % (year_abr, next_year),
+                         ]
+
+        for filename in vote_info_list:
+            s_vote_url = 'ftp://www.njleg.state.nj.us/votes/%s.zip' % filename
             s_vote_zip, resp = self.urlretrieve(s_vote_url)
             zipedfile = zipfile.ZipFile(s_vote_zip)
-            vfile = "%s.txt" % bill_vote_file
+            vfile = "%s.txt" % filename
             vote_file = zipedfile.open(vfile, 'U')
             vdict_file = csv.DictReader(vote_file)
 
             votes = {}
-            if bill_vote_file[0] == "A":
+            if filename.startswith('A') or filename.startswith('CA'):
                 chamber = "lower"
             else:
                 chamber = "upper"
 
-            for rec in vdict_file:
-                bill_id = rec["Bill"]
-                bill_id = bill_id.strip()
-                leg = rec["Full_Name"]
+            if filename.startswith('C'):
+                vote_file_type = 'committee'
+            else:
+                vote_file_type = 'chamber'
 
-                date = rec["Session_Date"]
+            for rec in vdict_file:
+
+                if vote_file_type == 'chamber':
+                    bill_id = rec["Bill"].strip()
+                    leg = rec["Full_Name"]
+
+                    date = rec["Session_Date"]
+                    action = rec["Action"]
+                    leg_vote = rec["Legislator_Vote"]
+                else:
+                    bill_id = '%s%s' % (rec['Bill_Type'], rec['Bill_Number'])
+                    leg = rec['Name']
+                    # drop time portion
+                    date = rec['Agenda_Date'].split()[0]
+                    # make motion readable
+                    action = self._com_vote_motions[rec['BillAction']]
+                    # first char (Y/N) use [0:1] to ignore ''
+                    leg_vote = rec['LegislatorVote'][0:1]
+
                 date = datetime.strptime(date, "%m/%d/%Y")
-                action = rec["Action"]
-                leg_vote = rec["Legislator_Vote"]
-                vote_id = bill_id + "_" + action
+                vote_id = '_'.join((bill_id, chamber, action))
                 vote_id = vote_id.replace(" ", "_")
-                passed = None
 
                 if vote_id not in votes:
-                    votes[vote_id] = Vote(chamber, date, action, passed, None,
+                    votes[vote_id] = Vote(chamber, date, action, None, None,
                                           None, None, bill_id=bill_id)
+                if vote_file_type == 'committee':
+                    votes[vote_id]['committee'] = self._committees[
+                        rec['Committee_House']]
+
                 if leg_vote == "Y":
                     votes[vote_id].yes(leg)
                 elif leg_vote == "N":
                     votes[vote_id].no(leg)
                 else:
                     votes[vote_id].other(leg)
+
+            # remove temp file
+            os.remove(s_vote_zip)
 
             #Counts yes/no/other votes and saves overall vote
             for vote in votes.itervalues():
