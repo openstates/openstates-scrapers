@@ -3,34 +3,46 @@
 
 {% block content %}
 
-{% markdown %}
-## Open State Project API
-
-### Basic Information
+<h2> Open State Project API </h2>
+{% rest %}
 
 The Open State Project provides a RESTful API for accessing state legislative information.
 
-  * The base URL is <code>http://openstates.sunlightlabs.com/api/v1/</code>
-  * All methods return JSON, XML output is not currently supported.
+  * The base URL is ``http://openstates.sunlightlabs.com/api/v1/``
+  * All methods return `JSON <http://json.org/>`_.
   * Appropriate HTTP error codes are sent on errors (generally 404 if object is not found, 401 if authentication fails, etc.).
-  * An API key is required and can be obtained via [http://services.sunlightlabs.com/](http://services.sunlightlabs.com/)
-  * There is a [Python client library](http://github.com/sunlightlabs/python-openstates) available.
+  * An API key is required and can be obtained via http://services.sunlightlabs.com/
+  * There is a `Python client library <http://github.com/sunlightlabs/python-openstates>`_ available.
 
 For details on the current availability and status of state data visit the
-[Open States status page](http://openstates.sunlightlabs.com/status/).
+`Open States status page <http://openstates.sunlightlabs.com/status/>`_.
 
-All changes to the API will be announced on the [Open State Project Google Group](http://groups.google.com/group/fifty-state-project/) and documented in the [api changelog](/api/changelog/).
+All changes to the API will be announced on the `Open State Project Google Group <http://groups.google.com/group/fifty-state-project/>`_ and documented in the `api changelog </api/changelog/>`_.
 
-### Methods
+Methods
+=======
 
-  * State Metadata <api.metadata>
-  * Bill Methods <api.bills>
-  * Legislator Methods <api.legislators>
-  * Committee Methods <api.committees>
-  * Event Methods <api.events>
+  * `State Metadata </api/metadata/>`_
+  * `Bill Methods </api/bills/>`_
 
-<a name="extrafields"></a>
-### Extra Fields
+    * `Bill Search </api/bills/#bill-search>`_
+    * `Bill Lookup </api/bills/#bill-lookup>`_
+  * `Legislator Methods </api/legislators/>`_
+
+    * `Legislator Search </api/legislators/#legislator-search>`_
+    * `Legislator Lookup </api/legislators/#legislator-lookup>`_
+    * `Legislator Geo Search </api/legislators/#geo-lookup>`_
+  * `Committee Methods </api/committees/>`_
+
+    * `Committee Search </api/committees/#committee-search>`_
+    * `Committee Lookup </api/committees/#committee-lookup>`_
+  * `Event Methods </api/events/>`_
+
+    * `Event Search </api/events/#event-search>`_
+    * `Event Lookup </api/events/#event-lookup>`_
+
+Extra Fields
+============
 
 You may notice that the fields documented methods are sometimes a subset of the fields actually included in a response.
 
@@ -40,6 +52,6 @@ To make it clear which fields can be relied on and which are perhaps specific to
 
 If you are using the API to get data for multiple states it is best to restrict your usage to the fields documented here, if you are only interested in data for a small subset of our available states it might make sense to take a more in depth look at the API responses for the state in question to see what extra data we are able to provide.
 
-{% endmarkdown %}
+{% endrest %}
 
 {% endblock %}

@@ -12,7 +12,7 @@ Three API methods are available for accessing legislators:
 `Legislator Lookup`_
     Get all available information for a legislator.
 `Legislator Search`_
-    Allows looking up committees by (almost) any of their attributes.  (Doesn't return memberships.)
+    Allows looking up legislators by (almost) any of their attributes.  (Doesn't return memberships.)
 `Geo Lookup`_
     Search for all legislators that represent an area containing a location.
 
@@ -55,7 +55,7 @@ All legislator methods return Legislator objects consisting of the following fie
     ``sources``, ``roles`` and ``old_roles`` are not included in the legislator search response.
 
 .. note::
-    Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See :ref:`extrafields`)
+    Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See `extra fields </api/#extrafields">`_.)
 
 
 Legislator Search
@@ -84,7 +84,7 @@ Parameters
 URL format
 ----------
 
-:samp:`http://openstates.sunlightlabs.com/api/v1/legislators/?{SEARCH-PARAMS}&apikey={YOUR_API_KEY}`
+`http://openstates.sunlightlabs.com/api/v1/legislators/?{SEARCH-PARAMS}&apikey={YOUR_API_KEY}`
 
 Example
 -------
@@ -103,7 +103,7 @@ Lookup all available data for a legislator given their Open State Project ``leg_
 URL Format
 ----------
 
-:samp:`http://openstates.sunlightlabs.com/api/v1/legislators/{LEG_ID}/?apikey={YOUR_API_KEY}`
+`http://openstates.sunlightlabs.com/api/v1/legislators/{LEG_ID}/?apikey={YOUR_API_KEY}`
 
 Example
 -------
