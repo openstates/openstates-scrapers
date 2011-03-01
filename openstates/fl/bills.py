@@ -64,7 +64,14 @@ class FLBillScraper(BillScraper):
                     action = action.strip()
                     if not action:
                         continue
-                    bill.add_action(actor, action, date)
+
+                    atype = []
+                    if action.startswith('Referred to'):
+                        atype.append('committee:referred')
+                    elif action.startswith('Favorable by'):
+                        atype.append('committee:passed')
+
+                    bill.add_action(actor, action, date, type=atype)
 
             version_table = page.xpath(
                 "//div[@id = 'tabBodyBillText']/table")[0]
