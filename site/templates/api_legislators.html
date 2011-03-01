@@ -1,0 +1,146 @@
+{% extends "flatpage.html" %}
+{% load markup_tags %}
+
+{% block content %}
+
+<h2>Legislator API</h2>
+
+{% rest %}
+
+Three API methods are available for accessing legislators:
+
+`Legislator Lookup`_
+    Get all available information for a legislator.
+`Legislator Search`_
+    Allows looking up legislators by (almost) any of their attributes.  (Doesn't return memberships.)
+`Geo Lookup`_
+    Search for all legislators that represent an area containing a location.
+
+These methods return legislator objects with the following fields (or a subset in the case of search).
+
+Legislator Fields
+=================
+
+All legislator methods return Legislator objects consisting of the following fields:
+
+  * ``leg_id``: A permanent, unique identifier for this legislator
+    within the Open State Project system.
+  * ``full_name``
+  * ``first_name``
+  * ``last_name``
+  * ``middle_name``
+  * ``suffixes``
+  * ``photo_url``
+  * ``active`` - Boolean indicating whether or not this legislator is currently serving.
+  * ``state``, ``chamber``, ``district``, ``party`` (only present if the legislator is
+    currently serving)
+  * ``roles``: A list of objects representing roles this legislator currently holds. Each role will contain at least the ``type`` and
+    ``term`` roles:
+
+    * ``type`` the type of role - e.g. "member", "committee member", "Lt. Governor"
+    * ``term`` the term the role was held during
+    * ``chamber``
+    * ``district``
+    * ``party``
+    * ``committee``
+    * ``term``
+  * ``old_roles``: A dictionary mapping term names for past terms to lists of roles held. (Sub-objects have same fields as ``roles``.)
+  * ``sources``
+    List of sources that this data was collected from.
+
+      * ``url``: URL of the source
+      * ``retrieved``: time at which the source was last retrieved
+
+.. note::
+    ``sources``, ``roles`` and ``old_roles`` are not included in the legislator search response.
+
+.. note::
+    Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See `extra fields </api/#extrafields">`_.)
+
+
+Legislator Search
+=================
+
+Searches for legislators matching certain criteria.
+
+Parameters
+----------
+
+``state``
+    Filter by state served in (two-letter state abbreviation)
+``first_name``, ``last_name``
+    Filter by name
+``chamber``
+    Filter by legislator's chamber, i.e. 'upper' or 'lower'.
+``active``
+    Restrict the search to currently-active legislators (the default) - 'true' or 'false'.
+``term``
+    Filter by legislators who served during a certain term.
+``district``
+    Filter by legislative district.
+``party``
+    Filter by the legislator's party, e.g. 'Democratic' or 'Republican'.
+
+URL format
+----------
+
+`http://openstates.sunlightlabs.com/api/v1/legislators/?{SEARCH-PARAMS}&apikey={YOUR_API_KEY}`
+
+Example
+-------
+
+http://openstates.sunlightlabs.com/api/v1/legislators/?state=ca&party=democratic&first_name=Bob&active=true&apikey=YOUR_API_KEY
+
+.. raw:: html
+
+    <script src="https://gist.github.com/849541.js?file=legislator_search.json"></script>
+
+Legislator Lookup
+=================
+
+Lookup all available data for a legislator given their Open State Project ``leg_id``.
+
+URL Format
+----------
+
+`http://openstates.sunlightlabs.com/api/v1/legislators/{LEG_ID}/?apikey={YOUR_API_KEY}`
+
+Example
+-------
+
+http://openstates.sunlightlabs.com/api/v1/legislators/MDL000210/?apikey=YOUR_API_KEY
+
+.. raw:: html
+
+    <script src="https://gist.github.com/849541.js?file=legislator_lookup.json"></script>
+
+
+Geo Lookup
+==========
+
+Lookup all legislators that serve districts containing a given geographical point.
+
+Parameters
+----------
+
+``lat``
+    Latitude of point to use for district lookup
+``long``
+    Longitude of point to use for district lookup
+
+URL Format
+----------
+
+`http://openstates.sunlightlabs.com/api/v1/legislators/geo/?long={LONGITUDE}&lat={LATITUDE}&apikey={YOUR_API_KEY}`
+
+Example
+-------
+
+http://openstates.sunlightlabs.com/api/v1/legislators/geo/?long=-78.76648&lat=35.81336&apikey=YOUR_API_KEY
+
+.. raw:: html
+
+    <script src="https://gist.github.com/849541.js?file=geo_lookup.json"></script>
+
+{% endrest %}
+{% endblock %}
