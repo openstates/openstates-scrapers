@@ -1,14 +1,16 @@
 import re
+import urllib2
 import urlparse
 import datetime as dt
 
+from billy.utils import urlescape
 from billy.scrape import ScrapeError
-from openstates.tx import metadata
-from openstates.tx.utils import chamber_name, parse_ftp_listing
 from billy.scrape.bills import BillScraper, Bill
 
+from openstates.tx import metadata
+from openstates.tx.utils import chamber_name, parse_ftp_listing
+
 import lxml.etree
-import urllib2
 
 
 class TXBillScraper(BillScraper):
@@ -42,7 +44,7 @@ class TXBillScraper(BillScraper):
                 return
 
             bill = self.parse_bill_xml(chamber, session, data)
-            bill.add_source(url)
+            bill.add_source(urlescape(url))
 
             versions_url = url.replace('billhistory', 'billtext/html')
             # URLs for versions inexplicably (H|S)(J|C) instead of (H|J)(CR|JR)
@@ -55,13 +57,15 @@ class TXBillScraper(BillScraper):
 
             try:
                 with self.urlopen(versions_url) as versions_list:
-                    bill.add_source(versions_url)
+                    bill.add_source(urlescape(versions_url))
                     for version in parse_ftp_listing(versions_list):
                         if version.startswith(long_bill_id):
                             version_name = version.split('.')[0]
-                            version_url = urlparse.urljoin(versions_url + '/',
-                                                           version)
-                            bill.add_version(version_name, version_url)
+                            version_url = urlparse.urljoin(
+                                versions_url + '/',
+                                version)
+                            bill.add_version(version_name,
+                                             urlescape(version_url))
             except urllib2.URLError:
                 # Sometimes the text is missing
                 pass
@@ -121,6 +125,8 @@ class TXBillScraper(BillScraper):
             elif re.match(r'^Received (by|from) the', desc):
                 if 'Secretary of the Senate' not in desc:
                     atype = 'bill:introduced'
+                else:
+                    atype = 'other'
             elif desc.startswith('Sent to the Governor'):
                 # But what if it gets lost in the mail?
                 atype = 'governor:received'
