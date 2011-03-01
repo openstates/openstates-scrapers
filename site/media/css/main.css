@@ -125,10 +125,6 @@ dd{
 dd, dt{
     line-height: 1.6;
 }
-dt { 
-    font-family: monospace;
-    font-size: 90%;
-}
 dd dl{
     border-left: 1px dotted #cccebf;
     margin-left: -10px;
