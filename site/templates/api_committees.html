@@ -1,0 +1,113 @@
+{% extends "flatpage.html" %}
+{% load markup_tags %}
+
+{% block content %}
+
+<h2>Committee API</h2>
+
+{% rest %}
+
+Two API methods are available for accessing committees:
+
+`Committee Lookup`_
+    Lookup current details/membership for a committee.
+`Committee Search`_
+    Allows looking up committees by (almost) any of their attributes.  (Doesn't return memberships.)
+
+Both methods return committee objects with the following fields (in the case of search, a subset of these fields).
+
+Committee Fields
+================
+
+Committee methods return objects with the following fields:
+
+``id``
+    Open State Project Committee ID.
+``chamber``
+    Associated chamber (``upper``, ``lower``, or ``joint``).
+``state``
+    State abbreviation (eg. ``ny``).
+``committee``
+    Name of committee.
+``subcommittee``
+    Name of subcommittee (null if record describes a top level
+    committee).
+``parent_id``
+    For subcommittees, the committee ID of its parent. ``null`` otherwise.
+``members``
+    Listing of the current committee membership.
+
+    ``legislator``
+        Name of legislator (as captured from source).
+    ``role``
+        Role of this member on the committee (usually 'member' but may indicate
+        charimanship or other special status)
+    ``leg_id``
+        Legislator's Open State Project ID
+``sources``
+    List of sources that this data was collected from.
+
+    ``url``
+        URL of the source
+    ``retrieved``
+        time at which the source was last retrieved
+
+.. note::
+   ``members`` and ``sources`` are not included in the committee search API results
+
+.. note::
+    Keep in mind that these documented fields may be a subset of the fields provided for a given state. (See `extra fields </api/#extrafields">`_.)
+
+
+Committee Lookup
+================
+
+Get all information about a committee given its Open State Project ID.
+
+URL Format
+^^^^^^^^^^
+
+`http://openstates.sunlightlabs.com/api/v1/committees/{COMMITTEE-ID}/?apikey={YOUR_API_KEY}`
+
+Example
+^^^^^^^
+
+http://openstates.sunlightlabs.com/api/v1/committees/MDC000065/?apikey=YOUR_API_KEY
+
+.. raw:: html
+
+    <script src="https://gist.github.com/849541.js?file=committee_lookup.json"></script>
+
+Committee Search
+================
+
+Search committees by properties such as state or chamber.
+
+Parameters
+^^^^^^^^^^
+
+``committee``
+    name of a committee
+``subcommittee``
+    name of a subcommittee
+``chamber``
+    filter results by given chamber (``upper``, ``lower`` or ``joint``)
+``state``
+    return committees for a given state (eg. ``ny``)
+
+URL Format
+^^^^^^^^^^
+
+`http://openstates.sunlightlabs.com/api/v1/committees/?{SEARCH-PARAMS}&apikey={YOUR_API_KEY}`
+
+Example
+^^^^^^^
+
+http://openstates.sunlightlabs.com/api/v1/committees/?state=md&chamber=upper&apikey=YOUR_API_KEY
+
+.. raw:: html
+
+    <script src="https://gist.github.com/849541.js?file=committee_search.json"></script>
+
+{% endrest %}
+{% endblock %}
