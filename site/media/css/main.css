@@ -34,7 +34,7 @@ input, select { vertical-align:middle; }
 
 body { font:13px/1.231 sans-serif; *font-size:small; }
 select, input, textarea, button { font:99% sans-serif; }
-pre, code, kbd, samp { font-family: monospace, sans-serif; }
+pre, code, kbd, samp { font-family: monospace, sans-serif; font-size: 90%; }
 
 body, select, input, textarea {   color: #444; }
 h1,h2,h3,h4,h5,h6 { font-weight: bold; }
@@ -119,11 +119,15 @@ dl{
 }
 dd{
     padding: 0 0 0 30px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 
 }
 dd, dt{
     line-height: 1.6;
+}
+dt { 
+    font-family: monospace;
+    font-size: 90%;
 }
 dd dl{
     border-left: 1px dotted #cccebf;

@@ -21,6 +21,8 @@ urlpatterns = patterns('',
      {'template':'api.html'}),
     (r'^api/changelog/$', 'django.views.generic.simple.direct_to_template',
      {'template':'api_changelog.html'}),
+    (r'^api/metadata/$', 'django.views.generic.simple.direct_to_template',
+     {'template':'api_metadata.html'}),
     (r'^status/$', 'django.views.generic.simple.direct_to_template',
      {'template':'status.html'}),
 )
