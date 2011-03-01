@@ -2,17 +2,18 @@ from django.conf import settings
 from django.conf.urls.defaults import *
 from django.http import HttpResponse
 
+from locksmith.mongoauth.db import db
+
 import piston.resource
 from piston.emitters import Emitter
 
 from billy.site.api import handlers
 from billy.site.api.views import document, legislator_preview
-from billy.site.api.models import LogEntry
 from billy.site.api.emitters import OpenStateJSONEmitter
 from billy.site.api.emitters import FeedEmitter, ICalendarEmitter
 
 if getattr(settings, 'USE_LOCKSMITH', False):
-    from locksmith.auth.authentication import PistonKeyAuthentication
+    from locksmith.mongoauth.authentication import PistonKeyAuthentication
 
     class Authorizer(PistonKeyAuthentication):
         def challenge(self):
@@ -28,11 +29,10 @@ if getattr(settings, 'USE_LOCKSMITH', False):
             resp = super(Resource, self).__call__(request, *args, **kwargs)
 
             try:
-                LogEntry.objects.create(
-                    caller_key=request.apikey.key,
-                    method=self.handler.__class__.__name__,
-                    query_string=request.META['QUERY_STRING'],
-                )
+                db.logs.insert({'key': request.apikey.key,
+                                'method': self.handler.__class__.__name__,
+                                'query_string': request.META['QUERY_STRING'],
+                                'timestamp': datetime.datetime.utcnow()})
             except AttributeError:
                 pass
 
