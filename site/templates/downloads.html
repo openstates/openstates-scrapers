@@ -22,7 +22,7 @@
     <table id="download_list">
         <tr><th>State</th><th>Latest Dump</th></tr>
         {% for state in states %}
-        <tr><td>{{state.name}}</td><td><a href="/data/{{state.abbr}}.zip">{{state.latest_dump_date}}</a></td></tr>
+        <tr><td>{{state.name}}</td><td><a href="{{state.latest_dump_url}}">{{state.latest_dump_date|date}}</a></td></tr>
         {% endfor %}
     </table>
 
