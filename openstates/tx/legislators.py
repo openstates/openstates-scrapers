@@ -1,5 +1,6 @@
 import re
 
+from billy.utils import urlescape
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import (LegislatorScraper, Legislator,
                                             Person)
@@ -82,7 +83,7 @@ class TXLegislatorScraper(LegislatorScraper):
                                  party=party, photo_url=photo_url,
                                  **addrs)
 
-            leg.add_source(member_url)
+            leg.add_source(urlescape(member_url))
 
             comm_div = root.xpath('//div[string() = "Committee Membership:"]'
                                   '/following-sibling::div'

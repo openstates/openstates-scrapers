@@ -175,8 +175,7 @@ class AKBillScraper(BillScraper):
                                                cols[1].a['href'])
                         bill.add_vote(vote)
                     except:
-                        self.log("Failed parsing vote at %s" %
-                                 cols[1].a['href'])
+                        self.log("Failed parsing vote")
 
                 action, atype = self.clean_action(action)
 
