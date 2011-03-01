@@ -1,7 +1,11 @@
 import re
-import jellyfish
+import urllib
+import urlparse
 
 from billy import db
+
+import jellyfish
+
 
 # metadata cache
 __metadata = {}
@@ -33,6 +37,7 @@ stop_words = [
 def tokenize(str):
     return re.split(r"[\s.,!?'\"`()]+", str)
 
+
 def keywordize(str):
     """
     Splits a string into words, removes common stopwords, stems and removes
@@ -43,6 +48,7 @@ def keywordize(str):
                 for word in tokenize(str)
                 if (word.isalpha() or word.isdigit()) and
                 word.lower() not in stop_words])
+
 
 def metadata(state):
     """
@@ -64,3 +70,10 @@ def term_for_session(state, session):
             return term['name']
 
     raise ValueError("no such session")
+
+
+def urlescape(url):
+    scheme, netloc, path, qs, anchor = urlparse.urlsplit(url)
+    path = urllib.quote(path, '/%')
+    qs = urllib.quote_plus(qs, ':&=')
+    return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
