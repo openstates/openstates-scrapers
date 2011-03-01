@@ -1,0 +1,30 @@
+{% extends "flatpage.html" %}
+
+
+{% block content %}
+<h2> Bulk Downloads </h2>
+<div>
+    <p>
+    Because it is often convenient to get all of a state's data at once we provide bulk downloads.
+
+    The data contained in these downloads is in the same format as that obtained via the
+    <a href="/api/">API</a>.
+    </p>
+
+    <p>
+    These downloads are not intended as a replacement for using the API, the
+    main deficit you'll notice is that they lag up to a month (but usually not more)
+    behind the current data.  This makes them useful for general research
+    purposes or initializing a database that will then be kept up to date
+    via regular calls.  If you'd like more current data please use the <a href="/api/">API</a>.
+    </p>
+
+    <table id="download_list">
+        <tr><th>State</th><th>Latest Dump</th></tr>
+        {% for state in states %}
+        <tr><td>{{state.name}}</td><td><a href="{{state.latest_dump_url}}">{{state.latest_dump_date|date}}</a></td></tr>
+        {% endfor %}
+    </table>
+
+</div>
+{% endblock %}

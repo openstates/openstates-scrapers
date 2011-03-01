@@ -105,6 +105,9 @@ class TXBillScraper(BillScraper):
 
             desc = action.findtext('description').strip()
 
+            if desc == 'Scheduled for public hearing on . . .':
+                continue
+
             if desc == 'Amended':
                 atype = 'amendment:passed'
             elif desc == 'Amendment(s) offered':
@@ -116,7 +119,8 @@ class TXBillScraper(BillScraper):
             elif desc == 'Passed' or desc == 'Adopted':
                 atype = 'bill:passed'
             elif re.match(r'^Received (by|from) the', desc):
-                atype = 'bill:introduced'
+                if 'Secretary of the Senate' not in desc:
+                    atype = 'bill:introduced'
             elif desc.startswith('Sent to the Governor'):
                 # But what if it gets lost in the mail?
                 atype = 'governor:received'
