@@ -84,15 +84,18 @@ class FLBillScraper(BillScraper):
                 url = tr.xpath("td/a[1]")[0].attrib['href']
                 bill.add_version(name, url)
 
-            analysis_table = page.xpath(
-                "//div[@id = 'tabBodyStaffAnalysis']/table")[0]
-            for tr in analysis_table.xpath("tbody/tr"):
-                name = tr.xpath("string(td[1])").strip()
-                name += " -- " + tr.xpath("string(td[3])").strip()
-                date = tr.xpath("string(td[4])").strip()
-                if date:
-                    name += " (%s)" % date
-                url = tr.xpath("td/a")[0].attrib['href']
-                bill.add_document(name, url)
+            try:
+                analysis_table = page.xpath(
+                    "//div[@id = 'tabBodyStaffAnalysis']/table")[0]
+                for tr in analysis_table.xpath("tbody/tr"):
+                    name = tr.xpath("string(td[1])").strip()
+                    name += " -- " + tr.xpath("string(td[3])").strip()
+                    date = tr.xpath("string(td[4])").strip()
+                    if date:
+                        name += " (%s)" % date
+                    url = tr.xpath("td/a")[0].attrib['href']
+                    bill.add_document(name, url)
+            except IndexError:
+                self.log("No analysis table for %s" % bill_id)
 
             self.save_bill(bill)
