@@ -70,6 +70,10 @@ class FLBillScraper(BillScraper):
                         atype.append('committee:referred')
                     elif action.startswith('Favorable by'):
                         atype.append('committee:passed')
+                    elif action == "Filed":
+                        atype.append("bill:filed")
+                    elif action.startswith("Withdrawn"):
+                        atype.append("bill:failed")
 
                     bill.add_action(actor, action, date, type=atype)
 
