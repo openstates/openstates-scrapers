@@ -198,8 +198,8 @@ class MDBillScraper(BillScraper):
                             for cell in row.cssselect('a'):
                                 getattr(vote, status)(cell.text.strip())
 
+                    vote.add_source(vote_url)
                     bill.add_vote(vote)
-                    bill.add_source(vote_url)
 
 
     def scrape_bill(self, chamber, session, bill_type, number):
