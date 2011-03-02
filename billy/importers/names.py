@@ -92,7 +92,7 @@ class NameMatcher(object):
                 reader = csv.reader(f)
 
                 for (term, chamber, name, leg_id) in reader:
-                    if term == self._term:
+                    if term == self._term and leg_id:
                         self._manual[chamber][name] = leg_id
                         self._manual[None][name] = leg_id
         except IOError:

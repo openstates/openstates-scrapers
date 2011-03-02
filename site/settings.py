@@ -54,6 +54,7 @@ INSTALLED_APPS = (
     'billy.site.browse',
     'locksmith.mongoauth',
     'mediasync',
+    'markup_tags',
 )
 
 DATE_FORMAT = 'Y-m-d'

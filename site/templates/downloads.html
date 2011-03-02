@@ -19,8 +19,11 @@
     via regular calls.  If you'd like more current data please use the <a href="/api/">API</a>.
     </p>
 
+    <p>One last thing, <strong>these files are large</strong>.  They are often a couple years worth of
+    legislative data and generally fall in the 100MB range.  </p>
+
     <table id="download_list">
-        <tr><th>State</th><th>Latest Dump</th></tr>
+        <tr><th>State</th><th>JSON Archive</th></tr>
         {% for state in states %}
         <tr><td>{{state.name}}</td><td><a href="{{state.latest_dump_url}}">{{state.latest_dump_date|date}}</a></td></tr>
         {% endfor %}
