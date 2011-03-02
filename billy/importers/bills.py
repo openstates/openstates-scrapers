@@ -16,9 +16,10 @@ from billy.utils import keywordize
 from billy import db
 from billy.importers.names import get_legislator_id
 from billy.importers.utils import (insert_with_id,
-                                       update, prepare_obj,
-                                       get_committee_id,
-                                       fix_bill_id)
+                                   update, prepare_obj,
+                                   get_committee_id,
+                                   fix_bill_id,
+                                   VoteMatcher,)
 
 import pymongo
 
@@ -69,6 +70,7 @@ def import_bills(state, data_dir):
         # clean up bill_id
         data['bill_id'] = fix_bill_id(data['bill_id'])
 
+        # move subjects to scraped_subjects
         subjects = data.pop('subjects', None)
         if subjects:
             data['scraped_subjects'] = subjects
@@ -78,18 +80,27 @@ def import_bills(state, data_dir):
                                   'chamber': data['chamber'],
                                   'bill_id': data['bill_id']})
 
+        vote_matcher = VoteMatcher(data['state'])
+        if bill:
+            vote_matcher.learn_vote_ids(bill['votes'])
+        vote_matcher.set_vote_ids(data['votes'])
+
+        # match sponsor leg_ids
         for sponsor in data['sponsors']:
             id = get_legislator_id(state, data['session'], None,
                                    sponsor['name'])
             sponsor['leg_id'] = id
 
         for vote in data['votes']:
+
+            # committee_ids
             if 'committee' in vote:
                 committee_id = get_committee_id(state,
                                                 vote['chamber'],
                                                 vote['committee'])
                 vote['committee_id'] = committee_id
 
+            # vote leg_ids
             for vtype in ('yes_votes', 'no_votes', 'other_votes'):
                 svlist = []
                 for svote in vote[vtype]:
