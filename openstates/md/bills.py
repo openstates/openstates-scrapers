@@ -142,9 +142,14 @@ class MDBillScraper(BillScraper):
         }
         elems = doc.cssselect('a')
 
+        # MD has a habit of listing votes twice
+        seen_votes = set()
+
         for elem in elems:
             href = elem.get('href')
-            if href and "votes" in href and href.endswith('htm'):
+            if (href and "votes" in href and href.endswith('htm') and 
+                href not in seen_votes):
+                seen_votes.add(href)
                 vote_url = BASE_URL + href
                 with self.urlopen(vote_url) as vote_html:
                     vote_doc = lxml.html.fromstring(vote_html)
