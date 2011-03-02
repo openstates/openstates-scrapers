@@ -120,6 +120,8 @@ class MSBillScraper(BillScraper):
                         asg_version_url = "http://billstatus.ls.state.ms.us/" + asg_version
                         bill.add_version("Approved by the Governor", asg_version_url)
 
+                    # avoid duplicate votes
+                    seen_votes = set()
 
                     #Actions
                     for action in details_root.xpath('//history/action'):
@@ -158,9 +160,12 @@ class MSBillScraper(BillScraper):
 
                         if act_vote:
                             vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
-                            vote = self.scrape_votes(vote_url, action, date, actor)
-                            bill.add_vote(vote)
-                            bill.add_source(vote_url)
+                            if vote_url not in seen_votes:
+                                seen_votes.add(vote_url)
+                                vote = self.scrape_votes(vote_url, action,
+                                                         date, actor)
+                                vote.add_source(vote_url)
+                                bill.add_vote(vote)
 
                     bill.add_source(bill_details_url)
                     self.save_bill(bill)
