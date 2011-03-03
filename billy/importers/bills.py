@@ -6,6 +6,7 @@ import sys
 import time
 import glob
 import datetime
+from collection import defaultdict
 
 try:
     import json
@@ -48,6 +49,37 @@ def ensure_indexes():
                            ('chamber', pymongo.ASCENDING),
                            ('sponsors', pymongo.ASCENDING)])
 
+def import_votes(state, data_dir):
+    pattern = os.path.join(data_dir, 'votes', '*.json')
+    paths = glob.glob(pattern)
+
+    votes = defaultdict(list)
+
+    for path in paths:
+        with open(path) as f:
+            data = prepare_obj(json.load(f))
+
+        # need to match bill_id already in the database
+        bill_id = fix_bill_id(data.pop('bill_id'))
+
+        bill = db.bills.find_one({'state':state,
+                                  'chamber': data['bill_chamber'],
+                                  'session': data['session'],
+                                  'bill_id': bill_id})
+        if not bill:
+            _log.warning("Couldn't find bill %s" % bill_id)
+            continue
+
+        try:
+            del data['filename']
+        except KeyError:
+            pass
+
+        votes[(data['bill_chamber'], data['session'], bill_id)].append(data)
+
+    print 'imported %s vote files' % len(paths)
+    return votes
+
 
 def import_bills(state, data_dir):
     data_dir = os.path.join(data_dir, state)
@@ -60,6 +92,8 @@ def import_bills(state, data_dir):
     for term in meta['terms']:
         for session in term['sessions']:
             sessions[session] = term['name']
+
+    votes = import_votes(state, data_dir)
 
     paths = glob.glob(pattern)
 
@@ -74,6 +108,10 @@ def import_bills(state, data_dir):
         subjects = data.pop('subjects', None)
         if subjects:
             data['scraped_subjects'] = subjects
+
+        # add loaded votes to data
+        data['votes'].extend(votes[data['chamber'], data['session'],
+                                   data['bill_id']])
 
         bill = db.bills.find_one({'state': data['state'],
                                   'session': data['session'],
