@@ -6,7 +6,7 @@ import sys
 import time
 import glob
 import datetime
-from collection import defaultdict
+from collections import defaultdict
 
 try:
     import json
@@ -62,14 +62,6 @@ def import_votes(state, data_dir):
         # need to match bill_id already in the database
         bill_id = fix_bill_id(data.pop('bill_id'))
 
-        bill = db.bills.find_one({'state':state,
-                                  'chamber': data['bill_chamber'],
-                                  'session': data['session'],
-                                  'bill_id': bill_id})
-        if not bill:
-            _log.warning("Couldn't find bill %s" % bill_id)
-            continue
-
         try:
             del data['filename']
         except KeyError:
@@ -110,8 +102,9 @@ def import_bills(state, data_dir):
             data['scraped_subjects'] = subjects
 
         # add loaded votes to data
-        data['votes'].extend(votes[data['chamber'], data['session'],
-                                   data['bill_id']])
+        bill_votes = votes.pop((data['chamber'], data['session'],
+                                data['bill_id']), [])
+        data['votes'].extend(bill_votes)
 
         bill = db.bills.find_one({'state': data['state'],
                                   'session': data['session'],
@@ -173,6 +166,9 @@ def import_bills(state, data_dir):
             update(bill, data, db.bills)
 
     print 'imported %s bill files' % len(paths)
+
+    for remaining in votes.keys():
+        print 'Failed to match vote %s %s %s' % remaining
 
     populate_current_fields(state)
     ensure_indexes()
