@@ -306,4 +306,4 @@ class VoteMatcher(object):
         self.reset_sequence()
         for vote in votes_list:
             key = self.key_for_vote(vote)
-            vote['vote_id'] = self.vote_ids.get(key, self.get_next_id())
+            vote['vote_id'] = self.vote_ids.get(key) or self.get_next_id()
