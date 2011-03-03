@@ -100,7 +100,8 @@ class BillSearchHandler(FiftyStateHandler):
 
         bill_fields = {'title': 1, 'created_at': 1, 'updated_at': 1,
                        'bill_id': 1, 'type': 1, 'state': 1,
-                       'session': 1, 'chamber': 1}
+                       'session': 1, 'chamber': 1,
+                       'subjects': 1}
 
         # normal mongo search logic
         _filter = _build_mongo_filter(request, ('state', 'chamber'))
