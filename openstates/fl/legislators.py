@@ -71,7 +71,8 @@ class FLLegislatorScraper(LegislatorScraper):
                 district = link.xpath('string(../../td[4])').strip()
 
                 split_url = urlparse.urlsplit(link.attrib['href'])
-                member_id = urlparse.parse_qs(split_url.query)['MemberId']
+                member_id = urlparse.parse_qs(split_url.query)[
+                    'MemberId'][0]
                 photo_url = ("http://www.flhouse.gov/FileStores/Web/"
                              "Imaging/Member/%s.jpg" % member_id)
 
