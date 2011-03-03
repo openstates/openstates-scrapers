@@ -70,6 +70,8 @@ stats_handler = Resource(handlers.StatsHandler,
                          authentication=authorizer)
 events_handler = Resource(handlers.EventsHandler,
                           authentication=authorizer)
+subject_list_handler = Resource(handlers.SubjectListHandler,
+                                authentication=authorizer)
 reconciliation_handler = Resource(handlers.ReconciliationHandler,
                                   authentication=authorizer)
 
@@ -94,6 +96,8 @@ urlpatterns = patterns('',
 
     url(r'^v1/events/$', events_handler),
     url(r'^v1/events/(?P<id>[A-Z]{2,2}E\d{8,8})/$', events_handler),
+
+    url(r'v1/subjects/', subject_list_handler),
 
     url(r'^v1/legislators/reconcile/$', reconciliation_handler),
     url(r'^v1/legislators/preview/(?P<id>[A-Z]{2,2}L\d{6,6})/$',

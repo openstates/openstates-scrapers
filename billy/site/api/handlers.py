@@ -1,8 +1,8 @@
 import re
 import datetime
 
-from django.conf import settings
 from billy import db
+from billy.conf import settings
 from billy.utils import keywordize
 
 from django.http import HttpResponse
@@ -254,6 +254,11 @@ class EventsHandler(FiftyStateHandler):
 
         return list(db.events.find(spec).sort(
             'when', pymongo.DESCENDING).limit(20))
+
+
+class SubjectListHandler(FiftyStateHandler):
+    def read(self, request):
+        return settings.BILLY_SUBJECTS
 
 
 class ReconciliationHandler(BaseHandler):
