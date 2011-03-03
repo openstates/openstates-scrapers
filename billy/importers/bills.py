@@ -47,6 +47,10 @@ def ensure_indexes():
     db.bills.ensure_index([('state', pymongo.ASCENDING),
                            ('session', pymongo.ASCENDING),
                            ('chamber', pymongo.ASCENDING),
+                           ('subjects', pymongo.ASCENDING)])
+    db.bills.ensure_index([('state', pymongo.ASCENDING),
+                           ('session', pymongo.ASCENDING),
+                           ('chamber', pymongo.ASCENDING),
                            ('sponsors', pymongo.ASCENDING)])
 
 def import_votes(state, data_dir):

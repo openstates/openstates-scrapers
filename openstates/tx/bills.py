@@ -139,6 +139,8 @@ class TXBillScraper(BillScraper):
                 atype = 'bill:passed'
             elif desc.startswith('Referred to'):
                 atype = 'committee:referred'
+            elif desc == "Filed":
+                atype = 'bill:filed'
             else:
                 atype = 'other'
 

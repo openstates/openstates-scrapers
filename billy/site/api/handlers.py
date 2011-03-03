@@ -1,8 +1,8 @@
 import re
 import datetime
 
-from django.conf import settings
 from billy import db
+from billy.conf import settings
 from billy.utils import keywordize
 
 from django.http import HttpResponse
@@ -33,6 +33,15 @@ def _build_mongo_filter(request, keys, icase=True):
     # queries are coming eventually:
     # http://jira.mongodb.org/browse/SERVER-90
     _filter = {}
+    keys = set(keys)
+
+    try:
+        keys.remove('subjects')
+        if 'subject' in request.GET:
+            _filter['subjects'] = {'$all': request.GET.getlist('subject')}
+    except KeyError:
+        pass
+
     for key in keys:
         value = request.GET.get(key)
         if value:
@@ -41,6 +50,7 @@ def _build_mongo_filter(request, keys, icase=True):
                 _filter[key] = _chamber_aliases.get(value, value)
             else:
                 _filter[key] = re.compile('^%s$' % value, re.IGNORECASE)
+
     return _filter
 
 
@@ -100,10 +110,12 @@ class BillSearchHandler(FiftyStateHandler):
 
         bill_fields = {'title': 1, 'created_at': 1, 'updated_at': 1,
                        'bill_id': 1, 'type': 1, 'state': 1,
-                       'session': 1, 'chamber': 1}
+                       'session': 1, 'chamber': 1,
+                       'subjects': 1}
 
         # normal mongo search logic
-        _filter = _build_mongo_filter(request, ('state', 'chamber'))
+        _filter = _build_mongo_filter(request, ('state', 'chamber',
+                                                'subjects'))
 
         # process full-text query
         query = request.GET.get('q')
@@ -242,6 +254,11 @@ class EventsHandler(FiftyStateHandler):
 
         return list(db.events.find(spec).sort(
             'when', pymongo.DESCENDING).limit(20))
+
+
+class SubjectListHandler(FiftyStateHandler):
+    def read(self, request):
+        return settings.BILLY_SUBJECTS
 
 
 class ReconciliationHandler(BaseHandler):
