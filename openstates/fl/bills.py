@@ -49,40 +49,47 @@ class FLBillScraper(BillScraper):
 
             bill.add_sponsor('introducer', sponsor)
 
-            hist_table = page.xpath(
-                "//div[@id = 'tabBodyBillHistory']/table")[0]
-            for tr in hist_table.xpath("tbody/tr"):
-                date = tr.xpath("string(td[1])")
-                date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
+            try:
+                hist_table = page.xpath(
+                    "//div[@id = 'tabBodyBillHistory']/table")[0]
+                for tr in hist_table.xpath("tbody/tr"):
+                    date = tr.xpath("string(td[1])")
+                    date = datetime.datetime.strptime(
+                        date, "%m/%d/%Y").date()
 
-                actor = tr.xpath("string(td[2])")
-                actor = {'Senate': 'upper', 'House': 'lower'}.get(
-                    actor, actor)
+                    actor = tr.xpath("string(td[2])")
+                    actor = {'Senate': 'upper', 'House': 'lower'}.get(
+                        actor, actor)
 
-                act_text = tr.xpath("string(td[3])").strip()
-                for action in act_text.split(u'\u2022'):
-                    action = action.strip()
-                    if not action:
-                        continue
+                    act_text = tr.xpath("string(td[3])").strip()
+                    for action in act_text.split(u'\u2022'):
+                        action = action.strip()
+                        if not action:
+                            continue
 
-                    atype = []
-                    if action.startswith('Referred to'):
-                        atype.append('committee:referred')
-                    elif action.startswith('Favorable by'):
-                        atype.append('committee:passed')
-                    elif action == "Filed":
-                        atype.append("bill:filed")
-                    elif action.startswith("Withdrawn"):
-                        atype.append("bill:failed")
+                        atype = []
+                        if action.startswith('Referred to'):
+                            atype.append('committee:referred')
+                        elif action.startswith('Favorable by'):
+                            atype.append('committee:passed')
+                        elif action == "Filed":
+                            atype.append("bill:filed")
+                        elif action.startswith("Withdrawn"):
+                            atype.append("bill:failed")
 
-                    bill.add_action(actor, action, date, type=atype)
+                        bill.add_action(actor, action, date, type=atype)
+            except IndexError:
+                self.log("No bill history for %s" % bill_id)
 
-            version_table = page.xpath(
-                "//div[@id = 'tabBodyBillText']/table")[0]
-            for tr in version_table.xpath("tbody/tr"):
-                name = tr.xpath("string(td[1])").strip()
-                url = tr.xpath("td/a[1]")[0].attrib['href']
-                bill.add_version(name, url)
+            try:
+                version_table = page.xpath(
+                    "//div[@id = 'tabBodyBillText']/table")[0]
+                for tr in version_table.xpath("tbody/tr"):
+                    name = tr.xpath("string(td[1])").strip()
+                    url = tr.xpath("td/a[1]")[0].attrib['href']
+                    bill.add_version(name, url)
+            except IndexError:
+                self.log("No version table for %s" % bill_id)
 
             try:
                 analysis_table = page.xpath(
