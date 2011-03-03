@@ -70,8 +70,9 @@ class NameMatcher(object):
         self._term = term
 
         roles_elemMatch = {'state': state, 'type': 'member', 'term': term}
-        old_roles_query = {'old_roles.%s' % term: {'state': state,
-                                                   'type': 'member'}}
+        old_roles_query = {'old_roles.%s' % term: {'$elemMatch':
+                                                   {'state': state,
+                                                   'type': 'member'}}}
 
         for legislator in db.legislators.find({
             '$or': [{'roles': {'$elemMatch': roles_elemMatch}},
