@@ -33,6 +33,14 @@ def _build_mongo_filter(request, keys, icase=True):
     # queries are coming eventually:
     # http://jira.mongodb.org/browse/SERVER-90
     _filter = {}
+    keys = set(keys)
+
+    try:
+        keys.remove('subjects')
+        _filter['subjects'] = {'$all': request.GET.getlist('subject')}
+    except KeyError:
+        pass
+
     for key in keys:
         value = request.GET.get(key)
         if value:
@@ -41,6 +49,7 @@ def _build_mongo_filter(request, keys, icase=True):
                 _filter[key] = _chamber_aliases.get(value, value)
             else:
                 _filter[key] = re.compile('^%s$' % value, re.IGNORECASE)
+
     return _filter
 
 
@@ -104,7 +113,8 @@ class BillSearchHandler(FiftyStateHandler):
                        'subjects': 1}
 
         # normal mongo search logic
-        _filter = _build_mongo_filter(request, ('state', 'chamber'))
+        _filter = _build_mongo_filter(request, ('state', 'chamber',
+                                                'subjects'))
 
         # process full-text query
         query = request.GET.get('q')
