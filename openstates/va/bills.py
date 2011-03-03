@@ -190,6 +190,9 @@ class VABillScraper(BillScraper):
                     if name.endswith(u' (chief\xa0patron)'):
                         name = name[:-15]
                         type = 'primary'
+                    elif: name.endswith(u' chief(\xa0co-patron'):
+                        name = name[:-18]
+                        type = 'cosponsor'
                     else:
                         type = 'cosponsor'
                     bill.add_sponsor(type, name)
