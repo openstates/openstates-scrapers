@@ -41,8 +41,12 @@ class FLLegislatorScraper(LegislatorScraper):
                 district = link.xpath("string(../../td[1])")
                 party = link.xpath("string(../../td[2])")
 
+                photo_url = ("http://www.flsenate.gov/userContent/"
+                             "Senators/2010-2012/photos/s%03d.jpg" % (
+                                 int(district)))
+
                 leg = Legislator(term, 'upper', district, name,
-                                 party=party)
+                                 party=party, photo_url=photo_url)
                 leg.add_source(url)
 
                 self.save_legislator(leg)
