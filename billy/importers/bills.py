@@ -62,11 +62,6 @@ def import_votes(state, data_dir):
         # need to match bill_id already in the database
         bill_id = fix_bill_id(data.pop('bill_id'))
 
-        try:
-            del data['filename']
-        except KeyError:
-            pass
-
         votes[(data['bill_chamber'], data['session'], bill_id)].append(data)
 
     print 'imported %s vote files' % len(paths)

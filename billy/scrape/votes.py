@@ -1,5 +1,6 @@
 from __future__ import with_statement
 import os
+import itertools
 
 try:
     import json
@@ -12,6 +13,10 @@ from billy.scrape import Scraper, SourcedObject, JSONDateEncoder
 class VoteScraper(Scraper):
 
     scraper_type = 'votes'
+
+    def __init__(self, *args, **kwargs):
+        super(VoteScraper, self).__init__(*args, **kwargs)
+        self.sequence = itertools.count()
 
     def _get_schema(self):
         schema_path = os.path.join(os.path.split(__file__)[0],
@@ -36,7 +41,10 @@ class VoteScraper(Scraper):
 
         Should be called after all data for the given vote is collected.
         """
-        filename = vote["filename"] + ".json"
+        filename = '%s_%s_%s_seq%s.json' % (vote['session'],
+                                            vote['chamber'],
+                                            vote['bill_id'],
+                                            self.sequence.next())
 
         self.log("save_vote %s %s: %s '%s'" % (vote['session'],
                                                vote['chamber'],

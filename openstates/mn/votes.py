@@ -11,7 +11,6 @@ class MNVoteScraper(VoteScraper):
 
     yeanay_re = re.compile(r'(\d+) YEA and (\d+) Nay')
     date_re = re.compile(r'Date: (\d+/\d+/\d+)')
-    sequence = itertools.count(1)
 
     def scrape(self, chamber, session):
         self.validate_session(session)
@@ -60,10 +59,8 @@ class MNVoteScraper(VoteScraper):
             date = self.date_re.match(paragraphs[1].text_content()).groups()[0]
             date = datetime.datetime.strptime(date, '%m/%d/%Y')
 
-            filename = 'vote%s-%s' % (self.sequence.next(), bill_id)
             vote = Vote('lower', date, motion, yeas>nays, yeas, nays, 0,
-                        session=session, bill_id=bill_id, bill_chamber=chamber,
-                        filename=filename)
+                        session=session, bill_id=bill_id, bill_chamber=chamber)
             vote.add_source(vote_url)
 
             # first table has YEAs

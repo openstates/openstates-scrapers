@@ -127,7 +127,6 @@ def record_votes(root, session):
             vote['session'] = session[0:2]
             vote['method'] = 'record'
             vote['record'] = m.group('record')
-            vote['filename'] = m.group('record')
             vote['type'] = get_type(motion)
 
             for name in names(el):
@@ -178,7 +177,6 @@ def viva_voce_votes(root, session):
             vote['bill_chamber'] = bill_chamber
             vote['session'] = session[0:2]
             vote['method'] = 'viva voce'
-            vote['filename'] = record
             vote['record'] = record
             vote['type'] = get_type(motion)
             yield vote
@@ -216,7 +214,6 @@ def viva_voce_votes(root, session):
             vote['bill_chamber'] = bill_chamber
             vote['session'] = session[0:2]
             vote['method'] = 'viva voce'
-            vote['filename'] = record
             vote['record'] = record
             vote['type'] = get_type(motion)
 
