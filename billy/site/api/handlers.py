@@ -37,7 +37,8 @@ def _build_mongo_filter(request, keys, icase=True):
 
     try:
         keys.remove('subjects')
-        _filter['subjects'] = {'$all': request.GET.getlist('subject')}
+        if 'subject' in request.GET:
+            _filter['subjects'] = {'$all': request.GET.getlist('subject')}
     except KeyError:
         pass
 
