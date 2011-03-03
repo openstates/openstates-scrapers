@@ -1,4 +1,5 @@
 import re
+import urlparse
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
@@ -69,7 +70,12 @@ class FLLegislatorScraper(LegislatorScraper):
 
                 district = link.xpath('string(../../td[4])').strip()
 
+                split_url = urlparse.urlsplit(link.attrib['href'])
+                member_id = urlparse.parse_qs(split_url.query)['MemberId']
+                photo_url = ("http://www.flhouse.gov/FileStores/Web/"
+                             "Imaging/Member/%s.jpg" % member_id)
+
                 leg = Legislator(term, 'lower', district, name,
-                                 party=party)
+                                 party=party, photo_url=photo_url)
                 leg.add_source(url)
                 self.save_legislator(leg)
