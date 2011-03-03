@@ -80,5 +80,13 @@
   </ul>
 </div>
 
+<div class="photo">
+{% if leg.photo_url %}
+  <h4>Photo:</h4>
+  <img src="{{ leg.photo_url }}" />
+{% else %}
+  <h4>No photo_url</h4>
+{% endif %}
+</div>
 {% endblock %}
 
