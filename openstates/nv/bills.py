@@ -85,7 +85,7 @@ class NVBillScraper(BillScraper):
 
                     primary, secondary = self.scrape_sponsors(page)
 
-                    if primary[0] == 'By:':
+                    if primary and primary[0] == 'By:':
                         primary.pop(0)
 
                         if primary[0] == 'ElectionsProceduresEthicsand':
