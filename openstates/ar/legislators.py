@@ -47,10 +47,10 @@ class ARLegislatorScraper(LegislatorScraper):
                 party = 'Democratic'
 
             info_box = root.xpath('string(//table[@class="InfoTable"])')
-
             district = re.search(r'District(.+)\r', info_box).group(1).strip()
+            email = re.search(r'Email(.+)\r', info_box).group(1).strip()
 
-            leg = Legislator(term, chamber, district, full_name, party=party)
+            leg = Legislator(term, chamber, district, full_name, email=email, party=party)
             leg.add_source(member_url)
 
             self.save_legislator(leg)
