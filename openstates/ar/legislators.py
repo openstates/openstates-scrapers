@@ -46,11 +46,33 @@ class ARLegislatorScraper(LegislatorScraper):
             elif party == '(D)':
                 party = 'Democratic'
 
-            info_box = root.xpath('string(//table[@class="InfoTable"])')
-            district = re.search(r'District(.+)\r', info_box).group(1).strip()
-            email = re.search(r'Email(.+)\r', info_box).group(1).strip()
+            img = root.xpath('//img[@class="SitePhotos"]')[0]
+            photo_url = img.attrib['src']
 
-            leg = Legislator(term, chamber, district, full_name, email=email, party=party)
+            # Need to figure out a cleaner method for this later
+            info_box = root.xpath('string(//table[@class="InfoTable"])')
+            district = re.search(r'District(.+)\r', info_box).group(1)
+            try:
+                email = re.search(r'Email(.+)\r', info_box).group(1)
+            except:
+                email = None
+            try:
+                occupation = re.search(r'Occupation(.+)\r', info_box).group(1)
+            except:
+                occupation = None
+            try:
+                religion = re.search(r'Church Affiliation(.+)\r', info_box).group(1)
+            except:
+                religion = None
+            try:
+                veteran = re.search(r'Veteran(.+)\r', info_box).group(1)
+            except:
+                veteran = None
+
+            leg = Legislator(term, chamber, district, full_name, party=party,
+                             photo_url=photo_url, email=email,
+                             occupation=occupation, religion=religion,
+                             veteran=veteran)
             leg.add_source(member_url)
 
             self.save_legislator(leg)
