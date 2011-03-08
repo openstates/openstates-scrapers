@@ -49,7 +49,16 @@ class SDBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            bill = Bill(session, chamber, bill_id, title)
+            if re.match(r'^(S|H)B ', bill_id):
+                btype = ['bill']
+            elif re.match(r'(S|H)C ', bill_id):
+                btype = ['commemoration']
+            elif re.match(r'(S|H)JR ', bill_id):
+                btype = ['joint resolution']
+            else:
+                btype = ['bill']
+
+            bill = Bill(session, chamber, bill_id, title, type=btype)
             bill.add_source(url)
 
             regex_ns = "http://exslt.org/regular-expressions"
