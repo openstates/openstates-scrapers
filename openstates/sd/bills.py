@@ -103,6 +103,9 @@ class SDBillScraper(BillScraper):
                 elif 'Veto override, Failed' in action:
                     atypes.append('bill:veto_override:failed')
 
+                if 'Delivered to the Governor' in action:
+                    atypes.append('governor:received')
+
                 match = re.match("First read in (Senate|House)", action)
                 if match:
                     if match.group(1) == 'Senate':
