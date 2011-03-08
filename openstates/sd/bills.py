@@ -55,6 +55,8 @@ class SDBillScraper(BillScraper):
                 btype = ['commemoration']
             elif re.match(r'(S|H)JR ', bill_id):
                 btype = ['joint resolution']
+            elif re.match(r'(S|H)CR ', bill_id):
+                btype = ['concurrent resolution']
             else:
                 btype = ['bill']
 
