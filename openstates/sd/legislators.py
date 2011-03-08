@@ -76,4 +76,26 @@ class SDLegislatorScraper(LegislatorScraper):
                                     photo_url=photo_url,
                                     office_phone=office_phone)
             legislator.add_source(url)
+
+            comm_url = page.xpath("//a[. = 'Committees']")[0].attrib['href']
+            self.scrape_committees(legislator, comm_url)
+
             self.save_legislator(legislator)
+
+    def scrape_committees(self, leg, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            leg.add_source(url)
+
+            term = leg['roles'][0]['term']
+
+            for link in page.xpath("//a[contains(@href, 'CommitteeMem')]"):
+                comm = link.text.strip()
+
+                if comm.startswith('Joint'):
+                    chamber = 'joint'
+                else:
+                    chamber = leg['roles'][0]['chamber']
+
+                leg.add_role('committee member', term, chamber,
+                             committee=comm)
