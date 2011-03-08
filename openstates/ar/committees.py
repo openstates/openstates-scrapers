@@ -25,19 +25,19 @@ class ARCommitteeScraper(CommitteeScraper):
 
                 for a in page.xpath('//td[@class="dxtl dxtl__B0"] \
                                       /a'):
-                    name = a.text
+                    name = a.text.strip()
                     comm_url = url_fix(a.attrib['href'])
                     if chamber == 'task_force':
                         chamber = 'joint'
                     self.scrape_committee(chamber, name, comm_url)
 
 
-    def scrape_committee(self, chamber, name, url):
+    def scrape_committee(self, chamber, name, url, subcommittee=None):
+        comm = Committee(chamber, name, subcommittee=subcommittee)
+        comm.add_source(url)
+
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
-
-            comm = Committee(chamber, name)
-            comm.add_source(url)
 
             for tr in page.xpath('//table[@class="gridtable"] \
                                    /tr[position()>1]'):
@@ -48,6 +48,13 @@ class ARCommitteeScraper(CommitteeScraper):
                 member = tr.xpath('string(td[3])').split()
                 member = ' '.join(member[1:])
                 comm.add_member(member, mtype)
+
+            for a in page.xpath('//ul \
+                                  /li \
+                                  /a'):
+                sub_name = a.text.strip()
+                sub_url = url_fix(a.attrib['href'])
+                self.scrape_committee(chamber, name, sub_url, subcommittee=sub_name)
 
             self.save_committee(comm)
 
