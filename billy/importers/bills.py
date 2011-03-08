@@ -167,7 +167,8 @@ def import_bills(state, data_dir):
     print 'imported %s bill files' % len(paths)
 
     for remaining in votes.keys():
-        print 'Failed to match vote %s %s %s' % remaining
+        print 'Failed to match vote %s %s %s' % [
+            r.encode('ascii', 'replace') for r in remaining]
 
     populate_current_fields(state)
     ensure_indexes()
