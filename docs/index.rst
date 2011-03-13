@@ -9,8 +9,7 @@ Documentation
 .. toctree::
    :maxdepth: 2
 
-   api
-   api.changelog
    scrapers
+   metadata
    configuration
    scripts
