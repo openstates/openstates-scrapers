@@ -4,11 +4,7 @@ import sys
 import glob
 import logging
 import datetime
-
-try:
-    import json
-except:
-    import simplejson as json
+import json
 
 from billy import db
 from billy.importers.names import get_legislator_id

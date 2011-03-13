@@ -1,5 +1,3 @@
-from __future__ import with_statement
-
 from BeautifulSoup import BeautifulSoup
 
 from billy.scrape import NoDataForPeriod

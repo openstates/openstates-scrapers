@@ -5,16 +5,13 @@ import logging
 import os
 import sys
 import argparse
+import json
 
 from billy.conf import settings, base_arg_parser
 from billy.scrape import (NoDataForPeriod, JSONDateEncoder,
                                 _scraper_registry)
 from billy.scrape.validator import DatetimeValidator
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
 class RunException(Exception):
     """ exception when trying to run a scraper """

@@ -1,19 +1,14 @@
-from __future__ import with_statement
 import os
 import time
 import logging
 import urllib2
 import datetime
 import contextlib
+import json
 from optparse import make_option, OptionParser
 from collections import defaultdict
 
 from billy.scrape.validator import DatetimeValidator
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
 from billy.conf import settings
 

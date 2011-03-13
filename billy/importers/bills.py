@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import with_statement
 import os
 import re
 import sys
@@ -7,11 +6,7 @@ import time
 import glob
 import datetime
 from collections import defaultdict
-
-try:
-    import json
-except:
-    import simplejson as json
+import json
 
 from billy.utils import keywordize
 from billy import db

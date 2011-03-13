@@ -1,10 +1,5 @@
-from __future__ import with_statement
 import os
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import json
 
 from billy.scrape import Scraper, SourcedObject, JSONDateEncoder
 

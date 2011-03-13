@@ -7,11 +7,7 @@ import zipfile
 import datetime
 import urllib2
 import urllib
-
-try:
-    import json
-except:
-    import simplejson as json
+import json
 
 from billy.conf import settings, base_arg_parser
 from billy import db

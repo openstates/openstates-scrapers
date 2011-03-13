@@ -1,5 +1,6 @@
 import re
 import datetime
+import json
 
 from billy import db
 from billy.conf import settings
@@ -13,12 +14,6 @@ from piston.utils import rc
 from piston.handler import BaseHandler, HandlerMetaClass
 
 from jellyfish import levenshtein_distance
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
 
 _chamber_aliases = {
     'assembly': 'lower',
