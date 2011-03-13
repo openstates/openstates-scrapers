@@ -61,6 +61,9 @@ class FLBillScraper(BillScraper):
                     actor = {'Senate': 'upper', 'House': 'lower'}.get(
                         actor, actor)
 
+                    if not actor:
+                        continue
+
                     act_text = tr.xpath("string(td[3])").strip()
                     for action in act_text.split(u'\u2022'):
                         action = action.strip()
