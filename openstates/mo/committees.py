@@ -12,24 +12,6 @@ class MOCommitteeScraper(CommitteeScraper):
     senate_url_base = 'http://www.senate.mo.gov/'
     no_members_text = 'This Committee does not have any members'
 
-    def urlopen(self, url):
-       """Override for testing, cache pages."""
-       CACHE_DIR = os.path.expanduser('~/OpenStateCache')
-
-       if not os.path.exists(CACHE_DIR):
-           raise ValueError('Directory %s does not exist.'%CACHE_DIR)
-       try:
-           url_filename = url.replace('/', '_')
-           with open(os.path.join(CACHE_DIR,url_filename),'r') as cached_file:
-               response = Response(url, url, code=200, fromcache=True, headers={})
-               result = self._wrap_result(response, cached_file.read())
-           return result
-       except IOError:
-           page = super(MOCommitteeScraper, self).urlopen(url)
-           cached_file = open(os.path.join(CACHE_DIR,url_filename), 'w')
-           cached_file.write(page)
-           return page
-
     def scrape(self, chamber, term_name):
         session = None
         if chamber == 'upper':
