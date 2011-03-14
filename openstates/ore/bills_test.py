@@ -11,7 +11,10 @@ class BillsTest(unittest.TestCase):
     def setUp(self):
         self.bills = []
         self.s = bills.OREBillScraper(None)
-        self.s.rawdataByYear[2011] = open(path.join(path.dirname(__file__),'testdata/measures.txt')).read()
+        self.s.rawdataByYear[2011] = (
+            open(path.join(path.dirname(__file__),'testdata/measures.txt')).read(),
+            open(path.join(path.dirname(__file__),'testdata/meashistory.txt')).read()
+        )
         # replace base class method for saving bill data
         self.s.save_bill = lambda b: self.bills.append(b)
 
@@ -46,6 +49,21 @@ class BillsTest(unittest.TestCase):
                 'bill_id' : 'SB 0003',
                 'session' : self.session,
                 'chamber' : 'upper' }, self.bills[0])
+
+    def testCanParseActions(self):
+        actions = self.s.parse_actions(self.s.rawdataByYear[2011][1])
+        self.assertEquals(7907, len(actions))
+        self.assertEquals('HB 2659', actions[0]['bill_id'])
+        self.assertEquals("First reading. Referred to Speaker's desk.", actions[0]['action'])
+        self.assertEquals('2011-01-11 12:36:18', actions[0]['date'].strftime("%Y-%m-%d %H:%M:%S"))
+        self.assertEquals('lower', actions[0]['actor'])
+
+    def testCanGroupActionsByBill(self):
+        actions_by_bill = self.s.parse_actions_and_group(self.s.rawdataByYear[2011][1])
+        actions = actions_by_bill['HB 2659']
+        self.assertEquals(2, len(actions))
+        self.assertEquals("First reading. Referred to Speaker's desk.", actions[0]['action'])
+        self.assertEquals("Referred to Judiciary.", actions[1]['action'])
 
     def _testLoadFtpData(self):
         # this test is a little slow b/c it actually loads the
