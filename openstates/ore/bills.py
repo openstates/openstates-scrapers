@@ -5,6 +5,68 @@ from openstates.ore.utils import year_from_session
 
 import datetime as dt
 import pytz
+import re
+import urllib
+
+class BillDetailsParser(object):
+
+    search_url = 'http://www.leg.state.or.us/cgi-bin/searchMeas.pl'
+
+    re_versions = re.compile('>\n([^\(]+)\([^"]+"([^"]+)"')
+    re_sponsors = re.compile('<td><b>By ([^;]+); ')
+
+    years_to_lookin = {
+        2011 : '11reg',
+        2010 : '10ssl',
+        2009 : '09reg',
+        2008 : '08ssl',
+        2007 : '07reg',
+        2005 : '05reg',
+        2003 : '03reg',
+        2001 : '01reg',
+        1999 : '99reg'
+    }
+
+    def fetch_and_parse(self, scraper, session, bill_id):
+        output = None
+        params = self.resolve_search_params(session, bill_id)
+        if params:
+            html = scraper.urlopen(self.search_url, method='POST', body=urllib.urlencode(params))
+            output = self.parse(html)
+        return output
+
+    def parse(self, html):
+        output = { 'sponsors' : [ ], 'versions': [ ] }
+        subhtml = html[(html.find("</h1><p></p>")+11):html.find("<center><br><table")]
+        for match in self.re_versions.findall(subhtml):
+            #print match
+            output['versions'].insert(0, {'name': match[0].strip(), 'url': match[1].strip() })
+        subhtml = html[html.find("<center><br><table"):]
+        match = self.re_sponsors.search(subhtml)
+        if match:
+            val = match.groups()[0]
+            if val.find("--") > 0:
+                val = val[:val.find("--")]
+            for name in val.split(","):
+                name = name.replace('Representatives','')
+                name = name.replace('Representative','')
+                name = name.replace('Senator','')
+                name = name.replace('Senators','')                
+                output['sponsors'].append(name.strip())
+        return output
+
+    def resolve_search_params(self, session, bill_id):
+        year = year_from_session(session)
+        if self.years_to_lookin.has_key(year):
+            (chamber, number) = bill_id.split(" ")
+            return {
+                'lookin'  : self.years_to_lookin[year],
+                'lookfor' : chamber.lower(),
+                'number'  : number,
+                'submit'  : 'Search'
+            }
+        else:
+            return None
 
 class OREBillScraper(BillScraper):
     baseFtpUrl    = 'ftp://landru.leg.state.or.us'
@@ -16,6 +78,8 @@ class OREBillScraper(BillScraper):
     rawdataByYear = { }
 
     actionsByBill = { }
+
+    versionsSponsorsParser = BillDetailsParser()
 
     def scrape(self, chamber, session):
         sessionYear = year_from_session(session)
@@ -59,7 +123,7 @@ class OREBillScraper(BillScraper):
                 (month, day, year)     = date.split("/")
                 (hour, minute, second) = time.split(":")
                 actor = "upper"
-                if prefix == "HB": actor = "lower"
+                if house == "H": actor = "lower"
                 action = {
                     "bill_id" : "%s %s" % (prefix, number.zfill(4)),
                     "action"  : note.strip(),
@@ -78,6 +142,15 @@ class OREBillScraper(BillScraper):
                 if self.actionsByBill.has_key(bill_id):
                     for a in self.actionsByBill[bill_id]:
                         bill.add_action(a['actor'], a['action'], a['date'])
+                versionsSponsors = self.versionsSponsorsParser.fetch_and_parse(self, session, bill_id)
+                if versionsSponsors:
+                    for ver in versionsSponsors['versions']:
+                        bill.add_version(ver['name'], ver['url'])
+                    sponsorType = 'primary'
+                    if len(versionsSponsors['sponsors']) > 0:
+                        sponsorType = 'cosponsor'
+                    for name in versionsSponsors['sponsors']:
+                        bill.add_sponsor(sponsorType, name)
                 self.save_bill(bill)
 
     def _load_data(self, session):
@@ -109,14 +182,5 @@ class OREBillScraper(BillScraper):
             return filename
         else:
             return 'archive/%02d%s' % (sessionTwoDigitYear, filename)
-
-
-
-
-
-
-
-
-
 
 
