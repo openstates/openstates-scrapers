@@ -7,7 +7,7 @@
     "state": {"type": "string", "pattern": "^[a-z]{2}$"},
     "chamber": {"type": "string", "enum": ["upper", "lower", "joint"]},
     "parent_id": {"type": ["string", "null"],
-      "pattern": "^[A-Z]{2}C\\d{6}$", "optional": true},
+      "pattern": "^[A-Z]{2}C\\d{6}$", "required": false},
     "members": {"type": "array", "items": {"type": "object", "properties": {
         "role": {"type": "string"},
         "name": {"type": "string"},
