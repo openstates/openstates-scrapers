@@ -4,7 +4,7 @@ from django.contrib import admin
 
 
 urlpatterns = patterns('',
-    (r'^api/locksmith/', include('locksmith.auth.urls')),
+    (r'^api/locksmith/', include('locksmith.mongoauth.urls')),
     (r'^api/', include('billy.site.api.urls')),
     (r'^browse/', include('billy.site.browse.urls')),
     (r'^downloads/$', 'billy.site.api.views.downloads'),

@@ -1,4 +1,3 @@
-import re
 import datetime
 
 from billy.scrape.bills import BillScraper, Bill
@@ -60,6 +59,9 @@ class FLBillScraper(BillScraper):
                     actor = tr.xpath("string(td[2])")
                     actor = {'Senate': 'upper', 'House': 'lower'}.get(
                         actor, actor)
+
+                    if not actor:
+                        continue
 
                     act_text = tr.xpath("string(td[3])").strip()
                     for action in act_text.split(u'\u2022'):

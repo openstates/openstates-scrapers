@@ -1,14 +1,9 @@
 #!/usr/bin/env python
-from __future__ import with_statement
 import os
 import sys
 import glob
 import datetime
-
-try:
-    import json
-except:
-    import simplejson as json
+import json
 
 from billy import db
 from billy.importers.utils import insert_with_id, update, prepare_obj

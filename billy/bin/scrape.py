@@ -5,16 +5,13 @@ import logging
 import os
 import sys
 import argparse
+import json
 
 from billy.conf import settings, base_arg_parser
 from billy.scrape import (NoDataForPeriod, JSONDateEncoder,
                                 _scraper_registry)
 from billy.scrape.validator import DatetimeValidator
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
 class RunException(Exception):
     """ exception when trying to run a scraper """
@@ -69,6 +66,9 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
             'retry_wait_seconds': settings.SCRAPELIB_RETRY_WAIT_SECONDS,
             # TODO: cache_dir, error_dir?
         }
+    if options.fastmode:
+        opts['requests_per_minute'] = 0
+        opts['use_cache_first'] = True
     scraper = ScraperClass(metadata, **opts)
 
     # times: the list to iterate over for second scrape param
@@ -147,6 +147,8 @@ def main():
                         "encountering validation warning")
     parser.add_argument('-n', '--no_cache', action='store_true',
                         dest='no_cache', help="don't use web page cache")
+    parser.add_argument('--fastmode', help="scrape in fast mode",
+                        action="store_true", default=False)
     parser.add_argument('-r', '--rpm', action='store', type=int, dest='rpm',
                         default=60),
 

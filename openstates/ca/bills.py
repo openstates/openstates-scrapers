@@ -3,11 +3,9 @@ import os
 import datetime
 
 from billy.conf import settings
-from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from openstates.ca import metadata
-from openstates.ca.models import CABill, CABillVersion
+from openstates.ca.models import CABill
 
 from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy import create_engine

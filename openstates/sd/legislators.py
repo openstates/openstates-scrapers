@@ -1,6 +1,5 @@
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.sd import metadata
 
 import lxml.html
 

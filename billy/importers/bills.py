@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import with_statement
 import os
 import re
 import sys
@@ -7,11 +6,7 @@ import time
 import glob
 import datetime
 from collections import defaultdict
-
-try:
-    import json
-except:
-    import simplejson as json
+import json
 
 from billy.utils import keywordize
 from billy import db
@@ -167,8 +162,8 @@ def import_bills(state, data_dir):
     print 'imported %s bill files' % len(paths)
 
     for remaining in votes.keys():
-        print 'Failed to match vote %s %s %s' % [
-            r.encode('ascii', 'replace') for r in remaining]
+        print 'Failed to match vote %s %s %s' % tuple([
+            r.encode('ascii', 'replace') for r in remaining])
 
     populate_current_fields(state)
     ensure_indexes()

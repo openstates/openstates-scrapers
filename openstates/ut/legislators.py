@@ -1,5 +1,4 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.ut import metadata
 
 import lxml.html
 
