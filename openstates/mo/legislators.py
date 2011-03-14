@@ -1,11 +1,7 @@
-import re
-import datetime
-
-from billy.scrape import NoDataForPeriod
-from billy.scrape.legislators import LegislatorScraper, Legislator
-
 import lxml.html
 import xlrd
+
+from billy.scrape.legislators import LegislatorScraper, Legislator
 
 
 class MOLegislatorScraper(LegislatorScraper):
@@ -68,18 +64,22 @@ class MOLegislatorScraper(LegislatorScraper):
             table = page.xpath(table_xpath)[0]
             for tr in table.xpath('tr'):
                 tds = tr.xpath('td')
+                leg_code = tds[0].xpath('a[1]')[0].attrib.get('href')
                 last_name = tds[0].text_content().strip()
                 first_name = tds[1].text_content().strip()
                 full_name = '%s %s' % (first_name, last_name)
                 district = str(int(tds[2].text_content().strip()))
                 party = tds[3].text_content().strip()
+                if party == 'Democrat':
+                    party = 'Democratic'
                 phone = tds[4].text_content().strip()
                 room = tds[5].text_content().strip()
                 address = self.assumed_address_fmt % (room if room else '')
                 leg = Legislator(term, chamber, district, full_name=full_name,
                                 first_name=first_name, last_name=last_name,
                                 party=party, phone=phone,
-                                office_address=address)
+                                office_address=address,
+                                _code=leg_code)
                 leg.add_source(url)
                 self.save_legislator(leg)
 
