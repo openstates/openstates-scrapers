@@ -96,5 +96,5 @@ class SDLegislatorScraper(LegislatorScraper):
                 else:
                     chamber = leg['roles'][0]['chamber']
 
-                leg.add_role('committee member', term, chamber,
+                leg.add_role('committee member', term, chamber=chamber,
                              committee=comm)
