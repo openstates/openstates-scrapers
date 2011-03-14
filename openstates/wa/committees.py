@@ -1,5 +1,3 @@
-import urllib
-
 from .utils import xpath
 from billy.scrape.committees import CommitteeScraper, Committee
 

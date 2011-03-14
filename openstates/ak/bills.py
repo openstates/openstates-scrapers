@@ -1,5 +1,5 @@
 import re
-import datetime as dt
+import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
@@ -158,7 +158,7 @@ class AKBillScraper(BillScraper):
             for row in act_rows:
                 cols = row.findAll('td')
                 act_date = cols[0].font.contents[0]
-                act_date = dt.datetime.strptime(act_date, '%m/%d/%y')
+                act_date = datetime.datetime.strptime(act_date, '%m/%d/%y')
 
                 if cols[2].font.string == "(H)":
                     act_chamber = "lower"
@@ -182,7 +182,7 @@ class AKBillScraper(BillScraper):
                 match = re.match('^Prefile released (\d+/\d+/\d+)$', action)
                 if match:
                     action = 'Prefile released'
-                    act_date = dt.datetime.strptime(match.group(1),
+                    act_date = datetime.datetime.strptime(match.group(1),
                                                     '%m/%d/%y')
 
                 bill.add_action(act_chamber, action, act_date, type=atype)

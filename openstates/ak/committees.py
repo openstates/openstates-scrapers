@@ -1,7 +1,3 @@
-import re
-import datetime
-
-from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html

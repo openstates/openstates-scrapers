@@ -1,7 +1,7 @@
 import re
 import datetime
 
-from billy.scrape import NoDataForPeriod, ScrapeError
+from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
