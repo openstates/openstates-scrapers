@@ -87,6 +87,8 @@ class MOCommitteeScraper(CommitteeScraper):
                             continue
                         mem_name = (mem_parts[1].strip() + ' ' +
                                     mem_parts[0].strip())
+                        # Sometimes Senator abbreviation is in the name
+                        mem_name = mem_name.replace(' Sen. ')
                         mem_role = 'member'
                         if len(mem_parts) > 2:
                             # Handle the case where there is a comma in the
