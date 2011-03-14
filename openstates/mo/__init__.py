@@ -1,5 +1,6 @@
 metadata = {
     'state_name': 'Missouri',
+    'abbreviation': 'mo',
     'legislature_name': 'Missouri General Assembly',
     'lower_chamber_name': 'House of Representatives',
     'upper_chamber_name': 'Senate',
@@ -27,5 +28,9 @@ metadata = {
                  'sub_sessions': ['2007 Extraordinary Session']},
         '2008': {'years': [2008], 'sub_sessions': []},
         '2009': {'years': [2009], 'sub_sessions': []}
-    }
+    },
+    'terms': [
+        {'name': '2011-2012', 'sessions': ['2001'], 'start_year': 2011,
+         'end_year': 2012}
+    ],
 }
