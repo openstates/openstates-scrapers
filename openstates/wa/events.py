@@ -1,5 +1,3 @@
-import os
-import re
 import datetime
 
 from billy.scrape.events import EventScraper, Event

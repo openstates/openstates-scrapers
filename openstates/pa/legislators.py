@@ -2,7 +2,6 @@ import re
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.pa import metadata
 from openstates.pa.utils import legislators_url
 
 import lxml.html
