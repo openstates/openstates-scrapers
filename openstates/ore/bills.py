@@ -1,195 +1,223 @@
-from billy.scrape import ScrapeError, NoDataForPeriod
-from billy.scrape.votes import Vote
+#from billy.scrape import ScrapeError, NoDataForPeriod
+#from billy.scrape.votes import Vote
 from billy.scrape.bills import BillScraper, Bill
-from openstates.ore.utils import bills_url, base_url, year_from_session
+from openstates.ore.utils import year_from_session
 
-import lxml.html
-import re
 import datetime as dt
+import pytz
+import re
+
+class BillDetailsParser(object):
+
+    search_url = 'http://www.leg.state.or.us/cgi-bin/searchMeas.pl'
+
+    re_versions = re.compile('>\n([^\(]+)\([^"]+"([^"]+)"')
+    re_sponsors = re.compile('<td><b>By ([^<]+)<')
+
+    #
+    # this is the mapping of years to
+    # 'lookin' search values for the search form for
+    # bill detail pages.
+    #
+    # go to search_url above and view source
+    # we may want to build this list dynamically
+    # as it appears there's a pattern
+    #
+    years_to_lookin = {
+        2011 : '11reg',
+        2010 : '10ss1',
+        2009 : '09reg',
+        2008 : '08ss1',
+        2007 : '07reg',
+        2005 : '05reg',
+        2003 : '03reg',
+        2001 : '01reg',
+        1999 : '99reg'
+    }
+
+    def fetch_and_parse(self, scraper, session, bill_id):
+        output = None
+        params = self.resolve_search_params(session, bill_id)
+        if params:
+            # can't use urllib.urlencode() because this search URL
+            # expects post args in a certain order it appears
+            # (I didn't believe it either until I manually tested via curl)
+            # none of these params should need to be encoded
+            postdata = "lookfor=%s&number=%s&lookin=%s&submit=Search" % (params['lookfor'], params['number'], params['lookin'])
+            html = scraper.urlopen(self.search_url, method='POST', body=postdata)
+            #print "fetch_and_parse postdata: %s  html: %s" % (postdata, html)
+            output = self.parse(html)
+        return output
+
+    def parse(self, html):
+        output = { 'sponsors' : [ ], 'versions': [ ] }
+        subhtml = html[(html.find("</h1></p>")+8):html.find("<center><table BORDER")]
+        for match in self.re_versions.findall(subhtml):
+            #print match
+            output['versions'].insert(0, {'name': match[0].strip(), 'url': match[1].strip() })
+        subhtml = html[html.find("<center><table BORDER"):]
+        match = self.re_sponsors.search(subhtml)
+        if match:
+            val = match.groups()[0]
+            end1 = val.find("--")
+            end2 = val.find(";")
+            if end1 > -1 and end2 > -1:
+                if end1 > end2:
+                    val = val[:end2]
+                else:
+                    val = val[:end1]
+            elif end1 > -1:
+                val = val[:end1]
+            else:
+                val = val[:end2]
+            for name in val.split(","):
+                name = name.replace('Representatives','')
+                name = name.replace('Representative','')
+                name = name.replace('Senator','')
+                name = name.replace('Senators','')                
+                output['sponsors'].append(name.strip())
+        return output
+
+    def resolve_search_params(self, session, bill_id):
+        year = year_from_session(session)
+        if self.years_to_lookin.has_key(year):
+            (chamber, number) = bill_id.split(" ")
+            number = str(int(number))  # remove leading zeros
+            return {
+                'lookin'  : self.years_to_lookin[year],
+                'lookfor' : chamber.lower(),
+                'number'  : number,
+                'submit'  : 'Search'
+            }
+        else:
+            return None
 
 class OREBillScraper(BillScraper):
-    state = 'or'
+    baseFtpUrl    = 'ftp://landru.leg.state.or.us'
+    state         = 'or'
+    timeZone      = pytz.timezone('US/Pacific')
+
+    load_versions_sponsors = True
+
+    # key: year (int)
+    # value: raw measures data for that year from OR FTP server
+    rawdataByYear = { }
+
+    actionsByBill = { }
+
+    versionsSponsorsParser = BillDetailsParser()
 
     def scrape(self, chamber, session):
-        bills_link = bills_url()
-        bills_sessions_pages = []
+        sessionYear = year_from_session(session)
+        currentYear = dt.date.today().year
+        source_url = self._resolve_ftp_url(sessionYear, currentYear)
 
-        with self.urlopen(bills_link) as bills_page_html:
-            bills_page = lxml.html.fromstring(bills_page_html)
-            for element, attribute, link, pos in bills_page.iterlinks():
-                match = re.search("..(/measures[0-9]{2}s?.html)", link)
-                if match != None:
-                    bills_sessions_pages.append(base_url() + match.group(1))
+        (billData, actionData) = self._load_data(session)
+        self.actionsByBill = self.parse_actions_and_group(actionData)
+        
+        first = True
+        for line in billData.split("\n"):
+            if first: first = False
+            else: self._parse_bill(session, chamber, source_url, line.strip())
 
-        year = year_from_session(session)
+    def parse_actions_and_group(self, data):
+        by_bill_id = { }
+        for a in self.parse_actions(data):
+            bill_id = a['bill_id']
+            if not by_bill_id.has_key(bill_id):
+                by_bill_id[bill_id] = [ ]
+            by_bill_id[bill_id].append(a)
+        return by_bill_id
 
-        shortened_year = int(year) % 100
+    def parse_actions(self, data):
+        actions = [ ]
+        first = True
+        for line in data.split("\n"):
+            if first:
+                first = False
+            else:
+                action = self._parse_action_line(line)
+                if action:
+                    actions.append(action)
+        return sorted(actions, key=lambda k: k['date'])
 
-        if shortened_year == 00:
-            return
+    def _parse_action_line(self, line):
+        action = None
+        if line:
+            (combined_id, prefix, number, house, date, time, note) = line.split("\xe4")
+            if prefix == "HB" or prefix == "SB":
+                (month, day, year)     = date.split("/")
+                (hour, minute, second) = time.split(":")
+                actor = "upper"
+                if house == "H": actor = "lower"
+                action = {
+                    "bill_id" : "%s %s" % (prefix, number.zfill(4)),
+                    "action"  : note.strip(),
+                    "date"    : self.timeZone.localize(dt.datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))),
+                    "actor"   : actor
+                }
+        return action
 
-        pages_for_year = []
+    def _parse_bill(self, session, chamber, source_url, line):
+        if line:
+            (type, combined_id, number, title, relating_to) = line.split("\xe4")
+            if (type == 'HB' and chamber == 'lower') or (type == 'SB' and chamber == 'upper'):
+                #
+                # basic bill info
+                bill_id = "%s %s" % (type, number.zfill(4))
+                bill = Bill(session, chamber, bill_id, title)
+                bill.add_source(source_url)
 
-        for bsp in bills_sessions_pages:
-            if str(shortened_year) in bsp:
-                pages_for_year.append(bsp)
+                #
+                # add actions
+                if self.actionsByBill.has_key(bill_id):
+                    for a in self.actionsByBill[bill_id]:
+                        bill.add_action(a['actor'], a['action'], a['date'])
 
-        measure_pages = []
-        bill_pages_directory = []
+                if self.load_versions_sponsors:
+                    # add versions and sponsors
+                    versionsSponsors = self.versionsSponsorsParser.fetch_and_parse(self, session, bill_id)
+                    #print "versionsSponsors: %s" % str(versionsSponsors)
+                    if versionsSponsors:
+                        for ver in versionsSponsors['versions']:
+                            bill.add_version(ver['name'], ver['url'])
+                        sponsorType = 'primary'
+                        if len(versionsSponsors['sponsors']) > 1:
+                            sponsorType = 'cosponsor'
+                        for name in versionsSponsors['sponsors']:
+                            bill.add_sponsor(sponsorType, name)
 
-        for pfy in pages_for_year:
-            with self.urlopen(pfy) as year_bills_page_html:
-                year_bills_page = lxml.html.fromstring(year_bills_page_html)
-                for element, attribute, link, pos in year_bills_page.iterlinks():
-                    if chamber == 'upper':
-                        link_part = 'senmh'
-                    else:
-                        link_part = 'hsemh'
+                # save - writes out JSON
+                self.save_bill(bill)
 
-                    regex = "([0-9]{2}(reg|ss[0-9]))/pubs/" + link_part + ".(html|txt)"
-                    match = re.search(regex, link)
+    def _load_data(self, session):
+        sessionYear = year_from_session(session)
+        if not self.rawdataByYear.has_key(sessionYear):
+            url = self._resolve_ftp_url(sessionYear, dt.date.today().year)
+            actionUrl = self._resolve_action_ftp_url(sessionYear, dt.date.today().year)
+            self.rawdataByYear[sessionYear] = ( self.urlopen(url), self.urlopen(actionUrl) )
+        return self.rawdataByYear[sessionYear]
 
-                    if match != None:
-                        measure_pages.append(base_url() + match.group(0))
-                        bill_pages_directory.append(base_url() + match.group(1) + "/measures/main.html")
+    def _resolve_ftp_url(self, sessionYear, currentYear):
+        url = "%s/pub/%s" % (self.baseFtpUrl, self._resolve_ftp_path(sessionYear, currentYear))
+        return url
 
-        bill_pages = []
+    def _resolve_action_ftp_url(self, sessionYear, currentYear):
+        url = "%s/pub/%s" % (self.baseFtpUrl, self._resolve_action_ftp_path(sessionYear, currentYear))
+        return url    
 
-        for bp in bill_pages_directory:
-            with self.urlopen(bp) as bills_page_html:
-                bills_page = lxml.html.fromstring(bills_page_html)
-                for element, attribute, link, pos in bills_page.iterlinks():
-                    if re.search(' +.html +', link)!= None:
-                        continue
+    def _resolve_ftp_path(self, sessionYear, currentYear):
+        return self._resolve_path_generic(sessionYear, currentYear, 'measures.txt')
 
-                    base_link = bp.rstrip('main.html')
+    def _resolve_action_ftp_path(self, sessionYear, currentYear):
+        return self._resolve_path_generic(sessionYear, currentYear, 'meashistory.txt')
 
-                    if chamber == 'upper':
-                        if link[0] == 's':
-                            bill_pages.append(base_link + link.translate(None, '\n'))
-                    else:
-                        if link[0] == 'h':
-                            bill_pages.append(base_link + link.translate(None, '\n'))
-
-        # Remove unnecesary link
-        bill_pages.pop(0)
-
-        bills_dict = {}
-
-        for bp in bill_pages:
-            with self.urlopen(bp) as bills_page_html:
-                bills_page = lxml.html.fromstring(bills_page_html)
-                bills = bills_page.cssselect('a')
-                for b in bills:
-                    bill_description = b.text_content()
-                    title, sep, version = bill_description.partition('-')
-                    splitted_title = title.split()
-                    bill_number = splitted_title[-1]
-                    splitted_title.pop(-1)
-                    initials = ''
-                    for t in splitted_title:
-                        initials += t[0]
-
-                    key = initials + ' ' + bill_number.lstrip('0')
-                    link = b.iterlinks().next()[2]
-
-                    try:
-                        bills_dict[key]
-                    except KeyError:
-                        bills_dict[key] = []
-
-                    bills_dict[key].append((version, base_link + link))
-
-        if chamber == 'upper':
-            markers = ('SB', 'SR', 'SJR', 'SJM', 'SCR', 'SM')
+    def _resolve_path_generic(self, sessionYear, currentYear, filename):
+        currentTwoDigitYear = currentYear % 100
+        sessionTwoDigitYear = sessionYear % 100
+        if currentTwoDigitYear == sessionTwoDigitYear:
+            return filename
         else:
-            markers = ('HB', 'HR', 'HJR', 'HJM', 'HCR', 'JM')
-
-        bill_info = {}
-
-        for mp in measure_pages:
-            with self.urlopen(mp) as measure_page_html:
-                measure_page = lxml.html.fromstring(measure_page_html)
-                measures = measure_page.text_content()
-                lines = measures.split('\n')
-
-                raw_date = ''
-                action_party = ''
-                key = ''
-                text = ''
-                actions = []
-                first_bill = True
-
-                for line in lines:
-                    date_match = re.search('([0-9]{1,2}-[0-9]{1,2})(\((S|H)\))? ', line)
-
-                    marker_in_line = False
-                    for marker in markers:
-                        if marker in line[0:2]:
-                            marker_in_line = True
-                            break
-
-                    if marker_in_line:
-                        if not first_bill:
-                            value = bill_info[key]
-                            date = dt.datetime.strptime(raw_date + '-' + year, '%m-%d-%Y')
-                            actions.append((date, action_party, self.clean_space(text)))
-                            value.append(actions)
-                            actions = []
-
-                        else:
-                            first_bill = False
-
-                        new_bill = True
-                        regex = marker + ' +[0-9]{1,4}'
-                        key_match = re.search(regex, line)
-                        if key_match == None:
-                            print line
-                            print regex
-                        key  = self.clean_space(key_match.group(0))
-                        text = line.split(key)[1]
-
-                    elif date_match != None:
-                        if new_bill:
-                            bill_info[key] = [self.clean_space(text)]
-                            print self.clean_space(text)
-                            print
-                            new_bill = False
-
-                        else:
-                            date = dt.datetime.strptime(raw_date + '-' + year, '%m-%d-%Y')
-                            actions.append((date, action_party, self.clean_space(text)))
-
-                        raw_date = date_match.group(1)
-                        action_party = date_match.group(2)
-                        text = line.split(date_match.group(0))[1]
-
-                    elif line.isspace():
-                        continue
-
-                    elif '---' in line:
-                        continue
-
-                    else:
-                        text = text + ' ' + line
-
-#            for key, value in bill_info.iteritems():
-#                print key
-#                text = value[0]
-#                print text
-#                actions = value[1]
-#                for a in actions:
-#                    print a[0]
-#                    print a[1]
-#                    print a[2]
-
-
-
-
-
-
-
-
-
+            return 'archive/%02d%s' % (sessionTwoDigitYear, filename)
 
 

@@ -4,8 +4,8 @@ status = dict(
     sponsors=False,
     actions=False,
     votes=False,
-    legislators=False,
-    contributors=['Gabriel J. Perez-Irizarry'],
+    legislators=True,
+    contributors=['Gabriel J. Perez-Irizarry', 'James Cooper <james@bitmechanic.com>'],
     notes="Legislator data available for only 2009. Oregon does not hold annual sessions.",
 )
 
