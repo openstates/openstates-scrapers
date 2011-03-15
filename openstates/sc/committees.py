@@ -19,8 +19,8 @@ class SCCommitteeScraper(CommitteeScraper):
                 com = Committee(chamber, committee.text_content())
                 com.add_source(url)
 
-                member_table = committee.xpath('following-sibling::table')[0]
-                for member in member_table.xpath('tr/td/span/a'):
+                members = committee.xpath('following::table[1]/tr/td/span/a')
+                for member in members:
                     name = member.text
                     roles = member.xpath('span')
 
