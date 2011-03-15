@@ -47,9 +47,9 @@ class GABillScraper(BillScraper):
             self.show_error(url, body)
             raise
 
-    def scrape(self, chamber, year):
-        year = int(year)
-
+    def scrape(self, chamber, session):
+        year = int(session.split(' ')[0])
+        
         if (year < 1995):
             raise NoDataForPeriod(year)
         if (year % 2 == 0):
