@@ -56,6 +56,12 @@ metadata = {
             'start_year': 2009, 
             'end_year': 2010, 
             'sessions': ['106th Regular Session', '106th Special Session']
-        },       
+        },
+        {
+            'name': '107th General Assembly', 
+            'start_year': 2010, 
+            'end_year': 2011, 
+            'sessions': ['107th Regular Session',]
+        }       
     ]
 }
