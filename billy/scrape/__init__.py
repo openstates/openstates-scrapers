@@ -128,7 +128,7 @@ class Scraper(scrapelib.Scraper):
             self._schema = self._get_schema()
         try:
             self.validator.validate(obj, self._schema)
-        except ValueError, ve:
+        except ValueError as ve:
             self.warning(str(ve))
             if self.strict_validation:
                 raise ve

@@ -35,7 +35,7 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
     path = os.path.join(options.output_dir, scraper_type)
     try:
         os.makedirs(path)
-    except OSError, e:
+    except OSError as e:
         if e.errno != 17:
             raise e
         else:
@@ -45,13 +45,13 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
     try:
         mod_path = '%s.%s' % (mod_path, scraper_type)
         mod = __import__(mod_path)
-    except ImportError, e:
+    except ImportError as e:
         if not options.alldata:
             raise RunException("could not import %s" % mod_path, e)
 
     try:
         ScraperClass = _scraper_registry[state][scraper_type]
-    except KeyError, e:
+    except KeyError as e:
         if not options.alldata:
             raise RunException("no %s %s scraper found" %
                                (state, scraper_type))
@@ -182,7 +182,7 @@ def main():
     args.output_dir = os.path.join(settings.BILLY_DATA_DIR, args.state)
     try:
         os.makedirs(args.output_dir)
-    except OSError, e:
+    except OSError as e:
         if e.errno != 17:
             raise e
 
@@ -194,7 +194,7 @@ def main():
 
         validator = DatetimeValidator()
         validator.validate(metadata, schema)
-    except ValueError, e:
+    except ValueError as e:
         logging.getLogger('billy').warning('metadata validation error: '
                                                  + str(e))
 
@@ -244,6 +244,6 @@ def main():
 if __name__ == '__main__':
     try:
         result = main()
-    except RunException, e:
+    except RunException as e:
         print 'Error:', e
         sys.exit(1)
