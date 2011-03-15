@@ -30,7 +30,7 @@ if getattr(settings, 'USE_LOCKSMITH', False):
             resp = super(Resource, self).__call__(request, *args, **kwargs)
 
             try:
-                db.logs.insert({'key': request.apikey.key,
+                db.logs.insert({'key': request.apikey['key'],
                                 'method': self.handler.__class__.__name__,
                                 'query_string': request.META['QUERY_STRING'],
                                 'timestamp': datetime.datetime.utcnow()})
