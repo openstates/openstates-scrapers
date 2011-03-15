@@ -48,11 +48,12 @@ class ORELegislatorScraper(LegislatorScraper):
         for name, xpath in self.addr_fields.iteritems():
             result = member.xpath(xpath)
             if result:
-                extra_dict[name] = '%s %s, %s %s' % (
-                    member.get('street-address'),
-                    member.get('city'),
-                    member.get('state'),
-                    member.get('postal-code'))
+                result = result[0]
+                extra_dict[name] = '%s, %s, %s %s' % (
+                    result.get('street-address'),
+                    result.get('city'),
+                    result.get('state'),
+                    result.get('postal-code'))
 
         leg = Legislator(term, chamber, member.get('district-number'),
                          full_name=first_name+' '+last_name,

@@ -97,6 +97,8 @@ class OREBillScraper(BillScraper):
     state         = 'or'
     timeZone      = pytz.timezone('US/Pacific')
 
+    load_versions_sponsors = True
+
     # key: year (int)
     # value: raw measures data for that year from OR FTP server
     rawdataByYear = { }
@@ -137,7 +139,7 @@ class OREBillScraper(BillScraper):
                 action = self._parse_action_line(line)
                 if action:
                     actions.append(action)
-        return actions
+        return sorted(actions, key=lambda k: k['date'])
 
     def _parse_action_line(self, line):
         action = None
@@ -172,17 +174,18 @@ class OREBillScraper(BillScraper):
                     for a in self.actionsByBill[bill_id]:
                         bill.add_action(a['actor'], a['action'], a['date'])
 
-                # add versions and sponsors
-                versionsSponsors = self.versionsSponsorsParser.fetch_and_parse(self, session, bill_id)
-                #print "versionsSponsors: %s" % str(versionsSponsors)
-                if versionsSponsors:
-                    for ver in versionsSponsors['versions']:
-                        bill.add_version(ver['name'], ver['url'])
-                    sponsorType = 'primary'
-                    if len(versionsSponsors['sponsors']) > 0:
-                        sponsorType = 'cosponsor'
-                    for name in versionsSponsors['sponsors']:
-                        bill.add_sponsor(sponsorType, name)
+                if self.load_versions_sponsors:
+                    # add versions and sponsors
+                    versionsSponsors = self.versionsSponsorsParser.fetch_and_parse(self, session, bill_id)
+                    #print "versionsSponsors: %s" % str(versionsSponsors)
+                    if versionsSponsors:
+                        for ver in versionsSponsors['versions']:
+                            bill.add_version(ver['name'], ver['url'])
+                        sponsorType = 'primary'
+                        if len(versionsSponsors['sponsors']) > 1:
+                            sponsorType = 'cosponsor'
+                        for name in versionsSponsors['sponsors']:
+                            bill.add_sponsor(sponsorType, name)
 
                 # save - writes out JSON
                 self.save_bill(bill)

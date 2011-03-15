@@ -32,7 +32,8 @@ class BillsTest(unittest.TestCase):
         self.assertEquals('archive/01meashistory.txt', self.s._resolve_action_ftp_path(2001, 2011))
         self.assertEquals('archive/10meashistory.txt', self.s._resolve_action_ftp_path(2010, 2011))
 
-    def _testCanParseHouse(self):
+    def testCanParseHouse(self):
+        self.s.load_versions_sponsors = False  # this prevents us from hitting the search server for all bills
         self.s.scrape('lower', self.session)
         self.assertEquals(1637, len(self.bills))
         self._billEquals({
@@ -41,7 +42,8 @@ class BillsTest(unittest.TestCase):
                 'session' : self.session,
                 'chamber' : 'lower' }, self.bills[0])
 
-    def _testCanParseSenate(self):
+    def testCanParseSenate(self):
+        self.s.load_versions_sponsors = False  # this prevents us from hitting the search server for all bills        
         self.s.scrape('upper', self.session)
         self.assertEquals(1012, len(self.bills))
         self._billEquals({
@@ -51,12 +53,19 @@ class BillsTest(unittest.TestCase):
                 'chamber' : 'upper' }, self.bills[0])
 
     def testCanParseActions(self):
+        actions_by_bill_id = self.s.parse_actions_and_group(self.s.rawdataByYear[2011][1])
+        actions = actions_by_bill_id['HB 2673']
+        self.assertEquals(2, len(actions))
+        self.assertEquals("First reading. Referred to Speaker's desk.", actions[0]['action'])
+        self.assertEquals("Referred to Judiciary.", actions[1]['action'])
+
+    def testActionsAreSortedByDateAscending(self):
         actions = self.s.parse_actions(self.s.rawdataByYear[2011][1])
         self.assertEquals(7907, len(actions))
-        self.assertEquals('HB 2659', actions[0]['bill_id'])
-        self.assertEquals("First reading. Referred to Speaker's desk.", actions[0]['action'])
-        self.assertEquals('2011-01-11 12:36:18', actions[0]['date'].strftime("%Y-%m-%d %H:%M:%S"))
-        self.assertEquals('lower', actions[0]['actor'])
+        self.assertEquals('SB 0014', actions[0]['bill_id'])
+        self.assertEquals("Introduction and first reading. Referred to President's desk.", actions[0]['action'])
+        self.assertEquals('2011-01-10 10:59:36', actions[0]['date'].strftime("%Y-%m-%d %H:%M:%S"))
+        self.assertEquals('upper', actions[0]['actor'])
 
     def testCanGroupActionsByBill(self):
         actions_by_bill = self.s.parse_actions_and_group(self.s.rawdataByYear[2011][1])
@@ -112,7 +121,6 @@ class BillsTest(unittest.TestCase):
         data = open(path.join(path.dirname(__file__),'testdata/bill-detail-5.html')).read()
         parser = bills.BillDetailsParser()
         parsed = parser.parse(data)
-        print parsed['versions']
         self.assertEquals(4, len(parsed['versions']))
         self.assertEquals({'name': 'Introduced',
                            'url': 'http://www.leg.state.or.us/10ss1/measures/hb3600.dir/hb3646.intro.html' },
@@ -134,14 +142,14 @@ class BillsTest(unittest.TestCase):
             params = parser.resolve_search_params(i['session'], i['bill_id'])
             self.assertEquals(i['params'], params)
 
-    def _testLoadFtpData(self):
+    def testLoadFtpData(self):
         # this test is a little slow b/c it actually loads the
         # FTP file from OR's server.  the other tests should use files
         # in testdata
         self.s.rawdataByYear = { }
         data = self.s._load_data(self.session)
         self.assertTrue(data != None)
-        self.assertEquals(0, data.find('Meas_Prefix'))
+        self.assertEquals(0, data[0].find('Meas_Prefix'))
 
     def _billEquals(self, expected, actual):
         for k, v in expected.items():
