@@ -98,11 +98,37 @@ class BillsTest(unittest.TestCase):
                           parsed['versions'][0])
         self.assertEquals([ 'THATCHER' ], parsed['sponsors'])
 
+    def testCanParseDocsAndSponsors4(self):
+        data = open(path.join(path.dirname(__file__),'testdata/bill-detail-4.html')).read()
+        parser = bills.BillDetailsParser()
+        parsed = parser.parse(data)
+        self.assertEquals(1, len(parsed['versions']))
+        self.assertEquals({'name': 'Introduced',
+                           'url': 'http://www.leg.state.or.us/10ss1/measures/sb1000.dir/sb1051.intro.html' },
+                          parsed['versions'][0])
+        self.assertEquals([ 'BOQUIST' ], parsed['sponsors'])
+
+    def testCanParseDocsAndSponsors5(self):
+        data = open(path.join(path.dirname(__file__),'testdata/bill-detail-5.html')).read()
+        parser = bills.BillDetailsParser()
+        parsed = parser.parse(data)
+        print parsed['versions']
+        self.assertEquals(4, len(parsed['versions']))
+        self.assertEquals({'name': 'Introduced',
+                           'url': 'http://www.leg.state.or.us/10ss1/measures/hb3600.dir/hb3646.intro.html' },
+                          parsed['versions'][0])
+        self.assertEquals({'name': 'House Amendments',
+                           'url': 'http://www.leg.state.or.us/10ss1/measures/hb3600.dir/hb3646.1ha.html' },
+                          parsed['versions'][3])
+        self.assertEquals([ 'FREDERICK' ], parsed['sponsors'])
+
     def testCanResolveDocsUrls(self):
         parser = bills.BillDetailsParser()
         input = [
             { 'session': '2011 Session', 'bill_id': 'HB 2659',
-              'params': { 'lookfor': 'hb', 'number': '2659', 'lookin': '11reg', 'submit':'Search'} }
+              'params': { 'lookfor': 'hb', 'number': '2659', 'lookin': '11reg', 'submit':'Search'} },
+            { 'session': '2010 Session', 'bill_id': 'SB 0059',
+              'params': { 'lookfor': 'sb', 'number': '59', 'lookin': '10ss1', 'submit':'Search'} }            
         ]
         for i in input:
             params = parser.resolve_search_params(i['session'], i['bill_id'])

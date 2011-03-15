@@ -6,20 +6,28 @@ from openstates.ore.utils import year_from_session
 import datetime as dt
 import pytz
 import re
-import urllib
 
 class BillDetailsParser(object):
 
     search_url = 'http://www.leg.state.or.us/cgi-bin/searchMeas.pl'
 
     re_versions = re.compile('>\n([^\(]+)\([^"]+"([^"]+)"')
-    re_sponsors = re.compile('<td><b>By ([^;]+); ')
+    re_sponsors = re.compile('<td><b>By ([^<]+)<')
 
+    #
+    # this is the mapping of years to
+    # 'lookin' search values for the search form for
+    # bill detail pages.
+    #
+    # go to search_url above and view source
+    # we may want to build this list dynamically
+    # as it appears there's a pattern
+    #
     years_to_lookin = {
         2011 : '11reg',
-        2010 : '10ssl',
+        2010 : '10ss1',
         2009 : '09reg',
-        2008 : '08ssl',
+        2008 : '08ss1',
         2007 : '07reg',
         2005 : '05reg',
         2003 : '03reg',
@@ -31,22 +39,37 @@ class BillDetailsParser(object):
         output = None
         params = self.resolve_search_params(session, bill_id)
         if params:
-            html = scraper.urlopen(self.search_url, method='POST', body=urllib.urlencode(params))
+            # can't use urllib.urlencode() because this search URL
+            # expects post args in a certain order it appears
+            # (I didn't believe it either until I manually tested via curl)
+            # none of these params should need to be encoded
+            postdata = "lookfor=%s&number=%s&lookin=%s&submit=Search" % (params['lookfor'], params['number'], params['lookin'])
+            html = scraper.urlopen(self.search_url, method='POST', body=postdata)
+            #print "fetch_and_parse postdata: %s  html: %s" % (postdata, html)
             output = self.parse(html)
         return output
 
     def parse(self, html):
         output = { 'sponsors' : [ ], 'versions': [ ] }
-        subhtml = html[(html.find("</h1><p></p>")+11):html.find("<center><br><table")]
+        subhtml = html[(html.find("</h1></p>")+8):html.find("<center><table BORDER")]
         for match in self.re_versions.findall(subhtml):
             #print match
             output['versions'].insert(0, {'name': match[0].strip(), 'url': match[1].strip() })
-        subhtml = html[html.find("<center><br><table"):]
+        subhtml = html[html.find("<center><table BORDER"):]
         match = self.re_sponsors.search(subhtml)
         if match:
             val = match.groups()[0]
-            if val.find("--") > 0:
-                val = val[:val.find("--")]
+            end1 = val.find("--")
+            end2 = val.find(";")
+            if end1 > -1 and end2 > -1:
+                if end1 > end2:
+                    val = val[:end2]
+                else:
+                    val = val[:end1]
+            elif end1 > -1:
+                val = val[:end1]
+            else:
+                val = val[:end2]
             for name in val.split(","):
                 name = name.replace('Representatives','')
                 name = name.replace('Representative','')
@@ -59,6 +82,7 @@ class BillDetailsParser(object):
         year = year_from_session(session)
         if self.years_to_lookin.has_key(year):
             (chamber, number) = bill_id.split(" ")
+            number = str(int(number))  # remove leading zeros
             return {
                 'lookin'  : self.years_to_lookin[year],
                 'lookfor' : chamber.lower(),
@@ -136,13 +160,21 @@ class OREBillScraper(BillScraper):
         if line:
             (type, combined_id, number, title, relating_to) = line.split("\xe4")
             if (type == 'HB' and chamber == 'lower') or (type == 'SB' and chamber == 'upper'):
+                #
+                # basic bill info
                 bill_id = "%s %s" % (type, number.zfill(4))
                 bill = Bill(session, chamber, bill_id, title)
                 bill.add_source(source_url)
+
+                #
+                # add actions
                 if self.actionsByBill.has_key(bill_id):
                     for a in self.actionsByBill[bill_id]:
                         bill.add_action(a['actor'], a['action'], a['date'])
+
+                # add versions and sponsors
                 versionsSponsors = self.versionsSponsorsParser.fetch_and_parse(self, session, bill_id)
+                #print "versionsSponsors: %s" % str(versionsSponsors)
                 if versionsSponsors:
                     for ver in versionsSponsors['versions']:
                         bill.add_version(ver['name'], ver['url'])
@@ -151,6 +183,8 @@ class OREBillScraper(BillScraper):
                         sponsorType = 'cosponsor'
                     for name in versionsSponsors['sponsors']:
                         bill.add_sponsor(sponsorType, name)
+
+                # save - writes out JSON
                 self.save_bill(bill)
 
     def _load_data(self, session):
