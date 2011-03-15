@@ -1,5 +1,5 @@
-from fiftystates.scrape import ScrapeError, NoDataForPeriod
-from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from billy.scrape import ScrapeError, NoDataForPeriod
+from billy.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
 
