@@ -1,0 +1,3 @@
+[submodule "validictory"]
+	path = validictory
+	url = git@github.com:sunlightlabs/validictory.git
