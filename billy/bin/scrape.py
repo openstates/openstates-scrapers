@@ -179,7 +179,7 @@ def main():
                        )
 
     # make output dir
-    args.output_dir = os.path.join(settings.BILLY_DATA_DIR, state)
+    args.output_dir = os.path.join(settings.BILLY_DATA_DIR, args.state)
     try:
         os.makedirs(args.output_dir)
     except OSError, e:
