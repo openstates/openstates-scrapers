@@ -67,6 +67,9 @@ class TNLegislatorScraper(LegislatorScraper):
             raise NoDataForPeriod(term)
         
         with self.urlopen(url) as page:
+            # FIXME: mark white's tr is missing, fixes invalid html
+            page = page.replace('<td><a href="h83.html">White</a>, Mark </td>',
+                            '<tr><td><a href="h83.html">White</a>, Mark </td>')
             page = lxml.html.fromstring(page)
             
             for row in page.xpath("//tr")[1:]:
