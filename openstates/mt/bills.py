@@ -2,12 +2,9 @@ import os
 import re
 from datetime import datetime
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from openstates.mt import metadata
 
-import html5lib
 import lxml.html
 from lxml.etree import ElementTree
 
@@ -52,28 +49,16 @@ class MTBillScraper(BillScraper):
 
     def __init__(self, *args, **kwargs):
         super(MTBillScraper, self).__init__(*args, **kwargs)
-        self.parser = html5lib.HTMLParser(tree = html5lib.treebuilders.getTreeBuilder('lxml')).parse
 
         self.search_url_template = "http://laws.leg.mt.gov/laws%s/LAW0203W$BSRV.ActionQuery?P_BLTP_BILL_TYP_CD=%s&P_BILL_NO=%s&P_BILL_DFT_NO=&Z_ACTION=Find&P_SBJ_DESCR=&P_SBJT_SBJ_CD=&P_LST_NM1=&P_ENTY_ID_SEQ="
 
-    def getSession(self, year):
-        for session, years in metadata['session_details'].items():
-            if year in years['years']:
-                return session
+    def scrape(self, chamber, session):
+        for term in self.metadata['terms']:
+            if session in term['sessions']:
+                year = term['start_year']
+                break
 
-    def scrape(self, chamber, year):
-        year = int(year)
-        session = self.getSession(year)
-        #2 year terms starting on odd year, so if even number, use the previous odd year
-        if year < 1999:
-            raise NoDataForPeriod(year)
-        if year % 2 == 0:
-            year -= 1
-
-        if year == 1999:
-            base_bill_url = 'http://data.opi.mt.gov/bills/BillHtml/'
-        else:
-            base_bill_url = 'http://data.opi.mt.gov/bills/%d/BillHtml/' % year
+        base_bill_url = 'http://data.opi.mt.gov/bills/%d/BillHtml/' % year
         index_page = ElementTree(lxml.html.fromstring(self.urlopen(base_bill_url)))
 
         bill_urls = []
@@ -111,7 +96,7 @@ class MTBillScraper(BillScraper):
             page_name = bill_url.split("/")[-1].split(".")[0]
             bill_type = page_name[0:2]
             bill_number = page_name[2:]
-            laws_year = metadata['session_details'][session]['years'][0] % 100
+            laws_year = self.metadata['session_details'][session]['years'][0] % 100
 
             status_url = self.search_url_template % (laws_year, bill_type, bill_number)
             bill = self.parse_bill_status_page(status_url, bill_url, session, chamber)
