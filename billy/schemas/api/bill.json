@@ -13,7 +13,7 @@
     "versions": {"type": "array", "items": {"type": "object", "properties": {
         "name": {"type": "string"},
         "url": {"type": "string"},
-        "title": {"type": "string", "optional": true}
+        "title": {"type": "string", "required": false}
     }}},
     "documents": {"type": "array", "items": {"type": "object", "properties": {
         "name": {"type": "string"},
@@ -23,7 +23,7 @@
         "type": {"type": "string"},
         "name": {"type": "string"},
         "chamber": {"type": "string", "enum": ["upper", "lower"],
-          "optional": true},
+          "required": false},
         "leg_id": {"type": ["string", "null"],
           "pattern": "^[A-Z]{2}L\\d{6}$"}
     }}},
@@ -48,7 +48,7 @@
     }}},
     "votes": {"type": "array", "items": {"type": "object", "properties": {
         "chamber": {"type": "string", "enum": ["upper", "lower"]},
-        "committee": {"type": "string", "optional": "true"},
+        "committee": {"type": "string", "required": false},
         "date": {"type": "datetime"},
         "motion": {"type": "string"},
         "passed": {"type": "boolean"},
@@ -80,7 +80,7 @@
             "url": {"type": "string"},
             "retrieved": {"type": "datetime"}
         }}},
-        "type": {"type": "string", "optional": true,
+        "type": {"type": "string", "required": false,
                  "enum": ["passage", "reading", "reading:1", "reading:2",
                           "reading:3", "veto_override", "amendment", "other"]}
     }}},

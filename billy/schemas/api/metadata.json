@@ -18,12 +18,12 @@
        "sessions": {"type": "array", "minItems": 1,
          "items": {"type": "string"}}
      }}},
-   "session_details": { "type": "object", "optional": "true",
+   "session_details": { "type": "object", "required": false,
      "additionalProperties": { "type": "object",
        "properties": {
          "type": {"type": "string"},
-         "start_date": {"type": "datetime", "optional": true},
-         "end_date": {"type": "datetime", "optional": true}
+         "start_date": {"type": "datetime", "required": false},
+         "end_date": {"type": "datetime", "required": false}
        }
      }
    }

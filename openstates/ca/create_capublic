@@ -11,4 +11,4 @@ PASS=$3
 
 cd $4
 
-mysql -u$USER -p$PASS -h$HOST -v -v -f < capublic.sql
+mysql5 -h$HOST -v -v -f < capublic.sql

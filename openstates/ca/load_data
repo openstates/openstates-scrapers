@@ -14,19 +14,19 @@ cd $4
 sed=`which gsed || which sed`
 $sed -i 's|c:\\\\pubinfo\\\\|'"$PWD"'/|g' *.sql
 
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_VERSION_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < LAW_SECTION_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_DETAIL_VOTE_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < LOCATION_CODE_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_ANALYSIS_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_MOTION_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < LAW_TOC_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_VERSION_AUTHORS_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < DAILY_FILE_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_SUMMARY_VOTE_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < LAW_TOC_SECTIONS_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < COMMITTEE_HEARING_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < CODES_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_HISTORY_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < LEGISLATOR_TBL.sql
-mysql -u$USER -p$PASS -h$HOST -Dcapublic -v -v -f < BILL_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < BILL_VERSION_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < LAW_SECTION_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < BILL_DETAIL_VOTE_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < LOCATION_CODE_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < BILL_ANALYSIS_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < BILL_MOTION_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < LAW_TOC_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < BILL_VERSION_AUTHORS_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < DAILY_FILE_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < BILL_SUMMARY_VOTE_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < LAW_TOC_SECTIONS_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < COMMITTEE_HEARING_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < CODES_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < BILL_HISTORY_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < LEGISLATOR_TBL.sql
+mysql5 -h$HOST -Dcapublic -v -v -f < BILL_TBL.sql

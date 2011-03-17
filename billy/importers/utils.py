@@ -81,6 +81,7 @@ def timestamp_to_dt(timestamp):
     return datetime.datetime(*time.localtime(timestamp)[0:6])
 
 
+
 def update(old, new, coll):
     # To prevent deleting standalone votes..
     if 'votes' in new and not new['votes']:
@@ -128,7 +129,10 @@ def convert_timestamps(obj):
                 'retrieved'):
         value = obj.get(key)
         if value:
-            obj[key] = timestamp_to_dt(value)
+            try:
+                obj[key] = timestamp_to_dt(value)
+            except TypeError:
+                raise TypeError("expected float for %s, got %s" % (key, value))
 
     for key in ('sources', 'actions', 'votes'):
         for child in obj.get(key, []):
