@@ -64,3 +64,6 @@ class NYBillScraper(BillScraper):
 
             for date, action in reversed(actions):
                 bill.add_action(bill['chamber'], action, date)
+
+            for link in page.xpath("//a[contains(@href, 'lawsection')]"):
+                bill.add_subject(link.text.strip())
