@@ -13,7 +13,7 @@ class NYLegislatorScraper(LegislatorScraper):
         if chamber == 'upper':
             self.scrape_upper(term)
         else:
-            pass
+            self.scrape_lower(term)
 
     def scrape_upper(self, term):
         url = "http://www.nysenate.gov/senators"
@@ -35,6 +35,25 @@ class NYLegislatorScraper(LegislatorScraper):
                 legislator = Legislator(term, 'upper', district,
                                         name, party="Unknown",
                                         photo_url=photo_url)
+                legislator.add_source(url)
+
+                self.save_legislator(legislator)
+
+    def scrape_lower(self, term):
+        url = "http://assembly.state.ny.us/mem/?sh=email"
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            for link in page.xpath("//a[contains(@href, '/mem/')]"):
+                name = link.text.strip()
+                if name == 'Assembly Members':
+                    continue
+
+                district =  link.xpath("string(../following-sibling::div[2])")
+                district = district.rstrip('thnds')
+
+                legislator = Legislator(term, 'lower', district,
+                                        name, party="Unknown")
                 legislator.add_source(url)
 
                 self.save_legislator(legislator)
