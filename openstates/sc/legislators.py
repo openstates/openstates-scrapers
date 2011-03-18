@@ -16,7 +16,7 @@ class SCLegislatorScraper(LegislatorScraper):
             doc = lxml.html.fromstring(data)
             rows = doc.xpath('//pre/div[@class="sansSerifNormal"]')
 
-            for row in rows[1:]:
+            for row in rows:
                 member_a = row.xpath('a')[0]
 
                 name_party = member_a.text_content()
