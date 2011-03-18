@@ -170,6 +170,8 @@ class DCBillScraper(BillScraper):
 
                 if bill_id.startswith('B'):
                     type = 'bill'
+                elif bill_id.startswith('CER'):
+                    type = 'resolution'
                 elif bill_id.startswith('CA'):
                     type = 'contract'
                 elif bill_id.startswith('PR'):
