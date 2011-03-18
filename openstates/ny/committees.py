@@ -74,5 +74,3 @@ class NYCommitteeScraper(CommitteeScraper):
                 comm.add_member(member)
 
             self.save_committee(comm)
-
-

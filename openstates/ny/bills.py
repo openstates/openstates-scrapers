@@ -1,6 +1,10 @@
+import re
+import datetime
+
 from billy.scrape.bills import BillScraper, Bill
 
 import scrapelib
+import lxml.html
 import lxml.etree
 
 
@@ -16,11 +20,10 @@ class NYBillScraper(BillScraper):
                 with self.urlopen(url) as page:
                     page = lxml.etree.fromstring(page)
 
-                    for bill in page.xpath("//result[@type = 'bill']"):
-                        print bill.attrib['id']
-                        id = bill.attrib['id'].split('-')[0]
-                        title = bill.attrib['title'].strip()
-                        primary_sponsor = bill.attrib['sponsor']
+                    for result in page.xpath("//result[@type = 'bill']"):
+                        id = result.attrib['id'].split('-')[0]
+                        title = result.attrib['title'].strip()
+                        primary_sponsor = result.attrib['sponsor']
 
                         if id.startswith('S'):
                             bill_chamber = 'upper'
@@ -34,7 +37,30 @@ class NYBillScraper(BillScraper):
                         bill.add_source(url)
                         bill.add_sponsor('primary', primary_sponsor)
 
+                        bill_url = ("http://open.nysenate.gov/legislation/"
+                                    "bill/%s" % result.attrib['id'])
+                        self.scrape_bill(bill, bill_url)
+
                         self.save_bill(bill)
         except scrapelib.HTTPError as e:
             if e.response.code != 404:
                 raise
+
+    def scrape_bill(self, bill, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            actions = []
+            for li in page.xpath("//div[@id = 'content']/ul[1]/li"):
+                text = li.text.strip()
+
+                match = re.match(r"([A-Z][a-z][a-z]\s+\d{1,2},\s+\d{4,4}):"
+                                 r"\s+(.*)$", text)
+                date = datetime.datetime.strptime(match.group(1),
+                                                  "%b %d, %Y").date()
+                action = match.group(2)
+
+                actions.append((date, action))
+
+            for date, action in reversed(actions):
+                bill.add_action(bill['chamber'], action, date)
