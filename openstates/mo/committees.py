@@ -81,14 +81,7 @@ class MOCommitteeScraper(CommitteeScraper):
                         mem_links = mem_tr.xpath('td/a[1]')
                         if len(mem_links):
                             mem_code = mem_links[0].attrib.get('href')
-                        # Output is "Rubble, Barney, Neighbor"
-                        mem_parts = mem_tr.text_content().strip().split(',')
-                        if self.no_members_text in mem_parts:
-                            continue
-                        mem_name = (mem_parts[1].strip() + ' ' +
-                                    mem_parts[0].strip())
-                        # Sometimes Senator abbreviation is in the name
-                        mem_name = mem_name.replace(' Sen. ', '')
+                        mem_name = mem_tr.text_content().strip()
                         mem_role = 'member'
                         if len(mem_parts) > 2:
                             # Handle the case where there is a comma in the
