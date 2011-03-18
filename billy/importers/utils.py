@@ -78,8 +78,11 @@ def insert_with_id(obj):
 
 
 def timestamp_to_dt(timestamp):
-    return datetime.datetime(*time.localtime(timestamp)[0:6])
-
+    tstruct = time.localtime(timestamp)
+    dt = datetime.datetime(*tstruct[0:6])
+    if tstruct.tm_isdst:
+        dt = dt - datetime.timedelta(hours=1)
+    return dt
 
 
 def update(old, new, coll):

@@ -1,5 +1,4 @@
 import re
-import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator

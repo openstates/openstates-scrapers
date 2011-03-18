@@ -96,8 +96,6 @@ def import_committees(state, data_dir):
             if not member['name']:
                 continue
 
-            (pre, first, last, suff) = name_tools.split(member['name'])
-
             leg_id = get_legislator_id(state, current_session,
                                        data['chamber'],
                                        member['name'])
