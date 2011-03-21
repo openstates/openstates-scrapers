@@ -22,7 +22,11 @@ class NYBillScraper(BillScraper):
 
                     for result in page.xpath("//result[@type = 'bill']"):
                         id = result.attrib['id'].split('-')[0]
+
                         title = result.attrib['title'].strip()
+                        if title == '(no title)':
+                            continue
+
                         primary_sponsor = result.attrib['sponsor']
 
                         if id.startswith('S'):
