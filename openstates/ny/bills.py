@@ -44,6 +44,7 @@ class NYBillScraper(BillScraper):
                         bill_url = ("http://open.nysenate.gov/legislation/"
                                     "bill/%s" % result.attrib['id'])
                         self.scrape_bill(bill, bill_url)
+                        bill.add_source(bill_url)
 
                         self.save_bill(bill)
         except scrapelib.HTTPError as e:
