@@ -1,66 +1,76 @@
-import lxml.html
-import datetime as dt
 from billy.scrape import NoDataForPeriod
-
 from billy.scrape.committees import CommitteeScraper, Committee
 
-import nyss_billyslation.models
+import lxml.html
 
 
 class NYCommitteeScraper(CommitteeScraper):
     state = "ny"
 
     def scrape(self, chamber, term):
-        if term != '2009-2010':
+        if term != '2011-2012':
             raise NoDataForPeriod(term)
 
         if chamber == "upper":
-            self.scrape_senate()
+            self.scrape_upper()
         elif chamber == "lower":
-            self.scrape_assembly()
+            self.scrape_lower()
 
-    def scrape_assembly(self):
-        """Scrape Assembly Committees"""
-        assembly_committees_url = "http://assembly.state.ny.us/comm/"
+    def scrape_lower(self):
+        url = "http://assembly.state.ny.us/comm/"
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
-        with self.urlopen(assembly_committees_url) as html:
-            doc = lxml.html.fromstring(html)
-            standing_committees, subcommittees, legislative_commissions, task_forces = doc.cssselect('#sitelinks ul')
-            committee_paths = set([l.get('href') for l in standing_committees.cssselect("li a[href]")
-                              if l.get("href").startswith('?sec=mem')])
+            for link in page.xpath("//a[contains(@href, 'sec=mem')]"):
+                name = link.xpath("string(../strong)").strip()
+                url = link.attrib['href']
 
-        for committee_path in committee_paths:
-            committee_url = assembly_committees_url+committee_path
-            with self.urlopen(committee_url) as chtml:
-                cdoc = lxml.html.fromstring(chtml)
-                for h in cdoc.cssselect("#content .pagehdg"):
-                    if h.text:
-                        committee_name = h.text.split('Committee Members')[0].strip()
-                        break
+                self.scrape_lower_committee(name, url)
 
-                committee = Committee("lower", committee_name)
-                committee.add_source(committee_url)
-                members = cdoc.cssselect("#sitelinks")[0]
+    def scrape_lower_committee(self, name, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
 
-                first = 1
-                for member in members.iter('span'):
-                    member = member.xpath('li/a')[0].text
-                    if first == 1:
-                        committee.add_member(member, 'chair')
-                        first = 0
-                    else:
-                        committee.add_member(member)
+            comm = Committee('lower', name)
+            comm.add_source(url)
 
-                self.save_committee(committee)
+            for link in page.xpath("//a[contains(@href, 'mem?ad')]"):
+                member = link.text.strip()
+                comm.add_member(member)
 
-    def scrape_senate(self):
-        """Scrape Senate Committees"""
-        for name, comm in nyss_billyslation.models.committees.items():
-            name = name.title().replace('And', 'and')
+            self.save_committee(comm)
 
-            committee = Committee('upper', name)
+    def scrape_upper(self):
+        url = "http://www.nysenate.gov/committees"
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
-            for member in comm.members:
-                committee.add_member(member.fullname)
+            for link in page.xpath("//a[contains(@href, '/committee/')]"):
+                name = link.text.strip()
+                self.scrape_upper_committee(name, link.attrib['href'])
 
-            self.save_committee(committee)
+    def scrape_upper_committee(self, name, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            comm = Committee('upper', name)
+            comm.add_source(url)
+
+            member_div = page.xpath("//div[@class = 'committee-members']")[0]
+
+            seen = set()
+            for link in member_div.xpath(".//a"):
+                if not link.text:
+                    continue
+
+                member = link.text.strip()
+
+                if member in seen or not member:
+                    continue
+                seen.add(member)
+
+                comm.add_member(member)
+
+            self.save_committee(comm)

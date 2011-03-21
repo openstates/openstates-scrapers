@@ -136,8 +136,10 @@ class TXBillScraper(BillScraper):
                 introduced = True
             elif desc == 'Read & adopted':
                 atype = 'bill:passed'
-            elif desc.startswith('Referred to'):
+            elif desc.startswith('Referred to') or desc.startswith("Recommended to be sent to "):
                 atype = 'committee:referred'
+            elif desc == "Reported favorably w/o amendment(s)":
+                atype = 'committee:passed'
             elif desc == "Filed":
                 atype = 'bill:filed'
             else:
