@@ -49,7 +49,8 @@ class NYLegislatorScraper(LegislatorScraper):
                 if name == 'Assembly Members':
                     continue
 
-                district = link.xpath("string(../following-sibling::div[2])")
+                district = link.xpath("string(../following-sibling::"
+                                      "div[@class = 'email2'][1])")
                 district = district.rstrip('thnds')
 
                 legislator = Legislator(term, 'lower', district,
