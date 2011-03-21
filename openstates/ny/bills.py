@@ -53,6 +53,7 @@ class NYBillScraper(BillScraper):
     def scrape_bill(self, bill, url):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
             actions = []
             for li in page.xpath("//div[@id = 'content']/ul[1]/li"):
@@ -68,6 +69,9 @@ class NYBillScraper(BillScraper):
 
             for date, action in reversed(actions):
                 bill.add_action(bill['chamber'], action, date)
+
+            text_link = page.xpath("//a[contains(@href, 'lrs-print')]")[0]
+            bill.add_version(bill['bill_id'], text_link.attrib['href'])
 
             subjects = []
             for link in page.xpath("//a[contains(@href, 'lawsection')]"):
