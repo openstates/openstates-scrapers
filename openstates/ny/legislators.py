@@ -51,7 +51,7 @@ class NYLegislatorScraper(LegislatorScraper):
 
                 district = link.xpath("string(../following-sibling::"
                                       "div[@class = 'email2'][1])")
-                district = district.rstrip('thnds')
+                district = district.rstrip('rthnds')
 
                 legislator = Legislator(term, 'lower', district,
                                         name, party="Unknown")
