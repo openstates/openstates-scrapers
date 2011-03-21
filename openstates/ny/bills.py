@@ -67,8 +67,31 @@ class NYBillScraper(BillScraper):
 
                 actions.append((date, action))
 
+            first = True
+            act_chamber = bill['chamber']
             for date, action in reversed(actions):
-                bill.add_action(bill['chamber'], action, date)
+                atype = []
+                if first:
+                    atype.append('bill:introduced')
+                    first = False
+
+                if 'REFERRED TO' in action:
+                    atype.append('committee:referred')
+                elif action == 'ADOPTED':
+                    atype.append('bill:passed')
+                elif action in ('PASSED SENATE', 'PASSED ASSEMBLY'):
+                    atype.append('bill:passed')
+                elif action in ('DELIVERED TO SENATE',
+                                'DELIVERED TO ASSEMBLY'):
+                    first = True
+                    act_chamber = {'upper': 'lower',
+                                   'lower': 'upper'}[act_chamber]
+
+                if not atype:
+                    atype = ['other']
+
+                bill.add_action(bill['chamber'], action, date,
+                                type=atype)
 
             text_link = page.xpath("//a[contains(@href, 'lrs-print')]")[0]
             bill.add_version(bill['bill_id'], text_link.attrib['href'])
