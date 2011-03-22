@@ -40,7 +40,8 @@ def test_activate_legislators():
             'roles': [{'type': 'member', 'chamber': 'upper', 'state': 'ex',
                        'term': '2011-2012', 'district': '3',
                        'party': 'Democrat',
-                       'start_date': None, 'end_date': datetime.datetime.now()}]}
+                       'start_date': None,
+                       'end_date': datetime.datetime(2011,1,1)}]}
 
     id1 = utils.insert_with_id(leg1)
     id2 = utils.insert_with_id(leg2)
@@ -91,8 +92,18 @@ def test_deactivate_legislators():
             'party': 'Democrat'}
     leg2_roles = leg2['roles']
 
+    # Current term, with end date
+    leg3 = {'_type': 'person', 'state': 'ex',
+            'roles': [{'type': 'member', 'chamber': 'upper', 'state': 'ex',
+                       'term': '2011-2012', 'district': '3',
+                       'party': 'Democrat',
+                       'start_date': None,
+                       'end_date': datetime.datetime(2011,1,1)}]}
+    leg3_roles = leg3['roles']
+
     id1 = utils.insert_with_id(leg1)
     id2 = utils.insert_with_id(leg2)
+    id3 = utils.insert_with_id(leg3)
 
     legislators.deactivate_legislators('ex', '2011-2012')
 
@@ -112,6 +123,13 @@ def test_deactivate_legislators():
     assert leg2['roles'] == leg2_roles
     assert 'old_roles' not in leg2
 
+    leg3 = db.legislators.find_one({'_id': id3})
+    assert leg3['active'] == False
+    assert 'chamber' not in leg3
+    assert 'district' not in leg3
+    assert 'party' not in leg3
+    assert leg3['roles'] == []
+    assert leg3['old_roles']['2011-2012'] == leg3_roles
 
 @with_setup(setup_func)
 def test_get_previous_term():
