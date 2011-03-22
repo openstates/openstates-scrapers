@@ -35,17 +35,32 @@ class TXEventScraper(EventScraper):
                 except ValueError:
                     continue
 
-                try:
-                    time = re.match('Time: (\d+:\d+ (A|P)M)',
-                                    entry['description']).group(1)
-                except AttributeError:
-                    # There are a few broken events in their feeds
-                    # sometimes
-                    continue
+                desc = entry['description'].strip()
+                match = re.match(
+                    r'Time: (\d+:\d+ (A|P)M)((\s+\(.*\))|( or .*))?, Location:',
+                    desc)
+                if match:
+                    dt = "%s %s" % (date, match.group(1))
+                    when = datetime.datetime.strptime(dt,
+                                                  '%m/%d/%Y %I:%M %p')
+                    when = self._tz.localize(when)
+                    all_day = False
 
-                when = "%s %s" % (date, time)
-                when = datetime.datetime.strptime(when, '%m/%d/%Y %I:%M %p')
-                when = self._tz.localize(when)
+                    notes = match.group(3)
+                    notes = notes.strip() if notes else None
+
+                    if notes == '(Canceled)':
+                        status = 'canceled'
+                    else:
+                        status = 'confirmed'
+                else:
+                    match = re.match(r'Time: (.*), Location:', desc)
+                    if match:
+                        when = datetime.datetime.strptime(date,
+                                                          '%m/%d/%Y').date()
+                        all_day = True
+                        notes = match.group(1).strip()
+                        status = 'confirmed'
 
                 location = entry['description'].split('Location: ')[1]
 
@@ -55,7 +70,10 @@ class TXEventScraper(EventScraper):
 
                 event = Event(session, when, 'committee:meeting',
                               description,
-                              location=location)
+                              location=location,
+                              status=status,
+                              notes=notes,
+                              all_day=all_day)
                 event.add_participant('committee', title)
 
                 event['_guid'] = entry['guid']
