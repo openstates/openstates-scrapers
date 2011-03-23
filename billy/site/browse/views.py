@@ -23,11 +23,11 @@ def all_states(request, template='billy/index.html'):
     for meta in list(db.metadata.find()) + [{'_id':'total', 'name':'total'}]:
         state = {}
         state['id'] = meta['_id']
+        s_spec = {'state': state['id']}
         state['name'] = meta['name']
         counts = db.counts.find_one({'_id': state['id']})
         if counts:
             counts = counts['value']
-            s_spec = {'state': state['id']}
             state['bills'] = counts['bills']
             state['votes'] = counts['votes']
             state['versions'] = counts['versions']
