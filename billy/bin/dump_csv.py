@@ -109,9 +109,9 @@ def dump_bill_csvs(state):
             for vtype in ('yes', 'no', 'other'):
                 for leg_vote in vote[vtype+'_votes']:
                     legvote_csv.writerow({'vote_id': vote['vote_id'],
-                                          'leg_id': leg_vote['leg_id'],
-                                          'name': leg_vote['name'],
-                                          'vote': vtype})
+                                      'leg_id': leg_vote['leg_id'],
+                                      'name': leg_vote['name'].encode('utf8'),
+                                      'vote': vtype})
     return (bill_csv_fname, action_csv_fname, sponsor_csv_fname,
             vote_csv_fname, legvote_csv_fname)
 
