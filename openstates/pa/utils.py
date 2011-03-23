@@ -1,4 +1,4 @@
-import datetime as dt
+import datetime
 
 
 def bill_abbr(chamber):
@@ -15,9 +15,9 @@ def start_year(session):
 def parse_action_date(date_str):
     date_str = date_str.replace('Sept.', 'September')
     try:
-        date = dt.datetime.strptime(date_str, '%b. %d, %Y')
+        date = datetime.datetime.strptime(date_str, '%b. %d, %Y')
     except ValueError:
-        date = dt.datetime.strptime(date_str, '%B %d, %Y')
+        date = datetime.datetime.strptime(date_str, '%B %d, %Y')
     return date
 
 

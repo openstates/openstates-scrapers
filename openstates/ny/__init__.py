@@ -8,6 +8,6 @@ metadata = dict(
     upper_chamber_title='Senator',
     lower_chamber_term=2,
     upper_chamber_term=2,
-    terms=[dict(name='2009-2010', start_year=2009, end_year=2010,
-                sessions=['2009-2010'])],
+    terms=[dict(name='2011-2012', start_year=2011, end_year=2012,
+                sessions=['2011-2012'])],
     )

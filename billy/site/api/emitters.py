@@ -98,25 +98,35 @@ class ICalendarEmitter(Emitter):
 
             event = icalendar.Event()
 
+            if obj.get('all_day', False):
+                event.add('dtstart', obj['when'].date())
+                event['X-FUNAMBOL-ALLDAY'] = 1
+                event['X-MICROSOFT-CDO-ALLDAYEVENT'] = 1
+            else:
+                event.add('dtstart', obj['when'])
+
+                end = obj.get('end')
+                if not end:
+                    end = obj['when'] + datetime.timedelta(hours=1)
+                event.add('dtend', end)
+
             if obj['type'] == 'committee:meeting':
                 summary = "%s Committee Meeting" % (
                     obj['participants'][0]['participant'])
-                event.add('dtstart', obj['when'])
             elif obj['type'] == 'bill:action':
                 summary = obj['description']
-                event.add('dtstart', obj['when'].date())
             else:
                 continue
 
             event.add('summary', summary)
-
-            end = obj.get('end')
-            if not end:
-                end = obj['when'] + datetime.timedelta(hours=1)
-            event.add('dtend', end)
-
             event.add('location', obj.get('location', 'Unknown'))
             event['uid'] = obj['_id']
+
+            if 'status' in obj:
+                event.add('status', obj['status'].upper())
+
+            if 'notes' in obj:
+                event.add('description', obj['notes'])
 
             for participant in obj['participants']:
                 addr = icalendar.vCalAddress('MAILTO:noone@example.com')

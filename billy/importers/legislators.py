@@ -69,11 +69,22 @@ def activate_legislators(state, current_term):
 
 
 def deactivate_legislators(state, current_term):
+
+    # legislators without a current term role or with an end_date
     for leg in db.legislators.find(
-        {'roles': {'$elemMatch':
-                   {'term': {'$ne': current_term},
-                    'type': 'member',
-                    'state': state}}}):
+        {'$or': [
+            {'roles': {'$elemMatch':
+                       {'term': {'$ne': current_term},
+                        'type': 'member',
+                        'state': state}}
+            },
+            {'roles': {'$elemMatch':
+                       {'term': current_term,
+                        'type': 'member',
+                        'end_date': {'$ne':None}}}
+            }
+
+        ]}):
 
         if 'old_roles' not in leg:
             leg['old_roles'] = {}

@@ -1,6 +1,5 @@
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.sd import metadata
 
 import lxml.html
 
@@ -97,5 +96,5 @@ class SDLegislatorScraper(LegislatorScraper):
                 else:
                     chamber = leg['roles'][0]['chamber']
 
-                leg.add_role('committee member', term, chamber,
+                leg.add_role('committee member', term=term, chamber=chamber,
                              committee=comm)

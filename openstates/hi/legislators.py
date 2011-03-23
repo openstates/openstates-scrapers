@@ -1,66 +1,97 @@
 from billy.scrape import ScrapeError, NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.hi.utils import year_from_session, BASE_URL
+from scrapelib import Response
+
+from utils import STATE_URL #, house, chamber_label # Data structures.
+# from utils import get_session_details, get_chamber_string # Functions.
 
 import lxml.html
-
-import itertools
-
-# From the itertools docs's recipe section 
-def grouper(n, iterable, fillvalue=None):
-    "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
-    args = [iter(iterable)] * n
-    return itertools.izip_longest(fillvalue=fillvalue, *args) 
-
+import os
 
 class HILegislatorScraper(LegislatorScraper):
     state = 'hi'
 
-    def scrape(self, chamber, session):
+    def __init__(self, *kwargs, **args):
+        super(HILegislatorScraper, self).__init__(*kwargs, **args)
+        """
+        session_scraper dict associates urls with scrapers for types of
+        session pages. LegislatorScraper.scrape() uses this to find the
+        approriate page url and scrape method to run for a specific
+        chamber and session defined in module __init__.py.
+        """
+        self.term_scraper = {
+            '2009-2011': ["/session2011/members/%s/%smembers.aspx", self.scrape_2011Leg],
+        }
+    
+    # def urlopen(self, url):
+    #     """Local override for speeding testing. Caches pages in local
+    #     directory on first scrape. Subsequently retrieves pages from 
+    #     local directory.
+    #     Comment out for production.
+    #     """
+    #     CACHE_DIR = os.path.expanduser('~/OpenStateCache')
+    #     
+    #     if not os.path.exists(CACHE_DIR):
+    #         raise ValueError('Directory %s does not exist.'%CACHE_DIR)
+    #     try:
+    #         url_filename = url.replace('/', '_')
+    #         with open(os.path.join(CACHE_DIR,url_filename),'r') as cached_file:
+    #             response = Response(url, url, code=200, fromcache=True, headers={})
+    #             result = self._wrap_result(response, cached_file.read())
+    #         return result
+    #     except IOError:
+    #         page = super(HILegislatorScraper, self).urlopen(url)
+    #         cached_file = open(os.path.join(CACHE_DIR,url_filename), 'w')
+    #         cached_file.write(page)
+    #         return page
+    
+    def scrape(self, chamber, term):
         # All other years are stored in a pdf
         # http://www.capitol.hawaii.gov/session2009/misc/statehood.pdf
-        if year_from_session(session) != 2009:
-            raise NoDataForPeriod(session)
+        chamber_names = {'lower': 'house', 'upper': 'senate'}
+        chamber_name = chamber_names.get(chamber, '')
+        self.validate_term(term) # Check term is defined in init file.
+        # Check if session scaper already implemented.
+        url, scraper = self.term_scraper.get(term, [None, None])
+        if scraper is not None:
+            # Session scraper is specified, so just run.
+            scraper(chamber, term, STATE_URL+url%(chamber_name, chamber_name))
+        else: # return without scraping.
+            raise NoDataForPeriod
 
-        if chamber == 'upper':
-            legislators_page_url = BASE_URL + "/site1/info/direct/sendir.asp"
-        else:
-            legislators_page_url = BASE_URL + "/site1/info/direct/repdir.asp"
-
-        with self.urlopen(legislators_page_url) as legislators_page_html:
-            legislators_page = lxml.html.fromstring(legislators_page_html)
-
-            # get all rows (except first) of first table
-            legislators_data = legislators_page.xpath('//table[1]/tr')[1:]
-            # group legislator data in sets of 3
-            legislators_data = grouper(3, legislators_data)
-
-            for name_and_party, district, email in legislators_data:
-                element, attribute, link, pos = name_and_party.iterlinks().next()
-                source = BASE_URL + link
-
-                name_and_party = name_and_party.cssselect('td')
-                name_and_party = name_and_party[0]
-                name, sep, party =  name_and_party.text_content().partition("(")
-                # remove space at the beginning
-                name = name.strip()
-
-                if party == 'R)':
-                    party = 'Republican'
-                else:
-                    party = 'Democratic'
-
-                district = district.cssselect('td')
-                district = district[1]
-                district = district.text_content()
-
-                email = email.cssselect('a')
-                email = email[0]
-                email = email.text_content()
-                # Remove white space
-                email = email.strip()
-
-                leg = Legislator(session, chamber, district, name,
-                                 party=party, official_email=email)
-                leg.add_source(source)
+    def scrape_2011Leg(self, chamber, term, url):
+        """2011 Scraper for legislators"""
+        titles = {'lower': 'Representative', 'upper': 'Senator'}
+        parties = {'D': 'Democrat', 'R': 'Republican'}
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+            table = page.xpath('//table[contains(@id, "GridView1")]')[0]
+            for row in table.xpath('tr[td/a[contains(@href, "memberpage")]]'):
+                params = {}
+                district = row.xpath('td/span[contains(@id, "LabelDis")]/font')[0].text + " " + \
+                    row.xpath('td/span[contains(@id, "LabelDistrict2")]/font')[0].text
+                # Replace any / in district name to allow json file to save.
+                district = district.replace('/', '-')
+                params['title'] = titles.get(chamber, '')
+                last_name = row.xpath('td/a[contains(@id, "HyperLinkLast")]/font')[0].text.strip()
+                first_names = row.xpath('td/span[contains(@id, "LabelFirst")]/font')[0].text.strip()
+                first_name = first_names.split()[0]
+                middle_name = ' '.join(first_names.split()[1:])
+                party = row.xpath('td/span[contains(@id, "LabelParty")]/font')[0].text
+                party = party.replace('(', '')
+                party = party.replace(')', '')
+                party = parties.get(party, '') # Expand party from initial letter.
+                params['office_address'] = row.xpath('td/span[contains(@id, "LabelRoom")]')[0].text + \
+                    " " + row.xpath('td/span[contains(@id, "LabelRoom2")]')[0].text
+                params['photo_url'] = row.xpath('td/a[contains(@id, "HyperLinkChairJPG")]/img')[0].attrib['src']
+                params['email'] = row.xpath('td/a[contains(@id, "HyperLinkEmail")]')[0].text
+                params['phone'] = row.xpath('td/span[contains(@id, "LabelPhone2")]')[0].text
+                
+                full_name = first_names + " " + last_name
+                leg = Legislator(term, chamber, district, full_name, 
+                        first_name, last_name, middle_name, party, **params)
+                leg.add_source(url)
                 self.save_legislator(leg)
+                
+

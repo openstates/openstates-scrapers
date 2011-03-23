@@ -2,6 +2,8 @@ import re
 import datetime
 import lxml.html
 
+import scrapelib
+
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
@@ -107,7 +109,11 @@ class DCBillScraper(BillScraper):
                 vote_type = td.text
                 vote_type_id = re.search(r"LoadVotingInfo\(this\.id, '(\d)'",
                                          td.get('onclick')).groups()[0]
-                self.scrape_vote(bill, vote_type_id, vote_type)
+                # some votes randomly break
+                try:
+                    self.scrape_vote(bill, vote_type_id, vote_type)
+                except scrapelib.HTTPError as e:
+                    self.warning(str(e))
 
         bill['actions'] = sorted(bill['actions'], key=lambda b:b['date'])
         self.save_bill(bill)
@@ -170,6 +176,8 @@ class DCBillScraper(BillScraper):
 
                 if bill_id.startswith('B'):
                     type = 'bill'
+                elif bill_id.startswith('CER'):
+                    type = 'resolution'
                 elif bill_id.startswith('CA'):
                     type = 'contract'
                 elif bill_id.startswith('PR'):

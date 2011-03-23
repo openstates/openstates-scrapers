@@ -1,4 +1,3 @@
-import re
 import datetime
 
 from billy.scrape.bills import BillScraper, Bill
