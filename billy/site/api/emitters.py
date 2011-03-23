@@ -122,11 +122,17 @@ class ICalendarEmitter(Emitter):
             event.add('location', obj.get('location', 'Unknown'))
             event['uid'] = obj['_id']
 
-            if 'status' in obj:
-                event.add('status', obj['status'].upper())
+            status = obj.get('status')
+            if status:
+                event.add('status', status.upper())
 
-            if 'notes' in obj:
-                event.add('description', obj['notes'])
+            notes = obj.get('notes')
+            if notes:
+                event.add('description', notes)
+
+            link = obj.get('link')
+            if link:
+                event.add('attach', link)
 
             for participant in obj['participants']:
                 addr = icalendar.vCalAddress('MAILTO:noone@example.com')
