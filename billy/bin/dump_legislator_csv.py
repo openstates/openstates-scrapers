@@ -3,16 +3,9 @@ import csv
 import argparse
 
 from billy import db
+from billy.utils import extract_fields
 from billy.conf import settings, base_arg_parser
 
-def _extract(d, fields):
-    rd = {}
-    for f in fields:
-        v = d.get(f, None)
-        if isinstance(v, (str, unicode)):
-            v = v.encode('utf8')
-        rd[f] = v
-    return rd
 
 def check_state(state):
     legislators = db.legislators.find({
@@ -32,7 +25,7 @@ def check_state(state):
 
     for leg in legislators:
 
-        writer.writerow(_extract(leg, fields))
+        writer.writerow(extract_fields(leg, fields))
 
         # check other uniques
         for field in uniques.iterkeys():

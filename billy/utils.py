@@ -77,3 +77,14 @@ def urlescape(url):
     path = urllib.quote(path, '/%')
     qs = urllib.quote_plus(qs, ':&=')
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
+
+
+def extract_fields(d, fields):
+    """ get values out of an object ``d`` for saving to a csv """
+    rd = {}
+    for f in fields:
+        v = d.get(f, None)
+        if isinstance(v, (str, unicode)):
+            v = v.encode('utf8')
+        rd[f] = v
+    return rd
