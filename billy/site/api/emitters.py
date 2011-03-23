@@ -91,32 +91,54 @@ class ICalendarEmitter(Emitter):
 
     def render(self, request):
         cal = icalendar.Calendar()
+        cal.add('version', '2.0')
+        cal.add('prodid', 'openstates')
+
         for obj in self.construct():
+            if not isinstance(obj, dict):
+                continue
+
             if obj.get('_type') != 'event':
                 # We can only serialize events
                 continue
 
             event = icalendar.Event()
 
+            if obj.get('all_day', False):
+                event.add('dtstart', obj['when'].date())
+                event['X-FUNAMBOL-ALLDAY'] = 1
+                event['X-MICROSOFT-CDO-ALLDAYEVENT'] = 1
+            else:
+                event.add('dtstart', obj['when'])
+
+                end = obj.get('end')
+                if not end:
+                    end = obj['when'] + datetime.timedelta(hours=1)
+                event.add('dtend', end)
+
             if obj['type'] == 'committee:meeting':
                 summary = "%s Committee Meeting" % (
                     obj['participants'][0]['participant'])
-                event.add('dtstart', obj['when'])
             elif obj['type'] == 'bill:action':
                 summary = obj['description']
-                event.add('dtstart', obj['when'].date())
             else:
                 continue
 
             event.add('summary', summary)
-
-            end = obj.get('end')
-            if not end:
-                end = obj['when'] + datetime.timedelta(hours=1)
-            event.add('dtend', end)
-
             event.add('location', obj.get('location', 'Unknown'))
             event['uid'] = obj['_id']
+
+            status = obj.get('status')
+            if status:
+                event.add('status', status.upper())
+
+            notes = obj.get('notes')
+            if notes:
+                event.add('description', notes)
+
+            link = obj.get('link')
+            if link:
+                event.add('attach', link)
 
             for participant in obj['participants']:
                 addr = icalendar.vCalAddress('MAILTO:noone@example.com')
