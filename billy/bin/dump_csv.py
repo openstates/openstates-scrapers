@@ -20,7 +20,7 @@ def _make_csv(state, name, fields):
     f.writerow(dict(zip(fields, fields)))
     return filename, f
 
-def dump_legislator_csvs(state, zf):
+def dump_legislator_csvs(state):
     leg_fields = ('leg_id', 'full_name', 'first_name', 'last_name',
                   'middle_name', 'suffixes', 'photo_url', 'active',
                   'created_at', 'updated_at')
@@ -31,6 +31,10 @@ def dump_legislator_csvs(state, zf):
                    'start_date', 'end_date')
     role_csv_fname, role_csv = _make_csv(state, 'legislator_roles.csv',
                                          role_fields)
+
+    com_fields = ('id', 'state', 'chamber', 'committee', 'subcommittee',
+                  'parent_id')
+    com_csv_fname, com_csv = _make_csv(state, 'committees.csv', com_fields)
 
     for legislator in db.legislators.find({'state': state}):
         leg_csv.writerow(extract_fields(legislator, leg_fields))
@@ -45,9 +49,12 @@ def dump_legislator_csvs(state, zf):
             d.update({'leg_id':legislator['leg_id']})
             role_csv.writerow(d)
 
-    return leg_csv_fname, role_csv_fname
+    for committee in db.committees.find({'state': state}):
+        com_csv.writerow(extract_fields(committee, com_fields))
 
-def dump_bill_csvs(state, zf):
+    return leg_csv_fname, role_csv_fname, com_csv_fname
+
+def dump_bill_csvs(state):
     bill_fields = ('state', 'session', 'chamber', 'bill_id', 'title',
                    'created_at', 'updated_at', 'type', 'subjects')
     bill_csv_fname, bill_csv = _make_csv(state, 'bills.csv', bill_fields)
@@ -110,8 +117,8 @@ def dump_csv(state, filename):
     zfile = zipfile.ZipFile(filename, 'w')
 
     files = []
-    files += dump_legislator_csvs(state, zfile)
-    files += dump_bill_csvs(state, zfile)
+    files += dump_legislator_csvs(state)
+    files += dump_bill_csvs(state)
 
     for fname in files:
         arcname = fname.split('/')[-1]
