@@ -14,21 +14,23 @@ import boto
 import pymongo
 from boto.s3.key import Key
 
-def _make_csv(directory, name, fields):
-    f = csv.DictWriter(open(os.path.join(directory, name), 'w'), fields)
+def _make_csv(state, name, fields):
+    filename = '/tmp/{0}_{1}'.format(state, name)
+    f = csv.DictWriter(open(filename, 'w'), fields)
     f.writerow(dict(zip(fields, fields)))
-    return f
+    return filename, f
 
-def dump_legislator_csvs(state, directory):
+def dump_legislator_csvs(state, zf):
     leg_fields = ('leg_id', 'full_name', 'first_name', 'last_name',
                   'middle_name', 'suffixes', 'photo_url', 'active',
                   'created_at', 'updated_at')
-    leg_csv = _make_csv(directory, 'legislators.csv', leg_fields)
+    leg_csv_fname, leg_csv = _make_csv(state, 'legislators.csv', leg_fields)
 
     role_fields = ('leg_id', 'type', 'term', 'district', 'chamber', 'state',
                    'party', 'committee_id', 'committee', 'subcommittee',
                    'start_date', 'end_date')
-    role_csv = _make_csv(directory, 'legislator_roles.csv', role_fields)
+    role_csv_fname, role_csv = _make_csv(state, 'legislator_roles.csv',
+                                         role_fields)
 
     for legislator in db.legislators.find({'state': state}):
         leg_csv.writerow(extract_fields(legislator, leg_fields))
@@ -43,27 +45,32 @@ def dump_legislator_csvs(state, directory):
             d.update({'leg_id':legislator['leg_id']})
             role_csv.writerow(d)
 
-def dump_bill_csvs(state, directory):
+    return leg_csv_fname, role_csv_fname
+
+def dump_bill_csvs(state, zf):
     bill_fields = ('state', 'session', 'chamber', 'bill_id', 'title',
                    'created_at', 'updated_at', 'type', 'subjects')
-    bill_csv = _make_csv(directory, 'bills.csv', bill_fields)
+    bill_csv_fname, bill_csv = _make_csv(state, 'bills.csv', bill_fields)
 
     action_fields = ('state', 'session', 'chamber', 'bill_id', 'date',
                      'action', 'actor', 'type')
-    action_csv = _make_csv(directory, 'bill_actions.csv', action_fields)
+    action_csv_fname, action_csv = _make_csv(state, 'bill_actions.csv',
+                                             action_fields)
 
     sponsor_fields = ('state', 'session', 'chamber', 'bill_id', 'type', 'name',
                       'leg_id')
-    sponsor_csv = _make_csv(directory, 'bill_sponsors.csv', sponsor_fields)
+    sponsor_csv_fname, sponsor_csv = _make_csv(state, 'bill_sponsors.csv',
+                                               sponsor_fields)
 
     vote_fields = ('state', 'session', 'chamber', 'bill_id', 'vote_id',
                    'vote_chamber', 'motion', 'date', 'type', 'yes_count',
                    'no_count', 'other_count')
-    vote_csv = _make_csv(directory, 'bill_votes.csv', vote_fields)
+    vote_csv_fname, vote_csv = _make_csv(state, 'bill_votes.csv', vote_fields)
 
     legvote_fields = ('vote_id', 'leg_id', 'name', 'vote')
-    legvote_csv = _make_csv(directory, 'bill_legislator_votes.csv',
-                            legvote_fields)
+    legvote_csv_fname, legvote_csv = _make_csv(state,
+                                               'bill_legislator_votes.csv',
+                                               legvote_fields)
 
     for bill in db.bills.find({'state': state}):
         bill_csv.writerow(extract_fields(bill, bill_fields))
@@ -71,6 +78,8 @@ def dump_bill_csvs(state, directory):
         bill_info = extract_fields(bill,
                                    ('bill_id', 'state', 'session', 'chamber'))
 
+        # basically same behavior for actions, sponsors and votes:
+        #    extract fields, update with bill_info, write to csv
         for action in bill['actions']:
             adict = extract_fields(action, action_fields)
             adict.update(bill_info)
@@ -94,18 +103,21 @@ def dump_bill_csvs(state, directory):
                                           'leg_id': leg_vote['leg_id'],
                                           'name': leg_vote['name'],
                                           'vote': vtype})
+    return (bill_csv_fname, action_csv_fname, sponsor_csv_fname,
+            vote_csv_fname, legvote_csv_fname)
 
+def dump_csv(state, filename):
+    zfile = zipfile.ZipFile(filename, 'w')
 
-def dump_csv(state, directory):
-    try:
-        os.makedirs(directory)
-    except OSError:
-        pass
+    files = []
+    files += dump_legislator_csvs(state, zfile)
+    files += dump_bill_csvs(state, zfile)
 
-    dump_legislator_csvs(state, directory)
-    dump_bill_csvs(state, directory)
+    for fname in files:
+        arcname = fname.split('/')[-1]
+        zfile.write(fname, arcname=arcname)
 
-def zjson_upload(state, filename):
+def json_upload(state, filename):
     today = datetime.date.today()
 
     # build URL
@@ -149,8 +161,8 @@ if __name__ == '__main__':
     )
     parser.add_argument('state', help=('the two-letter abbreviation of the'
                                        ' state to import'))
-    parser.add_argument('--directory',
-                        help='directory to output to (default: <state>_csv)')
+    parser.add_argument('--file', '-f',
+                        help='filename to output to (defaults to <state>.zip)')
     parser.add_argument('--nodump', action='store_true', default=False,
                         help="don't run the dump, only upload")
     parser.add_argument('--upload', '-u', action='store_true', default=False,
@@ -160,11 +172,11 @@ if __name__ == '__main__':
 
     settings.update(args)
 
-    if not args.directory:
-        args.directory = args.state + '_csv'
+    if not args.file:
+        args.file = '{0}_csv.zip'.format(args.state)
 
     if not args.nodump:
-        dump_csv(args.state, args.directory)
+        dump_csv(args.state, args.file)
 
     if args.upload:
         upload(args.state, args.file)
