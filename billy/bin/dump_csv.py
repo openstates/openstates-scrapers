@@ -142,6 +142,7 @@ def upload(state, filename):
     k.set_contents_from_filename(filename)
     k.set_acl('public-read')
 
+    metadata = db.metadata.find_one({'_id': state})
     metadata['_latest_csv_url'] = s3_url
     metadata['_latest_csv_date'] = datetime.datetime.utcnow()
     db.metadata.save(metadata, safe=True)
