@@ -10,7 +10,7 @@
    "when": {"type": "datetime"},
    "end": {"type": ["datetime", "null"]},
    "all_day": {"type": "boolean", "required": false},
-   "notes": {"type": "string", "required": false},
+   "notes": {"type": ["string", "null"], "required": false},
    "status": {"type": "string", "required": false},
    "participants": {"type": "array", "items":
      {"type": "object", "properties": {
