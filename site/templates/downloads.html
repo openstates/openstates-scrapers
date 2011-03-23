@@ -43,7 +43,7 @@ required you should use the JSON downloads or `API </api/>`_.
 
 <h3> Downloads </h3>
 <table id="download_list">
-    <tr><th>State</th><th>JSON Archive</th><th>CSV Archive</th></tr>
+    <tr><th>State</th><th>JSON</th><th>CSV</th></tr>
     {% for state in states %}
     <tr><td>{{state.name}}</td>
         <td><a href="{{state.latest_dump_url}}">{{state.latest_dump_date|date}}</a></td>
