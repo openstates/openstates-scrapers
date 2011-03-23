@@ -91,6 +91,9 @@ class ICalendarEmitter(Emitter):
 
     def render(self, request):
         cal = icalendar.Calendar()
+        cal.add('version', '2.0')
+        cal.add('prodid', 'openstates')
+
         for obj in self.construct():
             if not isinstance(obj, dict):
                 continue
