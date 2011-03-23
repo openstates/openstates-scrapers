@@ -92,6 +92,9 @@ class ICalendarEmitter(Emitter):
     def render(self, request):
         cal = icalendar.Calendar()
         for obj in self.construct():
+            if not isinstance(obj, dict):
+                continue
+
             if obj.get('_type') != 'event':
                 # We can only serialize events
                 continue
