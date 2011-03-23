@@ -50,7 +50,9 @@ def dump_legislator_csvs(state):
             role_csv.writerow(d)
 
     for committee in db.committees.find({'state': state}):
-        com_csv.writerow(extract_fields(committee, com_fields))
+        cdict = extract_fields(committee, com_fields)
+        cdict['id'] = committee['_id']
+        com_csv.writerow(cdict)
 
     return leg_csv_fname, role_csv_fname, com_csv_fname
 
