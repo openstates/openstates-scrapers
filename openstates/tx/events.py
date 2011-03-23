@@ -73,7 +73,8 @@ class TXEventScraper(EventScraper):
                               location=location,
                               status=status,
                               notes=notes,
-                              all_day=all_day)
+                              all_day=all_day,
+                              link=entry['link'])
                 event.add_participant('committee', title)
 
                 event['_guid'] = entry['guid']
