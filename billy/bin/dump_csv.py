@@ -14,22 +14,21 @@ import boto
 import pymongo
 from boto.s3.key import Key
 
+def _make_csv(directory, name, fields):
+    f = csv.DictWriter(open(os.path.join(directory, name), 'w'), fields)
+    f.writerow(dict(zip(fields, fields)))
+    return f
+
 def dump_legislator_csvs(state, directory):
     leg_fields = ('leg_id', 'full_name', 'first_name', 'last_name',
                   'middle_name', 'suffixes', 'photo_url', 'active',
                   'created_at', 'updated_at')
-    leg_csv = csv.DictWriter(
-        open(os.path.join(directory, 'legislators.csv'), 'w'),
-        leg_fields)
-    leg_csv.writerow(dict(zip(leg_fields, leg_fields)))
+    leg_csv = _make_csv(directory, 'legislators.csv', leg_fields)
 
     role_fields = ('leg_id', 'type', 'term', 'district', 'chamber', 'state',
                    'party', 'committee_id', 'committee', 'subcommittee',
                    'start_date', 'end_date')
-    role_csv = csv.DictWriter(
-        open(os.path.join(directory, 'legislator_roles.csv'), 'w'),
-        role_fields)
-    role_csv.writerow(dict(zip(role_fields, role_fields)))
+    role_csv = _make_csv(directory, 'legislator_roles.csv', role_fields)
 
     for legislator in db.legislators.find({'state': state}):
         leg_csv.writerow(extract_fields(legislator, leg_fields))
@@ -44,6 +43,57 @@ def dump_legislator_csvs(state, directory):
             d.update({'leg_id':legislator['leg_id']})
             role_csv.writerow(d)
 
+def dump_bill_csvs(state, directory):
+    bill_fields = ('state', 'session', 'chamber', 'bill_id', 'title',
+                   'created_at', 'updated_at', 'type', 'subjects')
+    bill_csv = _make_csv(directory, 'bills.csv', bill_fields)
+
+    action_fields = ('state', 'session', 'chamber', 'bill_id', 'date',
+                     'action', 'actor', 'type')
+    action_csv = _make_csv(directory, 'bill_actions.csv', action_fields)
+
+    sponsor_fields = ('state', 'session', 'chamber', 'bill_id', 'type', 'name',
+                      'leg_id')
+    sponsor_csv = _make_csv(directory, 'bill_sponsors.csv', sponsor_fields)
+
+    vote_fields = ('state', 'session', 'chamber', 'bill_id', 'vote_id',
+                   'vote_chamber', 'motion', 'date', 'type', 'yes_count',
+                   'no_count', 'other_count')
+    vote_csv = _make_csv(directory, 'bill_votes.csv', vote_fields)
+
+    legvote_fields = ('vote_id', 'leg_id', 'name', 'vote')
+    legvote_csv = _make_csv(directory, 'bill_legislator_votes.csv',
+                            legvote_fields)
+
+    for bill in db.bills.find({'state': state}):
+        bill_csv.writerow(extract_fields(bill, bill_fields))
+
+        bill_info = extract_fields(bill,
+                                   ('bill_id', 'state', 'session', 'chamber'))
+
+        for action in bill['actions']:
+            adict = extract_fields(action, action_fields)
+            adict.update(bill_info)
+            action_csv.writerow(adict)
+
+        for sponsor in bill['sponsors']:
+            sdict = extract_fields(sponsor, sponsor_fields)
+            sdict.update(bill_info)
+            sponsor_csv.writerow(sdict)
+
+        for vote in bill['votes']:
+            vdict = extract_fields(vote, vote_fields)
+            # copy chamber from vote into vote_chamber
+            vdict['vote_chamber'] = vdict['chamber']
+            vdict.update(bill_info)
+            vote_csv.writerow(vdict)
+
+            for vtype in ('yes', 'no', 'other'):
+                for leg_vote in vote[vtype+'_votes']:
+                    legvote_csv.writerow({'vote_id': vote['vote_id'],
+                                          'leg_id': leg_vote['leg_id'],
+                                          'name': leg_vote['name'],
+                                          'vote': vtype})
 
 
 def dump_csv(state, directory):
@@ -53,6 +103,7 @@ def dump_csv(state, directory):
         pass
 
     dump_legislator_csvs(state, directory)
+    dump_bill_csvs(state, directory)
 
 def zjson_upload(state, filename):
     today = datetime.date.today()

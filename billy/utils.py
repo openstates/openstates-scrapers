@@ -79,12 +79,14 @@ def urlescape(url):
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
 
-def extract_fields(d, fields):
+def extract_fields(d, fields, delimiter='|'):
     """ get values out of an object ``d`` for saving to a csv """
     rd = {}
     for f in fields:
         v = d.get(f, None)
         if isinstance(v, (str, unicode)):
             v = v.encode('utf8')
+        elif isinstance(v, list):
+            v = delimiter.join(v)
         rd[f] = v
     return rd
