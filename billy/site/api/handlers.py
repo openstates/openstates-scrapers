@@ -248,12 +248,22 @@ class EventsHandler(FiftyStateHandler):
                 spec[key] = {'$in': split}
 
         return list(db.events.find(spec).sort(
-            'when', pymongo.ASCENDING).limit(50))
+            'when', pymongo.ASCENDING).limit(1000))
 
 
 class SubjectListHandler(FiftyStateHandler):
-    def read(self, request):
-        return settings.BILLY_SUBJECTS
+    def read(self, request, state, session=None, chamber=None):
+        spec = {'state': state.lower()}
+        if session:
+            spec['session'] = session
+        if chamber:
+            chamber = chamber.lower()
+            spec['chamber'] = _chamber_aliases.get(chamber, chamber)
+        result = {}
+        for subject in settings.BILLY_SUBJECTS:
+            count = db.bills.find(dict(spec, subjects=subject)).count()
+            result[subject] = count
+        return result
 
 
 class ReconciliationHandler(BaseHandler):
