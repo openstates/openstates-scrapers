@@ -50,7 +50,9 @@ def dump_legislator_csvs(state):
             role_csv.writerow(d)
 
     for committee in db.committees.find({'state': state}):
-        com_csv.writerow(extract_fields(committee, com_fields))
+        cdict = extract_fields(committee, com_fields)
+        cdict['id'] = committee['_id']
+        com_csv.writerow(cdict)
 
     return leg_csv_fname, role_csv_fname, com_csv_fname
 
@@ -107,9 +109,9 @@ def dump_bill_csvs(state):
             for vtype in ('yes', 'no', 'other'):
                 for leg_vote in vote[vtype+'_votes']:
                     legvote_csv.writerow({'vote_id': vote['vote_id'],
-                                          'leg_id': leg_vote['leg_id'],
-                                          'name': leg_vote['name'],
-                                          'vote': vtype})
+                                      'leg_id': leg_vote['leg_id'],
+                                      'name': leg_vote['name'].encode('utf8'),
+                                      'vote': vtype})
     return (bill_csv_fname, action_csv_fname, sponsor_csv_fname,
             vote_csv_fname, legvote_csv_fname)
 
@@ -142,8 +144,9 @@ def upload(state, filename):
     k.set_contents_from_filename(filename)
     k.set_acl('public-read')
 
-    metadata['_latest_csv_url'] = s3_url
-    metadata['_latest_csv_date'] = datetime.datetime.utcnow()
+    metadata = db.metadata.find_one({'_id': state})
+    metadata['latest_csv_url'] = s3_url
+    metadata['latest_csv_date'] = datetime.datetime.utcnow()
     db.metadata.save(metadata, safe=True)
 
     print 'uploaded to %s' % s3_url

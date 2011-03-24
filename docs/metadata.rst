@@ -31,6 +31,10 @@ Metadata Fields
     URL pointing to a download of all data for the state
 ``latest_dump_date``
     datestamp of the file at ``latest_dump_url``
+``latest_csv_url``
+    URL pointing to experimental CSV download of state data
+``latest_csv_date``
+    datestamp of the file at ``latest_csv_url``
 ``terms``
     A list of terms that we have data available for. Each session will be an object with the following fields:
 

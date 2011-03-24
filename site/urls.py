@@ -21,6 +21,8 @@ urlpatterns = patterns('',
      {'template':'categorization.html'}),
     (r'^status/$', 'django.views.generic.simple.direct_to_template',
      {'template':'status.html'}),
+    (r'^csv_downloads/$', 'django.views.generic.simple.direct_to_template',
+     {'template':'csv_downloads.html'}),
 
     # api docs
     (r'^api/$', 'django.views.generic.simple.direct_to_template',
