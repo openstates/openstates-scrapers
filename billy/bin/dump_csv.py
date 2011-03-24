@@ -21,8 +21,10 @@ def _make_csv(state, name, fields):
     return filename, f
 
 def dump_legislator_csvs(state):
-    leg_fields = ('leg_id', 'full_name', 'first_name', 'last_name',
-                  'middle_name', 'suffixes', 'photo_url', 'active',
+    leg_fields = ('leg_id', 'full_name', 'first_name', 'middle_name',
+                  'last_name', 'suffixes', 'nickname', 'active',
+                  'state', 'chamber', 'district', 'party',
+                  'votesmart_id', 'transparencydata_id', 'photo_url',
                   'created_at', 'updated_at')
     leg_csv_fname, leg_csv = _make_csv(state, 'legislators.csv', leg_fields)
 
