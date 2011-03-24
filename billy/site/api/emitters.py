@@ -80,6 +80,17 @@ class FeedEmitter(Emitter):
         return EventFeed()(request, self.construct())
 
 
+class _vDatetime(icalendar.vDatetime):
+    """
+    The icalendar module outputs datetimes with VALUE=DATE,
+    which breaks some calendar clients. This is a fix to
+    use VALUE=DATETIME.
+    """
+    def __init__(self, dt):
+        self.dt = dt
+        self.params = icalendar.Parameters(dict(value='DATETIME'))
+
+
 class ICalendarEmitter(Emitter):
     """
     Emits an iCalendar-format calendar from a list of Open State 'event'
@@ -109,12 +120,12 @@ class ICalendarEmitter(Emitter):
                 event['X-FUNAMBOL-ALLDAY'] = 1
                 event['X-MICROSOFT-CDO-ALLDAYEVENT'] = 1
             else:
-                event.add('dtstart', obj['when'])
+                event['dtstart'] = _vDatetime(obj['when'])
 
                 end = obj.get('end')
                 if not end:
                     end = obj['when'] + datetime.timedelta(hours=1)
-                event.add('dtend', end)
+                event['dtend'] = _vDatetime(end)
 
             if obj['type'] == 'committee:meeting':
                 summary = "%s Committee Meeting" % (
