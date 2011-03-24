@@ -19,7 +19,16 @@ class ScrapeError(Exception):
     """
     Base class for scrape errors.
     """
-    pass
+    def __init__(self, msg, orig_exception=None):
+        self.msg = msg
+        self.orig_exception = orig_exception
+
+    def __str__(self):
+        if self.orig_exception:
+            return '%s\nOriginal Exception: %s' % (self.msg,
+                                        self.orig_exception)
+        else:
+            return self.msg
 
 
 class NoDataForPeriod(ScrapeError):
@@ -208,12 +217,12 @@ def get_scraper(mod_path, state, scraper_type):
         mod_path = '%s.%s' % (mod_path, scraper_type)
         mod = __import__(mod_path)
     except ImportError as e:
-        raise RunException("could not import %s" % mod_path, e)
+        raise ScrapeError("could not import %s" % mod_path, e)
 
     try:
         ScraperClass = _scraper_registry[state][scraper_type]
     except KeyError as e:
-        raise RunException("no %s %s scraper found" %
+        raise ScrapeError("no %s %s scraper found" %
                            (state, scraper_type))
     return ScraperClass
 

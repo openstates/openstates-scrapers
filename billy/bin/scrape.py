@@ -8,22 +8,9 @@ import argparse
 import json
 
 from billy.conf import settings, base_arg_parser
-from billy.scrape import NoDataForPeriod, JSONDateEncoder, get_scraper
+from billy.scrape import (ScrapeError, NoDataForPeriod, JSONDateEncoder,
+                          get_scraper)
 from billy.scrape.validator import DatetimeValidator
-
-
-class RunException(Exception):
-    """ exception when trying to run a scraper """
-
-    def __init__(self, msg, orig_exception=None):
-        self.msg = msg
-        self.orig_exception = orig_exception
-
-    def __str__(self):
-        if self.orig_exception:
-            return '%s\nOriginal Exception: %s' % (self.msg, self.orig_exception)
-        else:
-            return self.msg
 
 
 def _run_scraper(mod_path, state, scraper_type, options, metadata):
@@ -44,7 +31,7 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
 
     try:
         ScraperClass = get_scraper(mod_path, state, scraper_type)
-    except RunError as e:
+    except ScrapeError as e:
         # only re-raise if not alldata
         if not options.alldata:
             raise e
@@ -209,9 +196,9 @@ def main():
 
     if not (args.bills or args.legislators or args.votes or
             args.committees or args.events or args.alldata):
-        raise RunException("Must specify at least one of --bills, "
-                           "--legislators, --committees, --votes, --events, "
-                           "--alldata")
+        raise ScrapeError("Must specify at least one of --bills, "
+                          "--legislators, --committees, --votes, --events, "
+                          "--alldata")
 
     if args.alldata:
         args.bills = True
@@ -234,6 +221,6 @@ def main():
 if __name__ == '__main__':
     try:
         result = main()
-    except RunException as e:
+    except ScrapeError as e:
         print 'Error:', e
         sys.exit(1)
