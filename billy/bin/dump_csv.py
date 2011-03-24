@@ -3,6 +3,7 @@ import re
 import os
 import csv
 import time
+import shutil
 import zipfile
 import datetime
 
@@ -117,16 +118,26 @@ def dump_bill_csvs(state):
     return (bill_csv_fname, action_csv_fname, sponsor_csv_fname,
             vote_csv_fname, legvote_csv_fname)
 
-def dump_csv(state, filename):
-    zfile = zipfile.ZipFile(filename, 'w')
+def dump_csv(state, filename, nozip):
 
     files = []
     files += dump_legislator_csvs(state)
     files += dump_bill_csvs(state)
 
-    for fname in files:
-        arcname = fname.split('/')[-1]
-        zfile.write(fname, arcname=arcname)
+    if not nozip:
+        zfile = zipfile.ZipFile(filename, 'w')
+        for fname in files:
+            arcname = fname.split('/')[-1]
+            zfile.write(fname, arcname=arcname)
+            os.remove(fname)
+    else:
+        dirname = state+'_csv'
+        try:
+            os.makedirs(dirname)
+        except OSError:
+            pass
+        for fname in files:
+            shutil.move(fname, dirname)
 
 def upload(state, filename):
     today = datetime.date.today()
@@ -151,7 +162,7 @@ def upload(state, filename):
     metadata['latest_csv_date'] = datetime.datetime.utcnow()
     db.metadata.save(metadata, safe=True)
 
-    print 'uploaded to %s' % s3_url
+    print('uploaded to %s' % s3_url)
 
 
 if __name__ == '__main__':
@@ -167,8 +178,8 @@ if __name__ == '__main__':
                                        ' state to import'))
     parser.add_argument('--file', '-f',
                         help='filename to output to (defaults to <state>.zip)')
-    parser.add_argument('--nodump', action='store_true', default=False,
-                        help="don't run the dump, only upload")
+    parser.add_argument('--nozip', action='store_true', default=False,
+                        help="don't zip the files")
     parser.add_argument('--upload', '-u', action='store_true', default=False,
                         help='upload the created archive to S3')
 
@@ -179,8 +190,10 @@ if __name__ == '__main__':
     if not args.file:
         args.file = '{0}_csv.zip'.format(args.state)
 
-    if not args.nodump:
-        dump_csv(args.state, args.file)
+    dump_csv(args.state, args.file, args.nozip)
 
     if args.upload:
-        upload(args.state, args.file)
+        if args.nozip:
+            raise Warning('Unable to --upload if --nozip is specified')
+        else:
+            upload(args.state, args.file)
