@@ -248,7 +248,7 @@ class EventsHandler(FiftyStateHandler):
                 spec[key] = {'$in': split}
 
         return list(db.events.find(spec).sort(
-            'when', pymongo.ASCENDING).limit(50))
+            'when', pymongo.ASCENDING).limit(1000))
 
 
 class SubjectListHandler(FiftyStateHandler):
