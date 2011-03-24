@@ -62,6 +62,13 @@ def metadata(state):
     return db.metadata.find_one({'_id': state})
 
 
+def chamber_name(state, chamber):
+    if chamber == 'joint':
+        return 'Joint'
+
+    return metadata(state)['%s_chamber_name' % chamber].split()[0]
+
+
 def term_for_session(state, session):
     meta = metadata(state)
 
