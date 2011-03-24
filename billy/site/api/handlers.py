@@ -252,10 +252,13 @@ class EventsHandler(FiftyStateHandler):
 
 
 class SubjectListHandler(FiftyStateHandler):
-    def read(self, request, state, session=None):
+    def read(self, request, state, session=None, chamber=None):
         spec = {'state': state.lower()}
         if session:
             spec['session'] = session
+        if chamber:
+            chamber = chamber.lower()
+            spec['chamber'] = _chamber_aliases.get(chamber, chamber)
         result = {}
         for subject in settings.BILLY_SUBJECTS:
             count = db.bills.find(dict(spec, subjects=subject)).count()
