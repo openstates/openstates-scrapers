@@ -200,3 +200,20 @@ class SourcedObject(dict):
         """
         retrieved = retrieved or datetime.datetime.utcnow()
         self['sources'].append(dict(url=url, retrieved=retrieved, **kwargs))
+
+
+def get_scraper(mod_path, state, scraper_type):
+    """ import a scraper from the scraper registry """
+    try:
+        mod_path = '%s.%s' % (mod_path, scraper_type)
+        mod = __import__(mod_path)
+    except ImportError as e:
+        raise RunException("could not import %s" % mod_path, e)
+
+    try:
+        ScraperClass = _scraper_registry[state][scraper_type]
+    except KeyError as e:
+        raise RunException("no %s %s scraper found" %
+                           (state, scraper_type))
+    return ScraperClass
+
