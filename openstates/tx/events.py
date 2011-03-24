@@ -52,11 +52,6 @@ class TXEventScraper(EventScraper):
                         notes = "Time: " + notes.strip()
                     else:
                         notes = ""
-
-                    if notes == 'Time: (Canceled)':
-                        status = 'canceled'
-                    else:
-                        status = 'confirmed'
                 else:
                     match = re.match(r'Time: (.*), Location:', desc)
                     if match:
@@ -64,7 +59,11 @@ class TXEventScraper(EventScraper):
                                                           '%m/%d/%Y').date()
                         all_day = True
                         notes = "Time: " + match.group(1).strip()
-                        status = 'confirmed'
+
+                if '(Canceled)' in notes:
+                    status = 'canceled'
+                else:
+                    status = 'confirmed'
 
                 location = entry['description'].split('Location: ')[1]
 
