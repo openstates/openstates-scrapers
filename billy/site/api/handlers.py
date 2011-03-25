@@ -375,7 +375,7 @@ class ReconciliationHandler(BaseHandler):
         return sorted(results, cmp=lambda l, r: cmp(r['score'], l['score']))
 
 
-class LegislatorGeoHandler(FiftyStateHandler):
+class LegislatorGeoHandler(BillyHandler):
     base_url = getattr(settings, 'BOUNDARY_SERVICE_URL',
                        'http://localhost:8001/1.0/')
 
