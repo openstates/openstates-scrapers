@@ -59,9 +59,14 @@ class NCBillScraper(BillScraper):
                             self.subject_map[bill_link[0]].append(cur_subject)
 
     def scrape_bill(self, session, bill_id):
+        # there will be a space in bill_id if we're doing a one-off bill scrape
+        # convert HB 102 into H102
+        if ' ' in bill_id:
+            bill_id = bill_id[0] + bill_id.split(' ')[-1]
+
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/'\
             'BillLookUp/BillLookUp.pl?Session=%s&BillID=%s' % (
-            session, bill_id.replace(' ', ''))
+            session, bill_id)
 
         if bill_id[0] == 'H':
             chamber = 'lower'
@@ -148,7 +153,7 @@ class NCBillScraper(BillScraper):
 
                 bill.add_action(actor, action, act_date, type=atype)
 
-            if self.is_latest_session(session):
+            if hasattr(self, 'subject_map'):
                 subj_key = bill_id[0] + ' ' + bill_id.split(' ')[-1]
                 bill['subjects'] = self.subject_map[subj_key]
 
