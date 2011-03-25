@@ -1,12 +1,14 @@
 import re
+import urllib2
 import datetime
 import json
+
+from django.http import HttpResponse
 
 from billy import db
 from billy.conf import settings
 from billy.utils import keywordize
-
-from django.http import HttpResponse
+from billy.site.api.utils import district_from_census_name
 
 import pymongo
 
@@ -372,3 +374,40 @@ class ReconciliationHandler(BaseHandler):
                                  "name": "Legislator"}]})
 
         return sorted(results, cmp=lambda l, r: cmp(r['score'], l['score']))
+
+
+class LegislatorGeoHandler(BillyHandler):
+    base_url = getattr(settings, 'BOUNDARY_SERVICE_URL',
+                       'http://localhost:8001/1.0/')
+
+    def read(self, request):
+        try:
+            latitude, longitude = request.GET['lat'], request.GET['long']
+        except KeyError:
+            resp = rc.BAD_REQUEST
+            resp.write(': Need lat and long parameters')
+            return resp
+
+        url = "%sboundary/?contains=%s,%s&sets=sldl,sldu&limit=0" % (
+            self.base_url, latitude, longitude)
+
+        resp = json.load(urllib2.urlopen(url))
+
+        filters = []
+        ret = []
+        for dist in resp['objects']:
+            state = dist['name'][0:2].lower()
+            chamber = {'/1.0/boundary-set/sldu/': 'upper',
+                       '/1.0/boundary-set/sldl/': 'lower'}[dist['set']]
+            census_name = dist['name'][3:]
+
+            our_name = district_from_census_name(
+                state, chamber, census_name)
+
+            filters.append({'state': state, 'district': our_name,
+                            'chamber': chamber})
+
+        if not filters:
+            return []
+
+        return list(db.legislators.find({'$or': filters}))
