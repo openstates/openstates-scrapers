@@ -400,8 +400,10 @@ class LegislatorGeoHandler(FiftyStateHandler):
             chamber = {'/1.0/boundary-set/sldu/': 'upper',
                        '/1.0/boundary-set/sldl/': 'lower'}[dist['set']]
 
+            our_name = utils.district_from_census_name(
+                state, chamber, name)
 
-            filters.append({'state': state, 'district': name,
+            filters.append({'state': state, 'district': our_name,
                             'chamber': chamber})
 
         if not filters:
