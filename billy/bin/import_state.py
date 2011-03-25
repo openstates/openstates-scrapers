@@ -10,6 +10,7 @@ from billy.importers.legislators import import_legislators
 from billy.importers.committees import import_committees
 from billy.importers.events import import_events
 from billy.importers.versions import import_versions
+from billy.utils import configure_logging
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -49,16 +50,7 @@ if __name__ == '__main__':
     data_dir = settings.BILLY_DATA_DIR
 
     # configure logger
-    if args.verbose == 0:
-        verbosity = logging.WARNING
-    elif args.verbose == 1:
-        verbosity = logging.INFO
-    else:
-        verbosity = logging.DEBUG
-
-    logging.basicConfig(level=verbosity,
-                    format="%(asctime)s %(name)s %(levelname)s %(message)s",
-                    datefmt="%H:%M:%S")
+    configure_logging(args.verbose, args.state)
 
     # always import metadata
     import_metadata(args.state, data_dir)

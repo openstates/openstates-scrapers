@@ -12,21 +12,15 @@ from billy.scrape import (ScrapeError, NoDataForPeriod, JSONDateEncoder,
                           get_scraper)
 from billy.scrape.validator import DatetimeValidator
 from billy.importers.bills import import_bills
+from billy.utils import configure_logging
+from billy.bin.scrape import _clear_scraped_data
 
 def _run_scraper(mod_path, state, options, metadata):
     """
         state: lower case two letter abbreviation of state
     """
-    # make or clear directory for this type
-    path = os.path.join(options.output_dir, 'bills')
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno != 17:
-            raise e
-        else:
-            for f in glob.glob(path+'/*.json'):
-                os.remove(f)
+
+    _clear_scraped_data(options.output_dir, 'bills')
 
     ScraperClass = get_scraper(mod_path, state, 'bills')
 
@@ -84,26 +78,9 @@ def main():
     state = metadata['abbreviation']
 
     # configure logger
-    if args.verbose == 0:
-        verbosity = logging.WARNING
-    elif args.verbose == 1:
-        verbosity = logging.INFO
-    else:
-        verbosity = logging.DEBUG
+    configure_logging(args.verbose, state)
 
-    logging.basicConfig(level=verbosity,
-                        format="%(asctime)s %(name)s %(levelname)s " + state +
-                               " %(message)s",
-                        datefmt="%H:%M:%S",
-                       )
-
-    # make output dir
     args.output_dir = os.path.join(settings.BILLY_DATA_DIR, args.state)
-    try:
-        os.makedirs(args.output_dir)
-    except OSError as e:
-        if e.errno != 17:
-            raise e
 
     _run_scraper(args.state, state, args, metadata)
 

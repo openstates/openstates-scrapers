@@ -10,16 +10,12 @@ import json
 from billy.conf import settings, base_arg_parser
 from billy.scrape import (ScrapeError, NoDataForPeriod, JSONDateEncoder,
                           get_scraper)
+from billy.utils import configure_logging
 from billy.scrape.validator import DatetimeValidator
 
-
-def _run_scraper(mod_path, state, scraper_type, options, metadata):
-    """
-        state: lower case two letter abbreviation of state
-        scraper_type: bills, legislators, committees, votes
-    """
+def _clear_scraped_data(output_dir, scraper_type):
     # make or clear directory for this type
-    path = os.path.join(options.output_dir, scraper_type)
+    path = os.path.join(output_dir, scraper_type)
     try:
         os.makedirs(path)
     except OSError as e:
@@ -28,6 +24,13 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
         else:
             for f in glob.glob(path+'/*.json'):
                 os.remove(f)
+
+def _run_scraper(mod_path, state, scraper_type, options, metadata):
+    """
+        state: lower case two letter abbreviation of state
+        scraper_type: bills, legislators, committees, votes
+    """
+    _clear_scraped_data(options.output_dir, scraper_type)
 
     try:
         ScraperClass = get_scraper(mod_path, state, scraper_type)
@@ -141,19 +144,7 @@ def main():
     metadata = __import__(args.state, fromlist=['metadata']).metadata
     state = metadata['abbreviation']
 
-    # configure logger
-    if args.verbose == 0:
-        verbosity = logging.WARNING
-    elif args.verbose == 1:
-        verbosity = logging.INFO
-    else:
-        verbosity = logging.DEBUG
-
-    logging.basicConfig(level=verbosity,
-                        format="%(asctime)s %(name)s %(levelname)s " + state +
-                               " %(message)s",
-                        datefmt="%H:%M:%S",
-                       )
+    configure_logging(args.verbose, args.state)
 
     # make output dir
     args.output_dir = os.path.join(settings.BILLY_DATA_DIR, args.state)

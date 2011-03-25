@@ -1,10 +1,10 @@
 import re
 import urllib
 import urlparse
+import logging
 
 from billy import db
 
-import jellyfish
 
 
 # metadata cache
@@ -43,6 +43,7 @@ def keywordize(str):
     Splits a string into words, removes common stopwords, stems and removes
     duplicates.
     """
+    import jellyfish
     return set([jellyfish.porter_stem(word.lower().encode('ascii',
                                                           'ignore'))
                 for word in tokenize(str)
@@ -97,3 +98,12 @@ def extract_fields(d, fields, delimiter='|'):
             v = delimiter.join(v)
         rd[f] = v
     return rd
+
+def configure_logging(verbosity_count=0, state=None):
+    verbosity = {0: logging.WARNING, 1: logging.INFO}.get(verbosity_count,
+                                                          logging.DEBUG)
+    if state:
+        format = "%(asctime)s %(name)s %(levelname)s " + state + " %(message)s"
+    else:
+        format = "%(asctime)s %(name)s %(levelname)s %(message)s"
+    logging.basicConfig(level=verbosity, format=format, datefmt="%H:%M:%S")
