@@ -396,12 +396,11 @@ class LegislatorGeoHandler(BillyHandler):
         ret = []
         for dist in resp['objects']:
             state = dist['name'][0:2].lower()
-            name = dist['name'].split('District ')[1]
             chamber = {'/1.0/boundary-set/sldu/': 'upper',
                        '/1.0/boundary-set/sldl/': 'lower'}[dist['set']]
 
             our_name = utils.district_from_census_name(
-                state, chamber, name)
+                state, chamber, dist['name'])
 
             filters.append({'state': state, 'district': our_name,
                             'chamber': chamber})
