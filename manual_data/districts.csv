@@ -1,0 +1,384 @@
+"State","Chamber","Census Name","Our Name"
+"mn","lower","State House District 10A","10A"
+"mn","lower","State House District 10B","10B"
+"mn","lower","State House District 11A","11A"
+"mn","lower","State House District 11B","11B"
+"mn","lower","State House District 12A","12A"
+"mn","lower","State House District 12B","12B"
+"mn","lower","State House District 13A","13A"
+"mn","lower","State House District 13B","13B"
+"mn","lower","State House District 14A","14A"
+"mn","lower","State House District 14B","14B"
+"mn","lower","State House District 15A","15A"
+"mn","lower","State House District 15B","15B"
+"mn","lower","State House District 16A","16A"
+"mn","lower","State House District 16B","16B"
+"mn","lower","State House District 17A","17A"
+"mn","lower","State House District 17B","17B"
+"mn","lower","State House District 18A","18A"
+"mn","lower","State House District 18B","18B"
+"mn","lower","State House District 19A","19A"
+"mn","lower","State House District 19B","19B"
+"mn","lower","State House District 1A","01A"
+"mn","lower","State House District 1B","01B"
+"mn","lower","State House District 20A","20A"
+"mn","lower","State House District 20B","20B"
+"mn","lower","State House District 21A","21A"
+"mn","lower","State House District 21B","21B"
+"mn","lower","State House District 22A","22A"
+"mn","lower","State House District 22B","22B"
+"mn","lower","State House District 23A","23A"
+"mn","lower","State House District 23B","23B"
+"mn","lower","State House District 24A","24A"
+"mn","lower","State House District 24B","24B"
+"mn","lower","State House District 25A","25A"
+"mn","lower","State House District 25B","25B"
+"mn","lower","State House District 26A","26A"
+"mn","lower","State House District 26B","26B"
+"mn","lower","State House District 27A","27A"
+"mn","lower","State House District 27B","27B"
+"mn","lower","State House District 28A","28A"
+"mn","lower","State House District 28B","28B"
+"mn","lower","State House District 29A","29A"
+"mn","lower","State House District 29B","29B"
+"mn","lower","State House District 2A","02A"
+"mn","lower","State House District 2B","02B"
+"mn","lower","State House District 30A","30A"
+"mn","lower","State House District 30B","30B"
+"mn","lower","State House District 31A","31A"
+"mn","lower","State House District 31B","31B"
+"mn","lower","State House District 32A","32A"
+"mn","lower","State House District 32B","32B"
+"mn","lower","State House District 33A","33A"
+"mn","lower","State House District 33B","33B"
+"mn","lower","State House District 34A","34A"
+"mn","lower","State House District 34B","34B"
+"mn","lower","State House District 35A","35A"
+"mn","lower","State House District 35B","35B"
+"mn","lower","State House District 36A","36A"
+"mn","lower","State House District 36B","36B"
+"mn","lower","State House District 37A","37A"
+"mn","lower","State House District 37B","37B"
+"mn","lower","State House District 38A","38A"
+"mn","lower","State House District 38B","38B"
+"mn","lower","State House District 39A","39A"
+"mn","lower","State House District 39B","39B"
+"mn","lower","State House District 3A","03A"
+"mn","lower","State House District 3B","03B"
+"mn","lower","State House District 40A","40A"
+"mn","lower","State House District 40B","40B"
+"mn","lower","State House District 41A","41A"
+"mn","lower","State House District 41B","41B"
+"mn","lower","State House District 42A","42A"
+"mn","lower","State House District 42B","42B"
+"mn","lower","State House District 43A","43A"
+"mn","lower","State House District 43B","43B"
+"mn","lower","State House District 44A","44A"
+"mn","lower","State House District 44B","44B"
+"mn","lower","State House District 45A","45A"
+"mn","lower","State House District 45B","45B"
+"mn","lower","State House District 46A","46A"
+"mn","lower","State House District 46B","46B"
+"mn","lower","State House District 47A","47A"
+"mn","lower","State House District 47B","47B"
+"mn","lower","State House District 48A","48A"
+"mn","lower","State House District 48B","48B"
+"mn","lower","State House District 49A","49A"
+"mn","lower","State House District 49B","49B"
+"mn","lower","State House District 4A","04A"
+"mn","lower","State House District 4B","04B"
+"mn","lower","State House District 50A","50A"
+"mn","lower","State House District 50B","50B"
+"mn","lower","State House District 51A","51A"
+"mn","lower","State House District 51B","51B"
+"mn","lower","State House District 52A","52A"
+"mn","lower","State House District 52B","52B"
+"mn","lower","State House District 53A","53A"
+"mn","lower","State House District 53B","53B"
+"mn","lower","State House District 54A","54A"
+"mn","lower","State House District 54B","54B"
+"mn","lower","State House District 55A","55A"
+"mn","lower","State House District 55B","55B"
+"mn","lower","State House District 56A","56A"
+"mn","lower","State House District 56B","56B"
+"mn","lower","State House District 57A","57A"
+"mn","lower","State House District 57B","57B"
+"mn","lower","State House District 58A","58A"
+"mn","lower","State House District 58B","58B"
+"mn","lower","State House District 59A","59A"
+"mn","lower","State House District 59B","59B"
+"mn","lower","State House District 5A","05A"
+"mn","lower","State House District 5B","05B"
+"mn","lower","State House District 60A","60A"
+"mn","lower","State House District 60B","60B"
+"mn","lower","State House District 61A","61A"
+"mn","lower","State House District 61B","61B"
+"mn","lower","State House District 62A","62A"
+"mn","lower","State House District 62B","62B"
+"mn","lower","State House District 63A","63A"
+"mn","lower","State House District 63B","63B"
+"mn","lower","State House District 64A","64A"
+"mn","lower","State House District 64B","64B"
+"mn","lower","State House District 65A","65A"
+"mn","lower","State House District 65B","65B"
+"mn","lower","State House District 66A","66A"
+"mn","lower","State House District 66B","66B"
+"mn","lower","State House District 67A","67A"
+"mn","lower","State House District 67B","67B"
+"mn","lower","State House District 6A","06A"
+"mn","lower","State House District 6B","06B"
+"mn","lower","State House District 7A","07A"
+"mn","lower","State House District 7B","07B"
+"mn","lower","State House District 8A","08A"
+"mn","lower","State House District 8B","08B"
+"mn","lower","State House District 9A","09A"
+"mn","lower","State House District 9B","09B"
+"nv","lower","Assembly District 1",1
+"nv","lower","Assembly District 10",10
+"nv","lower","Assembly District 11",11
+"nv","lower","Assembly District 12",12
+"nv","lower","Assembly District 13",13
+"nv","lower","Assembly District 14",14
+"nv","lower","Assembly District 15",15
+"nv","lower","Assembly District 16",16
+"nv","lower","Assembly District 17",17
+"nv","lower","Assembly District 18",18
+"nv","lower","Assembly District 19",19
+"nv","lower","Assembly District 2",2
+"nv","lower","Assembly District 20",20
+"nv","lower","Assembly District 21",21
+"nv","lower","Assembly District 22",22
+"nv","lower","Assembly District 23",23
+"nv","lower","Assembly District 24",24
+"nv","lower","Assembly District 25",25
+"nv","lower","Assembly District 26",26
+"nv","lower","Assembly District 27",27
+"nv","lower","Assembly District 28",28
+"nv","lower","Assembly District 29",29
+"nv","lower","Assembly District 3",3
+"nv","lower","Assembly District 30",30
+"nv","lower","Assembly District 31",31
+"nv","lower","Assembly District 32",32
+"nv","lower","Assembly District 33",33
+"nv","lower","Assembly District 34",34
+"nv","lower","Assembly District 35",35
+"nv","lower","Assembly District 36",36
+"nv","lower","Assembly District 37",37
+"nv","lower","Assembly District 38",38
+"nv","lower","Assembly District 39",39
+"nv","lower","Assembly District 4",4
+"nv","lower","Assembly District 40",40
+"nv","lower","Assembly District 41",41
+"nv","lower","Assembly District 42",42
+"nv","lower","Assembly District 5",5
+"nv","lower","Assembly District 6",6
+"nv","lower","Assembly District 7",7
+"nv","lower","Assembly District 8",8
+"nv","lower","Assembly District 9",9
+"vt","lower","Addison-1 State House District","Addison-1"
+"vt","lower","Addison-2 State House District","Addison-2"
+"vt","lower","Addison-3 State House District","Addison-3"
+"vt","lower","Addison-4 State House District","Addison-4"
+"vt","lower","Addison-5 State House District","Addison-5"
+"vt","lower","Addison-Rutland-1 State House District","Addison-Rutland-1"
+"vt","lower","Bennington-1 State House District","Bennington-1"
+"vt","lower","Bennington-2-1 State House District","Bennington-2-1"
+"vt","lower","Bennington-2-2 State House District","Bennington-2-2"
+"vt","lower","Bennington-3 State House District","Bennington-3"
+"vt","lower","Bennington-4 State House District","Bennington-4"
+"vt","lower","Bennington-5 State House District","Bennington-5"
+"vt","lower","Bennington-Rutland-1 State House District","Bennington-Rutland-1"
+"vt","lower","Caledonia-1 State House District","Caledonia-1"
+"vt","lower","Caledonia-2 State House District","Caledonia-2"
+"vt","lower","Caledonia-3 State House District","Caledonia-3"
+"vt","lower","Caledonia-4 State House District","Caledonia-4"
+"vt","lower","Caledonia-Washington-1 State House District","Caledonia-Washington-1"
+"vt","lower","Chittenden-1-1 State House District","Chittenden-1-1"
+"vt","lower","Chittenden-1-2 State House District","Chittenden-1-2"
+"vt","lower","Chittenden-2 State House District","Chittenden-2"
+"vt","lower","Chittenden-3-1 State House District","Chittenden-3-1"
+"vt","lower","Chittenden-3-10 State House District","Chittenden-3-10"
+"vt","lower","Chittenden-3-2 State House District","Chittenden-3-2"
+"vt","lower","Chittenden-3-3 State House District","Chittenden-3-3"
+"vt","lower","Chittenden-3-4 State House District","Chittenden-3-4"
+"vt","lower","Chittenden-3-5 State House District","Chittenden-3-5"
+"vt","lower","Chittenden-3-6 State House District","Chittenden-3-6"
+"vt","lower","Chittenden-3-7 State House District","Chittenden-3-7"
+"vt","lower","Chittenden-3-8 State House District","Chittenden-3-8"
+"vt","lower","Chittenden-3-9 State House District","Chittenden-3-9"
+"vt","lower","Chittenden-4 State House District","Chittenden-4"
+"vt","lower","Chittenden-5-1 State House District","Chittenden-5-1"
+"vt","lower","Chittenden-5-2 State House District","Chittenden-5-2"
+"vt","lower","Chittenden-6-1 State House District","Chittenden-6-1"
+"vt","lower","Chittenden-6-2 State House District","Chittenden-6-2"
+"vt","lower","Chittenden-6-3 State House District","Chittenden-6-3"
+"vt","lower","Chittenden-7-1 State House District","Chittenden-7-1"
+"vt","lower","Chittenden-7-2 State House District","Chittenden-7-2"
+"vt","lower","Chittenden-8 State House District","Chittenden-8"
+"vt","lower","Chittenden-9 State House District","Chittenden-9"
+"vt","lower","Essex-Caledonia-1 State House District",
+"vt","lower","Essex-Caledonia-2 State House District",
+"vt","lower","Franklin-1 State House District","Franklin-1"
+"vt","lower","Franklin-2 State House District","Franklin-2"
+"vt","lower","Franklin-3 State House District","Franklin-3"
+"vt","lower","Franklin-4 State House District","Franklin-4"
+"vt","lower","Franklin-5 State House District","Franklin-5"
+"vt","lower","Franklin-6 State House District","Franklin-6"
+"vt","lower","Grand Isle-Chittenden-1 State House District","Grand Isle-Chittenden-1"
+"vt","lower","Lamoille-1 State House District","Lamoille-1"
+"vt","lower","Lamoille-2 State House District","Lamoille-2"
+"vt","lower","Lamoille-3 State House District","Lamoille-3"
+"vt","lower","Lamoille-4 State House District","Lamoille-4"
+"vt","lower","Lamoille-Washington-1 State House District","Lamouille-Washington-1"
+"vt","lower","Orange-1 State House District","Orange-1"
+"vt","lower","Orange-2 State House District","Orange-2"
+"vt","lower","Orange-Addison-1 State House District","Orange-Addison-1"
+"vt","lower","Orange-Caledonia-1 State House District","Orange-Caledonia-1"
+"vt","lower","Orleans-1 State House District","Orleans-1"
+"vt","lower","Orleans-2 State House District","Orleans-2"
+"vt","lower","Orleans-Caledonia-1 State House District","Orleans-Caledonia-1"
+"vt","lower","Orleans-Franklin-1 State House District","Orleans-Franklin-1"
+"vt","lower","Rutland-1-1 State House District","Rutland-1-1"
+"vt","lower","Rutland-1-2 State House District","Rutland-1-2"
+"vt","lower","Rutland-2 State House District","Rutland-2"
+"vt","lower","Rutland-3 State House District","Rutland-3"
+"vt","lower","Rutland-4 State House District","Rutland-4"
+"vt","lower","Rutland-5-1 State House District","Rutland-5-1"
+"vt","lower","Rutland-5-2 State House District","Rutland-5-2"
+"vt","lower","Rutland-5-3 State House District","Rutland-5-3"
+"vt","lower","Rutland-5-4 State House District","Rutland-5-4"
+"vt","lower","Rutland-6 State House District","Rutland-6"
+"vt","lower","Rutland-7 State House District","Rutland-7"
+"vt","lower","Rutland-8 State House District","Rutland-8"
+"vt","lower","Rutland-Windsor-1 State House District","Rutland-Windsor-1"
+"vt","lower","Washington-1 State House District","Washington-1"
+"vt","lower","Washington-2 State House District","Washington-2"
+"vt","lower","Washington-3-1 State House District","Washington-3-1"
+"vt","lower","Washington-3-2 State House District","Washington-3-2"
+"vt","lower","Washington-3-3 State House District","Washington-3-3"
+"vt","lower","Washington-4 State House District","Washington-4"
+"vt","lower","Washington-5 State House District","Washington-5"
+"vt","lower","Washington-6 State House District","Washington-6"
+"vt","lower","Washington-7 State House District","Washington-7"
+"vt","lower","Washington-Chittenden-1 State House District","Washington-Chittenden-1"
+"vt","lower","Windham-1 State House District","Windham-1"
+"vt","lower","Windham-2 State House District","Windham-2"
+"vt","lower","Windham-3-1 State House District","Windham-3-1"
+"vt","lower","Windham-3-2 State House District","Windham-3-2"
+"vt","lower","Windham-3-3 State House District","Windham3-3"
+"vt","lower","Windham-4 State House District","Windham-4"
+"vt","lower","Windham-5 State House District","Windham-5"
+"vt","lower","Windham-6 State House District","Windham-6"
+"vt","lower","Windham-Bennington-1 State House District","Windham-Bennington-1"
+"vt","lower","Windham-Bennington-Windsor State House District","Windham-Bennington-Windsor-1"
+"vt","lower","Windsor-1-1 State House District","Windsor-1-1"
+"vt","lower","Windsor-1-2 State House District","Windsor-1-2"
+"vt","lower","Windsor-2 State House District","Windsor-2"
+"vt","lower","Windsor-3 State House District","Windsor-3"
+"vt","lower","Windsor-4 State House District","Windsor-4"
+"vt","lower","Windsor-5 State House District","Windsor-5"
+"vt","lower","Windsor-6-1 State House District","Windsor-6-1"
+"vt","lower","Windsor-6-2 State House District","Windsor-6-2"
+"vt","lower","Windsor-Orange-1 State House District","Windsor-Orange-1"
+"vt","lower","Windsor-Orange-2 State House District","Windsor-Orange-2"
+"vt","lower","Windsor-Rutland-1 State House District","Windsor-Rutland-1"
+"vt","lower","Windsor-Rutland-2 State House District","Windsor-Rutland-2"
+"mn","upper","State Senate District 1",1
+"mn","upper","State Senate District 10",10
+"mn","upper","State Senate District 11",11
+"mn","upper","State Senate District 12",12
+"mn","upper","State Senate District 13",13
+"mn","upper","State Senate District 14",14
+"mn","upper","State Senate District 15",15
+"mn","upper","State Senate District 16",16
+"mn","upper","State Senate District 17",17
+"mn","upper","State Senate District 18",18
+"mn","upper","State Senate District 19",19
+"mn","upper","State Senate District 2",2
+"mn","upper","State Senate District 20",20
+"mn","upper","State Senate District 21",21
+"mn","upper","State Senate District 22",22
+"mn","upper","State Senate District 23",23
+"mn","upper","State Senate District 24",24
+"mn","upper","State Senate District 25",25
+"mn","upper","State Senate District 26",26
+"mn","upper","State Senate District 27",27
+"mn","upper","State Senate District 28",28
+"mn","upper","State Senate District 29",29
+"mn","upper","State Senate District 3",3
+"mn","upper","State Senate District 30",30
+"mn","upper","State Senate District 31",31
+"mn","upper","State Senate District 32",32
+"mn","upper","State Senate District 33",33
+"mn","upper","State Senate District 34",34
+"mn","upper","State Senate District 35",35
+"mn","upper","State Senate District 36",36
+"mn","upper","State Senate District 37",37
+"mn","upper","State Senate District 38",38
+"mn","upper","State Senate District 39",39
+"mn","upper","State Senate District 4",4
+"mn","upper","State Senate District 40",40
+"mn","upper","State Senate District 41",41
+"mn","upper","State Senate District 42",42
+"mn","upper","State Senate District 43",43
+"mn","upper","State Senate District 44",44
+"mn","upper","State Senate District 45",45
+"mn","upper","State Senate District 46",46
+"mn","upper","State Senate District 47",47
+"mn","upper","State Senate District 48",48
+"mn","upper","State Senate District 49",49
+"mn","upper","State Senate District 5",5
+"mn","upper","State Senate District 50",50
+"mn","upper","State Senate District 51",51
+"mn","upper","State Senate District 52",52
+"mn","upper","State Senate District 53",53
+"mn","upper","State Senate District 54",54
+"mn","upper","State Senate District 55",55
+"mn","upper","State Senate District 56",56
+"mn","upper","State Senate District 57",57
+"mn","upper","State Senate District 58",58
+"mn","upper","State Senate District 59",59
+"mn","upper","State Senate District 6",6
+"mn","upper","State Senate District 60",60
+"mn","upper","State Senate District 61",61
+"mn","upper","State Senate District 62",62
+"mn","upper","State Senate District 63",63
+"mn","upper","State Senate District 64",64
+"mn","upper","State Senate District 65",65
+"mn","upper","State Senate District 66",66
+"mn","upper","State Senate District 67",67
+"mn","upper","State Senate District 7",7
+"mn","upper","State Senate District 8",8
+"mn","upper","State Senate District 9",9
+"nv","upper","Capital Senatorial District","Capital Senatorial District"
+"nv","upper","Central Nevada Senatorial District","Central Nevada Senatorial District"
+"nv","upper","Clark County Senatorial District 1","Clark County, No. 1"
+"nv","upper","Clark County Senatorial District 10","Clark County, No. 10"
+"nv","upper","Clark County Senatorial District 11","Clark County, No. 11"
+"nv","upper","Clark County Senatorial District 12","Clark County, No. 12"
+"nv","upper","Clark County Senatorial District 2","Clark County, No. 2"
+"nv","upper","Clark County Senatorial District 3","Clark County, No. 3"
+"nv","upper","Clark County Senatorial District 4","Clark County, No. 4"
+"nv","upper","Clark County Senatorial District 5","Clark County, No. 5"
+"nv","upper","Clark County Senatorial District 6","Clark County, No. 6"
+"nv","upper","Clark County Senatorial District 7","Clark County, No. 7"
+"nv","upper","Clark County Senatorial District 8","Clark County, No.8"
+"nv","upper","Clark County Senatorial District 9","Clark County, No. 9"
+"nv","upper","Rural Nevada Senatorial District","Rural Nevada Senatorial District"
+"nv","upper","Washoe County Senatorial District 1","Washoe County, No. 1"
+"nv","upper","Washoe County Senatorial District 2","Washoe County, No. 2"
+"nv","upper","Washoe County Senatorial District 3","Washoe County, No. 3"
+"nv","upper","Washoe County Senatorial District 4","Washoe County, No. 4"
+"vt","upper","Addison State Senate District","Addison "
+"vt","upper","Bennington State Senate District","Bennington "
+"vt","upper","Caledonia State Senate District","Caledonia "
+"vt","upper","Chittenden State Senate District","Chittenden "
+"vt","upper","Essex-Orleans State Senate District","Essex-Orleans"
+"vt","upper","Franklin State Senate District","Franklin "
+"vt","upper","Grand Isle State Senate District","Grand Isle "
+"vt","upper","Lamoille State Senate District","Lamoille "
+"vt","upper","Orange State Senate District","Orange "
+"vt","upper","Rutland State Senate District","Rutland "
+"vt","upper","Washington State Senate District","Washington "
+"vt","upper","Windham State Senate District","Windham "
+"vt","upper","Windsor State Senate District","Windsor "
