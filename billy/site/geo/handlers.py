@@ -1,10 +1,10 @@
-from billy.site.api.handlers import FiftyStateHandler
+from billy.site.api.handlers import BillyHandler
 from billy.site.geo.models import District
 from billy import db
 
 from piston.utils import rc
 
-class LegislatorGeoHandler(FiftyStateHandler):
+class LegislatorGeoHandler(BillyHandler):
     def read(self, request):
         try:
             districts = District.lat_long(request.GET['lat'],

@@ -49,12 +49,12 @@ def _build_mongo_filter(request, keys, icase=True):
     return _filter
 
 
-class FiftyStateHandlerMetaClass(HandlerMetaClass):
+class BillyHandlerMetaClass(HandlerMetaClass):
     """
     Returns 404 if Handler result is None.
     """
     def __new__(cls, name, bases, attrs):
-        new_cls = super(FiftyStateHandlerMetaClass, cls).__new__(
+        new_cls = super(BillyHandlerMetaClass, cls).__new__(
             cls, name, bases, attrs)
 
         if hasattr(new_cls, 'read'):
@@ -75,15 +75,15 @@ class FiftyStateHandlerMetaClass(HandlerMetaClass):
         return new_cls
 
 
-class FiftyStateHandler(BaseHandler):
+class BillyHandler(BaseHandler):
     """
-    Base handler for the Fifty State API.
+    Base handler for the Billy API.
     """
-    __metaclass__ = FiftyStateHandlerMetaClass
+    __metaclass__ = BillyHandlerMetaClass
     allowed_methods = ('GET',)
 
 
-class MetadataHandler(FiftyStateHandler):
+class MetadataHandler(BillyHandler):
     def read(self, request, state):
         """
         Get metadata about a state legislature.
@@ -91,7 +91,7 @@ class MetadataHandler(FiftyStateHandler):
         return db.metadata.find_one({'_id': state.lower()})
 
 
-class BillHandler(FiftyStateHandler):
+class BillHandler(BillyHandler):
     def read(self, request, state, session, bill_id, chamber=None):
         query = {'state': state.lower(), 'session': session,
                  'bill_id': bill_id}
@@ -100,7 +100,7 @@ class BillHandler(FiftyStateHandler):
         return db.bills.find_one(query)
 
 
-class BillSearchHandler(FiftyStateHandler):
+class BillSearchHandler(BillyHandler):
     def read(self, request):
 
         bill_fields = {'title': 1, 'created_at': 1, 'updated_at': 1,
@@ -158,12 +158,12 @@ class BillSearchHandler(FiftyStateHandler):
         return list(db.bills.find(_filter, bill_fields))
 
 
-class LegislatorHandler(FiftyStateHandler):
+class LegislatorHandler(BillyHandler):
     def read(self, request, id):
         return db.legislators.find_one({'_all_ids': id})
 
 
-class LegislatorSearchHandler(FiftyStateHandler):
+class LegislatorSearchHandler(BillyHandler):
     def read(self, request):
         legislator_fields = {'sources': 0, 'roles': 0, 'old_roles': 0}
 
@@ -184,12 +184,12 @@ class LegislatorSearchHandler(FiftyStateHandler):
         return list(db.legislators.find(_filter, legislator_fields))
 
 
-class CommitteeHandler(FiftyStateHandler):
+class CommitteeHandler(BillyHandler):
     def read(self, request, id):
         return db.committees.find_one({'_all_ids': id})
 
 
-class CommitteeSearchHandler(FiftyStateHandler):
+class CommitteeSearchHandler(BillyHandler):
     def read(self, request):
         committee_fields = {'members': 0, 'sources': 0}
 
@@ -198,7 +198,7 @@ class CommitteeSearchHandler(FiftyStateHandler):
         return list(db.committees.find(_filter, committee_fields))
 
 
-class StatsHandler(FiftyStateHandler):
+class StatsHandler(BillyHandler):
     def read(self, request):
         counts = {}
 
@@ -225,7 +225,7 @@ class StatsHandler(FiftyStateHandler):
         return stats
 
 
-class EventsHandler(FiftyStateHandler):
+class EventsHandler(BillyHandler):
     def read(self, request, id=None, events=[]):
         if events:
             return events
@@ -251,7 +251,7 @@ class EventsHandler(FiftyStateHandler):
             'when', pymongo.ASCENDING).limit(1000))
 
 
-class SubjectListHandler(FiftyStateHandler):
+class SubjectListHandler(BillyHandler):
     def read(self, request, state, session=None, chamber=None):
         spec = {'state': state.lower()}
         if session:
