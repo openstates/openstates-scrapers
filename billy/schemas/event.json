@@ -9,10 +9,15 @@
    "description": {"type": "string"},
    "when": {"type": "datetime"},
    "end": {"type": ["datetime", "null"]},
+   "all_day": {"type": "boolean", "required": false},
+   "notes": {"type": ["string", "null"], "required": false},
+   "status": {"type": "string", "required": false},
+   "link": {"type": ["string", "null"], "required": false},
    "participants": {"type": "array", "items":
      {"type": "object", "properties": {
        "type": {"type": "string"},
-       "participant": {"type": "string"}}}},
+       "participant": {"type": "string"},
+       "chamber": {"type": "string", "required": false}}}},
    "sources": {"type": "array", "items": {"type": "object", "properties": {
         "url": {"type": "string"},
         "retrieved": {"type": "datetime"}

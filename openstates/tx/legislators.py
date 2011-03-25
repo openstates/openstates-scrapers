@@ -101,16 +101,26 @@ class TXLegislatorScraper(LegislatorScraper):
 
                 name = clean_committee_name(link.text)
 
+                # There's no easy way to determine whether a committee
+                # is joint or not using the mobile legislator directory
+                # (without grabbing a whole bunch of pages, at least)
+                # so for now we will hard-code the one broken case
+                if (name == "Oversight of HHS Eligibility System" and
+                    term == '82'):
+                    comm_chamber = 'joint'
+                else:
+                    comm_chamber = chamber
+
                 if name.startswith('Appropriations-S/C on '):
                     sub = name.replace('Appropriations-S/C on ', '')
                     leg.add_role('committee member', term,
-                                 chamber=chamber,
+                                 chamber=comm_chamber,
                                  committee='Appropriations',
                                  subcommittee=sub,
                                  position=mtype)
                 else:
                     leg.add_role('committee member', term,
-                                 chamber=chamber,
+                                 chamber=comm_chamber,
                                  committee=name,
                                  position=mtype)
 

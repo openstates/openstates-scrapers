@@ -5,8 +5,11 @@ status = dict(
     actions=True,
     votes=True,
     legislators=True,
-    contributors=['Gabriel J. Perez-Irizarry'],
-    notes="Some changes need to be made to be able to scrape older years. Still can't determine if votes passed",
+    contributors=['Gabriel J. Perez-Irizarry', 'Richard House'],
+    notes="Only Regular Sessions scraped 2009 and later. \
+        Sessions prior to 2009 have differing formats. \
+        Still can't determine if votes passed. \
+        Archive listing http://www.capitol.hawaii.gov/site1/archives/archives.asp",
 )
 
 metadata = dict(
@@ -44,20 +47,24 @@ metadata = dict(
          'start_year': 2005, 'end_year': 2007},
         {'name': '2007-2009',
          'sessions': ['2007 Regular Session',
-                      '2007 First Special Session'
+                      '2007 First Special Session',
                       '2007 Second Special Session',
-                      '2007 Third Special Session'
+                      '2007 Third Special Session',
                       '2008 Regular Session',
-                      '2008 First Special Session'
+                      '2008 First Special Session',
                       '2008 Second Special Session',
                       '2008 Third Special Session'],
          'start_year': 2007, 'end_year': 2009},
         {'name': '2009-2011',
-         'sessions': ['2010 Regular Session',
-                      '2010 First Special Session'
-                      '2009 Regular Session',
+         'sessions': ['2009 Regular Session',
                       '2009 First Special Session',
-                      '2009 Third Special Session'],
+                      '2009 Second Special Session',
+                      '2009 Third Special Session',
+                      '2010 Regular Session',
+                      '2010 First Special Session',
+                      '2010 Second Special Session',
+                      '2009 Regular Session',
+                      '2011 Regular Session',],
          'start_year': 2009, 'end_year': 2011},
              ]
 )

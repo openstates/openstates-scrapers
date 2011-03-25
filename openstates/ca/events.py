@@ -1,11 +1,9 @@
 import os
 import re
-import datetime
 from collections import defaultdict
 
 from billy.conf import settings
 from billy.scrape.events import EventScraper, Event
-from openstates.ca import metadata
 from openstates.ca.models import CACommitteeHearing, CALocation
 
 from sqlalchemy.orm import sessionmaker, relation, backref

@@ -1,6 +1,7 @@
 import json
 import datetime
 
+from billy.utils import chamber_name
 from billy.site.api.feeds import EventFeed
 
 from django.template import defaultfilters
@@ -80,6 +81,17 @@ class FeedEmitter(Emitter):
         return EventFeed()(request, self.construct())
 
 
+class _vDatetime(icalendar.vDatetime):
+    """
+    The icalendar module outputs datetimes with VALUE=DATE,
+    which breaks some calendar clients. This is a fix to
+    use VALUE=DATETIME.
+    """
+    def __init__(self, dt):
+        self.dt = dt
+        self.params = icalendar.Parameters(dict(value='DATETIME'))
+
+
 class ICalendarEmitter(Emitter):
     """
     Emits an iCalendar-format calendar from a list of Open State 'event'
@@ -91,37 +103,72 @@ class ICalendarEmitter(Emitter):
 
     def render(self, request):
         cal = icalendar.Calendar()
+        cal.add('version', '2.0')
+        cal.add('prodid', 'openstates')
+
         for obj in self.construct():
+            if not isinstance(obj, dict):
+                continue
+
             if obj.get('_type') != 'event':
                 # We can only serialize events
                 continue
 
             event = icalendar.Event()
 
+            if obj.get('all_day', False):
+                event.add('dtstart', obj['when'].date())
+                event['X-FUNAMBOL-ALLDAY'] = 1
+                event['X-MICROSOFT-CDO-ALLDAYEVENT'] = 1
+            else:
+                event['dtstart'] = _vDatetime(obj['when'])
+
+                end = obj.get('end')
+                if not end:
+                    end = obj['when'] + datetime.timedelta(hours=1)
+                event['dtend'] = _vDatetime(end)
+
             if obj['type'] == 'committee:meeting':
-                summary = "%s Committee Meeting" % (
-                    obj['participants'][0]['participant'])
-                event.add('dtstart', obj['when'])
+                part = obj['participants'][0]
+                comm = part['participant']
+
+                chamber = part.get('chamber')
+                if chamber:
+                    comm = "%s %s" % (chamber_name(obj['state'], chamber),
+                                      comm)
+
+                summary = "%s Committee Meeting" % comm
             elif obj['type'] == 'bill:action':
                 summary = obj['description']
-                event.add('dtstart', obj['when'].date())
             else:
                 continue
 
             event.add('summary', summary)
-
-            end = obj.get('end')
-            if not end:
-                end = obj['when'] + datetime.timedelta(hours=1)
-            event.add('dtend', end)
-
             event.add('location', obj.get('location', 'Unknown'))
             event['uid'] = obj['_id']
+
+            status = obj.get('status')
+            if status:
+                event.add('status', status.upper())
+
+            notes = obj.get('notes')
+            if notes:
+                event.add('description', notes)
+
+            link = obj.get('link')
+            if link:
+                event.add('attach', link)
 
             for participant in obj['participants']:
                 addr = icalendar.vCalAddress('MAILTO:noone@example.com')
 
-                cn = participant['participant']
+                chamber = participant.get('chamber')
+                if chamber:
+                    cn = chamber_name(obj['state'], chamber) + " "
+                else:
+                    cn = ""
+
+                cn += participant['participant']
 
                 if participant['type'] == 'committee':
                     cn += ' Committee'

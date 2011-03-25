@@ -2,7 +2,7 @@ import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
-from openstates.nv.utils import clean_committee_name, DBFMixin
+from openstates.nj.utils import clean_committee_name, DBFMixin
 
 import lxml.etree
 from dbfpy import dbf
@@ -28,7 +28,7 @@ class NJCommitteeScraper(CommitteeScraper, DBFMixin):
 
     def scrape_committees(self, year_abr, session):
 
-        members_url, members_db = self.get_dbf(year_abr, 'COMEDB')
+        members_url, members_db = self.get_dbf(year_abr, 'COMEMB')
         comm_info_url, info_db = self.get_dbf(year_abr, 'COMMITT')
 
         comm_dictionary = {}

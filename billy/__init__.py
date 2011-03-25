@@ -34,6 +34,8 @@ class LazyFs():
         if not self._fs:
             self._fs = gridfs.GridFS(db._db, collection="documents")
 
+        return getattr(self._fs, attr)
+
 
 db = LazyDb()
 fs = LazyFs()

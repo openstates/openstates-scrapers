@@ -23,11 +23,11 @@ def all_states(request, template='billy/index.html'):
     for meta in list(db.metadata.find()) + [{'_id':'total', 'name':'total'}]:
         state = {}
         state['id'] = meta['_id']
+        s_spec = {'state': state['id']}
         state['name'] = meta['name']
         counts = db.counts.find_one({'_id': state['id']})
         if counts:
             counts = counts['value']
-            s_spec = {'state': state['id']}
             state['bills'] = counts['bills']
             state['votes'] = counts['votes']
             state['versions'] = counts['versions']
@@ -47,10 +47,15 @@ def all_states(request, template='billy/index.html'):
             id_counts = _get_state_leg_id_stats(state['id'])
             active_legs = db.legislators.find({'state':state['id'],
                                                'active':True}).count()
-            state['external_ids'] = (1-(float(id_counts['missing_pvs'] +
-                                            #id_counts['missing_nimsp'] +
-                                            id_counts['missing_tdata']) /
-                                       (active_legs*2)))*100
+
+            if not active_legs:
+                state['external_ids'] = 0
+            else:
+                total_missing = float(id_counts['missing_pvs'] +
+                                      id_counts['missing_tdata'])
+                state['external_ids'] = (1 - (total_missing /
+                                              (active_legs * 2))) * 100
+
             missing_bill_sources = db.bills.find({'state': state['id'],
                                                   'sources': {'$size': 0}}).count()
             missing_leg_sources = db.legislators.find({'state': state['id'],

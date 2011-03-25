@@ -1,7 +1,7 @@
 import re
 import datetime
 
-from billy.scrape import NoDataForPeriod, ScrapeError
+from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
@@ -49,7 +49,18 @@ class SDBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            bill = Bill(session, chamber, bill_id, title)
+            if re.match(r'^(S|H)B ', bill_id):
+                btype = ['bill']
+            elif re.match(r'(S|H)C ', bill_id):
+                btype = ['commemoration']
+            elif re.match(r'(S|H)JR ', bill_id):
+                btype = ['joint resolution']
+            elif re.match(r'(S|H)CR ', bill_id):
+                btype = ['concurrent resolution']
+            else:
+                btype = ['bill']
+
+            bill = Bill(session, chamber, bill_id, title, type=btype)
             bill.add_source(url)
 
             regex_ns = "http://exslt.org/regular-expressions"
@@ -102,6 +113,9 @@ class SDBillScraper(BillScraper):
                     atypes.append('bill:veto_override:passed')
                 elif 'Veto override, Failed' in action:
                     atypes.append('bill:veto_override:failed')
+
+                if 'Delivered to the Governor' in action:
+                    atypes.append('governor:received')
 
                 match = re.match("First read in (Senate|House)", action)
                 if match:

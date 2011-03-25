@@ -42,7 +42,7 @@ class WIBillScraper(BillScraper):
 
     def __init__(self, *args, **kwargs):
         super(WIBillScraper, self).__init__(*args, **kwargs)
-        #self.build_issue_index()
+        self.build_issue_index()
 
     def build_issue_index(self):
         self.log('building WI issue index')
@@ -61,7 +61,6 @@ class WIBillScraper(BillScraper):
                             link = link.replace('-', ' ').strip()
                             self._subjects[link].append(title)
                 n += 1
-                print n
         except scrapelib.ScrapeError:
             pass
 
@@ -110,7 +109,9 @@ class WIBillScraper(BillScraper):
 
                     bill = Bill(session, chamber, bill_id, title,
                                 type=bill_type)
-                    #bill['subjects'] = self._subjects[bill_id]
+                    # unfortunately subjects don't apply to special session
+                    if 'Regular' in session:
+                        bill['subjects'] = list(set(self._subjects[bill_id]))
                     self.scrape_bill_history(bill, link)
         except scrapelib.HTTPError, e:
             if e.response.code == 404:

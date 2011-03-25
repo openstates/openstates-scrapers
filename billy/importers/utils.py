@@ -4,6 +4,7 @@ import time
 import json
 import logging
 import datetime
+from collections import defaultdict
 
 from pymongo.son import SON
 import pymongo.errors
@@ -77,7 +78,11 @@ def insert_with_id(obj):
 
 
 def timestamp_to_dt(timestamp):
-    return datetime.datetime(*time.localtime(timestamp)[0:6])
+    tstruct = time.localtime(timestamp)
+    dt = datetime.datetime(*tstruct[0:6])
+    if tstruct.tm_isdst:
+        dt = dt - datetime.timedelta(hours=1)
+    return dt
 
 
 def update(old, new, coll):
@@ -127,7 +132,10 @@ def convert_timestamps(obj):
                 'retrieved'):
         value = obj.get(key)
         if value:
-            obj[key] = timestamp_to_dt(value)
+            try:
+                obj[key] = timestamp_to_dt(value)
+            except TypeError:
+                raise TypeError("expected float for %s, got %s" % (key, value))
 
     for key in ('sources', 'actions', 'votes'):
         for child in obj.get(key, []):
@@ -264,3 +272,45 @@ def fix_bill_id(bill_id):
     bill_id = bill_id.replace('.', '')
     return _bill_id_re.sub(r'\1 \2', bill_id)
 
+
+class VoteMatcher(object):
+
+    def __init__(self, state):
+        self.state = state
+        self.vote_ids = {}
+
+    def reset_sequence(self):
+        self.seq_for_vote_key = defaultdict(int)
+
+    def get_next_id(self):
+        # Generate a new sequential ID for the vote
+        query = SON([('_id', self.state)])
+        update = SON([('$inc', SON([('seq', 1)]))])
+        seq = db.command(SON([('findandmodify', 'vote_ids'),
+                              ('query', query),
+                              ('update', update),
+                              ('new', True),
+                              ('upsert', True)]))['value']['seq']
+
+        return "%sV%08d" % (self.state.upper(), seq)
+
+    def key_for_vote(self, vote):
+        key = (vote['motion'], vote['chamber'], vote['date'],
+               vote['yes_count'], vote['no_count'], vote['other_count'])
+        # running count of how many of this key we've seen
+        seq_num = self.seq_for_vote_key[key]
+        self.seq_for_vote_key[key] += 1
+        # append seq_num to key to avoid sharing key for multiple votes
+        return key + (seq_num,)
+
+    def learn_vote_ids(self, votes_list):
+        self.reset_sequence()
+        for vote in votes_list:
+            key = self.key_for_vote(vote)
+            self.vote_ids[key] = vote['vote_id']
+
+    def set_vote_ids(self, votes_list):
+        self.reset_sequence()
+        for vote in votes_list:
+            key = self.key_for_vote(vote)
+            vote['vote_id'] = self.vote_ids.get(key) or self.get_next_id()

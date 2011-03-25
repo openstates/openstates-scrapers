@@ -1,34 +1,60 @@
 #!/usr/bin/env python
+import re
+
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from votesmart import votesmart, VotesmartApiError
-from billy.conf import settings
-import os
 
-from nyss_billyslation.models import senators
-
-votesmart.apikey = os.environ.get('VOTESMART_API_KEY', settings.VOTESMART_API_KEY)
+import lxml.html
 
 
 class NYLegislatorScraper(LegislatorScraper):
     state = 'ny'
 
-    def scrape(self, chamber, year):
+    def scrape(self, chamber, term):
         if chamber == 'upper':
-            self.scrape_senators()
+            self.scrape_upper(term)
         else:
-            for cand in votesmart.officials.getByOfficeState(7, 'NY'):
-                full_name = cand.firstName
-                if cand.middleName:
-                    full_name += " " + cand.middleName
-                full_name += " " + cand.lastName
-                leg = Legislator('2009-2010', chamber, cand.officeDistrictName,
-                                 full_name, cand.firstName, cand.lastName,
-                                 cand.middleName, cand.officeParties)
-                self.save_legislator(leg)
+            self.scrape_lower(term)
 
-    def scrape_senators(self):
-        for sen in senators.legislators.values():
-            leg = Legislator('2009-2010', 'upper', sen['district'],
-                             sen['fullname'],
-                             party=','.join(sen['parties']))
-            self.save_legislator(leg)
+    def scrape_upper(self, term):
+        url = "http://www.nysenate.gov/senators"
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+
+            for link in page.xpath("//span[@class='field-content']/a"):
+                if not link.text:
+                    continue
+                name = link.text.strip()
+
+                district = link.xpath("string(../../../div[3]/span[1])")
+                district = re.match(r"District (\d+)", district).group(1)
+
+                photo_link = link.xpath("../../../div[1]/span/a/img")[0]
+                photo_url = photo_link.attrib['src']
+
+                legislator = Legislator(term, 'upper', district,
+                                        name, party="Unknown",
+                                        photo_url=photo_url)
+                legislator.add_source(url)
+
+                self.save_legislator(legislator)
+
+    def scrape_lower(self, term):
+        url = "http://assembly.state.ny.us/mem/?sh=email"
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            for link in page.xpath("//a[contains(@href, '/mem/')]"):
+                name = link.text.strip()
+                if name == 'Assembly Members':
+                    continue
+
+                district = link.xpath("string(../following-sibling::"
+                                      "div[@class = 'email2'][1])")
+                district = district.rstrip('rthnds')
+
+                legislator = Legislator(term, 'lower', district,
+                                        name, party="Unknown")
+                legislator.add_source(url)
+
+                self.save_legislator(legislator)

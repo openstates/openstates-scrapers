@@ -1,5 +1,3 @@
-import datetime
-
 from .utils import xpath
 from billy.scrape.legislators import LegislatorScraper, Legislator
 

@@ -70,7 +70,9 @@ class NameMatcher(object):
         self._term = term
 
         roles_elemMatch = {'state': state, 'type': 'member', 'term': term}
-        old_roles_query = {'old_roles.%s' % term: {'$exists': True}}
+        old_roles_query = {'old_roles.%s' % term: {'$elemMatch':
+                                                   {'state': state,
+                                                   'type': 'member'}}}
 
         for legislator in db.legislators.find({
             '$or': [{'roles': {'$elemMatch': roles_elemMatch}},
@@ -92,7 +94,7 @@ class NameMatcher(object):
                 reader = csv.reader(f)
 
                 for (term, chamber, name, leg_id) in reader:
-                    if term == self._term:
+                    if term == self._term and leg_id:
                         self._manual[chamber][name] = leg_id
                         self._manual[None][name] = leg_id
         except IOError:

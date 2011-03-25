@@ -1,3 +1,4 @@
+import datetime
 from django.conf import settings
 from django.conf.urls.defaults import *
 from django.http import HttpResponse
@@ -29,7 +30,7 @@ if getattr(settings, 'USE_LOCKSMITH', False):
             resp = super(Resource, self).__call__(request, *args, **kwargs)
 
             try:
-                db.logs.insert({'key': request.apikey.key,
+                db.logs.insert({'key': request.apikey['_id'],
                                 'method': self.handler.__class__.__name__,
                                 'query_string': request.META['QUERY_STRING'],
                                 'timestamp': datetime.datetime.utcnow()})
@@ -70,6 +71,8 @@ stats_handler = Resource(handlers.StatsHandler,
                          authentication=authorizer)
 events_handler = Resource(handlers.EventsHandler,
                           authentication=authorizer)
+subject_list_handler = Resource(handlers.SubjectListHandler,
+                                authentication=authorizer)
 reconciliation_handler = Resource(handlers.ReconciliationHandler,
                                   authentication=authorizer)
 legislator_geo_handler = Resource(handlers.LegislatorGeoHandler,
@@ -96,6 +99,10 @@ urlpatterns = patterns('',
 
     url(r'^v1/events/$', events_handler),
     url(r'^v1/events/(?P<id>[A-Z]{2,2}E\d{8,8})/$', events_handler),
+
+    url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/(?P<chamber>upper|lower)/', subject_list_handler),
+    url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/', subject_list_handler),
+    url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/', subject_list_handler),
 
     url(r'^v1/legislators/reconcile/$', reconciliation_handler),
     url(r'^v1/legislators/preview/(?P<id>[A-Z]{2,2}L\d{6,6})/$',

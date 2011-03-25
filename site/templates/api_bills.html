@@ -1,0 +1,166 @@
+{% extends "flatpage.html" %}
+{% load markup_tags %}
+
+{% block breadcrumb %}
+<li class="home">
+    <a href="/api/">API</a>
+</li>
+<li class="live">
+<a href="">Bills</a>
+</li>
+{% endblock %}
+
+{% block content %}
+
+<h2> Bill API </h2>
+
+{% rest %}
+
+Two API methods are available for working with bills:
+
+`Bill Search`_
+    Allows looking up bills by (almost) any of their attributes.  Only returns basic information about a bill.
+`Bill Lookup`_
+    Lookup full details on a bill by id (including all actions, sponsors, votes, etc.)
+
+Both methods return bill objects with the following fields (in the case of search, a subset of these fields).
+
+Bill Fields
+===========
+
+Both methods return bill objects consisting of the following fields:
+
+``title``
+    The title given to the bill by the state legislature.
+``state``
+    The 2-letter abbreviation of the state this bill is from (e.g. ``ny``).
+``session``
+    The session this bill was introduced in.
+``chamber``
+    The chamber this bill was introduced in (e.g. 'upper', 'lower')
+``bill_id``
+    The identifier given to this bill by the state legislature (e.g. 'AB6667')
+``type``
+    Bill type (see `bill categorization </categorization/#bills>`_).
+``alternate_titles``
+    A list of alternate titles that this bill is/was known by, if available.
+``updated_at``
+    Timestamp representing when bill was last updated in our system.
+``actions``
+    A list of legislative actions performed on this bill. Each action will be an object with at least the following fields:
+
+    * ``date``: The date/time the action was performed
+    * ``actor``: The chamber, person, committee, etc. responsible for this action
+    * ``action``: A textual description of the action performed
+    * ``type``: A normalized type for the action, see see `action categorization </categorization/#actions>`_.
+``sponsors``
+    A list of sponsors of this bill. Each sponsor will be an object with at least the following fields:
+
+    * ``leg_id``: An Open State Project legislator ID.
+    * ``full_name``: The name of the sponsor
+    * ``type``: The type of sponsorship (state specific, examples include 'Primary Sponsor', 'Co-Sponsor')
+``votes``
+    A list of votes relating to this bill. Each vote will be an object with at least the following fields:
+
+    * ``date``: The date/time the vote was taken
+    * ``chamber``: The chamber that the vote was taken in
+    * ``motion``: The motion being voted on
+    * ``yes_count``, ``no_count``, ``other_count``: The number of 'yes', 'no', and other votes
+    * ``yes_votes``, ``no_votes``, ``other_votes``: The legislators voting 'yes', 'no', and other
+    * ``passed``: Whether or not the vote passed
+    * ``type``: The normalized type for the vote. See `vote categorization </categorization/#votes>`_).
+``versions``
+    A list of versions of the text of this bill. Each version will be an object with at least the following fields:
+
+    * ``url``: The URL for an official source of this version of the bill text
+    * ``name``: A name for this version of the bill text
+``documents``
+    A list of documents related to this bill. Each document will be an object with at least the following fields:
+
+    * ``url``: The URL for an official source of this document
+    * ``name``: A name for this document (eg. 'Fiscal Statement', 'Education Committee Report')
+``sources``
+    List of sources that this data was collected from.
+
+    * ``url``: URL of the source
+    * ``retrieved``: time at which the source was last retrieved
+
+.. note::
+    ``actions``, ``sponsors``, ``votes``, ``versions``, ``documents``,
+    ``alternate_title`` and ``sources`` are not returned via the search API.
+
+.. note::
+    Keep in mind that these documented fields may be a subset of the fields provided for a given state.  (See `extra fields </api/#extra-fields>`_.)
+
+
+Bill Search
+===========
+
+Search bills, either by keyword or by properties such as updated date or session.
+
+Parameters
+^^^^^^^^^^
+
+When searching either a keyword (``q``) parameter is required or a ``state`` and ``session``.
+All other parameters are optional and can be combined as needed.
+
+``q``
+    the keyword string to lookup
+``state``
+    filter results by given state (two-letter abbreviation)
+``search_window``
+    a string representing what time period to search across. Pass 'session'
+    to search bills from the state's current or most recent legislative session,
+    'term' to search the current or most recent term, 'all' to search as far back
+    as the Open State Project has data for, or supply 'session:SESSION_NAME' or
+    'term:TERM_NAME' (e.g. 'session:2009' or 'term:2009-2010') to search a
+    specific session or term.
+``chamber``
+    filter results by given chamber ('upper' or 'lower')
+``updated_since``
+    only return bills that have been updated since a given date, YYYY-MM-DD format
+``subject``
+    filty by bills that are about a given subject. If multiple subject
+    parameters are supplied then only bills that match all of them
+    will be returned. See `list of subjects <http://openstates.sunlightlabs.com/categorization/#subjects>`_
+
+URL Format
+^^^^^^^^^^
+
+`http://openstates.sunlightlabs.com/api/v1/bills/?{SEARCH-PARAMS}&apikey={YOUR_API_KEY}`
+
+Example
+^^^^^^^
+
+http://openstates.sunlightlabs.com/api/v1/bills/?q=agriculture&state=vt&chamber=upper&apikey=YOUR_API_KEY
+
+.. raw:: html
+
+    <script src="https://gist.github.com/849541.js?file=bill_search.json"></script>
+
+Bill Lookup
+===========
+
+This endpoint exists to get all information about a bill given its state/session/chamber and bill id.
+
+URL Format
+^^^^^^^^^^
+
+`http://openstates.sunlightlabs.com/api/v1/bills/{STATE-ABBREV}/{SESSION}/{BILL-ID}h?apikey={YOUR_API_KEY}`
+
+alternatively, if BILL-ID is ambiguous, chamber may be prepended as part of the path:
+
+`http://openstates.sunlightlabs.com/api/v1/bills/{STATE-ABBREV}/{SESSION}/{CHAMBER}/{BILL-ID}h?apikey={YOUR_API_KEY}`
+
+Example
+^^^^^^^
+
+http://openstates.sunlightlabs.com/api/v1/bills/ca/20092010/AB%20667/?apikey=YOUR_API_KEY
+
+.. raw:: html
+
+    <script src="https://gist.github.com/849541.js?file=bill_lookup.json"></script>
+
+
+{% endrest %}
+{% endblock %}

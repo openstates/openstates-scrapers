@@ -9,51 +9,6 @@ from billy import db
 from billy.conf import settings, base_arg_parser
 from billy.utils import metadata
 
-SUBJECTS = ['Agriculture and Food',
-            'Animal Rights and Wildlife Issues',
-            'Arts and Humanities',
-            'Budget, Spending, and Taxes',
-            'Business and Consumers',
-            'Campaign Finance and Election Issues',
-            'Civil Liberties and Civil Rights',
-            'Commerce',
-            'Crime',
-            'Drugs',
-            'Education',
-            'Energy',
-            'Environmental',
-            'Executive Branch',
-            'Family and Children Issues',
-            'Federal, State, and Local Relations',
-            'Gambling and Gaming',
-            'Government Reform',
-            'Guns',
-            'Health',
-            'Housing and Property',
-            'Immigration',
-            'Indigenous Peoples',
-            'Insurance',
-            'Judiciary',
-            'Labor and Employment',
-            'Legal Issues',
-            'Legislative Affairs',
-            'Military',
-            'Municipal and County Issues',
-            'Other',
-            'Public Services',
-            'Recreation',
-            'Reproductive Issues',
-            'Resolutions',
-            'Science and Medical Research',
-            'Senior Issues',
-            'Sexual Orientation and Gender Issues',
-            'Social Issues',
-            'State Agencies',
-            'Technology and Communication',
-            'Trade',
-            'Transportation',
-            'Welfare and Poverty']
-
 def categorize_subjects(state, data_dir, process_all):
     categorizer = defaultdict(set)
     categories_per_bill = defaultdict(int)
@@ -65,7 +20,7 @@ def categorize_subjects(state, data_dir, process_all):
     for row in reader:
         for subj in row[1:]:
             if subj:
-                if subj not in SUBJECTS:
+                if subj not in settings.BILLY_SUBJECTS:
                     raise Exception('invalid subject %s (%s)' % (subj, row[0]))
                 categorizer[row[0]].add(subj)
 

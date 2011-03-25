@@ -19,6 +19,9 @@
         <dt>Type</dt><dd>{{bill.type|join:','}}</dd>
         <dt>Session</dt><dd>{{bill.session}}</dd>
         <dt>Chamber</dt><dd>{{bill.chamber}}</dd>
+        {% if bill.subjects %}
+        <dt>Subjects</dt><dd>{{bill.subjects|join:'<br/>'}}</dd>
+        {% endif %}
 
         {# show plus fields #}
         {% for k,v in bill.items %}

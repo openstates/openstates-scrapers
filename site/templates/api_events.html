@@ -1,0 +1,101 @@
+{% extends "flatpage.html" %}
+{% load markup_tags %}
+
+{% block breadcrumb %}
+<li class="home">
+    <a href="/api/">API</a>
+</li>
+<li class="live">
+<a href="">Events</a>
+</li>
+{% endblock %}
+
+{% block content %}
+
+<h2>Event API</h2>
+
+{% rest %}
+
+Two API methods are available for working with events:
+
+`Event Search`_
+    Search events by state or type.
+`Event Lookup`_
+    Get all details on an event given its id.
+
+Both methods return event objects with the following fields.
+
+Event Fields
+============
+
+All event methods return Event objects consisting of at least the following fields:
+
+  * ``id``: An Open State Project event id, e.g. ``TXE00004925``
+  * ``description``: A description of the event, e.g. 'Appropriations Committee Meeting'
+  * ``when``: The date/time of the event, in UTC
+  * ``end``: The end date/time of the event, in UTC, if available
+  * ``location``: Where the event occurred, e.g. 'Capitol Room 6C
+  * ``type``: The type of event, e.g. 'committee:meeting', 'bill:action'
+  * ``state``: The state in which the event ocurred
+  * ``session``: The legislative session during which the event ocurred
+  * ``participants``: A list of people/groups that participated in the event, containing at least the following fields:
+
+    * ``type``: the type of participant, e.g. ``legislator`` or ``committee``
+    * ``participant`` the name of the participant
+  * ``sources``
+    List of sources that this data was collected from.
+
+      * ``url``: URL of the source
+      * ``retrieved``: time at which the source was last retrieved
+
+
+Event Search
+============
+
+Searches for events matching certain criteria.
+
+Parameters
+----------
+
+``state``
+    Filter by state (two-letter abbreviation)
+``type``
+    Filter by event type (e.g.  'committee:meeting'). Accepts multiple types separated by commas.
+``format``
+    Output format. Possible values: ``json``, ``rss``, ``ics``
+
+URL Format
+----------
+
+`http://openstates.sunlightlabs.com/api/v1/events/?{SEARCH-PARAMS}&apikey={YOUR_API_KEY}`
+
+Example
+-------
+
+http://openstates.sunlightlabs.com/api/v1/events/?state=tx&type=committee:meeting&apikey=YOUR_API_KEY
+
+.. raw:: html
+
+    <script src="https://gist.github.com/849541.js?file=event_search.json"></script>
+
+Event Lookup
+============
+
+Looks up information on a single legislative event given its Open State Project event ID.
+
+URL Format
+----------
+
+`http://openstates.sunlightlabs.com/api/v1/events/{EVENT_ID}/?apikey={YOUR_API_KEY}`
+
+Example
+-------
+
+http://openstates.sunlightlabs.com/api/v1/events/TXE00004925/?apikey=YOUR_API_KEY
+
+.. raw:: html
+
+    <script src="https://gist.github.com/849541.js?file=event_lookup.json"></script>
+
+{% endrest %}
+{% endblock %}

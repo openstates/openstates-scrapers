@@ -8,7 +8,6 @@ from billy.importers.metadata import import_metadata
 from billy.importers.bills import import_bills
 from billy.importers.legislators import import_legislators
 from billy.importers.committees import import_committees
-from billy.importers.votes import import_votes
 from billy.importers.events import import_events
 from billy.importers.versions import import_versions
 
@@ -30,8 +29,6 @@ if __name__ == '__main__':
                         help='scrape legislator data')
     parser.add_argument('--committees', action='store_true',
                         help='scrape (separate) committee data')
-    parser.add_argument('--votes', action='store_true',
-                        help='scrape (separate) vote data')
     parser.add_argument('--events', action='store_true',
                         help='scrape event data')
     parser.add_argument('--versions', action='store_true',
@@ -41,10 +38,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not (args.bills or args.legislators or args.votes or args.committees or
+    if not (args.bills or args.legislators or args.committees or
             args.events or args.versions or args.alldata):
         raise Exception("Must specify at least one type: --bills, "
-                           "--legislators, --committees, --votes, --events, "
+                           "--legislators, --committees, --events, "
                            "--versions,  --alldata")
 
     settings.update(args)
@@ -72,8 +69,6 @@ if __name__ == '__main__':
         import_bills(args.state, data_dir)
     if args.committees or args.alldata:
         import_committees(args.state, data_dir)
-    if args.votes or args.alldata:
-        import_votes(args.state, data_dir)
 
     # events and versions currently excluded from --alldata
     if args.events:

@@ -1,19 +1,14 @@
-from __future__ import with_statement
 import os
 import time
 import logging
 import urllib2
 import datetime
 import contextlib
+import json
 from optparse import make_option, OptionParser
 from collections import defaultdict
 
 from billy.scrape.validator import DatetimeValidator
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
 from billy.conf import settings
 
@@ -133,7 +128,7 @@ class Scraper(scrapelib.Scraper):
             self._schema = self._get_schema()
         try:
             self.validator.validate(obj, self._schema)
-        except ValueError, ve:
+        except ValueError as ve:
             self.warning(str(ve))
             if self.strict_validation:
                 raise ve

@@ -5,6 +5,7 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
 
 import pytz
+import lxml.html
 import feedparser
 
 
@@ -35,17 +36,34 @@ class TXEventScraper(EventScraper):
                 except ValueError:
                     continue
 
-                try:
-                    time = re.match('Time: (\d+:\d+ (A|P)M)',
-                                    entry['description']).group(1)
-                except AttributeError:
-                    # There are a few broken events in their feeds
-                    # sometimes
-                    continue
+                desc = entry['description'].strip()
+                match = re.match(
+                    r'Time: (\d+:\d+ (A|P)M)((\s+\(.*\))|( or .*))?, Location:',
+                    desc)
+                if match:
+                    dt = "%s %s" % (date, match.group(1))
+                    when = datetime.datetime.strptime(dt,
+                                                  '%m/%d/%Y %I:%M %p')
+                    when = self._tz.localize(when)
+                    all_day = False
 
-                when = "%s %s" % (date, time)
-                when = datetime.datetime.strptime(when, '%m/%d/%Y %I:%M %p')
-                when = self._tz.localize(when)
+                    notes = match.group(3)
+                    if notes:
+                        notes = "Time: " + notes.strip()
+                    else:
+                        notes = ""
+                else:
+                    match = re.match(r'Time: (.*), Location:', desc)
+                    if match:
+                        when = datetime.datetime.strptime(date,
+                                                          '%m/%d/%Y').date()
+                        all_day = True
+                        notes = "Time: " + match.group(1).strip()
+
+                if '(Canceled)' in notes:
+                    status = 'canceled'
+                else:
+                    status = 'confirmed'
 
                 location = entry['description'].split('Location: ')[1]
 
@@ -55,10 +73,23 @@ class TXEventScraper(EventScraper):
 
                 event = Event(session, when, 'committee:meeting',
                               description,
-                              location=location)
-                event.add_participant('committee', title)
+                              location=location,
+                              status=status,
+                              all_day=all_day,
+                              link=entry['link'])
+                event.add_participant('committee', title, chamber=chamber)
 
                 event['_guid'] = entry['guid']
+
+                with self.urlopen(entry['link']) as page:
+                    page = lxml.html.fromstring(page)
+                    text = page.xpath("string(//body)")
+                    text = re.sub(r'(\r\n\s*)+', '\n', text).strip()
+                    text = text.encode('ascii', 'ignore')
+                    notes += "\n\n" + text
+
+                event['notes'] = notes.strip()
+
                 event['link'] = entry['link']
 
                 event.add_source(url)

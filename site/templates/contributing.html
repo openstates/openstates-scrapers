@@ -1,125 +1,107 @@
 {% extends "flatpage.html" %}
+{% load markup_tags %}
 
 
 {% block content %}
 <h2> Contributing </h2>
-<div>
-    <h3> Contributing Scrapers </h3>
-    <p>
-    The Open State Project relies on volunteers and if you're interested in
-    helping this guide is the place to start.
-    </p>
+{% rest %}
+The Open State Project relies on volunteers and contributions are extremely welcome. If you're interested in helping this guide will help you find a place to contribute and walk you through the process of getting your code into the project.  
 
-    <p> One of the first things to do is to visit our <a href="http://openstates.sunlightlabs.com/status/">status sheet</a>.  You'll find
-    most states have at least some work already done, but there's still plenty to do.</p>
+Community
+=========
 
-    <h3> Community </h3>
+The primary tool that we use to communicate is the `Open State Project Google Group <http://groups.google.com/group/fifty-state-project>`_, if you aren't already a member your first step towards contributing is to join (and consider introducing yourself too).
 
-    <p>If you haven't already, we strongly recommended you join the <a href="http://groups.google.com/group/fifty-state-project">Open State Project Google Group</a>,
-    once you have an idea of how you'd like to contribute (or if you have any questions) you should email the group.</a>
+If you're on IRC, we also tend to spend time in #openstates on freenode.  Feel free to stop by the channel if you have questions or want to get more involved.
 
-    <p>If you're on IRC, we also tend to spend time in #openstates.  Feel free to stop by the channel if you have questions or want to get more involved.</p>
+Once you have an idea of how you'd like to contribute (or if you have any questions) you should email the group.  Announcing your intentions is important, it helps to avoid duplicated effort and sometimes someone might have a few tips for your particular effort.
 
-    <h3> How To Help </h3>
+Finding A Place To Help
+=======================
 
-    <p>If a state doesn't have any work done for it at all, any contribution will help.  Take a stab at getting the legislators for the current session, browse around the state legislature's site and take notes on possible low hanging fruit and contribute to the
-    <a href="http://code.google.com/p/openstates/w/list">google code wiki</a>.
+If you're looking for a place to start it is best to look at `status page </status/>`_.  States that aren't colored are the ones that need the most work.  The map isn't a perfect indicator of what work has been done or is in progress, so before doing a lot of work be sure to check that the code you're hoping to contribute doesn't already exist within `the repository <http://github.com/sunlightlabs/openstates/>`_.
 
-    <p>If the state you're interested in already has some work done, check if it has
-    a committer listed on the status page.  If not and you feel up to the task,
-    email the group and let us know of your interest.  As a rule if you can show
-    us that you can make several useful commits to your state we'll be happy to
-    take your contributions and give you commit access.</p>
+If a state doesn't have any work done for it at all, any contribution will help.  Most people prefer to first take a stab at getting the legislators for the current session.
 
-    <p>In the case that the states you're interested in working on are already
-    maintained, most state committers are happy to have the extra help.  Express
-    your interest on the list and we'll help you find how you can best help.</p>
+If the state you're interested in already has some work done don't let that dissuade you, email the list and ask if there are things that can be done.  Often (even in some "completed") states there is additional data that we aren't collecting.
 
-    <h3> Obtaining Source Code </h3>
+Getting Started
+===============
 
-    <p>
-    If you're going to contribute code, you're going to need to start with your
-    own fork of the project code.
-    </p>
+Obtaining Source Code
+---------------------
 
-    <p>
-    In order to contribute you'll need to create a <a href="http://github.com">GitHub</a>
-    account and then visit the <a href="http://github.com/sunlightlabs/openstates/">openstates project page</a> and click the "Fork" button.
-    </p>
+In order to contribute you'll need a `GitHub <http://github.com>`_ account.
+Once signed in to your account, visit the `openstates project page <http://github.com/sunlightlabs/openstates/>`_ and click the "Fork" button.
 
-    <p>You'll see github create a fork under your account, check your fork out with a command like
-    <pre><code>
+You'll see github create a fork under your account, check your fork out with a command like::
+
     git clone git@github.com:YOURUSERNAME/openstates.git
-    </code></pre>
 
-    <h3> Setting Up Your Environment </h3>
+Setting Up Your Environment
+---------------------------
 
-    <p>Once you have the code checked out you'll need to set up your environment.</p>
+Once you have the code checked out you'll need to set up your environment.
 
-    <p>It is strongly recommended that you install 
-    <a href="http://pypi.python.org/pypi/virtualenv">python-virtualenv</a> and create an
-    "openstates" virtualenv.  This allows you to install packages that the
-    project needs without modifying your global python installation.  
-    <em>It is also assumed that you are using <a href="http://pypi.python.org/pypi/pip">pip</a>.
-        If you are not using these tools modify the directions below to use your installer of choice.</em>
+(It is strongly recommended that you use both `virtualenv <http://pypi.python.org/pypi/virtualenv>` and `pip <http://pypi.python.org/pypi/pip>`_ if you aren't using these tools adjust these steps to suit your environment.)
 
-    <p> The first thing to ensure is that the base <code>openstates</code> directory has been
-    added to your path.  The easiest way to do this is by running
-    <code>python setup.py develop</code> class in the base <code>openstates</code> directory.
-    </p>
+The first thing to ensure is that the base ``openstates`` directory has been
+added to your path.  The easiest way to do this is by running 
+``python setup.py develop`` from within this directory.
 
-    <p>The preferred library for scraping is <a href="http://codespeak.net/lxml/">lxml</a> which 
-    offers robust support for several different methods of scraping.  For cases where lxml is not
-    an option (such as scraping from Text or PDF files) other libraries may be used.
-    </p>
+The preferred library for scraping is `lxml <http://lxml.de>`_ which 
+offers robust support for several different methods of scraping.  For cases where lxml is not
+an option (such as scraping from Text or PDF files) other libraries may be used.
 
-    <p>To install all recommended libraries:
-    <pre><code>
+To install all recommended libraries::
+
     pip install -r ./billy/requirements.txt
-    </code></pre>
 
-    <h3> Writing a Scraper </h3>
+Writing a Scraper
+=================
 
-    <p>All state scrapers should exist within a subdirectory of <code>openstates/</code> with the two letter postal abbreviation of your state (ie. wy for wyoming).
+All state scrapers should exist within a subdirectory of ``openstates/`` with the two letter postal abbreviation of your state (ie. wy for wyoming).
 
-    <p>All code specific to a state should be within this directory, common files are:
-    <dl>
-        <dt> <code>__init__.py</code>:</dt> 
-		<dd>When starting a new state you should first create an <code>__init__.py</code> that contains a MetadataDictionary.</dd>
-        <dt> <code>bills.py</code>:</dt> 
-		<dd><a href="http://openstates.sunlightlabs.com/docs/scrapers.html#bills">Scraping of bills</a>, including sponsorship information, actions, and (optionally) votes. <strong>Required</strong></dd>
-        <dt> <code>legislators.py</code>:</dt> 
-		<dd><a href="http://openstates.sunlightlabs.com/docs/scrapers.html#legislators">Scraping of legislators</a>, optionally may scrape committees as well. <strong>Required</strong></dd>
-        <dt> <code>committees.py</code>:</dt> 
-		<dd><a href="http://openstates.sunlightlabs.com/docs/scrapers.html#legislators">Scraping of committees</a>.  (<em>Only required if legislators.py does not include scraping committees.</em>)</dd>
-        <dt> <code>votes.py</code>:</dt>
-		<dd><a href="http://openstates.sunlightlabs.com/scrapers.html#votes">Scraping of votes</a>. (<em>Only required if bills.py does not include scraping votes.</em>)</dd>
-    </dl>
+All code specific to a state should be within this directory, common files are:
 
-    <p> When implementing these files be sure to refer to the <a href="http://openstates.sunlightlabs.com/scrapers.html">scraper documentation</a>.</p>
+__init__.py
+    When starting a new state you should first create an ``__init__.py`` that contains `metadata </docs/metadata.html>`_.
+bills.py
+    `Scraping of bills <http://openstates.sunlightlabs.com/docs/scrapers.html#bills>`_, including sponsorship information, actions, and (optionally) votes. **Required**
+legislators.py
+    `Scraping of legislators <http://openstates.sunlightlabs.com/docs/scrapers.html#legislators>`_, optionally may scrape committees as well. **Required**
+committees.py
+    `Scraping of committees, <http://openstates.sunlightlabs.com/docs/scrapers.html#legislators>`_.  (*Only required if legislators.py does not add committees to legislators.*)
+votes.py
+    `Scraping of votes <http://openstates.sunlightlabs.com/scrapers.html#votes>`_. (*Only required if bills.py does not scrape votes.*)
 
-    <h3> Running Your Scraper </h3> 
+When implementing these files be sure to refer to the `scraper documentation <http://openstates.sunlightlabs.com/scrapers.html>`_ and completed states.
 
-    <p>There is an executable located at <code>billy/bin/scrape.py</code> that is used to run scrapers and takes a number of command line options. 
+Running Your Scraper
+====================
 
-    <h4> Examples of common usage </h4>
+There is an executable located at ``billy/bin/scrape.py`` that is used to run scrapers and takes a number of command line options.
 
-    <p>Getting all legislators for Vermont from the latest session:</p>
-    <pre><code>
+Examples of Common Usage
+------------------------
+
+Getting all legislators for Vermont from the latest session::
+
     python billy/bin/scrape.py vt --legislators -v
-    </code></pre>
 
-    <p>Getting all committees and bills for Pennsylvania from the 204th session:</p>
-    <pre><code>
+Getting all committees and bills for Pennsylvania from the 204th session::
+
     python billy/bin/scrape.py pa --committees --bills --session 204 -v
-    </code></pre>
 
-    <h3> Submitting Your Code </h3>
+Submitting Your Code
+====================
 
-    <p>When you have working code for your state please email the <a href="http://groups.google.com/group/fifty-state-project">group</a>.  One of the
-    committers will review your code and integrate it into the repository.</p>
+When you have working code that you'd like us to review please email the `group <http://groups.google.com/group/fifty-state-project>`_.  One of the committers will review your code and integrate it into the repository.
 
-    <p>The Open State Project is licensed under the <a href="http://gplv3.fsf.org/">GPL 3</a> and by
-    submitting your code for inclusion you agree to allow your code to be distributed under this license.</p>
-</div>
+The Open State Project is licensed under the `GPL 3 <http://gplv3.fsf.org/>`_ and by
+submitting your code for inclusion you agree to allow your code to be distributed under this license.
+
+As a rule if you can show us that you can make several useful commits to improve a state we'll be happy to take your contributions and give you commit access.
+
+{% endrest %}
 {% endblock %}

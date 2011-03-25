@@ -62,6 +62,13 @@ def metadata(state):
     return db.metadata.find_one({'_id': state})
 
 
+def chamber_name(state, chamber):
+    if chamber == 'joint':
+        return 'Joint'
+
+    return metadata(state)['%s_chamber_name' % chamber].split()[0]
+
+
 def term_for_session(state, session):
     meta = metadata(state)
 
@@ -77,3 +84,16 @@ def urlescape(url):
     path = urllib.quote(path, '/%')
     qs = urllib.quote_plus(qs, ':&=')
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
+
+
+def extract_fields(d, fields, delimiter='|'):
+    """ get values out of an object ``d`` for saving to a csv """
+    rd = {}
+    for f in fields:
+        v = d.get(f, None)
+        if isinstance(v, (str, unicode)):
+            v = v.encode('utf8')
+        elif isinstance(v, list):
+            v = delimiter.join(v)
+        rd[f] = v
+    return rd

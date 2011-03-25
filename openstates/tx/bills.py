@@ -1,13 +1,12 @@
 import re
 import urllib2
 import urlparse
-import datetime as dt
+import datetime
 
 from billy.utils import urlescape
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 
-from openstates.tx import metadata
 from openstates.tx.utils import chamber_name, parse_ftp_listing
 
 import lxml.etree
@@ -94,7 +93,7 @@ class TXBillScraper(BillScraper):
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
 
         for action in root.findall('actions/action'):
-            act_date = dt.datetime.strptime(action.findtext('date'),
+            act_date = datetime.datetime.strptime(action.findtext('date'),
                                             "%m/%d/%Y").date()
 
             extra = {}
@@ -137,8 +136,12 @@ class TXBillScraper(BillScraper):
                 introduced = True
             elif desc == 'Read & adopted':
                 atype = 'bill:passed'
-            elif desc.startswith('Referred to'):
+            elif desc.startswith('Referred to') or desc.startswith("Recommended to be sent to "):
                 atype = 'committee:referred'
+            elif desc == "Reported favorably w/o amendment(s)":
+                atype = 'committee:passed'
+            elif desc == "Filed":
+                atype = 'bill:filed'
             else:
                 atype = 'other'
 

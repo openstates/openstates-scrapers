@@ -1,17 +1,13 @@
 #!/usr/bin/env python
-from __future__ import with_statement
 import os
 import datetime
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import json
 
 from billy import db
 from billy.importers.utils import prepare_obj
 
-PRESERVED_FIELDS = ('latest_dump_url', 'latest_dump_date',)
+PRESERVED_FIELDS = ('latest_dump_url', 'latest_dump_date',
+                    'latest_csv_url', 'latest_csv_date')
 
 def import_metadata(state, data_dir):
     preserved = {}

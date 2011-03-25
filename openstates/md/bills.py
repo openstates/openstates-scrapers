@@ -142,9 +142,14 @@ class MDBillScraper(BillScraper):
         }
         elems = doc.cssselect('a')
 
+        # MD has a habit of listing votes twice
+        seen_votes = set()
+
         for elem in elems:
             href = elem.get('href')
-            if href and "votes" in href and href.endswith('htm'):
+            if (href and "votes" in href and href.endswith('htm') and 
+                href not in seen_votes):
+                seen_votes.add(href)
                 vote_url = BASE_URL + href
                 with self.urlopen(vote_url) as vote_html:
                     vote_doc = lxml.html.fromstring(vote_html)
@@ -193,8 +198,8 @@ class MDBillScraper(BillScraper):
                             for cell in row.cssselect('a'):
                                 getattr(vote, status)(cell.text.strip())
 
+                    vote.add_source(vote_url)
                     bill.add_vote(vote)
-                    bill.add_source(vote_url)
 
 
     def scrape_bill(self, chamber, session, bill_type, number):
@@ -246,7 +251,7 @@ class MDBillScraper(BillScraper):
             for i in itertools.count(1):
                 try:
                     self.scrape_bill(chamber, session, bill_type, i)
-                except HTTPError, he:
+                except HTTPError as he:
                     if he.response.code != 404:
                         raise he
                     break

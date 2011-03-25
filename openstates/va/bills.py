@@ -47,7 +47,8 @@ class VABillScraper(BillScraper):
     link_xpath = '//ul[@class="linkSect"]/li/a'
 
     def get_page_bills(self, issue_name, href):
-        with self.urlopen('http://lis.virginia.gov' + href) as issue_html:
+        with self.urlopen('http://lis.virginia.gov' + href,
+                          retry_on_404=True) as issue_html:
             idoc = lxml.html.fromstring(issue_html)
             for ilink in idoc.xpath(self.link_xpath):
                 self.subject_map[ilink.text].append(issue_name)
@@ -80,7 +81,7 @@ class VABillScraper(BillScraper):
         url = 'http://leg6.state.va.us/cgi-bin/legp604.exe?%s+lst+ALL' % self.site_id
 
         while url:
-            with self.urlopen(url) as html:
+            with self.urlopen(url, retry_on_404=True) as html:
                 doc = lxml.html.fromstring(html)
 
                 url = None  # no more unless we encounter 'More...'
@@ -119,7 +120,7 @@ class VABillScraper(BillScraper):
         #url = "http://leg6.state.va.us/cgi-bin/legp604.exe?%s+sum+%s" % (
         #    self.site_id, bill.replace(' ', '')
         #)
-        with self.urlopen(url) as html:
+        with self.urlopen(url, retry_on_404=True) as html:
             doc = lxml.html.fromstring(html)
 
             # summary sections
@@ -180,7 +181,7 @@ class VABillScraper(BillScraper):
         #else:
         #    order = ['upper', 'lower']
 
-        with self.urlopen(url) as html:
+        with self.urlopen(url, retry_on_404=True) as html:
             doc = lxml.html.fromstring(html)
 
             for slist in doc.xpath('//ul[@class="linkSect"]'):
@@ -190,6 +191,9 @@ class VABillScraper(BillScraper):
                     if name.endswith(u' (chief\xa0patron)'):
                         name = name[:-15]
                         type = 'primary'
+                    elif name.endswith(u' (chief\xa0co-patron)'):
+                        name = name[:-18]
+                        type = 'cosponsor'
                     else:
                         type = 'cosponsor'
                     bill.add_sponsor(type, name)
@@ -210,7 +214,7 @@ class VABillScraper(BillScraper):
     def parse_vote(self, vote, url):
         url = BASE_URL + url
 
-        with self.urlopen(url) as html:
+        with self.urlopen(url, retry_on_404=True) as html:
             doc = lxml.html.fromstring(html)
 
             yeas = doc.xpath('//p[contains(text(), "YEAS--")]')

@@ -1,14 +1,9 @@
 #!/usr/bin/env python
-from __future__ import with_statement
 import os
 import sys
 import glob
 import datetime
-
-try:
-    import json
-except:
-    import simplejson as json
+import json
 
 from billy import db
 from billy.importers.names import get_legislator_id
@@ -100,8 +95,6 @@ def import_committees(state, data_dir):
         for member in committee['members']:
             if not member['name']:
                 continue
-
-            (pre, first, last, suff) = name_tools.split(member['name'])
 
             leg_id = get_legislator_id(state, current_session,
                                        data['chamber'],

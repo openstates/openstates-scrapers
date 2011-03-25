@@ -19,13 +19,12 @@ class FLCommitteeScraper(CommitteeScraper):
             self.scrape_lower_committees()
 
     def scrape_upper_committees(self):
-        url = ("http://www.flsenate.gov/Committees/"
-               "index.cfm?Mode=Committee%20Pages&Submenu=1&Tab=committees")
+        url = "http://flsenate.gov/Committees/"
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            path = "//a[contains(@href, 'Directory=committees')]"
+            path = "//a[contains(@href, 'Committees/Show')]"
             for link in page.xpath(path):
                 comm_name = link.text.strip()
 
@@ -46,11 +45,11 @@ class FLCommitteeScraper(CommitteeScraper):
             page = lxml.html.fromstring(page)
             comm.add_source(url)
 
-            path = "//a[contains(@href, 'legislators')]/name"
+            path = "//a[contains(@href, 'Senators')]/name"
             for name in page.xpath(path):
-                b = name.xpath("../preceding-sibling::b")
-                if b:
-                    mtype = b[0].text.strip(': \r\n\t').lower()
+                dt = name.xpath("../../preceding-sibling::dt")
+                if dt:
+                    mtype = dt[0].text.strip(': \r\n\t').lower()
                 else:
                     mtype = 'member'
 
