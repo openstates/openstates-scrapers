@@ -23,6 +23,9 @@ class NYEventScraper(EventScraper):
                     continue
 
                 text = str(comp['SUMMARY'])
+                if 'Committee Meeting' not in text:
+                    continue
+
                 start = comp['DTSTART'].dt
                 end = comp['DTEND'].dt
                 uid = str(comp['UID'])

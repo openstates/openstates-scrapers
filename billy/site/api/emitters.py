@@ -1,6 +1,7 @@
 import json
 import datetime
 
+from billy.utils import chamber_name
 from billy.site.api.feeds import EventFeed
 
 from django.template import defaultfilters
@@ -128,8 +129,15 @@ class ICalendarEmitter(Emitter):
                 event['dtend'] = _vDatetime(end)
 
             if obj['type'] == 'committee:meeting':
-                summary = "%s Committee Meeting" % (
-                    obj['participants'][0]['participant'])
+                part = obj['participants'][0]
+                comm = part['participant']
+
+                chamber = part.get('chamber')
+                if chamber:
+                    comm = "%s %s" % (chamber_name(obj['state'], chamber),
+                                      comm)
+
+                summary = "%s Committee Meeting" % comm
             elif obj['type'] == 'bill:action':
                 summary = obj['description']
             else:
@@ -154,7 +162,13 @@ class ICalendarEmitter(Emitter):
             for participant in obj['participants']:
                 addr = icalendar.vCalAddress('MAILTO:noone@example.com')
 
-                cn = participant['participant']
+                chamber = participant.get('chamber')
+                if chamber:
+                    cn = chamber_name(obj['state'], chamber) + " "
+                else:
+                    cn = ""
+
+                cn += participant['participant']
 
                 if participant['type'] == 'committee':
                     cn += ' Committee'
