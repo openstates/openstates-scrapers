@@ -388,7 +388,7 @@ class LegislatorGeoHandler(BillyHandler):
             resp.write(': Need lat and long parameters')
             return resp
 
-        url = "%sboundary/?contains=%s,%s&sets=sldl,sldu" % (
+        url = "%sboundary/?contains=%s,%s&sets=sldl,sldu&limit=0" % (
             self.base_url, latitude, longitude)
 
         resp = json.load(urllib2.urlopen(url))
