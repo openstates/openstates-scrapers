@@ -13,7 +13,6 @@ import name_tools
 import pymongo
 
 from votesmart import votesmart, VotesmartApiError
-votesmart.apikey = getattr(settings, 'VOTESMART_API_KEY', '')
 
 def update_votesmart_legislators(state):
     current_term = state['terms'][-1]['name']
@@ -71,7 +70,7 @@ def update_transparencydata_legislators(state, sunlight_key):
     for leg in db.legislators.find(query):
         query = urllib.urlencode({'apikey': sunlight_key,
                                   'search': leg['full_name'].encode('utf8')})
-	url = 'http://transparencydata.com/api/1.0/entities.json?' + query
+    url = 'http://transparencydata.com/api/1.0/entities.json?' + query
         data = urllib2.urlopen(url).read()
         results = json.loads(data)
         matches = []
@@ -121,5 +120,3 @@ if __name__ == '__main__':
 
     for state in args.states:
         update_missing_ids(state, settings.SUNLIGHT_SERVICES_KEY)
-
-

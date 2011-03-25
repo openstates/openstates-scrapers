@@ -8,23 +8,10 @@ import argparse
 import json
 
 from billy.conf import settings, base_arg_parser
-from billy.scrape import (NoDataForPeriod, JSONDateEncoder,
-                                _scraper_registry)
+from billy.scrape import (ScrapeError, NoDataForPeriod, JSONDateEncoder,
+                          get_scraper)
 from billy.scrape.validator import DatetimeValidator
 
-
-class RunException(Exception):
-    """ exception when trying to run a scraper """
-
-    def __init__(self, msg, orig_exception=None):
-        self.msg = msg
-        self.orig_exception = orig_exception
-
-    def __str__(self):
-        if self.orig_exception:
-            return '%s\nOriginal Exception: %s' % (self.msg, self.orig_exception)
-        else:
-            return self.msg
 
 def _run_scraper(mod_path, state, scraper_type, options, metadata):
     """
@@ -43,20 +30,11 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
                 os.remove(f)
 
     try:
-        mod_path = '%s.%s' % (mod_path, scraper_type)
-        mod = __import__(mod_path)
-    except ImportError as e:
+        ScraperClass = get_scraper(mod_path, state, scraper_type)
+    except ScrapeError as e:
+        # only re-raise if not alldata
         if not options.alldata:
-            raise RunException("could not import %s" % mod_path, e)
-
-    try:
-        ScraperClass = _scraper_registry[state][scraper_type]
-    except KeyError as e:
-        if not options.alldata:
-            raise RunException("no %s %s scraper found" %
-                               (state, scraper_type))
-        else:
-            return
+            raise e
 
     opts = {'output_dir': options.output_dir,
             'no_cache': options.no_cache,
@@ -64,7 +42,6 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
             'strict_validation': options.strict,
             'retry_attempts': settings.SCRAPELIB_RETRY_ATTEMPTS,
             'retry_wait_seconds': settings.SCRAPELIB_RETRY_WAIT_SECONDS,
-            # TODO: cache_dir, error_dir?
         }
     if options.fastmode:
         opts['requests_per_minute'] = 0
@@ -219,9 +196,9 @@ def main():
 
     if not (args.bills or args.legislators or args.votes or
             args.committees or args.events or args.alldata):
-        raise RunException("Must specify at least one of --bills, "
-                           "--legislators, --committees, --votes, --events, "
-                           "--alldata")
+        raise ScrapeError("Must specify at least one of --bills, "
+                          "--legislators, --committees, --votes, --events, "
+                          "--alldata")
 
     if args.alldata:
         args.bills = True
@@ -244,6 +221,6 @@ def main():
 if __name__ == '__main__':
     try:
         result = main()
-    except RunException as e:
+    except ScrapeError as e:
         print 'Error:', e
         sys.exit(1)

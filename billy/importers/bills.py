@@ -92,6 +92,10 @@ def import_bills(state, data_dir):
 
         # move subjects to scraped_subjects
         subjects = data.pop('subjects', None)
+
+        # NOTE: intentionally doesn't copy blank lists of subjects
+        # this avoids the problem where a bill is re-run but we can't
+        # get subjects anymore (quite common in fact)
         if subjects:
             data['scraped_subjects'] = subjects
 
