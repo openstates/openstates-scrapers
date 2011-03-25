@@ -61,7 +61,7 @@ class NCBillScraper(BillScraper):
     def scrape_bill(self, session, bill_id):
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/'\
             'BillLookUp/BillLookUp.pl?Session=%s&BillID=%s' % (
-            session, bill_id)
+            session, bill_id.replace(' ', ''))
 
         if bill_id[0] == 'H':
             chamber = 'lower'
