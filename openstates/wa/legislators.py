@@ -1,8 +1,9 @@
 from .utils import xpath
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
-import lxml.etree
+import scrapelib
 import lxml.html
+import lxml.etree
 
 
 class WALegislatorScraper(LegislatorScraper):
@@ -43,13 +44,18 @@ class WALegislatorScraper(LegislatorScraper):
                     leg_url = ("http://www.leg.wa.gov/house/"
                                "representatives/Pages/%s.aspx" % last)
 
-                with self.urlopen(leg_url) as leg_page:
-                    leg_page = lxml.html.fromstring(leg_page)
-                    leg_page.make_links_absolute(leg_url)
+                try:
+                    with self.urlopen(leg_url) as leg_page:
+                        leg_page = lxml.html.fromstring(leg_page)
+                        leg_page.make_links_absolute(leg_url)
 
-                    photo_link = leg_page.xpath(
-                        "//a[contains(@href, 'publishingimages')]")[0]
-                    photo_url = photo_link.attrib['href']
+                        photo_link = leg_page.xpath(
+                            "//a[contains(@href, 'publishingimages')]")[0]
+                        photo_url = photo_link.attrib['href']
+                except scrapelib.HTTPError:
+                    # Sometimes the API and website are out of sync
+                    # with respect to legislator resignations/appointments
+                    photo_url = ''
 
                 leg = Legislator(term, chamber, district,
                                  name, '', '', '', party, email=email,
