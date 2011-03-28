@@ -73,8 +73,7 @@ class MDBillScraper(BillScraper):
                                  _clean_sponsor(elem.text.strip()))
         else:
             # single bill sponsor
-            sponsor = doc.cssselect('a[name=Sponsors]')[0] \
-                .getparent().getparent().cssselect('dd a')[0].text.strip()
+            sponsor = doc.xpath('//a[@name="Sponsors"]/../../dd')[0].text_content()
             bill.add_sponsor('primary', _clean_sponsor(sponsor))
 
     def parse_bill_actions(self, doc, bill):
