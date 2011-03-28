@@ -38,6 +38,8 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
         # only re-raise if not alldata
         if not options.alldata:
             raise e
+        else:
+            return
 
     opts = {'output_dir': options.output_dir,
             'no_cache': options.no_cache,
