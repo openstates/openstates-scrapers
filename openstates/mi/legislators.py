@@ -1,8 +1,7 @@
 import re
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
-
-from BeautifulSoup import BeautifulSoup
+import lxml.html
 
 class MILegislatorScraper(LegislatorScraper):
     state = 'mi'
@@ -14,40 +13,37 @@ class MILegislatorScraper(LegislatorScraper):
 
         if chamber == 'lower':
             with self.urlopen('http://house.michigan.gov/replist.asp') as html:
-                legs = BeautifulSoup(html)
-                for leg in legs.findAll('table', text='First Name'):
-                    for tr in leg.parent.parent.parent.parent.parent.findAll('tr'):  #a - font - th - tr - table
-                        if tr.findAll('th') != []: continue
-                        (district, last_name, first_name, party) = tr.findAll('td', limit=4)
-                        if last_name.div.a.font.string is None: continue
-                        if party.div.font.string.strip() == '': continue
-                        last_name = last_name.div.a.font.string.strip()
-                        first_name = first_name.div.a.font.string.strip()
-                        district = district.div.font.string.strip()
-                        party = abbr[party.div.font.string.strip()]
-                        leg = Legislator(term, chamber, district,
-                                         first_name + " " + last_name,
-                                         first_name, last_name,
-                                         party=party)
-                        self.save_legislator(leg)
+                doc = lxml.html.fromstring(html)
+                # skip two rows at top
+                for row in doc.xpath('//table[@cellspacing=0]/tr')[2:]:
+                    tds = [x.text_content().strip() for x in row.xpath('td')]
+                    (district, last_name, first_name,
+                     party, office, phone, email) = tds
+                    leg = Legislator(term=term, chamber=chamber,
+                                     district=district,
+                                     full_name=first_name + " " + last_name,
+                                     first_name=first_name,
+                                     last_name=last_name,
+                                     party=party,
+                                     office=office,
+                                     phone=phone,
+                                     email=email
+                                    )
+                    self.save_legislator(leg)
         else:
-            with self.urlopen('http://www.senate.michigan.gov/SenatorInfo/alphabetical_list_of_senators.htm') as html:
-                legs = BeautifulSoup(html)
-                for tr in legs.findAll('tr'):
-                    tds = tr.findAll('td', limit=4)
-                    if len(tds) != 4: continue
-                    (name, hometown , district, party) = tds
-                    if name.font is None or name.font.a is None: continue
-                    #if district.string is None: continue
-                    name = name.font.a.string.strip().replace('\n','')
-                    whitespace = re.compile('\s+')
-                    name = whitespace.sub(' ', name)
-                    name = name.split(', ')
-                    name = "%s %s" % (name[1], name[0]) #.reverse() didn't work and I didn't care
-                    if district.p: district = district.p.a.font.string.strip()
-                    elif district.a: district = district.a.font.string.strip()
-                    else: continue 
-
-                    party = party.font.string.strip()
-                    leg = Legislator(term, chamber, district, name, party=party)
+            with self.urlopen('http://www.senate.michigan.gov/members/memberlist.htm') as html:
+                doc = lxml.html.fromstring(html)
+                for row in doc.xpath('//table[@width=550]/tr')[1:39]:
+                    # party, dist, member, office_phone, office_fax, office_loc
+                    party = abbr[row.xpath('td[1]/text()')[0]]
+                    district = row.xpath('td[2]/a/text()')[0]
+                    name = row.xpath('td[3]/a/text()')[0]
+                    office_phone = row.xpath('td[4]/text()')[0]
+                    office_fax = row.xpath('td[5]/text()')[0]
+                    office_loc = row.xpath('td[6]/text()')[0]
+                    leg = Legislator(term=term, chamber=chamber,
+                                     district=district, full_name=name,
+                                     party=party, office_phone=office_phone,
+                                     office_fax=office_fax,
+                                     office_loc=office_loc)
                     self.save_legislator(leg)
