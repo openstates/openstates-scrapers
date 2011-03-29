@@ -3,9 +3,8 @@ import re
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from billy.scrape import NoDataForPeriod
 
-from BeautifulSoup import BeautifulSoup
+import lxml.html
 
 BASE_URL = 'http://www.legislature.mi.gov'
 
@@ -13,66 +12,66 @@ class MIBillScraper(BillScraper):
     state = 'mi'
 
     def scrape(self, chamber, session):
-        self.validate_session(session)
-
         if chamber == 'upper':
             bill_no = 1
             abbr = 'SB'
         else:
             bill_no = 4001
             abbr = 'HB'
-        while True:
-            bill_page = self.scrape_bill(session, abbr, bill_no)
-            bill_page = BeautifulSoup(bill_page)
-            # if we can't find a page, we must be done. This is a healthy thing.
-            if bill_page == None: return
-            title = ''.join(self.flatten(bill_page.findAll(id='frg_billstatus_ObjectSubject')[0]))
-            title = title.replace('\n','').replace('\r','')
-            bill_id = "%s %d" % (abbr, bill_no)
 
-            the_bill = Bill(session, chamber, bill_id, title)
+        while True:
+            with self.get_bill(session, abbr, bill_no) as html:
+                if not html:
+                    break
+                doc = lxml.html.fromstring(html)
+
+            bill_id = "%s %d" % (abbr, bill_no)
+            title = doc.xpath('//span[@id="frg_billstatus_ObjectSubject"]')[0].text_content()
+
+            bill = Bill(session=session, chamber=chamber, bill_id=bill_id,
+                        title=title)
 
             #sponsors
-            first = 0
-            for name in bill_page.findAll(id='frg_billstatus_SponsorList')[0].findAll('a'):
-                the_bill.add_sponsor(['primary', 'cosponsor'][first], name.string)
-                first = 1
+            sp_type = 'primary'
+            for sponsor in doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a/text()'):
+                bill.add_sponsor(sp_type, sponsor)
+                sp_type = 'cosponsor'
 
             #versions
-            for doc in bill_page.findAll(id='frg_billstatus_DocumentGridTable')[0].findAll('tr'):
-                r = self.parse_doc(the_bill, doc)
-                if r: the_bill.add_version(*r)
+            for row in doc.xpath('//table[@id="frg_billstatus_DocumentGridTable"]/tr'):
+                version = self.parse_doc_row(row)
+                if version:
+                    bill.add_version(*version)
 
             #documents
-            if 'frg_billstatus_HlaTable' in str(bill_page):
-                for doc in bill_page.findAll(id='frg_billstatus_HlaTable')[0].findAll('tr'):
-                    r = self.parse_doc(the_bill, doc)
-                    if r: the_bill.add_document(*r)
-            if 'frg_billstatus_SfaSection' in str(bill_page):
-                for doc in bill_page.findAll(id='frg_billstatus_SfaSection')[0].findAll('tr'):
-                    r = self.parse_doc(the_bill, doc)
-                    if r: the_bill.add_document(*r)
+            for row in doc.xpath('//table[@id="frg_billstatus_HlaTable"]/tr'):
+                document = self.parse_doc_row(row)
+                if document:
+                    bill.add_document(*document)
+            for row in doc.xpath('//table[@id="frg_billstatus_SfaTable"]/tr'):
+                document = self.parse_doc_row(row)
+                if document:
+                    bill.add_document(*document)
 
-            self.parse_actions(the_bill, bill_page.findAll(id='frg_billstatus_HistoriesGridView')[0])
-            self.save_bill(the_bill)
-            bill_no = bill_no + 1
-        pass
+            #self.parse_actions(the_bill, bill_page.findAll(id='frg_billstatus_HistoriesGridView')[0])
+            self.save_bill(bill)
+            # try next bill
+            bill_no += 1
 
-    def parse_doc(self, the_bill, row):
-        (docs, words) = row.findAll('td')
-        url = None
-        if '.htm' in str(docs): url = docs.findAll('a', href=re.compile('.htm'))
-        elif '.pdf' in str(docs): url = docs.findAll('a', href=re.compile('.pdf'))
- 
-        if url: return (words.b.string, "%s/%s" % (BASE_URL, url[0]['href'].replace('../','')))
-        else: return None
+    def parse_doc_row(self, row):
+        # first anchor in the row is HTML if present, otherwise PDF
+        a = row.xpath('.//a')
+        if a:
+            name = row.xpath('.//b/text()')[0]
+            url = BASE_URL + a[0].get('href').replace('../', '')
+            return name, url
 
     def parse_vote_table(self, table):
         members = []
         for cell in table.findAll('td'):
             if cell.font: members.append(cell.font.string)
             else: found = cell
-     
+
         return members
 
     # votes aren't shown anywhere besides the journals, but the journals are
@@ -208,23 +207,14 @@ class MIBillScraper(BillScraper):
             chamber = 'lower' if action[1].islower() else 'upper'
             the_bill.add_action(chamber, action, dt.datetime.strptime(date.string, '%m/%d/%Y'))
 
-    def scrape_bill(self, session, chamber, number):
-        number = "%04d" % number
-        with self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s-%s' % (session[:4], chamber, number)) as html:
+    def get_bill(self, session, chamber, number):
+        with self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s-%04d' % (
+            session[:4], chamber, number)) as html:
             if 'Page Not Found' not in html:
                 return html
-
         # they change years when a new year starts. HOW ODD
-        with self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s-%s' % (session[-4:], chamber, number)) as bill:
+        with self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s-%04d' % (
+            session[-4:], chamber, number)) as bill:
             if 'Page Not Found' not in html:
                 return html
 
-
-    def flatten(self, tree):
-        if tree.string:
-            s = tree.string
-        else:
-            s = map(lambda x: self.flatten(x), tree.contents)
-        if len(s) == 1:
-            s = s[0]
-        return s
