@@ -43,8 +43,27 @@ class MIBillScraper(BillScraper):
             action = tds[2].text_content()
             date = datetime.datetime.strptime(date, "%m/%d/%Y")
             # instead of trusting upper/lower case, use journal for actor
-            actor = 'upper' if journal[0] == 'S' else 'lower'
+            actor = 'upper' if 'SJ' in journal else 'lower'
             bill.add_action(actor, action, date)
+
+            # check if action mentions a vote
+            rcmatch = re.search('Roll Call # (\d+)', action, re.IGNORECASE)
+            if rcmatch:
+                rc_num = rcmatch.groups()[0]
+                # in format mileg.aspx?page=getobject&objectname=2011-SJ-02-10-011
+                objectname = tds[1].xpath('a/@href')[0].rsplit('=', 1)[-1]
+                chamber_name = {'upper': 'Senate', 'lower': 'House'}[actor]
+                vote_url = BASE_URL + '/documents/%s/Journal/%s/htm/%s.htm' % (
+                    session, chamber_name, objectname)
+                vote = Vote(actor, date, action, False, 0, 0, 0)
+                self.parse_roll_call(vote, vote_url, rc_num)
+                # TODO: use the counts, base passed on real data
+                vote['yes_count'] = len(vote['yes_votes'])
+                vote['no_count'] = len(vote['no_votes'])
+                vote['other_count'] = len(vote['other_votes'])
+                vote['passed'] = vote['yes_count'] > vote['no_count']
+                vote.add_source(vote_url)
+                bill.add_vote(vote)
 
         # versions
         for row in doc.xpath('//table[@id="frg_billstatus_DocumentGridTable"]/tr'):
@@ -88,112 +107,29 @@ class MIBillScraper(BillScraper):
             url = BASE_URL + a[0].get('href').replace('../', '')
             return name, url
 
-    def parse_vote_table(self, table):
-        members = []
-        for cell in table.findAll('td'):
-            if cell.font: members.append(cell.font.string)
-            else: found = cell
+    def parse_roll_call(self, vote, url, rc_num):
+        with self.urlopen(url) as html:
+            vote_doc = lxml.html.fromstring(html)
 
-        return members
+            # split the file into lines using the <p> tags
+            pieces = [p.text_content() for p in vote_doc.xpath('//p')]
 
-    # votes aren't shown anywhere besides the journals, but the journals are
-    # relatively easy to parse. 
-    def parse_vote(self, the_bill, journal_meta, action, motion, the_date):	
-        abbr = {'HJ': 'House', 'SJ': 'Senate'}
-        updown = {'HJ': 'lower', 'SJ': 'upper'}
-        (year,house,rest) = journal_meta.split('-', 2)
+            # go until we find the roll call
+            for i, p in enumerate(pieces):
+                if p.startswith(u'Roll Call No.\xa0%s' % rc_num):
+                    break
 
-        # try and get the vote counts from the action summary. if not, trigger an error later on
-        # that we can use to find out which action on which bill is malformed.
-        votes = re.findall('YEAS (\d+)\s*NAYS (\d+)(?:[\sA-Z]+)*\s*(\d*)(?:[\sA-Z]+)*\s*(\d*)', action, re.I)
-        if votes != []:
-            (yeas, nays, o1, o2) = map(lambda x: 0 if x=='' else int(x), votes[0])
-        else:
-            (yeas, nays, o1, o2) = [0,0,0,0]
-            print action
-
-        the_vote = Vote(updown[house], the_date, motion, (yeas > nays), yeas, nays, o1+o2)
-        # get the right 1999-2000 type string built.
-        if int(year) % 2 == 0: year = "%d-%s" % (int(year)-1, year)
-        else: year = "%s-%d" % (year, int(year)+1)
-
-        # find the roll call number from the action
-        number = re.findall('Roll Call\s(?:#|(?:No\.))\s(\d+)', action, re.I)
-        # if we can't, die.
-        if not number: return 
-        number = int(number[0])
-
-        url = "http://www.legislature.mi.gov/documents/%s/Journal/%s/htm/%s.htm" % (year, abbr[house], journal_meta)
-        with self.urlopen(url) as journal:
-            # clean up a few things
-            journal = str(journal).replace('&nbsp;', ' ').replace('&#009;', '\t')
-            # substring searching: The Best Way To Do Things
-            start = re.search('<B>Roll Call No.(?:\s*)%d' % number, journal, re.I)
-            if not start: # This roll wasn't found -- sometimes they screw up the journal no.
-                the_bill.add_vote(the_vote)
-                self.log("Couldn't find roll #%d" % number)
-                return the_vote
-            else:
-                start = start.start()
-            
-            end = journal.index('In The Chair:', start)
-
-
-            byline = 'yea' #start with *something*
-            vote_type = the_vote.yes
-            votes,names = [],[]
-            # the -24 is a super fragile way of getting to the <p> tag before the <b>
-            for line in BeautifulSoup(journal[start-24:end]).contents:
-                line = str(line)
-                # check to see if we need to flip the vote type
-                last_byline = byline
-                last_vote_type = vote_type
-                if 'Yeas' in line: vote_type, byline = the_vote.yes, 'yea'
-                elif 'Nays' in line: vote_type, byline = the_vote.no, 'nay'
-                elif 'Excused' in line: vote_type, byline = the_vote.other, 'excused'
-                elif 'Not Voting' in line: vote_type, byline = the_vote.other, 'not voting'
-
-                # remove empty names
-                names = filter(lambda n: not re.match('^\s*$', n), names)
-                # add names to the vote list for this type
-                if last_byline != byline:
-                    # save the votes
-                    map(lambda x: votes.append(x), names)
-                    map(lambda x: last_vote_type(x), votes)
-                    #print "changing %s %s" % (last_byline, votes)
-
-                    votes = []
-                    names = []
-                    continue
+            # once we find the roll call, go through voters
+            for p in pieces[i:]:
+                # mdash: \xe2\x80\x94 splits Yeas/Nays/Excused/NotVoting
+                if 'Yeas' in p:
+                    vtype = vote.yes
+                elif 'Nays' in p:
+                    vtype = vote.no
+                elif 'Excused' in p or 'Not Voting' in p:
+                    vtype = vote.other
+                elif p.startswith('In The Chair:'):
+                    break
                 else:
-                    map(lambda x: votes.append(x), names)
-
-                names = []
-                # votes are listed in a few different ways. it's a blast.
-                soup = BeautifulSoup(line)
-                if soup.table:
-                    names = self.parse_vote_table(soup)
-                elif soup.b: #bolds are headings, which we skip
-                    continue
-                elif soup.p and soup.p.font and soup.p.font.string is not None:
-                    names = soup.p.font.string.split('\t')
-                # sometimes we only have a <p>
-                elif soup.p and soup.p.string is not None:
-                    names = soup.p.string.split('\t')
-                # and sometimes, we just get blank lines.
-                elif '\t' in line:
-                    names = line.split('\t')
-
-        # out of the loop, add the last votes
-        map(lambda x: last_vote_type(x), votes)
-
-        # do some checking, but don't die if there's a problem. Usuaully it's just a bad heading.
-        if the_vote['yes_count'] != len(the_vote['yes_votes']):
-           self.log("Yea vote mismatch: %d expected, but saw %d" % (the_vote['yes_count'], len(the_vote['yes_votes'])))  
-        elif the_vote['no_count'] != len(the_vote['no_votes']):
-           self.log("Nay vote mismatch: %d expected, but saw %d" % (the_vote['no_count'], len(the_vote['no_votes'])))
-        elif the_vote['other_count'] != len(the_vote['other_votes']):
-           self.log("Other vote mismatch: %d expected, but saw %d" % (the_vote['other_count'], len(the_vote['other_votes'])))
-        the_bill.add_vote(the_vote)
-        
-        return the_vote
+                    for l in p.split():
+                        vtype(l)
