@@ -1,4 +1,4 @@
-import datetime as dt
+import datetime
 import re
 
 from billy.scrape.bills import BillScraper, Bill
@@ -20,10 +20,18 @@ class MIBillScraper(BillScraper):
             abbr = 'HB'
 
         while True:
-            with self.get_bill(session, abbr, bill_no) as html:
-                if not html:
+
+            # try and get bill for current year
+            html = self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s-%04d'
+                                % (session[:4], abbr, bill_no))
+            # if first page isn't found, try next year
+            if 'Page Not Found' in html:
+                html = self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s-%04d'
+                                    % (session[-4:], abbr, bill_no))
+                if 'Page Not Found' in html:
                     break
-                doc = lxml.html.fromstring(html)
+
+            doc = lxml.html.fromstring(html)
 
             bill_id = "%s %d" % (abbr, bill_no)
             title = doc.xpath('//span[@id="frg_billstatus_ObjectSubject"]')[0].text_content()
@@ -31,19 +39,30 @@ class MIBillScraper(BillScraper):
             bill = Bill(session=session, chamber=chamber, bill_id=bill_id,
                         title=title)
 
-            #sponsors
+            # sponsors
             sp_type = 'primary'
             for sponsor in doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a/text()'):
                 bill.add_sponsor(sp_type, sponsor)
                 sp_type = 'cosponsor'
 
-            #versions
+            # actions (skip header)
+            for row in doc.xpath('//table[@id="frg_billstatus_HistoriesGridView"]/tr')[1:]:
+                tds = row.xpath('td')  # date, journal link, action
+                date = tds[0].text_content()
+                journal = tds[1].text_content()
+                action = tds[2].text_content()
+                date = datetime.datetime.strptime(date, "%m/%d/%Y")
+                # instead of trusting upper/lower case, use journal for actor
+                actor = 'upper' if journal[0] == 'S' else 'lower'
+                bill.add_action(actor, action, date)
+
+            # versions
             for row in doc.xpath('//table[@id="frg_billstatus_DocumentGridTable"]/tr'):
                 version = self.parse_doc_row(row)
                 if version:
                     bill.add_version(*version)
 
-            #documents
+            # documents
             for row in doc.xpath('//table[@id="frg_billstatus_HlaTable"]/tr'):
                 document = self.parse_doc_row(row)
                 if document:
@@ -175,46 +194,3 @@ class MIBillScraper(BillScraper):
         the_bill.add_vote(the_vote)
         
         return the_vote
-
-    def parse_actions(self, the_bill, actions):
-        date, last_action, action = None, None, None
-        for action_line in actions.findAll('tr'):
-            if action_line.findAll('th') != []: continue
-            last_date = date
-            really_last_action = last_action
-            last_action = action
-            (date, journal, action) = action_line.findAll('td')
-            action = ''.join(self.flatten(action))
-            # sometimes we get a blank line, and we need to go back a bit to see what 
-            # we actually need to check.
-            if re.match("\s+$", date.string) and 'time:' not in action.lower():
-                vote = self.parse_vote(the_bill, journal_meta, action, really_last_action, dt.datetime.strptime(last_date.string, '%m/%d/%Y'))
-                continue
-            elif re.match("\s+$", date.string) and 'time:' in action.lower():
-                continue
-            
-            # pull out the link to the journal for roll calls
-            if journal.a:
-                journal_meta = re.findall(r'objectname\=(\d{4}\-\w\w\-\d+-\d+\-\d+)', journal.a['href'])[0]
-            
-
-            if re.match('.*?Roll Call\s(?:#|(?:No\.))\s(\d+)', action, re.I):
-                vote = self.parse_vote(the_bill, journal_meta, action, really_last_action, dt.datetime.strptime(date.string, '%m/%d/%Y'))
-
-            # Instead of just *saying* what chamber performed an action
-            # They use uppercase or lowercase to denote it. Unless the first
-            # word in a lowercase sentance is a proper noun, then that's uppercase too.
-            chamber = 'lower' if action[1].islower() else 'upper'
-            the_bill.add_action(chamber, action, dt.datetime.strptime(date.string, '%m/%d/%Y'))
-
-    def get_bill(self, session, chamber, number):
-        with self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s-%04d' % (
-            session[:4], chamber, number)) as html:
-            if 'Page Not Found' not in html:
-                return html
-        # they change years when a new year starts. HOW ODD
-        with self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s-%04d' % (
-            session[-4:], chamber, number)) as bill:
-            if 'Page Not Found' not in html:
-                return html
-
