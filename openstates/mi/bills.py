@@ -8,6 +8,15 @@ import lxml.html
 
 BASE_URL = 'http://www.legislature.mi.gov'
 
+def jres_id(n):
+    """ joint res ids go from A-Z, AA-ZZ, etc. """
+    return chr(ord('A')+(n+1)%26)*((n/26)+1)
+
+bill_types = {'B':'bill',
+              'R':'resolution',
+              'CR':'concurrent resolution',
+              'JR':'joint resolution'}
+
 class MIBillScraper(BillScraper):
     state = 'mi'
 
@@ -27,8 +36,11 @@ class MIBillScraper(BillScraper):
 
         title = doc.xpath('//span[@id="frg_billstatus_ObjectSubject"]')[0].text_content()
 
+        # get B/R/JR/CR part and look up bill type
+        bill_type = bill_types[bill_id.split(' ')[0][1:]]
+
         bill = Bill(session=session, chamber=chamber, bill_id=bill_id,
-                    title=title)
+                    title=title, type=bill_type)
         bill.add_source(url)
 
         # sponsors
@@ -36,6 +48,8 @@ class MIBillScraper(BillScraper):
         for sponsor in doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a/text()'):
             bill.add_sponsor(sp_type, sponsor)
             sp_type = 'cosponsor'
+
+        bill['subjects'] = doc.xpath('//span[@id="frg_billstatus_CategoryList"]/a/text()')
 
         # actions (skip header)
         for row in doc.xpath('//table[@id="frg_billstatus_HistoriesGridView"]/tr')[1:]:
@@ -87,19 +101,23 @@ class MIBillScraper(BillScraper):
         return True
 
     def scrape(self, chamber, session):
-        if chamber == 'upper':
-            bill_no = 1
-            abbr = 'SB'
-        else:
-            bill_no = 4001
-            abbr = 'HB'
+        bill_types = {
+            'upper': [('SB', 1), ('SR', 1), ('SCR', 1), ('SJR', 1)],
+            'lower': [('HB', 4001), ('HR', 1), ('HCR', 1, ('HJR', 1))]
+            #JRs are A..Z,AA..ZZ,AAA..ZZZ
+        }
 
-        # keep trying bills until scrape_bill returns None
-        while True:
-            if not self.scrape_bill(chamber, session,
-                                    '%s %04d' % (abbr, bill_no)):
-                break
-            bill_no += 1
+        for abbr, start_num in bill_types[chamber]:
+            n = start_num
+            # keep trying bills until scrape_bill returns None
+            while True:
+                if 'JR' in abbr:
+                    bill_id = '%s %s' % (abbr, jres_id(n))
+                else:
+                    bill_id = '%s %04d' % (abbr, n)
+                if not self.scrape_bill(chamber, session, bill_id):
+                    break
+                n += 1
 
     def parse_doc_row(self, row):
         # first anchor in the row is HTML if present, otherwise PDF
