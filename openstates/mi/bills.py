@@ -13,8 +13,9 @@ class MIBillScraper(BillScraper):
 
     def scrape_bill(self, chamber, session, bill_id):
         # try and get bill for current year
-        html = self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s'
-                            % (session[:4], bill_id.replace(' ', '-')))
+        url = 'http://legislature.mi.gov/doc.aspx?%s-%s' % (
+            session[:4], bill_id.replace(' ', '-')))
+        html = self.urlopen(url)
         # if first page isn't found, try second year
         if 'Page Not Found' in html:
             html = self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s'
@@ -28,6 +29,7 @@ class MIBillScraper(BillScraper):
 
         bill = Bill(session=session, chamber=chamber, bill_id=bill_id,
                     title=title)
+        bill.add_source(url)
 
         # sponsors
         sp_type = 'primary'
