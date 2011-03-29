@@ -11,6 +11,60 @@ BASE_URL = 'http://www.legislature.mi.gov'
 class MIBillScraper(BillScraper):
     state = 'mi'
 
+    def scrape_bill(self, chamber, session, bill_id):
+        # try and get bill for current year
+        html = self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s'
+                            % (session[:4], bill_id.replace(' ', '-')))
+        # if first page isn't found, try second year
+        if 'Page Not Found' in html:
+            html = self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s'
+                                % (session[-4:], bill_id.replace(' ','-')))
+            if 'Page Not Found' in html:
+                return None
+
+        doc = lxml.html.fromstring(html)
+
+        title = doc.xpath('//span[@id="frg_billstatus_ObjectSubject"]')[0].text_content()
+
+        bill = Bill(session=session, chamber=chamber, bill_id=bill_id,
+                    title=title)
+
+        # sponsors
+        sp_type = 'primary'
+        for sponsor in doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a/text()'):
+            bill.add_sponsor(sp_type, sponsor)
+            sp_type = 'cosponsor'
+
+        # actions (skip header)
+        for row in doc.xpath('//table[@id="frg_billstatus_HistoriesGridView"]/tr')[1:]:
+            tds = row.xpath('td')  # date, journal link, action
+            date = tds[0].text_content()
+            journal = tds[1].text_content()
+            action = tds[2].text_content()
+            date = datetime.datetime.strptime(date, "%m/%d/%Y")
+            # instead of trusting upper/lower case, use journal for actor
+            actor = 'upper' if journal[0] == 'S' else 'lower'
+            bill.add_action(actor, action, date)
+
+        # versions
+        for row in doc.xpath('//table[@id="frg_billstatus_DocumentGridTable"]/tr'):
+            version = self.parse_doc_row(row)
+            if version:
+                bill.add_version(*version)
+
+        # documents
+        for row in doc.xpath('//table[@id="frg_billstatus_HlaTable"]/tr'):
+            document = self.parse_doc_row(row)
+            if document:
+                bill.add_document(*document)
+        for row in doc.xpath('//table[@id="frg_billstatus_SfaTable"]/tr'):
+            document = self.parse_doc_row(row)
+            if document:
+                bill.add_document(*document)
+
+        self.save_bill(bill)
+        return True
+
     def scrape(self, chamber, session):
         if chamber == 'upper':
             bill_no = 1
@@ -19,62 +73,11 @@ class MIBillScraper(BillScraper):
             bill_no = 4001
             abbr = 'HB'
 
+        # keep trying bills until scrape_bill returns None
         while True:
-
-            # try and get bill for current year
-            html = self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s-%04d'
-                                % (session[:4], abbr, bill_no))
-            # if first page isn't found, try next year
-            if 'Page Not Found' in html:
-                html = self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s-%04d'
-                                    % (session[-4:], abbr, bill_no))
-                if 'Page Not Found' in html:
-                    break
-
-            doc = lxml.html.fromstring(html)
-
-            bill_id = "%s %d" % (abbr, bill_no)
-            title = doc.xpath('//span[@id="frg_billstatus_ObjectSubject"]')[0].text_content()
-
-            bill = Bill(session=session, chamber=chamber, bill_id=bill_id,
-                        title=title)
-
-            # sponsors
-            sp_type = 'primary'
-            for sponsor in doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a/text()'):
-                bill.add_sponsor(sp_type, sponsor)
-                sp_type = 'cosponsor'
-
-            # actions (skip header)
-            for row in doc.xpath('//table[@id="frg_billstatus_HistoriesGridView"]/tr')[1:]:
-                tds = row.xpath('td')  # date, journal link, action
-                date = tds[0].text_content()
-                journal = tds[1].text_content()
-                action = tds[2].text_content()
-                date = datetime.datetime.strptime(date, "%m/%d/%Y")
-                # instead of trusting upper/lower case, use journal for actor
-                actor = 'upper' if journal[0] == 'S' else 'lower'
-                bill.add_action(actor, action, date)
-
-            # versions
-            for row in doc.xpath('//table[@id="frg_billstatus_DocumentGridTable"]/tr'):
-                version = self.parse_doc_row(row)
-                if version:
-                    bill.add_version(*version)
-
-            # documents
-            for row in doc.xpath('//table[@id="frg_billstatus_HlaTable"]/tr'):
-                document = self.parse_doc_row(row)
-                if document:
-                    bill.add_document(*document)
-            for row in doc.xpath('//table[@id="frg_billstatus_SfaTable"]/tr'):
-                document = self.parse_doc_row(row)
-                if document:
-                    bill.add_document(*document)
-
-            #self.parse_actions(the_bill, bill_page.findAll(id='frg_billstatus_HistoriesGridView')[0])
-            self.save_bill(bill)
-            # try next bill
+            if not self.scrape_bill(chamber, session,
+                                    '%s %04d' % (abbr, bill_no)):
+                break
             bill_no += 1
 
     def parse_doc_row(self, row):
