@@ -20,11 +20,11 @@ class MILegislatorScraper(LegislatorScraper):
                     (district, last_name, first_name,
                      party, office, phone, email) = tds
                     leg = Legislator(term=term, chamber=chamber,
-                                     district=district,
+                                     district=str(int(district)),
                                      full_name=first_name + " " + last_name,
                                      first_name=first_name,
                                      last_name=last_name,
-                                     party=party,
+                                     party=abbr[party],
                                      office=office,
                                      phone=phone,
                                      email=email
