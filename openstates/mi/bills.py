@@ -14,7 +14,7 @@ class MIBillScraper(BillScraper):
     def scrape_bill(self, chamber, session, bill_id):
         # try and get bill for current year
         url = 'http://legislature.mi.gov/doc.aspx?%s-%s' % (
-            session[:4], bill_id.replace(' ', '-')))
+            session[:4], bill_id.replace(' ', '-'))
         html = self.urlopen(url)
         # if first page isn't found, try second year
         if 'Page Not Found' in html:
