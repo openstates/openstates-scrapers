@@ -37,7 +37,7 @@ def _run_scraper(mod_path, state, options, metadata):
     scraper = ScraperClass(metadata, **opts)
 
     print options.session, options.bill_id
-    scraper.scrape_bill(options.session, options.bill_id)
+    scraper.scrape_bill(options.chamber, options.session, options.bill_id)
 
 def main():
 
@@ -48,6 +48,8 @@ def main():
 
     parser.add_argument('state', type=str,
                         help='state scraper module (eg. nc)')
+    parser.add_argument('chamber', type=str,
+                        help='chamber for bill to scrape')
     parser.add_argument('session', type=str,
                         help='session for bill to scrape')
     parser.add_argument('bill_id', type=str,
