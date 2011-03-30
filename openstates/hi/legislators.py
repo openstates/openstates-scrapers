@@ -1,6 +1,5 @@
 from billy.scrape import ScrapeError, NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from scrapelib import Response
 
 from utils import STATE_URL #, house, chamber_label # Data structures.
 # from utils import get_session_details, get_chamber_string # Functions.
@@ -22,29 +21,7 @@ class HILegislatorScraper(LegislatorScraper):
         self.term_scraper = {
             '2009-2011': ["/session2011/members/%s/%smembers.aspx", self.scrape_2011Leg],
         }
-    
-    # def urlopen(self, url):
-    #     """Local override for speeding testing. Caches pages in local
-    #     directory on first scrape. Subsequently retrieves pages from 
-    #     local directory.
-    #     Comment out for production.
-    #     """
-    #     CACHE_DIR = os.path.expanduser('~/OpenStateCache')
-    #     
-    #     if not os.path.exists(CACHE_DIR):
-    #         raise ValueError('Directory %s does not exist.'%CACHE_DIR)
-    #     try:
-    #         url_filename = url.replace('/', '_')
-    #         with open(os.path.join(CACHE_DIR,url_filename),'r') as cached_file:
-    #             response = Response(url, url, code=200, fromcache=True, headers={})
-    #             result = self._wrap_result(response, cached_file.read())
-    #         return result
-    #     except IOError:
-    #         page = super(HILegislatorScraper, self).urlopen(url)
-    #         cached_file = open(os.path.join(CACHE_DIR,url_filename), 'w')
-    #         cached_file.write(page)
-    #         return page
-    
+
     def scrape(self, chamber, term):
         # All other years are stored in a pdf
         # http://www.capitol.hawaii.gov/session2009/misc/statehood.pdf
@@ -87,11 +64,11 @@ class HILegislatorScraper(LegislatorScraper):
                 params['photo_url'] = row.xpath('td/a[contains(@id, "HyperLinkChairJPG")]/img')[0].attrib['src']
                 params['email'] = row.xpath('td/a[contains(@id, "HyperLinkEmail")]')[0].text
                 params['phone'] = row.xpath('td/span[contains(@id, "LabelPhone2")]')[0].text
-                
+
                 full_name = first_names + " " + last_name
-                leg = Legislator(term, chamber, district, full_name, 
+                leg = Legislator(term, chamber, district, full_name,
                         first_name, last_name, middle_name, party, **params)
                 leg.add_source(url)
                 self.save_legislator(leg)
-                
+
 

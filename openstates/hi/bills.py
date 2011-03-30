@@ -5,7 +5,6 @@ from openstates.hi import metadata
 
 import lxml.html
 from datetime import datetime
-from scrapelib import Response
 import os
 
 from utils import STATE_URL, house, chamber_label # Data structures.
@@ -13,7 +12,7 @@ from utils import get_session_details, get_chamber_string # Functions.
 
 class HIBillScraper(BillScraper):
     state = 'hi'
-    
+
     def __init__(self, *kwargs, **args):
         super(HIBillScraper, self).__init__(*kwargs, **args)
         """
@@ -39,29 +38,7 @@ class HIBillScraper(BillScraper):
             '2010 First Special Session': ["/splsession%s/", self.scrape_20101SS],
             '2010 Second Special Session': ["/splsession%sb/", self.scrape_20101SS],
         }
-    
-    # def urlopen(self, url):
-    #     """Local override for speeding testing. Caches pages in local
-    #     directory on first scrape. Subsequently retrieves pages from 
-    #     local directory.
-    #     Comment out for production.
-    #     """
-    #     CACHE_DIR = os.path.expanduser('~/OpenStateCache')
-    #     
-    #     if not os.path.exists(CACHE_DIR):
-    #         raise ValueError('Directory %s does not exist.'%CACHE_DIR)
-    #     try:
-    #         url_filename = url.replace('/', '_')
-    #         with open(os.path.join(CACHE_DIR,url_filename),'r') as cached_file:
-    #             response = Response(url, url, code=200, fromcache=True, headers={})
-    #             result = self._wrap_result(response, cached_file.read())
-    #         return result
-    #     except IOError:
-    #         page = super(HIBillScraper, self).urlopen(url)
-    #         cached_file = open(os.path.join(CACHE_DIR,url_filename), 'w')
-    #         cached_file.write(page)
-    #         return page
-    
+
     def scrape(self, chamber, session):
         self.validate_session(session) # Check session is defined in init file.
         # Work out appropriate scaper for year and session type.
@@ -81,7 +58,7 @@ class HIBillScraper(BillScraper):
         if scraper is not None:
             scraper(chamber, session, STATE_URL+url)
         # else return without scraping.
-    
+
     def scrape_2009RS(self, chamber, session, url):
         """Scraper for post 2009 Regular Sessions."""
         year_label, session_type = get_session_details(session)
@@ -89,18 +66,18 @@ class HIBillScraper(BillScraper):
         bill_list_url = url%(year_label, chamber_string)
         with self.urlopen(bill_list_url) as page:
             page = lxml.html.fromstring(page)
-            page.make_links_absolute(bill_list_url)  
-            table = page.xpath('//table[contains(@id, "ReportGridView")]')[0]          
+            page.make_links_absolute(bill_list_url)
+            table = page.xpath('//table[contains(@id, "ReportGridView")]')[0]
             for row in table.xpath('tr'):
                 # import pdb; pdb.set_trace()
                 self.scrape_2009RS_row(chamber, session, row)
-    
+
     def scrape_2009RS_row(self, chamber, session, row):
         """Returns bill attributes from row."""
         params = {}
         params['session'] = session
-        params['chamber'] = chamber 
-        
+        params['chamber'] = chamber
+
         b = row.xpath('td/font/a[contains(@id, "HyperLink1")]')
         if b: # Ignore if no match
             bill_status_url = b[0].attrib['href']
@@ -119,13 +96,13 @@ class HIBillScraper(BillScraper):
             bill.add_source(bill_status_url)
             self.save_bill(bill)
         return
-    
+
     def scrape_actions(self, bill, bill_url):
         """Scrapes the bill actions from the bill details page."""
         actions = []
         with self.urlopen(bill_url) as page:
             page = lxml.html.fromstring(page)
-            page.make_links_absolute(bill_url)  
+            page.make_links_absolute(bill_url)
             table = page.xpath('//table[contains(@id, "GridView1")]')[0]
             for row in table.xpath('tr'):
                 # import pdb; pdb.set_trace()
@@ -155,16 +132,16 @@ class HIBillScraper(BillScraper):
         bill_list_url = url%(year_label, chamber_string)
         with self.urlopen(bill_list_url) as page:
             page = lxml.html.fromstring(page)
-            page.make_links_absolute(bill_list_url)  
+            page.make_links_absolute(bill_list_url)
             table = page.xpath('//table[tr/th[contains(., "Measure")]]')[0]
             for row in table.xpath('tr'):
                 self.scrape_2008RS_row(chamber, session, row)
-    
+
     def scrape_2008RS_row(self, chamber, session, row):
         """Scrapes rows for scrape_2008RS."""
         params = {}
         params['session'] = session
-        params['chamber'] = chamber 
+        params['chamber'] = chamber
         b = row.xpath('td/a[contains(., "View measure")]')
         if b: # Ignore if no match
             bill_url = b[0].attrib['href']
@@ -176,9 +153,9 @@ class HIBillScraper(BillScraper):
             bill.add_source(bill_status_url)
             self.save_bill(bill)
         return
-        
+
     def scrape_regular_status_page(self, url, params={}):
-        """Scrapes the status page url, populating parameter dict and 
+        """Scrapes the status page url, populating parameter dict and
         returns bill
         """
         with self.urlopen(url) as page:
@@ -222,17 +199,17 @@ class HIBillScraper(BillScraper):
         bill_list_url = url%(year_label)
         with self.urlopen(bill_list_url) as page:
             page = lxml.html.fromstring(page)
-            page.make_links_absolute(bill_list_url)  
-            table = page.xpath('//table[tr/th[contains(., "Measure Status")]]')[0]          
+            page.make_links_absolute(bill_list_url)
+            table = page.xpath('//table[tr/th[contains(., "Measure Status")]]')[0]
             for row in table.xpath('tr'):
                 # import pdb; pdb.set_trace()
                 self.scrape_20101SS_row(chamber, session, row)
-    
+
     def scrape_20101SS_row(self, chamber, session, row):
         """Scrapes rows for scrape_20101SS."""
         params = {}
         params['session'] = session
-        params['chamber'] = chamber 
+        params['chamber'] = chamber
         b = row.xpath('td/a[contains(., "Status")]')
         if b: # Ignore if no match
             bill_status_url = b[0].xpath('../a[contains(., "Status")]')[0].attrib['href']
@@ -243,7 +220,7 @@ class HIBillScraper(BillScraper):
         return
 
     def scrape_bill_status_page(self, url, params={}):
-        """Scrapes the status page url, populating parameter dict and 
+        """Scrapes the status page url, populating parameter dict and
         returns bill
         """
         with self.urlopen(url) as page:
@@ -294,17 +271,17 @@ class HIBillScraper(BillScraper):
         bill_list_url = url%(year_label)
         with self.urlopen(bill_list_url) as page:
             page = lxml.html.fromstring(page)
-            page.make_links_absolute(bill_list_url)  
-            table = page.xpath('//table[@id="ReportGridView"]')[0]          
+            page.make_links_absolute(bill_list_url)
+            table = page.xpath('//table[@id="ReportGridView"]')[0]
             for row in table.xpath('tr'):
                 # import pdb; pdb.set_trace()
                 self.scrape_20091SS_row(chamber, session, row)
-                 
+
     def scrape_20091SS_row(self, chamber, session, row):
         """Scrapes rows for scrape_20091SS."""
         params = {}
         params['session'] = session
-        params['chamber'] = chamber 
+        params['chamber'] = chamber
         b = row.xpath('td/a[contains(@id, "HyperLink1")]')
         if b: # Ignore if no match
             bill_status_url = b[0].attrib['href']
@@ -315,24 +292,24 @@ class HIBillScraper(BillScraper):
         return
 
     def scrape_2009_special_status_page(self, url, params={}):
-        """Scrapes the status page url, populating parameter dict and 
+        """Scrapes the status page url, populating parameter dict and
         returns bill
         """
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
             params['bill_id'] = page.xpath('//a[contains(@class, "headerlink")]')[0].text
-            params['title'] = page.xpath( 
+            params['title'] = page.xpath(
                 '//td[contains(preceding::td[1]/b/text(), "Report Title")]')[0].text.strip()
-            sponsors = page.xpath( 
+            sponsors = page.xpath(
                 '//td[contains(preceding::td[1]/b/text(), "Introducer")]')[0].text.strip()
-            subject = page.xpath( 
+            subject = page.xpath(
                 '//td[contains(preceding::td[1]/b/text(), "Measure Title")]')[0].text.strip()
             subject = subject.replace('RELATING TO ', '') # Remove lead text
             params['subject'] = subject.replace('.', '')
-            params['description'] = page.xpath( 
+            params['description'] = page.xpath(
                 '//td[contains(preceding::td[1]/b/text(), "Description")]')[0].text.strip()
-            params['companion'] = page.xpath( 
+            params['companion'] = page.xpath(
                 '//td[contains(preceding::td[1]/b/text(), "Companion")]')[0].text.strip()
             actions = []
             table = page.xpath('//table[contains(@id, "GridView1")]')[0]
