@@ -10,7 +10,7 @@ BASE_URL = 'http://www.legislature.mi.gov'
 
 def jres_id(n):
     """ joint res ids go from A-Z, AA-ZZ, etc. """
-    return chr(ord('A')+(n+1)%26)*((n/26)+1)
+    return chr(ord('A')+(n-1)%25)*((n/26)+1)
 
 bill_types = {'B':'bill',
               'R':'resolution',
