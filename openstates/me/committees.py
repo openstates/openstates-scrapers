@@ -4,7 +4,7 @@ import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
-from openstates.oh.utils import clean_committee_name
+from openstates.me.utils import clean_committee_name
 
 import lxml.etree
 import xlrd
@@ -29,7 +29,7 @@ class MECommitteeScraper(CommitteeScraper):
             self.scrape_reps_comm(chamber, session)
 
     def scrape_reps_comm(self, chamber, session):        
-        
+
        url = 'http://www.maine.gov/legis/house/hsecoms.htm'
 
        with self.urlopen(url) as page:
