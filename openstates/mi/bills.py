@@ -108,8 +108,7 @@ class MIBillScraper(BillScraper):
     def scrape(self, chamber, session):
         bill_types = {
             'upper': [('SB', 1), ('SR', 1), ('SCR', 1), ('SJR', 1)],
-            'lower': [('HB', 4001), ('HR', 1), ('HCR', 1, ('HJR', 1))]
-            #JRs are A..Z,AA..ZZ,AAA..ZZZ
+            'lower': [('HB', 4001), ('HR', 1), ('HCR', 1), ('HJR', 1)]
         }
 
         for abbr, start_num in bill_types[chamber]:
