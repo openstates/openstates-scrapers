@@ -33,8 +33,6 @@ _categorizers = {
     'amendment(s) defeated': 'amendment:failed',
 }
 
-# OOPS: http://greenbelt.sunlightlabs.net/browse/mi/2011-2012/HR%202/
-
 def categorize_action(action):
     for prefix, atype in _categorizers.iteritems():
         if action.lower().startswith(prefix):
