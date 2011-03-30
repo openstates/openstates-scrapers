@@ -14,16 +14,19 @@ def categorize_subjects(state, data_dir, process_all):
     categories_per_bill = defaultdict(int)
     uncategorized = defaultdict(int)
 
-    reader = csv.reader(open(os.path.join(data_dir, state+'.csv')))
+    filename = os.path.join(data_dir, state+'.csv')
+    try:
+        reader = csv.reader(open(filename))
 
-    # build category mapping
-    for row in reader:
-        for subj in row[1:]:
-            if subj:
-                if subj not in settings.BILLY_SUBJECTS:
-                    raise Exception('invalid subject %s (%s)' % (subj, row[0]))
-                categorizer[row[0]].add(subj)
-
+        # build category mapping
+        for row in reader:
+            for subj in row[1:]:
+                if subj:
+                    if subj not in settings.BILLY_SUBJECTS:
+                        raise Exception('invalid subject %s (%s)' % (subj, row[0]))
+                    categorizer[row[0]].add(subj)
+    except IOError:
+        print 'Proceeding without', filename
 
     spec = {'state':state}
     if not process_all:
