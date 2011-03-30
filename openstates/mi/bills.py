@@ -83,7 +83,8 @@ class MIBillScraper(BillScraper):
                     vote.add_source(vote_url)
                     bill.add_vote(vote)
                 else:
-                    self.warning("missing journal link for", bill_id, journal)
+                    self.warning("missing journal link for %s %s" % 
+                                 (bill_id, journal))
 
         # versions
         for row in doc.xpath('//table[@id="frg_billstatus_DocumentGridTable"]/tr'):
