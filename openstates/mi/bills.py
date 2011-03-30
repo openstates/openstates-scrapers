@@ -17,6 +17,29 @@ bill_types = {'B':'bill',
               'CR':'concurrent resolution',
               'JR':'joint resolution'}
 
+_categorizers = {
+    'read a first time': 'bill:reading:1',
+    'read a second time': 'bill:reading:2',
+    'read a third time': 'bill:reading:3',
+    'introduced by': 'bill:introduced',
+    'passed': 'bill:passed',
+    'referred to committee': 'committee:referred',
+    'reported': 'committee:passed',
+    'received': 'bill:introduced',
+    'presented to governor': 'governor:received',
+    'approved by governor': 'governor:signed',
+    'adopted': 'bill:passed',
+    'amendment(s) adopted': 'amendment:passed',
+    'amendment(s) defeated': 'amendment:failed',
+}
+
+# OOPS: http://greenbelt.sunlightlabs.net/browse/mi/2011-2012/HR%202/
+
+def categorize_action(action):
+    for prefix, atype in _categorizers.iteritems():
+        if action.lower().startswith(prefix):
+            return atype
+
 class MIBillScraper(BillScraper):
     state = 'mi'
 
@@ -60,7 +83,8 @@ class MIBillScraper(BillScraper):
             date = datetime.datetime.strptime(date, "%m/%d/%Y")
             # instead of trusting upper/lower case, use journal for actor
             actor = 'upper' if 'SJ' in journal else 'lower'
-            bill.add_action(actor, action, date)
+            type = categorize_action(action)
+            bill.add_action(actor, action, date, type=type)
 
             # check if action mentions a vote
             rcmatch = re.search('Roll Call # (\d+)', action, re.IGNORECASE)
