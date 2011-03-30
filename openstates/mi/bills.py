@@ -152,7 +152,7 @@ class MIBillScraper(BillScraper):
         a = row.xpath('.//a')
         if a:
             name = row.xpath('.//b/text()')[0]
-            url = BASE_URL + a[0].get('href').replace('../', '')
+            url = BASE_URL + a[0].get('href').replace('../', '/')
             return name, url
 
     def parse_roll_call(self, vote, url, rc_num):
