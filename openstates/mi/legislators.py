@@ -12,7 +12,8 @@ class MILegislatorScraper(LegislatorScraper):
         abbr = {'D': 'Democratic', 'R': 'Republican'}
 
         if chamber == 'lower':
-            with self.urlopen('http://house.michigan.gov/replist.asp') as html:
+            url = 'http://house.michigan.gov/replist.asp'
+            with self.urlopen(url) as html:
                 doc = lxml.html.fromstring(html)
                 # skip two rows at top
                 for row in doc.xpath('//table[@cellspacing=0]/tr')[2:]:
@@ -29,9 +30,11 @@ class MILegislatorScraper(LegislatorScraper):
                                      phone=phone,
                                      email=email
                                     )
+                    leg.add_source(url)
                     self.save_legislator(leg)
         else:
-            with self.urlopen('http://www.senate.michigan.gov/members/memberlist.htm') as html:
+            url = 'http://www.senate.michigan.gov/members/memberlist.htm'
+            with self.urlopen(url) as html:
                 doc = lxml.html.fromstring(html)
                 for row in doc.xpath('//table[@width=550]/tr')[1:39]:
                     # party, dist, member, office_phone, office_fax, office_loc
@@ -46,4 +49,5 @@ class MILegislatorScraper(LegislatorScraper):
                                      party=party, office_phone=office_phone,
                                      office_fax=office_fax,
                                      office_loc=office_loc)
+                    leg.add_source(url)
                     self.save_legislator(leg)
