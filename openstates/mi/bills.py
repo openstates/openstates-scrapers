@@ -67,19 +67,23 @@ class MIBillScraper(BillScraper):
             if rcmatch:
                 rc_num = rcmatch.groups()[0]
                 # in format mileg.aspx?page=getobject&objectname=2011-SJ-02-10-011
-                objectname = tds[1].xpath('a/@href')[0].rsplit('=', 1)[-1]
-                chamber_name = {'upper': 'Senate', 'lower': 'House'}[actor]
-                vote_url = BASE_URL + '/documents/%s/Journal/%s/htm/%s.htm' % (
-                    session, chamber_name, objectname)
-                vote = Vote(actor, date, action, False, 0, 0, 0)
-                self.parse_roll_call(vote, vote_url, rc_num)
-                # TODO: use the counts, base passed on real data
-                vote['yes_count'] = len(vote['yes_votes'])
-                vote['no_count'] = len(vote['no_votes'])
-                vote['other_count'] = len(vote['other_votes'])
-                vote['passed'] = vote['yes_count'] > vote['no_count']
-                vote.add_source(vote_url)
-                bill.add_vote(vote)
+                journal_link = tds[1].xpath('a/@href')
+                if journal_link:
+                    objectname = journal_link[0].rsplit('=', 1)[-1]
+                    chamber_name = {'upper': 'Senate', 'lower': 'House'}[actor]
+                    vote_url = BASE_URL + '/documents/%s/Journal/%s/htm/%s.htm' % (
+                        session, chamber_name, objectname)
+                    vote = Vote(actor, date, action, False, 0, 0, 0)
+                    self.parse_roll_call(vote, vote_url, rc_num)
+                    # TODO: use the counts, base passed on real data
+                    vote['yes_count'] = len(vote['yes_votes'])
+                    vote['no_count'] = len(vote['no_votes'])
+                    vote['other_count'] = len(vote['other_votes'])
+                    vote['passed'] = vote['yes_count'] > vote['no_count']
+                    vote.add_source(vote_url)
+                    bill.add_vote(vote)
+                else:
+                    self.warning("missing journal link for", bill_id, journal)
 
         # versions
         for row in doc.xpath('//table[@id="frg_billstatus_DocumentGridTable"]/tr'):
