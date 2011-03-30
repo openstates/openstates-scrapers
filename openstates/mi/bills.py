@@ -97,7 +97,19 @@ class MIBillScraper(BillScraper):
                         session, chamber_name, objectname)
                     vote = Vote(actor, date, action, False, 0, 0, 0)
                     self.parse_roll_call(vote, vote_url, rc_num)
-                    # TODO: use the counts, base passed on real data
+
+                    # check the expected counts vs actual
+                    count = re.search('(\d+) YEAS')
+                    count = int(count.groups()[0]) if count else 0
+                    if count != len(vote['yes_votes']):
+                        self.warning('vote count mismatch for %s %s, %d != %d' % 
+                                     (bill_id, action, count, len(vote['yes_votes'])))
+                    count = re.search('(\d+) NAYS')
+                    count = int(count.groups()[0]) if count else 0
+                    if count != len(vote['no_votes']):
+                        self.warning('vote count mismatch for %s %s, %d != %d' % 
+                                     (bill_id, action, count, len(vote['no_votes'])))
+
                     vote['yes_count'] = len(vote['yes_votes'])
                     vote['no_count'] = len(vote['no_votes'])
                     vote['other_count'] = len(vote['other_votes'])
