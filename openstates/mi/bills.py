@@ -189,5 +189,6 @@ class MIBillScraper(BillScraper):
                 elif p.startswith('In The Chair:'):
                     break
                 else:
-                    for l in p.split():
+                    # split on spaces not preceeded by commas
+                    for l in re.split('(?<!,)\s+):
                         vtype(l)
