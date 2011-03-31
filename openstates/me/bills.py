@@ -39,7 +39,7 @@ class MEBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath('//a[contains(@href, "contents")]/@href')
+            for link in page.xpath('//a[contains(@href, "contents")]/@href'):
                 self.scrape_session_directory(session, chamber, link)
 
     def scrape_session_directory(self, session, chamber, url):
