@@ -118,6 +118,8 @@ def record_votes(root, session):
             else:
                 continue
 
+            bill_id = bill_id.replace(u'\xa0', ' ')
+
             motion = get_motion(m)
 
             vote = Vote(None, None, motion, True,
