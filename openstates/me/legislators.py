@@ -7,22 +7,20 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 import xlrd
 
+_party_map = {'D': 'Democratic', 'R':'Republican', 'U':'Independent'}
 
 class MELegislatorScraper(LegislatorScraper):
     state = 'me'
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
-
-        session = ((int(term[0:4]) - 2009) / 2) + 124
+        self.validate_term(term, latest_only=True)
 
         if chamber == 'upper':
-            self.scrape_senators(chamber, session, term)
+            self.scrape_senators(chamber, term)
         elif chamber == 'lower':
-            self.scrape_reps(chamber, session, term)
+            self.scrape_reps(chamber, term)
 
-    def scrape_reps(self, chamber, session, term_name):
+    def scrape_reps(self, chamber, term_name):
         url = 'http://www.maine.gov/legis/house/dist_mem.htm'
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
@@ -46,9 +44,12 @@ class MELegislatorScraper(LegislatorScraper):
                         lastname = ""
                         middlename = ""
 
+                        # vacant
                         if party == "V":
-                            # vacant
                             continue
+                        else:
+                            party = _party_map[party]
+
 
                         leg = Legislator(term_name, chamber, str(district),
                                          name, firstname, lastname,
@@ -58,7 +59,8 @@ class MELegislatorScraper(LegislatorScraper):
 
                         self.save_legislator(leg)
 
-    def scrape_senators(self, chamber, session, term):
+    def scrape_senators(self, chamber, term):
+        session = ((int(term[0:4]) - 2009) / 2) + 124
         url = ('http://www.maine.gov/legis/senate/senators/email/'
                '%sSenatorsList.xls' % session)
 
@@ -111,9 +113,11 @@ class MELegislatorScraper(LegislatorScraper):
             else:
                 phone = phone[1:4] + phone[6:9] + phone[10:14]
 
-            leg = Legislator(term, chamber, d['district'], full_name,
+            district = d['district'].split('.')[0]
+
+            leg = Legislator(term, chamber, district, full_name,
                              d['first_name'], d['last_name'], d['middle_name'],
-                             d['party'], suffix=d['suffix'],
+                             _party_map[d['party']], suffix=d['suffix'],
                              resident_county=d['resident_county'],
                              office_address=address,
                              office_phone=phone,
