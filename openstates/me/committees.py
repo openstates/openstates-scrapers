@@ -4,32 +4,27 @@ import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
-from openstates.oh.utils import clean_committee_name
+from openstates.me.utils import clean_committee_name
 
-import lxml.etree
+import lxml.etree, lxml.html
 import xlrd
-import urllib
 
 
 class MECommitteeScraper(CommitteeScraper):
     state = 'me'
 
     def scrape(self, chamber, term_name):
-        self.save_errors=False
-
-        year = term_name[0:4]
-        if int(year) < 2009:
-            raise NoDataForPeriod(term_name)
-
-        session = ((int(year) - 2009)/2) + 124
+        self.validate_term(term_name, latest_only=True)
 
         if chamber == 'upper':
-            self.scrape_senate_comm(chamber, session)
+            self.scrape_senate_comm()
+            # scrape joint committees under senate
+            self.scrape_joint_comm()
         elif chamber == 'lower':
-            self.scrape_reps_comm(chamber, session)
+            self.scrape_reps_comm()
 
-    def scrape_reps_comm(self, chamber, session):        
-        
+    def scrape_reps_comm(self):
+
        url = 'http://www.maine.gov/legis/house/hsecoms.htm'
 
        with self.urlopen(url) as page:
@@ -40,8 +35,8 @@ class MECommitteeScraper(CommitteeScraper):
             for n in range(1, 12, 2):
                 path = 'string(//body/center[%s]/h1/a)' % (n)
                 comm_name = root.xpath(path)
-                committee = Committee(chamber, comm_name)
-                count = count + 1                
+                committee = Committee('lower', comm_name)
+                count = count + 1
 
                 path2 = '/html/body/ul[%s]/li/a' % (count)
 
@@ -52,35 +47,45 @@ class MECommitteeScraper(CommitteeScraper):
                         rep = rep[15: mark]
                    committee.add_member(rep)
                 committee.add_source(url)
-                
+
                 self.save_committee(committee)
 
-    def scrape_senate_comm(self, chamber, session):
-        #print "Need to be worked on"
-        
-        senurl = ' http://www.maine.gov/legis/senate/senators/bios/bio%ss.htm'
-        
+    def scrape_senate_comm(self):
+        url = 'http://www.maine.gov/legis/senate/Senate-Standing-Committees.html'
 
-        #works on joint legislation
-        self.scrape_joint_comm(chamber, session)
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
 
-    def scrape_joint_comm(self, chamber, session):
+            # committee titles
+            for item in doc.xpath('//span[@style="FONT-SIZE: 11pt"]'):
+                text = item.text_content().strip()
+                # some contain COMMITTEE ON & some are blank, drop those
+                if not text or text.startswith('COMMITTEE'):
+                    continue
 
+                # titlecase committee name
+                com = Committee('upper', text.title())
+                com.add_source(url)
+
+                # up two and get ul sibling
+                for leg in item.xpath('../../following-sibling::ul[1]/li'):
+                    lname = leg.text_content().strip().split(' of ')[0]
+                    com.add_member(lname)
+
+                self.save_committee(com)
+
+    def scrape_joint_comm(self):
         fileurl = 'http://www.maine.gov/legis/house/commlist.xls'
-        
-        joint = urllib.urlopen(fileurl).read()
-        f = open('me_joint.xls', 'w')
-        f.write(joint)
-        f.close()
+        fname, resp = self.urlretrieve(fileurl)
 
-        wb = xlrd.open_workbook('me_joint.xls')
+        wb = xlrd.open_workbook(fname)
         sh = wb.sheet_by_index(0)
 
         cur_comm_name = ''
         chamber = 'joint'
 
         for rownum in range(1, sh.nrows):
-            
+
             comm_name = sh.cell(rownum, 0).value
 
             first_name = sh.cell(rownum, 3).value
@@ -99,7 +104,7 @@ class MECommitteeScraper(CommitteeScraper):
             phone = str(sh.cell(rownum, 14).value)
             home_email = sh.cell(rownum, 15).value
             leg_email = sh.cell(rownum, 16).value
-            
+
             leg_chamber = sh.cell(rownum, 2).value
             chair = sh.cell(rownum, 1).value
             role = "member"
@@ -108,11 +113,21 @@ class MECommitteeScraper(CommitteeScraper):
                 role = leg_chamber + " " + "Chair"
 
             if comm_name != cur_comm_name:
-                cur_comm_name = comm_name 
+                cur_comm_name = comm_name
                 committee = Committee(chamber, comm_name)
-                committee.add_member(full_name, role = role, party = party, legalres= legalres, address1 = address1, address2 = address2, town = town, state = state, zipcode = zipcode, phone = phone, home_email = home_email, leg_email = leg_email)
+                committee.add_member(full_name, role = role, party = party,
+                                     legalres= legalres, address1 = address1,
+                                     address2 = address2, town = town,
+                                     state = state, zipcode = zipcode,
+                                     phone = phone, home_email = home_email,
+                                     leg_email = leg_email)
                 committee.add_source(fileurl)
             else:
-                committee.add_member(full_name, role = role, party = party, legalres = legalres, address1 = address1, address2 = address2, town = town, state = state, zipcode = zipcode, phone = phone, home_email = home_email, leg_email = leg_email)
-               
-            self.save_committee(committee) 
+                committee.add_member(full_name, role = role, party = party,
+                                     legalres = legalres, address1 = address1,
+                                     address2 = address2, town = town, 
+                                     state = state, zipcode = zipcode,
+                                     phone = phone, home_email = home_email,
+                                     leg_email = leg_email)
+
+            self.save_committee(committee)

@@ -7,6 +7,14 @@ from billy.scrape.votes import VoteScraper, Vote
 
 import lxml.html
 
+def classify_action(action):
+    # TODO: this likely needs to be retuned after more happens
+    if 'REFERRED to the Committee' in action:
+        return 'committee:referred'
+    elif 'PASSED' in action:
+        return 'bill:passed'
+    else:
+        return 'other'
 
 class MEBillScraper(BillScraper):
     state = 'me'
@@ -159,4 +167,6 @@ class MEBillScraper(BillScraper):
                 if action == 'Unfinished Business' or not action:
                     continue
 
-                bill.add_action(chamber, action, date)
+                atype = classify_action(action)
+
+                bill.add_action(chamber, action, date, type=atype)

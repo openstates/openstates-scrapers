@@ -174,6 +174,8 @@ def viva_voce_votes(root, session):
             else:
                 continue
 
+            bill_id = bill_id.replace(u'\xa0', ' ')
+
             vote = Vote(None, None, motion, True, 0, 0, 0)
             vote['bill_id'] = bill_id
             vote['bill_chamber'] = bill_chamber
@@ -208,6 +210,7 @@ def viva_voce_votes(root, session):
             else:
                 continue
 
+            bill_id = bill_id.replace(u'\xa0', ' ')
             motion = get_motion(m)
 
             record = str(uuid.uuid1())
