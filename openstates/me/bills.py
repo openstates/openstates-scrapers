@@ -20,9 +20,6 @@ class MEBillScraper(BillScraper):
     state = 'me'
 
     def scrape(self, chamber, session):
-        if int(session) < 121:
-            raise NoDataForPeriod(session)
-
         if session[-1] == "1":
             session_abbr = session + "st"
         elif session[-1] == "2":
@@ -42,7 +39,7 @@ class MEBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//tr/td/ul/li//@href"):
+            for link in page.xpath('//a[contains(@href, "contents")]/@href')
                 self.scrape_session_directory(session, chamber, link)
 
     def scrape_session_directory(self, session, chamber, url):
@@ -59,10 +56,16 @@ class MEBillScraper(BillScraper):
                 elif bill_id.startswith('HP'):
                     bill_chamber = 'lower'
 
+                if (title.lower().startswith('joint order') or
+                    title.lower().startswith('joint resolution')):
+                    bill_type = 'joint resolution'
+                else:
+                    bill_type = 'bill'
+
                 if chamber != bill_chamber:
                     continue
 
-                bill = Bill(session, chamber, bill_id, title)
+                bill = Bill(session, chamber, bill_id, title, type=bill_type)
                 self.scrape_bill(bill, link.attrib['href'])
                 self.save_bill(bill)
 
