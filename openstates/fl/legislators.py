@@ -61,6 +61,8 @@ class FLLegislatorScraper(LegislatorScraper):
 
             for link in page.xpath("//a[contains(@href, 'MemberId')]"):
                 name = re.sub(r"\s+", " ", link.text).strip()
+                if 'Special Election' in name:
+                    continue
 
                 party = link.xpath('string(../../td[3])').strip()
                 if party == 'D':
