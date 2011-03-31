@@ -191,4 +191,5 @@ class MIBillScraper(BillScraper):
                 else:
                     # split on spaces not preceeded by commas
                     for l in re.split('(?<!,)\s+', p):
-                        vtype(l)
+                        if l:
+                            vtype(l)
