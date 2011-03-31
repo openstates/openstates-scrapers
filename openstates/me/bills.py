@@ -43,27 +43,23 @@ class MEBillScraper(BillScraper):
                 self.scrape_session_directory(session, chamber, link)
 
     def scrape_session_directory(self, session, chamber, url):
+        # decide xpath based on upper/lower
+        link_xpath = {'lower': '//big/a[starts-with(text(), "HP")]',
+                      'upper': '//big/a[starts-with(text(), "SP")]'}[chamber]
+
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//big/a[2]"):
+            for link in page.xpath(link_xpath):
                 bill_id = link.text
                 title = link.xpath("string(../../following-sibling::dd[1])")
-
-                if bill_id.startswith('SP'):
-                    bill_chamber = 'upper'
-                elif bill_id.startswith('HP'):
-                    bill_chamber = 'lower'
 
                 if (title.lower().startswith('joint order') or
                     title.lower().startswith('joint resolution')):
                     bill_type = 'joint resolution'
                 else:
                     bill_type = 'bill'
-
-                if chamber != bill_chamber:
-                    continue
 
                 bill = Bill(session, chamber, bill_id, title, type=bill_type)
                 self.scrape_bill(bill, link.attrib['href'])
@@ -87,6 +83,13 @@ class MEBillScraper(BillScraper):
 
             votes_link = page.xpath("//a[contains(@href, 'rollcalls.asp')]")[0]
             self.scrape_votes(bill, votes_link.attrib['href'])
+
+            spon_link = page.xpath("//a[contains(@href, 'subjects.asp')]")[0]
+            with self.urlopen(spon_link.get('href')) as spon_html:
+                sdoc = lxml.html.fromstring(spon_html)
+                srow = sdoc.xpath('//table[@class="sectionbody"]/tr[2]/td[2]/text()')
+                if srow:
+                    bill['subjects'] = [srow[0].strip()]
 
     def scrape_votes(self, bill, url):
         with self.urlopen(url) as page:
