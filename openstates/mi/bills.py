@@ -99,12 +99,12 @@ class MIBillScraper(BillScraper):
                     self.parse_roll_call(vote, vote_url, rc_num)
 
                     # check the expected counts vs actual
-                    count = re.search('(\d+) YEAS', action)
+                    count = re.search('YEAS (\d+)', action)
                     count = int(count.groups()[0]) if count else 0
                     if count != len(vote['yes_votes']):
                         self.warning('vote count mismatch for %s %s, %d != %d' % 
                                      (bill_id, action, count, len(vote['yes_votes'])))
-                    count = re.search('(\d+) NAYS', action)
+                    count = re.search('NAYS (\d+)', action)
                     count = int(count.groups()[0]) if count else 0
                     if count != len(vote['no_votes']):
                         self.warning('vote count mismatch for %s %s, %d != %d' % 
