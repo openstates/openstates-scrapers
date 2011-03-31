@@ -87,6 +87,14 @@ class NYBillScraper(BillScraper):
                     first = True
                     act_chamber = {'upper': 'lower',
                                    'lower': 'upper'}[act_chamber]
+                elif (action.startswith('AMENDED') or
+                      action.startswith('AMEND (T) AND')):
+                    atype.append('amendment:passed')
+                elif action.startswith('RECOMMIT,'):
+                    atype.append('committee:referred')
+
+                if 'RECOMMIT TO' in action:
+                    atype.append('committee:referred')
 
                 if not atype:
                     atype = ['other']
