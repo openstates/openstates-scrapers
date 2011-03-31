@@ -91,6 +91,15 @@ class MEBillScraper(BillScraper):
                 if srow:
                     bill['subjects'] = [srow[0].strip()]
 
+            ver_link = page.xpath("//a[contains(@href, 'display_ps.asp')]")[0]
+            ver_url = ver_link.get('href')
+            with self.urlopen(ver_url) as ver_html:
+                vdoc = lxml.html.fromstring(ver_html)
+                vdoc.make_links_absolute(ver_url)
+                # various versions: billtexts, billdocs, billpdfs
+                vurl = vdoc.xpath('//a[contains(@href, "billtexts")]/@href')[0]
+                bill.add_version('Initial Version', vurl)
+
     def scrape_votes(self, bill, url):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
