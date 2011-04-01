@@ -10,6 +10,16 @@ from openstates.tx.utils import parse_ftp_listing
 import lxml.etree
 
 
+def next_tag(el):
+    """
+    Return next tag, skipping <br>s.
+    """
+    el = el.getnext()
+    while el.tag == 'br':
+        el = el.getnext()
+    return el
+
+
 def clean_journal(root):
     # Remove page breaks
     for el in root.xpath('//hr[@noshade and @size=1]'):
@@ -134,20 +144,16 @@ def record_votes(root, session):
             for name in names(el):
                 vote.yes(name)
 
-            el = el.getnext()
-            if el.tag == 'br':
-                el = el.getnext()
+            el = next_tag(el)
             if el.text and el.text.startswith('Nays'):
                 for name in names(el):
                     vote.no(name)
-                el = el.getnext()
+                el = next_tag(el)
 
             while el.text and re.match(r'Present|Absent', el.text):
                 for name in names(el):
                     vote.other(name)
-                el = el.getnext()
-                if el.tag == 'br':
-                    el = el.getnext()
+                el = next_tag(el)
 
             vote['other_count'] = len(vote['other_votes'])
             yield vote
