@@ -8,6 +8,12 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 class CTLegislatorScraper(LegislatorScraper):
     state = 'ct'
 
+    _committee_names = {}
+
+    def __init__(self, *args, **kwargs):
+        super(CTLegislatorScraper, self).__init__(*args, **kwargs)
+        self._scrape_committee_names()
+
     def scrape(self, chamber, term):
         if term != '2011-2012':
             raise NoDataForPeriod(term)
@@ -49,4 +55,22 @@ class CTLegislatorScraper(LegislatorScraper):
                              office_address=office_address,
                              office_phone=row['capitol phone'])
             leg.add_source(leg_url)
+
+            for comm_code in row['committee codes'].split(';'):
+                if comm_code:
+                    comm_name = self._committee_names[comm_code]
+                    leg.add_role('committee member', term,
+                                 chamber='joint',
+                                 committee=comm_name)
+
             self.save_legislator(leg)
+
+    def _scrape_committee_names(self):
+        comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
+        page = urllib2.urlopen(comm_url)
+        page = csv.DictReader(page)
+
+        for row in page:
+            comm_code = row['comm_code'].strip()
+            comm_name = row['comm_name'].strip()
+            self._committee_names[comm_code] = comm_name
