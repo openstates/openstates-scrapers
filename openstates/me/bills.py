@@ -99,7 +99,7 @@ class MEBillScraper(BillScraper):
                 # various versions: billtexts, billdocs, billpdfs
                 vurl = vdoc.xpath('//a[contains(@href, "billtexts")]/@href')
                 if vurl:
-                    bill.add_version('Initial Version', vurl)
+                    bill.add_version('Initial Version', vurl[0])
 
     def scrape_votes(self, bill, url):
         with self.urlopen(url) as page:
