@@ -135,6 +135,8 @@ def record_votes(root, session):
                 vote.yes(name)
 
             el = el.getnext()
+            if el.tag == 'br':
+                el = el.getnext()
             if el.text and el.text.startswith('Nays'):
                 for name in names(el):
                     vote.no(name)
@@ -144,6 +146,8 @@ def record_votes(root, session):
                 for name in names(el):
                     vote.other(name)
                 el = el.getnext()
+                if el.tag == 'br':
+                    el = el.getnext()
 
             vote['other_count'] = len(vote['other_votes'])
             yield vote
