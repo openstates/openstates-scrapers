@@ -1,6 +1,8 @@
 import csv
 import urllib2
 import datetime
+from collections import defaultdict
+from operator import itemgetter
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
@@ -41,17 +43,31 @@ class CTBillScraper(BillScraper):
         page = urllib2.urlopen(history_url)
         page = csv.DictReader(page)
 
+        action_rows = defaultdict(list)
+
         for row in page:
             bill_id = row['bill_num']
 
-            try:
-                bill = self.bills[bill_id]
-            except KeyError:
-                continue
+            if bill_id in self.bills:
+                action_rows[bill_id].append(row)
 
-            action = row['act_desc']
-            date = row['act_date']
-            date = datetime.datetime.strptime(
-                date, "%Y-%m-%d %H:%M:%S").date()
 
-            bill.add_action(bill['chamber'], action, date)
+        for (bill_id, actions) in action_rows.iteritems():
+            bill = self.bills[bill_id]
+
+            actions.sort(key=itemgetter('act_date'))
+            act_chamber = bill['chamber']
+
+            for row in actions:
+                action = row['act_desc']
+                date = row['act_date']
+                date = datetime.datetime.strptime(
+                    date, "%Y-%m-%d %H:%M:%S").date()
+
+                bill.add_action(act_chamber, action, date)
+
+                if 'TRANS.TO HOUSE' in action:
+                    act_chamber = 'lower'
+
+                if 'TRANSMITTED TO SENATE' in action:
+                    act_chamber = 'upper'
