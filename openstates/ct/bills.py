@@ -1,8 +1,9 @@
+import re
 import csv
 import urllib2
 import datetime
-from collections import defaultdict
 from operator import itemgetter
+from collections import defaultdict
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
@@ -98,4 +99,5 @@ class CTBillScraper(BillScraper):
         for row in page:
             comm_code = row['comm_code'].strip()
             comm_name = row['comm_name'].strip()
+            comm_name = re.sub(r' Committee$', '', comm_name)
             self._committee_names[comm_code] = comm_name
