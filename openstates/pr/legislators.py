@@ -57,7 +57,7 @@ class PRLegislatorScraper(LegislatorScraper):
         url = 'http://www.camaraderepresentantes.org/cr_legs.asp'
 
         party_map = {'PNP': 'Partido Nuevo Progresista',
-                     'PPD': 'Partido Popular Democrático'}
+                     'PPD': u'Partido Popular Democr\xc3tico'}
 
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
