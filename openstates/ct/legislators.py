@@ -1,3 +1,4 @@
+import re
 import csv
 import urllib2
 
@@ -73,4 +74,5 @@ class CTLegislatorScraper(LegislatorScraper):
         for row in page:
             comm_code = row['comm_code'].strip()
             comm_name = row['comm_name'].strip()
+            comm_name = re.sub(r' Committee$', '', comm_name)
             self._committee_names[comm_code] = comm_name
