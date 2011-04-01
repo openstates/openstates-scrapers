@@ -21,20 +21,6 @@ def between_keywords(key1, key2, str):
 def doc_link_url(doc_link_part):
     return 'http://www.camaraderepresentantes.org' + doc_link_part  
 
-def legislators_url(chamber):
-    if chamber == 'upper':
-        return ('http://www.senadopr.us/senadores/Pages/Senadores%20Acumulacion.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20I.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20II.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20III.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20IV.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20V.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20VI.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20VII.aspx',
-                                'http://www.senadopr.us/Pages/Senadores%20Distrito%20VIII.aspx')
-    else:
-        return 'http://www.camaraderepresentantes.org/legsv.asp'
-
 def committees_url(chamber):
     if chamber == 'upper':
         return {'permanent':'http://senadopr.us/Pages/ComisionesPermanentes.aspx',
