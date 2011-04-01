@@ -7,6 +7,7 @@ from collections import defaultdict
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
+from openstates.ct.utils import parse_directory_listing
 
 
 class CTBillScraper(BillScraper):
@@ -25,6 +26,7 @@ class CTBillScraper(BillScraper):
         self.bills = {}
         self.scrape_bill_info(chamber, session)
         self.scrape_bill_history()
+        self.scrape_versions(chamber, session)
 
         for bill in self.bills.itervalues():
             self.save_bill(bill)
@@ -90,6 +92,27 @@ class CTBillScraper(BillScraper):
 
                 if 'TRANSMITTED TO SENATE' in action:
                     act_chamber = 'upper'
+
+    def scrape_versions(self, chamber, session):
+        chamber_letter = {'upper': 's', 'lower': 'h'}[chamber]
+        versions_url = "ftp://ftp.cga.ct.gov/%s/tob/%s/" % (
+            session, chamber_letter)
+
+        with self.urlopen(versions_url) as page:
+            files = parse_directory_listing(page)
+
+            for f in files:
+                match = re.match(r'^\d{4,4}([A-Z]+-\d{5,5})-(R\d\d)',
+                                 f.filename)
+                bill_id = match.group(1).replace('-', '')
+
+                try:
+                    bill = self.bills[bill_id]
+                except KeyError:
+                    continue
+
+                url = versions_url + f.filename
+                bill.add_version(match.group(2), url)
 
     def _scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
