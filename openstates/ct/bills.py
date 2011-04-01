@@ -1,8 +1,9 @@
+import re
 import csv
 import urllib2
 import datetime
-from collections import defaultdict
 from operator import itemgetter
+from collections import defaultdict
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
@@ -10,6 +11,12 @@ from billy.scrape.bills import BillScraper, Bill
 
 class CTBillScraper(BillScraper):
     state = 'ct'
+
+    _committee_names = {}
+
+    def __init__(self, *args, **kwargs):
+        super(CTBillScraper, self).__init__(*args, **kwargs)
+        self._scrape_committee_names()
 
     def scrape(self, chamber, session):
         if session != '2011':
@@ -51,7 +58,6 @@ class CTBillScraper(BillScraper):
             if bill_id in self.bills:
                 action_rows[bill_id].append(row)
 
-
         for (bill_id, actions) in action_rows.iteritems():
             bill = self.bills[bill_id]
 
@@ -59,15 +65,39 @@ class CTBillScraper(BillScraper):
             act_chamber = bill['chamber']
 
             for row in actions:
-                action = row['act_desc']
                 date = row['act_date']
                 date = datetime.datetime.strptime(
                     date, "%Y-%m-%d %H:%M:%S").date()
 
-                bill.add_action(act_chamber, action, date)
+                action = row['act_desc'].strip()
+                act_type = []
+
+                if action.endswith('COMM. ON'):
+                    comm_code = row['qual1']
+                    comm_name = self._committee_names.get(comm_code,
+                                                          comm_code)
+                    action = "%s %s" % (action, comm_name)
+                    act_type.append('committee:referred')
+
+                if not act_type:
+                    act_type = ['other']
+
+                bill.add_action(act_chamber, action, date,
+                                type=act_type)
 
                 if 'TRANS.TO HOUSE' in action:
                     act_chamber = 'lower'
 
                 if 'TRANSMITTED TO SENATE' in action:
                     act_chamber = 'upper'
+
+    def _scrape_committee_names(self):
+        comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
+        page = urllib2.urlopen(comm_url)
+        page = csv.DictReader(page)
+
+        for row in page:
+            comm_code = row['comm_code'].strip()
+            comm_name = row['comm_name'].strip()
+            comm_name = re.sub(r' Committee$', '', comm_name)
+            self._committee_names[comm_code] = comm_name
