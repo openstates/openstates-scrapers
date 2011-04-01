@@ -37,11 +37,16 @@ class CTLegislatorScraper(LegislatorScraper):
             if party == 'Democrat':
                 party = 'Democratic'
 
+            office_address = "%s, Room %s\nHartford, CT 06106-1591" % (
+                row['capitol street address'], row['room number'])
+
             leg = Legislator(term, chamber, district,
                              name, first_name=row['first name'],
                              last_name=row['last name'],
                              middle_name=row['middle initial'],
                              suffixes=row['suffix'],
-                             party=party)
+                             party=party,
+                             office_address=office_address,
+                             office_phone=row['capitol phone'])
             leg.add_source(leg_url)
             self.save_legislator(leg)
