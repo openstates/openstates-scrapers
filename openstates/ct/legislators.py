@@ -22,6 +22,8 @@ class CTLegislatorScraper(LegislatorScraper):
             if office_code != row['office code']:
                 continue
 
+            district = row['dist'].lstrip('0')
+
             name = row['first name']
             mid = row['middle initial'].strip()
             if mid:
@@ -35,7 +37,7 @@ class CTLegislatorScraper(LegislatorScraper):
             if party == 'Democrat':
                 party = 'Democratic'
 
-            leg = Legislator(term, chamber, row['dist'],
+            leg = Legislator(term, chamber, district,
                              name, first_name=row['first name'],
                              last_name=row['last name'],
                              middle_name=row['middle initial'],
