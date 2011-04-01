@@ -36,7 +36,7 @@ class PRLegislatorScraper(LegislatorScraper):
                 for row in table.xpath('tr')[1:]:
                     tds = row.xpath('td')
                     photo_url = row.xpath('.//img/@src')[0]
-                    name = tds[1].text_content()
+                    name = tds[1].text_content().title()
                     party = tds[2].text_content()
                     phone = tds[3].text_content()
                     email = tds[4].text_content()
@@ -55,6 +55,9 @@ class PRLegislatorScraper(LegislatorScraper):
 
     def scrape_house(self, term):
         url = 'http://www.camaraderepresentantes.org/cr_legs.asp'
+
+        party_map = {'PNP': 'Partido Nuevo Progresista',
+                     'PPD': 'Partido Popular Democrático'}
 
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
@@ -78,10 +81,12 @@ class PRLegislatorScraper(LegislatorScraper):
                         district = 'At-Large'
                         first_name = last_name = ''
 
-                    party = td.xpath('.//font')[1].text_content()
+                    party = party_map[td.xpath('.//font')[1].text_content()]
 
                     leg = Legislator(term, 'lower', district, name,
-                                     first_name=first_name, last_name=last_name,
-                                     party=party, photo_url=photo_url)
+                                     first_name=first_name,
+                                     last_name=last_name,
+                                     party=party,
+                                     photo_url=photo_url)
                     leg.add_source(url)
                     self.save_legislator(leg)
