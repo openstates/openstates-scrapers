@@ -89,6 +89,16 @@ class CTBillScraper(BillScraper):
                                                           comm_code)
                     action = "%s %s" % (action, comm_name)
                     act_type.append('committee:referred')
+                elif row['qual1']:
+                    if bill['session'] in row['qual1']:
+                        action += ' (%s' % row['qual1']
+                        if row['qual2']:
+                            action += ' %s)' % row['qual2']
+                    else:
+                        action += ' %s' % row['qual1']
+
+                if re.match(r'^ADOPTED, (HOUSE|SENATE)', action):
+                    act_type.append('bill:passed')
 
                 if not act_type:
                     act_type = ['other']
