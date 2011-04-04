@@ -9,15 +9,20 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from openstates.ct.utils import parse_directory_listing
 
+import lxml.html
+
 
 class CTBillScraper(BillScraper):
     state = 'ct'
 
     _committee_names = {}
+    _introducers = defaultdict(set)
 
     def __init__(self, *args, **kwargs):
         super(CTBillScraper, self).__init__(*args, **kwargs)
-        self._scrape_committee_names()
+        self.scrape_committee_names()
+        self.scrape_introducers('upper')
+        self.scrape_introducers('lower')
 
     def scrape(self, chamber, session):
         if session != '2011':
@@ -45,6 +50,10 @@ class CTBillScraper(BillScraper):
 
             bill = Bill(session, chamber, bill_id, row['bill_title'])
             bill.add_source(info_url)
+
+            for introducer in self._introducers[bill_id]:
+                    bill.add_sponsor('introducer', introducer)
+
             self.bills[bill_id] = bill
 
     def scrape_bill_history(self):
@@ -80,6 +89,16 @@ class CTBillScraper(BillScraper):
                                                           comm_code)
                     action = "%s %s" % (action, comm_name)
                     act_type.append('committee:referred')
+                elif row['qual1']:
+                    if bill['session'] in row['qual1']:
+                        action += ' (%s' % row['qual1']
+                        if row['qual2']:
+                            action += ' %s)' % row['qual2']
+                    else:
+                        action += ' %s' % row['qual1']
+
+                if re.match(r'^ADOPTED, (HOUSE|SENATE)', action):
+                    act_type.append('bill:passed')
 
                 if not act_type:
                     act_type = ['other']
@@ -114,7 +133,7 @@ class CTBillScraper(BillScraper):
                 url = versions_url + f.filename
                 bill.add_version(match.group(2), url)
 
-    def _scrape_committee_names(self):
+    def scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
         page = urllib2.urlopen(comm_url)
         page = csv.DictReader(page)
@@ -124,3 +143,25 @@ class CTBillScraper(BillScraper):
             comm_name = row['comm_name'].strip()
             comm_name = re.sub(r' Committee$', '', comm_name)
             self._committee_names[comm_code] = comm_name
+
+    def scrape_introducers(self, chamber):
+        chamber_letter = {'upper': 's', 'lower': 'h'}[chamber]
+        url = "http://www.cga.ct.gov/asp/menu/%slist.asp" % chamber_letter
+
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+
+            for link in page.xpath("//a[contains(@href, 'MemberBills')]"):
+                name = link.xpath("string(../../td[1])").strip()
+                name = re.match("^S?\d+\s+-\s+(.*)$", name).group(1)
+
+                self.scrape_introducer(name, link.attrib['href'])
+
+    def scrape_introducer(self, name, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            for link in page.xpath("//a[contains(@href, 'billstatus')]"):
+                bill_id = link.text.strip()
+                self._introducers[bill_id].add(name)
