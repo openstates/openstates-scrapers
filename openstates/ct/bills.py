@@ -7,6 +7,7 @@ from collections import defaultdict
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 from openstates.ct.utils import parse_directory_listing
 
 import lxml.html
@@ -51,10 +52,86 @@ class CTBillScraper(BillScraper):
             bill = Bill(session, chamber, bill_id, row['bill_title'])
             bill.add_source(info_url)
 
+            self.scrape_votes(bill)
+
             for introducer in self._introducers[bill_id]:
                     bill.add_sponsor('introducer', introducer)
 
             self.bills[bill_id] = bill
+
+    def scrape_votes(self, bill):
+        url = ("http://www.cga.ct.gov/asp/cgabillstatus/"
+               "cgabillstatus.asp?selBillType=Bill"
+               "&bill_num=%s&which_year=%s" % (bill['bill_id'],
+                                               bill['session']))
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+
+            for link in page.xpath("//a[contains(@href, 'VOTE')]"):
+                self.scrape_vote(bill, link.text.strip(),
+                                 link.attrib['href'])
+
+    def scrape_vote(self, bill, name, url):
+        if "VOTE/H" in url:
+            vote_chamber = 'lower'
+            cols = (1, 5, 9, 13)
+            name_offset = 3
+            yes_offset = 0
+            no_offset = 1
+        else:
+            vote_chamber = 'upper'
+            cols = (1, 6)
+            name_offset = 4
+            yes_offset = 1
+            no_offset = 2
+
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            yes_count = page.xpath(
+                "string(//span[contains(., 'Those voting Yea')])")
+            yes_count = int(re.match(r'.*(\d+).*', yes_count).group(1))
+
+            no_count = page.xpath(
+                "string(//span[contains(., 'Those voting Nay')])")
+            no_count = int(re.match(r'.*(\d+).*', no_count).group(1))
+
+            other_count = page.xpath(
+                "string(//span[contains(., 'Those absent')])")
+            other_count = int(re.match(r'.*(\d+).*', other_count).group(1))
+
+            need_count = page.xpath(
+                "string(//span[contains(., 'Necessary for')])")
+            need_count = int(re.match(r'.*(\d+).*', need_count).group(1))
+
+            date = page.xpath("string(//span[contains(., 'Taken on')])")
+            date = re.match(r'.*Taken on (\d+/\d+)', date).group(1)
+            date = datetime.datetime.strptime(date, "%m/%d").date()
+
+            vote = Vote(vote_chamber, date, name, yes_count > need_count,
+                        yes_count, no_count, other_count)
+            vote.add_source(url)
+
+            table = page.xpath("//table")[0]
+            for row in table.xpath("tr"):
+                for i in cols:
+                    name = row.xpath("string(td[%d])" % (
+                        i + name_offset)).strip()
+
+                    if not name:
+                        continue
+
+                    if "Y" in row.xpath("string(td[%d])" %
+                                        (i + yes_offset)):
+                        vote.yes(name)
+                    elif "N" in row.xpath("string(td[%d])" %
+                                          (i + no_offset)):
+                        vote.no(name)
+                    else:
+                        vote.other(name)
+
+            bill.add_vote(vote)
 
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"
