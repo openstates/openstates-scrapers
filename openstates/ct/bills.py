@@ -16,7 +16,7 @@ class CTBillScraper(BillScraper):
     state = 'ct'
 
     _committee_names = {}
-    _introducers = defaultdict(list)
+    _introducers = defaultdict(set)
 
     def __init__(self, *args, **kwargs):
         super(CTBillScraper, self).__init__(*args, **kwargs)
@@ -50,6 +50,10 @@ class CTBillScraper(BillScraper):
 
             bill = Bill(session, chamber, bill_id, row['bill_title'])
             bill.add_source(info_url)
+
+            for introducer in self._introducers[bill_id]:
+                    bill.add_sponsor('introducer', introducer)
+
             self.bills[bill_id] = bill
 
     def scrape_bill_history(self):
@@ -91,9 +95,6 @@ class CTBillScraper(BillScraper):
 
                 bill.add_action(act_chamber, action, date,
                                 type=act_type)
-
-                for introducer in self._introducers[bill_id]:
-                    bill.add_sponsor('introducer', introducer)
 
                 if 'TRANS.TO HOUSE' in action:
                     act_chamber = 'lower'
@@ -153,4 +154,4 @@ class CTBillScraper(BillScraper):
 
             for link in page.xpath("//a[contains(@href, 'billstatus')]"):
                 bill_id = link.text.strip()
-                self._introducers[bill_id].append(name)
+                self._introducers[bill_id].add(name)
