@@ -94,18 +94,11 @@ def upload(state, filename):
 
     # build URL
     s3_bucket = 'data.openstates.sunlightlabs.com'
-    n = 1
-    s3_path = '%s-%02d-%s-r%d.zip' % (today.year, today.month, state, n)
+    s3_path = '%s-%02d-%02d-%s.zip' % (today.year, today.month, today.day,
+                                           state)
     s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
     metadata = db.metadata.find_one({'_id':state})
-    old_url = metadata.get('latest_dump_url')
-
-    if s3_url == old_url:
-        old_num = re.match('.*?-r(\d*).zip', old_url).groups()[0]
-        n = int(old_num)+1
-        s3_path = '%s-%02d-%s-r%d.zip' % (today.year, today.month, state, n)
-        s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
     # S3 upload
     s3conn = boto.connect_s3(settings.AWS_KEY, settings.AWS_SECRET)

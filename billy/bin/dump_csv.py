@@ -144,7 +144,6 @@ def upload(state, filename):
 
     # build URL
     s3_bucket = 'data.openstates.sunlightlabs.com'
-    n = 1
     s3_path = '%s-%02d-%02d-%s-csv.zip' % (today.year, today.month, today.day,
                                            state)
     s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
