@@ -8,7 +8,6 @@ local_settings.*py
 errors/*
 *.pid
 *.swp
-fabfile.py
 *.egg-info
 dist/
 MANIFEST
