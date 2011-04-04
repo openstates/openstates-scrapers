@@ -33,5 +33,10 @@ def get_leg_ids_csv(state):
 
 def dump_json(state):
     with cd('/tmp/'):
-        _venv('~openstates/src/openstates/billy/bin/dump_json.py --upload ' +
-              state)
+        cmd = '~openstates/src/openstates/billy/bin/dump_json.py --upload '
+        # special case those known to have reasons not to pass validation
+        # la: missing dates on votes sometimes
+        # ca: version URLs missing
+        if state in ('la', 'ca'):
+            cmd += '--novalidate '
+        _venv(cmd + state)
