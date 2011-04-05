@@ -52,14 +52,14 @@ class CTBillScraper(BillScraper):
             bill = Bill(session, chamber, bill_id, row['bill_title'])
             bill.add_source(info_url)
 
-            self.scrape_votes(bill)
+            self.scrape_bill_page(bill)
 
             for introducer in self._introducers[bill_id]:
                     bill.add_sponsor('introducer', introducer)
 
             self.bills[bill_id] = bill
 
-    def scrape_votes(self, bill):
+    def scrape_bill_page(self, bill):
         url = ("http://www.cga.ct.gov/asp/cgabillstatus/"
                "cgabillstatus.asp?selBillType=Bill"
                "&bill_num=%s&which_year=%s" % (bill['bill_id'],
@@ -67,6 +67,13 @@ class CTBillScraper(BillScraper):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
+            bill.add_source(url)
+
+            for link in page.xpath("//a[contains(@href, '/FN/')]"):
+                bill.add_document(link.text.strip(), link.attrib['href'])
+
+            for link in page.xpath("//a[contains(@href, '/BA/')]"):
+                bill.add_document(link.text.strip(), link.attrib['href'])
 
             for link in page.xpath("//a[contains(@href, 'VOTE')]"):
                 self.scrape_vote(bill, link.text.strip(),
@@ -87,27 +94,32 @@ class CTBillScraper(BillScraper):
             no_offset = 2
 
         with self.urlopen(url) as page:
+            if 'BUDGET ADDRESS' in page:
+                return
+
             page = lxml.html.fromstring(page)
 
             yes_count = page.xpath(
                 "string(//span[contains(., 'Those voting Yea')])")
-            yes_count = int(re.match(r'.*(\d+).*', yes_count).group(1))
+            yes_count = int(re.match(r'[^\d]*(\d+)[^\d]*', yes_count).group(1))
 
             no_count = page.xpath(
                 "string(//span[contains(., 'Those voting Nay')])")
-            no_count = int(re.match(r'.*(\d+).*', no_count).group(1))
+            no_count = int(re.match(r'[^\d]*(\d+)[^\d]*', no_count).group(1))
 
             other_count = page.xpath(
                 "string(//span[contains(., 'Those absent')])")
-            other_count = int(re.match(r'.*(\d+).*', other_count).group(1))
+            other_count = int(re.match(r'[^\d]*(\d+)[^\d]*', other_count).group(1))
 
             need_count = page.xpath(
                 "string(//span[contains(., 'Necessary for')])")
-            need_count = int(re.match(r'.*(\d+).*', need_count).group(1))
+            need_count = int(re.match(r'[^\d]*(\d+)[^\d]*', need_count).group(1))
 
             date = page.xpath("string(//span[contains(., 'Taken on')])")
-            date = re.match(r'.*Taken\s+on\s+(\d+/\d+)', date).group(1)
-            date = datetime.datetime.strptime(date, "%m/%d").date()
+            date = re.match(r'.*Taken\s+on\s+(\d+/\s?\d+)', date).group(1)
+            date = date.replace(' ', '')
+            date = datetime.datetime.strptime(date + " " + bill['session'],
+                                              "%m/%d %Y").date()
 
             vote = Vote(vote_chamber, date, name, yes_count > need_count,
                         yes_count, no_count, other_count)
