@@ -52,14 +52,14 @@ class CTBillScraper(BillScraper):
             bill = Bill(session, chamber, bill_id, row['bill_title'])
             bill.add_source(info_url)
 
-            self.scrape_votes(bill)
+            self.scrape_bill_page(bill)
 
             for introducer in self._introducers[bill_id]:
                     bill.add_sponsor('introducer', introducer)
 
             self.bills[bill_id] = bill
 
-    def scrape_votes(self, bill):
+    def scrape_bill_page(self, bill):
         url = ("http://www.cga.ct.gov/asp/cgabillstatus/"
                "cgabillstatus.asp?selBillType=Bill"
                "&bill_num=%s&which_year=%s" % (bill['bill_id'],
@@ -68,6 +68,12 @@ class CTBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
             bill.add_source(url)
+
+            for link in page.xpath("//a[contains(@href, '/FN/')]"):
+                bill.add_document(link.text.strip(), link.attrib['href'])
+
+            for link in page.xpath("//a[contains(@href, '/BA/')]"):
+                bill.add_document(link.text.strip(), link.attrib['href'])
 
             for link in page.xpath("//a[contains(@href, 'VOTE')]"):
                 self.scrape_vote(bill, link.text.strip(),
