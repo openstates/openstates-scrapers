@@ -49,7 +49,15 @@ class CTBillScraper(BillScraper):
             if not bill_id[0] == abbrev:
                 continue
 
-            bill = Bill(session, chamber, bill_id, row['bill_title'])
+            if re.match(r'^(S|H)J', bill_id):
+                bill_type = 'joint resolution'
+            elif re.match(r'^(S|H)R', bill_id):
+                bill_type = 'resolution'
+            else:
+                bill_type = 'bill'
+
+            bill = Bill(session, chamber, bill_id, row['bill_title'],
+                        type=bill_type)
             bill.add_source(info_url)
 
             self.scrape_bill_page(bill)
