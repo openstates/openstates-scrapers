@@ -87,6 +87,9 @@ class CTBillScraper(BillScraper):
             no_offset = 2
 
         with self.urlopen(url) as page:
+            if 'BUDGET ADDRESS' in page:
+                return
+
             page = lxml.html.fromstring(page)
 
             yes_count = page.xpath(
