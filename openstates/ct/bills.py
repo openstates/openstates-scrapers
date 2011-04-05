@@ -112,7 +112,8 @@ class CTBillScraper(BillScraper):
             date = page.xpath("string(//span[contains(., 'Taken on')])")
             date = re.match(r'.*Taken\s+on\s+(\d+/\s?\d+)', date).group(1)
             date = date.replace(' ', '')
-            date = datetime.datetime.strptime(date, "%m/%d").date()
+            date = datetime.datetime.strptime(date + " " + bill['session'],
+                                              "%m/%d %Y").date()
 
             vote = Vote(vote_chamber, date, name, yes_count > need_count,
                         yes_count, no_count, other_count)
