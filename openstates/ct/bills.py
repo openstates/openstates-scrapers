@@ -95,19 +95,19 @@ class CTBillScraper(BillScraper):
 
             yes_count = page.xpath(
                 "string(//span[contains(., 'Those voting Yea')])")
-            yes_count = int(re.match(r'.*(\d+).*', yes_count).group(1))
+            yes_count = int(re.match(r'[^\d]*(\d+)[^\d]*', yes_count).group(1))
 
             no_count = page.xpath(
                 "string(//span[contains(., 'Those voting Nay')])")
-            no_count = int(re.match(r'.*(\d+).*', no_count).group(1))
+            no_count = int(re.match(r'[^\d]*(\d+)[^\d]*', no_count).group(1))
 
             other_count = page.xpath(
                 "string(//span[contains(., 'Those absent')])")
-            other_count = int(re.match(r'.*(\d+).*', other_count).group(1))
+            other_count = int(re.match(r'[^\d]*(\d+)[^\d]*', other_count).group(1))
 
             need_count = page.xpath(
                 "string(//span[contains(., 'Necessary for')])")
-            need_count = int(re.match(r'.*(\d+).*', need_count).group(1))
+            need_count = int(re.match(r'[^\d]*(\d+)[^\d]*', need_count).group(1))
 
             date = page.xpath("string(//span[contains(., 'Taken on')])")
             date = re.match(r'.*Taken\s+on\s+(\d+/\s?\d+)', date).group(1)
