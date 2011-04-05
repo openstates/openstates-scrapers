@@ -67,6 +67,7 @@ class CTBillScraper(BillScraper):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
+            bill.add_source(url)
 
             for link in page.xpath("//a[contains(@href, 'VOTE')]"):
                 self.scrape_vote(bill, link.text.strip(),
