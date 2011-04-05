@@ -35,20 +35,22 @@ def api_url(path):
                                 settings.SUNLIGHT_SERVICES_KEY)
 
 
-def dump_json(state, filename, validate):
+def dump_json(state, filename, validate, schema_dir):
     scraper = scrapelib.Scraper(requests_per_minute=600)
 
     zip = zipfile.ZipFile(filename, 'w')
 
-    cwd = os.path.split(__file__)[0]
+    if not schema_dir:
+        cwd = os.path.split(__file__)[0]
+        schema_dir = os.path.join(cwd, "../schemas/api/")
 
-    with open(os.path.join(cwd, "../schemas/api/bill.json")) as f:
+    with open(os.path.join(schema_dir, "bill.json")) as f:
         bill_schema = json.load(f)
 
-    with open(os.path.join(cwd, "../schemas/api/legislator.json")) as f:
+    with open(os.path.join(schema_dir, "legislator.json")) as f:
         legislator_schema = json.load(f)
 
-    with open(os.path.join(cwd, "../schemas/api/committee.json")) as f:
+    with open(os.path.join(schema_dir, "committee.json")) as f:
         committee_schema = json.load(f)
 
     for bill in db.bills.find({'state': state}):
@@ -128,6 +130,9 @@ if __name__ == '__main__':
                                        ' state to import'))
     parser.add_argument('--file', '-f',
                         help='filename to output to (defaults to <state>.zip)')
+    parser.add_argument('--schema_dir',
+                        help='directory to use for API schemas (optional)',
+                        default=None)
     parser.add_argument('--nodump', action='store_true', default=False,
                         help="don't run the dump, only upload")
     parser.add_argument('--novalidate', action='store_true', default=False,
@@ -143,7 +148,7 @@ if __name__ == '__main__':
         args.file = args.state + '.zip'
 
     if not args.nodump:
-        dump_json(args.state, args.file, not args.novalidate)
+        dump_json(args.state, args.file, not args.novalidate, args.schema_dir)
 
     if args.upload:
         upload(args.state, args.file)

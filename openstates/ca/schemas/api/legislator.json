@@ -1,0 +1,42 @@
+{"description": "legislator API response",
+ "type": "object",
+ "properties": {
+   "id": {"type": "string", "pattern": "^[A-Z]{2}L\\d{6}$"},
+   "full_name": {"type": "string"},
+   "first_name": {"type": "string"},
+   "last_name": {"type": "string"},
+   "middle_name": {"type": "string", "blank": true},
+   "suffixes": {"type": "string", "blank": true},
+   "active": {"type": "boolean"},
+   "created_at": {"type": "datetime"},
+   "updated_at": {"type": "datetime"},
+   "roles": {"type": "array", "items": {"type": "object", "properties": {
+     "chamber": {"type": "string", "enum": ["upper", "lower", "joint"],
+         "required": false},
+     "state": {"type": "string", "pattern": "^[a-z]{2}$"},
+     "term": {"type": "string"},
+     "type": {"type": "string"},
+     "committee": {"type": "string", "required": false},
+     "subcommittee": {"type": ["string", "null"], "required": false},
+     "district": {"type": "string", "required": false},
+     "party": {"type": "string", "required": false},
+     "start_date": {"type": ["datetime", "null"], "required": false},
+     "end_date": {"type": ["datetime", "null"], "required": false},
+     "position": {"type": "string", "required": false}
+   }}},
+   "sources": {"type": "array", "items": {"type": "object", "properties": {
+     "url": {"type": "string"},
+     "retrieved": {"type": "datetime"}
+   }}},
+   "votesmart_id": {"type": ["null", "string"], "required": false},
+   "nimsp_candidate_id": {"type": ["string", "null"], "required": false},
+   "state": {"type": "string", "pattern": "^[a-z]{2}$",
+     "required": false},
+   "district": {"type": "string", "required": false},
+   "chamber": {"type": "string", "required": false},
+   "party": {"type": "string", "required": false},
+   "photo_url": {"type": "string", "required": false, "blank": true},
+   "office_phone": {"type": "string", "blank": true, "required": false},
+   "office_address": {"type": "string", "blank": true, "required": false},
+   "email": {"type": "string", "blank": true, "required": false}
+}}
