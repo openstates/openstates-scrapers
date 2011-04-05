@@ -37,6 +37,8 @@ def dump_json(state):
         # special case those known to have reasons not to pass validation
         # la: missing dates on votes sometimes
         # ca: version URLs missing
-        if state in ('la', 'ca'):
-            cmd += '--novalidate '
+        schemas = {'la': '--schema_dir=/projects/openstates/src/openstates/openstates/la/schemas/api/ ',
+                   'ca': '--novalidate '}
+        if state in schemas:
+            cmd += schemas[state]
         _venv(cmd + state)

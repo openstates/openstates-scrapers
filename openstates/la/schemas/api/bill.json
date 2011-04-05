@@ -49,7 +49,7 @@
     "votes": {"type": "array", "items": {"type": "object", "properties": {
         "chamber": {"type": "string", "enum": ["upper", "lower"]},
         "committee": {"type": "string", "required": false},
-        "date": {"type": "datetime", "required": false},
+        "date": {"type": ["datetime", "null"]},
         "motion": {"type": "string"},
         "passed": {"type": "boolean"},
         "yes_count": {"type": "integer", "minimum": 0},
