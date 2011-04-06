@@ -15,6 +15,7 @@ from billy.importers.bills import import_bills
 from billy.utils import configure_logging
 from billy.bin.scrape import _clear_scraped_data
 
+
 def _run_scraper(mod_path, state, options, metadata):
     """
         state: lower case two letter abbreviation of state
@@ -38,6 +39,7 @@ def _run_scraper(mod_path, state, options, metadata):
 
     print options.session, options.bill_id
     scraper.scrape_bill(options.chamber, options.session, options.bill_id)
+
 
 def main():
 

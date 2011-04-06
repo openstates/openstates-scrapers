@@ -6,7 +6,6 @@ import logging
 from billy import db
 
 
-
 # metadata cache
 __metadata = {}
 
@@ -98,6 +97,7 @@ def extract_fields(d, fields, delimiter='|'):
             v = delimiter.join(v)
         rd[f] = v
     return rd
+
 
 def configure_logging(verbosity_count=0, state=None):
     verbosity = {0: logging.WARNING, 1: logging.INFO}.get(verbosity_count,

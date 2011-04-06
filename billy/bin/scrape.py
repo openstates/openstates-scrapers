@@ -13,6 +13,7 @@ from billy.scrape import (ScrapeError, NoDataForPeriod, JSONDateEncoder,
 from billy.utils import configure_logging
 from billy.scrape.validator import DatetimeValidator
 
+
 def _clear_scraped_data(output_dir, scraper_type):
     # make or clear directory for this type
     path = os.path.join(output_dir, scraper_type)
@@ -22,8 +23,9 @@ def _clear_scraped_data(output_dir, scraper_type):
         if e.errno != 17:
             raise e
         else:
-            for f in glob.glob(path+'/*.json'):
+            for f in glob.glob(path + '/*.json'):
                 os.remove(f)
+
 
 def _run_scraper(mod_path, state, scraper_type, options, metadata):
     """
@@ -65,7 +67,8 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
                             times.extend(metaterm['sessions'])
             else:
                 latest_session = metadata['terms'][-1]['sessions'][-1]
-                print 'No session specified, using latest "%s"' % latest_session
+                print('No session specified, using latest "%s"' %
+                      latest_session)
                 times = [latest_session]
         else:
             times = options.sessions

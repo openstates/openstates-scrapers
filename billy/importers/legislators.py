@@ -76,13 +76,13 @@ def deactivate_legislators(state, current_term):
             {'roles': {'$elemMatch':
                        {'term': {'$ne': current_term},
                         'type': 'member',
-                        'state': state}}
+                        'state': state}},
             },
             {'roles': {'$elemMatch':
                        {'term': current_term,
                         'type': 'member',
-                        'end_date': {'$ne':None}}}
-            }
+                        'end_date': {'$ne':None}}},
+            },
 
         ]}):
 

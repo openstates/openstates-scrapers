@@ -36,7 +36,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print "Please provide a state as an argument."
         sys.exit(1)
-    
+
     coll = action_count_by_date_mr(sys.argv[1])
 
     for obj in coll.find():

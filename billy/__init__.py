@@ -4,6 +4,7 @@ import os
 
 from billy.conf import settings
 
+
 class LazyDb(object):
 
     def __init__(self):
@@ -22,6 +23,7 @@ class LazyDb(object):
             self._db = conn[db_name]
 
         return getattr(self._db, attr)
+
 
 class LazyFs():
 

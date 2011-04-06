@@ -56,6 +56,7 @@ class JSONDateEncoder(json.JSONEncoder):
 
 _scraper_registry = defaultdict(dict)
 
+
 class ScraperMeta(type):
     """ register derived scrapers in a central registry """
 
@@ -110,7 +111,8 @@ class Scraper(scrapelib.Scraper):
             kwargs['retry_attempts'] = settings.SCRAPELIB_RETRY_ATTEMPTS
 
         if 'retry_wait_seconds' not in kwargs:
-            kwargs['retry_wait_seconds'] = settings.SCRAPELIB_RETRY_WAIT_SECONDS
+            kwargs['retry_wait_seconds'] = \
+                    settings.SCRAPELIB_RETRY_WAIT_SECONDS
 
         super(Scraper, self).__init__(**kwargs)
 
@@ -225,4 +227,3 @@ def get_scraper(mod_path, state, scraper_type):
         raise ScrapeError("no %s %s scraper found" %
                            (state, scraper_type))
     return ScraperClass
-

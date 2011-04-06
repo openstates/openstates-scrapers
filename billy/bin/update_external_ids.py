@@ -5,7 +5,8 @@ from billy import db
 
 import re
 import json
-import urllib, urllib2
+import urllib
+import urllib2
 import datetime
 
 import argparse
@@ -14,13 +15,14 @@ import pymongo
 
 from votesmart import votesmart, VotesmartApiError
 
+
 def update_votesmart_legislators(state):
     current_term = state['terms'][-1]['name']
 
     query = {'roles': {'$elemMatch':
                        {'type': 'member',
                         'state': state['abbreviation'],
-                        'term': current_term}
+                        'term': current_term},
                       },
              'votesmart_id': None,
             }
@@ -52,12 +54,13 @@ def update_votesmart_legislators(state):
 
     print 'Updated %s of %s missing votesmart ids' % (updated, initial_count)
 
+
 def update_transparencydata_legislators(state, sunlight_key):
     current_term = state['terms'][-1]['name']
     query = {'roles': {'$elemMatch':
                        {'type': 'member',
                         'state': state['abbreviation'],
-                        'term': current_term}
+                        'term': current_term},
                       },
              'transparencydata_id': None,
              'active': True,
@@ -85,7 +88,8 @@ def update_transparencydata_legislators(state, sunlight_key):
             db.legislators.save(leg, safe=True)
             updated += 1
 
-    print 'Updated %s of %s missing transparencydata ids' % (updated, initial_count)
+    print 'Updated %s of %s missing transparencydata ids' % (updated,
+                                                             initial_count)
 
 
 def update_missing_ids(state_abbrev, sunlight_key):

@@ -5,15 +5,16 @@ from billy.conf import settings, base_arg_parser
 import csv
 import argparse
 
+
 def process_file(state, save=False):
 
     filename = state + '_legislators.csv'
 
     # print initial missing counts
-    print 'missing pvs', db.legislators.find({'state':state,
-                                              'votesmart_id':None}).count()
-    print 'missing tdata', db.legislators.find({'state':state,
-                                        'transparencydata_id':None}).count()
+    print 'missing pvs', db.legislators.find({'state': state,
+                                              'votesmart_id': None}).count()
+    print 'missing tdata', db.legislators.find({'state': state,
+                                        'transparencydata_id': None}).count()
 
     namefile = csv.DictReader(open(filename))
 
@@ -47,7 +48,7 @@ def process_file(state, save=False):
         # show what changed
         if changed:
             print row['_id']
-            for k,v in changed.iteritems():
+            for k, v in changed.iteritems():
                 print '  %s [%s --> %s]' % (k, v, row[k])
 
         # reassemble full_name
@@ -68,10 +69,10 @@ def process_file(state, save=False):
             db.legislators.save(leg, safe=True)
 
     if save:
-        print 'missing pvs', db.legislators.find({'state':state,
-                                          'votesmart_id':None}).count()
-        print 'missing tdata', db.legislators.find({'state':state,
-                                    'transparencydata_id':None}).count()
+        print 'missing pvs', db.legislators.find({'state': state,
+                                          'votesmart_id': None}).count()
+        print 'missing tdata', db.legislators.find({'state': state,
+                                    'transparencydata_id': None}).count()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -80,7 +81,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument('states', metavar='STATE', type=str, nargs='+',
-                        help='states to load (filenames should be xy_legislators.csv)')
+                help='states to load (filenames should be xy_legislators.csv)')
     parser.add_argument('--save', action='store_true', default=False,
                         help='save changes to database')
 

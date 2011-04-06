@@ -12,11 +12,13 @@ from django.utils.datastructures import SortedDict
 
 import pymongo
 
+
 def keyfunc(obj):
     try:
         return int(obj['district'])
     except ValueError:
         return obj['district']
+
 
 def all_states(request, template='billy/index.html'):
     states = []
@@ -32,21 +34,25 @@ def all_states(request, template='billy/index.html'):
             state['votes'] = counts['votes']
             state['versions'] = counts['versions']
             if counts['actions']:
-                state['typed_actions'] = float(counts['categorized'])/counts['actions']*100
+                state['typed_actions'] = (float(counts['categorized']) /
+                                          counts['actions'] * 100)
             if counts['bills']:
-                state['subjects'] = float(counts['subjects'])/counts['bills']*100
+                state['subjects'] = (float(counts['subjects']) /
+                                     counts['bills'] * 100)
             if counts['sponsors']:
-                state['sponsor_ids'] = float(counts['idd_sponsors'])/counts['sponsors']*100
+                state['sponsor_ids'] = (float(counts['idd_sponsors']) /
+                                        counts['sponsors'] * 100)
             if counts['voters']:
-                state['voter_ids'] = float(counts['idd_voters'])/counts['voters']*100
+                state['voter_ids'] = (float(counts['idd_voters']) /
+                                      counts['voters'] * 100)
 
         if state['id'] != 'total':
             state['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
             state['legislators'] = db.legislators.find(s_spec).count()
             state['committees'] = db.committees.find(s_spec).count()
             id_counts = _get_state_leg_id_stats(state['id'])
-            active_legs = db.legislators.find({'state':state['id'],
-                                               'active':True}).count()
+            active_legs = db.legislators.find({'state': state['id'],
+                                               'active': True}).count()
 
             if not active_legs:
                 state['external_ids'] = 0
@@ -57,9 +63,9 @@ def all_states(request, template='billy/index.html'):
                                               (active_legs * 2))) * 100
 
             missing_bill_sources = db.bills.find({'state': state['id'],
-                                                  'sources': {'$size': 0}}).count()
+                                              'sources': {'$size': 0}}).count()
             missing_leg_sources = db.legislators.find({'state': state['id'],
-                                                  'sources': {'$size': 0}}).count()
+                                              'sources': {'$size': 0}}).count()
             state['missing_sources'] = ''
             if missing_bill_sources:
                 state['missing_sources'] += 'bills'
@@ -68,21 +74,21 @@ def all_states(request, template='billy/index.html'):
 
         states.append(state)
 
-    states.sort(key=lambda x:x['id'] if x['id'] != 'total' else 'zz')
+    states.sort(key=lambda x: x['id'] if x['id'] != 'total' else 'zz')
 
     return render_to_response(template, {'states': states})
 
 def _bill_stats_for_session(state, session):
     context = {}
-    context['upper_bill_count'] = db.bills.find({'state':state,
-                                                 'session':session,
+    context['upper_bill_count'] = db.bills.find({'state': state,
+                                                 'session': session,
                                                  'chamber': 'upper'}).count()
-    context['lower_bill_count'] = db.bills.find({'state':state,
-                                                 'session':session,
+    context['lower_bill_count'] = db.bills.find({'state': state,
+                                                 'session': session,
                                                  'chamber': 'lower'}).count()
     context['bill_count'] = context['upper_bill_count'] + context['lower_bill_count']
     context['ns_bill_count'] = db.bills.find({'state': state,
-                                              'session':session,
+                                              'session': session,
                                            'sources': {'$size': 0}}).count()
     types = defaultdict(int)
     action_types = defaultdict(int)
@@ -103,8 +109,9 @@ def _bill_stats_for_session(state, session):
     context['types'] = dict(types)
     context['action_types'] = dict(action_types)
     if total_actions:
-        context['action_cat_percent'] = ((total_actions-action_types['other'])/
-                                         float(total_actions)*100)
+        context['action_cat_percent'] = ((total_actions -
+                                          action_types['other']) /
+                                         float(total_actions) * 100)
 
     return context
 
@@ -113,14 +120,15 @@ def _get_state_leg_id_stats(state):
     context = {}
     context['missing_pvs'] = db.legislators.find({'state': state,
                              'active': True,
-                             'votesmart_id': {'$exists':False}}).count()
+                             'votesmart_id': {'$exists': False}}).count()
     context['missing_nimsp'] = db.legislators.find({'state': state,
                              'active': True,
-                             'nimsp_id': {'$exists':False}}).count()
+                             'nimsp_id': {'$exists': False}}).count()
     context['missing_tdata'] = db.legislators.find({'state': state,
                              'active': True,
-                             'transparencydata_id': {'$exists':False}}).count()
+                             'transparencydata_id': {'$exists': False}}).count()
     return context
+
 
 def state_index(request, state):
     meta = metadata(state)
@@ -137,30 +145,31 @@ def state_index(request, state):
     context.update(_bill_stats_for_session(state, latest_session))
 
     # legislators
-    context['upper_leg_count'] = db.legislators.find({'state':state,
+    context['upper_leg_count'] = db.legislators.find({'state': state,
                                                       'active': True,
-                                                  'chamber':'upper'}).count()
-    context['lower_leg_count'] = db.legislators.find({'state':state,
+                                                  'chamber': 'upper'}).count()
+    context['lower_leg_count'] = db.legislators.find({'state': state,
                                                       'active': True,
-                                                  'chamber':'lower'}).count()
-    context['lower_leg_count'] = db.legislators.find({'state':state,
+                                                  'chamber': 'lower'}).count()
+    context['lower_leg_count'] = db.legislators.find({'state': state,
                                                       'active': True,
-                                                  'chamber':'lower'}).count()
-    context['leg_count'] = context['upper_leg_count'] + context['lower_leg_count']
+                                                  'chamber': 'lower'}).count()
+    context['leg_count'] = (context['upper_leg_count'] +
+                            context['lower_leg_count'])
     context['inactive_leg_count'] = db.legislators.find({'state': state,
-                                                         'active': False}).count()
+                                                     'active': False}).count()
     context['ns_leg_count'] = db.legislators.find({'state': state,
                              'active': True,
                              'sources': {'$size': 0}}).count()
     context.update(_get_state_leg_id_stats(state))
 
     # committees
-    context['upper_com_count'] = db.committees.find({'state':state,
-                                                  'chamber':'upper'}).count()
-    context['lower_com_count'] = db.committees.find({'state':state,
-                                                  'chamber':'lower'}).count()
-    context['joint_com_count'] = db.committees.find({'state':state,
-                                                  'chamber':'joint'}).count()
+    context['upper_com_count'] = db.committees.find({'state': state,
+                                                  'chamber': 'upper'}).count()
+    context['lower_com_count'] = db.committees.find({'state': state,
+                                                  'chamber': 'lower'}).count()
+    context['joint_com_count'] = db.committees.find({'state': state,
+                                                  'chamber': 'joint'}).count()
     context['com_count'] = (context['upper_com_count'] +
                             context['lower_com_count'] +
                             context['joint_com_count'])
@@ -192,7 +201,7 @@ def random_bill(request, state):
         raise Http404
     latest_session = meta['terms'][-1]['sessions'][-1]
 
-    spec = {'state':state.lower(), 'session':latest_session} 
+    spec = {'state':state.lower(), 'session':latest_session}
 
     count = db.bills.find(spec).count()
     bill = db.bills.find(spec)[random.randint(0, count - 1)]

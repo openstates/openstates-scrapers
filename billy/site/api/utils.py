@@ -21,6 +21,7 @@ def _load_census_mapping():
             _census_to_district[tuple(row[0:3])] = row[3].strip()
             _district_to_census[(row[0], row[1], row[3])] = row[2].strip()
 
+
 def district_from_census_name(state, chamber, census_name):
     """
     In some states the Census Bureau names districts differently than

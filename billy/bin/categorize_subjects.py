@@ -9,12 +9,13 @@ from billy import db
 from billy.conf import settings, base_arg_parser
 from billy.utils import metadata
 
+
 def categorize_subjects(state, data_dir, process_all):
     categorizer = defaultdict(set)
     categories_per_bill = defaultdict(int)
     uncategorized = defaultdict(int)
 
-    filename = os.path.join(data_dir, state+'.csv')
+    filename = os.path.join(data_dir, state + '.csv')
     try:
         reader = csv.reader(open(filename))
 
@@ -23,12 +24,13 @@ def categorize_subjects(state, data_dir, process_all):
             for subj in row[1:]:
                 if subj:
                     if subj not in settings.BILLY_SUBJECTS:
-                        raise Exception('invalid subject %s (%s)' % (subj, row[0]))
+                        raise Exception('invalid subject %s (%s)' %
+                                        (subj, row[0]))
                     categorizer[row[0]].add(subj)
     except IOError:
         print 'Proceeding without', filename
 
-    spec = {'state':state}
+    spec = {'state': state}
     if not process_all:
         sessions = metadata(state)['terms'][-1]['sessions']
         spec['session'] = {'$in': sessions}
@@ -54,7 +56,8 @@ def categorize_subjects(state, data_dir, process_all):
 
     print 'Uncategorized'
     print '-------------'
-    subjects_i = sorted([(v,k) for k,v in uncategorized.items()], reverse=True)
+    subjects_i = sorted([(v, k) for k, v in uncategorized.items()],
+                        reverse=True)
     for n, category in subjects_i:
         print '%s,%s' % (n, category.encode('ascii', 'replace'))
 

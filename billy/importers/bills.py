@@ -48,6 +48,7 @@ def ensure_indexes():
                            ('chamber', pymongo.ASCENDING),
                            ('sponsors', pymongo.ASCENDING)])
 
+
 def import_votes(state, data_dir):
     pattern = os.path.join(data_dir, 'votes', '*.json')
     paths = glob.glob(pattern)

@@ -1,5 +1,6 @@
 import subprocess
 
+
 def convert_pdf(filename, type='xml'):
     commands = {'text': ['pdftotext', '-layout', filename, '-'],
                 'xml':  ['pdftohtml', '-xml', '-stdout', filename],
@@ -9,6 +10,7 @@ def convert_pdf(filename, type='xml'):
     data = pipe.read()
     pipe.close()
     return data
+
 
 def pdf_to_lxml(filename, type='html'):
     import lxml.html
