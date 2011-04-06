@@ -71,6 +71,10 @@ def all_states(request, template='billy/index.html'):
                 state['missing_sources'] += 'bills'
             if missing_leg_sources:
                 state['missing_sources'] += ' legislators'
+        else:
+            state['bill_types'] = 'n/a'
+            state['legislators'] = db.legislators.find().count()
+            state['committees'] = db.committees.find().count()
 
         states.append(state)
 
