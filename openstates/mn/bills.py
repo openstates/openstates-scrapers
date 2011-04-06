@@ -242,19 +242,13 @@ class MNBillScraper(BillScraper):
             bill_details_url = urlparse.urljoin(BILL_DETAIL_URL_BASE,
                                                 bill_details_link.get('href'))
 
-            # senate version link goes to wrong place, forge it
-            if search_chamber == 'Senate':
-                session_year = search_session[-4:]
-                session_number = search_session[0]
-                bill_id = bill_details_link.text_content()
-                bill_version_url = 'https://www.revisor.mn.gov/bin/getbill.php' \
-                '?session_year=%s&session_number=%s&number=%s&version=list' % (
-                    session_year, session_number, bill_id)
-            else:
-                # fourth column: version link (only right for House)
-                bill_version_url = row.xpath('td[4]/a/@href')[0]
-                bill_version_url = urlparse.urljoin(VERSION_URL_BASE,
-                                                    bill_version_url)
+            # version link sometimes goes to wrong place, forge it
+            session_year = search_session[-4:]
+            session_number = search_session[0]
+            bill_id = bill_details_link.text_content()
+            bill_version_url = 'https://www.revisor.mn.gov/bin/getbill.php' \
+            '?session_year=%s&session_number=%s&number=%s&version=list' % (
+                session_year, session_number, bill_id)
 
             self.get_bill_info(search_chamber, session, bill_details_url,
                                bill_version_url)
