@@ -1,0 +1,75 @@
+import csv
+import datetime
+try:
+    import cStringIO as StringIO
+except ImportError:
+    import StringIO
+
+from billy.scrape import NoDataForPeriod
+from billy.scrape.events import EventScraper, Event
+
+import lxml.html
+
+
+class CTEventScraper(EventScraper):
+    state = 'ct'
+
+    def __init__(self, *args, **kwargs):
+        super(CTEventScraper, self).__init__(*args, **kwargs)
+
+    def scrape(self, chamber, session):
+        if session != '2011':
+            raise NoDataForPeriod(session)
+
+        if chamber != 'other':
+            # All CT committees are joint
+            return
+
+        for comm in self.get_comm_codes():
+            self.scrape_committee_events(session, comm)
+
+    def scrape_committee_events(self, session, comm):
+        url = ("http://www.cga.ct.gov/asp/menu/"
+               "CGACommCal.asp?comm_code=%s" % comm)
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+
+            cal_table = page.xpath(
+                "//table[contains(@summary, 'Calendar')]")[0]
+
+            date_str = None
+            for row in cal_table.xpath("tr[2]//tr"):
+                col1 = row.xpath("string(td[1])").strip()
+                col2 = row.xpath("string(td[2])").strip()
+
+                if not col1:
+                    if col2 == "No Meetings Scheduled":
+                        return
+                    # If col1 is empty then this is a date header
+                    date_str = col2
+                    #datetime.datetime.strptime(
+                    #    col2, "%A, %B %d, %Y").date()
+                    #print date
+                else:
+                    # Otherwise, this is a committee event row
+                    when = date_str + " " + col1
+                    when = datetime.datetime.strptime(
+                        when, "%A, %B %d, %Y %I:%M %p")
+
+                    location = row.xpath("string(td[3])").strip()
+                    guid = row.xpath("td/a")[0].attrib['href']
+
+                    event = Event(session, when, 'committee meeting',
+                                  col2, location, guid=guid)
+                    event.add_source(url)
+
+                    self.save_event(event)
+
+    def get_comm_codes(self):
+        with self.urlopen("ftp://ftp.cga.ct.gov/pub/data/committee.csv") as page:
+            page = csv.DictReader(StringIO.StringIO(page))
+
+            return [row['comm_code'].strip() for row in page]
+
+
