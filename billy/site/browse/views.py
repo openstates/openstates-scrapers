@@ -9,6 +9,7 @@ from django.views.decorators.cache import never_cache
 from django.shortcuts import render_to_response
 from django.utils.datastructures import SortedDict
 
+
 def keyfunc(obj):
     try:
         return int(obj['district'])
@@ -78,6 +79,7 @@ def all_states(request, template='billy/index.html'):
 
     return render_to_response(template, {'states': states})
 
+
 def _bill_stats_for_session(state, session):
     context = {}
     context['upper_bill_count'] = db.bills.find({'state': state,
@@ -86,7 +88,8 @@ def _bill_stats_for_session(state, session):
     context['lower_bill_count'] = db.bills.find({'state': state,
                                                  'session': session,
                                                  'chamber': 'lower'}).count()
-    context['bill_count'] = context['upper_bill_count'] + context['lower_bill_count']
+    context['bill_count'] = (context['upper_bill_count'] +
+                             context['lower_bill_count'])
     context['ns_bill_count'] = db.bills.find({'state': state,
                                               'session': session,
                                            'sources': {'$size': 0}}).count()
@@ -95,8 +98,8 @@ def _bill_stats_for_session(state, session):
     total_actions = 0
     versions = 0
 
-    for bill in db.bills.find({'state': state, 'session':session},
-                              {'type':1, 'actions.type': 1, 'versions': 1}):
+    for bill in db.bills.find({'state': state, 'session': session},
+                              {'type': 1, 'actions.type': 1, 'versions': 1}):
         for t in bill['type']:
             types[t] += 1
         for a in bill['actions']:
@@ -125,8 +128,7 @@ def _get_state_leg_id_stats(state):
                              'active': True,
                              'nimsp_id': {'$exists': False}}).count()
     context['missing_tdata'] = db.legislators.find({'state': state,
-                             'active': True,
-                             'transparencydata_id': {'$exists': False}}).count()
+         'active': True, 'transparencydata_id': {'$exists': False}}).count()
     return context
 
 
@@ -178,6 +180,7 @@ def state_index(request, state):
 
     return render_to_response('billy/state_index.html', context)
 
+
 def bills(request, state):
     meta = metadata(state)
     if not meta:
@@ -201,12 +204,13 @@ def random_bill(request, state):
         raise Http404
     latest_session = meta['terms'][-1]['sessions'][-1]
 
-    spec = {'state':state.lower(), 'session':latest_session}
+    spec = {'state': state.lower(), 'session': latest_session}
 
     count = db.bills.find(spec).count()
     bill = db.bills.find(spec)[random.randint(0, count - 1)]
 
     return render_to_response('billy/bill.html', {'bill': bill})
+
 
 def bill(request, state, session, id):
     bill = db.bills.find_one(dict(state=state.lower(),
@@ -216,6 +220,7 @@ def bill(request, state, session, id):
         raise Http404
 
     return render_to_response('billy/bill.html', {'bill': bill})
+
 
 def legislators(request, state):
     upper_legs = db.legislators.find({'state': state.lower(),
@@ -234,8 +239,9 @@ def legislators(request, state):
         'upper_legs': upper_legs,
         'lower_legs': lower_legs,
         'inactive_legs': inactive_legs,
-        'metadata': metadata(state)
+        'metadata': metadata(state),
     })
+
 
 def legislator(request, id):
     leg = db.legislators.find_one({'_all_ids': id})
@@ -243,6 +249,7 @@ def legislator(request, id):
         raise Http404
     return render_to_response('billy/legislator.html', {'leg': leg,
                                           'metadata': metadata(leg['state'])})
+
 
 def committees(request, state):
     upper_coms = db.committees.find({'state': state.lower(),
@@ -259,5 +266,5 @@ def committees(request, state):
         'upper_coms': upper_coms,
         'lower_coms': lower_coms,
         'joint_coms': joint_coms,
-        'metadata': metadata(state)
+        'metadata': metadata(state),
     })

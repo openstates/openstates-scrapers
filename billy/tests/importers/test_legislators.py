@@ -41,7 +41,7 @@ def test_activate_legislators():
                        'term': '2011-2012', 'district': '3',
                        'party': 'Democrat',
                        'start_date': None,
-                       'end_date': datetime.datetime(2011,1,1)}]}
+                       'end_date': datetime.datetime(2011, 1, 1)}]}
 
     id1 = utils.insert_with_id(leg1)
     id2 = utils.insert_with_id(leg2)
@@ -100,7 +100,7 @@ def test_deactivate_legislators():
                        'term': '2011-2012', 'district': '3',
                        'party': 'Democrat',
                        'start_date': None,
-                       'end_date': datetime.datetime(2011,1,1)}]}
+                       'end_date': datetime.datetime(2011, 1, 1)}]}
     leg3_roles = leg3['roles']
 
     id1 = utils.insert_with_id(leg1)
@@ -132,6 +132,7 @@ def test_deactivate_legislators():
     assert 'party' not in leg3
     assert leg3['roles'] == []
     assert leg3['old_roles']['2011-2012'] == leg3_roles
+
 
 @with_setup(setup_func)
 def test_get_previous_term():
@@ -174,7 +175,6 @@ def test_import_legislator():
                        'term': '2011-2012', 'district': '2',
                        'party': 'Democrat',
                        'start_date': None, 'end_date': None}]}
-
 
     legislators.import_legislator(leg1)
     assert db.legislators.count() == 1

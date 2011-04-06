@@ -101,7 +101,8 @@ urlpatterns = patterns('',
     url(r'^v1/events/(?P<id>[A-Z]{2,2}E\d{8,8})/$', events_handler),
 
     url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/(?P<chamber>upper|lower)/', subject_list_handler),
-    url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/', subject_list_handler),
+    url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/',
+        subject_list_handler),
     url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/', subject_list_handler),
 
     url(r'^v1/legislators/reconcile/$', reconciliation_handler),
