@@ -61,7 +61,7 @@ class CTEventScraper(EventScraper):
                     guid = row.xpath("td/a")[0].attrib['href']
 
                     event = Event(session, when, 'committee meeting',
-                                  col2, location, guid=guid)
+                                  col2, location, _guid=guid)
                     event.add_source(url)
                     event.add_participant('committee', name,
                                           chamber='joint')
