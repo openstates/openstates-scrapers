@@ -1,0 +1,36 @@
+{% extends "flatpage.html" %}
+{% load markup_tags %}
+
+{% block content %}
+<h2> Detailed Status </h2>
+
+{% rest %}
+
+Explain what this is.
+
+{% endrest %}
+
+<table id="download_list">
+    <tr>
+        <th>State</th>
+        <th>Legislators</th>
+        <th>Bills</th>
+        <th>Votes</th>
+        <th>Committees</th>
+        <th>Events</th>
+        <th>Subjects</th>
+    </tr>
+    {% for state in states %}
+    <tr>
+        <td>{{state.name}}</td>
+        <td>{{state.legislators}}</td>
+        <td>{{state.bills}}</td>
+        <td>{{state.votes}}</td>
+        <td>{{state.committees}}</td>
+        <td>{{state.events}}</td>
+        <td>{{state.subjects}}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
