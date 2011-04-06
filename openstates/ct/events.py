@@ -25,12 +25,12 @@ class CTEventScraper(EventScraper):
             # All CT committees are joint
             return
 
-        for comm in self.get_comm_codes():
-            self.scrape_committee_events(session, comm)
+        for (code, name) in self.get_comm_codes():
+            self.scrape_committee_events(session, code, name)
 
-    def scrape_committee_events(self, session, comm):
+    def scrape_committee_events(self, session, code, name):
         url = ("http://www.cga.ct.gov/asp/menu/"
-               "CGACommCal.asp?comm_code=%s" % comm)
+               "CGACommCal.asp?comm_code=%s" % code)
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
@@ -63,6 +63,8 @@ class CTEventScraper(EventScraper):
                     event = Event(session, when, 'committee meeting',
                                   col2, location, guid=guid)
                     event.add_source(url)
+                    event.add_participant('committee', name,
+                                          chamber='joint')
 
                     self.save_event(event)
 
@@ -70,6 +72,6 @@ class CTEventScraper(EventScraper):
         with self.urlopen("ftp://ftp.cga.ct.gov/pub/data/committee.csv") as page:
             page = csv.DictReader(StringIO.StringIO(page))
 
-            return [row['comm_code'].strip() for row in page]
-
-
+            return [(row['comm_code'].strip(),
+                     row['comm_name'].strip())
+                    for row in page]
