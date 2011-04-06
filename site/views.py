@@ -1,6 +1,6 @@
 from billy import db
 
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 
 def detailed_status(request):
     states = []
@@ -26,3 +26,15 @@ def detailed_status(request):
     states.sort(key=lambda x: x['id'] if x['id'] != 'total' else 'zz')
 
     return render_to_response('detailed_status.html', {'states': states})
+
+
+def downloads(request):
+    states = sorted(db.metadata.find(), key=lambda x:x['_id'])
+    return render_to_response('downloads.html', {'states':states})
+
+
+def data_zip(request, state):
+    metadata = db.metadata.find_one({'_id': state})
+    if not metadata or 'latest_dump_url' not in metadata:
+        raise Http404
+    return redirect(metadata['latest_dump_url'])
