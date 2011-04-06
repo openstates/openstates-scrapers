@@ -6,7 +6,7 @@
 
 {% rest %}
 
-Explain what this is.
+The counts below represent how many objects we're currently tracking for each state.
 
 {% endrest %}
 
@@ -28,7 +28,7 @@ Explain what this is.
         <td>{{state.votes}}</td>
         <td>{{state.committees}}</td>
         <td>{{state.events}}</td>
-        <td>{{state.subjects}}</td>
+        <td>{{state.subjects|yesno}}</td>
     </tr>
     {% endfor %}
 </table>
