@@ -2,8 +2,6 @@
 """
 Print a breakdown of action count by date for a given state.
 """
-import datetime
-
 from billy import db
 
 

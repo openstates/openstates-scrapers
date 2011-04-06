@@ -394,7 +394,6 @@ class LegislatorGeoHandler(BillyHandler):
         resp = json.load(urllib2.urlopen(url))
 
         filters = []
-        ret = []
         for dist in resp['objects']:
             state = dist['name'][0:2].lower()
             chamber = {'/1.0/boundary-set/sldu/': 'upper',

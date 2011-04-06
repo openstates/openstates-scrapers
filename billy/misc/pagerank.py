@@ -2,7 +2,6 @@ from billy import db, utils
 
 import numpy
 from numpy import linalg
-import pymongo
 
 
 def generate_leg_indexes(state, term, chamber):

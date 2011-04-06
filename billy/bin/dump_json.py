@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 import re
 import os
-import sys
-import time
 import zipfile
 import datetime
-import urllib2
 import urllib
 import json
 
@@ -13,7 +10,6 @@ from billy.conf import settings, base_arg_parser
 from billy import db
 
 import boto
-import pymongo
 import scrapelib
 import validictory
 from boto.s3.key import Key

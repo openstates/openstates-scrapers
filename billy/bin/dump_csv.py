@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-import re
 import os
 import csv
-import time
 import shutil
 import zipfile
 import datetime
@@ -12,7 +10,6 @@ from billy.utils import extract_fields
 from billy.conf import settings, base_arg_parser
 
 import boto
-import pymongo
 from boto.s3.key import Key
 
 

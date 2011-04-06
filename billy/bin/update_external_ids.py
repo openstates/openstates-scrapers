@@ -3,15 +3,12 @@
 from billy.conf import settings, base_arg_parser
 from billy import db
 
-import re
+import sys
 import json
 import urllib
 import urllib2
-import datetime
 
 import argparse
-import name_tools
-import pymongo
 
 from votesmart import votesmart, VotesmartApiError
 

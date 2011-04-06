@@ -1,17 +1,13 @@
-import re
 import random
 from collections import defaultdict
 
 from billy import db
 from billy.utils import metadata
 
-from django.http import HttpResponseRedirect, HttpResponse, Http404
+from django.http import Http404
 from django.views.decorators.cache import never_cache
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render_to_response
 from django.utils.datastructures import SortedDict
-
-import pymongo
-
 
 def keyfunc(obj):
     try:

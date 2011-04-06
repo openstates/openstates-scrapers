@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import datetime
 import glob
 import logging
 import os
@@ -8,8 +7,7 @@ import argparse
 import json
 
 from billy.conf import settings, base_arg_parser
-from billy.scrape import (ScrapeError, NoDataForPeriod, JSONDateEncoder,
-                          get_scraper)
+from billy.scrape import ScrapeError, JSONDateEncoder, get_scraper
 from billy.utils import configure_logging
 from billy.scrape.validator import DatetimeValidator
 

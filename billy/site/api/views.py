@@ -1,7 +1,7 @@
 from billy import db, fs
 
 from django.http import HttpResponse, Http404
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render_to_response
 
 import gridfs
 

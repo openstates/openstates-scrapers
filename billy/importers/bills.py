@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 import os
-import re
-import sys
-import time
 import glob
-import datetime
 from collections import defaultdict
 import json
 

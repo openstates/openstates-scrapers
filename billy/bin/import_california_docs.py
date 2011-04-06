@@ -2,7 +2,7 @@
 from billy import db
 from billy.scrape.ca.models import CABillVersion
 
-from sqlalchemy.orm import sessionmaker, relation, backref
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
 import gridfs

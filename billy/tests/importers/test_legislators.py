@@ -48,6 +48,8 @@ def test_activate_legislators():
     id3 = utils.insert_with_id(leg3)
 
     legislators.activate_legislators('ex', '2011-2012')
+
+    leg1 = db.legislators.find_one({'_id': id1})
     assert 'active' not in leg1
     assert 'district' not in leg1
     assert 'chamber' not in leg1
@@ -151,7 +153,6 @@ def test_import_legislator():
                        'term': '2009-2010', 'district': '1',
                        'party': 'Democrat',
                        'start_date': None, 'end_date': None}]}
-    leg1_roles = leg1['roles']
 
     leg2 = {'_type': 'person', 'state': 'ex',
             'full_name': 'T. Rex Hagan',
@@ -186,7 +187,6 @@ def test_import_legislator():
 
     legislators.import_legislator(leg3)
     assert db.legislators.count() == 2
-
 
     legislators.import_legislator(leg4)
     assert db.legislators.count() == 3

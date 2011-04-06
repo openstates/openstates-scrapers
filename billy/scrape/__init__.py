@@ -1,11 +1,7 @@
-import os
 import time
 import logging
-import urllib2
 import datetime
-import contextlib
 import json
-from optparse import make_option, OptionParser
 from collections import defaultdict
 
 from billy.scrape.validator import DatetimeValidator
@@ -215,12 +211,15 @@ class SourcedObject(dict):
 
 def get_scraper(mod_path, state, scraper_type):
     """ import a scraper from the scraper registry """
+
+    # act of importing puts it into the registry
     try:
         mod_path = '%s.%s' % (mod_path, scraper_type)
-        mod = __import__(mod_path)
+        __import__(mod_path)
     except ImportError as e:
         raise ScrapeError("could not import %s" % mod_path, e)
 
+    # now pull the class out of the registry
     try:
         ScraperClass = _scraper_registry[state][scraper_type]
     except KeyError as e:
