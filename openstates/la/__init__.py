@@ -6,23 +6,16 @@ metadata = {
     "upper_chamber_title": "Senator",
     "terms": [
         {
-            "end_year": 2009,
-            "start_year": 2009,
-            "name": "2009",
+            "name": "2008-2011",
+            "start_year": 2008,
+            "end_year": 2011,
             "sessions": [
-                "2009"
-            ],
-            '_ids': ['09rs'],
+                "2009",
+                "2010",
+                "2011 1st Extraordinary Session",
+                "2011"
+                ]
         },
-        {
-            "end_year": 2010,
-            "start_year": 2010,
-            "name": "2010",
-            "sessions": [
-                "2010"
-            ],
-            '_ids': ['10rs'],
-        }
     ],
     "name": "Louisiana",
     "upper_chamber_term": 4,
@@ -38,7 +31,14 @@ metadata = {
             "type": "primary",
             "start_date": datetime.date(2010, 3, 29),
             "end_date": datetime.date(2010, 6, 21),
-        }
+        },
+        "2011 1st Extraordinary Session": {
+            "type": "special",
+            "_id": "111es",
+        },
+        "2011": {
+            "type": "special",
+        },
     },
     "legislature_name": "Louisiana Legislature",
     "lower_chamber_term": 4
