@@ -44,6 +44,11 @@ class MICommitteeScraper(CommitteeScraper):
             doc = lxml.html.fromstring(html)
 
             for strong in doc.xpath('//strong')[2:]:
+
+                # if this isn't a link, this isn't a normal committee (skip it)
+                if not strong.xpath('a'):
+                    continue
+
                 # trim off trailing :
                 name = strong.text_content()[:-1]
                 com = Committee(chamber='upper', committee=name)
