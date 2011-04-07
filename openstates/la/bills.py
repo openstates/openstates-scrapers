@@ -18,7 +18,10 @@ class LABillScraper(BillScraper):
     def scrape(self, chamber, session):
         types = {'upper': ['SB', 'SR', 'SCR'], 'lower': ['HB', 'HR', 'HCR']}
 
-        s_id = session[2:4] + "rs"
+        try:
+            s_id = metadata["session_details"][session]['_id']
+        except KeyError:
+            s_id = session[2:4] + "rs"
 
         # Fake it until we can make it
         for abbr in types[chamber]:
