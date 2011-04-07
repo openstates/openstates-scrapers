@@ -14,6 +14,8 @@ import lxml.html
 class CTEventScraper(EventScraper):
     state = 'ct'
 
+    _tz = pytz.timezone('US/Eastern')
+
     def __init__(self, *args, **kwargs):
         super(CTEventScraper, self).__init__(*args, **kwargs)
 
@@ -48,14 +50,12 @@ class CTEventScraper(EventScraper):
                         return
                     # If col1 is empty then this is a date header
                     date_str = col2
-                    #datetime.datetime.strptime(
-                    #    col2, "%A, %B %d, %Y").date()
-                    #print date
                 else:
                     # Otherwise, this is a committee event row
                     when = date_str + " " + col1
                     when = datetime.datetime.strptime(
                         when, "%A, %B %d, %Y %I:%M %p")
+                    when = self._tz.localize(when)
 
                     location = row.xpath("string(td[3])").strip()
                     guid = row.xpath("td/a")[0].attrib['href']
