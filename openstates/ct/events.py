@@ -8,6 +8,7 @@ except ImportError:
 from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
 
+import pytz
 import lxml.html
 
 
