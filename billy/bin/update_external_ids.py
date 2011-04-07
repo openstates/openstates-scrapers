@@ -95,6 +95,8 @@ def update_missing_ids(state_abbrev, sunlight_key):
         print "State '%s' does not exist in the database." % (
             state_abbrev)
         sys.exit(1)
+    else:
+        print "Updating ids for {0}".format(state_abbrev)
 
     print "Updating PVS legislator ids..."
     update_votesmart_legislators(state)
@@ -121,3 +123,4 @@ if __name__ == '__main__':
 
     for state in args.states:
         update_missing_ids(state, settings.SUNLIGHT_SERVICES_KEY)
+        time.sleep(30)
