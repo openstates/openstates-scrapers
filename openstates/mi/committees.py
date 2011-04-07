@@ -33,8 +33,18 @@ class MICommitteeScraper(CommitteeScraper):
                     com.add_source(com_url)
 
                     # all links to http:// pages in servicecolumn2 are legislators
-                    for leg in cdoc.xpath('//div[@class="servicecolumn2"]//a[starts-with(@href, "http")]/text()'):
-                        com.add_member(leg)
+                    for a in cdoc.xpath('//div[@class="servicecolumn2"]//a[starts-with(@href, "http")]'):
+                        name = a.text.strip()
+                        text = a.xpath('../following-sibling::font[1]/text()')
+                        print text[0],
+                        if text[0].startswith('Committee Chair'):
+                            role = 'chairman'
+                        elif 'Vice-Chair' in text[0]:
+                            role = 'vice chairman'
+                        else:
+                            role = 'member'
+                        print role
+                        com.add_member(name, role=role)
 
                     self.save_committee(com)
 
