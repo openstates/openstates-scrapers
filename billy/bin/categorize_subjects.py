@@ -59,7 +59,7 @@ def categorize_subjects(state, data_dir, process_all):
     subjects_i = sorted([(v, k) for k, v in uncategorized.items()],
                         reverse=True)
     for n, category in subjects_i:
-        print '%s,%s' % (n, category.encode('ascii', 'replace'))
+        print '%s,"%s"' % (n, category.encode('ascii', 'replace'))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
