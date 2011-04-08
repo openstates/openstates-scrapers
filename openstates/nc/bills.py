@@ -64,6 +64,12 @@ class NCBillScraper(BillScraper):
         if ' ' in bill_id:
             bill_id = bill_id[0] + bill_id.split(' ')[-1]
 
+        # if chamber comes in as House/Senate convert to lower/upper
+        if chamber == 'Senate':
+            chamber = 'upper'
+        elif chamber == 'House':
+            chamber = 'lower'
+
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/'\
             'BillLookUp/BillLookUp.pl?Session=%s&BillID=%s' % (
             session, bill_id)
