@@ -34,7 +34,13 @@ def district_from_census_name(state, chamber, census_name):
     try:
         return _census_to_district[(state, chamber, census_name)]
     except KeyError:
-        return census_name.split('District ')[1]
+        try:
+            return census_name.split('District ')[1]
+        except IndexError:
+            try:
+                return census_name.split('Subdistrict ')[1]
+            except IndexError:
+                return census_name
 
 
 def district_slug(state, chamber, district):
