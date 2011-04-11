@@ -1,6 +1,10 @@
+import os
+import re
 import datetime
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from billy.scrape.utils import convert_pdf
 
 import lxml.html
 
@@ -107,4 +111,49 @@ class FLBillScraper(BillScraper):
             except IndexError:
                 self.log("No analysis table for %s" % bill_id)
 
+            try:
+                vote_table = page.xpath(
+                    "//div[@id = 'tabBodyVoteHistory']/table")[1]
+                for tr in vote_table.xpath("tbody/tr"):
+                    vote_chamber = tr.xpath("string(td[2])")
+                    rc_num = tr.xpath("string(td[3])")
+
+                    vote_date = tr.xpath("string(td[4])")
+                    vote_date = datetime.datetime.strptime(
+                        vote_date, "%m/%d/%Y").date()
+
+                    vote_url = tr.xpath("td[5]/a")[0].attrib['href']
+                    self.scrape_vote(bill, vote_chamber, vote_date,
+                                     vote_url)
+            except IndexError:
+                self.log("No vote table for %s" % bill_id)
+
             self.save_bill(bill)
+
+    def scrape_vote(self, bill, chamber, date, url):
+        (path, resp) = self.urlretrieve(url)
+        text = convert_pdf(path, 'text')
+
+        motion = text.split('\n')[4].strip()
+
+        yes_count = int(re.search(r'Yeas - (\d+)', text).group(1))
+        no_count = int(re.search(r'Nays - (\d+)', text).group(1))
+        other_count = int(re.search(r'Not Voting - (\d+)', text).group(1))
+        passed = yes_count > (no_count + other_count)
+
+        vote = Vote(chamber, date, motion, passed, yes_count, no_count,
+                    other_count)
+        vote.add_source(url)
+
+        for match in re.finditer(r'(Y|EX|N)\s+([^-]+)-\d+', text):
+            vtype = match.group(1)
+            name = match.group(2)
+            print name
+            if vtype == 'Y':
+                vote.yes(name)
+            elif vtype == 'N':
+                vote.no(name)
+            else:
+                vote.other(name)
+
+        bill.add_vote(vote)
