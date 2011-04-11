@@ -82,6 +82,8 @@ class FLBillScraper(BillScraper):
                             atype.append("bill:filed")
                         elif action.startswith("Withdrawn"):
                             atype.append("bill:failed")
+                        elif action.startswith('Introduced'):
+                            atype.append('bill:introduced')
 
                         bill.add_action(actor, action, date, type=atype)
             except IndexError:
