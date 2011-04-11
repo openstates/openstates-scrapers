@@ -73,6 +73,9 @@ class FLBillScraper(BillScraper):
                         if not action:
                             continue
 
+                        action = re.sub(r'-(H|S)J\s+(\d+)$', '',
+                                        action)
+
                         atype = []
                         if action.startswith('Referred to'):
                             atype.append('committee:referred')
