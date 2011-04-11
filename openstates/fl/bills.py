@@ -148,7 +148,7 @@ class FLBillScraper(BillScraper):
         for match in re.finditer(r'(Y|EX|N)\s+([^-]+)-\d+', text):
             vtype = match.group(1)
             name = match.group(2)
-            print name
+
             if vtype == 'Y':
                 vote.yes(name)
             elif vtype == 'N':
