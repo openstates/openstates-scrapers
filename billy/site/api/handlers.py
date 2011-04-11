@@ -1,12 +1,14 @@
 import re
+import urllib2
 import datetime
 import json
+
+from django.http import HttpResponse
 
 from billy import db
 from billy.conf import settings
 from billy.utils import keywordize
-
-from django.http import HttpResponse
+from billy.site.api.utils import district_from_census_name
 
 import pymongo
 
@@ -49,12 +51,12 @@ def _build_mongo_filter(request, keys, icase=True):
     return _filter
 
 
-class FiftyStateHandlerMetaClass(HandlerMetaClass):
+class BillyHandlerMetaClass(HandlerMetaClass):
     """
     Returns 404 if Handler result is None.
     """
     def __new__(cls, name, bases, attrs):
-        new_cls = super(FiftyStateHandlerMetaClass, cls).__new__(
+        new_cls = super(BillyHandlerMetaClass, cls).__new__(
             cls, name, bases, attrs)
 
         if hasattr(new_cls, 'read'):
@@ -75,15 +77,15 @@ class FiftyStateHandlerMetaClass(HandlerMetaClass):
         return new_cls
 
 
-class FiftyStateHandler(BaseHandler):
+class BillyHandler(BaseHandler):
     """
-    Base handler for the Fifty State API.
+    Base handler for the Billy API.
     """
-    __metaclass__ = FiftyStateHandlerMetaClass
+    __metaclass__ = BillyHandlerMetaClass
     allowed_methods = ('GET',)
 
 
-class MetadataHandler(FiftyStateHandler):
+class MetadataHandler(BillyHandler):
     def read(self, request, state):
         """
         Get metadata about a state legislature.
@@ -91,7 +93,7 @@ class MetadataHandler(FiftyStateHandler):
         return db.metadata.find_one({'_id': state.lower()})
 
 
-class BillHandler(FiftyStateHandler):
+class BillHandler(BillyHandler):
     def read(self, request, state, session, bill_id, chamber=None):
         query = {'state': state.lower(), 'session': session,
                  'bill_id': bill_id}
@@ -100,7 +102,7 @@ class BillHandler(FiftyStateHandler):
         return db.bills.find_one(query)
 
 
-class BillSearchHandler(FiftyStateHandler):
+class BillSearchHandler(BillyHandler):
     def read(self, request):
 
         bill_fields = {'title': 1, 'created_at': 1, 'updated_at': 1,
@@ -158,12 +160,12 @@ class BillSearchHandler(FiftyStateHandler):
         return list(db.bills.find(_filter, bill_fields))
 
 
-class LegislatorHandler(FiftyStateHandler):
+class LegislatorHandler(BillyHandler):
     def read(self, request, id):
         return db.legislators.find_one({'_all_ids': id})
 
 
-class LegislatorSearchHandler(FiftyStateHandler):
+class LegislatorSearchHandler(BillyHandler):
     def read(self, request):
         legislator_fields = {'sources': 0, 'roles': 0, 'old_roles': 0}
 
@@ -184,12 +186,12 @@ class LegislatorSearchHandler(FiftyStateHandler):
         return list(db.legislators.find(_filter, legislator_fields))
 
 
-class CommitteeHandler(FiftyStateHandler):
+class CommitteeHandler(BillyHandler):
     def read(self, request, id):
         return db.committees.find_one({'_all_ids': id})
 
 
-class CommitteeSearchHandler(FiftyStateHandler):
+class CommitteeSearchHandler(BillyHandler):
     def read(self, request):
         committee_fields = {'members': 0, 'sources': 0}
 
@@ -198,7 +200,7 @@ class CommitteeSearchHandler(FiftyStateHandler):
         return list(db.committees.find(_filter, committee_fields))
 
 
-class StatsHandler(FiftyStateHandler):
+class StatsHandler(BillyHandler):
     def read(self, request):
         counts = {}
 
@@ -225,7 +227,7 @@ class StatsHandler(FiftyStateHandler):
         return stats
 
 
-class EventsHandler(FiftyStateHandler):
+class EventsHandler(BillyHandler):
     def read(self, request, id=None, events=[]):
         if events:
             return events
@@ -248,12 +250,22 @@ class EventsHandler(FiftyStateHandler):
                 spec[key] = {'$in': split}
 
         return list(db.events.find(spec).sort(
-            'when', pymongo.DESCENDING).limit(20))
+            'when', pymongo.ASCENDING).limit(1000))
 
 
-class SubjectListHandler(FiftyStateHandler):
-    def read(self, request):
-        return settings.BILLY_SUBJECTS
+class SubjectListHandler(BillyHandler):
+    def read(self, request, state, session=None, chamber=None):
+        spec = {'state': state.lower()}
+        if session:
+            spec['session'] = session
+        if chamber:
+            chamber = chamber.lower()
+            spec['chamber'] = _chamber_aliases.get(chamber, chamber)
+        result = {}
+        for subject in settings.BILLY_SUBJECTS:
+            count = db.bills.find(dict(spec, subjects=subject)).count()
+            result[subject] = count
+        return result
 
 
 class ReconciliationHandler(BaseHandler):
@@ -362,3 +374,39 @@ class ReconciliationHandler(BaseHandler):
                                  "name": "Legislator"}]})
 
         return sorted(results, cmp=lambda l, r: cmp(r['score'], l['score']))
+
+
+class LegislatorGeoHandler(BillyHandler):
+    base_url = getattr(settings, 'BOUNDARY_SERVICE_URL',
+                       'http://localhost:8001/1.0/')
+
+    def read(self, request):
+        try:
+            latitude, longitude = request.GET['lat'], request.GET['long']
+        except KeyError:
+            resp = rc.BAD_REQUEST
+            resp.write(': Need lat and long parameters')
+            return resp
+
+        url = "%sboundary/?contains=%s,%s&sets=sldl,sldu&limit=0" % (
+            self.base_url, latitude, longitude)
+
+        resp = json.load(urllib2.urlopen(url))
+
+        filters = []
+        for dist in resp['objects']:
+            state = dist['name'][0:2].lower()
+            chamber = {'/1.0/boundary-set/sldu/': 'upper',
+                       '/1.0/boundary-set/sldl/': 'lower'}[dist['set']]
+            census_name = dist['name'][3:]
+
+            our_name = district_from_census_name(
+                state, chamber, census_name)
+
+            filters.append({'state': state, 'district': our_name,
+                            'chamber': chamber})
+
+        if not filters:
+            return []
+
+        return list(db.legislators.find({'$or': filters}))

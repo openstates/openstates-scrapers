@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 import re
 import os
-import sys
-import time
 import zipfile
 import datetime
-import urllib2
 import urllib
 import json
 
@@ -13,7 +10,6 @@ from billy.conf import settings, base_arg_parser
 from billy import db
 
 import boto
-import pymongo
 import scrapelib
 import validictory
 from boto.s3.key import Key
@@ -30,25 +26,28 @@ class APIValidator(validictory.SchemaValidator):
 _base_url = getattr(settings, 'OPENSTATES_API_BASE_URL',
                     "http://openstates.sunlightlabs.com/api/v1/")
 
+
 def api_url(path):
     return "%s%s/?apikey=%s" % (_base_url, urllib.quote(path),
                                 settings.SUNLIGHT_SERVICES_KEY)
 
 
-def dump_json(state, filename, validate):
+def dump_json(state, filename, validate, schema_dir):
     scraper = scrapelib.Scraper(requests_per_minute=600)
 
     zip = zipfile.ZipFile(filename, 'w')
 
-    cwd = os.path.split(__file__)[0]
+    if not schema_dir:
+        cwd = os.path.split(__file__)[0]
+        schema_dir = os.path.join(cwd, "../schemas/api/")
 
-    with open(os.path.join(cwd, "../schemas/api/bill.json")) as f:
+    with open(os.path.join(schema_dir, "bill.json")) as f:
         bill_schema = json.load(f)
 
-    with open(os.path.join(cwd, "../schemas/api/legislator.json")) as f:
+    with open(os.path.join(schema_dir, "legislator.json")) as f:
         legislator_schema = json.load(f)
 
-    with open(os.path.join(cwd, "../schemas/api/committee.json")) as f:
+    with open(os.path.join(schema_dir, "committee.json")) as f:
         committee_schema = json.load(f)
 
     for bill in db.bills.find({'state': state}):
@@ -94,18 +93,11 @@ def upload(state, filename):
 
     # build URL
     s3_bucket = 'data.openstates.sunlightlabs.com'
-    n = 1
-    s3_path = '%s-%02d-%s-r%d.zip' % (today.year, today.month, state, n)
+    s3_path = '%s-%02d-%02d-%s.zip' % (today.year, today.month, today.day,
+                                           state)
     s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
-    metadata = db.metadata.find_one({'_id':state})
-    old_url = metadata.get('latest_dump_url')
-
-    if s3_url == old_url:
-        old_num = re.match('.*?-r(\d*).zip', old_url).groups()[0]
-        n = int(old_num)+1
-        s3_path = '%s-%02d-%s-r%d.zip' % (today.year, today.month, state, n)
-        s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
+    metadata = db.metadata.find_one({'_id': state})
 
     # S3 upload
     s3conn = boto.connect_s3(settings.AWS_KEY, settings.AWS_SECRET)
@@ -135,6 +127,9 @@ if __name__ == '__main__':
                                        ' state to import'))
     parser.add_argument('--file', '-f',
                         help='filename to output to (defaults to <state>.zip)')
+    parser.add_argument('--schema_dir',
+                        help='directory to use for API schemas (optional)',
+                        default=None)
     parser.add_argument('--nodump', action='store_true', default=False,
                         help="don't run the dump, only upload")
     parser.add_argument('--novalidate', action='store_true', default=False,
@@ -150,7 +145,7 @@ if __name__ == '__main__':
         args.file = args.state + '.zip'
 
     if not args.nodump:
-        dump_json(args.state, args.file, not args.novalidate)
+        dump_json(args.state, args.file, not args.novalidate, args.schema_dir)
 
     if args.upload:
         upload(args.state, args.file)

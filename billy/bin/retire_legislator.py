@@ -7,8 +7,9 @@ from billy.importers.legislators import deactivate_legislators
 import datetime
 import argparse
 
+
 def retire_legislator(leg_id, date):
-    legislator = db.legislators.find_one({'leg_id':leg_id})
+    legislator = db.legislators.find_one({'leg_id': leg_id})
     term = metadata(legislator['state'])['terms'][-1]['name']
     cur_role = legislator['roles'][0]
     if cur_role['type'] != 'member' or cur_role['term'] != term:

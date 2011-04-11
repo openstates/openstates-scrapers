@@ -73,7 +73,8 @@ class LALegislatorScraper(LegislatorScraper):
 
             try:
                 party = page.xpath(
-                    "//b[text() = 'Party']")[0].getnext().tail.strip()
+                    "//b[contains(text(), 'Party')]")[0].getnext().tail
+                party = party.strip()
             except IndexError:
                 party = 'N/A'
 

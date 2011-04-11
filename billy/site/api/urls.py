@@ -75,6 +75,8 @@ subject_list_handler = Resource(handlers.SubjectListHandler,
                                 authentication=authorizer)
 reconciliation_handler = Resource(handlers.ReconciliationHandler,
                                   authentication=authorizer)
+legislator_geo_handler = Resource(handlers.LegislatorGeoHandler,
+                                      authentication=authorizer)
 
 urlpatterns = patterns('',
     # v1 urls
@@ -98,20 +100,16 @@ urlpatterns = patterns('',
     url(r'^v1/events/$', events_handler),
     url(r'^v1/events/(?P<id>[A-Z]{2,2}E\d{8,8})/$', events_handler),
 
-    url(r'v1/subjects/', subject_list_handler),
+    url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/(?P<chamber>upper|lower)/', subject_list_handler),
+    url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/',
+        subject_list_handler),
+    url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/', subject_list_handler),
 
     url(r'^v1/legislators/reconcile/$', reconciliation_handler),
     url(r'^v1/legislators/preview/(?P<id>[A-Z]{2,2}L\d{6,6})/$',
         legislator_preview),
 
+    url(r'v1/legislators/geo/$', legislator_geo_handler),
+
     url(r'^v1/stats/$', stats_handler),
 )
-
-if 'billy.site.geo' in settings.INSTALLED_APPS:
-    from billy.site.geo.handlers import LegislatorGeoHandler
-    legislator_geo_handler = Resource(LegislatorGeoHandler,
-                                      authentication=authorizer)
-    urlpatterns += patterns('',
-        url(r'^v1/legislators/geo/$', legislator_geo_handler),
-    )
-

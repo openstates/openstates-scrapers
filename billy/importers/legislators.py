@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import sys
 import glob
 import datetime
 import json
@@ -9,7 +8,6 @@ from billy import db
 from billy.importers.utils import insert_with_id, update, prepare_obj
 
 import pymongo
-import name_tools
 
 
 def ensure_indexes():
@@ -50,8 +48,6 @@ def activate_legislators(state, current_term):
     Sets the 'active' flag on legislators and populates top-level
     district/chamber/party fields for currently serving legislators.
     """
-    meta = db.metadata.find_one({'_id': state})
-
     for legislator in db.legislators.find({'roles': {'$elemMatch':
                                                      {'state': state,
                                                       'type': 'member',
@@ -76,13 +72,13 @@ def deactivate_legislators(state, current_term):
             {'roles': {'$elemMatch':
                        {'term': {'$ne': current_term},
                         'type': 'member',
-                        'state': state}}
+                        'state': state}},
             },
             {'roles': {'$elemMatch':
                        {'term': current_term,
                         'type': 'member',
-                        'end_date': {'$ne':None}}}
-            }
+                        'end_date': {'$ne':None}}},
+            },
 
         ]}):
 

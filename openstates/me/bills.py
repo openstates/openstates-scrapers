@@ -7,14 +7,19 @@ from billy.scrape.votes import VoteScraper, Vote
 
 import lxml.html
 
+def classify_action(action):
+    # TODO: this likely needs to be retuned after more happens
+    if 'REFERRED to the Committee' in action:
+        return 'committee:referred'
+    elif 'PASSED' in action:
+        return 'bill:passed'
+    else:
+        return 'other'
 
 class MEBillScraper(BillScraper):
     state = 'me'
 
     def scrape(self, chamber, session):
-        if int(session) < 121:
-            raise NoDataForPeriod(session)
-
         if session[-1] == "1":
             session_abbr = session + "st"
         elif session[-1] == "2":
@@ -34,27 +39,29 @@ class MEBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//tr/td/ul/li//@href"):
+            for link in page.xpath('//a[contains(@href, "contents")]/@href'):
                 self.scrape_session_directory(session, chamber, link)
 
     def scrape_session_directory(self, session, chamber, url):
+        # decide xpath based on upper/lower
+        link_xpath = {'lower': '//big/a[starts-with(text(), "HP")]',
+                      'upper': '//big/a[starts-with(text(), "SP")]'}[chamber]
+
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//big/a[2]"):
+            for link in page.xpath(link_xpath):
                 bill_id = link.text
                 title = link.xpath("string(../../following-sibling::dd[1])")
 
-                if bill_id.startswith('SP'):
-                    bill_chamber = 'upper'
-                elif bill_id.startswith('HP'):
-                    bill_chamber = 'lower'
+                if (title.lower().startswith('joint order') or
+                    title.lower().startswith('joint resolution')):
+                    bill_type = 'joint resolution'
+                else:
+                    bill_type = 'bill'
 
-                if chamber != bill_chamber:
-                    continue
-
-                bill = Bill(session, chamber, bill_id, title)
+                bill = Bill(session, chamber, bill_id, title, type=bill_type)
                 self.scrape_bill(bill, link.attrib['href'])
                 self.save_bill(bill)
 
@@ -76,6 +83,23 @@ class MEBillScraper(BillScraper):
 
             votes_link = page.xpath("//a[contains(@href, 'rollcalls.asp')]")[0]
             self.scrape_votes(bill, votes_link.attrib['href'])
+
+            spon_link = page.xpath("//a[contains(@href, 'subjects.asp')]")[0]
+            with self.urlopen(spon_link.get('href')) as spon_html:
+                sdoc = lxml.html.fromstring(spon_html)
+                srow = sdoc.xpath('//table[@class="sectionbody"]/tr[2]/td[2]/text()')
+                if srow:
+                    bill['subjects'] = [srow[0].strip()]
+
+            ver_link = page.xpath("//a[contains(@href, 'display_ps.asp')]")[0]
+            ver_url = ver_link.get('href')
+            with self.urlopen(ver_url) as ver_html:
+                vdoc = lxml.html.fromstring(ver_html)
+                vdoc.make_links_absolute(ver_url)
+                # various versions: billtexts, billdocs, billpdfs
+                vurl = vdoc.xpath('//a[contains(@href, "billtexts")]/@href')
+                if vurl:
+                    bill.add_version('Initial Version', vurl[0])
 
     def scrape_votes(self, bill, url):
         with self.urlopen(url) as page:
@@ -159,4 +183,6 @@ class MEBillScraper(BillScraper):
                 if action == 'Unfinished Business' or not action:
                     continue
 
-                bill.add_action(chamber, action, date)
+                atype = classify_action(action)
+
+                bill.add_action(chamber, action, date, type=atype)

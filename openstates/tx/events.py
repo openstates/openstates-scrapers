@@ -5,6 +5,7 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
 
 import pytz
+import lxml.html
 import feedparser
 
 
@@ -47,20 +48,22 @@ class TXEventScraper(EventScraper):
                     all_day = False
 
                     notes = match.group(3)
-                    notes = notes.strip() if notes else None
-
-                    if notes == '(Canceled)':
-                        status = 'canceled'
+                    if notes:
+                        notes = "Time: " + notes.strip()
                     else:
-                        status = 'confirmed'
+                        notes = ""
                 else:
                     match = re.match(r'Time: (.*), Location:', desc)
                     if match:
                         when = datetime.datetime.strptime(date,
                                                           '%m/%d/%Y').date()
                         all_day = True
-                        notes = match.group(1).strip()
-                        status = 'confirmed'
+                        notes = "Time: " + match.group(1).strip()
+
+                if '(Canceled)' in notes:
+                    status = 'canceled'
+                else:
+                    status = 'confirmed'
 
                 location = entry['description'].split('Location: ')[1]
 
@@ -72,11 +75,21 @@ class TXEventScraper(EventScraper):
                               description,
                               location=location,
                               status=status,
-                              notes=notes,
-                              all_day=all_day)
-                event.add_participant('committee', title)
+                              all_day=all_day,
+                              link=entry['link'])
+                event.add_participant('committee', title, chamber=chamber)
 
                 event['_guid'] = entry['guid']
+
+                with self.urlopen(entry['link']) as page:
+                    page = lxml.html.fromstring(page)
+                    text = page.xpath("string(//body)")
+                    text = re.sub(r'(\r\n\s*)+', '\n', text).strip()
+                    text = text.encode('ascii', 'ignore')
+                    notes += "\n\n" + text
+
+                event['notes'] = notes.strip()
+
                 event['link'] = entry['link']
 
                 event.add_source(url)

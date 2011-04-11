@@ -1,10 +1,9 @@
 import re
 import urllib
 import urlparse
+import logging
 
 from billy import db
-
-import jellyfish
 
 
 # metadata cache
@@ -43,6 +42,7 @@ def keywordize(str):
     Splits a string into words, removes common stopwords, stems and removes
     duplicates.
     """
+    import jellyfish
     return set([jellyfish.porter_stem(word.lower().encode('ascii',
                                                           'ignore'))
                 for word in tokenize(str)
@@ -62,6 +62,13 @@ def metadata(state):
     return db.metadata.find_one({'_id': state})
 
 
+def chamber_name(state, chamber):
+    if chamber == 'joint':
+        return 'Joint'
+
+    return metadata(state)['%s_chamber_name' % chamber].split()[0]
+
+
 def term_for_session(state, session):
     meta = metadata(state)
 
@@ -77,3 +84,26 @@ def urlescape(url):
     path = urllib.quote(path, '/%')
     qs = urllib.quote_plus(qs, ':&=')
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
+
+
+def extract_fields(d, fields, delimiter='|'):
+    """ get values out of an object ``d`` for saving to a csv """
+    rd = {}
+    for f in fields:
+        v = d.get(f, None)
+        if isinstance(v, (str, unicode)):
+            v = v.encode('utf8')
+        elif isinstance(v, list):
+            v = delimiter.join(v)
+        rd[f] = v
+    return rd
+
+
+def configure_logging(verbosity_count=0, state=None):
+    verbosity = {0: logging.WARNING, 1: logging.INFO}.get(verbosity_count,
+                                                          logging.DEBUG)
+    if state:
+        format = "%(asctime)s %(name)s %(levelname)s " + state + " %(message)s"
+    else:
+        format = "%(asctime)s %(name)s %(levelname)s %(message)s"
+    logging.basicConfig(level=verbosity, format=format, datefmt="%H:%M:%S")

@@ -1,33 +1,57 @@
 {% extends "flatpage.html" %}
+{% load markup_tags %}
 
+{% block title %} Open State Project Bulk Downloads {% endblock %}
 
 {% block content %}
 <h2> Bulk Downloads </h2>
-<div>
-    <p>
-    Because it is often convenient to get all of a state's data at once we provide bulk downloads.
 
-    The data contained in these downloads is in the same format as that obtained via the
-    <a href="/api/">API</a>.
-    </p>
+{% rest %}
+Because it is often convenient to get all of a state's data for testing or offline use we provide bulk downloads of our data.
 
-    <p>
-    These downloads are not intended as a replacement for using the API, the
-    main deficit you'll notice is that they lag up to a month (but usually not more)
-    behind the current data.  This makes them useful for general research
-    purposes or initializing a database that will then be kept up to date
-    via regular calls.  If you'd like more current data please use the <a href="/api/">API</a>.
-    </p>
+We currently offer bulk data in two formats, JSON and CSV.
 
-    <p>One last thing, <strong>these files are large</strong>.  They are often a couple years worth of
-    legislative data and generally fall in the 100MB range.  </p>
 
-    <table id="download_list">
-        <tr><th>State</th><th>JSON Archive</th></tr>
-        {% for state in states %}
-        <tr><td>{{state.name}}</td><td><a href="{{state.latest_dump_url}}">{{state.latest_dump_date|date}}</a></td></tr>
-        {% endfor %}
-    </table>
+JSON Archives
+=============
 
-</div>
+The data contained in these downloads is in the same format as that obtained via the
+`API </api/>`_, refer to those docs for specifics on file formats.
+
+These downloads are not intended as a replacement for using the API, the
+main deficit you'll notice is that they lag up to a month (but usually not more)
+behind the current data.  This makes them useful for general research
+purposes or initializing a database that will then be kept up to date
+via regular calls.  If you'd like more current data please use the `API </api/>`_.
+
+One last thing, **these files are large**.  They are often a couple years worth of
+legislative data and generally fall in the 100MB range.
+
+CSV Archives
+============
+
+Because not everyone is comfortable working with JSON data we are now offering
+**experimental** CSV files.
+
+`Documentation on the CSV bulk files </csv_downloads/>`_.
+
+Like the JSON archives, these aren't intended as a replacement for the API.
+In addition to being older than the data provided via the API CSV files
+do not reflect extra fields that the JSON files are able to include, this
+is due to the inherient limitation of JSON and if extra fields are
+required you should use the JSON downloads or `API </api/>`_.
+
+{% endrest %}
+
+<h3> Downloads </h3>
+<table id="download_list">
+    <tr><th>State</th><th>JSON</th><th>CSV</th></tr>
+    {% for state in states %}
+    <tr><td>{{state.name}}</td>
+        <td><a href="{{state.latest_dump_url}}">{{state.latest_dump_date|date}}</a></td>
+        <td><a href="{{state.latest_csv_url}}">{{state.latest_csv_date|date}}</a></td>
+    </tr>
+    {% endfor %}
+</table>
+
 {% endblock %}

@@ -1,19 +1,10 @@
 from billy import db, fs
 
 from django.http import HttpResponse, Http404
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render_to_response
 
 import gridfs
 
-def downloads(request):
-    states = sorted(db.metadata.find(), key=lambda x:x['_id'])
-    return render_to_response('downloads.html', {'states':states})
-
-def data_zip(request, state):
-    metadata = db.metadata.find_one({'_id': state})
-    if not metadata or 'latest_dump_url' not in metadata:
-        raise Http404
-    return redirect(metadata['latest_dump_url'])
 
 def document(request, id):
     try:

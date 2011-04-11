@@ -1,16 +1,11 @@
 #!/usr/bin/env python
-import sys
-import logging
 import argparse
 
-from pymongo.son import SON
-
 import urllib
-import urllib2_file
 import urllib2
 
 from billy import db, fs
-from billy.utils import base_arg_parser
+from billy.utils import base_arg_parser, configure_logging
 
 
 def import_versions(state, solr_url="http://localhost:8983/solr/"):
@@ -47,12 +42,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    verbosity = {0: logging.WARNING,
-                 1: logging.INFO}.get(args.verbose, logging.DEBUG)
-
-    logging.basicConfig(level=verbosity,
-                        format=("%(asctime)s %(name)s %(levelname)s " +
-                                args.state + " %(message)s"),
-                        datefmt="%H:%M:%S")
+    configure_logging(args.verbose, args.state)
 
     import_versions(args.state, args.url)

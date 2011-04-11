@@ -7,22 +7,20 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 import xlrd
 
+_party_map = {'D': 'Democratic', 'R':'Republican', 'U':'Independent'}
 
 class MELegislatorScraper(LegislatorScraper):
     state = 'me'
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
-
-        session = ((int(term[0:4]) - 2009) / 2) + 124
+        self.validate_term(term, latest_only=True)
 
         if chamber == 'upper':
-            self.scrape_senators(chamber, session, term)
+            self.scrape_senators(chamber, term)
         elif chamber == 'lower':
-            self.scrape_reps(chamber, session, term)
+            self.scrape_reps(chamber, term)
 
-    def scrape_reps(self, chamber, session, term_name):
+    def scrape_reps(self, chamber, term_name):
         url = 'http://www.maine.gov/legis/house/dist_mem.htm'
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
@@ -46,9 +44,12 @@ class MELegislatorScraper(LegislatorScraper):
                         lastname = ""
                         middlename = ""
 
+                        # vacant
                         if party == "V":
-                            # vacant
                             continue
+                        else:
+                            party = _party_map[party]
+
 
                         leg = Legislator(term_name, chamber, str(district),
                                          name, firstname, lastname,
@@ -58,9 +59,31 @@ class MELegislatorScraper(LegislatorScraper):
 
                         self.save_legislator(leg)
 
-    def scrape_senators(self, chamber, session, term):
+    def scrape_senators(self, chamber, term):
+        session = ((int(term[0:4]) - 2009) / 2) + 124
         url = ('http://www.maine.gov/legis/senate/senators/email/'
                '%sSenatorsList.xls' % session)
+
+        DISTRICT = 1
+        FIRST_NAME = 3
+        MIDDLE_NAME = 4
+        LAST_NAME = 6
+        PARTY = 7
+
+        mapping = {
+            'district': 1,
+            'first_name': 3,
+            'middle_name': 4,
+            'last_name': 5,
+            'suffix': 6,
+            'party': 7,
+            'resident_county': 9,
+            'street_addr': 10,
+            'city': 11,
+            'zip_code': 13,
+            'phone': 14,
+            'email': 15,
+        }
 
         with self.urlopen(url) as senator_xls:
             with open('me_senate.xls', 'w') as f:
@@ -70,46 +93,36 @@ class MELegislatorScraper(LegislatorScraper):
         sh = wb.sheet_by_index(0)
 
         for rownum in xrange(1, sh.nrows):
-                district = str(int(sh.cell(rownum, 2).value))
-                first_name = sh.cell(rownum, 4).value
-                middle_name = sh.cell(rownum, 5).value
-                last_name = sh.cell(rownum, 6).value
-                suffix = sh.cell(rownum, 7).value
-                full_name = (first_name + " " + middle_name + " " +
-                             last_name + " " + suffix)
-                full_name = re.sub(r'\s+', ' ', full_name).strip()
+            # get fields out of mapping
+            d = {}
+            for field, col_num in mapping.iteritems():
+                d[field] = str(sh.cell(rownum, col_num).value)
 
-                party = sh.cell(rownum, 8).value
+            full_name = " ".join((d['first_name'], d['middle_name'],
+                                  d['last_name'], d['suffix']))
+            full_name = re.sub(r'\s+', ' ', full_name).strip()
 
-                # extra stuff that is easy to grab
-                resident_county = sh.cell(rownum, 9).value
-                street_addr = sh.cell(rownum, 10).value
-                city = sh.cell(rownum, 11).value
-                state = sh.cell(rownum, 12).value
-                zip_code = sh.cell(rownum, 13).value
+            address = "{street_addr}\n{city}, ME {zip_code}".format(**d)
 
-                address = "%s\n%s, %s %s" % (street_addr, city, state,
-                                             zip_code)
+            # For matching up legs with votes
+            district_name = d['city']
 
-                phone = str(sh.cell(rownum, 14).value)
-                email = str(sh.cell(rownum, 15).value)
+            phone = d['phone']
+            if phone.find("-") == -1:
+                phone = phone[0: len(phone) - 2]
+            else:
+                phone = phone[1:4] + phone[6:9] + phone[10:14]
 
-                # For matching up legs with votes
-                district_name = city
+            district = d['district'].split('.')[0]
 
-                if phone.find("-") == -1:
-                    phone = phone[0: len(phone) - 2]
-                else:
-                    phone = phone[1:4] + phone[6:9] + phone[10:14]
+            leg = Legislator(term, chamber, district, full_name,
+                             d['first_name'], d['last_name'], d['middle_name'],
+                             _party_map[d['party']], suffix=d['suffix'],
+                             resident_county=d['resident_county'],
+                             office_address=address,
+                             office_phone=phone,
+                             email=d['email'],
+                             disctict_name=district_name)
+            leg.add_source(url)
 
-                leg = Legislator(term, chamber, district, full_name,
-                                 first_name, last_name, middle_name,
-                                 party, suffix=suffix,
-                                 resident_county=resident_county,
-                                 office_address=address,
-                                 office_phone=phone,
-                                 email=email,
-                                 disctict_name=district_name)
-                leg.add_source(url)
-
-                self.save_legislator(leg)
+            self.save_legislator(leg)

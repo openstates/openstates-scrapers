@@ -2,7 +2,6 @@ from billy import db, utils
 
 import numpy
 from numpy import linalg
-import pymongo
 
 
 def generate_leg_indexes(state, term, chamber):
@@ -66,9 +65,9 @@ def pagerank(matrix, d_factor=0.85):
 
     # Divide each column by its number of outgoing links
     for i in xrange(0, size):
-        col_sum = matrix[:,i].sum()
+        col_sum = matrix[:, i].sum()
         if col_sum:
-            matrix[:,i] /= col_sum
+            matrix[:, i] /= col_sum
 
     e = ((1.0 - d_factor) / size) * numpy.ones((size, size))
     matrix = d_factor * matrix + e

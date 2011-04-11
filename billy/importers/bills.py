@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 import os
-import re
-import sys
-import time
 import glob
-import datetime
 from collections import defaultdict
 import json
 
@@ -47,6 +43,7 @@ def ensure_indexes():
                            ('session', pymongo.ASCENDING),
                            ('chamber', pymongo.ASCENDING),
                            ('sponsors', pymongo.ASCENDING)])
+
 
 def import_votes(state, data_dir):
     pattern = os.path.join(data_dir, 'votes', '*.json')
@@ -92,6 +89,10 @@ def import_bills(state, data_dir):
 
         # move subjects to scraped_subjects
         subjects = data.pop('subjects', None)
+
+        # NOTE: intentionally doesn't copy blank lists of subjects
+        # this avoids the problem where a bill is re-run but we can't
+        # get subjects anymore (quite common in fact)
         if subjects:
             data['scraped_subjects'] = subjects
 

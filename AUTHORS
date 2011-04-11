@@ -1,46 +1,39 @@
+Core Developers: Michael Stephens, James Turk
 
-Utilities: Michael Stephens, James Turk, Mark Olson, Ian Bicking, Jeremy Dunck
+Additional Utilities Improvements: Mark Olson, Ian Bicking, Jeremy Dunck
 
-AK: Michael Stephens, Mark Olson
-AL: Mark Olson
-AR: Ian Whalen
-AZ: Brandon Lewis, Dan Hixon, Marc Chung
-CA: Michael Stephens
-CO: Gabriel J. Pérez
-CT: Rebecca Shapiro
-DC: James Turk
-FL: Michael Stephens
-GA: Brantley Harris
-HI: Gabriel J. Pérez
-IL: Joe Germuska, Christopher Groskopf
-KY: Clayton Clark
-LA: Mark Olson
-MA: Rebecca Shapiro
-MD: Jeremy Carbaugh, James Turk
-ME: M. Jackson Wilkinson, Dan Schneiderman
-MI: Mark Olson
-MN: Jeff Ramnani
-MO: Matt Brennan, Craig Dennis
-MS: Justin Palmer, James Turk
-MT: James Falcon, Tim Freund
-NC: James Turk
-ND: Christopher Groskopf
-NH: Rebecca Shapiro
-NJ: Greg Osuri, Dan Schneiderman
-NV: Dan Schneiderman
-NY: Ben Woosley
-NM: Rishabh Manocha
-OH: Dan Schneiderman
-OR: Gabriel J. Pérez, James Cooper
-PA: Michael Stephens
-PR: Gabriel J. Pérez
-SC: Carson McDonald, Daniel Schep
-SD: Michael Stephens
-TN: Matt Grayson, Lucas Taylor
-TX: Michael Stephens
-UT: Michael Stephens
-VA: Mark Olson, James Turk
-VT: Michael Stephens
-WA: Gabriel J. Pérez
-WI: Mark Olson, James Turk
-WV: Ben Wolfson
+Additional Contributions:
+    AK: Mark Olson
+    AL: Mark Olson
+    AR: Ian Whalen
+    AZ: Brandon Lewis, Dan Hixon, Marc Chung
+    CO: Gabriel J. Pérez
+    CT: Rebecca Shapiro
+    GA: Brantley Harris
+    HI: Gabriel J. Pérez
+    IL: Joe Germuska, Christopher Groskopf
+    KY: Clayton Clark
+    LA: Mark Olson
+    MA: Rebecca Shapiro
+    MD: Jeremy Carbaugh
+    ME: M. Jackson Wilkinson, Dan Schneiderman
+    MI: Mark Olson
+    MN: Jeff Ramnani
+    MO: Matt Brennan, Craig Dennis
+    MS: Justin Palmer
+    MT: James Falcon, Tim Freund
+    ND: Christopher Groskopf
+    NH: Rebecca Shapiro
+    NJ: Greg Osuri, Dan Schneiderman
+    NV: Dan Schneiderman
+    NY: Ben Woosley
+    NM: Rishabh Manocha
+    OH: Dan Schneiderman
+    OR: Gabriel J. Pérez, James Cooper
+    PR: Gabriel J. Pérez
+    SC: Carson McDonald, Daniel Schep
+    TN: Matt Grayson, Lucas Taylor
+    VA: Mark Olson
+    WA: Gabriel J. Pérez
+    WI: Mark Olson
+    WV: Ben Wolfson

@@ -1,0 +1,151 @@
+{% extends "flatpage.html" %}
+{% load markup_tags %}
+
+{% block title %} Open State Project CSV Downloads {% endblock %}
+
+{% block content %}
+<h2> CSV Downloads </h2>
+
+{% rest %}
+
+CSV downloads are currently experimental, we haven't yet committed to regular updates.
+
+Let us know if you find these files useful, any feedback is welcome via the `Open State Project Google Group <http://groups.google.com/group/fifty-state-project>`_.
+
+See `downloads </downloads/>`_ for information on bulk downloads for each state.
+
+Obtaining CSV Downloads
+=======================
+
+The latest CSV dump can be obtained via the `downloads page </downloads/>`_
+
+For each state we provide a .zip file containing several CSV files.
+
+The following CSV files exist:
+
+legislators.csv
+---------------
+
+Basic information on legislators.
+
+    * ``leg_id``: Open States ID for legislator
+    * ``full_name``
+    * ``first_name``
+    * ``middle_name``
+    * ``last_name``
+    * ``suffixes``
+    * ``nickname``
+    * ``active``: True or False
+    * ``state``: if active, state for current role
+    * ``chamber``: if active, chamber for current role
+    * ``district``: if active, district for current role
+    * ``party``: if active, party for current role
+    * ``votesmart_id``: ID on votesmart.org
+    * ``transparencydata_id``: ID on transparencydata.com
+    * ``photo_url``
+    * ``created_at``: timestamp of when object was created in our system
+    * ``updated_at``: timestamp of when object was last updated in our system
+
+legislator_roles.csv
+--------------------
+
+Links legislators (by id) to any roles that they've had.
+
+    * ``leg_id``: Open States ID for legislator
+    * ``type``: type of role (likely to be 'member' or 'committee member')
+    * ``term``: term for which legislator held role
+    * ``district``: if role is member, will be district served
+    * ``chamber``: chamber of legislature (upper/lower)
+    * ``state``: if role is member, will be state legislator was active in
+    * ``party``: if role is member, will be legislator's party
+    * ``committee_id``: if role is committee member, will be Open States ID for committee
+    * ``committee``: if role if committee member, will be name of committee (parent if subcommittee)
+    * ``subcommittee``: if role if committee member, will be name of subcommittee
+    * ``start_date``: optional, start date for role
+    * ``end_date``: optional, end date for role
+
+committees.csv
+--------------
+
+List of committees (see legislator_roles.csv) for membership info.
+
+    * ``id``: Open States ID for committee
+    * ``state``
+    * ``chamber``: may be upper, lower, or joint
+    * ``committee``: name of committee (parent if subcommitee)
+    * ``subcommittee``: name of subcommittee (blank if committee)
+    * ``parent_id``: Open States ID for parent committee if this is a subcommitee
+
+bills.csv
+---------
+
+Basic details on all bills for a given state.
+
+    * ``bill_id``: state-assigned bill id (eg. HB 271 or SR 10)
+    * ``state``
+    * ``session``
+    * ``chamber``: upper or lower
+    * ``title``: state-given title of bill
+    * ``created_at``: timestamp of when object was created in our system
+    * ``updated_at``: timestamp of when object was last updated in our system
+    * ``type``: bill types, pipe delimited if multi-valued (see `categorization </categorization/>`_)
+    * ``subjects``: bill subjects, pipe delimited if multi-valued (see `categorization </categorization/>`_)
+
+bill_actions.csv
+----------------
+
+Listing of actions taken on all bills.
+
+    * ``state``: uniquely identifies bill together with session, chamber, and bill_id
+    * ``session``: uniquely identifies bill together with state, chamber, and bill_id
+    * ``chamber``: uniquely identifies bill together with state, session, and bill_id
+    * ``bill_id``:  uniquely identifies bill together with session, chamber, and chamber
+    * ``date``: date that action took place
+    * ``action``: state-given name of action
+    * ``actor``: often upper/lower, can be other values
+    * ``type``: type of action (see `categorization </categorization/>`_)
+
+bill_sponsors.csv
+-----------------
+
+Listing of sponsors across all bills.
+
+    * ``state``: uniquely identifies bill together with session, chamber, and bill_id
+    * ``session``: uniquely identifies bill together with state, chamber, and bill_id
+    * ``chamber``: uniquely identifies bill together with state, session, and bill_id
+    * ``bill_id``:  uniquely identifies bill together with session, chamber, and chamber
+    * ``type``: type of sponsor (primary/cosponsor/etc)
+    * ``name``: given name of sponsor
+    * ``leg_id``: Open States Legislator ID for sponsor
+
+bill_votes.csv
+--------------
+
+A listing of all votes on all bills.
+
+    * ``state``: uniquely identifies bill together with session, chamber, and bill_id
+    * ``session``: uniquely identifies bill together with state, chamber, and bill_id
+    * ``chamber``: uniquely identifies bill together with state, session, and bill_id
+    * ``bill_id``:  uniquely identifies bill together with session, chamber, and chamber
+    * ``vote_id``: Open States Vote ID for this vote
+    * ``vote_chamber``: chamber vote took place in (upper/lower)
+    * ``motion``
+    * ``date``
+    * ``type``: type of vote (see `categorization </categorization/>`_)
+    * ``yes_count``: number of 'yes' votes
+    * ``no_count``: number of 'no' votes
+    * ``other_count``: number of 'other' votes
+
+bill_legislator_votes.csv
+-------------------------
+
+Pairing of vote ids with how a specific legislator voted.
+
+    * ``vote_id``: Open States Vote ID, matches ``vote_id`` from bill_votes.csv
+    * ``leg_id``: Open States Legislator ID
+    * ``name``: name of legislator
+    * ``vote``: yes/no/other
+
+{% endrest %}
+
+{% endblock %}

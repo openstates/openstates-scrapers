@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import datetime
 import glob
 import logging
 import os
@@ -8,53 +7,37 @@ import argparse
 import json
 
 from billy.conf import settings, base_arg_parser
-from billy.scrape import (NoDataForPeriod, JSONDateEncoder,
-                                _scraper_registry)
+from billy.scrape import ScrapeError, JSONDateEncoder, get_scraper
+from billy.utils import configure_logging
 from billy.scrape.validator import DatetimeValidator
 
 
-class RunException(Exception):
-    """ exception when trying to run a scraper """
-
-    def __init__(self, msg, orig_exception=None):
-        self.msg = msg
-        self.orig_exception = orig_exception
-
-    def __str__(self):
-        if self.orig_exception:
-            return '%s\nOriginal Exception: %s' % (self.msg, self.orig_exception)
-        else:
-            return self.msg
-
-def _run_scraper(mod_path, state, scraper_type, options, metadata):
-    """
-        state: lower case two letter abbreviation of state
-        scraper_type: bills, legislators, committees, votes
-    """
+def _clear_scraped_data(output_dir, scraper_type):
     # make or clear directory for this type
-    path = os.path.join(options.output_dir, scraper_type)
+    path = os.path.join(output_dir, scraper_type)
     try:
         os.makedirs(path)
     except OSError as e:
         if e.errno != 17:
             raise e
         else:
-            for f in glob.glob(path+'/*.json'):
+            for f in glob.glob(path + '/*.json'):
                 os.remove(f)
 
-    try:
-        mod_path = '%s.%s' % (mod_path, scraper_type)
-        mod = __import__(mod_path)
-    except ImportError as e:
-        if not options.alldata:
-            raise RunException("could not import %s" % mod_path, e)
+
+def _run_scraper(mod_path, state, scraper_type, options, metadata):
+    """
+        state: lower case two letter abbreviation of state
+        scraper_type: bills, legislators, committees, votes
+    """
+    _clear_scraped_data(options.output_dir, scraper_type)
 
     try:
-        ScraperClass = _scraper_registry[state][scraper_type]
-    except KeyError as e:
+        ScraperClass = get_scraper(mod_path, state, scraper_type)
+    except ScrapeError as e:
+        # only re-raise if not alldata
         if not options.alldata:
-            raise RunException("no %s %s scraper found" %
-                               (state, scraper_type))
+            raise e
         else:
             return
 
@@ -64,7 +47,6 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
             'strict_validation': options.strict,
             'retry_attempts': settings.SCRAPELIB_RETRY_ATTEMPTS,
             'retry_wait_seconds': settings.SCRAPELIB_RETRY_WAIT_SECONDS,
-            # TODO: cache_dir, error_dir?
         }
     if options.fastmode:
         opts['requests_per_minute'] = 0
@@ -83,7 +65,8 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
                             times.extend(metaterm['sessions'])
             else:
                 latest_session = metadata['terms'][-1]['sessions'][-1]
-                print 'No session specified, using latest "%s"' % latest_session
+                print('No session specified, using latest "%s"' %
+                      latest_session)
                 times = [latest_session]
         else:
             times = options.sessions
@@ -164,19 +147,7 @@ def main():
     metadata = __import__(args.state, fromlist=['metadata']).metadata
     state = metadata['abbreviation']
 
-    # configure logger
-    if args.verbose == 0:
-        verbosity = logging.WARNING
-    elif args.verbose == 1:
-        verbosity = logging.INFO
-    else:
-        verbosity = logging.DEBUG
-
-    logging.basicConfig(level=verbosity,
-                        format="%(asctime)s %(name)s %(levelname)s " + state +
-                               " %(message)s",
-                        datefmt="%H:%M:%S",
-                       )
+    configure_logging(args.verbose, args.state)
 
     # make output dir
     args.output_dir = os.path.join(settings.BILLY_DATA_DIR, args.state)
@@ -219,9 +190,9 @@ def main():
 
     if not (args.bills or args.legislators or args.votes or
             args.committees or args.events or args.alldata):
-        raise RunException("Must specify at least one of --bills, "
-                           "--legislators, --committees, --votes, --events, "
-                           "--alldata")
+        raise ScrapeError("Must specify at least one of --bills, "
+                          "--legislators, --committees, --votes, --events, "
+                          "--alldata")
 
     if args.alldata:
         args.bills = True
@@ -244,6 +215,6 @@ def main():
 if __name__ == '__main__':
     try:
         result = main()
-    except RunException as e:
+    except ScrapeError as e:
         print 'Error:', e
         sys.exit(1)
