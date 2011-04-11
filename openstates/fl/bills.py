@@ -99,7 +99,7 @@ class FLBillScraper(BillScraper):
 
             try:
                 analysis_table = page.xpath(
-                    "//div[@id = 'tabBodyStaffAnalysis']/table")[0]
+                    "//div[@id = 'tabBodyAnalyses']/table")[0]
                 for tr in analysis_table.xpath("tbody/tr"):
                     name = tr.xpath("string(td[1])").strip()
                     name += " -- " + tr.xpath("string(td[3])").strip()
