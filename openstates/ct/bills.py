@@ -180,7 +180,8 @@ class CTBillScraper(BillScraper):
                 action = row['act_desc'].strip()
                 act_type = []
 
-                if action.endswith('COMM. ON'):
+                match = re.search('COMM(ITTEE|\.) ON$', action)
+                if match:
                     comm_code = row['qual1']
                     comm_name = self._committee_names.get(comm_code,
                                                           comm_code)
@@ -194,15 +195,15 @@ class CTBillScraper(BillScraper):
                     else:
                         action += ' %s' % row['qual1']
 
-                if re.match(r'^ADOPTED, (HOUSE|SENATE)', action):
-                    act_type.append('bill:passed')
-
                 match = re.search(r'REFERRED TO OLR, OFA (.*)',
                                   action)
                 if match:
                     action = ('REFERRED TO Office of Legislative Research'
                               ' AND Office of Fiscal Analysis %s' % (
                                   match.group(1)))
+
+                if re.match(r'^ADOPTED, (HOUSE|SENATE)', action):
+                    act_type.append('bill:passed')
 
                 if not act_type:
                     act_type = ['other']
