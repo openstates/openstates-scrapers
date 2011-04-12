@@ -117,3 +117,11 @@ class Vote(SourcedObject):
         voted 'present', or made any other vote not covered by 'yes' or 'no'.
         """
         self['other_votes'].append(legislator)
+
+    def validate(self):
+        if self['yes_votes'] or self['no_votes'] or self['other_votes']:
+            # If we have *any* specific votes, then validate the counts
+            # for all types.
+            assert len(self['yes_votes']) == self['yes_count']
+            assert len(self['no_votes']) == self['no_count']
+            assert len(self['other_votes']) == self['other_count']
