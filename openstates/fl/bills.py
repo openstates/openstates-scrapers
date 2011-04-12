@@ -154,14 +154,12 @@ class FLBillScraper(BillScraper):
         vote.add_source(url)
 
         for line in text.split('\n')[9:]:
-            col_slices = [(0, 37), (37, 64), (64, None)]
-            for start, end in col_slices:
-                col = line[start:end].strip()
-
+            for col in re.split(r'-\d+', line):
+                col = col.strip()
                 if not col:
                     continue
 
-                match = re.match(r'(Y|N|EX)\s+([^-]+)-\d+', col)
+                match = re.match(r'(Y|N|EX)\s+(.+)$', col)
                 if match:
                     if match.group(1) == 'Y':
                         vote.yes(match.group(2))
@@ -170,9 +168,7 @@ class FLBillScraper(BillScraper):
                     else:
                         vote.other(match.group(2))
                 else:
-                    name = '-'.join(col.split('-')[:-1])
-                    assert name
-                    vote.other(name)
+                    vote.other(name.strip())
 
         vote.validate()
         bill.add_vote(vote)
