@@ -168,7 +168,7 @@ class FLBillScraper(BillScraper):
                     else:
                         vote.other(match.group(2))
                 else:
-                    vote.other(name.strip())
+                    vote.other(col.strip())
 
         vote.validate()
         bill.add_vote(vote)
