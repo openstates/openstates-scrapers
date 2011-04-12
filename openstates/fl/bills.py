@@ -156,6 +156,8 @@ class FLBillScraper(BillScraper):
         for line in text.split('\n')[9:]:
             if 'after roll call' in line:
                 break
+            if 'Presiding' in line:
+                continue
 
             for col in re.split(r'-\d+', line):
                 col = col.strip()
