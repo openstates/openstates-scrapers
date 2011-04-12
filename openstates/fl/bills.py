@@ -152,8 +152,6 @@ class FLBillScraper(BillScraper):
                     other_count)
         vote.add_source(url)
 
-        sv_text = '\n'.join(text.split('\n')[9:])
-
         for line in text.split('\n')[9:]:
             col_slices = [(0, 37), (37, 64), (64, None)]
             for start, end in col_slices:
