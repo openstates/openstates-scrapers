@@ -152,16 +152,28 @@ class FLBillScraper(BillScraper):
                     other_count)
         vote.add_source(url)
 
-        for match in re.finditer(r'(Y|EX|N)\s+([^-]+)-\d+', text):
-            vtype = match.group(1)
-            name = match.group(2)
+        sv_text = '\n'.join(text.split('\n')[9:])
 
-            if vtype == 'Y':
-                vote.yes(name)
-            elif vtype == 'N':
-                vote.no(name)
-            else:
-                vote.other(name)
+        for line in text.split('\n')[9:]:
+            col_slices = [(0, 37), (37, 64), (64, None)]
+            for start, end in col_slices:
+                col = line[start:end].strip()
+
+                if not col:
+                    continue
+
+                match = re.match(r'(Y|N|EX)\s+([^-]+)-\d+', col)
+                if match:
+                    if match.group(1) == 'Y':
+                        vote.yes(match.group(2))
+                    elif match.group(1) == 'N':
+                        vote.no(match.group(2))
+                    else:
+                        vote.other(match.group(2))
+                else:
+                    name = '-'.join(col.split('-')[:-1])
+                    assert name
+                    vote.other(name)
 
         vote.validate()
         bill.add_vote(vote)
