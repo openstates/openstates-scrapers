@@ -140,6 +140,7 @@ class FLBillScraper(BillScraper):
     def scrape_vote(self, bill, chamber, date, url):
         (path, resp) = self.urlretrieve(url)
         text = convert_pdf(path, 'text')
+        os.remove(path)
 
         motion = text.split('\n')[4].strip()
 
