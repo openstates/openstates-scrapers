@@ -154,6 +154,9 @@ class FLBillScraper(BillScraper):
         vote.add_source(url)
 
         for line in text.split('\n')[9:]:
+            if 'after roll call' in line:
+                break
+
             for col in re.split(r'-\d+', line):
                 col = col.strip()
                 if not col:
