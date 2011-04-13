@@ -14,10 +14,10 @@ def parse_name(name):
     ('Felix Ortiz', 'member')
     >>> parse_name('Felix Ortiz (Chair)')
     ('Felix Ortiz', 'chair')
-    >>> parse_name('Felix Ortiz, Co-Chair')
+    >>> parse_name('Hon. Felix Ortiz, Co-Chair')
     ('Felix Ortiz', 'co-chair')
     """
-    name = re.sub(r'^Hon.\s+', '', name)
+    name = re.sub(r'^(Hon\.|Assemblyman|Assemblywoman)\s+', '', name)
 
     roles = ["Chair", "Chairwoman", "Secretary", "Treasurer",
              "Parliamentarian", "Chaplain"]
