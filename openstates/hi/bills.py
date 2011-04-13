@@ -53,7 +53,6 @@ class HIBillScraper(BillScraper):
             page.make_links_absolute(bill_list_url)
             table = page.xpath('//table[contains(@id, "ReportGridView")]')[0]
             for row in table.xpath('tr'):
-                # import pdb; pdb.set_trace()
                 self.scrape_regular_row(chamber, session, row)
 
     def scrape_regular_row(self, chamber, session, row):
@@ -75,7 +74,8 @@ class HIBillScraper(BillScraper):
             sponsors = row.xpath('td/font/span[contains(@id, "_Label7")]')[0].text
             params['companion'] = row.xpath('td/font/span[contains(@id, "_Label8")]')[0].text
             bill = Bill(**params)
-            bill.add_sponsor('primary', sponsors)
+            for sponsor in sponsors.split(', '):
+                bill.add_sponsor('primary', sponsor)
             actions = self.scrape_actions(bill, bill_status_url)
             bill.add_source(bill_status_url)
             self.save_bill(bill)
@@ -89,7 +89,6 @@ class HIBillScraper(BillScraper):
             page.make_links_absolute(bill_url)
             table = page.xpath('//table[contains(@id, "GridView1")]')[0]
             for row in table.xpath('tr'):
-                # import pdb; pdb.set_trace()
                 action_params = {}
                 cells = row.xpath('td')
                 if len(cells) == 3:
@@ -131,7 +130,6 @@ class HIBillScraper(BillScraper):
             actions = []
             table = page.xpath('//table[tr/th[contains(., "Date")]]')[0]
             for row in table.xpath('tr[td]'): # Ignore table header row.
-                # import pdb; pdb.set_trace()
                 action_params = {}
                 cells = row.xpath('td')
                 if len(cells) == 3:
@@ -157,7 +155,6 @@ class HIBillScraper(BillScraper):
             page.make_links_absolute(bill_list_url)
             table = page.xpath('//table[tr/th[contains(., "Measure Status")]]')[0]
             for row in table.xpath('tr'):
-                # import pdb; pdb.set_trace()
                 self.scrape_20101SS_row(chamber, session, row)
 
     def scrape_20101SS_row(self, chamber, session, row):
@@ -199,7 +196,6 @@ class HIBillScraper(BillScraper):
             actions = []
             table = page.xpath('//table[tr/th[contains(., "Date")]]')[0]
             for row in table.xpath('tr[td]'): # Ignore table header row
-                # import pdb; pdb.set_trace()
                 action_params = {}
                 cells = row.xpath('td')
                 if len(cells) == 3:
@@ -229,7 +225,6 @@ class HIBillScraper(BillScraper):
             page.make_links_absolute(bill_list_url)
             table = page.xpath('//table[@id="ReportGridView"]')[0]
             for row in table.xpath('tr'):
-                # import pdb; pdb.set_trace()
                 self.scrape_20091SS_row(chamber, session, row)
 
     def scrape_20091SS_row(self, chamber, session, row):
