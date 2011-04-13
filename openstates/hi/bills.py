@@ -86,7 +86,7 @@ class HIBillScraper(BillScraper):
             params['title'] = row.xpath('td/font/span[contains(@id, "_Label1")]/u/font')[0].text
             subject = row.xpath('td/font/span[contains(@id, "_Label6")]')[0].text
             subject = subject.replace('RELATING TO ', '') # Remove lead text
-            params['subject'] = subject.replace('.', '')
+            params['subjects'] = [subject.replace('.', '')]
             params['description'] = row.xpath('td/font/span[contains(@id, "_Label2")]')[0].text
             sponsors = row.xpath('td/font/span[contains(@id, "_Label7")]')[0].text
             params['companion'] = row.xpath('td/font/span[contains(@id, "_Label8")]')[0].text
