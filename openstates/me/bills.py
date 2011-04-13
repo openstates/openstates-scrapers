@@ -91,7 +91,7 @@ class MEBillScraper(BillScraper):
                 sdoc = lxml.html.fromstring(spon_html)
                 srow = sdoc.xpath('//table[@class="sectionbody"]/tr[2]/td/text()')[1:]
                 if srow:
-                    bill['subjects'] = [s.strip() for s in srow]
+                    bill['subjects'] = [s.strip() for s in srow if s.strip()]
 
             ver_link = page.xpath("//a[contains(@href, 'display_ps.asp')]")[0]
             ver_url = ver_link.get('href')
