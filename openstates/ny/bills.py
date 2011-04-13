@@ -118,9 +118,8 @@ class NYBillScraper(BillScraper):
             date = b.text.split('-')[1].strip()
             date = datetime.datetime.strptime(date, "%b %d, %Y").date()
 
-            yes_votes = []
-            no_votes = []
-            other_votes = []
+            yes_votes, no_votes, other_votes = [], [], []
+            yes_count, no_count, other_count = 0, 0, 0
 
             vtype = None
             for tag in b.xpath("following-sibling::blockquote/*"):
@@ -128,11 +127,17 @@ class NYBillScraper(BillScraper):
                     text = tag.text
                     if text.startswith('Ayes'):
                         vtype = 'yes'
+                        yes_count = int(re.search(
+                            r'\((\d+)\):', text).group(1))
                     elif text.startswith('Nays'):
                         vtype = 'no'
+                        no_count = int(re.search(
+                            r'\((\d+)\):', text).group(1))
                     elif (text.startswith('Excused') or
                           text.startswith('Abstains')):
                         vtype = 'other'
+                        other_count += int(re.search(
+                            r'\((\d+)\):', text).group(1))
                     else:
                         raise ValueError('bad vote type: %s' % tag.text)
                 elif tag.tag == 'a':
@@ -144,9 +149,6 @@ class NYBillScraper(BillScraper):
                     elif vtype == 'other':
                         other_votes.append(name)
 
-            yes_count = len(yes_votes)
-            no_count = len(no_votes)
-            other_count = len(other_votes)
             passed = yes_count > (no_count + other_count)
 
             vote = Vote('upper', date, 'Floor Vote', passed, yes_count,
