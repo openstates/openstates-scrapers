@@ -93,9 +93,8 @@ class HIBillScraper(BillScraper):
         return
 
     def parse_vote(self, bill, action, chamber, date):
-        pattern = r"were as follows: (?P<n_yes>\d+) Aye\(?s\)?: (?P<yes>.*?); Aye\(?s\)? with reservations: (?P<yes_resv>.*?); (?P<n_no>\d*) No\(?es\)?: (?P<no>.*?); and (?P<n_excused>\d*) Excused: (?P<excused>.*)"
+        pattern = r"were as follows: (?P<n_yes>\d+) Aye\(?s\)?:\s+(?P<yes>.*?);\s+Aye\(?s\)? with reservations:\s+(?P<yes_resv>.*?);\s+(?P<n_no>\d*) No\(?es\)?:\s+(?P<no>.*?);\s+and (?P<n_excused>\d*) Excused: (?P<excused>.*)"
         if 'as follows' in action:
-            print action
             result = re.search(pattern, action).groupdict()
             motion = action.split('.')[0] + '.'
             vote = Vote(chamber, date, motion, 'PASSED' in action,
