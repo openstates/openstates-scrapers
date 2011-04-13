@@ -66,7 +66,7 @@ class HIBillScraper(BillScraper):
         if b: # Ignore if no match
             bill_status_url = b[0].attrib['href']
             bill_url = row.xpath('td/font/span[contains(@id, "_Label2")]')[0].text
-            params['bill_id'] = b[0].xpath('font')[0].text
+            params['bill_id'] = b[0].xpath('font')[0].text.split()[0]
             params['title'] = row.xpath('td/font/span[contains(@id, "_Label1")]/u/font')[0].text
             subject = row.xpath('td/font/span[contains(@id, "_Label6")]')[0].text
             subject = subject.replace('RELATING TO ', '') # Remove lead text

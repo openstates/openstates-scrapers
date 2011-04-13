@@ -19,7 +19,7 @@ class HILegislatorScraper(LegislatorScraper):
         chamber and session defined in module __init__.py.
         """
         self.term_scraper = {
-            '2009-2011': ["/session2011/members/%s/%smembers.aspx", self.scrape_2011Leg],
+            '2011-2012': ["/session2011/members/%s/%smembers.aspx", self.scrape_2011Leg],
         }
 
     def scrape(self, chamber, term):
