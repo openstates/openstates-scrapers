@@ -1,11 +1,8 @@
-from billy.scrape import ScrapeError, NoDataForPeriod
-from billy.scrape.votes import Vote
 from billy.scrape.bills import BillScraper, Bill
-from openstates.hi import metadata
+from billy.scrape.votes import Vote
 
 import lxml.html
 from datetime import datetime
-import os
 import re
 
 from utils import STATE_URL, house, chamber_label # Data structures.
