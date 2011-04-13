@@ -17,6 +17,8 @@ def parse_name(name):
     >>> parse_name('Felix Ortiz, Co-Chair')
     ('Felix Ortiz', 'co-chair')
     """
+    name = re.sub(r'^Hon.\s+', '', name)
+
     roles = ["Chair", "Chairwoman", "Secretary", "Treasurer",
              "Parliamentarian", "Chaplain"]
     match = re.match(r'(.*),? \(?((Co|Vice)?-?\s*(%s))\)?' % '|'.join(roles),
