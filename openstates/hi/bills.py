@@ -6,6 +6,7 @@ from openstates.hi import metadata
 import lxml.html
 from datetime import datetime
 import os
+import re
 
 from utils import STATE_URL, house, chamber_label # Data structures.
 from utils import get_session_details, get_chamber_string # Functions.
