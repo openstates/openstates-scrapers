@@ -38,7 +38,6 @@ class HILegislatorScraper(LegislatorScraper):
 
     def scrape_2011Leg(self, chamber, term, url):
         """2011 Scraper for legislators"""
-        titles = {'lower': 'Representative', 'upper': 'Senator'}
         parties = {'(D)': 'Democratic', '(R)': 'Republican'}
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
@@ -47,7 +46,6 @@ class HILegislatorScraper(LegislatorScraper):
             for row in table.xpath('tr[td/a[contains(@href, "memberpage")]]'):
                 params = {}
                 district = row.xpath('td/span[contains(@id, "LabelDistrict")]/font')[0].text
-                params['title'] = titles.get(chamber, '')
                 last_name = row.xpath('td/a[contains(@id, "HyperLinkLast")]/font')[0].text.strip()
                 first_names = row.xpath('td/span[contains(@id, "LabelFirst")]/font')[0].text.strip()
                 first_name = first_names.split()[0]
@@ -65,5 +63,3 @@ class HILegislatorScraper(LegislatorScraper):
                         first_name, last_name, middle_name, party, **params)
                 leg.add_source(url)
                 self.save_legislator(leg)
-
-
