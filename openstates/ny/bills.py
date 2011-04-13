@@ -2,6 +2,7 @@ import re
 import datetime
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 import scrapelib
 import lxml.html
@@ -105,7 +106,57 @@ class NYBillScraper(BillScraper):
             text_link = page.xpath("//a[contains(@href, 'lrs-print')]")[0]
             bill.add_version(bill['bill_id'], text_link.attrib['href'])
 
+            self.scrape_votes(bill, page)
+
             subjects = []
             for link in page.xpath("//a[contains(@href, 'lawsection')]"):
                 subjects.append(link.text.strip())
             bill['subjects'] = subjects
+
+    def scrape_votes(self, bill, page):
+        for b in page.xpath("//div/b[starts-with(., 'VOTE: FLOOR VOTE:')]"):
+            date = b.text.split('-')[1].strip()
+            date = datetime.datetime.strptime(date, "%b %d, %Y").date()
+
+            yes_votes = []
+            no_votes = []
+            other_votes = []
+
+            vtype = None
+            for tag in b.xpath("following-sibling::blockquote/*"):
+                if tag.tag == 'b':
+                    text = tag.text
+                    if text.startswith('Ayes'):
+                        vtype = 'yes'
+                    elif text.startswith('Nays'):
+                        vtype = 'no'
+                    elif (text.startswith('Excused') or
+                          text.startswith('Abstains')):
+                        vtype = 'other'
+                    else:
+                        raise ValueError('bad vote type: %s' % tag.text)
+                elif tag.tag == 'a':
+                    name = tag.text.strip()
+                    if vtype == 'yes':
+                        yes_votes.append(name)
+                    elif vtype == 'no':
+                        no_votes.append(name)
+                    elif vtype == 'other':
+                        other_votes.append(name)
+
+            yes_count = len(yes_votes)
+            no_count = len(no_votes)
+            other_count = len(other_votes)
+            passed = yes_count > (no_count + other_count)
+
+            vote = Vote('upper', date, 'Floor Vote', passed, yes_count,
+                        no_count, other_count)
+
+            for name in yes_votes:
+                vote.yes(name)
+            for name in no_votes:
+                vote.no(name)
+            for name in other_votes:
+                vote.other(name)
+
+            bill.add_vote(vote)

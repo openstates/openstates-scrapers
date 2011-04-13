@@ -1,3 +1,5 @@
+import re
+
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
@@ -24,6 +26,9 @@ class NYCommitteeScraper(CommitteeScraper):
 
             for link in page.xpath("//a[contains(@href, 'sec=mem')]"):
                 name = link.xpath("string(../strong)").strip()
+                if 'Caucus' in name:
+                    continue
+
                 url = link.attrib['href']
 
                 self.scrape_lower_committee(name, url)
@@ -37,6 +42,8 @@ class NYCommitteeScraper(CommitteeScraper):
 
             for link in page.xpath("//a[contains(@href, 'mem?ad')]"):
                 member = link.text.strip()
+                member = re.sub(r'\s+', ' ', member)
+
                 comm.add_member(member)
 
             self.save_committee(comm)
@@ -66,6 +73,7 @@ class NYCommitteeScraper(CommitteeScraper):
                     continue
 
                 member = link.text.strip()
+                member = re.sub(r'\s+', ' ', member)
 
                 if member in seen or not member:
                     continue
