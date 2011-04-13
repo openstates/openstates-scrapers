@@ -39,7 +39,7 @@ class HILegislatorScraper(LegislatorScraper):
     def scrape_2011Leg(self, chamber, term, url):
         """2011 Scraper for legislators"""
         titles = {'lower': 'Representative', 'upper': 'Senator'}
-        parties = {'(D)': 'Democrat', '(R)': 'Republican'}
+        parties = {'(D)': 'Democratic', '(R)': 'Republican'}
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
