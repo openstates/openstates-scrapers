@@ -26,7 +26,8 @@ class NYCommitteeScraper(CommitteeScraper):
 
             for link in page.xpath("//a[contains(@href, 'sec=mem')]"):
                 name = link.xpath("string(../strong)").strip()
-                name = re.sub(r'\s+', ' ', name)
+                if 'Caucus' in name:
+                    continue
 
                 url = link.attrib['href']
 
@@ -41,6 +42,8 @@ class NYCommitteeScraper(CommitteeScraper):
 
             for link in page.xpath("//a[contains(@href, 'mem?ad')]"):
                 member = link.text.strip()
+                member = re.sub(r'\s+', ' ', member)
+
                 comm.add_member(member)
 
             self.save_committee(comm)
