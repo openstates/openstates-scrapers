@@ -6,6 +6,28 @@ from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
 
 
+def parse_name(name):
+    """
+    Split a committee membership string into name and role.
+
+    >>> parse_name('Felix Ortiz')
+    ('Felix Ortiz', 'member')
+    >>> parse_name('Felix Ortiz (Chair)')
+    ('Felix Ortiz', 'chair')
+    >>> parse_name('Felix Ortiz, Co-Chair')
+    ('Felix Ortiz', 'co-chair')
+    """
+    roles = ["Chair", "Chairwoman", "Secretary", "Treasurer",
+             "Parliamentarian", "Chaplain"]
+    match = re.match(r'(.*),? \(?((Co|Vice)?-?\s*(%s))\)?' % '|'.join(roles),
+                     name)
+    if match:
+        name = match.group(1).strip(' ,')
+        role = match.group(2).lower()
+        return (name, role)
+    return (name, 'member')
+
+
 class NYCommitteeScraper(CommitteeScraper):
     state = "ny"
 
@@ -44,7 +66,8 @@ class NYCommitteeScraper(CommitteeScraper):
                 member = link.text.strip()
                 member = re.sub(r'\s+', ' ', member)
 
-                comm.add_member(member)
+                name, role = parse_name(member)
+                comm.add_member(name, role)
 
             self.save_committee(comm)
 
@@ -79,6 +102,7 @@ class NYCommitteeScraper(CommitteeScraper):
                     continue
                 seen.add(member)
 
-                comm.add_member(member)
+                name, role = parse_name(member)
+                comm.add_member(name, role)
 
             self.save_committee(comm)
