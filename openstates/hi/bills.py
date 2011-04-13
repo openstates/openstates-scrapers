@@ -107,6 +107,7 @@ class HIBillScraper(BillScraper):
                 vote.no(voter)
             for voter in split_specific_votes(result['excused']):
                 vote.other(voter)
+        bill.add_vote(vote)
 
 
     def scrape_actions(self, bill, bill_url):
