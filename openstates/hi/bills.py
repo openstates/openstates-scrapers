@@ -15,9 +15,9 @@ def split_specific_votes(voters):
     if voters.startswith('none'):
         return []
     elif voters.startswith('Senator(s)'):
-        voters.replace('Senator(s) ', '')
+        voters = voters.replace('Senator(s) ', '')
     elif voters.startswith('Representative(s)'):
-        voters.replace('Representative(s)', '')
+        voters = voters.replace('Representative(s)', '')
     return voters.split(', ')
 
 
@@ -98,7 +98,9 @@ class HIBillScraper(BillScraper):
             result = re.search(pattern, action).groupdict()
             motion = action.split('.')[0] + '.'
             vote = Vote(chamber, date, motion, 'PASSED' in action,
-                        result['n_yes'], result['n_no'], result['n_excused'])
+                        result['n_yes'] or 0,
+                        result['n_no'] or 0,
+                        result['n_excused'] or 0)
             for voter in split_specific_votes(result['yes']):
                 vote.yes(voter)
             for voter in split_specific_votes(result['yes_resv']):
