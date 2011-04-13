@@ -98,9 +98,9 @@ class HIBillScraper(BillScraper):
             result = re.search(pattern, action).groupdict()
             motion = action.split('.')[0] + '.'
             vote = Vote(chamber, date, motion, 'PASSED' in action,
-                        result['n_yes'] or 0,
-                        result['n_no'] or 0,
-                        result['n_excused'] or 0)
+                        int(result['n_yes']) or 0,
+                        int(result['n_no']) or 0,
+                        int(result['n_excused']) or 0)
             for voter in split_specific_votes(result['yes']):
                 vote.yes(voter)
             for voter in split_specific_votes(result['yes_resv']):
