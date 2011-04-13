@@ -1,14 +1,25 @@
 metadata = {
-    'state_name': 'Georgia',
+    'name': 'Georgia',
+    'abbreviation': 'ga',
     'legislature_name': 'Georgia General Assembly',
     'upper_chamber_name': 'Senate',
     'lower_chamber_name': 'House of Representatives',
-    'upper_title': 'Senator',
-    'lower_title': 'Representative',
-    'upper_term': 2,
-    'lower_term': 2,
+    'upper_chamber_title': 'Senator',
+    'lower_chamber_title': 'Representative',
+    'upper_chamber_term': 2,
+    'lower_chamber_term': 2,
+    'terms': [
+        {'name': '1995_1996', 'start_year': 1995, 'end_year': 1996, 'sessions': ['1995 Regular Session']},
+        {'name': '1997_1998', 'start_year': 1997, 'end_year': 1998, 'sessions': ['1997 Regular Session']},
+        {'name': '1999_2000', 'start_year': 1999, 'end_year': 2000, 'sessions': ['1999 Regular Session']},
+        {'name': '2001_2002', 'start_year': 2001, 'end_year': 2002, 'sessions': ['2001 Regular Session']},
+        {'name': '2003_2004', 'start_year': 2003, 'end_year': 2004, 'sessions': ['2003 Regular Session']},
+        {'name': '2005_2006', 'start_year': 2005, 'end_year': 2006, 'sessions': ['2005 Regular Session']},
+        {'name': '2007_2008', 'start_year': 2007, 'end_year': 2008, 'sessions': ['2007 Regular Session']},
+        {'name': '2009_2010', 'start_year': 2009, 'end_year': 2010, 'sessions': ['2009 Regular Session']}
+    ],
     'sessions': ['1995_1996', '1997_1998', '1999_2000', '2001_2002',
-                 '2003_2004', '2005_2006', '2007_2008', '2009_2010',],
+                 '2003_2004', '2005_2006', '2007_2008', '2009_2010', ],
     'session_details': {
         '1995_1996': {'years': [1995, 1996], 'sub_sessions': []},
         '1997_1998': {'years': [1997, 1998], 'sub_sessions': []},
@@ -18,5 +29,5 @@ metadata = {
         '2005_2006': {'years': [2005, 2006], 'sub_sessions': []},
         '2007_2008': {'years': [2007, 2008], 'sub_sessions': []},
         '2009_2010': {'years': [2009, 2010], 'sub_sessions': []},
-        }
-    }
+    },
+}

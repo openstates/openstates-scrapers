@@ -26,7 +26,7 @@ class GALegislatorScraper(LegislatorScraper):
                 raise
 
     def scrape(self, chamber, term):
-        year = int(term)
+        year = int(term[0: term.index('_')])
 
         if (year < 2000):
             raise NoDataForPeriod(year)
@@ -54,22 +54,30 @@ class GALegislatorScraper(LegislatorScraper):
             page.make_links_absolute(url)
             path = '//table[@id="hoverTable"]/tr'
             roster = page.xpath(path)[1:]
-            found_it = True
+            found_it = False
             for row in roster:
+                #if found_it:
+                #   return
+                district = row.getchildren()[1].text_content()
                 name = row.getchildren()[0]
                 # attempt to get the url to the specific legislators page
                 for name_child in name.getchildren():
                     if name_child.tag == 'a':
                         # Now that we got the specific legislators page, scrape that page
                         link = name_child.get('href')
-                        if 'wilkinsonJoe' not in link and not found_it:
-                            continue
+                        if 'Bio' in link:
+                            link = link.replace('Bio', '')  # Don't go to bio pages
+                            # Make sure if it ends in html go to htm as the regular contact pages are htm pages
+                            if link.endswith("html"):
+                                link = link.replace("html", 'htm')
+                        #if 'kiddRusty' not in link and not found_it:
+                        #    continue
                         found_it = True
-                        legislator = self._scrape_individual_legislator_page(link, chamber, term)
+                        legislator = self._scrape_individual_legislator_page(link, term, chamber, district=district)
                         if legislator is not None:
                             self.save_legislator(legislator)
 
-    def _scrape_individual_legislator_page(self, url, term, chamber):
+    def _scrape_individual_legislator_page(self, url, term, chamber, district=None):
         """Scrape a specific lower house legislators page. The function will actually
         call one of three functions as there is 2 different bio templates and a completely
         separate one for the speaker of the house.
@@ -93,10 +101,11 @@ class GALegislatorScraper(LegislatorScraper):
 
             for style_sheet in stylesheets:
                 if 'legis.ga.gov.house.factsheet.css' in style_sheet.get('href') or \
-                   'legis.ga.gov.house.bio.css' in style_sheet.get('href') :
-                    return self._scrape_individual_legislator_page_second_template(page, term, chamber)
+                   'legis.ga.gov.house.bio.css' in style_sheet.get('href'):
 
+                    return self._scrape_individual_legislator_page_second_template(page, term, chamber, district=district)
 
+            return None
             path = '//table[@id="hoverTable"]/tr'
             legislator_info = page.xpath(path)
 
@@ -129,12 +138,12 @@ class GALegislatorScraper(LegislatorScraper):
                 if party == '':
                     party = td_elements.text_content().split('\n')[1].strip()[0:1]
 
-            district = None
-            if len(td_elements) < 3 or "District" not in td_elements[2].text_content():
-                text_content = first_row[1].text_content().split('\n')
-                district = text_content[0].strip()[len("District "):]
-            else:
-                district = td_elements[2].text_content().strip()[len("District "):]
+            if not district:
+                if len(td_elements) < 3 or "District" not in td_elements[2].text_content():
+                    text_content = first_row[1].text_content().split('\n')
+                    district = text_content[0].strip()[len("District "):]
+                else:
+                    district = td_elements[2].text_content().strip()[len("District "):]
 
             # Not every legislator has a sworn in date or facebook url, so attempt to parse
             # and just pass if it fails
@@ -189,9 +198,26 @@ class GALegislatorScraper(LegislatorScraper):
             legislator.add_source(url)
             return legislator
 
-    def _scrape_individual_legislator_page_second_template(self, page, term, chamber):
-        print 'found a second template one!!!'
-        return Legislator(term, chamber, 'district #', 'Foo Bar Name', party='Democratic')
+    def _scrape_individual_legislator_page_second_template(self, page, term, chamber, district=None):
+        party = None
+        li_nodes = page.xpath('//li/text()')
+        for li_node in li_nodes:
+            if 'Democrat' in li_node:
+                party = "Democrat"
+                break
+            elif 'Republican' in li_node:
+                party = "Republican"
+                break
+            elif "I" == li_node.strip():
+                party = "Independent"
+                break
+
+        h1_nodes = page.xpath('//h1/text()')
+        if len(h1_nodes) > 0:
+            name = h1_nodes[0][len("Representative "):]
+
+        return Legislator(term, chamber, district, name, party=party)
 
     def _scrape_speaker_of_the_house(self, url, term, chamber):
+        print "###############################3 %s" % url
         pass
