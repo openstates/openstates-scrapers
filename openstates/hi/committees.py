@@ -19,12 +19,13 @@ class HICommitteeScraper(CommitteeScraper):
 
             for a in doc.xpath('//a[contains(@id, "HyperLinkCommName")]'):
                 com = Committee(chamber, a.text_content())
-                com.add_source(url)
                 self.scrape_committee(com, a.get('href'))
                 self.save_committee(com)
 
 
     def scrape_committee(self, committee, url):
+        committee.add_source(url)
+
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
             chair = doc.xpath('//a[@id="HyperLinkChair"]/text()')[0].strip()
