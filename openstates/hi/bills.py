@@ -149,7 +149,7 @@ class HIBillScraper(BillScraper):
                     action_params['action'] = cells[2].xpath('font')[0].text
                     action_date = cells[0].xpath('font')[0].text
                     action_params['date'] = datetime.strptime(action_date, "%m/%d/%Y")
-                    action_params['type'] = classify_action(action_params['action'])
+                    action_params['type'] = categorize_action(action_params['action'])
                     actions.append(action_params)
             for action_params in actions:
                 bill.add_action(**action_params)
