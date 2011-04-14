@@ -1,14 +1,22 @@
-from billy.scrape import ScrapeError, NoDataForPeriod
-from billy.scrape.votes import Vote
 from billy.scrape.bills import BillScraper, Bill
-from openstates.hi import metadata
+from billy.scrape.votes import Vote
 
 import lxml.html
 from datetime import datetime
-import os
+import re
 
 from utils import STATE_URL, house, chamber_label # Data structures.
 from utils import get_session_details, get_chamber_string # Functions.
+
+def split_specific_votes(voters):
+    if voters.startswith('none'):
+        return []
+    elif voters.startswith('Senator(s)'):
+        voters = voters.replace('Senator(s) ', '')
+    elif voters.startswith('Representative(s)'):
+        voters = voters.replace('Representative(s)', '')
+    return voters.split(', ')
+
 
 class HIBillScraper(BillScraper):
     state = 'hi'
@@ -81,6 +89,26 @@ class HIBillScraper(BillScraper):
             self.save_bill(bill)
         return
 
+    def parse_vote(self, bill, action, chamber, date):
+        pattern = r"were as follows: (?P<n_yes>\d+) Aye\(?s\)?:\s+(?P<yes>.*?);\s+Aye\(?s\)? with reservations:\s+(?P<yes_resv>.*?);\s+(?P<n_no>\d*) No\(?es\)?:\s+(?P<no>.*?);\s+and (?P<n_excused>\d*) Excused: (?P<excused>.*)"
+        if 'as follows' in action:
+            result = re.search(pattern, action).groupdict()
+            motion = action.split('.')[0] + '.'
+            vote = Vote(chamber, date, motion, 'PASSED' in action,
+                        int(result['n_yes'] or 0),
+                        int(result['n_no'] or 0),
+                        int(result['n_excused'] or 0))
+            for voter in split_specific_votes(result['yes']):
+                vote.yes(voter)
+            for voter in split_specific_votes(result['yes_resv']):
+                vote.yes(voter)
+            for voter in split_specific_votes(result['no']):
+                vote.no(voter)
+            for voter in split_specific_votes(result['excused']):
+                vote.other(voter)
+            bill.add_vote(vote)
+
+
     def scrape_actions(self, bill, bill_url):
         """Scrapes the bill actions from the bill details page."""
         actions = []
@@ -100,13 +128,16 @@ class HIBillScraper(BillScraper):
                     actions.append(action_params)
             for action_params in actions:
                 bill.add_action(**action_params)
+
+                self.parse_vote(bill, action_params['action'],
+                                action_params['actor'], action_params['date'])
+
             # Add version document if not on a javascript link.
             try:
                 bill_version = page.xpath('//a[contains(@id, "HyperLinkPDF")]')[0].attrib['href']
                 bill.add_version('Current version', bill_version)
             except IndexError: # href not found.
                 pass
-        return
 
     def scrape_regular_status_page(self, url, params={}):
         """Scrapes the status page url, populating parameter dict and

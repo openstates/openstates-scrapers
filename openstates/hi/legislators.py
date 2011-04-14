@@ -38,27 +38,20 @@ class HILegislatorScraper(LegislatorScraper):
 
     def scrape_2011Leg(self, chamber, term, url):
         """2011 Scraper for legislators"""
-        titles = {'lower': 'Representative', 'upper': 'Senator'}
-        parties = {'D': 'Democrat', 'R': 'Republican'}
+        parties = {'(D)': 'Democratic', '(R)': 'Republican'}
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
             table = page.xpath('//table[contains(@id, "GridView1")]')[0]
             for row in table.xpath('tr[td/a[contains(@href, "memberpage")]]'):
                 params = {}
-                district = row.xpath('td/span[contains(@id, "LabelDis")]/font')[0].text + " " + \
-                    row.xpath('td/span[contains(@id, "LabelDistrict2")]/font')[0].text
-                # Replace any / in district name to allow json file to save.
-                district = district.replace('/', '-')
-                params['title'] = titles.get(chamber, '')
+                district = row.xpath('td/span[contains(@id, "LabelDistrict")]/font')[0].text
                 last_name = row.xpath('td/a[contains(@id, "HyperLinkLast")]/font')[0].text.strip()
                 first_names = row.xpath('td/span[contains(@id, "LabelFirst")]/font')[0].text.strip()
                 first_name = first_names.split()[0]
                 middle_name = ' '.join(first_names.split()[1:])
                 party = row.xpath('td/span[contains(@id, "LabelParty")]/font')[0].text
-                party = party.replace('(', '')
-                party = party.replace(')', '')
-                party = parties.get(party, '') # Expand party from initial letter.
+                party = parties[party]
                 params['office_address'] = row.xpath('td/span[contains(@id, "LabelRoom")]')[0].text + \
                     " " + row.xpath('td/span[contains(@id, "LabelRoom2")]')[0].text
                 params['photo_url'] = row.xpath('td/a[contains(@id, "HyperLinkChairJPG")]/img')[0].attrib['src']
@@ -70,5 +63,3 @@ class HILegislatorScraper(LegislatorScraper):
                         first_name, last_name, middle_name, party, **params)
                 leg.add_source(url)
                 self.save_legislator(leg)
-
-
