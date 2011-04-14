@@ -18,6 +18,30 @@ def split_specific_votes(voters):
     return voters.split(', ')
 
 
+def categorize_action(action):
+    classifiers = (
+        ('Pass(ed)? First Reading', 'bill:reading:1'),
+        ('Introduced and Pass(ed)? First Reading',
+             ['bill:introduced', 'bill:reading:1']),
+        ('Introduced', 'bill:introduced'),
+        #('The committee\(s\) recommends that the measure be deferred', ?
+        ('Re(-re)?ferred to ', 'committee:referred'),
+        ('Passed Second Reading .* referred to the committee',
+         ['bill:reading:2', 'committee:referred']),
+        ('that the measure be PASSED', 'committee:passed:favorable'),
+        ('Received from ', 'bill:introduced'),
+        ('Floor amendment .* offered', 'amendment:introduced'),
+        ('Floor amendment adopted', 'amendment:passed'),
+        ('Floor amendment failed', 'amendment:failed'),
+    )
+    for pattern, types in classifiers:
+        if re.match(pattern, action):
+            return types
+
+    # return other by default
+    return 'other'
+
+
 class HIBillScraper(BillScraper):
     state = 'hi'
 
@@ -125,6 +149,7 @@ class HIBillScraper(BillScraper):
                     action_params['action'] = cells[2].xpath('font')[0].text
                     action_date = cells[0].xpath('font')[0].text
                     action_params['date'] = datetime.strptime(action_date, "%m/%d/%Y")
+                    action_params['type'] = classify_action(action_params['action'])
                     actions.append(action_params)
             for action_params in actions:
                 bill.add_action(**action_params)
