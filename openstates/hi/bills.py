@@ -100,8 +100,7 @@ class HIBillScraper(BillScraper):
             with self.urlopen(bill_list_url) as page:
                 page = lxml.html.fromstring(page)
                 page.make_links_absolute(bill_list_url)
-                tbl = page.xpath('//table[contains(@id, "ReportGridView")]')[0]
-                for row in tbl.xpath('tr'):
+                for row in page.xpath('//table/tr'):
                     self.scrape_regular_row(chamber, session, bill_type, row)
 
     def scrape_regular_row(self, chamber, session, bill_type, row):
@@ -111,18 +110,18 @@ class HIBillScraper(BillScraper):
         params['chamber'] = chamber
         params['type'] = bill_type
 
-        b = row.xpath('td/font/a[contains(@id, "HyperLink1")]')
+        b = row.xpath('td//a[contains(@id, "HyperLink1")]')
         if b: # Ignore if no match
             bill_status_url = b[0].attrib['href']
-            bill_url = row.xpath('td/font/span[contains(@id, "_Label2")]')[0].text
+            bill_url = row.xpath('td//span[contains(@id, "_Label2")]')[0].text
             params['bill_id'] = b[0].xpath('font')[0].text.split()[0]
             params['title'] = row.xpath('td/font/span[contains(@id, "_Label1")]/u/font')[0].text
-            subject = row.xpath('td/font/span[contains(@id, "_Label6")]')[0].text
+            subject = row.xpath('td//span[contains(@id, "_Label6")]')[0].text
             subject = subject.replace('RELATING TO ', '') # Remove lead text
             params['subjects'] = [subject.replace('.', '')]
-            params['description'] = row.xpath('td/font/span[contains(@id, "_Label2")]')[0].text
-            sponsors = row.xpath('td/font/span[contains(@id, "_Label7")]')[0].text
-            params['companion'] = row.xpath('td/font/span[contains(@id, "_Label8")]')[0].text
+            params['description'] = row.xpath('td//span[contains(@id, "_Label2")]')[0].text
+            sponsors = row.xpath('td//span[contains(@id, "_Label7")]')[0].text
+            params['companion'] = row.xpath('td//span[contains(@id, "_Label8")]')[0].text
             bill = Bill(**params)
             for sponsor in sponsors.split(', '):
                 bill.add_sponsor('primary', sponsor)
