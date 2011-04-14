@@ -110,10 +110,13 @@ class MEBillScraper(BillScraper):
 
             path = "//div/a[contains(@href, 'rollcall.asp')]"
             for link in page.xpath(path):
-                motion = link.text.strip()
-                url = link.attrib['href']
+                # skip blank motions, nothing we can do with these
+                # seen on http://www.mainelegislature.org/LawMakerWeb/rollcalls.asp?ID=280039835
+                if link.text:
+                    motion = link.text.strip()
+                    url = link.attrib['href']
 
-                self.scrape_vote(bill, motion, url)
+                    self.scrape_vote(bill, motion, url)
 
     def scrape_vote(self, bill, motion, url):
         with self.urlopen(url) as page:
