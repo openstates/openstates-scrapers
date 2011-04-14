@@ -35,7 +35,7 @@ class MEBillScraper(BillScraper):
         url = ('http://www.mainelegislature.org/legis/bills/bills_%s'
                '/billtexts/' % session_abbr)
 
-        with self.urlopen(url) as page:
+        with self.urlopen(url, retry_on_404=True) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
@@ -47,7 +47,7 @@ class MEBillScraper(BillScraper):
         link_xpath = {'lower': '//big/a[starts-with(text(), "HP")]',
                       'upper': '//big/a[starts-with(text(), "SP")]'}[chamber]
 
-        with self.urlopen(url) as page:
+        with self.urlopen(url, retry_on_404=True) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
@@ -69,7 +69,7 @@ class MEBillScraper(BillScraper):
         session_id = (int(bill['session']) - 124) + 8
         url = ("http://www.mainelegislature.org/LawMakerWeb/summary.asp"
                "?paper=%s&SessionID=%d" % (bill['bill_id'], session_id))
-        with self.urlopen(url) as page:
+        with self.urlopen(url, retry_on_404=True) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
             bill.add_source(url)
@@ -87,7 +87,7 @@ class MEBillScraper(BillScraper):
             spon_link = page.xpath("//a[contains(@href, 'subjects.asp')]")[0]
             spon_url = spon_link.get('href')
             bill.add_source(spon_url)
-            with self.urlopen(spon_url) as spon_html:
+            with self.urlopen(spon_url, retry_on_404=True) as spon_html:
                 sdoc = lxml.html.fromstring(spon_html)
                 srow = sdoc.xpath('//table[@class="sectionbody"]/tr[2]/td/text()')[1:]
                 if srow:
@@ -95,7 +95,7 @@ class MEBillScraper(BillScraper):
 
             ver_link = page.xpath("//a[contains(@href, 'display_ps.asp')]")[0]
             ver_url = ver_link.get('href')
-            with self.urlopen(ver_url) as ver_html:
+            with self.urlopen(ver_url, retry_on_404=True) as ver_html:
                 vdoc = lxml.html.fromstring(ver_html)
                 vdoc.make_links_absolute(ver_url)
                 # various versions: billtexts, billdocs, billpdfs
@@ -104,7 +104,7 @@ class MEBillScraper(BillScraper):
                     bill.add_version('Initial Version', vurl[0])
 
     def scrape_votes(self, bill, url):
-        with self.urlopen(url) as page:
+        with self.urlopen(url, retry_on_404=True) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
@@ -119,7 +119,7 @@ class MEBillScraper(BillScraper):
                     self.scrape_vote(bill, motion, url)
 
     def scrape_vote(self, bill, motion, url):
-        with self.urlopen(url) as page:
+        with self.urlopen(url, retry_on_404=True) as page:
             page = lxml.html.fromstring(page)
 
             yeas_cell = page.xpath("//td[text() = 'Yeas (Y):']")[0]
@@ -169,7 +169,7 @@ class MEBillScraper(BillScraper):
             bill.add_vote(vote)
 
     def scrape_actions(self, bill, url):
-        with self.urlopen(url) as page:
+        with self.urlopen(url, retry_on_404=True) as page:
             page = lxml.html.fromstring(page)
             bill.add_source(url)
 
