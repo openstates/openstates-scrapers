@@ -6,7 +6,7 @@ from datetime import datetime
 import re
 
 from utils import STATE_URL, house, chamber_label # Data structures.
-from utils import get_session_details, get_chamber_string # Functions.
+from utils import get_session_details
 
 def split_specific_votes(voters):
     if voters.startswith('none'):
@@ -73,28 +73,43 @@ class HIBillScraper(BillScraper):
 
         # Configure for general cases.
         if scraper is None:
-            url = "/session%s/lists/RptIntro%s.aspx"
+            url = "/session%s/lists/"
             scraper = self.scrape_regular
 
         scraper(chamber, session, STATE_URL+url)
 
     def scrape_regular(self, chamber, session, url):
-        """Scraper for post 2009 Regular Sessions."""
+        """Scraper for Regular Sessions >= 2009 """
         year_label, session_type = get_session_details(session)
-        chamber_string = get_chamber_string(url, chamber)
-        bill_list_url = url%(year_label, chamber_string)
-        with self.urlopen(bill_list_url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(bill_list_url)
-            table = page.xpath('//table[contains(@id, "ReportGridView")]')[0]
-            for row in table.xpath('tr'):
-                self.scrape_regular_row(chamber, session, row)
+        base_url = url % year_label
 
-    def scrape_regular_row(self, chamber, session, row):
+        bill_types = {
+            'lower': (
+                ('RptIntroHB.aspx', 'bill'),
+                ('RptHR.aspx', 'resolution'),
+                ('RptHCR.aspx', 'concurrent resolution')),
+            'upper': (
+                ('RptIntroSB.aspx', 'bill'),
+                ('RptSR.aspx', 'resolution'),
+                ('RptSCR.aspx', 'concurrent resolution')),
+        }
+
+        for suffix, bill_type in bill_types[chamber]:
+            bill_list_url = base_url + suffix
+
+            with self.urlopen(bill_list_url) as page:
+                page = lxml.html.fromstring(page)
+                page.make_links_absolute(bill_list_url)
+                tbl = page.xpath('//table[contains(@id, "ReportGridView")]')[0]
+                for row in tbl.xpath('tr'):
+                    self.scrape_regular_row(chamber, session, bill_type, row)
+
+    def scrape_regular_row(self, chamber, session, bill_type, row):
         """Returns bill attributes from row."""
         params = {}
         params['session'] = session
         params['chamber'] = chamber
+        params['type'] = bill_type
 
         b = row.xpath('td/font/a[contains(@id, "HyperLink1")]')
         if b: # Ignore if no match
@@ -207,7 +222,6 @@ class HIBillScraper(BillScraper):
     def scrape_20101SS(self, chamber, session, url):
         """Scraper for 2010 Special Sessions"""
         year_label, session_type = get_session_details(session)
-        # chamber_string = get_chamber_string(url, chamber)
         bill_list_url = url%(year_label)
         with self.urlopen(bill_list_url) as page:
             page = lxml.html.fromstring(page)
@@ -277,7 +291,6 @@ class HIBillScraper(BillScraper):
     def scrape_20091SS(self, chamber, session, url):
         """Scraper for 2009 First Special Session"""
         year_label, session_type = get_session_details(session)
-        # chamber_string = get_chamber_string(url, chamber)
         bill_list_url = url%(year_label)
         with self.urlopen(bill_list_url) as page:
             page = lxml.html.fromstring(page)
