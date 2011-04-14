@@ -22,7 +22,7 @@ class NYBillScraper(BillScraper):
                     page = lxml.etree.fromstring(page)
 
                     for result in page.xpath("//result[@type = 'bill']"):
-                        id = result.attrib['id'].split('-')[0]
+                        bill_id = result.attrib['id'].split('-')[0]
 
                         title = result.attrib['title'].strip()
                         if title == '(no title)':
@@ -30,15 +30,21 @@ class NYBillScraper(BillScraper):
 
                         primary_sponsor = result.attrib['sponsor']
 
-                        if id.startswith('S'):
-                            bill_chamber = 'upper'
-                        else:
-                            bill_chamber = 'lower'
+                        bill_chamber, bill_type = {
+                            'S': ('upper', 'bill'),
+                            'R': ('upper', 'resolution'),
+                            'J': ('upper', 'legislative resolution'),
+                            'B': ('upper', 'concurrent resolution'),
+                            'A': ('lower', 'bill'),
+                            'E': ('lower', 'resolution'),
+                            'K': ('lower', 'legislative resolution'),
+                            'L': ('lower', 'joint resolution')}[bill_id[0]]
 
                         if chamber != bill_chamber:
                             continue
 
-                        bill = Bill(session, chamber, id, title)
+                        bill = Bill(session, chamber, bill_id, title,
+                                    type=bill_type)
                         bill.add_source(url)
                         bill.add_sponsor('primary', primary_sponsor)
 
