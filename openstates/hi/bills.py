@@ -28,11 +28,14 @@ def categorize_action(action):
         ('Re(-re)?ferred to ', 'committee:referred'),
         ('Passed Second Reading .* referred to the committee',
          ['bill:reading:2', 'committee:referred']),
-        ('that the measure be PASSED', 'committee:passed:favorable'),
-        ('Received from ', 'bill:introduced'),
+        ('.* that the measure be PASSED', 'committee:passed:favorable'),
+        ('Received from (House|Senate)', 'bill:introduced'),
         ('Floor amendment .* offered', 'amendment:introduced'),
         ('Floor amendment adopted', 'amendment:passed'),
         ('Floor amendment failed', 'amendment:failed'),
+        ('.*Passed Third Reading', 'bill:passed'),
+        ('Enrolled to Governor', 'governor:received'),
+        ('Act ', 'governor:signed'),
     )
     for pattern, types in classifiers:
         if re.match(pattern, action):
