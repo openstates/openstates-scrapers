@@ -2,6 +2,7 @@ import re
 import datetime
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 import scrapelib
 import lxml.html
@@ -21,7 +22,7 @@ class NYBillScraper(BillScraper):
                     page = lxml.etree.fromstring(page)
 
                     for result in page.xpath("//result[@type = 'bill']"):
-                        id = result.attrib['id'].split('-')[0]
+                        bill_id = result.attrib['id'].split('-')[0]
 
                         title = result.attrib['title'].strip()
                         if title == '(no title)':
@@ -29,15 +30,21 @@ class NYBillScraper(BillScraper):
 
                         primary_sponsor = result.attrib['sponsor']
 
-                        if id.startswith('S'):
-                            bill_chamber = 'upper'
-                        else:
-                            bill_chamber = 'lower'
+                        bill_chamber, bill_type = {
+                            'S': ('upper', 'bill'),
+                            'R': ('upper', 'resolution'),
+                            'J': ('upper', 'legislative resolution'),
+                            'B': ('upper', 'concurrent resolution'),
+                            'A': ('lower', 'bill'),
+                            'E': ('lower', 'resolution'),
+                            'K': ('lower', 'legislative resolution'),
+                            'L': ('lower', 'joint resolution')}[bill_id[0]]
 
                         if chamber != bill_chamber:
                             continue
 
-                        bill = Bill(session, chamber, id, title)
+                        bill = Bill(session, chamber, bill_id, title,
+                                    type=bill_type)
                         bill.add_source(url)
                         bill.add_sponsor('primary', primary_sponsor)
 
@@ -105,7 +112,59 @@ class NYBillScraper(BillScraper):
             text_link = page.xpath("//a[contains(@href, 'lrs-print')]")[0]
             bill.add_version(bill['bill_id'], text_link.attrib['href'])
 
+            self.scrape_votes(bill, page)
+
             subjects = []
             for link in page.xpath("//a[contains(@href, 'lawsection')]"):
                 subjects.append(link.text.strip())
             bill['subjects'] = subjects
+
+    def scrape_votes(self, bill, page):
+        for b in page.xpath("//div/b[starts-with(., 'VOTE: FLOOR VOTE:')]"):
+            date = b.text.split('-')[1].strip()
+            date = datetime.datetime.strptime(date, "%b %d, %Y").date()
+
+            yes_votes, no_votes, other_votes = [], [], []
+            yes_count, no_count, other_count = 0, 0, 0
+
+            vtype = None
+            for tag in b.xpath("following-sibling::blockquote/*"):
+                if tag.tag == 'b':
+                    text = tag.text
+                    if text.startswith('Ayes'):
+                        vtype = 'yes'
+                        yes_count = int(re.search(
+                            r'\((\d+)\):', text).group(1))
+                    elif text.startswith('Nays'):
+                        vtype = 'no'
+                        no_count = int(re.search(
+                            r'\((\d+)\):', text).group(1))
+                    elif (text.startswith('Excused') or
+                          text.startswith('Abstains')):
+                        vtype = 'other'
+                        other_count += int(re.search(
+                            r'\((\d+)\):', text).group(1))
+                    else:
+                        raise ValueError('bad vote type: %s' % tag.text)
+                elif tag.tag == 'a':
+                    name = tag.text.strip()
+                    if vtype == 'yes':
+                        yes_votes.append(name)
+                    elif vtype == 'no':
+                        no_votes.append(name)
+                    elif vtype == 'other':
+                        other_votes.append(name)
+
+            passed = yes_count > (no_count + other_count)
+
+            vote = Vote('upper', date, 'Floor Vote', passed, yes_count,
+                        no_count, other_count)
+
+            for name in yes_votes:
+                vote.yes(name)
+            for name in no_votes:
+                vote.no(name)
+            for name in other_votes:
+                vote.other(name)
+
+            bill.add_vote(vote)

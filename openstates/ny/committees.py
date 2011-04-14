@@ -1,7 +1,38 @@
+import re
+
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
+
+
+def parse_name(name):
+    """
+    Split a committee membership string into name and role.
+
+    >>> parse_name('Felix Ortiz')
+    ('Felix Ortiz', 'member')
+    >>> parse_name('Felix Ortiz (Chair)')
+    ('Felix Ortiz', 'chair')
+    >>> parse_name('Hon. Felix Ortiz, Co-Chair')
+    ('Felix Ortiz', 'co-chair')
+    >>> parse_name('Owen H.\\r\\nJohnson (Vice Chairperson)')
+    ('Owen H. Johnson', 'vice chairperson')
+    """
+    name = re.sub(r'^(Hon\.|Assemblyman|Assemblywoman)\s+', '', name)
+    name = re.sub(r'\s+', ' ', name)
+
+    roles = ["Chairwoman", "Chairperson", "Chair", "Secretary", "Treasurer",
+             "Parliamentarian", "Chaplain"]
+    match = re.match(
+        r'([^(]+),? \(?((Co|Vice)?-?\s*(%s))\)?' % '|'.join(roles),
+        name)
+
+    if match:
+        name = match.group(1).strip(' ,')
+        role = match.group(2).lower()
+        return (name, role)
+    return (name, 'member')
 
 
 class NYCommitteeScraper(CommitteeScraper):
@@ -24,6 +55,9 @@ class NYCommitteeScraper(CommitteeScraper):
 
             for link in page.xpath("//a[contains(@href, 'sec=mem')]"):
                 name = link.xpath("string(../strong)").strip()
+                if 'Caucus' in name:
+                    continue
+
                 url = link.attrib['href']
 
                 self.scrape_lower_committee(name, url)
@@ -37,7 +71,10 @@ class NYCommitteeScraper(CommitteeScraper):
 
             for link in page.xpath("//a[contains(@href, 'mem?ad')]"):
                 member = link.text.strip()
-                comm.add_member(member)
+                member = re.sub(r'\s+', ' ', member)
+
+                name, role = parse_name(member)
+                comm.add_member(name, role)
 
             self.save_committee(comm)
 
@@ -67,10 +104,21 @@ class NYCommitteeScraper(CommitteeScraper):
 
                 member = link.text.strip()
 
+                next_elem = link.getnext()
+                if (next_elem is not None and
+                    next_elem.tag == 'a' and
+                    next_elem.attrib['href'] == link.attrib['href']):
+                    # Sometimes NY is cool and splits names across a
+                    # couple links
+                    member = "%s %s" % (member, next_elem.text.strip())
+
+                member = re.sub(r'\s+', ' ', member)
+
                 if member in seen or not member:
                     continue
                 seen.add(member)
 
-                comm.add_member(member)
+                name, role = parse_name(member)
+                comm.add_member(name, role)
 
             self.save_committee(comm)
