@@ -178,13 +178,15 @@ def render_full_legislator(leg):
 
     return elem
 
-def render_committee(comm):
-    def member(m):
-        kwargs = {}
-        if 'leg_id' in m:
-            kwargs['id'] = m['leg_id']
-        return E.member(m['name'], role=m['role'], **kwargs)
 
+def render_committee(comm):
+    if 'members' not in comm:
+        return render_short_committee(comm)
+    else:
+        return render_full_committee(comm)
+
+
+def render_short_committee(comm):
     kwargs = {}
     pid = comm.get('parent_id')
     if pid:
@@ -193,11 +195,24 @@ def render_committee(comm):
     return E.committee(
         E.state(comm['state']),
         E.chamber(comm['chamber']),
-        E.name(E.committee_name(comm['committee']),
-               E.subcommittee_name(comm.get('subcommittee', '') or '')),
-        E.subcommittee_name(comm.get('subcommittee', '') or ''),
-        E.members(*[member(m) for m in comm['members']]),
+        E.name(
+            E.committee_name(comm['committee']),
+            E.subcommittee_name(comm.get('subcommittee', '') or ''),
+        ),
 
         id=comm['_id'],
         **kwargs
     )
+
+
+def render_full_committee(comm):
+    def member(m):
+        kwargs = {}
+        if 'leg_id' in m:
+            kwargs['id'] = m['leg_id']
+        return E.member(m['name'], role=m['role'], **kwargs)
+
+    elem = render_short_committee(comm)
+    elem.append(E.members(*[member(m) for m in comm['members']]))
+
+    return elem
