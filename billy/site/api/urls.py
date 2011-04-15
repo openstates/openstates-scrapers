@@ -44,7 +44,7 @@ else:
 
 Emitter.register('json', OpenStateJSONEmitter,
                  'application/json; charset=utf-8')
-Emitter.register('xml', OpenStateXMLEmitter, 'text/xml')
+Emitter.register('xml', OpenStateXMLEmitter, 'application/xml; charset=utf-8')
 
 Emitter.register('rss', FeedEmitter, 'application/rss+xml')
 Emitter.register('ics', ICalendarEmitter, 'text/calendar')

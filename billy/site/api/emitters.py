@@ -80,7 +80,9 @@ class OpenStateXMLEmitter(Emitter):
                 elems.append(bill_to_xml(obj))
 
         results = E.results(*elems)
-        return lxml.etree.tostring(results, pretty_print=True)
+        return lxml.etree.tostring(results, pretty_print=True,
+                                   xml_declaration=True,
+                                   encoding='UTF-8')
 
 
 class FeedEmitter(Emitter):
