@@ -2,7 +2,33 @@ import lxml.etree
 from lxml.builder import E
 
 
-def bill_to_xml(bill):
+def render(obj):
+    if obj['_type'] == 'bill':
+        return render_bill(obj)
+    return None
+
+
+def render_bill(bill):
+    if 'actions' not in bill:
+        return render_short_bill(bill)
+    else:
+        return render_full_bill(bill)
+
+
+def render_short_bill(bill):
+    return E.bill(
+        E.state(bill['state']),
+        E.session(bill['session']),
+        E.chamber(bill['chamber']),
+        E.bill_id(bill['bill_id']),
+        E.title(bill['title']),
+        *[E.type(t) for t in bill['type']],
+        created_at=str(bill['created_at']),
+        updated_at=str(bill['updated_at'])
+    )
+
+
+def render_full_bill(bill):
     def action(a):
         return E.action(
             E.text(a['action']),

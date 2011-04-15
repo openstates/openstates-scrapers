@@ -3,7 +3,7 @@ import datetime
 
 from billy.utils import chamber_name
 from billy.site.api.feeds import EventFeed
-from billy.site.api.xml import bill_to_xml
+from billy.site.api import xml
 
 from django.template import defaultfilters
 from piston.emitters import Emitter, JSONEmitter
@@ -74,12 +74,7 @@ class OpenStateJSONEmitter(JSONEmitter):
 
 class OpenStateXMLEmitter(Emitter):
     def render(self, request):
-        elems = []
-        for obj in self.construct():
-            if obj.get('_type') == 'bill':
-                elems.append(bill_to_xml(obj))
-
-        results = E.results(*elems)
+        results = E.results(*[xml.render(o) for o in self.construct()])
         return lxml.etree.tostring(results, pretty_print=True,
                                    xml_declaration=True,
                                    encoding='UTF-8')
