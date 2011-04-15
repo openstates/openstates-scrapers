@@ -3,11 +3,14 @@ import datetime
 
 from billy.utils import chamber_name
 from billy.site.api.feeds import EventFeed
+from billy.site.api.xml import bill_to_xml
 
 from django.template import defaultfilters
 from piston.emitters import Emitter, JSONEmitter
 
 import icalendar
+import lxml.etree
+from lxml.builder import E
 
 
 class DateTimeAwareJSONEncoder(json.JSONEncoder):
@@ -67,6 +70,17 @@ class OpenStateJSONEmitter(JSONEmitter):
                 else:
                     obj.__dict__[key] = self._clean(value)
         return obj
+
+
+class OpenStateXMLEmitter(Emitter):
+    def render(self, request):
+        elems = []
+        for obj in self.construct():
+            if obj.get('_type') == 'bill':
+                elems.append(bill_to_xml(obj))
+
+        results = E.results(*elems)
+        return lxml.etree.tostring(results, pretty_print=True)
 
 
 class FeedEmitter(Emitter):

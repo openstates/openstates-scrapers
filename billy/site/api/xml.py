@@ -47,17 +47,17 @@ def bill_to_xml(bill):
             'alternate_titles', [])]),
 
         E.sponsors(*[E.sponsor(s['name'], id=s['leg_id'] or '', type=s['type'])
-                     for s in bill['sponsors']]),
+                     for s in bill.get('sponsors', [])]),
 
-        E.actions(*[action(a) for a in bill['actions']]),
-        E.votes(*[vote(v) for v in bill['votes']]),
+        E.actions(*[action(a) for a in bill.get('actions', [])]),
+        E.votes(*[vote(v) for v in bill.get('votes', [])]),
         E.subjects(*[E.subject(s) for s in bill.get('subjects', [])]),
 
         E.versions(*[E.version(href=v['url'], name=v['name'])
-                     for v in bill['versions']]),
+                     for v in bill.get('versions', [])]),
 
         E.sources(*[E.source(href=s['url'], retrieved=str(s['retrieved']))
-                    for s in bill['sources']]),
+                    for s in bill.get('sources', [])]),
 
         *[E.type(t) for t in bill['type']],
 
