@@ -17,7 +17,8 @@ def render(obj):
     renderer = {'bill': render_bill,
                 'person': render_legislator,
                 'legislator': render_legislator,
-                'committee': render_committee}[obj['_type']]
+                'committee': render_committee,
+                'metadata': render_metadata}[obj['_type']]
 
     elem = renderer(obj)
 
@@ -214,5 +215,52 @@ def render_full_committee(comm):
 
     elem = render_short_committee(comm)
     elem.append(E.members(*[member(m) for m in comm['members']]))
+
+    return elem
+
+
+def render_metadata(meta):
+    def session(s):
+        args = []
+        try:
+            details = meta['session_details'][s]
+            for key in ('type', 'start_date', 'end_date'):
+                value = details.get(key)
+                if value:
+                    if isinstance(value, datetime.date):
+                        args.append(E(key, _date(value)))
+                    else:
+                        args.append(E(key, str(value)))
+        except KeyError:
+            pass
+
+        return E.session(E.name(s), *args)
+
+    elem = E.metadata(
+        E.state_name(meta['name']),
+        E.state_abbreviation(meta['abbreviation']),
+        E.legislature_name(meta['legislature_name']),
+        E.latest_update(_date(meta['latest_update'])),
+    )
+
+    for chamber in ('upper', 'lower'):
+        if ('%s_chamber_name' % chamber) not in meta:
+            # for unicams
+            continue
+
+        elem.append(E.chamber(
+            E.type(chamber),
+            E.name(meta[chamber + '_chamber_name']),
+            E.title(meta[chamber + '_chamber_title']),
+            E.term(str(meta[chamber + '_chamber_term'])),
+        ))
+
+    for term in meta['terms']:
+        elem.append(E.term(
+            E.name(term['name']),
+            E.start_year(str(term['start_year'])),
+            E.end_year(str(term['end_year'])),
+            *[session(s) for s in term['sessions']]
+        ))
 
     return elem
