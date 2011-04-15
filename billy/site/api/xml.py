@@ -3,6 +3,7 @@ import datetime
 import lxml.etree
 from lxml.builder import E
 
+
 def _date(d):
     if isinstance(d, datetime.datetime):
         return d.strftime("%Y-%d-%mT%H:%M:%S")
@@ -87,13 +88,8 @@ def render_full_bill(bill):
             passed=str(v['passed']).lower()
         )
 
-    return E.bill(
-        E.state(bill['state']),
-        E.session(bill['session']),
-        E.chamber(bill['chamber']),
-        E.bill_id(bill['bill_id']),
-        E.title(bill['title']),
-
+    elem = render_short_bill(bill)
+    elem.extend([
         E.alternate_titles(*[E.title(t) for t in bill.get(
             'alternate_titles', [])]),
 
@@ -106,12 +102,47 @@ def render_full_bill(bill):
 
         E.versions(*[E.version(href=v['url'], name=v['name'])
                      for v in bill.get('versions', [])]),
-
-        *[E.type(t) for t in bill['type']]
+        ]
     )
+
+    return elem
 
 
 def render_legislator(leg):
+    if 'roles' not in leg:
+        return render_short_legislator(leg)
+    else:
+        return render_full_legislator(leg)
+
+
+def render_short_legislator(leg):
+    elem = E.legislator(
+        E.state(leg['state']),
+        E.first_name(leg['first_name']),
+        E.last_name(leg['last_name']),
+        E.full_name(leg['full_name']),
+        E.middle_name(leg['middle_name']),
+        E.suffixes(leg['suffixes']),
+
+        E.transparencydata_id(leg.get('transparencydata_id', '')),
+        E.votesmart_id(leg.get('votesmart_id', '')),
+        E.nimsp_candidate_id(leg.get('nimsp_candidate_id', '')),
+        E.photo_url(leg.get('photo_url', '')),
+
+        id=leg['leg_id']
+    )
+
+    if leg.get('active'):
+        elem.append(E.active('true'))
+        for key in ('chamber', 'district', 'party'):
+            value = leg.get(key)
+            if value:
+                elem.append(E(key, value))
+
+    return elem
+
+
+def render_full_legislator(leg):
     def role(r):
         children = []
         kwargs = {}
@@ -139,24 +170,13 @@ def render_legislator(leg):
         old_terms.append(E.term(
             *[role(r) for r in value]))
 
-    return E.legislator(
-        E.state(leg['state']),
-        E.first_name(leg['first_name']),
-        E.last_name(leg['last_name']),
-        E.full_name(leg['full_name']),
-        E.middle_name(leg['middle_name']),
-        E.suffixes(leg['suffixes']),
-        E.roles(*[role(r) for r in leg['roles']]),
+    elem = render_short_legislator(leg)
+    elem.extend([
+        E.roles(*[role(r) for r in leg.get('roles', [])]),
         E.old_roles(*old_terms),
+    ])
 
-        E.transparencydata_id(leg.get('transparencydata_id', '')),
-        E.votesmart_id(leg.get('votesmart_id', '')),
-        E.nimsp_candidate_id(leg.get('nimsp_candidate_id', '')),
-        E.photo_url(leg.get('photo_url', '')),
-
-        id=leg['leg_id']
-    )
-
+    return elem
 
 def render_committee(comm):
     def member(m):
