@@ -1,5 +1,15 @@
+import datetime
+
 import lxml.etree
 from lxml.builder import E
+
+def _date(d):
+    if isinstance(d, datetime.datetime):
+        return d.strftime("%Y-%d-%mT%H:%M:%S")
+    elif isinstance(d, datetime.date):
+        return d.strftime("%Y-%d-%m")
+
+    raise ValueError("expected date or datetime")
 
 
 def render(obj):
@@ -25,8 +35,8 @@ def render_short_bill(bill):
         E.bill_id(bill['bill_id']),
         E.title(bill['title']),
         *[E.type(t) for t in bill['type']],
-        created_at=str(bill['created_at']),
-        updated_at=str(bill['updated_at'])
+        created_at=_date(bill['created_at']),
+        updated_at=_date(bill['updated_at'])
     )
 
 
@@ -35,7 +45,7 @@ def render_full_bill(bill):
         return E.action(
             E.text(a['action']),
             *[E.type(t) for t in a['type']],
-            date=str(a['date']),
+            date=_date(a['date']),
             actor=a['actor']
         )
 
@@ -54,7 +64,7 @@ def render_full_bill(bill):
             E.motion(v['motion']),
             *avotes,
 
-            date=str(v['date']),
+            date=_date(v['date']),
             chamber=v['chamber'],
             id=v['id'],
             type=v['type'],
@@ -84,13 +94,13 @@ def render_full_bill(bill):
         E.versions(*[E.version(href=v['url'], name=v['name'])
                      for v in bill.get('versions', [])]),
 
-        E.sources(*[E.source(href=s['url'], retrieved=str(s['retrieved']))
+        E.sources(*[E.source(href=s['url'], retrieved=_date(s['retrieved']))
                     for s in bill.get('sources', [])]),
 
         *[E.type(t) for t in bill['type']],
 
-        updated_at=str(bill['updated_at']),
-        created_at=str(bill['created_at'])
+        updated_at=_date(bill['updated_at']),
+        created_at=_date(bill['created_at'])
     )
 
 
@@ -137,10 +147,10 @@ def render_legislator(leg):
         E.nimsp_candidate_id(leg.get('nimsp_candidate_id', '')),
         E.photo_url(leg.get('photo_url', '')),
 
-        E.sources(*[E.source(href=s['url'], retrieved=str(s['retrieved']))
+        E.sources(*[E.source(href=s['url'], retrieved=_date(s['retrieved']))
                     for s in leg.get('sources', [])]),
 
-        created_at=str(leg['created_at']),
-        updated_at=str(leg['updated_at']),
+        created_at=_date(leg['created_at']),
+        updated_at=_date(leg['updated_at']),
         id=leg['leg_id']
     )
