@@ -6,9 +6,9 @@ from lxml.builder import E
 
 def _date(d):
     if isinstance(d, datetime.datetime):
-        return d.strftime("%Y-%d-%mT%H:%M:%S")
+        return d.strftime("%Y-%m-%dT%H:%M:%S")
     elif isinstance(d, datetime.date):
-        return d.strftime("%Y-%d-%m")
+        return d.strftime("%Y-%m-%d")
 
     raise ValueError("expected date or datetime")
 
