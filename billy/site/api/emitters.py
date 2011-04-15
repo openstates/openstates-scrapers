@@ -74,7 +74,12 @@ class OpenStateJSONEmitter(JSONEmitter):
 
 class OpenStateXMLEmitter(Emitter):
     def render(self, request):
-        results = E.results(*[xml.render(o) for o in self.construct()])
+        obj = self.construct()
+        if isinstance(obj, list):
+            results = E.results(*[xml.render(o) for o in obj])
+        else:
+            results = E.results(xml.render(obj))
+
         return lxml.etree.tostring(results, pretty_print=True,
                                    xml_declaration=True,
                                    encoding='UTF-8')

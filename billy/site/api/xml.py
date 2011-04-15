@@ -5,6 +5,8 @@ from lxml.builder import E
 def render(obj):
     if obj['_type'] == 'bill':
         return render_bill(obj)
+    elif obj['_type'] in ('person', 'legislator'):
+        return render_legislator(obj)
     return None
 
 
@@ -89,4 +91,56 @@ def render_full_bill(bill):
 
         updated_at=str(bill['updated_at']),
         created_at=str(bill['created_at'])
+    )
+
+
+def render_legislator(leg):
+    def role(r):
+        children = []
+        kwargs = {}
+
+        if r['type'] == 'committee member':
+            children.append(E.committee(
+                r['committee'],
+                id=r['committee_id']))
+
+        for optional_attr in ('party', 'start_date', 'end_date'):
+            value = r.get(optional_attr)
+            if value:
+                kwargs[optional_attr] = str(value)
+
+        return E.role(
+            *children,
+            type=r['type'],
+            term=r['term'],
+            chamber=r['chamber'],
+            **kwargs
+        )
+
+    old_terms = []
+    for key, value in leg.get('old_roles', []):
+        old_terms.append(E.term(
+            *[role(r) for r in value]))
+
+    return E.legislator(
+        E.state(leg['state']),
+        E.first_name(leg['first_name']),
+        E.last_name(leg['last_name']),
+        E.full_name(leg['full_name']),
+        E.middle_name(leg['middle_name']),
+        E.suffixes(leg['suffixes']),
+        E.roles(*[role(r) for r in leg['roles']]),
+        E.old_roles(*old_terms),
+
+        E.transparencydata_id(leg.get('transparencydata_id', '')),
+        E.votesmart_id(leg.get('votesmart_id', '')),
+        E.nimsp_candidate_id(leg.get('nimsp_candidate_id', '')),
+        E.photo_url(leg.get('photo_url', '')),
+
+        E.sources(*[E.source(href=s['url'], retrieved=str(s['retrieved']))
+                    for s in leg.get('sources', [])]),
+
+        created_at=str(leg['created_at']),
+        updated_at=str(leg['updated_at']),
+        id=leg['leg_id']
     )
