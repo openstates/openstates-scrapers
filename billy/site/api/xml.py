@@ -13,11 +13,26 @@ def _date(d):
 
 
 def render(obj):
-    if obj['_type'] == 'bill':
-        return render_bill(obj)
-    elif obj['_type'] in ('person', 'legislator'):
-        return render_legislator(obj)
-    return None
+    renderer = {'bill': render_bill,
+                'person': render_legislator,
+                'legislator': render_legislator,
+                'committee': render_committee}[obj['_type']]
+
+    elem = renderer(obj)
+
+    # Append some universal attributes and elements
+    if 'created_at' in obj:
+        elem.attrib['created_at'] = _date(obj['created_at'])
+    if 'updated_at' in obj:
+        elem.attrib['updated_at'] = _date(obj['updated_at'])
+    if 'id' in obj:
+        elem.attrib['id'] = obj['id']
+    if 'sources' in obj:
+        elem.append(E.sources(
+            *[E.source(href=s['url'], retrieved=_date(s['retrieved']))
+              for s in obj['sources']]))
+
+    return elem
 
 
 def render_bill(bill):
@@ -34,9 +49,7 @@ def render_short_bill(bill):
         E.chamber(bill['chamber']),
         E.bill_id(bill['bill_id']),
         E.title(bill['title']),
-        *[E.type(t) for t in bill['type']],
-        created_at=_date(bill['created_at']),
-        updated_at=_date(bill['updated_at'])
+        *[E.type(t) for t in bill['type']]
     )
 
 
@@ -94,13 +107,7 @@ def render_full_bill(bill):
         E.versions(*[E.version(href=v['url'], name=v['name'])
                      for v in bill.get('versions', [])]),
 
-        E.sources(*[E.source(href=s['url'], retrieved=_date(s['retrieved']))
-                    for s in bill.get('sources', [])]),
-
-        *[E.type(t) for t in bill['type']],
-
-        updated_at=_date(bill['updated_at']),
-        created_at=_date(bill['created_at'])
+        *[E.type(t) for t in bill['type']]
     )
 
 
@@ -147,10 +154,30 @@ def render_legislator(leg):
         E.nimsp_candidate_id(leg.get('nimsp_candidate_id', '')),
         E.photo_url(leg.get('photo_url', '')),
 
-        E.sources(*[E.source(href=s['url'], retrieved=_date(s['retrieved']))
-                    for s in leg.get('sources', [])]),
-
-        created_at=_date(leg['created_at']),
-        updated_at=_date(leg['updated_at']),
         id=leg['leg_id']
+    )
+
+
+def render_committee(comm):
+    def member(m):
+        kwargs = {}
+        if 'leg_id' in m:
+            kwargs['id'] = m['leg_id']
+        return E.member(m['name'], role=m['role'], **kwargs)
+
+    kwargs = {}
+    pid = comm.get('parent_id')
+    if pid:
+        kwargs['parent_id'] = pid
+
+    return E.committee(
+        E.state(comm['state']),
+        E.chamber(comm['chamber']),
+        E.name(E.committee_name(comm['committee']),
+               E.subcommittee_name(comm.get('subcommittee', '') or '')),
+        E.subcommittee_name(comm.get('subcommittee', '') or ''),
+        E.members(*[member(m) for m in comm['members']]),
+
+        id=comm['_id'],
+        **kwargs
     )
