@@ -66,9 +66,9 @@ def render_full_bill(bill):
 
     def avote(av, type):
         if av['leg_id']:
-            return E.avote(name=sv, leg_id=a['leg_id'], type=type)
+            return E.avote(name=av['name'], leg_id=av['leg_id'], type=type)
         else:
-            return E.avote(name=sv, type=type)
+            return E.avote(name=av['name'], type=type)
 
     def vote(v):
         avotes = [avote(av, 'yes') for av in v['yes_votes']]
@@ -81,7 +81,7 @@ def render_full_bill(bill):
 
             date=_date(v['date']),
             chamber=v['chamber'],
-            id=v['id'],
+            id=v['vote_id'],
             type=v['type'],
             yes_count=str(v['yes_count']),
             no_count=str(v['no_count']),
