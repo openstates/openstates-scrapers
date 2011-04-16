@@ -1,4 +1,3 @@
-from billy import db
 from billy.utils import metadata
 
 from django import template

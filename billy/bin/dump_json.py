@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 import re
 import os
-import sys
-import time
 import zipfile
 import datetime
-import urllib2
 import urllib
 import json
 
@@ -13,7 +10,6 @@ from billy.conf import settings, base_arg_parser
 from billy import db
 
 import boto
-import pymongo
 import scrapelib
 import validictory
 from boto.s3.key import Key
@@ -29,6 +25,7 @@ class APIValidator(validictory.SchemaValidator):
 
 _base_url = getattr(settings, 'OPENSTATES_API_BASE_URL',
                     "http://openstates.sunlightlabs.com/api/v1/")
+
 
 def api_url(path):
     return "%s%s/?apikey=%s" % (_base_url, urllib.quote(path),
@@ -100,7 +97,7 @@ def upload(state, filename):
                                            state)
     s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
-    metadata = db.metadata.find_one({'_id':state})
+    metadata = db.metadata.find_one({'_id': state})
 
     # S3 upload
     s3conn = boto.connect_s3(settings.AWS_KEY, settings.AWS_SECRET)

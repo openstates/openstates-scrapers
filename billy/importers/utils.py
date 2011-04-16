@@ -13,6 +13,7 @@ from billy import db, fs
 
 import name_tools
 
+
 def _get_property_dict(schema):
     """ given a schema object produce a nested dictionary of fields """
     pdict = {}
@@ -268,6 +269,8 @@ def merge_legislators(old, new):
 
 # fixing bill ids
 _bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
+
+
 def fix_bill_id(bill_id):
     bill_id = bill_id.replace('.', '')
     return _bill_id_re.sub(r'\1 \2', bill_id)

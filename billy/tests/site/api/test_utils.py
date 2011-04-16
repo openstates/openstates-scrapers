@@ -1,5 +1,6 @@
 from billy.site.api import utils
 
+
 def test_district_from_census_name():
     tests = [
         (('vt', 'lower', 'Washington-5 State House District'),

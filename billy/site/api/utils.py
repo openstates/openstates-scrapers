@@ -21,6 +21,7 @@ def _load_census_mapping():
             _census_to_district[tuple(row[0:3])] = row[3].strip()
             _district_to_census[(row[0], row[1], row[3])] = row[2].strip()
 
+
 def district_from_census_name(state, chamber, census_name):
     """
     In some states the Census Bureau names districts differently than
@@ -33,7 +34,13 @@ def district_from_census_name(state, chamber, census_name):
     try:
         return _census_to_district[(state, chamber, census_name)]
     except KeyError:
-        return census_name.split('District ')[1]
+        try:
+            return census_name.split('District ')[1]
+        except IndexError:
+            try:
+                return census_name.split('Subdistrict ')[1]
+            except IndexError:
+                return census_name
 
 
 def district_slug(state, chamber, district):

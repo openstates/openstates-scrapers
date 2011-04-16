@@ -6,10 +6,12 @@ from billy import db
 from billy.utils import metadata
 from billy.conf import settings, base_arg_parser
 
+
 def _session_to_term(state, session):
     for term in metadata(state)['terms']:
         if session in term['sessions']:
             return term['name']
+
 
 def dump_missing_leg_ids(state, detailed=False):
     """
@@ -44,7 +46,8 @@ def dump_missing_leg_ids(state, detailed=False):
                     sponsor_csv.writerow((state, bill['session'],
                                           bill['chamber'], bill['bill_id'],
                                           sponsor['type'],
-                                          sponsor['name'].encode('ascii', 'replace')))
+                                          sponsor['name'].encode('ascii',
+                                                                 'replace')))
 
         i = 0
         for vote in bill['votes']:
@@ -79,11 +82,13 @@ def dump_missing_leg_ids(state, detailed=False):
                              member['name'].encode('ascii', 'replace')))
 
                 if detailed:
+                    com = committee['committee'].encode('ascii', 'replace')
+                    subcom = (committee['subcommittee'] or u'').encode('ascii',
+                                                                   'replace')
                     comm_csv.writerow((state, committee['chamber'],
-                                       committee['committee'].encode('ascii', 'replace'),
-                                       (committee['subcommittee'] or u'').encode('ascii', 'replace'),
-                                       member['role'],
-                                       member['name'].encode('ascii', 'replace')))
+                                       com, subcom, member['role'],
+                                       member['name'].encode('ascii',
+                                                             'replace')))
 
     for item in missing:
         missing_csv.writerow(item)

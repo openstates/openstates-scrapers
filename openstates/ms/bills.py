@@ -91,9 +91,10 @@ class MSBillScraper(BillScraper):
                         bill.add_sponsor(type, main_sponsor, main_sponsor_url = main_sponsor_url)
                     for author in details_root.xpath('//authors/additional'):
                         leg = author.xpath('string(co_name)').replace(" ", "_")
-                        leg_url = 'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, leg)
-                        type = "cosponsor"
-                        bill.add_sponsor(type, leg, leg_url=leg_url)
+                        if leg:
+                            leg_url = 'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, leg)
+                            type = "cosponsor"
+                            bill.add_sponsor(type, leg, leg_url=leg_url)
 
                     #Versions 
                     curr_version = details_root.xpath('string(//current_other)').replace("../../../../", "")

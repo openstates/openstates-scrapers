@@ -33,8 +33,16 @@ class MICommitteeScraper(CommitteeScraper):
                     com.add_source(com_url)
 
                     # all links to http:// pages in servicecolumn2 are legislators
-                    for leg in cdoc.xpath('//div[@class="servicecolumn2"]//a[starts-with(@href, "http")]/text()'):
-                        com.add_member(leg)
+                    for a in cdoc.xpath('//div[@class="servicecolumn2"]//a[starts-with(@href, "http")]'):
+                        name = a.text.strip()
+                        text = a.xpath('../following-sibling::font[1]/text()')
+                        if text[0].startswith('Committee Chair'):
+                            role = 'chairman'
+                        elif 'Vice-Chair' in text[0]:
+                            role = 'vice chairman'
+                        else:
+                            role = 'member'
+                        com.add_member(name, role=role)
 
                     self.save_committee(com)
 
@@ -44,6 +52,11 @@ class MICommitteeScraper(CommitteeScraper):
             doc = lxml.html.fromstring(html)
 
             for strong in doc.xpath('//strong')[2:]:
+
+                # if this isn't a link, this isn't a normal committee (skip it)
+                if not strong.xpath('a'):
+                    continue
+
                 # trim off trailing :
                 name = strong.text_content()[:-1]
                 com = Committee(chamber='upper', committee=name)

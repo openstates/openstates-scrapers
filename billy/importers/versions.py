@@ -1,12 +1,9 @@
 #!/usr/bin/env python
-import sys
 import logging
-
-from pymongo.son import SON
 
 import scrapelib
 
-from billy import db, fs
+from billy import db
 from billy.importers.utils import put_document
 
 

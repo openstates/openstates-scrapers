@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 import os
-import sys
 import glob
 import logging
 import datetime
 import json
 
 from billy import db
-from billy.importers.names import get_legislator_id
-from billy.importers.utils import prepare_obj, update, get_committee_id
+from billy.importers.utils import prepare_obj, update
 from billy.scrape.events import Event
 
 import pymongo

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-import re
 import os
 import csv
-import time
 import shutil
 import zipfile
 import datetime
@@ -12,14 +10,15 @@ from billy.utils import extract_fields
 from billy.conf import settings, base_arg_parser
 
 import boto
-import pymongo
 from boto.s3.key import Key
+
 
 def _make_csv(state, name, fields):
     filename = '/tmp/{0}_{1}'.format(state, name)
     f = csv.DictWriter(open(filename, 'w'), fields)
     f.writerow(dict(zip(fields, fields)))
     return filename, f
+
 
 def dump_legislator_csvs(state):
     leg_fields = ('leg_id', 'full_name', 'first_name', 'middle_name',
@@ -49,7 +48,7 @@ def dump_legislator_csvs(state):
 
         for role in all_roles:
             d = extract_fields(role, role_fields)
-            d.update({'leg_id':legislator['leg_id']})
+            d.update({'leg_id': legislator['leg_id']})
             role_csv.writerow(d)
 
     for committee in db.committees.find({'state': state}):
@@ -58,6 +57,7 @@ def dump_legislator_csvs(state):
         com_csv.writerow(cdict)
 
     return leg_csv_fname, role_csv_fname, com_csv_fname
+
 
 def dump_bill_csvs(state):
     bill_fields = ('state', 'session', 'chamber', 'bill_id', 'title',
@@ -110,13 +110,14 @@ def dump_bill_csvs(state):
             vote_csv.writerow(vdict)
 
             for vtype in ('yes', 'no', 'other'):
-                for leg_vote in vote[vtype+'_votes']:
+                for leg_vote in vote[vtype + '_votes']:
                     legvote_csv.writerow({'vote_id': vote['vote_id'],
                                       'leg_id': leg_vote['leg_id'],
                                       'name': leg_vote['name'].encode('utf8'),
                                       'vote': vtype})
     return (bill_csv_fname, action_csv_fname, sponsor_csv_fname,
             vote_csv_fname, legvote_csv_fname)
+
 
 def dump_csv(state, filename, nozip):
 
@@ -131,13 +132,14 @@ def dump_csv(state, filename, nozip):
             zfile.write(fname, arcname=arcname)
             os.remove(fname)
     else:
-        dirname = state+'_csv'
+        dirname = state + '_csv'
         try:
             os.makedirs(dirname)
         except OSError:
             pass
         for fname in files:
             shutil.move(fname, dirname)
+
 
 def upload(state, filename):
     today = datetime.date.today()

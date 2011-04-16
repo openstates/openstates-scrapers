@@ -1,19 +1,14 @@
 #!/usr/bin/env python
-import datetime
-import glob
-import logging
 import os
 import sys
 import argparse
-import json
 
 from billy.conf import settings, base_arg_parser
-from billy.scrape import (ScrapeError, NoDataForPeriod, JSONDateEncoder,
-                          get_scraper)
-from billy.scrape.validator import DatetimeValidator
+from billy.scrape import ScrapeError, get_scraper
 from billy.importers.bills import import_bills
 from billy.utils import configure_logging
 from billy.bin.scrape import _clear_scraped_data
+
 
 def _run_scraper(mod_path, state, options, metadata):
     """
@@ -38,6 +33,7 @@ def _run_scraper(mod_path, state, options, metadata):
 
     print options.session, options.bill_id
     scraper.scrape_bill(options.chamber, options.session, options.bill_id)
+
 
 def main():
 

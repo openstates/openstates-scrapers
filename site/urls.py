@@ -7,8 +7,11 @@ urlpatterns = patterns('',
     (r'^api/locksmith/', include('locksmith.mongoauth.urls')),
     (r'^api/', include('billy.site.api.urls')),
     (r'^browse/', include('billy.site.browse.urls')),
-    (r'^downloads/$', 'billy.site.api.views.downloads'),
-    (r'^data/(?P<state>\w\w).zip$', 'billy.site.api.views.data_zip'),
+
+    # site-specific views
+    (r'^downloads/$', 'views.downloads'),
+    (r'^data/(?P<state>\w\w).zip$', 'views.data_zip'),
+    (r'^status/detailed/$', 'views.detailed_status'),
 
     # flat pages
     (r'^$', 'django.views.generic.simple.direct_to_template',

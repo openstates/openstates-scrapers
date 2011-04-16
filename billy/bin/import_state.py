@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import logging
 import argparse
 
 from billy.conf import base_arg_parser, settings

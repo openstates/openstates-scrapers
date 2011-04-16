@@ -108,6 +108,7 @@ class NJBillScraper(BillScraper, DBFMixin):
         'AS':  'Assembly Substitute',
         'SCS': 'Senate Committee Substitute',
         'SS':  'Senate Substitute',
+        'GS':  "Governor's Statement",
     }
 
     _version_types = ('I', 'R', 'RS', 'ACS', 'AS', 'SCS', 'SS')
@@ -218,7 +219,11 @@ class NJBillScraper(BillScraper, DBFMixin):
                 document.replace('.DOC', '.HTM'))
 
             # name document based _doctype
-            doc_name = self._doctypes[rec['doctype']]
+            try:
+                doc_name = self._doctypes[rec['doctype']]
+            except KeyError:
+                raise Exception('unknown doctype %s on %s' %
+                                (rec['doctype'], bill_id))
             if rec['comment']:
                 doc_name += ' ' + rec['comment']
 

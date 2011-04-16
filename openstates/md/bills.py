@@ -55,7 +55,7 @@ def _clean_sponsor(name):
         name = name.split(' ', 1)[1]
     if ', District' in name:
         name = name.rsplit(',', 1)[0]
-    return name
+    return name.strip()
 
 BASE_URL = "http://mlis.state.md.us"
 BILL_URL = BASE_URL + "/%s/billfile/%s%04d.htm" # year, session, bill_type, number

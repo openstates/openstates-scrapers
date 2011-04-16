@@ -3,16 +3,16 @@
 from billy.conf import settings, base_arg_parser
 from billy import db
 
-import re
+import sys
 import json
-import urllib, urllib2
-import datetime
+import urllib
+import urllib2
+import time
 
 import argparse
-import name_tools
-import pymongo
 
 from votesmart import votesmart, VotesmartApiError
+
 
 def update_votesmart_legislators(state):
     current_term = state['terms'][-1]['name']
@@ -20,7 +20,7 @@ def update_votesmart_legislators(state):
     query = {'roles': {'$elemMatch':
                        {'type': 'member',
                         'state': state['abbreviation'],
-                        'term': current_term}
+                        'term': current_term},
                       },
              'votesmart_id': None,
             }
@@ -52,12 +52,13 @@ def update_votesmart_legislators(state):
 
     print 'Updated %s of %s missing votesmart ids' % (updated, initial_count)
 
+
 def update_transparencydata_legislators(state, sunlight_key):
     current_term = state['terms'][-1]['name']
     query = {'roles': {'$elemMatch':
                        {'type': 'member',
                         'state': state['abbreviation'],
-                        'term': current_term}
+                        'term': current_term},
                       },
              'transparencydata_id': None,
              'active': True,
@@ -85,7 +86,8 @@ def update_transparencydata_legislators(state, sunlight_key):
             db.legislators.save(leg, safe=True)
             updated += 1
 
-    print 'Updated %s of %s missing transparencydata ids' % (updated, initial_count)
+    print 'Updated %s of %s missing transparencydata ids' % (updated,
+                                                             initial_count)
 
 
 def update_missing_ids(state_abbrev, sunlight_key):
@@ -94,6 +96,8 @@ def update_missing_ids(state_abbrev, sunlight_key):
         print "State '%s' does not exist in the database." % (
             state_abbrev)
         sys.exit(1)
+    else:
+        print "Updating ids for {0}".format(state_abbrev)
 
     print "Updating PVS legislator ids..."
     update_votesmart_legislators(state)
@@ -120,3 +124,4 @@ if __name__ == '__main__':
 
     for state in args.states:
         update_missing_ids(state, settings.SUNLIGHT_SERVICES_KEY)
+        time.sleep(30)

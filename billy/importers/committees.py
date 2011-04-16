@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import sys
 import glob
 import datetime
 import json
@@ -10,7 +9,6 @@ from billy.importers.names import get_legislator_id
 from billy.importers.utils import prepare_obj, update, insert_with_id
 
 import pymongo
-import name_tools
 
 
 def ensure_indexes():
