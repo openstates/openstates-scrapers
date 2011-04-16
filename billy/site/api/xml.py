@@ -101,8 +101,11 @@ def render_full_bill(bill):
         E.votes(*[vote(v) for v in bill.get('votes', [])]),
         E.subjects(*[E.subject(s) for s in bill.get('subjects', [])]),
 
-        E.versions(*[E.version(href=v['url'], name=v['name'])
+        E.versions(*[E.version(v['name'], href=v['url'])
                      for v in bill.get('versions', [])]),
+
+        E.documents(*[E.document(d['name'], href=d['url'])
+                      for d in bill.get('documents', [])]),
         ]
     )
 
