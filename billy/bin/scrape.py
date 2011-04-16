@@ -44,6 +44,7 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
     opts = {'output_dir': options.output_dir,
             'no_cache': options.no_cache,
             'requests_per_minute': options.rpm,
+            'timeout': options.timeout,
             'strict_validation': options.strict,
             'retry_attempts': settings.SCRAPELIB_RETRY_ATTEMPTS,
             'retry_wait_seconds': settings.SCRAPELIB_RETRY_WAIT_SECONDS,
@@ -133,6 +134,8 @@ def main():
                         action="store_true", default=False)
     parser.add_argument('-r', '--rpm', action='store', type=int, dest='rpm',
                         default=60),
+    parser.add_argument('--timeout', action='store', type=int, dest='timeout',
+                        default=10)
 
     args = parser.parse_args()
 
