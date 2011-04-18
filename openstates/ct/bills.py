@@ -1,6 +1,5 @@
 import re
 import csv
-import urllib2
 import datetime
 from operator import itemgetter
 from collections import defaultdict
@@ -44,8 +43,8 @@ class CTBillScraper(BillScraper):
 
     def scrape_bill_info(self, chamber, session):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/bill_info.csv"
-        page = urllib2.urlopen(info_url)
-        page = csv.DictReader(page)
+        page = self.urlopen(info_url)
+        page = csv.DictReader(StringIO.StringIO(page))
 
         abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
@@ -245,8 +244,8 @@ class CTBillScraper(BillScraper):
 
     def scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
-        page = urllib2.urlopen(comm_url)
-        page = csv.DictReader(page)
+        page = self.urlopen(comm_url)
+        page = csv.DictReader(StringIO.StringIO(page))
 
         for row in page:
             comm_code = row['comm_code'].strip()
