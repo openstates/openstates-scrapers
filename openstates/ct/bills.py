@@ -5,6 +5,11 @@ import datetime
 from operator import itemgetter
 from collections import defaultdict
 
+try:
+    import cStringIO as StringIO
+except ImportError:
+    import StringIO
+
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -155,8 +160,8 @@ class CTBillScraper(BillScraper):
 
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"
-        page = urllib2.urlopen(history_url)
-        page = csv.DictReader(page)
+        page = self.urlopen(history_url)
+        page = csv.DictReader(StringIO.StringIO(page))
 
         action_rows = defaultdict(list)
 
