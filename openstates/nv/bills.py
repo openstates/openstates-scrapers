@@ -85,20 +85,11 @@ class NVBillScraper(BillScraper):
 
                     primary, secondary = self.scrape_sponsors(page)
 
-                    if primary and primary[0] == 'By:':
-                        primary.pop(0)
-
-                        if primary[0] == 'ElectionsProceduresEthicsand':
-                            primary[0] = 'Elections Procedures Ethics and'
-
-                        full_name = ''
-                        for part_name in primary:
-                            full_name = full_name + part_name + " "
-                        bill.add_sponsor('primary', full_name)
-                    else:
-                        for leg in primary:
-                            bill.add_sponsor('primary', leg)
+                    for leg in primary:
+                        print leg
+                        bill.add_sponsor('primary', leg)
                     for leg in secondary:
+                        print leg
                         bill.add_sponsor('cosponsor', leg)
 
 
@@ -193,32 +184,18 @@ class NVBillScraper(BillScraper):
 
     def scrape_sponsors(self, page):
         primary = []
-        root = lxml.html.fromstring(page)
-        path = 'string(/html/body/div[@id="content"]/table[1]/tr[4]/td)'
-        sponsors = root.xpath(path)
-        sponsors = sponsors.replace(', ', '')
-        sponsors = sponsors.split()
+        sponsors = []
+        doc = lxml.html.fromstring(page)
+        for b in doc.xpath('//div[@id="content"]/table[1]/tr[4]/td/b'):
+            name = b.text.strip()
+            # add these as sponsors (excluding junk text)
+            if name not in ('By:', 'Bolded'):
+                primary.append(name)
 
-        if '(Bolded' in sponsors:
-            sponsors.remove('By:')
-            sponsors.remove('(Bolded')
-            sponsors.remove('name')
-            sponsors.remove('indicates')
-            sponsors.remove('primary')
-            sponsors.remove('sponsorship)')          
-
-        for mr in root.xpath('/html/body/div[@id="content"]/table[1]/tr[4]/td/b[position() > 2]'):
-            name = mr.xpath('string()')
-            name = name.replace(' ', '')
-            primary.append(name)
-
-        for unwanted in primary:
-            if unwanted in sponsors:
-                sponsors.remove(unwanted)
-
-        if len(primary) == 0:
-            primary = sponsors
-            sponsors = []
+        # tail of last b has remaining sponsors
+        for name in b.tail.split(', '):
+            if name.strip():
+                sponsors.append(name.strip())
 
         return primary, sponsors
 
