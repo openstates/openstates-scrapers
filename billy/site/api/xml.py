@@ -13,12 +13,21 @@ def _date(d):
     raise ValueError("expected date or datetime")
 
 
+def _bool(b):
+    return str(b).lower()
+
+
 def render(obj):
-    renderer = {'bill': render_bill,
-                'person': render_legislator,
-                'legislator': render_legislator,
-                'committee': render_committee,
-                'metadata': render_metadata}[obj['_type']]
+    try:
+        renderer = {'bill': render_bill,
+                    'person': render_legislator,
+                    'legislator': render_legislator,
+                    'committee': render_committee,
+                    'metadata': render_metadata,
+                    'event': render_event}[obj['_type']]
+    except KeyError:
+        raise ValueError(
+            "don't know how to serialize object of type '%s'" % obj['_type'])
 
     elem = renderer(obj)
 
@@ -86,7 +95,7 @@ def render_full_bill(bill):
             yes_count=str(v['yes_count']),
             no_count=str(v['no_count']),
             other_count=str(v['other_count']),
-            passed=str(v['passed']).lower()
+            passed=_bool(v['passed'])
         )
 
     elem = render_short_bill(bill)
@@ -268,3 +277,35 @@ def render_metadata(meta):
         ))
 
     return elem
+
+
+def render_event(ev):
+    def participant(p):
+        return E.participant(
+            p['participant'],
+            chamber=p['chamber'],
+            type=p['type']
+        )
+
+    if ev['end']:
+        end = E.end(_date(ev['end']))
+    else:
+        end = E.end()
+
+    extra = []
+    if 'link' in ev:
+        extra.append(E.link(href=ev['link']))
+
+    return E.event(
+        E.state(ev['state']),
+        E.session(ev['session']),
+        E.type(ev['type']),
+        E.when(_date(ev['when'])),
+        end,
+        E.location(ev['location']),
+        E.all_day(_bool(ev['all_day'])),
+        E.description(ev['description']),
+        E.notes(ev['notes']),
+        E.participants(*[participant(p) for p in ev['participants']]),
+        *extra
+    )
