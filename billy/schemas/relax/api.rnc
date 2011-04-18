@@ -109,6 +109,33 @@ start =
         }*
       }*
     }
+  | element event {
+      attribute created_at { xsd:dateTime },
+      attribute updated_at { xsd:dateTime },
+      attribute id {
+        xsd:string { pattern = "[A-Z][A-Z]E\d{8}" }
+      },
+      element state { state },
+      element session { string.non_empty },
+      element type { string.non_empty },
+      element when { xsd:dateTime },
+      element end { empty | xsd:dateTime },
+      element location { xsd:string },
+      element all_day { xsd:boolean },
+      element description { xsd:string },
+      element notes { xsd:string },
+      element participants {
+        element participant {
+          attribute chamber { chamber },
+          attribute type { string.non_empty },
+          string.non_empty
+        }*
+      },
+      element link {
+        attribute href { string.non_empty }
+      }?,
+      sources
+    }
 
 bill.header =
   attribute created_at { xsd:dateTime },
@@ -172,7 +199,7 @@ sources =
   }
 
 state = xsd:string { pattern = "[a-z][a-z]" }
-  
+
 legislator_id = xsd:string { pattern = "[A-Z][A-Z]L[0-9]{6}" }
 
 committee_id = xsd:string { pattern = "[A-Z][A-Z]C[0-9]{6}" }
