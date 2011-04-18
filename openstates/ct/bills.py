@@ -44,7 +44,7 @@ class CTBillScraper(BillScraper):
     def scrape_bill_info(self, chamber, session):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/bill_info.csv"
         page = self.urlopen(info_url)
-        page = csv.DictReader(StringIO(page))
+        page = csv.DictReader(StringIO.StringIO(page))
 
         abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
@@ -245,7 +245,7 @@ class CTBillScraper(BillScraper):
     def scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
         page = self.urlopen(comm_url)
-        page = csv.DictReader(StringIO(page))
+        page = csv.DictReader(StringIO.StringIO(page))
 
         for row in page:
             comm_code = row['comm_code'].strip()
