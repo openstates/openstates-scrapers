@@ -307,5 +307,6 @@ def render_event(ev):
         E.description(ev['description']),
         E.notes(ev['notes']),
         E.participants(*[participant(p) for p in ev['participants']]),
-        *extra
+        *extra,
+        id=ev['_id']
     )
