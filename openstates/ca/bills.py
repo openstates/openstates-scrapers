@@ -96,7 +96,7 @@ class CABillScraper(BillScraper):
 
             fsbill.add_source(source_url)
 
-            scraped_versions = self.scrape_site_versions(bill, source_url)
+            scraped_versions = self.scrape_site_versions(source_url)
 
             title = ''
             short_title = ''
@@ -301,14 +301,14 @@ class CABillScraper(BillScraper):
 
             self.save_bill(fsbill)
 
-    def scrape_site_versions(self, bill, source_url):
+    def scrape_site_versions(self, source_url):
         with self.urlopen(source_url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(source_url)
 
             versions = []
 
-            for link in page.xpath("//a[contains(@href, '.pdf')]"):
+            for link in page.xpath("//a[contains(., 'HTML')]"):
                 date = link.xpath("string(../../td[2])").strip(" -")
                 date = datetime.datetime.strptime(
                     date, '%m/%d/%Y').date()
