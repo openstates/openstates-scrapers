@@ -43,7 +43,7 @@ def categorize_action(action):
         ('Act ', 'governor:signed'),
         # these are for resolutions
         ('Offered', 'bill:introduced'),
-        ('Adopted': 'bill:passed'),
+        ('Adopted', 'bill:passed'),
     )
     for pattern, types in classifiers:
         if re.match(pattern, action):
