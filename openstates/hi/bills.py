@@ -41,6 +41,9 @@ def categorize_action(action):
         ('.*Passed Third Reading', 'bill:passed'),
         ('Enrolled to Governor', 'governor:received'),
         ('Act ', 'governor:signed'),
+        # these are for resolutions
+        ('Offered', 'bill:introduced'),
+        ('Adopted', 'bill:passed'),
     )
     for pattern, types in classifiers:
         if re.match(pattern, action):

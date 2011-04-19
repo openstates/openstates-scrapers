@@ -69,9 +69,14 @@ class MEBillScraper(BillScraper):
         session_id = (int(bill['session']) - 124) + 8
         url = ("http://www.mainelegislature.org/LawMakerWeb/summary.asp"
                "?paper=%s&SessionID=%d" % (bill['bill_id'], session_id))
-        with self.urlopen(url, retry_on_404=True) as page:
-            page = lxml.html.fromstring(page)
+        with self.urlopen(url, retry_on_404=True) as html:
+            page = lxml.html.fromstring(html)
             page.make_links_absolute(url)
+
+            if 'Bill not found.' in html:
+                self.warning('%s returned "Bill not found." page' % url)
+                return
+
             bill.add_source(url)
 
             sponsor = page.xpath("string(//td[text() = 'Sponsored by ']/b)")
