@@ -415,7 +415,8 @@ metadata = dict(
                 {'type': 'special', 'session_id': 105,
                 'verbose_name': 'Fiftieth Legislature - Second Special Session',
                 'start_date': datetime.date(2011, 2, 14),
-                'end_date': datetime.date(2011, 16, 15)},
+#                'end_date': datetime.date(2011, 16, 15)
+                },
             '50th-1st-regular':
                 {'type': 'primary', 'session_id': 102,
                 'verbose_name': 'Fiftieth Legislature - First Regular Session',
