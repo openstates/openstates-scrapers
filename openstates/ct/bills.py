@@ -221,7 +221,8 @@ class CTBillScraper(BillScraper):
 
                 match = re.match(r'^Joint ((Un)?[Ff]avorable)', action)
                 if match:
-                    act_type.append('committee:passed:%s' % match.group(1))
+                    act_type.append('committee:passed:%s' %
+                                    match.group(1).lower())
 
                 if not act_type:
                     act_type = ['other']
