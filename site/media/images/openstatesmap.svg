@@ -39,9 +39,9 @@
    inkscape:window-height="1172"
    id="namedview728"
    showgrid="false"
-   inkscape:zoom="1.8792044"
-   inkscape:cx="108.73283"
-   inkscape:cy="266.86712"
+   inkscape:zoom="1.5222174"
+   inkscape:cx="415.35528"
+   inkscape:cy="222.39287"
    inkscape:window-x="0"
    inkscape:window-y="24"
    inkscape:window-maximized="0"
@@ -926,15 +926,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.75"
+   style="stop-color:#a5b765;stop-opacity:0.74901962;"
    id="stop331" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9862"
+   style="stop-color:#a5b765;stop-opacity:0.98431373;"
    id="stop333" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop335" />
 </radialGradient>
 <polygon
@@ -1070,15 +1070,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.75"
+   style="stop-color:#a5b765;stop-opacity:0.74901962;"
    id="stop385" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9862"
+   style="stop-color:#a5b765;stop-opacity:0.98431373;"
    id="stop387" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop389" />
 </radialGradient>
 <polygon
@@ -1262,15 +1262,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#D5D6C3;stop-opacity:0.6"
+   style="stop-color:#75afa5;stop-opacity:0.60000002;"
    id="stop457" />
 	<stop
    offset="0.9447"
-   style="stop-color:#D5D6C3;stop-opacity:0.9779"
+   style="stop-color:#75afa5;stop-opacity:0.97647059;"
    id="stop459" />
 	<stop
    offset="1"
-   style="stop-color:#D5D6C3"
+   style="stop-color:#75afa5;stop-opacity:1;"
    id="stop461" />
 </radialGradient>
 <polygon
@@ -1574,15 +1574,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop574" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop576" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop578" />
 </radialGradient>
 <polygon
@@ -1598,15 +1598,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop583" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop585" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop587" />
 </radialGradient>
 <polygon
@@ -1622,21 +1622,21 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop592" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop594" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop596" />
 </radialGradient>
 <polygon
-   fill="url(#SVGID_66_)"
    points="25.488,369.098 22.139,368.034 19.85,369.422 18.133,369.098 17.318,369.669   18.299,371.384 20.585,372.936 23.282,373.346 25.729,372.855 "
-   id="polygon598" />
+   id="polygon598"
+   fill="url(#SVGID_66_)" />
 <radialGradient
    id="SVGID_67_"
    cx="29.3682"
@@ -1646,15 +1646,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop601" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop603" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop605" />
 </radialGradient>
 <polygon
@@ -1670,15 +1670,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop610" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop612" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop614" />
 </radialGradient>
 <polygon
@@ -1694,15 +1694,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop619" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop621" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop623" />
 </radialGradient>
 <polygon
@@ -1718,15 +1718,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop628" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop630" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop632" />
 </radialGradient>
 <polygon
@@ -1742,15 +1742,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop637" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop639" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop641" />
 </radialGradient>
 <polygon
@@ -1766,15 +1766,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop646" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b76f;stop-opacity:0.56470591;"
    id="stop648" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop650" />
 </radialGradient>
 <polygon
@@ -1790,15 +1790,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop655" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop657" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop659" />
 </radialGradient>
 <polygon
@@ -1814,15 +1814,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop664" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop666" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b76f;stop-opacity:0.94117647;"
    id="stop668" />
 </radialGradient>
 <polygon
@@ -1838,15 +1838,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop673" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop675" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop677" />
 </radialGradient>
 <polygon
@@ -1862,15 +1862,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop682" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop684" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop686" />
 </radialGradient>
 <polygon
@@ -1886,15 +1886,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop691" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop693" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop695" />
 </radialGradient>
 <polygon
@@ -1910,15 +1910,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.6"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop700" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9779"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop702" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop704" />
 </radialGradient>
 <polygon
