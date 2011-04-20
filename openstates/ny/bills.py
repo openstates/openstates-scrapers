@@ -65,7 +65,7 @@ class NYBillScraper(BillScraper):
 
             actions = []
             for li in page.xpath("//div[@id = 'content']/ul[1]/li"):
-                text = li.text.strip()
+                text = li.xpath("string()").strip()
 
                 match = re.match(r"([A-Z][a-z][a-z]\s+\d{1,2},\s+\d{4,4}):"
                                  r"\s+(.*)$", text)
