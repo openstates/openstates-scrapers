@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from collections import defaultdict
 
 from openstates.nv import metadata
 from openstates.nv.utils import chamber_name, parse_ftp_listing
@@ -46,16 +47,42 @@ class NVBillScraper(BillScraper):
         elif str(session)[-1] == '3':
             sessionsuffix = 'rd'
 
+        self.subject_mapping = defaultdict(list)
+
         if 'Special' in session:
             insert = session[-2:] + sessionsuffix + str(year) + "Special"
         else:
             insert = str(session) + sessionsuffix + str(year)
+            self.scrape_subjects(insert, session, year)
 
         if chamber == 'upper':
             self.scrape_senate_bills(chamber, insert, session, year)
         elif chamber == 'lower':
             self.scrape_assem_bills(chamber, insert, session, year)
 
+    def scrape_subjects(self, insert, session, year):
+        url = 'http://www.leg.state.nv.us/Session/%s/Reports/TablesAndIndex/%s_%s-index.html' % (insert, year, session)
+
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
+
+            # first, a bit about this page:
+            # Level0 are the bolded titles
+            # Level1,2,3,4 are detailed titles, contain links to bills
+            # all links under a Level0 we can consider categorized by it
+            # there are random newlines *everywhere* that should get replaced
+
+            subject = None
+
+            for p in doc.xpath('//p'):
+                if p.get('class') == 'Level0':
+                    subject = p.text_content().replace('\r\n', ' ')
+                else:
+                    if subject:
+                        for a in p.xpath('.//a'):
+                            bill_id = (a.text.replace('\r\n', '') if a.text
+                                       else None)
+                            self.subject_mapping[bill_id].append(subject)
 
     def scrape_senate_bills(self, chamber, insert, session, year):
         doc_type = {2: 'bill', 4: 'resolution', 7: 'concurrent resolution',
@@ -78,6 +105,7 @@ class NVBillScraper(BillScraper):
 
                     bill = Bill(session, chamber, bill_id, title,
                                 type=bill_type)
+                    bill['subjects'] = self.subject_mapping[bill_id]
 
                     bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
                     text_url = "http://www.leg.state.nv.us" + bill_text
@@ -86,10 +114,8 @@ class NVBillScraper(BillScraper):
                     primary, secondary = self.scrape_sponsors(page)
 
                     for leg in primary:
-                        print leg
                         bill.add_sponsor('primary', leg)
                     for leg in secondary:
-                        print leg
                         bill.add_sponsor('cosponsor', leg)
 
 
@@ -130,6 +156,7 @@ class NVBillScraper(BillScraper):
 
                     bill = Bill(session, chamber, bill_id, title,
                                 type=bill_type)
+                    bill['subjects'] = self.subject_mapping[bill_id]
                     bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
                     text_url = "http://www.leg.state.nv.us" + bill_text
                     bill.add_version("Bill Text", text_url)
