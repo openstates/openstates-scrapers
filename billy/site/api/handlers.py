@@ -157,6 +157,11 @@ class BillSearchHandler(BillyHandler):
                     " Please supply a date in YYYY-MM-DD format.")
                     return resp
 
+        # process sponsor_id
+        sponsor_id = request.GET.get('sponsor_id')
+        if sponsor_id:
+            _filter['sponsors.leg_id'] = sponsor_id
+
         return list(db.bills.find(_filter, bill_fields))
 
 
