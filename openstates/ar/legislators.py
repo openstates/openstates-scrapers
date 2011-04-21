@@ -30,7 +30,8 @@ class ARLegislatorScraper(LegislatorScraper):
         with self.urlopen(member_url) as page:
             root = lxml.html.fromstring(page)
 
-            name_and_party = root.xpath('string(//td[@class="SiteNames"])').split()
+            name_and_party = root.xpath(
+                'string(//td[@class="SiteNames"])').split()
 
             title = name_and_party[0]
             if title == 'Representative':
@@ -52,28 +53,21 @@ class ARLegislatorScraper(LegislatorScraper):
             # Need to figure out a cleaner method for this later
             info_box = root.xpath('string(//table[@class="InfoTable"])')
             district = re.search(r'District(.+)\r', info_box).group(1)
-            try:
-                email = re.search(r'Email(.+)\r', info_box).group(1)
-            except:
-                email = None
-            try:
-                occupation = re.search(r'Occupation(.+)\r', info_box).group(1)
-            except:
-                occupation = None
-            try:
-                religion = re.search(r'Church Affiliation(.+)\r', info_box).group(1)
-            except:
-                religion = None
-            try:
-                veteran = re.search(r'Veteran(.+)\r', info_box).group(1)
-            except:
-                veteran = None
 
             leg = Legislator(term, chamber, district, full_name, party=party,
-                             photo_url=photo_url, email=email,
-                             occupation=occupation, religion=religion,
-                             veteran=veteran)
+                             photo_url=photo_url)
             leg.add_source(member_url)
+
+            try:
+                leg['email'] = re.search(r'Email(.+)\r', info_box).group(1)
+            except AttributeError:
+                pass
+
+            try:
+                leg['occupation'] = re.search(
+                    r'Occupation(.+)\r', info_box).group(1)
+            except AttributeError:
+                pass
 
             self.save_legislator(leg)
 
