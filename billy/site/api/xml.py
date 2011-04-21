@@ -268,13 +268,16 @@ def render_metadata(meta):
             E.term(str(meta[chamber + '_chamber_term'])),
         ))
 
+    terms = E.terms()
     for term in meta['terms']:
-        elem.append(E.term(
+        terms.append(E.term(
             E.name(term['name']),
             E.start_year(str(term['start_year'])),
             E.end_year(str(term['end_year'])),
             *[session(s) for s in term['sessions']]
         ))
+
+    elem.append(terms)
 
     return elem
 
