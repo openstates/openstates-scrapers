@@ -1,10 +1,11 @@
 import re
 
+from billy.utils import urlescape
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
-import urllib, urlparse
+
 
 class ARLegislatorScraper(LegislatorScraper):
     state = 'ar'
@@ -19,11 +20,10 @@ class ARLegislatorScraper(LegislatorScraper):
         with self.urlopen(url) as page:
             root = lxml.html.fromstring(page)
 
-            for a in root.xpath('//table[@class="dxgvTable"] \
-                                  /tr[contains(@class, "dxgvDataRow")] \
-                                  /td[1] \
-                                  /a'):
-                member_url = url_fix(a.attrib['href'])
+            for a in root.xpath('//table[@class="dxgvTable"]'
+                                '/tr[contains(@class, "dxgvDataRow")]'
+                                '/td[1]/a'):
+                member_url = urlescape(a.attrib['href'])
                 self.scrape_member(chamber, term, member_url)
 
     def scrape_member(self, chamber, term, member_url):
@@ -70,13 +70,3 @@ class ARLegislatorScraper(LegislatorScraper):
                 pass
 
             self.save_legislator(leg)
-
-
-def url_fix(s, charset='utf-8'):
-    """http://stackoverflow.com/questions/120951/how-can-i-normalize-a-url-in-python"""
-    if isinstance(s, unicode):
-        s = s.encode(charset, 'ignore')
-    scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
-    path = urllib.quote(path, '/%')
-    qs = urllib.quote_plus(qs, ':&=')
-    return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
