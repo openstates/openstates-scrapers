@@ -72,6 +72,8 @@ class AREventScraper(EventScraper):
                               location=location)
                 event.add_source(url)
 
+                event.add_participant('committee', comm, chamber=chamber)
+
                 time = row[3].strip()
                 if time in TIMECODES:
                     event['notes'] = TIMECODES[time]
