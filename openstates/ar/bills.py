@@ -1,5 +1,7 @@
 import csv
 import StringIO
+import datetime
+import collections
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
@@ -26,6 +28,14 @@ class ARBillScraper(BillScraper):
         if session != '2011':
             raise NoDataForPeriod(session)
 
+        self.bills = {}
+        self.scrape_bill_info(chamber, session)
+        self.scrape_actions()
+
+        for bill in self.bills.itervalues():
+            self.save_bill(bill)
+
+    def scrape_bill_info(self, chamber, session):
         url = "ftp://www.arkleg.state.ar.us/dfadooas/LegislativeMeasures.txt"
         page = self.urlopen(url).decode('latin-1')
         page = unicode_csv_reader(StringIO.StringIO(page), delimiter='|')
@@ -46,4 +56,24 @@ class ARBillScraper(BillScraper):
                                session, bill_id.replace(' ', '')))
             bill.add_version(bill_id, version_url)
 
-            self.save_bill(bill)
+            self.bills[bill_id] = bill
+
+    def scrape_actions(self):
+        url = "ftp://www.arkleg.state.ar.us/dfadooas/ChamberActions.txt"
+        page = self.urlopen(url)
+        page = csv.reader(StringIO.StringIO(page))
+
+        for row in page:
+            bill_id = "%s%s %s" % (row[1], row[2], row[3])
+            if bill_id not in self.bills:
+                continue
+
+            # Commas aren't escaped, but only one field (the action) can
+            # contain them so we can work around it by using both positive
+            # and negative offsets
+            bill_id = "%s%s %s" % (row[1], row[2], row[3])
+            actor = {'HU': 'lower', 'SU': 'upper'}[row[-5].upper()]
+            date = datetime.datetime.strptime(row[6], "%Y-%m-%d %H:%M:%S")
+            action = ','.join(row[7:-5])
+
+            self.bills[bill_id].add_action(actor, action, date)
