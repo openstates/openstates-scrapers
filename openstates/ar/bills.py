@@ -41,4 +41,9 @@ class ARBillScraper(BillScraper):
             bill.add_source(url)
             bill.add_sponsor('lead sponsor', row[11])
 
+            version_url = ("ftp://www.arkleg.state.ar.us/Bills/"
+                           "%s/Public/%s.pdf" % (
+                               session, bill_id.replace(' ', '')))
+            bill.add_version(bill_id, version_url)
+
             self.save_bill(bill)
