@@ -54,6 +54,7 @@ class ARBillScraper(BillScraper):
             type_spec = re.match(r'(H|S)([A-Z]+)\s', bill_id).group(2)
             bill_type = {
                 'B': 'bill',
+                'R': 'resolution',
                 'JR': 'joint resolution',
                 'CR': 'concurrent resolution',
                 'MR': 'memorial resolution',
