@@ -1,3 +1,4 @@
+import re
 import csv
 import StringIO
 import datetime
@@ -50,7 +51,15 @@ class ARBillScraper(BillScraper):
 
             bill_id = "%s%s %s" % (row[0], row[1], row[2])
 
-            bill = Bill('2011', chamber, bill_id, row[3])
+            type_spec = re.match(r'(H|S)([A-Z]+)\s', bill_id).group(2)
+            bill_type = {
+                'B': 'bill',
+                'JR': 'joint resolution',
+                'CR': 'concurrent resolution',
+                'MR': 'memorial resolution',
+                'CMR': 'concurrent memorial resolution'}[type_spec]
+
+            bill = Bill('2011', chamber, bill_id, row[3], type=bill_type)
             bill.add_source(url)
             bill.add_sponsor('lead sponsor', row[11])
 
