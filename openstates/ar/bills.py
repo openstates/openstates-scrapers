@@ -91,7 +91,29 @@ class ARBillScraper(BillScraper):
             date = datetime.datetime.strptime(row[6], "%Y-%m-%d %H:%M:%S")
             action = ','.join(row[7:-5])
 
-            self.bills[bill_id].add_action(actor, action, date)
+            action_type = []
+            if action.startswith('Filed'):
+                action_type.append('bill:introduced')
+            elif action.startswith('Read first time'):
+                action_type.append('bill:reading:1')
+            elif action.startswith('Read the third time'):
+                action_type.append('bill:reading:3')
+                if action.endswith('and passed.'):
+                    action_type.append('bill:passed')
+            elif action.startswith('DELIVERED TO THE GOVERNOR'):
+                action_type.append('governor:received')
+
+            if 'referred to' in action:
+                action_type.append('committee:referred')
+
+            if 'Returned by the Committee' in action:
+                if 'recommendation that it Do Pass' in action:
+                    action_type.append('committee:passed:favorable')
+                else:
+                    action_type.append('committee:passed')
+
+            self.bills[bill_id].add_action(actor, action, date,
+                                           type=action_type or ['other'])
 
     def scrape_votes(self, bill):
         # We need to scrape each bill page in order to grab associated votes.
