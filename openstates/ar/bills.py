@@ -5,6 +5,9 @@ import collections
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+
+import lxml.html
 
 
 def unicode_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
@@ -29,13 +32,13 @@ class ARBillScraper(BillScraper):
             raise NoDataForPeriod(session)
 
         self.bills = {}
-        self.scrape_bill_info(chamber, session)
+        self.scrape_bill(chamber, session)
         self.scrape_actions()
 
         for bill in self.bills.itervalues():
             self.save_bill(bill)
 
-    def scrape_bill_info(self, chamber, session):
+    def scrape_bill(self, chamber, session):
         url = "ftp://www.arkleg.state.ar.us/dfadooas/LegislativeMeasures.txt"
         page = self.urlopen(url).decode('latin-1')
         page = unicode_csv_reader(StringIO.StringIO(page), delimiter='|')
@@ -55,6 +58,8 @@ class ARBillScraper(BillScraper):
                            "%s/Public/%s.pdf" % (
                                session, bill_id.replace(' ', '')))
             bill.add_version(bill_id, version_url)
+
+            self.scrape_votes(bill)
 
             self.bills[bill_id] = bill
 
@@ -77,3 +82,54 @@ class ARBillScraper(BillScraper):
             action = ','.join(row[7:-5])
 
             self.bills[bill_id].add_action(actor, action, date)
+
+    def scrape_votes(self, bill):
+        # We need to scrape each bill page in order to grab associated votes.
+        # It's still more efficient to get the rest of the data we're
+        # interested in from the CSVs, though, because their site splits
+        # other info (e.g. actions) across many pages
+        measureno = bill['bill_id'].replace(' ', '')
+        url = ("http://www.arkleg.state.ar.us/assembly/2011/2011R/"
+               "Pages/BillInformation.aspx?measureno=%s" % measureno)
+
+        page = lxml.html.fromstring(self.urlopen(url))
+        page.make_links_absolute(url)
+
+        for link in page.xpath("//a[contains(@href, 'Votes.aspx')]"):
+            date = link.xpath("string(../../td[2])")
+            date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
+
+            motion = link.xpath("string(../../td[3])")
+
+            self.scrape_vote(bill, date, motion, link.attrib['href'])
+
+    def scrape_vote(self, bill, date, motion, url):
+        page = lxml.html.fromstring(self.urlopen(url))
+
+        if url.endswith('Senate'):
+            actor = 'upper'
+        else:
+            actor = 'lower'
+
+        count_path = "string(//td[@align = 'center' and contains(., '%s: ')])"
+        yes_count = int(page.xpath(count_path % "Yeas").split()[-1])
+        no_count = int(page.xpath(count_path % "Nays").split()[-1])
+        other_count = int(page.xpath(count_path % "Non Voting").split()[-1])
+        other_count += int(page.xpath(count_path % "Present").split()[-1])
+
+        passed = yes_count > no_count + other_count
+        vote = Vote(actor, date, motion, passed, yes_count,
+                    no_count, other_count)
+        vote.add_source(url)
+
+        vote_path = "//h3[. = '%s']/following-sibling::table[1]/tr/td/a"
+        for yes in page.xpath(vote_path % "Yeas"):
+            vote.yes(yes.text)
+        for no in page.xpath(vote_path % "Nays"):
+            vote.no(no.text)
+        for other in page.xpath(vote_path % "Non Voting"):
+            vote.other(other.text)
+        for other in page.xpath(vote_path % "Present"):
+            vote.other(other.text)
+
+        bill.add_vote(vote)
