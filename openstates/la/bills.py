@@ -230,7 +230,7 @@ class LABillScraper(BillScraper):
             type = 'passage'
         elif motion.startswith('AMENDMENT'):
             type = 'amendment'
-        elif 'ON 3RD READINT' in motion:
+        elif 'ON 3RD READING' in motion:
             type = 'reading:3'
         else:
             type = 'other'
