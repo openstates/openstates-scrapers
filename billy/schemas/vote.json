@@ -20,8 +20,7 @@
     "other_count": {"type": "integer", "minimum": 0},
     "other_votes": {"type": "array", "items": {"type": "string"}},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
-        "url": {"type": "string"},
-        "retrieved": {"type": "datetime"}
+        "url": {"type": "string"}
     }}}
  }
 }

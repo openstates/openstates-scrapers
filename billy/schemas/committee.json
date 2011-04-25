@@ -12,8 +12,7 @@
         "name": {"type": "string"}
     }}},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
-        "url": {"type": "string"},
-        "retrieved": {"type": "datetime"}
+        "url": {"type": "string"}
     }}}
  }
 }

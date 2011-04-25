@@ -40,7 +40,7 @@ def render(obj):
         elem.attrib['id'] = obj['id']
     if 'sources' in obj:
         elem.append(E.sources(
-            *[E.source(href=s['url'], retrieved=_date(s['retrieved']))
+            *[E.source(href=s['url'])
               for s in obj['sources']]))
 
     return elem
