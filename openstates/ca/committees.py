@@ -20,58 +20,35 @@ class CACommitteeScraper(CommitteeScraper):
             self.scrape_lower_committees(term)
 
     def scrape_upper_committees(self, term):
-        types = {
-            'standing':
-            'http://www.sen.ca.gov/~newsen/committees/standing.htp',
-            'select':
-            'http://www.sen.ca.gov/~newsen/committees/Select.HTP'}
-        comm_xpath = '//a[contains(@href, "PROFILE.HTM")]'
+        url = "http://senate.ca.gov/committees"
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
-        for type, url in types.items():
-            with self.urlopen(url) as page:
-                page = lxml.html.fromstring(page)
-                page.make_links_absolute(url)
+            for link in page.xpath("//h3[.='Standing Committees']/..//a"):
+                if not link.text:
+                    continue
 
-                for a in page.xpath(comm_xpath):
-                    name = a.text.strip()
+                comm = Committee('upper', link.text.strip())
+                self.scrape_upper_committee_members(comm, link.attrib['href'])
+                self.save_committee(comm)
 
-                    if type == 'select':
-                        name = 'Select Committee on ' + name
-                    else:
-                        name = 'Committee on ' + name
+    def scrape_upper_committee_members(self, committee, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            committee.add_source(url)
 
-                    comm = Committee('upper', name)
-                    comm['type'] = type
-                    self.scrape_upper_committee_members(
-                        comm, a.attrib['href'])
+            for link in page.xpath("//a[contains(., 'Senator')]"):
+                name = link.text.strip().replace('Senator ', '')
 
-                    # don't save committees which haven't been assigned
-                    # members yet
-                    if comm['members']:
-                        self.save_committee(comm)
+                match = re.search(r'(.+)\s+\(((Vice )?Chair)\)$', name)
+                if match:
+                    role = match.group(2).lower()
+                    name = match.group(1)
+                else:
+                    role = 'member'
 
-    def scrape_upper_committee_members(self, comm, url):
-        # Senate committee pages are being served up with
-        # an incorrect Content-Length header that confuses
-        # httplib/httplib2, so fall back to urllib2
-        page = urllib2.urlopen(url).read()
-        page = lxml.html.fromstring(page)
-        comm.add_source(url)
-
-        for a in page.xpath('//a[contains(@href, "district")]'):
-            name = a.text.strip()
-            name = name.replace('Senator ', '')
-
-            if name.endswith(' (Chair)'):
-                mtype = 'chair'
-                name = name.replace(' (Chair)', '')
-            elif name.endswith(' (Vice-Chair)'):
-                mtype = 'vice-chair'
-                name = name.replace(' (Vice-Chair)', '')
-            else:
-                mtype = 'member'
-
-            comm.add_member(name, mtype)
+                committee.add_member(name, role)
 
     def scrape_lower_committees(self, term):
         list_url = 'http://www.assembly.ca.gov/acs/comDir.asp'
