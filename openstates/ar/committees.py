@@ -1,3 +1,5 @@
+import re
+
 from billy.utils import urlescape
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
@@ -26,7 +28,15 @@ class ARCommitteeScraper(CommitteeScraper):
                 page = lxml.html.fromstring(page)
 
                 for a in page.xpath('//td[@class="dxtl dxtl__B0"]/a'):
-                    name = a.text.strip()
+                    if a.attrib.get('colspan') == '2':
+                        # colspan=2 signals a subcommittee, but it's easier
+                        # to pick those up from links on the committee page,
+                        # so we do that in scrape_committee() and skip
+                        # it here
+                        continue
+
+                    name = re.sub(r'\s*-\s*(SENATE|HOUSE)$', '', a.text).strip()
+
                     comm_url = urlescape(a.attrib['href'])
                     if chamber == 'task_force':
                         chamber = 'joint'
