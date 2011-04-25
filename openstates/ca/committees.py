@@ -25,12 +25,21 @@ class CACommitteeScraper(CommitteeScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//h3[.='Standing Committees']/..//a"):
+            for link in page.xpath("//h3[. = 'Standing Committees']/..//a"):
                 if not link.text:
                     continue
 
                 comm = Committee('upper',
                                  'Committee on %s' % link.text.strip())
+                self.scrape_upper_committee_members(comm, link.attrib['href'])
+                self.save_committee(comm)
+
+            for link in page.xpath("//h3[. = 'Select Committees']/..//a"):
+                if not link.text:
+                    continue
+
+                comm = Committee('upper',
+                                 'Select Committee on %s' % link.text.strip())
                 self.scrape_upper_committee_members(comm, link.attrib['href'])
                 self.save_committee(comm)
 
