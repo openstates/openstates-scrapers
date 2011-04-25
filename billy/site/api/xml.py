@@ -137,9 +137,9 @@ def render_short_legislator(leg):
         E.middle_name(leg['middle_name']),
         E.suffixes(leg['suffixes']),
 
-        E.transparencydata_id(leg.get('transparencydata_id', '')),
-        E.votesmart_id(leg.get('votesmart_id', '')),
-        E.nimsp_candidate_id(leg.get('nimsp_candidate_id', '')),
+        E.transparencydata_id(leg.get('transparencydata_id', '') or ''),
+        E.votesmart_id(leg.get('votesmart_id', '') or ''),
+        E.nimsp_candidate_id(leg.get('nimsp_candidate_id', '') or ''),
         E.photo_url(leg.get('photo_url', '')),
 
         id=leg['leg_id']
