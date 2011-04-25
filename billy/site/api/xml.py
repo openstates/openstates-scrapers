@@ -180,7 +180,7 @@ def render_full_legislator(leg):
 
     old_terms = []
     if leg.get('old_roles'):
-        for key, value in leg.get('old_roles'):
+        for key, value in leg.get('old_roles').iteritems():
             old_terms.append(E.term(
                 *[role(r) for r in value],
                 name=key))
