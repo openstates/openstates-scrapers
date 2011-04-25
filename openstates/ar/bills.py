@@ -123,6 +123,7 @@ class ARBillScraper(BillScraper):
         measureno = bill['bill_id'].replace(' ', '')
         url = ("http://www.arkleg.state.ar.us/assembly/2011/2011R/"
                "Pages/BillInformation.aspx?measureno=%s" % measureno)
+        bill.add_source(url)
 
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
