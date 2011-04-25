@@ -179,10 +179,11 @@ def render_full_legislator(leg):
         )
 
     old_terms = []
-    for key, value in leg.get('old_roles', []):
-        old_terms.append(E.term(
-            *[role(r) for r in value],
-            name=key))
+    if leg.get('old_roles'):
+        for key, value in leg.get('old_roles'):
+            old_terms.append(E.term(
+                *[role(r) for r in value],
+                name=key))
 
     elem = render_short_legislator(leg)
     elem.extend([
