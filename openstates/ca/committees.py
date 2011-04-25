@@ -16,7 +16,7 @@ class CACommitteeScraper(CommitteeScraper):
 
         if chamber == 'upper':
             self.scrape_upper_committees(term)
-        else:
+        elif chamber == 'lower':
             self.scrape_lower_committees(term)
 
     def scrape_upper_committees(self, term):
