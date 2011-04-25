@@ -29,7 +29,8 @@ class CACommitteeScraper(CommitteeScraper):
                 if not link.text:
                     continue
 
-                comm = Committee('upper', link.text.strip())
+                comm = Committee('upper',
+                                 'Committee on %s' % link.text.strip())
                 self.scrape_upper_committee_members(comm, link.attrib['href'])
                 self.save_committee(comm)
 
