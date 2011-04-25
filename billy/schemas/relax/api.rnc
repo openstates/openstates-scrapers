@@ -193,7 +193,6 @@ committee.header =
 sources =
   element sources {
     element source {
-      attribute retrieved { xsd:dateTime },
       attribute href { string.non_empty }
     }*
   }

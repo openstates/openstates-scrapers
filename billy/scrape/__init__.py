@@ -199,14 +199,13 @@ class SourcedObject(dict):
         self['sources'] = []
         self.update(kwargs)
 
-    def add_source(self, url, retrieved=None, **kwargs):
+    def add_source(self, url, **kwargs):
         """
         Add a source URL from which data related to this object was scraped.
 
         :param url: the location of the source
         """
-        retrieved = retrieved or datetime.datetime.utcnow()
-        self['sources'].append(dict(url=url, retrieved=retrieved, **kwargs))
+        self['sources'].append(dict(url=url, **kwargs))
 
 
 def get_scraper(mod_path, state, scraper_type):
