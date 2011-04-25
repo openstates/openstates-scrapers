@@ -150,6 +150,10 @@ class LABillScraper(BillScraper):
 
                 if action.startswith('Signed by the Governor.'):
                     atype.append('governor:signed')
+                elif action.startswith('Sent to the Governor'):
+                    atype.append('governor:received')
+                elif action.startswith('Read third time'):
+                    atype.append('bill:reading:3')
 
                 if 'amendments proposed' in action_lower:
                     atype.append('amendment:introduced')
