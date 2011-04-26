@@ -1,3 +1,4 @@
+import os
 import time
 import logging
 import datetime
@@ -179,6 +180,16 @@ class Scraper(scrapelib.Scraper):
                 return True
         raise NoDataForPeriod(term)
 
+    def save_object(self, obj):
+        obj['state'] = self.state
+
+        filename = obj.get_filename()
+        with open(os.path.join(self.output_dir, self.scraper_type, filename),
+                  'w') as f:
+            json.dump(obj, f, cls=JSONDateEncoder)
+
+        # validate after writing, allows for inspection
+        self.validate_json(obj)
 
 class SourcedObject(dict):
     """ Base object used for data storage.

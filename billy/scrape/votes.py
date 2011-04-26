@@ -11,7 +11,6 @@ class VoteScraper(Scraper):
 
     def __init__(self, *args, **kwargs):
         super(VoteScraper, self).__init__(*args, **kwargs)
-        self.sequence = itertools.count()
 
     def _get_schema(self):
         schema_path = os.path.join(os.path.split(__file__)[0],
@@ -36,23 +35,17 @@ class VoteScraper(Scraper):
 
         Should be called after all data for the given vote is collected.
         """
-        filename = '%s_%s_%s_seq%s.json' % (vote['session'],
-                                            vote['chamber'],
-                                            vote['bill_id'],
-                                            self.sequence.next())
-
         self.log("save_vote %s %s: %s '%s'" % (vote['session'],
                                                vote['chamber'],
                                                vote['bill_id'],
                                                vote['motion']))
-
-        self.validate_json(vote)
-
-        with open(os.path.join(self.output_dir, 'votes', filename), 'w') as f:
-            json.dump(vote, f, cls=JSONDateEncoder)
+        self.save_object(vote)
 
 
 class Vote(SourcedObject):
+
+    sequence = itertools.count()
+
     def __init__(self, chamber, date, motion, passed,
                  yes_count, no_count, other_count, type='other', **kwargs):
         """
@@ -125,3 +118,10 @@ class Vote(SourcedObject):
             assert len(self['yes_votes']) == self['yes_count']
             assert len(self['no_votes']) == self['no_count']
             assert len(self['other_votes']) == self['other_count']
+
+    def get_filename(self):
+        filename = '%s_%s_%s_seq%s.json' % (vote['session'],
+                                            vote['chamber'],
+                                            vote['bill_id'],
+                                            self.sequence.next())
+
