@@ -180,7 +180,8 @@ class OREBillScraper(BillScraper):
                     #print "versionsSponsors: %s" % str(versionsSponsors)
                     if versionsSponsors:
                         for ver in versionsSponsors['versions']:
-                            bill.add_version(ver['name'], ver['url'])
+                            if ver['name']:
+                                bill.add_version(ver['name'], ver['url'])
                         sponsorType = 'primary'
                         if len(versionsSponsors['sponsors']) > 1:
                             sponsorType = 'cosponsor'
