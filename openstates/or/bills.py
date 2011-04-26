@@ -1,7 +1,7 @@
 #from billy.scrape import ScrapeError, NoDataForPeriod
 #from billy.scrape.votes import Vote
 from billy.scrape.bills import BillScraper, Bill
-from openstates.ore.utils import year_from_session
+from .utils import year_from_session
 
 import datetime as dt
 import pytz
