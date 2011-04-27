@@ -132,7 +132,7 @@ class ORBillScraper(BillScraper):
         action = {
             "bill_id" : "%s %s" % (prefix, number.zfill(4)),
             "action"  : note.strip(),
-            "actor"   : actor
+            "actor"   : actor,
             "date"    : self.timeZone.localize(dt.datetime(int(year),
                                                            int(month),
                                                            int(day),
