@@ -74,10 +74,6 @@ class ORBillScraper(BillScraper):
 
     load_versions_sponsors = True
 
-    # key: year (int)
-    # value: raw measures data for that year from OR FTP server
-    rawdataByYear = { }
-
     actionsByBill = { }
 
     bill_types = {'B': 'bill',
@@ -92,15 +88,21 @@ class ORBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         sessionYear = year_from_session(session)
-        source_url = self._resolve_ftp_url(sessionYear)
+        measure_url = self._resolve_ftp_path(sessionYear, 'measures.txt')
+        action_url = self._resolve_ftp_path(sessionYear, 'meashistory.txt')
 
-        (billData, actionData) = self._load_data(session)
-        self.actionsByBill = self.parse_actions_and_group(actionData)
+        # get all actions first
+        with self.urlopen(action_url) as action_data:
+            self.actionsByBill = self.parse_actions_and_group(action_data)
 
-        first = True
-        for line in billData.split("\n"):
-            if first: first = False
-            else: self._parse_bill(session, chamber, source_url, line.strip())
+        # get the actual bills
+        with self.urlopen(measure_url) as bill_data:
+            # skip header row
+            for line in bill_data.split("\n")[1:]:
+                if line:
+                    self._parse_bill(session, chamber, measure_url,
+                                     line.strip())
+
 
     def parse_actions_and_group(self, data):
         by_bill_id = { }
@@ -139,61 +141,41 @@ class ORBillScraper(BillScraper):
         return action
 
     def _parse_bill(self, session, chamber, source_url, line):
-        if line:
-            (type, combined_id, number, title, relating_to) = line.split("\xe4")
-            if ((type[0] == 'H' and chamber == 'lower') or
-                (type[0] == 'S' and chamber == 'upper')):
+        (type, combined_id, number, title, relating_to) = line.split("\xe4")
+        if ((type[0] == 'H' and chamber == 'lower') or
+            (type[0] == 'S' and chamber == 'upper')):
 
-                # basic bill info
-                bill_id = "%s %s" % (type, number.zfill(4))
-                bill_type = self.bill_types[type[1:]]
-                bill = Bill(session, chamber, bill_id, title, type=bill_type)
-                bill.add_source(source_url)
+            # basic bill info
+            bill_id = "%s %s" % (type, number.zfill(4))
+            bill_type = self.bill_types[type[1:]]
+            bill = Bill(session, chamber, bill_id, title, type=bill_type)
+            bill.add_source(source_url)
 
-                # add actions
-                for a in self.actionsByBill.get(bill_id, []):
-                    bill.add_action(a['actor'], a['action'], a['date'])
+            # add actions
+            for a in self.actionsByBill.get(bill_id, []):
+                bill.add_action(a['actor'], a['action'], a['date'])
 
-                if self.load_versions_sponsors:
-                    # add versions and sponsors
-                    versionsSponsors = self.versionsSponsorsParser.fetch_and_parse(self, session, bill_id)
-                    #print "versionsSponsors: %s" % str(versionsSponsors)
-                    if versionsSponsors:
-                        for ver in versionsSponsors['versions']:
-                            if ver['name']:
-                                bill.add_version(ver['name'], ver['url'])
-                        sponsorType = 'primary'
-                        if len(versionsSponsors['sponsors']) > 1:
-                            sponsorType = 'cosponsor'
-                        for name in versionsSponsors['sponsors']:
-                            bill.add_sponsor(sponsorType, name)
+            if self.load_versions_sponsors:
+                # add versions and sponsors
+                versionsSponsors = self.versionsSponsorsParser.fetch_and_parse(self, session, bill_id)
+                if versionsSponsors:
+                    for ver in versionsSponsors['versions']:
+                        if ver['name']:
+                            bill.add_version(ver['name'], ver['url'])
+                    sponsorType = 'primary'
+                    if len(versionsSponsors['sponsors']) > 1:
+                        sponsorType = 'cosponsor'
+                    for name in versionsSponsors['sponsors']:
+                        bill.add_sponsor(sponsorType, name)
 
-                # save - writes out JSON
-                self.save_bill(bill)
+            # save - writes out JSON
+            self.save_bill(bill)
 
-    def _load_data(self, session):
-        sessionYear = year_from_session(session)
-        if not self.rawdataByYear.has_key(sessionYear):
-            url = self._resolve_ftp_url(sessionYear)
-            actionUrl = self._resolve_action_ftp_url(sessionYear)
-            self.rawdataByYear[sessionYear] = ( self.urlopen(url), self.urlopen(actionUrl) )
-        return self.rawdataByYear[sessionYear]
-
-    def _resolve_ftp_url(self, sessionYear):
-        path = self._resolve_path_generic(sessionYear, 'measures.txt')
-        url = "%s/pub/%s" % (self.baseFtpUrl, path)
-        return url
-
-    def _resolve_action_ftp_url(self, sessionYear):
-        path = self._resolve_path_generic(sessionYear, 'meashistory.txt')
-        url = "%s/pub/%s" % (self.baseFtpUrl, path)
-        return url
-
-    def _resolve_path_generic(self, sessionYear, filename):
+    def _resolve_ftp_path(self, sessionYear, filename):
         currentYear = dt.datetime.today().year
         currentTwoDigitYear = currentYear % 100
         sessionTwoDigitYear = sessionYear % 100
-        if currentTwoDigitYear == sessionTwoDigitYear:
-            return filename
-        else:
-            return 'archive/%02d%s' % (sessionTwoDigitYear, filename)
+        if currentTwoDigitYear != sessionTwoDigitYear:
+            filename = 'archive/%02d%s' % (sessionTwoDigitYear, filename)
+
+        return "%s/pub/%s" % (self.baseFtpUrl, filename)
