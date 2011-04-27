@@ -36,10 +36,10 @@ class LALegislatorScraper(LegislatorScraper):
         if name == 'Franklin, A.B.':
             name = 'Franklin, A. B.'
         elif ', Jr., ' in name:
-            name.replace(', Jr., ', ' ')
+            name = name.replace(', Jr., ', ' ')
             name += ', Jr.'
         elif ', III, ' in name:
-            name.replace(', III, ', ' ')
+            name = name.replace(', III, ', ' ')
             name += ', III'
 
         with self.urlopen(url) as text:
