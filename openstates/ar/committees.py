@@ -43,12 +43,12 @@ class ARCommitteeScraper(CommitteeScraper):
                     self.scrape_committee(chamber, name, comm_url)
 
     def scrape_committee(self, chamber, name, url, subcommittee=None):
-        comm = Committee(chamber, name, subcommittee=subcommittee)
-        comm.add_source(url)
-
         if subcommittee:
             subcommittee = subcommittee.split('-')[-1].strip()
             subcommittee = re.sub(r'^(HOUSE|SENATE)\s+', '', subcommittee)
+
+        comm = Committee(chamber, name, subcommittee=subcommittee)
+        comm.add_source(url)
 
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
