@@ -109,26 +109,33 @@ class ORBillScraper(BillScraper):
         chamber = 'House' if chamber == 'lower' else 'Senate'
         url = 'http://www.leg.state.or.us/%s/measures/main.html' % session_slug
         with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(url)
+            doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
             links = doc.xpath('//a[starts-with(text(), "%s")]' % chamber)
             for link in links:
-                self.parse_version_page(url)
+                self.parse_version_page(link.get('href'))
 
     def parse_version_page(self, url):
         with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(url)
+            doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
 
             for row in doc.xpath('//table[2]/tr'):
                 named_a = row.xpath('.//a/@name')
                 if named_a:
                     bill_id = named_a[0]
-                    bill_id = re.sub(r'(\w+)(\d+)', r'\1 \2', bill_id)
+                    bill_id = re.sub(r'([A-Z]+)(\d+)', r'\1 \2', bill_id)
                 else:
-                    name = row.xpath('td[@width="83%"]/text()')[0]
-                    html, pdf = row.xpath('.//a/@href')
-                    self.all_bills[bill_id].add_version(name, html)
+                    name_td = row.xpath('td[@width="83%"]/text()')
+                    if name_td:
+                        name = name_td[0]
+                        html, pdf = row.xpath('.//a/@href')
+
+                        if bill_id not in self.all_bills:
+                            self.warning("unknown bill %s" % bill_id)
+                            continue
+
+                        self.all_bills[bill_id].add_version(name, html)
 
 
     def fetch_and_parse_details(self, session, bill_id):
@@ -153,7 +160,6 @@ class ORBillScraper(BillScraper):
         output = { 'sponsors' : [ ], 'versions': [ ] }
         subhtml = html[(html.find("</h1></p>")+8):html.find("<center><table BORDER")]
         for match in self.re_versions.findall(subhtml):
-            #print match
             output['versions'].insert(0, {'name': match[0].strip(), 'url': match[1].strip() })
         subhtml = html[html.find("<center><table BORDER"):]
         match = self.re_sponsors.search(subhtml)
