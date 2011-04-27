@@ -44,8 +44,10 @@ class ARCommitteeScraper(CommitteeScraper):
 
     def scrape_committee(self, chamber, name, url, subcommittee=None):
         if subcommittee:
-            subcommittee = subcommittee.split('-')[-1].strip()
-            subcommittee = re.sub(r'^(HOUSE|SENATE)\s+', '', subcommittee)
+            split_sub = subcommittee.split('-')
+            if len(split_sub) > 1:
+                subcommittee = '-'.join(split_sub[1:])
+            subcommittee = re.sub(r'^(HOUSE|SENATE)\s+', '', subcommittee.strip())
 
         comm = Committee(chamber, name, subcommittee=subcommittee)
         comm.add_source(url)
