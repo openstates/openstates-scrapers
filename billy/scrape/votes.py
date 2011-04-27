@@ -120,8 +120,8 @@ class Vote(SourcedObject):
             assert len(self['other_votes']) == self['other_count']
 
     def get_filename(self):
-        filename = '%s_%s_%s_seq%s.json' % (vote['session'],
-                                            vote['chamber'],
-                                            vote['bill_id'],
+        filename = '%s_%s_%s_seq%s.json' % (self['session'],
+                                            self['chamber'],
+                                            self['bill_id'],
                                             self.sequence.next())
 
