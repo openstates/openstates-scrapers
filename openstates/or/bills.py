@@ -128,7 +128,7 @@ class ORBillScraper(BillScraper):
         combined_id, prefix, number, house, date, time, note = line.split("\xe4")
         (month, day, year)     = date.split("/")
         (hour, minute, second) = time.split(":")
-        actor = "upper" if house == "S" else actor = "lower"
+        actor = "upper" if house == "S" else "lower"
         action = {
             "bill_id" : "%s %s" % (prefix, number.zfill(4)),
             "action"  : note.strip(),
