@@ -97,7 +97,7 @@ class ARBillScraper(BillScraper):
             elif (action.startswith('Read first time') or
                   action.startswith('Read the first time')):
                 action_type.append('bill:reading:1')
-            if re.match('Read the first time, .*, read the second time'):
+            if re.match('Read the first time, .*, read the second time', action):
                 action_type.append('bill:reading:2')
             elif action.startswith('Read the third time'):
                 action_type.append('bill:reading:3')
