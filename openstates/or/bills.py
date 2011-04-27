@@ -5,6 +5,7 @@ from collections import defaultdict
 import datetime as dt
 import pytz
 import re
+import lxml.html
 
 class ORBillScraper(BillScraper):
     state         = 'or'
@@ -12,48 +13,54 @@ class ORBillScraper(BillScraper):
     timeZone      = pytz.timezone('US/Pacific')
     baseFtpUrl    = 'ftp://landru.leg.state.or.us'
 
-    actionsByBill = { }
-
     bill_types = {'B': 'bill',
                   'M': 'memorial',
                   'R': 'resolution',
                   'JM': 'joint memorial',
                   'JR': 'joint resolution',
-                  'CR': 'concurrent resolution'
-                 }
+                  'CR': 'concurrent resolution'}
 
     search_url = 'http://www.leg.state.or.us/cgi-bin/searchMeas.pl'
-
-    re_versions = re.compile('>\n([^\(]+)\([^"]+"([^"]+)"')
-    re_sponsors = re.compile('<td><b>By ([^<]+)<')
 
     # mapping of sessions to 'lookin' search values for search_url
     session_to_lookin = {
         '2011 Regular Session' : '11reg',
     }
 
+    all_bills = {}
+
     def scrape(self, chamber, session):
         sessionYear = year_from_session(session)
         measure_url = self._resolve_ftp_path(sessionYear, 'measures.txt')
         action_url = self._resolve_ftp_path(sessionYear, 'meashistory.txt')
-
-        # get all actions first
-        with self.urlopen(action_url) as action_data:
-            self.actionsByBill = self.parse_actions(action_data)
 
         # get the actual bills
         with self.urlopen(measure_url) as bill_data:
             # skip header row
             for line in bill_data.split("\n")[1:]:
                 if line:
-                    self._parse_bill(session, chamber, measure_url,
-                                     line.strip())
+                    self.parse_bill(session, chamber, line.strip())
 
-    def parse_actions(self, data):
+        # add actions
+        chamber_letter = 'S' if chamber == 'upper' else 'H'
+        with self.urlopen(action_url) as action_data:
+            self.parse_actions(action_data, chamber_letter)
+
+        # add versions
+        self.parse_versions(session, chamber)
+
+        # save all bills
+        for bill in self.all_bills.itervalues():
+            bill.add_source(measure_url)
+            bill.add_source(action_url)
+            self.save_bill(bill)
+
+
+    def parse_actions(self, data, chamber_letter):
         actions = []
         # skip first
         for line in data.split("\n")[1:]:
-            if line:
+            if line and line.startswith(chamber_letter):
                 action = self._parse_action_line(line)
                 actions.append(action)
 
@@ -64,9 +71,8 @@ class ORBillScraper(BillScraper):
         by_bill_id = defaultdict(list)
         for a in actions:
             bill_id = a['bill_id']
-            by_bill_id[bill_id].append(a)
-
-        return by_bill_id
+            self.all_bills[bill_id].add_action(a['actor'], a['action'],
+                                               a['date'])
 
     def _parse_action_line(self, line):
         combined_id, prefix, number, house, date, time, note = line.split("\xe4")
@@ -86,7 +92,7 @@ class ORBillScraper(BillScraper):
         }
         return action
 
-    def _parse_bill(self, session, chamber, source_url, line):
+    def parse_bill(self, session, chamber, line):
         (type, combined_id, number, title, relating_to) = line.split("\xe4")
         if ((type[0] == 'H' and chamber == 'lower') or
             (type[0] == 'S' and chamber == 'upper')):
@@ -95,27 +101,34 @@ class ORBillScraper(BillScraper):
             bill_id = "%s %s" % (type, number)
             # lookup type without chamber prefix
             bill_type = self.bill_types[type[1:]]
-            bill = Bill(session, chamber, bill_id, title, type=bill_type)
-            bill.add_source(source_url)
+            self.all_bills[bill_id] =  Bill(session, chamber, bill_id, title,
+                                            type=bill_type)
 
-            # add actions
-            for a in self.actionsByBill.get(bill_id, []):
-                bill.add_action(a['actor'], a['action'], a['date'])
+    def parse_versions(self, session, chamber):
+        session_slug = self.session_to_lookin[session]
+        chamber = 'House' if chamber == 'lower' else 'Senate'
+        url = 'http://www.leg.state.or.us/%s/measures/main.html' % session_slug
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(url)
+            doc.make_links_absolute(url)
+            links = doc.xpath('//a[starts-with(text(), "%s")]' % chamber)
+            for link in links:
+                self.parse_version_page(url)
 
-            # add versions and sponsors
-            versionsSponsors = self.fetch_and_parse_details(session, bill_id)
-            if versionsSponsors:
-                for ver in versionsSponsors['versions']:
-                    if ver['name']:
-                        bill.add_version(ver['name'], ver['url'])
-                sponsorType = 'primary'
-                if len(versionsSponsors['sponsors']) > 1:
-                    sponsorType = 'cosponsor'
-                for name in versionsSponsors['sponsors']:
-                    bill.add_sponsor(sponsorType, name)
+    def parse_version_page(self, url):
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(url)
+            doc.make_links_absolute(url)
 
-            # save - writes out JSON
-            self.save_bill(bill)
+            for row in doc.xpath('//table[2]/tr'):
+                named_a = row.xpath('.//a/@name')
+                if named_a:
+                    bill_id = named_a[0]
+                    bill_id = re.sub(r'(\w+)(\d+)', r'\1 \2', bill_id)
+                else:
+                    name = row.xpath('td[@width="83%"]/text()')[0]
+                    html, pdf = row.xpath('.//a/@href')
+                    self.all_bills[bill_id].add_version(name, html)
 
 
     def fetch_and_parse_details(self, session, bill_id):
