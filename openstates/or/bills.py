@@ -1,5 +1,3 @@
-#from billy.scrape import ScrapeError, NoDataForPeriod
-#from billy.scrape.votes import Vote
 from billy.scrape.bills import BillScraper, Bill
 from .utils import year_from_session
 
@@ -14,39 +12,29 @@ class BillDetailsParser(object):
     re_versions = re.compile('>\n([^\(]+)\([^"]+"([^"]+)"')
     re_sponsors = re.compile('<td><b>By ([^<]+)<')
 
-    #
-    # this is the mapping of years to
-    # 'lookin' search values for the search form for
-    # bill detail pages.
-    #
-    # go to search_url above and view source
-    # we may want to build this list dynamically
-    # as it appears there's a pattern
-    #
-    years_to_lookin = {
-        2011 : '11reg',
-        2010 : '10ss1',
-        2009 : '09reg',
-        2008 : '08ss1',
-        2007 : '07reg',
-        2005 : '05reg',
-        2003 : '03reg',
-        2001 : '01reg',
-        1999 : '99reg'
+    # mapping of sessions to 'lookin' search values for search_url
+    session_to_lookin = {
+        '2011 Regular Session' : '11reg',
     }
 
     def fetch_and_parse(self, scraper, session, bill_id):
         output = None
-        params = self.resolve_search_params(session, bill_id)
-        if params:
+        if session in self.session_to_lookin:
+            (chamber, number) = bill_id.split(" ")
+            number = str(int(number))  # remove leading zeros
+            lookin = self.session_to_lookin[session]
+            chamber = chamber.lower()
+
             # can't use urllib.urlencode() because this search URL
             # expects post args in a certain order it appears
             # (I didn't believe it either until I manually tested via curl)
             # none of these params should need to be encoded
-            postdata = "lookfor=%s&number=%s&lookin=%s&submit=Search" % (params['lookfor'], params['number'], params['lookin'])
-            html = scraper.urlopen(self.search_url, method='POST', body=postdata)
-            #print "fetch_and_parse postdata: %s  html: %s" % (postdata, html)
+            postdata = "lookfor=%s&number=%s&lookin=%s&submit=Search" % (
+                chamber, number, lookin)
+            html = scraper.urlopen(self.search_url, method='POST',
+                                   body=postdata)
             output = self.parse(html)
+
         return output
 
     def parse(self, html):
@@ -78,24 +66,11 @@ class BillDetailsParser(object):
                 output['sponsors'].append(name.strip())
         return output
 
-    def resolve_search_params(self, session, bill_id):
-        year = year_from_session(session)
-        if self.years_to_lookin.has_key(year):
-            (chamber, number) = bill_id.split(" ")
-            number = str(int(number))  # remove leading zeros
-            return {
-                'lookin'  : self.years_to_lookin[year],
-                'lookfor' : chamber.lower(),
-                'number'  : number,
-                'submit'  : 'Search'
-            }
-        else:
-            return None
-
-class OREBillScraper(BillScraper):
-    baseFtpUrl    = 'ftp://landru.leg.state.or.us'
+class ORBillScraper(BillScraper):
     state         = 'or'
+
     timeZone      = pytz.timezone('US/Pacific')
+    baseFtpUrl    = 'ftp://landru.leg.state.or.us'
 
     load_versions_sponsors = True
 
@@ -105,16 +80,23 @@ class OREBillScraper(BillScraper):
 
     actionsByBill = { }
 
+    bill_types = {'B': 'bill',
+                  'M': 'memorial',
+                  'R': 'resolution',
+                  'JM': 'joint memorial',
+                  'JR': 'joint resolution',
+                  'CR': 'concurrent resolution'
+                 }
+
     versionsSponsorsParser = BillDetailsParser()
 
     def scrape(self, chamber, session):
         sessionYear = year_from_session(session)
-        currentYear = dt.date.today().year
-        source_url = self._resolve_ftp_url(sessionYear, currentYear)
+        source_url = self._resolve_ftp_url(sessionYear)
 
         (billData, actionData) = self._load_data(session)
         self.actionsByBill = self.parse_actions_and_group(actionData)
-        
+
         first = True
         for line in billData.split("\n"):
             if first: first = False
@@ -161,16 +143,17 @@ class OREBillScraper(BillScraper):
     def _parse_bill(self, session, chamber, source_url, line):
         if line:
             (type, combined_id, number, title, relating_to) = line.split("\xe4")
-            if (type == 'HB' and chamber == 'lower') or (type == 'SB' and chamber == 'upper'):
-                #
+            if ((type[0] == 'H' and chamber == 'lower') or
+                (type[0] == 'S' and chamber == 'upper')):
+
                 # basic bill info
                 bill_id = "%s %s" % (type, number.zfill(4))
-                bill = Bill(session, chamber, bill_id, title)
+                bill_type = self.bill_types[type[1:]]
+                bill = Bill(session, chamber, bill_id, title, type=bill_type)
                 bill.add_source(source_url)
 
-                #
                 # add actions
-                if self.actionsByBill.has_key(bill_id):
+                if bill_id in self.actionsByBill:
                     for a in self.actionsByBill[bill_id]:
                         bill.add_action(a['actor'], a['action'], a['date'])
 
@@ -194,31 +177,26 @@ class OREBillScraper(BillScraper):
     def _load_data(self, session):
         sessionYear = year_from_session(session)
         if not self.rawdataByYear.has_key(sessionYear):
-            url = self._resolve_ftp_url(sessionYear, dt.date.today().year)
-            actionUrl = self._resolve_action_ftp_url(sessionYear, dt.date.today().year)
+            url = self._resolve_ftp_url(sessionYear)
+            actionUrl = self._resolve_action_ftp_url(sessionYear)
             self.rawdataByYear[sessionYear] = ( self.urlopen(url), self.urlopen(actionUrl) )
         return self.rawdataByYear[sessionYear]
 
-    def _resolve_ftp_url(self, sessionYear, currentYear):
-        url = "%s/pub/%s" % (self.baseFtpUrl, self._resolve_ftp_path(sessionYear, currentYear))
+    def _resolve_ftp_url(self, sessionYear):
+        path = self._resolve_path_generic(sessionYear, 'measures.txt')
+        url = "%s/pub/%s" % (self.baseFtpUrl, path)
         return url
 
-    def _resolve_action_ftp_url(self, sessionYear, currentYear):
-        url = "%s/pub/%s" % (self.baseFtpUrl, self._resolve_action_ftp_path(sessionYear, currentYear))
-        return url    
+    def _resolve_action_ftp_url(self, sessionYear):
+        path = self._resolve_path_generic(sessionYear, 'meashistory.txt')
+        url = "%s/pub/%s" % (self.baseFtpUrl, path)
+        return url
 
-    def _resolve_ftp_path(self, sessionYear, currentYear):
-        return self._resolve_path_generic(sessionYear, currentYear, 'measures.txt')
-
-    def _resolve_action_ftp_path(self, sessionYear, currentYear):
-        return self._resolve_path_generic(sessionYear, currentYear, 'meashistory.txt')
-
-    def _resolve_path_generic(self, sessionYear, currentYear, filename):
+    def _resolve_path_generic(self, sessionYear, filename):
+        currentYear = dt.datetime.today().year
         currentTwoDigitYear = currentYear % 100
         sessionTwoDigitYear = sessionYear % 100
         if currentTwoDigitYear == sessionTwoDigitYear:
             return filename
         else:
             return 'archive/%02d%s' % (sessionTwoDigitYear, filename)
-
-
