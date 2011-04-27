@@ -49,10 +49,18 @@ class ORBillScraper(BillScraper):
         # add versions
         self.parse_versions(session, chamber)
 
+        # add authors
+        if chamber == 'upper':
+            author_url = 'http://www.leg.state.or.us/11reg/pubs/senmh.html'
+        else:
+            author_url = 'http://www.leg.state.or.us/11reg/pubs/hsemh.html'
+        self.parse_authors(author_url)
+
         # save all bills
         for bill in self.all_bills.itervalues():
             bill.add_source(measure_url)
             bill.add_source(action_url)
+            bill.add_source(author_url)
             self.save_bill(bill)
 
 
@@ -137,52 +145,31 @@ class ORBillScraper(BillScraper):
 
                         self.all_bills[bill_id].add_version(name, html)
 
+    def parse_authors(self, url):
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
+            for measure_str in doc.xpath('//p[@class="MHMeasure"]'):
+                measure_str = measure_str.text_content()
 
-    def fetch_and_parse_details(self, session, bill_id):
-        lookin = self.session_to_lookin[session]
-        (chamber, number) = bill_id.split(" ")
-        number = str(int(number))  # remove leading zeros
-        chamber = chamber.lower()
+                # bill_id is first part
+                bill_id = measure_str.rsplit('\t', 1)[0]
+                bill_id = bill_id.replace('\t', ' ').strip()
 
-        # can't use urllib.urlencode() because this search URL
-        # expects post args in a certain order it appears
-        # (I didn't believe it either until I manually tested via curl)
-        # none of these params should need to be encoded
-        postdata = "lookfor=%s&number=%s&lookin=%s&submit=Search" % (
-            chamber, number, lookin)
-        html = self.urlopen(self.search_url, method='POST',
-                               body=postdata)
-        output = self.parse_details(html)
+                # pull out everything within the By -- bookends
+                inner_str = re.search('By (.+) --', measure_str)
+                if inner_str:
+                    inner_str = inner_str.groups()[0]
 
-        return output
+                    # TODO: find out if this semicolon is significant
+                    # (might split primary/cosponsors)
+                    inner_str = inner_str.replace('; ', ', ')
+                    inner_str = inner_str.replace('Representatives','')
+                    inner_str = inner_str.replace('Representative','')
+                    inner_str = inner_str.replace('Senators','')
+                    inner_str = inner_str.replace('Senator','')
 
-    def parse_details(self, html):
-        output = { 'sponsors' : [ ], 'versions': [ ] }
-        subhtml = html[(html.find("</h1></p>")+8):html.find("<center><table BORDER")]
-        for match in self.re_versions.findall(subhtml):
-            output['versions'].insert(0, {'name': match[0].strip(), 'url': match[1].strip() })
-        subhtml = html[html.find("<center><table BORDER"):]
-        match = self.re_sponsors.search(subhtml)
-        if match:
-            val = match.groups()[0]
-            end1 = val.find("--")
-            end2 = val.find(";")
-            if end1 > -1 and end2 > -1:
-                if end1 > end2:
-                    val = val[:end2]
-                else:
-                    val = val[:end1]
-            elif end1 > -1:
-                val = val[:end1]
-            else:
-                val = val[:end2]
-            for name in val.split(","):
-                name = name.replace('Representatives','')
-                name = name.replace('Representative','')
-                name = name.replace('Senator','')
-                name = name.replace('Senators','')
-                output['sponsors'].append(name.strip())
-        return output
+                    for name in inner_str.split(', '):
+                        self.all_bills[bill_id].add_sponsor(name, 'sponsor')
 
 
     def _resolve_ftp_path(self, sessionYear, filename):
