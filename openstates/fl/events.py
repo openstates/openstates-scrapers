@@ -3,11 +3,14 @@ import datetime
 
 from billy.scrape.events import EventScraper, Event
 
+import pytz
 import feedparser
 
 
 class FLEventScraper(EventScraper):
     state = 'fl'
+
+    _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
         if chamber == 'upper' and session == '2011':
@@ -30,9 +33,13 @@ class FLEventScraper(EventScraper):
                                              int(match.group(1)),
                                              int(match.group(2)),
                                              0)
+                    when = self._tz.localize(when)
+
                     desc = entry['summary'].split(' - ')[0]
                     location = entry['summary'].split(' - ')[1]
+
                     event = Event(session, when, 'committee:meeting',
                                   desc, location)
                     event.add_source(url)
+
                     self.save_event(event)
