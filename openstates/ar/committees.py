@@ -61,9 +61,17 @@ class ARCommitteeScraper(CommitteeScraper):
                     mtype = tr.xpath('string(td[1])')
                 else:
                     mtype = 'member'
+
                 member = tr.xpath('string(td[3])').split()
+                title = member[0]
                 member = ' '.join(member[1:])
-                comm.add_member(member, mtype)
+
+                if title == 'Senator':
+                    mchamber = 'upper'
+                elif title == 'Representative':
+                    mchamber = 'lower'
+
+                comm.add_member(member, mtype, chamber=mchamber)
 
             for a in page.xpath('//ul/li/a'):
                 sub_name = a.text.strip()
