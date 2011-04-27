@@ -124,4 +124,4 @@ class Vote(SourcedObject):
                                             self['chamber'],
                                             self['bill_id'],
                                             self.sequence.next())
-
+        return filename
