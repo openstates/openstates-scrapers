@@ -113,18 +113,14 @@ class ORBillScraper(BillScraper):
 
     def parse_actions(self, data):
         actions = [ ]
-        first = True
-        for line in data.split("\n"):
-            if first:
-                first = False
-            else:
+        # skip first
+        for line in data.split("\n")[1:]:
+            if line:
                 action = self._parse_action_line(line)
-                if line:
-                    actions.append(action)
+                actions.append(action)
         return sorted(actions, key=lambda k: k['date'])
 
     def _parse_action_line(self, line):
-        action = None
         combined_id, prefix, number, house, date, time, note = line.split("\xe4")
         (month, day, year)     = date.split("/")
         (hour, minute, second) = time.split(":")
