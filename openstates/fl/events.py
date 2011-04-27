@@ -19,6 +19,9 @@ class FLEventScraper(EventScraper):
             feed = feedparser.parse(page)
 
             for entry in feed['entries']:
+                if 'Committee' not in entry['summary']:
+                    continue
+                
                 date = datetime.datetime(*entry['updated_parsed'][:6])
                 match = re.match(r'(\d+):(\d+)', entry['title'])
                 if match:
@@ -27,6 +30,7 @@ class FLEventScraper(EventScraper):
                                              int(match.group(1)),
                                              int(match.group(2)),
                                              0)
+                    print event['summary']
                     event = Event(session, when, 'committee:meeting',
                                   entry['summary'], 'Unknown')
                     event.add_source(url)
