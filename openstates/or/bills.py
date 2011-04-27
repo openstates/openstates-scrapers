@@ -119,25 +119,27 @@ class ORBillScraper(BillScraper):
                 first = False
             else:
                 action = self._parse_action_line(line)
-                if action:
+                if line:
                     actions.append(action)
         return sorted(actions, key=lambda k: k['date'])
 
     def _parse_action_line(self, line):
         action = None
-        if line:
-            (combined_id, prefix, number, house, date, time, note) = line.split("\xe4")
-            if prefix == "HB" or prefix == "SB":
-                (month, day, year)     = date.split("/")
-                (hour, minute, second) = time.split(":")
-                actor = "upper"
-                if house == "H": actor = "lower"
-                action = {
-                    "bill_id" : "%s %s" % (prefix, number.zfill(4)),
-                    "action"  : note.strip(),
-                    "date"    : self.timeZone.localize(dt.datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))),
-                    "actor"   : actor
-                }
+        combined_id, prefix, number, house, date, time, note = line.split("\xe4")
+        (month, day, year)     = date.split("/")
+        (hour, minute, second) = time.split(":")
+        actor = "upper" if house == "S" else actor = "lower"
+        action = {
+            "bill_id" : "%s %s" % (prefix, number.zfill(4)),
+            "action"  : note.strip(),
+            "actor"   : actor
+            "date"    : self.timeZone.localize(dt.datetime(int(year),
+                                                           int(month),
+                                                           int(day),
+                                                           int(hour),
+                                                           int(minute),
+                                                           int(second))),
+        }
         return action
 
     def _parse_bill(self, session, chamber, source_url, line):
@@ -153,9 +155,8 @@ class ORBillScraper(BillScraper):
                 bill.add_source(source_url)
 
                 # add actions
-                if bill_id in self.actionsByBill:
-                    for a in self.actionsByBill[bill_id]:
-                        bill.add_action(a['actor'], a['action'], a['date'])
+                for a in self.actionsByBill.get(bill_id, []):
+                    bill.add_action(a['actor'], a['action'], a['date'])
 
                 if self.load_versions_sponsors:
                     # add versions and sponsors
