@@ -76,6 +76,7 @@ class ORLegislatorScraper(LegislatorScraper):
         for com in member.xpath(com_xpath):
             cdict = {
                 'position': com.get('title').lower(),
+                'chamber': chamber,
             }
             com_name = com.get('name')
             com_class = com.get('committee-class')
