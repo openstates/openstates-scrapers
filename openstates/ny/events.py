@@ -6,11 +6,22 @@ import pytz
 import icalendar
 import lxml.html
 
+_tz = pytz.timezone('US/Eastern')
+
+
+def _parse_date(date):
+    try:
+        when = datetime.datetime.strptime(
+            date, "%b %d %Y %I:%M %p")
+    except ValueError:
+        when = datetime.datetime.strptime(
+            date, "%B %d %Y %I:%M %p")
+
+    return _tz.localize(when)
+
 
 class NYEventScraper(EventScraper):
     state = 'ny'
-
-    _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
         if chamber == 'upper':
@@ -34,8 +45,8 @@ class NYEventScraper(EventScraper):
                 if 'Committee Meeting' not in text:
                     continue
 
-                start = self._tz.localize(comp['DTSTART'].dt)
-                end = self._tz.localize(comp['DTEND'].dt)
+                start = _tz.localize(comp['DTSTART'].dt)
+                end = _tz.localize(comp['DTEND'].dt)
                 uid = str(comp['UID'])
                 event_url = comp['URL']
 
@@ -75,21 +86,17 @@ class NYEventScraper(EventScraper):
                 date = ' '.join(td.text.split()[0:2]).strip()
 
                 time = td.xpath("../following-sibling::tr[3]/td[2]")[0]
-                time = time.text.split('-')[0].strip()
+                split_time = time.text.split('-')
 
-                when = "%s %d %s" % (date, year, time)
-                when = when.replace('.', '')
+                when = "%s %d %s" % (date, year, split_time[0].strip())
+                when = _parse_date(when.replace('.', ''))
 
-                try:
-                    when = datetime.datetime.strptime(
-                        when, "%b %d %Y %I:%M %p")
-                except ValueError:
-                    when = datetime.datetime.strptime(
-                        when, "%B %d %Y %I:%M %p")
-
-                when = self._tz.localize(when)
+                end = None
+                if len(split_time) > 1:
+                    end = "%s %d %s" % (date, year, split_time[1].strip())
+                    end = _parse_date(end.replace('.', ''))
 
                 event = Event(session, when, 'committee:meeting',
-                              desc, location)
+                              desc, location, end=end)
                 event.add_source(url)
                 self.save_event(event)
