@@ -1,3 +1,4 @@
+import re
 import datetime
 
 from billy.scrape.events import EventScraper, Event
@@ -80,6 +81,11 @@ class NYEventScraper(EventScraper):
                     # We should pick these up from the upper scraper
                     continue
 
+                notes = td.xpath(
+                    "string(../following-sibling::tr[1]/td[2])")
+                notes = re.sub(r'**Click here to view hearing notice**',
+                               '', notes).strip()
+
                 location = td.xpath(
                     "string(../following-sibling::tr[2]/td[2])")
 
@@ -97,6 +103,6 @@ class NYEventScraper(EventScraper):
                     end = _parse_date(end.replace('.', ''))
 
                 event = Event(session, when, 'committee:meeting',
-                              desc, location, end=end)
+                              desc, location, end=end, notes=notes)
                 event.add_source(url)
                 self.save_event(event)
