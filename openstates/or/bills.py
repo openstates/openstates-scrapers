@@ -33,9 +33,9 @@ class ORBillScraper(BillScraper):
         ('Assigned to Subcommittee', 'committee:referred'),
         ('Recommendation: Do pass', 'committee:passed:favorable'),
         ('Governor signed', 'governor:signed'),
-        ('.*Third reading .* Passed', 'bill:passed'),
-        ('.*Third reading .* Failed', 'bill:failed'),
-        ('Final reading .* Adopted', 'bill:passed'),
+        ('.*Third reading.* Passed', 'bill:passed'),
+        ('.*Third reading.* Failed', 'bill:failed'),
+        ('Final reading.* Adopted', 'bill:passed'),
         ('Read third time .* Passed', 'bill:passed'),
         ('Read\. .* Adopted', 'bill:passed'),
     )
