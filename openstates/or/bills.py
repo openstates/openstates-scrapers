@@ -20,12 +20,25 @@ class ORBillScraper(BillScraper):
                   'JR': 'joint resolution',
                   'CR': 'concurrent resolution'}
 
-    search_url = 'http://www.leg.state.or.us/cgi-bin/searchMeas.pl'
-
     # mapping of sessions to 'lookin' search values for search_url
     session_to_lookin = {
         '2011 Regular Session' : '11reg',
     }
+
+    action_classifiers = (
+        ('Introduction and first reading', ['bill:introduced', 'bill:reading:1']),
+        ('First reading', ['bill:introduced', 'bill:reading:1']),
+        ('Second reading', ['bill:reading:2']),
+        ('Referred to ', 'committee:referred'),
+        ('Assigned to Subcommittee', 'committee:referred'),
+        ('Recommendation: Do pass', 'committee:passed:favorable'),
+        ('Governor signed', 'governor:signed'),
+        ('.*Third reading.* Passed', 'bill:passed'),
+        ('.*Third reading.* Failed', 'bill:failed'),
+        ('Final reading.* Adopted', 'bill:passed'),
+        ('Read third time .* Passed', 'bill:passed'),
+        ('Read\. .* Adopted', 'bill:passed'),
+    )
 
     all_bills = {}
 
@@ -79,8 +92,14 @@ class ORBillScraper(BillScraper):
         by_bill_id = defaultdict(list)
         for a in actions:
             bill_id = a['bill_id']
+
+            action_type = 'other'
+            for pattern, types in self.action_classifiers:
+                if re.match(pattern, a['action']):
+                    action_type = types
+
             self.all_bills[bill_id].add_action(a['actor'], a['action'],
-                                               a['date'])
+                                               a['date'], type=action_type)
 
     def _parse_action_line(self, line):
         combined_id, prefix, number, house, date, time, note = line.split("\xe4")
