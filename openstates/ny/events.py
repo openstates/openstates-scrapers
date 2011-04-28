@@ -1,11 +1,14 @@
 from billy.scrape.events import EventScraper, Event
 
+import pytz
 import icalendar
 import lxml.html
 
 
 class NYEventScraper(EventScraper):
     state = 'ny'
+
+    _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
         if chamber == 'upper':
@@ -26,8 +29,8 @@ class NYEventScraper(EventScraper):
                 if 'Committee Meeting' not in text:
                     continue
 
-                start = comp['DTSTART'].dt
-                end = comp['DTEND'].dt
+                start = self._tz.localize(comp['DTSTART'].dt)
+                end = self._tz.localize(comp['DTEND'].dt)
                 uid = str(comp['UID'])
                 event_url = comp['URL']
 
