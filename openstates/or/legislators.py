@@ -1,9 +1,10 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
-class ORELegislatorScraper(LegislatorScraper):
-    rawdata    = None
+class ORLegislatorScraper(LegislatorScraper):
     state      = 'or'
+
+    rawdata    = None
     source_url = 'http://www.leg.state.or.us/xml/members.xml'
 
     extra_fields = {
@@ -23,6 +24,7 @@ class ORELegislatorScraper(LegislatorScraper):
     party_map = {'DEM': 'Democratic', 'REP': 'Republican'}
 
     def scrape(self, chamber, term):
+        self.validate_term(term, latest_only=True)
         html = self._load_data()
         doc = lxml.html.fromstring(html)
 
@@ -36,6 +38,9 @@ class ORELegislatorScraper(LegislatorScraper):
         first_name = member.get('first-name')
         last_name = member.get('last-name')
         party = self.party_map[member.get('party')]
+
+        # this is semi-safe because we validated term w/ latest_only=True
+        session = self.metadata['terms'][-1]['sessions'][-1]
 
         # extra_fields
         extra_dict = {}
@@ -65,6 +70,23 @@ class ORELegislatorScraper(LegislatorScraper):
                          website=member.get('website'),
                          oregon_member_id=member.get('leg-member-id'),
                          **extra_dict)
+
+        # committees
+        com_xpath = 'committee-membership/session[@session-name="%s"]/committee' % session
+        for com in member.xpath(com_xpath):
+            cdict = {
+                'position': com.get('title').lower(),
+            }
+            com_name = com.get('name')
+            com_class = com.get('committee-class')
+            if com_class == 'sub-committee':
+                cdict['committee'], cdict['subcommittee'] = \
+                        com.get('name').split(' Subcommittee On ')
+            else:
+                cdict['committee'] = com.get('name')
+
+            leg.add_role('committee member', term, **cdict)
+
         leg.add_source(self.source_url)
         return leg
 
