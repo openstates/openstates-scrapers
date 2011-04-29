@@ -2,6 +2,7 @@ import re
 import urllib2
 import datetime
 import json
+import itertools
 
 from django.http import HttpResponse
 
@@ -30,7 +31,7 @@ def _build_mongo_filter(request, keys, icase=True):
     # queries are coming eventually:
     # http://jira.mongodb.org/browse/SERVER-90
     _filter = {}
-    keys = set(keys)
+    keys = set(keys) - set(['fields'])
 
     try:
         keys.remove('subjects')
@@ -49,6 +50,16 @@ def _build_mongo_filter(request, keys, icase=True):
                 _filter[key] = re.compile('^%s$' % value, re.IGNORECASE)
 
     return _filter
+
+def _build_field_list(request, default_fields=None):
+    # if 'fields' key is specified in request split it on comma
+    # and use only those fields instead of default_fields
+    fields = request.GET.get('fields')
+
+    if not fields:
+        return default_fields
+    else:
+        return dict(zip(fields.split(','), itertools.repeat(1)))
 
 
 class BillyHandlerMetaClass(HandlerMetaClass):
@@ -90,7 +101,8 @@ class MetadataHandler(BillyHandler):
         """
         Get metadata about a state legislature.
         """
-        return db.metadata.find_one({'_id': state.lower()})
+        return db.metadata.find_one({'_id': state.lower()},
+                                   fields=_build_field_list(request))
 
 
 class BillHandler(BillyHandler):
@@ -99,7 +111,7 @@ class BillHandler(BillyHandler):
                  'bill_id': bill_id}
         if chamber:
             query['chamber'] = chamber.lower()
-        return db.bills.find_one(query)
+        return db.bills.find_one(query, fields=_build_field_list(request))
 
 
 class BillSearchHandler(BillyHandler):
@@ -109,6 +121,8 @@ class BillSearchHandler(BillyHandler):
                        'bill_id': 1, 'type': 1, 'state': 1,
                        'session': 1, 'chamber': 1,
                        'subjects': 1, '_type': 1}
+        # replace with request's fields if they exist
+        bill_fields = _build_field_list(request, bill_fields)
 
         # normal mongo search logic
         _filter = _build_mongo_filter(request, ('state', 'chamber',
@@ -167,12 +181,15 @@ class BillSearchHandler(BillyHandler):
 
 class LegislatorHandler(BillyHandler):
     def read(self, request, id):
-        return db.legislators.find_one({'_all_ids': id})
+        return db.legislators.find_one({'_all_ids': id},
+                                       _build_field_list(request))
 
 
 class LegislatorSearchHandler(BillyHandler):
     def read(self, request):
         legislator_fields = {'sources': 0, 'roles': 0, 'old_roles': 0}
+        # replace with request's fields if they exist
+        legislator_fields = _build_field_list(request, legislator_fields)
 
         _filter = _build_mongo_filter(request, ('state', 'first_name',
                                                'last_name'))
@@ -193,12 +210,15 @@ class LegislatorSearchHandler(BillyHandler):
 
 class CommitteeHandler(BillyHandler):
     def read(self, request, id):
-        return db.committees.find_one({'_all_ids': id})
+        return db.committees.find_one({'_all_ids': id},
+                                     _build_field_list(request))
 
 
 class CommitteeSearchHandler(BillyHandler):
     def read(self, request):
         committee_fields = {'members': 0, 'sources': 0}
+        # replace with request's fields if they exist
+        committee_fields = _build_field_list(request, committee_fields)
 
         _filter = _build_mongo_filter(request, ('committee', 'subcommittee',
                                                 'chamber', 'state'))
@@ -414,4 +434,5 @@ class LegislatorGeoHandler(BillyHandler):
         if not filters:
             return []
 
-        return list(db.legislators.find({'$or': filters}))
+        return list(db.legislators.find({'$or': filters},
+                                        _build_field_list(request)))
