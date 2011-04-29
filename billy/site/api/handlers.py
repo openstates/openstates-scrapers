@@ -77,6 +77,12 @@ class BillyHandlerMetaClass(HandlerMetaClass):
             old_read = new_cls.read
 
             def new_read(*args, **kwargs):
+                request = args[1]
+                if (request.GET.get('format') == 'xml' and
+                    'fields' in request.GET):
+                    resp = rc.BAD_REQUEST
+                    resp.write(": cannot specify fields param if format=xml")
+                    return resp
                 obj = old_read(*args, **kwargs)
                 if isinstance(obj, HttpResponse):
                     return obj
