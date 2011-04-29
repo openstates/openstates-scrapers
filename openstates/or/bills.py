@@ -203,19 +203,19 @@ class ORBillScraper(BillScraper):
         pdf, resp = self.urlretrieve(url)
         lines = convert_pdf(pdf, 'text-nolayout').splitlines()
 
-        last_was_upper = False
+        last_line = ''
 
+        subject_re = re.compile('^[A-Z ]+$')
         bill_re = re.compile('(?:S|H)[A-Z]{1,2} \d+')
 
         for line in lines[1:]:
             if 'BILL INDEX' in line:
                 pass
-            elif line.isupper():
-                if last_was_upper:
+            elif subject_re.match(line):
+                if subject_re.match(last_line):
                     title += ' %s' % line
-                else:
+                elif last_line == '':
                     title = line
-                last_was_upper = True
             else:
                 last_was_upper = False
                 for bill_id in bill_re.findall(line):
@@ -225,6 +225,8 @@ class ORBillScraper(BillScraper):
                             continue
                         self.all_bills[bill_id].setdefault('subjects',
                                                            []).append(title)
+            # sometimes we need to look back
+            last_line = line
 
     def _resolve_ftp_path(self, sessionYear, filename):
         currentYear = dt.datetime.today().year
