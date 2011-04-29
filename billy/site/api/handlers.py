@@ -59,7 +59,10 @@ def _build_field_list(request, default_fields=None):
     if not fields:
         return default_fields
     else:
-        return dict(zip(fields.split(','), itertools.repeat(1)))
+        d = dict(zip(fields.split(','), itertools.repeat(1)))
+        d['_id'] = d.pop('id', 0)
+        d['_type'] = 1
+        return d
 
 
 class BillyHandlerMetaClass(HandlerMetaClass):
