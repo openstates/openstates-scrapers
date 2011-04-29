@@ -58,15 +58,33 @@ Experimental XML Output
 
 In addition to the default JSON, experimental XML support exists as well, append ``&format=xml`` to any request to get XML output.
 
-When using XML field names are the same, for specifics on how JSON-specific constructs like lists translate look at the XML examples.
+When using XML, field names are the same as those found in the documentation.  For specifics on how JSON-specific constructs like lists translate look at the XML examples.
 
-Several features (Notably extra fields and the `fields` parameter) are not compatible with the XML output option.
+Several features (notably extra fields and the custom fieldset behavior documented below) are not compatible with the XML output option.
+
+
+Requesting A Custom Fieldset
+============================
+
+It is possible to return a custom subset of fields on an object by specifying a special ``fields`` parameter.
+
+There are two use cases that this functionality aims to serve:
+
+First, if you are writing an application that loads a lot of data but only uses some of it, specifying a limited subset of fields can reduce response time and bandwidth.  We've seen this approach be particuarly useful for mobile applications where bandwidth is at a premium.
+
+An example would be a legislator search with ``fields=first_name,last_name,leg_id`` specified.  All legislator objects returned will only have the three fields that you requested.
+
+Second, you can actually specify a set of fields that includes fields excluded in the default response.
+
+For instance if you are doing a bill search it typically does not include sponsors, though many sites may wish to use sponsor information without making a request for the full bill (which is typically much larger as it includes versions, votes, actions, etc.).
+
+A bill search that specifies ``fields=bill_id,sponsors,title,chamber`` will include the full sponsor listing in addition to the standard bill_id, title, and chamber fields.
 
 
 Extra Fields
 ============
 
-You may notice that the fields documented methods are sometimes a subset of the fields actually included in a response.
+You may notice that the fields documented are sometimes a subset of the fields actually included in a response.
 
 Many times as part of our scraping process we take in data that is available for a given state and is either not available or does not have an analog in other states.  Instead of artificially limiting the data we provide to the smallest common subset we make this extra data available.
 
