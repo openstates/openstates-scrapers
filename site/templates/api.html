@@ -13,19 +13,26 @@
 
 The Open State Project provides a RESTful API for accessing state legislative information.
 
-  * The base URL is ``http://openstates.sunlightlabs.com/api/v1/``
-  * All methods return `JSON <http://json.org/>`_.
-  * Appropriate HTTP error codes are sent on errors (generally 404 if object is not found, 401 if authentication fails, etc.).
-  * An API key is required and can be obtained via http://services.sunlightlabs.com/
-  * There is a `Python client library <http://github.com/sunlightlabs/python-openstates>`_ available.
-
-For details on the current availability and status of state data visit the
-`Open States status page <http://openstates.sunlightlabs.com/status/>`_.
+    * API calls are URLs in the form ``http://openstates.sunlightlabs.com/api/v1/METHOD/?apikey=``
+    * Responses will (unless otherwise specified) be `JSON <http://json.org/>`_.
+    * If an error occurs the response will be a plain text error message with an appropriate HTTP error codes are sent on errors (404 if object is not found, 401 if authentication fails, etc.).
+    * The required API key can be obtained via http://services.sunlightlabs.com/
+    * For details on the current availability and status of state data visit the `Open States status page <http://openstates.sunlightlabs.com/status/>`_.
 
 All changes to the API will be announced on the `Open State Project Google Group <http://groups.google.com/group/fifty-state-project/>`_ and documented in the `api changelog </api/changelog/>`_.
 
+Client Libraries
+================
+
+    * We make an official `python-openstates <http://github.com/sunlightlabs/python-openstates>`_ library available.
+    * The team working on `OpenGovernment.org <http://opengovernment.org>`_ has put together the `govkit ruby gem <https://github.com/opengovernment/govkit>`_ that interfaces with the Open States API as well as many others.
+
 Methods
 =======
+
+There are five top level object types Metadata, Bills, Legislators, Committees, and Events.
+
+With the exception of metadata, all have a generic search method and a direct lookup method.
 
   * `State Metadata </api/metadata/>`_
   * `Bill Methods </api/bills/>`_
@@ -45,6 +52,16 @@ Methods
 
     * `Event Search </api/events/#event-search>`_
     * `Event Lookup </api/events/#event-lookup>`_
+
+Experimental XML Output
+=======================
+
+In addition to the default JSON, experimental XML support exists as well, append ``&format=xml`` to any request to get XML output.
+
+When using XML field names are the same, for specifics on how JSON-specific constructs like lists translate look at the XML examples.
+
+Several features (Notably extra fields and the `fields` parameter) are not compatible with the XML output option.
+
 
 Extra Fields
 ============
