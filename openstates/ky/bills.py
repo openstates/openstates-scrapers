@@ -55,9 +55,16 @@ class KYBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            version_link = page.xpath(
-                "//a[contains(@href, '%s/bill.doc')]" % bill_id)[0]
+            try:
+                version_link = page.xpath(
+                    "//a[contains(@href, '%s/bill.doc')]" % bill_id)[0]
+            except IndexError:
+                # Bill withdrawn
+                return
+
             title = version_link.xpath("string(following-sibling::p[1])")
+            title = re.sub(r'\s+', ' ', title).strip()
+
             bill = Bill(session, chamber, bill_id, title)
             bill.add_source(url)
 
@@ -74,12 +81,10 @@ class KYBillScraper(BillScraper):
                     'Prefiled' in action):
                     continue
 
-                action_date = action.split('-')[0]
+                action_date = "%s %s" % (action.split('-')[0],
+                                         session[0:4])
                 action_date = datetime.datetime.strptime(
-                    action_date, '%b %d')
-                # Fix:
-                action_date = action_date.replace(
-                    year=int('20' + session[2:4]))
+                    action_date, '%b %d %Y')
 
                 action = '-'.join(action.split('-')[1:])
 
@@ -90,6 +95,31 @@ class KYBillScraper(BillScraper):
                 else:
                     actor = chamber
 
-                bill.add_action(actor, action, action_date)
+                atype = []
+                if action.startswith('introduced in'):
+                    atype.append('bill:introduced')
+                elif action.startswith('signed by Governor'):
+                    atype.append('governor:signed')
+                elif re.match(r'^to [A-Z]', action):
+                    atype.append('committee:referred')
+
+                if '1st reading' in action:
+                    atype.append('bill:reading:1')
+                if '3rd reading' in action:
+                    atype.append('bill:reading:3')
+
+                if not atype:
+                    atype = ['other']
+
+                bill.add_action(actor, action, action_date, type=atype)
+
+                try:
+                    votes_link = page.xpath(
+                        "//a[contains(@href, 'vote_history.pdf')]")[0]
+                    bill.add_document("Vote History",
+                                      votes_link.attrib['href'])
+                except IndexError:
+                    # No votes
+                    pass
 
             self.save_bill(bill)
