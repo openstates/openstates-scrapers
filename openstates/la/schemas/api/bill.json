@@ -84,7 +84,7 @@
                           "reading:3", "veto_override", "amendment", "other"]}
     }}},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
-        "url": {"type": "string"},
+        "url": {"type": "string"}
     }}}
  }
 }
