@@ -95,6 +95,22 @@ class KYBillScraper(BillScraper):
                 else:
                     actor = chamber
 
-                bill.add_action(actor, action, action_date)
+                atype = []
+                if action.startswith('introduced in'):
+                    atype.append('bill:introduced')
+                elif action.startswith('signed by Governor'):
+                    atype.append('governor:signed')
+                elif re.match(r'^to [A-Z]', action):
+                    atype.append('committee:referred')
+
+                if '1st reading' in action:
+                    atype.append('bill:reading:1')
+                if '3rd reading' in action:
+                    atype.append('bill:reading:3')
+
+                if not atype:
+                    atype = ['other']
+
+                bill.add_action(actor, action, action_date, type=atype)
 
             self.save_bill(bill)
