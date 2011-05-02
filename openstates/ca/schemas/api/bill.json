@@ -12,7 +12,7 @@
     "updated_at": {"type": "datetime"},
     "versions": {"type": "array", "items": {"type": "object", "properties": {
         "name": {"type": "string"},
-        "url": {"type": "string", "required": false},
+        "url": {"type": "string", "blank": true},
         "title": {"type": "string", "required": false}
     }}},
     "documents": {"type": "array", "items": {"type": "object", "properties": {
@@ -77,16 +77,14 @@
           }}
         },
         "sources": {"type": "array", "items": {"type": "object", "properties": {
-            "url": {"type": "string"},
-            "retrieved": {"type": "datetime"}
+            "url": {"type": "string"}
         }}},
         "type": {"type": "string", "required": false,
                  "enum": ["passage", "reading", "reading:1", "reading:2",
                           "reading:3", "veto_override", "amendment", "other"]}
     }}},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
-        "url": {"type": "string"},
-        "retrieved": {"type": "datetime"}
+        "url": {"type": "string"}
     }}}
  }
 }
