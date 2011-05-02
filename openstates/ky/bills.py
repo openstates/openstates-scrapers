@@ -79,12 +79,10 @@ class KYBillScraper(BillScraper):
                     'Prefiled' in action):
                     continue
 
-                action_date = action.split('-')[0]
+                action_date = "%s %s" % (action.split('-')[0],
+                                         session[0:4])
                 action_date = datetime.datetime.strptime(
-                    action_date, '%b %d')
-                # Fix:
-                action_date = action_date.replace(
-                    year=int('20' + session[2:4]))
+                    action_date, '%b %d %Y')
 
                 action = '-'.join(action.split('-')[1:])
 
