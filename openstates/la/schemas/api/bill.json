@@ -77,8 +77,7 @@
           }}
         },
         "sources": {"type": "array", "items": {"type": "object", "properties": {
-            "url": {"type": "string"},
-            "retrieved": {"type": "datetime"}
+            "url": {"type": "string"}
         }}},
         "type": {"type": "string", "required": false,
                  "enum": ["passage", "reading", "reading:1", "reading:2",
