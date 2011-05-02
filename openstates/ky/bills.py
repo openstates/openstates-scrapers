@@ -113,4 +113,13 @@ class KYBillScraper(BillScraper):
 
                 bill.add_action(actor, action, action_date, type=atype)
 
+                try:
+                    votes_link = page.xpath(
+                        "//a[contains(@href, 'vote_history.pdf')]")[0]
+                    bill.add_document("Vote History",
+                                      votes_link.attrib['href'])
+                except IndexError:
+                    # No votes
+                    pass
+
             self.save_bill(bill)
