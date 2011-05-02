@@ -55,8 +55,13 @@ class KYBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            version_link = page.xpath(
-                "//a[contains(@href, '%s/bill.doc')]" % bill_id)[0]
+            try:
+                version_link = page.xpath(
+                    "//a[contains(@href, '%s/bill.doc')]" % bill_id)[0]
+            except IndexError:
+                # Bill withdrawn
+                return
+
             title = version_link.xpath("string(following-sibling::p[1])")
             bill = Bill(session, chamber, bill_id, title)
             bill.add_source(url)
