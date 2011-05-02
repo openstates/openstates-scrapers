@@ -198,6 +198,9 @@ class LABillScraper(BillScraper):
                 else:
                     type = 'author'
 
+                if not author:
+                    continue
+
                 bill.add_sponsor(type, author)
 
     def scrape_versions(self, bill, url):
