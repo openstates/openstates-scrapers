@@ -109,7 +109,8 @@ class CABillScraper(BillScraper):
                     continue
 
                 title = clean_title(version.title)
-                all_titles.add(title)
+                if title:
+                    all_titles.add(title)
                 short_title = clean_title(version.short_title)
                 type = [bill_type]
 
