@@ -36,9 +36,6 @@ class KYBillScraper(BillScraper):
         tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup')).parse
 
     def scrape(self, chamber, year):
-        if year not in metadata['sessions']:
-            raise NoDataForPeriod(year)
-
         self.scrape_session(chamber, year)
         for sub in metadata['session_details'][year]['sub_sessions']:
             self.scrape_session(chamber, sub)
