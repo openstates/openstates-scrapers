@@ -1,5 +1,6 @@
-from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.utils import convert_pdf
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 from .utils import year_from_session
 
 from collections import defaultdict
@@ -7,6 +8,67 @@ import datetime as dt
 import pytz
 import re
 import lxml.html
+
+# OR only provides people not voting yes,  this is fragile and annoying
+# these regexes will pull the appropriate numbers/voters out
+ayes_re = re.compile(" ayes, (\d+)", re.I)
+nays_re = re.compile(" nays, (\d+)--([^;]*)", re.I)
+absent_re = re.compile(" absent, (\d+)--([^;]*)", re.I)
+excused_re = re.compile(" excused(?: for business of the house)?, (\d+)--([^;]*)", re.I)
+
+example_votes = """Third reading. Carried by Conger. Passed. Ayes, 60.
+Third reading. Carried by Read. Passed. Ayes, 58; Nays, 2--Garrard, Wingard.
+Third reading. Carried by Holvey. Passed. Ayes, 49; Nays, 10--Esquivel, Garrard, Krieger, McLane, Parrish, Richardson, Schaufler, Sprenger, Wand, Wingard; Excused, 1--Kennemer.
+Third reading. Carried by Esquivel. Passed. Ayes, 59; Absent, 1--Berger.
+Third reading. Carried by Bailey. Passed. Ayes, 58; Excused, 2--Hicks, Richardson.
+Read. Carried by Richardson. Adopted. Ayes, 58; Absent, 1--Parrish; Excused, 1--Nolan.
+Read. Carried by Matthews. Adopted. Ayes, 57; Excused, 1--Witt; Excused for Business of the House, 2--Buckley, Richardson.
+Read. Carried by Cowan. Adopted. Ayes, 50; Nays, 9--Freeman, Garrard, Hicks, Lindsay, Olson, Parrish, Thatcher, Weidner, Wingard; Excused, 1--Brewer.
+Read. Carried by Huffman. Adopted. Ayes, 58; Excused for Business of the House, 2--Berger, Speaker Hanna.
+Third reading. Carried by Cameron. Passed. Ayes, 58; Excused, 2--Frederick, Kennemer.
+Third reading. Carried by  Wingard. Failed. Ayes, 28; Nays, 32--Bailey, Barker, Barnhart, Beyer, Boone, Buckley, Cannon, Clem, Cowan, Dembrow, Doherty, Frederick, Garrard, Garrett, Gelser, Greenlick, Harker, Holvey, Hoyle, Hunt, Jenson, Kotek, Matthews, Nathanson, Nolan, Read, Schaufler, Smith G., Smith J., Tomei, Witt, Speaker Roblan.
+Third reading. Carried by Conger. Failed. Ayes, 28; Nays, 28--Barnhart, Bentz, Brewer, Cannon, Clem, Esquivel, Frederick, Freeman, Garrard, Greenlick, Hicks, Johnson, Kennemer, Komp, Olson, Parrish, Richardson, Schaufler, Sheehan, Smith G., Smith J., Sprenger, Thatcher, Thompson, Wand, Weidner, Wingard, Speaker Hanna; Excused, 2--Gilliam, Lindsay; Excused for Business of the House, 2--Cowan, Jenson.
+Third reading.  Carried by  Bonamici.  Failed. Ayes, 11; nays, 18--Atkinson, Beyer, Bonamici, Boquist, Ferrioli, Girod, Hass, Kruse, Monnes Anderson, Morse, Nelson, Olsen, Prozanski, Starr, Telfer, Thomsen, Whitsett, Winters; excused, 1--George.""".splitlines()
+
+def _handle_3rd_reading(action, chamber, date, passed):
+
+    ayes = ayes_re.findall(action)
+    if ayes:
+        ayes = int(ayes[0])
+    else:
+        ayes = 0
+
+    nays = nays_re.findall(action)
+    if nays:
+        nays, n_votes = nays[0]
+        nays = int(nays)
+        n_votes = n_votes.split(', ')
+    else:
+        nays = 0
+        n_votes = []
+
+    absent = absent_re.findall(action)
+    excused = excused_re.findall(action)
+    others = 0
+    o_votes = []
+    if absent:
+        absents, a_votes = absent[0]
+        others += int(absents)
+        o_votes += a_votes.split(', ')
+    # might be multiple excused matches ("on business of house" case)
+    for excused_match in excused:
+        excuseds, e_votes = excused_match
+        others += int(excuseds)
+        o_votes += e_votes.split(', ')
+
+    vote = Vote(chamber, date, 'Bill Passage', passed, ayes, nays, others)
+    for n in n_votes:
+        vote.no(n)
+    for o in o_votes:
+        vote.other(o)
+
+    return vote
+
 
 class ORBillScraper(BillScraper):
     state         = 'or'
@@ -34,10 +96,10 @@ class ORBillScraper(BillScraper):
         ('Assigned to Subcommittee', 'committee:referred'),
         ('Recommendation: Do pass', 'committee:passed:favorable'),
         ('Governor signed', 'governor:signed'),
-        ('.*Third reading.* Passed', 'bill:passed'),
-        ('.*Third reading.* Failed', 'bill:failed'),
+        ('.*Third reading.* Passed', ['bill:passed', 'bill:reading:3']),
+        ('.*Third reading.* Failed', ['bill:failed', 'bill:reading:3']),
         ('Final reading.* Adopted', 'bill:passed'),
-        ('Read third time .* Passed', 'bill:passed'),
+        ('Read third time .* Passed', ['bill:passed', 'bill:reading:3']),
         ('Read\. .* Adopted', 'bill:passed'),
     )
 
@@ -107,6 +169,17 @@ class ORBillScraper(BillScraper):
             for pattern, types in self.action_classifiers:
                 if re.match(pattern, a['action']):
                     action_type = types
+
+            # record vote if this looks like a bill pass or fail
+            if 'bill:passed' in action_type:
+                vote = _handle_3rd_reading(a['action'], a['actor'], a['date'],
+                                           True)
+                self.all_bills[bill_id].add_vote(vote)
+            elif 'bill:failed' in action_type:
+                vote = _handle_3rd_reading(a['action'], a['actor'], a['date'],
+                                           False)
+                self.all_bills[bill_id].add_vote(vote)
+
 
             self.all_bills[bill_id].add_action(a['actor'], a['action'],
                                                a['date'], type=action_type)
