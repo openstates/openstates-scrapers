@@ -414,13 +414,12 @@ metadata = dict(
             '50th-2nd-special':
                 {'type': 'special', 'session_id': 105,
                 'verbose_name': 'Fiftieth Legislature - Second Special Session',
-                'start_date': datetime.date(2011, 2, 14)},
-                #'end_date': datetime.date(2011, 2, 15)},
+                'start_date': datetime.date(2011, 2, 14),
+                'end_date': datetime.date(2011, 2, 16) },
             '50th-1st-regular':
                 {'type': 'primary', 'session_id': 102,
                 'verbose_name': 'Fiftieth Legislature - First Regular Session',
                 'start_date': datetime.date(2011, 1, 10),
-                #'end_date': datetime.date()
-                },
+                'end_date': datetime.date(2011,4,20)},
         }
     )

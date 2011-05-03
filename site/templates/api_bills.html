@@ -1,6 +1,8 @@
 {% extends "flatpage.html" %}
 {% load markup_tags %}
 
+{% block title %}Open State Project API: Bill API Methods{% endblock %}
+
 {% block breadcrumb %}
 <li class="home">
     <a href="/api/">API</a>
@@ -83,7 +85,6 @@ Both methods return bill objects consisting of the following fields:
     List of sources that this data was collected from.
 
     * ``url``: URL of the source
-    * ``retrieved``: time at which the source was last retrieved
 
 .. note::
     ``actions``, ``sponsors``, ``votes``, ``versions``, ``documents``,
@@ -120,9 +121,11 @@ All other parameters are optional and can be combined as needed.
 ``updated_since``
     only return bills that have been updated since a given date, YYYY-MM-DD format
 ``subject``
-    filty by bills that are about a given subject. If multiple subject
+    filter by bills that are about a given subject. If multiple subject
     parameters are supplied then only bills that match all of them
     will be returned. See `list of subjects <http://openstates.sunlightlabs.com/categorization/#subjects>`_
+``sponsor_id``
+    only return bills sponsored by the legislator with the given id (corresponds to `leg_id`)
 
 URL Format
 ^^^^^^^^^^

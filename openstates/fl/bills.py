@@ -1,6 +1,10 @@
+import os
+import re
 import datetime
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from billy.scrape.utils import convert_pdf
 
 import lxml.html
 
@@ -69,6 +73,9 @@ class FLBillScraper(BillScraper):
                         if not action:
                             continue
 
+                        action = re.sub(r'-(H|S)J\s+(\d+)$', '',
+                                        action)
+
                         atype = []
                         if action.startswith('Referred to'):
                             atype.append('committee:referred')
@@ -78,6 +85,8 @@ class FLBillScraper(BillScraper):
                             atype.append("bill:filed")
                         elif action.startswith("Withdrawn"):
                             atype.append("bill:failed")
+                        elif action.startswith('Introduced'):
+                            atype.append('bill:introduced')
 
                         bill.add_action(actor, action, date, type=atype)
             except IndexError:
@@ -95,7 +104,7 @@ class FLBillScraper(BillScraper):
 
             try:
                 analysis_table = page.xpath(
-                    "//div[@id = 'tabBodyStaffAnalysis']/table")[0]
+                    "//div[@id = 'tabBodyAnalyses']/table")[0]
                 for tr in analysis_table.xpath("tbody/tr"):
                     name = tr.xpath("string(td[1])").strip()
                     name += " -- " + tr.xpath("string(td[3])").strip()
@@ -107,4 +116,64 @@ class FLBillScraper(BillScraper):
             except IndexError:
                 self.log("No analysis table for %s" % bill_id)
 
+            try:
+                vote_table = page.xpath(
+                    "//div[@id = 'tabBodyVoteHistory']/table")[1]
+                for tr in vote_table.xpath("tbody/tr"):
+                    vote_chamber = tr.xpath("string(td[2])").strip()
+                    vote_chamber = {'Senate': 'upper',
+                                    'House': 'lower'}[vote_chamber]
+                    rc_num = tr.xpath("string(td[3])")
+
+                    vote_date = tr.xpath("string(td[4])")
+                    vote_date = datetime.datetime.strptime(
+                        vote_date, "%m/%d/%Y").date()
+
+                    vote_url = tr.xpath("td[5]/a")[0].attrib['href']
+                    self.scrape_vote(bill, vote_chamber, vote_date,
+                                     vote_url)
+            except IndexError:
+                self.log("No vote table for %s" % bill_id)
+
             self.save_bill(bill)
+
+    def scrape_vote(self, bill, chamber, date, url):
+        (path, resp) = self.urlretrieve(url)
+        text = convert_pdf(path, 'text')
+        os.remove(path)
+
+        motion = text.split('\n')[4].strip()
+
+        yes_count = int(re.search(r'Yeas - (\d+)', text).group(1))
+        no_count = int(re.search(r'Nays - (\d+)', text).group(1))
+        other_count = int(re.search(r'Not Voting - (\d+)', text).group(1))
+        passed = yes_count > (no_count + other_count)
+
+        vote = Vote(chamber, date, motion, passed, yes_count, no_count,
+                    other_count)
+        vote.add_source(url)
+
+        for line in text.split('\n')[9:]:
+            if 'after roll call' in line:
+                break
+            if 'Presiding' in line:
+                continue
+
+            for col in re.split(r'-\d+', line):
+                col = col.strip()
+                if not col:
+                    continue
+
+                match = re.match(r'(Y|N|EX)\s+(.+)$', col)
+                if match:
+                    if match.group(1) == 'Y':
+                        vote.yes(match.group(2))
+                    elif match.group(1) == 'N':
+                        vote.no(match.group(2))
+                    else:
+                        vote.other(match.group(2))
+                else:
+                    vote.other(col.strip())
+
+        vote.validate()
+        bill.add_vote(vote)

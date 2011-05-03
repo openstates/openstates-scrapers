@@ -22,17 +22,10 @@ class EventScraper(Scraper):
         raise NotImplementedError("EventScrapers must define a scrape method")
 
     def save_event(self, event):
-        event['state'] = self.state
-
         self.log("save_event %s %s: %s" % (event['when'],
                                            event['type'],
                                            event['description']))
-
-        self.validate_json(event)
-
-        filename = "%s.json" % str(uuid.uuid1())
-        with open(os.path.join(self.output_dir, "events", filename), 'w') as f:
-            json.dump(event, f, cls=JSONDateEncoder)
+        self.save_object(event)
 
 
 class Event(SourcedObject):
@@ -51,3 +44,7 @@ class Event(SourcedObject):
     def add_participant(self, type, participant, **kwargs):
         kwargs.update({'type': type, 'participant': participant})
         self['participants'].append(kwargs)
+
+    def get_filename(self):
+        return "%s.json" % str(uuid.uuid1())
+

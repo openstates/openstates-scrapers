@@ -96,6 +96,10 @@ class INBillScraper(BillScraper):
 
                 action = row.xpath("string(td[4])").strip(' ;\t\n')
 
+                if not action:
+                    # sometimes there are blank actions, just skip these
+                    continue
+
                 atype = []
 
                 if action.startswith('First reading:'):

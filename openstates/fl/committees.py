@@ -53,7 +53,8 @@ class FLCommitteeScraper(CommitteeScraper):
                 else:
                     mtype = 'member'
 
-                comm.add_member(name.text.strip(), mtype)
+                member = re.sub(r'\s+', ' ', name.text.strip())
+                comm.add_member(member, mtype)
 
     def scrape_lower_committees(self):
         url = ("http://www.myfloridahouse.gov/Sections/Committees/"
@@ -85,6 +86,7 @@ class FLCommitteeScraper(CommitteeScraper):
 
             for link in page.xpath("//a[contains(@href, 'MemberId')]"):
                 name = re.sub(r' \([A-Z]\)$', '', link.text).strip()
+                name = re.sub(r'\s+', ' ', name)
 
                 mtype = link.xpath(
                     "string(../following-sibling::td)").strip().lower()

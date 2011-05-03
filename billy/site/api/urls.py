@@ -10,7 +10,7 @@ from piston.emitters import Emitter
 
 from billy.site.api import handlers
 from billy.site.api.views import document, legislator_preview
-from billy.site.api.emitters import OpenStateJSONEmitter
+from billy.site.api.emitters import OpenStateJSONEmitter, OpenStateXMLEmitter
 from billy.site.api.emitters import FeedEmitter, ICalendarEmitter
 
 if getattr(settings, 'USE_LOCKSMITH', False):
@@ -44,11 +44,11 @@ else:
 
 Emitter.register('json', OpenStateJSONEmitter,
                  'application/json; charset=utf-8')
+Emitter.register('xml', OpenStateXMLEmitter, 'application/xml; charset=utf-8')
 
 Emitter.register('rss', FeedEmitter, 'application/rss+xml')
 Emitter.register('ics', ICalendarEmitter, 'text/calendar')
 
-Emitter.unregister('xml')
 Emitter.unregister('yaml')
 Emitter.unregister('django')
 Emitter.unregister('pickle')
@@ -101,7 +101,8 @@ urlpatterns = patterns('',
     url(r'^v1/events/(?P<id>[A-Z]{2,2}E\d{8,8})/$', events_handler),
 
     url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/(?P<chamber>upper|lower)/', subject_list_handler),
-    url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/', subject_list_handler),
+    url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/(?P<session>.+)/',
+        subject_list_handler),
     url(r'v1/subject_counts/(?P<state>[a-zA-Z]{2,2})/', subject_list_handler),
 
     url(r'^v1/legislators/reconcile/$', reconciliation_handler),

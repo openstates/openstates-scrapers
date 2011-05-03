@@ -32,7 +32,7 @@ def standardize_names(state):
             except KeyError:
                 pass
 
-        db.bills.save(bill)
+        db.bills.save(bill, safe=True)
 
 
 if __name__ == '__main__':

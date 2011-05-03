@@ -122,7 +122,8 @@ class NameMatcher(object):
         """
         name, obj = legislator, legislator['_id']
 
-        if legislator['roles'] and legislator['roles'][0]['term'] == self._term:
+        if (legislator['roles'] and legislator['roles'][0]['term'] ==
+            self._term):
             chamber = legislator['roles'][0]['chamber']
         else:
             try:
@@ -192,7 +193,6 @@ class NameMatcher(object):
                 self._names[None][form] = None
             else:
                 self._names[None][form] = obj
-
 
     def match(self, name, chamber=None):
         """

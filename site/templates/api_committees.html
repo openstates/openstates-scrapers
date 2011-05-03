@@ -1,6 +1,8 @@
 {% extends "flatpage.html" %}
 {% load markup_tags %}
 
+{% block title %}Open State Project API: Committee Methods{% endblock %}
+
 {% block breadcrumb %}
 <li class="home">
     <a href="/api/">API</a>
@@ -58,8 +60,6 @@ Committee methods return objects with the following fields:
 
     ``url``
         URL of the source
-    ``retrieved``
-        time at which the source was last retrieved
 
 .. note::
    ``members`` and ``sources`` are not included in the committee search API results

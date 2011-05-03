@@ -1,0 +1,208 @@
+start =
+  element bill { bill.header }
+  | element bill {
+      bill.header,
+      element alternate_titles {
+        element title { string.non_empty }*
+      },
+      element sponsors {
+        element sponsor {
+          attribute type { string.non_empty },
+          attribute id { legislator_id | empty },
+          string.non_empty
+        }*
+      },
+      element actions {
+        element action {
+          attribute date { xsd:dateTime },
+          attribute actor { string.non_empty },
+          element text { string.non_empty },
+          element type { string.non_empty }+
+        }*
+      },
+      element votes {
+        element vote {
+          attribute date { xsd:dateTime },
+          attribute chamber { chamber },
+          attribute id {
+            xsd:string { pattern = "[A-Z][A-Z]V\d{8}" }
+          },
+          attribute type { string.non_empty },
+          attribute yes_count { xsd:nonNegativeInteger },
+          attribute no_count { xsd:nonNegativeInteger },
+          attribute other_count { xsd:nonNegativeInteger },
+          attribute passed { xsd:boolean },
+          element motion { string.non_empty },
+          element avote {
+            attribute name { string.non_empty },
+            attribute leg_id { legislator_id | empty }*,
+            attribute type { "yes" | "no" | "other" }
+          }*
+        }*
+      },
+      element subjects {
+        element subject { string.non_empty }*
+      },
+      element versions {
+        element version {
+          attribute href { string.non_empty },
+          string.non_empty
+        }*
+      },
+      element documents {
+        element document {
+          attribute href { string.non_empty },
+          string.non_empty
+        }*
+      },
+      sources
+    }
+  | element legislator { legislator.header }
+  | element legislator {
+      legislator.header,
+      element roles {
+        role*
+      }?,
+
+      element old_roles {
+        element term {
+          attribute name { string.non_empty },
+          role*
+        }*
+      }?,
+
+      sources
+    }
+  | element committee { committee.header }
+  | element committee {
+      committee.header,
+      element members {
+        element member {
+          attribute role { string.non_empty },
+          attribute id { empty | legislator_id }?,
+          string.non_empty
+        }*
+      },
+
+      sources
+    }
+  | element metadata {
+      element state_name { string.non_empty },
+      element state_abbreviation { state },
+      element legislature_name { string.non_empty },
+      element latest_update { xsd:dateTime },
+      element chamber {
+        element type { chamber },
+        element name { string.non_empty },
+        element title { string.non_empty },
+        element term { string.non_empty }
+      }+,
+      element term {
+        element name { string.non_empty },
+        element start_year { string.non_empty },
+        element end_year { string.non_empty },
+        element session {
+          element name { string.non_empty },
+          element type { string.non_empty },
+          element start_date { xsd:dateTime }?,
+          element end_date { xsd:dateTime }?
+        }*
+      }*
+    }
+  | element event {
+      attribute created_at { xsd:dateTime },
+      attribute updated_at { xsd:dateTime },
+      attribute id {
+        xsd:string { pattern = "[A-Z][A-Z]E\d{8}" }
+      },
+      element state { state },
+      element session { string.non_empty },
+      element type { string.non_empty },
+      element when { xsd:dateTime },
+      element end { empty | xsd:dateTime },
+      element location { xsd:string },
+      element all_day { xsd:boolean },
+      element description { xsd:string },
+      element notes { xsd:string },
+      element participants {
+        element participant {
+          attribute chamber { chamber },
+          attribute type { string.non_empty },
+          string.non_empty
+        }*
+      },
+      element link {
+        attribute href { string.non_empty }
+      }?,
+      sources
+    }
+
+bill.header =
+  attribute created_at { xsd:dateTime },
+  attribute updated_at { xsd:dateTime },
+  element state { state },
+  element session { string.non_empty },
+  element chamber { chamber },
+  element bill_id { string.non_empty },
+  element title { string.non_empty },
+  element type { string.non_empty }+
+
+legislator.header =
+  attribute created_at { xsd:dateTime },
+  attribute updated_at { xsd:dateTime },
+  attribute id { legislator_id },
+  element state { state },
+  element first_name { string.non_empty },
+  element last_name { string.non_empty },
+  element full_name { string.non_empty },
+  element middle_name { xsd:string},
+  element suffixes { xsd:string },
+  element transparencydata_id { xsd:string },
+  element votesmart_id { xsd:string },
+  element nimsp_candidate_id { xsd:string },
+  element photo_url { xsd:string },
+  element active { xsd:boolean },
+  element chamber { string.non_empty }?,
+  element district { string.non_empty }?,
+  element party { xsd:string }?
+
+role =
+  element role {
+    attribute term { string.non_empty },
+    attribute type { string.non_empty },
+    attribute chamber { string.non_empty }?,
+    attribute party { xsd:string }?,
+
+    element committee {
+      attribute id { empty | committee_id }?,
+      string.non_empty
+    }?
+  }
+
+committee.header =
+  attribute created_at { xsd:dateTime },
+  attribute updated_at { xsd:dateTime },
+  attribute id { committee_id },
+  element state { state },
+  element chamber { chamber },
+  element name {
+    element committee_name { string.non_empty },
+    element subcommittee_name { xsd:string }
+  }
+
+sources =
+  element sources {
+    element source {
+      attribute href { string.non_empty }
+    }*
+  }
+
+state = xsd:string { pattern = "[a-z][a-z]" }
+
+legislator_id = xsd:string { pattern = "[A-Z][A-Z]L[0-9]{6}" }
+
+committee_id = xsd:string { pattern = "[A-Z][A-Z]C[0-9]{6}" }
+
+chamber = "upper" | "lower"
+
+string.non_empty = xsd:string { minLength = "1" }

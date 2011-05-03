@@ -1,12 +1,9 @@
 #!/usr/bin/env python
-import sys
 import logging
-
-from pymongo.son import SON
 
 import scrapelib
 
-from billy import db, fs
+from billy import db
 from billy.importers.utils import put_document
 
 
@@ -38,4 +35,4 @@ def import_versions(state, rpm=60):
             bill_changed = True
 
         if bill_changed:
-            db.bills.save(bill)
+            db.bills.save(bill, safe=True)

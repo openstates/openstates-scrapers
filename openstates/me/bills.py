@@ -35,7 +35,7 @@ class MEBillScraper(BillScraper):
         url = ('http://www.mainelegislature.org/legis/bills/bills_%s'
                '/billtexts/' % session_abbr)
 
-        with self.urlopen(url) as page:
+        with self.urlopen(url, retry_on_404=True) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
@@ -47,7 +47,7 @@ class MEBillScraper(BillScraper):
         link_xpath = {'lower': '//big/a[starts-with(text(), "HP")]',
                       'upper': '//big/a[starts-with(text(), "SP")]'}[chamber]
 
-        with self.urlopen(url) as page:
+        with self.urlopen(url, retry_on_404=True) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
@@ -69,9 +69,14 @@ class MEBillScraper(BillScraper):
         session_id = (int(bill['session']) - 124) + 8
         url = ("http://www.mainelegislature.org/LawMakerWeb/summary.asp"
                "?paper=%s&SessionID=%d" % (bill['bill_id'], session_id))
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        with self.urlopen(url, retry_on_404=True) as html:
+            page = lxml.html.fromstring(html)
             page.make_links_absolute(url)
+
+            if 'Bill not found.' in html:
+                self.warning('%s returned "Bill not found." page' % url)
+                return
+
             bill.add_source(url)
 
             sponsor = page.xpath("string(//td[text() = 'Sponsored by ']/b)")
@@ -85,15 +90,17 @@ class MEBillScraper(BillScraper):
             self.scrape_votes(bill, votes_link.attrib['href'])
 
             spon_link = page.xpath("//a[contains(@href, 'subjects.asp')]")[0]
-            with self.urlopen(spon_link.get('href')) as spon_html:
+            spon_url = spon_link.get('href')
+            bill.add_source(spon_url)
+            with self.urlopen(spon_url, retry_on_404=True) as spon_html:
                 sdoc = lxml.html.fromstring(spon_html)
-                srow = sdoc.xpath('//table[@class="sectionbody"]/tr[2]/td[2]/text()')
+                srow = sdoc.xpath('//table[@class="sectionbody"]/tr[2]/td/text()')[1:]
                 if srow:
-                    bill['subjects'] = [srow[0].strip()]
+                    bill['subjects'] = [s.strip() for s in srow if s.strip()]
 
             ver_link = page.xpath("//a[contains(@href, 'display_ps.asp')]")[0]
             ver_url = ver_link.get('href')
-            with self.urlopen(ver_url) as ver_html:
+            with self.urlopen(ver_url, retry_on_404=True) as ver_html:
                 vdoc = lxml.html.fromstring(ver_html)
                 vdoc.make_links_absolute(ver_url)
                 # various versions: billtexts, billdocs, billpdfs
@@ -102,19 +109,22 @@ class MEBillScraper(BillScraper):
                     bill.add_version('Initial Version', vurl[0])
 
     def scrape_votes(self, bill, url):
-        with self.urlopen(url) as page:
+        with self.urlopen(url, retry_on_404=True) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
             path = "//div/a[contains(@href, 'rollcall.asp')]"
             for link in page.xpath(path):
-                motion = link.text.strip()
-                url = link.attrib['href']
+                # skip blank motions, nothing we can do with these
+                # seen on http://www.mainelegislature.org/LawMakerWeb/rollcalls.asp?ID=280039835
+                if link.text:
+                    motion = link.text.strip()
+                    url = link.attrib['href']
 
-                self.scrape_vote(bill, motion, url)
+                    self.scrape_vote(bill, motion, url)
 
     def scrape_vote(self, bill, motion, url):
-        with self.urlopen(url) as page:
+        with self.urlopen(url, retry_on_404=True) as page:
             page = lxml.html.fromstring(page)
 
             yeas_cell = page.xpath("//td[text() = 'Yeas (Y):']")[0]
@@ -143,8 +153,11 @@ class MEBillScraper(BillScraper):
             except ValueError:
                 date = datetime.datetime.strptime(date, "%b. %d, %Y")
 
+            outcome_cell = page.xpath("//td[text()='Outcome:']")[0]
+            outcome = outcome_cell.xpath("string(following-sibling::td)")
+
             vote = Vote(chamber, date, motion,
-                        yes_count > (no_count + other_count),
+                        outcome == 'PREVAILS',
                         yes_count, no_count, other_count)
             vote.add_source(url)
 
@@ -164,7 +177,7 @@ class MEBillScraper(BillScraper):
             bill.add_vote(vote)
 
     def scrape_actions(self, bill, url):
-        with self.urlopen(url) as page:
+        with self.urlopen(url, retry_on_404=True) as page:
             page = lxml.html.fromstring(page)
             bill.add_source(url)
 

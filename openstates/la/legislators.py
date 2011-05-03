@@ -36,10 +36,10 @@ class LALegislatorScraper(LegislatorScraper):
         if name == 'Franklin, A.B.':
             name = 'Franklin, A. B.'
         elif ', Jr., ' in name:
-            name.replace(', Jr., ', ' ')
+            name = name.replace(', Jr., ', ' ')
             name += ', Jr.'
         elif ', III, ' in name:
-            name.replace(', III, ', ' ')
+            name = name.replace(', III, ', ' ')
             name += ', III'
 
         with self.urlopen(url) as text:
@@ -73,7 +73,8 @@ class LALegislatorScraper(LegislatorScraper):
 
             try:
                 party = page.xpath(
-                    "//b[text() = 'Party']")[0].getnext().tail.strip()
+                    "//b[contains(text(), 'Party')]")[0].getnext().tail
+                party = party.strip()
             except IndexError:
                 party = 'N/A'
 

@@ -1,6 +1,8 @@
 {% extends "flatpage.html" %}
 {% load markup_tags %}
 
+{% block title %}Open State Project API: Changelog{% endblock %}
+
 {% block breadcrumb %}
 <li class="home">
     <a href="/api/">API</a>
@@ -26,6 +28,7 @@ The current API version is v1, released on September 1st 2010.
 
 * Events methods added (January 2011)
 * metadata: addition of latest_dump_url/latest_dump_date
+* removal of 'retrieved' attribute on sources (April 2011)
 
 ### Deprecated Versions
 

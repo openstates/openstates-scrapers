@@ -13,6 +13,7 @@ from billy import db, fs
 
 import name_tools
 
+
 def _get_property_dict(schema):
     """ given a schema object produce a nested dictionary of fields """
     pdict = {}
@@ -100,6 +101,7 @@ def update(old, new, coll):
 
     for key, value in new.items():
 
+        # don't update locked fields
         if key in locked_fields:
             continue
 
@@ -107,8 +109,7 @@ def update(old, new, coll):
             old[key] = value
 
             need_save = True
-            if key != 'sources':
-                updated = True
+            updated = True
 
         # remove old +key field if this field no longer has a +
         plus_key = '+%s' % key
@@ -128,8 +129,7 @@ def convert_timestamps(obj):
     Convert unix timestamps in the scraper output to python datetimes
     so that they will be saved properly as Mongo datetimes.
     """
-    for key in ('date', 'when', 'end', 'start_date', 'end_date',
-                'retrieved'):
+    for key in ('date', 'when', 'end', 'start_date', 'end_date'):
         value = obj.get(key)
         if value:
             try:
@@ -264,10 +264,12 @@ def merge_legislators(old, new):
     db.legislators.remove({'_id': new['_id']})
     new['_id'] = old['_id']
     new['leg_id'] = new['_id']
-    db.legislators.save(new)
+    db.legislators.save(new, safe=True)
 
 # fixing bill ids
 _bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
+
+
 def fix_bill_id(bill_id):
     bill_id = bill_id.replace('.', '')
     return _bill_id_re.sub(r'\1 \2', bill_id)

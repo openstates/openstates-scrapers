@@ -58,20 +58,21 @@ class NCBillScraper(BillScraper):
                         if bill_link:
                             self.subject_map[bill_link[0]].append(cur_subject)
 
-    def scrape_bill(self, session, bill_id):
+    def scrape_bill(self, chamber, session, bill_id):
         # there will be a space in bill_id if we're doing a one-off bill scrape
         # convert HB 102 into H102
         if ' ' in bill_id:
             bill_id = bill_id[0] + bill_id.split(' ')[-1]
 
+        # if chamber comes in as House/Senate convert to lower/upper
+        if chamber == 'Senate':
+            chamber = 'upper'
+        elif chamber == 'House':
+            chamber = 'lower'
+
         bill_detail_url = 'http://www.ncga.state.nc.us/gascripts/'\
             'BillLookUp/BillLookUp.pl?Session=%s&BillID=%s' % (
             session, bill_id)
-
-        if bill_id[0] == 'H':
-            chamber = 'lower'
-        else:
-            chamber = 'upper'
 
         # parse the bill data page, finding the latest html text
         with self.urlopen(bill_detail_url) as data:
@@ -134,7 +135,8 @@ class NCBillScraper(BillScraper):
                 tds = row.xpath('td')
                 act_date = tds[0].text
                 actor = tds[1].text or ''
-                action = tds[2].text.strip()
+                # if text is blank, try diving in
+                action = tds[2].text.strip() or tds[2].text_content().strip()
 
                 act_date = dt.datetime.strptime(act_date, '%m/%d/%Y')
 
@@ -172,4 +174,4 @@ class NCBillScraper(BillScraper):
             doc = lxml.html.fromstring(data)
             for row in doc.xpath('//table[@cellpadding=3]/tr')[1:]:
                 bill_id = row.xpath('td[1]/a/text()')[0]
-                self.scrape_bill(session, bill_id)
+                self.scrape_bill(chamber, session, bill_id)

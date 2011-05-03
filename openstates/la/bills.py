@@ -18,7 +18,10 @@ class LABillScraper(BillScraper):
     def scrape(self, chamber, session):
         types = {'upper': ['SB', 'SR', 'SCR'], 'lower': ['HB', 'HR', 'HCR']}
 
-        s_id = session[2:4] + "rs"
+        try:
+            s_id = metadata["session_details"][session]['_id']
+        except KeyError:
+            s_id = session[2:4] + "rs"
 
         # Fake it until we can make it
         for abbr in types[chamber]:
@@ -147,6 +150,10 @@ class LABillScraper(BillScraper):
 
                 if action.startswith('Signed by the Governor.'):
                     atype.append('governor:signed')
+                elif action.startswith('Sent to the Governor'):
+                    atype.append('governor:received')
+                elif action.startswith('Read third time'):
+                    atype.append('bill:reading:3')
 
                 if 'amendments proposed' in action_lower:
                     atype.append('amendment:introduced')
@@ -191,6 +198,9 @@ class LABillScraper(BillScraper):
                 else:
                     type = 'author'
 
+                if not author:
+                    continue
+
                 bill.add_sponsor(type, author)
 
     def scrape_versions(self, bill, url):
@@ -227,7 +237,7 @@ class LABillScraper(BillScraper):
             type = 'passage'
         elif motion.startswith('AMENDMENT'):
             type = 'amendment'
-        elif 'ON 3RD READINT' in motion:
+        elif 'ON 3RD READING' in motion:
             type = 'reading:3'
         else:
             type = 'other'
@@ -249,7 +259,11 @@ class LABillScraper(BillScraper):
             body = html.xpath('string(/html/body)')
 
             date_match = re.search('%s (\d{4,4})' % bill['bill_id'], body)
-            date = date_match.group(1)
+            try:
+                date = date_match.group(1)
+            except AttributeError:
+                print "BAD VOTE"
+                return
             month = int(date[0:2])
             day = int(date[2:4])
             date = datetime.date(int(bill['session']), month, day)

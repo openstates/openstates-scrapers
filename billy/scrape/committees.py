@@ -23,20 +23,10 @@ class CommitteeScraper(Scraper):
         Save a scraped :class:`~billy.scrape.committees.Committee` object.
         """
         name = committee['committee']
-        if 'subcommittee' in committee:
+        if committee.get('subcommittee', None):
             name += '_%s' % committee['subcommittee']
         self.log("save_committee: %s" % name)
-
-        committee['state'] = self.state
-
-        self.validate_json(committee)
-
-        filename = "%s_%s.json" % (committee['chamber'],
-                                   name.replace('/', ','))
-
-        with open(os.path.join(self.output_dir, "committees", filename),
-                  'w') as f:
-            json.dump(committee, f, cls=JSONDateEncoder)
+        self.save_object(committee)
 
 
 class Committee(SourcedObject):
@@ -66,3 +56,11 @@ class Committee(SourcedObject):
         """
         self['members'].append(dict(name=legislator, role=role,
                                     **kwargs))
+
+    def get_filename(self):
+        name = self['committee']
+        if self.get('subcommittee', None):
+            name += '_%s' % self['subcommittee']
+
+        return "%s_%s.json" % (self['chamber'], name.replace('/', ','))
+

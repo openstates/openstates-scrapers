@@ -1,11 +1,8 @@
 import os
 import time
 import logging
-import urllib2
 import datetime
-import contextlib
 import json
-from optparse import make_option, OptionParser
 from collections import defaultdict
 
 from billy.scrape.validator import DatetimeValidator
@@ -55,6 +52,7 @@ class JSONDateEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 _scraper_registry = defaultdict(dict)
+
 
 class ScraperMeta(type):
     """ register derived scrapers in a central registry """
@@ -110,7 +108,8 @@ class Scraper(scrapelib.Scraper):
             kwargs['retry_attempts'] = settings.SCRAPELIB_RETRY_ATTEMPTS
 
         if 'retry_wait_seconds' not in kwargs:
-            kwargs['retry_wait_seconds'] = settings.SCRAPELIB_RETRY_WAIT_SECONDS
+            kwargs['retry_wait_seconds'] = \
+                    settings.SCRAPELIB_RETRY_WAIT_SECONDS
 
         super(Scraper, self).__init__(**kwargs)
 
@@ -181,6 +180,16 @@ class Scraper(scrapelib.Scraper):
                 return True
         raise NoDataForPeriod(term)
 
+    def save_object(self, obj):
+        obj['state'] = self.state
+
+        filename = obj.get_filename()
+        with open(os.path.join(self.output_dir, self.scraper_type, filename),
+                  'w') as f:
+            json.dump(obj, f, cls=JSONDateEncoder)
+
+        # validate after writing, allows for inspection
+        self.validate_json(obj)
 
 class SourcedObject(dict):
     """ Base object used for data storage.
@@ -201,28 +210,29 @@ class SourcedObject(dict):
         self['sources'] = []
         self.update(kwargs)
 
-    def add_source(self, url, retrieved=None, **kwargs):
+    def add_source(self, url, **kwargs):
         """
         Add a source URL from which data related to this object was scraped.
 
         :param url: the location of the source
         """
-        retrieved = retrieved or datetime.datetime.utcnow()
-        self['sources'].append(dict(url=url, retrieved=retrieved, **kwargs))
+        self['sources'].append(dict(url=url, **kwargs))
 
 
 def get_scraper(mod_path, state, scraper_type):
     """ import a scraper from the scraper registry """
+
+    # act of importing puts it into the registry
     try:
         mod_path = '%s.%s' % (mod_path, scraper_type)
-        mod = __import__(mod_path)
+        __import__(mod_path)
     except ImportError as e:
         raise ScrapeError("could not import %s" % mod_path, e)
 
+    # now pull the class out of the registry
     try:
         ScraperClass = _scraper_registry[state][scraper_type]
     except KeyError as e:
         raise ScrapeError("no %s %s scraper found" %
                            (state, scraper_type))
     return ScraperClass
-

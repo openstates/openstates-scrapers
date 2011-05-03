@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import datetime
 import glob
 import logging
 import os
@@ -8,10 +7,10 @@ import argparse
 import json
 
 from billy.conf import settings, base_arg_parser
-from billy.scrape import (ScrapeError, NoDataForPeriod, JSONDateEncoder,
-                          get_scraper)
+from billy.scrape import ScrapeError, JSONDateEncoder, get_scraper
 from billy.utils import configure_logging
 from billy.scrape.validator import DatetimeValidator
+
 
 def _clear_scraped_data(output_dir, scraper_type):
     # make or clear directory for this type
@@ -22,8 +21,9 @@ def _clear_scraped_data(output_dir, scraper_type):
         if e.errno != 17:
             raise e
         else:
-            for f in glob.glob(path+'/*.json'):
+            for f in glob.glob(path + '/*.json'):
                 os.remove(f)
+
 
 def _run_scraper(mod_path, state, scraper_type, options, metadata):
     """
@@ -44,6 +44,7 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
     opts = {'output_dir': options.output_dir,
             'no_cache': options.no_cache,
             'requests_per_minute': options.rpm,
+            'timeout': options.timeout,
             'strict_validation': options.strict,
             'retry_attempts': settings.SCRAPELIB_RETRY_ATTEMPTS,
             'retry_wait_seconds': settings.SCRAPELIB_RETRY_WAIT_SECONDS,
@@ -65,7 +66,8 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
                             times.extend(metaterm['sessions'])
             else:
                 latest_session = metadata['terms'][-1]['sessions'][-1]
-                print 'No session specified, using latest "%s"' % latest_session
+                print('No session specified, using latest "%s"' %
+                      latest_session)
                 times = [latest_session]
         else:
             times = options.sessions
@@ -133,6 +135,8 @@ def main():
                         action="store_true", default=False)
     parser.add_argument('-r', '--rpm', action='store', type=int, dest='rpm',
                         default=60),
+    parser.add_argument('--timeout', action='store', type=int, dest='timeout',
+                        default=10)
 
     args = parser.parse_args()
 

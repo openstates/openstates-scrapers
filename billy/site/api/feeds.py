@@ -1,8 +1,4 @@
-from billy import db
-
 from django.contrib.syndication.views import Feed
-
-import pymongo
 
 
 class EventFeed(Feed):

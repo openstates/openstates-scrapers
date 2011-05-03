@@ -1,6 +1,8 @@
 {% extends "flatpage.html" %}
 {% load markup_tags %}
 
+{% block title %}Open State Project API{% endblock %}
+
 {% block breadcrumb %}
 {% endblock %}
 
@@ -11,19 +13,26 @@
 
 The Open State Project provides a RESTful API for accessing state legislative information.
 
-  * The base URL is ``http://openstates.sunlightlabs.com/api/v1/``
-  * All methods return `JSON <http://json.org/>`_.
-  * Appropriate HTTP error codes are sent on errors (generally 404 if object is not found, 401 if authentication fails, etc.).
-  * An API key is required and can be obtained via http://services.sunlightlabs.com/
-  * There is a `Python client library <http://github.com/sunlightlabs/python-openstates>`_ available.
-
-For details on the current availability and status of state data visit the
-`Open States status page <http://openstates.sunlightlabs.com/status/>`_.
+    * API calls are URLs in the form ``http://openstates.sunlightlabs.com/api/v1/METHOD/?apikey=``
+    * Responses will (unless otherwise specified) be `JSON <http://json.org/>`_.
+    * If an error occurs the response will be a plain text error message with an appropriate HTTP error codes are sent on errors (404 if object is not found, 401 if authentication fails, etc.).
+    * The required API key can be obtained via http://services.sunlightlabs.com/
+    * For details on the current availability and status of state data visit the `Open States status page <http://openstates.sunlightlabs.com/status/>`_.
 
 All changes to the API will be announced on the `Open State Project Google Group <http://groups.google.com/group/fifty-state-project/>`_ and documented in the `api changelog </api/changelog/>`_.
 
+Client Libraries
+================
+
+    * We make an official `python-openstates <http://github.com/sunlightlabs/python-openstates>`_ library available.
+    * The team working on `OpenGovernment.org <http://opengovernment.org>`_ has put together the `govkit ruby gem <https://github.com/opengovernment/govkit>`_ that interfaces with the Open States API as well as many others.
+
 Methods
 =======
+
+There are five top level object types Metadata, Bills, Legislators, Committees, and Events.
+
+With the exception of metadata, all have a generic search method and a direct lookup method.
 
   * `State Metadata </api/metadata/>`_
   * `Bill Methods </api/bills/>`_
@@ -44,10 +53,38 @@ Methods
     * `Event Search </api/events/#event-search>`_
     * `Event Lookup </api/events/#event-lookup>`_
 
+Experimental XML Output
+=======================
+
+In addition to the default JSON, experimental XML support exists as well, append ``&format=xml`` to any request to get XML output.
+
+When using XML, field names are the same as those found in the documentation.  For specifics on how JSON-specific constructs like lists translate look at the XML examples.
+
+Several features (notably extra fields and the custom fieldset behavior documented below) are not compatible with the XML output option.
+
+
+Requesting A Custom Fieldset
+============================
+
+It is possible to return a custom subset of fields on an object by specifying a special ``fields`` parameter.
+
+There are two use cases that this functionality aims to serve:
+
+First, if you are writing an application that loads a lot of data but only uses some of it, specifying a limited subset of fields can reduce response time and bandwidth.  We've seen this approach be particuarly useful for mobile applications where bandwidth is at a premium.
+
+An example would be a legislator search with ``fields=first_name,last_name,leg_id`` specified.  All legislator objects returned will only have the three fields that you requested.
+
+Second, you can actually specify a set of fields that includes fields excluded in the default response.
+
+For instance if you are doing a bill search it typically does not include sponsors, though many sites may wish to use sponsor information without making a request for the full bill (which is typically much larger as it includes versions, votes, actions, etc.).
+
+A bill search that specifies ``fields=bill_id,sponsors,title,chamber`` will include the full sponsor listing in addition to the standard bill_id, title, and chamber fields.
+
+
 Extra Fields
 ============
 
-You may notice that the fields documented methods are sometimes a subset of the fields actually included in a response.
+You may notice that the fields documented are sometimes a subset of the fields actually included in a response.
 
 Many times as part of our scraping process we take in data that is available for a given state and is either not available or does not have an analog in other states.  Instead of artificially limiting the data we provide to the smallest common subset we make this extra data available.
 

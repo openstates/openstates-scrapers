@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 import os
-import re
-import sys
-import time
 import glob
-import datetime
 from collections import defaultdict
 import json
 
@@ -46,7 +42,8 @@ def ensure_indexes():
     db.bills.ensure_index([('state', pymongo.ASCENDING),
                            ('session', pymongo.ASCENDING),
                            ('chamber', pymongo.ASCENDING),
-                           ('sponsors', pymongo.ASCENDING)])
+                           ('sponsors.leg_id', pymongo.ASCENDING)])
+
 
 def import_votes(state, data_dir):
     pattern = os.path.join(data_dir, 'votes', '*.json')
@@ -178,6 +175,7 @@ def bill_keywords(bill):
     Get the keyword set for all of a bill's titles.
     """
     keywords = keywordize(bill['title'])
+    keywords = keywords.union(keywordize(bill['bill_id']))
     for title in bill['alternate_titles']:
         keywords = keywords.union(keywordize(title))
     return keywords

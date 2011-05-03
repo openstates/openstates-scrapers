@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import sys
 import glob
 import datetime
 import json
@@ -10,7 +9,6 @@ from billy.importers.names import get_legislator_id
 from billy.importers.utils import prepare_obj, update, insert_with_id
 
 import pymongo
-import name_tools
 
 
 def ensure_indexes():
@@ -31,7 +29,7 @@ def import_committees(state, data_dir):
 
     for committee in db.committees.find({'state': state}):
         committee['members'] = []
-        db.committees.save(committee)
+        db.committees.save(committee, safe=True)
 
     if not paths:
         # Not standalone committees
@@ -152,4 +150,4 @@ def link_parents(state):
             else:
                 comm['parent_id'] = parent['_id']
 
-        db.committees.save(comm)
+        db.committees.save(comm, safe=True)
