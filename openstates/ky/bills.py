@@ -107,6 +107,13 @@ class KYBillScraper(BillScraper):
                     atype.append('bill:reading:1')
                 if '3rd reading' in action:
                     atype.append('bill:reading:3')
+                if '2nd reading' in action:
+                    atype.append('bill:reading:2')
+
+                amendment_re = (r'floor amendments?( \([a-z\d\-]+\))*'
+                                r'( and \([a-z\d\-]+\))? filed')
+                if re.search(amendment_re, action):
+                    atype.append('amendment:introduced')
 
                 if not atype:
                     atype = ['other']
