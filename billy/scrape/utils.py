@@ -3,6 +3,7 @@ import subprocess
 
 def convert_pdf(filename, type='xml'):
     commands = {'text': ['pdftotext', '-layout', filename, '-'],
+                'text-nolayout': ['pdftotext', filename, '-'],
                 'xml':  ['pdftohtml', '-xml', '-stdout', filename],
                 'html': ['pdftohtml', '-stdout', filename]}
     pipe = subprocess.Popen(commands[type], stdout=subprocess.PIPE,

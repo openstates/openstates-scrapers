@@ -83,7 +83,7 @@ class NYEventScraper(EventScraper):
 
                 notes = td.xpath(
                     "string(../following-sibling::tr[1]/td[2])")
-                notes = re.sub(r'**Click here to view hearing notice**',
+                notes = re.sub(r'\*\*Click here to view hearing notice\*\*',
                                '', notes).strip()
 
                 location = td.xpath(

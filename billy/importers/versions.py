@@ -35,4 +35,4 @@ def import_versions(state, rpm=60):
             bill_changed = True
 
         if bill_changed:
-            db.bills.save(bill)
+            db.bills.save(bill, safe=True)

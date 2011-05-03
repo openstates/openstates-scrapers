@@ -15,8 +15,7 @@
           "pattern": "^[A-Z]{2}L\\d{6}$"}
     }}},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
-        "url": {"type": "string"},
-        "retrieved": {"type": "datetime"}
+        "url": {"type": "string"}
     }}}
  }
 }

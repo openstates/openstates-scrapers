@@ -264,7 +264,7 @@ def merge_legislators(old, new):
     db.legislators.remove({'_id': new['_id']})
     new['_id'] = old['_id']
     new['leg_id'] = new['_id']
-    db.legislators.save(new)
+    db.legislators.save(new, safe=True)
 
 # fixing bill ids
 _bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')

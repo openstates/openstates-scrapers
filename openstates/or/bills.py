@@ -1,4 +1,5 @@
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.utils import convert_pdf
 from .utils import year_from_session
 
 from collections import defaultdict
@@ -60,7 +61,15 @@ class ORBillScraper(BillScraper):
             self.parse_actions(action_data, chamber_letter)
 
         # add versions
-        self.parse_versions(session, chamber)
+        session_slug = self.session_to_lookin[session]
+        version_url = 'http://www.leg.state.or.us/%s/measures/main.html' % (
+            session_slug)
+        self.parse_versions(version_url, chamber)
+
+        # add subjects
+        subject_url = 'http://www.leg.state.or.us/%s/pubs/index.pdf' % (
+            session_slug)
+        self.parse_subjects(subject_url, chamber_letter)
 
         # add authors
         if chamber == 'upper':
@@ -71,9 +80,10 @@ class ORBillScraper(BillScraper):
 
         # save all bills
         for bill in self.all_bills.itervalues():
+            bill.add_source(author_url)
+            bill.add_source(version_url)
             bill.add_source(measure_url)
             bill.add_source(action_url)
-            bill.add_source(author_url)
             self.save_bill(bill)
 
 
@@ -131,10 +141,8 @@ class ORBillScraper(BillScraper):
             self.all_bills[bill_id] =  Bill(session, chamber, bill_id, title,
                                             type=bill_type)
 
-    def parse_versions(self, session, chamber):
-        session_slug = self.session_to_lookin[session]
+    def parse_versions(self, url, chamber):
         chamber = 'House' if chamber == 'lower' else 'Senate'
-        url = 'http://www.leg.state.or.us/%s/measures/main.html' % session_slug
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
@@ -190,6 +198,35 @@ class ORBillScraper(BillScraper):
                     for name in inner_str.split(', '):
                         self.all_bills[bill_id].add_sponsor('sponsor', name)
 
+
+    def parse_subjects(self, url, chamber_letter):
+        pdf, resp = self.urlretrieve(url)
+        lines = convert_pdf(pdf, 'text-nolayout').splitlines()
+
+        last_line = ''
+
+        subject_re = re.compile('^[A-Z ]+$')
+        bill_re = re.compile('(?:S|H)[A-Z]{1,2} \d+')
+
+        for line in lines[1:]:
+            if 'BILL INDEX' in line:
+                pass
+            elif subject_re.match(line):
+                if subject_re.match(last_line):
+                    title += ' %s' % line
+                elif last_line == '':
+                    title = line
+            else:
+                last_was_upper = False
+                for bill_id in bill_re.findall(line):
+                    if bill_id.startswith(chamber_letter):
+                        if bill_id not in self.all_bills:
+                            self.warning("unknown bill %s" % bill_id)
+                            continue
+                        self.all_bills[bill_id].setdefault('subjects',
+                                                           []).append(title)
+            # sometimes we need to look back
+            last_line = line
 
     def _resolve_ftp_path(self, sessionYear, filename):
         currentYear = dt.datetime.today().year
