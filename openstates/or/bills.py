@@ -110,7 +110,7 @@ class ORBillScraper(BillScraper):
         measure_url = self._resolve_ftp_path(sessionYear, 'measures.txt')
         action_url = self._resolve_ftp_path(sessionYear, 'meashistory.txt')
 
-        all_bills = {}
+        self.all_bills = {}
 
         # get the actual bills
         with self.urlopen(measure_url) as bill_data:
