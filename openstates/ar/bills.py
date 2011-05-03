@@ -140,7 +140,7 @@ class ARBillScraper(BillScraper):
             self.scrape_vote(bill, date, motion, link.attrib['href'])
 
     def scrape_vote(self, bill, date, motion, url):
-        page = lxml.urlopen(url)
+        page = self.urlopen(url)
 
         if 'not yet official' in page:
             # Sometimes they link to vote pages before they go live
