@@ -63,7 +63,7 @@ class KYBillScraper(BillScraper):
                 return
 
             title = version_link.xpath("string(following-sibling::p[1])")
-            title = re.sub(r'\s+', ' ', title).strip()
+            title = re.sub(ur'[\s\xa0]+', ' ', title).strip()
 
             bill = Bill(session, chamber, bill_id, title)
             bill.add_source(url)
