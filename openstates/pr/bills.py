@@ -4,70 +4,59 @@ from billy.scrape.bills import BillScraper, Bill
 from openstates.pr.utils import grouper, doc_link_url, year_from_session
 
 import lxml.html
-import datetime as dt
+import datetime
+import itertools
 
 class PRBillScraper(BillScraper):
     state = 'pr'
 
+    bill_types = {'P': 'bill',
+                  'R': 'resolution',
+                  'RK': 'concurrent resolution',
+                  'RC': 'joint resolution',
+                  #'PR': 'plan de reorganizacion',
+                 }
+
     def scrape(self, chamber, session):
-        bill_search_url = 'http://www.camaraderepresentantes.org/cr_buscar.asp'
-        bill_types = {'Project':'P', 'Resolution':'R', \
-                             'Joint Resolution':'RC', \
-                             'Concurrent Resolution':'RK', \
-                             'Appointment':'N'}
-        #bodies = {'upper':'S', 'lower':'C'}
-        bodies = {'upper':'S'}
+        year = session[0:4]
 
-        bill_search_page = lxml.html.parse(bill_search_url).getroot()
-        search_form = bill_search_page.forms[0]
+        self.base_url = 'http://www.oslpr.org/legislatura/tl%s/tl_medida_print2.asp' % year
+        chamber_letter = {'upper':'S', 'lower':'C'}[chamber]
 
-        for body in bodies.itervalues():
-            for bill_type in bill_types.itervalues():
-                search_form.fields['cuerpo'] = body
-                search_form.fields['tipo'] = bill_type
-                search_form.fields['autor'] = 'NA'
+        for code, type in self.bill_types.iteritems():
+            counter = itertools.count(1)
+            for n in counter:
+                bill_id = '%s%s%s' % (code, chamber_letter, n)
+                self.scrape_bill(chamber, session, bill_id, type)
 
-                if year_from_session(session) == '2009':
-                    search_form.fields['f2'] = '12/31/2009'
-                elif year_from_session(session) == '2010':
-                    search_form.fields['f1'] = '01/01/2010'
+    def scrape_bill(self, chamber, session, bill_id, bill_type):
+        url = '%s?r=%s' % (self.base_url, bill_id)
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
 
-                result = lxml.html.parse(lxml.html.submit_form(search_form)).getroot()
-                table_elements = result.cssselect('table')
-                table_elements.pop()
-                bill_elements = grouper(3, table_elements)
+            # search for Titulo, accent over i messes up lxml, so use 'tulo'
+            title = doc.xpath(u'//td/b[contains(text(),"tulo")]/../following-sibling::td/text()')[0]
+            bill = Bill(session, chamber, bill_id, title, type=bill_type)
+            author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
+            bill.add_sponsor('primary', author.strip())
 
-                for actions, complete_data, bill_data in bill_elements:
-                    td_elements = bill_data.cssselect('td')
-                    title = td_elements[1].text_content()
-                    date = td_elements[3].text_content()
-                    description = td_elements[5].text_content()
-                    authors = td_elements[7].text_content().split('/')
+            action_table = doc.xpath('//table')[-1]
+            for row in action_table[1:]:
+                tds = row.xpath('td')
 
-                    bill = Bill(session, chamber, title, description)
+                # ignore row missing date
+                if len(tds) != 2:
+                    continue
 
-                    for author in authors:
-                        if len(authors) == 1:
-                            bill.add_sponsor('primary', author)
-                        else:
-                            bill.add_sponsor('cosponsor', author)
 
-                    td_elements = actions.cssselect('td')
-                    td_elements = td_elements[4:-1]
-                    action_elements = grouper(3, td_elements)
+                date = datetime.datetime.strptime(tds[0].text_content(),
+                                                  "%m/%d/%Y")
+                action = tds[1].text_content()
+                bill.add_action(chamber, action, date)
 
-                    for date_element, action, empty in action_elements:
-                        # Clean unicode character
-                        date_text = date_element.text_content().replace(u'\xa0',u'')
-                        date = dt.datetime.strptime(date_text, '%m/%d/%Y')
-                        action_text = action.text_content()
-                        try:
-                            doc_link_part = action.iterlinks().next()[2]
-                            if 'voto' in doc_link_part:
-                                raise
-                            doc_link = doc_link_url(doc_link_part)
-                            bill.add_version((action_text, doc_link))
-                        except:
-                            pass
+                # also has an associated version
+                if tds[1].xpath('a'):
+                    bill.add_version(action, tds[1].xpath('a/@href')[0])
 
-                        bill.add_action(chamber, action_text, date)
+            bill.add_source(url)
+            self.save_bill(bill)
