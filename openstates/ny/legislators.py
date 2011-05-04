@@ -48,6 +48,18 @@ class NYLegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(page)
             legislator.add_source(url)
 
+            dist_str = page.xpath("string(//div[@class = 'district'])")
+            match = re.match(r'\(([A-Za-z,\s]+)\)', dist_str)
+            if match:
+                party = match.group(1)
+                party_map = {'D': 'Democratic', 'R': 'Republican',
+                             'WF': 'Working Families',
+                             'C': 'Conservative'}
+                party = ', '.join(
+                    [party_map.get(p.strip(), p.strip())
+                     for p in party.split(',')])
+                legislator['roles'][0]['party'] = party
+
             try:
                 span = page.xpath("//span[. = 'Albany Office']/..")[0]
                 cap_address = span.xpath("string(div[1])").strip()
