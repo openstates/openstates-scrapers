@@ -63,7 +63,7 @@ class KYBillScraper(BillScraper):
                 return
 
             title = version_link.xpath("string(following-sibling::p[1])")
-            title = re.sub(r'\s+', ' ', title).strip()
+            title = re.sub(ur'[\s\xa0]+', ' ', title).strip()
 
             bill = Bill(session, chamber, bill_id, title)
             bill.add_source(url)
@@ -107,19 +107,26 @@ class KYBillScraper(BillScraper):
                     atype.append('bill:reading:1')
                 if '3rd reading' in action:
                     atype.append('bill:reading:3')
+                if '2nd reading' in action:
+                    atype.append('bill:reading:2')
+
+                amendment_re = (r'floor amendments?( \([a-z\d\-]+\))*'
+                                r'( and \([a-z\d\-]+\))? filed')
+                if re.search(amendment_re, action):
+                    atype.append('amendment:introduced')
 
                 if not atype:
                     atype = ['other']
 
                 bill.add_action(actor, action, action_date, type=atype)
 
-                try:
-                    votes_link = page.xpath(
-                        "//a[contains(@href, 'vote_history.pdf')]")[0]
-                    bill.add_document("Vote History",
-                                      votes_link.attrib['href'])
-                except IndexError:
-                    # No votes
-                    pass
+            try:
+                votes_link = page.xpath(
+                    "//a[contains(@href, 'vote_history.pdf')]")[0]
+                bill.add_document("Vote History",
+                                  votes_link.attrib['href'])
+            except IndexError:
+                # No votes
+                pass
 
             self.save_bill(bill)

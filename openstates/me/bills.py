@@ -153,8 +153,11 @@ class MEBillScraper(BillScraper):
             except ValueError:
                 date = datetime.datetime.strptime(date, "%b. %d, %Y")
 
+            outcome_cell = page.xpath("//td[text()='Outcome:']")[0]
+            outcome = outcome_cell.xpath("string(following-sibling::td)")
+
             vote = Vote(chamber, date, motion,
-                        yes_count > (no_count + other_count),
+                        outcome == 'PREVAILS',
                         yes_count, no_count, other_count)
             vote.add_source(url)
 
