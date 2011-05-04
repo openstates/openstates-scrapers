@@ -7,6 +7,9 @@ import lxml.html
 import datetime
 import itertools
 
+class NoSuchBill(Exception):
+    pass
+
 class PRBillScraper(BillScraper):
     state = 'pr'
 
@@ -27,7 +30,10 @@ class PRBillScraper(BillScraper):
             counter = itertools.count(1)
             for n in counter:
                 bill_id = '%s%s%s' % (code, chamber_letter, n)
-                self.scrape_bill(chamber, session, bill_id, type)
+                try:
+                    self.scrape_bill(chamber, session, bill_id, type)
+                except NoSuchBill:
+                    break
 
     def scrape_bill(self, chamber, session, bill_id, bill_type):
         url = '%s?r=%s' % (self.base_url, bill_id)
@@ -35,8 +41,10 @@ class PRBillScraper(BillScraper):
             doc = lxml.html.fromstring(html)
 
             # search for Titulo, accent over i messes up lxml, so use 'tulo'
-            title = doc.xpath(u'//td/b[contains(text(),"tulo")]/../following-sibling::td/text()')[0]
-            bill = Bill(session, chamber, bill_id, title, type=bill_type)
+            title = doc.xpath(u'//td/b[contains(text(),"tulo")]/../following-sibling::td/text()')
+            if not title:
+                raise NoSuchBill()
+            bill = Bill(session, chamber, bill_id, title[0], type=bill_type)
             author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
             bill.add_sponsor('primary', author.strip())
 
