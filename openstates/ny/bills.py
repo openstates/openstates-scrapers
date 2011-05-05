@@ -29,6 +29,8 @@ class NYBillScraper(BillScraper):
                             continue
 
                         primary_sponsor = result.attrib['sponsor']
+                        primary_sponsor = re.sub(
+                            r'\s+\(MS\)\s*$', '', primary_sponsor).strip()
 
                         bill_chamber, bill_type = {
                             'S': ('upper', 'bill'),
