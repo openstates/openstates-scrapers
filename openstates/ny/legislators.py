@@ -37,7 +37,57 @@ class NYLegislatorScraper(LegislatorScraper):
                                         photo_url=photo_url)
                 legislator.add_source(url)
 
+                contact_link = link.xpath("../span[@class = 'contact']/a")[0]
+                self.scrape_upper_contact_info(
+                    legislator, contact_link.attrib['href'])
+
                 self.save_legislator(legislator)
+
+    def scrape_upper_contact_info(self, legislator, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            legislator.add_source(url)
+
+            dist_str = page.xpath("string(//div[@class = 'district'])")
+            match = re.match(r'\(([A-Za-z,\s]+)\)', dist_str)
+            if match:
+                party = match.group(1)
+                party_map = {'D': 'Democratic', 'R': 'Republican',
+                             'WF': 'Working Families',
+                             'C': 'Conservative'}
+                party = ', '.join(
+                    [party_map.get(p.strip(), p.strip())
+                     for p in party.split(',')])
+                legislator['roles'][0]['party'] = party
+
+            try:
+                span = page.xpath("//span[. = 'Albany Office']/..")[0]
+                cap_address = span.xpath("string(div[1])").strip()
+                cap_address += "\nAlbany, NY 12247"
+                legislator['capitol_address'] = cap_address
+
+                phone = span.xpath("div[@class='tel']/span[@class='value']")[0]
+                legislator['capitol_phone'] = phone.text.strip()
+            except IndexError:
+                # Sometimes contact pages are just plain broken
+                pass
+
+            try:
+                span = page.xpath("//span[. = 'District Office']/..")[0]
+                dist_address = span.xpath("string(div[1])").strip() + "\n"
+                dist_address += span.xpath(
+                    "string(span[@class='locality'])").strip() + ", "
+                dist_address += span.xpath(
+                    "string(span[@class='region'])").strip() + " "
+                dist_address += span.xpath(
+                    "string(span[@class='postal-code'])").strip()
+                legislator['district_address'] = dist_address
+
+                phone = span.xpath("div[@class='tel']/span[@class='value']")[0]
+                legislator['district_phone'] = phone.text.strip()
+            except IndexError:
+                # No district office yet?
+                pass
 
     def scrape_lower(self, term):
         url = "http://assembly.state.ny.us/mem/?sh=email"

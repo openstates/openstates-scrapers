@@ -28,8 +28,7 @@
     "office_address": {"type": "string", "blank": true, "required": false},
     "email": {"type": "string", "blank": true, "required": false},
     "sources": {"type": "array", "items": {"type": "object", "properties": {
-        "url": {"type": "string"},
-        "retrieved": {"type": "datetime"}
+        "url": {"type": "string"}
     }}}
  }
 }

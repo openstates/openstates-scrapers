@@ -19,8 +19,7 @@
        "participant": {"type": "string"},
        "chamber": {"type": "string", "required": false}}}},
    "sources": {"type": "array", "items": {"type": "object", "properties": {
-        "url": {"type": "string"},
-        "retrieved": {"type": "datetime"}
+        "url": {"type": "string"}
     }}}
  }
 }

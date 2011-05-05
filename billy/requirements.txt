@@ -5,8 +5,11 @@ argparse==1.1
 lxml>=2.2
 feedparser>=4.1
 pytz>=2010l
-scrapelib>=0.4.3
-validictory>=0.6.1
+scrapelib>=0.5.1
+validictory>=0.7.0
+-e hg+https://httplib2.googlecode.com/hg/#egg=httplib2
+xlrd
+http://downloads.sourceforge.net/project/dbfpy/dbfpy/2.2.5/dbfpy-2.2.5.tar.gz
 
 # billy.importers requirements
 pymongo>=1.8.1

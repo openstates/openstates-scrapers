@@ -47,7 +47,7 @@ def categorize_subjects(state, data_dir, process_all):
         # increment # of bills with # of subjects
         categories_per_bill[len(subjects)] += 1
 
-        db.bills.save(bill)
+        db.bills.save(bill, safe=True)
 
     print 'Categories per bill'
     print '-------------------'

@@ -150,6 +150,10 @@ class LABillScraper(BillScraper):
 
                 if action.startswith('Signed by the Governor.'):
                     atype.append('governor:signed')
+                elif action.startswith('Sent to the Governor'):
+                    atype.append('governor:received')
+                elif action.startswith('Read third time'):
+                    atype.append('bill:reading:3')
 
                 if 'amendments proposed' in action_lower:
                     atype.append('amendment:introduced')
@@ -194,6 +198,9 @@ class LABillScraper(BillScraper):
                 else:
                     type = 'author'
 
+                if not author:
+                    continue
+
                 bill.add_sponsor(type, author)
 
     def scrape_versions(self, bill, url):
@@ -230,7 +237,7 @@ class LABillScraper(BillScraper):
             type = 'passage'
         elif motion.startswith('AMENDMENT'):
             type = 'amendment'
-        elif 'ON 3RD READINT' in motion:
+        elif 'ON 3RD READING' in motion:
             type = 'reading:3'
         else:
             type = 'other'

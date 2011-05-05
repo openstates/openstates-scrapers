@@ -25,8 +25,7 @@
      "position": {"type": "string", "required": false}
    }}},
    "sources": {"type": "array", "items": {"type": "object", "properties": {
-     "url": {"type": "string"},
-     "retrieved": {"type": "datetime"}
+     "url": {"type": "string"}
    }}},
    "votesmart_id": {"type": ["null", "string"], "required": false},
    "nimsp_candidate_id": {"type": ["string", "null"], "required": false},

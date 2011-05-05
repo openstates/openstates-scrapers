@@ -37,20 +37,7 @@ class LegislatorScraper(Scraper):
         :meth:`save_legislator`.
         """
         self.log("save_person: %s" % person['full_name'])
-
-        person['state'] = self.state
-
-        # call validation
-        self.validate_json(person)
-
-        role = person['roles'][0]
-        filename = "%s_%s.json" % (role['term'],
-                                   person['full_name'])
-        filename = filename.encode('ascii', 'replace')
-
-        with open(os.path.join(self.output_dir, "legislators", filename),
-                  'w') as f:
-            json.dump(person, f, cls=JSONDateEncoder)
+        self.save_object(person)
 
     def save_legislator(self, legislator):
         """
@@ -60,22 +47,7 @@ class LegislatorScraper(Scraper):
         Only call after all data for the given legislator has been collected.
         """
         self.log("save_legislator: %s" % legislator['full_name'])
-
-        role = legislator['roles'][0]
-        legislator['state'] = self.state
-
-        # call validation
-        self.validate_json(legislator)
-
-        filename = "%s_%s_%s_%s.json" % (role['term'],
-                                         role['chamber'],
-                                         role['district'],
-                                         legislator['full_name'])
-        filename = filename.encode('ascii', 'replace')
-        with open(os.path.join(self.output_dir, "legislators", filename),
-                  'w') as f:
-            json.dump(legislator, f, cls=JSONDateEncoder)
-
+        self.save_object(legislator)
 
 class Person(SourcedObject):
     def __init__(self, full_name, first_name='', last_name='',
@@ -115,6 +87,11 @@ class Person(SourcedObject):
                                   start_date=start_date,
                                   end_date=end_date, **kwargs))
 
+    def get_filename(self):
+        role = self['roles'][0]
+        filename = "%s_%s.json" % (role['term'], self['full_name'])
+        return filename.encode('ascii', 'replace')
+
 
 class Legislator(Person):
     def __init__(self, term, chamber, district, full_name,
@@ -147,3 +124,11 @@ class Legislator(Person):
         #self['type'] = 'legislator'
         self.add_role('member', term, chamber=chamber, district=district,
                       party=party)
+
+    def get_filename(self):
+        role = self['roles'][0]
+        filename = "%s_%s_%s_%s.json" % (role['term'],
+                                         role['chamber'],
+                                         role['district'],
+                                         self['full_name'])
+        return filename.encode('ascii', 'replace')

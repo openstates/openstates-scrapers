@@ -42,7 +42,7 @@ def ensure_indexes():
     db.bills.ensure_index([('state', pymongo.ASCENDING),
                            ('session', pymongo.ASCENDING),
                            ('chamber', pymongo.ASCENDING),
-                           ('sponsors', pymongo.ASCENDING)])
+                           ('sponsors.leg_id', pymongo.ASCENDING)])
 
 
 def import_votes(state, data_dir):
@@ -175,6 +175,7 @@ def bill_keywords(bill):
     Get the keyword set for all of a bill's titles.
     """
     keywords = keywordize(bill['title'])
+    keywords = keywords.union(keywordize(bill['bill_id']))
     for title in bill['alternate_titles']:
         keywords = keywords.union(keywordize(title))
     return keywords

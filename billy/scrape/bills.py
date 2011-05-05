@@ -34,15 +34,7 @@ class BillScraper(Scraper):
         self.log("save_bill %s %s: %s" % (bill['chamber'],
                                           bill['session'],
                                           bill['bill_id']))
-
-        bill['state'] = self.state
-        self.validate_json(bill)
-
-        filename = "%s_%s_%s.json" % (bill['session'], bill['chamber'],
-                                      bill['bill_id'])
-        filename = filename.encode('ascii', 'replace')
-        with open(os.path.join(self.output_dir, "bills", filename), 'w') as f:
-            json.dump(bill, f, cls=JSONDateEncoder)
+        self.save_object(bill)
 
 
 class Bill(SourcedObject):
@@ -164,3 +156,8 @@ class Bill(SourcedObject):
         Associate an alternate title with this bill.
         """
         self['alternate_titles'].append(title)
+
+    def get_filename(self):
+        filename = "%s_%s_%s.json" % (self['session'], self['chamber'],
+                                      self['bill_id'])
+        return filename.encode('ascii', 'replace')

@@ -215,8 +215,14 @@ class CTBillScraper(BillScraper):
                               ' AND Office of Fiscal Analysis %s' % (
                                   match.group(1)))
 
-                if re.match(r'^ADOPTED, (HOUSE|SENATE)', action):
+                if (re.match(r'^ADOPTED, (HOUSE|SENATE)', action) or
+                    re.match(r'^(HOUSE|SENATE) PASSED', action)):
                     act_type.append('bill:passed')
+
+                match = re.match(r'^Joint ((Un)?[Ff]avorable)', action)
+                if match:
+                    act_type.append('committee:passed:%s' %
+                                    match.group(1).lower())
 
                 if not act_type:
                     act_type = ['other']
@@ -224,10 +230,10 @@ class CTBillScraper(BillScraper):
                 bill.add_action(act_chamber, action, date,
                                 type=act_type)
 
-                if 'TRANS.TO HOUSE' in action:
+                if 'TRANS.TO HOUSE' in action or action == 'SENATE PASSED':
                     act_chamber = 'lower'
 
-                if 'TRANSMITTED TO SENATE' in action:
+                if 'TRANSMITTED TO SENATE' in action or action == 'HOUSE PASSED':
                     act_chamber = 'upper'
 
     def scrape_versions(self, chamber, session):
