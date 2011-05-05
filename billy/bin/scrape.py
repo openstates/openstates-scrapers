@@ -203,8 +203,6 @@ def main():
         args.votes = True
         args.committees = True
 
-    if args.bills:
-        _run_scraper(args.state, state, 'bills', args, metadata)
     if args.legislators:
         _run_scraper(args.state, state, 'legislators', args, metadata)
     if args.committees:
@@ -213,6 +211,8 @@ def main():
         _run_scraper(args.state, state, 'votes', args, metadata)
     if args.events:
         _run_scraper(args.state, state, 'events', args, metadata)
+    if args.bills:
+        _run_scraper(args.state, state, 'bills', args, metadata)
 
 
 if __name__ == '__main__':
