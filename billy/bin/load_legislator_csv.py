@@ -20,9 +20,9 @@ def process_file(state, save=False):
 
     for row in namefile:
         # get the legislator
-        leg = db.legislators.find_one({'leg_id': row['_id']})
+        leg = db.legislators.find_one({'leg_id': row['leg_id']})
         if not leg:
-            print 'no such leg:', row['_id']
+            print 'no such leg:', row['leg_id']
             continue
 
         # backwards compatibility, copy full_name into _scraped_name
@@ -47,7 +47,7 @@ def process_file(state, save=False):
 
         # show what changed
         if changed:
-            print row['_id']
+            print row['leg_id']
             for k, v in changed.iteritems():
                 print '  %s [%s --> %s]' % (k, v, row[k])
 
