@@ -61,13 +61,18 @@ class AZLegislatorScraper(LegislatorScraper):
                     
                 district = district.text_content()
                 party = party.text_content().strip()
-                party = self.get_party(party)
                 email = email.text_content().strip()
                 
-                if re.match('Vacated', email):
+                if 'Vacated' in email:
+                    # comment out the following 'continue' for historical 
+                    # legislative sessions
+                    # for the current session, if a legislator has left we will
+                    # skip him/her to keep from overwriting their information
+                    continue
                     vacated = re.search('[0-9]*/[0-9]*/\d{4}', email).group()
                     email = ''
                 
+                party = self.get_party(party)
                 room = room.text_content().strip()
                 if chamber == 'lower':
                     address = "House of Representatives\n"

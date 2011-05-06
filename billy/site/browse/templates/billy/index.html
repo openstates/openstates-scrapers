@@ -42,7 +42,7 @@
         <td class="{{state.bill_types|yesno:"good,bad"}}">
             {{state.bill_types}}</td>
         <td
-            {% if state.subjects < 50 %}
+            {% if state.subjects < 25 %}
             class="bad"
             {% else %}
                 {% if state.subjects < 90 %}

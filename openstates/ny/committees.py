@@ -86,6 +86,11 @@ class NYCommitteeScraper(CommitteeScraper):
 
             for link in page.xpath("//a[contains(@href, '/committee/')]"):
                 name = link.text.strip()
+
+                if name == 'New York State Conference of Black Senators':
+                    # stop scraping once we reach the caucuses
+                    break
+
                 self.scrape_upper_committee(name, link.attrib['href'])
 
     def scrape_upper_committee(self, name, url):
