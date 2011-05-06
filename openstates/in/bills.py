@@ -13,19 +13,28 @@ class INBillScraper(BillScraper):
     def scrape(self, chamber, session):
         self.build_subject_mapping(session)
 
-        url = ("http://www.in.gov/apps/lsa/session/billwatch/billinfo"
-               "?year=%s&session=1&request=all" % session)
+        bill_types = {
+            'B': ("http://www.in.gov/apps/lsa/session/billwatch/billinfo"
+                  "?year=%s&session=1&request=all" % session),
+            'JR': ("http://www.in.gov/apps/lsa/session/billwatch/billinfo?"
+                   "year=%s&session=1&request=getJointResolutions" % session),
+            'CR': ("http://www.in.gov/apps/lsa/session/billwatch/billinfo?year"
+                   "=%s&session=1&request=getConcurrentResolutions" % session),
+            'R': ("http://www.in.gov/apps/lsa/session/billwatch/billinfo?year="
+                  "%s&session=1&request=getSimpleResolutions" % session)
+        }
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        for type, url in bill_types.iteritems():
+            with self.urlopen(url) as page:
+                page = lxml.html.fromstring(page)
+                page.make_links_absolute(url)
 
-            abbrev = {'upper': 'SB', 'lower': 'HB'}[chamber]
-            xpath = "//a[contains(@href, 'doctype=%s')]" % abbrev
-            for link in page.xpath(xpath):
-                bill_id = link.text.strip()
-                self.scrape_bill(session, chamber, bill_id,
-                                 link.attrib['href'])
+                abbrev = {'upper': 'S', 'lower': 'H'}[chamber] + type
+                xpath = "//a[contains(@href, 'doctype=%s')]" % abbrev
+                for link in page.xpath(xpath):
+                    bill_id = link.text.strip()
+                    self.scrape_bill(session, chamber, bill_id,
+                                     link.attrib['href'])
 
     def scrape_bill(self, session, chamber, bill_id, url):
         with self.urlopen(url) as page:
@@ -37,7 +46,17 @@ class INBillScraper(BillScraper):
                 return
             title = title.strip()
 
-            bill = Bill(session, chamber, bill_id, title)
+            if bill_id.endswith('B'):
+                bill_type = ['bill']
+            elif bill_id.endswith('JR'):
+                bill_type = ['joint resolution']
+            elif bill_id.endswith('CR'):
+                bill_type = ['concurrent resolution']
+            elif bill_id.endswith('R'):
+                bill_type = ['resolution']
+
+            bill = Bill(session, chamber, bill_id, title,
+                        type=bill_type)
             bill.add_source(url)
 
             action_link = page.xpath("//a[contains(@href, 'getActions')]")[0]
