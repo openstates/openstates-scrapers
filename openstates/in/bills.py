@@ -37,6 +37,9 @@ class INBillScraper(BillScraper):
                                      link.attrib['href'])
 
     def scrape_bill(self, session, chamber, bill_id, url):
+        if bill_id == 'SCR 0003':
+            return
+
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
