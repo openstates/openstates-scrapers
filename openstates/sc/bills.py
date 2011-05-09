@@ -260,8 +260,8 @@ class SCBillScraper(BillScraper):
 	summary = None
 	the_action = None
 
-	start = d.index("--")
-	stop = d.index(":",start)
+	start = d.find("--")
+	stop = d.find(":",start)
 
 	d1 = d
 	after_sponsor = d
@@ -361,16 +361,6 @@ class SCBillScraper(BillScraper):
         if session != '119':
             raise NoDataForPeriod(session)
 
-        #if session != '2011-2012':
-        #    raise NoDataForPeriod(session)
-
-        #if chamber == 'lower':
-        #    bill_abbr = "H."
-        #else:
-        #    bill_abbr = "S."
-	#    #print 'Not processing senate'
-        #    #return
-
         sessions_url = get_session_days_url(chamber) 
 
 	session_days = []
@@ -401,47 +391,32 @@ class SCBillScraper(BillScraper):
 	for b in bills_with_votes:
 		billdict[ b['bill_id'] ] = b
 
-	bills_to_save = []
-	self.debug( "INITIALLY bill procssed : %d", len(bills_processed))
 	for dayurl in session_days:
-		if numdays < 1:
-			self.debug( "processing day %s" % dayurl )
-			with self.urlopen( dayurl ) as data:
-				daybills = self.scrape_day(session,chamber,data)
-				self.debug( "  #bills on this day %d" % len(daybills))
-				for b in daybills:
-					bill_id = b['bill_id']
-					if bill_id in bills_processed: 
-						self.debug("   already processed %s" % bill_id )
-						continue
+		self.debug( "processing day %s" % dayurl )
+		with self.urlopen( dayurl ) as data:
+			daybills = self.scrape_day(session,chamber,data)
+			self.debug( "  #bills on this day %d" % len(daybills))
+			for b in daybills:
+				bill_id = b['bill_id']
+				if bill_id in bills_processed: 
+					self.debug("   already processed %s" % bill_id )
+					continue
 
-					self.debug( "      processing bill .... %s" % bill_id )
-					if bill_id in bills_with_summary:
-						#print "*** HAS SUMMARY ", bill_id, ' ', b['title']
-						ab = billdict[bill_id]
-						#print "*** ab ", ab
-						self.debug( "  changing title to %s" % ab['title'])
-						b['description'] = b['title']
-						b['title'] = ab['title']
+				self.debug( "    processing %s ... " % bill_id )
+				if bill_id in bills_with_summary:
+					ab = billdict[bill_id]
+					self.debug( "  changing title to %s" % ab['title'])
+					b['description'] = b['title']
+					b['title'] = ab['title']
 
-					bills_to_save.append(b)
-					bills_processed.add( b['bill_id']  )
+				bills_processed.add( b['bill_id']  )
+				self.save_bill(b)
 
-				#print "bill processed : ", len(bills_processed)
 			
-			numdays += 1
+		numdays += 1
 
 	self.log( "Total bills processed: %d : " % len(bills_processed) )
-	self.log( "Bills processed: %s" % ("|".join(bills_processed)) )
-	self.log( "Saving %d bills" % len(bills_to_save) )
-
-	for bill in bills_to_save:
-		try:
-			self.save_bill(bill)
-		except:
-			print "failed to save bill: ", bill
-			self.error( "failed to save bill: %s" % str(bill))
-			raise
+	self.debug( "Bills processed: %s" % ("|".join(bills_processed)) )
 
 
 
