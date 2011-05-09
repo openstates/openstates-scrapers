@@ -1,8 +1,11 @@
+import os
 import re
 import datetime
 from collections import defaultdict
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from billy.scrape.utils import convert_pdf
 
 import lxml.html
 
@@ -74,6 +77,9 @@ class INBillScraper(BillScraper):
                 links = page.xpath(path)
                 if links:
                     bill.add_version(version_type, links[0].attrib['href'])
+
+            for vote_link in page.xpath("//a[contains(@href, 'Srollcal')]"):
+                self.scrape_senate_vote(bill, vote_link.attrib['href'])
 
             for doc_link in page.xpath("//a[contains(@href, 'FISCAL')]"):
                 num = doc_link.text.strip().split("(")[0]
@@ -173,3 +179,54 @@ class INBillScraper(BillScraper):
             for link in page.xpath("//a[contains(@href, 'getBill')]"):
                 self.subjects[link.text.strip()].append(subject)
 
+    def scrape_senate_vote(self, bill, url):
+        (path, resp) = self.urlretrieve(url)
+        text = convert_pdf(path, 'text-nolayout')
+        os.remove(path)
+
+        lines = text.split('\n')
+
+        vote_type = None
+        yes_count, no_count, other_count = None, None, 0
+        votes = []
+        for line in lines[20:]:
+            line = line.strip()
+            if not line:
+                continue
+
+            if line.startswith('YEAS'):
+                yes_count = int(line.split(' - ')[1])
+                vote_type = 'yes'
+            elif line.startswith('NAYS'):
+                no_count = int(line.split(' - ')[1])
+                vote_type = 'no'
+            elif line.startswith('EXCUSED') or line.startswith('NOT VOTING'):
+                other_count += int(line.split(' - ')[1])
+                vote_type = 'other'
+            else:
+                votes.append((line, vote_type))
+
+        if yes_count is None or no_count is None:
+            # probably a committee vote?
+            return
+
+        passed = yes_count > no_count + other_count
+
+        date = "%s %s" % (lines[-4], lines[-3])
+        date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
+
+        motion = lines[7].strip()
+
+        vote = Vote('upper', date, motion, passed, yes_count, no_count,
+                    other_count)
+        vote.add_source(url)
+
+        for name, vtype in votes:
+            if vtype == 'yes':
+                vote.yes(name)
+            elif vtype == 'no':
+                vote.no(name)
+            else:
+                vote.other(name)
+
+        bill.add_vote(vote)
