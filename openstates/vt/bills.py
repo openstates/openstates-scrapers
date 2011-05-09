@@ -122,9 +122,20 @@ class VTBillScraper(BillScraper):
 
                 for link in page.xpath("//a[contains(@href, 'summary.cfm')]"):
                     bill_id = link.text
+
+                    if bill_id.startswith('JR'):
+                        bill_type = 'joint resolution'
+                    elif bill_id[1:3] == 'CR':
+                        bill_type = 'concurrent resolution'
+                    elif bill_id[0:2] in ['HR', 'SR']:
+                        bill_type = 'resolution'
+                    else:
+                        bill_type = 'bill'
+
                     title = link.xpath("string(../../td[2])")
 
-                    bill = Bill(session, chamber, bill_id, title)
+                    bill = Bill(session, chamber, bill_id, title,
+                                type=bill_type)
                     self.scrape_bill(bill, link.attrib['href'])
 
     def scrape_bill(self, bill, url):
