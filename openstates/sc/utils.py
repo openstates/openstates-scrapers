@@ -1,8 +1,5 @@
 
-#senate_url="http://www.scstatehouse.gov/php/votehistory.php?chamber=S"
-#house_url="http://www.scstatehouse.gov/php/votehistory.php?chamber=H"
-
-def get_session_days_url(chamber):
+def sessionDaysUrl(chamber):
 	"""Returns the url which contains the list of day that have been
 	in session.  There will be a link for each day that the chamber
 	was in session.
@@ -13,14 +10,6 @@ def get_session_days_url(chamber):
 	else:
 	        url = "http://www.scstatehouse.gov/hintro/hintros.htm"
 	return url
-
-
-def get_bill_detail_url(billnum):
-	"Location of static html page containing bill details."
-
-	# another option
-	# billurl = "http://scstatehouse.gov/cgi-bin/web_bh10.exe?bill1=%d&session=119" % billnum
-	return "http://scstatehouse.gov/sess119_2011-2012/bills/%d.htm" % billnum
 
 
 # extracts senators from string.
@@ -55,17 +44,12 @@ def corrected_sponsor(orig):
 	#print 'orig ' , orig , ' parts ', len(parts)
 	and_start = orig.find(" and ")
 	if and_start > 0:
-		#print 'has and |', orig, '|'
 		left_operand = orig[1:and_start]
 		right_start = and_start + len(" and ")
 		right_operand = orig[right_start:]
 
 		sponsors.append(left_operand)
-		#print ' ===> LEFT |', left_operand, '|'
 		sponsors.append(right_operand)
-		#print ' ===> RIGHT |', right_operand, '|'
-
-		#print  ' returning ', sponsors 
 		return sponsors
 	else:
 		sponsors.append(orig)
@@ -73,21 +57,15 @@ def corrected_sponsor(orig):
 
 
 def sponsorsToList(str):
-	#print '\n========================\nsponsorsToList: ENTER ', str, '\n\n'
-
-	tmp = str.split()
-	sponsor_names = " ".join(tmp).split(",")
+	sponsor_names = " ".join(str.split()).split(",")
 
 	sponlist = []
 	for n in sponsor_names:
 		sponlist.extend( corrected_sponsor(n) )
-
-	#print '\n\nRETURNING the results is : ', sponlist
-	#print "************************************\n\n"
 	return sponlist
 
 
-def get_vote_history_url(chamber):
+def voteHistoryUrl(chamber):
 	house_url="http://www.scstatehouse.gov/php/votehistory.php?chamber=H"
 	senate_url="http://www.scstatehouse.gov/php/votehistory.php?chamber=S"
 

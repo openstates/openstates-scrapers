@@ -2,7 +2,7 @@ import re
 import datetime
 import contextlib
 
-from .utils import get_bill_detail_url, get_session_days_url, get_vote_history_url
+from .utils import sessionDaysUrl, voteHistoryUrl
 from .utils import removeNonAscii, sponsorsToList
 
 from billy.scrape import NoDataForPeriod, ScrapeError
@@ -10,114 +10,6 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
 import lxml.html
-
-table_xpath = "/html/body/table/tbody/tr/td/div[@id='tablecontent']/table/tbody/tr/td[@class='content']/div[@id='votecontent']/div/div/table"
-
-# Extracts bill number and title from a string
-# Sample input "Something someting Bill 1: Bill Title - Something else "
-#    returns (1,Bill Title)
-def extract_title(string):
-	title_pattern = re.compile(".* Bill (\d*):\s*(.*)\s*-.*$")
-	g1 = title_pattern.search(string)
-	#print 'g1 = ', g1
-	if g1 != None:
-		groups = g1.groups()
-		#print 'groups ', groups
-		if len(groups) == 2:
-			bill_number = groups[0]
-			title = groups[1].strip()
-			#print "extract_title billn orig [%s] [%s] title [%s]" % (string, bill_number, title)
-			return (bill_number, title )
-	return (None,None)
-
-# extracts senators from string.
-#   Gets rid of Senator(s) at start of string, 
-#   Senator last names are separated by commas, except the last two 
-#   are separated by the word 'and'
-#   handles ' and '
-def xxxxcorrected_sponsor(orig):
-
-	sponsors = []
-	parts = orig.split()
-	if orig.startswith("Senator") and len(parts) >= 2:
-		#print '|', orig, '| returning ', parts[1]
-		sponsors.append(" ".join(parts[1:]))
-		return sponsors
-
-	if len(parts) == 1:
-		sponsors.append(parts[0])
-		return sponsors
-
-	#print 'orig ' , orig , ' parts ', len(parts)
-	and_start = orig.find(" and ")
-	if and_start > 0:
-		#print 'has and |', orig, '|'
-		for p in parts:
-			if p != "and":
-				sponsors.append(p)
-		#print  ' returning ', sponsors 
-		return sponsors
-	
-	else:
-		sponsors.append(orig)
-
-	return sponsors
-
-
-# Returns a tuple with the bill id, sponsors, and blurb 
-def extract_bill_data(data):
-
-	chamber = "lower"
-	pat1 = "<title>"
-	match = data.find(pat1)
-
-	title = None
-	start_title = data.find("<title>")
-	end_title = data.find("</title>")
-
-	if start_title > 0 and end_title > start_title:
-		start_title = start_title + len("<title>")
-		title = data[start_title:end_title]
-		#print 'before title is [', title, ']'
-		(bill_number,title) = extract_title(title)
-	else:
-		return ()
-
-	next_part = end_title + len("</title>")
-	sample1 = data[next_part:]
-
-	start_sponsor = sample1.find("Sponsors: ")
-	if start_sponsor < 0:
-		print 'warning no sponsors'
-		return ()
-
-	start_sponsor = start_sponsor + len("Sponsors:")
-	sample1 = sample1[start_sponsor:]
-	#print 'start sponsor: ' , start_sponsor 
-
-	end_sponsor = sample1.find("<br>")
-	#print 'end sponsor: ' , end_sponsor 
-	if end_sponsor < 0:
-		print 'warning no sponsors'
-		return ()
-
-	sponsor_names = sample1[:end_sponsor]
-	if sponsor_names.find("Senator") >= 0:
-		chamber = "upper"
-	tmp = sponsor_names.split()
-	sponsor_names = " ".join(tmp).split(",")
-
-	slist = [corrected_sponsor(n) for n in sponsor_names]
-
-	sponlist = []
-	for bbb in slist:
-		sponlist.extend(bbb)
-
-	blurb = None
-	bill_name = title
-	return ( bill_number, bill_name, sponlist, blurb, chamber )
-
-
 
 #################################################################
 # main class:
@@ -140,8 +32,10 @@ class SCBillScraper(BillScraper):
 
 
     #################################################################
-    # Return a list of bills found on this page
+    # Return list of bills on this page
     def scrape_vote_page(self, chamber, page):
+	table_xpath = "/html/body/table/tbody/tr/td/div[@id='tablecontent']/table/tbody/tr/td[@class='content']/div[@id='votecontent']/div/div/table"
+
 	self.log('scraping bill vote page for chamber %s' % chamber)
 	bills_on_this_page = []
 	bills_seen = set()
@@ -207,22 +101,6 @@ class SCBillScraper(BillScraper):
 	self.log( "THERE ARE %d bills: %d dups " %(numbills,dupcount)) 
 	return bills_on_this_page
 
-
-    ####################################################
-    # scrape static bill html pages, urls are like 
-    # http://scstatehouse.gov/sess119_2011-2012/bills/%d.htm
-    def scrape_static_bill(self, billurl, session, data, summary_file):
-	(bill_id,title,sponsors,blurb,chamber) = extract_bill_data(data)
-	self.log("     %s:%s:%s:%s:%s" % (bill_id,title,chamber,sponsors,blurb))
-	print "     %s:%s:%s:%s:%s" % (bill_id,title,chamber,sponsors,blurb)
-	summary_file.write( "%s:%s:%s\n    %s\n" % (bill_id,title,chamber,sponsors))
-	#summary_file.write( "%s:%s:%s:%s" % (bill_id,title,sponsors,blurb))
-        bill = Bill(session, chamber, bill_id, title)
-	bill.add_source(billurl)
-
-	for sponsor in sponsors:
-		bill.add_sponsor("sponsor", sponsor )
-	return bill
 
     ###################################################
     def scrape_session_days(self, url, page):
@@ -361,7 +239,7 @@ class SCBillScraper(BillScraper):
         if session != '119':
             raise NoDataForPeriod(session)
 
-        sessions_url = get_session_days_url(chamber) 
+        sessions_url = sessionDaysUrl(chamber) 
 
 	session_days = []
 	with self.urlopen( sessions_url ) as page:
@@ -370,7 +248,7 @@ class SCBillScraper(BillScraper):
 	self.log( "Session days: %d" % len(session_days) )
 
 	bills_with_votes = []
-	with self.lxml_context( get_vote_history_url(chamber) ) as page:
+	with self.lxml_context( voteHistoryUrl(chamber) ) as page:
 		bills_with_votes = self.scrape_vote_page(chamber,page)
 
 	self.log( "Bills with votes: %d" % len(bills_with_votes))
@@ -417,19 +295,3 @@ class SCBillScraper(BillScraper):
 
 	self.log( "Total bills processed: %d : " % len(bills_processed) )
 	self.debug( "Bills processed: %s" % ("|".join(bills_processed)) )
-
-
-
-# example title: <title>2011-2012 Bill 1: S.C. Election Reform Act - South Carolina Legislature Online</title>
-#########################################################################
-def scrape_bill_name(page):
-	#log('scraping bill name')
-
-	title = page.xpath("/html/head/title/text()")[0].split(":",1)[1].split("-",1)[0]
-	billname = page.xpath("/html/body/p/b")[0].text
-	if billname.startswith("S"):
-		chamber = "upper"
-	else:
-		chamber = "lower"
-	return (title,billname,chamber)
-
