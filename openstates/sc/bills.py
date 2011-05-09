@@ -149,8 +149,6 @@ class SCBillScraper(BillScraper):
 				temp2 = temp1[s1+1:s2].split()
 				complete_bill_name = " ".join(temp2)
 				bill_id = complete_bill_name
-				#print "  BillName|", complete_bill_name, '|'
-				#print "BEFORE START: ", d[1:start], ' billname ', bill_name
 
 		start += 2  # skip the two dashes
 		bill_source = d[1:start]
@@ -166,9 +164,7 @@ class SCBillScraper(BillScraper):
 		summary_end = after_sponsor.find("<p>")
 
 	if summary_end > 0:
-		#print ("AAA : ", stop, " to ", summary_end )
 		summary = d1[stop:summary_end]
-		#print ("BBB : ", summary )
 
 		d1 = d1[:summary_end]
 		maybe_actions = d
@@ -189,8 +185,8 @@ class SCBillScraper(BillScraper):
 		summary = removeNonAscii(summary)
 
 	if len(summary) > 300:
-		self.log("Truncating summary %s" % summary )
 		summary = summary[1:300]
+		self.log("Truncated summary [%s]" % summary )
 
 	if len(summary) == 0:
 		self.log("NO SUMMARY url:%s (%s,%s,%s) " % (dayurl, session,chamber,bill_id))
@@ -198,6 +194,7 @@ class SCBillScraper(BillScraper):
 	else:
 		self.debug("Bill(%s,%s,%s,%s)" %(session,chamber,bill_id,summary))
 		bill = Bill(session,chamber,bill_id,summary)
+		bill.add_source(dayurl)
 		for sponsor in sponsors:
 			bill.add_sponsor("primary", sponsor )
 
