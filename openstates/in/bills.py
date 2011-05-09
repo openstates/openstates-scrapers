@@ -186,10 +186,25 @@ class INBillScraper(BillScraper):
 
         lines = text.split('\n')
 
+        date_fmt = "%m/%d/%Y %I:%M:%S %p"
+        date, vstart = None, None
+        try:
+            date = "%s %s" % (lines[-4], lines[-3])
+            date = datetime.datetime.strptime(date, date_fmt)
+            vstart = 20
+        except ValueError:
+            try:
+                date = "%s %s" % (lines[6], lines[7])
+                date = datetime.datetime.strptime(date, date_fmt)
+                vstart = 27
+            except ValueError:
+                self.log("Couldn't find vote date in %s" % url)
+                return
+
         vote_type = None
         yes_count, no_count, other_count = None, None, 0
         votes = []
-        for line in lines[20:]:
+        for line in lines[vstart:]:
             line = line.strip()
             if not line:
                 continue
@@ -207,14 +222,10 @@ class INBillScraper(BillScraper):
                 votes.append((line, vote_type))
 
         if yes_count is None or no_count is None:
-            # probably a committee vote?
+            self.log("Couldne't find vote counts in %s" % url)
             return
 
         passed = yes_count > no_count + other_count
-
-        date = "%s %s" % (lines[-4], lines[-3])
-        date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
-
         motion = lines[7].strip()
 
         vote = Vote('upper', date, motion, passed, yes_count, no_count,
@@ -226,7 +237,7 @@ class INBillScraper(BillScraper):
                 vote.yes(name)
             elif vtype == 'no':
                 vote.no(name)
-            else:
+            elif vtype == 'other':
                 vote.other(name)
 
         bill.add_vote(vote)
