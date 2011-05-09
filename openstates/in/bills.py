@@ -49,13 +49,14 @@ class INBillScraper(BillScraper):
                 return
             title = title.strip()
 
-            if bill_id.endswith('B'):
+            abbrev = bill_id.split()[0]
+            if abbrev.endswith('B'):
                 bill_type = ['bill']
-            elif bill_id.endswith('JR'):
+            elif abbrev.endswith('JR'):
                 bill_type = ['joint resolution']
-            elif bill_id.endswith('CR'):
+            elif abbrev.endswith('CR'):
                 bill_type = ['concurrent resolution']
-            elif bill_id.endswith('R'):
+            elif abbrev.endswith('R'):
                 bill_type = ['resolution']
 
             bill = Bill(session, chamber, bill_id, title,
