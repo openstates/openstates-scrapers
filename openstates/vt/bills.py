@@ -108,20 +108,24 @@ class VTBillScraper(BillScraper):
         else:
             bill_abbr = "S."
 
-        url = ("http://www.leg.state.vt.us/"
-               "docs/bills.cfm?Session=%s&Body=%s" % (
-                   session.split('-')[1], bill_abbr[0]))
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        urls = [
+            "http://www.leg.state.vt.us/docs/bills.cfm?Session=%s&Body=%s",
+            "http://www.leg.state.vt.us/docs/resolutn.cfm?Session=%s&Body=%s"
+        ]
 
-            for link in page.xpath("//a[contains(@href, 'summary.cfm')]"):
-                bill_id = link.text
-                title = link.xpath("string(../../td[2])")
+        for url in urls:
+            url = url % (session.split('-')[1], bill_abbr[0])
+            with self.urlopen(url) as page:
+                page = lxml.html.fromstring(page)
+                page.make_links_absolute(url)
 
-                bill = Bill(session, chamber, bill_id, title)
-                self.scrape_bill(bill, link.attrib['href'])
+                for link in page.xpath("//a[contains(@href, 'summary.cfm')]"):
+                    bill_id = link.text
+                    title = link.xpath("string(../../td[2])")
+
+                    bill = Bill(session, chamber, bill_id, title)
+                    self.scrape_bill(bill, link.attrib['href'])
 
     def scrape_bill(self, bill, url):
         with self.urlopen(url) as page:
