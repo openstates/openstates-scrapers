@@ -20,9 +20,7 @@ class SCBillScraper(BillScraper):
     def lxml_context(self,url):
 	body = self.urlopen(url)
 	body = unicode(self.urlopen(url), 'latin-1')
-	#body = body.replace('name=Expires', 'name="Expires"')
 	elem = lxml.html.fromstring(body)
-	#print "lxml_context() GOT ELEM\n"
 	try:
 		yield elem
 	except Exception as error:
@@ -51,8 +49,6 @@ class SCBillScraper(BillScraper):
 
 	for r in rows:
 	  try:
-		item = {}
-		alltd = r.xpath("td");
 		brows = r.xpath("td[1]/a[@target='_blank']/text()")
 		if len(brows) <= 0:
 			continue
@@ -106,8 +102,6 @@ class SCBillScraper(BillScraper):
     def scrape_session_days(self, url, page):
 	"""The session days page contains a list of 
 	bills by introduction date.
-
-	Find links which are of the form YYYYMMDD.htm (eg. 20110428.htm)
 	Returns a list of these pages
 	"""
 
@@ -122,7 +116,7 @@ class SCBillScraper(BillScraper):
 
 
     ###################################################
-    def extract_bill_info(self, session,chamber,d):
+    def extract_bill_info(self, session,chamber,dayurl,d):
 	"""Extracts bill info, which is the bill id,
 	the sponsors, and a paragraph describing the bill (a shorter
 	summary suitable for a title may be available 
@@ -133,51 +127,60 @@ class SCBillScraper(BillScraper):
 	regexp = re.compile( "/cgi-bin/web_bh10.exe" )
 	bregexp = re.compile( "bill1=(\d+)&" )
 
-	bill_name = None
-	sponsors_str = None
-	summary = None
-	the_action = None
+	bill_name, summary, the_action = None, None, None
 
 	start = d.find("--")
 	stop = d.find(":",start)
 
 	d1 = d
 	after_sponsor = d
-	splist = []
+	sponsors = []
 
-	maybe_actions = ""
-	#print "   sp (%d,%d)" % (start , stop)
+	bill_source, bill_document, bill_id = None, None, None
 	if start >= 0 and stop > start:
 		bn = d[:start]
-		start += 2  # skip the two dashes
 		bill_name = bregexp.search(bn).groups()[0]
-		#print 'bill_name ', bill_name
-		self.debug( "\nbill_name |%s|" % bill_name )
 
-		sponsors_str = d[start:stop]
-		self.debug( "\nsponsors_str |%s|" %  sponsors_str)
-		splist = sponsorsToList(sponsors_str)
-		self.debug( "\nafter cleansing |%s|\n\n" %  ("|".join(splist)))
+		temp1 = d[1:start]
+		s1 = temp1.find(">") 
+		if s1 >= 0:
+			s2 = temp1.find("<",s1)
+			if s2 > s1:	
+				temp2 = temp1[s1+1:s2].split()
+				complete_bill_name = " ".join(temp2)
+				bill_id = complete_bill_name
+				#print "  BillName|", complete_bill_name, '|'
+				#print "BEFORE START: ", d[1:start], ' billname ', bill_name
+
+		start += 2  # skip the two dashes
+		bill_source = d[1:start]
+		bill_document = d[1:start]
+
+		sponsors = sponsorsToList( d[start+2:stop] )
 
 		after_sponsor = d[stop+1:]
 
-	summary = d1 
-	d1_end = after_sponsor.find("<br>",stop)
-	if d1_end > 0:
-		summary = d1[stop:d1_end]
+	summary = d1[stop]
+	summary_end = after_sponsor.find("<br>")
+	if summary_end < 0:
+		summary_end = after_sponsor.find("<p>")
 
-		d1 = d1[:d1_end]
+	if summary_end > 0:
+		#print ("AAA : ", stop, " to ", summary_end )
+		summary = d1[stop:summary_end]
+		#print ("BBB : ", summary )
+
+		d1 = d1[:summary_end]
 		maybe_actions = d
-		#print "AAAAA WHATEVER ", maybe_actions
 		act = maybe_actions.find("<center>")
-		#print "    cter?  ", act
 		if act != -1:
 			end_act = maybe_actions.index("</center>", act)
 			act += len("<center>")
 			maybe_actions = maybe_actions[act:end_act]
 			#print "Action: ", maybe_actions
 			the_action = maybe_actions
-
+	else:
+		self.log("\n\nSUMMARY_END: %s %s, %s ==> %s\n\n" %(dayurl, summary_end,summary,d))
 
 	try:
 		bs = summary.decode('utf8')
@@ -185,46 +188,48 @@ class SCBillScraper(BillScraper):
 		self.log("scrubbing %s summary, originally %s" % (bill_name,summary) )
 		summary = removeNonAscii(summary)
 
-	#print "==> [%s] Sponsors [%s] Summary [%s]\n\n" % (bill_name, sponsors_str, summary)
-	
-	if chamber == "lower":
-		bill_prefix  = "H "
-		bill_id = "H %s" % bill_name
+	if len(summary) > 300:
+		self.log("Truncating summary %s" % summary )
+		summary = summary[1:300]
+
+	if len(summary) == 0:
+		self.log("NO SUMMARY url:%s (%s,%s,%s) " % (dayurl, session,chamber,bill_id))
+		return None
 	else:
-		bill_prefix  = "S "
-		bill_id = "S %s" % bill_name
+		self.debug("Bill(%s,%s,%s,%s)" %(session,chamber,bill_id,summary))
+		bill = Bill(session,chamber,bill_id,summary)
+		for sponsor in sponsors:
+			bill.add_sponsor("primary", sponsor )
 
-	bill = Bill(session,chamber,bill_id,summary)
-	for sponsor in splist:
-		bill.add_sponsor("primary", sponsor )
-
-	#TEMPORARY TAMI
-	#if the_action != None:
-	#	bill.add_action(chamber, the_action, 'date')
-	return bill
+		#TEMPORARY TAMI
+		#if the_action != None:
+		#	bill.add_action(chamber, the_action, 'date')
+		return bill
 
     ###################################################
-    def scrape_day(self, session,chamber,data):
+    def fix_bill_id(self,s):
+	return "%s%s%s" % (s[0:1],".",s[1:])
+
+    ###################################################
+    def scrape_day(self, session,chamber,dayurl,data):
 	"""Extract bill info from the daily summary
 	page.  Splits the page into the different
 	bill sections, extracts the data,
 	and returns list containing the parsed bills.
 	"""
-
 	# throw away everything before <body>
 	start = data.index("<body>")
 	stop = data.index("</body>",start)
 
 	if stop >= 0 and stop > start:
 	  all = re.compile( "/cgi-bin/web_bh10.exe" ).split(data[start:stop])
-	  #print "number of bills page = %d" % (len(all)-1)
-	  self.log( "number of bills page = %d" % (len(all)-1 ))
+	  self.debug( "number of bills on page = %d" % (len(all)-1 ))
 
 	  # skip first one, because it's before the pattern
-	  return [self.extract_bill_info(session,chamber,segment) 
+	  return [self.extract_bill_info(session,chamber,dayurl,segment) 
 		for segment in all[1:]]
 
-	print 'bad format'
+	self.log("scrape_day: bad format %s" % dayurl)
 	raise
 
     ####################################################
@@ -251,11 +256,8 @@ class SCBillScraper(BillScraper):
 	with self.lxml_context( voteHistoryUrl(chamber) ) as page:
 		bills_with_votes = self.scrape_vote_page(chamber,page)
 
-	self.log( "Bills with votes: %d" % len(bills_with_votes))
+	self.debug( "Bills with votes: %d" % len(bills_with_votes))
 	
-	bill_ids_with_votes = [b['bill_id'] for b in bills_with_votes]
-	bills_with_summary = set(bill_ids_with_votes)
-				
 
 	# now go through each session day and extract the bill summaries
 	# if the vote page has a bill summary, use that for the title
@@ -263,35 +265,38 @@ class SCBillScraper(BillScraper):
 	#
 	# keep track of which bills have been processed, and get bill details only once
 	# (each bill will appear on the day page whenever it had an action)
-	numdays = 0
 	bills_processed = set()
+	bills_with_summary = set()
+
 	billdict = dict()
 	for b in bills_with_votes:
-		billdict[ b['bill_id'] ] = b
+		fixed = self.fix_bill_id(b['bill_id'])
+		billdict[ fixed ] = b
+		bills_with_summary.add(fixed) 
 
 	for dayurl in session_days:
 		self.debug( "processing day %s" % dayurl )
 		with self.urlopen( dayurl ) as data:
-			daybills = self.scrape_day(session,chamber,data)
+			daybills = self.scrape_day(session,chamber,dayurl,data)
 			self.debug( "  #bills on this day %d" % len(daybills))
-			for b in daybills:
-				bill_id = b['bill_id']
-				if bill_id in bills_processed: 
-					self.debug("   already processed %s" % bill_id )
-					continue
 
-				self.debug( "    processing %s ... " % bill_id )
-				if bill_id in bills_with_summary:
-					ab = billdict[bill_id]
-					self.debug( "  changing title to %s" % ab['title'])
-					b['description'] = b['title']
-					b['title'] = ab['title']
+		for b in daybills:
+			if b == None:
+				continue
+			bill_id = b['bill_id']
+			if bill_id in bills_processed: 
+				self.debug("   already processed %s" % bill_id )
+				continue
 
-				bills_processed.add( b['bill_id']  )
-				self.save_bill(b)
+			self.debug( "    processing [%s] ... " % bill_id )
+			if bill_id in bills_with_summary:
+				ab = billdict[bill_id]
+				self.log( "  changing title to %s" % ab['title'])
+				b['description'] = b['title']
+				b['title'] = ab['title']
 
-			
-		numdays += 1
+			bills_processed.add( bill_id )
+			self.save_bill(b)
 
 	self.log( "Total bills processed: %d : " % len(bills_processed) )
-	self.debug( "Bills processed: %s" % ("|".join(bills_processed)) )
+	#self.debug( "Bills processed: %s" % ("|".join(bills_processed)) )
