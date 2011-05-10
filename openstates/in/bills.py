@@ -194,7 +194,12 @@ class INBillScraper(BillScraper):
         if not date_match:
             self.log("Couldn't find date on %s" % url)
             return
-        date = datetime.datetime.strptime(date_match.group(1), "%m/%d/%Y")
+
+        time_match = re.search(r'Time:\s+(\d+:\d+:\d+)\s+(AM|PM)', text)
+        date = "%s %s %s" % (date_match.group(1), time_match.group(1),
+                           time_match.group(2))
+
+        date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
 
         vote_type = None
         yes_count, no_count, other_count = None, None, 0
