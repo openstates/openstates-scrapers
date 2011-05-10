@@ -8,11 +8,14 @@ from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
 from billy.importers.utils import fix_bill_id
 
+import pytz
 import lxml.html
 
 
 class INBillScraper(BillScraper):
     state = 'in'
+
+    _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
         self.build_subject_mapping(session)
@@ -198,8 +201,8 @@ class INBillScraper(BillScraper):
         time_match = re.search(r'Time:\s+(\d+:\d+:\d+)\s+(AM|PM)', text)
         date = "%s %s %s" % (date_match.group(1), time_match.group(1),
                            time_match.group(2))
-
         date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
+        date = self._tz.localize(date)
 
         vote_type = None
         yes_count, no_count, other_count = None, None, 0
