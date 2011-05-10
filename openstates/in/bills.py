@@ -231,6 +231,7 @@ class INBillScraper(BillScraper):
         motion = lines[motion_line]
         if not motion:
             self.log("Couldn't find motion for %s" % url)
+            return
 
         vote = Vote('upper', date, motion, passed, yes_count, no_count,
                     other_count)
