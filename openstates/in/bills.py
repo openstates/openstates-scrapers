@@ -36,10 +36,13 @@ class INBillScraper(BillScraper):
                 xpath = "//a[contains(@href, 'doctype=%s')]" % abbrev
                 for link in page.xpath(xpath):
                     bill_id = link.text.strip()
-                    self.scrape_bill(session, chamber, bill_id,
+
+                    short_title = link.tail.split(' -- ')[1].strip()
+
+                    self.scrape_bill(session, chamber, bill_id, short_title,
                                      link.attrib['href'])
 
-    def scrape_bill(self, session, chamber, bill_id, url):
+    def scrape_bill(self, session, chamber, bill_id, short_title, url):
         if bill_id == 'SCR 0003':
             return
 
@@ -49,7 +52,7 @@ class INBillScraper(BillScraper):
 
             title = page.xpath("//br")[8].tail
             if not title:
-                return
+                title = short_title
             title = title.strip()
 
             abbrev = bill_id.split()[0]
