@@ -6,6 +6,7 @@ from collections import defaultdict
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
+from billy.importers.utils import fix_bill_id
 
 import lxml.html
 
@@ -221,7 +222,13 @@ class INBillScraper(BillScraper):
             return
 
         passed = yes_count > no_count + other_count
-        motion = lines[7].strip()
+
+        clean_bill_id = fix_bill_id(bill['bill_id'])
+        motion_line = None
+        for i, line in enumerate(lines):
+            if line.strip() == clean_bill_id:
+                motion_line = i + 2
+        motion = lines[motion_line]
 
         vote = Vote('upper', date, motion, passed, yes_count, no_count,
                     other_count)
