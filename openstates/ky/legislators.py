@@ -39,8 +39,7 @@ class KYLegislatorScraper(LegislatorScraper):
 
             member['photo_url'] = imgtag[0].get('src')
 
-            name_list = [mem.text for mem in table.iterdescendants(tag='strong')][0].split(' ')
-
+            name_list = table.xpath('string(.//strong[1])').split(' ')
             member['full_name'] = ' '.join(name_list[1:-1]).strip()
 
             party = name_list[-1]
