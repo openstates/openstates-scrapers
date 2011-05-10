@@ -2,14 +2,12 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from lxml import html
 import contextlib
-import re
 import scrapelib
 
 class GALegislatorScraper(LegislatorScraper):
     state = 'ga'
     PARTY_DICT = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
-    email_matcher = re.compile("[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:[A-Z]{2}|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\b")
-
+    
     @contextlib.contextmanager
     def lxml_context(self, url):
         body = None
@@ -26,22 +24,78 @@ class GALegislatorScraper(LegislatorScraper):
                 raise
 
     def scrape(self, chamber, term):
-        year = int(term[0: term.index('_')])
-
-        if (year < 2000):
-            raise NoDataForPeriod(year)
-        if (year % 2 == 0):
-            raise NoDataForPeriod(year)
-
-        session = "%s_%s" % (year, str(year + 1)[-2:])
-
-        if chamber == 'lower':
-            base = "http://www1.legis.ga.gov/legis/%s/house/alpha.html" % session #/2009_10/house/alpha.html
+        
+        if chamber == "upper":
+            url = "http://www.senate.ga.gov/senators/en-US/SenateMembersList.aspx"
+            self.scrape_upper_house(url, chamber, term)
         else:
-            base = "http://www.legis.ga.gov/legis/%s/leg/sum/%s%s%d.htm"
+            year = int(term[0: term.index('_')])
+            
+            if (year < 2000):
+                raise NoDataForPeriod(year)
+            if (year % 2 == 0):
+                raise NoDataForPeriod(year)
+    
+            session = "%s_%s" % (year, str(year + 1)[-2:])
+    
+            if chamber == 'lower':
+                base = "http://www1.legis.ga.gov/legis/%s/house/alpha.html" % session #/2009_10/house/alpha.html
+            else:
+                base = "http://www.legis.ga.gov/legis/%s/leg/sum/%s%s%d.htm"
+    
+            self.scrape_lower_house(base, chamber, term)
 
-        self.scrape_lower_house(base, chamber, term)
-
+    def scrape_upper_house(self, url, chamber, term):
+        """Scrape the 'upper' (Senate) GA House.
+        
+        url: http://www.senate.ga.gov/senators/en-US/SenateMembersList.aspx
+        """
+        with self.lxml_context(url) as page:
+            path = '//div[@style="font-size:13px;"]/span'
+            span_tags = page.xpath(path)
+            
+            # every set of 3 span tags is one senator, so break that up correctly
+            span_tag_sets = []
+            i = 0
+            while i < len(span_tags):
+                span_tag_set = span_tags[i:i+3]
+                span_tag_sets.append(span_tag_set)
+                i+=3
+            
+            for span_tags in span_tag_sets:
+                name_and_party_tag = span_tags[0].text_content()
+                district_tag = span_tags[1].text_content()
+                city_tag = span_tags[2].text_content()
+                
+                # Parse Party
+                if 'Democrat' in name_and_party_tag:
+                    party = "Democrat"
+                elif 'Republican' in name_and_party_tag:
+                    party = "Republican"
+                elif "Independent" == name_and_party_tag:
+                    party = "Independent"
+                
+                # Parse name
+                name_parts = name_and_party_tag.split()
+                last_name = name_parts[0].strip(",")
+                first_name = name_parts[1]
+                
+                # Parse district
+                district = district_tag.strip()
+                
+                # Parse city
+                city = city_tag.strip()[2:]
+                
+                legislator = Legislator(term,
+                                        chamber,
+                                        district,
+                                        first_name + " " + last_name,
+                                        first_name = first_name,
+                                        last_name = last_name,
+                                        party=party,
+                                        city=city)
+                self.save_legislator(legislator)
+    
     def scrape_lower_house(self, url, chamber, term):
         """Scrape the 'lower' GA House. The representative page contains a list of reps
         but we have to go into their individual bio pages in order to extract all necessary
@@ -84,7 +138,6 @@ class GALegislatorScraper(LegislatorScraper):
         
         Example url: http://www1.legis.ga.gov/legis/2009_10/house/bios/abdulsalaamRoberta/abdulsalaamRoberta.htm
         """
-        print url
         if 'speaker/index.htm' in url:
             return self._scrape_speaker_of_the_house(url, term, chamber)
 
