@@ -81,8 +81,8 @@ class INBillScraper(BillScraper):
                 if links:
                     bill.add_version(version_type, links[0].attrib['href'])
 
-            # for vote_link in page.xpath("//a[contains(@href, 'Srollcal')]"):
-            #     self.scrape_senate_vote(bill, vote_link.attrib['href'])
+            for vote_link in page.xpath("//a[contains(@href, 'Srollcal')]"):
+                self.scrape_senate_vote(bill, vote_link.attrib['href'])
 
             for doc_link in page.xpath("//a[contains(@href, 'FISCAL')]"):
                 num = doc_link.text.strip().split("(")[0]
@@ -184,30 +184,21 @@ class INBillScraper(BillScraper):
 
     def scrape_senate_vote(self, bill, url):
         (path, resp) = self.urlretrieve(url)
-        text = convert_pdf(path, 'text-nolayout')
+        text = convert_pdf(path, 'text')
         os.remove(path)
 
         lines = text.split('\n')
 
-        date_fmt = "%m/%d/%Y %I:%M:%S %p"
-        date, vstart = None, None
-        try:
-            date = "%s %s" % (lines[-4], lines[-3])
-            date = datetime.datetime.strptime(date, date_fmt)
-            vstart = 20
-        except ValueError:
-            try:
-                date = "%s %s" % (lines[6], lines[7])
-                date = datetime.datetime.strptime(date, date_fmt)
-                vstart = 27
-            except ValueError:
-                self.log("Couldn't find vote date in %s" % url)
-                return
+        date_match = re.search(r'Date:\s+(\d+/\d+/\d+)', text)
+        if not date_match:
+            self.log("Couldn't find date on %s" % url)
+            return
+        date = datetime.datetime.strptime(date_match.group(1), "%m/%d/%Y")
 
         vote_type = None
         yes_count, no_count, other_count = None, None, 0
         votes = []
-        for line in lines[vstart:]:
+        for line in lines[21:]:
             line = line.strip()
             if not line:
                 continue
@@ -222,7 +213,8 @@ class INBillScraper(BillScraper):
                 other_count += int(line.split(' - ')[1])
                 vote_type = 'other'
             else:
-                votes.append((line, vote_type))
+                votes.extend([(n.strip(), vote_type)
+                              for n in re.split(r'\s{2,}', line)])
 
         if yes_count is None or no_count is None:
             self.log("Couldne't find vote counts in %s" % url)
