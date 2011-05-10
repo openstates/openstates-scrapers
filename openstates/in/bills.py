@@ -229,6 +229,8 @@ class INBillScraper(BillScraper):
             if line.strip() == clean_bill_id:
                 motion_line = i + 2
         motion = lines[motion_line]
+        if not motion:
+            self.log("Couldn't find motion for %s" % url)
 
         vote = Vote('upper', date, motion, passed, yes_count, no_count,
                     other_count)
