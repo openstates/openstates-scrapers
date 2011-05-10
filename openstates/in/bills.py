@@ -78,8 +78,8 @@ class INBillScraper(BillScraper):
                 if links:
                     bill.add_version(version_type, links[0].attrib['href'])
 
-            for vote_link in page.xpath("//a[contains(@href, 'Srollcal')]"):
-                self.scrape_senate_vote(bill, vote_link.attrib['href'])
+            # for vote_link in page.xpath("//a[contains(@href, 'Srollcal')]"):
+            #     self.scrape_senate_vote(bill, vote_link.attrib['href'])
 
             for doc_link in page.xpath("//a[contains(@href, 'FISCAL')]"):
                 num = doc_link.text.strip().split("(")[0]
