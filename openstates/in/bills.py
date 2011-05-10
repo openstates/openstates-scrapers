@@ -156,7 +156,8 @@ class INBillScraper(BillScraper):
                 if action.startswith('Reassigned to'):
                     atype.append('committee:referred')
 
-                match = re.match(r'Amendment \d+ \(.*\), (prevailed|failed)', action)
+                match = re.match(
+                    r'Amendment \d+ \(.*\), (prevailed|failed)', action)
                 if match:
                     if match.group(1) == 'prevailed':
                         atype.append('amendment:passed')

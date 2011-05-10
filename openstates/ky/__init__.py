@@ -9,7 +9,7 @@ metadata = dict(
     upper_chamber_term=4,
     lower_chamber_term=2,
     terms=[
-    dict(name='2009', 
+    dict(name='2009',
         start_year=2009,
         end_year=2009,
         sessions=[
@@ -34,7 +34,7 @@ metadata = dict(
         '2009 Regular Session': {'type': 'primary'},
         '2009 Special Session': {'type': 'special'},
         '2010 Regular Session': {'type': 'primary'},
-        '2010 Extraordinary Session': {'type':'special'},
-        '2011 Regular Session':{'type':'primary'}
+        '2010 Extraordinary Session': {'type': 'special'},
+        '2011 Regular Session': {'type': 'primary'}
         }
     )

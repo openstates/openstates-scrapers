@@ -124,11 +124,13 @@ class CTBillScraper(BillScraper):
 
             other_count = page.xpath(
                 "string(//span[contains(., 'Those absent')])")
-            other_count = int(re.match(r'[^\d]*(\d+)[^\d]*', other_count).group(1))
+            other_count = int(
+                re.match(r'[^\d]*(\d+)[^\d]*', other_count).group(1))
 
             need_count = page.xpath(
                 "string(//span[contains(., 'Necessary for')])")
-            need_count = int(re.match(r'[^\d]*(\d+)[^\d]*', need_count).group(1))
+            need_count = int(
+                re.match(r'[^\d]*(\d+)[^\d]*', need_count).group(1))
 
             date = page.xpath("string(//span[contains(., 'Taken on')])")
             date = re.match(r'.*Taken\s+on\s+(\d+/\s?\d+)', date).group(1)
@@ -233,7 +235,8 @@ class CTBillScraper(BillScraper):
                 if 'TRANS.TO HOUSE' in action or action == 'SENATE PASSED':
                     act_chamber = 'lower'
 
-                if 'TRANSMITTED TO SENATE' in action or action == 'HOUSE PASSED':
+                if ('TRANSMITTED TO SENATE' in action or
+                    action == 'HOUSE PASSED'):
                     act_chamber = 'upper'
 
     def scrape_versions(self, chamber, session):
