@@ -245,4 +245,8 @@ class INBillScraper(BillScraper):
             elif vtype == 'other':
                 vote.other(name)
 
+        assert yes_count == len(vote['yes_votes'])
+        assert no_count == len(vote['no_votes'])
+        assert other_count == len(vote['other_votes'])
+
         bill.add_vote(vote)
