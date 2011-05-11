@@ -261,8 +261,9 @@ class INBillScraper(BillScraper):
                     votes.append((n4, vtype))
 
         passed = re.search(
-            r'Roll\s+Call\s+\d+:\s+(FAILED|PREVAILED|PASSED)', text).group(1)
-        passed = {'FAILED': False, 'PREVAILED': True,
+            r'Roll\s+Call\s+\d+:\s+(FAILED|PREVAILED|PASSED|DEFEATED)',
+            text).group(1)
+        passed = {'FAILED': False, 'DEFEATED': False, 'PREVAILED': True,
                   'PASSED': True}[passed]
 
         motion_line = None
