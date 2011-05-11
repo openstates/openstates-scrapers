@@ -260,11 +260,17 @@ class INBillScraper(BillScraper):
                 if n4:
                     votes.append((n4, vtype))
 
+        result_types = {
+            'FAILED': False,
+            'DEFEATED': False,
+            'PREVAILED': True,
+            'PASSED': True,
+            'SUSTAINED': True
+        }
         passed = re.search(
-            r'Roll\s+Call\s+\d+:\s+(FAILED|PREVAILED|PASSED|DEFEATED)',
+            r'Roll\s+Call\s+\d+:\s+(%s)' % '|'.join(result_types.keys()),
             text).group(1)
-        passed = {'FAILED': False, 'DEFEATED': False, 'PREVAILED': True,
-                  'PASSED': True}[passed]
+        passed = result_types[passed]
 
         motion_line = None
         for i, line in enumerate(lines):
