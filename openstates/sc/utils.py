@@ -1,3 +1,4 @@
+import re
 
 def sessionDaysUrl(chamber):
 	"""Returns the url which contains the list of day that have been
@@ -22,12 +23,27 @@ def corrected_sponsor(orig):
 	returns a list of sponsors
 	"""
 
+	#print '25 TAMI corrected_sponsor [%s]\n' % orig
 	sponsors = []
 	parts = orig.split()
-	if orig.startswith("Senator") and len(parts) >= 2:
-		#print '|', orig, '| returning ', parts[1]
-		sponsors.append(" ".join(parts[1:]))
-		return sponsors
+
+	if orig.startswith("Senators"):
+		sparts = orig.split("Senators",1)
+		parts = sparts[1:]
+		orig = " ".join(sparts[1:])
+
+	elif orig.startswith("Senator"):
+		sparts = orig.split("Senator",1)
+		parts = sparts[1:]
+		orig = " ".join(sparts[1:])
+
+#	if orig.startswith("Senator") and len(parts) >= 2:
+#		print '|', orig, '| returning ', parts[1]
+#		this_sponsor = " ".join(parts[1:])
+#		print 'TAMI corrected_sponsor [%s] this_sponsor [%s]\n' % (orig,str(this_sponsor))
+#		sponsors.append(" ".join(parts[1:]))
+#		print 'TAMI corrected_sponsor [%s] return [%s]\n' % (orig,str(sponsors))
+#		return sponsors
 
 	if orig.startswith("Reps."):
 		start = len("Reps.")
@@ -38,7 +54,7 @@ def corrected_sponsor(orig):
 		orig = orig[start:]
 
 	if len(parts) == 1:
-		sponsors.append(parts[0])
+		sponsors.append(parts[0].strip())
 		return sponsors
 
 	#print 'orig ' , orig , ' parts ', len(parts)
@@ -48,11 +64,12 @@ def corrected_sponsor(orig):
 		right_start = and_start + len(" and ")
 		right_operand = orig[right_start:]
 
-		sponsors.append(left_operand)
-		sponsors.append(right_operand)
+		sponsors.append(left_operand.strip())
+		sponsors.append(right_operand.strip())
 		return sponsors
 	else:
-		sponsors.append(orig)
+		sponsors.append(orig.strip())
+	#print '71 TAMI corrected_sponsor [%s] return [%s]' % (orig,str(sponsors))
 	return sponsors
 
 
@@ -77,3 +94,37 @@ def voteHistoryUrl(chamber):
 
 def removeNonAscii(s):
 	return "".join(i for i in s if ord(i)<128)
+
+
+def action_type(action):
+	action = action.lower()
+	atypes = []
+	if re.match('^read (the )?(first|1st) time', action):
+		atypes.append('bill:introduced')
+		atypes.append('bill:reading:1')
+
+	if re.match('^referred to the committee', action):
+		atypes.append('committee:referred:1')
+
+	if atypes:
+		return atypes
+
+	return ['other']
+
+
+
+def bill_type(s):
+	action = s.lower()
+	if re.match('house resolution', s):
+		return 'resolution'
+
+	if re.match('senate resolution', s):
+		return 'resolution'
+
+	if re.match('concurrent resolution', s):
+		return 'joint resolution'
+
+	if re.match('joint resolution', s):
+		return 'joint resolution'
+
+	return 'bill'

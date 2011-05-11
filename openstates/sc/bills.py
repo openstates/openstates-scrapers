@@ -2,7 +2,7 @@ import re
 import datetime
 import contextlib
 
-from .utils import sessionDaysUrl, voteHistoryUrl
+from .utils import sessionDaysUrl, voteHistoryUrl, action_type, bill_type
 from .utils import removeNonAscii, sponsorsToList
 
 from billy.scrape import NoDataForPeriod, ScrapeError
@@ -15,6 +15,13 @@ import lxml.html
 # main class:
 class SCBillScraper(BillScraper):
     state = 'sc'
+
+    def __init__(self, *args, **kwargs):
+	super(SCBillScraper,self).__init__(*args,**kwargs)
+	self.initStuff()
+
+    def initStuff(self):
+	self.log("TODO get legislators to get first names for sponsors")
 
     @contextlib.contextmanager
     def lxml_context(self,url):
@@ -128,12 +135,12 @@ class SCBillScraper(BillScraper):
 	bregexp = re.compile( "bill1=(\d+)&" )
 
 	bill_name, summary, the_action = None, None, None
+	summary_and_actions = None
 
 	start = d.find("--")
 	stop = d.find(":",start)
 
 	d1 = d
-	after_sponsor = d
 	sponsors = []
 
 	bill_source, bill_document, bill_id = None, None, None
@@ -154,29 +161,33 @@ class SCBillScraper(BillScraper):
 		bill_source = d[1:start]
 		bill_document = d[1:start]
 
-		sponsors = sponsorsToList( d[start+2:stop] )
+		sponsors = sponsorsToList( d[start:stop] )
+		self.debug("SPONSOR ORIG\n|%s|\n|%s|\n" % (d[start:stop], sponsors))
 
-		after_sponsor = d[stop+1:]
+	summary_and_actions = d1[stop+1:]
 
-	summary = d1[stop]
-	summary_end = after_sponsor.find("<br>")
-	if summary_end < 0:
-		summary_end = after_sponsor.find("<p>")
+	break_pat = re.compile(".*<br>", re.IGNORECASE )
+	mm = re.match(break_pat,summary_and_actions)
 
-	if summary_end > 0:
-		summary = d1[stop:summary_end]
+	summary = summary_and_actions
+	action_section = None
 
-		d1 = d1[:summary_end]
-		maybe_actions = d
-		act = maybe_actions.find("<center>")
-		if act != -1:
-			end_act = maybe_actions.index("</center>", act)
-			act += len("<center>")
-			maybe_actions = maybe_actions[act:end_act]
-			#print "Action: ", maybe_actions
-			the_action = maybe_actions
-	else:
-		self.log("\n\nSUMMARY_END: %s %s, %s ==> %s\n\n" %(dayurl, summary_end,summary,d))
+	if mm:
+		# don't include the <br> as part of the title
+		s_end = mm.end() - len("<br>")
+		summary =  summary_and_actions[mm.start():s_end]
+		action_section = summary_and_actions[mm.end():]
+
+	action_mm = None
+	actions_list = []
+	if action_section:
+		action_pat = re.compile("<center>(.*)</center>", re.IGNORECASE )
+		action_mm = re.search(action_pat,action_section)
+		if action_mm:
+		 	gg = action_mm.groups()
+			if gg:
+				self.debug( "%s -- has action (%s)" % (str(bill_name), gg) )
+				actions_list.extend(gg)
 
 	try:
 		bs = summary.decode('utf8')
@@ -185,23 +196,40 @@ class SCBillScraper(BillScraper):
 		summary = removeNonAscii(summary)
 
 	if len(summary) > 300:
+		origlen = len(summary)
 		summary = summary[1:300]
-		self.log("Truncated summary [%s]" % summary )
+		self.log("Truncated summary (origlen=%d) [%s]" % (origlen, summary ))
 
 	if len(summary) == 0:
 		self.log("NO SUMMARY url:%s (%s,%s,%s) " % (dayurl, session,chamber,bill_id))
 		return None
-	else:
-		self.debug("Bill(%s,%s,%s,%s)" %(session,chamber,bill_id,summary))
-		bill = Bill(session,chamber,bill_id,summary)
-		bill.add_source(dayurl)
-		for sponsor in sponsors:
-			bill.add_sponsor("primary", sponsor )
 
-		#TEMPORARY TAMI
-		#if the_action != None:
-		#	bill.add_action(chamber, the_action, 'date')
-		return bill
+	summary = summary.strip()
+	bill = Bill(session,chamber,bill_id,summary, type=bill_type(summary))
+
+	self.log("Bill[%s,%s,%s][%s]\n" % (session,chamber,bill_id,summary))
+	self.debug("%s - type |%s|" % (bill_name, bill_type(summary)))
+
+	bill.add_source(dayurl)
+	self.debug("%s - Source |%s|" % (bill_name, dayurl))
+
+	bill_detail_url = "http://scstatehouse.gov/cgi-bin/web_bh10.exe?bill1=%s&session=%s" % (bill_name,session)
+	self.debug("%s - Source |%s|" % (bill_name, bill_detail_url))
+
+	bill.add_source(bill_detail_url)
+	self.debug("%s - Sponsors |%s|" % (bill_name, sponsors ))
+
+	for sponsor in sponsors:
+		bill.add_sponsor("primary", sponsor )
+
+	for action in actions_list:
+		date = datetime.datetime.strptime('11/23/1960', "%m/%d/%Y")
+		date = date.date()
+		#date = "11231960"
+		bill.add_action(chamber, action, date, type=action_type(action) )
+		self.debug("%s -  Action |%s|" % (bill_name, action_type(action)) )
+
+	return bill
 
     ###################################################
     def fix_bill_id(self,s):
@@ -236,7 +264,9 @@ class SCBillScraper(BillScraper):
     # 3. Get Bill info.
     ####################################################
     def scrape(self, chamber, session):
+    	summary = open("tami_scrapedbg.txt", "w")
 	self.log( 'scrape(session %s,chamber %s)' % (session, chamber))
+	summary.write( 'scrape(session %s,chamber %s)\n' % (session, chamber))
 
         if session != '119':
             raise NoDataForPeriod(session)
@@ -273,9 +303,11 @@ class SCBillScraper(BillScraper):
 
 	for dayurl in session_days:
 		self.debug( "processing day %s" % dayurl )
+		summary.write( "processing day [%s]\n" % dayurl )
 		with self.urlopen( dayurl ) as data:
 			daybills = self.scrape_day(session,chamber,dayurl,data)
 			self.debug( "  #bills on this day %d" % len(daybills))
+			summary.write( "  #bills on this day %d\n" % len(daybills))
 
 		for b in daybills:
 			if b == None:
@@ -297,3 +329,4 @@ class SCBillScraper(BillScraper):
 
 	self.log( "Total bills processed: %d : " % len(bills_processed) )
 	#self.debug( "Bills processed: %s" % ("|".join(bills_processed)) )
+	summary.close()
