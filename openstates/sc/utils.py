@@ -1,6 +1,6 @@
 import re
 
-def sessionDaysUrl(chamber):
+def session_days_url(chamber):
 	"""Returns the url which contains the list of day that have been
 	in session.  There will be a link for each day that the chamber
 	was in session.
@@ -82,7 +82,7 @@ def sponsorsToList(str):
 	return sponlist
 
 
-def voteHistoryUrl(chamber):
+def vote_history_url(chamber):
 	house_url="http://www.scstatehouse.gov/php/votehistory.php?chamber=H"
 	senate_url="http://www.scstatehouse.gov/php/votehistory.php?chamber=S"
 

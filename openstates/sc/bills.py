@@ -2,7 +2,7 @@ import re
 import datetime
 import contextlib
 
-from .utils import sessionDaysUrl, voteHistoryUrl, action_type, bill_type
+from .utils import session_days_url, vote_history_url, action_type, bill_type
 from .utils import removeNonAscii, sponsorsToList
 
 from billy.scrape import NoDataForPeriod, ScrapeError
@@ -21,7 +21,7 @@ class SCBillScraper(BillScraper):
 	self.initStuff()
 
     def initStuff(self):
-	self.log("TODO get legislators to get first names for sponsors")
+	self.debug("TODO get legislators to get first names for sponsors")
 
     @contextlib.contextmanager
     def lxml_context(self,url):
@@ -38,7 +38,7 @@ class SCBillScraper(BillScraper):
 
     #################################################################
     # Return list of bills on this page
-    def scrape_vote_page(self, chamber, page):
+    def scrape_vote_page(self, session, chamber, page):
 	table_xpath = "/html/body/table/tbody/tr/td/div[@id='tablecontent']/table/tbody/tr/td[@class='content']/div[@id='votecontent']/div/div/table"
 
 	self.log('scraping bill vote page for chamber %s' % chamber)
@@ -52,7 +52,6 @@ class SCBillScraper(BillScraper):
 
 	rows = tables[0].xpath("//tr")
 	numbills, dupcount = 0, 0
-	session = "119"
 
 	for r in rows:
 	  try:
@@ -60,9 +59,16 @@ class SCBillScraper(BillScraper):
 		if len(brows) <= 0:
 			continue
 
+		bill_vote_url = None
+		bill_votes_url = r.xpath("td[1]/a[@target='_blank']/@href")
+		if bill_votes_url:
+			bill_vote_url = str(bill_votes_url[0])
+
 		bname = r.xpath("td[2]/a[@target='_blank']/text()")
 		if len(bname) == 0:
 			continue
+
+		self.debug("brows [%s] bname[%s] url[%s]" % (brows,bname,bill_vote_url) )
 
 		btitle = r.xpath("td[3]/text()")
 		btitle1 = r.xpath("string(td[3])")
@@ -94,10 +100,13 @@ class SCBillScraper(BillScraper):
 			bills_seen.add( bill_id )
 			numbills = numbills + 1
 
-			bill = Bill(session,chamber, bill_id, title)
+			bill = Bill(session, chamber, bill_id, title)
+			bill['vote_url'] = bill_vote_url
+			#bill['vote_url_x'] = make_bill_vote_url(bill_id)
 			bills_on_this_page.append(bill)
 			bills_seen.add( bill_id )
 			self.debug("   votepage: found bill |%s| |%s|", bill_id, title)
+			self.debug("   voteurl: found bill |%s| |%s|", bill_id, bill_vote_url)
 	  except UnicodeEncodeError:
 		self.error("scrape vote page : unicode error")
 
@@ -111,14 +120,14 @@ class SCBillScraper(BillScraper):
 	bills by introduction date.
 	Returns a list of these pages
 	"""
+	self.debug("getting list of day pages: [%s]" % url )
 
 	page = lxml.html.fromstring(page)
-	self.log("scrape_session_days: getting list of day pages: [%s]" % url )
 	page.make_links_absolute(url)
 
 	# All the links have 'contentlink' class
 	for link in page.find_class('contentlink'):
-		self.debug( "   Bills introduced on %s are at %s" % ( str(link.text),str(link.attrib['href']) ))
+		self.debug( "Bills introduced %s at %s" % ( str(link.text),str(link.attrib['href']) ))
 	return [str(link.attrib['href']) for link in page.find_class('contentlink')]
 
 
@@ -195,9 +204,9 @@ class SCBillScraper(BillScraper):
 		self.log("scrubbing %s summary, originally %s" % (bill_name,summary) )
 		summary = removeNonAscii(summary)
 
-	if len(summary) > 300:
+	if len(summary) > 1000:
 		origlen = len(summary)
-		summary = summary[1:300]
+		summary = summary[1:1000]
 		self.log("Truncated summary (origlen=%d) [%s]" % (origlen, summary ))
 
 	if len(summary) == 0:
@@ -233,12 +242,44 @@ class SCBillScraper(BillScraper):
 
     ###################################################
     def fix_bill_id(self,s):
+	"Adds a period to the bill, eg from H 8000 to H. 8000"
 	return "%s%s%s" % (s[0:1],".",s[1:])
+
+    ###################################################
+    def process_daily_bills(self, daybills, billdict, bills_processed ):
+	"""Process all the bills on the daily summary page."""
+
+	for bill in daybills:
+		if bill == None:
+			continue
+
+		bill_id = bill['bill_id']
+		if bill_id in bills_processed: 
+			self.debug("   already processed %s" % bill_id )
+			continue
+
+		if bill_id in billdict:
+			ab = billdict[bill_id]
+			self.log( "  changing title of %s to %s" % (bill_id,ab['title']))
+			bill['description'] = bill['title']
+			bill['title'] = ab['title']
+			# how about getting the vote url here as well
+			if ab['vote_url']:
+				vv = ab['vote_url']
+				self.debug("Bill %s has vote url %s" % (bill_id,ab['vote_url']))
+				bill['vote_url'] = ab['vote_url']
+				bill.add_source( ab['vote_url'] )
+				# could collect votes here although the votes
+				# are embedded in pdf
+
+
+		bills_processed.add( bill_id )
+		self.save_bill(bill)
 
     ###################################################
     def scrape_day(self, session,chamber,dayurl,data):
 	"""Extract bill info from the daily summary
-	page.  Splits the page into the different
+	page.  Splits page into the different
 	bill sections, extracts the data,
 	and returns list containing the parsed bills.
 	"""
@@ -264,14 +305,12 @@ class SCBillScraper(BillScraper):
     # 3. Get Bill info.
     ####################################################
     def scrape(self, chamber, session):
-    	summary = open("tami_scrapedbg.txt", "w")
 	self.log( 'scrape(session %s,chamber %s)' % (session, chamber))
-	summary.write( 'scrape(session %s,chamber %s)\n' % (session, chamber))
 
         if session != '119':
             raise NoDataForPeriod(session)
 
-        sessions_url = sessionDaysUrl(chamber) 
+        sessions_url = session_days_url(chamber) 
 
 	session_days = []
 	with self.urlopen( sessions_url ) as page:
@@ -280,53 +319,33 @@ class SCBillScraper(BillScraper):
 	self.log( "Session days: %d" % len(session_days) )
 
 	bills_with_votes = []
-	with self.lxml_context( voteHistoryUrl(chamber) ) as page:
-		bills_with_votes = self.scrape_vote_page(chamber,page)
+	vhistory_url = vote_history_url(chamber)
+	with self.lxml_context( vhistory_url ) as page:
+		page.make_links_absolute(vhistory_url)
+		bills_with_votes = self.scrape_vote_page(session, chamber,page)
 
 	self.debug( "Bills with votes: %d" % len(bills_with_votes))
-	
 
-	# now go through each session day and extract the bill summaries
+	# visit each session day and extract bill summaries
 	# if the vote page has a bill summary, use that for the title
 	# otherwise, use the longer paragraph on the day page
-	#
-	# keep track of which bills have been processed, and get bill details only once
-	# (each bill will appear on the day page whenever it had an action)
+
+	# keep track of which bills have already been processed 
+	# (each bill will appear on every day page whenever it had an action)
 	bills_processed = set()
-	bills_with_summary = set()
 
 	billdict = dict()
 	for b in bills_with_votes:
 		fixed = self.fix_bill_id(b['bill_id'])
 		billdict[ fixed ] = b
-		bills_with_summary.add(fixed) 
 
 	for dayurl in session_days:
 		self.debug( "processing day %s" % dayurl )
-		summary.write( "processing day [%s]\n" % dayurl )
+
 		with self.urlopen( dayurl ) as data:
 			daybills = self.scrape_day(session,chamber,dayurl,data)
-			self.debug( "  #bills on this day %d" % len(daybills))
-			summary.write( "  #bills on this day %d\n" % len(daybills))
+			self.debug( "  #bills on this day %d %s" % (len(daybills),dayurl))
 
-		for b in daybills:
-			if b == None:
-				continue
-			bill_id = b['bill_id']
-			if bill_id in bills_processed: 
-				self.debug("   already processed %s" % bill_id )
-				continue
-
-			self.debug( "    processing [%s] ... " % bill_id )
-			if bill_id in bills_with_summary:
-				ab = billdict[bill_id]
-				self.log( "  changing title to %s" % ab['title'])
-				b['description'] = b['title']
-				b['title'] = ab['title']
-
-			bills_processed.add( bill_id )
-			self.save_bill(b)
+    		self.process_daily_bills( daybills, billdict, bills_processed )
 
 	self.log( "Total bills processed: %d : " % len(bills_processed) )
-	#self.debug( "Bills processed: %s" % ("|".join(bills_processed)) )
-	summary.close()
