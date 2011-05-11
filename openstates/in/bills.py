@@ -12,6 +12,28 @@ import pytz
 import lxml.html
 
 
+def parse_vote_count(s):
+    if s == 'NONE':
+        return 0
+    return int(s)
+
+
+def insert_specific_votes(vote, specific_votes):
+    for name, vtype in specific_votes:
+        if vtype == 'yes':
+            vote.yes(name)
+        elif vtype == 'no':
+            vote.no(name)
+        elif vtype == 'other':
+            vote.other(name)
+
+
+def check_vote_counts(vote):
+    assert vote['yes_count'] == len(vote['yes_votes'])
+    assert vote['no_count'] == len(vote['no_votes'])
+    assert vote['other_count'] == len(vote['other_votes'])
+
+
 class INBillScraper(BillScraper):
     state = 'in'
 
@@ -87,6 +109,9 @@ class INBillScraper(BillScraper):
 
             for vote_link in page.xpath("//a[contains(@href, 'Srollcal')]"):
                 self.scrape_senate_vote(bill, vote_link.attrib['href'])
+
+            for vote_link in page.xpath("//a[contains(@href, 'Hrollcal')]"):
+                self.scrape_house_vote(bill, vote_link.attrib['href'])
 
             for doc_link in page.xpath("//a[contains(@href, 'FISCAL')]"):
                 num = doc_link.text.strip().split("(")[0]
@@ -187,6 +212,76 @@ class INBillScraper(BillScraper):
             for link in page.xpath("//a[contains(@href, 'getBill')]"):
                 self.subjects[link.text.strip()].append(subject)
 
+    def scrape_house_vote(self, bill, url):
+        (path, resp) = self.urlretrieve(url)
+        text = convert_pdf(path, 'text')
+        os.remove(path)
+
+        lines = text.split('\n')
+
+        try:
+            date = re.search(r'\d\d-\d\d-\d\d', text).group(0)
+        except AttributeError:
+            self.log("Couldn't find date on %s" % url)
+            return
+        date = datetime.datetime.strptime(date, "%m-%d-%y")
+
+        votes = []
+        yes_count, no_count, other_count = None, None, 0
+        vtype = None
+        for line in lines[14:]:
+            line = line.strip()
+            if not line:
+                continue
+
+            if line.startswith('VOTING YEA'):
+                yes_count = parse_vote_count(line.split(":")[1].strip())
+                vtype = 'yes'
+            elif line.startswith('VOTING NAY'):
+                no_count = parse_vote_count(line.split(":")[1].strip())
+                vtype = 'no'
+            elif line.startswith('EXCUSED'):
+                other_count += parse_vote_count(line.split(":")[1].strip())
+                vtype = 'other'
+            elif line.startswith('NOT VOTING'):
+                other_count += parse_vote_count(line.split(":")[1].strip())
+                vtype = 'other'
+            else:
+                n1 = line[0:19].strip()
+                if n1:
+                    votes.append((n1, vtype))
+                n2 = line[19:40].strip()
+                if n2:
+                    votes.append((n2, vtype))
+                n3 = line[40:58].strip()
+                if n3:
+                    votes.append((n3, vtype))
+                n4 = line[58:].strip()
+                if n4:
+                    votes.append((n4, vtype))
+
+        passed = yes_count > no_count + other_count
+        motion = lines[7].strip()
+
+        motion_line = None
+        for i, line in enumerate(lines):
+            if line.startswith('MEETING DAY'):
+                motion_line = i + 2
+        motion = lines[motion_line]
+        if not motion:
+            self.log("Couldn't find motion for %s" % url)
+            return
+        motion = motion.strip()
+
+        vote = Vote('lower', date, motion, passed, yes_count, no_count,
+                    other_count)
+        vote.add_source(url)
+
+        insert_specific_votes(vote, votes)
+        check_vote_counts(vote)
+
+        bill.add_vote(vote)
+
     def scrape_senate_vote(self, bill, url):
         (path, resp) = self.urlretrieve(url)
         text = convert_pdf(path, 'text')
@@ -246,16 +341,7 @@ class INBillScraper(BillScraper):
                     other_count)
         vote.add_source(url)
 
-        for name, vtype in votes:
-            if vtype == 'yes':
-                vote.yes(name)
-            elif vtype == 'no':
-                vote.no(name)
-            elif vtype == 'other':
-                vote.other(name)
-
-        assert yes_count == len(vote['yes_votes'])
-        assert no_count == len(vote['no_votes'])
-        assert other_count == len(vote['other_votes'])
+        insert_specific_votes(vote, votes)
+        check_vote_counts(vote)
 
         bill.add_vote(vote)
