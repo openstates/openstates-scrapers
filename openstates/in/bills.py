@@ -266,12 +266,11 @@ class INBillScraper(BillScraper):
         motion_line = None
         for i, line in enumerate(lines):
             if line.startswith('MEETING DAY'):
-                motion_line = i + 2
-        motion = lines[motion_line]
+                motion_line = i + 7
+        motion = re.split(r'\s{2,}', lines[motion_line].strip())[0].strip()
         if not motion:
             self.log("Couldn't find motion for %s" % url)
             return
-        motion = motion.strip()
 
         vote = Vote('lower', date, motion, passed, yes_count, no_count,
                     other_count)
