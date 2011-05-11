@@ -5,14 +5,20 @@ import contextlib
 import scrapelib
 
 class GALegislatorScraper(LegislatorScraper):
+    """Let me first start by saying, I'm sorry you have to look at this. In a nutshell, the lower legislator
+    websites are a nightmare, they all are pretty much formed by hand it appears and a lot has slight differences.
+    I did the best I could, the senate scrapping is much better to look at :)
+    
+    You can find me at doug.morgan@gmail.com if you have questions.
+    """
     state = 'ga'
     PARTY_DICT = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
     
     @contextlib.contextmanager
-    def lxml_context(self, url):
+    def lxml_context(self, url, method="GET", body=None):
         body = None
         try:
-            body = unicode(self.urlopen(url), 'latin-1')
+            body = unicode(self.urlopen(url, method=method, body=body), 'latin-1')
         except scrapelib.HTTPError:
             yield None
         if body:
@@ -94,6 +100,7 @@ class GALegislatorScraper(LegislatorScraper):
                                         last_name = last_name,
                                         party=party,
                                         city=city)
+                legislator.add_source(url)
                 self.save_legislator(legislator)
     
     def scrape_lower_house(self, url, chamber, term):
@@ -108,10 +115,7 @@ class GALegislatorScraper(LegislatorScraper):
             page.make_links_absolute(url)
             path = '//table[@id="hoverTable"]/tr'
             roster = page.xpath(path)[1:]
-            found_it = False
             for row in roster:
-                #if found_it:
-                #   return
                 district = row.getchildren()[1].text_content()
                 name = row.getchildren()[0]
                 # attempt to get the url to the specific legislators page
@@ -124,9 +128,6 @@ class GALegislatorScraper(LegislatorScraper):
                             # Make sure if it ends in html go to htm as the regular contact pages are htm pages
                             if link.endswith("html"):
                                 link = link.replace("html", 'htm')
-                        #if 'kiddRusty' not in link and not found_it:
-                        #    continue
-                        found_it = True
                         legislator = self._scrape_individual_legislator_page(link, term, chamber, district=district)
                         if legislator is not None:
                             self.save_legislator(legislator)
@@ -155,13 +156,21 @@ class GALegislatorScraper(LegislatorScraper):
             for style_sheet in stylesheets:
                 if 'legis.ga.gov.house.factsheet.css' in style_sheet.get('href') or \
                    'legis.ga.gov.house.bio.css' in style_sheet.get('href'):
-
                     return self._scrape_individual_legislator_page_second_template(page, term, chamber, district=district)
 
-            return None
             path = '//table[@id="hoverTable"]/tr'
             legislator_info = page.xpath(path)
 
+            # There is one page, "www1.legis.ga.gov/legis/2011_12/house/bios/williamsCoach.htm" that has
+            # malformed HTML, going to manually do that one:
+            if "www1.legis.ga.gov/legis/2011_12/house/bios/williamsCoach.htm" in url:
+                legislator = Legislator(term,
+                                        chamber,
+                                        district,
+                                        '"Coach" Williams',
+                                        party="Democrate")
+                return legislator
+                                    
             # See if we got to the first row, some templates don't start with their table as 'hoverTable'
             # in this case let's just get the first table on the page as that is seeming to work well.
             if not legislator_info:
@@ -190,7 +199,7 @@ class GALegislatorScraper(LegislatorScraper):
                         break
                 if party == '':
                     party = td_elements.text_content().split('\n')[1].strip()[0:1]
-
+                
             if not district:
                 if len(td_elements) < 3 or "District" not in td_elements[2].text_content():
                     text_content = first_row[1].text_content().split('\n')
@@ -272,5 +281,36 @@ class GALegislatorScraper(LegislatorScraper):
         return Legislator(term, chamber, district, name, party=party)
 
     def _scrape_speaker_of_the_house(self, url, term, chamber):
-        print "###############################3 %s" % url
-        pass
+        """The speaker of the house has a special page, because he is just OH so special</sarcasm>
+        
+        Main page url like: http://www1.legis.ga.gov/legis/2011_12/house/speaker/index.htm
+        but need to scrape: http://www1.legis.ga.gov/legis/2011_12/house/speaker/bio.html
+        """
+        if url.endswith("index.htm"):
+            url = url.replace("index.htm", "bio.html")
+        with self.lxml_context(url) as page:
+            path = '//div[@id="title"]'
+            speaker_info_div = page.xpath(path)
+            if speaker_info_div and len(speaker_info_div) == 1:
+                # This isn't exactly great but it's the best/quickest solution for now
+                speaker_info = speaker_info_div[0].text_content().split()
+                name = speaker_info[2] + " " + speaker_info[3]
+                party = None
+                if "R-" in speaker_info[4]:
+                    party = "Republican"
+                elif "D-" in speaker_info[4]:
+                    party = "Democrat"
+                elif "I-" in speaker_info[4]:
+                    party = "Independent"
+                
+                district = None
+                if "district" in speaker_info[6].lower():
+                    district = speaker_info[7].strip(")")
+                
+                legislator = Legislator(term,
+                                        chamber,
+                                        district,
+                                        name,
+                                        party=party)
+                legislator.add_source(url)
+                return legislator
