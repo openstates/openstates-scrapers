@@ -1,14 +1,21 @@
+import os
 import re
 import datetime
 from collections import defaultdict
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from billy.scrape.utils import convert_pdf
+from billy.importers.utils import fix_bill_id
 
+import pytz
 import lxml.html
 
 
 class INBillScraper(BillScraper):
     state = 'in'
+
+    _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
         self.build_subject_mapping(session)
@@ -33,10 +40,13 @@ class INBillScraper(BillScraper):
                 xpath = "//a[contains(@href, 'doctype=%s')]" % abbrev
                 for link in page.xpath(xpath):
                     bill_id = link.text.strip()
-                    self.scrape_bill(session, chamber, bill_id,
+
+                    short_title = link.tail.split(' -- ')[1].strip()
+
+                    self.scrape_bill(session, chamber, bill_id, short_title,
                                      link.attrib['href'])
 
-    def scrape_bill(self, session, chamber, bill_id, url):
+    def scrape_bill(self, session, chamber, bill_id, short_title, url):
         if bill_id == 'SCR 0003':
             return
 
@@ -46,16 +56,17 @@ class INBillScraper(BillScraper):
 
             title = page.xpath("//br")[8].tail
             if not title:
-                return
+                title = short_title
             title = title.strip()
 
-            if bill_id.endswith('B'):
+            abbrev = bill_id.split()[0]
+            if abbrev.endswith('B'):
                 bill_type = ['bill']
-            elif bill_id.endswith('JR'):
+            elif abbrev.endswith('JR'):
                 bill_type = ['joint resolution']
-            elif bill_id.endswith('CR'):
+            elif abbrev.endswith('CR'):
                 bill_type = ['concurrent resolution']
-            elif bill_id.endswith('R'):
+            elif abbrev.endswith('R'):
                 bill_type = ['resolution']
 
             bill = Bill(session, chamber, bill_id, title,
@@ -73,6 +84,9 @@ class INBillScraper(BillScraper):
                 links = page.xpath(path)
                 if links:
                     bill.add_version(version_type, links[0].attrib['href'])
+
+            for vote_link in page.xpath("//a[contains(@href, 'Srollcal')]"):
+                self.scrape_senate_vote(bill, vote_link.attrib['href'])
 
             for doc_link in page.xpath("//a[contains(@href, 'FISCAL')]"):
                 num = doc_link.text.strip().split("(")[0]
@@ -142,7 +156,8 @@ class INBillScraper(BillScraper):
                 if action.startswith('Reassigned to'):
                     atype.append('committee:referred')
 
-                match = re.match(r'Amendment \d+ \(.*\), (prevailed|failed)', action)
+                match = re.match(
+                    r'Amendment \d+ \(.*\), (prevailed|failed)', action)
                 if match:
                     if match.group(1) == 'prevailed':
                         atype.append('amendment:passed')
@@ -172,3 +187,75 @@ class INBillScraper(BillScraper):
             for link in page.xpath("//a[contains(@href, 'getBill')]"):
                 self.subjects[link.text.strip()].append(subject)
 
+    def scrape_senate_vote(self, bill, url):
+        (path, resp) = self.urlretrieve(url)
+        text = convert_pdf(path, 'text')
+        os.remove(path)
+
+        lines = text.split('\n')
+
+        date_match = re.search(r'Date:\s+(\d+/\d+/\d+)', text)
+        if not date_match:
+            self.log("Couldn't find date on %s" % url)
+            return
+
+        time_match = re.search(r'Time:\s+(\d+:\d+:\d+)\s+(AM|PM)', text)
+        date = "%s %s %s" % (date_match.group(1), time_match.group(1),
+                           time_match.group(2))
+        date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
+        date = self._tz.localize(date)
+
+        vote_type = None
+        yes_count, no_count, other_count = None, None, 0
+        votes = []
+        for line in lines[21:]:
+            line = line.strip()
+            if not line:
+                continue
+
+            if line.startswith('YEAS'):
+                yes_count = int(line.split(' - ')[1])
+                vote_type = 'yes'
+            elif line.startswith('NAYS'):
+                no_count = int(line.split(' - ')[1])
+                vote_type = 'no'
+            elif line.startswith('EXCUSED') or line.startswith('NOT VOTING'):
+                other_count += int(line.split(' - ')[1])
+                vote_type = 'other'
+            else:
+                votes.extend([(n.strip(), vote_type)
+                              for n in re.split(r'\s{2,}', line)])
+
+        if yes_count is None or no_count is None:
+            self.log("Couldne't find vote counts in %s" % url)
+            return
+
+        passed = yes_count > no_count + other_count
+
+        clean_bill_id = fix_bill_id(bill['bill_id'])
+        motion_line = None
+        for i, line in enumerate(lines):
+            if line.strip() == clean_bill_id:
+                motion_line = i + 2
+        motion = lines[motion_line]
+        if not motion:
+            self.log("Couldn't find motion for %s" % url)
+            return
+
+        vote = Vote('upper', date, motion, passed, yes_count, no_count,
+                    other_count)
+        vote.add_source(url)
+
+        for name, vtype in votes:
+            if vtype == 'yes':
+                vote.yes(name)
+            elif vtype == 'no':
+                vote.no(name)
+            elif vtype == 'other':
+                vote.other(name)
+
+        assert yes_count == len(vote['yes_votes'])
+        assert no_count == len(vote['no_votes'])
+        assert other_count == len(vote['other_votes'])
+
+        bill.add_vote(vote)

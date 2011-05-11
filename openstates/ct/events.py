@@ -70,7 +70,8 @@ class CTEventScraper(EventScraper):
                     self.save_event(event)
 
     def get_comm_codes(self):
-        with self.urlopen("ftp://ftp.cga.ct.gov/pub/data/committee.csv") as page:
+        url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
+        with self.urlopen(url) as page:
             page = csv.DictReader(StringIO.StringIO(page))
 
             return [(row['comm_code'].strip(),
