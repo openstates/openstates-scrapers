@@ -12,6 +12,12 @@ from billy.conf import settings
 import scrapelib
 
 
+level_required_fields = {
+    'country': ['country'],
+    'state': ['state'],
+}
+
+
 class ScrapeError(Exception):
     """
     Base class for scrape errors.
@@ -51,8 +57,8 @@ class JSONDateEncoder(json.JSONEncoder):
 
         return json.JSONEncoder.default(self, obj)
 
-_scraper_registry = defaultdict(dict)
-
+# maps scraper_type -> scraper
+_scraper_registry = dict()
 
 class ScraperMeta(type):
     """ register derived scrapers in a central registry """
@@ -60,11 +66,15 @@ class ScraperMeta(type):
     def __new__(meta, classname, bases, classdict):
         cls = type.__new__(meta, classname, bases, classdict)
 
-        state = getattr(cls, 'state', None)
+        # default _level to state to preserve old behavior
+        if not hasattr(cls, '_level'):
+            cls._level = 'state'
+
+        region = getattr(cls, cls._level, None)
         scraper_type = getattr(cls, 'scraper_type', None)
 
-        if state and scraper_type:
-            _scraper_registry[state][scraper_type] = cls
+        if region and scraper_type:
+            _scraper_registry[scraper_type] = cls
 
         return cls
 
@@ -113,8 +123,10 @@ class Scraper(scrapelib.Scraper):
 
         super(Scraper, self).__init__(**kwargs)
 
-        if not hasattr(self, 'state'):
-            raise Exception('Scrapers must have a state attribute')
+        for f in level_required_fields[self._level]:
+            if not hasattr(self, f):
+                raise Exception('%s scrapers must have a %s attribute' % (
+                    self._level, f))
 
         self.metadata = metadata
         self.output_dir = output_dir
@@ -181,7 +193,10 @@ class Scraper(scrapelib.Scraper):
         raise NoDataForPeriod(term)
 
     def save_object(self, obj):
-        obj['state'] = self.state
+        # copy over level information
+        obj['_level'] = self._level
+        for f in level_required_fields[self._level]:
+            obj[f] = getattr(self, f)
 
         filename = obj.get_filename()
         with open(os.path.join(self.output_dir, self.scraper_type, filename),
@@ -219,7 +234,7 @@ class SourcedObject(dict):
         self['sources'].append(dict(url=url, **kwargs))
 
 
-def get_scraper(mod_path, state, scraper_type):
+def get_scraper(mod_path, scraper_type):
     """ import a scraper from the scraper registry """
 
     # act of importing puts it into the registry
@@ -231,8 +246,8 @@ def get_scraper(mod_path, state, scraper_type):
 
     # now pull the class out of the registry
     try:
-        ScraperClass = _scraper_registry[state][scraper_type]
+        ScraperClass = _scraper_registry[scraper_type]
     except KeyError as e:
-        raise ScrapeError("no %s %s scraper found" %
-                           (state, scraper_type))
+        raise ScrapeError("no %s scraper found in module %s" %
+                           (scraper_type, mod_path))
     return ScraperClass

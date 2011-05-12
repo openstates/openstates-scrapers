@@ -25,15 +25,15 @@ def _clear_scraped_data(output_dir, scraper_type):
                 os.remove(f)
 
 
-def _run_scraper(mod_path, state, scraper_type, options, metadata):
+def _run_scraper(scraper_type, options, metadata):
     """
-        state: lower case two letter abbreviation of state
         scraper_type: bills, legislators, committees, votes
     """
     _clear_scraped_data(options.output_dir, scraper_type)
+    mod_path = options.module
 
     try:
-        ScraperClass = get_scraper(mod_path, state, scraper_type)
+        ScraperClass = get_scraper(mod_path, scraper_type)
     except ScrapeError as e:
         # only re-raise if not alldata
         if not options.alldata:
@@ -98,12 +98,11 @@ def _run_scraper(mod_path, state, scraper_type, options, metadata):
 def main():
 
     parser = argparse.ArgumentParser(
-        description='Scrape data for state, saving data to disk.',
+        description='Scrape legislative data, saving data to disk as JSON.',
         parents=[base_arg_parser],
     )
 
-    parser.add_argument('state', type=str,
-                        help='state scraper module (eg. nc)')
+    parser.add_argument('module', type=str, help='scraper module (eg. nc)')
     parser.add_argument('-s', '--session', action='append', dest='sessions',
                         help='session(s) to scrape')
     parser.add_argument('-t', '--term', action='append', dest='terms',
@@ -147,13 +146,12 @@ def main():
                                     '../../openstates'))
 
     # get metadata
-    metadata = __import__(args.state, fromlist=['metadata']).metadata
-    state = metadata['abbreviation']
+    metadata = __import__(args.module, fromlist=['metadata']).metadata
 
-    configure_logging(args.verbose, args.state)
+    configure_logging(args.verbose, args.module)
 
     # make output dir
-    args.output_dir = os.path.join(settings.BILLY_DATA_DIR, args.state)
+    args.output_dir = os.path.join(settings.BILLY_DATA_DIR, args.module)
     try:
         os.makedirs(args.output_dir)
     except OSError as e:
@@ -204,15 +202,15 @@ def main():
         args.committees = True
 
     if args.legislators:
-        _run_scraper(args.state, state, 'legislators', args, metadata)
+        _run_scraper('legislators', args, metadata)
     if args.committees:
-        _run_scraper(args.state, state, 'committees', args, metadata)
+        _run_scraper('committees', args, metadata)
     if args.votes:
-        _run_scraper(args.state, state, 'votes', args, metadata)
+        _run_scraper('votes', args, metadata)
     if args.events:
-        _run_scraper(args.state, state, 'events', args, metadata)
+        _run_scraper('events', args, metadata)
     if args.bills:
-        _run_scraper(args.state, state, 'bills', args, metadata)
+        _run_scraper('bills', args, metadata)
 
 
 if __name__ == '__main__':
