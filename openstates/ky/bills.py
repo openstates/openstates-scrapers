@@ -64,13 +64,22 @@ class KYBillScraper(BillScraper):
             page.make_links_absolute(url)
 
             try:
+                short_bill_id = re.sub(r'S([JC])R', r'S\1', bill_id)
+
                 version_link = page.xpath(
-                    "//a[contains(@href, '%s/bill.doc')]" % bill_id)[0]
+                    "//a[contains(@href, '%s/bill.doc')]" % short_bill_id)[0]
             except IndexError:
                 # Bill withdrawn
                 return
 
-            title = version_link.xpath("string(following-sibling::p[1])")
+            pars = version_link.xpath("following-sibling::p")
+            if len(pars) == 2:
+                title = pars[0].xpath("string()")
+                action_p = pars[1]
+            else:
+                title = pars[0].getprevious().tail
+                action_p = pars[0]
+
             title = re.sub(ur'[\s\xa0]+', ' ', title).strip()
 
             if 'CR' in bill_id:
@@ -82,7 +91,6 @@ class KYBillScraper(BillScraper):
             else:
                 bill_type = 'bill'
 
-
             bill = Bill(session, chamber, bill_id, title, type=bill_type)
             bill.add_source(url)
 
@@ -92,7 +100,6 @@ class KYBillScraper(BillScraper):
             for link in page.xpath("//a[contains(@href, 'legislator/')]"):
                 bill.add_sponsor('primary', link.text.strip())
 
-            action_p = version_link.xpath("following-sibling::p[2]")[0]
             for line in action_p.xpath("string()").split("\n"):
                 action = line.strip()
                 if (not action or action == 'last action' or
