@@ -268,27 +268,24 @@ class NVBillScraper(BillScraper):
                 page = page.decode("utf8").replace(u"\xa0", " ")
                 root = lxml.html.fromstring(page)
 
-                date = root.xpath('string(/html/body/center/font)').split()[-1]
-                date = date + "-" + str(year)
-                date = datetime.strptime(date, "%m-%d-%Y")
-                yes_count = int(root.xpath('string(/html/body/center/table/tr/td[1])').split()[0])
-                no_count = int(root.xpath('string(/html/body/center/table/tr/td[2])').split()[0])
-                excused = int(root.xpath('string(/html/body/center/table/tr/td[3])').split()[0])
-                not_voting = int(root.xpath('string(/html/body/center/table/tr/td[4])').split()[0])
-                absent = int(root.xpath('string(/html/body/center/table/tr/td[5])').split()[0])
+                date = root.xpath('//h1/text()')[-1].strip()
+                date = datetime.strptime(date, "%B %d, %Y at %H:%M %p")
+                top_block_text = root.xpath('//div[@align="center"]')[0].text_content()
+                yes_count = int(re.findall("(\d+) Yea", top_block_text)[0])
+                no_count = int(re.findall("(\d+) Nay", top_block_text)[0])
+                excused = int(re.findall("(\d+) Excused", top_block_text)[0])
+                not_voting = int(re.findall("(\d+) Not Voting", top_block_text)[0])
+                absent = int(re.findall("(\d+) Absent", top_block_text)[0])
                 other_count = excused + not_voting + absent
                 passed = yes_count > no_count
 
                 vote = Vote(chamber, date, motion, passed, yes_count, no_count,
                             other_count, not_voting=not_voting, absent=absent)
 
-                for el in root.xpath('/html/body/table[2]/tr'):
-                    name = el.xpath('string(td[1])').strip()
-                    full_name = ''
-                    for part in name:
-                        full_name = full_name + part + " "
-                    name = str(name)
-                    vote_result = el.xpath('string(td[2])').split()[0]
+                for el in root.xpath('//table[2]/tr'):
+                    tds = el.xpath('td')
+                    name = tds[1].text_content().strip()
+                    vote_result = tds[2].text_content().strip()
 
                     if vote_result == 'Yea':
                         vote.yes(name)
