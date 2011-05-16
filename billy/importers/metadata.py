@@ -10,20 +10,20 @@ PRESERVED_FIELDS = ('latest_dump_url', 'latest_dump_date',
                     'latest_csv_url', 'latest_csv_date')
 
 
-def import_metadata(state, data_dir):
+def import_metadata(abbr, data_dir):
     preserved = {}
-    old_metadata = db.metadata.find_one({'_id': state}) or {}
+    old_metadata = db.metadata.find_one({'_id': abbr}) or {}
     for field in PRESERVED_FIELDS:
         if field in old_metadata:
             preserved[field] = old_metadata[field]
 
-    data_dir = os.path.join(data_dir, state)
-    with open(os.path.join(data_dir, 'state_metadata.json')) as f:
+    data_dir = os.path.join(data_dir, abbr)
+    with open(os.path.join(data_dir, 'metadata.json')) as f:
         data = json.load(f)
         data['_type'] = 'metadata'
         data = prepare_obj(data)
 
-    data['_id'] = state
+    data['_id'] = abbr
     data.update(preserved)
 
     data['latest_update'] = datetime.datetime.utcnow()

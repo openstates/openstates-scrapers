@@ -151,7 +151,8 @@ def main():
     configure_logging(args.verbose, args.module)
 
     # make output dir
-    args.output_dir = os.path.join(settings.BILLY_DATA_DIR, args.module)
+    args.output_dir = os.path.join(settings.BILLY_DATA_DIR,
+                                   metadata['abbreviation'])
     try:
         os.makedirs(args.output_dir)
     except OSError as e:
@@ -170,7 +171,7 @@ def main():
         logging.getLogger('billy').warning('metadata validation error: '
                                                  + str(e))
 
-    with open(os.path.join(args.output_dir, 'state_metadata.json'), 'w') as f:
+    with open(os.path.join(args.output_dir, 'metadata.json'), 'w') as f:
         json.dump(metadata, f, cls=JSONDateEncoder)
 
     # determine time period to run for

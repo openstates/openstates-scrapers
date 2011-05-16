@@ -13,13 +13,12 @@ from billy.utils import configure_logging
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Import scraped state data into database.',
+        description='Import scraped data into database.',
         parents=[base_arg_parser],
     )
 
-    parser.add_argument('state', type=str,
-                        help=('the two-letter abbreviation of the '
-                              'state to import'))
+    parser.add_argument('abbreviation', type=str,
+                        help=('the short name of the data to import'))
     parser.add_argument('-r', '--rpm', type=int, default=60,
                         help=('maximum number of documents to download '
                               'per minute'))
@@ -49,20 +48,20 @@ if __name__ == '__main__':
     data_dir = settings.BILLY_DATA_DIR
 
     # configure logger
-    configure_logging(args.verbose, args.state)
+    configure_logging(args.verbose, args.abbreviation)
 
     # always import metadata
-    import_metadata(args.state, data_dir)
+    import_metadata(args.abbreviation, data_dir)
 
     if args.legislators or args.alldata:
-        import_legislators(args.state, data_dir)
+        import_legislators(args.abbreviation, data_dir)
     if args.bills or args.alldata:
-        import_bills(args.state, data_dir)
+        import_bills(args.abbreviation, data_dir)
     if args.committees or args.alldata:
-        import_committees(args.state, data_dir)
+        import_committees(args.abbreviation, data_dir)
 
     # events and versions currently excluded from --alldata
     if args.events:
-        import_events(args.state, data_dir)
+        import_events(args.abbreviation, data_dir)
     if args.versions:
-        import_versions(args.state, args.rpm)
+        import_versions(args.abbreviation, args.rpm)

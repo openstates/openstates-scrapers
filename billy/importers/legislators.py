@@ -24,8 +24,8 @@ def ensure_indexes():
                                 name='role_and_name_parts')
 
 
-def import_legislators(state, data_dir):
-    data_dir = os.path.join(data_dir, state)
+def import_legislators(abbr, data_dir):
+    data_dir = os.path.join(data_dir, abbr)
     pattern = os.path.join(data_dir, 'legislators', '*.json')
     paths = glob.glob(pattern)
     for path in paths:
@@ -34,7 +34,7 @@ def import_legislators(state, data_dir):
 
     print 'imported %s legislator files' % len(paths)
 
-    meta = db.metadata.find_one({'_id': state})
+    meta = db.metadata.find_one({'_id': abbr})
     current_term = meta['terms'][-1]['name']
 
     activate_legislators(state, current_term)
