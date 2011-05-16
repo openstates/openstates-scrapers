@@ -16,6 +16,21 @@ metadata = {
         {'name': '2003_2004', 'start_year': 2003, 'end_year': 2004, 'sessions': ['2003 Regular Session']},
         {'name': '2005_2006', 'start_year': 2005, 'end_year': 2006, 'sessions': ['2005 Regular Session']},
         {'name': '2007_2008', 'start_year': 2007, 'end_year': 2008, 'sessions': ['2007 Regular Session']},
-        {'name': '2009_2010', 'start_year': 2009, 'end_year': 2010, 'sessions': ['2009 Regular Session']}
+        {'name': '2009_2010', 'start_year': 2009, 'end_year': 2010, 'sessions': ['2009 Regular Session']},
+        {'name': '2011_2012', 'start_year': 2011, 'end_year': 2012, 'sessions': ['2011 Regular Session']}
     ],
+    'sessions': ['1995_1996', '1997_1998', '1999_2000', '2001_2002',
+                 '2003_2004', '2005_2006', '2007_2008', '2009_2010',
+                 '2011_2012'],
+    'session_details': {
+        '1995_1996': {'years': [1995, 1996], 'sub_sessions': []},
+        '1997_1998': {'years': [1997, 1998], 'sub_sessions': []},
+        '1999_2000': {'years': [1999, 2000], 'sub_sessions': []},
+        '2001_2002': {'years': [2001, 2002], 'sub_sessions': []},
+        '2003_2004': {'years': [2003, 2004], 'sub_sessions': []},
+        '2005_2006': {'years': [2005, 2006], 'sub_sessions': []},
+        '2007_2008': {'years': [2007, 2008], 'sub_sessions': []},
+        '2009_2010': {'years': [2009, 2010], 'sub_sessions': []},
+        '2011_2012': {'years': [2011, 2012], 'sub_sessions': []},
+    },
 }

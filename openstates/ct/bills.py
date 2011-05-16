@@ -25,6 +25,7 @@ class CTBillScraper(BillScraper):
 
     def __init__(self, *args, **kwargs):
         super(CTBillScraper, self).__init__(*args, **kwargs)
+        self.raise_errors = False
         self.scrape_committee_names()
         self.scrape_introducers('upper')
         self.scrape_introducers('lower')

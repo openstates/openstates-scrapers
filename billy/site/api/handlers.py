@@ -416,9 +416,9 @@ class LegislatorGeoHandler(BillyHandler):
                        'http://localhost:8001/1.0/')
 
     def read(self, request):
-        try:
-            latitude, longitude = request.GET['lat'], request.GET['long']
-        except KeyError:
+        latitude, longitude = request.GET.get('lat'), request.GET.get('long')
+
+        if not latitude or not longitude:
             resp = rc.BAD_REQUEST
             resp.write(': Need lat and long parameters')
             return resp

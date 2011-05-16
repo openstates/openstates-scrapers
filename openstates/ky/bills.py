@@ -30,22 +30,30 @@ class KYBillScraper(BillScraper):
             self.scrape_session(chamber, sub)
 
     def scrape_session(self, chamber, session):
-        url = session_url(session) + "bills_%s.htm" % (
+        bill_url = session_url(session) + "bills_%s.htm" % (
             chamber_abbr(chamber))
+        self.scrape_bill_list(chamber, session, bill_url)
 
-        bill_abbr = {'upper': 'SB', 'lower': 'HB'}[chamber]
+        resolution_url = session_url(session) + "res_%s.htm" % (
+            chamber_abbr(chamber))
+        self.scrape_bill_list(chamber, session, resolution_url)
 
+    def scrape_bill_list(self, chamber, session, url):
+        bill_abbr = None
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
             for link in page.xpath("//a"):
-                if re.search(r"%s\d{1,4}\.htm" % bill_abbr,
-                             link.attrib.get('href', '')):
-                    if link.text.startswith(bill_abbr):
-                        bill_id = link.text.replace(' ', '')
+                if re.search(r"\d{1,4}\.htm", link.attrib.get('href', '')):
+                    bill_id = link.text
+
+                    match = re.match(r'([A-Z]+)\s+\d+', link.text)
+                    if match:
+                        bill_abbr = match.group(1)
+                        bill_id = bill_id.replace(' ', '')
                     else:
-                        bill_id = "%s%s" % (bill_abbr, link.text)
+                        bill_id = bill_abbr + bill_id
 
                     self.parse_bill(chamber, session, bill_id,
                                     link.attrib['href'])
@@ -56,16 +64,34 @@ class KYBillScraper(BillScraper):
             page.make_links_absolute(url)
 
             try:
+                short_bill_id = re.sub(r'S([JC])R', r'S\1', bill_id)
+
                 version_link = page.xpath(
-                    "//a[contains(@href, '%s/bill.doc')]" % bill_id)[0]
+                    "//a[contains(@href, '%s/bill.doc')]" % short_bill_id)[0]
             except IndexError:
                 # Bill withdrawn
                 return
 
-            title = version_link.xpath("string(following-sibling::p[1])")
+            pars = version_link.xpath("following-sibling::p")
+            if len(pars) == 2:
+                title = pars[0].xpath("string()")
+                action_p = pars[1]
+            else:
+                title = pars[0].getprevious().tail
+                action_p = pars[0]
+
             title = re.sub(ur'[\s\xa0]+', ' ', title).strip()
 
-            bill = Bill(session, chamber, bill_id, title)
+            if 'CR' in bill_id:
+                bill_type = 'concurrent resolution'
+            elif 'JR' in bill_id:
+                bill_type = 'joint resolution'
+            elif 'R' in bill_id:
+                bill_type = 'resolution'
+            else:
+                bill_type = 'bill'
+
+            bill = Bill(session, chamber, bill_id, title, type=bill_type)
             bill.add_source(url)
 
             bill.add_version("Most Recent Version",
@@ -74,7 +100,6 @@ class KYBillScraper(BillScraper):
             for link in page.xpath("//a[contains(@href, 'legislator/')]"):
                 bill.add_sponsor('primary', link.text.strip())
 
-            action_p = version_link.xpath("following-sibling::p[2]")[0]
             for line in action_p.xpath("string()").split("\n"):
                 action = line.strip()
                 if (not action or action == 'last action' or
