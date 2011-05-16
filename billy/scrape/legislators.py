@@ -122,6 +122,11 @@ class Legislator(Person):
                                          last_name, middle_name,
                                          **kwargs)
         #self['type'] = 'legislator'
+
+        extra_keys = {'chamber': chamber,
+                      'district': district,
+                      'party': party}
+        # TODO: figure out what keys to take?
         self.add_role('member', term, chamber=chamber, district=district,
                       party=party)
 
