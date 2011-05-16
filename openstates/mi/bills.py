@@ -167,14 +167,14 @@ class MIBillScraper(BillScraper):
 
     def parse_roll_call(self, vote, url, rc_num):
         with self.urlopen(url) as html:
-            html = html.replace(u'\xa0', ' ')
             if 'In The Chair' not in html:
                 self.warning('"In The Chair" indicator not found, unable to extract vote')
                 return
             vote_doc = lxml.html.fromstring(html)
 
             # split the file into lines using the <p> tags
-            pieces = [p.text_content() for p in vote_doc.xpath('//p')]
+            pieces = [p.text_content().replace(u'\xa0', ' ')
+                      for p in vote_doc.xpath('//p')]
 
             # go until we find the roll call
             for i, p in enumerate(pieces):
