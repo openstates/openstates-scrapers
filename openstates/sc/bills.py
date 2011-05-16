@@ -3,7 +3,7 @@ import datetime
 import contextlib
 
 from .utils import session_days_url, vote_history_url, action_type, bill_type, vote_url
-from .utils import removeNonAscii, sponsorsToList, scrape_bill_details
+from .utils import removeNonAscii, sponsorsToList
 
 from billy.scrape import NoDataForPeriod, ScrapeError
 from billy.scrape.bills import BillScraper, Bill
