@@ -167,6 +167,7 @@ class MIBillScraper(BillScraper):
 
     def parse_roll_call(self, vote, url, rc_num):
         with self.urlopen(url) as html:
+            html = html.replace(u'\xa0', ' ')
             if 'In The Chair' not in html:
                 self.warning('"In The Chair" indicator not found, unable to extract vote')
                 return
@@ -177,7 +178,7 @@ class MIBillScraper(BillScraper):
 
             # go until we find the roll call
             for i, p in enumerate(pieces):
-                if p.startswith(u'Roll Call No.\xa0%s' % rc_num):
+                if p.startswith(u'Roll Call No. %s' % rc_num):
                     break
 
             # once we find the roll call, go through voters
