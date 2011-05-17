@@ -140,6 +140,7 @@ def import_legislator(data):
             del role['role']
 
         # copy over country and/or state into role
+        role['_level'] = data['_level']
         if 'country' in data:
             role['country'] = data['country']
         if 'state' in data:

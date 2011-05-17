@@ -11,10 +11,12 @@ from billy.importers import utils
 @with_setup(db.legislators.drop)
 def test_insert_with_id():
     obj1 = {'full_name': 'a test legislator',
-           '_type': 'person',
-           'state': 'ex'}
+            '_type': 'person',
+            '_level': 'state',
+            'state': 'ex'}
     obj2 = {'full_name': 'another legislator',
             '_type': 'person',
+            '_level': 'state',
             'state': 'ex'}
 
     id_re = r'^EXL\d{6,6}$'
@@ -35,8 +37,9 @@ def test_insert_with_id():
 @with_setup(db.bills.drop)
 def test_update():
     dt = datetime.datetime.utcnow()
-    obj1 = {'_type': 'bill', 'state': 'ex', 'field1': 'stuff',
-            'field2': 'original', '_locked_fields': 'field2',
+    obj1 = {'_type': 'bill', '_level': 'state', 'state': 'ex',
+            'field1': 'stuff', 'field2': 'original',
+            '_locked_fields': 'field2',
             'created_at': dt, 'updated_at': dt}
 
     id1 = utils.insert_with_id(obj1)
