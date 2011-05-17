@@ -54,10 +54,12 @@ def insert_with_id(obj):
         collection = db.bills
         id_type = 'B'
 
-    id_reg = re.compile('^%s%s' % (obj['state'].upper(), id_type))
+    level = obj[obj['_level']].upper()
+
+    id_reg = re.compile('^%s%s' % (level, id_type))
 
     # Find the next available _id and insert
-    id_prefix = '%s%s' % (obj['state'].upper(), id_type)
+    id_prefix = '%s%s' % (level, id_type)
     cursor = collection.find({'_id': id_reg}).sort('_id', -1).limit(1)
 
     try:
@@ -149,7 +151,6 @@ def convert_timestamps(obj):
 
     for role in obj.get('roles', []):
         convert_timestamps(role)
-        role['state'] = obj['state']
 
     return obj
 
