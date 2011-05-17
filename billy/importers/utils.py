@@ -37,7 +37,7 @@ def insert_with_id(obj):
     Generates a unique ID for the supplied legislator/committee/bill
     and inserts it into the appropriate collection.
     """
-    if hasattr(obj, '_id'):
+    if '_id' in obj:
         raise ValueError("object already has '_id' field")
 
     # add created_at/updated_at on insert
@@ -53,6 +53,8 @@ def insert_with_id(obj):
     elif obj['_type'] == 'bill':
         collection = db.bills
         id_type = 'B'
+    else:
+        raise ValueError("unknown _type for object")
 
     level = obj[obj['_level']].upper()
 
@@ -80,7 +82,7 @@ def insert_with_id(obj):
             new_id += 1
 
 
-def timestamp_to_dt(timestamp):
+def _timestamp_to_dt(timestamp):
     tstruct = time.localtime(timestamp)
     dt = datetime.datetime(*tstruct[0:6])
     if tstruct.tm_isdst:
@@ -94,10 +96,7 @@ def update(old, new, coll):
         del new['votes']
 
     # need_save = something has changed
-    # updated = the updated_at field needs bumping
-    # (we don't bump updated_at if only the sources list has changed, but
-    #  we still update the object)
-    need_save, updated = False, False
+    need_save = False
 
     locked_fields = old.get('_locked_fields', [])
 
@@ -135,7 +134,7 @@ def convert_timestamps(obj):
         value = obj.get(key)
         if value:
             try:
-                obj[key] = timestamp_to_dt(value)
+                obj[key] = _timestamp_to_dt(value)
             except TypeError:
                 raise TypeError("expected float for %s, got %s" % (key, value))
 

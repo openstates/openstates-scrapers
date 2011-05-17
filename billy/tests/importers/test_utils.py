@@ -2,14 +2,25 @@ import re
 import time
 import datetime
 
-from nose.tools import with_setup
+from nose.tools import with_setup, assert_raises
 
 from billy import db
 from billy.importers import utils
 
+def drop_everything():
+    db.metadata.drop()
+    db.legislators.drop()
+    db.bills.drop()
+    db.committees.drop()
 
-@with_setup(db.legislators.drop)
-def test_insert_with_id():
+
+def test_insert_with_id_duplicate_id():
+    obj = {'_id': 'whatever'}
+    assert_raises(ValueError, utils.insert_with_id, obj)
+
+
+@with_setup(drop_everything)
+def test_insert_with_id_increments():
     obj1 = {'full_name': 'a test legislator',
             '_type': 'person',
             '_level': 'state',
@@ -19,19 +30,48 @@ def test_insert_with_id():
             '_level': 'state',
             'state': 'ex'}
 
-    id_re = r'^EXL\d{6,6}$'
+    leg_id_re = re.compile(r'^EXL\d{6,6}$')
 
     id1 = utils.insert_with_id(obj1)
-    assert re.match(id_re, id1)
+    assert leg_id_re.match(id1)
     found = db.legislators.find_one({'_id': id1})
     assert found['_all_ids'] == [id1]
 
     id2 = utils.insert_with_id(obj2)
-    assert re.match(id_re, id2)
+    assert leg_id_re.match(id2)
     assert id2 != id1
     found = db.legislators.find_one({'_id': id2})
     assert found
     assert found['_all_ids'] == [id2]
+
+    # also check the timestamp creation
+    assert found['created_at'] == found['updated_at']
+    assert isinstance(found['created_at'], datetime.datetime)
+
+
+@with_setup(drop_everything)
+def test_insert_with_id_types():
+    person = {'_type': 'person', '_level': 'state', 'state': 'ex'}
+    legislator = {'_type': 'person', '_level': 'state', 'state': 'ex'}
+    committee = {'_type': 'committee', '_level': 'state', 'state': 'ex'}
+    bill = {'_type': 'bill', '_level': 'state', 'state': 'ex'}
+    other = {'_type': 'other', '_level': 'state', 'state': 'ex'}
+
+    assert utils.insert_with_id(person).startswith('EXL')
+    assert utils.insert_with_id(legislator).startswith('EXL')
+    assert utils.insert_with_id(committee).startswith('EXC')
+    assert utils.insert_with_id(bill).startswith('EXB')
+    assert_raises(ValueError, utils.insert_with_id, other)
+
+
+@with_setup(drop_everything)
+def test_insert_with_id_levels():
+    state_obj = {'_type': 'person', '_level': 'state', 'state': 'ex',
+                 'country':'us'}
+    country_obj = {'_type': 'person', '_level': 'country', 'state': 'ex',
+                   'country':'us'}
+    assert utils.insert_with_id(state_obj).startswith('EX')
+    assert utils.insert_with_id(country_obj).startswith('US')
 
 
 @with_setup(db.bills.drop)
