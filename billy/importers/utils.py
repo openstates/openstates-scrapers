@@ -273,16 +273,16 @@ def fix_bill_id(bill_id):
 
 class VoteMatcher(object):
 
-    def __init__(self, state):
-        self.state = state
+    def __init__(self, abbr):
+        self.abbr = abbr
         self.vote_ids = {}
 
-    def reset_sequence(self):
+    def _reset_sequence(self):
         self.seq_for_vote_key = defaultdict(int)
 
-    def get_next_id(self):
+    def _get_next_id(self):
         # Generate a new sequential ID for the vote
-        query = SON([('_id', self.state)])
+        query = SON([('_id', self.abbr)])
         update = SON([('$inc', SON([('seq', 1)]))])
         seq = db.command(SON([('findandmodify', 'vote_ids'),
                               ('query', query),
@@ -290,9 +290,9 @@ class VoteMatcher(object):
                               ('new', True),
                               ('upsert', True)]))['value']['seq']
 
-        return "%sV%08d" % (self.state.upper(), seq)
+        return "%sV%08d" % (self.abbr.upper(), seq)
 
-    def key_for_vote(self, vote):
+    def _key_for_vote(self, vote):
         key = (vote['motion'], vote['chamber'], vote['date'],
                vote['yes_count'], vote['no_count'], vote['other_count'])
         # running count of how many of this key we've seen
@@ -302,13 +302,15 @@ class VoteMatcher(object):
         return key + (seq_num,)
 
     def learn_vote_ids(self, votes_list):
-        self.reset_sequence()
+        """ read in already set vote_ids on bill objects """
+        self._reset_sequence()
         for vote in votes_list:
-            key = self.key_for_vote(vote)
+            key = self._key_for_vote(vote)
             self.vote_ids[key] = vote['vote_id']
 
     def set_vote_ids(self, votes_list):
-        self.reset_sequence()
+        """ set vote ids on an object, using internal mapping then new ids """
+        self._reset_sequence()
         for vote in votes_list:
-            key = self.key_for_vote(vote)
-            vote['vote_id'] = self.vote_ids.get(key) or self.get_next_id()
+            key = self._key_for_vote(vote)
+            vote['vote_id'] = self.vote_ids.get(key) or self._get_next_id()
