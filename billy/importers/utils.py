@@ -108,20 +108,16 @@ def update(old, new, coll):
 
         if old.get(key) != value:
             old[key] = value
-
             need_save = True
-            updated = True
 
         # remove old +key field if this field no longer has a +
         plus_key = '+%s' % key
         if plus_key in old:
             del old[plus_key]
-            need_save, updated = True, True
-
-    if updated:
-        old['updated_at'] = datetime.datetime.utcnow()
+            need_save = True
 
     if need_save:
+        old['updated_at'] = datetime.datetime.utcnow()
         coll.save(old, safe=True)
 
 

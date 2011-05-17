@@ -76,30 +76,31 @@ def test_insert_with_id_levels():
 
 @with_setup(db.bills.drop)
 def test_update():
-    dt = datetime.datetime.utcnow()
-    obj1 = {'_type': 'bill', '_level': 'state', 'state': 'ex',
+    obj0 = {'_type': 'bill', '_level': 'state', 'state': 'ex',
             'field1': 'stuff', 'field2': 'original',
-            '_locked_fields': 'field2',
-            'created_at': dt, 'updated_at': dt}
+            '_locked_fields': ['field2']}
 
-    id1 = utils.insert_with_id(obj1)
+    id1 = utils.insert_with_id(obj0)
     obj1 = db.bills.find_one(id1)
 
     # Updating a bill with itself shouldn't cause 'updated_at' to be changed
     utils.update(obj1, obj1, db.bills)
     obj2 = db.bills.find_one({'_id': id1})
-    assert obj2['created_at'] == obj2['updated_at']
-    assert obj1['updated_at'] == obj2['updated_at']
+    assert obj2['created_at'] == obj2['updated_at'] == obj1['updated_at']
 
-    utils.update(obj1, {'_type': 'bill', 'field1': 'more stuff',
-                        'field2': 'a change', 'state': 'ex'},
-                 db.bills)
+    initial_timestamp = obj2['created_at']   # we need this later
+
+    # update with a few fields changed
+    changes = {'field1': 'more stuff', 'field2': 'a change'}
+    utils.update(obj1, changes, db.bills)
     obj2 = db.bills.find_one({'_id': id1})
-    assert obj2['created_at'] != obj2['updated_at']
-    assert obj1['updated_at'] != obj2['updated_at']
-    assert obj2['field1'] == 'more stuff'
 
-    # make sure locked fields don't get overwritten
+    # check that timestamps have updated
+    assert obj2['created_at'] < obj2['updated_at']
+    assert initial_timestamp < obj2['updated_at']
+
+    # make sure field1 gets overwritten and field 2 doesn't
+    assert obj2['field1'] == 'more stuff'
     assert obj2['field2'] == 'original'
 
 
