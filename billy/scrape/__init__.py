@@ -13,8 +13,8 @@ import scrapelib
 
 
 level_required_fields = {
-    'country': ['country'],
-    'state': ['state'],
+    'country': ('country',),
+    'state': ('state', 'country'),
 }
 
 
@@ -69,6 +69,7 @@ class ScraperMeta(type):
         # default _level to state to preserve old behavior
         if not hasattr(cls, '_level'):
             cls._level = 'state'
+            cls.country = 'us'
 
         region = getattr(cls, cls._level, None)
         scraper_type = getattr(cls, 'scraper_type', None)

@@ -36,20 +36,26 @@ def import_legislators(abbr, data_dir):
 
     meta = db.metadata.find_one({'_id': abbr})
     current_term = meta['terms'][-1]['name']
+    level = meta['_level']
 
-    activate_legislators(state, current_term)
-    deactivate_legislators(state, current_term)
+    activate_legislators(current_term, abbr, level)
+    deactivate_legislators(current_term, abbr, level)
 
     ensure_indexes()
 
 
-def activate_legislators(state, current_term):
+def activate_legislators(current_term, abbr, level):
     """
     Sets the 'active' flag on legislators and populates top-level
     district/chamber/party fields for currently serving legislators.
     """
+    # to support multiple levels we adopt the pattern of
+    # '_level': level,  level: abbr
+    # this means that _level must always be a key name that maps to the abbr
+
     for legislator in db.legislators.find({'roles': {'$elemMatch':
-                                                     {'state': state,
+                                                     {'_level': level,
+                                                      level: abbr,
                                                       'type': 'member',
                                                       'term': current_term}}}):
         active_role = legislator['roles'][0]
@@ -64,7 +70,7 @@ def activate_legislators(state, current_term):
         db.legislators.save(legislator, safe=True)
 
 
-def deactivate_legislators(state, current_term):
+def deactivate_legislators(current_term, abbr, level):
 
     # legislators without a current term role or with an end_date
     for leg in db.legislators.find(
@@ -72,11 +78,15 @@ def deactivate_legislators(state, current_term):
             {'roles': {'$elemMatch':
                        {'term': {'$ne': current_term},
                         'type': 'member',
-                        'state': state}},
+                         '_level': level,
+                          level: abbr,
+                       }},
             },
             {'roles': {'$elemMatch':
                        {'term': current_term,
                         'type': 'member',
+                         '_level': level,
+                          level: abbr,
                         'end_date': {'$ne':None}}},
             },
 
@@ -97,8 +107,8 @@ def deactivate_legislators(state, current_term):
         db.legislators.save(leg, safe=True)
 
 
-def get_previous_term(state, term):
-    meta = db.metadata.find_one({'_id': state})
+def get_previous_term(abbrev, term):
+    meta = db.metadata.find_one({'_id': abbrev})
     t1 = meta['terms'][0]
     for t2 in meta['terms'][1:]:
         if t2['name'] == term:
@@ -108,8 +118,8 @@ def get_previous_term(state, term):
     return None
 
 
-def get_next_term(state, term):
-    meta = db.metadata.find_one({'_id': state})
+def get_next_term(abbrev, term):
+    meta = db.metadata.find_one({'_id': abbrev})
     t1 = meta['terms'][0]
     for t2 in meta['terms'][1:]:
         if t1['name'] == term:
@@ -129,12 +139,23 @@ def import_legislator(data):
             role['type'] = role['role']
             del role['role']
 
+        # copy over country and/or state into role
+        if 'country' in data:
+            role['country'] = data['country']
+        if 'state' in data:
+            role['state'] = data['state']
+
     cur_role = data['roles'][0]
     term = cur_role['term']
-    prev_term = get_previous_term(data['state'], term)
-    next_term = get_next_term(data['state'], term)
 
-    spec = {'state': data['state'],
+    # TODO: perhaps make this more flexible somehow?
+    level = data['_level']
+    abbrev = data[level]
+
+    prev_term = get_previous_term(abbrev, term)
+    next_term = get_next_term(abbrev, term)
+
+    spec = {level: abbrev,
             'type': cur_role['type'],
             'term': {'$in': [term, prev_term, next_term]}}
     if 'district' in cur_role:
@@ -143,7 +164,7 @@ def import_legislator(data):
         spec['chamber'] = cur_role['chamber']
 
     leg = db.legislators.find_one(
-        {'state': data['state'],
+        {'_level': level, level: abbrev,
          '_scraped_name': data['full_name'],
          'roles': {'$elemMatch': spec}})
 
