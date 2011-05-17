@@ -27,7 +27,6 @@ metadata = dict(
                 'end_date': datetime.date(2009, 7, 10),
                 'type': 'special'},
         '82': {'start_date': datetime.date(2011, 1, 11),
-               'end_date': None,
                'type': 'primary'},
         },
     )
