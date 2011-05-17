@@ -2,7 +2,9 @@
  "type": "object",
  "properties": {
    "_type": {"type": "string", "enum": ["event"]},
-   "state": {"type": "string", "minLength": 2, "maxLength": 2},
+    "_level": {"type": "string", "enum":["country", "state"]},
+    "state": {"type": "string", "minLength": 2, "maxLength": 2},
+    "country": {"type": "string", "minLength": 2, "maxLength": 2},
    "session": {"type": "string"},
    "type": {"type": "string"},
    "location": {"type": "string"},
