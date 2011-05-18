@@ -35,7 +35,7 @@ start =
           element motion { string.non_empty },
           element avote {
             attribute name { string.non_empty },
-            attribute leg_id { legislator_id | empty }*,
+            attribute leg_id { legislator_id | empty }?,
             attribute type { "yes" | "no" | "other" }
           }*
         }*
