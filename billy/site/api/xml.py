@@ -91,7 +91,7 @@ def render_full_bill(bill):
             date=_date(v['date']),
             chamber=v['chamber'],
             id=v['vote_id'],
-            type=v['type'],
+            type=v.get('type', '') or '',
             yes_count=str(v['yes_count']),
             no_count=str(v['no_count']),
             other_count=str(v['other_count']),
