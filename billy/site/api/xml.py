@@ -151,6 +151,8 @@ def render_short_legislator(leg):
             value = leg.get(key)
             if value:
                 elem.append(E(key, value))
+    else:
+        elem.append(E.active('false'))
 
     return elem
 
