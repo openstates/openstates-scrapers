@@ -308,7 +308,7 @@ def render_event(ev):
         E.when(_date(ev['when'])),
         end,
         E.location(ev['location']),
-        E.all_day(_bool(ev['all_day'])),
+        E.all_day(_bool(ev.get('all_day', False))),
         E.description(ev['description']),
         E.notes(ev['notes']),
         E.participants(*[participant(p) for p in ev['participants']]),
