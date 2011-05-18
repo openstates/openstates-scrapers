@@ -102,7 +102,7 @@ def validate_api(state):
 
     if total_events:
         for i in xrange(0, 10):
-            event = db.events.find({'state': stat})[
+            event = db.events.find({'state': state})[
                 random.randint(0, total_events - 1)]
             path = "events/%s" % event['_id']
             url = api_url(path)
