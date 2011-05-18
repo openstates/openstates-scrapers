@@ -310,7 +310,7 @@ def render_event(ev):
         E.location(ev['location']),
         E.all_day(_bool(ev.get('all_day', False))),
         E.description(ev['description']),
-        E.notes(ev['notes']),
+        E.notes(ev.get('notes', '')),
         E.participants(*[participant(p) for p in ev['participants']]),
         *extra,
         id=ev['_id']
