@@ -165,7 +165,8 @@ def render_full_legislator(leg):
                 r['committee'],
                 id=r['committee_id']))
 
-        for optional_attr in ('party', 'start_date', 'end_date'):
+        for optional_attr in ('party', 'start_date', 'end_date',
+                              'chamber'):
             value = r.get(optional_attr)
             if value:
                 kwargs[optional_attr] = str(value)
@@ -174,7 +175,6 @@ def render_full_legislator(leg):
             *children,
             type=r['type'],
             term=r['term'],
-            chamber=r['chamber'],
             **kwargs
         )
 
