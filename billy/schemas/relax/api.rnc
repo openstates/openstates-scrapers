@@ -187,7 +187,7 @@ committee.header =
   attribute id { committee_id },
   attribute parent_id { committee_id }?,
   element state { state },
-  element chamber { "upper" | "lower" | "joint" },
+  element chamber { string.non_empty },
   element name {
     element committee_name { string.non_empty },
     element subcommittee_name { xsd:string }
