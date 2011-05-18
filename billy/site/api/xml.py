@@ -223,8 +223,9 @@ def render_short_committee(comm):
 def render_full_committee(comm):
     def member(m):
         kwargs = {}
-        if 'leg_id' in m:
-            kwargs['id'] = m['leg_id']
+        leg_id = kwargs.get('leg_id')
+        if leg_id:
+            kwargs['id'] = leg_id
         return E.member(m['name'], role=m['role'], **kwargs)
 
     elem = render_short_committee(comm)
