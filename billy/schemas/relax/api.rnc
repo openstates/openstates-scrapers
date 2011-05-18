@@ -185,6 +185,7 @@ committee.header =
   attribute created_at { xsd:dateTime },
   attribute updated_at { xsd:dateTime },
   attribute id { committee_id },
+  attribute parent_id { committee_id }?,
   element state { state },
   element chamber { "upper" | "lower" | "joint" },
   element name {
