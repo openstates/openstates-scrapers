@@ -128,7 +128,7 @@ start =
       element notes { xsd:string },
       element participants {
         element participant {
-          attribute chamber { chamber },
+          attribute chamber { chamber }?,
           attribute type { string.non_empty },
           string.non_empty
         }*
