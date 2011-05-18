@@ -173,11 +173,12 @@ class MIBillScraper(BillScraper):
             vote_doc = lxml.html.fromstring(html)
 
             # split the file into lines using the <p> tags
-            pieces = [p.text_content() for p in vote_doc.xpath('//p')]
+            pieces = [p.text_content().replace(u'\xa0', ' ')
+                      for p in vote_doc.xpath('//p')]
 
             # go until we find the roll call
             for i, p in enumerate(pieces):
-                if p.startswith(u'Roll Call No.\xa0%s' % rc_num):
+                if p.startswith(u'Roll Call No. %s' % rc_num):
                     break
 
             # once we find the roll call, go through voters

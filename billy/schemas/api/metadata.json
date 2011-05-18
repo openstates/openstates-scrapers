@@ -21,7 +21,7 @@
    "session_details": { "type": "object", "required": false,
      "additionalProperties": { "type": "object",
        "properties": {
-         "type": {"type": "string"},
+         "type": {"type": "string", "required": false},
          "start_date": {"type": "datetime", "required": false},
          "end_date": {"type": "datetime", "required": false}
        }

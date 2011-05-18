@@ -13,7 +13,6 @@ class NVLegislatorScraper(LegislatorScraper):
     state = 'nv'
 
     def scrape(self, chamber, term_name):
-        self.save_errors=False
         year = term_name[0:4]
         if int(year) < 2001:
             raise NoDataForPeriod(year)
@@ -53,7 +52,7 @@ class NVLegislatorScraper(LegislatorScraper):
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
 
             #Going through the districts
-            for row_index in range(3, num_districts+2):
+            for row_index in range(2, num_districts+1):
                 namepath = 'string(//table[%s]/tr/td/table[1]/tr/td[2])' % row_index
                 last_name = root.xpath(namepath).split()[0]
                 last_name = last_name[0 : len(last_name) - 1]
