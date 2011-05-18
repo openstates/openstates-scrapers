@@ -165,7 +165,7 @@ def render_full_legislator(leg):
         if r['type'] == 'committee member':
             children.append(E.committee(
                 r['committee'],
-                id=r.get('committee_id', '')))
+                id=r.get('committee_id', '') or ''))
 
         for optional_attr in ('party', 'start_date', 'end_date',
                               'chamber'):
