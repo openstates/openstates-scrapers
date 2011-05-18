@@ -95,6 +95,24 @@ def validate_api(state):
 
         validate_xml(url, xml_schema)
 
+    with open(os.path.join(schema_dir, "event.json")) as f:
+        event_schema = json.load(f)
+
+    total_events = db.events.find({'state': state}).count()
+
+    if total_events:
+        for i in xrange(0, 10):
+            event = db.events.find({'state': stat})[
+                random.randint(0, total_events - 1)]
+            path = "events/%s" % event['_id']
+            url = api_url(path)
+
+            json_response = scrapelib.urlopen(url)
+            validictory.validate(json.loads(json_response), event_schema,
+                                 validator_cls=APIValidator)
+
+            validate_xml(url, xml_schema)
+
 
 if __name__ == '__main__':
     import sys
