@@ -288,10 +288,15 @@ def render_metadata(meta):
 
 def render_event(ev):
     def participant(p):
+        kwargs = {}
+        chamber = p.get('chamber')
+        if chamber:
+            kwargs['chamber'] = chamber
+
         return E.participant(
             p['participant'],
-            chamber=p['chamber'],
-            type=p['type']
+            type=p['type'],
+            **kwargs
         )
 
     if ev['end']:
