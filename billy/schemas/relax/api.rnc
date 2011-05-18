@@ -97,17 +97,19 @@ start =
         element title { string.non_empty },
         element term { string.non_empty }
       }+,
-      element term {
-        element name { string.non_empty },
-        element start_year { string.non_empty },
-        element end_year { string.non_empty },
-        element session {
+      element terms {
+        element term {
           element name { string.non_empty },
-          element type { string.non_empty },
-          element start_date { xsd:dateTime }?,
-          element end_date { xsd:dateTime }?
+          element start_year { string.non_empty },
+          element end_year { string.non_empty },
+          element session {
+            element name { string.non_empty },
+            element type { string.non_empty }?,
+            element start_date { xsd:dateTime }?,
+            element end_date { xsd:dateTime }?
+          }*
         }*
-      }*
+      }
     }
   | element event {
       attribute created_at { xsd:dateTime },
