@@ -27,6 +27,13 @@ def get_xml_schema():
     return schema
 
 
+def validate_xml(url, schema):
+    response = scrapelib.urlopen(url + "&format=xml")
+    xml = lxml.etree.fromstring(response)
+    for child in xml.xpath("/results/*"):
+        schema.assertValid(child)
+
+
 def validate_api(state):
     cwd = os.path.split(__file__)[0]
     schema_dir = os.path.join(cwd, "../schemas/api/")
@@ -37,9 +44,11 @@ def validate_api(state):
         metadata_schema = json.load(f)
 
     path = "metadata/%s" % state
-    response = scrapelib.urlopen(api_url(path))
-    validictory.validate(json.loads(response), metadata_schema,
+    url = api_url(path)
+    json_response = scrapelib.urlopen(url)
+    validictory.validate(json.loads(json_response), metadata_schema,
                          validator_cls=APIValidator)
+    validate_xml(url, xml_schema)
 
     with open(os.path.join(schema_dir, "bill.json")) as f:
         bill_schema = json.load(f)
@@ -58,10 +67,7 @@ def validate_api(state):
         validictory.validate(json.loads(json_response), bill_schema,
                                  validator_cls=APIValidator)
 
-        xml_response = scrapelib.urlopen(url + "&format=xml")
-        xml = lxml.etree.fromstring(xml_response)
-        for child in xml.xpath("/results/*"):
-            xml_schema.assertValid(child)
+        validate_xml(url, xml_schema)
 
     with open(os.path.join(schema_dir, "legislator.json")) as f:
         legislator_schema = json.load(f)
@@ -74,10 +80,7 @@ def validate_api(state):
         validictory.validate(json.loads(json_response), legislator_schema,
                              validator_cls=APIValidator)
 
-        xml_response = scrapelib.urlopen(url + "&format=xml")
-        xml = lxml.etree.fromstring(xml_response)
-        for child in xml.xpath("/results/*"):
-            xml_schema.assertValid(child)
+        validate_xml(url, xml_schema)
 
     with open(os.path.join(schema_dir, "committee.json")) as f:
         committee_schema = json.load(f)
@@ -90,10 +93,7 @@ def validate_api(state):
         validictory.validate(json.loads(json_response), committee_schema,
                              validator_cls=APIValidator)
 
-        xml_response = scrapelib.urlopen(url + "&format=xml")
-        xml = lxml.etree.fromstring(xml_response)
-        for child in xml.xpath("/results/*"):
-            xml_schema.assertValid(child)
+        validate_xml(url, xml_schema)
 
 
 if __name__ == '__main__':
