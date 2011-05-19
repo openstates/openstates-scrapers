@@ -15,6 +15,8 @@ COMM_TYPES = {'joint': 'Joint',
 class ARCommitteeScraper(CommitteeScraper):
     state = 'ar'
 
+    _seen = set()
+
     def scrape(self, chamber, term):
         if term != '2011-2012':
             raise NoDataForPeriod
@@ -48,6 +50,10 @@ class ARCommitteeScraper(CommitteeScraper):
             if len(split_sub) > 1:
                 subcommittee = '-'.join(split_sub[1:])
             subcommittee = re.sub(r'^(HOUSE|SENATE)\s+', '', subcommittee.strip())
+
+        if (name, subcommittee) in self._seen:
+            return
+        self._seen.add((name, subcommittee))
 
         comm = Committee(chamber, name, subcommittee=subcommittee)
         comm.add_source(url)
