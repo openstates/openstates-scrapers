@@ -27,7 +27,7 @@ start =
           attribute id {
             xsd:string { pattern = "[A-Z][A-Z]V\d{8}" }
           },
-          attribute type { string.non_empty },
+          attribute type { xsd:string },
           attribute yes_count { xsd:nonNegativeInteger },
           attribute no_count { xsd:nonNegativeInteger },
           attribute other_count { xsd:nonNegativeInteger },
