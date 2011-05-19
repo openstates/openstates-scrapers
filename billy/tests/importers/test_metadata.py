@@ -11,6 +11,7 @@ def test_import_metadata():
     import_metadata("ex", data_dir)
     metadata = db.metadata.find_one({"_id": "ex"})
     assert metadata
+    assert metadata['_type'] == 'metadata'
 
     # add some fields
     for f in PRESERVED_FIELDS:
