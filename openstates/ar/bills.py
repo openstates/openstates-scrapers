@@ -69,7 +69,7 @@ class ARBillScraper(BillScraper):
                                session, bill_id.replace(' ', '')))
             bill.add_version(bill_id, version_url)
 
-            self.scrape_votes(bill)
+            self.scrape_bill_page(bill)
 
             self.bills[bill_id] = bill
 
@@ -123,7 +123,7 @@ class ARBillScraper(BillScraper):
             self.bills[bill_id].add_action(actor, action, date,
                                            type=action_type or ['other'])
 
-    def scrape_votes(self, bill):
+    def scrape_bill_page(self, bill):
         # We need to scrape each bill page in order to grab associated votes.
         # It's still more efficient to get the rest of the data we're
         # interested in from the CSVs, though, because their site splits
@@ -143,6 +143,11 @@ class ARBillScraper(BillScraper):
             motion = link.xpath("string(../../td[3])")
 
             self.scrape_vote(bill, date, motion, link.attrib['href'])
+
+        for link in page.xpath("//a[contains(@href, 'Amendments')]"):
+            num = link.xpath("string(../../td[2])")
+            name = "Amendment %s" % num
+            bill.add_document(name, link.attrib['href'])
 
     def scrape_vote(self, bill, date, motion, url):
         page = self.urlopen(url)
