@@ -238,15 +238,9 @@ def get_committee_id(state, chamber, committee):
 
 def put_document(doc, content_type, metadata):
     # Generate a new sequential ID for the document
-    query = SON([('_id', metadata['bill']['state'])])
-    update = SON([('$inc', SON([('seq', 1)]))])
-    seq = db.command(SON([('findandmodify', 'doc_ids'),
-                          ('query', query),
-                          ('update', update),
-                          ('new', True),
-                          ('upsert', True)]))['value']['seq']
+    abbr = metadata['bill']['state']
+    id = next_big_id(abbr, 'D', 'doc_ids')
 
-    id = "%sD%08d" % (metadata['bill']['state'].upper(), seq)
     logging.info("Saving as %s" % id)
 
     fs.put(doc, _id=id, content_type=content_type, metadata=metadata)
@@ -270,6 +264,15 @@ def fix_bill_id(bill_id):
     bill_id = bill_id.replace('.', '')
     return _bill_id_re.sub(r'\1 \2', bill_id)
 
+def next_big_id(abbr, letter, collection):
+    query = SON([('_id', abbr)])
+    update = SON([('$inc', SON([('seq', 1)]))])
+    seq = db.command(SON([('findandmodify', collection),
+                          ('query', query),
+                          ('update', update),
+                          ('new', True),
+                          ('upsert', True)]))['value']['seq']
+    return "%s%s%08d" % (abbr.upper(), letter, seq)
 
 class VoteMatcher(object):
 
@@ -281,16 +284,7 @@ class VoteMatcher(object):
         self.seq_for_vote_key = defaultdict(int)
 
     def _get_next_id(self):
-        # Generate a new sequential ID for the vote
-        query = SON([('_id', self.abbr)])
-        update = SON([('$inc', SON([('seq', 1)]))])
-        seq = db.command(SON([('findandmodify', 'vote_ids'),
-                              ('query', query),
-                              ('update', update),
-                              ('new', True),
-                              ('upsert', True)]))['value']['seq']
-
-        return "%sV%08d" % (self.abbr.upper(), seq)
+        return next_big_id(self.abbr, 'V', 'vote_ids')
 
     def _key_for_vote(self, vote):
         key = (vote['motion'], vote['chamber'], vote['date'],

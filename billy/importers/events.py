@@ -6,12 +6,10 @@ import datetime
 import json
 
 from billy import db
-from billy.importers.utils import prepare_obj, update
+from billy.importers.utils import prepare_obj, update, next_big_id
 from billy.scrape.events import Event
 
 import pymongo
-from pymongo.son import SON
-
 
 def ensure_indexes():
     db.events.ensure_index([('when', pymongo.ASCENDING),
@@ -23,15 +21,8 @@ def ensure_indexes():
 
 
 def _insert_with_id(event):
-    query = SON([('_id', event['state'])])
-    update = SON([('$inc', SON([('seq', 1)]))])
-    seq = db.command(SON([('findandmodify', 'event_ids'),
-                          ('query', query),
-                          ('update', update),
-                          ('new', True),
-                          ('upsert', True)]))['value']['seq']
-
-    id = "%sE%08d" % (event['state'].upper(), seq)
+    abbr = event[event['_level']]
+    id = next_big_id(abbr, 'E', 'event_ids')
     logging.info("Saving as %s" % id)
 
     event['_id'] = id
@@ -40,38 +31,46 @@ def _insert_with_id(event):
     return id
 
 
-def import_events(state, data_dir, import_actions=True):
-    data_dir = os.path.join(data_dir, state)
+def import_events(abbr, data_dir, import_actions=False):
+    data_dir = os.path.join(data_dir, abbr)
     pattern = os.path.join(data_dir, 'events', '*.json')
 
     for path in glob.iglob(pattern):
         with open(path) as f:
             data = prepare_obj(json.load(f))
 
-        event = None
-        if '_guid' in data:
-            event = db.events.find_one({'state': data['state'],
-                                        '_guid': data['_guid']})
-
-        if not event:
-            event = db.events.find_one({'state': data['state'],
-                                        'when': data['when'],
-                                        'end': data['end'],
-                                        'type': data['type'],
-                                        'description': data['description']})
-
-        if not event:
-            data['created_at'] = datetime.datetime.utcnow()
-            data['updated_at'] = data['created_at']
-            _insert_with_id(data)
-        else:
-            update(event, data, db.events)
-
-#    if import_actions:
-#        actions_to_events(state)
+            import_event(data)
 
     ensure_indexes()
 
+def import_event(data):
+    event = None
+    _level = data['_level']
+
+    if '_guid' in data:
+        event = db.events.find_one({'_level': _level,
+                                    _level: data[_level],
+                                    '_guid': data['_guid']})
+
+    if not event:
+        event = db.events.find_one({'_level': _level,
+                                    _level: data[_level],
+                                    'when': data['when'],
+                                    'end': data['end'],
+                                    'type': data['type'],
+                                    'description': data['description']})
+
+    if not event:
+        data['created_at'] = datetime.datetime.utcnow()
+        data['updated_at'] = data['created_at']
+        _insert_with_id(data)
+    else:
+        update(event, data, db.events)
+
+# IMPORTANT: if/when actions_to_events is re-enabled it definitely
+# needs to be updated to support _level
+#    if import_actions:
+#        actions_to_events(state)
 
 def actions_to_events(state):
     for bill in db.bills.find({'state': state}):
