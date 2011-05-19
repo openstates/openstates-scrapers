@@ -16,6 +16,49 @@ def ensure_indexes():
                                 ('committee', pymongo.ASCENDING),
                                 ('subcommittee', pymongo.ASCENDING)])
 
+def import_committees_from_legislators(current_term, level, abbr):
+    for legislator in db.legislators.find({
+        '_level': level,
+        'roles': {'$elemMatch': {'term': current_term,
+                                 level: abbr}}}):
+
+        for role in legislator['roles']:
+            if (role['type'] == 'committee member' and
+                'committee_id' not in role):
+
+                spec = {'_level': level,
+                        # TODO: add additional required fields here
+                        level: abbr,
+                        'chamber': role['chamber'],
+                        'committee': role['committee']}
+                if 'subcommittee' in role:
+                    spec['subcommittee'] = role['subcommittee']
+
+                committee = db.committees.find_one(spec)
+
+                if not committee:
+                    committee = spec
+                    committee['_type'] = 'committee'
+                    committee['members'] = []
+                    committee['sources'] = []
+                    if 'subcommittee' not in committee:
+                        committee['subcommittee'] = None
+                    insert_with_id(committee)
+
+                for member in committee['members']:
+                    if member['leg_id'] == legislator['leg_id']:
+                        break
+                else:
+                    committee['members'].append(
+                        {'name': legislator['full_name'],
+                         'leg_id': legislator['leg_id'],
+                         'role': role.get('position') or 'member'})
+                    db.committees.save(committee, safe=True)
+
+                    role['committee_id'] = committee['_id']
+
+        db.legislators.save(legislator, safe=True)
+
 
 def import_committees(state, data_dir):
     data_dir = os.path.join(data_dir, state)
@@ -24,6 +67,7 @@ def import_committees(state, data_dir):
     meta = db.metadata.find_one({'_id': state})
     current_term = meta['terms'][-1]['name']
     current_session = meta['terms'][-1]['sessions'][-1]
+    level = meta['_level']
 
     paths = glob.glob(pattern)
 
@@ -31,46 +75,9 @@ def import_committees(state, data_dir):
         committee['members'] = []
         db.committees.save(committee, safe=True)
 
+    # import committees from legislator roles, no standalone committees scraped
     if not paths:
-        # Not standalone committees
-        for legislator in db.legislators.find({
-            'roles': {'$elemMatch': {'term': current_term,
-                                     'state': state}}}):
-
-            for role in legislator['roles']:
-                if (role['type'] == 'committee member' and
-                    'committee_id' not in role):
-
-                    spec = {'state': role['state'],
-                            'chamber': role['chamber'],
-                            'committee': role['committee']}
-                    if 'subcommittee' in role:
-                        spec['subcommittee'] = role['subcommittee']
-
-                    committee = db.committees.find_one(spec)
-
-                    if not committee:
-                        committee = spec
-                        committee['_type'] = 'committee'
-                        committee['members'] = []
-                        committee['sources'] = []
-                        if 'subcommittee' not in committee:
-                            committee['subcommittee'] = None
-                        insert_with_id(committee)
-
-                    for member in committee['members']:
-                        if member['leg_id'] == legislator['leg_id']:
-                            break
-                    else:
-                        committee['members'].append(
-                            {'name': legislator['full_name'],
-                             'leg_id': legislator['leg_id'],
-                             'role': role.get('position') or 'member'})
-                        db.committees.save(committee, safe=True)
-
-                        role['committee_id'] = committee['_id']
-
-            db.legislators.save(legislator, safe=True)
+        import_committees_from_legislators(current_term, level, state)
 
     for path in paths:
         with open(path) as f:
