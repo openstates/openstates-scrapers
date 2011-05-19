@@ -179,6 +179,18 @@ def test_fix_bill_id():
     assert utils.fix_bill_id('PR19-0041') == 'PR 19-0041'
 
 
+def test_next_big_id():
+    db.test_ids.drop()
+    db.vote_ids.drop()
+    assert utils.next_big_id('xy', 'D', 'test_ids') == 'XYD00000001'
+    assert utils.next_big_id('xy', 'D', 'test_ids') == 'XYD00000002'
+    assert utils.next_big_id('xy', 'D', 'test_ids') == 'XYD00000003'
+    assert utils.next_big_id('xy', 'V', 'vote_ids') == 'XYV00000001'
+    db.test_ids.drop()
+    assert utils.next_big_id('xy', 'D', 'test_ids') == 'XYD00000001'
+    assert utils.next_big_id('xy', 'V', 'vote_ids') == 'XYV00000002'
+
+
 @with_setup(db.vote_ids.drop)
 def test_votematcher():
     # three votes, two with the same fingerprint
@@ -212,4 +224,3 @@ def test_votematcher():
     assert votes[1]['vote_id'] == 'EXV00000002'
     assert votes[2]['vote_id'] == 'EXV00000004'
     assert votes[3]['vote_id'] == 'EXV00000003'
-
