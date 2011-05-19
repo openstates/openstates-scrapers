@@ -99,10 +99,11 @@ class ARBillScraper(BillScraper):
                 action_type.append('bill:reading:1')
             if re.match('Read the first time, .*, read the second time', action):
                 action_type.append('bill:reading:2')
+            elif action.startswith('Read the third time and passed'):
+                action_type.append('bill:passed')
+                action_type.append('bill:reading:3')
             elif action.startswith('Read the third time'):
                 action_type.append('bill:reading:3')
-                if action.endswith('and passed.'):
-                    action_type.append('bill:passed')
             elif action.startswith('DELIVERED TO GOVERNOR'):
                 action_type.append('governor:received')
 
@@ -114,6 +115,10 @@ class ARBillScraper(BillScraper):
                     action_type.append('committee:passed:favorable')
                 else:
                     action_type.append('committee:passed')
+
+            if re.match(r'Amendment No\. \d+ read and adopted', action):
+                action_type.append('amendment:introduced')
+                action_type.append('amendment:passed')
 
             self.bills[bill_id].add_action(actor, action, date,
                                            type=action_type or ['other'])
