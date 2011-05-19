@@ -171,7 +171,7 @@ def render_full_legislator(leg):
                               'chamber'):
             value = r.get(optional_attr)
             if isinstance(value, datetime.date):
-                args.append(E(key, _date(value)))
+                kwargs[optional_attr] = _date(value)
             elif value:
                 kwargs[optional_attr] = str(value)
 
