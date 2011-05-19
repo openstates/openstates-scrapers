@@ -59,96 +59,109 @@ def import_committees_from_legislators(current_term, level, abbr):
 
         db.legislators.save(legislator, safe=True)
 
+def import_committee(data, current_session, current_term):
+    _level = data['_level']
+    abbr = data[_level]
+    spec = {'_level': _level,
+            _level: abbr,
+            'chamber': data['chamber'],
+            'committee': data['committee']}
+    if 'subcommittee' in data:
+        spec['subcommittee'] = data['subcommittee']
 
-def import_committees(state, data_dir):
-    data_dir = os.path.join(data_dir, state)
+    # insert/update the actual committee object
+    committee = db.committees.find_one(spec)
+
+    if not committee:
+        insert_with_id(data)
+        committee = data
+    else:
+        update(committee, data, db.committees)
+
+    # deal with the members, add roles
+    for member in committee['members']:
+        if not member['name']:
+            continue
+
+        leg_id = get_legislator_id(abbr, current_session,
+                                   data['chamber'],
+                                   member['name'])
+
+        if not leg_id:
+            print "No matches for %s" % member['name'].encode(
+                'ascii', 'ignore')
+            member['leg_id'] = None
+            continue
+
+        legislator = db.legislators.find_one({'_id': leg_id})
+
+        member['leg_id'] = leg_id
+
+        for role in legislator['roles']:
+            if (role['type'] == 'committee member' and
+                role['term'] == current_term and
+                role['committee_id'] == committee['_id']):
+                break
+        else:
+            new_role = {'type': 'committee member',
+                        'committee': committee['committee'],
+                        'term': current_term,
+                        'chamber': committee['chamber'],
+                        'committee_id': committee['_id'],
+                        '_level': _level,
+                        #TODO: add other required fields
+                        _level: committee[_level],
+                       }
+            if 'subcommittee' in committee:
+                new_role['subcommittee'] = committee['subcommittee']
+            legislator['roles'].append(new_role)
+            legislator['updated_at'] = datetime.datetime.utcnow()
+            db.legislators.save(legislator, safe=True)
+
+    db.committees.save(committee, safe=True)
+
+
+def import_committees(abbr, data_dir):
+    data_dir = os.path.join(data_dir, abbr)
     pattern = os.path.join(data_dir, 'committees', '*.json')
 
-    meta = db.metadata.find_one({'_id': state})
+    meta = db.metadata.find_one({'_id': abbr})
     current_term = meta['terms'][-1]['name']
     current_session = meta['terms'][-1]['sessions'][-1]
     level = meta['_level']
 
     paths = glob.glob(pattern)
 
-    for committee in db.committees.find({'state': state}):
+    for committee in db.committees.find({level: meta[level]}):
         committee['members'] = []
         db.committees.save(committee, safe=True)
 
     # import committees from legislator roles, no standalone committees scraped
     if not paths:
-        import_committees_from_legislators(current_term, level, state)
+        import_committees_from_legislators(current_term, level, abbr)
 
     for path in paths:
         with open(path) as f:
             data = prepare_obj(json.load(f))
 
-        spec = {'state': state,
-                'chamber': data['chamber'],
-                'committee': data['committee']}
-        if 'subcommittee' in data:
-            spec['subcommittee'] = data['subcommittee']
-
-        committee = db.committees.find_one(spec)
-
-        if not committee:
-            insert_with_id(data)
-            committee = data
-        else:
-            update(committee, data, db.committees)
-
-        for member in committee['members']:
-            if not member['name']:
-                continue
-
-            leg_id = get_legislator_id(state, current_session,
-                                       data['chamber'],
-                                       member['name'])
-
-            if not leg_id:
-                print "No matches for %s" % member['name'].encode(
-                    'ascii', 'ignore')
-                member['leg_id'] = None
-                continue
-
-            legislator = db.legislators.find_one({'_id': leg_id})
-
-            member['leg_id'] = leg_id
-
-            for role in legislator['roles']:
-                if (role['type'] == 'committee member' and
-                    role['term'] == current_term and
-                    role['committee_id'] == committee['_id']):
-                    break
-            else:
-                new_role = {'type': 'committee member',
-                            'committee': committee['committee'],
-                            'term': current_term,
-                            'chamber': committee['chamber'],
-                            'committee_id': committee['_id'],
-                            'state': state}
-                if 'subcommittee' in committee:
-                    new_role['subcommittee'] = committee['subcommittee']
-                legislator['roles'].append(new_role)
-                legislator['updated_at'] = datetime.datetime.utcnow()
-                db.legislators.save(legislator, safe=True)
-
-        db.committees.save(committee, safe=True)
+        import_committee(data)
 
     print 'imported %s committee files' % len(paths)
 
-    link_parents(state)
+    link_parents(abbr)
 
     ensure_indexes()
 
 
-def link_parents(state):
-    for comm in db.committees.find({'state': state}):
+def link_parents(level, abbr):
+    for comm in db.committees.find({'_level': level,
+                                    level: abbr}):
         sub = comm.get('subcommittee')
         if not sub:
             comm['parent_id'] = None
         else:
-            parent = db.committees.find_one({'state': state,
+            parent = db.committees.find_one({'_level': level,
+                                             level: abbr,
                                              'chamber': comm['chamber'],
                                              'committee': comm['committee']})
             if not parent:

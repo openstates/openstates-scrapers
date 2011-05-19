@@ -2,11 +2,15 @@ from nose.tools import with_setup
 
 from billy import db
 from billy.importers import committees
+from billy.importers import names
 
 def setup_func():
     db.metadata.drop()
     db.legislators.drop()
     db.committees.drop()
+
+    db.metadata.insert({'_level': 'state', '_id': 'ex',
+                        'terms': [{'name': 'T1', 'sessions': ['S1']}]})
 
     leg_a = {'full_name': 'Richard Feynman', 'leg_id': 'EXL000001',
              '_level': 'state',
@@ -70,3 +74,21 @@ def test_committees_from_legislators():
     # make sure that committee_ids are added to legislators
     feynman = db.legislators.find_one({'leg_id': 'EXL000001'})
     assert 'committee_id' in feynman['roles'][1]
+
+@with_setup(setup_func)
+def test_import_committee():
+    committee = {'_type': 'committee', '_level': 'state', 'state': 'ex',
+                 'chamber': 'joint', 'committee': 'Reptilian Task Force',
+                 'members': [
+                     {'name': 'Richard Feynman'},
+                     {'name': 'A. Einstein'},
+                 ]
+                }
+
+    committees.import_committee(committee, 'S1', 'T1')
+
+    com = db.committees.find_one()
+
+    assert com
+
+    # for some reason this test makes test_names fail

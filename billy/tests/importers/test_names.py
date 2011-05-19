@@ -5,8 +5,10 @@ from billy.importers import names
 
 
 def setup_func():
-    db.legislators.drop()
     db.metadata.drop()
+    db.legislators.drop()
+    # TODO: this is kind of a hack, fix it?
+    names.__matchers = {}
 
 
 @with_setup(setup_func)
