@@ -175,6 +175,7 @@ role =
     attribute type { string.non_empty },
     attribute chamber { string.non_empty }?,
     attribute party { xsd:string }?,
+    attribute end_date { xsd:dateTime }?,
 
     element committee {
       attribute id { empty | committee_id }?,
