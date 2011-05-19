@@ -170,7 +170,9 @@ def render_full_legislator(leg):
         for optional_attr in ('party', 'start_date', 'end_date',
                               'chamber'):
             value = r.get(optional_attr)
-            if value:
+            if isinstance(value, datetime.date):
+                args.append(E(key, _date(value)))
+            elif value:
                 kwargs[optional_attr] = str(value)
 
         return E.role(
