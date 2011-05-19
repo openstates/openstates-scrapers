@@ -7,11 +7,11 @@ from billy import db
 __matchers = {}
 
 
-def get_legislator_id(state, session, chamber, name):
+def get_legislator_id(abbr, session, chamber, name):
     try:
-        matcher = __matchers[(state, session)]
+        matcher = __matchers[(abbr, session)]
     except KeyError:
-        metadata = db.metadata.find_one({'_id': state})
+        metadata = db.metadata.find_one({'_id': abbr})
         term = None
         for term in metadata['terms']:
             if session in term['sessions']:
@@ -19,8 +19,8 @@ def get_legislator_id(state, session, chamber, name):
         else:
             raise Exception("bad session: " + session)
 
-        matcher = NameMatcher(state, term['name'])
-        __matchers[(state, session)] = matcher
+        matcher = NameMatcher(abbr, term['name'], metadata['_level'])
+        __matchers[(abbr, session)] = matcher
 
     if chamber == 'both' or chamber == 'joint':
         chamber = None
@@ -62,16 +62,16 @@ class NameMatcher(object):
     are no longer unique and will not be matched with either legislator.
     """
 
-    def __init__(self, state, term):
+    def __init__(self, abbr, term, level):
         self._names = {'upper': {}, 'lower': {}, None: {}}
         self._codes = {'upper': {}, 'lower': {}, None: {}}
         self._manual = {'upper': {}, 'lower': {}, None: {}}
-        self._state = state
+        self._abbr = abbr
         self._term = term
 
-        roles_elemMatch = {'state': state, 'type': 'member', 'term': term}
+        roles_elemMatch = {level: abbr, 'type': 'member', 'term': term}
         old_roles_query = {'old_roles.%s' % term: {'$elemMatch':
-                                                   {'state': state,
+                                                   {level: abbr,
                                                    'type': 'member'}}}
 
         for legislator in db.legislators.find({
@@ -88,7 +88,7 @@ class NameMatcher(object):
     def _learn_manual_matches(self):
         path = os.path.join(os.path.dirname(__file__),
                             "../../manual_data/leg_ids/%s.csv" %
-                            self._state)
+                            self._abbr)
         try:
             with open(path) as f:
                 reader = csv.reader(f)

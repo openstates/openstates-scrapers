@@ -11,7 +11,7 @@ def setup_func():
 
 @with_setup(setup_func)
 def test_get_legislator_id():
-    db.metadata.insert({'_id': 'ex',
+    db.metadata.insert({'_id': 'ex', '_level': 'state',
                         'terms': [{'name': 'T1',
                                    'sessions': ['S1']}]})
     db.legislators.insert({'_id': 'EXL000042',
@@ -34,3 +34,33 @@ def test_get_legislator_id():
     assert names.get_legislator_id('ex', 'S1',
                                    'upper', 'E. Iron Cloud') == 'EXL000042'
     assert not names.get_legislator_id('ex', 'S1', 'lower', 'Ed Iron Cloud')
+
+
+@with_setup(setup_func)
+def test_get_legislator_id_country():
+    db.metadata.insert({'_id': 'zz',
+                        '_level': 'country',
+                        'terms': [{'name': 'T1', 'sessions': ['S1']}]})
+    db.legislators.insert({'_id': 'ZZL000042',
+                           '_level': 'country',
+                           'country': 'zz',
+                           'state': 'ab',
+                           'full_name': 'Ed Iron Cloud III',
+                           '_scraped_name': 'Ed Iron Cloud III',
+                           'first_name': 'Ed',
+                           'last_name': 'Iron Cloud',
+                           'suffixes': 'III',
+                           'roles': [{'type': 'member',
+                                      'state': 'ab',
+                                      'country': 'zz',
+                                      'term': 'T1',
+                                      'chamber': 'upper',
+                                      'district': '10'}]})
+
+    assert names.get_legislator_id('zz', 'S1',
+                                   'upper', 'Ed Iron Cloud') == 'ZZL000042'
+    assert names.get_legislator_id('zz', 'S1',
+                                   'upper', 'Iron Cloud') == 'ZZL000042'
+    assert names.get_legislator_id('zz', 'S1',
+                                   'upper', 'E. Iron Cloud') == 'ZZL000042'
+    assert not names.get_legislator_id('zz', 'S1', 'lower', 'Ed Iron Cloud')
