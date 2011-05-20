@@ -59,6 +59,7 @@ def import_committees_from_legislators(current_term, level, abbr):
 
         db.legislators.save(legislator, safe=True)
 
+
 def import_committee(data, current_session, current_term):
     _level = data['_level']
     abbr = data[_level]
@@ -100,7 +101,7 @@ def import_committee(data, current_session, current_term):
         for role in legislator['roles']:
             if (role['type'] == 'committee member' and
                 role['term'] == current_term and
-                role['committee_id'] == committee['_id']):
+                role.get('committee_id') == committee['_id']):
                 break
         else:
             new_role = {'type': 'committee member',
