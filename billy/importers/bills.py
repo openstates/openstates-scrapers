@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import re
 import glob
 from collections import defaultdict
 import json
@@ -7,11 +8,8 @@ import json
 from billy.utils import keywordize, term_for_session
 from billy import db
 from billy.importers.names import get_legislator_id
-from billy.importers.utils import (insert_with_id,
-                                   update, prepare_obj,
-                                   get_committee_id,
-                                   fix_bill_id,
-                                   VoteMatcher,)
+from billy.importers.utils import (insert_with_id, update, prepare_obj,
+                                   get_committee_id, next_big_id)
 
 import pymongo
 
@@ -166,6 +164,15 @@ def import_bills(abbr, data_dir):
     ensure_indexes()
 
 
+# fixing bill ids
+_bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
+
+
+def fix_bill_id(bill_id):
+    bill_id = bill_id.replace('.', '')
+    return _bill_id_re.sub(r'\1 \2', bill_id)
+
+
 def bill_keywords(bill):
     """
     Get the keyword set for all of a bill's titles.
@@ -198,3 +205,39 @@ def populate_current_fields(state):
             bill['_current_term'] = False
 
         db.bills.save(bill, safe=True)
+
+
+class VoteMatcher(object):
+
+    def __init__(self, abbr):
+        self.abbr = abbr
+        self.vote_ids = {}
+
+    def _reset_sequence(self):
+        self.seq_for_vote_key = defaultdict(int)
+
+    def _get_next_id(self):
+        return next_big_id(self.abbr, 'V', 'vote_ids')
+
+    def _key_for_vote(self, vote):
+        key = (vote['motion'], vote['chamber'], vote['date'],
+               vote['yes_count'], vote['no_count'], vote['other_count'])
+        # running count of how many of this key we've seen
+        seq_num = self.seq_for_vote_key[key]
+        self.seq_for_vote_key[key] += 1
+        # append seq_num to key to avoid sharing key for multiple votes
+        return key + (seq_num,)
+
+    def learn_vote_ids(self, votes_list):
+        """ read in already set vote_ids on bill objects """
+        self._reset_sequence()
+        for vote in votes_list:
+            key = self._key_for_vote(vote)
+            self.vote_ids[key] = vote['vote_id']
+
+    def set_vote_ids(self, votes_list):
+        """ set vote ids on an object, using internal mapping then new ids """
+        self._reset_sequence()
+        for vote in votes_list:
+            key = self._key_for_vote(vote)
+            vote['vote_id'] = self.vote_ids.get(key) or self._get_next_id()

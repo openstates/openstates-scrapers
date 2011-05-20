@@ -10,6 +10,19 @@ def setup_func():
     db.metadata.insert({'_level': 'state', '_id': 'ex',
                         'terms': [{'name': 'T1', 'sessions': ['S1', 'S2']}]})
 
+
+def test_fix_bill_id():
+    expect = 'AB 74'
+    bill_ids = ['A.B. 74', 'A.B.74', 'AB74', 'AB 0074',
+                'AB074', 'A.B.074', 'A.B. 074', 'A.B\t074']
+
+    for bill_id in bill_ids:
+        assert bills.fix_bill_id(bill_id) == expect
+
+    assert bills.fix_bill_id('PR19-0041') == 'PR 19-0041'
+
+
+
 def test_bill_keywords():
     bill = {'title': 'transportation of hazardous materials',
             'bill_id': 'HB 201',
@@ -43,3 +56,38 @@ def test_populate_current_fields():
     b = db.bills.find_one({'title': 'not current'})
     assert not b['_current_session']
     assert not b['_current_term']
+
+
+@with_setup(db.vote_ids.drop)
+def test_votematcher():
+    # three votes, two with the same fingerprint
+    votes = [{'motion': 'a', 'chamber': 'b', 'date': 'c',
+             'yes_count': 1, 'no_count': 2, 'other_count': 3},
+             {'motion': 'x', 'chamber': 'y', 'date': 'z',
+             'yes_count': 0, 'no_count': 0, 'other_count': 0},
+             {'motion': 'a', 'chamber': 'b', 'date': 'c',
+             'yes_count': 1, 'no_count': 2, 'other_count': 3},
+            ]
+    vm = bills.VoteMatcher('ex')
+
+    vm.set_vote_ids(votes)
+    assert votes[0]['vote_id'] == 'EXV00000001'
+    assert votes[1]['vote_id'] == 'EXV00000002'
+    assert votes[2]['vote_id'] == 'EXV00000003'
+
+    # a brand new matcher has to learn first
+    vm = bills.VoteMatcher('ex')
+    vm.learn_vote_ids(votes)
+
+    # clear vote_ids & add a new vote
+    for v in votes:
+        v.pop('vote_id', None)
+    votes.insert(2, {'motion': 'f', 'chamber': 'g', 'date': 'h',
+                  'yes_count': 5, 'no_count': 5, 'other_count': 5})
+
+    # setting ids now should restore old ids & give the new vote a new id
+    vm.set_vote_ids(votes)
+    assert votes[0]['vote_id'] == 'EXV00000001'
+    assert votes[1]['vote_id'] == 'EXV00000002'
+    assert votes[2]['vote_id'] == 'EXV00000004'
+    assert votes[3]['vote_id'] == 'EXV00000003'

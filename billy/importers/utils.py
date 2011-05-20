@@ -256,13 +256,6 @@ def merge_legislators(old, new):
     new['leg_id'] = new['_id']
     db.legislators.save(new, safe=True)
 
-# fixing bill ids
-_bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
-
-
-def fix_bill_id(bill_id):
-    bill_id = bill_id.replace('.', '')
-    return _bill_id_re.sub(r'\1 \2', bill_id)
 
 def next_big_id(abbr, letter, collection):
     query = SON([('_id', abbr)])
@@ -274,37 +267,3 @@ def next_big_id(abbr, letter, collection):
                           ('upsert', True)]))['value']['seq']
     return "%s%s%08d" % (abbr.upper(), letter, seq)
 
-class VoteMatcher(object):
-
-    def __init__(self, abbr):
-        self.abbr = abbr
-        self.vote_ids = {}
-
-    def _reset_sequence(self):
-        self.seq_for_vote_key = defaultdict(int)
-
-    def _get_next_id(self):
-        return next_big_id(self.abbr, 'V', 'vote_ids')
-
-    def _key_for_vote(self, vote):
-        key = (vote['motion'], vote['chamber'], vote['date'],
-               vote['yes_count'], vote['no_count'], vote['other_count'])
-        # running count of how many of this key we've seen
-        seq_num = self.seq_for_vote_key[key]
-        self.seq_for_vote_key[key] += 1
-        # append seq_num to key to avoid sharing key for multiple votes
-        return key + (seq_num,)
-
-    def learn_vote_ids(self, votes_list):
-        """ read in already set vote_ids on bill objects """
-        self._reset_sequence()
-        for vote in votes_list:
-            key = self._key_for_vote(vote)
-            self.vote_ids[key] = vote['vote_id']
-
-    def set_vote_ids(self, votes_list):
-        """ set vote ids on an object, using internal mapping then new ids """
-        self._reset_sequence()
-        for vote in votes_list:
-            key = self._key_for_vote(vote)
-            vote['vote_id'] = self.vote_ids.get(key) or self._get_next_id()

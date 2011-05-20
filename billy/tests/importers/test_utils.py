@@ -168,17 +168,6 @@ def test_make_plus_fields():
     assert plussed == expect
 
 
-def test_fix_bill_id():
-    expect = 'AB 74'
-    bill_ids = ['A.B. 74', 'A.B.74', 'AB74', 'AB 0074',
-                'AB074', 'A.B.074', 'A.B. 074', 'A.B\t074']
-
-    for bill_id in bill_ids:
-        assert utils.fix_bill_id(bill_id) == expect
-
-    assert utils.fix_bill_id('PR19-0041') == 'PR 19-0041'
-
-
 def test_next_big_id():
     db.test_ids.drop()
     db.vote_ids.drop()
@@ -189,38 +178,3 @@ def test_next_big_id():
     db.test_ids.drop()
     assert utils.next_big_id('xy', 'D', 'test_ids') == 'XYD00000001'
     assert utils.next_big_id('xy', 'V', 'vote_ids') == 'XYV00000002'
-
-
-@with_setup(db.vote_ids.drop)
-def test_votematcher():
-    # three votes, two with the same fingerprint
-    votes = [{'motion': 'a', 'chamber': 'b', 'date': 'c',
-             'yes_count': 1, 'no_count': 2, 'other_count': 3},
-             {'motion': 'x', 'chamber': 'y', 'date': 'z',
-             'yes_count': 0, 'no_count': 0, 'other_count': 0},
-             {'motion': 'a', 'chamber': 'b', 'date': 'c',
-             'yes_count': 1, 'no_count': 2, 'other_count': 3},
-            ]
-    vm = utils.VoteMatcher('ex')
-
-    vm.set_vote_ids(votes)
-    assert votes[0]['vote_id'] == 'EXV00000001'
-    assert votes[1]['vote_id'] == 'EXV00000002'
-    assert votes[2]['vote_id'] == 'EXV00000003'
-
-    # a brand new matcher has to learn first
-    vm = utils.VoteMatcher('ex')
-    vm.learn_vote_ids(votes)
-
-    # clear vote_ids & add a new vote
-    for v in votes:
-        v.pop('vote_id', None)
-    votes.insert(2, {'motion': 'f', 'chamber': 'g', 'date': 'h',
-                  'yes_count': 5, 'no_count': 5, 'other_count': 5})
-
-    # setting ids now should restore old ids & give the new vote a new id
-    vm.set_vote_ids(votes)
-    assert votes[0]['vote_id'] == 'EXV00000001'
-    assert votes[1]['vote_id'] == 'EXV00000002'
-    assert votes[2]['vote_id'] == 'EXV00000004'
-    assert votes[3]['vote_id'] == 'EXV00000003'
