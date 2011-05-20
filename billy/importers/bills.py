@@ -4,7 +4,7 @@ import glob
 from collections import defaultdict
 import json
 
-from billy.utils import keywordize
+from billy.utils import keywordize, term_for_session
 from billy import db
 from billy.importers.names import get_legislator_id
 from billy.importers.utils import (insert_with_id,
@@ -45,7 +45,7 @@ def ensure_indexes():
                            ('sponsors.leg_id', pymongo.ASCENDING)])
 
 
-def import_votes(state, data_dir):
+def import_votes(data_dir):
     pattern = os.path.join(data_dir, 'votes', '*.json')
     paths = glob.glob(pattern)
 
@@ -64,101 +64,97 @@ def import_votes(state, data_dir):
     return votes
 
 
-def import_bills(state, data_dir):
-    data_dir = os.path.join(data_dir, state)
+def import_bill(data, votes):
+    abbr = data[data['_level']]
+    # clean up bill_id
+    data['bill_id'] = fix_bill_id(data['bill_id'])
+
+    # move subjects to scraped_subjects
+    subjects = data.pop('subjects', None)
+
+    # NOTE: intentionally doesn't copy blank lists of subjects
+    # this avoids the problem where a bill is re-run but we can't
+    # get subjects anymore (quite common)
+    if subjects:
+        data['scraped_subjects'] = subjects
+
+    # add loaded votes to data
+    bill_votes = votes.pop((data['chamber'], data['session'],
+                            data['bill_id']), [])
+    data['votes'].extend(bill_votes)
+
+    bill = db.bills.find_one({'state': data['state'],
+                              'session': data['session'],
+                              'chamber': data['chamber'],
+                              'bill_id': data['bill_id']})
+
+    vote_matcher = VoteMatcher(abbr)
+    if bill:
+        vote_matcher.learn_vote_ids(bill['votes'])
+    vote_matcher.set_vote_ids(data['votes'])
+
+    # match sponsor leg_ids
+    for sponsor in data['sponsors']:
+        id = get_legislator_id(abbr, data['session'], None,
+                               sponsor['name'])
+        sponsor['leg_id'] = id
+
+    for vote in data['votes']:
+
+        # committee_ids
+        if 'committee' in vote:
+            committee_id = get_committee_id(abbr,
+                                            vote['chamber'],
+                                            vote['committee'])
+            vote['committee_id'] = committee_id
+
+        # vote leg_ids
+        for vtype in ('yes_votes', 'no_votes', 'other_votes'):
+            svlist = []
+            for svote in vote[vtype]:
+                id = get_legislator_id(abbr, data['session'],
+                                       vote['chamber'], svote)
+                svlist.append({'name': svote, 'leg_id': id})
+
+            vote[vtype] = svlist
+
+    data['_term'] = term_for_session(abbr, data['session'])
+
+    # Merge any version titles into the alternate_titles list
+    alt_titles = set(data.get('alternate_titles', []))
+    for version in data['versions']:
+        if 'title' in version:
+            alt_titles.add(version['title'])
+        if '+short_title' in version:
+            alt_titles.add(version['+short_title'])
+    try:
+        # Make sure the primary title isn't included in the
+        # alternate title list
+        alt_titles.remove(data['title'])
+    except KeyError:
+        pass
+    data['alternate_titles'] = list(alt_titles)
+
+    if not bill:
+        data['_keywords'] = list(bill_keywords(data))
+        insert_with_id(data)
+    else:
+        data['_keywords'] = list(bill_keywords(data))
+        update(bill, data, db.bills)
+
+
+def import_bills(abbr, data_dir):
+    data_dir = os.path.join(data_dir, abbr)
     pattern = os.path.join(data_dir, 'bills', '*.json')
 
-    meta = db.metadata.find_one({'_id': state})
-
-    # Build a session to term mapping
-    sessions = {}
-    for term in meta['terms']:
-        for session in term['sessions']:
-            sessions[session] = term['name']
-
-    votes = import_votes(state, data_dir)
+    votes = import_votes(data_dir)
 
     paths = glob.glob(pattern)
-
     for path in paths:
         with open(path) as f:
             data = prepare_obj(json.load(f))
 
-        # clean up bill_id
-        data['bill_id'] = fix_bill_id(data['bill_id'])
-
-        # move subjects to scraped_subjects
-        subjects = data.pop('subjects', None)
-
-        # NOTE: intentionally doesn't copy blank lists of subjects
-        # this avoids the problem where a bill is re-run but we can't
-        # get subjects anymore (quite common in fact)
-        if subjects:
-            data['scraped_subjects'] = subjects
-
-        # add loaded votes to data
-        bill_votes = votes.pop((data['chamber'], data['session'],
-                                data['bill_id']), [])
-        data['votes'].extend(bill_votes)
-
-        bill = db.bills.find_one({'state': data['state'],
-                                  'session': data['session'],
-                                  'chamber': data['chamber'],
-                                  'bill_id': data['bill_id']})
-
-        vote_matcher = VoteMatcher(data['state'])
-        if bill:
-            vote_matcher.learn_vote_ids(bill['votes'])
-        vote_matcher.set_vote_ids(data['votes'])
-
-        # match sponsor leg_ids
-        for sponsor in data['sponsors']:
-            id = get_legislator_id(state, data['session'], None,
-                                   sponsor['name'])
-            sponsor['leg_id'] = id
-
-        for vote in data['votes']:
-
-            # committee_ids
-            if 'committee' in vote:
-                committee_id = get_committee_id(state,
-                                                vote['chamber'],
-                                                vote['committee'])
-                vote['committee_id'] = committee_id
-
-            # vote leg_ids
-            for vtype in ('yes_votes', 'no_votes', 'other_votes'):
-                svlist = []
-                for svote in vote[vtype]:
-                    id = get_legislator_id(state, data['session'],
-                                           vote['chamber'], svote)
-                    svlist.append({'name': svote, 'leg_id': id})
-
-                vote[vtype] = svlist
-
-        data['_term'] = sessions[data['session']]
-
-        # Merge any version titles into the alternate_titles list
-        alt_titles = set(data.get('alternate_titles', []))
-        for version in data['versions']:
-            if 'title' in version:
-                alt_titles.add(version['title'])
-            if '+short_title' in version:
-                alt_titles.add(version['+short_title'])
-        try:
-            # Make sure the primary title isn't included in the
-            # alternate title list
-            alt_titles.remove(data['title'])
-        except KeyError:
-            pass
-        data['alternate_titles'] = list(alt_titles)
-
-        if not bill:
-            data['_keywords'] = list(bill_keywords(data))
-            insert_with_id(data)
-        else:
-            data['_keywords'] = list(bill_keywords(data))
-            update(bill, data, db.bills)
+        import_bill(data, votes)
 
     print 'imported %s bill files' % len(paths)
 
@@ -166,7 +162,7 @@ def import_bills(state, data_dir):
         print 'Failed to match vote %s %s %s' % tuple([
             r.encode('ascii', 'replace') for r in remaining])
 
-    populate_current_fields(state)
+    populate_current_fields(abbr)
     ensure_indexes()
 
 
