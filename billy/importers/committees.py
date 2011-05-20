@@ -133,7 +133,7 @@ def import_committees(abbr, data_dir):
 
     paths = glob.glob(pattern)
 
-    for committee in db.committees.find({level: meta[level]}):
+    for committee in db.committees.find({level: abbr}):
         committee['members'] = []
         db.committees.save(committee, safe=True)
 
@@ -145,11 +145,11 @@ def import_committees(abbr, data_dir):
         with open(path) as f:
             data = prepare_obj(json.load(f))
 
-        import_committee(data)
+        import_committee(data, current_session, current_term)
 
     print 'imported %s committee files' % len(paths)
 
-    link_parents(abbr)
+    link_parents(level, abbr)
 
     ensure_indexes()
 
