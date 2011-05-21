@@ -16,6 +16,12 @@ import lxml.html
 # main class:
 class SCBillScraper(BillScraper):
     state = 'sc'
+    urls = {
+	'house-members-url' : 'http://www.scstatehouse.gov/html-pages/housemembers.html',
+	'senate-members-url' : 'http://www.scstatehouse.gov/html-pages/senatemembersd.html',
+	'bill-detail-url' : "http://scstatehouse.gov/cgi-bin/web_bh10.exe?bill1=%s&session=%s" 
+    }
+
     people = dict()
     members = []
 
@@ -27,9 +33,12 @@ class SCBillScraper(BillScraper):
 	self.debug("TODO get legislators to get first names for sponsors")
 
     def initMember(self,chamber):
+	#outfile = open("members.txt", "w")
         if chamber == 'lower':
+	    #url = self.urls['house-members-url']
             url = 'http://www.scstatehouse.gov/html-pages/housemembers.html'
         else:
+	    #url = self.urls['senate-members-url']
             url = 'http://www.scstatehouse.gov/html-pages/senatemembersd.html'
 
         with self.urlopen(url) as data:
@@ -43,29 +52,32 @@ class SCBillScraper(BillScraper):
                 if name_party.find('[D]') != -1:
                     party = 'Democratic'
                     full_name = name_party.partition('[D]')[0].strip()
-		    self.debug("Democratic %s" % full_name );
+		    #self.debug("Democratic %s" % full_name );
                 elif name_party.find('[R]') != -1:
                     party = 'Republican'
                     full_name = name_party.partition('[R]')[0].strip()
-	            self.debug("Republican %s" % full_name );
+	            #self.debug("Republican %s" % full_name );
 		else:
 		    full_name = None
 
 		if full_name:
-			#if there's a comma, should get rid of 
-			parts = full_name.split()
-			last_name = parts[-1]
-			self.people[last_name] = full_name
+			#parts = full_name.split()
+			#last_name = parts[-1]
+			#self.people[last_name] = full_name
 
-			name_pat = re.compile(r'(?P<first>\w+)\s+(?P<mi>\w+)?\s+(?P<last>\w+)(?P<suffix>,.*)?')
-			name_pat = re.compile(r'(?P<first>\w+)\s+(?P<mi>\w.?)?\s+(?P<last>[\w\']+)(,.*)?')
-			self.debug("LAST NAME [%s] Full[%s]" % (last_name, full_name) );
+			# get rid of parenthetical expression
+			# ex. Shannon S. Erickson (Mrs. Kendall F.)
+			name_without_paren = full_name.partition('(')[0]
 
-			results = name_pat.search(full_name)
-			if results:
-				last_name = results.group('last')
-				self.debug("    MATCHED RESULTS LAST NAME FULL [%s] last [%s]" % (full_name, last_name ))
-				self.people[last_name] = full_name
+			# get rid of the suffix
+			# ex. James E. Smith, Jr
+			name_without_suffix = name_without_paren.partition(',')[0]
+			nlast_name = name_without_suffix.split()[-1]
+			self.people[nlast_name] = full_name
+
+			self.debug("%s Name [%s] Lastname [%s]" % (chamber, full_name, nlast_name))
+			#outfile.write("2>%s)) %s|\n" % (nlast_name, full_name ))
+	#outfile.close()
 
 	
 
@@ -143,17 +155,6 @@ class SCBillScraper(BillScraper):
 			self.debug("votepage: duplicate |%s| |%s|" % (bill_id, title))
 		else:
 			bills_seen.add( bill_id )
-
-			# TAMI
-			#try:
-				#pdf, resp = self.urlretrieve(bill_vote_url)
-				#self.debug("retrieved url %s" % bill_vote_url)
-				#self.debug("resp %s" % resp)
-				#vote_contents = convert_pdf(pdf, 'text-nolayout')
-				#vote_contents = convert_pdf(bill_vote_url, 'text-nolayout')
-			#except Exception as error:
-			#	raise ScrapeError("Failed to parse vote_url %s error %s" % (bill_vote_url,error))
-			#self.debug("vote_contents %s" % vote_contents)
 			
 			bill = Bill(session, chamber, bill_id, title)
 			bill['vote_url'] = bill_vote_url
@@ -177,6 +178,111 @@ class SCBillScraper(BillScraper):
 		return result.group(1)
 
     ###################################################
+    def scrape_vote_detail(self, vurl, chamber, bill, bill_id ):
+
+	with self.urlopen( vurl ) as votepage:
+		#if votepage.find("No Votes Returned") >= 0:
+		#	self.debug("VVV-1 NO VOTES [%s]" % vurl )
+		if votepage.find("No Votes Returned") != -1:
+			return
+
+		bill_title_xpath = "//div[@id='votecontent']/div[1]"
+
+		tdotherxpath = '/html/body/table/tbody/tr/td/div[@id="tablecontent"]/table/tbody/tr/td[@class="content"]/div[@id="votecontent"]//td'
+
+		doc = lxml.html.fromstring(votepage)
+		self.debug("VVV-2 Got vote url [%s]" % vurl )
+		doc.make_links_absolute(vurl)
+
+		vote_row = doc.xpath(tdotherxpath)
+
+		bill_title_dev = doc.xpath(bill_title_xpath)
+		self.debug("VVV-TITLE %d [%s]" % ( len(bill_title_dev), bill_title_dev) )
+		
+		try:
+			for bt in bill_title_dev:
+				self.debug("VVV-TITLE-1 BT [%s]" % bt )
+				self.debug("VVV-TITLE-2 BT [%s]" % bt.text_content().strip() )
+
+			#my_title = bill_title_dev.text_content()
+			#self.debug("VVV-TITLE my title [%s]" % my_title )
+		except Exception as error:
+			self.debug("VVV-TITLE FAILED TO GET CONTENT [%s]" % error)
+
+
+		# 0, 1 = datetime, 2 = text,3 = link to votes page
+		# 4 = yeas , #5 = nays, #6 = nv , #7 = Ex Abs, #8 = Abstain, #9 = Total , #10 result
+
+		vote_date_time = vote_row[1].text_content()
+		action = vote_row[2].text_content()
+		link_to_votes = vote_row[3].text_content()
+		link = vote_row[3]
+	
+		# THIS IS A PDF DOCUMENT
+		link_to_votes_href = link.xpath("a/@href")[0]
+		self.debug("VVV-BB link href[%s]" % (link_to_votes_href))
+
+		yes_count_str = vote_row[4].text_content()
+		nay_count_str = vote_row[5].text_content()
+		other_count_str = vote_row[6].text_content()
+		total_count_str = vote_row[9].text_content()
+		result = vote_row[10].text_content()
+		
+		yes_count = int(yes_count_str)
+		no_count = int(nay_count_str)
+		total_count = int(total_count_str)
+
+		other_count = total_count - (yes_count + no_count)
+		self.debug("VVV-BB %s Yes/No/Other %d/%d/%d" % (bill_id, yes_count, no_count, other_count) )
+		self.debug("VVV-BB %s [%s] %s LINK_TO_VOTES[%s] HREF[%s] %s" 
+			% (bill_id, action, vote_date_time, link_to_votes, link_to_votes_href, result ))
+
+		#vote_date = vote_date_time.split()[0]
+		vote_date_1 = vote_date_time.split()
+		vote_date = " ".join(vote_date_1)
+
+		motion = result
+		passed = result.find("Passed") != -1
+		vote = Vote(chamber, vote_date, motion, passed, yes_count, no_count, other_count )
+						#use default for type
+		bill.add_vote(vote)
+				
+		date = datetime.datetime.strptime(vote_date, "%m/%d/%Y %I:%M %p")
+		date = date.date()
+		bill.add_action(chamber, action, date, type=action_type(action) )
+
+
+
+    ###################################################
+    def split_page_into_parts(self, data):
+	"""
+	Return a tuple containing: similar list, summary, after_summary
+	"""
+
+	#self.debug("VVV AAA Data==[%s]\n========" % data)
+	similar_to_list, after_summary, summary = [], None, None
+
+	sim = re.match("Similar (.+)\n",data)
+	if sim:
+		for part in sim.group(1).split(","):
+			simparts_pat = re.compile('\(<A HREF=".+">(.+)</A>\)')
+			#self.debug("VVV CCC Part==[%s]\n========" % part)
+			sr = simparts_pat.match( part.strip() )
+			if sr:
+				similar_to_list.append( sr.group(1) )
+		data = data[sim.end():]
+
+	bb = data.find("<A HREF")
+	if bb != -1:
+		summary = re.sub(r'\s+', ' ', data[1:bb])
+		after_summary = data[bb:]
+	else:
+		summary = re.sub(r'\s+', ' ', data)
+
+	return ( similar_to_list, summary, after_summary )
+
+
+    ###################################################
     def scrape_details(self, bill_detail_url, session, chamber, bill_id, page):
 	
 	data = page
@@ -198,12 +304,12 @@ class SCBillScraper(BillScraper):
 
 	pre_section = page[pre_start:pre_stop]
 	self.debug( "DETAILS PRE (%d,%d) [%s] " % (pre_start, pre_stop, pre_section))
+
 	data = pre_section
 	vurl = None
 	
 	date_re = re.compile("\d\d/\d\d/\d\d")
 
-	billattr = dict()
 	pat2 = re.compile(r' By ')
 	results = pat2.search(data)
 	#print " by = ", results.start() ,  " " , results.end()
@@ -223,9 +329,9 @@ class SCBillScraper(BillScraper):
 	if results != None and results1 != None:
 		sponsors = data[:results1.start()]
 		#self.debug( "DETAIL SPONSORS: [%s]" % data[:results1.start()].strip() )
-		billattr['sponsors'] = data[:results1.start()]
-		mysponsors = sponsorsToList( billattr['sponsors'] )
-		#self.debug("QQQ SPONSOR ORIG |%s| becomes |%s|" % (billattr['sponsors'], mysponsors))
+		spondata = data[:results1.start()]
+		mysponsors = sponsorsToList( spondata )
+		#self.debug("QQQ SPONSOR ORIG |%s| becomes |%s|" % (spondata, mysponsors))
 		for s in mysponsors:
 			if s in self.people:
 				#self.log( "DETAIL SPONSOR FOUND [%s]=[%s]" % (s,self.people[s]) )
@@ -236,27 +342,28 @@ class SCBillScraper(BillScraper):
 		data = data[results1.end():]
 		
 	linenum = 0
-	parse_state = 0
 	bill_summary = ""
 	apat = re.compile(">(H|S) (\d*)<")
 	billpat = re.compile("(\d+)")
-	
-	similar_bills = []
-	actions = []
-	for line in data.splitlines():
+
+	(similar_bills,summary,after_summary) = self.split_page_into_parts(data)
+	self.debug("VVV: %s Similar List %s " % (bill_id,similar_bills) )
+	self.debug("VVV: %s Summary len %d %s " % (bill_id,len(summary),summary) )
+	self.debug("VVV: %s After %d %s " % (bill_id,len(after_summary), after_summary) )
+
+	bill_summary = summary.strip() 
+	try:
+		bs = bill_summary.decode('utf8')
+	except:
+		self.log("scrubbing %s summary, originally %s" % (bill_id,bill_summary) )
+		bill_summary = removeNonAscii(bill_summary)
+
+	bill = Bill(session, chamber, bill_id, bill_summary, type=bill_type(bill_summary))
+		
+	parse_state = 1
+	for line in after_summary.splitlines():
 		#self.debug("   DETAILS parse_state: %d %d line |%s|" % (linenum, parse_state,line)) 
-		if parse_state == 0: 
-			result1 = apat.search(line)
-			if result1:
-				sbill = dict()	
-				sbill['bill_number' ] = result1.group(2)
-				sbill['bill_suffix' ] = result1.group(1)
-				sbill['bill_name' ] = "%s %s" % (result1.group(1), result1.group(2))
-				similar_bills.append(sbill)
-			else:
-				bill_summary += line	
-			parse_state = 1
-		elif parse_state == 1:
+		if parse_state == 1: 
 			ahref = line.find("<A HREF") 
 			if ahref >= 0:
 				# the links should be on this line 
@@ -267,65 +374,38 @@ class SCBillScraper(BillScraper):
 					if bill_results:
 						bill_number = bill_results.group(0)
 						vurl = vote_url(bill_number)
-					#self.debug("VV |%s| (%d) View Vote History" % (bill_id, ahref))
 				parse_state = 2
-			else:
-				bill_summary += line
 		elif parse_state == 2:
-			# We'v got the bill summary now, create the bill
-			bill_summary = bill_summary.strip() 
-			try:
-				bs = bill_summary.decode('utf8')
-			except:
-				self.log("scrubbing %s summary, originally %s" % (bill_id,bill_summary) )
-				bill_summary = removeNonAscii(bill_summary)
-
-			bill = Bill(session, chamber, bill_id, bill_summary, 
-				type=bill_type(bill_summary))
-
-			parse_state = 3
 			date_results = date_re.search(line)
 			if date_results:
 				the_date = date_results.group(0)
 				date = datetime.datetime.strptime(the_date, "%m/%d/%y")
 				date = date.date()
-				action = line
-				bill.add_action(chamber, action, date, type=action_type(action) )
-				self.debug( "     bill %s action: %s %s" % (bill_id,the_date,action))
-
-		elif parse_state == 3:
-			date_results = date_re.search(line)
-			if date_results:
-				the_date = date_results.group(0)
-				date = datetime.datetime.strptime(the_date, "%m/%d/%y")
-				date = date.date()
-				action = line
+				action = line.partition("(")[0]
 				bill.add_action(chamber, action, date, type=action_type(action) )
 				self.debug( "     bill %s action: %s %s" % (bill_id,the_date,action))
 		linenum += 1
 
 
 	if similar_bills:
-		billattr['similar'] = similar_bills
 		self.debug("similar %s %s" % (bill_id, similar_bills))
 		bill['similar'] = similar_bills
 		
 	sponsors = newspon 
 
 	bill.add_source(bill_detail_url)
-	bill_name = bill_id
 
 	for sponsor in sponsors:
 		bill.add_sponsor("sponsor", sponsor )
 
 	if vurl:
-		self.debug("QQQ Got vote url [%s]" % vurl )
+		try:
+	    		self.scrape_vote_detail( vurl, chamber, bill, bill_id )
+		except Exception as error:
+			self.log("VVV-BB FAILED TO SCRAPE VOTE %s" % error )
 
-	#self.debug("QQQ SPONSOR ORIG\n|%s|\n|%s|\n" % (billattr['sponsors'], sponsors))
-	self.debug("QQQ %s - Summary |%s|" % (bill_id, bill_summary ))
-	#self.debug("QQQ %s - Source |%s|" % (bill_id, bill_detail_url))
-	#self.debug("QQQ %s - Sponsors |%s|" % (bill_id, sponsors ))
 	self.save_bill(bill)
+
 
 
     ###################################################
@@ -370,7 +450,10 @@ class SCBillScraper(BillScraper):
         if session != '119':
             raise NoDataForPeriod(session)
 
-	self.initMember(chamber)
+	# initial both upper and lower members 
+	self.initMember("lower")
+	self.initMember("upper")
+
         sessions_url = session_days_url(chamber) 
 
 	days = []
@@ -403,7 +486,7 @@ class SCBillScraper(BillScraper):
 		
 	regexp = re.compile( "\d+" )
 	for bill_id in all_bills:
-		self.log("Processing [%s]" % bill_id)
+		#self.log("Processing [%s]" % bill_id)
 		pat = regexp.search(bill_id)
 		if not pat:
 			self.log( "383 Missing billid [%s]" % bill_id )
