@@ -2,13 +2,19 @@ import re
 import datetime
 import contextlib
 
-from .utils import session_days_url, vote_history_url, action_type, bill_type, vote_url
+from .utils import action_type, bill_type, vote_url
 from .utils import removeNonAscii, sponsorsToList
 
 from billy.scrape import NoDataForPeriod, ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
+
+from pdfminer.pdfinterp import PDFResourceManager, process_pdf
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
+
+import tempfile
 
 import lxml.html
 
@@ -17,10 +23,22 @@ import lxml.html
 class SCBillScraper(BillScraper):
     state = 'sc'
     urls = {
-	'house-members-url' : 'http://www.scstatehouse.gov/html-pages/housemembers.html',
-	'senate-members-url' : 'http://www.scstatehouse.gov/html-pages/senatemembersd.html',
-	'bill-detail-url' : "http://scstatehouse.gov/cgi-bin/web_bh10.exe?bill1=%s&session=%s" 
+	'bill-detail' : "http://scstatehouse.gov/cgi-bin/web_bh10.exe?bill1=%s&session=%s" ,
+	'vote-url' : "http://www.scstatehouse.gov/php/votehistory.php?type=BILL&session=119&bill_number=%s",
+
+	'lower' : { 
+	  'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.htm",
+    	  'members':'http://www.scstatehouse.gov/html-pages/housemembers.html',
+	  'vote-history': "http://www.scstatehouse.gov/php/votehistory.php?chamber=H"
+	},
+
+	'upper' : { 
+	  'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.htm",
+	  'members' :'http://www.scstatehouse.gov/html-pages/senatemembersd.html',
+	  'vote-history':"http://www.scstatehouse.gov/php/votehistory.php?chamber=S"
+	}
     }
+
 
     people = dict()
     members = []
@@ -33,13 +51,7 @@ class SCBillScraper(BillScraper):
 	self.debug("TODO get legislators to get first names for sponsors")
 
     def initMember(self,chamber):
-	#outfile = open("members.txt", "w")
-        if chamber == 'lower':
-	    #url = self.urls['house-members-url']
-            url = 'http://www.scstatehouse.gov/html-pages/housemembers.html'
-        else:
-	    #url = self.urls['senate-members-url']
-            url = 'http://www.scstatehouse.gov/html-pages/senatemembersd.html'
+	url = self.urls[chamber]['members']
 
         with self.urlopen(url) as data:
             doc = lxml.html.fromstring(data)
@@ -79,7 +91,6 @@ class SCBillScraper(BillScraper):
 			#outfile.write("2>%s)) %s|\n" % (nlast_name, full_name ))
 	#outfile.close()
 
-	
 
     @contextlib.contextmanager
     def lxml_context(self,url):
@@ -168,7 +179,7 @@ class SCBillScraper(BillScraper):
 	return bills_on_this_page
 
 
-	###################################################
+    ###################################################
     def get_sponsors(self, d):
 	# this matches the sponsor 
 	sponsor_regexp = re.compile("--(.*):")
@@ -176,6 +187,120 @@ class SCBillScraper(BillScraper):
 	if result != None:
 		self.log("get_sponsors found sponsors %s "  % result.group(0))
 		return result.group(1)
+
+
+
+    ###################################################
+    def parse_rollcall(self,data):
+	sections = [ 'FIRST', 'RESULT', 'Yeas:', 'YEAS','NAYS', 'EXCUSED ABSENCE', 'NOT VOTING', 'REST' ]
+
+	lines = data.split("\n")
+	section  = 0 
+	next_section = 1
+
+	areas = dict()
+	#print "number of lines ", len(lines)
+	linenum = 0
+	section_list = []
+	expected = dict()
+	for line in lines:
+		if section >= len(sections):
+			print "after ", line
+			continue
+
+		skey = sections[section]
+		nkey = sections[next_section]
+
+		if line.startswith( nkey ) :
+			print "FOUND: " , linenum, ' ', line, ' ', section
+			areas[skey] = section_list	
+
+			# get specified value to verify we get them all
+			epat = re.compile("\w - (\d+)")
+			eresult = epat.search(line)
+			section_count = 0
+			if eresult:
+				section_count = int(eresult.group(1))
+
+			expected[ nkey ] = section_count
+			section_list = []
+
+			section += 1
+			next_section += 1
+
+		elif len(line.strip()) > 0 and not re.search("Page \d+ of \d+", line):
+			# Skip page footer, Page x of Y
+			if not re.search("Page \d+ of \d+", line):
+				section_list.append(line.strip())
+		linenum += 1
+
+	# handle last section lines
+	areas[sections[section]] = section_list	
+
+	# get specified value to verify we get them all
+	epat = re.compile("\w - (\d+)")
+	eresult = epat.search(line)
+	section_count = 0
+	if eresult:
+		section_count = int(eresult.group(1))
+
+	expected[ sections[next_section] ] = section_count
+
+	return (expected, areas)
+
+
+    ###################################################
+    def add_vote_yeas(self,vote,bill_id,voters):
+	try:
+	  for legislator in voters['YEAS']:
+		self.debug("VVV-XX   ADDING YEA %s [%s] " % (bill_id, legislator) )
+		vote.yes(legislator)
+	except Exception as error:
+		self.warning("VVV-XX   FAILED TO ADD YEA %s [%s] " % (bill_id, error) )
+
+    ###################################################
+    def add_vote_nays(self,vote,bill_id,voters):
+	try:
+	  for legislator in voters['NAYS']:
+		self.debug("VVV-XX   ADDING NAY %s [%s] " % (bill_id, legislator) )
+		vote.no(legislator)
+	except Exception as error:
+		self.warning("VVV-XX   %FAILED TO ADD NAY %s [%s] " % (bill_id, error) )
+
+
+    ###################################################
+    def print_vote_sections(self,bill_id,expected,areas):
+	for k in areas:
+		v = areas[k]
+		msg = ""
+		try:
+			exp = expected[ k ] 
+		except KeyError:
+			exp = 0
+
+		if len(v) != exp:
+			self.warning("Vote count mismatch - %s [%s] Got %d, expected %d"  % (bill_id,k, len(v), exp))
+		else:
+			self.debug("VVV-ZZ Section %s [%s] actual (%d) expected (%d)"  % (bill_id,k, len(v), exp))
+		for vv in v:
+			self.debug("   %s  %s: [%s] " % (bill_id, k, vv) )
+
+	for k in areas:
+		v = areas[k]
+		try:
+			exp = expected[ k ] 
+		except KeyError:
+			exp = 0
+		if len(v) != exp:
+			self.warning("Vote count mismatch - %s [%s] Got %d, expected %d"  % (bill_id,k, len(v), exp))
+		else:
+			self.debug("VVV-ZZ-1 Section %s [%s] actual (%d) expected (%d)"  % (bill_id,k, len(v), exp))
+
+#		file = open("sample_vote_file.txt","r")
+#		data = file.read()
+#		(expected, areas) = parse_rollcall(data)
+#		print_vote_sections(expected, areas)
+#		file.close()
 
     ###################################################
     def scrape_vote_detail(self, vurl, chamber, bill, bill_id ):
@@ -188,26 +313,20 @@ class SCBillScraper(BillScraper):
 
 		bill_title_xpath = "//div[@id='votecontent']/div[1]"
 
-		tdotherxpath = '/html/body/table/tbody/tr/td/div[@id="tablecontent"]/table/tbody/tr/td[@class="content"]/div[@id="votecontent"]//td'
+		vxpath = '/html/body/table/tbody/tr/td/div[@id="tablecontent"]/table/tbody/tr/td[@class="content"]/div[@id="votecontent"]//td'
 
 		doc = lxml.html.fromstring(votepage)
-		self.debug("VVV-2 Got vote url [%s]" % vurl )
 		doc.make_links_absolute(vurl)
 
-		vote_row = doc.xpath(tdotherxpath)
+		vote_row = doc.xpath(vxpath)
 
-		bill_title_dev = doc.xpath(bill_title_xpath)
-		self.debug("VVV-TITLE %d [%s]" % ( len(bill_title_dev), bill_title_dev) )
-		
-		try:
-			for bt in bill_title_dev:
-				self.debug("VVV-TITLE-1 BT [%s]" % bt )
-				self.debug("VVV-TITLE-2 BT [%s]" % bt.text_content().strip() )
-
-			#my_title = bill_title_dev.text_content()
-			#self.debug("VVV-TITLE my title [%s]" % my_title )
-		except Exception as error:
-			self.debug("VVV-TITLE FAILED TO GET CONTENT [%s]" % error)
+		bill_title_dev = doc.xpath(bill_title_xpath)[0].text_content().strip()
+		#bill_title_dev = doc.xpath(bill_title_xpath)
+		#try:
+		#	for bt in bill_title_dev:
+		#		self.debug("VVV-TITLE-2 BT [%s]" % bt.text_content().strip() )
+		#except Exception as error:
+		#	self.debug("VVV-TITLE FAILED TO GET CONTENT [%s]" % error)
 
 
 		# 0, 1 = datetime, 2 = text,3 = link to votes page
@@ -215,12 +334,12 @@ class SCBillScraper(BillScraper):
 
 		vote_date_time = vote_row[1].text_content()
 		action = vote_row[2].text_content()
+
+		# Get link to PDF containing roll call votes
 		link_to_votes = vote_row[3].text_content()
 		link = vote_row[3]
-	
-		# THIS IS A PDF DOCUMENT
 		link_to_votes_href = link.xpath("a/@href")[0]
-		self.debug("VVV-BB link href[%s]" % (link_to_votes_href))
+		#self.debug("VVV-BB link href[%s]" % (link_to_votes_href))
 
 		yes_count_str = vote_row[4].text_content()
 		nay_count_str = vote_row[5].text_content()
@@ -245,6 +364,50 @@ class SCBillScraper(BillScraper):
 		passed = result.find("Passed") != -1
 		vote = Vote(chamber, vote_date, motion, passed, yes_count, no_count, other_count )
 						#use default for type
+
+		# PARSING ONLY WORKS FOR lower now
+		if link_to_votes_href and chamber == "lower":
+		   try:
+			billnum = re.search("(\d+)", bill_id).group(1)
+			#self.debug("Opened url: [%s] billnum [%s]" % (link_to_votes_href,billnum))
+
+			# Save pdf to a local file
+			temp_file = tempfile.NamedTemporaryFile(delete=False,suffix='.pdf',prefix="votetmp_%s_"%billnum )
+			#self.debug("Opened url: [%s] save to[%s]" % (link_to_votes_href,temp_file.name))
+			with self.urlopen(link_to_votes_href) as whatever:
+				pdf_file = file(temp_file.name, 'w')
+				pdf_file.write(whatever)
+				pdf_file.close()
+
+			otemp_file = tempfile.NamedTemporaryFile(delete=False,suffix='.txt',prefix="vote_text_%s_"%billnum )
+			outfp = file(otemp_file.name, 'w')
+
+			rsrcmgr = PDFResourceManager(caching=True)
+
+			laparams = LAParams()
+			codec = 'utf-8'
+			device = TextConverter(rsrcmgr, outfp, codec=codec,laparams=laparams)
+
+			fp = open(temp_file.name,'rb')
+			process_pdf(rsrcmgr, device, fp )
+			device.close()
+			outfp.close()
+
+			# at this point, the votes are in text format in 
+			#file = open("sample_vote_file.txt","r")
+			vfile = open(otemp_file.name,"r")
+			vdata = vfile.read()
+			(expected, areas) = self.parse_rollcall(vdata)
+			message = "bill %s file %s" % (bill_id,otemp_file.name)
+			self.print_vote_sections(message,expected, areas)
+			vfile.close()
+
+    			self.add_vote_yeas(vote,bill_id,areas)
+    			self.add_vote_nays(vote,bill_id,areas)
+		   except Exception as error:
+			self.warning("Failed to get votes for bill[%s] %s" % (bill_id, error))
+
+
 		bill.add_vote(vote)
 				
 		date = datetime.datetime.strptime(vote_date, "%m/%d/%Y %I:%M %p")
@@ -454,18 +617,18 @@ class SCBillScraper(BillScraper):
 	self.initMember("lower")
 	self.initMember("upper")
 
-        sessions_url = session_days_url(chamber) 
+	bill_index_url = self.urls[chamber]['daily-bill-index']
 
 	days = []
-	with self.urlopen( sessions_url ) as page:
+	with self.urlopen( bill_index_url ) as page:
 		page = lxml.html.fromstring(page)
-		page.make_links_absolute(sessions_url)
+		page.make_links_absolute(bill_index_url)
 		days = [str(link.attrib['href']) for link in page.find_class('contentlink')]
 
 	self.log( "Session days: %d" % len(days) )
 
 	bills_with_votes = []
-	vhistory_url = vote_history_url(chamber)
+	vhistory_url = self.urls[chamber]['vote-history']
 #	with self.lxml_context( vhistory_url ) as page:
 #		page.make_links_absolute(vhistory_url)
 #		bills_with_votes = self.scrape_vote_page(session, chamber,page)
@@ -489,11 +652,12 @@ class SCBillScraper(BillScraper):
 		#self.log("Processing [%s]" % bill_id)
 		pat = regexp.search(bill_id)
 		if not pat:
-			self.log( "383 Missing billid [%s]" % bill_id )
+			self.warning( "383 Missing billid [%s]" % bill_id )
 			continue
 
 		bn = pat.group(0)
-		dtl_url = "http://scstatehouse.gov/cgi-bin/web_bh10.exe?bill1=%s&session=%s" % (bn,session)
+		dtl_url = self.urls['bill-detail'] % (bn,session)
+
 		self.debug("447 detail %s %s" % (bn,dtl_url) )
 		with self.urlopen(dtl_url) as page:
 			self.scrape_details( dtl_url, session, chamber, bill_id, page)

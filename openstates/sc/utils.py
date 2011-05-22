@@ -1,19 +1,5 @@
 import re
 
-def session_days_url(chamber):
-	"""Returns the url which contains the list of day that have been
-	in session.  There will be a link for each day that the chamber
-	was in session.
-	"""
-
-	if chamber == "upper":
-	        url = "http://www.scstatehouse.gov/sintro/sintros.htm"
-	else:
-	        url = "http://www.scstatehouse.gov/hintro/hintros.htm"
-	return url
-
-
-
 # extracts senators from string.
 #   Gets rid of Senator(s) at start of string, 
 #   Senator last names are separated by commas, except the last two 
@@ -85,17 +71,6 @@ def sponsorsToList(str):
 # vote url - contains all votes for a bill, including links to drill down on specific bill actions
 def vote_url(bill_number):
 	return "http://www.scstatehouse.gov/php/votehistory.php?type=BILL&session=119&bill_number=%s" % bill_number 
-
-# vote url - page with all bills with their pass/fail vote summaries with links to specific votes
-def vote_history_url(chamber):
-	house_url="http://www.scstatehouse.gov/php/votehistory.php?chamber=H"
-	senate_url="http://www.scstatehouse.gov/php/votehistory.php?chamber=S"
-
-	if chamber == "lower":
-		return house_url
-	else:
-		return senate_url
-
 
 def removeNonAscii(s):
 	return "".join(i for i in s if ord(i)<128)
