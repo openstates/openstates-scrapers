@@ -1,15 +1,75 @@
 from billy import db
-from billy.importers import bills
+from billy.importers import bills, names
 
 from nose.tools import with_setup
 
 def setup_func():
     db.metadata.drop()
     db.bills.drop()
+    db.legislators.drop()
+    names.__matchers = {}
 
     db.metadata.insert({'_level': 'state', '_id': 'ex',
                         'terms': [{'name': 'T1', 'sessions': ['S1', 'S2']}]})
+    db.legislators.insert({'_level': 'state', 'state': 'ex',
+                           '_id': 'EXL000001', 'leg_id': 'EXL000001',
+                           'chamber': 'upper',
+                           'full_name': 'John Adams', 'first_name': 'John',
+                           'last_name': 'Adams', '_scraped_name': 'John Adams',
+                           'roles': [
+                               {'type': 'member', 'chamber': 'upper',
+                                'term': 'T1', 'state': 'ex'},
+                           ]
+                          })
 
+
+@with_setup(setup_func)
+def test_import_bill():
+    # TODO: add votes & test vote functionality
+    data = {'_type': 'bill', '_level': 'state', 'state': 'ex', 'bill_id': 'S1',
+            'chamber': 'upper', 'session': 'S1',
+            'subjects': ['Pigs', 'Sheep', 'Horses'],
+            'votes': [],
+            'sponsors': [{'name': 'Adams', 'type': 'primary'},
+                         {'name': 'Jackson', 'type': 'cosponsor'}],
+            'title': 'main title',
+            'alternate_titles': ['second title'],
+            'versions': [{'title': 'old title'},
+                         {'title': 'main title'}],
+           }
+
+    bills.import_bill(data.copy(), {})
+
+    # test that basics work
+    bill = db.bills.find_one()
+    assert bill['bill_id'] == 'S 1'
+    assert bill['chamber'] == 'upper'
+    assert bill['scraped_subjects'] == data['subjects']
+    assert 'subjects' not in bill
+    assert bill['_term'] == 'T1'
+    assert '_keywords' in bill
+    assert bill['created_at'] == bill['updated_at']
+
+    # assure sponsors are there and that John Adams gets matched
+    assert len(bill['sponsors']) == 2
+    assert bill['sponsors'][0]['leg_id'] == 'EXL000001'
+
+    # titles from alternate_titles & versions (not main title)
+    assert 'main title' not in bill['alternate_titles']
+    assert 'second title' in bill['alternate_titles']
+    assert 'old title' in bill['alternate_titles']
+
+    # now test an update
+    bill['versions'].append({'title': 'third title'})
+    bill['sponsors'].pop()
+    bills.import_bill(bill, {})
+
+    assert db.bills.count() == 1
+    bill = db.bills.find_one()
+
+    assert len(bill['versions']) == 3
+    assert len(bill['sponsors']) == 1
+    assert 'third title' in bill['alternate_titles']
 
 def test_fix_bill_id():
     expect = 'AB 74'

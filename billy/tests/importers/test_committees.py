@@ -8,6 +8,7 @@ def setup_func():
     db.metadata.drop()
     db.legislators.drop()
     db.committees.drop()
+    names.__matchers = {}
 
     db.metadata.insert({'_level': 'state', '_id': 'ex',
                         'terms': [{'name': 'T1', 'sessions': ['S1']}]})

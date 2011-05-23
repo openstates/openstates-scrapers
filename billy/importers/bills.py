@@ -133,11 +133,12 @@ def import_bill(data, votes):
         pass
     data['alternate_titles'] = list(alt_titles)
 
+    # update keywords
+    data['_keywords'] = list(bill_keywords(data))
+
     if not bill:
-        data['_keywords'] = list(bill_keywords(data))
         insert_with_id(data)
     else:
-        data['_keywords'] = list(bill_keywords(data))
         update(bill, data, db.bills)
 
 
