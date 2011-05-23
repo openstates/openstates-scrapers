@@ -1,3 +1,4 @@
+import copy
 from billy import db
 from billy.importers import bills, names
 
@@ -7,6 +8,7 @@ def setup_func():
     db.metadata.drop()
     db.bills.drop()
     db.legislators.drop()
+    db.vote_ids.drop()
     names.__matchers = {}
 
     db.metadata.insert({'_level': 'state', '_id': 'ex',
@@ -25,20 +27,39 @@ def setup_func():
 
 @with_setup(setup_func)
 def test_import_bill():
-    # TODO: add votes & test vote functionality
     data = {'_type': 'bill', '_level': 'state', 'state': 'ex', 'bill_id': 'S1',
             'chamber': 'upper', 'session': 'S1',
             'subjects': ['Pigs', 'Sheep', 'Horses'],
-            'votes': [],
             'sponsors': [{'name': 'Adams', 'type': 'primary'},
                          {'name': 'Jackson', 'type': 'cosponsor'}],
             'title': 'main title',
             'alternate_titles': ['second title'],
             'versions': [{'title': 'old title'},
                          {'title': 'main title'}],
+            'votes': [{'motion': 'passage', 'chamber': 'upper', 'date': None,
+                       'yes_count': 1, 'no_count': 1, 'other_count': 0,
+                       'yes_votes': ['John Adams'],
+                       'no_votes': ['John Quincy Adams'],
+                       'other_votes': [],
+                      },
+                      {'motion': 'referral', 'chamber': 'upper', 'date': None,
+                       'yes_count': 0, 'no_count': 0, 'other_count': 0,
+                       'yes_votes': [], 'no_votes': [], 'other_votes': [],
+                       'committee': 'Committee on Agriculture',
+                      }],
            }
+    standalone_votes = {
+        # chamber, session, bill id -> vote list
+        ('upper', 'S1', 'S 1'): [
+          {'motion': 'house passage', 'chamber': 'lower', 'date': None,
+           'yes_count': 1, 'no_count': 0, 'other_count': 0,
+           'yes_votes': [], 'no_votes': [], 'other_votes': [],
+          }
+        ]
+    }
 
-    bills.import_bill(data.copy(), {})
+    # deepcopy both so we can reinsert same data without modification
+    bills.import_bill(copy.deepcopy(data), copy.deepcopy(standalone_votes))
 
     # test that basics work
     bill = db.bills.find_one()
@@ -54,22 +75,33 @@ def test_import_bill():
     assert len(bill['sponsors']) == 2
     assert bill['sponsors'][0]['leg_id'] == 'EXL000001'
 
+    # test vote import
+    assert len(bill['votes']) == 3
+    assert bill['votes'][0]['vote_id'] == 'EXV00000001'
+    assert bill['votes'][0]['yes_votes'][0]['leg_id'] == 'EXL000001'
+    assert 'committee_id' in bill['votes'][1]
+
     # titles from alternate_titles & versions (not main title)
     assert 'main title' not in bill['alternate_titles']
     assert 'second title' in bill['alternate_titles']
     assert 'old title' in bill['alternate_titles']
 
     # now test an update
-    bill['versions'].append({'title': 'third title'})
-    bill['sponsors'].pop()
-    bills.import_bill(bill, {})
+    data['versions'].append({'title': 'third title'})
+    data['sponsors'].pop()
+    bills.import_bill(data, standalone_votes)
 
+    # still only one bill
     assert db.bills.count() == 1
     bill = db.bills.find_one()
 
+    # votes haven't changed, versions, titles, and sponsors have
+    assert len(bill['votes']) == 3
+    assert bill['votes'][0]['vote_id'] == 'EXV00000001'
     assert len(bill['versions']) == 3
     assert len(bill['sponsors']) == 1
     assert 'third title' in bill['alternate_titles']
+
 
 def test_fix_bill_id():
     expect = 'AB 74'
