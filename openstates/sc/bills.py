@@ -15,6 +15,7 @@ from pdfminer.converter import TextConverter
 from pdfminer.layout import LAParams
 
 import tempfile
+import sys, traceback
 
 import lxml.html
 
@@ -45,10 +46,10 @@ class SCBillScraper(BillScraper):
 
     def __init__(self, *args, **kwargs):
 	super(SCBillScraper,self).__init__(*args,**kwargs)
-	self.initStuff()
 
-    def initStuff(self):
-	self.debug("TODO get legislators to get first names for sponsors")
+    def initLegislators(self):
+	self.initMember("lower")
+	self.initMember("upper")
 
     def initMember(self,chamber):
 	url = self.urls[chamber]['members']
@@ -87,9 +88,7 @@ class SCBillScraper(BillScraper):
 			nlast_name = name_without_suffix.split()[-1]
 			self.people[nlast_name] = full_name
 
-			self.debug("%s Name [%s] Lastname [%s]" % (chamber, full_name, nlast_name))
-			#outfile.write("2>%s)) %s|\n" % (nlast_name, full_name ))
-	#outfile.close()
+			#self.debug("%s Name [%s] Lastname [%s]" % (chamber, full_name, nlast_name))
 
 
     @contextlib.contextmanager
@@ -114,7 +113,7 @@ class SCBillScraper(BillScraper):
 
 	tables = page.xpath(table_xpath)
 	if len(tables) != 1:
-		self.log( 'error, expecting one table, aborting' )
+		self.warning( 'error, scrape_vote_page, expecting one table, aborting' )
 		return
 
 	rows = tables[0].xpath("//tr")
@@ -199,20 +198,23 @@ class SCBillScraper(BillScraper):
 	next_section = 1
 
 	areas = dict()
+	for s in sections:
+		areas[s] = []
+
 	#print "number of lines ", len(lines)
 	linenum = 0
 	section_list = []
 	expected = dict()
 	for line in lines:
 		if section >= len(sections):
-			print "after ", line
+			#print "after ", line
 			continue
 
 		skey = sections[section]
 		nkey = sections[next_section]
 
 		if line.startswith( nkey ) :
-			print "FOUND: " , linenum, ' ', line, ' ', section
+			#self.debug( "FOUND: %d %s %s "  % (linenum, line, section))
 			areas[skey] = section_list	
 
 			# get specified value to verify we get them all
@@ -246,23 +248,31 @@ class SCBillScraper(BillScraper):
 
 	expected[ sections[next_section] ] = section_count
 
-	return (expected, areas)
+	yays = areas['YEAS']
+	nays = areas['NAYS']
+	other = areas['EXCUSED ABSENCE'] 
+	other.extend( areas['NOT VOTING'] )
+
+	return (expected, areas, yays, nays, other )
 
 
     ###################################################
-    def add_vote_yeas(self,vote,bill_id,voters):
+    def add_vote_yeas(self,vote,bill_id,yays):
+	#self.debug("VVV-XX add_vote_yea %s %s" % (bill_id,yays))
 	try:
-	  for legislator in voters['YEAS']:
-		self.debug("VVV-XX   ADDING YEA %s [%s] " % (bill_id, legislator) )
+	  for legislator in yays:
+		#self.debug("VVV-XX   ADDING YEA %s [%s] " % (bill_id, legislator) )
 		vote.yes(legislator)
 	except Exception as error:
 		self.warning("VVV-XX   FAILED TO ADD YEA %s [%s] " % (bill_id, error) )
+		raise ScrapeError("VVV-XX: Failed to add yea  %s" % bill_id)
 
     ###################################################
-    def add_vote_nays(self,vote,bill_id,voters):
+    def add_vote_nays(self,vote,bill_id,nays):
+	self.debug("VVV-XX add_vote_nays %s %s" % (bill_id,nays))
 	try:
-	  for legislator in voters['NAYS']:
-		self.debug("VVV-XX   ADDING NAY %s [%s] " % (bill_id, legislator) )
+	  for legislator in nays:
+		#self.debug("VVV-XX   ADDING NAY %s [%s] " % (bill_id, legislator) )
 		vote.no(legislator)
 	except Exception as error:
 		self.warning("VVV-XX   %FAILED TO ADD NAY %s [%s] " % (bill_id, error) )
@@ -271,6 +281,10 @@ class SCBillScraper(BillScraper):
     ###################################################
     def print_vote_sections(self,bill_id,expected,areas):
 	for k in areas:
+		if k == "RESULT":
+			continue
+		if k == "FIRST":
+			continue
 		v = areas[k]
 		msg = ""
 		try:
@@ -278,24 +292,34 @@ class SCBillScraper(BillScraper):
 		except KeyError:
 			exp = 0
 
-		if len(v) != exp:
-			self.warning("Vote count mismatch - %s [%s] Got %d, expected %d"  % (bill_id,k, len(v), exp))
-		else:
-			self.debug("VVV-ZZ Section %s [%s] actual (%d) expected (%d)"  % (bill_id,k, len(v), exp))
-		for vv in v:
-			self.debug("   %s  %s: [%s] " % (bill_id, k, vv) )
+		try:
+			if len(v) != exp:
+				self.warning("Vote count mismatch - %s [%s] Got %d, expected %d"  % (bill_id,k, len(v), exp))
+			else:
+				self.debug("VVV-ZZ Section %s [%s] actual (%d) expected (%d)"  % (bill_id,k, len(v), exp))
+			for vv in v:
+				self.debug("   %s  %s: [%s] " % (bill_id, k, vv) )
+		except Exception as error:
+			self.debug("VVV-ERR: [%s] " % (error) )
 
 	for k in areas:
+		if k == "RESULT":
+			continue
+		if k == "FIRST":
+			continue
 		v = areas[k]
 		try:
 			exp = expected[ k ] 
 		except KeyError:
 			exp = 0
-		if len(v) != exp:
-			self.warning("Vote count mismatch - %s [%s] Got %d, expected %d"  % (bill_id,k, len(v), exp))
-		else:
-			self.debug("VVV-ZZ-1 Section %s [%s] actual (%d) expected (%d)"  % (bill_id,k, len(v), exp))
+		try:
+			if len(v) != exp:
+				self.warning("Vote count mismatch - %s [%s] Got %d, expected %d"  % (bill_id,k, len(v), exp))
+			else:
+				self.debug("VVV-ZZ-1 Section %s [%s] actual (%d) expected (%d)"  % (bill_id,k, len(v), exp))
 
+		except Exception as error:
+			self.debug("VVV-ERR-1: [%s] " % (error) )
 #		file = open("sample_vote_file.txt","r")
 #		data = file.read()
 #		(expected, areas) = parse_rollcall(data)
@@ -352,9 +376,11 @@ class SCBillScraper(BillScraper):
 		total_count = int(total_count_str)
 
 		other_count = total_count - (yes_count + no_count)
-		self.debug("VVV-BB %s Yes/No/Other %d/%d/%d" % (bill_id, yes_count, no_count, other_count) )
-		self.debug("VVV-BB %s [%s] %s LINK_TO_VOTES[%s] HREF[%s] %s" 
-			% (bill_id, action, vote_date_time, link_to_votes, link_to_votes_href, result ))
+		self.debug("VVV-BB %s[%s] %s Yes/No/Other %d/%d/%d %s %s %s" % (bill_id, action, result, yes_count, no_count, other_count,
+vote_date_time, link_to_votes, link_to_votes_href 
+) )
+
+#		self.debug("VVV-BB %s [%s] %s LINK_TO_VOTES[%s] HREF[%s] %s" % (bill_id, action, vote_date_time, link_to_votes, link_to_votes_href, result ))
 
 		#vote_date = vote_date_time.split()[0]
 		vote_date_1 = vote_date_time.split()
@@ -367,23 +393,20 @@ class SCBillScraper(BillScraper):
 
 		# PARSING ONLY WORKS FOR lower now
 		if link_to_votes_href and chamber == "lower":
+		   bill.add_source(link_to_votes_href)
+		   billnum = re.search("(\d+)", bill_id).group(1)
+		   # Save pdf to a local file
+		   temp_file = tempfile.NamedTemporaryFile(delete=False,suffix='.pdf',prefix="votetmp_%s_"%billnum )
+		   otemp_file = tempfile.NamedTemporaryFile(delete=False,suffix='.txt',prefix="vote_text_%s_"%billnum )
 		   try:
-			billnum = re.search("(\d+)", bill_id).group(1)
-			#self.debug("Opened url: [%s] billnum [%s]" % (link_to_votes_href,billnum))
-
-			# Save pdf to a local file
-			temp_file = tempfile.NamedTemporaryFile(delete=False,suffix='.pdf',prefix="votetmp_%s_"%billnum )
-			#self.debug("Opened url: [%s] save to[%s]" % (link_to_votes_href,temp_file.name))
 			with self.urlopen(link_to_votes_href) as whatever:
 				pdf_file = file(temp_file.name, 'w')
 				pdf_file.write(whatever)
 				pdf_file.close()
 
-			otemp_file = tempfile.NamedTemporaryFile(delete=False,suffix='.txt',prefix="vote_text_%s_"%billnum )
 			outfp = file(otemp_file.name, 'w')
 
 			rsrcmgr = PDFResourceManager(caching=True)
-
 			laparams = LAParams()
 			codec = 'utf-8'
 			device = TextConverter(rsrcmgr, outfp, codec=codec,laparams=laparams)
@@ -397,16 +420,22 @@ class SCBillScraper(BillScraper):
 			#file = open("sample_vote_file.txt","r")
 			vfile = open(otemp_file.name,"r")
 			vdata = vfile.read()
-			(expected, areas) = self.parse_rollcall(vdata)
-			message = "bill %s file %s" % (bill_id,otemp_file.name)
-			self.print_vote_sections(message,expected, areas)
 			vfile.close()
 
-    			self.add_vote_yeas(vote,bill_id,areas)
-    			self.add_vote_nays(vote,bill_id,areas)
-		   except Exception as error:
-			self.warning("Failed to get votes for bill[%s] %s" % (bill_id, error))
+			(expected, areas, yays, nays, other) = self.parse_rollcall(vdata)
+			#self.debug("VVV-XX %s yays %s" % (bill_id, yays))
+			#message = "bill %s file %s" % (bill_id,otemp_file.name)
+			#self.print_vote_sections(message, expected, areas)
 
+	  		for legislator in yays:
+				vote.yes(legislator)
+	  		for legislator in nays:
+				vote.no(legislator)
+
+    			#self.add_vote_nays(vote,bill_id,nays)
+		   except Exception as error:
+			self.warning("VVV-XX CC %s FAILED %s " % ( bill_id, traceback.format_exc()) ) 
+			#self.warning("CC Failed to get votes for bill[%s] %s" % (bill_id, error))
 
 		bill.add_vote(vote)
 				
@@ -466,7 +495,7 @@ class SCBillScraper(BillScraper):
 		raise ScrapeError("scrape_details(3) - unable to parse (no </pre>) %s"  % bill_detail_url)
 
 	pre_section = page[pre_start:pre_stop]
-	self.debug( "DETAILS PRE (%d,%d) [%s] " % (pre_start, pre_stop, pre_section))
+	#self.debug( "DETAILS PRE (%d,%d) [%s] " % (pre_start, pre_stop, pre_section))
 
 	data = pre_section
 	vurl = None
@@ -510,9 +539,9 @@ class SCBillScraper(BillScraper):
 	billpat = re.compile("(\d+)")
 
 	(similar_bills,summary,after_summary) = self.split_page_into_parts(data)
-	self.debug("VVV: %s Similar List %s " % (bill_id,similar_bills) )
-	self.debug("VVV: %s Summary len %d %s " % (bill_id,len(summary),summary) )
-	self.debug("VVV: %s After %d %s " % (bill_id,len(after_summary), after_summary) )
+	#self.debug("VVV: %s Similar List %s " % (bill_id,similar_bills) )
+	#self.debug("VVV: %s Summary len %d %s " % (bill_id,len(summary),summary) )
+	#self.debug("VVV: %s After %d %s " % (bill_id,len(after_summary), after_summary) )
 
 	bill_summary = summary.strip() 
 	try:
@@ -546,12 +575,12 @@ class SCBillScraper(BillScraper):
 				date = date.date()
 				action = line.partition("(")[0]
 				bill.add_action(chamber, action, date, type=action_type(action) )
-				self.debug( "     bill %s action: %s %s" % (bill_id,the_date,action))
+				#self.debug( "     bill %s action: %s %s" % (bill_id,the_date,action))
 		linenum += 1
 
 
 	if similar_bills:
-		self.debug("similar %s %s" % (bill_id, similar_bills))
+		#self.debug("similar %s %s" % (bill_id, similar_bills))
 		bill['similar'] = similar_bills
 		
 	sponsors = newspon 
@@ -564,8 +593,9 @@ class SCBillScraper(BillScraper):
 	if vurl:
 		try:
 	    		self.scrape_vote_detail( vurl, chamber, bill, bill_id )
+			bill.add_source(vurl)
 		except Exception as error:
-			self.log("VVV-BB FAILED TO SCRAPE VOTE %s" % error )
+			self.warning("VVV-BB FAILED TO SCRAPE VOTE %s" % error )
 
 	self.save_bill(bill)
 
@@ -613,9 +643,7 @@ class SCBillScraper(BillScraper):
         if session != '119':
             raise NoDataForPeriod(session)
 
-	# initial both upper and lower members 
-	self.initMember("lower")
-	self.initMember("upper")
+	self.initLegislators()
 
 	bill_index_url = self.urls[chamber]['daily-bill-index']
 
@@ -658,7 +686,7 @@ class SCBillScraper(BillScraper):
 		bn = pat.group(0)
 		dtl_url = self.urls['bill-detail'] % (bn,session)
 
-		self.debug("447 detail %s %s" % (bn,dtl_url) )
+		#self.debug("447 detail %s %s" % (bn,dtl_url) )
 		with self.urlopen(dtl_url) as page:
 			self.scrape_details( dtl_url, session, chamber, bill_id, page)
 
