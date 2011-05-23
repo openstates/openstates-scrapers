@@ -63,7 +63,8 @@ def import_votes(data_dir):
 
 
 def import_bill(data, votes):
-    abbr = data[data['_level']]
+    level = data['_level']
+    abbr = data[level]
     # clean up bill_id
     data['bill_id'] = fix_bill_id(data['bill_id'])
 
@@ -81,7 +82,7 @@ def import_bill(data, votes):
                             data['bill_id']), [])
     data['votes'].extend(bill_votes)
 
-    bill = db.bills.find_one({'state': data['state'],
+    bill = db.bills.find_one({level: abbr,
                               'session': data['session'],
                               'chamber': data['chamber'],
                               'bill_id': data['bill_id']})
