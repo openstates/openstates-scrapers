@@ -90,7 +90,7 @@ class KYLegislatorScraper(LegislatorScraper):
 
             if 'additionalRoles' in member:
                 for role in member['additionalRoles']:
-                    leg.add_role(role, year)
+                    leg.add_role(role, year, chamber=chamber)
 
             self.save_legislator(leg)
 

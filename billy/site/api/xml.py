@@ -91,7 +91,7 @@ def render_full_bill(bill):
             date=_date(v['date']),
             chamber=v['chamber'],
             id=v['vote_id'],
-            type=v['type'],
+            type=v.get('type', '') or '',
             yes_count=str(v['yes_count']),
             no_count=str(v['no_count']),
             other_count=str(v['other_count']),
@@ -151,6 +151,8 @@ def render_short_legislator(leg):
             value = leg.get(key)
             if value:
                 elem.append(E(key, value))
+    else:
+        elem.append(E.active('false'))
 
     return elem
 
@@ -163,18 +165,20 @@ def render_full_legislator(leg):
         if r['type'] == 'committee member':
             children.append(E.committee(
                 r['committee'],
-                id=r['committee_id']))
+                id=r.get('committee_id', '') or ''))
 
-        for optional_attr in ('party', 'start_date', 'end_date'):
+        for optional_attr in ('party', 'start_date', 'end_date',
+                              'chamber'):
             value = r.get(optional_attr)
-            if value:
+            if isinstance(value, datetime.date):
+                kwargs[optional_attr] = _date(value)
+            elif value:
                 kwargs[optional_attr] = str(value)
 
         return E.role(
             *children,
             type=r['type'],
             term=r['term'],
-            chamber=r['chamber'],
             **kwargs
         )
 
@@ -223,8 +227,9 @@ def render_short_committee(comm):
 def render_full_committee(comm):
     def member(m):
         kwargs = {}
-        if 'leg_id' in m:
-            kwargs['id'] = m['leg_id']
+        leg_id = kwargs.get('leg_id')
+        if leg_id:
+            kwargs['id'] = leg_id
         return E.member(m['name'], role=m['role'], **kwargs)
 
     elem = render_short_committee(comm)
@@ -285,10 +290,15 @@ def render_metadata(meta):
 
 def render_event(ev):
     def participant(p):
+        kwargs = {}
+        chamber = p.get('chamber')
+        if chamber:
+            kwargs['chamber'] = chamber
+
         return E.participant(
             p['participant'],
-            chamber=p['chamber'],
-            type=p['type']
+            type=p['type'],
+            **kwargs
         )
 
     if ev['end']:
@@ -307,9 +317,9 @@ def render_event(ev):
         E.when(_date(ev['when'])),
         end,
         E.location(ev['location']),
-        E.all_day(_bool(ev['all_day'])),
+        E.all_day(_bool(ev.get('all_day', False))),
         E.description(ev['description']),
-        E.notes(ev['notes']),
+        E.notes(ev.get('notes', '')),
         E.participants(*[participant(p) for p in ev['participants']]),
         *extra,
         id=ev['_id']

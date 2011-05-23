@@ -27,7 +27,7 @@ start =
           attribute id {
             xsd:string { pattern = "[A-Z][A-Z]V\d{8}" }
           },
-          attribute type { string.non_empty },
+          attribute type { xsd:string },
           attribute yes_count { xsd:nonNegativeInteger },
           attribute no_count { xsd:nonNegativeInteger },
           attribute other_count { xsd:nonNegativeInteger },
@@ -35,8 +35,9 @@ start =
           element motion { string.non_empty },
           element avote {
             attribute name { string.non_empty },
-            attribute leg_id { legislator_id | empty }*,
-            attribute type { "yes" | "no" | "other" }
+            attribute leg_id { legislator_id | empty }?,
+            attribute type { "yes" | "no" | "other" },
+            empty
           }*
         }*
       },
@@ -97,17 +98,19 @@ start =
         element title { string.non_empty },
         element term { string.non_empty }
       }+,
-      element term {
-        element name { string.non_empty },
-        element start_year { string.non_empty },
-        element end_year { string.non_empty },
-        element session {
+      element terms {
+        element term {
           element name { string.non_empty },
-          element type { string.non_empty },
-          element start_date { xsd:dateTime }?,
-          element end_date { xsd:dateTime }?
+          element start_year { string.non_empty },
+          element end_year { string.non_empty },
+          element session {
+            element name { string.non_empty },
+            element type { string.non_empty }?,
+            element start_date { xsd:dateTime }?,
+            element end_date { xsd:dateTime }?
+          }*
         }*
-      }*
+      }
     }
   | element event {
       attribute created_at { xsd:dateTime },
@@ -126,7 +129,7 @@ start =
       element notes { xsd:string },
       element participants {
         element participant {
-          attribute chamber { chamber },
+          attribute chamber { chamber }?,
           attribute type { string.non_empty },
           string.non_empty
         }*
@@ -172,6 +175,7 @@ role =
     attribute type { string.non_empty },
     attribute chamber { string.non_empty }?,
     attribute party { xsd:string }?,
+    attribute end_date { xsd:dateTime }?,
 
     element committee {
       attribute id { empty | committee_id }?,
@@ -183,8 +187,9 @@ committee.header =
   attribute created_at { xsd:dateTime },
   attribute updated_at { xsd:dateTime },
   attribute id { committee_id },
+  attribute parent_id { committee_id }?,
   element state { state },
-  element chamber { chamber },
+  element chamber { string.non_empty },
   element name {
     element committee_name { string.non_empty },
     element subcommittee_name { xsd:string }
