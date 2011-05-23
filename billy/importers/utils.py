@@ -236,18 +236,6 @@ def get_committee_id(state, chamber, committee):
     return __committee_ids[key]
 
 
-def put_document(doc, content_type, metadata):
-    # Generate a new sequential ID for the document
-    abbr = metadata['bill']['state']
-    id = next_big_id(abbr, 'D', 'doc_ids')
-
-    logging.info("Saving as %s" % id)
-
-    fs.put(doc, _id=id, content_type=content_type, metadata=metadata)
-
-    return id
-
-
 def merge_legislators(old, new):
     all_ids = set(old['_all_ids']).union(new['_all_ids'])
     new['_all_ids'] = list(all_ids)

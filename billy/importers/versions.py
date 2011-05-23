@@ -4,7 +4,17 @@ import logging
 import scrapelib
 
 from billy import db
-from billy.importers.utils import put_document
+
+def put_document(doc, content_type, metadata):
+    # Generate a new sequential ID for the document
+    abbr = metadata['bill']['state']
+    id = next_big_id(abbr, 'D', 'doc_ids')
+
+    logging.info("Saving as %s" % id)
+
+    fs.put(doc, _id=id, content_type=content_type, metadata=metadata)
+
+    return id
 
 
 def import_versions(state, rpm=60):
