@@ -43,7 +43,7 @@ def test_populate_current_fields():
     db.bills.insert({'_level': 'state', 'state': 'ex', 'session': 'S0',
                      'title': 'not current'})
 
-    bills.populate_current_fields('ex')
+    bills.populate_current_fields('state', 'ex')
 
     b = db.bills.find_one({'title': 'current everything'})
     assert b['_current_session']

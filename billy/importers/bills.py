@@ -160,7 +160,10 @@ def import_bills(abbr, data_dir):
         print 'Failed to match vote %s %s %s' % tuple([
             r.encode('ascii', 'replace') for r in remaining])
 
-    populate_current_fields(abbr)
+    meta = db.metadata.find_one({'_id': abbr})
+    level = meta['_level']
+    populate_current_fields(level, abbr)
+
     ensure_indexes()
 
 
@@ -184,16 +187,16 @@ def bill_keywords(bill):
     return keywords
 
 
-def populate_current_fields(state):
+def populate_current_fields(level, abbr):
     """
     Set/update _current_term and _current_session fields on all bills
-    from the given state.
+    for a given location.
     """
-    meta = db.metadata.find_one({'_id': state})
+    meta = db.metadata.find_one({'_id': abbr})
     current_term = meta['terms'][-1]
     current_session = current_term['sessions'][-1]
 
-    for bill in db.bills.find({'state': state}):
+    for bill in db.bills.find({level: abbr}):
         if bill['session'] == current_session:
             bill['_current_session'] = True
         else:
