@@ -1,3 +1,4 @@
+import re
 import datetime
 
 from .utils import xpath
@@ -38,7 +39,7 @@ class WABillScraper(BillScraper):
                 if bill_chamber != chamber:
                     continue
 
-                if bill_id[0:3] in ('SSB', 'SHB', 'ESSB', 'ESHB'):
+                if re.match(r'^E?S(H|S)B', bill_id):
                     # Merge committee substitutes with original bills.
                     # All the actions for the substitute should have been
                     # grabbed when we got the original, so just make
