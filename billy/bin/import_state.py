@@ -8,7 +8,6 @@ from billy.importers.bills import import_bills
 from billy.importers.legislators import import_legislators
 from billy.importers.committees import import_committees
 from billy.importers.events import import_events
-from billy.importers.versions import import_versions
 from billy.utils import configure_logging
 
 if __name__ == '__main__':
@@ -30,18 +29,16 @@ if __name__ == '__main__':
                         help='scrape (separate) committee data')
     parser.add_argument('--events', action='store_true',
                         help='scrape event data')
-    parser.add_argument('--versions', action='store_true',
-                        help='pull down copies of bill versions')
     parser.add_argument('--alldata', action='store_true', dest='alldata',
                         default=False, help="import all available data")
 
     args = parser.parse_args()
 
     if not (args.bills or args.legislators or args.committees or
-            args.events or args.versions or args.alldata):
+            args.events or args.alldata):
         raise Exception("Must specify at least one type: --bills, "
                            "--legislators, --committees, --events, "
-                           "--versions,  --alldata")
+                           "--alldata")
 
     settings.update(args)
 
@@ -60,8 +57,6 @@ if __name__ == '__main__':
     if args.committees or args.alldata:
         import_committees(args.abbreviation, data_dir)
 
-    # events and versions currently excluded from --alldata
+    # events currently excluded from --alldata
     if args.events:
         import_events(args.abbreviation, data_dir)
-    if args.versions:
-        import_versions(args.abbreviation, args.rpm)
