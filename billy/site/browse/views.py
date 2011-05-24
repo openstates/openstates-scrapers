@@ -80,11 +80,11 @@ def all_states(request, template='billy/index.html'):
 
         states.append(state)
 
-    # set total external ids
-    states['total']['external_ids'] = (1 - (total_missing_ids /
-                                            (total_active * 2))) * 100
-
     states.sort(key=lambda x: x['id'] if x['id'] != 'total' else 'zz')
+
+    # set total external ids
+    states[-1]['external_ids'] = (1 - (total_missing_ids /
+                                       (total_active * 2))) * 100
 
     return render_to_response(template, {'states': states})
 
