@@ -38,7 +38,7 @@ class WABillScraper(BillScraper):
                 if bill_chamber != chamber:
                     continue
 
-                if bill_id[0:3] in ('SSB', 'SHB'):
+                if bill_id[0:3] in ('SSB', 'SHB', 'ESSB', 'ESHB'):
                     # Merge committee substitutes with original bills.
                     # All the actions for the substitute should have been
                     # grabbed when we got the original, so just make
