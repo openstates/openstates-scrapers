@@ -62,7 +62,7 @@ def all_states(request, template='billy/index.html'):
                 state['external_ids'] = (1 - (missing_ids /
                                               (active_legs * 2))) * 100
                 total_missing_ids += missing_ids
-                total_active = active_legs
+                total_active += active_legs
 
             missing_bill_sources = db.bills.find({'state': state['id'],
                                               'sources': {'$size': 0}}).count()
