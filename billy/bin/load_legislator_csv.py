@@ -38,7 +38,7 @@ def process_file(state, save=False):
         for key in keys:
             row[key] = row[key].decode('utf-8')
             fileval = (row[key] or u'').strip()
-            dbval = leg.get(key, '')
+            dbval = leg.get(key, '').strip()
             if fileval != dbval:
                 changed[key] = dbval
                 leg[key] = fileval
