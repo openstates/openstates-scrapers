@@ -62,6 +62,7 @@ class NYBillScraper(BillScraper):
 
     def scrape_bill(self, bill, url):
         with self.urlopen(url) as page:
+            page = page.replace('\x00', '')
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
