@@ -192,8 +192,7 @@ class MNBillScraper(BillScraper):
                 bill.add_version('resolution text', version_html.response.url)
             else:
                 version_doc = lxml.html.fromstring(version_html)
-                for v in version_doc.xpath('//a[starts-with(@href,
-                                           "/bin/getbill.php")]'):
+                for v in version_doc.xpath('//a[starts-with(@href, "/bin/getbill.php")]'):
                     version_url = urlparse.urljoin(VERSION_URL_BASE,
                                                    v.get('href'))
                     bill.add_version(v.text.strip(), version_url)
