@@ -183,3 +183,37 @@ def test_votematcher():
     assert votes[1]['vote_id'] == 'EXV00000002'
     assert votes[2]['vote_id'] == 'EXV00000004'
     assert votes[3]['vote_id'] == 'EXV00000003'
+
+
+@with_setup(db.committees.drop)
+def test_get_committee_id():
+    # 3 committees with the same name, different levels & chamber
+    db.committees.insert({'_level': 'state', 'state': 'ex', 'chamber': 'upper',
+                          'committee': 'Animal Control', '_id': 'EXC000001'})
+    db.committees.insert({'_level': 'state', 'state': 'ex', 'chamber': 'lower',
+                          'committee': 'Animal Control', '_id': 'EXC000002'})
+    db.committees.insert({'_level': 'country', 'country': 'zz', 'state': 'ex',
+                          'chamber': 'upper',
+                          'committee': 'Animal Control', '_id': 'ZZC000001'})
+    # committee w/ subcommittee (also has 'Committee on' prefix)
+    db.committees.insert({'_level': 'state', 'state': 'ex', 'chamber': 'upper',
+                          'committee': 'Committee on Science',
+                          '_id': 'EXC000004'})
+    db.committees.insert({'_level': 'state', 'state': 'ex', 'chamber': 'upper',
+                          'committee': 'Committee on Science',
+                          'subcommittee': 'Space',
+                          '_id': 'EXC000005'})
+
+    # simple lookup
+    assert (bills.get_committee_id('state', 'ex', 'upper', 'Animal Control') ==
+            'EXC000001')
+    # different chamber
+    assert (bills.get_committee_id('state', 'ex', 'lower', 'Animal Control') ==
+            'EXC000002')
+    # different level
+    assert (bills.get_committee_id('country', 'zz', 'upper', 'Animal Control')
+            == 'ZZC000001')
+    # without 'Committee on'  (this one also has a subcommittee)
+    assert (bills.get_committee_id('state', 'ex', 'upper', 'Science') ==
+            'EXC000004')
+    assert bills.get_committee_id('state', 'ex', 'upper', 'Nothing') is None

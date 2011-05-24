@@ -9,7 +9,7 @@ from billy.utils import keywordize, term_for_session
 from billy import db
 from billy.importers.names import get_legislator_id
 from billy.importers.utils import (insert_with_id, update, prepare_obj,
-                                   get_committee_id, next_big_id)
+                                   next_big_id)
 
 import pymongo
 
@@ -102,8 +102,7 @@ def import_bill(data, votes):
 
         # committee_ids
         if 'committee' in vote:
-            committee_id = get_committee_id(abbr,
-                                            vote['chamber'],
+            committee_id = get_committee_id(level, abbr, vote['chamber'],
                                             vote['committee'])
             vote['committee_id'] = committee_id
 
@@ -246,3 +245,29 @@ class VoteMatcher(object):
         for vote in votes_list:
             key = self._key_for_vote(vote)
             vote['vote_id'] = self.vote_ids.get(key) or self._get_next_id()
+
+
+__committee_ids = {}
+
+
+def get_committee_id(level, abbr, chamber, committee):
+    key = (level, abbr, chamber, committee)
+    if key in __committee_ids:
+        return __committee_ids[key]
+
+    spec = {'_level': level, level: abbr, 'chamber': chamber,
+            'committee': committee, 'subcommittee': None}
+
+    comms = db.committees.find(spec)
+
+    if comms.count() != 1:
+        spec['committee'] = 'Committee on ' + committee
+        comms = db.committees.find(spec)
+
+    if comms and comms.count() == 1:
+        __committee_ids[key] = comms[0]['_id']
+    else:
+        __committee_ids[key] = None
+
+    return __committee_ids[key]
+
