@@ -94,7 +94,7 @@ class Scraper(scrapelib.Scraper):
         """
         Create a new Scraper instance.
 
-        :param metadata: metadata for this state
+        :param metadata: metadata for this scraper
         :param no_cache: if True, will ignore any cached downloads
         :param output_dir: the data directory to use
         :param strict_validation: exit immediately if validation fails
