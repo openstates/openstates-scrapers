@@ -6,7 +6,7 @@ import zipfile
 import datetime
 
 from billy import db
-from billy.utils import extract_fields
+from billy.utils import extract_fields, metadata
 from billy.conf import settings, base_arg_parser
 
 import boto
