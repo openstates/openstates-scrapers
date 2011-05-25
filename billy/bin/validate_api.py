@@ -5,6 +5,7 @@ import random
 import subprocess
 
 from billy import db
+from billy.utils import metadata
 from billy.bin.dump_json import APIValidator, api_url
 
 import scrapelib
@@ -34,7 +35,7 @@ def validate_xml(url, schema):
         schema.assertValid(child)
 
 
-def validate_api(state):
+def validate_api(abbr):
     cwd = os.path.split(__file__)[0]
     schema_dir = os.path.join(cwd, "../schemas/api/")
 
@@ -43,7 +44,7 @@ def validate_api(state):
     with open(os.path.join(schema_dir, "metadata.json")) as f:
         metadata_schema = json.load(f)
 
-    path = "metadata/%s" % state
+    path = "metadata/%s" % abbr
     url = api_url(path)
     json_response = scrapelib.urlopen(url)
     validictory.validate(json.loads(json_response), metadata_schema,
@@ -53,14 +54,14 @@ def validate_api(state):
     with open(os.path.join(schema_dir, "bill.json")) as f:
         bill_schema = json.load(f)
 
-    bill_spec = {'state': state}
-    total_bills = db.bills.find(bill_spec).count()
+    level = metadata(abbr)['_level']
+    spec = {'_level': level, level: abbr}
+    total_bills = db.bills.find(spec).count()
 
     for i in xrange(0, 100):
-        bill = db.bills.find(bill_spec)[random.randint(0, total_bills - 1)]
-        path = "bills/%s/%s/%s/%s" % (state, bill['session'],
-                                           bill['chamber'],
-                                           bill['bill_id'])
+        bill = db.bills.find(spec)[random.randint(0, total_bills - 1)]
+        path = "bills/%s/%s/%s/%s" % (abbr, bill['session'],
+                                      bill['chamber'], bill['bill_id'])
         url = api_url(path)
 
         json_response = scrapelib.urlopen(url)
@@ -72,7 +73,7 @@ def validate_api(state):
     with open(os.path.join(schema_dir, "legislator.json")) as f:
         legislator_schema = json.load(f)
 
-    for legislator in db.legislators.find({'state': state}):
+    for legislator in db.legislators.find(spec):
         path = 'legislators/%s' % legislator['_id']
         url = api_url(path)
 
@@ -85,7 +86,7 @@ def validate_api(state):
     with open(os.path.join(schema_dir, "committee.json")) as f:
         committee_schema = json.load(f)
 
-    for committee in db.committees.find({'state': state}):
+    for committee in db.committees.find(spec):
         path = "committees/%s" % committee['_id']
         url = api_url(path)
 
@@ -98,12 +99,11 @@ def validate_api(state):
     with open(os.path.join(schema_dir, "event.json")) as f:
         event_schema = json.load(f)
 
-    total_events = db.events.find({'state': state}).count()
+    total_events = db.events.find(spec).count()
 
     if total_events:
         for i in xrange(0, 10):
-            event = db.events.find({'state': state})[
-                random.randint(0, total_events - 1)]
+            event = db.events.find(spec)[random.randint(0, total_events - 1)]
             path = "events/%s" % event['_id']
             url = api_url(path)
 
