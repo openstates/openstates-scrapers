@@ -31,7 +31,7 @@ def categorize_subjects(abbr, data_dir, process_all):
         print 'Proceeding without', filename
 
     meta = metadata(abbr)
-    spec = {meta['_level]: abbr}
+    spec = {meta['_level']: abbr}
     if not process_all:
         sessions = meta['terms'][-1]['sessions']
         spec['session'] = {'$in': sessions}
