@@ -165,7 +165,7 @@ def upload(abbr, filename):
     meta = metadata(abbr)
     meta['latest_csv_url'] = s3_url
     meta['latest_csv_date'] = datetime.datetime.utcnow()
-    db.metadata.save(metadata, safe=True)
+    db.metadata.save(meta, safe=True)
 
     print('uploaded to %s' % s3_url)
 
