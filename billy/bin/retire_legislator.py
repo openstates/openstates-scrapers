@@ -10,7 +10,10 @@ import argparse
 
 def retire_legislator(leg_id, date):
     legislator = db.legislators.find_one({'leg_id': leg_id})
-    term = metadata(legislator['state'])['terms'][-1]['name']
+    level = legislator['_level']
+    abbr = legislator[level]
+
+    term = metadata(abbr)['terms'][-1]['name']
     cur_role = legislator['roles'][0]
     if cur_role['type'] != 'member' or cur_role['term'] != term:
         raise ValueError('member missing role for %s' % term)
@@ -19,7 +22,7 @@ def retire_legislator(leg_id, date):
     cur_role['end_date'] = date
     db.legislators.save(legislator, safe=True)
     print('deactivating legislator {0}'.format(leg_id))
-    deactivate_legislators(legislator['state'], term)
+    deactivate_legislators(term, abbr, level)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
