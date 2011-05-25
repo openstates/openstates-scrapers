@@ -190,9 +190,11 @@ def test_import_legislator():
     assert db.legislators.count() == 1
     assert t_rex['roles'][0]['term'] == '2011-2012'
     assert '2009-2010' in t_rex['old_roles']
+    assert t_rex['roles'][0]['_level'] == t_rex['_level']
 
     legislators.import_legislator(leg3)
     assert db.legislators.count() == 2
 
     legislators.import_legislator(leg4)
     assert db.legislators.count() == 3
+

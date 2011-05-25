@@ -19,10 +19,12 @@ def setup_func():
              'last_name': 'Feynman',
              'roles': [
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
-                  'type': 'member'},
+                  '_level': 'state', 'type': 'member'},
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
+                  '_level': 'state',
                   'type': 'committee member',  'committee': 'Agriculture'},
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
+                  '_level': 'state',
                   'type': 'committee member',  'committee': 'Agriculture',
                   'subcommittee': 'Tractors'},
               ]}
@@ -32,14 +34,15 @@ def setup_func():
              'last_name': 'Einstein',
              'roles': [
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
-                  'type': 'member'},
+                  '_level': 'state', 'type': 'member'},
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
-                  'position': 'chairman',
+                  'position': 'chairman', '_level': 'state',
                   'type': 'committee member',  'committee': 'Agriculture'},
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
                  'type': 'committee member',  'committee': 'Agriculture',
-                  'subcommittee': 'Tractors'},
+                  '_level': 'state', 'subcommittee': 'Tractors'},
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
+                  '_level': 'state',
                   'type': 'committee member',  'committee': 'Appropriations'},
               ]}
     # in a different term
@@ -49,13 +52,16 @@ def setup_func():
              'last_name': 'Heisenberg',
              'roles': [
                  {'state': 'ex', 'term': 'T0', 'chamber': 'upper',
-                  'type': 'member'},
+                  '_level': 'state', 'type': 'member'},
                  {'state': 'ex', 'term': 'T0', 'chamber': 'upper',
+                  '_level': 'state',
                   'type': 'committee member', 'committee': 'Agriculture'},
                  {'state': 'ex', 'term': 'T0', 'chamber': 'upper',
+                  '_level': 'state',
                   'type': 'committee member', 'committee': 'Agriculture',
                   'subcommittee': 'Tractors'},
                  {'state': 'ex', 'term': 'T0', 'chamber': 'upper',
+                  '_level': 'state',
                   'type': 'committee member', 'committee': 'Appropriations'},
               ]}
 

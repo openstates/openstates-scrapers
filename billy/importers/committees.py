@@ -133,7 +133,7 @@ def import_committees(abbr, data_dir):
 
     paths = glob.glob(pattern)
 
-    for committee in db.committees.find({level: abbr}):
+    for committee in db.committees.find({'_level': level, level: abbr}):
         committee['members'] = []
         db.committees.save(committee, safe=True)
 
@@ -155,8 +155,7 @@ def import_committees(abbr, data_dir):
 
 
 def link_parents(level, abbr):
-    for comm in db.committees.find({'_level': level,
-                                    level: abbr}):
+    for comm in db.committees.find({'_level': level, level: abbr}):
         sub = comm.get('subcommittee')
         if not sub:
             comm['parent_id'] = None

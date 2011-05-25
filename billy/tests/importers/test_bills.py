@@ -20,7 +20,7 @@ def setup_func():
                            'last_name': 'Adams', '_scraped_name': 'John Adams',
                            'roles': [
                                {'type': 'member', 'chamber': 'upper',
-                                'term': 'T1', 'state': 'ex'},
+                                '_level': 'state', 'term': 'T1', 'state': 'ex'}
                            ]
                           })
 

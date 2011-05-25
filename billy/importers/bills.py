@@ -82,7 +82,7 @@ def import_bill(data, votes):
                             data['bill_id']), [])
     data['votes'].extend(bill_votes)
 
-    bill = db.bills.find_one({level: abbr,
+    bill = db.bills.find_one({'_level': level, level: abbr,
                               'session': data['session'],
                               'chamber': data['chamber'],
                               'bill_id': data['bill_id']})
@@ -197,7 +197,7 @@ def populate_current_fields(level, abbr):
     current_term = meta['terms'][-1]
     current_session = current_term['sessions'][-1]
 
-    for bill in db.bills.find({level: abbr}):
+    for bill in db.bills.find({'_level': level, level: abbr}):
         if bill['session'] == current_session:
             bill['_current_session'] = True
         else:

@@ -24,6 +24,7 @@ def test_get_legislator_id():
                            'last_name': 'Iron Cloud',
                            'suffixes': 'III',
                            'roles': [{'type': 'member',
+                                      '_level': 'state',
                                       'state': 'ex',
                                       'term': 'T1',
                                       'chamber': 'upper',
@@ -55,6 +56,7 @@ def test_get_legislator_id_country():
                            'roles': [{'type': 'member',
                                       'state': 'ab',
                                       'country': 'zz',
+                                      '_level': 'country',
                                       'term': 'T1',
                                       'chamber': 'upper',
                                       'district': '10'}]})
