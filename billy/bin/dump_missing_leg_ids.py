@@ -97,9 +97,11 @@ if __name__ == '__main__':
     )
     parser.add_argument('abbrs', metavar='ABBR', type=str, nargs='+',
                         help='data abbreviations to dump')
+    parser.add_argument('--detailed', action='store_true', default=False,
+                        help='print detailed csvs as well')
     args = parser.parse_args()
 
     settings.update(args)
 
     for abbr in args.abbrs:
-        dump_missing_leg_ids(abbr)
+        dump_missing_leg_ids(abbr, args.detailed)
