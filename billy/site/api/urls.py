@@ -10,7 +10,7 @@ from piston.emitters import Emitter
 
 from billy.site.api import handlers
 from billy.site.api.views import document, legislator_preview
-from billy.site.api.emitters import OpenStateJSONEmitter, OpenStateXMLEmitter
+from billy.site.api.emitters import BillyJSONEmitter, BillyXMLEmitter
 from billy.site.api.emitters import FeedEmitter, ICalendarEmitter
 
 if getattr(settings, 'USE_LOCKSMITH', False):
@@ -42,9 +42,8 @@ else:
     authorizer = None
     Resource = piston.resource.Resource
 
-Emitter.register('json', OpenStateJSONEmitter,
-                 'application/json; charset=utf-8')
-Emitter.register('xml', OpenStateXMLEmitter, 'application/xml; charset=utf-8')
+Emitter.register('json', BillyJSONEmitter, 'application/json; charset=utf-8')
+Emitter.register('xml', BillyXMLEmitter, 'application/xml; charset=utf-8')
 
 Emitter.register('rss', FeedEmitter, 'application/rss+xml')
 Emitter.register('ics', ICalendarEmitter, 'text/calendar')
