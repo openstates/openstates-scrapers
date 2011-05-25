@@ -284,6 +284,10 @@ class EventsHandler(BillyHandler):
             else:
                 spec[key] = {'$in': split}
 
+        now = datetime.datetime.now()
+        before = now - datetime.timedelta(5)
+        spec['when'] = {'$gte': before}
+
         return list(db.events.find(spec).sort(
             'when', pymongo.ASCENDING).limit(1000))
 
