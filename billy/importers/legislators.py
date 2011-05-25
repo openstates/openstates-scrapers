@@ -140,6 +140,7 @@ def import_legislator(data):
             del role['role']
 
         # copy over country and/or state into role
+        # TODO: base this on all possible level fields
         role['_level'] = data['_level']
         if 'country' in data:
             role['country'] = data['country']
@@ -149,7 +150,6 @@ def import_legislator(data):
     cur_role = data['roles'][0]
     term = cur_role['term']
 
-    # TODO: perhaps make this more flexible somehow?
     level = data['_level']
     abbrev = data[level]
 
