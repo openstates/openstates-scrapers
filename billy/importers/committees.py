@@ -117,9 +117,11 @@ def import_committee(data, current_session, current_term):
                         'chamber': committee['chamber'],
                         'committee_id': committee['_id'],
                         '_level': _level,
-                        #TODO: add other required fields
-                        _level: committee[_level],
                        }
+            # copy over all necessary fields from committee
+            for f in settings.BILLY_LEVEL_FIELDS:
+                new_role[f] = committee[f]
+
             if 'subcommittee' in committee:
                 new_role['subcommittee'] = committee['subcommittee']
             legislator['roles'].append(new_role)

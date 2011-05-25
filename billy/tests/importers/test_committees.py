@@ -105,6 +105,7 @@ def test_committees_from_legislators():
 @with_setup(setup_func)
 def test_import_committee():
     committee = {'_type': 'committee', '_level': 'state', 'state': 'ex',
+                 'country': 'zz',
                  'chamber': 'joint', 'committee': 'Reptilian Task Force',
                  'members': [
                      {'name': 'Richard Feynman'},
@@ -125,6 +126,6 @@ def test_import_committee():
     leg = db.legislators.find_one({'_id':'EXL000001'})
     assert leg['roles'][-1] == {'_level': 'state', 'term': 'T1',
                                 'committee_id': 'EXC000001', 'chamber':'joint',
-                                'state': 'ex', 'type': 'committee member',
+                                'state': 'ex', 'country': 'zz',
+                                'type': 'committee member',
                                 'committee': 'Reptilian Task Force'}
-
