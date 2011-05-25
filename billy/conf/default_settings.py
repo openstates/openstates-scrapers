@@ -61,6 +61,11 @@ BILLY_SUBJECTS = [
     'Transportation',
     'Welfare and Poverty']
 
+BILLY_LEVEL_FIELDS = {
+    'country': ('country',),
+    'state': ('state', 'country'),
+}
+
 SCRAPELIB_TIMEOUT = 600
 SCRAPELIB_RETRY_ATTEMPTS = 3
 SCRAPELIB_RETRY_WAIT_SECONDS = 20

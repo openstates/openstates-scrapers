@@ -12,12 +12,6 @@ from billy.conf import settings
 import scrapelib
 
 
-level_required_fields = {
-    'country': ('country',),
-    'state': ('state', 'country'),
-}
-
-
 class ScrapeError(Exception):
     """
     Base class for scrape errors.
@@ -124,7 +118,7 @@ class Scraper(scrapelib.Scraper):
 
         super(Scraper, self).__init__(**kwargs)
 
-        for f in level_required_fields[self._level]:
+        for f in settings.BILLY_LEVEL_FIELDS[self._level]:
             if not hasattr(self, f):
                 raise Exception('%s scrapers must have a %s attribute' % (
                     self._level, f))
@@ -196,7 +190,7 @@ class Scraper(scrapelib.Scraper):
     def save_object(self, obj):
         # copy over level information
         obj['_level'] = self._level
-        for f in level_required_fields[self._level]:
+        for f in settings.BILLY_LEVEL_FIELDS[self._level]:
             obj[f] = getattr(self, f)
 
         filename = obj.get_filename()

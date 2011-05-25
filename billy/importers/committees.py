@@ -5,6 +5,7 @@ import datetime
 import json
 
 from billy import db
+from billy.conf import settings
 from billy.importers.names import get_legislator_id
 from billy.importers.utils import prepare_obj, update, insert_with_id
 
@@ -17,17 +18,20 @@ def ensure_indexes():
                                 ('subcommittee', pymongo.ASCENDING)])
 
 def import_committees_from_legislators(current_term, level, abbr):
+    """ create committees from legislators that have committee roles """
+
+    # for all current legislators
     for legislator in db.legislators.find({
         '_level': level,
         'roles': {'$elemMatch': {'term': current_term,
                                  level: abbr}}}):
 
+        # for all committee roles
         for role in legislator['roles']:
             if (role['type'] == 'committee member' and
                 'committee_id' not in role):
 
                 spec = {'_level': level,
-                        # TODO: add additional required fields here
                         level: abbr,
                         'chamber': role['chamber'],
                         'committee': role['committee']}
@@ -39,6 +43,9 @@ def import_committees_from_legislators(current_term, level, abbr):
                 if not committee:
                     committee = spec
                     committee['_type'] = 'committee'
+                    # copy required fields from legislator to committee
+                    for f in settings.BILLY_LEVEL_FIELDS:
+                        committee[f] = legislator[f]
                     committee['members'] = []
                     committee['sources'] = []
                     if 'subcommittee' not in committee:
