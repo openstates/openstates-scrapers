@@ -52,7 +52,7 @@ def dump_json(abbr, filename, validate, schema_dir):
     with open(os.path.join(schema_dir, "committee.json")) as f:
         committee_schema = json.load(f)
 
-    for bill in db.bills.find({level: abbr}):
+    for bill in db.bills.find({'_level': level, level: abbr}):
         path = "bills/%s/%s/%s/%s" % (abbr, bill['session'],
                                       bill['chamber'], bill['bill_id'])
         url = api_url(path)
@@ -64,7 +64,7 @@ def dump_json(abbr, filename, validate, schema_dir):
 
         zip.writestr(path, scraper.urlopen(url))
 
-    for legislator in db.legislators.find({level: abbr}):
+    for legislator in db.legislators.find({'_level': level, level: abbr}):
         path = 'legislators/%s' % legislator['_id']
         url = api_url(path)
 
@@ -75,7 +75,7 @@ def dump_json(abbr, filename, validate, schema_dir):
 
         zip.writestr(path, response)
 
-    for committee in db.committees.find({level: abbr}):
+    for committee in db.committees.find({'_level': level, level: abbr}):
         path = 'committees/%s' % committee['_id']
         url = api_url(path)
 

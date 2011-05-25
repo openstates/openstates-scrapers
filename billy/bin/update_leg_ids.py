@@ -19,7 +19,8 @@ def match_names(abbr, term):
         return
 
     for session in sessions:
-        bills = db.bills.find({level: abbr, 'session': session})
+        bills = db.bills.find({'_level': level, level: abbr,
+                               'session': session})
 
         for bill in bills:
             for sponsor in bill['sponsors']:
