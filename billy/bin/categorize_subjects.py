@@ -10,12 +10,12 @@ from billy.conf import settings, base_arg_parser
 from billy.utils import metadata
 
 
-def categorize_subjects(state, data_dir, process_all):
+def categorize_subjects(abbr, data_dir, process_all):
     categorizer = defaultdict(set)
     categories_per_bill = defaultdict(int)
     uncategorized = defaultdict(int)
 
-    filename = os.path.join(data_dir, state + '.csv')
+    filename = os.path.join(data_dir, abbr + '.csv')
     try:
         reader = csv.reader(open(filename))
 
@@ -30,9 +30,10 @@ def categorize_subjects(state, data_dir, process_all):
     except IOError:
         print 'Proceeding without', filename
 
-    spec = {'state': state}
+    meta = metadata(abbr)
+    spec = {meta['_level]: abbr}
     if not process_all:
-        sessions = metadata(state)['terms'][-1]['sessions']
+        sessions = meta['terms'][-1]['sessions']
         spec['session'] = {'$in': sessions}
 
     for bill in db.bills.find(spec):
@@ -63,7 +64,7 @@ def categorize_subjects(state, data_dir, process_all):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='apply subject categorization for bills for a given state',
+        description='apply subject categorization for bills',
         parents=[base_arg_parser],
         conflict_handler='resolve',
     )
@@ -71,7 +72,7 @@ if __name__ == '__main__':
     default_dir = os.path.join(os.path.dirname(__file__),
                            '../../manual_data/subjects')
 
-    parser.add_argument('state', type=str, help='state to process')
+    parser.add_argument('abbr', type=str, help='abbreviation for data to process')
     parser.add_argument('--all', help='update all sessions',
                         action='store_true', default=False)
     parser.add_argument('-d', '--data_dir', help='directory of subject csvs',
@@ -80,4 +81,4 @@ if __name__ == '__main__':
 
     settings.update(args)
 
-    categorize_subjects(args.state, args.data_dir, args.all)
+    categorize_subjects(args.abbr, args.data_dir, args.all)
