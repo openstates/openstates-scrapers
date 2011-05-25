@@ -50,27 +50,27 @@ def keywordize(str):
                 word.lower() not in stop_words])
 
 
-def metadata(state):
+def metadata(abbr):
     """
-    Grab the metadata for the given state (two-letter abbreviation).
+    Grab the metadata for the given two-letter abbreviation.
     """
     # This data should change very rarely and is queried very often so
     # cache it here
-    state = state.lower()
-    if state in __metadata:
-        return __metadata[state]
-    return db.metadata.find_one({'_id': state})
+    abbr = abbr.lower()
+    if abbr in __metadata:
+        return __metadata[abbr]
+    return db.metadata.find_one({'_id': abbr})
 
 
-def chamber_name(state, chamber):
+def chamber_name(abbr, chamber):
     if chamber == 'joint':
         return 'Joint'
 
-    return metadata(state)['%s_chamber_name' % chamber].split()[0]
+    return metadata(abbr)['%s_chamber_name' % chamber].split()[0]
 
 
-def term_for_session(state, session):
-    meta = metadata(state)
+def term_for_session(abbr, session):
+    meta = metadata(abbr)
 
     for term in meta['terms']:
         if session in term['sessions']:
