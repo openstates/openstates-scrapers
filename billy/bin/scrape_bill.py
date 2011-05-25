@@ -10,14 +10,10 @@ from billy.utils import configure_logging
 from billy.bin.scrape import _clear_scraped_data
 
 
-def _run_scraper(mod_path, state, options, metadata):
-    """
-        state: lower case two letter abbreviation of state
-    """
-
+def _run_scraper(options, metadata):
     _clear_scraped_data(options.output_dir, 'bills')
 
-    ScraperClass = get_scraper(mod_path, state, 'bills')
+    ScraperClass = get_scraper(mod_path, 'bills')
 
     opts = {'output_dir': options.output_dir,
             'no_cache': options.no_cache,
@@ -38,18 +34,15 @@ def _run_scraper(mod_path, state, options, metadata):
 def main():
 
     parser = argparse.ArgumentParser(
-        description='Scrape data for state, saving data to disk.',
+        description='Scrape data for single bill, saving data to disk.',
         parents=[base_arg_parser],
     )
 
-    parser.add_argument('state', type=str,
-                        help='state scraper module (eg. nc)')
-    parser.add_argument('chamber', type=str,
-                        help='chamber for bill to scrape')
-    parser.add_argument('session', type=str,
-                        help='session for bill to scrape')
-    parser.add_argument('bill_id', type=str,
-                        help='bill_id to scrape')
+    parser.add_argument('module', type=str, help='scraper module (eg. nc)')
+    parser.add_argument('chamber', type=str, help='chamber for bill to scrape')
+    parser.add_argument('session', type=str, help='session for bill to scrape')
+    parser.add_argument('bill_id', type=str, help='bill_id to scrape')
+
     parser.add_argument('--strict', action='store_true', dest='strict',
                         default=False, help="fail immediately when"
                         "encountering validation warning")
@@ -72,18 +65,18 @@ def main():
                                     '../../openstates'))
 
     # get metadata
-    metadata = __import__(args.state, fromlist=['metadata']).metadata
-    state = metadata['abbreviation']
+    metadata = __import__(args.module, fromlist=['metadata']).metadata
+    abbr = metadata['abbreviation']
 
     # configure logger
-    configure_logging(args.verbose, state)
+    configure_logging(args.verbose, abbr)
 
-    args.output_dir = os.path.join(settings.BILLY_DATA_DIR, args.state)
+    args.output_dir = os.path.join(settings.BILLY_DATA_DIR, abbr)
 
-    _run_scraper(args.state, state, args, metadata)
+    _run_scraper(args, metadata)
 
     if args.do_import:
-        import_bills(args.state, settings.BILLY_DATA_DIR)
+        import_bills(abbr, settings.BILLY_DATA_DIR)
 
 
 if __name__ == '__main__':
