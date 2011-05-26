@@ -162,7 +162,7 @@ def overview(request, abbr):
 
     level = meta['_level']
 
-    context.update(_bill_stats_for_session(abbr, latest_session))
+    context.update(_bill_stats_for_session(level, abbr, latest_session))
 
     # legislators
     context['upper_leg_count'] = db.legislators.find({'_level': level,
