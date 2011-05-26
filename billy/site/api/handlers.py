@@ -25,6 +25,13 @@ _chamber_aliases = {
     }
 
 
+def parse_param_dt(dt):
+    try:
+        return datetime.datetime.strptime(dt, "%Y-%m-%d %H:%M")
+    except ValueError:
+        return datetime.datetime.strptime(dt, "%Y-%m-%d")
+
+
 def _build_mongo_filter(request, keys, icase=True):
     # We use regex queries to get case insensitive search - this
     # means they won't use any indexes for now. Real case insensitive
@@ -167,19 +174,12 @@ class BillSearchHandler(BillyHandler):
         since = request.GET.get('updated_since')
         if since:
             try:
-                _filter['updated_at'] = {'$gte': datetime.datetime.strptime(
-                    since,
-                    "%Y-%m-%d %H:%M")}
+                _filter['updated_at'] = {'$gte': parse_param_dt(since)}
             except ValueError:
-                try:
-                    _filter['updated_at'] = {'$gte': datetime.datetime.strptime(
-                        since,
-                        "%Y-%m-%d")}
-                except ValueError:
-                    resp = rc.BAD_REQUEST
-                    resp.write(": invalid updated_since parameter."
-                    " Please supply a date in YYYY-MM-DD format.")
-                    return resp
+                resp = rc.BAD_REQUEST
+                resp.write(": invalid updated_since parameter."
+                           " Please supply a date in YYYY-MM-DD format.")
+                return resp
 
         # process sponsor_id
         sponsor_id = request.GET.get('sponsor_id')
@@ -283,6 +283,28 @@ class EventsHandler(BillyHandler):
                 spec[key] = value
             else:
                 spec[key] = {'$in': split}
+
+        if 'dtstart' in request.GET:
+            try:
+                spec['when'] = {'$gte': parse_param_dt(request.GET['dtstart'])}
+            except ValueError:
+                resp = rc.BAD_REQUEST
+                resp.write(": invalid updated_since parameter."
+                           " Please supply a date in YYYY-MM-DD format.")
+                return resp
+        else:
+            now = datetime.datetime.now()
+            before = now - datetime.timedelta(7)
+            spec['when'] = {'$gte': before}
+
+        if 'dtend' in request.GET:
+            try:
+                spec['when'] = {'$lte': parse_param_dt(request.GET['dtend'])}
+            except ValueError:
+                resp = rc.BAD_REQUEST
+                resp.write(": invalid updated_since parameter."
+                           " Please supply a date in YYYY-MM-DD format.")
+                return resp
 
         return list(db.events.find(spec).sort(
             'when', pymongo.ASCENDING).limit(1000))

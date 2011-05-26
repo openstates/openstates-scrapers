@@ -101,9 +101,11 @@ if __name__ == '__main__':
     )
     parser.add_argument('states', metavar='STATE', type=str, nargs='+',
                         help='states to dump')
+    parser.add_argument('--detailed', action='store_true', default=False,
+                        help='print detailed csvs as well')
     args = parser.parse_args()
 
     settings.update(args)
 
     for state in args.states:
-        dump_missing_leg_ids(state)
+        dump_missing_leg_ids(state, args.detailed)

@@ -18,12 +18,6 @@ def restart_nginx():
 def _venv(cmd):
     sudo('source ~openstates/site-venv/bin/activate && ' + cmd)
 
-def get_legislator_csv(state):
-    with cd('/tmp/'):
-        _venv('~openstates/src/openstates/billy/bin/dump_legislator_csv.py ' +
-              state)
-        get('/tmp/%s_legislators.csv' % state, '%s_legislators.csv' % state)
-
 def get_leg_ids_csv(state):
     with cd('/tmp/'):
         _venv('~openstates/src/openstates/billy/bin/dump_missing_leg_ids.py ' +
@@ -41,4 +35,9 @@ def dump_json(state):
                    'ca': '--schema_dir=/projects/openstates/src/openstates/openstates/ca/schemas/api/ ',}
         if state in schemas:
             cmd += schemas[state]
+        _venv(cmd + state)
+
+def dump_csv(state):
+    with cd('/tmp/'):
+        cmd = '~openstates/src/openstates/billy/bin/dump_csv.py --upload '
         _venv(cmd + state)

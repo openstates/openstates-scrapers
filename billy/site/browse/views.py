@@ -19,6 +19,9 @@ def keyfunc(obj):
 
 def all_states(request, template='billy/index.html'):
     states = []
+    total_missing_ids = 0
+    total_active = 0
+
     for meta in list(db.metadata.find()) + [{'_id':'total', 'name':'total'}]:
         state = {}
         state['id'] = meta['_id']
@@ -54,10 +57,12 @@ def all_states(request, template='billy/index.html'):
             if not active_legs:
                 state['external_ids'] = 0
             else:
-                total_missing = float(id_counts['missing_pvs'] +
-                                      id_counts['missing_tdata'])
-                state['external_ids'] = (1 - (total_missing /
+                missing_ids = float(id_counts['missing_pvs'] +
+                                    id_counts['missing_tdata'])
+                state['external_ids'] = (1 - (missing_ids /
                                               (active_legs * 2))) * 100
+                total_missing_ids += missing_ids
+                total_active += active_legs
 
             missing_bill_sources = db.bills.find({'state': state['id'],
                                               'sources': {'$size': 0}}).count()
@@ -76,6 +81,10 @@ def all_states(request, template='billy/index.html'):
         states.append(state)
 
     states.sort(key=lambda x: x['id'] if x['id'] != 'total' else 'zz')
+
+    # set total external ids
+    states[-1]['external_ids'] = (1 - (total_missing_ids /
+                                       (total_active * 2))) * 100
 
     return render_to_response(template, {'states': states})
 
@@ -124,9 +133,6 @@ def _get_state_leg_id_stats(state):
     context['missing_pvs'] = db.legislators.find({'state': state,
                              'active': True,
                              'votesmart_id': {'$exists': False}}).count()
-    context['missing_nimsp'] = db.legislators.find({'state': state,
-                             'active': True,
-                             'nimsp_id': {'$exists': False}}).count()
     context['missing_tdata'] = db.legislators.find({'state': state,
          'active': True, 'transparencydata_id': {'$exists': False}}).count()
     return context

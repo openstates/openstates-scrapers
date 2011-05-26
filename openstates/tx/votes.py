@@ -121,14 +121,15 @@ def record_votes(root, session):
             other_count = int(m.group('present'))
 
             bill_id = m.group('bill_id')
+            bill_id = bill_id.replace(u'\xa0', ' ')
+            bill_id = re.sub(r'CS(SB|HB)', r'\1', bill_id)
+
             if bill_id.startswith('H') or bill_id.startswith('CSHB'):
                 bill_chamber = 'lower'
             elif bill_id.startswith('S') or bill_id.startswith('CSSB'):
                 bill_chamber = 'upper'
             else:
                 continue
-
-            bill_id = bill_id.replace(u'\xa0', ' ')
 
             motion = get_motion(m)
 
@@ -177,14 +178,15 @@ def viva_voce_votes(root, session):
             record = str(uuid.uuid1())
 
             bill_id = m.group('bill_id')
+            bill_id = bill_id.replace(u'\xa0', ' ')
+            bill_id = re.sub(r'CS(SB|HB)', r'\1', bill_id)
+
             if bill_id.startswith('H') or bill_id.startswith('CSHB'):
                 bill_chamber = 'lower'
             elif bill_id.startswith('S') or bill_id.startswith('CSSB'):
                 bill_chamber = 'upper'
             else:
                 continue
-
-            bill_id = bill_id.replace(u'\xa0', ' ')
 
             vote = Vote(None, None, motion, True, 0, 0, 0)
             vote['bill_id'] = bill_id
