@@ -5,8 +5,8 @@ from pymongo.code import Code
 
 def generate_statistics():
     """
-    Use mongo's map/reduce to output counts of various Open State objects to
-    the 'counts' collection.
+    Use mongo's map/reduce to output counts of various objects to the 'counts'
+    collection.
     """
     m = Code("""
     function () {
