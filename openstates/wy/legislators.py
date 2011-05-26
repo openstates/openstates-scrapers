@@ -31,6 +31,7 @@ class WYLegislatorScraper(LegislatorScraper):
             else:
                 chamber_indication = 'rep' if chamber == 'lower' else 'sen'
                 url = self.urls['old'] % (year, chamber_indication)
+                members = self.scrape_old_style(url, members)
 
         for m in members:
             self.log(m)
@@ -62,6 +63,24 @@ class WYLegislatorScraper(LegislatorScraper):
 
             return members
 
-    def scrape_old_style(self, url):
+    def scrape_old_style(self, url, members):
+        """
+        Scrapes legislator information from pages created prior to 2005
+        """
         self.log(url)
-        self.warn('Not implemented yet')
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            for row in page.xpath('//table/tr')[1:]:
+                tds = row.xpath('.//td')
+                if(len(tds) < 4):
+                    continue
+                name = tds[0].text_content().strip()
+                party = tds[1].text_content().strip()
+                district = tds[2].text_content().strip()
+                # Only keep if we don't already have member
+                if(not members.has_key(name)):
+                    self.log(name)
+                    members[name] = { 'name': name, 'party': party, 'district': district, 'source': url }
+
+            return members
