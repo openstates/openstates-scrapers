@@ -2,7 +2,7 @@
  "type": "object",
  "properties": {
     "_type": {"type": "string", "enum":["bill"]},
-    "_level": {"type": "string", "enum":["country", "state"]},
+    "level": {"type": "string", "enum":["country", "state"]},
     "state": {"type": "string", "minLength": 2, "maxLength": 2},
     "country": {"type": "string", "minLength": 2, "maxLength": 2},
     "session": {"type": "string"},
