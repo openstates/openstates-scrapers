@@ -72,7 +72,7 @@ def generate_statistics():
             }
         }
 
-        emit(this[this['_level']], val);
+        emit(this[this['level']], val);
         emit('total', val);
     }""")
 

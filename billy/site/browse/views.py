@@ -46,13 +46,13 @@ def browse_index(request, template='billy/index.html'):
                                     counts['voters'] * 100)
 
         if row['id'] != 'total':
-            level = meta['_level']
-            s_spec = {'_level': level, level: row['id']}
+            level = meta['level']
+            s_spec = {'level': level, level: row['id']}
             row['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
             row['legislators'] = db.legislators.find(s_spec).count()
             row['committees'] = db.committees.find(s_spec).count()
             id_counts = _get_leg_id_stats(level, row['id'])
-            active_legs = db.legislators.find({'_level': level,
+            active_legs = db.legislators.find({'level': level,
                                                level: row['id'],
                                                'active': True}).count()
 
@@ -66,10 +66,10 @@ def browse_index(request, template='billy/index.html'):
                 total_missing_ids += missing_ids
                 total_active += active_legs
 
-            missing_bill_sources = db.bills.find({'_level': level,
+            missing_bill_sources = db.bills.find({'level': level,
                                                   level: row['id'],
                                               'sources': {'$size': 0}}).count()
-            missing_leg_sources = db.legislators.find({'_level': level,
+            missing_leg_sources = db.legislators.find({'level': level,
                                                        level: row['id'],
                                               'sources': {'$size': 0}}).count()
             row['missing_sources'] = ''
@@ -95,17 +95,17 @@ def browse_index(request, template='billy/index.html'):
 
 def _bill_stats_for_session(level, abbr, session):
     context = {}
-    context['upper_bill_count'] = db.bills.find({'_level': level,
+    context['upper_bill_count'] = db.bills.find({'level': level,
                                                  level: abbr,
                                                  'session': session,
                                                  'chamber': 'upper'}).count()
-    context['lower_bill_count'] = db.bills.find({'_level': level,
+    context['lower_bill_count'] = db.bills.find({'level': level,
                                                  level: abbr,
                                                  'session': session,
                                                  'chamber': 'lower'}).count()
     context['bill_count'] = (context['upper_bill_count'] +
                              context['lower_bill_count'])
-    context['ns_bill_count'] = db.bills.find({'_level': level,
+    context['ns_bill_count'] = db.bills.find({'level': level,
                                               level: abbr,
                                               'session': session,
                                            'sources': {'$size': 0}}).count()
@@ -114,7 +114,7 @@ def _bill_stats_for_session(level, abbr, session):
     total_actions = 0
     versions = 0
 
-    for bill in db.bills.find({'_level': level, level: abbr,
+    for bill in db.bills.find({'level': level, level: abbr,
                                'session': session},
                               {'type': 1, 'actions.type': 1, 'versions': 1}):
         for t in bill['type']:
@@ -138,11 +138,11 @@ def _bill_stats_for_session(level, abbr, session):
 
 def _get_leg_id_stats(level, abbr):
     context = {}
-    context['missing_pvs'] = db.legislators.find({'_level': level,
+    context['missing_pvs'] = db.legislators.find({'level': level,
                              level: abbr,
                              'active': True,
                              'votesmart_id': {'$exists': False}}).count()
-    context['missing_tdata'] = db.legislators.find({'_level': level,
+    context['missing_tdata'] = db.legislators.find({'level': level,
          level: abbr, 'active': True,
          'transparencydata_id': {'$exists': False}}).count()
     return context
@@ -160,44 +160,44 @@ def overview(request, abbr):
     latest_session = meta['terms'][-1]['sessions'][-1]
     context['session'] = latest_session
 
-    level = meta['_level']
+    level = meta['level']
 
     context.update(_bill_stats_for_session(level, abbr, latest_session))
 
     # legislators
-    context['upper_leg_count'] = db.legislators.find({'_level': level,
+    context['upper_leg_count'] = db.legislators.find({'level': level,
                                                       level: abbr,
                                                       'active': True,
                                                   'chamber': 'upper'}).count()
-    context['lower_leg_count'] = db.legislators.find({'_level': level,
+    context['lower_leg_count'] = db.legislators.find({'level': level,
                                                       level: abbr,
                                                       'active': True,
                                                   'chamber': 'lower'}).count()
     context['leg_count'] = (context['upper_leg_count'] +
                             context['lower_leg_count'])
-    context['inactive_leg_count'] = db.legislators.find({'_level': level,
+    context['inactive_leg_count'] = db.legislators.find({'level': level,
                                                          level: abbr,
                                                      'active': False}).count()
-    context['ns_leg_count'] = db.legislators.find({'_level': level,
+    context['ns_leg_count'] = db.legislators.find({'level': level,
                              level: abbr,
                              'active': True,
                              'sources': {'$size': 0}}).count()
     context.update(_get_leg_id_stats(level, abbr))
 
     # committees
-    context['upper_com_count'] = db.committees.find({'_level': level,
+    context['upper_com_count'] = db.committees.find({'level': level,
                                                      level: abbr,
                                                   'chamber': 'upper'}).count()
-    context['lower_com_count'] = db.committees.find({'_level': level,
+    context['lower_com_count'] = db.committees.find({'level': level,
                                                      level: abbr,
                                                   'chamber': 'lower'}).count()
-    context['joint_com_count'] = db.committees.find({'_level': level,
+    context['joint_com_count'] = db.committees.find({'level': level,
                                                      level: abbr,
                                                   'chamber': 'joint'}).count()
     context['com_count'] = (context['upper_com_count'] +
                             context['lower_com_count'] +
                             context['joint_com_count'])
-    context['ns_com_count'] = db.committees.find({'_level': level,
+    context['ns_com_count'] = db.committees.find({'level': level,
                                                   level: abbr,
                              'sources': {'$size': 0}}).count()
 
@@ -226,10 +226,10 @@ def random_bill(request, abbr):
     if not meta:
         raise Http404
 
-    level = meta['_level']
+    level = meta['level']
     latest_session = meta['terms'][-1]['sessions'][-1]
 
-    spec = {'_level': level, level: abbr.lower(), 'session': latest_session}
+    spec = {'level': level, level: abbr.lower(), 'session': latest_session}
 
     count = db.bills.find(spec).count()
     bill = db.bills.find(spec)[random.randint(0, count - 1)]
@@ -238,8 +238,8 @@ def random_bill(request, abbr):
 
 
 def bill(request, abbr, session, id):
-    level = metadata(abbr)['_level']
-    bill = db.bills.find_one({'_level': level, level: abbr,
+    level = metadata(abbr)['level']
+    bill = db.bills.find_one({'level': level, level: abbr,
                               'session':session, 'bill_id':id.upper()})
     if not bill:
         raise Http404
@@ -249,13 +249,13 @@ def bill(request, abbr, session, id):
 
 def legislators(request, abbr):
     meta = metadata(abbr)
-    level = metadata(abbr)['_level']
+    level = metadata(abbr)['level']
 
-    upper_legs = db.legislators.find({'_level': level, level: abbr.lower(),
+    upper_legs = db.legislators.find({'level': level, level: abbr.lower(),
                                       'active': True, 'chamber': 'upper'})
-    lower_legs = db.legislators.find({'_level': level, level: abbr.lower(),
+    lower_legs = db.legislators.find({'level': level, level: abbr.lower(),
                                       'active': True, 'chamber': 'lower'})
-    inactive_legs = db.legislators.find({'_level': level, level: abbr.lower(),
+    inactive_legs = db.legislators.find({'level': level, level: abbr.lower(),
                                          'active': False})
     upper_legs = sorted(upper_legs, key=keyfunc)
     lower_legs = sorted(lower_legs, key=keyfunc)
@@ -274,7 +274,7 @@ def legislator(request, id):
     if not leg:
         raise Http404
 
-    meta = metadata(leg[leg['_level']])
+    meta = metadata(leg[leg['level']])
 
     return render_to_response('billy/legislator.html', {'leg': leg,
                                                         'metadata': meta})
@@ -282,13 +282,13 @@ def legislator(request, id):
 
 def committees(request, abbr):
     meta = metadata(abbr)
-    level = metadata(abbr)['_level']
+    level = metadata(abbr)['level']
 
-    upper_coms = db.committees.find({'_level': level, level: abbr.lower(),
+    upper_coms = db.committees.find({'level': level, level: abbr.lower(),
                                      'chamber': 'upper'})
-    lower_coms = db.committees.find({'_level': level, level: abbr.lower(),
+    lower_coms = db.committees.find({'level': level, level: abbr.lower(),
                                       'chamber': 'lower'})
-    joint_coms = db.committees.find({'_level': level, level: abbr.lower(),
+    joint_coms = db.committees.find({'level': level, level: abbr.lower(),
                                       'chamber': 'joint'})
     upper_coms = sorted(upper_coms)
     lower_coms = sorted(lower_coms)

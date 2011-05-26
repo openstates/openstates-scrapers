@@ -63,7 +63,7 @@ def import_votes(data_dir):
 
 
 def import_bill(data, votes):
-    level = data['_level']
+    level = data['level']
     abbr = data[level]
     # clean up bill_id
     data['bill_id'] = fix_bill_id(data['bill_id'])
@@ -82,7 +82,7 @@ def import_bill(data, votes):
                             data['bill_id']), [])
     data['votes'].extend(bill_votes)
 
-    bill = db.bills.find_one({'_level': level, level: abbr,
+    bill = db.bills.find_one({'level': level, level: abbr,
                               'session': data['session'],
                               'chamber': data['chamber'],
                               'bill_id': data['bill_id']})
@@ -162,7 +162,7 @@ def import_bills(abbr, data_dir):
             r.encode('ascii', 'replace') for r in remaining])
 
     meta = db.metadata.find_one({'_id': abbr})
-    level = meta['_level']
+    level = meta['level']
     populate_current_fields(level, abbr)
 
     ensure_indexes()
@@ -197,7 +197,7 @@ def populate_current_fields(level, abbr):
     current_term = meta['terms'][-1]
     current_session = current_term['sessions'][-1]
 
-    for bill in db.bills.find({'_level': level, level: abbr}):
+    for bill in db.bills.find({'level': level, level: abbr}):
         if bill['session'] == current_session:
             bill['_current_session'] = True
         else:
@@ -255,7 +255,7 @@ def get_committee_id(level, abbr, chamber, committee):
     if key in __committee_ids:
         return __committee_ids[key]
 
-    spec = {'_level': level, level: abbr, 'chamber': chamber,
+    spec = {'level': level, level: abbr, 'chamber': chamber,
             'committee': committee, 'subcommittee': None}
 
     comms = db.committees.find(spec)

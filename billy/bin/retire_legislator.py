@@ -10,7 +10,7 @@ import argparse
 
 def retire_legislator(leg_id, date):
     legislator = db.legislators.find_one({'leg_id': leg_id})
-    level = legislator['_level']
+    level = legislator['level']
     abbr = legislator[level]
 
     term = metadata(abbr)['terms'][-1]['name']

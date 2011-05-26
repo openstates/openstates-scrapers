@@ -10,61 +10,61 @@ def setup_func():
     db.committees.drop()
     names.__matchers = {}
 
-    db.metadata.insert({'_level': 'state', '_id': 'ex',
+    db.metadata.insert({'level': 'state', '_id': 'ex',
                         'terms': [{'name': 'T1', 'sessions': ['S1']}]})
 
     leg_a = {'full_name': 'Richard Feynman', 'leg_id': 'EXL000001',
-             '_id':'EXL000001', '_level': 'state',
+             '_id':'EXL000001', 'level': 'state',
              'state': 'ex', 'country': 'zz',
              '_scraped_name': 'Richard Feynman', 'first_name': 'Richard',
              'last_name': 'Feynman',
              'roles': [
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
-                  '_level': 'state', 'type': 'member'},
+                  'level': 'state', 'type': 'member'},
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
-                  '_level': 'state',
+                  'level': 'state',
                   'type': 'committee member',  'committee': 'Agriculture'},
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
-                  '_level': 'state',
+                  'level': 'state',
                   'type': 'committee member',  'committee': 'Agriculture',
                   'subcommittee': 'Tractors'},
               ]}
     leg_b = {'full_name': 'Albert Einstein', 'leg_id': 'EXL000002',
-             '_id':'EXL000002', '_level': 'state',
+             '_id':'EXL000002', 'level': 'state',
              'state': 'ex', 'country': 'zz',
              '_scraped_name': 'Albert Einstein', 'first_name': 'Albert',
              'last_name': 'Einstein',
              'roles': [
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
-                  '_level': 'state', 'type': 'member'},
+                  'level': 'state', 'type': 'member'},
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
-                  'position': 'chairman', '_level': 'state',
+                  'position': 'chairman', 'level': 'state',
                   'type': 'committee member',  'committee': 'Agriculture'},
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
                  'type': 'committee member',  'committee': 'Agriculture',
-                  '_level': 'state', 'subcommittee': 'Tractors'},
+                  'level': 'state', 'subcommittee': 'Tractors'},
                  {'state': 'ex', 'term': 'T1', 'chamber': 'upper',
-                  '_level': 'state',
+                  'level': 'state',
                   'type': 'committee member',  'committee': 'Appropriations'},
               ]}
     # in a different term
     leg_c = {'full_name': 'Werner Heisenberg', 'leg_id': 'EXL000003',
-             '_id':'EXL000003', '_level': 'state',
+             '_id':'EXL000003', 'level': 'state',
              'state': 'ex', 'country': 'zz',
              '_scraped_name': 'Werner Heisenberg', 'first_name': 'Werner',
              'last_name': 'Heisenberg',
              'roles': [
                  {'state': 'ex', 'term': 'T0', 'chamber': 'upper',
-                  '_level': 'state', 'type': 'member'},
+                  'level': 'state', 'type': 'member'},
                  {'state': 'ex', 'term': 'T0', 'chamber': 'upper',
-                  '_level': 'state',
+                  'level': 'state',
                   'type': 'committee member', 'committee': 'Agriculture'},
                  {'state': 'ex', 'term': 'T0', 'chamber': 'upper',
-                  '_level': 'state',
+                  'level': 'state',
                   'type': 'committee member', 'committee': 'Agriculture',
                   'subcommittee': 'Tractors'},
                  {'state': 'ex', 'term': 'T0', 'chamber': 'upper',
-                  '_level': 'state',
+                  'level': 'state',
                   'type': 'committee member', 'committee': 'Appropriations'},
               ]}
 
@@ -89,7 +89,7 @@ def test_committees_from_legislators():
     assert ag_com['members'][1]['role'] == 'chairman'
 
     # check that level, state, and country are copied over
-    assert ag_com['_level'] == 'state'
+    assert ag_com['level'] == 'state'
     assert ag_com['state'] == 'ex'
     assert ag_com['country'] == 'zz'
 
@@ -104,7 +104,7 @@ def test_committees_from_legislators():
 
 @with_setup(setup_func)
 def test_import_committee():
-    committee = {'_type': 'committee', '_level': 'state', 'state': 'ex',
+    committee = {'_type': 'committee', 'level': 'state', 'state': 'ex',
                  'country': 'zz',
                  'chamber': 'joint', 'committee': 'Reptilian Task Force',
                  'members': [
@@ -124,7 +124,7 @@ def test_import_committee():
     assert com['members'][1]['name'] == 'A. Einstein'
 
     leg = db.legislators.find_one({'_id':'EXL000001'})
-    assert leg['roles'][-1] == {'_level': 'state', 'term': 'T1',
+    assert leg['roles'][-1] == {'level': 'state', 'term': 'T1',
                                 'committee_id': 'EXC000001', 'chamber':'joint',
                                 'state': 'ex', 'country': 'zz',
                                 'type': 'committee member',

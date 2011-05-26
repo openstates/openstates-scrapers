@@ -9,7 +9,7 @@ def setup_func():
 
 @with_setup(setup_func)
 def test_import_event_guid():
-    event = {'_level': 'state', 'state': 'ex', 'description': 'TBD',
+    event = {'level': 'state', 'state': 'ex', 'description': 'TBD',
              'when': 'now', 'end': 'never', 'type': 'party',
              '_guid': 'xx-yy-zz'}
 
@@ -30,7 +30,7 @@ def test_import_event_guid():
 
 @with_setup(setup_func)
 def test_import_event_no_guid():
-    event = {'_level': 'state', 'state': 'ex', 'description': 'TBD',
+    event = {'level': 'state', 'state': 'ex', 'description': 'TBD',
              'when': 'now', 'end': 'never', 'type': 'party',}
 
     # test insert

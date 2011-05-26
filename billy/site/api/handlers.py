@@ -125,7 +125,7 @@ class MetadataHandler(BillyHandler):
 class BillHandler(BillyHandler):
     def read(self, request, abbr, session, bill_id, chamber=None):
         abbr = abbr.lower()
-        level = metadata(abbr)['_level']
+        level = metadata(abbr)['level']
         query = {level: abbr, 'session': session, 'bill_id': bill_id}
         if chamber:
             query['chamber'] = chamber.lower()
@@ -245,12 +245,12 @@ class StatsHandler(BillyHandler):
         for count in db.counts.find():
             val = count['value']
             abbr = count['_id']
-            level = metadata(abbr)['_level']
+            level = metadata(abbr)['level']
 
             if abbr == 'total':
                 val['legislators'] = db.legislators.count()
             else:
-                val['legislators'] = db.legislators.find({'_level': level,
+                val['legislators'] = db.legislators.find({'level': level,
                                                           level: abbr}).count()
 
             counts[abbr] = val
@@ -312,7 +312,7 @@ class EventsHandler(BillyHandler):
 class SubjectListHandler(BillyHandler):
     def read(self, request, abbr, session=None, chamber=None):
         abbr = abbr.lower()
-        level = metadata(abbr)['_level']
+        level = metadata(abbr)['level']
         spec = {level: abbr}
         if session:
             spec['session'] = session

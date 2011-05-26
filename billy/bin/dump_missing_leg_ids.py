@@ -17,7 +17,7 @@ def dump_missing_leg_ids(abbr, detailed=False):
     missing_csv.writerow(('term', 'chamber', 'name'))
     missing = set()
 
-    level = metadata(abbr)['_level']
+    level = metadata(abbr)['level']
 
     if detailed:
         sponsor_csv = csv.writer(open('%s_missing_sponsor_leg_ids.csv' %
@@ -31,7 +31,7 @@ def dump_missing_leg_ids(abbr, detailed=False):
                            "Vote Index", "Vote Chamber", "Vote Motion",
                            "Vote", "Name"))
 
-    for bill in db.bills.find({'_level': level, level: abbr}):
+    for bill in db.bills.find({'level': level, level: abbr}):
         for sponsor in bill['sponsors']:
             if not sponsor['leg_id']:
                 missing.add((term_for_session(abbr, bill['session']),
@@ -70,7 +70,7 @@ def dump_missing_leg_ids(abbr, detailed=False):
         comm_csv.writerow(("Abbreviation", "Chamber", "Committee",
                            "Subcommittee", "Role", "Name"))
 
-    for committee in db.committees.find({'_level': level, level: abbr}):
+    for committee in db.committees.find({'level': level, level: abbr}):
         for member in committee['members']:
             if not member['leg_id']:
                 missing.add((committee.get('term', ''),

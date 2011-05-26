@@ -21,7 +21,7 @@ def ensure_indexes():
 
 
 def _insert_with_id(event):
-    abbr = event[event['_level']]
+    abbr = event[event['level']]
     id = next_big_id(abbr, 'E', 'event_ids')
     logging.info("Saving as %s" % id)
 
@@ -45,16 +45,16 @@ def import_events(abbr, data_dir, import_actions=False):
 
 def import_event(data):
     event = None
-    _level = data['_level']
+    level = data['level']
 
     if '_guid' in data:
-        event = db.events.find_one({'_level': _level,
-                                    _level: data[_level],
+        event = db.events.find_one({'level': level,
+                                    level: data[level],
                                     '_guid': data['_guid']})
 
     if not event:
-        event = db.events.find_one({'_level': _level,
-                                    _level: data[_level],
+        event = db.events.find_one({'level': level,
+                                    level: data[level],
                                     'when': data['when'],
                                     'end': data['end'],
                                     'type': data['type'],
@@ -68,7 +68,7 @@ def import_event(data):
         update(event, data, db.events)
 
 # IMPORTANT: if/when actions_to_events is re-enabled it definitely
-# needs to be updated to support _level
+# needs to be updated to support level
 #    if import_actions:
 #        actions_to_events(state)
 

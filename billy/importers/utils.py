@@ -56,7 +56,7 @@ def insert_with_id(obj):
     else:
         raise ValueError("unknown _type for object")
 
-    level = obj[obj['_level']].upper()
+    level = obj[obj['level']].upper()
 
     id_reg = re.compile('^%s%s' % (level, id_type))
 

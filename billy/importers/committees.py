@@ -22,7 +22,7 @@ def import_committees_from_legislators(current_term, level, abbr):
 
     # for all current legislators
     for legislator in db.legislators.find({
-        '_level': level,
+        'level': level,
         'roles': {'$elemMatch': {'term': current_term,
                                  level: abbr}}}):
 
@@ -31,7 +31,7 @@ def import_committees_from_legislators(current_term, level, abbr):
             if (role['type'] == 'committee member' and
                 'committee_id' not in role):
 
-                spec = {'_level': level,
+                spec = {'level': level,
                         level: abbr,
                         'chamber': role['chamber'],
                         'committee': role['committee']}
@@ -68,10 +68,10 @@ def import_committees_from_legislators(current_term, level, abbr):
 
 
 def import_committee(data, current_session, current_term):
-    _level = data['_level']
-    abbr = data[_level]
-    spec = {'_level': _level,
-            _level: abbr,
+    level = data['level']
+    abbr = data[level]
+    spec = {'level': level,
+            level: abbr,
             'chamber': data['chamber'],
             'committee': data['committee']}
     if 'subcommittee' in data:
@@ -116,7 +116,7 @@ def import_committee(data, current_session, current_term):
                         'term': current_term,
                         'chamber': committee['chamber'],
                         'committee_id': committee['_id'],
-                        '_level': _level,
+                        'level': level,
                        }
             # copy over all necessary fields from committee
             for f in settings.BILLY_LEVEL_FIELDS:
@@ -138,11 +138,11 @@ def import_committees(abbr, data_dir):
     meta = db.metadata.find_one({'_id': abbr})
     current_term = meta['terms'][-1]['name']
     current_session = meta['terms'][-1]['sessions'][-1]
-    level = meta['_level']
+    level = meta['level']
 
     paths = glob.glob(pattern)
 
-    for committee in db.committees.find({'_level': level, level: abbr}):
+    for committee in db.committees.find({'level': level, level: abbr}):
         committee['members'] = []
         db.committees.save(committee, safe=True)
 
@@ -164,12 +164,12 @@ def import_committees(abbr, data_dir):
 
 
 def link_parents(level, abbr):
-    for comm in db.committees.find({'_level': level, level: abbr}):
+    for comm in db.committees.find({'level': level, level: abbr}):
         sub = comm.get('subcommittee')
         if not sub:
             comm['parent_id'] = None
         else:
-            parent = db.committees.find_one({'_level': level,
+            parent = db.committees.find_one({'level': level,
                                              level: abbr,
                                              'chamber': comm['chamber'],
                                              'committee': comm['committee']})

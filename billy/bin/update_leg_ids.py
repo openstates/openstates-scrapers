@@ -7,7 +7,7 @@ from billy.importers.names import NameMatcher
 
 
 def match_names(abbr, term):
-    level = metadata(abbr)['_level']
+    level = metadata(abbr)['level']
     nm = NameMatcher(abbr, term, level)
 
     for t in metadata(abbr)['terms']:
@@ -19,7 +19,7 @@ def match_names(abbr, term):
         return
 
     for session in sessions:
-        bills = db.bills.find({'_level': level, level: abbr,
+        bills = db.bills.find({'level': level, level: abbr,
                                'session': session})
 
         for bill in bills:

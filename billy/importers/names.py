@@ -19,7 +19,7 @@ def get_legislator_id(abbr, session, chamber, name):
         else:
             raise Exception("bad session: " + session)
 
-        matcher = NameMatcher(abbr, term['name'], metadata['_level'])
+        matcher = NameMatcher(abbr, term['name'], metadata['level'])
         __matchers[(abbr, session)] = matcher
 
     if chamber == 'both' or chamber == 'joint':
@@ -69,10 +69,10 @@ class NameMatcher(object):
         self._abbr = abbr
         self._term = term
 
-        roles_elemMatch = {'_level': level, level: abbr, 'type': 'member',
+        roles_elemMatch = {'level': level, level: abbr, 'type': 'member',
                            'term': term}
         old_roles_query = {'old_roles.%s' % term: {'$elemMatch':
-                                                   {'_level': level,
+                                                   {'level': level,
                                                     level: abbr,
                                                     'type': 'member'}}}
 

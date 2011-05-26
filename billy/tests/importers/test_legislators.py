@@ -10,7 +10,7 @@ def setup_func():
     db.legislators.drop()
     db.metadata.drop()
 
-    db.metadata.insert({'_id': 'ex', '_level': 'state',
+    db.metadata.insert({'_id': 'ex', 'level': 'state',
                         'terms': [{'name': '2009-2010',
                                    'sessions': ['2009', '2010'],
                                    'start_year': 2009, 'end_year': 2010},
@@ -22,25 +22,25 @@ def setup_func():
 @with_setup(setup_func)
 def test_activate_legislators():
     # Previous term
-    leg1 = {'_type': 'person', '_level': 'state', 'state': 'ex',
+    leg1 = {'_type': 'person', 'level': 'state', 'state': 'ex',
             'roles': [{'type': 'member', 'chamber': 'upper',
-                       '_level': 'state', 'state': 'ex',
+                       'level': 'state', 'state': 'ex',
                        'term': '2009-2010', 'district': '1',
                        'party': 'Democrat',
                        'start_date': None, 'end_date': None}]}
 
     # Current term, no end date
-    leg2 = {'_type': 'person', '_level': 'state', 'state': 'ex',
+    leg2 = {'_type': 'person', 'level': 'state', 'state': 'ex',
             'roles': [{'type': 'member', 'chamber': 'upper',
-                       '_level': 'state', 'state': 'ex',
+                       'level': 'state', 'state': 'ex',
                        'term': '2011-2012', 'district': '2',
                        'party': 'Democrat',
                        'start_date': None, 'end_date': None}]}
 
     # Current term, end date
-    leg3 = {'_type': 'person', '_level': 'state', 'state': 'ex',
+    leg3 = {'_type': 'person', 'level': 'state', 'state': 'ex',
             'roles': [{'type': 'member', 'chamber': 'upper',
-                       '_level': 'state', 'state': 'ex',
+                       'level': 'state', 'state': 'ex',
                        'term': '2011-2012', 'district': '3',
                        'party': 'Democrat',
                        'start_date': None,
@@ -74,9 +74,9 @@ def test_activate_legislators():
 @with_setup(setup_func)
 def test_deactivate_legislators():
     # Previous term
-    leg1 = {'_type': 'person', '_level': 'state', 'state': 'ex',
+    leg1 = {'_type': 'person', 'level': 'state', 'state': 'ex',
             'roles': [{'type': 'member', 'chamber': 'upper',
-                       '_level': 'state', 'state': 'ex',
+                       'level': 'state', 'state': 'ex',
                        'term': '2009-2010', 'district': '1',
                        'party': 'Democrat',
                        'start_date': None, 'end_date': None}],
@@ -87,9 +87,9 @@ def test_deactivate_legislators():
     leg1_roles = leg1['roles']
 
     # Current term, no end date
-    leg2 = {'_type': 'person', '_level': 'state', 'state': 'ex',
+    leg2 = {'_type': 'person', 'level': 'state', 'state': 'ex',
             'roles': [{'type': 'member', 'chamber': 'upper',
-                       '_level': 'state', 'state': 'ex',
+                       'level': 'state', 'state': 'ex',
                        'term': '2011-2012', 'district': '2',
                        'party': 'Democrat',
                        'start_date': None, 'end_date': None}],
@@ -100,9 +100,9 @@ def test_deactivate_legislators():
     leg2_roles = leg2['roles']
 
     # Current term, with end date
-    leg3 = {'_type': 'person', '_level': 'state', 'state': 'ex',
+    leg3 = {'_type': 'person', 'level': 'state', 'state': 'ex',
             'roles': [{'type': 'member', 'chamber': 'upper',
-                       '_level': 'state', 'state': 'ex',
+                       'level': 'state', 'state': 'ex',
                        'term': '2011-2012', 'district': '3',
                        'party': 'Democrat',
                        'start_date': None,
@@ -154,28 +154,28 @@ def test_get_next_term():
 
 @with_setup(setup_func)
 def test_import_legislator():
-    leg1 = {'_type': 'person', '_level': 'state', 'state': 'ex',
+    leg1 = {'_type': 'person', 'level': 'state', 'state': 'ex',
             'full_name': 'T. Rex Hagan',
             'roles': [{'role': 'member', 'chamber': 'upper', 'state': 'ex',
                        'term': '2009-2010', 'district': '1',
                        'party': 'Democrat',
                        'start_date': None, 'end_date': None}]}
 
-    leg2 = {'_type': 'person', '_level': 'state', 'state': 'ex',
+    leg2 = {'_type': 'person', 'level': 'state', 'state': 'ex',
             'full_name': 'T. Rex Hagan',
             'roles': [{'role': 'member', 'chamber': 'upper', 'state': 'ex',
                        'term': '2011-2012', 'district': '1',
                        'party': 'Democrat',
                        'start_date': None, 'end_date': None}]}
 
-    leg3 = {'_type': 'person', '_level': 'state', 'state': 'ex',
+    leg3 = {'_type': 'person', 'level': 'state', 'state': 'ex',
             'full_name': 'Joe Heck',
             'roles': [{'role': 'member', 'chamber': 'upper', 'state': 'ex',
                        'term': '2009-2010', 'district': '2',
                        'party': 'Democrat',
                        'start_date': None, 'end_date': None}]}
 
-    leg4 = {'_type': 'person', '_level': 'state', 'state': 'ex',
+    leg4 = {'_type': 'person', 'level': 'state', 'state': 'ex',
             'full_name': 'Bob Dold',
             'roles': [{'role': 'member', 'chamber': 'upper', 'state': 'ex',
                        'term': '2011-2012', 'district': '2',
@@ -190,7 +190,7 @@ def test_import_legislator():
     assert db.legislators.count() == 1
     assert t_rex['roles'][0]['term'] == '2011-2012'
     assert '2009-2010' in t_rex['old_roles']
-    assert t_rex['roles'][0]['_level'] == t_rex['_level']
+    assert t_rex['roles'][0]['level'] == t_rex['level']
 
     legislators.import_legislator(leg3)
     assert db.legislators.count() == 2

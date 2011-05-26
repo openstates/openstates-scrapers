@@ -36,7 +36,7 @@ def import_legislators(abbr, data_dir):
 
     meta = db.metadata.find_one({'_id': abbr})
     current_term = meta['terms'][-1]['name']
-    level = meta['_level']
+    level = meta['level']
 
     activate_legislators(current_term, abbr, level)
     deactivate_legislators(current_term, abbr, level)
@@ -50,11 +50,11 @@ def activate_legislators(current_term, abbr, level):
     district/chamber/party fields for currently serving legislators.
     """
     # to support multiple levels we adopt the pattern of
-    # '_level': level,  level: abbr
-    # this means that _level must always be a key name that maps to the abbr
+    # 'level': level,  level: abbr
+    # this means that level must always be a key name that maps to the abbr
 
     for legislator in db.legislators.find({'roles': {'$elemMatch':
-                                                     {'_level': level,
+                                                     {'level': level,
                                                       level: abbr,
                                                       'type': 'member',
                                                       'term': current_term}}}):
@@ -78,14 +78,14 @@ def deactivate_legislators(current_term, abbr, level):
             {'roles': {'$elemMatch':
                        {'term': {'$ne': current_term},
                         'type': 'member',
-                         '_level': level,
+                         'level': level,
                           level: abbr,
                        }},
             },
             {'roles': {'$elemMatch':
                        {'term': current_term,
                         'type': 'member',
-                         '_level': level,
+                         'level': level,
                           level: abbr,
                         'end_date': {'$ne':None}}},
             },
@@ -141,7 +141,7 @@ def import_legislator(data):
 
         # copy over country and/or state into role
         # TODO: base this on all possible level fields
-        role['_level'] = data['_level']
+        role['level'] = data['level']
         if 'country' in data:
             role['country'] = data['country']
         if 'state' in data:
@@ -150,7 +150,7 @@ def import_legislator(data):
     cur_role = data['roles'][0]
     term = cur_role['term']
 
-    level = data['_level']
+    level = data['level']
     abbrev = data[level]
 
     prev_term = get_previous_term(abbrev, term)
@@ -165,7 +165,7 @@ def import_legislator(data):
         spec['chamber'] = cur_role['chamber']
 
     leg = db.legislators.find_one(
-        {'_level': level, level: abbrev,
+        {'level': level, level: abbrev,
          '_scraped_name': data['full_name'],
          'roles': {'$elemMatch': spec}})
 

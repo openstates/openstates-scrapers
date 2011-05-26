@@ -13,7 +13,7 @@ def setup_func():
 
 @with_setup(setup_func)
 def test_get_legislator_id():
-    db.metadata.insert({'_id': 'ex', '_level': 'state',
+    db.metadata.insert({'_id': 'ex', 'level': 'state',
                         'terms': [{'name': 'T1',
                                    'sessions': ['S1']}]})
     db.legislators.insert({'_id': 'EXL000042',
@@ -24,7 +24,7 @@ def test_get_legislator_id():
                            'last_name': 'Iron Cloud',
                            'suffixes': 'III',
                            'roles': [{'type': 'member',
-                                      '_level': 'state',
+                                      'level': 'state',
                                       'state': 'ex',
                                       'term': 'T1',
                                       'chamber': 'upper',
@@ -42,10 +42,10 @@ def test_get_legislator_id():
 @with_setup(setup_func)
 def test_get_legislator_id_country():
     db.metadata.insert({'_id': 'zz',
-                        '_level': 'country',
+                        'level': 'country',
                         'terms': [{'name': 'T1', 'sessions': ['S1']}]})
     db.legislators.insert({'_id': 'ZZL000042',
-                           '_level': 'country',
+                           'level': 'country',
                            'country': 'zz',
                            'state': 'ab',
                            'full_name': 'Ed Iron Cloud III',
@@ -56,7 +56,7 @@ def test_get_legislator_id_country():
                            'roles': [{'type': 'member',
                                       'state': 'ab',
                                       'country': 'zz',
-                                      '_level': 'country',
+                                      'level': 'country',
                                       'term': 'T1',
                                       'chamber': 'upper',
                                       'district': '10'}]})

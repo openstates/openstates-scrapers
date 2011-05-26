@@ -23,11 +23,11 @@ def test_insert_with_id_duplicate_id():
 def test_insert_with_id_increments():
     obj1 = {'full_name': 'a test legislator',
             '_type': 'person',
-            '_level': 'state',
+            'level': 'state',
             'state': 'ex'}
     obj2 = {'full_name': 'another legislator',
             '_type': 'person',
-            '_level': 'state',
+            'level': 'state',
             'state': 'ex'}
 
     leg_id_re = re.compile(r'^EXL\d{6,6}$')
@@ -51,11 +51,11 @@ def test_insert_with_id_increments():
 
 @with_setup(drop_everything)
 def test_insert_with_id_types():
-    person = {'_type': 'person', '_level': 'state', 'state': 'ex'}
-    legislator = {'_type': 'person', '_level': 'state', 'state': 'ex'}
-    committee = {'_type': 'committee', '_level': 'state', 'state': 'ex'}
-    bill = {'_type': 'bill', '_level': 'state', 'state': 'ex'}
-    other = {'_type': 'other', '_level': 'state', 'state': 'ex'}
+    person = {'_type': 'person', 'level': 'state', 'state': 'ex'}
+    legislator = {'_type': 'person', 'level': 'state', 'state': 'ex'}
+    committee = {'_type': 'committee', 'level': 'state', 'state': 'ex'}
+    bill = {'_type': 'bill', 'level': 'state', 'state': 'ex'}
+    other = {'_type': 'other', 'level': 'state', 'state': 'ex'}
 
     assert utils.insert_with_id(person).startswith('EXL')
     assert utils.insert_with_id(legislator).startswith('EXL')
@@ -65,10 +65,10 @@ def test_insert_with_id_types():
 
 
 @with_setup(drop_everything)
-def test_insert_with_id_levels():
-    state_obj = {'_type': 'person', '_level': 'state', 'state': 'ex',
+def test_insert_with_idlevels():
+    state_obj = {'_type': 'person', 'level': 'state', 'state': 'ex',
                  'country':'us'}
-    country_obj = {'_type': 'person', '_level': 'country', 'state': 'ex',
+    country_obj = {'_type': 'person', 'level': 'country', 'state': 'ex',
                    'country':'us'}
     assert utils.insert_with_id(state_obj).startswith('EX')
     assert utils.insert_with_id(country_obj).startswith('US')
@@ -76,7 +76,7 @@ def test_insert_with_id_levels():
 
 @with_setup(db.bills.drop)
 def test_update():
-    obj0 = {'_type': 'bill', '_level': 'state', 'state': 'ex',
+    obj0 = {'_type': 'bill', 'level': 'state', 'state': 'ex',
             'field1': 'stuff', 'field2': 'original',
             '_locked_fields': ['field2']}
 

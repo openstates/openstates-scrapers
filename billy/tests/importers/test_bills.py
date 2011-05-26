@@ -11,23 +11,23 @@ def setup_func():
     db.vote_ids.drop()
     names.__matchers = {}
 
-    db.metadata.insert({'_level': 'state', '_id': 'ex',
+    db.metadata.insert({'level': 'state', '_id': 'ex',
                         'terms': [{'name': 'T1', 'sessions': ['S1', 'S2']}]})
-    db.legislators.insert({'_level': 'state', 'state': 'ex',
+    db.legislators.insert({'level': 'state', 'state': 'ex',
                            '_id': 'EXL000001', 'leg_id': 'EXL000001',
                            'chamber': 'upper',
                            'full_name': 'John Adams', 'first_name': 'John',
                            'last_name': 'Adams', '_scraped_name': 'John Adams',
                            'roles': [
                                {'type': 'member', 'chamber': 'upper',
-                                '_level': 'state', 'term': 'T1', 'state': 'ex'}
+                                'level': 'state', 'term': 'T1', 'state': 'ex'}
                            ]
                           })
 
 
 @with_setup(setup_func)
 def test_import_bill():
-    data = {'_type': 'bill', '_level': 'state', 'state': 'ex', 'bill_id': 'S1',
+    data = {'_type': 'bill', 'level': 'state', 'state': 'ex', 'bill_id': 'S1',
             'chamber': 'upper', 'session': 'S1',
             'subjects': ['Pigs', 'Sheep', 'Horses'],
             'sponsors': [{'name': 'Adams', 'type': 'primary'},
@@ -128,11 +128,11 @@ def test_bill_keywords():
 
 @with_setup(setup_func)
 def test_populate_current_fields():
-    db.bills.insert({'_level': 'state', 'state': 'ex', 'session': 'S1',
+    db.bills.insert({'level': 'state', 'state': 'ex', 'session': 'S1',
                      'title': 'current term'})
-    db.bills.insert({'_level': 'state', 'state': 'ex', 'session': 'S2',
+    db.bills.insert({'level': 'state', 'state': 'ex', 'session': 'S2',
                      'title': 'current everything'})
-    db.bills.insert({'_level': 'state', 'state': 'ex', 'session': 'S0',
+    db.bills.insert({'level': 'state', 'state': 'ex', 'session': 'S0',
                      'title': 'not current'})
 
     bills.populate_current_fields('state', 'ex')
@@ -188,18 +188,18 @@ def test_votematcher():
 @with_setup(db.committees.drop)
 def test_get_committee_id():
     # 3 committees with the same name, different levels & chamber
-    db.committees.insert({'_level': 'state', 'state': 'ex', 'chamber': 'upper',
+    db.committees.insert({'level': 'state', 'state': 'ex', 'chamber': 'upper',
                           'committee': 'Animal Control', '_id': 'EXC000001'})
-    db.committees.insert({'_level': 'state', 'state': 'ex', 'chamber': 'lower',
+    db.committees.insert({'level': 'state', 'state': 'ex', 'chamber': 'lower',
                           'committee': 'Animal Control', '_id': 'EXC000002'})
-    db.committees.insert({'_level': 'country', 'country': 'zz', 'state': 'ex',
+    db.committees.insert({'level': 'country', 'country': 'zz', 'state': 'ex',
                           'chamber': 'upper',
                           'committee': 'Animal Control', '_id': 'ZZC000001'})
     # committee w/ subcommittee (also has 'Committee on' prefix)
-    db.committees.insert({'_level': 'state', 'state': 'ex', 'chamber': 'upper',
+    db.committees.insert({'level': 'state', 'state': 'ex', 'chamber': 'upper',
                           'committee': 'Committee on Science',
                           '_id': 'EXC000004'})
-    db.committees.insert({'_level': 'state', 'state': 'ex', 'chamber': 'upper',
+    db.committees.insert({'level': 'state', 'state': 'ex', 'chamber': 'upper',
                           'committee': 'Committee on Science',
                           'subcommittee': 'Space',
                           '_id': 'EXC000005'})

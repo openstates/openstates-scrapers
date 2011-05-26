@@ -23,22 +23,22 @@ def _make_csv(abbr, name, fields):
 def dump_legislator_csvs(level, abbr):
     leg_fields = ('leg_id', 'full_name', 'first_name', 'middle_name',
                   'last_name', 'suffixes', 'nickname', 'active',
-                  '_level', 'country', 'state', 'chamber', 'district', 'party',
+                  'level', 'country', 'state', 'chamber', 'district', 'party',
                   'votesmart_id', 'transparencydata_id', 'photo_url',
                   'created_at', 'updated_at')
     leg_csv_fname, leg_csv = _make_csv(abbr, 'legislators.csv', leg_fields)
 
-    role_fields = ('leg_id', 'type', 'term', 'district', 'chamber', '_level',
+    role_fields = ('leg_id', 'type', 'term', 'district', 'chamber', 'level',
                    'country', 'state', 'party', 'committee_id', 'committee',
                    'subcommittee', 'start_date', 'end_date')
     role_csv_fname, role_csv = _make_csv(abbr, 'legislator_roles.csv',
                                          role_fields)
 
-    com_fields = ('id', '_level', 'country', 'state', 'chamber', 'committee',
+    com_fields = ('id', 'level', 'country', 'state', 'chamber', 'committee',
                   'subcommittee', 'parent_id')
     com_csv_fname, com_csv = _make_csv(abbr, 'committees.csv', com_fields)
 
-    for legislator in db.legislators.find({'_level': level, level: abbr}):
+    for legislator in db.legislators.find({'level': level, level: abbr}):
         leg_csv.writerow(extract_fields(legislator, leg_fields))
 
         # go through roles to create role csv
@@ -51,7 +51,7 @@ def dump_legislator_csvs(level, abbr):
             d.update({'leg_id': legislator['leg_id']})
             role_csv.writerow(d)
 
-    for committee in db.committees.find({'_level': level, level: abbr}):
+    for committee in db.committees.find({'level': level, level: abbr}):
         cdict = extract_fields(committee, com_fields)
         cdict['id'] = committee['_id']
         com_csv.writerow(cdict)
@@ -60,22 +60,22 @@ def dump_legislator_csvs(level, abbr):
 
 
 def dump_bill_csvs(level, abbr):
-    bill_fields = ('_level', 'country', 'state', 'session', 'chamber',
+    bill_fields = ('level', 'country', 'state', 'session', 'chamber',
                    'bill_id', 'title', 'created_at', 'updated_at', 'type',
                    'subjects')
     bill_csv_fname, bill_csv = _make_csv(abbr, 'bills.csv', bill_fields)
 
-    action_fields = ('_level', 'country', 'state', 'session', 'chamber',
+    action_fields = ('level', 'country', 'state', 'session', 'chamber',
                      'bill_id', 'date', 'action', 'actor', 'type')
     action_csv_fname, action_csv = _make_csv(abbr, 'bill_actions.csv',
                                              action_fields)
 
-    sponsor_fields = ('_level', 'country', 'state', 'session', 'chamber',
+    sponsor_fields = ('level', 'country', 'state', 'session', 'chamber',
                       'bill_id', 'type', 'name', 'leg_id')
     sponsor_csv_fname, sponsor_csv = _make_csv(abbr, 'bill_sponsors.csv',
                                                sponsor_fields)
 
-    vote_fields = ('_level', 'country', 'state', 'session', 'chamber',
+    vote_fields = ('level', 'country', 'state', 'session', 'chamber',
                    'bill_id', 'vote_id', 'vote_chamber', 'motion', 'date',
                    'type', 'yes_count', 'no_count', 'other_count')
     vote_csv_fname, vote_csv = _make_csv(abbr, 'bill_votes.csv', vote_fields)
@@ -85,11 +85,11 @@ def dump_bill_csvs(level, abbr):
                                                'bill_legislator_votes.csv',
                                                legvote_fields)
 
-    for bill in db.bills.find({'_level': level, level: abbr}):
+    for bill in db.bills.find({'level': level, level: abbr}):
         bill_csv.writerow(extract_fields(bill, bill_fields))
 
         bill_info = extract_fields(bill,
-                                   ('bill_id', '_level', 'country', 'state',
+                                   ('bill_id', 'level', 'country', 'state',
                                     'session', 'chamber'))
 
         # basically same behavior for actions, sponsors and votes:
@@ -123,7 +123,7 @@ def dump_bill_csvs(level, abbr):
 
 def dump_csv(abbr, filename, nozip):
 
-    level = metadata(abbr)['_level']
+    level = metadata(abbr)['level']
 
     files = []
     files += dump_legislator_csvs(level, abbr)

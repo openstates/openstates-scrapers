@@ -149,7 +149,7 @@ class ICalendarEmitter(Emitter):
 
                 chamber = part.get('chamber')
                 if chamber:
-                    comm = "%s %s" % (chamber_name(obj[obj['_level']], chamber),
+                    comm = "%s %s" % (chamber_name(obj[obj['level']], chamber),
                                       comm)
 
                 summary = "%s Committee Meeting" % comm
@@ -179,7 +179,7 @@ class ICalendarEmitter(Emitter):
 
                 chamber = participant.get('chamber')
                 if chamber:
-                    cn = chamber_name(obj[obj['_level']], chamber) + " "
+                    cn = chamber_name(obj[obj['level']], chamber) + " "
                 else:
                     cn = ""
 
