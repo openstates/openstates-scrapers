@@ -119,8 +119,7 @@ start =
       attribute id {
         xsd:string { pattern = "[A-Z][A-Z]E\d{8}" }
       },
-      element level { level },
-      element state { state },
+      region,
       element session { string.non_empty },
       element type { string.non_empty },
       element when { xsd:dateTime },
@@ -145,8 +144,7 @@ start =
 bill.header =
   attribute created_at { xsd:dateTime },
   attribute updated_at { xsd:dateTime },
-  element level { level },
-  element state { state },
+  region,
   element session { string.non_empty },
   element chamber { chamber },
   element bill_id { string.non_empty },
@@ -157,8 +155,7 @@ legislator.header =
   attribute created_at { xsd:dateTime },
   attribute updated_at { xsd:dateTime },
   attribute id { legislator_id },
-  element level { level },
-  element state { state },
+  region,
   element first_name { string.non_empty },
   element last_name { string.non_empty },
   element full_name { string.non_empty },
@@ -192,8 +189,7 @@ committee.header =
   attribute updated_at { xsd:dateTime },
   attribute id { committee_id },
   attribute parent_id { committee_id }?,
-  element level { level },
-  element state { state },
+  region,
   element chamber { string.non_empty },
   element name {
     element committee_name { string.non_empty },
@@ -206,6 +202,11 @@ sources =
       attribute href { string.non_empty }
     }*
   }
+
+region =
+  element level { "state" | "country" },
+  element country { xsd:string {  pattern = "[a-z][a-z]" },
+  element state { xsd:string { pattern = "[a-z][a-z]" }?
 
 state = xsd:string { pattern = "[a-z][a-z]" }
 
