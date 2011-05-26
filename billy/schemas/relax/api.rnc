@@ -205,8 +205,8 @@ sources =
 
 region =
   element level { "state" | "country" },
-  element country { xsd:string {  pattern = "[a-z][a-z]" },
-  element state { xsd:string { pattern = "[a-z][a-z]" }?
+  element country { xsd:string {  pattern = "[a-z][a-z]" } },
+  element state { xsd:string { pattern = "[a-z][a-z]" } }?
 
 state = xsd:string { pattern = "[a-z][a-z]" }
 
