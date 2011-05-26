@@ -25,8 +25,6 @@ def browse_index(request, template='billy/index.html'):
     for meta in list(db.metadata.find()) + [{'_id':'total', 'name':'total'}]:
         row = {}
         row['id'] = meta['_id']
-        level = meta['_level']
-        s_spec = {'_level': level, level: row['id']}
         row['name'] = meta['name']
         counts = db.counts.find_one({'_id': row['id']})
         if counts:
@@ -48,6 +46,8 @@ def browse_index(request, template='billy/index.html'):
                                     counts['voters'] * 100)
 
         if row['id'] != 'total':
+            level = meta['_level']
+            s_spec = {'_level': level, level: row['id']}
             row['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
             row['legislators'] = db.legislators.find(s_spec).count()
             row['committees'] = db.committees.find(s_spec).count()
