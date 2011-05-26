@@ -116,4 +116,5 @@ def validate_api(abbr):
 
 if __name__ == '__main__':
     import sys
-    validate_api(sys.argv[1])
+    for state in sys.argv[1:]:
+        validate_api(state)
