@@ -149,7 +149,7 @@ def upload(abbr, filename):
     today = datetime.date.today()
 
     # build URL
-    s3_bucket = 'data.openstates.sunlightlabs.com'
+    s3_bucket = settings.AWS_BUCKET
     s3_path = '%s-%02d-%02d-%s-csv.zip' % (today.year, today.month, today.day,
                                            abbr)
     s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
