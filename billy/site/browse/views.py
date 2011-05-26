@@ -240,7 +240,7 @@ def random_bill(request, abbr):
 def bill(request, abbr, session, id):
     level = metadata(abbr)['_level']
     bill = db.bills.find_one({'_level': level, level: abbr,
-                              session=session, bill_id=id.upper()})
+                              'session':session, 'bill_id':id.upper()})
     if not bill:
         raise Http404
 
