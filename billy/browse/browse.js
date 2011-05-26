@@ -2,7 +2,7 @@ var objects;
 
 $(document).ready(function() {
     if (navigator.userAgent.indexOf('Gecko/') == -1) {
-        $("#loading").html("The Open States Browser only supports Firefox.");
+        $("#loading").html("The Billy Browser only supports Firefox.");
     } else {
         var types = {"legislators": populateLegislators,
                      "bills": populateBills,

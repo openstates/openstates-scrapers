@@ -14,12 +14,13 @@ import argparse
 from votesmart import votesmart, VotesmartApiError
 
 
-def update_votesmart_legislators(state):
-    current_term = state['terms'][-1]['name']
+def update_votesmart_legislators(meta):
+    current_term = meta['terms'][-1]['name']
 
     query = {'roles': {'$elemMatch':
                        {'type': 'member',
-                        'state': state['abbreviation'],
+                        'level': meta['level'],
+                        meta['level']: meta['abbreviation'],
                         'term': current_term},
                       },
              'votesmart_id': None,
@@ -29,12 +30,17 @@ def update_votesmart_legislators(state):
     initial_count = db.legislators.find(query).count()
 
     # get officials
-    abbrev = state['_id'].upper()
-    upper_officials = votesmart.officials.getByOfficeState(9, abbrev)
-    try:
-        lower_officials = votesmart.officials.getByOfficeState(8, abbrev)
-    except VotesmartApiError:
-        lower_officials = votesmart.officials.getByOfficeState(7, abbrev)
+    abbrev = meta['_id'].upper()
+
+    if meta['level'] == 'state':
+        upper_officials = votesmart.officials.getByOfficeState(9, abbrev)
+        try:
+            lower_officials = votesmart.officials.getByOfficeState(8, abbrev)
+        except VotesmartApiError:
+            lower_officials = votesmart.officials.getByOfficeState(7, abbrev)
+    elif meta['level'] == 'country':
+        lower_officials = votesmart.officials.getByOfficeState(5, abbrev)
+        upper_officials = votesmart.officials.getByOfficeState(6, abbrev)
 
     def _match(chamber, vsofficials):
         updated = 0
@@ -53,11 +59,12 @@ def update_votesmart_legislators(state):
     print 'Updated %s of %s missing votesmart ids' % (updated, initial_count)
 
 
-def update_transparencydata_legislators(state, sunlight_key):
-    current_term = state['terms'][-1]['name']
+def update_transparencydata_legislators(meta, sunlight_key):
+    current_term = meta['terms'][-1]['name']
     query = {'roles': {'$elemMatch':
                        {'type': 'member',
-                        'state': state['abbreviation'],
+                        'level': meta['level'],
+                        meta['level']: meta['abbreviation'],
                         'term': current_term},
                       },
              'transparencydata_id': None,
@@ -66,7 +73,7 @@ def update_transparencydata_legislators(state, sunlight_key):
 
     updated = 0
     initial_count = db.legislators.find(query).count()
-    state_abbrev = state['_id'].upper()
+    abbrev = meta['_id'].upper()
 
     for leg in db.legislators.find(query):
         query = urllib.urlencode({'apikey': sunlight_key,
@@ -76,7 +83,7 @@ def update_transparencydata_legislators(state, sunlight_key):
         results = json.loads(data)
         matches = []
         for result in results:
-            if (result['state'] == state_abbrev and
+            if (result['state'] == abbrev and
                 result['seat'][6:] == leg['chamber'] and
                 result['type'] == 'politician'):
                 matches.append(result)
@@ -90,20 +97,19 @@ def update_transparencydata_legislators(state, sunlight_key):
                                                              initial_count)
 
 
-def update_missing_ids(state_abbrev, sunlight_key):
-    state = db.metadata.find_one({'_id': state_abbrev.lower()})
-    if not state:
-        print "State '%s' does not exist in the database." % (
-            state_abbrev)
+def update_missing_ids(abbr, sunlight_key):
+    meta = db.metadata.find_one({'_id': abbr.lower()})
+    if not meta:
+        print "'{0}' does not exist in the database.".format(abbr)
         sys.exit(1)
     else:
-        print "Updating ids for {0}".format(state_abbrev)
+        print "Updating ids for {0}".format(abbr)
 
     print "Updating PVS legislator ids..."
-    update_votesmart_legislators(state)
+    update_votesmart_legislators(meta)
 
     print "Updating TransparencyData ids..."
-    update_transparencydata_legislators(state, sunlight_key)
+    update_transparencydata_legislators(meta, sunlight_key)
 
 
 if __name__ == '__main__':
@@ -113,8 +119,8 @@ if __name__ == '__main__':
         parents=[base_arg_parser],
     )
 
-    parser.add_argument('states', metavar='STATE', type=str, nargs='+',
-                        help='states to update')
+    parser.add_argument('abbrs', metavar='ABBR', type=str, nargs='+',
+                        help='abbreviations for data to update')
 
     args = parser.parse_args()
 
@@ -122,6 +128,6 @@ if __name__ == '__main__':
 
     votesmart.apikey = settings.VOTESMART_API_KEY
 
-    for state in args.states:
-        update_missing_ids(state, settings.SUNLIGHT_SERVICES_KEY)
+    for abb4 in args.abbrs:
+        update_missing_ids(abbr, settings.SUNLIGHT_SERVICES_KEY)
         time.sleep(30)

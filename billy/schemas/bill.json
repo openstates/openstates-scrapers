@@ -2,7 +2,9 @@
  "type": "object",
  "properties": {
     "_type": {"type": "string", "enum":["bill"]},
+    "level": {"type": "string", "enum":["country", "state"]},
     "state": {"type": "string", "minLength": 2, "maxLength": 2},
+    "country": {"type": "string", "minLength": 2, "maxLength": 2},
     "session": {"type": "string"},
     "chamber": {"type": "string", "enum": ["upper", "lower"]},
     "bill_id": {"type": "string"},

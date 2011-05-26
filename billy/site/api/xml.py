@@ -55,6 +55,8 @@ def render_bill(bill):
 
 def render_short_bill(bill):
     return E.bill(
+        E.level(bill['level']),
+        E.country(bill['country']),
         E.state(bill['state']),
         E.session(bill['session']),
         E.chamber(bill['chamber']),
@@ -130,6 +132,8 @@ def render_legislator(leg):
 
 def render_short_legislator(leg):
     elem = E.legislator(
+        E.level(leg['level']),
+        E.country(leg['country']),
         E.state(leg['state']),
         E.first_name(leg['first_name']),
         E.last_name(leg['last_name']),
@@ -212,6 +216,8 @@ def render_short_committee(comm):
         kwargs['parent_id'] = pid
 
     return E.committee(
+        E.level(comm['level']),
+        E.country(comm['country']),
         E.state(comm['state']),
         E.chamber(comm['chamber']),
         E.name(
@@ -256,6 +262,7 @@ def render_metadata(meta):
         return E.session(E.name(s), *args)
 
     elem = E.metadata(
+        E.level(meta['level']),
         E.state_name(meta['name']),
         E.state_abbreviation(meta['abbreviation']),
         E.legislature_name(meta['legislature_name']),
@@ -311,6 +318,8 @@ def render_event(ev):
         extra.append(E.link(href=ev['link']))
 
     return E.event(
+        E.level(ev['level']),
+        E.country(ev['country']),
         E.state(ev['state']),
         E.session(ev['session']),
         E.type(ev['type']),

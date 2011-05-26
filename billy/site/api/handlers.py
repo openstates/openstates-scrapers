@@ -8,7 +8,7 @@ from django.http import HttpResponse
 
 from billy import db
 from billy.conf import settings
-from billy.utils import keywordize
+from billy.utils import keywordize, metadata
 from billy.site.api.utils import district_from_census_name
 
 import pymongo
@@ -114,18 +114,19 @@ class BillyHandler(BaseHandler):
 
 
 class MetadataHandler(BillyHandler):
-    def read(self, request, state):
+    def read(self, request, abbr):
         """
-        Get metadata about a state legislature.
+        Get metadata about a legislature.
         """
-        return db.metadata.find_one({'_id': state.lower()},
+        return db.metadata.find_one({'_id': abbr.lower()},
                                    fields=_build_field_list(request))
 
 
 class BillHandler(BillyHandler):
-    def read(self, request, state, session, bill_id, chamber=None):
-        query = {'state': state.lower(), 'session': session,
-                 'bill_id': bill_id}
+    def read(self, request, abbr, session, bill_id, chamber=None):
+        abbr = abbr.lower()
+        level = metadata(abbr)['level']
+        query = {level: abbr, 'session': session, 'bill_id': bill_id}
         if chamber:
             query['chamber'] = chamber.lower()
         return db.bills.find_one(query, fields=_build_field_list(request))
@@ -239,22 +240,20 @@ class StatsHandler(BillyHandler):
     def read(self, request):
         counts = {}
 
-        # db.counts contains the output of a m/r run that generates
-        # per-state counts of bills and bill sub-objects
+        # db.counts contains the output of a m/r run that generates counts of
+        # bills and bill sub-objects
         for count in db.counts.find():
             val = count['value']
-            state = count['_id']
+            abbr = count['_id']
+            level = metadata(abbr)['level']
 
-            if state == 'total':
+            if abbr == 'total':
                 val['legislators'] = db.legislators.count()
-                val['documents'] = db.documents.files.count()
             else:
-                val['legislators'] = db.legislators.find(
-                    {'roles.state': state}).count()
-                val['documents'] = db.documents.files.find(
-                    {'metadata.bill.state': state}).count()
+                val['legislators'] = db.legislators.find({'level': level,
+                                                          level: abbr}).count()
 
-            counts[state] = val
+            counts[abbr] = val
 
         stats = db.command('dbStats')
         stats['counts'] = counts
@@ -311,8 +310,10 @@ class EventsHandler(BillyHandler):
 
 
 class SubjectListHandler(BillyHandler):
-    def read(self, request, state, session=None, chamber=None):
-        spec = {'state': state.lower()}
+    def read(self, request, abbr, session=None, chamber=None):
+        abbr = abbr.lower()
+        level = metadata(abbr)['level']
+        spec = {level: abbr}
         if session:
             spec['session'] = session
         if chamber:
@@ -340,19 +341,19 @@ class ReconciliationHandler(BaseHandler):
     key = getattr(settings, 'SUNLIGHT_SERVICES_KEY', 'no-key')
 
     metadata = {
-        "name": "Open State Reconciliation Service",
+        "name": "Billy Reconciliation Service",
         "view": {
-            "url": ("http://openstates.sunlightlabs.com/api/v1/legislators/"
-                    "preview/{{id}}/?apikey=%s" % key),
+            "url": "%slegislators/preview/{{id}}/?apikey=%s" % (
+                settings.API_BASE_URL, key),
             },
         "preview": {
-            "url": ("http://openstates.sunlightlabs.com/api/v1/legislators/"
-                    "preview/{{id}}/?apikey=%s" % key),
+            "url": "%slegislators/preview/{{id}}/?apikey=%s" % (
+                settings.API_BASE_URL, key),
             "width": 430,
             "height": 300
             },
         "defaultTypes": [
-            {"id": "/openstates/legislator",
+            {"id": "/billy/legislator",
              "name": "Legislator"}],
         }
 
@@ -427,7 +428,7 @@ class ReconciliationHandler(BaseHandler):
                             "score": score,
                             "match": match,
                             "type": [
-                                {"id": "/openstates/legislator",
+                                {"id": "/billy/legislator",
                                  "name": "Legislator"}]})
 
         return sorted(results, cmp=lambda l, r: cmp(r['score'], l['score']))
@@ -457,8 +458,7 @@ class LegislatorGeoHandler(BillyHandler):
                        '/1.0/boundary-set/sldl/': 'lower'}[dist['set']]
             census_name = dist['name'][3:]
 
-            our_name = district_from_census_name(
-                state, chamber, census_name)
+            our_name = district_from_census_name(state, chamber, census_name)
 
             filters.append({'state': state, 'district': our_name,
                             'chamber': chamber})

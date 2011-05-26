@@ -6,11 +6,10 @@ import csv
 import argparse
 
 
-def process_file(state, save=False):
+def process_file(filename, save=False):
 
-    filename = state + '_legislators.csv'
-
-    # print initial missing counts
+    # print initial missing counts (a hack)
+    state = filename.split('_')[0]
     print 'missing pvs', db.legislators.find({'state': state,
                                               'votesmart_id': None}).count()
     print 'missing tdata', db.legislators.find({'state': state,
@@ -80,14 +79,14 @@ if __name__ == '__main__':
         parents=[base_arg_parser],
     )
 
-    parser.add_argument('states', metavar='STATE', type=str, nargs='+',
-                help='states to load (filenames should be xy_legislators.csv)')
+    parser.add_argument('files', metavar='FILE', type=str, nargs='+',
+                help='filenames to import')
     parser.add_argument('--save', action='store_true', default=False,
-                        help='save changes to database')
+                        help='save changes to database (default is dry run)')
 
     args = parser.parse_args()
 
     settings.update(args)
 
-    for state in args.states:
-        process_file(state, args.save)
+    for file in args.files:
+        process_file(file, args.save)

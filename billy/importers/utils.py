@@ -37,7 +37,7 @@ def insert_with_id(obj):
     Generates a unique ID for the supplied legislator/committee/bill
     and inserts it into the appropriate collection.
     """
-    if hasattr(obj, '_id'):
+    if '_id' in obj:
         raise ValueError("object already has '_id' field")
 
     # add created_at/updated_at on insert
@@ -53,11 +53,15 @@ def insert_with_id(obj):
     elif obj['_type'] == 'bill':
         collection = db.bills
         id_type = 'B'
+    else:
+        raise ValueError("unknown _type for object")
 
-    id_reg = re.compile('^%s%s' % (obj['state'].upper(), id_type))
+    level = obj[obj['level']].upper()
+
+    id_reg = re.compile('^%s%s' % (level, id_type))
 
     # Find the next available _id and insert
-    id_prefix = '%s%s' % (obj['state'].upper(), id_type)
+    id_prefix = '%s%s' % (level, id_type)
     cursor = collection.find({'_id': id_reg}).sort('_id', -1).limit(1)
 
     try:
@@ -78,7 +82,7 @@ def insert_with_id(obj):
             new_id += 1
 
 
-def timestamp_to_dt(timestamp):
+def _timestamp_to_dt(timestamp):
     tstruct = time.localtime(timestamp)
     dt = datetime.datetime(*tstruct[0:6])
     if tstruct.tm_isdst:
@@ -92,10 +96,7 @@ def update(old, new, coll):
         del new['votes']
 
     # need_save = something has changed
-    # updated = the updated_at field needs bumping
-    # (we don't bump updated_at if only the sources list has changed, but
-    #  we still update the object)
-    need_save, updated = False, False
+    need_save = False
 
     locked_fields = old.get('_locked_fields', [])
 
@@ -107,20 +108,16 @@ def update(old, new, coll):
 
         if old.get(key) != value:
             old[key] = value
-
             need_save = True
-            updated = True
 
         # remove old +key field if this field no longer has a +
         plus_key = '+%s' % key
         if plus_key in old:
             del old[plus_key]
-            need_save, updated = True, True
-
-    if updated:
-        old['updated_at'] = datetime.datetime.utcnow()
+            need_save = True
 
     if need_save:
+        old['updated_at'] = datetime.datetime.utcnow()
         coll.save(old, safe=True)
 
 
@@ -133,7 +130,7 @@ def convert_timestamps(obj):
         value = obj.get(key)
         if value:
             try:
-                obj[key] = timestamp_to_dt(value)
+                obj[key] = _timestamp_to_dt(value)
             except TypeError:
                 raise TypeError("expected float for %s, got %s" % (key, value))
 
@@ -149,7 +146,6 @@ def convert_timestamps(obj):
 
     for role in obj.get('roles', []):
         convert_timestamps(role)
-        role['state'] = obj['state']
 
     return obj
 
@@ -212,52 +208,6 @@ def prepare_obj(obj):
     return make_plus_fields(obj)
 
 
-__committee_ids = {}
-
-
-def get_committee_id(state, chamber, committee):
-    key = (state, chamber, committee)
-    if key in __committee_ids:
-        return __committee_ids[key]
-
-    comms = db.committees.find({'state': state,
-                               'chamber': chamber,
-                               'committee': committee,
-                               'subcommittee': None})
-
-    if comms.count() != 1:
-        comms = db.committees.find({'state': state,
-                                   'chamber': chamber,
-                                   'committee': ('Committee on ' +
-                                                 committee),
-                                   'subcommittee': None})
-
-    if comms and comms.count() == 1:
-        __committee_ids[key] = comms[0]['_id']
-    else:
-        __committee_ids[key] = None
-
-    return __committee_ids[key]
-
-
-def put_document(doc, content_type, metadata):
-    # Generate a new sequential ID for the document
-    query = SON([('_id', metadata['bill']['state'])])
-    update = SON([('$inc', SON([('seq', 1)]))])
-    seq = db.command(SON([('findandmodify', 'doc_ids'),
-                          ('query', query),
-                          ('update', update),
-                          ('new', True),
-                          ('upsert', True)]))['value']['seq']
-
-    id = "%sD%08d" % (metadata['bill']['state'].upper(), seq)
-    logging.info("Saving as %s" % id)
-
-    fs.put(doc, _id=id, content_type=content_type, metadata=metadata)
-
-    return id
-
-
 def merge_legislators(old, new):
     all_ids = set(old['_all_ids']).union(new['_all_ids'])
     new['_all_ids'] = list(all_ids)
@@ -266,53 +216,14 @@ def merge_legislators(old, new):
     new['leg_id'] = new['_id']
     db.legislators.save(new, safe=True)
 
-# fixing bill ids
-_bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
 
+def next_big_id(abbr, letter, collection):
+    query = SON([('_id', abbr)])
+    update = SON([('$inc', SON([('seq', 1)]))])
+    seq = db.command(SON([('findandmodify', collection),
+                          ('query', query),
+                          ('update', update),
+                          ('new', True),
+                          ('upsert', True)]))['value']['seq']
+    return "%s%s%08d" % (abbr.upper(), letter, seq)
 
-def fix_bill_id(bill_id):
-    bill_id = bill_id.replace('.', '')
-    return _bill_id_re.sub(r'\1 \2', bill_id)
-
-
-class VoteMatcher(object):
-
-    def __init__(self, state):
-        self.state = state
-        self.vote_ids = {}
-
-    def reset_sequence(self):
-        self.seq_for_vote_key = defaultdict(int)
-
-    def get_next_id(self):
-        # Generate a new sequential ID for the vote
-        query = SON([('_id', self.state)])
-        update = SON([('$inc', SON([('seq', 1)]))])
-        seq = db.command(SON([('findandmodify', 'vote_ids'),
-                              ('query', query),
-                              ('update', update),
-                              ('new', True),
-                              ('upsert', True)]))['value']['seq']
-
-        return "%sV%08d" % (self.state.upper(), seq)
-
-    def key_for_vote(self, vote):
-        key = (vote['motion'], vote['chamber'], vote['date'],
-               vote['yes_count'], vote['no_count'], vote['other_count'])
-        # running count of how many of this key we've seen
-        seq_num = self.seq_for_vote_key[key]
-        self.seq_for_vote_key[key] += 1
-        # append seq_num to key to avoid sharing key for multiple votes
-        return key + (seq_num,)
-
-    def learn_vote_ids(self, votes_list):
-        self.reset_sequence()
-        for vote in votes_list:
-            key = self.key_for_vote(vote)
-            self.vote_ids[key] = vote['vote_id']
-
-    def set_vote_ids(self, votes_list):
-        self.reset_sequence()
-        for vote in votes_list:
-            key = self.key_for_vote(vote)
-            vote['vote_id'] = self.vote_ids.get(key) or self.get_next_id()

@@ -1,6 +1,7 @@
 {"description": "API metadata response",
  "type": "object",
  "properties": {
+   "level": {"type": "string", "enum":["country", "state"]},
    "name": {"type": "string"},
    "abbreviation": {"type": "string", "pattern": "^[a-z]{2}$"},
    "legislature_name": {"type": "string"},

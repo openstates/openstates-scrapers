@@ -51,8 +51,8 @@ class JSONDateEncoder(json.JSONEncoder):
 
         return json.JSONEncoder.default(self, obj)
 
-_scraper_registry = defaultdict(dict)
-
+# maps scraper_type -> scraper
+_scraper_registry = dict()
 
 class ScraperMeta(type):
     """ register derived scrapers in a central registry """
@@ -60,11 +60,16 @@ class ScraperMeta(type):
     def __new__(meta, classname, bases, classdict):
         cls = type.__new__(meta, classname, bases, classdict)
 
-        state = getattr(cls, 'state', None)
+        # default level to state to preserve old behavior
+        if not hasattr(cls, 'level'):
+            cls.level = 'state'
+            cls.country = 'us'
+
+        region = getattr(cls, cls.level, None)
         scraper_type = getattr(cls, 'scraper_type', None)
 
-        if state and scraper_type:
-            _scraper_registry[state][scraper_type] = cls
+        if region and scraper_type:
+            _scraper_registry[scraper_type] = cls
 
         return cls
 
@@ -83,7 +88,7 @@ class Scraper(scrapelib.Scraper):
         """
         Create a new Scraper instance.
 
-        :param metadata: metadata for this state
+        :param metadata: metadata for this scraper
         :param no_cache: if True, will ignore any cached downloads
         :param output_dir: the data directory to use
         :param strict_validation: exit immediately if validation fails
@@ -113,8 +118,10 @@ class Scraper(scrapelib.Scraper):
 
         super(Scraper, self).__init__(**kwargs)
 
-        if not hasattr(self, 'state'):
-            raise Exception('Scrapers must have a state attribute')
+        for f in settings.BILLY_LEVEL_FIELDS[self.level]:
+            if not hasattr(self, f):
+                raise Exception('%s scrapers must have a %s attribute' % (
+                    self.level, f))
 
         self.metadata = metadata
         self.output_dir = output_dir
@@ -181,7 +188,10 @@ class Scraper(scrapelib.Scraper):
         raise NoDataForPeriod(term)
 
     def save_object(self, obj):
-        obj['state'] = self.state
+        # copy over level information
+        obj['level'] = self.level
+        for f in settings.BILLY_LEVEL_FIELDS[self.level]:
+            obj[f] = getattr(self, f)
 
         filename = obj.get_filename()
         with open(os.path.join(self.output_dir, self.scraper_type, filename),
@@ -219,7 +229,7 @@ class SourcedObject(dict):
         self['sources'].append(dict(url=url, **kwargs))
 
 
-def get_scraper(mod_path, state, scraper_type):
+def get_scraper(mod_path, scraper_type):
     """ import a scraper from the scraper registry """
 
     # act of importing puts it into the registry
@@ -231,8 +241,8 @@ def get_scraper(mod_path, state, scraper_type):
 
     # now pull the class out of the registry
     try:
-        ScraperClass = _scraper_registry[state][scraper_type]
+        ScraperClass = _scraper_registry[scraper_type]
     except KeyError as e:
-        raise ScrapeError("no %s %s scraper found" %
-                           (state, scraper_type))
+        raise ScrapeError("no %s scraper found in module %s" %
+                           (scraper_type, mod_path))
     return ScraperClass

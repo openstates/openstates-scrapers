@@ -6,39 +6,39 @@ import zipfile
 import datetime
 
 from billy import db
-from billy.utils import extract_fields
+from billy.utils import extract_fields, metadata
 from billy.conf import settings, base_arg_parser
 
 import boto
 from boto.s3.key import Key
 
 
-def _make_csv(state, name, fields):
-    filename = '/tmp/{0}_{1}'.format(state, name)
+def _make_csv(abbr, name, fields):
+    filename = '/tmp/{0}_{1}'.format(abbr, name)
     f = csv.DictWriter(open(filename, 'w'), fields)
     f.writerow(dict(zip(fields, fields)))
     return filename, f
 
 
-def dump_legislator_csvs(state):
+def dump_legislator_csvs(level, abbr):
     leg_fields = ('leg_id', 'full_name', 'first_name', 'middle_name',
                   'last_name', 'suffixes', 'nickname', 'active',
-                  'state', 'chamber', 'district', 'party',
+                  'level', 'country', 'state', 'chamber', 'district', 'party',
                   'votesmart_id', 'transparencydata_id', 'photo_url',
                   'created_at', 'updated_at')
-    leg_csv_fname, leg_csv = _make_csv(state, 'legislators.csv', leg_fields)
+    leg_csv_fname, leg_csv = _make_csv(abbr, 'legislators.csv', leg_fields)
 
-    role_fields = ('leg_id', 'type', 'term', 'district', 'chamber', 'state',
-                   'party', 'committee_id', 'committee', 'subcommittee',
-                   'start_date', 'end_date')
-    role_csv_fname, role_csv = _make_csv(state, 'legislator_roles.csv',
+    role_fields = ('leg_id', 'type', 'term', 'district', 'chamber', 'level',
+                   'country', 'state', 'party', 'committee_id', 'committee',
+                   'subcommittee', 'start_date', 'end_date')
+    role_csv_fname, role_csv = _make_csv(abbr, 'legislator_roles.csv',
                                          role_fields)
 
-    com_fields = ('id', 'state', 'chamber', 'committee', 'subcommittee',
-                  'parent_id')
-    com_csv_fname, com_csv = _make_csv(state, 'committees.csv', com_fields)
+    com_fields = ('id', 'level', 'country', 'state', 'chamber', 'committee',
+                  'subcommittee', 'parent_id')
+    com_csv_fname, com_csv = _make_csv(abbr, 'committees.csv', com_fields)
 
-    for legislator in db.legislators.find({'state': state}):
+    for legislator in db.legislators.find({'level': level, level: abbr}):
         leg_csv.writerow(extract_fields(legislator, leg_fields))
 
         # go through roles to create role csv
@@ -51,7 +51,7 @@ def dump_legislator_csvs(state):
             d.update({'leg_id': legislator['leg_id']})
             role_csv.writerow(d)
 
-    for committee in db.committees.find({'state': state}):
+    for committee in db.committees.find({'level': level, level: abbr}):
         cdict = extract_fields(committee, com_fields)
         cdict['id'] = committee['_id']
         com_csv.writerow(cdict)
@@ -59,36 +59,38 @@ def dump_legislator_csvs(state):
     return leg_csv_fname, role_csv_fname, com_csv_fname
 
 
-def dump_bill_csvs(state):
-    bill_fields = ('state', 'session', 'chamber', 'bill_id', 'title',
-                   'created_at', 'updated_at', 'type', 'subjects')
-    bill_csv_fname, bill_csv = _make_csv(state, 'bills.csv', bill_fields)
+def dump_bill_csvs(level, abbr):
+    bill_fields = ('level', 'country', 'state', 'session', 'chamber',
+                   'bill_id', 'title', 'created_at', 'updated_at', 'type',
+                   'subjects')
+    bill_csv_fname, bill_csv = _make_csv(abbr, 'bills.csv', bill_fields)
 
-    action_fields = ('state', 'session', 'chamber', 'bill_id', 'date',
-                     'action', 'actor', 'type')
-    action_csv_fname, action_csv = _make_csv(state, 'bill_actions.csv',
+    action_fields = ('level', 'country', 'state', 'session', 'chamber',
+                     'bill_id', 'date', 'action', 'actor', 'type')
+    action_csv_fname, action_csv = _make_csv(abbr, 'bill_actions.csv',
                                              action_fields)
 
-    sponsor_fields = ('state', 'session', 'chamber', 'bill_id', 'type', 'name',
-                      'leg_id')
-    sponsor_csv_fname, sponsor_csv = _make_csv(state, 'bill_sponsors.csv',
+    sponsor_fields = ('level', 'country', 'state', 'session', 'chamber',
+                      'bill_id', 'type', 'name', 'leg_id')
+    sponsor_csv_fname, sponsor_csv = _make_csv(abbr, 'bill_sponsors.csv',
                                                sponsor_fields)
 
-    vote_fields = ('state', 'session', 'chamber', 'bill_id', 'vote_id',
-                   'vote_chamber', 'motion', 'date', 'type', 'yes_count',
-                   'no_count', 'other_count')
-    vote_csv_fname, vote_csv = _make_csv(state, 'bill_votes.csv', vote_fields)
+    vote_fields = ('level', 'country', 'state', 'session', 'chamber',
+                   'bill_id', 'vote_id', 'vote_chamber', 'motion', 'date',
+                   'type', 'yes_count', 'no_count', 'other_count')
+    vote_csv_fname, vote_csv = _make_csv(abbr, 'bill_votes.csv', vote_fields)
 
     legvote_fields = ('vote_id', 'leg_id', 'name', 'vote')
-    legvote_csv_fname, legvote_csv = _make_csv(state,
+    legvote_csv_fname, legvote_csv = _make_csv(abbr,
                                                'bill_legislator_votes.csv',
                                                legvote_fields)
 
-    for bill in db.bills.find({'state': state}):
+    for bill in db.bills.find({'level': level, level: abbr}):
         bill_csv.writerow(extract_fields(bill, bill_fields))
 
         bill_info = extract_fields(bill,
-                                   ('bill_id', 'state', 'session', 'chamber'))
+                                   ('bill_id', 'level', 'country', 'state',
+                                    'session', 'chamber'))
 
         # basically same behavior for actions, sponsors and votes:
         #    extract fields, update with bill_info, write to csv
@@ -119,11 +121,13 @@ def dump_bill_csvs(state):
             vote_csv_fname, legvote_csv_fname)
 
 
-def dump_csv(state, filename, nozip):
+def dump_csv(abbr, filename, nozip):
+
+    level = metadata(abbr)['level']
 
     files = []
-    files += dump_legislator_csvs(state)
-    files += dump_bill_csvs(state)
+    files += dump_legislator_csvs(level, abbr)
+    files += dump_bill_csvs(level, abbr)
 
     if not nozip:
         zfile = zipfile.ZipFile(filename, 'w')
@@ -132,7 +136,7 @@ def dump_csv(state, filename, nozip):
             zfile.write(fname, arcname=arcname)
             os.remove(fname)
     else:
-        dirname = state + '_csv'
+        dirname = abbr + '_csv'
         try:
             os.makedirs(dirname)
         except OSError:
@@ -141,13 +145,13 @@ def dump_csv(state, filename, nozip):
             shutil.move(fname, dirname)
 
 
-def upload(state, filename):
+def upload(abbr, filename):
     today = datetime.date.today()
 
     # build URL
-    s3_bucket = 'data.openstates.sunlightlabs.com'
+    s3_bucket = settings.AWS_BUCKET
     s3_path = '%s-%02d-%02d-%s-csv.zip' % (today.year, today.month, today.day,
-                                           state)
+                                           abbr)
     s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
     # S3 upload
@@ -158,10 +162,10 @@ def upload(state, filename):
     k.set_contents_from_filename(filename)
     k.set_acl('public-read')
 
-    metadata = db.metadata.find_one({'_id': state})
-    metadata['latest_csv_url'] = s3_url
-    metadata['latest_csv_date'] = datetime.datetime.utcnow()
-    db.metadata.save(metadata, safe=True)
+    meta = metadata(abbr)
+    meta['latest_csv_url'] = s3_url
+    meta['latest_csv_date'] = datetime.datetime.utcnow()
+    db.metadata.save(meta, safe=True)
 
     print('uploaded to %s' % s3_url)
 
@@ -170,15 +174,14 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description=('Dump API contents of a given state to  '
-                     ' directory of CSV files, optionally uploading'
-                     ' to S3 when done.'),
+        description=('Dump data to a set of CSV files, optionally uploading to'
+                     ' S3 when done.'),
         parents=[base_arg_parser],
     )
-    parser.add_argument('state', help=('the two-letter abbreviation of the'
-                                       ' state to import'))
+    parser.add_argument('abbr', help=('the two-letter abbreviation for the'
+                                       ' data to export'))
     parser.add_argument('--file', '-f',
-                        help='filename to output to (defaults to <state>.zip)')
+                        help='filename to output to (defaults to <abbr>.zip)')
     parser.add_argument('--nozip', action='store_true', default=False,
                         help="don't zip the files")
     parser.add_argument('--upload', '-u', action='store_true', default=False,
@@ -189,12 +192,12 @@ if __name__ == '__main__':
     settings.update(args)
 
     if not args.file:
-        args.file = '{0}_csv.zip'.format(args.state)
+        args.file = '{0}_csv.zip'.format(args.abbr)
 
-    dump_csv(args.state, args.file, args.nozip)
+    dump_csv(args.abbr, args.file, args.nozip)
 
     if args.upload:
         if args.nozip:
             raise Warning('Unable to --upload if --nozip is specified')
         else:
-            upload(args.state, args.file)
+            upload(args.abbr, args.file)

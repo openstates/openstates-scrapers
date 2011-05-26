@@ -52,11 +52,11 @@ class Bill(SourcedObject):
         :param session: the session in which the bill was introduced.
         :param chamber: the chamber in which the bill was introduced:
           either 'upper' or 'lower'
-        :param bill_id: an identifier assigned by the state to this bill
+        :param bill_id: an identifier assigned to this bill by the legislature
           (should be unique within the context of this chamber/session)
           e.g.: 'HB 1', 'S. 102', 'H.R. 18'
         :param title: a title or short description of this bill provided by
-          the state
+          the official source
 
         Any additional keyword arguments will be associated with this
         bill and stored in the database.
@@ -85,7 +85,7 @@ class Bill(SourcedObject):
         Associate a sponsor with this bill.
 
         :param type: the type of sponsorship, e.g. 'primary', 'cosponsor'
-        :param name: the name of the sponsor as provided by the state
+        :param name: the name of the sponsor as provided by the official source
         """
         self['sponsors'].append(dict(type=type, name=name, **kwargs))
 
@@ -110,8 +110,7 @@ class Bill(SourcedObject):
 
         :param name: a name given to this version of the text, e.g.
                      'As Introduced', 'Version 2', 'As amended', 'Enrolled'
-        :param url: the location of this version on the state's legislative
-                    website.
+        :param url: the location of this version on the legislative website.
 
         If multiple formats are provided, a good rule of thumb is to
         prefer text, followed by html, followed by pdf/word/etc.

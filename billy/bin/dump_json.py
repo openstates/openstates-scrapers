@@ -7,6 +7,7 @@ import urllib
 import json
 
 from billy.conf import settings, base_arg_parser
+from billy.utils import metadata
 from billy import db
 
 import boto
@@ -23,17 +24,14 @@ class APIValidator(validictory.SchemaValidator):
         return re.match(r'^\d{4}-\d\d-\d\d( \d\d:\d\d:\d\d)?$', val)
 
 
-_base_url = getattr(settings, 'OPENSTATES_API_BASE_URL',
-                    "http://openstates.sunlightlabs.com/api/v1/")
-
-
 def api_url(path):
-    return "%s%s/?apikey=%s" % (_base_url, urllib.quote(path),
+    return "%s%s/?apikey=%s" % (settings.API_BASE_URL, urllib.quote(path),
                                 settings.SUNLIGHT_SERVICES_KEY)
 
 
-def dump_json(state, filename, validate, schema_dir):
+def dump_json(abbr, filename, validate, schema_dir):
     scraper = scrapelib.Scraper(requests_per_minute=600)
+    level = metadata(abbr)['level']
 
     zip = zipfile.ZipFile(filename, 'w')
 
@@ -50,10 +48,9 @@ def dump_json(state, filename, validate, schema_dir):
     with open(os.path.join(schema_dir, "committee.json")) as f:
         committee_schema = json.load(f)
 
-    for bill in db.bills.find({'state': state}):
-        path = "bills/%s/%s/%s/%s" % (state, bill['session'],
-                                           bill['chamber'],
-                                           bill['bill_id'])
+    for bill in db.bills.find({'level': level, level: abbr}):
+        path = "bills/%s/%s/%s/%s" % (abbr, bill['session'],
+                                      bill['chamber'], bill['bill_id'])
         url = api_url(path)
 
         response = scraper.urlopen(url)
@@ -63,7 +60,7 @@ def dump_json(state, filename, validate, schema_dir):
 
         zip.writestr(path, scraper.urlopen(url))
 
-    for legislator in db.legislators.find({'state': state}):
+    for legislator in db.legislators.find({'level': level, level: abbr}):
         path = 'legislators/%s' % legislator['_id']
         url = api_url(path)
 
@@ -74,7 +71,7 @@ def dump_json(state, filename, validate, schema_dir):
 
         zip.writestr(path, response)
 
-    for committee in db.committees.find({'state': state}):
+    for committee in db.committees.find({'level': level, level: abbr}):
         path = 'committees/%s' % committee['_id']
         url = api_url(path)
 
@@ -88,16 +85,16 @@ def dump_json(state, filename, validate, schema_dir):
     zip.close()
 
 
-def upload(state, filename):
+def upload(abbr, filename):
     today = datetime.date.today()
 
     # build URL
-    s3_bucket = 'data.openstates.sunlightlabs.com'
+    s3_bucket = settings.AWS_BUCKET
     s3_path = '%s-%02d-%02d-%s.zip' % (today.year, today.month, today.day,
-                                           state)
+                                           abbr)
     s3_url = 'http://%s.s3.amazonaws.com/%s' % (s3_bucket, s3_path)
 
-    metadata = db.metadata.find_one({'_id': state})
+    meta = metadata(abbr)
 
     # S3 upload
     s3conn = boto.connect_s3(settings.AWS_KEY, settings.AWS_SECRET)
@@ -107,9 +104,9 @@ def upload(state, filename):
     k.set_contents_from_filename(filename)
     k.set_acl('public-read')
 
-    metadata['latest_dump_url'] = s3_url
-    metadata['latest_dump_date'] = datetime.datetime.utcnow()
-    db.metadata.save(metadata, safe=True)
+    meta['latest_dump_url'] = s3_url
+    meta['latest_dump_date'] = datetime.datetime.utcnow()
+    db.metadata.save(meta, safe=True)
 
     print 'uploaded to %s' % s3_url
 
@@ -118,15 +115,14 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description=('Dump API contents of a given state to a zipped'
-                     ' directory of JSON files, optionally uploading'
-                     ' to S3 when done.'),
+        description=('Dump API information to a zipped directory of JSON files'
+                     ', optionally uploading to S3 when done.'),
         parents=[base_arg_parser],
     )
-    parser.add_argument('state', help=('the two-letter abbreviation of the'
-                                       ' state to import'))
+    parser.add_argument('abbr', help=('the two-letter abbreviation of the data'
+                                      ' to export'))
     parser.add_argument('--file', '-f',
-                        help='filename to output to (defaults to <state>.zip)')
+                        help='filename to output to (defaults to <abbr>.zip)')
     parser.add_argument('--schema_dir',
                         help='directory to use for API schemas (optional)',
                         default=None)
@@ -142,10 +138,10 @@ if __name__ == '__main__':
     settings.update(args)
 
     if not args.file:
-        args.file = args.state + '.zip'
+        args.file = args.abbr + '.zip'
 
     if not args.nodump:
-        dump_json(args.state, args.file, not args.novalidate, args.schema_dir)
+        dump_json(args.abbr, args.file, not args.novalidate, args.schema_dir)
 
     if args.upload:
-        upload(args.state, args.file)
+        upload(args.abbr, args.file)
