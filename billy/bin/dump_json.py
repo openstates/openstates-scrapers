@@ -24,12 +24,8 @@ class APIValidator(validictory.SchemaValidator):
         return re.match(r'^\d{4}-\d\d-\d\d( \d\d:\d\d:\d\d)?$', val)
 
 
-_base_url = getattr(settings, 'OPENSTATES_API_BASE_URL',
-                    "http://openstates.sunlightlabs.com/api/v1/")
-
-
 def api_url(path):
-    return "%s%s/?apikey=%s" % (_base_url, urllib.quote(path),
+    return "%s%s/?apikey=%s" % (settings.API_BASE_URL, urllib.quote(path),
                                 settings.SUNLIGHT_SERVICES_KEY)
 
 

@@ -341,19 +341,19 @@ class ReconciliationHandler(BaseHandler):
     key = getattr(settings, 'SUNLIGHT_SERVICES_KEY', 'no-key')
 
     metadata = {
-        "name": "Open States Reconciliation Service",
+        "name": "Billy Reconciliation Service",
         "view": {
-            "url": ("http://openstates.sunlightlabs.com/api/v1/legislators/"
-                    "preview/{{id}}/?apikey=%s" % key),
+            "url": "%slegislators/preview/{{id}}/?apikey=%s" % (
+                settings.API_BASE_URL, key),
             },
         "preview": {
-            "url": ("http://openstates.sunlightlabs.com/api/v1/legislators/"
-                    "preview/{{id}}/?apikey=%s" % key),
+            "url": "%slegislators/preview/{{id}}/?apikey=%s" % (
+                settings.API_BASE_URL, key),
             "width": 430,
             "height": 300
             },
         "defaultTypes": [
-            {"id": "/openstates/legislator",
+            {"id": "/billy/legislator",
              "name": "Legislator"}],
         }
 
@@ -428,7 +428,7 @@ class ReconciliationHandler(BaseHandler):
                             "score": score,
                             "match": match,
                             "type": [
-                                {"id": "/openstates/legislator",
+                                {"id": "/billy/legislator",
                                  "name": "Legislator"}]})
 
         return sorted(results, cmp=lambda l, r: cmp(r['score'], l['score']))
