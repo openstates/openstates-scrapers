@@ -136,14 +136,6 @@ class ARBillScraper(BillScraper):
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 
-        for link in page.xpath("//a[contains(@href, 'Votes.aspx')]"):
-            date = link.xpath("string(../../td[2])")
-            date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
-
-            motion = link.xpath("string(../../td[3])")
-
-            self.scrape_vote(bill, date, motion, link.attrib['href'])
-
         for link in page.xpath("//a[contains(@href, 'Amendments')]"):
             num = link.xpath("string(../../td[2])")
             name = "Amendment %s" % num
@@ -156,6 +148,21 @@ class ARBillScraper(BillScraper):
         except IndexError:
             # No cosponsor link is OK
             pass
+
+        hist_link = page.xpath("//a[contains(@href, 'BillStatusHistory')]")[0]
+        self.scrape_votes(bill, hist_link.attrib['href'])
+
+    def scrape_votes(self, bill, url):
+        page = lxml.html.fromstring(self.urlopen(url))
+        page.make_links_absolute(url)
+
+        for link in page.xpath("//a[contains(@href, 'Votes.aspx')]"):
+            date = link.xpath("string(../../td[2])")
+            date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
+
+            motion = link.xpath("string(../../td[3])")
+
+            self.scrape_vote(bill, date, motion, link.attrib['href'])
 
     def scrape_vote(self, bill, date, motion, url):
         page = self.urlopen(url)
