@@ -126,4 +126,5 @@ if __name__ == '__main__':
     settings.update(args)
 
     for state in args.states:
+        print "Validating %s" % state
         validate_api(state)
