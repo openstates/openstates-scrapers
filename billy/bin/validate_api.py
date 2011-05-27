@@ -6,6 +6,7 @@ import subprocess
 
 from billy import db
 from billy.utils import metadata
+from billy.conf import settings, base_arg_parser
 from billy.bin.dump_json import APIValidator, api_url
 
 import scrapelib
@@ -116,5 +117,13 @@ def validate_api(abbr):
 
 if __name__ == '__main__':
     import sys
-    for state in sys.argv[1:]:
+    import argparse
+
+    parser = argparse.ArgumentParser(description='validate API results',
+                                     parents=[base_arg_parser])
+    parser.add_argument('states', nargs='+', help='states to validate')
+    args = parser.parse_args()
+    settings.update(args)
+
+    for state in args.states:
         validate_api(state)
