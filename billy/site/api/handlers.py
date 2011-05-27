@@ -298,7 +298,7 @@ class EventsHandler(BillyHandler):
 
         if 'dtend' in request.GET:
             try:
-                spec['when'] = {'$lte': parse_param_dt(request.GET['dtend'])}
+                spec['when']['$lte'] = parse_param_dt(request.GET['dtend'])}
             except ValueError:
                 invalid_date = True
 
