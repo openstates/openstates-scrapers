@@ -41,10 +41,19 @@ class WYCommitteeScraper(CommitteeScraper):
                 committees[el.text] = el.get("href")
 
         for c in committees:
+            self.log(c)
             detail_url = self.urls["detail"] % (committees[c],)
             with self.urlopen(detail_url) as page:
                 page = lxml.html.fromstring(page)
                 for table in page.xpath(".//table[contains(@id, 'CommitteeMembers')]"):
-                    for row in table.xpath(".//tr"):
+                    rows = table.xpath(".//tr")
+                    chamber = rows[0].xpath('.//td')[0].text_content().strip()
+                    chamber = 'upper' if self.log(chamber) == 'Senator' else 'lower'
+                    c = Committee(chamber, c)
+                    for row in rows[1:]:
                         tds = row.xpath('.//td')
-                        #self.log(tds[0].text_content())
+                        name = tds[0].text_content().strip()
+                        role = 'chairman' if tds[3].text_content().strip() == 'Chairman' else 'member'
+                        self.log(name)
+                        self.log(role)
+                        c.add_member(name, role)

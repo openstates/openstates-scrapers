@@ -29,14 +29,14 @@ class WYLegislatorScraper(LegislatorScraper):
             if(year > 2005):
                 chamber_indication = "H" if chamber == "lower" else "S"
                 url = self.urls["new"] % (chamber_indication, year, term)
-                self.scrape_members(url, 2)
+                self.scrape_members(url, 3)
             else:
                 chamber_indication = "rep" if chamber == "lower" else "sen"
                 url = self.urls["old"] % (year, chamber_indication)
-                self.scrape_members(url, 1)
+                version = 2 if year == 2005 else 1
+                self.scrape_members(url, version)
 
         for m in self.members:
-            self.log(m)
             m = self.members[m]
             leg = Legislator(term, chamber, m["district"], m["name"], party=m["party"])
             leg.add_source(m["source"])
@@ -52,17 +52,17 @@ class WYLegislatorScraper(LegislatorScraper):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
 
-            row_path = '//table[contains(@id,"Members")]/tr' if version == 2 else "//table/tr"
+            row_path = '//table[contains(@id,"Members")]/tr' if version == 3 else "//table/tr"
             for row in page.xpath(row_path)[1:]:
-                td_path = ".//td" if version == 2 else ".//td/font"
+                td_path = ".//td" if version == 3 else ".//td/font"
                 tds = row.xpath(td_path)
                 if(len(tds) < 4):
+                    self.log('Row not valid; skipping to next one')
                     continue
-                name = tds[0].text_content().replace("\n"," ").replace("\r"," ")
+
+                name = tds[0].text if version == 1 else tds[0].text_content()
+                name = name.replace("\n"," ").replace("\r"," ")
                 name = re.sub("\s+"," ", name)
-                # Special case from http://legisweb.state.wy.us/2003/members/sen.htm; need better fix
-                name = re.sub("Resigned - \d+/\d+", "", name)
-                name = name.strip()
 
                 party = tds[1].text_content().strip()
                 district = tds[2].text_content().strip()
