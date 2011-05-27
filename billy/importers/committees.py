@@ -13,6 +13,7 @@ import pymongo
 
 
 def ensure_indexes():
+    db.committees.ensure_index([('_all_ids', pymongo.ASCENDING)])
     db.committees.ensure_index([('state', pymongo.ASCENDING),
                                 ('committee', pymongo.ASCENDING),
                                 ('subcommittee', pymongo.ASCENDING)])

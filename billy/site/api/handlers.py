@@ -283,27 +283,30 @@ class EventsHandler(BillyHandler):
             else:
                 spec[key] = {'$in': split}
 
+        invalid_date = False
+
         if 'dtstart' in request.GET:
             try:
                 spec['when'] = {'$gte': parse_param_dt(request.GET['dtstart'])}
             except ValueError:
-                resp = rc.BAD_REQUEST
-                resp.write(": invalid updated_since parameter."
-                           " Please supply a date in YYYY-MM-DD format.")
-                return resp
+                invalid_date = True
         else:
+            # By default, go back 7 days
             now = datetime.datetime.now()
             before = now - datetime.timedelta(7)
             spec['when'] = {'$gte': before}
 
         if 'dtend' in request.GET:
             try:
-                spec['when'] = {'$lte': parse_param_dt(request.GET['dtend'])}
+                spec['when']['$lte'] = parse_param_dt(request.GET['dtend'])}
             except ValueError:
-                resp = rc.BAD_REQUEST
-                resp.write(": invalid updated_since parameter."
-                           " Please supply a date in YYYY-MM-DD format.")
-                return resp
+                invalid_date = True
+
+        if invalid_date:
+            resp = rc.BAD_REQUEST
+            resp.write(": invalid updated_since parameter."
+                       " Please supply a date in YYYY-MM-DD format.")
+            return resp
 
         return list(db.events.find(spec).sort(
             'when', pymongo.ASCENDING).limit(1000))
