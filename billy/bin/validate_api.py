@@ -6,6 +6,7 @@ import subprocess
 
 from billy import db
 from billy.utils import metadata
+from billy.conf import settings, base_arg_parser
 from billy.bin.dump_json import APIValidator, api_url
 
 import scrapelib
@@ -35,15 +36,28 @@ def validate_xml(url, schema):
         schema.assertValid(child)
 
 
-def validate_api(abbr):
-    cwd = os.path.split(__file__)[0]
-    schema_dir = os.path.join(cwd, "../schemas/api/")
+def get_json_schema(name, schema_dir):
+    if schema_dir:
+        try:
+            schema_dir = os.path.abspath(schema_dir)
+            with open(os.path.join(schema_dir, name + ".json")) as f:
+                return json.load(f)
+        except IOError as ex:
+            if ex.errno != 2:
+                raise
 
+    # Fallback to default schema dir
+    cwd = os.path.split(__file__)[0]
+    default_schema_dir = os.path.join(cwd, "../schemas/api/")
+
+    with open(os.path.join(default_schema_dir, name + ".json")) as f:
+        return json.load(f)
+
+
+def validate_api(abbr, schema_dir=None):
     xml_schema = get_xml_schema()
 
-    with open(os.path.join(schema_dir, "metadata.json")) as f:
-        metadata_schema = json.load(f)
-
+    metadata_schema = get_json_schema("metadata", schema_dir)
     path = "metadata/%s" % abbr
     url = api_url(path)
     json_response = scrapelib.urlopen(url)
@@ -51,8 +65,7 @@ def validate_api(abbr):
                          validator_cls=APIValidator)
     validate_xml(url, xml_schema)
 
-    with open(os.path.join(schema_dir, "bill.json")) as f:
-        bill_schema = json.load(f)
+    bill_schema = get_json_schema("bill", schema_dir)
 
     level = metadata(abbr)['level']
     spec = {'level': level, level: abbr}
@@ -70,9 +83,7 @@ def validate_api(abbr):
 
         validate_xml(url, xml_schema)
 
-    with open(os.path.join(schema_dir, "legislator.json")) as f:
-        legislator_schema = json.load(f)
-
+    legislator_schema = get_json_schema("legislator", schema_dir)
     for legislator in db.legislators.find(spec):
         path = 'legislators/%s' % legislator['_id']
         url = api_url(path)
@@ -83,9 +94,7 @@ def validate_api(abbr):
 
         validate_xml(url, xml_schema)
 
-    with open(os.path.join(schema_dir, "committee.json")) as f:
-        committee_schema = json.load(f)
-
+    committee_schema = get_json_schema("committee", schema_dir)
     for committee in db.committees.find(spec):
         path = "committees/%s" % committee['_id']
         url = api_url(path)
@@ -96,9 +105,7 @@ def validate_api(abbr):
 
         validate_xml(url, xml_schema)
 
-    with open(os.path.join(schema_dir, "event.json")) as f:
-        event_schema = json.load(f)
-
+    event_schema = get_json_schema("event", schema_dir)
     total_events = db.events.find(spec).count()
 
     if total_events:
@@ -116,5 +123,17 @@ def validate_api(abbr):
 
 if __name__ == '__main__':
     import sys
-    for state in sys.argv[1:]:
-        validate_api(state)
+    import argparse
+
+    parser = argparse.ArgumentParser(description='validate API results',
+                                     parents=[base_arg_parser])
+    parser.add_argument('states', nargs='+', help='states to validate')
+    parser.add_argument('--schema_dir',
+                        help='directory to use for API schemas (optional)',
+                        default=None)
+    args = parser.parse_args()
+    settings.update(args)
+
+    for state in args.states:
+        print "Validating %s" % state
+        validate_api(state, args.schema_dir)
