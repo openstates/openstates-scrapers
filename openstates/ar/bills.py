@@ -149,6 +149,14 @@ class ARBillScraper(BillScraper):
             name = "Amendment %s" % num
             bill.add_document(name, link.attrib['href'])
 
+        try:
+            cosponsor_link = page.xpath(
+                "//a[contains(@href, 'CoSponsors')]")[0]
+            self.scrape_cosponsors(bill, cosponsor_link.attrib['href'])
+        except IndexError:
+            # No cosponsor link is OK
+            pass
+
     def scrape_vote(self, bill, date, motion, url):
         page = self.urlopen(url)
 
@@ -185,3 +193,8 @@ class ARBillScraper(BillScraper):
             vote.other(other.text)
 
         bill.add_vote(vote)
+
+    def scrape_cosponsors(self, bill, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            
