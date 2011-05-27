@@ -5,7 +5,6 @@ from .utils import year_from_session
 
 from collections import defaultdict
 import datetime as dt
-import pytz
 import re
 import lxml.html
 
@@ -73,7 +72,6 @@ def _handle_3rd_reading(action, chamber, date, passed):
 class ORBillScraper(BillScraper):
     state         = 'or'
 
-    timeZone      = pytz.timezone('US/Pacific')
     baseFtpUrl    = 'ftp://landru.leg.state.or.us'
 
     bill_types = {'B': 'bill',
@@ -195,12 +193,8 @@ class ORBillScraper(BillScraper):
             "bill_id" : "%s %s" % (prefix, number),
             "action"  : note.strip(),
             "actor"   : actor,
-            "date"    : self.timeZone.localize(dt.datetime(int(year),
-                                                           int(month),
-                                                           int(day),
-                                                           int(hour),
-                                                           int(minute),
-                                                           int(second))),
+            "date"    : dt.datetime(int(year), int(month), int(day), int(hour),
+                                    int(minute), int(second)),
         }
         return action
 
