@@ -56,7 +56,7 @@ class Person(SourcedObject):
         Create a Person.
 
         Note: the :class:`~billy.scrape.legislators.Legislator` class
-        should be used when dealing with state legislators.
+        should be used when dealing with legislators.
 
         :param full_name: the person's full name
         :param first_name: the first name of this legislator (if specified)
@@ -104,7 +104,7 @@ class Legislator(Person):
         :param chamber: the chamber in which this legislator served,
           'upper' or 'lower'
         :param district: the district this legislator is representing, as given
-          by the state, e.g. 'District 2', '7th', 'District C'.
+           e.g. 'District 2', '7th', 'District C'.
         :param full_name: the full name of this legislator
         :param first_name: the first name of this legislator (if specified)
         :param last_name: the last name of this legislator (if specified)
@@ -115,18 +115,13 @@ class Legislator(Person):
         .. note::
 
             please only provide the first_name, middle_name and last_name
-            parameters if they are listed on the state's web site; do not
+            parameters if they are listed on the official web site; do not
             try to split the legislator's full name into components yourself.
         """
         super(Legislator, self).__init__(full_name, first_name,
                                          last_name, middle_name,
                                          **kwargs)
         #self['type'] = 'legislator'
-
-        extra_keys = {'chamber': chamber,
-                      'district': district,
-                      'party': party}
-        # TODO: figure out what keys to take?
         self.add_role('member', term, chamber=chamber, district=district,
                       party=party)
 

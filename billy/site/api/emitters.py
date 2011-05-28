@@ -29,7 +29,7 @@ class DateTimeAwareJSONEncoder(json.JSONEncoder):
         return super(DateTimeAwareJSONEncoder, self).default(o)
 
 
-class OpenStateJSONEmitter(JSONEmitter):
+class BillyJSONEmitter(JSONEmitter):
     """
     Removes private fields (keys preceded by '_') recursively and
     outputs as JSON, with datetimes converted to strings.
@@ -46,7 +46,7 @@ class OpenStateJSONEmitter(JSONEmitter):
         return seria
 
     def construct(self):
-        return self._clean(super(OpenStateJSONEmitter, self).construct())
+        return self._clean(super(BillyJSONEmitter, self).construct())
 
     def _clean(self, obj):
         if isinstance(obj, dict):
@@ -72,7 +72,7 @@ class OpenStateJSONEmitter(JSONEmitter):
         return obj
 
 
-class OpenStateXMLEmitter(Emitter):
+class BillyXMLEmitter(Emitter):
     def render(self, request):
         obj = self.construct()
         if isinstance(obj, list):
@@ -87,10 +87,10 @@ class OpenStateXMLEmitter(Emitter):
 
 class FeedEmitter(Emitter):
     """
-    Emits an RSS feed from a list of Open State 'event' objects.
+    Emits an RSS feed from a list of billy 'event' objects.
 
-    Expects a list of Open State objects from the handler. Non-event
-    objects will be ignored.
+    Expects a list of objects from the handler. Non-event objects will be
+    ignored.
     """
 
     def render(self, request):
@@ -110,17 +110,16 @@ class _vDatetime(icalendar.vDatetime):
 
 class ICalendarEmitter(Emitter):
     """
-    Emits an iCalendar-format calendar from a list of Open State 'event'
-    object.
+    Emits an iCalendar-format calendar from a list of 'event' objects.
 
-    Expects a list of Open State objects from the handler. Non-event
-    objects will be ignored.
+    Expects a list of objects from the handler. Non-event objects will be
+    ignored.
     """
 
     def render(self, request):
         cal = icalendar.Calendar()
         cal.add('version', '2.0')
-        cal.add('prodid', 'openstates')
+        cal.add('prodid', 'billy')
 
         for obj in self.construct():
             if not isinstance(obj, dict):
@@ -150,7 +149,7 @@ class ICalendarEmitter(Emitter):
 
                 chamber = part.get('chamber')
                 if chamber:
-                    comm = "%s %s" % (chamber_name(obj['state'], chamber),
+                    comm = "%s %s" % (chamber_name(obj[obj['level']], chamber),
                                       comm)
 
                 summary = "%s Committee Meeting" % comm
@@ -180,7 +179,7 @@ class ICalendarEmitter(Emitter):
 
                 chamber = participant.get('chamber')
                 if chamber:
-                    cn = chamber_name(obj['state'], chamber) + " "
+                    cn = chamber_name(obj[obj['level']], chamber) + " "
                 else:
                     cn = ""
 

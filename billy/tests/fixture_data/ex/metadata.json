@@ -1,0 +1,10 @@
+{"lower_chamber_title": "Representative",
+ "lower_chamber_name": "House of Representatives",
+ "upper_chamber_title": "Senator",
+ "terms": [{"end_year": 2012, "start_year": 2011, "name": "112th", "sessions": ["112th"]}],
+ "name": "Example State", "_level": "state",
+ "upper_chamber_term": 6,
+ "abbreviation": "ex",
+ "upper_chamber_name": "Senate",
+ "legislature_name": "United States Congress",
+ "lower_chamber_term": 2}
