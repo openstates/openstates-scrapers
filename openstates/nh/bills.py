@@ -41,7 +41,7 @@ class NHBillScraper(BillScraper):
             if line[3]:
                 name = '%s %s %s' % (line[2], line[3], line[1])
             else:
-                name = '%s %s' % (line[1], line[2])
+                name = '%s %s' % (line[2], line[1])
 
             self.legislators[employee_num] = {'name': name,
                                               'seat': line[5]}
