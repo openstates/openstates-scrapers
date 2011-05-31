@@ -2,7 +2,7 @@ import re
 import datetime
 import contextlib
 
-from .utils import action_type, bill_type, vote_url
+from .utils import action_type, bill_type
 from .utils import removeNonAscii, sponsorsToList
 
 from billy.scrape import NoDataForPeriod, ScrapeError
@@ -25,7 +25,7 @@ class SCBillScraper(BillScraper):
     state = 'sc'
     urls = {
 	'bill-detail' : "http://scstatehouse.gov/cgi-bin/web_bh10.exe?bill1=%s&session=%s" ,
-	'vote-url' : "http://www.scstatehouse.gov/php/votehistory.php?type=BILL&session=119&bill_number=%s",
+	'vote-url' : "http://www.scstatehouse.gov/php/votehistory.php?type=BILL&session=%s&bill_number=%s",
 
 	'lower' : { 
 	  'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.htm",
@@ -39,7 +39,6 @@ class SCBillScraper(BillScraper):
 	  'vote-history':"http://www.scstatehouse.gov/php/votehistory.php?chamber=S"
 	}
     }
-
 
     people = dict()
     members = []
@@ -90,7 +89,7 @@ class SCBillScraper(BillScraper):
 
 			#self.debug("%s Name [%s] Lastname [%s]" % (chamber, full_name, nlast_name))
 
-
+    #################################################################
     @contextlib.contextmanager
     def lxml_context(self,url):
 	body = self.urlopen(url)
@@ -201,7 +200,6 @@ class SCBillScraper(BillScraper):
 	for s in sections:
 		areas[s] = []
 
-	#print "number of lines ", len(lines)
 	linenum = 0
 	section_list = []
 	expected = dict()
@@ -257,28 +255,6 @@ class SCBillScraper(BillScraper):
 
 
     ###################################################
-    def add_vote_yeas(self,vote,bill_id,yays):
-	#self.debug("VVV-XX add_vote_yea %s %s" % (bill_id,yays))
-	try:
-	  for legislator in yays:
-		#self.debug("VVV-XX   ADDING YEA %s [%s] " % (bill_id, legislator) )
-		vote.yes(legislator)
-	except Exception as error:
-		self.warning("VVV-XX   FAILED TO ADD YEA %s [%s] " % (bill_id, error) )
-		raise ScrapeError("VVV-XX: Failed to add yea  %s" % bill_id)
-
-    ###################################################
-    def add_vote_nays(self,vote,bill_id,nays):
-	self.debug("VVV-XX add_vote_nays %s %s" % (bill_id,nays))
-	try:
-	  for legislator in nays:
-		#self.debug("VVV-XX   ADDING NAY %s [%s] " % (bill_id, legislator) )
-		vote.no(legislator)
-	except Exception as error:
-		self.warning("VVV-XX   %FAILED TO ADD NAY %s [%s] " % (bill_id, error) )
-
-
-    ###################################################
     def print_vote_sections(self,bill_id,expected,areas):
 	for k in areas:
 		if k == "RESULT":
@@ -320,11 +296,6 @@ class SCBillScraper(BillScraper):
 
 		except Exception as error:
 			self.debug("VVV-ERR-1: [%s] " % (error) )
-#		file = open("sample_vote_file.txt","r")
-#		data = file.read()
-#		(expected, areas) = parse_rollcall(data)
-#		print_vote_sections(expected, areas)
-#		file.close()
 
     ###################################################
     def scrape_vote_detail(self, vurl, chamber, bill, bill_id ):
@@ -345,14 +316,6 @@ class SCBillScraper(BillScraper):
 		vote_row = doc.xpath(vxpath)
 
 		bill_title_dev = doc.xpath(bill_title_xpath)[0].text_content().strip()
-		#bill_title_dev = doc.xpath(bill_title_xpath)
-		#try:
-		#	for bt in bill_title_dev:
-		#		self.debug("VVV-TITLE-2 BT [%s]" % bt.text_content().strip() )
-		#except Exception as error:
-		#	self.debug("VVV-TITLE FAILED TO GET CONTENT [%s]" % error)
-
-
 		# 0, 1 = datetime, 2 = text,3 = link to votes page
 		# 4 = yeas , #5 = nays, #6 = nv , #7 = Ex Abs, #8 = Abstain, #9 = Total , #10 result
 
@@ -363,7 +326,6 @@ class SCBillScraper(BillScraper):
 		link_to_votes = vote_row[3].text_content()
 		link = vote_row[3]
 		link_to_votes_href = link.xpath("a/@href")[0]
-		#self.debug("VVV-BB link href[%s]" % (link_to_votes_href))
 
 		yes_count_str = vote_row[4].text_content()
 		nay_count_str = vote_row[5].text_content()
@@ -380,15 +342,15 @@ class SCBillScraper(BillScraper):
 vote_date_time, link_to_votes, link_to_votes_href 
 ) )
 
-#		self.debug("VVV-BB %s [%s] %s LINK_TO_VOTES[%s] HREF[%s] %s" % (bill_id, action, vote_date_time, link_to_votes, link_to_votes_href, result ))
-
-		#vote_date = vote_date_time.split()[0]
 		vote_date_1 = vote_date_time.split()
 		vote_date = " ".join(vote_date_1)
 
+		vvote_date = datetime.datetime.strptime(vote_date, "%m/%d/%Y %I:%M %p")
+		vvote_date = vvote_date.date()
+
 		motion = result
 		passed = result.find("Passed") != -1
-		vote = Vote(chamber, vote_date, motion, passed, yes_count, no_count, other_count )
+		vote = Vote(chamber, vvote_date, motion, passed, yes_count, no_count, other_count )
 						#use default for type
 
 		# PARSING ONLY WORKS FOR lower now
@@ -399,6 +361,7 @@ vote_date_time, link_to_votes, link_to_votes_href
 		   temp_file = tempfile.NamedTemporaryFile(delete=False,suffix='.pdf',prefix="votetmp_%s_"%billnum )
 		   otemp_file = tempfile.NamedTemporaryFile(delete=False,suffix='.txt',prefix="vote_text_%s_"%billnum )
 		   try:
+			self.debug("Parsing pdf votes, saving to tempfile [%s] textfile=[%s]" % (temp_file.name, otemp_file.name))
 			with self.urlopen(link_to_votes_href) as whatever:
 				pdf_file = file(temp_file.name, 'w')
 				pdf_file.write(whatever)
@@ -423,36 +386,35 @@ vote_date_time, link_to_votes, link_to_votes_href
 			vfile.close()
 
 			(expected, areas, yays, nays, other) = self.parse_rollcall(vdata)
-			#self.debug("VVV-XX %s yays %s" % (bill_id, yays))
-			#message = "bill %s file %s" % (bill_id,otemp_file.name)
-			#self.print_vote_sections(message, expected, areas)
 
 	  		for legislator in yays:
 				vote.yes(legislator)
 	  		for legislator in nays:
 				vote.no(legislator)
+	  		#for legislator in other:
+			#	vote.other(legislator)
 
-    			#self.add_vote_nays(vote,bill_id,nays)
 		   except Exception as error:
-			self.warning("VVV-XX CC %s FAILED %s " % ( bill_id, traceback.format_exc()) ) 
-			#self.warning("CC Failed to get votes for bill[%s] %s" % (bill_id, error))
+			self.warning("Failed while fetching votes bill=%s %s" % ( bill_id, traceback.format_exc()) ) 
 
 		bill.add_vote(vote)
 				
 		date = datetime.datetime.strptime(vote_date, "%m/%d/%Y %I:%M %p")
 		date = date.date()
+		t = action_type(action)
+		self.debug("scrape vote detail ACTION: [%s] is [%s]" % (action,t))
 		bill.add_action(chamber, action, date, type=action_type(action) )
 
 
 
     ###################################################
-    def split_page_into_parts(self, data):
+    def split_page_into_parts(self, data, session, bill_number):
 	"""
+	Data contains the content of a bill detail page.
 	Return a tuple containing: similar list, summary, after_summary
 	"""
 
-	#self.debug("VVV AAA Data==[%s]\n========" % data)
-	similar_to_list, after_summary, summary = [], None, None
+	similar_to_list, after_summary, summary, vurl = [], None, None, None
 
 	sim = re.match("Similar (.+)\n",data)
 	if sim:
@@ -468,10 +430,19 @@ vote_date_time, link_to_votes, link_to_votes_href
 	if bb != -1:
 		summary = re.sub(r'\s+', ' ', data[1:bb])
 		after_summary = data[bb:]
+
+		vh = after_summary.find("View Vote History")
+		vh1 = after_summary.find("\n")
+		#self.debug("VOTE (eol vh1: %d) (votehistory %d)" % (vh1, vh))
+		if vh != -1: 
+			vurl = self.urls['vote-url'] % (session,bill_number)
+		if vh1 != -1:
+			# skip to end of line
+			after_summary = after_summary[vh1:]
 	else:
 		summary = re.sub(r'\s+', ' ', data)
 
-	return ( similar_to_list, summary, after_summary )
+	return ( similar_to_list, summary, after_summary, vurl )
 
 
     ###################################################
@@ -487,7 +458,7 @@ vote_date_time, link_to_votes, link_to_votes_href
 	pre_start = page.find("<pre>",results.start())
 	if pre_start == -1: 
 		#raise ScrapeError("scrape_details(2) - unable to parse (no <pre>) |%s|\n|%s|"  % (bill_detail_url,page))
-		self.log("scrape_details(2) - unable to parse (no <pre>) |%s|\n|%s|"  % (bill_detail_url,page))
+		self.warning("scrape_details(2) - unable to parse (no <pre>) |%s|\n|%s|"  % (bill_detail_url,page))
 		return
 
 	pre_stop = page.find("</pre>",pre_start)
@@ -500,30 +471,21 @@ vote_date_time, link_to_votes, link_to_votes_href
 	data = pre_section
 	vurl = None
 	
-	date_re = re.compile("\d\d/\d\d/\d\d")
+	action_line_re = re.compile(r'(\d\d/\d\d/\d\d)\s+(\w+)\s+(.+)')
 
 	pat2 = re.compile(r' By ')
 	results = pat2.search(data)
-	#print " by = ", results.start() ,  " " , results.end()
 	if results != None:
 		bystuff = data[results.start():results.end()]
-		#print " bystuff = ", bystuff
 		data = data[results.end():]
 
 	pat3 = re.compile(r'</b>')
 	results1 = pat3.search(data)
-	#print " after </b> = ", results1.start() ,  " " , results1.end()
-	#if results1 != None:
-	#	abba = data[results1.start():results1.end()]
-	#	print " abba = ", abba 
 
 	newspon = []
 	if results != None and results1 != None:
-		sponsors = data[:results1.start()]
-		#self.debug( "DETAIL SPONSORS: [%s]" % data[:results1.start()].strip() )
 		spondata = data[:results1.start()]
 		mysponsors = sponsorsToList( spondata )
-		#self.debug("QQQ SPONSOR ORIG |%s| becomes |%s|" % (spondata, mysponsors))
 		for s in mysponsors:
 			if s in self.people:
 				#self.log( "DETAIL SPONSOR FOUND [%s]=[%s]" % (s,self.people[s]) )
@@ -533,12 +495,12 @@ vote_date_time, link_to_votes, link_to_votes_href
 				newspon.append(s)
 		data = data[results1.end():]
 		
-	linenum = 0
-	bill_summary = ""
 	apat = re.compile(">(H|S) (\d*)<")
 	billpat = re.compile("(\d+)")
+	bill_number = billpat.search(bill_id).group(0)
 
-	(similar_bills,summary,after_summary) = self.split_page_into_parts(data)
+	(similar_bills,summary,after_summary,vurl) = self.split_page_into_parts(data,session, bill_number)
+	#self.debug("VVV: %s VURL %s " % (bill_id,vurl) )
 	#self.debug("VVV: %s Similar List %s " % (bill_id,similar_bills) )
 	#self.debug("VVV: %s Summary len %d %s " % (bill_id,len(summary),summary) )
 	#self.debug("VVV: %s After %d %s " % (bill_id,len(after_summary), after_summary) )
@@ -552,53 +514,52 @@ vote_date_time, link_to_votes, link_to_votes_href
 
 	bill = Bill(session, chamber, bill_id, bill_summary, type=bill_type(bill_summary))
 		
-	parse_state = 1
+	linenum = 0
 	for line in after_summary.splitlines():
-		#self.debug("   DETAILS parse_state: %d %d line |%s|" % (linenum, parse_state,line)) 
-		if parse_state == 1: 
-			ahref = line.find("<A HREF") 
-			if ahref >= 0:
-				# the links should be on this line 
-				#if line.find("View full text"):
-				#	self.debug("VV %s View full text" % bill_id)
-				if line.find("View Vote History"):
-					bill_results = billpat.search(bill_id)
-					if bill_results:
-						bill_number = bill_results.group(0)
-						vurl = vote_url(bill_number)
-				parse_state = 2
-		elif parse_state == 2:
-			date_results = date_re.search(line)
-			if date_results:
-				the_date = date_results.group(0)
-				date = datetime.datetime.strptime(the_date, "%m/%d/%y")
-				date = date.date()
-				action = line.partition("(")[0]
-				bill.add_action(chamber, action, date, type=action_type(action) )
-				#self.debug( "     bill %s action: %s %s" % (bill_id,the_date,action))
-		linenum += 1
+		#get rid of the parenthesis
+		action_line = line.partition("(")[0].strip()
+		r = action_line_re.search(action_line)
 
+		if r:
+			the_date = r.group(1)
+			action_chamber = r.group(2)
+			action = r.group(3)
+
+			date = datetime.datetime.strptime(the_date, "%m/%d/%y")
+			date = date.date()
+		
+			t = action_type(action)
+			if t == ['other']:
+				self.debug("OTHERACTION: bill %s %d Text[%s] line[%s]" % (bill_id,linenum,action,line))
+			else:
+				self.debug("ACTION [%s] line %d DATE[%s] CHAMBER[%s] TEXT[%s] TYPE=[%s]" % (bill_id, linenum, the_date, action_chamber, action,str(t)))
+
+			#self.debug("543 scrape details ACTION: [%s] is [%s]" % (action,t))
+			bill.add_action(chamber, action, date, t )
+			#self.debug( "     bill %s action: %s %s" % (bill_id,the_date,action))
+		else:
+			self.debug("Skipping line %d [%s] line:[$%s]" % (linenum, bill_id, line))
+
+		linenum += 1
 
 	if similar_bills:
 		#self.debug("similar %s %s" % (bill_id, similar_bills))
 		bill['similar'] = similar_bills
 		
-	sponsors = newspon 
-
 	bill.add_source(bill_detail_url)
 
-	for sponsor in sponsors:
+	for sponsor in newspon:
 		bill.add_sponsor("sponsor", sponsor )
 
 	if vurl:
 		try:
 	    		self.scrape_vote_detail( vurl, chamber, bill, bill_id )
 			bill.add_source(vurl)
+			self.debug("Scraped votes: (chamber=%s,bill=%s,url=%s)" % (chamber,bill_id,vurl) )
 		except Exception as error:
-			self.warning("VVV-BB FAILED TO SCRAPE VOTE %s" % error )
+			self.warning("Failed to scrape votes: (chamber=%s,bill=%s,url=%s) %s" % (chamber,bill_id,vurl,error) )
 
 	self.save_bill(bill)
-
 
 
     ###################################################
@@ -628,8 +589,6 @@ vote_date_time, link_to_votes, link_to_votes_href
 	  return billids
 
 	raise ScrapeError("recap: bad format %s" % data )
-
-
 
     ####################################################
     # 1. Get list of days with information by parsing daily url
@@ -677,7 +636,6 @@ vote_date_time, link_to_votes, link_to_votes_href
 		
 	regexp = re.compile( "\d+" )
 	for bill_id in all_bills:
-		#self.log("Processing [%s]" % bill_id)
 		pat = regexp.search(bill_id)
 		if not pat:
 			self.warning( "383 Missing billid [%s]" % bill_id )
@@ -686,7 +644,6 @@ vote_date_time, link_to_votes, link_to_votes_href
 		bn = pat.group(0)
 		dtl_url = self.urls['bill-detail'] % (bn,session)
 
-		#self.debug("447 detail %s %s" % (bn,dtl_url) )
 		with self.urlopen(dtl_url) as page:
 			self.scrape_details( dtl_url, session, chamber, bill_id, page)
 

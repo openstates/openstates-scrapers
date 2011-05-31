@@ -68,23 +68,37 @@ def sponsorsToList(str):
 		sponlist.extend( corrected_sponsor(n) )
 	return sponlist
 
-# vote url - contains all votes for a bill, including links to drill down on specific bill actions
-def vote_url(bill_number):
-	return "http://www.scstatehouse.gov/php/votehistory.php?type=BILL&session=119&bill_number=%s" % bill_number 
-
 def removeNonAscii(s):
 	return "".join(i for i in s if ord(i)<128)
 
 
+
+#20:02:42 billy WARNING sc Failed to validate field 'actions' list schema: Failed to validate field 'type' list schema: Value 'committee:referred:1' for field '_data' is not in the enumeration: [u'bill:introduced', u'bill:passed', u'bill:failed', u'bill:withdrawn', u'bill:substituted', u'bill:filed', u'bill:veto_override:passed', u'bill:veto_override:failed', u'governor:received', u'governor:signed', u'governor:vetoed', u'governor:vetoed:line-item', u'amendment:introduced', u'amendment:passed', u'amendment:failed', u'amendment:tabled', u'amendment:amended', u'amendment:withdrawn', u'committee:referred', u'committee:failed', u'committee:passed', u'committee:passed:favorable', u'committee:passed:unfavorable', u'bill:reading:1', u'bill:reading:2', u'bill:reading:3', u'other']
 def action_type(action):
 	action = action.lower()
 	atypes = []
 	if re.match('^read (the )?(first|1st) time', action):
 		atypes.append('bill:introduced')
 		atypes.append('bill:reading:1')
+	elif re.match('^read second time', action):
+		atypes.append('bill:reading:2')
+	elif re.match('^read third time', action):
+		atypes.append('bill:reading:3')
 
-	if re.match('^referred to the committee', action):
-		atypes.append('committee:referred:1')
+	if re.match('^referred to (the )?committee', action):
+		atypes.append('committee:referred')
+	elif re.match('^referred to (the )?subcommittee', action):
+		atypes.append('committee:referred')
+
+	if re.match('^introduced and adopted', action):
+		atypes.append('bill:introduced')
+		#not sure if adopted means passed
+		atypes.append('bill:passed')
+	elif re.match('^introduced and read first time', action):
+		atypes.append('bill:introduced')
+		atypes.append('bill:reading:1')
+	elif re.match('^introduced', action):
+		atypes.append('bill:introduced')
 
 	if atypes:
 		return atypes
