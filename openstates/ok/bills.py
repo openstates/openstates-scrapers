@@ -59,7 +59,7 @@ class OKBillScraper(BillScraper):
         act_table = page.xpath("//table[contains(@id, 'Actions')]")[0]
         for tr in act_table.xpath("tr")[2:]:
             action = tr.xpath("string(td[1])").strip()
-            if not action:
+            if not action or action == 'None':
                 continue
 
             date = tr.xpath("string(td[3])").strip()
