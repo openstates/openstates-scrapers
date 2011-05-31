@@ -5,6 +5,8 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import Bill, BillScraper
 
 body_code = {'lower': 'H', 'upper': 'S'}
+VERSION_URL = 'http://www.gencourt.state.nh.us/legislation/%s/%s.html'
+
 
 class NHBillScraper(BillScraper):
     state = 'nh'
@@ -30,6 +32,9 @@ class NHBillScraper(BillScraper):
             if body == body_code[chamber] and session_yr == session:
                 # TODO: billtype
                 self.bills[lsr] = Bill(session, chamber, bill_id, title)
+                version_url = VERSION_URL % (session,
+                                             expanded_bill_id.replace(' ', ''))
+                self.bills[lsr].add_version('latest version', version_url)
 
         # load legislators
         self.legislators = {}
