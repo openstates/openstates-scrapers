@@ -1,4 +1,5 @@
 import urllib
+import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
@@ -46,4 +47,22 @@ class OKBillScraper(BillScraper):
 
         bill = Bill(session, chamber, bill_id, title)
         bill.add_source(url)
+
+        table = page.xpath("//table[contains(@id, 'Actions')]")[0]
+        for tr in table.xpath("tr")[2:]:
+            action = tr.xpath("string(td[1])").strip()
+            if not action:
+                continue
+
+            date = tr.xpath("string(td[3])").strip()
+            date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
+
+            actor = tr.xpath("string(td[4])").strip()
+            if actor == 'H':
+                actor = 'lower'
+            elif actor == 'S':
+                actor = 'upper'
+
+            bill.add_action(actor, action, date)
+
         self.save_bill(bill)
