@@ -48,6 +48,14 @@ class OKBillScraper(BillScraper):
         bill = Bill(session, chamber, bill_id, title)
         bill.add_source(url)
 
+        for link in page.xpath("//a[contains(@id, 'Auth')]"):
+            name = link.xpath("string()").strip()
+
+            if 'coAuth' in link.attrib['id']:
+                bill.add_sponsor('coauthor', name)
+            else:
+                bill.add_sponsor('author', name)
+
         act_table = page.xpath("//table[contains(@id, 'Actions')]")[0]
         for tr in act_table.xpath("tr")[2:]:
             action = tr.xpath("string(td[1])").strip()
