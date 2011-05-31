@@ -48,8 +48,8 @@ class OKBillScraper(BillScraper):
         bill = Bill(session, chamber, bill_id, title)
         bill.add_source(url)
 
-        table = page.xpath("//table[contains(@id, 'Actions')]")[0]
-        for tr in table.xpath("tr")[2:]:
+        act_table = page.xpath("//table[contains(@id, 'Actions')]")[0]
+        for tr in act_table.xpath("tr")[2:]:
             action = tr.xpath("string(td[1])").strip()
             if not action:
                 continue
@@ -64,5 +64,14 @@ class OKBillScraper(BillScraper):
                 actor = 'upper'
 
             bill.add_action(actor, action, date)
+
+        version_table = page.xpath("//table[contains(@id, 'Versions')]")[0]
+        for link in version_table.xpath(".//a[contains(@href, '.DOC')]"):
+            version_url = link.attrib['href']
+            if 'COMMITTEE REPORTS' in version_url:
+                continue
+
+            name = link.text.strip()
+            bill.add_version(name, version_url)
 
         self.save_bill(bill)
