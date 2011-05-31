@@ -38,10 +38,10 @@ class NHLegislatorScraper(LegislatorScraper):
 
                 leg = Legislator(term, chamber, district, full, first, last,
                                  middle, party_map[party],
-                                 county=county, seat_id=seat,
-                                 address=address, home_phone=home_phone,
+                                 county=county, address=address,
+                                 home_phone=home_phone,
                                  office_phone=office_phone, office_fax=fax,
-                                 email=email)
+                                 email=email, _code=seat)
 
                 for com in (com1, com2, com3, com4, com5):
                     if com:
