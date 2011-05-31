@@ -1,114 +1,80 @@
-#!/usr/bin/env python
-import urllib
-import re
-from BeautifulSoup import BeautifulSoup
+import zipfile
+import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import Bill, BillScraper
 
-class NHBillScraper(BillScraper):
+body_code = {'lower': 'H', 'upper': 'S'}
 
+class NHBillScraper(BillScraper):
     state = 'nh'
 
-    def get_bill_text(self, url):
-        regexp = re.compile("href=\"(\S*)\"")
-        bill_url = regexp.search(str(url))
-        return bill_url.group(1)
+    def scrape(self, chamber, session):
+        zip_url = 'http://gencourt.state.nh.us/downloads/Bill%20Status%20Tables.zip'
 
-    def add_bill_sponsors(self, url):
-        regexp = re.compile("href=\"(\S*)\"")
-        sponsor_url = regexp.search(str(url))
-        sponsor_url = sponsor_url.group(1)
+        fname, resp = self.urlretrieve(zip_url)
+        zf = zipfile.ZipFile(open(fname))
 
-    def scrape(self, chamber, year):
-        if year == '2009':
-            self.scrape_year(chamber, '2009', '2009-2010')
-            self.scrape_year(chamber, '2010', '2009-2010')
-        else:
-            raise NoDataForPeriod(year)
+        # bill basics
+        self.bills = {}
+        for line in zf.open('tbllsrs.txt').readlines():
+            line = line.split('|')
+            session_yr = line[0]
+            lsr = line[1]
+            title = line[2]
+            body = line[3]
+            billtype = line[4]
+            expanded_bill_id = line[9]
+            bill_id = line[10]
 
-    def scrape_year(self, chamber, year, session):
-        if chamber == 'upper':
-            chamber_abbr = 'H'
-        elif chamber == 'lower':
-            chamber_abbr = 'S'
+            if body == body_code[chamber] and session_yr == session:
+                # TODO: billtype
+                self.bills[lsr] = Bill(session, chamber, bill_id, title)
 
-        #set up POST data
-        values = [('txtsessionyear', year),
-                  ('txttitle', ''),
-                  ('txtlsrnumber', ''),
-                  ('Submit1', 'Submit')]
-        params = urllib.urlencode(values)
-        search_url = 'http://www.gencourt.state.nh.us/bill_status/Results.aspx'
+        # load legislators
+        self.legislators = {}
+        for line in zf.open('tbllegislators.txt').readlines():
+            line = line.split('|')
+            employee_num = line[0]
 
-        #request page with list of all bills in year
-        with self.urlopen(search_url + '?' + params) as doc:
-            soup = BeautifulSoup(doc)
+            # first, last, middle
+            if line[3]:
+                name = '%s %s %s' % (line[1], line[3], line[2])
+            else:
+                name = '%s %s' % (line[1], line[2])
 
-            #parse results
-            bills = soup.find("table", {"class": "ptable"})
-            trs = soup.findAll("tr")
-            #go through all of the table rows with relevant data
-            tr_start = 8
-            tr_hop = 11
-            i = 0
+            self.legislators[employee_num] = {'name': name,
+                                              'seat': line[5]}
+            #body = line[4]
 
-            while (tr_start + (tr_hop * i)) < len(trs):
-                tr = trs[tr_start + (tr_hop * i)]
-                i = i + 1
-                # strip off extra white space from name
-                id = tr.find("big").string.strip()
-                bill_id = tr.find("big").string.strip()
-                exp = re.compile("^(\w*)")
-                bill_id = exp.search(id).group(1)
+        # sponsors
+        for line in zf.open('tbllsrsponsors.txt').readlines():
+            session_yr, lsr, seq, employee, primary = line.split('|')
 
-                # check to see if its in the proper chamber
-                exp = re.compile("^" + chamber_abbr)
-                if exp.search(bill_id) == None:
-                    continue  # in wrong house
+            if session_yr == session and lsr in self.bills:
+                sp_type = 'primary' if primary == '1' else 'cosponsor'
+                self.bills[lsr].add_sponsor(sp_type,
+                                    self.legislators[employee]['name'],
+                                    _code=self.legislators[employee]['seat'])
 
-                # check to see it is a bill and not a resolution
-                exp = re.compile("B")
-                if exp.search(bill_id) == None:
-                    continue  # not a bill
 
-                # get bill_id suffix if exists
-                exp = re.compile("(-\w*)$")
-                res = exp.search(id)
-                if res != None:
-                    bill_id = bill_id + res.group(1)
+        # actions
+        for line in zf.open('tbldocket.txt').readlines():
+            # a few blank/irregular lines, irritating
+            if '|' not in line:
+                continue
 
-                # get bill title
-                title = tr.findAll("b")[0]
-                bill_title = title.nextSibling.string
-                bill_title = bill_title.strip()
-                bill_title = bill_title.encode('ascii', 'xmlcharrefreplace')
+            (session_yr, lsr, _, timestamp, bill_id, body,
+             action) = line.split('|')
 
-                # grab url of bill text
-                urls = tr.findAll("a")
-                textexp = re.compile("Bill Text")
-                textdoc = re.compile("Bill Docket")
-                textstat = re.compile("Bill Status")
-                textcall = re.compile("Roll Calls")
-                textaudio = re.compile("Audio Files")
-                for url in urls:
-                    if textexp.search(str(url.string)) != None:
-                        bill_url = self.get_bill_text(url)
-                    if textdoc.search(str(url.string)) != None:
-                        pass
-                    if textstat.search(str(url.string)) != None:
-                        add_bill_sponsors()
-                    if textcall.search(str(url.string)) != None:
-                        pass
-                    if textaudio.search(str(url.string)) != None:
-                        pass
+            if session_yr == session and lsr in self.bills:
+                actor = 'lower' if body == 'H' else 'upper'
+                time = datetime.datetime.strptime(timestamp,
+                                                  '%m/%d/%Y %H:%M:%S %p')
+                self.bills[lsr].add_action(actor, action, time)
 
-                bill = Bill(session, chamber, bill_id, bill_title)
-                bill.add_version("Bill text", bill_url)
-                bill.add_source(search_url)
-                self.save_bill(bill)
 
-                #grabs sponsorship
-
-                #todo: add sponsorship, audio, actions
-
+        # save all bills
+        for bill in self.bills.values():
+            bill.add_source(zip_url)
+            self.save_bill(bill)
