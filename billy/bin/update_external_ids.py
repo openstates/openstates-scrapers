@@ -128,6 +128,6 @@ if __name__ == '__main__':
 
     votesmart.apikey = settings.VOTESMART_API_KEY
 
-    for abb4 in args.abbrs:
+    for abbr in args.abbrs:
         update_missing_ids(abbr, settings.SUNLIGHT_SERVICES_KEY)
         time.sleep(30)
