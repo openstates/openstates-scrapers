@@ -39,7 +39,7 @@ class NHBillScraper(BillScraper):
 
             # first, last, middle
             if line[3]:
-                name = '%s %s %s' % (line[1], line[3], line[2])
+                name = '%s %s %s' % (line[2], line[3], line[1])
             else:
                 name = '%s %s' % (line[1], line[2])
 
