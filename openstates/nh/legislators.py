@@ -41,7 +41,11 @@ class NHLegislatorScraper(LegislatorScraper):
                                  county=county, address=address,
                                  home_phone=home_phone,
                                  office_phone=office_phone, office_fax=fax,
-                                 email=email, _code=seat)
+                                 email=email)
+
+                # use seat as a _code if chamber is lower
+                if chamber == 'lower':
+                    leg['_code'] = seat
 
                 for com in (com1, com2, com3, com4, com5):
                     if com:
