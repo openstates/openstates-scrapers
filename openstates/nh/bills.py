@@ -31,6 +31,9 @@ class NHBillScraper(BillScraper):
 
             if body == body_code[chamber] and session_yr == session:
                 # TODO: billtype
+                if title.startswith('('):
+                    title = title.split(') ', 1)[1]
+
                 self.bills[lsr] = Bill(session, chamber, bill_id, title)
                 version_url = VERSION_URL % (session,
                                              expanded_bill_id.replace(' ', ''))
