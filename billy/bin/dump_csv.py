@@ -192,7 +192,7 @@ if __name__ == '__main__':
     settings.update(args)
 
     for abbr in args.abbrs:
-        print 'dumping CS for', abbr
+        print 'dumping CSV for', abbr
 
         if not args.file:
             args.file = '{0}_csv.zip'.format(abbr)
