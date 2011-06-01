@@ -33,7 +33,7 @@ def dump_json(abbr, filename, validate, schema_dir):
     scraper = scrapelib.Scraper(requests_per_minute=600)
     level = metadata(abbr)['level']
 
-    zip = zipfile.ZipFile(filename, 'w')
+    zip = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
 
     if not schema_dir:
         cwd = os.path.split(__file__)[0]

@@ -130,7 +130,7 @@ def dump_csv(abbr, filename, nozip):
     files += dump_bill_csvs(level, abbr)
 
     if not nozip:
-        zfile = zipfile.ZipFile(filename, 'w')
+        zfile = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
         for fname in files:
             arcname = fname.split('/')[-1]
             zfile.write(fname, arcname=arcname)
