@@ -51,7 +51,7 @@ class OKBillScraper(BillScraper):
         for link in page.xpath("//a[contains(@id, 'Auth')]"):
             name = link.xpath("string()").strip()
 
-            if 'coAuth' in link.attrib['id']:
+            if 'otherAuth' in link.attrib['id']:
                 bill.add_sponsor('coauthor', name)
             else:
                 bill.add_sponsor('author', name)
