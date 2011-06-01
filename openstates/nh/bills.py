@@ -114,9 +114,9 @@ class NHBillScraper(BillScraper):
                                                   '%m/%d/%Y %H:%M:%S %p')
                 # TODO: stop faking passed somehow
                 passed = yeas > nays
-                votes[vote_num] = Vote(actor, time, motion, passed, yeas, nays,
-                                       absent)
-                self.bills_by_id[bill_id].add_vote(votes[vote_num])
+                vote = Vote(actor, time, motion, passed, yeas, nays, absent)
+                votes[body+vote_num] = vote
+                self.bills_by_id[bill_id].add_vote(vote)
 
         for line in self.zf.open('tblrollcallhistory.txt'):
             session_yr, body, v_num, employee, bill_id, vote = line.split('|')
@@ -126,8 +126,8 @@ class NHBillScraper(BillScraper):
                 vote = vote.strip()
                 #code = self.legislators[employee]['seat']
                 if vote == 'Yea':
-                    votes[v_num].yes(leg)
+                    votes[body+v_num].yes(leg)
                 elif vote == 'Nay':
-                    votes[v_num].no(leg)
+                    votes[body+v_num].no(leg)
                 else:
-                    votes[v_num].other(leg)
+                    votes[body+v_num].other(leg)
