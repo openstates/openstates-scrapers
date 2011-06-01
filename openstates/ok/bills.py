@@ -10,7 +10,7 @@ import lxml.html
 def action_type(action):
     atype = []
 
-    if action == 'First reading':
+    if action == 'First Reading':
         atype.append('bill:introduced')
         atype.append('bill:reading:1')
     elif action == 'Sent to Governor':
