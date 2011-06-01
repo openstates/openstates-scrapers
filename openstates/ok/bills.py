@@ -43,19 +43,23 @@ class OKBillScraper(BillScraper):
         url = "http://webserver1.lsb.state.ok.us/WebApplication3/WebForm1.aspx"
         form_page = lxml.html.fromstring(self.urlopen(url))
 
-        if chamber == 'upper':
-            bill_type = 'SB'
-        else:
-            bill_type = 'HB'
+        bill_types = ['B', 'JR', 'CR', 'R']
 
-        values = {'cbxSessionId': '1100',
-                  'cbxActiveStatus': 'All',
-                  'lbxTypes': bill_type,
-                  'RadioButtonList1': 'On Any day',
-                  'Button1': 'Retrieve'}
+        if chamber == 'upper':
+            chamber_letter = 'S'
+        else:
+            chamber_letter = 'H'
+
+        values = [('cbxSessionId', '1100'),
+                  ('cbxActiveStatus', 'All'),
+                  ('RadioButtonList1', 'On Any day'),
+                  ('Button1', 'Retrieve')]
+
+        for bill_type in bill_types:
+            values.append(('lbxTypes', chamber_letter + bill_type))
 
         for hidden in form_page.xpath("//input[@type='hidden']"):
-            values[hidden.attrib['name']] = hidden.attrib['value']
+            values.append((hidden.attrib['name'], hidden.attrib['value']))
 
         page = self.urlopen(url, "POST", urllib.urlencode(values))
         page = lxml.html.fromstring(page)
