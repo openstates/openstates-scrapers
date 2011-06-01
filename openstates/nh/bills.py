@@ -6,6 +6,12 @@ from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote, VoteScraper
 
 body_code = {'lower': 'H', 'upper': 'S'}
+bill_type_map = {'B': 'bill',
+                 'R': 'resolution',
+                 'CR': 'concurrent resolution',
+                 'JR': 'joint resolution',
+                 'CO': 'concurrent order'
+                }
 VERSION_URL = 'http://www.gencourt.state.nh.us/legislation/%s/%s.html'
 
 
@@ -27,16 +33,20 @@ class NHBillScraper(BillScraper):
             lsr = line[1]
             title = line[2]
             body = line[3]
-            billtype = line[4]
+            type_num = line[4]
             expanded_bill_id = line[9]
             bill_id = line[10]
 
             if body == body_code[chamber] and session_yr == session:
-                # TODO: billtype
+                if expanded_bill_id.startswith('CACR'):
+                    bill_type = 'constitutional amendment'
+                else:
+                    bill_type = bill_type_map[expanded_bill_id.split(' ')[0][1:]]
                 if title.startswith('('):
                     title = title.split(') ', 1)[1]
 
-                self.bills[lsr] = Bill(session, chamber, bill_id, title)
+                self.bills[lsr] = Bill(session, chamber, bill_id, title,
+                                       type=bill_type)
                 version_url = VERSION_URL % (session,
                                              expanded_bill_id.replace(' ', ''))
                 self.bills[lsr].add_version('latest version', version_url)
