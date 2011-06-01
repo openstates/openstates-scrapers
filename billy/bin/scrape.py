@@ -35,11 +35,12 @@ def _run_scraper(scraper_type, options, metadata):
     try:
         ScraperClass = get_scraper(mod_path, scraper_type)
     except ScrapeError as e:
-        # only re-raise if not alldata
-        if not options.alldata:
-            raise e
-        else:
+        # silence error only for --alldata
+        if (options.alldata and str(e.orig_exception) ==
+            'No module named %s' % scraper_type):
             return
+        else:
+            raise e
 
     opts = {'output_dir': options.output_dir,
             'no_cache': options.no_cache,

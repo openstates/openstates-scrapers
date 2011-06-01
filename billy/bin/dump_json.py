@@ -48,7 +48,7 @@ def dump_json(abbr, filename, validate, schema_dir):
     with open(os.path.join(schema_dir, "committee.json")) as f:
         committee_schema = json.load(f)
 
-    for bill in db.bills.find({'level': level, level: abbr}):
+    for bill in db.bills.find({'level': level, level: abbr}, timeout=False):
         path = "bills/%s/%s/%s/%s" % (abbr, bill['session'],
                                       bill['chamber'], bill['bill_id'])
         url = api_url(path)
