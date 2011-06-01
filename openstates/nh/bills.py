@@ -115,7 +115,7 @@ class NHBillScraper(BillScraper):
                 # TODO: stop faking passed somehow
                 passed = yeas > nays
                 votes[vote_num] = Vote(actor, time, motion, passed, yeas, nays,
-                                       present+absent)
+                                       absent)
                 self.bills_by_id[bill_id].add_vote(votes[vote_num])
 
         for line in self.zf.open('tblrollcallhistory.txt'):
