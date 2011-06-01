@@ -123,7 +123,8 @@ class NHBillScraper(BillScraper):
 
             if session_yr == session and bill_id.strip() in self.bills_by_id:
                 leg = self.legislators[employee]['name']
-                #code = self.legislators[employee]['code']
+                vote = vote.strip()
+                #code = self.legislators[employee]['seat']
                 if vote == 'Yea':
                     votes[v_num].yes(leg)
                 elif vote == 'Nay':
