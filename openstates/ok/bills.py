@@ -7,6 +7,32 @@ from billy.scrape.bills import BillScraper, Bill
 import lxml.html
 
 
+def action_type(action):
+    atype = []
+
+    if action == 'First reading':
+        atype.append('bill:introduced')
+        atype.append('bill:reading:1')
+    elif action == 'Sent to Governor':
+        atype.append('governor:received')
+
+    if 'referred to' in action.lower():
+        atype.append('committee:referred')
+
+    if action.startswith('Second Reading'):
+        atype.append('bill:reading:2')
+    elif action.startswith('Third Reading'):
+        if 'Measure Passed' in action:
+            atype.append('bill:passed')
+        atype.append('bill:reading:3')
+    elif action.startswith('Reported Do Pass'):
+        atype.append('committee:passed')
+    elif action.startswith('Signed by Governor'):
+        atype.append('governor:signed')
+
+    return atype
+
+
 class OKBillScraper(BillScraper):
     state = 'ok'
 
@@ -51,7 +77,7 @@ class OKBillScraper(BillScraper):
         for link in page.xpath("//a[contains(@id, 'Auth')]"):
             name = link.xpath("string()").strip()
 
-            if 'coAuth' in link.attrib['id']:
+            if 'otherAuth' in link.attrib['id']:
                 bill.add_sponsor('coauthor', name)
             else:
                 bill.add_sponsor('author', name)
@@ -71,7 +97,8 @@ class OKBillScraper(BillScraper):
             elif actor == 'S':
                 actor = 'upper'
 
-            bill.add_action(actor, action, date)
+            bill.add_action(actor, action, date,
+                            type=action_type(action))
 
         version_table = page.xpath("//table[contains(@id, 'Versions')]")[0]
         for link in version_table.xpath(".//a[contains(@href, '.DOC')]"):
