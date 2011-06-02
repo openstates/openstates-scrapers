@@ -23,19 +23,34 @@ class OKCommitteeScraper(CommitteeScraper):
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 
+        parents = {}
+
         for link in page.xpath("//a[contains(@href, 'Members')]"):
             name = link.xpath("string()").strip()
 
             if 'Members' in name or 'Conference' in name or 'Joint' in name:
                 continue
 
-            self.scrape_lower_committee(name, link.attrib['href'])
+            match = re.search(r'CommID=(\d+)&SubCommID=(\d+)',
+                              link.attrib['href'])
+            comm_id, sub_comm_id = int(match.group(1)), int(match.group(2))
 
-    def scrape_lower_committee(self, name, url):
+            if sub_comm_id == 0:
+                parents[comm_id] = name
+                parent = None
+            else:
+                parent = parents[comm_id]
+
+            self.scrape_lower_committee(name, parent, link.attrib['href'])
+
+    def scrape_lower_committee(self, name, parent, url):
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 
-        comm = Committee('lower', name)
+        if parent:
+            comm = Committee('lower', parent, subcommittee=name)
+        else:
+            comm = Committee('lower', name)
         comm.add_source(url)
 
         for link in page.xpath("//a[contains(@href, 'District')]"):
