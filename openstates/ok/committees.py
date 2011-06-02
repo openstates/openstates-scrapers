@@ -49,7 +49,7 @@ class OKCommitteeScraper(CommitteeScraper):
             member = match.group(3).strip()
             role = match.group(1) or 'member'
 
-            comm.add_member(member, role)
+            comm.add_member(member, role.lower())
 
         self.save_committee(comm)
 
