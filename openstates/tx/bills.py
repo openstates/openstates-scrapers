@@ -142,6 +142,8 @@ class TXBillScraper(BillScraper):
                 atype = 'committee:passed'
             elif desc == "Filed":
                 atype = 'bill:filed'
+            elif desc == 'Read 3rd time':
+                atype = 'bill:reading:3'
             else:
                 atype = 'other'
 
