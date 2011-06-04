@@ -6,7 +6,7 @@ from collections import defaultdict
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
-from billy.importers.utils import fix_bill_id
+from billy.importers.bills import fix_bill_id
 
 import pytz
 import lxml.html
