@@ -130,7 +130,7 @@ def dump_csv(abbr, filename, nozip):
     files += dump_bill_csvs(level, abbr)
 
     if not nozip:
-        zfile = zipfile.ZipFile(filename, 'w')
+        zfile = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
         for fname in files:
             arcname = fname.split('/')[-1]
             zfile.write(fname, arcname=arcname)
@@ -178,8 +178,8 @@ if __name__ == '__main__':
                      ' S3 when done.'),
         parents=[base_arg_parser],
     )
-    parser.add_argument('abbr', help=('the two-letter abbreviation for the'
-                                       ' data to export'))
+    parser.add_argument('abbrs', metavar='ABBR', type=str, nargs='+',
+                help=('the two-letter abbreviation for the data to export'))
     parser.add_argument('--file', '-f',
                         help='filename to output to (defaults to <abbr>.zip)')
     parser.add_argument('--nozip', action='store_true', default=False,
@@ -191,13 +191,16 @@ if __name__ == '__main__':
 
     settings.update(args)
 
-    if not args.file:
-        args.file = '{0}_csv.zip'.format(args.abbr)
+    for abbr in args.abbrs:
+        print 'dumping CSV for', abbr
 
-    dump_csv(args.abbr, args.file, args.nozip)
+        if not args.file:
+            args.file = '{0}_csv.zip'.format(abbr)
 
-    if args.upload:
-        if args.nozip:
-            raise Warning('Unable to --upload if --nozip is specified')
-        else:
-            upload(args.abbr, args.file)
+        dump_csv(abbr, args.file, args.nozip)
+
+        if args.upload:
+            if args.nozip:
+                raise Warning('Unable to --upload if --nozip is specified')
+            else:
+                upload(abbr, args.file)

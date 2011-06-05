@@ -33,7 +33,7 @@ def dump_json(abbr, filename, validate, schema_dir):
     scraper = scrapelib.Scraper(requests_per_minute=600)
     level = metadata(abbr)['level']
 
-    zip = zipfile.ZipFile(filename, 'w')
+    zip = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
 
     if not schema_dir:
         cwd = os.path.split(__file__)[0]
@@ -48,7 +48,7 @@ def dump_json(abbr, filename, validate, schema_dir):
     with open(os.path.join(schema_dir, "committee.json")) as f:
         committee_schema = json.load(f)
 
-    for bill in db.bills.find({'level': level, level: abbr}):
+    for bill in db.bills.find({'level': level, level: abbr}, timeout=False):
         path = "bills/%s/%s/%s/%s" % (abbr, bill['session'],
                                       bill['chamber'], bill['bill_id'])
         url = api_url(path)
@@ -119,8 +119,8 @@ if __name__ == '__main__':
                      ', optionally uploading to S3 when done.'),
         parents=[base_arg_parser],
     )
-    parser.add_argument('abbr', help=('the two-letter abbreviation of the data'
-                                      ' to export'))
+    parser.add_argument('abbrs', metavar='ABBR', type=str, nargs='+',
+                help=('the two-letter abbreviation for the data to export'))
     parser.add_argument('--file', '-f',
                         help='filename to output to (defaults to <abbr>.zip)')
     parser.add_argument('--schema_dir',
@@ -137,11 +137,12 @@ if __name__ == '__main__':
 
     settings.update(args)
 
-    if not args.file:
-        args.file = args.abbr + '.zip'
+    for abbr in args.abbrs:
+        if not args.file:
+            args.file = abbr + '.zip'
 
-    if not args.nodump:
-        dump_json(args.abbr, args.file, not args.novalidate, args.schema_dir)
+        if not args.nodump:
+            dump_json(abbr, args.file, not args.novalidate, args.schema_dir)
 
-    if args.upload:
-        upload(args.abbr, args.file)
+        if args.upload:
+            upload(abbr, args.file)

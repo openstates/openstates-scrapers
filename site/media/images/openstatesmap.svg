@@ -7,6 +7,7 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    version="1.1"
@@ -26,7 +27,7 @@
    inkscape:export-ydpi="90"><metadata
    id="metadata730"><rdf:RDF><cc:Work
        rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><sodipodi:namedview
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><sodipodi:namedview
    pagecolor="#ffffff"
    bordercolor="#666666"
    borderopacity="1"
@@ -35,15 +36,15 @@
    guidetolerance="10"
    inkscape:pageopacity="0"
    inkscape:pageshadow="2"
-   inkscape:window-width="1676"
-   inkscape:window-height="1046"
+   inkscape:window-width="1916"
+   inkscape:window-height="1172"
    id="namedview728"
    showgrid="false"
-   inkscape:zoom="3.0444347"
-   inkscape:cx="467.67855"
-   inkscape:cy="289.4799"
-   inkscape:window-x="1920"
-   inkscape:window-y="0"
+   inkscape:zoom="8.6109617"
+   inkscape:cx="477.88433"
+   inkscape:cy="297.45623"
+   inkscape:window-x="0"
+   inkscape:window-y="24"
    inkscape:window-maximized="0"
    inkscape:current-layer="svg2" />
 <defs
@@ -608,27 +609,29 @@
 <radialGradient
    id="SVGID_24_"
    cx="341.332"
-   cy="667.3027"
+   cy="667.30267"
    r="24.4189"
-   gradientTransform="matrix(1 0 0 1 0 -450)"
-   gradientUnits="userSpaceOnUse">
+   gradientTransform="translate(0,-450)"
+   gradientUnits="userSpaceOnUse"
+   xlink:href="#SVGID_25_">
 	<stop
    offset="0"
-   style="stop-color:#D5D6C3;stop-opacity:0.6"
+   style="stop-color:#75afa5;stop-opacity:0.60000002;"
    id="stop214" />
 	<stop
    offset="0.9447"
-   style="stop-color:#D5D6C3;stop-opacity:0.9779"
+   style="stop-color:#75afa5;stop-opacity:0.97647059;"
    id="stop216" />
 	<stop
    offset="1"
-   style="stop-color:#D5D6C3"
+   style="stop-color:#75afa5;stop-opacity:1;"
    id="stop218" />
 </radialGradient>
 <polygon
    fill="url(#SVGID_24_)"
    points="316.096,195.87 326.314,195.631 342.559,194.917 361.1,193.73 358.631,200.666   366.568,199.831 365.062,203.318 364.667,205.218 363.559,211.479 353.02,230.655 352.861,232.079 352.939,233.744 353.968,237.626   354.048,239.445 336.616,240.398 322.701,240.876 322.512,234.124 318.473,232.792 318.312,210.29 317.918,206.725 "
-   id="polygon220" />
+   id="polygon220"
+   style="fill-opacity:1.0" />
 <radialGradient
    id="SVGID_25_"
    cx="351.5391"
@@ -1094,15 +1097,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75afa5;stop-opacity:0.60000002;"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop394" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75afa5;stop-opacity:0.97647059;"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop396" />
 	<stop
    offset="1"
-   style="stop-color:#75afa5;stop-opacity:1;"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop398" />
 </radialGradient>
 <polygon
@@ -1944,15 +1947,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75afa5;stop-opacity:0.60000002;"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop711" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75afa5;stop-opacity:0.97647059;"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop713" />
 	<stop
    offset="1"
-   style="stop-color:#75afa5;stop-opacity:1;"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop715" />
 </radialGradient>
 <polygon
