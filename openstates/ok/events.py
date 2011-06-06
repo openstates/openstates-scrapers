@@ -22,6 +22,9 @@ class OKEventScraper(EventScraper):
             comm = link.text.strip()
             comm = re.sub(r'\s+', ' ', comm)
 
+            if link.getnext().text == 'Cancelled':
+                continue
+
             date_path = "../../preceding-sibling::p[@class='MsoNormal']"
             date = link.xpath(date_path)[-1].xpath("string()")
 
