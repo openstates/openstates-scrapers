@@ -125,7 +125,15 @@ class OKBillScraper(BillScraper):
     def scrape_votes(self, bill, url):
         page = lxml.html.fromstring(self.urlopen(url))
 
-        for header in page.xpath("//p[contains(text(), 'OKLAHOMA HOUSE')]"):
+
+        path = ("//p[contains(text(), 'OKLAHOMA HOUSE') or "
+                "contains(text(), 'STATE SENATE')]")
+        for header in page.xpath(path):
+            if 'HOUSE' in header.xpath("string()"):
+                chamber = 'lower'
+            else:
+                chamber = 'upper'
+
             motion = header.xpath(
                 "string(following-sibling::p[8])").strip()
             motion = re.sub(r'\s+', ' ', motion)
@@ -171,7 +179,7 @@ class OKBillScraper(BillScraper):
             assert len(votes['no']) == counts['no']
             assert len(votes['other']) == counts['other']
 
-            vote = Vote('lower', date, motion, passed,
+            vote = Vote(chamber, date, motion, passed,
                         counts['yes'], counts['no'], counts['other'])
             vote.add_source(url)
 
