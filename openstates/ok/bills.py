@@ -146,9 +146,12 @@ class OKBillScraper(BillScraper):
             else:
                 passed = motion == 'PASSED'
 
-            date_p = header.xpath(
-                "following-sibling::p[contains(., 'RCS#')]")[0].getnext()
-            date_line = date_p.xpath("string()")
+            rcs_p = header.xpath(
+                "following-sibling::p[contains(., 'RCS#')]")[0]
+            rcs_line = rcs_p.xpath("string()").replace(u'\xa0', ' ')
+            rcs = re.search(r'RCS#\s+(\d+)', rcs_line).group(1)
+
+            date_line = rcs_p.getnext().xpath("string()")
             date = re.search(r'\d+/\d+/\d+', date_line).group(0)
             date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
 
@@ -182,7 +185,8 @@ class OKBillScraper(BillScraper):
             assert len(votes['other']) == counts['other']
 
             vote = Vote(chamber, date, motion, passed,
-                        counts['yes'], counts['no'], counts['other'])
+                        counts['yes'], counts['no'], counts['other'],
+                        rcs_num=rcs)
             vote.add_source(url)
 
             for name in votes['yes']:
