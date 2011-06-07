@@ -21,6 +21,8 @@ action_classifiers = [
     ('Proposed(.*) Amendment', 'amendment:introduced'),
     ('Amendment .* Adopted', 'amendment:passed'),
     ('Amendment .* Failed', 'amendment:failed'),
+    ('Signed', 'governor:signed'),
+    ('Vetoed', 'governor:vetoed'),
 ]
 VERSION_URL = 'http://www.gencourt.state.nh.us/legislation/%s/%s.html'
 AMENDMENT_URL = 'http://www.gencourt.state.nh.us/legislation/amendments/%s.html'
