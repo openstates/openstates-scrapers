@@ -143,7 +143,7 @@ class OKBillScraper(BillScraper):
                 motion = match.group(1)
                 passed = match.group(2) == 'PASSED'
             else:
-                passed = motion == 'PASSED'
+                passed = None
 
             rcs_p = header.xpath(
                 "following-sibling::p[contains(., 'RCS#')]")[0]
@@ -185,6 +185,9 @@ class OKBillScraper(BillScraper):
             assert len(votes['yes']) == counts['yes']
             assert len(votes['no']) == counts['no']
             assert len(votes['other']) == counts['other']
+
+            if passed is None:
+                passed = counts['yes'] > (counts['no'] + counts['other'])
 
             vote = Vote(chamber, date, motion, passed,
                         counts['yes'], counts['no'], counts['other'],
