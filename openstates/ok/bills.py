@@ -1,8 +1,12 @@
+import re
 import urllib
 import datetime
+import collections
 
+from billy.utils import urlescape
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 import lxml.html
 
@@ -113,4 +117,69 @@ class OKBillScraper(BillScraper):
             name = link.text.strip()
             bill.add_version(name, version_url)
 
+        for link in page.xpath(".//a[contains(@href, '_VOTES')]"):
+            self.scrape_votes(bill, urlescape(link.attrib['href']))
+
         self.save_bill(bill)
+
+    def scrape_votes(self, bill, url):
+        page = lxml.html.fromstring(self.urlopen(url))
+
+        for header in page.xpath("//p[contains(text(), 'OKLAHOMA HOUSE')]"):
+            motion = header.xpath(
+                "string(following-sibling::p[8])").strip()
+            motion = re.sub(r'\s+', ' ', motion)
+            match = re.match(r'^(.*) (PASSED|FAILED)$', motion)
+            if match:
+                motion = match.group(1)
+                passed = match.group(2) == 'PASSED'
+            else:
+                passed = motion == 'PASSED'
+
+            date_p = header.xpath(
+                "following-sibling::p[contains(., 'RCS#')]")[0].getnext()
+            date_line = date_p.xpath("string()")
+            date = re.search(r'\d+/\d+/\d+', date_line).group(0)
+            date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
+
+            vtype = None
+            counts = collections.defaultdict(int)
+            votes = collections.defaultdict(list)
+
+            for sib in header.xpath("following-sibling::p")[13:]:
+                line = sib.xpath("string()").strip()
+                line = re.sub(r'\s+', ' ', line)
+                if "*****" in line:
+                    break
+
+                match = re.match(
+                    r'(YEAS|NAYS|EXC|CONSTITUTIONAL PRIVILEGE)\s*:\s*(\d+)',
+                    line)
+                if match:
+                    if match.group(1) == 'YEAS':
+                        vtype = 'yes'
+                    elif match.group(1) == 'NAYS':
+                        vtype = 'no'
+                    else:
+                        vtype = 'other'
+                    counts[vtype] += int(match.group(2))
+                else:
+                    for name in line.split('   '):
+                        votes[vtype].append(name.strip())
+
+            assert len(votes['yes']) == counts['yes']
+            assert len(votes['no']) == counts['no']
+            assert len(votes['other']) == counts['other']
+
+            vote = Vote('lower', date, motion, passed,
+                        counts['yes'], counts['no'], counts['other'])
+            vote.add_source(url)
+
+            for name in votes['yes']:
+                vote.yes(name)
+            for name in votes['no']:
+                vote.no(name)
+            for name in votes['other']:
+                vote.other(name)
+
+            bill.add_vote(vote)
