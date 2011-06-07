@@ -23,6 +23,7 @@ def categorize_subjects(abbr, data_dir, process_all):
         for n,row in enumerate(reader):
             for subj in row[1:]:
                 if subj:
+                    subj = subj.strip()
                     if subj not in settings.BILLY_SUBJECTS:
                         raise Exception('invalid subject %s (%s - %s)' %
                                         (subj, row[0], n))
