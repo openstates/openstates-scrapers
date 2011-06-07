@@ -200,8 +200,8 @@ class SCBillScraper(BillScraper):
 	
     ###################################################
     def count_votes(self, url,chamber,bill_id,data):
-   	house_sections =  [ 'FIRST', 'RESULT', 'Yeas:', 'YEAS', 'NAYS', 'EXCUSED ABSENCE', 'NOT VOTING', 'REST' ]
-	senate_sections = [ 'FIRST', 'RESULT', 'Ayes:', 'AYES', 'NAYS', 'EXCUSED ABSENCE', 'NOT VOTING', 'REST' ]
+   	house_sections =  [ 'FIRST', 'RESULT', 'Yeas:', 'YEAS', 'NAYS', 'EXCUSED ABSENCE', 'ABSTAIN', 'NOT VOTING', 'REST' ]
+	senate_sections = [ 'FIRST', 'RESULT', 'Ayes:', 'AYES', 'NAYS', 'EXCUSED ABSENCE', 'ABSTAIN', 'NOT VOTING', 'REST' ]
 
 	#print("195 parse_rollcall: %s %s" % (chamber,bill_id) )
 
