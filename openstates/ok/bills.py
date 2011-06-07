@@ -177,8 +177,11 @@ class OKBillScraper(BillScraper):
                     counts[vtype] += int(match.group(2))
                 else:
                     for name in line.split('   '):
-                        if name:
-                            votes[vtype].append(name.strip())
+                        if not name:
+                            continue
+                        if 'HOUSE BILL' in name or 'SENATE BILL' in name:
+                            continue
+                        votes[vtype].append(name.strip())
 
             assert len(votes['yes']) == counts['yes']
             assert len(votes['no']) == counts['no']
