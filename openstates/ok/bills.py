@@ -125,7 +125,6 @@ class OKBillScraper(BillScraper):
     def scrape_votes(self, bill, url):
         page = lxml.html.fromstring(self.urlopen(url))
 
-
         path = ("//p[contains(text(), 'OKLAHOMA HOUSE') or "
                 "contains(text(), 'STATE SENATE')]")
         for header in page.xpath(path):
@@ -160,13 +159,13 @@ class OKBillScraper(BillScraper):
             votes = collections.defaultdict(list)
 
             for sib in header.xpath("following-sibling::p")[13:]:
-                line = sib.xpath("string()").strip()
-                line = re.sub(r'\s+', ' ', line)
+                line = sib.xpath("string()").replace(u'\xa0', ' ').replace(
+                    '\r\n', ' ').strip()
                 if "*****" in line:
                     break
 
                 match = re.match(
-                    r'(YEAS|NAYS|EXC|CONSTITUTIONAL PRIVILEGE)\s*:\s*(\d+)',
+                    r'(YEAS|NAYS|EXCUSED|CONSTITUTIONAL PRIVILEGE)\s*:\s*(\d+)',
                     line)
                 if match:
                     if match.group(1) == 'YEAS':
@@ -178,7 +177,8 @@ class OKBillScraper(BillScraper):
                     counts[vtype] += int(match.group(2))
                 else:
                     for name in line.split('   '):
-                        votes[vtype].append(name.strip())
+                        if name:
+                            votes[vtype].append(name.strip())
 
             assert len(votes['yes']) == counts['yes']
             assert len(votes['no']) == counts['no']
