@@ -61,6 +61,7 @@ class OKLegislatorScraper(LegislatorScraper):
             district = link.xpath("string(../../span[2])").strip()
             if not district:
                 district = link.xpath("..")[0].tail.strip()
+            district = re.sub(r'^District ', '', district)
 
             leg = Legislator(term, 'upper', district, name, party=party)
             leg.add_source(url)
