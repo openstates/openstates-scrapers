@@ -41,7 +41,7 @@ def process_file(filename, save=False):
             if fileval != dbval:
                 changed[key] = dbval
                 leg[key] = fileval
-            if key in leg:
+            if leg.get(key):
                 leg[key] = leg[key].strip()
 
         # show what changed
