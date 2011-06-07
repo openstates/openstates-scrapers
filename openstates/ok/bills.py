@@ -125,9 +125,9 @@ class OKBillScraper(BillScraper):
     def scrape_votes(self, bill, url):
         page = lxml.html.fromstring(self.urlopen(url).replace('\xa0', ' '))
 
-        path = ("//p[contains(text(), 'OKLAHOMA HOUSE') or "
-                "contains(text(), 'STATE SENATE')]")
-        for header in page.xpath(path):
+        re_ns = "http://exslt.org/regular-expressions"
+        path = "//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
+        for header in page.xpath(path, namespaces={'re': re_ns}):
             if 'HOUSE' in header.xpath("string()"):
                 chamber = 'lower'
                 motion_index = 8
