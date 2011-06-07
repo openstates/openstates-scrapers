@@ -131,11 +131,13 @@ class OKBillScraper(BillScraper):
         for header in page.xpath(path):
             if 'HOUSE' in header.xpath("string()"):
                 chamber = 'lower'
+                motion_index = 8
             else:
                 chamber = 'upper'
+                motion_index = 9
 
             motion = header.xpath(
-                "string(following-sibling::p[8])").strip()
+                "string(following-sibling::p[%d])" % motion_index).strip()
             motion = re.sub(r'\s+', ' ', motion)
             match = re.match(r'^(.*) (PASSED|FAILED)$', motion)
             if match:
