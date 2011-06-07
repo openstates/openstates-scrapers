@@ -1,8 +1,12 @@
+import re
 import urllib
 import datetime
+import collections
 
+from billy.utils import urlescape
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 import lxml.html
 
@@ -113,4 +117,85 @@ class OKBillScraper(BillScraper):
             name = link.text.strip()
             bill.add_version(name, version_url)
 
+        for link in page.xpath(".//a[contains(@href, '_VOTES')]"):
+            self.scrape_votes(bill, urlescape(link.attrib['href']))
+
         self.save_bill(bill)
+
+    def scrape_votes(self, bill, url):
+        page = lxml.html.fromstring(self.urlopen(url).replace('\xa0', ' '))
+
+        path = ("//p[contains(text(), 'OKLAHOMA HOUSE') or "
+                "contains(text(), 'STATE SENATE')]")
+        for header in page.xpath(path):
+            if 'HOUSE' in header.xpath("string()"):
+                chamber = 'lower'
+                motion_index = 8
+            else:
+                chamber = 'upper'
+                motion_index = 9
+
+            motion = header.xpath(
+                "string(following-sibling::p[%d])" % motion_index).strip()
+            motion = re.sub(r'\s+', ' ', motion)
+            match = re.match(r'^(.*) (PASSED|FAILED)$', motion)
+            if match:
+                motion = match.group(1)
+                passed = match.group(2) == 'PASSED'
+            else:
+                passed = motion == 'PASSED'
+
+            rcs_p = header.xpath(
+                "following-sibling::p[contains(., 'RCS#')]")[0]
+            rcs_line = rcs_p.xpath("string()").replace(u'\xa0', ' ')
+            rcs = re.search(r'RCS#\s+(\d+)', rcs_line).group(1)
+
+            date_line = rcs_p.getnext().xpath("string()")
+            date = re.search(r'\d+/\d+/\d+', date_line).group(0)
+            date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
+
+            vtype = None
+            counts = collections.defaultdict(int)
+            votes = collections.defaultdict(list)
+
+            for sib in header.xpath("following-sibling::p")[13:]:
+                line = sib.xpath("string()").replace('\r\n', ' ').strip()
+                if "*****" in line:
+                    break
+
+                match = re.match(
+                    r'(YEAS|NAYS|EXCUSED|CONSTITUTIONAL PRIVILEGE|NOT VOTING)\s*:\s*(\d+)',
+                    line)
+                if match:
+                    if match.group(1) == 'YEAS':
+                        vtype = 'yes'
+                    elif match.group(1) == 'NAYS':
+                        vtype = 'no'
+                    else:
+                        vtype = 'other'
+                    counts[vtype] += int(match.group(2))
+                else:
+                    for name in line.split('   '):
+                        if not name:
+                            continue
+                        if 'HOUSE BILL' in name or 'SENATE BILL' in name:
+                            continue
+                        votes[vtype].append(name.strip())
+
+            assert len(votes['yes']) == counts['yes']
+            assert len(votes['no']) == counts['no']
+            assert len(votes['other']) == counts['other']
+
+            vote = Vote(chamber, date, motion, passed,
+                        counts['yes'], counts['no'], counts['other'],
+                        rcs_num=rcs)
+            vote.add_source(url)
+
+            for name in votes['yes']:
+                vote.yes(name)
+            for name in votes['no']:
+                vote.no(name)
+            for name in votes['other']:
+                vote.other(name)
+
+            bill.add_vote(vote)
