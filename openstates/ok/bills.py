@@ -123,7 +123,7 @@ class OKBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_votes(self, bill, url):
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.urlopen(url).replace('\xa0', ' '))
 
         path = ("//p[contains(text(), 'OKLAHOMA HOUSE') or "
                 "contains(text(), 'STATE SENATE')]")
@@ -159,8 +159,7 @@ class OKBillScraper(BillScraper):
             votes = collections.defaultdict(list)
 
             for sib in header.xpath("following-sibling::p")[13:]:
-                line = sib.xpath("string()").replace(u'\xa0', ' ').replace(
-                    '\r\n', ' ').strip()
+                line = sib.xpath("string()").replace('\r\n', ' ').strip()
                 if "*****" in line:
                     break
 
