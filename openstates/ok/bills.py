@@ -165,7 +165,7 @@ class OKBillScraper(BillScraper):
                     break
 
                 match = re.match(
-                    r'(YEAS|NAYS|EXCUSED|CONSTITUTIONAL PRIVILEGE)\s*:\s*(\d+)',
+                    r'(YEAS|NAYS|EXCUSED|CONSTITUTIONAL PRIVILEGE|NOT VOTING)\s*:\s*(\d+)',
                     line)
                 if match:
                     if match.group(1) == 'YEAS':
