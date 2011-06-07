@@ -16,10 +16,14 @@ bill_type_map = {'B': 'bill',
 action_classifiers = [
     ('Passed by Third Reading', ['bill:reading:3', 'bill:passed']),
     ('.*Ought to Pass', ['committee:passed:favorable']),
-    ('Introduced (.*) and (R|r)eferred', ['bill:introduced', 'committee:referred']),
+    ('Introduced(.*) and (R|r)eferred', ['bill:introduced', 'committee:referred']),
     ('.*Inexpedient to Legislate', ['committee:passed:unfavorable']),
+    ('Proposed(.*) Amendment', 'amendment:introduced'),
+    ('Amendment .* Adopted', 'amendment:passed'),
+    ('Amendment .* Failed', 'amendment:failed'),
 ]
 VERSION_URL = 'http://www.gencourt.state.nh.us/legislation/%s/%s.html'
+AMENDMENT_URL = 'http://www.gencourt.state.nh.us/legislation/amendments/%s.html'
 
 
 def classify_action(action):
@@ -27,6 +31,13 @@ def classify_action(action):
         if re.match(regex, action):
             return classification
     return 'other'
+
+
+def extract_amendment_id(action):
+    piece = re.findall('Amendment #(\d{4}-\d+[hs])', action)
+    if piece:
+        return piece[0]
+
 
 class NHBillScraper(BillScraper):
     state = 'nh'
@@ -111,6 +122,10 @@ class NHBillScraper(BillScraper):
                 action = action.strip()
                 atype = classify_action(action)
                 self.bills[lsr].add_action(actor, action, time, type=atype)
+                amendment_id = extract_amendment_id(action)
+                if amendment_id:
+                    self.bills[lsr].add_document('amendment %s' % amendment_id,
+                                                 AMENDMENT_URL % amendment_id)
 
         self.scrape_votes(session)
 
