@@ -90,7 +90,7 @@ def wnominate(state, session, chamber, polarity, r_bin="R",
                               stdout=devnull, stderr=devnull)
 
     results = {}
-    with open(result_filename) as f:
+    with open(out_file) as f:
         c = csv.DictReader(f)
         for row in c:
             results[row['leg_id']] = float(row['coord1D'])
@@ -112,4 +112,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     wnominate(args.state, args.session, args.chamber, args.polarity,
-              args.out_file)
+              out_file=args.out_file)
