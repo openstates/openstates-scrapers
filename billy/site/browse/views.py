@@ -34,7 +34,7 @@ def browse_index(request, template='billy/index.html'):
             row['versions'] = counts['versions']
             if counts['actions']:
                 row['typed_actions'] = (float(counts['categorized']) /
-                                        counts['actions'] * 100)
+                                        counts['actions_this_term'] * 100)
             if counts['bills']:
                 row['subjects'] = (float(counts['subjects']) /
                                    counts['bills'] * 100)
