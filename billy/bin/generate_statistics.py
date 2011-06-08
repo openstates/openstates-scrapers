@@ -14,7 +14,7 @@ def generate_statistics():
         var val = {'bills': 1,
                    'introduced': 0,
                    'categorized': 0,
-                   'actions_this_session': 0,
+                   'actions_this_term': 0,
                    'voters': 0,
                    'idd_voters': 0,
                    'actions': this.actions.length,
@@ -27,12 +27,12 @@ def generate_statistics():
              val['subjects'] = 0;
         }
 
-        // only do remaining calculations for current session
-        if(!this['_current_session']) {
+        // only do remaining calculations for current term
+        if(!this['_current_term']) {
              return val;
         }
 
-        val['actions_this_session'] = val['actions'];
+        val['actions_this_term'] = val['actions'];
 
         // count how many actions are categorized & introduced
         for(var i=0; i < this.actions.length; ++i) {
@@ -90,7 +90,7 @@ def generate_statistics():
     function (key, values) {
         sums = {'bills': 0, 'actions': 0, 'votes': 0, 'versions': 0,
                 'subjects': 0, 'introduced': 0, 'categorized': 0,
-                'voters': 0, 'idd_voters': 0, 'actions_this_session': 0,
+                'voters': 0, 'idd_voters': 0, 'actions_this_term': 0,
                 'sponsors': 0, 'idd_sponsors': 0};
         for (var i in values) {
             value = values[i];
