@@ -161,22 +161,10 @@ class NVBillScraper(BillScraper):
                     text_url = "http://www.leg.state.nv.us" + bill_text
                     bill.add_version("Bill Text", text_url)
 
-
                     primary, secondary = self.scrape_sponsors(page)
-                    
-                    if primary[0] == 'By:':
-                        primary.pop(0)
-                        
-                        if primary[0] == 'ElectionsProceduresEthicsand':
-                            primary[0] = 'Elections Procedures Ethics and'
 
-                        full_name = ''
-                        for part_name in primary:
-                            full_name = full_name + part_name + " "
-                        bill.add_sponsor('primary', full_name)
-                    else:
-                        for leg in primary:
-                            bill.add_sponsor('primary', leg)
+                    for leg in primary:
+                        bill.add_sponsor('primary', leg)
                     for leg in secondary:
                         bill.add_sponsor('cosponsor', leg)
 
