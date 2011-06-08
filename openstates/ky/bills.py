@@ -127,6 +127,8 @@ class KYBillScraper(BillScraper):
                     atype.append('governor:signed')
                 elif re.match(r'^to [A-Z]', action):
                     atype.append('committee:referred')
+                elif action == 'adopted by voice vote':
+                    atype.append('bill:passed')
 
                 if '1st reading' in action:
                     atype.append('bill:reading:1')
