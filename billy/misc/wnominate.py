@@ -93,7 +93,11 @@ def wnominate(state, session, chamber, polarity, r_bin="R",
     with open(out_file) as f:
         c = csv.DictReader(f)
         for row in c:
-            results[row['leg_id']] = float(row['coord1D'])
+            try:
+                res = float(row['coord1D'])
+            except ValueError:
+                res = None
+            results[row['leg_id']] = res
 
     os.remove(filename)
 
