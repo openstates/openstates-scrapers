@@ -60,7 +60,7 @@ def vote_csv(state, session, chamber, out=sys.stdout):
         leg = legislators[leg_id]
 
         try:
-            party = leg['old_roles'][session][0]['party']
+            party = leg['old_roles'][term][0]['party']
         except KeyError:
             party = leg['party']
 
