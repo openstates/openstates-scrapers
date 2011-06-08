@@ -138,6 +138,12 @@ class PABillScraper(BillScraper):
                 type.append('bill:passed')
             elif action == 'Adopted' and bill['type'] == ['resolution']:
                 type.append('bill:passed')
+            elif action == 'First consideration':
+                type.append('bill:reading:1')
+            elif action.startswith('Second consideration'):
+                type.append('bill:reading:2')
+            elif action.startswith('Third consideration'):
+                type.extend('bill:reading:3')
 
             if re.search('concurred in (House|Senate) amendments', action):
                 if re.search(', as amended by the (House|Senate)', action):
