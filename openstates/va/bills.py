@@ -15,34 +15,31 @@ class VABillScraper(BillScraper):
     actor_map = {'House': 'lower', 'Senate': 'upper', 'Governor': 'governor',
                  'Conference': 'conference'}
 
-    _action_classifiers = {
-        'Approved by Governor': 'governor:signed',
-        '\s*Amendment(s)? .+ agreed': 'amendment:passed',
-        '\s*Amendment(s)? .+ withdrawn': 'amendment:withdrawn',
-        '\s*Amendment(s)? .+ rejected': 'amendment:failed',
-        'Subject matter referred': 'committee:referred',
-        'Rereferred to': 'committee:referred',
-        'Referred to': 'committee:referred',
-        'Assigned ': 'committee:referred',
-        'Reported from': 'committee:passed',
-        'Read third time and passed': 'bill:passed',
-        'Read third time and agreed': 'bill:passed',
-        'Passed (Senate|House)': 'bill:passed',
-        'Read third time and defeated': 'bill:failed',
-        'Presented': 'bill:introduced',
-        'Prefiled and ordered printed': 'bill:introduced',
-        #'Presented and ordered printed': 'other',
-        #'Renrolled bill text': 'other',
-        #'Printed as engrossed': 'other',
-        #'Engrossed by ': 'other',
-        #'Enacted, Chapter': 'other',
-        'Senators: ': None,
-        'Delegates: ': None,
-        'Committee substitute printed': None,
-        'Bill text as passed': None,
-        'Acts of Assembly': None,
-        #'Substitute': 'other',
-    }
+    _action_classifiers = (
+        ('Approved by Governor', 'governor:signed'),
+        ('\s*Amendment(s)? .+ agreed', 'amendment:passed'),
+        ('\s*Amendment(s)? .+ withdrawn', 'amendment:withdrawn'),
+        ('\s*Amendment(s)? .+ rejected', 'amendment:failed'),
+        ('Subject matter referred', 'committee:referred'),
+        ('Rereferred to', 'committee:referred'),
+        ('Referred to', 'committee:referred'),
+        ('Assigned ', 'committee:referred'),
+        ('Reported from', 'committee:passed'),
+        ('Read third time and passed', ['bill:passed', 'bill:reading:3']),
+        ('Read third time and agreed', ['bill:passed', 'bill:reading:3']),
+        ('Passed (Senate|House)', 'bill:passed'),
+        ('Read third time and defeated', 'bill:failed'),
+        ('Presented', 'bill:introduced'),
+        ('Prefiled and ordered printed', 'bill:introduced'),
+        ('Read first time', 'bill:reading:1'),
+        ('Read second time', 'bill:reading:2'),
+        ('Read third time', 'bill:reading:3'),
+        ('Senators: ', None),
+        ('Delegates: ', None),
+        ('Committee substitute printed', None),
+        ('Bill text as passed', None),
+        ('Acts of Assembly', None),
+    )
 
     link_xpath = '//ul[@class="linkSect"]/li/a'
 
@@ -160,7 +157,7 @@ class VABillScraper(BillScraper):
 
 
                 # categorize actions
-                for pattern, atype in self._action_classifiers.iteritems():
+                for pattern, atype in self._action_classifiers:
                     if re.match(pattern, action):
                         break
                 else:
