@@ -3,6 +3,7 @@ import re
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
+import xlrd
 import lxml.html
 
 
@@ -37,32 +38,28 @@ class OKLegislatorScraper(LegislatorScraper):
             self.save_legislator(leg)
 
     def scrape_upper(self, term):
-        url = "http://oksenate.gov/Senators/Default.aspx?selectedtab=0"
-        page = lxml.html.fromstring(self.urlopen(url))
-        page.make_links_absolute(url)
+        url = "http://www.oksenate.gov/Senators/directory.xls"
+        fname, resp = self.urlretrieve(url)
 
-        table = page.xpath("//table[contains(@summary, 'alphabetically')]")[0]
+        sheet = xlrd.open_workbook(fname).sheet_by_index(0)
 
-        for link in table.xpath(".//a[contains(@href, '_bio.aspx')]")[2:]:
-            name = link.text.strip()
-            name = re.sub(r'\s+', ' ', name)
+        for rownum in xrange(1, sheet.nrows):
+            name = str(sheet.cell(rownum, 0).value)
             if not name:
                 continue
 
-            match = re.match(r'([^\(]+)\s+\(([RD])\)', name)
-            name = match.group(1)
-            party = match.group(2)
-
-            if party == 'R':
-                party = 'Republican'
-            elif party == 'D':
+            party = str(sheet.cell(rownum, 1).value)
+            if party == 'D':
                 party = 'Democratic'
+            elif party == 'R':
+                party = 'Republican'
+            elif not party:
+                party = 'N/A'
 
-            district = link.xpath("string(../../span[2])").strip()
-            if not district:
-                district = link.xpath("..")[0].tail.strip()
-            district = re.sub(r'^District ', '', district)
+            district = str(sheet.cell(rownum, 2).value)
+            email = str(sheet.cell(rownum, 6).value)
 
-            leg = Legislator(term, 'upper', district, name, party=party)
+            leg = Legislator(term, 'upper', district, name, party=party,
+                             email_address=email)
             leg.add_source(url)
             self.save_legislator(leg)
