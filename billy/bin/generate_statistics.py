@@ -90,7 +90,7 @@ def generate_statistics():
     function (key, values) {
         sums = {'bills': 0, 'actions': 0, 'votes': 0, 'versions': 0,
                 'subjects': 0, 'introduced': 0, 'categorized': 0,
-                'voters': 0, 'idd_voters': 0,
+                'voters': 0, 'idd_voters': 0, 'actions_this_session': 0,
                 'sponsors': 0, 'idd_sponsors': 0};
         for (var i in values) {
             value = values[i];
