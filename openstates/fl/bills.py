@@ -84,9 +84,17 @@ class FLBillScraper(BillScraper):
                         elif action == "Filed":
                             atype.append("bill:filed")
                         elif action.startswith("Withdrawn"):
+                            atype.append("bill:withdrawn")
+                        elif action.startswith("Died"):
                             atype.append("bill:failed")
                         elif action.startswith('Introduced'):
                             atype.append('bill:introduced')
+                        elif action.startswith('Read 2nd time'):
+                            atype.append('bill:reading:2')
+                        elif action.startswith('Read 3rd time'):
+                            atype.append('bill:reading:3')
+                        elif action.startswith('Adopted'):
+                            atype.append('bill:passed')
 
                         bill.add_action(actor, action, date, type=atype)
             except IndexError:
