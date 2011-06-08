@@ -69,7 +69,7 @@ class INBillScraper(BillScraper):
                                      link.attrib['href'])
 
     def scrape_bill(self, session, chamber, bill_id, short_title, url):
-        if bill_id == 'SCR 0003':
+        if bill_id == 'SCR 0003' or bill_id == 'SB 0251':
             return
 
         with self.urlopen(url) as page:
