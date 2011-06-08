@@ -180,6 +180,9 @@ class INBillScraper(BillScraper):
                     atype.append('committee:referred')
                 if action.startswith('Reassigned to'):
                     atype.append('committee:referred')
+                if (action.startswith('Committee report: amend do pass') or
+                    action.startswith('Committee report: do pass')):
+                    atype.append('committee:passed:favorable')
 
                 match = re.match(
                     r'Amendment \d+ \(.*\), (prevailed|failed)', action)
