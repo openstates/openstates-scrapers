@@ -34,6 +34,7 @@ action_classifiers = {
     'Adopted': 'bill:passed',
     'Presented to the Governor': 'governor:received',
     'Introduced by': 'bill:introduced',
+    'Read a second time': 'bill:reading:2',
 }
 
 
