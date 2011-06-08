@@ -10,19 +10,29 @@ def generate_statistics():
     """
     m = Code("""
     function () {
+
         var val = {'bills': 1,
                    'introduced': 0,
                    'categorized': 0,
+                   'actions_this_session': 0,
                    'voters': 0,
                    'idd_voters': 0,
                    'actions': this.actions.length,
                    'votes': this.votes.length,
                    'versions': this.versions.length};
+
         if(this.hasOwnProperty('subjects') && this['subjects'].length > 0) {
              val['subjects'] = 1;
         } else {
              val['subjects'] = 0;
         }
+
+        // only do remaining calculations for current session
+        if(!this['_current_session']) {
+             return val;
+        }
+
+        val['actions_this_session'] = val['actions'];
 
         // count how many actions are categorized & introduced
         for(var i=0; i < this.actions.length; ++i) {
