@@ -72,19 +72,21 @@ def vote_csv(state, session, chamber, out=sys.stdout):
         out.writerow(row)
 
 
-def wnominate(state, session, chamber, polarity, r_bin="R"):
+def wnominate(state, session, chamber, polarity, r_bin="R",
+              out_file=None):
     (fd, filename) = tempfile.mkstemp('.csv')
     with os.fdopen(fd, 'w') as out:
         vote_csv(state, session, chamber, out)
 
-    (result_fd, result_filename) = tempfile.mkstemp('.csv')
-    os.close(result_fd)
+    if not out_file:
+        (result_fd, out_file) = tempfile.mkstemp('.csv')
+        os.close(result_fd)
 
     r_src_path = os.path.join(os.path.dirname(__file__), 'calc_wnominate.R')
 
     with open('/dev/null', 'w') as devnull:
         subprocess.check_call([r_bin, "-f", r_src_path, "--args",
-                               filename, result_filename, polarity],
+                               filename, out_file, polarity],
                               stdout=devnull, stderr=devnull)
 
     results = {}
@@ -94,7 +96,6 @@ def wnominate(state, session, chamber, polarity, r_bin="R"):
             results[row['leg_id']] = float(row['coord1D'])
 
     os.remove(filename)
-    os.remove(result_filename)
 
     return results
 
@@ -107,6 +108,8 @@ if __name__ == '__main__':
     parser.add_argument('session')
     parser.add_argument('chamber')
     parser.add_argument('polarity')
+    parser.add_argument('out_file')
     args = parser.parse_args()
 
-    wnominate(args.state, args.session, args.chamber, args.polarity)
+    wnominate(args.state, args.session, args.chamber, args.polarity,
+              args.out_file)
