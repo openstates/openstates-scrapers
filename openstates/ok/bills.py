@@ -31,7 +31,7 @@ def action_type(action):
         atype.append('bill:reading:3')
     elif action.startswith('Reported Do Pass'):
         atype.append('committee:passed')
-    elif action.startswith('Signed by Governor'):
+    elif re.match('(Signed|Approved) by Governor', action):
         atype.append('governor:signed')
 
     return atype
