@@ -123,6 +123,8 @@ class KYBillScraper(BillScraper):
                 atype = []
                 if action.startswith('introduced in'):
                     atype.append('bill:introduced')
+                    if '; to ' in action:
+                        atype.append('committee:referred')
                 elif action.startswith('signed by Governor'):
                     atype.append('governor:signed')
                 elif re.match(r'^to [A-Z]', action):
@@ -136,6 +138,9 @@ class KYBillScraper(BillScraper):
                     atype.append('bill:reading:3')
                 if '2nd reading' in action:
                     atype.append('bill:reading:2')
+
+                if 'R' in bill_id and 'adopted by voice vote' in action:
+                    atype.append('bill:passed')
 
                 amendment_re = (r'floor amendments?( \([a-z\d\-]+\))*'
                                 r'( and \([a-z\d\-]+\))? filed')
