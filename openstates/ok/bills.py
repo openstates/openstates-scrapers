@@ -79,7 +79,16 @@ class OKBillScraper(BillScraper):
         title = page.xpath(
             "string(//span[contains(@id, 'PlaceHolder1_txtST')])").strip()
 
-        bill = Bill(session, chamber, bill_id, title)
+        if 'JR' in bill_id:
+            bill_type = ['joint resolution']
+        elif 'CR' in bill_id:
+            bill_type = ['concurrent resolution']
+        elif 'R' in bill_id:
+            bill_type = ['resolution']
+        else:
+            bill_type = ['bill']
+
+        bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(url)
 
         for link in page.xpath("//a[contains(@id, 'Auth')]"):
