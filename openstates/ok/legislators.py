@@ -56,7 +56,7 @@ class OKLegislatorScraper(LegislatorScraper):
             elif not party:
                 party = 'N/A'
 
-            district = str(sheet.cell(rownum, 2).value)
+            district = str(int(sheet.cell(rownum, 2).value))
             email = str(sheet.cell(rownum, 6).value)
 
             leg = Legislator(term, 'upper', district, name, party=party,
