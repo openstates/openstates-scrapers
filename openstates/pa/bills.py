@@ -143,7 +143,7 @@ class PABillScraper(BillScraper):
             elif action.startswith('Second consideration'):
                 type.append('bill:reading:2')
             elif action.startswith('Third consideration'):
-                type.extend('bill:reading:3')
+                type.append('bill:reading:3')
 
             if re.search('concurred in (House|Senate) amendments', action):
                 if re.search(', as amended by the (House|Senate)', action):
