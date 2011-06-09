@@ -10,13 +10,11 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
 
-from pdfminer.pdfinterp import PDFResourceManager, process_pdf
-from pdfminer.converter import TextConverter
-from pdfminer.layout import LAParams
+#from pdfminer.pdfinterp import PDFResourceManager, process_pdf
+#from pdfminer.converter import TextConverter
+#from pdfminer.layout import LAParams
 
-import tempfile
-import os
-import sys, traceback
+import tempfile, os, sys, traceback
 
 import lxml.html
 from lxml import etree
@@ -200,6 +198,8 @@ class SCBillScraper(BillScraper):
 	
     ###################################################
     def count_votes(self, url,chamber,bill_id,data):
+	yays,nays, other, valid_data = [],[],[], False
+
    	house_sections =  [ 'FIRST', 'RESULT', 'Yeas:', 'YEAS', 'NAYS', 'EXCUSED ABSENCE', 'ABSTAIN', 'NOT VOTING', 'REST' ]
 	senate_sections = [ 'FIRST', 'RESULT', 'Ayes:', 'AYES', 'NAYS', 'EXCUSED ABSENCE', 'ABSTAIN', 'NOT VOTING', 'REST' ]
 
@@ -216,19 +216,31 @@ class SCBillScraper(BillScraper):
 
 	lines = data.split("\n")
 	#print("199 parse_rollcal: numlines %s %d" % (bill_id,len(lines)))
+	section, linenum, expected, areas = 0, 0, dict(), dict()
+	#for s in sections:
+	#	areas[s] = []
+	#	if not s in ['REST','FIRST','RESULT','Yeas:', 'Ayes:']:
+	#		expected[s] = 0
 
-	if re.match("Senate", lines[0]):
+	first_line = lines[0].strip()
+	if re.match("Senate", first_line):
 		sections = senate_sections
 		yes_section = senate_yes_section
-	else:
+	elif re.match("House", first_line):
 		sections = house_sections
 		yes_section = house_yes_section
+	elif re.match("Joint", first_line):
+		self.warning("Bill[%s] Joint votes not handled: %s " % (bill_id,first_line))
+		return ( False, expected, areas, yays, nays, other )
+	else:
+		self.warning("Bill[%s] unknown votes not handled: %s" % (bill_id,first_line))
+		return (valid_data, expected, areas, yays, nays, other )
 
-	section, linenum, expected, areas = 0, 0, dict(), dict()
 	for s in sections:
 		areas[s] = []
 		if not s in ['REST','FIRST','RESULT','Yeas:', 'Ayes:']:
 			expected[s] = 0
+
 
 	# Get the result line
 	nlines = len(lines)
@@ -243,11 +255,11 @@ class SCBillScraper(BillScraper):
 	if linenum < nlines:
 		result_match = result_pat.search( lines[linenum] )
 		if not result_match:
-			self.warning("failed to find RESULT")
-			return
+			self.warning("Bill[%s] failed to get roll call votes, because failed to find RESULT (url=%s)" % (bill_id,url))
+			return (valid_data, expected, areas, yays, nays, other )
 	else:
-		self.warning("2 failed to find RESULT")
-		return
+		self.warning("(2) Bill[%s] failed to get roll call votes, because failed to find RESULT (url=%s)" % (bill_id,url))
+		return (valid_data, expected, areas, yays, nays, other )
 
 	#self.debug("%s %d got result: %s |%s|" % (bill_id, linenum, result_match.group(1), lines[linenum]))
 	vresult = result_match.group(1)
@@ -298,14 +310,12 @@ class SCBillScraper(BillScraper):
 				section_count = int(eresult.group(1))
 
 			skey = sections[nn]
-			#self.debug 'found next section key=[', skey , '] count=', section_count
 			expected[ skey ] = section_count
-			#self.debug 'set expected ', skey, ' to ', section_count
 
 			section = nn
 
 		elif len(line) > 0 and not re.search("Page \d+ of \d+", line):
-			# Skip page footer, Page x of Y
+			# if not page footer ( Page x of Y ), add voters
 			possible = line.split("  ")
 			nonblank = [s.strip() for s in possible if len(s) >0]
 			areas[skey].extend(nonblank) 
@@ -317,7 +327,6 @@ class SCBillScraper(BillScraper):
 	for k in expected.keys():
 		v = areas[k]
 		expected_len = expected[k]
-		#self.debug("%s count AREAS %s %d expected %d" % (bill_id, k, len(v), expected_len ) )
 		if len(v) != expected[k]:
 			self.warning ("***** ERROR %s VOTE COUNT FOR %s: Got %d expected %d (%s)" % (bill_id, k, len(v) , expected[k], v ) )
 			counts_match = False
@@ -330,15 +339,14 @@ class SCBillScraper(BillScraper):
 		nays = areas['NAYS']
 		other = areas['EXCUSED ABSENCE'] 
 		other.extend( areas['NOT VOTING'] )
+		other.extend( areas['ABSTAIN'] )
 		msg = "SUCCESSFUL (y/n/o) (%d/%d/%d)" % (len(yays), len(nays), len(other) )
 		self.debug ("%s %s ROLL_CALL %s: %s" % (bill_id, chamber, msg, url) )
+		valid_data = True
 	else: 
-		yays = []
-		nays = []
-		other = []
 		self.warning("%s %s ROLL_CALL FAILED: %s" % (bill_id, chamber, url) )
 
-	return (expected, areas, yays, nays, other )
+	return (valid_data, expected, areas, yays, nays, other )
 
 
     ###################################################
@@ -409,23 +417,17 @@ class SCBillScraper(BillScraper):
 		pdf_file.write(pdata)
 		pdf_file.close()
 
-	# NOW WE HAVE THE PDF SAVE IN A TEMP FILE
+	# Pdf is in pdf_temp_name
 	rollcall_data  = convert_pdf(pdf_temp_name, type='text')
-	(expected, areas, yays, nays, other) = self.count_votes(url,chamber,bill_id,rollcall_data)
-	#(expected, areas, yays, nays, other) = self.count_votesparse_rollcall(chamber,bill_id,vdata)
-	self.debug("VOTE 370 %s %s yays %d nays %d other %d pdf=%s" % (bill_id, chamber, len(yays), len(nays), len(other), pdf_temp_name ) )
+	(valid_data, expected, areas, yays, nays, other) = self.count_votes(url,chamber,bill_id,rollcall_data)
 
 	os.unlink(pdf_temp_name)
 
-  	for legislator in yays:
-		#self.debug("VOTE %s YES %s" % (bill_id,legislator))
-		vote.yes(legislator)
-  	for legislator in nays:
-		#self.debug("VOTE %s NAY %s" % (bill_id,legislator))
-		vote.no(legislator)
-  	for legislator in other:
-		#self.debug("VOTE %s OTHER %s" % (bill_id,legislator))
-		vote.other(legislator)
+	if valid_data:
+		self.debug("VOTE %s %s yays %d nays %d other %d pdf=%s" % (bill_id, chamber, len(yays), len(nays), len(other), pdf_temp_name ) )
+		[vote.yes(legislator) for legislator in yays]
+		[vote.no(legislator) for legislator in nays]
+		[vote.other(legislator) for legislator in other]
 
     ###################################################
     def extract_vote_rows(self, bill_id,fb ):
@@ -484,8 +486,6 @@ class SCBillScraper(BillScraper):
 	For each vote row, fetch the pdf and extract the votes.  Add this vote information to the bill.
 
 	"""
-	#self.debug("ENTER VOTE %s scrape_vote_history: (%s,%s)" % (bill_id,vurl,chamber))
-
 	with self.urlopen( vurl ) as votepage:
 		if votepage.find("No Votes Returned") != -1:
 			return
@@ -503,25 +503,27 @@ class SCBillScraper(BillScraper):
 
 		bname = fb_vote_row[0].text_content().strip()
 		btitle = fb_vote_row[1].text_content().strip()
-		#self.debug("GGGG %s name %s title %s" % (bill_id,bname,btitle))
 
 		l1 = len(bill['title'])
 		l2 = len(btitle)
 		if l1 - l2 > 20 and l2 > 4 and l2 < l1:
-			self.debug("%s Setting title: %s" % (bill_id,btitle))
-			bill['alternate_title'] = btitle
-			bill['short_title'] = btitle
+			self.debug("Bill[%s] Setting title: %s" % (bill_id,btitle))
+			#bill['alternate_title'] = btitle
+			#bill['short_title'] = btitle
+			bill.add_title(btitle)
 
 		vote_details = self.extract_vote_rows(bill_id,fb_vote_row[2])
 
 	#now everyting ins in vote_details
 	for d in vote_details:
 	   try:
-		#self.debug("VOTE_HISTORY: Processing a vote: %s" % d)
-
 		vote_date_time = d['Date/Time']
 		motion = d['Motion']
-		result = d['Result']
+		try:
+			result = d['Result']
+		except KeyError:
+			self.warning("Bill[%s] Roll call data has no result %s %s" %(bill_id,vurl,d))
+			continue
 
 		# Get link to PDF containing roll call votes
 		link_to_votes_href = d['vote_link']
@@ -546,18 +548,11 @@ class SCBillScraper(BillScraper):
 		   bill.add_source(link_to_votes_href)
 		   vote['pdf-source'] = link_to_votes_href
 		   vote['source'] = link_to_votes_href
-		   #billnum = re.search("(\d+)", bill_id).group(1)
-		   try:
-		   	self.extract_rollcall_from_pdf(chamber,vote,bill,link_to_votes_href,bill_id)
-		   except Exception as error:
-			self.warning("Failed while fetching votes bill=%s %s" % ( bill_id, traceback.format_exc()) ) 
-
+		   self.extract_rollcall_from_pdf(chamber,vote,bill,link_to_votes_href,bill_id)
 		bill.add_vote(vote)
 	   except Exception as error:
 		#self.warning("VOTE_HISTORY: Processing a vote: %s" % d)
-		self.warning("Failed while vote history bill=%s %s %s" % ( bill_id, d, traceback.format_exc()) ) 
-
-	#self.debug("EXIT VOTE %s scrape_vote_history: (%s,%s)\n\n" % (bill_id,vurl,chamber))
+		self.warning("scrape_vote_history: Failed bill=%s %s %s" % ( bill_id, d, traceback.format_exc()) ) 
 
 
     ###################################################
@@ -624,7 +619,7 @@ class SCBillScraper(BillScraper):
 
 	vbase = self.urls['vote-url-base'] 
 	vurl = "%s%s" % (self.urls['vote-url-base'], the_link)
-	self.debug("\n\nVOTE 512 Roll call: link [%s] AYES [%s] NAYS[%s] vurl[%s]" % (the_link, the_ayes, the_nays, vurl ) )
+	self.debug("VOTE 512 Roll call: link [%s] AYES [%s] NAYS[%s] vurl[%s]" % (the_link, the_ayes, the_nays, vurl ) )
 
 	motion = "some rollcall action"
 	yes_count = int(the_ayes)
@@ -692,10 +687,6 @@ class SCBillScraper(BillScraper):
 	bill_number = billpat.search(bill_id).group(0)
 
 	(similar_bills,summary,after_summary,vurl) = self.split_page_into_parts(data,session, bill_number)
-	self.debug("VVV: %s VOTE HISTORY URL %s " % (bill_id,vurl) )
-	#self.debug("VVV: %s Similar List %s " % (bill_id,similar_bills) )
-	#self.debug("VVV: %s Summary len %d %s " % (bill_id,len(summary),summary) )
-	#self.debug("VVV: %s After %d %s " % (bill_id,len(after_summary), after_summary) )
 
 	bill_summary = summary.strip() 
 	try:
@@ -721,12 +712,6 @@ class SCBillScraper(BillScraper):
 			date = datetime.datetime.strptime(the_date, "%m/%d/%y")
 			date = date.date()
 		
-####
-####			if re.search('Roll call', action):
-####				self.debug("VOTE call roll call line %d %s" % (linenum,line))
-####				self.process_rollcall(chamber,date,bill,bill_id,action)
-
-
 			t = action_type(action)
 			if t == ['other']:
 				self.debug("OTHERACTION: bill %s %d Text[%s] line[%s]" % (bill_id,linenum,action,line))
@@ -756,8 +741,7 @@ class SCBillScraper(BillScraper):
 			bill.add_source(vurl)
 			self.debug("Scraped votes: (chamber=%s,bill=%s,url=%s)" % (chamber,bill_id,vurl) )
 		except Exception as error:
-			self.warning("Failed to scrape votes: bill=%s %s" % ( bill_id, traceback.format_exc()) ) 
-			self.warning("Failed to scrape votes: (chamber=%s,bill=%s,url=%s) %s" % (chamber,bill_id,vurl,error) )
+			self.warning("Failed to scrape votes: chamber=%s bill=%s vurl=%s %s" % ( chamber,bill_id, vurl, traceback.format_exc()) ) 
 
 	self.save_bill(bill)
 	#self.emit_bill(bill)
@@ -821,9 +805,6 @@ class SCBillScraper(BillScraper):
 #		bills_with_votes = self.scrape_vote_page(session, chamber,page)
 
 	self.debug( "Bills with votes: %d" % len(bills_with_votes))
-	#if len(bills_with_votes) > 0:
-	#	self.debug("ABORTING")
-	#	return
 
 	# visit each day and extract bill ids
 	all_bills = set()
