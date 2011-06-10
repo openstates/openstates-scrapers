@@ -130,12 +130,14 @@ class UTBillScraper(BillScraper):
                         comm_link.attrib['onmouseover']).group(1)
                     action = "to " + comm
                     type = 'committee:referred'
-                elif action == '2nd reading':
+                elif action.startswith('2nd reading'):
                     type = 'bill:reading:2'
-                elif action == '3rd reading':
+                elif action.startswith('3rd reading'):
                     type = 'bill:reading:3'
                 elif action == 'failed':
                     type = 'bill:failed'
+                elif action.startswith('2nd & 3rd readings'):
+                    type = ['bill:reading:2', 'bill:reading:3']
                 else:
                     type = 'other'
 

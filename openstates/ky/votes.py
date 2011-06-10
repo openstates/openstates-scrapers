@@ -1,5 +1,7 @@
 import sys
 
+from billy.scrape.votes import VoteScraper, Vote
+
 import Image
 import ImageChops
 
@@ -84,6 +86,13 @@ def parse_votes(filename):
                 votes.append('other')
 
     return votes
+
+
+class KYVoteScraper(VoteScraper):
+    state = 'ky'
+
+    def scrape(self, chamber, session):
+        pass
 
 
 if __name__ == '__main__':
