@@ -206,6 +206,7 @@ def overview(request, abbr):
 
 def bills(request, abbr):
     meta = metadata(abbr)
+    level = meta['level']
     if not meta:
         raise Http404
 
