@@ -38,7 +38,6 @@ class MABillScraper(BillScraper):
             for row in doc.xpath('//tr/td[2]/..'):
                 id = row.xpath('.//li/a/text()')[0].strip()
                 url = row.xpath('.//li/a/@href')[0]
-                print url
                 title = row.xpath('.//span[@class="searchResultItemTitle"]/a/text()')[0].strip()
                 desc = row.xpath('.//span[@class="searchResultItemDescr"]/a/text()')[0].strip()
 
