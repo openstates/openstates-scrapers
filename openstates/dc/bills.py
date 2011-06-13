@@ -138,7 +138,8 @@ class DCBillScraper(BillScraper):
                 '//span[@id="VoteCount1"]/b/text()')[0])
             no_count = extract_int(doc.xpath(
                 '//span[@id="VoteCount2"]/b/text()')[0])
-            other_count = 13 - (yes_count+no_count)   # a bit lazy
+            # every now and then this actually drops below 0 (error in count)
+            other_count = max(13 - (yes_count+no_count), 0)
 
             vote = Vote('upper', vote_date, vote_type, passed, yes_count,
                         no_count, other_count, voice_vote=voice)
