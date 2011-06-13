@@ -27,26 +27,6 @@ class MABillScraper(BillScraper):
                 if opt.text_content().startswith(session):
                     session_select_value = opt.get('value')
 
-
-        urls = {}
-        titles = {}
-        subjects = {}
-        altSubjects = {}
-
-        bills = {}
-
-        # -------------
-        # Just one bill, using the scrape_ma_bill call directly. Need to set up: title, subject, altSubject
-        #
-        # bills['H00048'] = {}
-        # bills['H00048']['title'] = 'H00048'
-        # bills['H00048']['altSubject'] = 'By Ms. Jennifer  E. Benson of Lunenburg, petition (accompanied by bill, House, No. 00048) of ...'
-        # bills['H00048']['source'] = 'http://malegislature.gov/Bills/187/House/H00048'
-
-        # self.scrape_ma_bill('187th Session(2011-2012)', 'H00048', bills, 'http://malegislature.gov/Bills/187/House/H00048')
-        # return
-        # --------------
-
         chamber_letter = 'H' if chamber == 'lower' else 'S'
 
         search_url = BASE_SEARCH_URL % session_select_value
@@ -69,7 +49,6 @@ class MABillScraper(BillScraper):
                 bill = Bill(session, chamber, id, title, description=desc)
                 bill.add_source(url)
                 self.scrape_ma_bill(bill, url)
-                # TODO: here!
 
 
     def scrape_ma_bill(self, bill, url):
@@ -77,6 +56,11 @@ class MABillScraper(BillScraper):
         chamber_map = {'House': 'lower', 'Senate':'upper', 'Joint': 'joint'}
 
         with self.urlopen(url) as html:
+            # sometimes the site breaks
+            if 'System.Web.HttpException' in html:
+                self.warning('HttpException on %s' % url)
+                return
+
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute('http://www.malegislature.gov/')
 
