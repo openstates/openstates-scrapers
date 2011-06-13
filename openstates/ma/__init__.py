@@ -9,13 +9,13 @@ metadata = {
             'end_year': 2010,
             'start_year': 2009,
             'name': '186',
-            'sessions': [ '186th Session (2009-2010)' ]
+            'sessions': [ '186th' ]
         },
         {
             'end_year': 2012,
             'start_year': 2011,
             'name': '187',
-            'sessions': [ '187th Session(2011-2012)' ]
+            'sessions': [ '187th' ]
         }
     ],
     'name': 'Massachussetts',

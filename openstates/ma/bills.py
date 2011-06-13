@@ -1,52 +1,37 @@
-
 from BeautifulSoup import BeautifulSoup
+import lxml.html
 
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 
 from datetime import datetime
-
 import re
 
 # Go to: http://www.malegislature.org
 # Click on "Bills"
 # Leave search criteria on "187th Session (2011-2012)" and nothing else:
 #
-# URL: http://www.malegislature.gov/Bills/SearchResults?Input.Keyword=&Input.BillNumber=&
+# URL: http://www.malegislature.gov/Bills/Searcheesults?Input.Keyword=&Input.BillNumber=&
 #           Input.GeneralCourtId=1&Input.City=&Input.DocumentTypeId=&Input.CommitteeId=&x=102&y=18
+
+BASE_SEARCH_URL = 'http://www.malegislature.gov/Bills/SearchResults?Input.GeneralCourtId=%s&perPage=50000'
 
 class MABillScraper(BillScraper):
     state = 'ma'
 
     def scrape(self, chamber, session):
+        # an <option> with the session name gives a number to use in the search
+        with self.urlopen('http://www.malegislature.gov/Bills/Search') as html:
+            doc = lxml.html.fromstring(html)
+            for opt in doc.xpath('//option'):
+                if opt.text_content().startswith(session):
+                    session_select_value = opt.get('value')
 
-        # we only need to go through this once
-        #
-        if chamber == 'upper': return
-
-        self.validate_session(session)
-
-        # print 'session: '+session
-
-        # an <option> with the session in it gives me a number to use in the search below.
-        #
-        page = self.urlopen('http://www.malegislature.gov/Bills/Search')
-        soup = BeautifulSoup(page)
-        optionsFound = soup.findAll('option')
-        for optionFound in optionsFound:
-            if optionFound.string == session:
-                sessionSelectValue = optionFound['value']
 
         urls = {}
         titles = {}
         subjects = {}
         altSubjects = {}
-
-        beginBlanks = re.compile("^\s+")
-        endBlanks = re.compile("\s+$")
-
-        houseBill = re.compile("^H")
-        senateBill = re.compile("^S")
 
         bills = {}
 
@@ -62,141 +47,70 @@ class MABillScraper(BillScraper):
         # return
         # --------------
 
-        # Uncomment this in order to get the list of all the bills to process.
-        #
-        page = self.urlopen('http://www.malegislature.gov/Bills/SearchResults?Input.GeneralCourtId='+sessionSelectValue+'&perPage=50000')
+        chamber_letter = 'H' if chamber == 'lower' else 'S'
 
-        # Uncomment this in order to get a shortened list of about ten bills (one page - partial search results)
-        #
-        # page = self.urlopen('http://www.malegislature.gov/Bills/SearchResults?Input.GeneralCourtId='+sessionSelectValue)
+        search_url = BASE_SEARCH_URL % session_select_value
+        with self.urlopen(search_url) as html:
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute('http://www.malegislature.gov/')
 
-        # Process the search result page. I can get the title here also. Should I rather just get the id and pass this on? We will see.
-        #
-        # Note that, in the search results, we have first a shortest title, which is really the id. Then we have a short title, which we
-        # will probably throw away. Then we have the longer title, which we use as the title. If the longer title is missing, I am
-        # attempting to use the shorter title. I am not sure that this comes up.:w
+            # all rows that have 2 child tds
+            for row in doc.xpath('//tr/td[2]/..'):
+                id = row.xpath('.//li/a/text()')[0].strip()
+                url = row.xpath('.//li/a/@href')[0]
+                print url
+                title = row.xpath('.//span[@class="searchResultItemTitle"]/a/text()')[0].strip()
+                desc = row.xpath('.//span[@class="searchResultItemDescr"]/a/text()')[0].strip()
 
-        soup = BeautifulSoup(page)
-        linksFound = soup.findAll('a', attrs={'href' : re.compile("^/Bills/")})
+                # if wrong chamber, skip this
+                if not id.startswith(chamber_letter):
+                    continue
 
-        for linkFound in linksFound:
-            id = linkFound['title']
-            if re.match("^[H|S]\d+$", id):
-                if id not in bills: bills[id] = {}
+                bill = Bill(session, chamber, id, title, description=desc)
+                bill.add_source(url)
+                self.scrape_ma_bill(bill, url)
+                # TODO: here!
 
-                bills[id]['source'] = 'http://www.malegislature.gov'+linkFound['href']
 
-                if re.match(houseBill, id): bills[id]['chamber'] = 'lower'
-                if re.match(senateBill, id): bills[id]['chamber'] = 'upper'
+    def scrape_ma_bill(self, bill, url):
+        # for setting the chamber of the action
+        chamber_map = {'House': 'lower', 'Senate':'upper', 'Joint': 'joint'}
 
-                if 'title' not in bills[id]:
-                    bills[id]['title'] = linkFound.string
-                    bills[id]['title'] = re.sub(beginBlanks, '', re.sub(endBlanks, '', bills[id]['title']))
-                else:
-                    if 'subject' not in bills[id]:
-                        bills[id]['subject'] = linkFound.string
-                        bills[id]['subject'] = re.sub(beginBlanks, '', re.sub(endBlanks, '', bills[id]['subject']))
-                    else:
-                        bills[id]['altSubject'] = linkFound.string
-                        bills[id]['altSubject'] = re.sub(beginBlanks, '', re.sub(endBlanks, '', bills[id]['altSubject']))
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute('http://www.malegislature.gov/')
 
-        print 'titles:'
-        for id in bills:
-            self.scrape_ma_bill(session, id, bills, bills[id]['source'])
+            # Find and record bill actions. Each bill action looks like this in the page:
+            #     <tr>
+            #         <td headers="bDate">1/14/2011</td>
+            #         <td headers="bBranch">House</td>
+            #         <td headers="bAction">Bill Filed.</td>
+            #     </tr>
+            #
+            # skipping first row
+            for act_row in doc.xpath('//tr')[1:]:
+                date, actor, action = act_row.xpath('./td/text()')
+                date = datetime.strptime(date, "%M/%d/%Y")
+                actor = chamber_map[actor]
+                bill.add_action(actor, action, date)
 
-    def scrape_ma_bill(self, session, id, bills, url):
- 
-        if re.match("^H", id): chamber = 'lower'
-        if re.match("^S", id): chamber = 'upper'
+            sponsors = doc.xpath('//h1/following-sibling::p/a/text()')
+            petitioners = doc.xpath('//div[@id="billSummary"]/p[1]/a/text()')
+            # remove sponsors from petitioners?
+            petitioners = set(petitioners) - set(sponsors)
+            for sponsor in sponsors:
+                bill.add_sponsor('primary', sponsor)
+            for petitioner in petitioners:
+                bill.add_sponsor('cosponsor', petitioner)
 
-        realTitle = ''
+            # I tried to, as I was finding the sponsors above, detect whether a
+            # sponsor was already known. One has to do this because an author
+            # is listed in the "Sponsors:" section and then the same person
+            # will be listed with others in the "Petitioners:" section. We are
+            # guessing that "Sponsors" are authors and "Petitioners" are
+            # co-authors. Does this make sense?
 
-        if 'altSubject' in bills[id]:
-            realTitle = bills[id]['altSubject']
-        elif 'subject' in bills[id]:
-            realTitle = bills[id]['subject']
+            bill_text_url = doc.xpath('//a[@title="Show Bill Text"]/@href')[0]
+            bill.add_version('current text', bill_text_url)
 
-        bill = Bill(session, chamber, id, realTitle, subjects=[], type='bill')
-
-        bill.add_source(bills[id]['source'])
-
-        # For setting the chamber of the action. There is going to be a better way to do this.
-        #
-        # See the headers="bBranch", below.
-        #
-        chamberAlt = {}
-        chamberAlt['House'] = 'lower'
-        chamberAlt['Senate'] = 'upper'
-        chamberAlt['Joint'] = 'joint'
-
-        page = self.urlopen(bills[id]['source'])
-        # print page
-        soup = BeautifulSoup(page)
-
-        # Find and record bill actions. Each bill action looks like this in the page:
-        #     <tr>
-        #         <td headers="bDate">1/14/2011</td>
-        #         <td headers="bBranch">House</td>
-        #         <td headers="bAction">Bill Filed.</td>
-        #     </tr>
-        #
-        actionsFound = soup.findAll('td', attrs={'headers' : "bDate"})
-        for actionDate in actionsFound:
-            actionActor = actionDate.findNext('td')
-            action = actionActor.findNext('td')
-            bill.add_action(chamberAlt[actionActor.string], action.string, datetime.strptime(actionDate.string, "%M/%d/%Y"))
-
-        sponsors = {}
-
-        billDetailTags = soup.findAll('div', { "id" : "billDetail" })
-        for billDetailTag in billDetailTags:
-            peopleTags = billDetailTag.findAll('a', href=re.compile("^/People/"))
-            for person in peopleTags:
-                if re.match("^Sponsors:", person.parent.contents[0].string):
-                    sponsors[person['title']] = 'author';
-                else:
-                    if person['title'] not in sponsors:
-                        sponsors[person['title']] = 'coauthor';
-
-        # I tried to, as I was finding the sponsors above, detect whether a sponsor was already known. One has
-        # to do this because an author is listed in the "Sponsors:" section and then the same person will be listed
-        # with others in the "Petitioners:" section. We are guessing that "Sponsors" are authors and
-        # "Petitioners" are co-authors. Does this make sense?
-
-        for name in sponsors:
-            bill.add_sponsor(sponsors[name], name)
-
-        # Now I should be able to get the bill text and put it in "+text". What else to do with it?
-        #
-        billTextTags = soup.findAll('div', { "id" : "billText" })
-
-        # When I get the line below, what I want to say is: 
-        #
-        #    if line is of class 'BeautifulSoup.NavigableString' and not 'BeautifulSoup.Tag'.
-        #
-        # Since I cannot figure out the syntax to say this right, I have to do this complicated crap....
-
-        brTag = soup.findAll('br')[0]
-        aTag = soup.findAll('a')[0]
-
-        lastWasTag = False
-
-        output = []
-        fixedOutput = []
-
-        for billTextTag in billTextTags:
-            for line in billTextTag.contents:
-
-                if not isinstance(line, brTag.__class__) and not isinstance(line, aTag.__class__):
-                    if not re.match("^\s$", line):
-                        output.append(line)
-
-        for line in output:
-            line = line.strip()
-            fixedOutput.append(line)
-
-        textValue = "\n".join(fixedOutput)
-        bill['+text'] = textValue
-
-        self.save_bill(bill)
-
+            self.save_bill(bill)
