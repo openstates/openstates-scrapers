@@ -125,16 +125,20 @@ class TXBillScraper(BillScraper):
                 if 'Secretary of the Senate' not in desc:
                     atype = 'bill:introduced'
                 else:
-                    atype = 'other'
+                    atype = 'bill:filed'
             elif desc.startswith('Sent to the Governor'):
                 # But what if it gets lost in the mail?
                 atype = 'governor:received'
             elif desc.startswith('Signed by the Governor'):
                 atype = 'governor:signed'
+            elif desc == 'Vetoed by the Governor':
+                atype = 'governor:vetoed'
             elif desc == 'Read first time':
                 atype = ['bill:introduced', 'bill:reading:1']
                 introduced = True
             elif desc == 'Read & adopted':
+                atype = 'bill:passed'
+            elif desc == "Passed as amended":
                 atype = 'bill:passed'
             elif desc.startswith('Referred to') or desc.startswith("Recommended to be sent to "):
                 atype = 'committee:referred'
