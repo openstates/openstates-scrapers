@@ -16,7 +16,7 @@ metadata = dict(
          'start_year': 2009, 'end_year': 2010,
          'type': 'primary'},
         {'name': '82',
-         'sessions': ['82'],
+         'sessions': ['82', '821'],
          'start_year': 2011, 'end_year': 2012,},
         ],
     session_details={
@@ -27,6 +27,9 @@ metadata = dict(
                 'end_date': datetime.date(2009, 7, 10),
                 'type': 'special'},
         '82': {'start_date': datetime.date(2011, 1, 11),
+               'end_date': datetime.date(2011, 5, 30),
                'type': 'primary'},
+        '821': {'start_date': datetime.date(2011, 5, 31),
+               'type': 'special'},
         },
     )
