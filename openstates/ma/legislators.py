@@ -29,6 +29,9 @@ def clean_district(district):
     district = district.title()
     for pattern, repl in mappings:
         district = re.sub(pattern, repl, district)
+    district = district.strip()
+    if district.endswith(','):
+        district = district[:-1]
     return district
 
 
