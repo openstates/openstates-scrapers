@@ -1,7 +1,6 @@
-
 from billy.scrape.committees import CommitteeScraper, Committee
 
-from BeautifulSoup import BeautifulSoup
+import lxml.html
 
 import re
 
@@ -9,19 +8,15 @@ class MACommitteeScraper(CommitteeScraper):
     state = 'ma'
 
     def scrape(self, chamber, term):
-        pageTypes = {}
-
         if chamber == 'upper':
-            pageTypes['Senate'] = 1
-            pageTypes['Joint'] = 1
-
-        if chamber == 'lower':
-            pageTypes['House'] = 1
+            page_types = ['Senate', 'Joint']
+        elif chamber == 'lower':
+            page_types = ['House']
 
         foundComms = []
 
-        for pageType in pageTypes:
-            url = 'http://www.malegislature.gov/Committees/' + pageType
+        for page_type in page_types:
+            url = 'http://www.malegislature.gov/Committees/' + page_type
 
             page = self.urlopen(url);
             soup = BeautifulSoup(page)
