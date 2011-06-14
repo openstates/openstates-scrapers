@@ -30,7 +30,11 @@ class IALegislatorScraper(LegislatorScraper):
             if party == 'Democrat':
                 party = 'Democratic'
 
+            pid = re.search("PID=(\d+)", link.attrib['href']).group(1)
+            photo_url = ("http://www.legis.iowa.gov/getPhotoPeople.aspx"
+                         "?GA=84&PID=%s" % pid)
+
             leg = Legislator(term, chamber, district, name, party=party,
-                             email_address=email)
+                             email_address=email, photo_url=photo_url)
             leg.add_source(url)
             self.save_legislator(leg)
