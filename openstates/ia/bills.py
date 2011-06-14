@@ -1,4 +1,5 @@
 import re
+import datetime
 
 from billy.scrape.bills import BillScraper, Bill
 
@@ -44,5 +45,19 @@ class IABillScraper(BillScraper):
 
         bill = Bill(session, chamber, bill_id, title)
         bill.add_source(url)
+
+        for tr in page.xpath("//table[3]/tr"):
+            date = tr.xpath("string(td[1])").strip()
+            date = datetime.datetime.strptime(date, "%B %d, %Y").date()
+
+            action = tr.xpath("string(td[2])").strip()
+            action = re.sub(r'\s+', ' ', action)
+
+            if 'S.J.' in action or 'SCS' in action:
+                actor = 'upper'
+            elif 'H.J.' in action or 'HCS' in action:
+                actor = 'lower'
+
+            bill.add_action(actor, action, date)
 
         self.save_bill(bill)
