@@ -30,7 +30,12 @@ class IABillScraper(BillScraper):
 
             bill_url = option.attrib['value'].strip() + '&frm=2'
             sidebar = lxml.html.fromstring(self.urlopen(bill_url))
-            hist_link = sidebar.xpath("//a[contains(., 'Bill History')]")[0]
+
+            try:
+                hist_link = sidebar.xpath("//a[contains(., 'Bill History')]")[0]
+            except IndexError:
+                # where is it?
+                continue
 
             hist_url = re.match(r'openWin\("(.*)"\)',
                                 hist_link.attrib['onclick']).group(1)
