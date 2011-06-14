@@ -77,6 +77,14 @@ class MABillScraper(BillScraper):
                 actor = chamber_map[actor]
                 bill.add_action(actor, action, date)
 
+
+            # I tried to, as I was finding the sponsors, detect whether a
+            # sponsor was already known. One has to do this because an author
+            # is listed in the "Sponsors:" section and then the same person
+            # will be listed with others in the "Petitioners:" section. We are
+            # guessing that "Sponsors" are authors and "Petitioners" are
+            # co-authors. Does this make sense?
+
             sponsors = doc.xpath('//h1/following-sibling::p/a/text()')
             petitioners = doc.xpath('//div[@id="billSummary"]/p[1]/a/text()')
             # remove sponsors from petitioners?
@@ -86,14 +94,9 @@ class MABillScraper(BillScraper):
             for petitioner in petitioners:
                 bill.add_sponsor('cosponsor', petitioner)
 
-            # I tried to, as I was finding the sponsors above, detect whether a
-            # sponsor was already known. One has to do this because an author
-            # is listed in the "Sponsors:" section and then the same person
-            # will be listed with others in the "Petitioners:" section. We are
-            # guessing that "Sponsors" are authors and "Petitioners" are
-            # co-authors. Does this make sense?
-
-            bill_text_url = doc.xpath('//a[@title="Show Bill Text"]/@href')[0]
-            bill.add_version('current text', bill_text_url)
+            # sometimes version link is just missing
+            bill_text_url = doc.xpath('//a[@title="Show Bill Text"]/@href')
+            if bill_text_url:
+                bill.add_version('current text', bill_text_url[0])
 
             self.save_bill(bill)
