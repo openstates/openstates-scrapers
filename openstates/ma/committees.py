@@ -18,75 +18,27 @@ class MACommitteeScraper(CommitteeScraper):
         for page_type in page_types:
             url = 'http://www.malegislature.gov/Committees/' + page_type
 
-            page = self.urlopen(url);
-            soup = BeautifulSoup(page)
+            with self.urlopen(url) as html:
+                doc = lxml.html.fromstring(html)
+                doc.make_links_absolute('http://www.malegislature.gov')
 
-            links = soup.findAll('a', href=re.compile("^/"))
+                for com_url in doc.xpath('//div[@class="widgetContent"]/ul/li/a/@href'):
+                    self.scrape_committee(chamber, com_url)
 
-            for link in links:
-                c1 = (link['href'] == '/Budget/HouseBudget')
-                c2 = (link['href'] == '/Committees/SenateWaysAndMeans')
-                c3 = (link['href'] == '/Committees/HouseWaysAndMeans')
-                c4 = (re.match('^/Committees/Senate/', link['href']))
-                c5 = (re.match('^/Committees/House/', link['href']))
-                c6 = (re.match('^/Committees/Joint/', link['href']))
+    def scrape_committee(self, chamber, url):
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
 
-                if c1 or c2 or c3 or c4 or c5 or c6:
-                    thisComm = {}
-                    thisComm['href'] = link['href']
-                    thisComm['name'] = link.string
-                    foundComms.append(thisComm)
+            name = doc.xpath('//h3/text()')[0]
+            com = Committee(chamber, name)
+            com.add_source(url)
 
-        for commInfo in foundComms:
-            # print commInfo
-            page = self.urlopen('http://www.malegislature.gov' + commInfo['href'])
+            for describe_div in doc.xpath('//div[@class="describe"]'):
+                role = describe_div.xpath('.//b/text()')[-1]
+                name = describe_div.xpath('.//u/a/text()')[0]
+                com.add_member(name, role)
 
-            if re.search('House', commInfo['href']): thisChamber = 'lower'
-            if re.search('Senate', commInfo['href']): thisChamber = 'upper'
-            if re.search('Joint', commInfo['href']): thisChamber = 'joint'
+            for member in doc.xpath('//div[@class="membersGallyList"]/ul/li/a/text()'):
+                com.add_member(name)
 
-            soup = BeautifulSoup(page)
-            commRoles = soup.findAll('div', { 'class' : 'describe' })
-
-            if len(commRoles) > 0:
-
-                foundRoles = []
-
-                for commRole in commRoles:
-
-                    bolded = commRole.findNext('b')
-                    linked = commRole.findNext('a')
-
-                    foundRole = {}
-
-                    if len(bolded) == 1:
-                        foundRole['role'] = bolded.string
-                    if len(bolded) > 1:
-                        foundRole['role'] = bolded.contents[0] + ' ' + bolded.contents[2]
-                    if linked.string is not None:
-                        foundRole['name'] = linked.string
-
-                    if 'role' not in foundRole:
-                        foundRole['role'] = 'UNKNOWN'
-
-                    foundRoles.append(foundRole)
-
-                commMembers = soup.findAll('div', { 'class' : 'membersGallyList' })
-
-                foundMembers = commMembers[0].findAll('a')
-
-                for foundMember in foundMembers:
-                    foundRole = {}
-                    foundRole['role'] = 'member'
-                    foundRole['name'] = foundMember.string
-                    foundRoles.append(foundRole)
-
-                nextComm = Committee(thisChamber, commInfo['name'])
-
-                nextComm.add_source('http://www.malegislature.gov' + commInfo['href'])
-
-                for member in foundRoles:
-                    nextComm.add_member(member['name'], member['role'])
-
-                self.save_committee(nextComm)
-
+            self.save_committee(com)
