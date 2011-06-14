@@ -49,6 +49,8 @@ class IABillScraper(BillScraper):
         for tr in page.xpath("//table[3]/tr"):
             date = tr.xpath("string(td[1])").strip()
             date = datetime.datetime.strptime(date, "%B %d, %Y").date()
+            if date.startswith("***"):
+                continue
 
             action = tr.xpath("string(td[2])").strip()
             action = re.sub(r'\s+', ' ', action)
