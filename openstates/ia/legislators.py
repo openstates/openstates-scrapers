@@ -20,6 +20,7 @@ class IALegislatorScraper(LegislatorScraper):
 
         url = "http://www.legis.iowa.gov/Legislators/%s.aspx" % chamber_name
         page = lxml.html.fromstring(self.urlopen(url))
+        page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, 'legislator.aspx')]"):
             name = link.text.strip()
@@ -37,4 +38,20 @@ class IALegislatorScraper(LegislatorScraper):
             leg = Legislator(term, chamber, district, name, party=party,
                              email_address=email, photo_url=photo_url)
             leg.add_source(url)
+
+            leg_page = lxml.html.fromstring(self.urlopen(link.attrib['href']))
+            comm_path = "//a[contains(@href, 'committee')]"
+            for comm_link in leg_page.xpath(comm_path):
+                comm = comm_link.text.strip()
+
+                if comm.endswith('Appropriations Subcommittee'):
+                    sub = re.match('^(.+) Appropriations Subcommittee$',
+                                   comm).group(1)
+                    leg.add_role('committee member', term, chamber=chamber,
+                                 committee='Appropriations',
+                                 subcommittee=sub)
+                else:
+                    leg.add_role('committee member', term, chamber=chamber,
+                                 committee=comm)
+
             self.save_legislator(leg)
