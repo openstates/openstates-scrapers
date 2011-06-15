@@ -64,8 +64,11 @@ class IABillScraper(BillScraper):
                 version_url = re.sub(r'frm=2', 'frm=3', url)
             else:
                 version_url = option.attrib['value'] + "&frm=3"
-            print "AAA:", version_url
             bill.add_version(version_name, version_url)
+
+        if not bill['versions']:
+            version_url = re.sub(r'frm=2', 'frm=3', url)
+            bill.add_version('Introduced', version_url)
 
         for tr in page.xpath("//table[3]/tr"):
             date = tr.xpath("string(td[1])").strip()
@@ -84,11 +87,3 @@ class IABillScraper(BillScraper):
             bill.add_action(actor, action, date)
 
         self.save_bill(bill)
-
-    def scrape_versions(self, bill, url):
-        page = lxml.html.fromstring(self.urlopen(url))
-        page.make_links_absolute(url)
-
-        for link in page.xpath("//a[contains(@href, 'billinfo')]"):
-#            print link.attrib['href']
-            print link.text.strip()
