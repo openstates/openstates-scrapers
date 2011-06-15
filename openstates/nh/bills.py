@@ -53,11 +53,20 @@ class NHBillScraper(BillScraper):
         # bill basics
         self.bills = {}         # LSR->Bill
         self.bills_by_id = {}   # need a second table to attach votes
+        last_line = []
         for line in self.zf.open('tbllsrs.txt').readlines():
             line = line.split('|')
-            if len(line) != 36:
-                self.warning('bad line: %s' % '|'.join(line))
-                continue
+            if len(line) < 36:
+                if len(last_line + line[1:]) == 36:
+                    # combine two lines for processing
+                    # (skip an empty entry at beginning of second line)
+                    line = last_line + line
+                    self.warning('used bad line')
+                else:
+                    # skip this line, maybe we'll use it later
+                    self.warning('bad line: %s' % '|'.join(line))
+                    last_line = line
+                    continue
             session_yr = line[0]
             lsr = line[1]
             title = line[2]
@@ -139,9 +148,17 @@ class NHBillScraper(BillScraper):
 
     def scrape_votes(self, session):
         votes = {}
+        last_line = []
 
         for line in self.zf.open('tblrollcallsummary.txt'):
             line = line.split('|')
+            if len(line) < 14:
+                if len(last_line + line[1:]) == 14:
+                    line = last_line
+                    self.warning('used bad vote line')
+                else:
+                    last_line = line
+                    self.warning('bad vote line %s' % '|'.join(line))
             session_yr = line[0]
             body = line[1]
             vote_num = line[2]
