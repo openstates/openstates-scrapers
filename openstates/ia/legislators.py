@@ -44,14 +44,23 @@ class IALegislatorScraper(LegislatorScraper):
             for comm_link in leg_page.xpath(comm_path):
                 comm = comm_link.text.strip()
 
+                match = re.search(r'\((.+)\)$', comm)
+                if match:
+                    comm = re.sub(r'\((.+)\)$', '', comm).strip()
+                    mtype = match.group(1).lower()
+                else:
+                    mtype = 'member'
+
                 if comm.endswith('Appropriations Subcommittee'):
                     sub = re.match('^(.+) Appropriations Subcommittee$',
                                    comm).group(1)
                     leg.add_role('committee member', term, chamber=chamber,
                                  committee='Appropriations',
-                                 subcommittee=sub)
+                                 subcommittee=sub,
+                                 position=mtype)
                 else:
                     leg.add_role('committee member', term, chamber=chamber,
-                                 committee=comm)
+                                 committee=comm,
+                                 position=mtype)
 
             self.save_legislator(leg)
