@@ -16,6 +16,25 @@ import re
 
 BASE_SEARCH_URL = 'http://www.malegislature.gov/Bills/SearchResults?Input.GeneralCourtId=%s&perPage=50000'
 
+_classifiers = (
+    ('Bill Filed', 'bill:filed'),
+    ('Referred to', 'committee:referred'),
+    ('Read second', 'bill:reading:2'),
+    ('Read third.* and passed', ['bill:reading:3', 'bill:passed']),
+    ('Committee recommended ought NOT', 'committee:passed:unfavorable'),
+    ('Committee recommended ought to pass', 'committee:passed:favorable'),
+    ('Bill reported favorably', 'committee:passed:favorable'),
+    ('Signed by the Governor', 'governor:signed'),
+    ('Amendment.* (A|a)dopted', 'amendment:passed'),
+    ('Amendment.* (R|r)ejected', 'amendment:failed'),
+)
+
+def classify_action(action):
+    for pattern, type in _classifiers:
+        if re.match(pattern, action):
+            return type
+    return 'other'
+
 class MABillScraper(BillScraper):
     state = 'ma'
 
@@ -75,7 +94,8 @@ class MABillScraper(BillScraper):
                 date, actor, action = act_row.xpath('./td/text()')
                 date = datetime.strptime(date, "%M/%d/%Y")
                 actor = chamber_map[actor]
-                bill.add_action(actor, action, date)
+                atype = classify_action(action)
+                bill.add_action(actor, action, date, type=atype)
 
 
             # I tried to, as I was finding the sponsors, detect whether a
