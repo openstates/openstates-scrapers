@@ -90,7 +90,7 @@ class IABillScraper(BillScraper):
                 atype = 'bill:reading:1'
             elif action.startswith('Referred to'):
                 atype = 'committee:referred'
-            elif action.startswith('Sent ot Governor'):
+            elif action.startswith('Sent to Governor'):
                 atype = 'governor:received'
             elif action.startswith('Signed by Governor'):
                 atype = 'governor:signed'
