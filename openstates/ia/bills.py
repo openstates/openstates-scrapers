@@ -6,6 +6,11 @@ from billy.scrape.bills import BillScraper, Bill
 import lxml.html
 
 
+def get_popup_url(link):
+    onclick = link.attrib['onclick']
+    return re.match(r'openWin\("(.*)"\)$', onclick).group(1)
+
+
 class IABillScraper(BillScraper):
     state = 'ia'
 
@@ -29,27 +34,35 @@ class IABillScraper(BillScraper):
                 continue
 
             bill_url = option.attrib['value'].strip() + '&frm=2'
-            sidebar = lxml.html.fromstring(self.urlopen(bill_url))
 
-            try:
-                hist_link = sidebar.xpath("//a[contains(., 'Bill History')]")[0]
-            except IndexError:
-                # where is it?
-                continue
-
-            hist_url = re.match(r'openWin\("(.*)"\)',
-                                hist_link.attrib['onclick']).group(1)
-
-            self.scrape_bill(chamber, session, bill_id, hist_url)
+            self.scrape_bill(chamber, session, bill_id, bill_url)
 
     def scrape_bill(self, chamber, session, bill_id, url):
-        page = lxml.html.fromstring(self.urlopen(url))
-        page.make_links_absolute(url)
+        sidebar = lxml.html.fromstring(self.urlopen(url))
+
+        try:
+            hist_url = get_popup_url(
+                sidebar.xpath("//a[contains(., 'Bill History')]")[0])
+        except IndexError:
+            # where is it?
+            return
+
+        page = lxml.html.fromstring(self.urlopen(hist_url))
+        page.make_links_absolute(hist_url)
 
         title = page.xpath("string(//table[2]/tr[4])").strip()
 
         bill = Bill(session, chamber, bill_id, title)
-        bill.add_source(url)
+        bill.add_source(hist_url)
+
+        for option in sidebar.xpath("//select[@name='BVer']/option"):
+            version_name = option.text.strip()
+            if option.get('selected'):
+                version_url = re.sub(r'frm=2', 'frm=3', url)
+            else:
+                version_url = option.attrib['value'] + "&frm=3"
+            print "AAA:", version_url
+            bill.add_version(version_name, version_url)
 
         for tr in page.xpath("//table[3]/tr"):
             date = tr.xpath("string(td[1])").strip()
@@ -68,3 +81,11 @@ class IABillScraper(BillScraper):
             bill.add_action(actor, action, date)
 
         self.save_bill(bill)
+
+    def scrape_versions(self, bill, url):
+        page = lxml.html.fromstring(self.urlopen(url))
+        page.make_links_absolute(url)
+
+        for link in page.xpath("//a[contains(@href, 'billinfo')]"):
+#            print link.attrib['href']
+            print link.text.strip()
