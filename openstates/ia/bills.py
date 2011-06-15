@@ -33,6 +33,9 @@ class IABillScraper(BillScraper):
             if bill_id == 'Pick One':
                 continue
 
+            if 'HSB' in bill_id or 'SSB' in bill_id:
+                continue
+
             bill_url = option.attrib['value'].strip() + '&frm=2'
 
             self.scrape_bill(chamber, session, bill_id, bill_url)
