@@ -2,7 +2,6 @@ from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
 
-import re
 
 class MACommitteeScraper(CommitteeScraper):
     state = 'ma'
@@ -39,6 +38,6 @@ class MACommitteeScraper(CommitteeScraper):
                 com.add_member(name, role)
 
             for member in doc.xpath('//div[@class="membersGallyList"]/ul/li/a/text()'):
-                com.add_member(name)
+                com.add_member(member)
 
             self.save_committee(com)
