@@ -191,7 +191,7 @@ class VTBillScraper(BillScraper):
                 bill.add_action(actor, action, date,
                                 type=action_type(action))
 
-                for vote_link in tr.xpath("td[3]/a"):
+                for vote_link in tr.xpath("td[4]/a"):
                     self.scrape_vote(bill, actor, vote_link.attrib['href'])
 
             self.save_bill(bill)
