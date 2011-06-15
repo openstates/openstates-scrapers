@@ -114,6 +114,15 @@ class IABillScraper(BillScraper):
                 atype = 'governor:vetoed:line-item'
             elif re.match(r'Passed (House|Senate)', action):
                 atype = 'bill:passed'
+            elif re.match(r'Amendment (S|H)-\d+ filed', action):
+                atype = ['amendment:introduced']
+                if ', adopted' in action:
+                    atype.append('amendment:passed')
+            elif re.match(r'Amendment (S|H)-\d+( as amended,)? adopted',
+                          action):
+                atype = 'amendment:passed'
+            elif re.match('Amendment (S|N)-\d+ lost', action):
+                atype = 'amendment:failed'
             else:
                 atype = 'other'
 
