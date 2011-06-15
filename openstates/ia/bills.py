@@ -123,6 +123,10 @@ class IABillScraper(BillScraper):
                 atype = 'amendment:passed'
             elif re.match('Amendment (S|N)-\d+ lost', action):
                 atype = 'amendment:failed'
+            elif action.startswith('Resolution filed'):
+                atype = 'bill:introduced'
+            elif action.startswith('Resolution adopted'):
+                atype = 'bill:passed'
             else:
                 atype = 'other'
 
