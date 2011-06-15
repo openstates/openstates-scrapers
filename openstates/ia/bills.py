@@ -84,6 +84,25 @@ class IABillScraper(BillScraper):
             elif 'H.J.' in action or 'HCS' in action:
                 actor = 'lower'
 
-            bill.add_action(actor, action, date)
+            if action.startswith('Introduced'):
+                atype = 'bill:introduced'
+            elif action.startswith('Read first time'):
+                atype = 'bill:reading:1'
+            elif action.startswith('Referred to'):
+                atype = 'committee:referred'
+            elif action.startswith('Sent ot Governor'):
+                atype = 'governor:received'
+            elif action.startswith('Signed by Governor'):
+                atype = 'governor:signed'
+            elif action.startswith('Vetoed by Governor'):
+                atype = 'governor:vetoed'
+            elif action.startswith('Item veto'):
+                atype = 'governor:vetoed:line-item'
+            elif re.match(r'Passed (House|Senate)', action):
+                atype = 'bill:passed'
+            else:
+                atype = 'other'
+
+            bill.add_action(actor, action, date, type=atype)
 
         self.save_bill(bill)
