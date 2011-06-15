@@ -80,12 +80,20 @@ class IABillScraper(BillScraper):
             bill.add_version('Introduced', version_url)
 
         sponsors = page.xpath("string(//table[2]/tr[3])").strip()
-        sponsor_re = r'\w+(?:, [A-Z]\.)?(?:,|(?: and)|\.$)'
+        sponsor_re = r'[\w-]+(?:, [A-Z]\.)?(?:,|(?: and)|\.$)'
         for sponsor in re.findall(sponsor_re, sponsors):
             sponsor = sponsor.replace(' and', '').strip(' .,')
-            if sponsor == 'Means':
-                # oops, gets mangled by the regex
-                sponsor = 'Ways & Means'
+
+            # a few sponsors get mangled by our regex
+            sponsor = {
+                'Means': 'Ways & Means',
+                'Safety': 'Public Safety',
+                'Resources': 'Human Resources',
+                'Affairs': 'Veterans Affairs',
+                'Protection': 'Environmental Protection',
+                'Government': 'State Government',
+                'Boef': 'De Boef'}.get(sponsor, sponsor)
+
             bill.add_sponsor('sponsor', sponsor)
 
         for tr in page.xpath("//table[3]/tr"):
