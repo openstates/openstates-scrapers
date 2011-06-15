@@ -49,11 +49,12 @@ class WYCommitteeScraper(CommitteeScraper):
                     rows = table.xpath(".//tr")
                     chamber = rows[0].xpath('.//td')[0].text_content().strip()
                     chamber = 'upper' if self.log(chamber) == 'Senator' else 'lower'
-                    c = Committee(chamber, c)
+                    comm = Committee(chamber, c)
                     for row in rows[1:]:
                         tds = row.xpath('.//td')
                         name = tds[0].text_content().strip()
                         role = 'chairman' if tds[3].text_content().strip() == 'Chairman' else 'member'
                         self.log(name)
                         self.log(role)
-                        c.add_member(name, role)
+                        comm.add_member(name, role)
+                    self.save_committee(comm)
