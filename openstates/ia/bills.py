@@ -55,7 +55,16 @@ class IABillScraper(BillScraper):
 
         title = page.xpath("string(//table[2]/tr[4])").strip()
 
-        bill = Bill(session, chamber, bill_id, title)
+        if 'HR' in bill_id or 'SR' in bill_id:
+            bill_type = ['resolution']
+        elif 'HJR' in bill_id or 'SJR' in bill_id:
+            bill_type = ['joint resolution']
+        elif 'HCR' in bill_id or 'SCR' in bill_id:
+            bill_type = ['concurrent resolution']
+        else:
+            bill_type = ['bill']
+
+        bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(hist_url)
 
         for option in sidebar.xpath("//select[@name='BVer']/option"):
