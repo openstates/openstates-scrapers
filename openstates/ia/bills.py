@@ -70,6 +70,11 @@ class IABillScraper(BillScraper):
             version_url = re.sub(r'frm=2', 'frm=3', url)
             bill.add_version('Introduced', version_url)
 
+        sponsors = page.xpath("string(//table[2]/tr[3])")
+        sponsors = sponsors.strip()[3:]
+        for sponsor in sponsors.split(','):
+            bill.add_sponsor('sponsor', sponsor.strip(" \r\n\t."))
+
         for tr in page.xpath("//table[3]/tr"):
             date = tr.xpath("string(td[1])").strip()
             if date.startswith("***"):
