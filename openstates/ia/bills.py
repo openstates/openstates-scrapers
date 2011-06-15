@@ -110,6 +110,8 @@ class IABillScraper(BillScraper):
             elif 'H.J.' in action or 'HCS' in action:
                 actor = 'lower'
 
+            action = re.sub(r'(H|S)\.J\.\s+\d+\.$', '', action)
+
             if action.startswith('Introduced'):
                 atype = 'bill:introduced'
             elif action.startswith('Read first time'):
