@@ -7,7 +7,7 @@ feedparser>=4.1
 pytz>=2010l
 scrapelib>=0.5.1
 validictory>=0.7.0
--e hg+https://httplib2.googlecode.com/hg/#egg=httplib2
+httplib2>=0.7.0
 xlrd
 http://downloads.sourceforge.net/project/dbfpy/dbfpy/2.2.5/dbfpy-2.2.5.tar.gz
 

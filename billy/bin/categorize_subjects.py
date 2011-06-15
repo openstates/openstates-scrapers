@@ -20,12 +20,13 @@ def categorize_subjects(abbr, data_dir, process_all):
         reader = csv.reader(open(filename))
 
         # build category mapping
-        for row in reader:
+        for n,row in enumerate(reader):
             for subj in row[1:]:
                 if subj:
+                    subj = subj.strip()
                     if subj not in settings.BILLY_SUBJECTS:
-                        raise Exception('invalid subject %s (%s)' %
-                                        (subj, row[0]))
+                        raise Exception('invalid subject %s (%s - %s)' %
+                                        (subj, row[0], n))
                     categorizer[row[0]].add(subj)
     except IOError:
         print 'Proceeding without', filename

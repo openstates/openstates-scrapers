@@ -1,3 +1,4 @@
+import re
 import zipfile
 import datetime
 
@@ -12,7 +13,32 @@ bill_type_map = {'B': 'bill',
                  'JR': 'joint resolution',
                  'CO': 'concurrent order'
                 }
+action_classifiers = [
+    ('Passed by Third Reading', ['bill:reading:3', 'bill:passed']),
+    ('.*Ought to Pass', ['committee:passed:favorable']),
+    ('Introduced(.*) and (R|r)eferred', ['bill:introduced', 'committee:referred']),
+    ('.*Inexpedient to Legislate', ['committee:passed:unfavorable']),
+    ('Proposed(.*) Amendment', 'amendment:introduced'),
+    ('Amendment .* Adopted', 'amendment:passed'),
+    ('Amendment .* Failed', 'amendment:failed'),
+    ('Signed', 'governor:signed'),
+    ('Vetoed', 'governor:vetoed'),
+]
 VERSION_URL = 'http://www.gencourt.state.nh.us/legislation/%s/%s.html'
+AMENDMENT_URL = 'http://www.gencourt.state.nh.us/legislation/amendments/%s.html'
+
+
+def classify_action(action):
+    for regex, classification in action_classifiers:
+        if re.match(regex, action):
+            return classification
+    return 'other'
+
+
+def extract_amendment_id(action):
+    piece = re.findall('Amendment #(\d{4}-\d+[hs])', action)
+    if piece:
+        return piece[0]
 
 
 class NHBillScraper(BillScraper):
@@ -29,6 +55,9 @@ class NHBillScraper(BillScraper):
         self.bills_by_id = {}   # need a second table to attach votes
         for line in self.zf.open('tbllsrs.txt').readlines():
             line = line.split('|')
+            if len(line) != 36:
+                self.warning('bad line: %s' % '|'.join(line))
+                continue
             session_yr = line[0]
             lsr = line[1]
             title = line[2]
@@ -92,7 +121,13 @@ class NHBillScraper(BillScraper):
                 actor = 'lower' if body == 'H' else 'upper'
                 time = datetime.datetime.strptime(timestamp,
                                                   '%m/%d/%Y %H:%M:%S %p')
-                self.bills[lsr].add_action(actor, action, time)
+                action = action.strip()
+                atype = classify_action(action)
+                self.bills[lsr].add_action(actor, action, time, type=atype)
+                amendment_id = extract_amendment_id(action)
+                if amendment_id:
+                    self.bills[lsr].add_document('amendment %s' % amendment_id,
+                                                 AMENDMENT_URL % amendment_id)
 
         self.scrape_votes(session)
 

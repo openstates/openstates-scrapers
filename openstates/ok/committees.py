@@ -28,7 +28,7 @@ class OKCommitteeScraper(CommitteeScraper):
         for link in page.xpath("//a[contains(@href, 'Members')]"):
             name = link.xpath("string()").strip()
 
-            if 'Members' in name or 'Conference' in name or 'Joint' in name:
+            if 'Members' in name or 'Conference' in name:
                 continue
 
             match = re.search(r'CommID=(\d+)&SubCommID=(\d+)',
@@ -47,10 +47,15 @@ class OKCommitteeScraper(CommitteeScraper):
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 
-        if parent:
-            comm = Committee('lower', parent, subcommittee=name)
+        if 'Joint' in name or (parent and 'Joint' in parent):
+            chamber = 'joint'
         else:
-            comm = Committee('lower', name)
+            chamber = 'lower'
+
+        if parent:
+            comm = Committee(chamber, parent, subcommittee=name)
+        else:
+            comm = Committee(chamber, name)
         comm.add_source(url)
 
         for link in page.xpath("//a[contains(@href, 'District')]"):
@@ -60,8 +65,8 @@ class OKCommitteeScraper(CommitteeScraper):
             if not member:
                 continue
 
-            match = re.match(r'((Vice )?Chair)?Rep\. ([^\(]+)', member)
-            member = match.group(3).strip()
+            match = re.match(r'((Co-)?(Vice )?Chair)?Rep\. ([^\(]+)', member)
+            member = match.group(4).strip()
             role = match.group(1) or 'member'
 
             comm.add_member(member, role.lower())
