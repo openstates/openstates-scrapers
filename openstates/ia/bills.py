@@ -145,9 +145,9 @@ class IABillScraper(BillScraper):
                 atype = 'bill:introduced'
             elif action.startswith('Resolution adopted'):
                 atype = 'bill:passed'
-            elif action.startswith('Committee report'):
-                if action.endswith('passage.'):
-                    atype = 'committee:passed'
+            elif (action.startswith('Committee report') and
+                  action.endswith('passage.')):
+                  atype = 'committee:passed'
             else:
                 atype = 'other'
 
