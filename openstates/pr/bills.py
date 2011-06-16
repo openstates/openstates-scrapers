@@ -14,8 +14,9 @@ class NoSuchBill(Exception):
 
 _classifiers = (
     ('Radicado', 'bill:introduced'),
-    ('Aparecee en Primera Lectura', 'bill:reading:1'),
+    ('Aparece en Primera Lectura', 'bill:reading:1'),
     (u'Remitido a Comisión', 'committee:referred'),
+    (u'Referido a Comisión', 'committee:referred'),
     ('Enviado al Gobernador', 'governor:received'),
     ('Aprobado por Cámara', 'bill:passed'),
     ('Aprobado por el Senado', 'bill:passed'),
