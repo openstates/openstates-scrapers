@@ -100,6 +100,8 @@ class IABillScraper(BillScraper):
             date = tr.xpath("string(td[1])").strip()
             if date.startswith("***"):
                 continue
+            elif "No history is recorded at this time." in date:
+                return
             date = datetime.datetime.strptime(date, "%B %d, %Y").date()
 
             action = tr.xpath("string(td[2])").strip()
@@ -113,7 +115,9 @@ class IABillScraper(BillScraper):
             action = re.sub(r'(H|S)\.J\.\s+\d+\.$', '', action)
 
             if action.startswith('Introduced'):
-                atype = 'bill:introduced'
+                atype = ['bill:introduced']
+                if ', referred to' in action:
+                    atype.append('committee:referred')
             elif action.startswith('Read first time'):
                 atype = 'bill:reading:1'
             elif action.startswith('Referred to'):
@@ -141,6 +145,9 @@ class IABillScraper(BillScraper):
                 atype = 'bill:introduced'
             elif action.startswith('Resolution adopted'):
                 atype = 'bill:passed'
+            elif (action.startswith('Committee report') and
+                  action.endswith('passage.')):
+                  atype = 'committee:passed'
             else:
                 atype = 'other'
 
