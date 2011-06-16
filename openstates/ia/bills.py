@@ -51,8 +51,6 @@ class IABillScraper(BillScraper):
             return
 
         page = lxml.html.fromstring(self.urlopen(hist_url))
-        if "No history is recorded at this time." in page:
-            return
         page.make_links_absolute(hist_url)
 
         title = page.xpath("string(//table[2]/tr[4])").strip()
@@ -101,6 +99,8 @@ class IABillScraper(BillScraper):
         for tr in page.xpath("//table[3]/tr"):
             date = tr.xpath("string(td[1])").strip()
             if date.startswith("***"):
+                continue
+            elif "No history is recorded at this time." in date:
                 continue
             date = datetime.datetime.strptime(date, "%B %d, %Y").date()
 
