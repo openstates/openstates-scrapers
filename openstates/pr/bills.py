@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from billy.scrape import ScrapeError, NoDataForPeriod
 from billy.scrape.votes import Vote
 from billy.scrape.bills import BillScraper, Bill
@@ -6,9 +7,19 @@ from openstates.pr.utils import grouper, doc_link_url, year_from_session
 import lxml.html
 import datetime
 import itertools
+import re
 
 class NoSuchBill(Exception):
     pass
+
+_classifiers = (
+    ('Radicado', 'bill:introduced'),
+    ('Aparecee en Primera Lectura', 'bill:reading:1'),
+    (u'Remitido a Comisión', 'committee:referred'),
+    ('Enviado al Gobernador', 'governor:received'),
+    ('Aprobado por Cámara', 'bill:passed'),
+    ('Aprobado por el Senado', 'bill:passed'),
+)
 
 class PRBillScraper(BillScraper):
     state = 'pr'
@@ -59,8 +70,13 @@ class PRBillScraper(BillScraper):
 
                 date = datetime.datetime.strptime(tds[0].text_content(),
                                                   "%m/%d/%Y")
-                action = tds[1].text_content()
-                bill.add_action(chamber, action, date)
+                action = tds[1].text_content().strip()
+                for pattern, atype in _classifiers:
+                    if re.match(pattern, action):
+                        break
+                else:
+                    atype = 'other'
+                bill.add_action(chamber, action, date, type=atype)
 
                 # also has an associated version
                 if tds[1].xpath('a'):
