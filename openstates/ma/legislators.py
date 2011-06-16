@@ -5,6 +5,7 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 
 def clean_district(district):
     mappings = (
+        ('\s+', ' '),
         ('Consisting.*', ''),
         (u'\xe2.*', ''),
         ('\..*', ''),
