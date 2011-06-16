@@ -58,6 +58,11 @@ class MABillScraper(BillScraper):
                 if '</html>' not in html:
                     self.warning('truncated page on %s' % bill_url)
                     continue
+
+                # lets assume if 10 bills are missing we're done
+                if skipped == 10:
+                    break
+
                 if 'Unable to find the Bill requested' in html:
                     skipped += 1
                     # no such bill
@@ -65,9 +70,6 @@ class MABillScraper(BillScraper):
                 else:
                     skipped = 0
 
-                # lets assume if 10 bills are missing we're done
-                if skipped == 10:
-                    break
 
                 doc = lxml.html.fromstring(html)
                 doc.make_links_absolute('http://www.malegislature.gov/')
