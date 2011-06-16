@@ -92,7 +92,7 @@ class MABillScraper(BillScraper):
             # skipping first row
             for act_row in doc.xpath('//tr')[1:]:
                 date, actor, action = act_row.xpath('./td/text()')
-                date = datetime.strptime(date, "%M/%d/%Y")
+                date = datetime.strptime(date, "%m/%d/%Y")
                 actor = chamber_map[actor]
                 atype = classify_action(action)
                 bill.add_action(actor, action, date, type=atype)
