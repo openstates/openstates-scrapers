@@ -4,6 +4,7 @@ import lxml.html
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 
+import itertools
 from datetime import datetime
 import re
 
@@ -39,84 +40,73 @@ class MABillScraper(BillScraper):
     state = 'ma'
 
     def scrape(self, chamber, session):
-        # an <option> with the session name gives a number to use in the search
-        with self.urlopen('http://www.malegislature.gov/Bills/Search') as html:
-            doc = lxml.html.fromstring(html)
-            for opt in doc.xpath('//option'):
-                if opt.text_content().startswith(session):
-                    session_select_value = opt.get('value')
-
-        chamber_letter = 'H' if chamber == 'lower' else 'S'
-
-        search_url = BASE_SEARCH_URL % session_select_value
-        with self.urlopen(search_url) as html:
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute('http://www.malegislature.gov/')
-
-            # all rows that have 2 child tds
-            for row in doc.xpath('//tr/td[2]/..'):
-                id = row.xpath('.//li/a/text()')[0].strip()
-                url = row.xpath('.//li/a/@href')[0]
-                title = row.xpath('.//span[@class="searchResultItemTitle"]/a/text()')[0].strip()
-                desc = row.xpath('.//span[@class="searchResultItemDescr"]/a/text()')[0].strip()
-
-                # if wrong chamber, skip this
-                if not id.startswith(chamber_letter):
-                    continue
-
-                bill = Bill(session, chamber, id, title, description=desc)
-                bill.add_source(url)
-                self.scrape_ma_bill(bill, url)
-
-
-    def scrape_ma_bill(self, bill, url):
-        # for setting the chamber of the action
+        # for the chamber of the action
         chamber_map = {'House': 'lower', 'Senate':'upper', 'Joint': 'joint'}
 
-        with self.urlopen(url) as html:
-            # sometimes the site breaks
-            if 'System.Web.HttpException' in html:
-                self.warning('HttpException on %s' % url)
-                return
+        session_slug = session[:-2]
+        chamber_slug = 'House' if chamber == 'lower' else 'Senate'
 
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute('http://www.malegislature.gov/')
+        # keep track of how many we've had to skip
+        skipped = 0
 
-            # Find and record bill actions. Each bill action looks like this in the page:
-            #     <tr>
-            #         <td headers="bDate">1/14/2011</td>
-            #         <td headers="bBranch">House</td>
-            #         <td headers="bAction">Bill Filed.</td>
-            #     </tr>
-            #
-            # skipping first row
-            for act_row in doc.xpath('//tr')[1:]:
-                date, actor, action = act_row.xpath('./td/text()')
-                date = datetime.strptime(date, "%m/%d/%Y")
-                actor = chamber_map[actor]
-                atype = classify_action(action)
-                bill.add_action(actor, action, date, type=atype)
+        for n in itertools.count(1):
+            bill_id = '%s%05d' % (chamber_slug[0], n)
+            bill_url = 'http://www.malegislature.gov/Bills/%s/%s/%s' % (
+                session_slug, chamber_slug, bill_id)
 
+            with self.urlopen(bill_url) as html:
+                # sometimes the site breaks
+                if '</html>' not in html:
+                    self.warning('truncated page on %s' % bill_url)
+                    continue
+                if 'Unable to find the Bill requested' in html:
+                    skipped += 1
+                    # no such bill
+                    continue
+                else:
+                    skipped = 0
 
-            # I tried to, as I was finding the sponsors, detect whether a
-            # sponsor was already known. One has to do this because an author
-            # is listed in the "Sponsors:" section and then the same person
-            # will be listed with others in the "Petitioners:" section. We are
-            # guessing that "Sponsors" are authors and "Petitioners" are
-            # co-authors. Does this make sense?
+                # lets assume if 10 bills are missing we're done
+                if skipped == 10:
+                    break
 
-            sponsors = doc.xpath('//h1/following-sibling::p/a/text()')
-            petitioners = doc.xpath('//div[@id="billSummary"]/p[1]/a/text()')
-            # remove sponsors from petitioners?
-            petitioners = set(petitioners) - set(sponsors)
-            for sponsor in sponsors:
-                bill.add_sponsor('primary', sponsor)
-            for petitioner in petitioners:
-                bill.add_sponsor('cosponsor', petitioner)
+                doc = lxml.html.fromstring(html)
+                doc.make_links_absolute('http://www.malegislature.gov/')
 
-            # sometimes version link is just missing
-            bill_text_url = doc.xpath('//a[@title="Show Bill Text"]/@href')
-            if bill_text_url:
-                bill.add_version('current text', bill_text_url[0])
+                title = doc.xpath('//h2/text()')[0]
+                desc = doc.xpath('//p[@class="billShortDesc"]/text()')[0]
 
-            self.save_bill(bill)
+                # create bill
+                bill = Bill(session, chamber, bill_id, title, description=desc)
+                bill.add_source(bill_url)
+
+                # actions
+                for act_row in doc.xpath('//tbody[@class="bgwht"]/tr'):
+                    date, actor, action = act_row.xpath('./td/text()')
+                    date = datetime.strptime(date, "%m/%d/%Y")
+                    actor = chamber_map[actor]
+                    atype = classify_action(action)
+                    bill.add_action(actor, action, date, type=atype)
+
+                # I tried to, as I was finding the sponsors, detect whether a
+                # sponsor was already known. One has to do this because an author
+                # is listed in the "Sponsors:" section and then the same person
+                # will be listed with others in the "Petitioners:" section. We are
+                # guessing that "Sponsors" are authors and "Petitioners" are
+                # co-authors. Does this make sense?
+
+                sponsors = doc.xpath('//p[@class="billReferral"]/a/text()')
+                petitioners = doc.xpath('//div[@id="billSummary"]/p[1]/a/text()')
+                # remove sponsors from petitioners?
+                petitioners = set(petitioners) - set(sponsors)
+                for sponsor in sponsors:
+                    bill.add_sponsor('primary', sponsor)
+                for petitioner in petitioners:
+                    bill.add_sponsor('cosponsor', petitioner)
+
+                # sometimes version link is just missing
+                bill_text_url = doc.xpath('//a[@title="Show and Print Bill Text"]/@href')
+                if bill_text_url:
+                    bill.add_version('Current Text', bill_text_url[0])
+
+                self.save_bill(bill)
