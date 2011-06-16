@@ -1,4 +1,3 @@
-from BeautifulSoup import BeautifulSoup
 import lxml.html
 
 from billy.scrape import ScrapeError
