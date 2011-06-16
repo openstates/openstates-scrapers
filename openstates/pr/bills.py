@@ -20,6 +20,7 @@ _classifiers = (
     ('Enviado al Gobernador', 'governor:received'),
     ('Aprobado por Cámara', 'bill:passed'),
     ('Aprobado por el Senado', 'bill:passed'),
+    ('Veto', 'governor:vetoed'),
 )
 
 class PRBillScraper(BillScraper):
