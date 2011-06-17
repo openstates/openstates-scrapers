@@ -26,13 +26,14 @@ def action_type(action):
     if action.startswith('Second Reading'):
         atype.append('bill:reading:2')
     elif action.startswith('Third Reading'):
-        if 'Measure Passed' in action:
-            atype.append('bill:passed')
         atype.append('bill:reading:3')
     elif action.startswith('Reported Do Pass'):
         atype.append('committee:passed')
     elif re.match('(Signed|Approved) by Governor', action):
         atype.append('governor:signed')
+
+    if 'measure passed' in action.lower():
+        atype.append('bill:passed')
 
     return atype
 
