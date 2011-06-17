@@ -237,6 +237,10 @@ class MSBillScraper(BillScraper):
             for name in line.split(','):
                 name = name.strip()
 
+                # move on if that's all there was
+                if not name:
+                    continue
+
                 # None or a Total indicate the end of a section
                 if 'None.' in name:
                     cur_array = None
@@ -250,8 +254,9 @@ class MSBillScraper(BillScraper):
                 for junk in ('on final passage', 'Necessary', 'who would have',
                              'being a tie', 'therefore', 'Vacancies', 'a pair',
                              'Total-'):
-                    if name and junk in name:
+                    if junk in name:
                         junk_in_name = True
+                        break
                 if cur_array is not None and not junk_in_name:
                     # strip trailing .
                     if name[-1] == '.':
