@@ -41,16 +41,16 @@ class DCBillScraper(BillScraper):
             introduced_by = doc.get_element_by_id('IntroducedBy').text
             if introduced_by:
                 for sponsor in introduced_by.split(', '):
-                    bill.add_sponsor('primary', sponsor)
+                    bill.add_sponsor('primary', sponsor.strip())
 
             requested_by = doc.get_element_by_id('RequestedBy').text
             if requested_by:
-                bill.add_sponsor('requestor', requested_by)
+                bill.add_sponsor('requestor', requested_by.strip())
 
             cosponsored_by = doc.get_element_by_id('CoSponsoredBy').text
             if cosponsored_by:
                 for cosponsor in cosponsored_by.split(','):
-                    bill.add_sponsor('cosponsor', cosponsor)
+                    bill.add_sponsor('cosponsor', cosponsor.strip())
 
             # actions
             actions = (
