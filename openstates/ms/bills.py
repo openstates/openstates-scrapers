@@ -203,13 +203,7 @@ class MSBillScraper(BillScraper):
         os.remove(vote_pdf)
 
         # this way we get a key error on a missing vote type
-        #if motion in self._vote_mapping:
         motion, passed = self._vote_mapping[motion]
-        #else:
-        #    passed = True
-        #   self.warning('unknown vote type: ' + motion)
-
-        # process PDF text
 
         yes_votes = []
         no_votes = []
@@ -252,7 +246,13 @@ class MSBillScraper(BillScraper):
                     cur_array = None
 
                 # append name if it looks ok
-                if cur_array is not None and name and 'Total--' not in name:
+                junk_in_name = False
+                for junk in ('on final passage', 'Necessary', 'who would have',
+                             'being a tie', 'therefore', 'Vacancies', 'a pair',
+                             'Total-'):
+                    if name and junk in name:
+                        junk_in_name = True
+                if cur_array is not None and not junk_in_name:
                     # strip trailing .
                     if name[-1] == '.':
                         name = name[:-1]
