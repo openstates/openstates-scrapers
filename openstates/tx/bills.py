@@ -111,6 +111,8 @@ class TXBillScraper(BillScraper):
             if desc == 'Scheduled for public hearing on . . .':
                 continue
 
+            introduced = False
+
             if desc == 'Amended':
                 atype = 'amendment:passed'
             elif desc == 'Amendment(s) offered':
@@ -137,7 +139,10 @@ class TXBillScraper(BillScraper):
                 atype = ['bill:introduced', 'bill:reading:1']
                 introduced = True
             elif desc == 'Read & adopted':
-                atype = 'bill:passed'
+                atype = ['bill:passed']
+                if not introduced:
+                    introduced = True
+                    atype.append['bill:introduced']
             elif desc == "Passed as amended":
                 atype = 'bill:passed'
             elif desc.startswith('Referred to') or desc.startswith("Recommended to be sent to "):
