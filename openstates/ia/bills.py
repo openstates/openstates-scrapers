@@ -70,9 +70,9 @@ class IABillScraper(BillScraper):
         for option in sidebar.xpath("//select[@name='BVer']/option"):
             version_name = option.text.strip()
             if option.get('selected'):
-                version_url = re.sub(r'frm=2', 'frm=3', url)
+                version_url = re.sub(r'frm=2', 'frm=1', url)
             else:
-                version_url = option.attrib['value'] + "&frm=3"
+                version_url = option.attrib['value']
             bill.add_version(version_name, version_url)
 
         if not bill['versions']:
