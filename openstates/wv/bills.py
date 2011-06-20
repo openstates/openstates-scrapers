@@ -52,6 +52,10 @@ class WVBillScraper(BillScraper):
 
         actor = chamber
         for tr in reversed(page.xpath("//div[@id='bhisttab']/table/tr")[1:]):
+            if len(tr.xpath("td")) < 3:
+                # Effective date row
+                continue
+
             date = tr.xpath("string(td[1])").strip()
             date = datetime.datetime.strptime(date, "%m/%d/%y").date()
             action = tr.xpath("string(td[2])").strip()
