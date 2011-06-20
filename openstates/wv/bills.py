@@ -37,7 +37,12 @@ class WVBillScraper(BillScraper):
             name = link.xpath("string()").strip()
             if name in ['html', 'wpd']:
                 continue
-            print name
             bill.add_version(name, link.attrib['href'])
+
+        subjects = []
+        for link in page.xpath("//a[contains(@href, 'Bills_Subject')]"):
+            subject = link.xpath("string()").strip()
+            subjects.append(subject)
+        bill['subjects'] = subjects
 
         self.save_bill(bill)
