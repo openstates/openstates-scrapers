@@ -45,4 +45,8 @@ class WVBillScraper(BillScraper):
             subjects.append(subject)
         bill['subjects'] = subjects
 
+        for link in page.xpath("//a[contains(@href, 'Bills_Sponsors')]"):
+            sponsor = link.xpath("string()").strip()
+            bill.add_sponsor('sponsor', sponsor)
+
         self.save_bill(bill)
