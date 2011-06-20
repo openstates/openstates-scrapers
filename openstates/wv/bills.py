@@ -32,4 +32,12 @@ class WVBillScraper(BillScraper):
 
         bill = Bill(session, chamber, bill_id, title)
         bill.add_source(url)
+
+        for link in page.xpath("//a[contains(@href, 'bills_text')]"):
+            name = link.xpath("string()").strip()
+            if name in ['html', 'wpd']:
+                continue
+            print name
+            bill.add_version(name, link.attrib['href'])
+
         self.save_bill(bill)
