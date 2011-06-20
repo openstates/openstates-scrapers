@@ -61,10 +61,12 @@ class WVBillScraper(BillScraper):
             action = tr.xpath("string(td[2])").strip()
 
             if (action == 'Communicated to Senate' or
-                action.startswith('Senate received')):
+                action.startswith('Senate received') or
+                action.startswith('Ordered to Senate')):
                 actor = 'upper'
             elif (action == 'Communicated to House' or
-                  action.startswith('House received')):
+                  action.startswith('House received') or
+                  action.startswith('Ordered to House')):
                 actor = 'lower'
 
             bill.add_action(actor, action, date)
