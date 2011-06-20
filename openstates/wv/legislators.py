@@ -41,7 +41,7 @@ class WVLegislatorScraper(LegislatorScraper):
         page.make_links_absolute(url)
 
         dist_link = page.xpath("//a[contains(@href, 'dist=')]")[0]
-        district = dist_link.xpath('string()').strip()
+        district = dist_link.xpath('string()').strip().lstrip('0')
 
         mem_span = page.xpath("//span[contains(@class, 'memname')]")[0]
         mem_tail = mem_span.tail.strip()
