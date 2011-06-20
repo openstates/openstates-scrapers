@@ -7,15 +7,6 @@ import itertools
 from datetime import datetime
 import re
 
-# Go to: http://www.malegislature.org
-# Click on "Bills"
-# Leave search criteria on "187th Session (2011-2012)" and nothing else:
-#
-# URL: http://www.malegislature.gov/Bills/Searcheesults?Input.Keyword=&Input.BillNumber=&
-#           Input.GeneralCourtId=1&Input.City=&Input.DocumentTypeId=&Input.CommitteeId=&x=102&y=18
-
-BASE_SEARCH_URL = 'http://www.malegislature.gov/Bills/SearchResults?Input.GeneralCourtId=%s&perPage=50000'
-
 _classifiers = (
     ('Bill Filed', 'bill:filed'),
     ('Referred to', 'committee:referred'),
@@ -96,13 +87,18 @@ class MABillScraper(BillScraper):
                 # guessing that "Sponsors" are authors and "Petitioners" are
                 # co-authors. Does this make sense?
 
-                sponsors = doc.xpath('//p[@class="billReferral"]/a/text()')
-                petitioners = doc.xpath('//div[@id="billSummary"]/p[1]/a/text()')
-                # remove sponsors from petitioners?
-                petitioners = set(petitioners) - set(sponsors)
-                for sponsor in sponsors:
+                sponsors = dict((a.get('href'), a.text) for a in
+                                doc.xpath('//p[@class="billReferral"]/a'))
+                petitioners = dict((a.get('href'), a.text) for a in
+                                   doc.xpath('//div[@id="billSummary"]/p[1]/a'))
+
+                # remove sponsors from petitioners
+                for k in sponsors:
+                    petitioners.pop(k, None)
+
+                for sponsor in sponsors.values():
                     bill.add_sponsor('primary', sponsor)
-                for petitioner in petitioners:
+                for petitioner in petitioners.values():
                     bill.add_sponsor('cosponsor', petitioner)
 
                 # sometimes version link is just missing
