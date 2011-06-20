@@ -159,6 +159,11 @@ class MSBillScraper(BillScraper):
                         bill.add_action(actor, action, date, type=atype,
                                         action_num=action_num)
 
+                        # use committee names as scraped subjects
+                        subjects = details_root.xpath('//h_name/text()')
+                        subjects += details_root.xpath('//s_name/text()')
+                        bill['subjects'] = subjects
+
                         if act_vote:
                             vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
                             if vote_url not in seen_votes:
