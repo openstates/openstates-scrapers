@@ -108,7 +108,7 @@ class NHBillScraper(BillScraper):
 
         # sponsors
         for line in self.zf.open('tbllsrsponsors.txt').readlines():
-            session_yr, lsr, seq, employee, primary = line.split('|')
+            session_yr, lsr, seq, employee, primary = line.strip().split('|')
 
             if session_yr == session and lsr in self.bills:
                 sp_type = 'primary' if primary == '1' else 'cosponsor'
