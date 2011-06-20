@@ -1,4 +1,5 @@
 import re
+import datetime
 
 from billy.scrape.bills import BillScraper, Bill
 
@@ -48,5 +49,20 @@ class WVBillScraper(BillScraper):
         for link in page.xpath("//a[contains(@href, 'Bills_Sponsors')]"):
             sponsor = link.xpath("string()").strip()
             bill.add_sponsor('sponsor', sponsor)
+
+        actor = chamber
+        for tr in reversed(page.xpath("//div[@id='bhisttab']/table/tr")[1:]):
+            date = tr.xpath("string(td[1])").strip()
+            date = datetime.datetime.strptime(date, "%m/%d/%y").date()
+            action = tr.xpath("string(td[2])").strip()
+
+            if (action == 'Communicated to Senate' or
+                action.startswith('Senate received')):
+                actor = 'upper'
+            elif (action == 'Communicated to House' or
+                  action.startswith('House received')):
+                actor = 'lower'
+
+            bill.add_action(actor, action, date)
 
         self.save_bill(bill)
