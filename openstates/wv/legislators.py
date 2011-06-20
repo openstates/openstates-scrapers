@@ -53,6 +53,10 @@ class WVLegislatorScraper(LegislatorScraper):
         elif party == 'R':
             party = 'Republican'
 
-        leg = Legislator(term, chamber, district, name, party=party)
+        photo_url = page.xpath(
+            "//img[contains(@src, 'images/members/')]")[0].attrib['src']
+
+        leg = Legislator(term, chamber, district, name, party=party,
+                         photo_url=photo_url)
         leg.add_source(url)
         self.save_legislator(leg)
