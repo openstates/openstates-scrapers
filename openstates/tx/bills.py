@@ -142,7 +142,7 @@ class TXBillScraper(BillScraper):
                 atype = ['bill:passed']
                 if not introduced:
                     introduced = True
-                    atype.append['bill:introduced']
+                    atype.append('bill:introduced')
             elif desc == "Passed as amended":
                 atype = 'bill:passed'
             elif desc.startswith('Referred to') or desc.startswith("Recommended to be sent to "):
