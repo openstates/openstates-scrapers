@@ -127,14 +127,21 @@ class WVBillScraper(BillScraper):
                 motion = lines[idx - 2].strip()
                 yes_count, no_count, other_count = [
                     int(g) for g  in match.groups()]
+
+                exc_match = re.search(r'EXCUSED: (\d+)', line)
+                if exc_match:
+                    other_count += int(exc_match.group(1))
+
                 continue
 
-            match = re.match(r'(YEAS|NAYS|NOT VOTING|PAIRED):\s+(\d+)\s*$',
-                             line)
+            match = re.match(
+                r'(YEAS|NAYS|NOT VOTING|PAIRED|EXCUSED):\s+(\d+)\s*$',
+                line)
             if match:
                 vote_type = {'YEAS': 'yes',
                              'NAYS': 'no',
                              'NOT VOTING': 'other',
+                             'EXCUSED': 'other',
                              'PAIRED': 'paired'}[match.group(1)]
                 continue
 
