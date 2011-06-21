@@ -1,7 +1,11 @@
+import os
 import re
 import datetime
+import collections
 
+from billy.scrape.utils import convert_pdf
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 import lxml.html
 
@@ -50,6 +54,9 @@ class WVBillScraper(BillScraper):
             sponsor = link.xpath("string()").strip()
             bill.add_sponsor('sponsor', sponsor)
 
+        for link in page.xpath("//a[contains(@href, 'House/Votes')]"):
+            self.scrape_vote(bill, link.attrib['href'])
+
         actor = chamber
         for tr in reversed(page.xpath("//div[@id='bhisttab']/table/tr")[1:]):
             if len(tr.xpath("td")) < 3:
@@ -95,3 +102,59 @@ class WVBillScraper(BillScraper):
             bill.add_action(actor, action, date, type=atype)
 
         self.save_bill(bill)
+
+    def scrape_vote(self, bill, url):
+        filename, resp = self.urlretrieve(url)
+        text = convert_pdf(filename, 'text')
+        os.remove(filename)
+
+        lines = text.splitlines()
+
+        vote_type = None
+        votes = collections.defaultdict(list)
+
+        for idx, line in enumerate(lines):
+            line = line.rstrip()
+            match = re.search(r'(\d+)/(\d+)/(\d{4,4})$', line)
+            if match:
+                date = datetime.datetime.strptime(match.group(0), "%m/%d/%Y")
+                continue
+
+            match = re.match(
+                r'\s+YEAS: (\d+)\s+NAYS: (\d+)\s+NOT VOTING: (\d+)',
+                line)
+            if match:
+                motion = lines[idx - 2].strip()
+                yes_count, no_count, other_count = [
+                    int(g) for g  in match.groups()]
+                passed = yes_count > (no_count + other_count)
+                continue
+
+            match = re.match(r'(YEAS|NAYS|NOT VOTING):\s+(\d+)\s*$',
+                             line)
+            if match:
+                vote_type = {'YEAS': 'yes',
+                             'NAYS': 'no',
+                             'NOT VOTING': 'other'}[match.group(1)]
+                continue
+
+            if vote_type:
+                for name in line.split('   '):
+                    name = name.strip()
+                    if not name:
+                        continue
+                    votes[vote_type].append(name)
+
+        vote = Vote('lower', date, motion, passed,
+                    yes_count, no_count, other_count)
+        vote.add_source(url)
+
+        vote['yes_votes'] = votes['yes']
+        vote['no_votes'] = votes['no']
+        vote['other_votes'] = votes['other']
+
+        assert len(vote['yes_votes']) == yes_count
+        assert len(vote['no_votes']) == no_count
+        assert len(vote['other_votes']) == other_count
+
+        bill.add_vote(vote)
