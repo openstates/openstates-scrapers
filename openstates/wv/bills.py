@@ -127,24 +127,35 @@ class WVBillScraper(BillScraper):
                 motion = lines[idx - 2].strip()
                 yes_count, no_count, other_count = [
                     int(g) for g  in match.groups()]
-                passed = yes_count > (no_count + other_count)
                 continue
 
-            match = re.match(r'(YEAS|NAYS|NOT VOTING):\s+(\d+)\s*$',
+            match = re.match(r'(YEAS|NAYS|NOT VOTING|PAIRED):\s+(\d+)\s*$',
                              line)
             if match:
                 vote_type = {'YEAS': 'yes',
                              'NAYS': 'no',
-                             'NOT VOTING': 'other'}[match.group(1)]
+                             'NOT VOTING': 'other',
+                             'PAIRED': 'paired'}[match.group(1)]
                 continue
 
-            if vote_type:
+            if vote_type == 'paired':
+                if not line.strip():
+                    continue
+                name, pair_type = re.match(
+                    r'([^\(]+)\((YEA|NAY)\)', line).groups()
+                name = name.strip()
+                if pair_type == 'YEA':
+                    votes['yes'].append(name)
+                elif pair_type == 'NAY':
+                    votes['no'].append(name)
+            elif vote_type:
                 for name in line.split('   '):
                     name = name.strip()
                     if not name:
                         continue
                     votes[vote_type].append(name)
 
+        passed = yes_count > (no_count + other_count)
         vote = Vote('lower', date, motion, passed,
                     yes_count, no_count, other_count)
         vote.add_source(url)
