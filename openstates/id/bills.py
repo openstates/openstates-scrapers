@@ -39,3 +39,26 @@ class IDBillScraper(BillScraper):
 
         version_link = page.xpath("//a[contains(., 'Bill Text')]")[0]
         bill.add_version('Text', version_link.attrib['href'])
+
+        act_table = page.xpath("//table")[5]
+        actor = bill['chamber']
+        for tr in act_table.xpath("tr"):
+            if len(tr.xpath("td")) < 4:
+                continue
+
+            date = tr.xpath("string(td[2])").strip()
+            if not date:
+                continue
+            date = datetime.datetime.strptime(date + "/" + bill['session'],
+                                              "%m/%d/%Y").date()
+
+            action = tr.xpath("string(td[3])").strip().replace(
+                u'\u00a0', ' ')
+            action = re.sub(r'\s+', ' ', action)
+            bill.add_action(actor, action, date)
+
+            if 'to House' in action:
+                actor = 'lower'
+            elif 'to Senate' in action:
+                actor = 'upper'
+
