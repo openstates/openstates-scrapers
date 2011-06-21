@@ -69,6 +69,27 @@ class WVBillScraper(BillScraper):
                   action.startswith('Ordered to House')):
                 actor = 'lower'
 
-            bill.add_action(actor, action, date)
+            if action == 'Read 1st time':
+                atype = 'bill:reading:1'
+            elif action == 'Read 2nd time':
+                atype = 'bill:reading:2'
+            elif action == 'Read 3rd time':
+                atype = 'bill:reading:3'
+            elif action == 'Filed for introduction':
+                atype = 'bill:filed'
+            elif re.match(r'To [A-Z]', action):
+                atype = 'committee:referred'
+            elif action.startswith('Introduced in'):
+                atype = 'bill:introduced'
+            elif action.startswith('To Governor') and 'Journal' not in action:
+                atype = 'governor:received'
+            elif (action.startswith('Approved by Governor') and
+                  'Journal' not in action):
+                atype = 'governor:signed'
+            elif (action.startswith('Passed Senate') or
+                  action.startswith('Passed House')):
+                atype = 'bill:passed'
+
+            bill.add_action(actor, action, date, type=atype)
 
         self.save_bill(bill)
