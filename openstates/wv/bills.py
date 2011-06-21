@@ -146,15 +146,17 @@ class WVBillScraper(BillScraper):
                 continue
 
             if vote_type == 'paired':
-                if not line.strip():
-                    continue
-                name, pair_type = re.match(
-                    r'([^\(]+)\((YEA|NAY)\)', line).groups()
-                name = name.strip()
-                if pair_type == 'YEA':
-                    votes['yes'].append(name)
-                elif pair_type == 'NAY':
-                    votes['no'].append(name)
+                for part in line.split('   '):
+                    part = part.strip()
+                    if not part:
+                        continue
+                    name, pair_type = re.match(
+                        r'([^\(]+)\((YEA|NAY)\)', line).groups()
+                    name = name.strip()
+                    if pair_type == 'YEA':
+                        votes['yes'].append(name)
+                    elif pair_type == 'NAY':
+                        votes['no'].append(name)
             elif vote_type:
                 for name in line.split('   '):
                     name = name.strip()
