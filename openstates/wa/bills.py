@@ -27,7 +27,7 @@ class WABillScraper(BillScraper):
             doc.make_links_absolute('http://apps.leg.wa.gov/billsbytopic/')
             for link in doc.xpath('//a[contains(@href, "ResultsRss")]/@href'):
                 subject = link.rsplit('=',1)[-1]
-                rss = feedparser.parse(link)
+                rss = feedparser.parse(self.urlopen(link.replace(' ', '%20')))
                 for e in rss['entries']:
                     match = re.match('\w\w \d{4}', e['title'])
                     if match:
