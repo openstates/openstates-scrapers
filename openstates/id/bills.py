@@ -52,9 +52,16 @@ class IDBillScraper(BillScraper):
             date = datetime.datetime.strptime(date + "/" + bill['session'],
                                               "%m/%d/%Y").date()
 
-            action = tr.xpath("string(td[3])").strip().replace(
-                u'\u00a0', ' ')
+            action = tr.xpath("string(td[3])").strip().replace(u'\xa0', ' ')
+
+            if re.match(r"3rd\s+rdg\s+-\s+(PASSED|FAILED)\s+-", action):
+                action = tr.xpath("td[3]")[0].text
+                action += tr.xpath("string(td[3]/span[1])")
+                action += ". " + tr.xpath("td[3]/br")[-1].tail
+                action = action.replace(u'\xa0', ' ').strip()
+
             action = re.sub(r'\s+', ' ', action)
+
             bill.add_action(actor, action, date)
 
             if 'to House' in action:
