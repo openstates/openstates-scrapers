@@ -1,5 +1,6 @@
 import re
 import datetime
+from collections import defaultdict
 
 from billy.scrape.bills import BillScraper, Bill
 from openstates.ky import metadata
@@ -24,9 +25,30 @@ def session_url(session):
 class KYBillScraper(BillScraper):
     state = 'ky'
 
-    def scrape(self, chamber, year):
-        self.scrape_session(chamber, year)
-        for sub in metadata['session_details'][year].get('sub_sessions', []):
+    _subjects = defaultdict(list)
+
+    def scrape_subjects(self, session):
+        if self._subjects:
+            return
+
+        url = session_url(session) + 'indexhd.htm'
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
+            for subj_link in doc.xpath('//a[contains(@href, ".htm")]/@href'):
+                # subject links are 4 numbers
+                if re.match('\d{4}', subj_link):
+                    subj_html = self.urlopen(session_url(session) + subj_link)
+                    sdoc = lxml.html.fromstring(subj_html)
+                    subject = sdoc.xpath('//a[@name="TopOfPage"]/text()')[0]
+                    for bill in sdoc.xpath('//table[@id="table2"]//a/text()'):
+                        self._subjects[bill.replace(' ', '')].append(subject)
+        print self._subjects
+
+
+    def scrape(self, chamber, session):
+        self.scrape_subjects(session)
+        self.scrape_session(chamber, session)
+        for sub in metadata['session_details'][session].get('sub_sessions', []):
             self.scrape_session(chamber, sub)
 
     def scrape_session(self, chamber, session):
@@ -92,6 +114,7 @@ class KYBillScraper(BillScraper):
                 bill_type = 'bill'
 
             bill = Bill(session, chamber, bill_id, title, type=bill_type)
+            bill['subjects'] = self._subjects[bill_id]
             bill.add_source(url)
 
             bill.add_version("Most Recent Version",
