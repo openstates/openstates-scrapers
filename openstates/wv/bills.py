@@ -89,6 +89,8 @@ class WVBillScraper(BillScraper):
             elif (action.startswith('Passed Senate') or
                   action.startswith('Passed House')):
                 atype = 'bill:passed'
+            else:
+                atype = 'other'
 
             bill.add_action(actor, action, date, type=atype)
 
