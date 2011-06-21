@@ -65,7 +65,7 @@ class IDBillScraper(BillScraper):
 
             action = tr.xpath("string(td[3])").strip().replace(u'\xa0', ' ')
 
-            if re.match(r"3rd\s+rdg\s+-\s+(PASSED|FAILED)\s+-", action):
+            if re.match(r"[^-]+\s+-\s+(PASSED|FAILED)\s+-", action):
                 self.scrape_vote(bill, actor, date, tr.xpath("td[3]")[0])
                 action = tr.xpath("td[3]")[0].text
                 action += tr.xpath("string(td[3]/span[1])")
