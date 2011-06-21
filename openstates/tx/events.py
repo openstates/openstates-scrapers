@@ -15,7 +15,7 @@ class TXEventScraper(EventScraper):
     _tz = pytz.timezone('US/Central')
 
     def scrape(self, chamber, session):
-        if session != '82':
+        if not session.startswith('82'):
             raise NoDataForPeriod(session)
 
         self.scrape_committee_upcoming(session, chamber)
