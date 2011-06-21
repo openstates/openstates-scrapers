@@ -13,6 +13,7 @@ class IDBillScraper(BillScraper):
         url = ("http://www.legislature.idaho.gov/legislation"
                "/%s/minidata.htm" % session)
         page = lxml.html.fromstring(self.urlopen(url))
+        page.make_links_absolute(url)
 
         bill_abbrev = {'lower': 'H', 'upper': 'S'}[chamber]
         for link in page.xpath("//a[contains(@href, 'legislation')]"):
@@ -29,4 +30,12 @@ class IDBillScraper(BillScraper):
             title = link.xpath("string(../../td[2])").strip()
             bill = Bill(session, chamber, bill_id, title,
                         type=bill_type)
+            self.scrape_bill(bill, link.attrib['href'])
             self.save_bill(bill)
+
+    def scrape_bill(self, bill, url):
+        bill.add_source(url)
+        page = lxml.html.fromstring(self.urlopen(url))
+
+        version_link = page.xpath("//a[contains(., 'Bill Text')]")[0]
+        bill.add_version('Text', version_link.attrib['href'])
