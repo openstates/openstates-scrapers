@@ -67,6 +67,6 @@ class NMLegislatorScraper(LegislatorScraper):
                 else:
                     role = role.lower()
                 leg.add_role('committee member', term, committee=committee,
-                             position=role)
+                             position=role, chamber=chamber)
 
             self.save_legislator(leg)
