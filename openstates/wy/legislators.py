@@ -31,7 +31,16 @@ class WYLegislatorScraper(LegislatorScraper):
             district = link.xpath(
                 "string(../../../td[4])").strip().lstrip('HS0')
 
+            leg_page = lxml.html.fromstring(
+                self.urlopen(link.attrib['href']))
+            leg_page.make_links_absolute(link.attrib['href'])
+            img = leg_page.xpath(
+                "//img[contains(@src, 'LegislatorSummary/photos')]")[0]
+            photo_url = img.attrib['src']
+
             leg = Legislator(term, chamber, district, name, party=party,
-                             email_address=email_address)
+                             email_address=email_address,
+                             photo_url=photo_url)
             leg.add_source(url)
+
             self.save_legislator(leg)
