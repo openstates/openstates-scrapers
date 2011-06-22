@@ -132,6 +132,11 @@ class WVBillScraper(BillScraper):
                 if exc_match:
                     other_count += int(exc_match.group(1))
 
+                if line.endswith('ADOPTED') or line.endswith('PASSED'):
+                    passed = True
+                else:
+                    passed = False
+
                 continue
 
             match = re.match(
@@ -164,7 +169,6 @@ class WVBillScraper(BillScraper):
                         continue
                     votes[vote_type].append(name)
 
-        passed = yes_count > (no_count + other_count)
         vote = Vote('lower', date, motion, passed,
                     yes_count, no_count, other_count)
         vote.add_source(url)
