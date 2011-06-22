@@ -1,56 +1,59 @@
-from BeautifulSoup import BeautifulSoup
-
-from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.nm.utils import get_abs_url
+
+import lxml.html
 
 
 class NMLegislatorScraper(LegislatorScraper):
     state = 'nm'
 
-    def scrape(self, chamber, year):
-        if year != '2010':
-            raise NoDataForPeriod(year)
+    def scrape(self, chamber, term):
+        self.validate_term(term, latest_only=True)
 
-        if chamber == 'upper':
-            url = 'http://legis.state.nm.us/lcs/leg.aspx?T=S'
+        if chamber == 'lower':
+            xpath = '//table[@id="ctl00_mainCopy_HouseDistGrid"]//a[contains(@href, "SPONCODE")]/@href'
         else:
-            url = 'http://legis.state.nm.us/lcs/leg.aspx?T=R'
+            xpath = '//table[@id="ctl00_mainCopy_SenateDistGrid"]//a[contains(@href, "SPONCODE")]/@href'
 
-        self.scrape_legislator_data(url, chamber)
+        with self.urlopen('http://www.nmlegis.gov/lcs/districts.aspx') as html:
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute('http://www.nmlegis.gov/lcs/')
+            for link in doc.xpath(xpath):
+                self.scrape_legislator(chamber, term, link)
 
-    def scrape_legislator_data(self, url, chamber):
-        party_fulls = {'R' : 'Republican', 'D' : 'Democrat'}
-        with self.urlopen(url) as page:
-            page = BeautifulSoup(page)
-            for data in page.find('table', id = 'ctl00_mainCopy_DataList1')('td'):
-                spans = data('span')
-                if len(spans) == 0:
-                    self.debug('Found an empty cell in %s. Continuing' % url)
-                    continue
-                full_name = ' '.join([span.string.strip() for span in spans])
-                if len(spans[0].string.strip().split()) == 2:
-                    first_name, middle_name = spans[0].string.strip().split()
-                else:
-                    first_name, middle_name = spans[0].string.strip(), ''
-                last_name = spans[1].string.strip()
+    def scrape_legislator(self, chamber, term, url):
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
 
-                details_url = get_abs_url(url, data.find('a')['href'])
-                with self.urlopen(details_url) as details:
-                    details = BeautifulSoup(details)
-                    district = details.find('a', id = 'ctl00_mainCopy_LegisInfo_DISTRICTLabel').string.strip()
-                    party = party_fulls[details.find('span', id = 'ctl00_mainCopy_LegisInfo_PARTYLabel').string]
+            # most properties are easy to pull
+            properties = {'first_name': 'FNAME', 'last_name': 'LNAME',
+                          'party': 'PARTY', 'district': 'DISTRICT',
+                          'county': 'COUNTY', 'start_year': 'STARTYEAR',
+                          'occupation': 'OCCUPATION',
+                          'capitol_phone': 'OFF_PHONE', 'office_phone': 'WKPH'}
+            for key, value in properties.iteritems():
+                id = 'ctl00_mainCopy_LegisInfo_%sLabel' % value
+                val = doc.get_element_by_id(id).text
+                if val:
+                    properties[key] = val.strip()
 
-                    leg = Legislator('2010', chamber, district, full_name, first_name, 
-                            last_name, middle_name, party)
-                    leg.add_source(details_url)
+            # image & email are a bit different
+            properties['image_url'] = doc.xpath('//img[@id="ctl00_mainCopy_LegisInfo_LegislatorPhoto"]/@src')[0]
+            email = doc.get_element_by_id('ctl00_mainCopy_LegisInfo_lnkEmail').text
+            if email:
+                properties['email'] = email.strip()
 
-                    comms_table = details.find('table', id = 'ctl00_mainCopy_MembershipGrid')
-                    for comms_raw_data in comms_table('tr')[1:]:
-                        comm_data = comms_raw_data('td')
-                        comm_role_type = comm_data[0].string.strip()
-                        comm_name = comm_data[1]('a')[0].string.strip()
-                        leg.add_role(comm_role_type, '2010', chamber = chamber, committee = comm_name)
+            properties['chamber'] = chamber
+            properties['term'] = term
+            properties['full_name'] = '%(first_name)s %(last_name)s' % properties
+            if '(D)' in properties['party']:
+                properties['party'] = 'Democratic'
+            elif '(R)' in properties['party']:
+                properties['party'] = 'Republican'
+            elif '(DTS)' in properties['party']:
+                properties['party'] = 'Decline to State'
+            else:
+                raise Exception("unknown party encountered")
 
-                    self.save_legislator(leg)
-
+            leg = Legislator(**properties)
+            leg.add_source(url)
+            self.save_legislator(leg)
