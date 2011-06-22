@@ -84,12 +84,12 @@ class WVBillScraper(BillScraper):
                 atype = 'bill:reading:3'
             elif action == 'Filed for introduction':
                 atype = 'bill:filed'
+            elif action.startswith('To Governor') and 'Journal' not in action:
+                atype = 'governor:received'
             elif re.match(r'To [A-Z]', action):
                 atype = 'committee:referred'
             elif action.startswith('Introduced in'):
                 atype = 'bill:introduced'
-            elif action.startswith('To Governor') and 'Journal' not in action:
-                atype = 'governor:received'
             elif (action.startswith('Approved by Governor') and
                   'Journal' not in action):
                 atype = 'governor:signed'
