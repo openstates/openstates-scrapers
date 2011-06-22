@@ -21,7 +21,12 @@ class WYBillScraper(BillScraper):
             title = tr.xpath("string(td[2])").strip()
             sponsor = tr.xpath("string(td[3])").strip()
 
-            bill = Bill(session, chamber, bill_id, title)
+            if bill_id[0:2] in ['SJ', 'HJ']:
+                bill_type = 'joint resolution'
+            else:
+                bill_type = 'bill'
+
+            bill = Bill(session, chamber, bill_id, title, type=bill_type)
             bill.add_source(url)
             bill.add_sponsor('sponsor', sponsor)
             self.save_bill(bill)
