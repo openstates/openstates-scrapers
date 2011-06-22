@@ -84,18 +84,21 @@ class WVBillScraper(BillScraper):
                 atype = 'bill:reading:3'
             elif action == 'Filed for introduction':
                 atype = 'bill:filed'
+            elif action.startswith('To Governor') and 'Journal' not in action:
+                atype = 'governor:received'
             elif re.match(r'To [A-Z]', action):
                 atype = 'committee:referred'
             elif action.startswith('Introduced in'):
                 atype = 'bill:introduced'
-            elif action.startswith('To Governor') and 'Journal' not in action:
-                atype = 'governor:received'
             elif (action.startswith('Approved by Governor') and
                   'Journal' not in action):
                 atype = 'governor:signed'
             elif (action.startswith('Passed Senate') or
                   action.startswith('Passed House')):
                 atype = 'bill:passed'
+            elif (action.startswith('Reported do pass') or
+                  action.startswith('With amendment, do pass')):
+                atype = 'committee:passed'
             else:
                 atype = 'other'
 
@@ -132,6 +135,11 @@ class WVBillScraper(BillScraper):
                 if exc_match:
                     other_count += int(exc_match.group(1))
 
+                if line.endswith('ADOPTED') or line.endswith('PASSED'):
+                    passed = True
+                else:
+                    passed = False
+
                 continue
 
             match = re.match(
@@ -164,7 +172,6 @@ class WVBillScraper(BillScraper):
                         continue
                     votes[vote_type].append(name)
 
-        passed = yes_count > (no_count + other_count)
         vote = Vote('lower', date, motion, passed,
                     yes_count, no_count, other_count)
         vote.add_source(url)
