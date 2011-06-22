@@ -96,6 +96,9 @@ class WVBillScraper(BillScraper):
             elif (action.startswith('Passed Senate') or
                   action.startswith('Passed House')):
                 atype = 'bill:passed'
+            elif (action.startswith('Reported do pass') or
+                  action.startswith('With amendment, do pass')):
+                atype = 'committee:passed'
             else:
                 atype = 'other'
 
