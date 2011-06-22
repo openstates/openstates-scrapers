@@ -56,4 +56,17 @@ class NMLegislatorScraper(LegislatorScraper):
 
             leg = Legislator(**properties)
             leg.add_source(url)
+
+            # committees
+            # skip first header row
+            for row in doc.xpath('//table[@id="ctl00_mainCopy_MembershipGrid"]/tr')[1:]:
+                role, committee, note = [x.text_content()
+                                         for x in row.xpath('td')]
+                if 'Interim' in note:
+                    role = 'interim ' + role.lower()
+                else:
+                    role = role.lower()
+                leg.add_role('committee member', term, committee=committee,
+                             position=role)
+
             self.save_legislator(leg)
