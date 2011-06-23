@@ -141,7 +141,7 @@ class NMBillScraper(BillScraper):
                 fname = line.split(None, 3)[-1]
 
                 # skip PDFs for now -- everything but votes have HTML versions
-                if fname.endswith('PDF') and 'VOTE' not in fname:
+                if fname.endswith('pdf') and 'VOTE' not in fname:
                     continue
 
                 match = re.match('([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
