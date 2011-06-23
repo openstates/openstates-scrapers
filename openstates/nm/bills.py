@@ -1,4 +1,6 @@
+import os
 import csv
+import zipfile
 import subprocess
 from datetime import datetime
 
@@ -9,33 +11,40 @@ import lxml.html
 class NMBillScraper(BillScraper):
     state = 'nm'
 
-    def scrape(self, chamber, session):
-        # TODO: urlretrieve the zip file and extract the mdb
-        mdbfile = '/home/james/code/sunlight/openstates/nm_leginfo/LegInfo11.mdb'
+    def __init__(self, *args, **kwargs):
+        super(NMBillScraper, self).__init__(*args, **kwargs)
 
+        remote_file = 'ftp://www.nmlegis.gov/other/LegInfo11.zip'
+        self.mdbfile = 'LegInfo11.mdb'
+        fname, resp = self.urlretrieve(remote_file)
+        zf = zipfile.ZipFile(fname)
+        zf.extract(self.mdbfile)
+        os.remove(fname)
+
+    def access_to_csv(self, table):
+        commands = ['mdb-export', self.mdbfile, table]
+        pipe = subprocess.Popen(commands, stdout=subprocess.PIPE,
+                                close_fds=True).stdout
+        csvfile = csv.DictReader(pipe)
+        return csvfile
+
+    def scrape(self, chamber, session):
         chamber_letter = 'S' if chamber == 'upper' else 'H'
 
-        def access_to_csv(table):
-            commands = ['mdb-export', mdbfile, table]
-            pipe = subprocess.Popen(commands, stdout=subprocess.PIPE,
-                                    close_fds=True).stdout
-            csvfile = csv.DictReader(pipe)
-            return csvfile
-
         action_map = {}
-        for action in access_to_csv('TblActions'):
+        for action in self.access_to_csv('TblActions'):
             action_map[action['ActionCode']] = action['Action']
 
         sponsor_map = {}
-        for sponsor in access_to_csv('tblSponsors'):
+        for sponsor in self.access_to_csv('tblSponsors'):
             sponsor_map[sponsor['SponsorCode']] = sponsor['FullName']
 
         subject_map = {}
-        for subject in access_to_csv('TblSubjects'):
+        for subject in self.access_to_csv('TblSubjects'):
             subject_map[subject['SubjectCode']] = subject['Subject']
 
         bills = {}
-        for data in access_to_csv('Legislation'):
+        for data in self.access_to_csv('Legislation'):
             # use their BillID for the key but build our own for storage
             bill_key = data['BillID'].replace(' ', '')
 
@@ -67,7 +76,7 @@ class NMBillScraper(BillScraper):
         # fake it with the first letter
         location_map = {'H': 'lower', 'S': 'upper', 'P': 'executive'}
 
-        for action in access_to_csv('Actions'):
+        for action in self.access_to_csv('Actions'):
             bill_key = action['BillID'].replace(' ', '')
 
             # if this is from the wrong chamber, skip it
