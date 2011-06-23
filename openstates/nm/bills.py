@@ -35,6 +35,10 @@ class NMBillScraper(BillScraper):
     def scrape(self, chamber, session):
         chamber_letter = 'S' if chamber == 'upper' else 'H'
 
+        session_year = session[2:]
+        # update as sessions update
+        session_path = {'2011': '11%20Regular'}
+
         sponsor_map = {}
         for sponsor in self.access_to_csv('tblSponsors'):
             sponsor_map[sponsor['SponsorCode']] = sponsor['FullName']
@@ -59,9 +63,8 @@ class NMBillScraper(BillScraper):
                                                data['Title'])
 
             # fake a source
-            year = 11       # TODO: calculate this
             bill.add_source('http://www.nmlegis.gov/lcs/_session.aspx?Chamber=%s&LegType=%s&LegNo=%s&year=%s' % (
-                data['Chamber'], data['LegType'], data['LegNo'], year))
+                data['Chamber'], data['LegType'], data['LegNo'], session_year))
 
 
 
@@ -134,11 +137,15 @@ class NMBillScraper(BillScraper):
     def scrape_documents(self, doctype, chamber):
         chamber_name = 'house' if chamber == 'lower' else 'senate'
 
-        ftp_path = 'ftp://www.nmlegis.gov/%s/%s/' % (doctype, chamber_name)
+        doc_path = 'http://www.nmlegis.gov/Sessions/%s/%s/%s/' % (session,
+                                                                  doctype,
+                                                                  chamber_name)
 
-        with self.urlopen(ftp_path) as text:
-            for line in text.splitlines():
-                fname = line.split(None, 3)[-1]
+        with self.urlopen(doc_path) as html:
+            doc = lxml.html.fromstring(html)
+
+            # all links but first one
+            for fname in doc.xpath('//a/text()')[1:]:
 
                 # skip PDFs for now -- everything but votes have HTML versions
                 if fname.endswith('pdf') and 'VOTE' not in fname:
@@ -156,7 +163,7 @@ class NMBillScraper(BillScraper):
 
                 # no suffix = just the bill
                 if suffix == '':
-                    bill.add_version('introduced version', ftp_path + fname)
+                    bill.add_version('introduced version', doc_path + fname)
 
                 # floor amendments
                 elif re.match('F(S|H)\d', suffix):
@@ -164,13 +171,13 @@ class NMBillScraper(BillScraper):
                     a_chamber = 'House' if a_chamber == 'H' else 'Senate'
                     bill.add_document('%s Floor Amendment %s' %
                                       (a_chamber, num),
-                                      ftp_path + fname)
+                                      doc_path + fname)
 
                 # committee substitutes
                 elif suffix.endswith('S'):
                     committee_name = suffix[:-1]
                     bill.add_version('%s substitute' % committee_name,
-                                     ftp_path + fname)
+                                     doc_path + fname)
 
                 # votes
                 elif 'VOTE' in suffix:
@@ -180,7 +187,7 @@ class NMBillScraper(BillScraper):
                 elif re.match('\w{2,3}\d', suffix):
                     committee_name = re.match('[A-Z]+', suffix).group()
                     bill.add_document('%s committee report' % committee_name,
-                                      ftp_path + fname)
+                                      doc_path + fname)
 
 
                 # ignore list, mostly typos reuploaded w/ proper name
