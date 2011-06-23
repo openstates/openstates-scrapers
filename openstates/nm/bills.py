@@ -1,5 +1,6 @@
 import csv
 import subprocess
+from datetime import datetime
 
 from billy.scrape.bills import BillScraper, Bill
 
@@ -77,8 +78,15 @@ class NMBillScraper(BillScraper):
                 self.warning('action for unknown bill %s' % bill_key)
                 continue
 
-            # TODO: this isn't right
-            action_date = action['Day']
+            # ok the whole Day situation is madness, N:M mapping to real days
+            # see http://www.nmlegis.gov/lcs/lcsdocs/legis_day_chart_11.pdf
+            # first idea was to look at all Days and use the first occurance's
+            # timestamp, but this is sometimes off by quite a bit
+            # instead lets just use EntryDate and take radical the position
+            # something hasn't happened until it is observed
+            action_day = action['Day']
+            action_date = datetime.strptime(action['EntryDate'].split()[0],
+                                            "%m/%d/%y")
             action_type = 'other'
             if action['LocationCode']:
                 actor = location_map.get(action['LocationCode'][0], 'other')
