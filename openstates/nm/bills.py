@@ -60,7 +60,7 @@ class NMBillScraper(BillScraper):
 
             # fake a source
             year = 11       # TODO: calculate this
-            bill.add_source('http://www.nmlegis.gov/lcs/_session.aspx?Chamber=%s&LegType=%s&LegNo=%s&year=11' % (
+            bill.add_source('http://www.nmlegis.gov/lcs/_session.aspx?Chamber=%s&LegType=%s&LegNo=%s&year=%s' % (
                 data['Chamber'], data['LegType'], data['LegNo'], year))
 
 
