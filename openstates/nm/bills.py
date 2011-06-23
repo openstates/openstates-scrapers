@@ -58,6 +58,13 @@ class NMBillScraper(BillScraper):
             self.bills[bill_key] = bill = Bill(session, chamber, bill_id,
                                                data['Title'])
 
+            # fake a source
+            year = 11       # TODO: calculate this
+            bill.add_source('http://www.nmlegis.gov/lcs/_session.aspx?Chamber=%s&LegType=%s&LegNo=%s&year=11' % (
+                data['Chamber'], data['LegType'], data['LegNo'], year))
+
+
+
             bill.add_sponsor('primary', sponsor_map[data['SponsorCode']])
             if data['SponsorCode2'] != 'NONE':
                 bill.add_sponsor('primary', sponsor_map[data['SponsorCode2']])
@@ -74,7 +81,9 @@ class NMBillScraper(BillScraper):
 
         # do other parts
         self.scrape_actions(chamber_letter)
-        self.scrape_documents(chamber)
+        self.scrape_documents('bills', chamber)
+        self.scrape_documents('resolutions', chamber)
+        self.scrape_documents('memorials', chamber)
 
         for bill in self.bills.values():
             self.save_bill(bill)
@@ -122,14 +131,19 @@ class NMBillScraper(BillScraper):
                                             day=action_day)
 
 
-    def scrape_documents(self, chamber):
+    def scrape_documents(self, doctype, chamber):
         chamber_name = 'house' if chamber == 'lower' else 'senate'
 
-        ftp_path = 'ftp://www.nmlegis.gov/bills/%s/' % chamber_name
+        ftp_path = 'ftp://www.nmlegis.gov/%s/%s/' % (doctype, chamber_name)
 
         with self.urlopen(ftp_path) as text:
             for line in text.splitlines():
                 fname = line.split(None, 3)[-1]
+
+                # skip PDFs for now -- everything but votes have HTML versions
+                if fname.endswith('PDF') and 'VOTE' not in fname:
+                    continue
+
                 match = re.match('([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
                 bill_type, bill_num, suffix = match.groups()
 
@@ -164,7 +178,7 @@ class NMBillScraper(BillScraper):
 
                 # committee reports
                 elif re.match('\w{2,3}\d', suffix):
-                    committee_name = re.match('[A-Z]+', suffix).group
+                    committee_name = re.match('[A-Z]+', suffix).group()
                     bill.add_document('%s committee report' % committee_name,
                                       ftp_path + fname)
 
