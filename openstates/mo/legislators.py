@@ -9,6 +9,9 @@ class MOLegislatorScraper(LegislatorScraper):
     assumed_telephone_prefix = '573'
     assumed_address_fmt = ('201 West Capitol Avenue %s, '
                             'Jefferson City, MO 65101')
+    senator_url = 'http://www.senate.mo.gov/%sinfo/%sSenateRoster.xls'
+    reps_url = 'http://www.house.mo.gov/member.aspx?year=%s'
+    vacant_legislators = []
 
     def scrape(self, chamber, term):
         session = term.split('-')[0]
@@ -18,9 +21,7 @@ class MOLegislatorScraper(LegislatorScraper):
             self.scrape_reps(chamber, session, term)
 
     def scrape_senators(self, chamber, session, term):
-        url = ('http://www.senate.mo.gov/%sinfo/%sSenateRoster.xls' %
-                (session[2:], session))
-
+        url = (self.senator_url % (session[2:], session))
         with self.urlopen(url) as senator_xls:
             with open('mo_senate.xls', 'w') as f:
                 f.write(senator_xls)
@@ -55,7 +56,7 @@ class MOLegislatorScraper(LegislatorScraper):
             self.save_legislator(leg)
 
     def scrape_reps(self, chamber, session, term):
-        url = 'http://www.house.mo.gov/member.aspx'
+        url = (self.reps_url % (session))
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             # This is the ASP.net table container
@@ -81,5 +82,11 @@ class MOLegislatorScraper(LegislatorScraper):
                                 office_address=address,
                                 _code=leg_code)
                 leg.add_source(url)
-                self.save_legislator(leg)
+                if last_name == 'Vacant':
+                    self.save_vacant_legislator(leg)
+                else:
+                    # TODO You can actually get historical information this way: http://www.house.mo.gov/member.aspx?year=1977&district=158
+                    self.save_legislator(leg)
 
+    def save_vacant_legislator(self,leg):
+            self.vacant_legislators.append(leg)
