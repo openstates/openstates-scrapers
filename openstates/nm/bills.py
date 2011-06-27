@@ -34,6 +34,13 @@ class NMBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         chamber_letter = 'S' if chamber == 'upper' else 'H'
+        bill_type_map = {'B': 'bill',
+                         'CR': 'concurrent resolution',
+                         'JM': 'joint memorial',
+                         'JR': 'joint resolution',
+                         'M': 'memorial',
+                         'R': 'resolution',
+                        }
 
         session_year = session[2:]
 
@@ -56,9 +63,10 @@ class NMBillScraper(BillScraper):
 
             bill_id = '%s%s%s' % (data['Chamber'], data['LegType'],
                                   data['LegNo'])
+            bill_type = bill_type_map[data['LegType']]
             bill_id = bill_id.replace(' ', '')  # remove spaces for consistency
             self.bills[bill_key] = bill = Bill(session, chamber, bill_id,
-                                               data['Title'])
+                                               data['Title'], type=bill_type)
 
             # fake a source
             bill.add_source('http://www.nmlegis.gov/lcs/_session.aspx?Chamber=%s&LegType=%s&LegNo=%s&year=%s' % (
