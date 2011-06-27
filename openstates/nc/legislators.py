@@ -1,6 +1,9 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
+party_map = {'Dem': 'Democratic',
+             'Rep': 'Republican',
+             'Una': 'Unaffiliated'}
 
 class NCLegislatorScraper(LegislatorScraper):
     state = 'nc'
@@ -22,10 +25,7 @@ class NCLegislatorScraper(LegislatorScraper):
                 party, district, full_name, counties = row.getchildren()
 
                 party = party.text_content()
-                if party == 'Dem':
-                    party = 'Democratic'
-                elif party == 'Rep':
-                    party = 'Republican'
+                party = party_map[party]
 
                 district = district.text_content()
 
