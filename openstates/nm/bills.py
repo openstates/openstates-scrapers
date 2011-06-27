@@ -36,8 +36,6 @@ class NMBillScraper(BillScraper):
         chamber_letter = 'S' if chamber == 'upper' else 'H'
 
         session_year = session[2:]
-        # update as sessions update
-        session_path = {'2011': '11%20Regular'}
 
         sponsor_map = {}
         for sponsor in self.access_to_csv('tblSponsors'):
@@ -66,8 +64,6 @@ class NMBillScraper(BillScraper):
             bill.add_source('http://www.nmlegis.gov/lcs/_session.aspx?Chamber=%s&LegType=%s&LegNo=%s&year=%s' % (
                 data['Chamber'], data['LegType'], data['LegNo'], session_year))
 
-
-
             bill.add_sponsor('primary', sponsor_map[data['SponsorCode']])
             if data['SponsorCode2'] != 'NONE':
                 bill.add_sponsor('primary', sponsor_map[data['SponsorCode2']])
@@ -84,9 +80,9 @@ class NMBillScraper(BillScraper):
 
         # do other parts
         self.scrape_actions(chamber_letter)
-        self.scrape_documents('bills', chamber)
-        self.scrape_documents('resolutions', chamber)
-        self.scrape_documents('memorials', chamber)
+        self.scrape_documents(session, 'bills', chamber)
+        self.scrape_documents(session, 'resolutions', chamber)
+        self.scrape_documents(session, 'memorials', chamber)
 
         for bill in self.bills.values():
             self.save_bill(bill)
@@ -97,10 +93,70 @@ class NMBillScraper(BillScraper):
         # fake it with the first letter
         location_map = {'H': 'lower', 'S': 'upper', 'P': 'executive'}
 
-        action_map = {}
-        for action in self.access_to_csv('TblActions'):
-            action_map[action['ActionCode']] = action['Action']
+        # combination of tblActions and http://www.nmlegis.gov/lcs/abbrev.aspx
+        action_map = {
+            # committee results
+            '7601': ('DO PASS committee report adopted', 'committee:passed:favorable'),
+            '7602': ('DO PASS, as amended, committee report adopted', 'committee:passed:favorable'),
+            '7603': ('WITHOUT RECOMMENDATION committee report adopted', 'committee:passed'),
+            '7604': ('WITHOUT RECOMMENDATION, as amended, committee report adopted', 'committee:passed'),
+            # 7605 - 7609 are Committee Substitutes in various amend states
+            '7605': ('DO NOT PASS, replaced with committee substitute', 'committee:passed'),
+            '7606': ('DO NOT PASS, replaced with committee substitute', 'committee:passed'),
+            '7608': ('DO NOT PASS, replaced with committee substitute', 'committee:passed'),
+            # withdrawals
+            '7611': ('withdrawn from %s', 'bill:withdrawn'),
+            '7612': ('withdrawn from all committees', 'bill:withdrawn'),
+            '7613': ('withdrawn and tabled', 'bill:withdrawn'),
+            # 7621-7629 are same as 760*s but add the speakers table (-T)
+            '7621': ("DO PASS committee report adopted, placed on Speaker's table", 'committee:passed:favorable'),
+            '7622': ("DO PASS, as amended, committee report adopted, placed on Speaker's table", 'committee:passed:favorable'),
+            '7623': ("WITHOUT RECOMMENDATION committee report adopted, placed on Speaker's table", 'committee:passed'),
+            '7624': ("WITHOUT RECOMMENDATION, as amended, committee report adopted, placed on Speaker's table", 'committee:passed'),
+            '7625': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table", 'committee:passed'),
+            '7628': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table", 'committee:passed'),
+            # floor actions
+            '7639': ('tabled in House', 'other'),
+            '7640': ('tabled in Senate', 'other'),
+            '7641': ('floor substitute adopted', 'other'),
+            '7642': ('floor substitute adopted (1 amendment)', 'other'),
+            '7643': ('floor substitute adopted (2 amendment)', 'other'),
+            '7644': ('floor substitute adopted (3 amendment)', 'other'),
+            '7645': ('motion to reconsider adopted', 'other'),
+            '7650': ('not printed %s', 'other'),
+            '7652': ('not printed, not referred to committee, tabled', 'other'),
+            '7654': ('referred to %s', 'committee:referred'),
+            '7660': ('passed House', 'bill:passed'),
+            '7661': ('passed Senate', 'bill:passed'),
+            '7663': ('House report adopted', 'other'),
+            '7664': ('Senate report adopted', 'other'),
+            '7665': ('House concurred in Senate amendments', 'other'),
+            '7666': ('Senate concurred in House amendments', 'other'),
+            '7667': ('House failed to concur in Senate amendments', 'other'),
+            '7668': ('Senate failed to concur in House amendments', 'other'),
+            '7669': ('this procedure could follow if the Senate refuses to recede from its amendments', 'other'),
+            '7670': ('this procedure could follow if the House refuses to recede from its amendments', 'other'),
+            '7678': ('tabled in Senate', 'other'),
+            '7681': ('failed passage in House', 'bill:failed'),
+            '7682': ('failed passage in Senate', 'bill:failed'),
+            '7685': ('Signed', 'other'),
+            '7699': ('special', 'other'),
+            '7701': ('failed passage in House', 'bill:failed'),
+            '7702': ('failed passage in Senate', 'bill:failed'),
+            '7704': ('tabled indefinitely', 'other'),
+            '7711': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
+            '7798': ('Succeeding entries', 'other'),
+            '7805': ('Signed', 'governor:signed'),
+            '7806': ('Vetoed', 'governor:vetoed'),
+            '7807': ('Pocket Veto', 'governor:vetoed'),
+            '7811': ('Veto Override Passed House', 'bill:veto_override:passed'),
+            '7812': ('Veto Override Passed Senate', 'bill:veto_override:passed'),
+            '7813': ('Veto Override Failed House', 'bill:veto_override:failed'),
+            '7814': ('Veto Override Failed Senate', 'bill:veto_override:failed'),
+            'SENT': ('introduced & referred to %s', ['bill:introduced', 'committee:referred']),
+        }
 
+        actions_with_committee = ('SENT', '7611', '7650', '7654')
 
         for action in self.access_to_csv('Actions'):
             bill_key = action['BillID'].replace(' ', '')
@@ -127,17 +183,22 @@ class NMBillScraper(BillScraper):
                 actor = location_map.get(action['LocationCode'][0], 'other')
             else:
                 actor = 'other'
+            action_code = action['ActionCode']
+            action_name, action_type = action_map[action_code]
+            if action_code in actions_with_committee:
+                action_name = action_name % action['Referral']
 
-            self.bills[bill_key].add_action(actor,
-                                            action_map[action['ActionCode']],
-                                            action_date, type=action_type,
-                                            day=action_day)
+            self.bills[bill_key].add_action(actor, action_name, action_date,
+                                            type=action_type, day=action_day)
 
 
-    def scrape_documents(self, doctype, chamber):
+    def scrape_documents(self, session, doctype, chamber):
+        # update as sessions update
+        session_path = {'2011': '11%20Regular'}[session]
+
         chamber_name = 'house' if chamber == 'lower' else 'senate'
 
-        doc_path = 'http://www.nmlegis.gov/Sessions/%s/%s/%s/' % (session,
+        doc_path = 'http://www.nmlegis.gov/Sessions/%s/%s/%s/' % (session_path,
                                                                   doctype,
                                                                   chamber_name)
 
