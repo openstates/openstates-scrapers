@@ -42,6 +42,10 @@ class FLLegislatorScraper(LegislatorScraper):
                 district = link.xpath("string(../../td[1])")
                 party = link.xpath("string(../../td[2])")
 
+                # for consistency
+                if party == 'Democrat':
+                    party = 'Democratic'
+
                 photo_url = ("http://www.flsenate.gov/userContent/"
                              "Senators/2010-2012/photos/s%03d.jpg" % (
                                  int(district)))

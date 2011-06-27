@@ -58,6 +58,10 @@ class AKLegislatorScraper(LegislatorScraper):
             email = re.search(r'Email: ([\w_]+@legis\.state\.ak\.us)',
                               info).group(1)
 
+            # for consistency
+            if party == 'Democrat':
+                party = 'Democratic'
+
             leg = Legislator(term, chamber, district, name, party=party,
                              email=email)
             leg.add_source(url)
