@@ -105,7 +105,7 @@ class NMBillScraper(BillScraper):
             '7606': ('DO NOT PASS, replaced with committee substitute', 'committee:passed'),
             '7608': ('DO NOT PASS, replaced with committee substitute', 'committee:passed'),
             # withdrawals
-            '7611': ('withdrawn from %s', 'bill:withdrawn'),
+            '7611': ('withdrawn from committee', 'bill:withdrawn'),
             '7612': ('withdrawn from all committees', 'bill:withdrawn'),
             '7613': ('withdrawn and tabled', 'bill:withdrawn'),
             # 7621-7629 are same as 760*s but add the speakers table (-T)
@@ -156,7 +156,7 @@ class NMBillScraper(BillScraper):
             'SENT': ('introduced & referred to %s', ['bill:introduced', 'committee:referred']),
         }
 
-        actions_with_committee = ('SENT', '7611', '7650', '7654')
+        actions_with_committee = ('SENT', '7650', '7654')
 
         for action in self.access_to_csv('Actions'):
             bill_key = action['BillID'].replace(' ', '')
