@@ -84,11 +84,11 @@ class NMBillScraper(BillScraper):
         super(NMBillScraper, self).__init__(*args, **kwargs)
 
         self.mdbfile = 'LegInfo11.mdb'
-        #remote_file = 'ftp://www.nmlegis.gov/other/LegInfo11.zip'
-        #fname, resp = self.urlretrieve(remote_file)
-        #zf = zipfile.ZipFile(fname)
-        #zf.extract(self.mdbfile)
-        #os.remove(fname)
+        remote_file = 'ftp://www.nmlegis.gov/other/LegInfo11.zip'
+        fname, resp = self.urlretrieve(remote_file)
+        zf = zipfile.ZipFile(fname)
+        zf.extract(self.mdbfile)
+        os.remove(fname)
 
 
     def access_to_csv(self, table):
