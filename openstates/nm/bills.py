@@ -411,7 +411,7 @@ class NMBillScraper(BillScraper):
 
 
     # {spaces}{vote indicator (Y/N/E/ )}{name}{2 spaces, space-indicator, or $}
-    HOUSE_VOTE_RE = re.compilee('\s*([YNE ])\s+(.+?)(?:(?:\s(?:[YNE ]))|$)')
+    HOUSE_VOTE_RE = re.compile('\s*([YNE ])\s+(.+?)(?:(?:\s(?:[YNE ]))|$)')
     # house totals
     HOUSE_TOTAL_RE = re.compile('\s+Absent: (\d+)\s+Yeas: (\d+)\s+Nays: (\d+)\s+Excused: (\d+)')
 
