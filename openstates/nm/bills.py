@@ -319,9 +319,10 @@ class NMBillScraper(BillScraper):
                 elif 'SVOTE' in suffix:
                     vote = self.parse_senate_vote(doc_path + fname)
                     bill.add_vote(vote)
-
                 elif 'HVOTE' in suffix:
-                    pass
+                    vote = self.parse_house_vote(doc_path + fname)
+                    if vote:
+                        bill.add_vote(vote)
 
                 # committee reports
                 elif re.match('\w{2,3}\d', suffix):
@@ -397,5 +398,41 @@ class NMBillScraper(BillScraper):
                     vote.no(name2)
                 else:
                     vote.other(name2)
+        return vote
 
+
+    # space followed by vote indicator (Y/N/E/ ) followed by name
+    HOUSE_VOTE_RE = re.compile('\s*([YNE ])\s+([^.]+)')
+    # house totals
+    HOUSE_TOTAL_RE = re.compile('\s+Absent: (\d+)\s+Yeas: (\d+)\s+Nays: (\d+)\s+Excused: (\d+)')
+
+    def parse_house_vote(self, url):
+
+        fname, resp = self.urlretrieve(url)
+        text = convert_pdf(fname, 'text')
+        if not text.strip():
+            self.warning('image PDF %s' % url)
+            return
+        os.remove(fname)
+
+        # get date
+        date = re.findall('(\d+/\d+/\d+)', text)[0]
+        date = datetime.strptime(date, '%m/%d/%y')
+
+        # get totals
+        absent, yea, nay, exc = self.HOUSE_TOTAL_RE.findall(text)[0]
+
+        # make vote (faked passage indicator)
+        vote = Vote('lower', date, 'house passage', int(yea) > int(nay),
+                    int(yea), int(nay), int(absent)+int(exc))
+        vote.add_source(url)
+
+        # votes (skip last match, is end-of-doc cruft)
+        for v, name in self.HOUSE_VOTE_RE.findall(text)[:-1]:
+            if v == 'Y':
+                vote.yes(name)
+            elif v == 'N':
+                vote.no(name)
+            else:   # excused/absent
+                vote.other(name)
         return vote
