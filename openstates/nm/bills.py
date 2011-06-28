@@ -427,8 +427,11 @@ class NMBillScraper(BillScraper):
                     int(yea), int(nay), int(absent)+int(exc))
         vote.add_source(url)
 
-        # votes (skip last match, is end-of-doc cruft)
-        for v, name in self.HOUSE_VOTE_RE.findall(text)[:-1]:
+        # votes
+        for v, name in self.HOUSE_VOTE_RE.findall(text):
+            # skip non-names
+            if 'CERTIFIED' in name or 'NEW MEXICO' in name:
+                continue
             if v == 'Y':
                 vote.yes(name)
             elif v == 'N':
