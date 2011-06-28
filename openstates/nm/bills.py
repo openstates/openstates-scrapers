@@ -83,12 +83,12 @@ class NMBillScraper(BillScraper):
     def __init__(self, *args, **kwargs):
         super(NMBillScraper, self).__init__(*args, **kwargs)
 
-        remote_file = 'ftp://www.nmlegis.gov/other/LegInfo11.zip'
         self.mdbfile = 'LegInfo11.mdb'
-        fname, resp = self.urlretrieve(remote_file)
-        zf = zipfile.ZipFile(fname)
-        zf.extract(self.mdbfile)
-        os.remove(fname)
+        #remote_file = 'ftp://www.nmlegis.gov/other/LegInfo11.zip'
+        #fname, resp = self.urlretrieve(remote_file)
+        #zf = zipfile.ZipFile(fname)
+        #zf.extract(self.mdbfile)
+        #os.remove(fname)
 
 
     def access_to_csv(self, table):
@@ -361,6 +361,16 @@ class NMBillScraper(BillScraper):
 
             else:
                 if 'TOTALS' in line:
+
+                    # Lt. Governor voted
+                    if 'GOVERNOR' in line:
+                        name, spaces, line = re.match(' ([A-Z,.]+)(\s+)X(.*)',
+                                                      line).groups()
+                        if len(spaces) == 1:
+                            vote.yes(name)
+                        else:
+                            vote.no(name)
+
                     _, yes, no, abs, exc = line.split()
                     vote['yes_count'] = int(yes)
                     vote['no_count'] = int(no)
