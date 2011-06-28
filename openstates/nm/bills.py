@@ -168,6 +168,10 @@ class NMBillScraper(BillScraper):
         # fake it with the first letter
         location_map = {'H': 'lower', 'S': 'upper', 'P': 'executive'}
 
+        com_location_map = {}
+        for loc in self.access_to_csv('TblLocations'):
+            com_location_map[loc['LocationCode']] = loc['LocationDesc']
+
         # combination of tblActions and http://www.nmlegis.gov/lcs/abbrev.aspx
         action_map = {
             # committee results
@@ -228,7 +232,7 @@ class NMBillScraper(BillScraper):
             '7812': ('Veto Override Passed Senate', 'bill:veto_override:passed'),
             '7813': ('Veto Override Failed House', 'bill:veto_override:failed'),
             '7814': ('Veto Override Failed Senate', 'bill:veto_override:failed'),
-            'SENT': ('introduced & referred to %s', ['bill:introduced', 'committee:referred']),
+            'SENT': ('Sent to %s', ['bill:introduced', 'committee:referred']),
         }
 
         actions_with_committee = ('SENT', '7650', '7654')
@@ -260,8 +264,13 @@ class NMBillScraper(BillScraper):
                 actor = 'other'
             action_code = action['ActionCode']
             action_name, action_type = action_map[action_code]
+
+            # if there's room in this action for a location name, map locations
+            # to their names from the Location table
             if action_code in actions_with_committee:
-                action_name = action_name % action['Referral']
+                locs = [com_location_map[l]
+                        for l in action['Referral'].split('/') if l]
+                action_name = action_name % (' & '.join(locs))
 
             self.bills[bill_key].add_action(actor, action_name, action_date,
                                             type=action_type, day=action_day)
