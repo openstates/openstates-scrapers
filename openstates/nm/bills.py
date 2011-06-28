@@ -6,8 +6,75 @@ import subprocess
 from datetime import datetime
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from billy.scrape.utils import convert_pdf
 
 import lxml.html
+
+"""
+Senate Votes come out in a bizarre encoding but we can handle it
+
+example after decoding:
+ OFFICIALROLLCALL
+NEWMEXICOSTATESENATE
+FIFTIETHLEGISLATURE,FIRSTSESSION,2011
+
+LEGISLATIVEDAY35DATE:03-09-11
+RCS#330
+SENATEBILL233,ASAMENDED
+  YES NO ABS EXC  YES NO ABS EXC
+ ADAIR X    LOVEJOY X
+ ASBILL X    MARTINEZ X
+ WILSONBEFFORT X    MCSORLEY X
+ BOITANO X    MORALES    X
+ BURT X    MUNOZ    X
+ CAMPOS X    NAVA X
+ CISNEROS X    NEVILLE X
+ CRAVENS X    ORTIZYPINO X
+ EICHENBERG X    PAPEN X
+ FELDMAN X    PAYNE X
+ FISCHMANN X    PINTO X
+ GARCIA X    RODRIGUEZ   X
+ GRIEGO,E. X    RUE X
+ GRIEGO,P. X    RYAN X
+ HARDEN X    SANCHEZ,B. X
+ INGLE X    SANCHEZ,M. X
+ JENNINGS X    SAPIEN X
+ KELLER   X  SHARER X
+ KERNAN X    SMITH   X
+ LEAVELL X    ULIBARRI X
+ LOPEZ    X WIRTH X
+      TOTALS=> 36 0 3 3
+
+PASSED:36-0
+"""
+
+def convert_sv_char(c):
+    # capital letters shift 64
+    if 65 <= ord(c)-64 <= 90:
+        return chr(ord(c)-64)
+    # punctuation shift 128
+    else:
+        return chr(ord(c)-128)
+
+def convert_sv_line(line):
+    line = line.strip()
+    # strip out junk filler char
+    line = line.replace('\xef\x80\xa0', '')
+    # shift characters
+    line = ''.join(convert_sv_char(c) for c in line)
+    # clean up the remaining cruft
+    line = line.replace('B3', ' ').replace('oA', '').replace('o', '').replace('\x00', '')
+    return line
+
+def convert_sv_text(text):
+    ret_lines = []
+    for line in text.splitlines():
+        line = convert_sv_line(line)
+        if 'DCDCDC' not in line:
+            ret_lines.append(line)
+    return ret_lines
+
 
 class NMBillScraper(BillScraper):
     state = 'nm'
@@ -249,8 +316,12 @@ class NMBillScraper(BillScraper):
                                      doc_path + fname)
 
                 # votes
-                elif 'VOTE' in suffix:
-                    pass    # item is a vote
+                elif 'SVOTE' in suffix:
+                    vote = self.parse_senate_vote(doc_path + fname)
+                    bill.add_vote(vote)
+
+                elif 'HVOTE' in suffix:
+                    pass
 
                 # committee reports
                 elif re.match('\w{2,3}\d', suffix):
@@ -264,4 +335,57 @@ class NMBillScraper(BillScraper):
                     pass
                 else:
                     # warn about unknown suffix
-                    print 'unknown document suffix' % (fname)
+                    print 'unknown document suffix %s' % (fname)
+
+
+    def parse_senate_vote(self, url):
+        vote = Vote('upper', '?', 'senate passage', False, 0, 0, 0)
+        vote.add_source(url)
+
+        fname, resp = self.urlretrieve(url)
+        sv_text = convert_sv_text(convert_pdf(fname, 'text'))
+        os.remove(fname)
+        in_votes = False
+
+        for line in sv_text:
+            if not in_votes:
+                dmatch = re.search('DATE:(\d{2}-\d{2}-\d{2})', line)
+                if dmatch:
+                    date = dmatch.groups()[0]
+                    vote['date'] =  datetime.strptime(date, '%m-%d-%y')
+
+                if 'YES NO ABS EXC' in line:
+                    in_votes = True
+                elif 'PASSED' in line:
+                    vote['passed'] = True
+
+            else:
+                if 'TOTALS' in line:
+                    _, yes, no, abs, exc = line.split()
+                    vote['yes_count'] = int(yes)
+                    vote['no_count'] = int(no)
+                    vote['other_count'] = int(abs)+int(exc)
+                    # no longer in votes
+                    in_votes = False
+                    continue
+
+                # pull votes out
+                matches = re.match(' ([A-Z,.]+)(\s+)X\s+([A-Z,.]+)(\s+)X', line).groups()
+                name1, spaces1, name2, spaces2 = matches
+
+                # vote can be determined by # of spaces
+                if len(spaces1) == 1:
+                    vote.yes(name1)
+                elif len(spaces1) == 2:
+                    vote.no(name1)
+                else:
+                    vote.other(name1)
+
+                if len(spaces2) == 1:
+                    vote.yes(name2)
+                elif len(spaces2) == 2:
+                    vote.no(name2)
+                else:
+                    vote.other(name2)
+
+        return vote
