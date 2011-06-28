@@ -410,8 +410,8 @@ class NMBillScraper(BillScraper):
         return vote
 
 
-    # {spaces}{vote indicator (Y/N/E/ )}{name}{2 spaces}
-    HOUSE_VOTE_RE = re.compile('\s*([YNE ])\s+(.+?)\s\s')
+    # {spaces}{vote indicator (Y/N/E/ )}{name}{2 spaces, space-indicator, or $}
+    HOUSE_VOTE_RE = re.compilee('\s*([YNE ])\s+(.+?)(?:(?:\s(?:[YNE ]))|$)')
     # house totals
     HOUSE_TOTAL_RE = re.compile('\s+Absent: (\d+)\s+Yeas: (\d+)\s+Nays: (\d+)\s+Excused: (\d+)')
 
@@ -441,12 +441,12 @@ class NMBillScraper(BillScraper):
         for v, name in self.HOUSE_VOTE_RE.findall(text):
             # our regex is a bit broad, wait until we see 'Nays' to start
             # and end when we see CERTIFIED
-            if 'Nays' in name:
+            if 'Nays' in name or 'Excused' in name:
                 real_votes = True
+                continue
             elif 'CERTIFIED' in name:
                 break
-
-            if real_votes:
+            elif real_votes and name.strip():
                 if v == 'Y':
                     vote.yes(name)
                 elif v == 'N':
