@@ -76,6 +76,9 @@ class ARCommitteeScraper(CommitteeScraper):
                     mchamber = 'upper'
                 elif title == 'Representative':
                     mchamber = 'lower'
+                else:
+                    # skip non-legislative members
+                    continue
 
                 comm.add_member(member, mtype, chamber=mchamber)
 
