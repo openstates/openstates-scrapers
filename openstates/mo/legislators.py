@@ -11,6 +11,7 @@ class MOLegislatorScraper(LegislatorScraper):
                             'Jefferson City, MO 65101')
     senator_url = 'http://www.senate.mo.gov/%sinfo/%sSenateRoster.xls'
     reps_url = 'http://www.house.mo.gov/member.aspx?year=%s'
+    rep_details_url = 'http://www.house.mo.gov/member.aspx?year=%s&district=%s'
     vacant_legislators = []
 
     def scrape(self, chamber, term):
@@ -76,17 +77,51 @@ class MOLegislatorScraper(LegislatorScraper):
                 phone = tds[4].text_content().strip()
                 room = tds[5].text_content().strip()
                 address = self.assumed_address_fmt % (room if room else '')
-                leg = Legislator(term, chamber, district, full_name=full_name,
+                if last_name == 'Vacant':
+                    leg = Legislator(term, chamber, district, full_name=full_name,
                                 first_name=first_name, last_name=last_name,
                                 party=party, phone=phone,
                                 office_address=address,
                                 _code=leg_code)
-                leg.add_source(url)
-                if last_name == 'Vacant':
+                    leg.add_source(url)
                     self.save_vacant_legislator(leg)
                 else:
-                    # TODO You can actually get historical information this way: http://www.house.mo.gov/member.aspx?year=1977&district=158
-                    self.save_legislator(leg)
+                    url = (self.rep_details_url % (session,district))
+                    with self.urlopen(url) as details_page:
+                        page = lxml.html.fromstring(details_page)
+                        picture = page.xpath('//*[@id="ContentPlaceHolder1_imgPhoto"]/@src')
+                        if len(picture) > 0:
+                            #print "Found picture : %s" % picture[0]
+                            picture = picture[0]
+                        else:
+                            picture = None
+                        email = page.xpath('//*[@id="ContentPlaceHolder1_lblAddresses"]/table/tr[4]/td/a/@href')
+                        if len(email) > 0 and email[0] != 'mailto:':
+                            #print "Found email : %s" % email[0]
+                            email = email[0].split(':')[1]
+                        else:
+                            email = None
+                        # TODO the detailed page also includes:
+                        # sponsored bills
+                        # committees
+                        # when elected
+                        # terms served
+                        # counties
+                        # hometown
+                        # biography
+                        # home address
+                        # district map details
+                        leg = Legislator(term, chamber, district, full_name=full_name,
+                                  first_name=first_name, last_name=last_name,
+                                  party=party, phone=phone, office_address=address,
+                                  photo_url=picture, email=email, 
+                                  _code=leg_code)
+                        # TODO are both sources supposed to be saved?
+                        leg.add_source(url)
+                        self.save_legislator(leg)
 
     def save_vacant_legislator(self,leg):
-            self.vacant_legislators.append(leg)
+        # Here is a stub to save the vacant records - but its not really being used
+        # since the current infrastructure pays attention to the legislators and not
+        # the seats. See: http://bit.ly/jOtrhd
+        self.vacant_legislators.append(leg)
