@@ -11,6 +11,9 @@ from billy.scrape.utils import convert_pdf
 
 import lxml.html
 
+
+# {spaces}{vote indicator (Y/N/E/ )}{name}{lookahead:2 spaces, space-indicator}
+HOUSE_VOTE_RE = re.compile('([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])')
 """
 Senate Votes come out in a bizarre encoding but we can handle it
 
@@ -410,8 +413,6 @@ class NMBillScraper(BillScraper):
         return vote
 
 
-    # {spaces}{vote indicator (Y/N/E/ )}{name}{2 spaces, space-indicator, or $}
-    HOUSE_VOTE_RE = re.compile('\s*([YNE ])\s+(.+?)(?:(?:\s(?:[YNE ]))|$)')
     # house totals
     HOUSE_TOTAL_RE = re.compile('\s+Absent: (\d+)\s+Yeas: (\d+)\s+Nays: (\d+)\s+Excused: (\d+)')
 
@@ -438,13 +439,13 @@ class NMBillScraper(BillScraper):
 
         # votes
         real_votes = False
-        for v, name in self.HOUSE_VOTE_RE.findall(text):
+        for v, name in HOUSE_VOTE_RE.findall(text):
             # our regex is a bit broad, wait until we see 'Nays' to start
-            # and end when we see CERTIFIED
+            # and end when we see CERTIFIED or ____ signature line
             if 'Nays' in name or 'Excused' in name:
                 real_votes = True
                 continue
-            elif 'CERTIFIED' in name:
+            elif 'CERTIFIED' in name or '___' in name:
                 break
             elif real_votes and name.strip():
                 if v == 'Y':
