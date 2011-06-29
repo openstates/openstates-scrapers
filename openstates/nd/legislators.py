@@ -50,13 +50,13 @@ class NDLegislatorScraper(LegislatorScraper):
         for row in doc.xpath('//div[@class="content"]/table//table/tr'):
             tds = row.getchildren()
             if tds[0].text_content().startswith('Telephone'):
-                attribs['office_phone'] = tds[1].text_content()
+                attribs['office_phone'] = tds[1].text_content().strip()
             elif tds[0].text_content().startswith('E-mail'):
-                attribs['email'] = tds[1].text_content()
+                attribs['email'] = tds[1].text_content().strip()
             elif tds[0].text_content().startswith('District'):
-                attribs['district'] = tds[1].text_content()
+                attribs['district'] = tds[1].text_content().strip()
             elif tds[0].text_content().startswith('Party'):
-                attribs['party'] = tds[1].text_content()
+                attribs['party'] = tds[1].text_content().strip()
 
         if attribs['party'] == 'Democrat':
             attribs['party'] = 'Democratic'
