@@ -29,15 +29,15 @@ class PRLegislatorScraper(LegislatorScraper):
 
         for counter, url in enumerate(urls):
             with self.urlopen(url) as leg_page_html:
-         	doc = lxml.html.fromstring(leg_page_html)
+                doc = lxml.html.fromstring(leg_page_html)
                 table = doc.xpath('//table[@summary="Listado de Senadores"]')[0]
-		
+
                 # skip first row
                 for row in table.xpath('tr')[1:]:
-	            tds = row.xpath('td')
-		    img = row.xpath('.//img/@src')
-		    if len(img) != 0:
-	          	photo_url = img[0]
+                    tds = row.xpath('td')
+                    img = row.xpath('.//img/@src')
+                    if len(img) != 0:
+                        photo_url = img[0]
                     name = tds[1].text_content().title()
                     party = tds[2].text_content()
                     phone = tds[3].text_content()
