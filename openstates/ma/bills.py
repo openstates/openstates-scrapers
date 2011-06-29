@@ -74,10 +74,12 @@ class MABillScraper(BillScraper):
 
                 # actions
                 for act_row in doc.xpath('//tbody[@class="bgwht"]/tr'):
-                    date, actor, action = act_row.xpath('./td/text()')
+                    date = act_row.xpath('./td[@headers="bDate"]/text()')[0]
                     date = datetime.strptime(date, "%m/%d/%Y")
-                    actor = chamber_map[actor.strip()]
-                    action = action.strip()
+                    actor_txt = act_row.xpath('./td[@headers="bBranch"]')[0].text_content().strip()
+                    if actor_txt:
+                        actor = chamber_map[actor_txt]
+                    action = act_row.xpath('./td[@headers="bAction"]/text()')[0].strip()
                     atype = classify_action(action)
                     bill.add_action(actor, action, date, type=atype)
 
