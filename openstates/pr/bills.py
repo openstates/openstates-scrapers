@@ -72,15 +72,15 @@ class PRBillScraper(BillScraper):
 
                 date = datetime.datetime.strptime(tds[0].text_content(),
                                                   "%m/%d/%Y")
-                
+
                 action = tds[1].text_content().strip()
                 #get url of action
                 action_document =  tds[1].xpath('a[text()=\''+ action+'\']/@href')
                 #check it has a url and is not just text
                 if len(action_document) != 0:
                     bill.add_document(action,action_document[0]);
-                
-                
+
+
                 for pattern, atype in _classifiers:
                     if re.match(pattern, action):
                         break
