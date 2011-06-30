@@ -11,56 +11,61 @@ from billy.scrape.utils import convert_pdf
 
 import lxml.html
 
-
 # {spaces}{vote indicator (Y/N/E/ )}{name}{lookahead:2 spaces, space-indicator}
 HOUSE_VOTE_RE = re.compile('([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])')
-"""
-Senate Votes come out in a bizarre encoding but we can handle it
 
-example after decoding:
- OFFICIALROLLCALL
-NEWMEXICOSTATESENATE
-FIFTIETHLEGISLATURE,FIRSTSESSION,2011
 
-LEGISLATIVEDAY35DATE:03-09-11
-RCS#330
-SENATEBILL233,ASAMENDED
-  YES NO ABS EXC  YES NO ABS EXC
- ADAIR X    LOVEJOY X
- ASBILL X    MARTINEZ X
- WILSONBEFFORT X    MCSORLEY X
- BOITANO X    MORALES    X
- BURT X    MUNOZ    X
- CAMPOS X    NAVA X
- CISNEROS X    NEVILLE X
- CRAVENS X    ORTIZYPINO X
- EICHENBERG X    PAPEN X
- FELDMAN X    PAYNE X
- FISCHMANN X    PINTO X
- GARCIA X    RODRIGUEZ   X
- GRIEGO,E. X    RUE X
- GRIEGO,P. X    RYAN X
- HARDEN X    SANCHEZ,B. X
- INGLE X    SANCHEZ,M. X
- JENNINGS X    SAPIEN X
- KELLER   X  SHARER X
- KERNAN X    SMITH   X
- LEAVELL X    ULIBARRI X
- LOPEZ    X WIRTH X
-      TOTALS=> 36 0 3 3
+def convert_sv_text(text):
+    """
+    normalize Senate vote text from pdftotext 
 
-PASSED:36-0
-"""
+    senate votes come out of pdftotext with characters shifted in weird way
+    convert_sv_text converts that text to a readable format with junk stripped
 
-def convert_sv_char(c):
-    # capital letters shift 64
-    if 65 <= ord(c)-64 <= 90:
-        return chr(ord(c)-64)
-    # punctuation shift 128
-    else:
-        return chr(ord(c)-128)
+    example after decoding:
+     OFFICIALROLLCALL
+    NEWMEXICOSTATESENATE
+    FIFTIETHLEGISLATURE,FIRSTSESSION,2011
+
+    LEGISLATIVEDAY35DATE:03-09-11
+    RCS#330
+    SENATEBILL233,ASAMENDED
+      YES NO ABS EXC  YES NO ABS EXC
+     ADAIR X    LOVEJOY X
+     ASBILL X    MARTINEZ X
+     WILSONBEFFORT X    MCSORLEY X
+     BOITANO X    MORALES    X
+     BURT X    MUNOZ    X
+     CAMPOS X    NAVA X
+     CISNEROS X    NEVILLE X
+     CRAVENS X    ORTIZYPINO X
+     EICHENBERG X    PAPEN X
+     FELDMAN X    PAYNE X
+     FISCHMANN X    PINTO X
+     GARCIA X    RODRIGUEZ   X
+     GRIEGO,E. X    RUE X
+     GRIEGO,P. X    RYAN X
+     HARDEN X    SANCHEZ,B. X
+     INGLE X    SANCHEZ,M. X
+     JENNINGS X    SAPIEN X
+     KELLER   X  SHARER X
+     KERNAN X    SMITH   X
+     LEAVELL X    ULIBARRI X
+     LOPEZ    X WIRTH X
+          TOTALS=> 36 0 3 3
+
+    PASSED:36-0
+    """
+    ret_lines = []
+    for line in text.splitlines():
+        line = convert_sv_line(line)
+        if 'DCDCDC' not in line:
+            ret_lines.append(line)
+    return ret_lines
+
 
 def convert_sv_line(line):
+    """ convert a single line of the garbled vote text """
     line = line.strip()
     # strip out junk filler char
     line = line.replace('\xef\x80\xa0', '')
@@ -70,22 +75,28 @@ def convert_sv_line(line):
     line = line.replace('B3', ' ').replace('oA', '').replace('o', '').replace('\x00', '')
     return line
 
-def convert_sv_text(text):
-    ret_lines = []
-    for line in text.splitlines():
-        line = convert_sv_line(line)
-        if 'DCDCDC' not in line:
-            ret_lines.append(line)
-    return ret_lines
+
+def convert_sv_char(c):
+    """ logic for shifting senate vote characters to real ASCII """
+    # capital letters shift 64
+    if 65 <= ord(c)-64 <= 90:
+        return chr(ord(c)-64)
+    # punctuation shift 128
+    else:
+        return chr(ord(c)-128)
+
 
 
 class NMBillScraper(BillScraper):
     state = 'nm'
 
+    # update as sessions update
+    session_paths = {'2011': '11%20Regular'}
 
     def __init__(self, *args, **kwargs):
         super(NMBillScraper, self).__init__(*args, **kwargs)
 
+        # all of the data is in this Access DB, download & retrieve it
         self.mdbfile = 'LegInfo11.mdb'
         remote_file = 'ftp://www.nmlegis.gov/other/LegInfo11.zip'
         fname, resp = self.urlretrieve(remote_file)
@@ -95,6 +106,7 @@ class NMBillScraper(BillScraper):
 
 
     def access_to_csv(self, table):
+        """ using mdbtools, read access tables as CSV """
         commands = ['mdb-export', self.mdbfile, table]
         pipe = subprocess.Popen(commands, stdout=subprocess.PIPE,
                                 close_fds=True).stdout
@@ -112,8 +124,10 @@ class NMBillScraper(BillScraper):
                          'R': 'resolution',
                         }
 
+        # used for faking sources
         session_year = session[2:]
 
+        # read in sponsor & subject mappings
         sponsor_map = {}
         for sponsor in self.access_to_csv('tblSponsors'):
             sponsor_map[sponsor['SponsorCode']] = sponsor['FullName']
@@ -122,6 +136,7 @@ class NMBillScraper(BillScraper):
         for subject in self.access_to_csv('TblSubjects'):
             subject_map[subject['SubjectCode']] = subject['Subject']
 
+        # get all bills into this dict, fill in action/docs before saving
         self.bills = {}
         for data in self.access_to_csv('Legislation'):
             # use their BillID for the key but build our own for storage
@@ -146,7 +161,7 @@ class NMBillScraper(BillScraper):
             if data['SponsorCode2'] != 'NONE':
                 bill.add_sponsor('primary', sponsor_map[data['SponsorCode2']])
 
-            #maybe use data['emergency'] data['passed'] data['signed']?
+            # maybe use data['emergency'] data['passed'] data['signed'] as well
 
             bill['subjects'] = []
             if data['SubjectCode1']:
@@ -156,17 +171,52 @@ class NMBillScraper(BillScraper):
             if data['SubjectCode3']:
                 bill['subjects'].append(subject_map[data['SubjectCode3']])
 
-        # do other parts
+        # bills and actions come from other tables
         self.scrape_actions(chamber_letter)
         self.scrape_documents(session, 'bills', chamber)
         self.scrape_documents(session, 'resolutions', chamber)
         self.scrape_documents(session, 'memorials', chamber)
+        self.check_other_documents(session, chamber)
 
-        for bill in self.bills.values():
+        # ..and save it all
+        for bill in self.bills.itervalues():
             self.save_bill(bill)
 
 
+    def check_other_documents(self, session, chamber):
+        """ check for documents that reside in their own directory """
+
+        s_slug = self.session_paths[session]
+        firs_url = 'http://www.nmlegis.gov/Sessions/%s/firs/' % s_slug
+        lesc_url = 'http://www.nmlegis.gov/Sessions/%s/LESCAnalysis/' % s_slug
+        final_url = 'http://www.nmlegis.gov/Sessions/%s/final/' % s_slug
+
+        # go through all of the links on these pages and add them to the
+        # appropriate bills
+        def check_docs(url, doc_type):
+            html = self.urlopen(url)
+            doc = lxml.html.fromstring(html)
+
+            for fname in doc.xpath('//a/text()'):
+                # split filename into bill_id format
+                match = re.match('([A-Z]+)0*(\d{1,4})', fname)
+                if match:
+                    bill_type, bill_num = match.groups()
+                    bill_id = bill_type.replace('B', '') + bill_num
+                    try:
+                        bill = self.bills[bill_id]
+                        bill.add_document(doc_type, url + fname)
+                    except KeyError:
+                        self.warning('document for unknown bill %s' % fname)
+
+        check_docs(firs_url, 'Fiscal Impact Report')
+        check_docs(lesc_url, 'LESC Analysis')
+        check_docs(final_url, 'Final Version')
+
+
     def scrape_actions(self, chamber_letter):
+        """ append actions to bills """
+
         # we could use the TblLocation to get the real location, but we can
         # fake it with the first letter
         location_map = {'H': 'lower', 'S': 'upper', 'P': 'executive'}
@@ -176,6 +226,7 @@ class NMBillScraper(BillScraper):
             com_location_map[loc['LocationCode']] = loc['LocationDesc']
 
         # combination of tblActions and http://www.nmlegis.gov/lcs/abbrev.aspx
+        # table will break when new actions are encountered
         action_map = {
             # committee results
             '7601': ('DO PASS committee report adopted', 'committee:passed:favorable'),
@@ -238,15 +289,15 @@ class NMBillScraper(BillScraper):
             'SENT': ('Sent to %s', ['bill:introduced', 'committee:referred']),
         }
 
+        # these actions need a committee name spliced in
         actions_with_committee = ('SENT', '7650', '7654')
 
         for action in self.access_to_csv('Actions'):
             bill_key = action['BillID'].replace(' ', '')
 
-            # if this is from the wrong chamber, skip it
+            # if this is from the wrong chamber or an unknown bill skip it
             if not bill_key.startswith(chamber_letter):
                 continue
-
             if bill_key not in self.bills:
                 self.warning('action for unknown bill %s' % bill_key)
                 continue
@@ -260,7 +311,6 @@ class NMBillScraper(BillScraper):
             action_day = action['Day']
             action_date = datetime.strptime(action['EntryDate'].split()[0],
                                             "%m/%d/%y")
-            action_type = 'other'
             if action['LocationCode']:
                 actor = location_map.get(action['LocationCode'][0], 'other')
             else:
@@ -271,6 +321,7 @@ class NMBillScraper(BillScraper):
             # if there's room in this action for a location name, map locations
             # to their names from the Location table
             if action_code in actions_with_committee:
+                # turn A/B/C into Full Name & Full Name 2 & Full Name 3
                 locs = [com_location_map[l]
                         for l in action['Referral'].split('/') if l]
                 action_name = action_name % (' & '.join(locs))
@@ -280,8 +331,10 @@ class NMBillScraper(BillScraper):
 
 
     def scrape_documents(self, session, doctype, chamber):
-        # update as sessions update
-        session_path = {'2011': '11%20Regular'}[session]
+        """ most document types (+ Votes)are in this common directory go
+        through it and attach them to their related bills """
+
+        session_path = self.session_paths[session]
 
         chamber_name = 'house' if chamber == 'lower' else 'senate'
 
@@ -348,19 +401,24 @@ class NMBillScraper(BillScraper):
                     pass
                 else:
                     # warn about unknown suffix
-                    print 'unknown document suffix %s' % (fname)
+                    self.warning('unknown document suffix %s' % (fname))
 
 
     def parse_senate_vote(self, url):
+        """ senate PDFs -> garbled text -> good text -> Vote """
         vote = Vote('upper', '?', 'senate passage', False, 0, 0, 0)
         vote.add_source(url)
 
         fname, resp = self.urlretrieve(url)
+        # this gives us the cleaned up text
         sv_text = convert_sv_text(convert_pdf(fname, 'text'))
         os.remove(fname)
         in_votes = False
 
+        # use in_votes as a sort of state machine
         for line in sv_text:
+
+            # not 'in_votes', get date or passage
             if not in_votes:
                 dmatch = re.search('DATE:(\d{2}-\d{2}-\d{2})', line)
                 if dmatch:
@@ -372,7 +430,9 @@ class NMBillScraper(BillScraper):
                 elif 'PASSED' in line:
                     vote['passed'] = True
 
+            # in_votes: totals & votes
             else:
+                # totals
                 if 'TOTALS' in line:
 
                     # Lt. Governor voted
@@ -412,11 +472,13 @@ class NMBillScraper(BillScraper):
                     vote.other(name2)
         return vote
 
-
     # house totals
     HOUSE_TOTAL_RE = re.compile('\s+Absent: (\d+)\s+Yeas: (\d+)\s+Nays: (\d+)\s+Excused: (\d+)')
 
+
     def parse_house_vote(self, url):
+        """ house votes are pdfs that can be converted to text, require some
+        nasty regex to get votes out reliably """
 
         fname, resp = self.urlretrieve(url)
         text = convert_pdf(fname, 'text')
