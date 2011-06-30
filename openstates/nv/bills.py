@@ -216,14 +216,16 @@ class NVBillScraper(BillScraper):
 
     def scrape_actions(self, root, bill, actor):
         path = '/html/body/div[@id="content"]/table/tr/td/p[1]'
-        count = 6
         for mr in root.xpath(path):
             date = mr.text_content().strip()
             date = date.split()[0] + " " + date.split()[1] + " " + date.split()[2]
             date = datetime.strptime(date, "%b %d, %Y")
-            count = count + 1
             for el in mr.xpath('../../following-sibling::tr[1]/td/ul/li'):
                 action = el.text_content().strip()
+
+                # skip blank actions
+                if not action:
+                    continue
 
                 # catch chamber changes
                 if action.startswith('In Assembly'):
