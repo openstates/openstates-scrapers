@@ -31,7 +31,7 @@ def api_url(path):
 
 
 def dump_json(abbr, filename, validate, schema_dir):
-    scraper = scrapelib.Scraper(requests_per_minute=600)
+    scraper = scrapelib.Scraper(requests_per_minute=600, follow_robots=False)
     level = metadata(abbr)['level']
 
     zip = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
