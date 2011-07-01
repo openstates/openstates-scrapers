@@ -10,8 +10,7 @@ class VTCommitteeScraper(CommitteeScraper):
     state = 'vt'
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
+        self.validate_term(term, latest_only=True)
 
         chamber_abbr = {'upper': 'S', 'lower': 'H'}[chamber]
 
@@ -22,7 +21,7 @@ class VTCommitteeScraper(CommitteeScraper):
 
             for li in page.xpath("//li"):
                 # Strip the room number from the committee name
-                comm_name = re.match(r'[^\(]+', li.text).group(0).strip()
+                comm_name = re.match(r'[^\(]+', li.text_content()).group(0).strip()
 
                 # Strip chamber from beginning of committee name
                 comm_name = re.sub(r'^(HOUSE|SENATE) COMMITTEE ON ', '',
