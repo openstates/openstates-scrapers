@@ -1,13 +1,14 @@
 #!/usr/bin/env python
-import re
-import os
-import zipfile
 import datetime
-import urllib
 import json
+import logging
+import os
+import re
+import urllib
+import zipfile
 
 from billy.conf import settings, base_arg_parser
-from billy.utils import metadata
+from billy.utils import metadata, configure_logging
 from billy import db
 
 import boto
@@ -108,11 +109,13 @@ def upload(abbr, filename):
     meta['latest_dump_date'] = datetime.datetime.utcnow()
     db.metadata.save(meta, safe=True)
 
-    print 'uploaded to %s' % s3_url
+    logging.info('uploaded to %s' % s3_url)
 
 
 if __name__ == '__main__':
     import argparse
+
+    configure_logging(1)
 
     parser = argparse.ArgumentParser(
         description=('Dump API information to a zipped directory of JSON files'
