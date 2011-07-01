@@ -60,7 +60,7 @@ def dump_json(abbr, filename, validate, schema_dir):
             validictory.validate(json.loads(response), bill_schema,
                                  validator_cls=APIValidator)
 
-        zip.writestr(path, scraper.urlopen(url))
+        zip.writestr(path, response)
 
     logging.info('dumping %s legislators...' % abbr)
     for legislator in db.legislators.find({'level': level, level: abbr}):
