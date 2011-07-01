@@ -49,6 +49,7 @@ def dump_json(abbr, filename, validate, schema_dir):
     with open(os.path.join(schema_dir, "committee.json")) as f:
         committee_schema = json.load(f)
 
+    logging.info('dumping %s bills...' % abbr)
     for bill in db.bills.find({'level': level, level: abbr}, timeout=False):
         path = "bills/%s/%s/%s/%s" % (abbr, bill['session'],
                                       bill['chamber'], bill['bill_id'])
@@ -61,6 +62,7 @@ def dump_json(abbr, filename, validate, schema_dir):
 
         zip.writestr(path, scraper.urlopen(url))
 
+    logging.info('dumping %s legislators...' % abbr)
     for legislator in db.legislators.find({'level': level, level: abbr}):
         path = 'legislators/%s' % legislator['_id']
         url = api_url(path)
@@ -72,6 +74,7 @@ def dump_json(abbr, filename, validate, schema_dir):
 
         zip.writestr(path, response)
 
+    logging.info('dumping %s committees...' % abbr)
     for committee in db.committees.find({'level': level, level: abbr}):
         path = 'committees/%s' % committee['_id']
         url = api_url(path)
@@ -102,6 +105,7 @@ def upload(abbr, filename):
     bucket = s3conn.create_bucket(s3_bucket)
     k = Key(bucket)
     k.key = s3_path
+    logging.info('beginning upload to %s' % s3_url)
     k.set_contents_from_filename(filename)
     k.set_acl('public-read')
 
@@ -109,7 +113,7 @@ def upload(abbr, filename):
     meta['latest_dump_date'] = datetime.datetime.utcnow()
     db.metadata.save(meta, safe=True)
 
-    logging.info('uploaded to %s' % s3_url)
+    logging.info('upload complete')
 
 
 if __name__ == '__main__':
