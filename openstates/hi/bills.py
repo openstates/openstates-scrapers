@@ -152,6 +152,8 @@ class HIBillScraper(BillScraper):
             bill = Bill(session, chamber, bill_id, title, subjects=subjects,
                         type=bill_type, description=description)
             for sponsor in sponsors.split(', '):
+                if sponsor.endswith(' (BR)'):
+                    sponsor = sponsor[:-5]
                 bill.add_sponsor('primary', sponsor)
 
             # actions
