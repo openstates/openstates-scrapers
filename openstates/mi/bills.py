@@ -67,6 +67,7 @@ class MIBillScraper(BillScraper):
         # sponsors
         sp_type = 'primary'
         for sponsor in doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a/text()'):
+            sponsor = sponsor.replace(u'\xa0', ' ')
             bill.add_sponsor(sp_type, sponsor)
             sp_type = 'cosponsor'
 
