@@ -138,6 +138,12 @@ class UTBillScraper(BillScraper):
                     type = 'bill:failed'
                 elif action.startswith('2nd & 3rd readings'):
                     type = ['bill:reading:2', 'bill:reading:3']
+                elif action == 'passed 2nd reading':
+                    type = 'bill:reading:2'
+                elif 'Comm - Favorable Recommendation' in action:
+                    type = 'committee:passed:favorable'
+                elif action == 'committee report favorable':
+                    type = 'committee:passed:favorable'
                 else:
                     type = 'other'
 
