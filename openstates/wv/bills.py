@@ -53,7 +53,15 @@ class WVBillScraper(BillScraper):
 
 
     def scrape_bill(self, session, chamber, bill_id, title, url):
-        page = lxml.html.fromstring(self.urlopen(url))
+        html = self.urlopen(url)
+
+        # sometimes sponsors are missing from bill
+        if 'SPONSOR(S)' not in html:
+            self.warning('got a truncated bill, sleeping for 10s')
+            time.sleep(10)
+            html = self.urlopen(url)
+
+        page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
 
         bill_type = self.bill_types[bill_id.split()[0][1:]]
