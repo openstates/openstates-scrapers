@@ -13,6 +13,7 @@ import lxml.html
 class WVBillScraper(BillScraper):
     state = 'wv'
 
+
     def scrape(self, chamber, session):
         if chamber == 'lower':
             orig = 'h'
@@ -31,6 +32,7 @@ class WVBillScraper(BillScraper):
             self.scrape_bill(session, chamber, bill_id, title,
                              link.attrib['href'])
 
+
     def scrape_bill(self, session, chamber, bill_id, title, url):
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
@@ -45,7 +47,8 @@ class WVBillScraper(BillScraper):
             bill.add_version(name, link.attrib['href'])
 
         subjects = []
-        for link in page.xpath("//a[contains(@href, 'Bills_Subject')]"):
+        # skip first 'Subject' link
+        for link in page.xpath("//a[contains(@href, 'Bills_Subject')]")[1:]:
             subject = link.xpath("string()").strip()
             subjects.append(subject)
         bill['subjects'] = subjects
