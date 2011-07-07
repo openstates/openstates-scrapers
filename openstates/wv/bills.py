@@ -13,6 +13,10 @@ import lxml.html
 class WVBillScraper(BillScraper):
     state = 'wv'
 
+    bill_types = {'B': 'bill',
+                  'R': 'resolution',
+                  'CR': 'concurrent resolution',
+                  'JR': 'joint resolution'}
 
     def scrape(self, chamber, session):
         if chamber == 'lower':
@@ -52,7 +56,9 @@ class WVBillScraper(BillScraper):
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 
-        bill = Bill(session, chamber, bill_id, title)
+        bill_type = self.bill_types[bill_id.split()[0][1:]]
+
+        bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(url)
 
         for link in page.xpath("//a[contains(@href, 'billdoc=')]"):
@@ -68,9 +74,25 @@ class WVBillScraper(BillScraper):
             subjects.append(subject)
         bill['subjects'] = subjects
 
-        for link in page.xpath("//a[contains(@href, 'Bills_Sponsors')]")[1:]:
-            sponsor = link.xpath("string()").strip()
-            bill.add_sponsor('sponsor', sponsor)
+        sponsor_links = page.xpath("//a[contains(@href, 'Bills_Sponsors')]")
+        if len(sponsor_links) > 1:
+            for link in sponsor_links[1:]:
+                sponsor = link.xpath("string()").strip()
+                bill.add_sponsor('sponsor', sponsor)
+        else:
+            # sometimes (resolutions only?) there aren't links so we have to
+            # use a regex to get sponsors
+            block = doc.xpath('//div[@id="bhistleft"]')[0].text_content()
+            # just text after sponsors
+            lines = block.split('SPONSOR(S):\r\n')[1].splitlines()
+            for line in lines:
+                line = line.strip()
+                # until we get a blank line
+                if not line:
+                    break
+                for sponsor in line.split(', '):
+                    bill.add_sponsor('sponsor', sponsor)
+
 
         for link in page.xpath("//a[contains(@href, 'House/Votes')]"):
             self.scrape_vote(bill, link.attrib['href'])
@@ -123,6 +145,7 @@ class WVBillScraper(BillScraper):
             bill.add_action(actor, action, date, type=atype)
 
         self.save_bill(bill)
+
 
     def scrape_vote(self, bill, url):
         filename, resp = self.urlretrieve(url)
