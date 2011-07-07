@@ -84,7 +84,7 @@ class WVBillScraper(BillScraper):
             # use a regex to get sponsors
             block = page.xpath('//div[@id="bhistleft"]')[0].text_content()
             # just text after sponsors
-            lines = block.split('SPONSOR(S):\r\n')[1].splitlines()
+            lines = block.split('SPONSOR(S):')[1].strip().splitlines()
             for line in lines:
                 line = line.strip()
                 # until we get a blank line
