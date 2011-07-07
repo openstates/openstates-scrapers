@@ -20,6 +20,7 @@ class WVBillScraper(BillScraper):
         else:
             orig = 's'
 
+        # scrape bills
         url = ("http://www.legis.state.wv.us/Bill_Status/"
                "Bills_all_bills.cfm?year=%s&sessiontype=RS"
                "&btype=bill&orig=%s" % (session, orig))
@@ -33,6 +34,20 @@ class WVBillScraper(BillScraper):
                              link.attrib['href'])
 
 
+        # scrape resolutions
+        res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?"
+                   "year=%s&sessiontype=rs&btype=res") % session
+        doc = lxml.html.fromstring(self.urlopen(res_url))
+        doc.make_links_absolute(res_url)
+
+        # check for links originating in this house
+        for link in doc.xpath('//a[contains(@href, "houseorig=%s")]' % orig):
+            bill_id = link.xpath("string()").strip()
+            title = link.xpath("string(../../td[2])").strip()
+            self.scrape_bill(session, chamber, bill_id, title,
+                             link.attrib['href'])
+
+
     def scrape_bill(self, session, chamber, bill_id, title, url):
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
@@ -40,7 +55,7 @@ class WVBillScraper(BillScraper):
         bill = Bill(session, chamber, bill_id, title)
         bill.add_source(url)
 
-        for link in page.xpath("//a[contains(@href, 'bills_text')]"):
+        for link in page.xpath("//a[contains(@href, 'billdoc=')]"):
             name = link.xpath("string()").strip()
             if name in ['html', 'wpd']:
                 continue
