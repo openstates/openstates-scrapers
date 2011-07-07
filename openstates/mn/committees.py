@@ -92,7 +92,7 @@ class MNCommitteeScraper(CommitteeScraper):
                             name = name.replace(role, '')
                         else:
                             role = 'member'
-                        name = name.split('( ')[0]
+                        name = name.split(' (')[0]
                         com.add_member(name, role)
 
                 # save
