@@ -258,7 +258,9 @@ class MSBillScraper(BillScraper):
                 junk_in_name = False
                 for junk in ('on final passage', 'Necessary', 'who would have',
                              'being a tie', 'therefore', 'Vacancies', 'a pair',
-                             'Total-'):
+                             'Total-', 'ATTORNEY', 'on final passage',
+                             'SPEAKER', 'BOARD', 'TREASURER', 'GOVERNOR',
+                             'ARCHIVES', 'SECRETARY'):
                     if junk in name:
                         junk_in_name = True
                         break
