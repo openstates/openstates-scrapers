@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from billy.scrape import ScrapeError, NoDataForPeriod
-from billy.scrape.utils import convert_word
 from billy.scrape.votes import Vote
 from billy.scrape.bills import BillScraper, Bill
 from openstates.pr.utils import grouper, doc_link_url, year_from_session
@@ -27,7 +26,7 @@ _classifiers = (
 #    ('Cuerpo de Origen concurre','bill:passed'),
     ('Aparece en Primera Lectura', 'bill:reading:1'),
     #sent is not the same as received
-    ('Enviado al Gobernador', 'governor:received'),i
+    ('Enviado al Gobernador', 'governor:received'),
     ('Veto', 'governor:vetoed'),
     #comissions give a report but sometimes they dont do any amendments and live them as they are.
     #i am not checking if they did or not. but it be easy just read the end and if it dosnt have amendments it should say 'sin enmiendas'
@@ -106,12 +105,12 @@ class PRBillScraper(BillScraper):
 
                 if action_url:
                     action_url = action_url[0]
-                #check if it's a version of the bill or another type of document.
-                #NOTE: not sure if new versions of the bill are only denoted with 'Entirillado' OR if that's the correct name but from what i gather it looks like it.
-                if re.match('Entirillado',action):
-                    bill.add_version(action, action_url)
-                else:
-                    bill.add_document(action, action_url)
+                    #check if it's a version of the bill or another type of document.
+                    #NOTE: not sure if new versions of the bill are only denoted with 'Entirillado' OR if that's the correct name but from what i gather it looks like it.
+                    if re.match('Entirillado', action):
+                        bill.add_version(action, action_url)
+                    else:
+                        bill.add_document(action, action_url)
 
                 for pattern, atype in _classifiers:
                     if re.match(pattern, action):
@@ -129,14 +128,15 @@ class PRBillScraper(BillScraper):
                     else:
                        self.warning('coudnt find voteChamber pattern')
 
-                if vote_chamber == 'lower' and len(action_url) > 0:
-                    vote = self.scrape_votes(action_url,action,date,vote_chamber)
-                    if not vote[0] == None:
-                        vote[0].add_source(action_url)
-                        bill.add_vote(vote[0])
-                   else:
-                       self.warning('Problem Reading vote: %s,%s' % (vote[1],
-                                                                     bill_id))
+                    if vote_chamber == 'lower' and len(action_url) > 0:
+                        vote = self.scrape_votes(action_url, action,date,
+                                                 vote_chamber)
+                        if not vote[0] == None:
+                            vote[0].add_source(action_url)
+                            bill.add_vote(vote[0])
+                        else:
+                            self.warning('Problem Reading vote: %s,%s' %
+                                         (vote[1], bill_id))
 
             bill.add_source(url)
             self.save_bill(bill)
@@ -158,9 +158,9 @@ class PRBillScraper(BillScraper):
         vote_doc, resp = self.urlretrieve(url)
 
         # use abiword to convert document
-        html_name = vote_doc.replace('.doc', '.html')
-        subprocess.Popen('abiword --to=%s %s' % (html_name, vote_doc),
-                         shell=True)
+        html_name = vote_doc + '.html'
+        subprocess.check_call('abiword --to=%s %s' % (html_name, vote_doc),
+                              shell=True, cwd='/tmp/')
         text = open(html_name).read()
         os.remove(html_name)
         os.remove(vote_doc)
