@@ -245,11 +245,11 @@ class StatsHandler(BillyHandler):
         for count in db.counts.find():
             val = count['value']
             abbr = count['_id']
-            level = metadata(abbr)['level']
 
             if abbr == 'total':
                 val['legislators'] = db.legislators.count()
             else:
+                level = metadata(abbr)['level']
                 val['legislators'] = db.legislators.find({'level': level,
                                                           level: abbr}).count()
 

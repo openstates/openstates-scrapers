@@ -35,7 +35,9 @@ class PRLegislatorScraper(LegislatorScraper):
                 # skip first row
                 for row in table.xpath('tr')[1:]:
                     tds = row.xpath('td')
-                    photo_url = row.xpath('.//img/@src')[0]
+                    img = row.xpath('.//img/@src')
+                    if len(img) != 0:
+                        photo_url = img[0]
                     name = tds[1].text_content().title()
                     party = tds[2].text_content()
                     phone = tds[3].text_content()

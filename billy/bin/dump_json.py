@@ -1,13 +1,14 @@
 #!/usr/bin/env python
-import re
-import os
-import zipfile
 import datetime
-import urllib
 import json
+import logging
+import os
+import re
+import urllib
+import zipfile
 
 from billy.conf import settings, base_arg_parser
-from billy.utils import metadata
+from billy.utils import metadata, configure_logging
 from billy import db
 
 import boto
@@ -30,7 +31,7 @@ def api_url(path):
 
 
 def dump_json(abbr, filename, validate, schema_dir):
-    scraper = scrapelib.Scraper(requests_per_minute=600)
+    scraper = scrapelib.Scraper(requests_per_minute=600, follow_robots=False)
     level = metadata(abbr)['level']
 
     zip = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
@@ -48,6 +49,7 @@ def dump_json(abbr, filename, validate, schema_dir):
     with open(os.path.join(schema_dir, "committee.json")) as f:
         committee_schema = json.load(f)
 
+    logging.info('dumping %s bills...' % abbr)
     for bill in db.bills.find({'level': level, level: abbr}, timeout=False):
         path = "bills/%s/%s/%s/%s" % (abbr, bill['session'],
                                       bill['chamber'], bill['bill_id'])
@@ -58,8 +60,9 @@ def dump_json(abbr, filename, validate, schema_dir):
             validictory.validate(json.loads(response), bill_schema,
                                  validator_cls=APIValidator)
 
-        zip.writestr(path, scraper.urlopen(url))
+        zip.writestr(path, response)
 
+    logging.info('dumping %s legislators...' % abbr)
     for legislator in db.legislators.find({'level': level, level: abbr}):
         path = 'legislators/%s' % legislator['_id']
         url = api_url(path)
@@ -71,6 +74,7 @@ def dump_json(abbr, filename, validate, schema_dir):
 
         zip.writestr(path, response)
 
+    logging.info('dumping %s committees...' % abbr)
     for committee in db.committees.find({'level': level, level: abbr}):
         path = 'committees/%s' % committee['_id']
         url = api_url(path)
@@ -101,6 +105,7 @@ def upload(abbr, filename):
     bucket = s3conn.create_bucket(s3_bucket)
     k = Key(bucket)
     k.key = s3_path
+    logging.info('beginning upload to %s' % s3_url)
     k.set_contents_from_filename(filename)
     k.set_acl('public-read')
 
@@ -108,11 +113,13 @@ def upload(abbr, filename):
     meta['latest_dump_date'] = datetime.datetime.utcnow()
     db.metadata.save(meta, safe=True)
 
-    print 'uploaded to %s' % s3_url
+    logging.info('upload complete')
 
 
 if __name__ == '__main__':
     import argparse
+
+    configure_logging(1)
 
     parser = argparse.ArgumentParser(
         description=('Dump API information to a zipped directory of JSON files'

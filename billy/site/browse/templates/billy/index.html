@@ -42,16 +42,20 @@
         <td class="{{row.bill_types|yesno:"good,bad"}}">
             {{row.bill_types}}</td>
         <td
-            {% if row.subjects < 25 %}
-            class="bad"
+            {% if not row.subjects %}
+            class="warning">---</td>
             {% else %}
-                {% if row.subjects < 90 %}
-                class="warning"
+                {% if row.subjects < 25 %}
+                class="bad"
                 {% else %}
-                class="good"
+                    {% if row.subjects < 90 %}
+                    class="warning"
+                    {% else %}
+                    class="good"
+                    {% endif %}
                 {% endif %}
+                >{{row.subjects|floatformat}}</td>
             {% endif %}
-            >{{row.subjects|floatformat}}</td>
         <td
             {% if row.typed_actions < 25 %}
             class="bad"

@@ -1,6 +1,9 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
+party_map = {'Dem': 'Democratic',
+             'Rep': 'Republican',
+             'Una': 'Unaffiliated'}
 
 class NCLegislatorScraper(LegislatorScraper):
     state = 'nc'
@@ -16,16 +19,14 @@ class NCLegislatorScraper(LegislatorScraper):
 
         with self.urlopen(url) as data:
             doc = lxml.html.fromstring(data)
+            doc.make_links_absolute('http://www.ncga.state.nc.us')
             rows = doc.xpath('//div[@id="mainBody"]/table/tr')
 
             for row in rows[1:]:
                 party, district, full_name, counties = row.getchildren()
 
                 party = party.text_content()
-                if party == 'Dem':
-                    party = 'Democratic'
-                elif party == 'Rep':
-                    party = 'Republican'
+                party = party_map[party]
 
                 district = district.text_content()
 
@@ -34,10 +35,17 @@ class NCLegislatorScraper(LegislatorScraper):
                     notice = notice[0].text_content()
                 else:
                     notice = None
+                link = full_name.xpath('a/@href')[0]
                 full_name = full_name.xpath('a')[0].text_content()
                 full_name = full_name.replace(u'\u00a0', ' ')
 
+                with self.urlopen(link) as lhtml:
+                    ldoc = lxml.html.fromstring(lhtml)
+                    ldoc.make_links_absolute('http://www.ncga.state.nc.us')
+                    photo_url = ldoc.xpath('//a[contains(@href, "pictures")]/@href')[0]
+
                 legislator = Legislator(term, chamber, district, full_name,
-                                        party=party, notice=notice)
-                legislator.add_source(url)
+                                        photo_url=photo_url, party=party,
+                                        notice=notice)
+                legislator.add_source(link)
                 self.save_legislator(legislator)

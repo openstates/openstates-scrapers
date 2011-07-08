@@ -26,13 +26,14 @@ def action_type(action):
     if action.startswith('Second Reading'):
         atype.append('bill:reading:2')
     elif action.startswith('Third Reading'):
-        if 'Measure Passed' in action:
-            atype.append('bill:passed')
         atype.append('bill:reading:3')
     elif action.startswith('Reported Do Pass'):
         atype.append('committee:passed')
     elif re.match('(Signed|Approved) by Governor', action):
         atype.append('governor:signed')
+
+    if 'measure passed' in action.lower():
+        atype.append('bill:passed')
 
     return atype
 
@@ -40,26 +41,32 @@ def action_type(action):
 class OKBillScraper(BillScraper):
     state = 'ok'
 
+    bill_types = ['B', 'JR', 'CR', 'R']
+    session_id_map = {'2011': '1100'}
+    subject_map = collections.defaultdict(list)
+
+
     def scrape(self, chamber, session):
         if session != '2011':
             raise NoDataForPeriod(session)
 
+        # start by building subject map
+        self.scrape_subjects(chamber, session)
+
         url = "http://webserver1.lsb.state.ok.us/WebApplication3/WebForm1.aspx"
         form_page = lxml.html.fromstring(self.urlopen(url))
-
-        bill_types = ['B', 'JR', 'CR', 'R']
 
         if chamber == 'upper':
             chamber_letter = 'S'
         else:
             chamber_letter = 'H'
 
-        values = [('cbxSessionId', '1100'),
+        values = [('cbxSessionId', self.session_id_map[session]),
                   ('cbxActiveStatus', 'All'),
                   ('RadioButtonList1', 'On Any day'),
                   ('Button1', 'Retrieve')]
 
-        for bill_type in bill_types:
+        for bill_type in self.bill_types:
             values.append(('lbxTypes', chamber_letter + bill_type))
 
         for hidden in form_page.xpath("//input[@type='hidden']"):
@@ -90,6 +97,7 @@ class OKBillScraper(BillScraper):
 
         bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(url)
+        bill['subjects'] = self.subject_map[bill_id]
 
         for link in page.xpath("//a[contains(@id, 'Auth')]"):
             name = link.xpath("string()").strip()
@@ -211,3 +219,29 @@ class OKBillScraper(BillScraper):
                 vote.other(name)
 
             bill.add_vote(vote)
+
+    def scrape_subjects(self, chamber, session):
+        form_url = 'http://webserver1.lsb.state.ok.us/WebApplication19/WebForm1.aspx'
+        form_html = self.urlopen(form_url)
+        fdoc = lxml.html.fromstring(form_html)
+
+        # bill types
+        letter = 'H' if chamber == 'lower' else 'S'
+        types = [letter+t for t in self.bill_types]
+
+        # do a request per subject
+        for subj in fdoc.xpath('//select[@name="lbxSubjects"]/option/@value'):
+            # these forms require us to get hidden session keys
+            values = {'cbxInclude': 'All', 'Button1': 'Retrieve',
+                      'RadioButtonList1': 'On Any Day',
+                      'cbxSessionID': self.session_id_map[session],
+                      'lbxSubjects': subj, 'lbxTypes': types}
+            for hidden in fdoc.xpath("//input[@type='hidden']"):
+                values[hidden.attrib['name']] =  hidden.attrib['value']
+            values = urllib.urlencode(values, doseq=True)
+            page_data = self.urlopen(form_url, 'POST', values)
+            page_doc = lxml.html.fromstring(page_data)
+
+            # all links after first are bill_ids
+            for bill_id in page_doc.xpath('//a/text()')[1:]:
+                self.subject_map[bill_id].append(subj)

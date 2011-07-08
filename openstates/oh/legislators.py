@@ -63,7 +63,7 @@ class OHLegislatorScraper(LegislatorScraper):
                 party = el.xpath('string(a[@class="senatorLN"]/span)')
 
                 if party == "D":
-                    party = "Democrat"
+                    party = "Democratic"
                 elif party == "R":
                     party = "Republican"
 

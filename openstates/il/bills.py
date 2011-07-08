@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import re
-from urlparse import urljoin,urlsplit
+from urlparse import urljoin, urlsplit
 
 from util import get_soup, get_text, elem_name, standardize_chamber
 import votes
 
-from openstates.il import year2session
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
@@ -19,12 +18,8 @@ class ILBillScraper(BillScraper):
 
     state = 'il'
 
-    def scrape(self, chamber, year):
-        try:
-            session = year2session[year]
-        except KeyError:
-            raise NoDataForPeriod(year)
-        urls = get_all_bill_urls(self, chamber,session,types=['HB','SB'])
+    def scrape(self, chamber, session):
+        urls = get_all_bill_urls(self, chamber, session, types=['HB','SB'])
         for url in urls:
             self._scrape_bill(url)
 
@@ -50,9 +45,9 @@ class ILBillScraper(BillScraper):
             no_votes = []
             other_votes = []
             for voter,vote in these_votes.iteritems():
-                if vote == 'Y': 
+                if vote == 'Y':
                     yes_votes.append(voter)
-                elif vote == 'N': 
+                elif vote == 'N':
                     no_votes.append(voter)
                 else:
                     other_votes.append(voter)
@@ -91,7 +86,7 @@ def parse_bill(scraper, url):
     bill = Bill(session, chamber, bill_id, bill_name.strip(),status_url=url)
     actions = extract_actions(s)
     for chamber,action,date in actions:
-        bill.add_action(chamber,action,date) #kwargs are permitted if we have 'em.  
+        bill.add_action(chamber,action,date) #kwargs are permitted if we have 'em.
     sponsor_dict = extract_sponsors_from_actions([action[1] for action in actions])
     for type,namelist in sponsor_dict.iteritems():
         for name in namelist:
@@ -120,7 +115,7 @@ def extract_versions(scraper, s):
 def extract_sponsors_from_actions(actions):
     """Given a list of actions, decompose into a map whose keys are sponsorship types
        and whose values are lists of sponsors.
-       
+
        We're assuming the first action always indicates a primary sponsor.
     """
     sponsor_dict = {}
@@ -170,14 +165,14 @@ def extract_bill_id(soup):
     match = re.match(".+Bill Status for (.+)$",title_text)
     if match:
         return match.groups()[0]
-    raise ValueError("Title text doesn't match expected pattern [%s]" % title_text)        
-    
+    raise ValueError("Title text doesn't match expected pattern [%s]" % title_text)
+
 def get_all_bill_urls(scraper, chamber,session,types=None):
     """Given a session number (e.g. '96' for the 2009-2010 GA session) and a chamber,
        return all bill URLs which can be identified as associated with the given session.
        At this time, Executive Orders and Joint Session Resolutions will never be returned.
     """
-    session_url = BASE_LEGISLATION_URL % session
+    session_url = BASE_LEGISLATION_URL % session[0:2]
     s = get_soup(scraper, session_url)
     groups = extract_bill_groups(s,session_url)
     special_sessions = s(text=re.compile(".*View Special Session.*"))
@@ -191,7 +186,7 @@ def get_all_bill_urls(scraper, chamber,session,types=None):
         doctype = extract_doctype(g)
         if (types is None or doctype in types) and (chamber == chamber_for_doctype(doctype)):
             urls.extend(extract_bill_urls_from_group(scraper, chamber, g))
-        
+
     return urls
 
 def chamber_for_doctype(doctype):
@@ -220,7 +215,7 @@ def chamber_for_doctype(doctype):
     if doctype.startswith("H"): return 'lower'
     if doctype.startswith("S"): return 'upper'
     return None
-    
+
 def extract_doctype(url):
     match = re.match(".*DocTypeID=(.+?)&.*",url)
     if match:
@@ -235,7 +230,7 @@ def extract_session(url):
 
 def extract_bill_groups(soup,base_url=BASE_LEGISLATION_URL):
     """Given a BeautifulSoup instance, return the links within the parsed document which
-    point to pages which list groups of bill status pages. The base_url is used to 
+    point to pages which list groups of bill status pages. The base_url is used to
     qualify relative URLs.
     """
     links = soup("a", {"href": re.compile(".*grplist.*")})

@@ -1,138 +1,237 @@
-#!/usr/bin/env python
-import urllib
+import os
 import re
-import datetime as dt
-import urllib2
-from BeautifulSoup import BeautifulSoup
+import time
+import datetime
+import collections
 
+from billy.scrape.utils import convert_pdf
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
-def cleansource(data):
-    '''Remove some irregularities from WV's HTML.
+import lxml.html
 
-It includes a spurious </HEAD> before the useful data begins and lines like '<option value="Bill"selected="selected">Bill</option>', in which the lack of a space between the attributes confuses BeautifulSoup.
-'''
-    data = data.replace('</HEAD>', '')
-    return re.sub('(="[^"]+")([a-zA-Z])', r'\1 \2', data)
-
-
-def cleansponsor(sponsor):
-    if sponsor.endswith('President)'):
-        # in the senate:
-        # Soandso (Salutation President)
-        return sponsor.split(' ')[0]
-    if ' Speaker' in sponsor:  # leading space in case there is a Rep. Speaker
-        # in the house:
-        # Salutation Speaker (Salutation Soandso)
-        return sponsor.split(' ')[-1][:-1]
-    return sponsor
-
-
-def issponsorlink(a):
-    if 'title' in a:
-        return (a['title'].startswith('View bills Delegate') or
-                a['title'].startswith('View bills Senator'))
-    return False
-
-
-def sessionexisted(data):
-    return not re.search('Please choose another session', data)
-
-urlbase = 'http://www.legis.state.wv.us/Bill_Status/%s'
 
 class WVBillScraper(BillScraper):
-
     state = 'wv'
 
-    session_abbrevs = 'RS 1X 2X 3X 4X 5X 6X 7X'.split()
+    bill_types = {'B': 'bill',
+                  'R': 'resolution',
+                  'CR': 'concurrent resolution',
+                  'JR': 'joint resolution'}
 
-    def scrape(self, chamber, year):
-        if int(year) < 1993:
-            raise NoDataForPeriod
-
-        for session in self.session_abbrevs:
-            if not self.scrape_session(chamber, session, year):
-                return
-
-    def scrape_session(self, chamber, session, year):
-        if chamber == 'upper':
-            c = 's'
+    def scrape(self, chamber, session):
+        if chamber == 'lower':
+            orig = 'h'
         else:
-            c = 'h'
+            orig = 's'
 
-        q = 'Bills_all_bills.cfm?year=%s&sessiontype=%s&btype=bill&orig=%s' % (
-            year, session, c)
+        # scrape bills
+        url = ("http://www.legis.state.wv.us/Bill_Status/"
+               "Bills_all_bills.cfm?year=%s&sessiontype=RS"
+               "&btype=bill&orig=%s" % (session, orig))
+        page = lxml.html.fromstring(self.urlopen(url))
+        page.make_links_absolute(url)
 
-        try:
-            with self.urlopen(urlbase % q) as data:
-                if not sessionexisted(data):
-                    return False
-                soup = BeautifulSoup(cleansource(data))
-                rows = soup.findAll('table')[1].findAll('tr')[1:]
-                for row in rows:
-                    histlink = urlbase % row.td.a['href']
-                    billid = row.td.a.contents[0].contents[0]
-                    self.scrape_bill(chamber, session, billid, histlink, year)
-                return True
-        except urllib2.HTTPError as e:
-            if e.code == 500:
-                # Nonexistent session
-                return False
+        for link in page.xpath("//a[contains(@href, 'Bills_history')]"):
+            bill_id = link.xpath("string()").strip()
+            title = link.xpath("string(../../td[2])").strip()
+            self.scrape_bill(session, chamber, bill_id, title,
+                             link.attrib['href'])
+
+
+        # scrape resolutions
+        res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?"
+                   "year=%s&sessiontype=rs&btype=res") % session
+        doc = lxml.html.fromstring(self.urlopen(res_url))
+        doc.make_links_absolute(res_url)
+
+        # check for links originating in this house
+        for link in doc.xpath('//a[contains(@href, "houseorig=%s")]' % orig):
+            bill_id = link.xpath("string()").strip()
+            title = link.xpath("string(../../td[2])").strip()
+            self.scrape_bill(session, chamber, bill_id, title,
+                             link.attrib['href'])
+
+
+    def scrape_bill(self, session, chamber, bill_id, title, url):
+        html = self.urlopen(url)
+
+        # sometimes sponsors are missing from bill
+        if 'SPONSOR(S)' not in html:
+            self.warning('got a truncated bill, sleeping for 10s')
+            time.sleep(10)
+            html = self.urlopen(url)
+
+        page = lxml.html.fromstring(html)
+        page.make_links_absolute(url)
+
+        bill_type = self.bill_types[bill_id.split()[0][1:]]
+
+        bill = Bill(session, chamber, bill_id, title, type=bill_type)
+        bill.add_source(url)
+
+        for link in page.xpath("//a[contains(@href, 'billdoc=')]"):
+            name = link.xpath("string()").strip()
+            if name in ['html', 'wpd']:
+                continue
+            bill.add_version(name, link.attrib['href'])
+
+        subjects = []
+        # skip first 'Subject' link
+        for link in page.xpath("//a[contains(@href, 'Bills_Subject')]")[1:]:
+            subject = link.xpath("string()").strip()
+            subjects.append(subject)
+        bill['subjects'] = subjects
+
+        sponsor_links = page.xpath("//a[contains(@href, 'Bills_Sponsors')]")
+        if len(sponsor_links) > 1:
+            for link in sponsor_links[1:]:
+                sponsor = link.xpath("string()").strip()
+                bill.add_sponsor('sponsor', sponsor)
+        else:
+            # sometimes (resolutions only?) there aren't links so we have to
+            # use a regex to get sponsors
+            block = page.xpath('//div[@id="bhistleft"]')[0].text_content()
+            # just text after sponsors
+            lines = block.split('SPONSOR(S):')[1].strip().splitlines()
+            for line in lines:
+                line = line.strip()
+                # until we get a blank line
+                if not line:
+                    break
+                for sponsor in line.split(', '):
+                    bill.add_sponsor('sponsor', sponsor)
+
+
+        for link in page.xpath("//a[contains(@href, 'House/Votes')]"):
+            self.scrape_vote(bill, link.attrib['href'])
+
+        actor = chamber
+        for tr in reversed(page.xpath("//div[@id='bhisttab']/table/tr")[1:]):
+            if len(tr.xpath("td")) < 3:
+                # Effective date row
+                continue
+
+            date = tr.xpath("string(td[1])").strip()
+            date = datetime.datetime.strptime(date, "%m/%d/%y").date()
+            action = tr.xpath("string(td[2])").strip()
+
+            if (action == 'Communicated to Senate' or
+                action.startswith('Senate received') or
+                action.startswith('Ordered to Senate')):
+                actor = 'upper'
+            elif (action == 'Communicated to House' or
+                  action.startswith('House received') or
+                  action.startswith('Ordered to House')):
+                actor = 'lower'
+
+            if action == 'Read 1st time':
+                atype = 'bill:reading:1'
+            elif action == 'Read 2nd time':
+                atype = 'bill:reading:2'
+            elif action == 'Read 3rd time':
+                atype = 'bill:reading:3'
+            elif action == 'Filed for introduction':
+                atype = 'bill:filed'
+            elif action.startswith('To Governor') and 'Journal' not in action:
+                atype = 'governor:received'
+            elif re.match(r'To [A-Z]', action):
+                atype = 'committee:referred'
+            elif action.startswith('Introduced in'):
+                atype = 'bill:introduced'
+            elif (action.startswith('Approved by Governor') and
+                  'Journal' not in action):
+                atype = 'governor:signed'
+            elif (action.startswith('Passed Senate') or
+                  action.startswith('Passed House')):
+                atype = 'bill:passed'
+            elif (action.startswith('Reported do pass') or
+                  action.startswith('With amendment, do pass')):
+                atype = 'committee:passed'
             else:
-                raise e
+                atype = 'other'
 
-    def scrape_bill(self, chamber, session, billid, histurl, year):
-        if year[0] != 'R':
-            session = year
-        else:
-            session = self.metadata['session_details'][year][
-                'sub_sessions'][int(year[0]) - 1]
-
-        with self.urlopen(histurl) as data:
-            soup = BeautifulSoup(cleansource(data))
-            basicinfo = soup.findAll('div', id='bhistleft')[0]
-            hist = basicinfo.table
-
-            sponsor = None
-            title = None
-            for b in basicinfo.findAll('b'):
-                if b.next.startswith('SUMMARY'):
-                    title = b.findNextSiblings(text=True)[0].strip()
-                elif b.next.startswith('SPONSOR'):
-                    for a in b.findNextSiblings('a'):
-                        if not issponsorlink(a):
-                            break
-                        sponsor = cleansponsor(a.contents[0])
-
-            bill = Bill(session, chamber, billid, title)
-
-            if sponsor:
-                bill.add_sponsor('primary', sponsor)
-
-            for row in hist.findAll('tr'):
-                link = row.td.a
-                vlink = urlbase % link['href']
-                vname = link.contents[0].strip()
-                bill.add_version(vname, vlink)
-
-            history = soup.findAll('div', id='bhisttab')[0].table
-            rows = history.findAll('tr')[1:]
-            for row in rows:
-                tds = row.findAll('td')
-                if len(tds) < 2:
-                    # This is not actually an action
-                    continue
-                date, action = row.findAll('td')[:2]
-                date = dt.datetime.strptime(date.contents[0], '%m/%d/%y')
-                action = action.contents[0].strip()
-                if 'House' in action:
-                    actor = 'lower'
-                elif 'Senate' in action:
-                    actor = 'upper'
-                else:  # for lack of a better
-                    actor = chamber
-
-                bill.add_action(actor, action, date)
+            bill.add_action(actor, action, date, type=atype)
 
         self.save_bill(bill)
 
+
+    def scrape_vote(self, bill, url):
+        filename, resp = self.urlretrieve(url)
+        text = convert_pdf(filename, 'text')
+        os.remove(filename)
+
+        lines = text.splitlines()
+
+        vote_type = None
+        votes = collections.defaultdict(list)
+
+        for idx, line in enumerate(lines):
+            line = line.rstrip()
+            match = re.search(r'(\d+)/(\d+)/(\d{4,4})$', line)
+            if match:
+                date = datetime.datetime.strptime(match.group(0), "%m/%d/%Y")
+                continue
+
+            match = re.match(
+                r'\s+YEAS: (\d+)\s+NAYS: (\d+)\s+NOT VOTING: (\d+)',
+                line)
+            if match:
+                motion = lines[idx - 2].strip()
+                yes_count, no_count, other_count = [
+                    int(g) for g  in match.groups()]
+
+                exc_match = re.search(r'EXCUSED: (\d+)', line)
+                if exc_match:
+                    other_count += int(exc_match.group(1))
+
+                if line.endswith('ADOPTED') or line.endswith('PASSED'):
+                    passed = True
+                else:
+                    passed = False
+
+                continue
+
+            match = re.match(
+                r'(YEAS|NAYS|NOT VOTING|PAIRED|EXCUSED):\s+(\d+)\s*$',
+                line)
+            if match:
+                vote_type = {'YEAS': 'yes',
+                             'NAYS': 'no',
+                             'NOT VOTING': 'other',
+                             'EXCUSED': 'other',
+                             'PAIRED': 'paired'}[match.group(1)]
+                continue
+
+            if vote_type == 'paired':
+                for part in line.split('   '):
+                    part = part.strip()
+                    if not part:
+                        continue
+                    name, pair_type = re.match(
+                        r'([^\(]+)\((YEA|NAY)\)', line).groups()
+                    name = name.strip()
+                    if pair_type == 'YEA':
+                        votes['yes'].append(name)
+                    elif pair_type == 'NAY':
+                        votes['no'].append(name)
+            elif vote_type:
+                for name in line.split('   '):
+                    name = name.strip()
+                    if not name:
+                        continue
+                    votes[vote_type].append(name)
+
+        vote = Vote('lower', date, motion, passed,
+                    yes_count, no_count, other_count)
+        vote.add_source(url)
+
+        vote['yes_votes'] = votes['yes']
+        vote['no_votes'] = votes['no']
+        vote['other_votes'] = votes['other']
+
+        assert len(vote['yes_votes']) == yes_count
+        assert len(vote['no_votes']) == no_count
+        assert len(vote['other_votes']) == other_count
+
+        bill.add_vote(vote)

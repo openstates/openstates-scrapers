@@ -41,16 +41,16 @@ class DCBillScraper(BillScraper):
             introduced_by = doc.get_element_by_id('IntroducedBy').text
             if introduced_by:
                 for sponsor in introduced_by.split(', '):
-                    bill.add_sponsor('primary', sponsor)
+                    bill.add_sponsor('primary', sponsor.strip())
 
             requested_by = doc.get_element_by_id('RequestedBy').text
             if requested_by:
-                bill.add_sponsor('requestor', requested_by)
+                bill.add_sponsor('requestor', requested_by.strip())
 
             cosponsored_by = doc.get_element_by_id('CoSponsoredBy').text
             if cosponsored_by:
                 for cosponsor in cosponsored_by.split(','):
-                    bill.add_sponsor('cosponsor', cosponsor)
+                    bill.add_sponsor('cosponsor', cosponsor.strip())
 
             # actions
             actions = (
@@ -138,7 +138,8 @@ class DCBillScraper(BillScraper):
                 '//span[@id="VoteCount1"]/b/text()')[0])
             no_count = extract_int(doc.xpath(
                 '//span[@id="VoteCount2"]/b/text()')[0])
-            other_count = 13 - (yes_count+no_count)   # a bit lazy
+            # every now and then this actually drops below 0 (error in count)
+            other_count = max(13 - (yes_count+no_count), 0)
 
             vote = Vote('upper', vote_date, vote_type, passed, yes_count,
                         no_count, other_count, voice_vote=voice)

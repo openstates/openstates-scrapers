@@ -159,6 +159,11 @@ class MSBillScraper(BillScraper):
                         bill.add_action(actor, action, date, type=atype,
                                         action_num=action_num)
 
+                        # use committee names as scraped subjects
+                        subjects = details_root.xpath('//h_name/text()')
+                        subjects += details_root.xpath('//s_name/text()')
+                        bill['subjects'] = subjects
+
                         if act_vote:
                             vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote
                             if vote_url not in seen_votes:
@@ -203,13 +208,7 @@ class MSBillScraper(BillScraper):
         os.remove(vote_pdf)
 
         # this way we get a key error on a missing vote type
-        #if motion in self._vote_mapping:
         motion, passed = self._vote_mapping[motion]
-        #else:
-        #    passed = True
-        #   self.warning('unknown vote type: ' + motion)
-
-        # process PDF text
 
         yes_votes = []
         no_votes = []
@@ -243,6 +242,10 @@ class MSBillScraper(BillScraper):
             for name in line.split(','):
                 name = name.strip()
 
+                # move on if that's all there was
+                if not name:
+                    continue
+
                 # None or a Total indicate the end of a section
                 if 'None.' in name:
                     cur_array = None
@@ -252,7 +255,16 @@ class MSBillScraper(BillScraper):
                     cur_array = None
 
                 # append name if it looks ok
-                if cur_array is not None and name and 'Total--' not in name:
+                junk_in_name = False
+                for junk in ('on final passage', 'Necessary', 'who would have',
+                             'being a tie', 'therefore', 'Vacancies', 'a pair',
+                             'Total-', 'ATTORNEY', 'on final passage',
+                             'SPEAKER', 'BOARD', 'TREASURER', 'GOVERNOR',
+                             'ARCHIVES', 'SECRETARY'):
+                    if junk in name:
+                        junk_in_name = True
+                        break
+                if cur_array is not None and not junk_in_name:
                     # strip trailing .
                     if name[-1] == '.':
                         name = name[:-1]

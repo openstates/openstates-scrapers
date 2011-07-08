@@ -1,19 +1,42 @@
 import re
 import datetime
+from collections import defaultdict
 
 from .utils import xpath
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
 import lxml.etree
-
+import lxml.html
+import feedparser
 
 class WABillScraper(BillScraper):
     state = 'wa'
 
     _base_url = 'http://wslwebservices.leg.wa.gov/legislationservice.asmx'
 
+    _subjects = defaultdict(list)
+
+    def build_subject_mapping(self, year):
+        if self._subjects:
+            return
+
+        url = 'http://apps.leg.wa.gov/billsbytopic/Results.aspx?year=2011'
+        with self.urlopen(url) as html:
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute('http://apps.leg.wa.gov/billsbytopic/')
+            for link in doc.xpath('//a[contains(@href, "ResultsRss")]/@href'):
+                subject = link.rsplit('=',1)[-1]
+                rss = feedparser.parse(self.urlopen(link.replace(' ', '%20')))
+                for e in rss['entries']:
+                    match = re.match('\w\w \d{4}', e['title'])
+                    if match:
+                        self._subjects[match.group()].append(subject)
+
+
     def scrape(self, chamber, session):
+        self.build_subject_mapping(session[0:4])
+
         url = "%s/GetLegislationByYear?year=%s" % (self._base_url,
                                                    session[0:4])
 
@@ -54,6 +77,7 @@ class WABillScraper(BillScraper):
 
                 bill = self.scrape_bill(chamber, session, bill_id)
                 bill['alternate_bill_ids'] = []
+                bill['subjects'] = self._subjects[bill_id]
                 self.save_bill(bill)
 
                 prev_bill = bill

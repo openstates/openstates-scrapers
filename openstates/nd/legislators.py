@@ -1,147 +1,69 @@
-import datetime
-import re
-import html5lib
+import lxml.html
+import scrapelib
 
-from billy.scrape import NoDataForPeriod, ScrapeError
 from billy.scrape.legislators import Legislator, LegislatorScraper
-from openstates.nd import metadata
 
 class NDLegislatorScraper(LegislatorScraper):
-    """
-    Scrapes available legislator information from the website of the North
-    Dakota legislature and stores it in the fiftystates backend.
-    """
     state = 'nd'
     site_root = 'http://www.legis.nd.gov'
-    parser = html5lib.HTMLParser(
-        tree=html5lib.treebuilders.getTreeBuilder('beautifulsoup'))
-    
-    
-    def scrape(self, chamber, year):
-        """
-        Scrape the ND legislators seated in a given chamber during a given year.
-        """    
-        # Error checking
-        if year not in metadata['session_details']:
-            raise NoDataForPeriod(year)
-        
-        # No legislator data for 1997 (though other data is available)
-        if year == '1997':
-            raise NoDataForPeriod(year)
-        
-        # URL building
+
+    def scrape(self, chamber, term):
+        # get session
+        for t in self.metadata['terms']:
+            if t['name'] == term:
+                session = t['sessions'][0]
+
         if chamber == 'upper':
-            url_chamber_name = 'senate'
-            norm_chamber_name = 'Senate'
-            url_member_name = 'senators'
+            url_chamber = 'senate'
         else:
-            url_chamber_name = 'house'
-            norm_chamber_name = 'House'
-            url_member_name = 'representatives'
-        
-        assembly_url = '/assembly/%i-%s/%s' % (
-            metadata['session_details'][str(year)]['number'],
-            year,
-            url_chamber_name)
-        
-        list_url = \
-            self.site_root + \
-            assembly_url + \
-            '/members/last-name.html'    
-        
-        # Parsing
-        with self.urlopen(list_url) as data:
-            soup = self.parser.parse(data)
-            
-            if not soup:
-                raise ScrapeError('Failed to parse legaslative list page.')
-            
-            header = soup.find('h2')
-            
-            if not header:
-                raise ScrapeError('Legaslative list header element not found.')
-            
-            party_images = {'/images/donkey.gif': 'Democrat', '/images/elephant.gif': 'Republican'}
-            for row in header.findNextSibling('table').findAll('tr'):
-                cells = row.findAll('td')
-                party = party_images[cells[0].img['src']]
-                name = map(lambda x: x.strip(), cells[1].a.contents[0].split(', '))
-                name.reverse()
-                name = ' '.join(name)
-                district = re.findall('District (\d+)', cells[2].contents[0])[0]
-                attributes = {
-                    'session': year,
-                    'chamber': chamber,
-                    'district': district,
-                    'party': party,
-                    'full_name': name,
-                }
-                split_name = name.split(' ')
-                if len(split_name) > 2:
-                    attributes['first_name'] = split_name[0]
-                    attributes['middle_name'] = split_name[1].strip(' .')
-                    attributes['last_name'] = split_name[2]
-                else:
-                    attributes['first_name'] = split_name[0]
-                    attributes['middle_name'] = u''
-                    attributes['last_name'] = split_name[1]
+            url_chamber = 'house'
 
-                # we can get some more data..
-                bio_url = self.site_root + cells[1].a['href']
-                try:
-                    attributes.update(self.scrape_legislator_bio(bio_url))
-                except urllib2.HTTPError: 
-                    self.log("failed to fetch %s" % bio_url)
+        list_url = '%s/assembly/%s/%s/members/district.html' % (self.site_root,
+                                                                session,
+                                                                url_chamber)
 
-                self.debug("attributes: %d", len(attributes))
-                self.debug(attributes)
-                # Save
-                legislator = Legislator(**attributes)
-                legislator.add_source(bio_url)
-                self.save_legislator(legislator)
-    
-    def scrape_legislator_bio(self, url):
-        """
-        Scrape the biography page of a specific ND legislator.
-        
-        Note that some parsing is conditional as older bio pages are not
-        formatted exactly as more recent ones are.
-        """
-        # Parsing
-        try:
-            data = self.urlopen(url)
-        except: 
-            return {}
-        soup = self.parser.parse(data)
-        
-        attributes = {}
-   
-        # Supplemental data
-        label = soup.find(text=re.compile('Address:'))
-        attributes['address'] = \
-            label.parent.parent.findNextSibling('td').contents[0]
-            
-        label = soup.find(text=re.compile('Telephone:'))
-        try:
-            attributes['telephone'] = \
-                label.parent.parent.findNextSibling('td').contents[0]
-        except:
-            # Handle aberrant empty tag
-            attributes['telephone'] = u''
-        
-        label = soup.find(text=re.compile('E-mail:'))
-        try:
-            email = label.parent.parent.findNextSibling('td').contents[0]
-        except:
-            email = u''
-        
-        if hasattr(email, 'contents'):
-            attributes['email'] = email.contents[0]
+        with self.urlopen(list_url) as html:
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(list_url)
+            for href in doc.xpath('//a[contains(@href,"bios")]/@href'):
+                self.scrape_legislator(chamber, term, href)
+
+    def scrape_legislator(self, chamber, term, url):
+        if chamber == 'upper':
+            mem_type = 'senators'
         else:
-            if email != 'None':
-                attributes['email'] = email
-            else:
-                attributes['email'] = u''
-            
-        return attributes  
+            mem_type = 'representatives'
 
+        try:
+            html = self.urlopen(url)
+        except scrapelib.HTTPError as e:
+            if e.response.code == 404:
+                self.warning('could not retrieve %s' % url)
+                return
+
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        name = doc.xpath('//h2/text()')[0].split(' ', 1)[1]
+
+        attribs = {}
+
+        for row in doc.xpath('//div[@class="content"]/table//table/tr'):
+            tds = row.getchildren()
+            if tds[0].text_content().startswith('Telephone'):
+                attribs['office_phone'] = tds[1].text_content().strip()
+            elif tds[0].text_content().startswith('E-mail'):
+                attribs['email'] = tds[1].text_content().strip()
+            elif tds[0].text_content().startswith('District'):
+                attribs['district'] = tds[1].text_content().strip()
+            elif tds[0].text_content().startswith('Party'):
+                attribs['party'] = tds[1].text_content().strip()
+
+        if attribs['party'] == 'Democrat':
+            attribs['party'] = 'Democratic'
+
+        img_xpath = '//img[contains(@src, "%s")]/@src' % mem_type
+        attribs['photo_url'] = doc.xpath(img_xpath)[0]
+
+        leg = Legislator(term, chamber, full_name=name, **attribs)
+        leg.add_source(url)
+        self.save_legislator(leg)
