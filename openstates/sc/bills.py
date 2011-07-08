@@ -1,6 +1,5 @@
 import re
 import datetime
-import contextlib
 
 from .utils import action_type, bill_type
 from .utils import removeNonAscii, sponsorsToList
@@ -24,166 +23,21 @@ class SCBillScraper(BillScraper):
 
         'lower' : {
           'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.htm",
-          'members':'http://www.scstatehouse.gov/html-pages/housemembers.html',
           'vote-history': "http://www.scstatehouse.gov/php/votehistory.php?chamber=H"
         },
 
         'upper' : {
           'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.htm",
-          'members' :'http://www.scstatehouse.gov/html-pages/senatemembersd.html',
           'vote-history':"http://www.scstatehouse.gov/php/votehistory.php?chamber=S"
         }
     }
 
-    people = dict()
-    members = []
-
-    def __init__(self, *args, **kwargs):
-        super(SCBillScraper,self).__init__(*args,**kwargs)
-
-    def initLegislators(self):
-        self.initMember("lower")
-        self.initMember("upper")
-
-    def initMember(self,chamber):
-        url = self.urls[chamber]['members']
-
-        with self.urlopen(url) as data:
-            doc = lxml.html.fromstring(data)
-            rows = doc.xpath('//pre/div[@class="sansSerifNormal"]')
-
-            for row in rows:
-                member_a = row.xpath('a')[0]
-
-                name_party = member_a.text_content()
-                if name_party.find('[D]') != -1:
-                    party = 'Democratic'
-                    full_name = name_party.partition('[D]')[0].strip()
-                elif name_party.find('[R]') != -1:
-                    party = 'Republican'
-                    full_name = name_party.partition('[R]')[0].strip()
-                else:
-                    full_name = None
-
-                if full_name:
-                    #parts = full_name.split()
-                    #last_name = parts[-1]
-                    #self.people[last_name] = full_name
-
-                    # get rid of parenthetical expression
-                    # ex. Shannon S. Erickson (Mrs. Kendall F.)
-                    name_without_paren = full_name.partition('(')[0]
-
-                    # get rid of the suffix
-                    # ex. James E. Smith, Jr
-                    name_without_suffix = name_without_paren.partition(',')[0]
-                    nlast_name = name_without_suffix.split()[-1]
-                    self.people[nlast_name] = full_name
-
-                    #self.debug("%s Name [%s] Lastname [%s]" % (chamber, full_name, nlast_name))
-
-
-    @contextlib.contextmanager
-    def lxml_context(self,url):
-        body = self.urlopen(url)
-        body = unicode(self.urlopen(url), 'latin-1')
-        elem = lxml.html.fromstring(body)
-        try:
-            yield elem
-        except Exception as error:
-            raise ScrapeError( "lxml url %s error %s"  % (url,error))
-
-
-    # Return list of bills on this page
-    def scrape_vote_page(self, session, chamber, page):
-        table_xpath = "/html/body/table/tbody/tr/td/div[@id='tablecontent']/table/tbody/tr/td[@class='content']/div[@id='votecontent']/div/div/table"
-
-        self.log('scraping bill vote page for chamber %s' % chamber)
-        bills_on_this_page = []
-        bills_seen = set()
-
-        tables = page.xpath(table_xpath)
-        if len(tables) != 1:
-            self.warning( 'error, scrape_vote_page, expecting one table, aborting' )
-            return
-
-        rows = tables[0].xpath("//tr")
-        dupcount = 0
-
-        for r in rows:
-            try:
-                brows = r.xpath("td[1]/a[@target='_blank']/text()")
-                if len(brows) <= 0:
-                    continue
-
-                bill_vote_url = None
-                bill_votes_url = r.xpath("td[1]/a[@target='_blank']/@href")
-                if bill_votes_url:
-                    bill_vote_url = str(bill_votes_url[0])
-
-                bname = r.xpath("td[2]/a[@target='_blank']/text()")
-                if len(bname) == 0:
-                    continue
-
-                self.debug("brows [%s] bname[%s] url[%s]" % (brows,bname,bill_vote_url) )
-
-                btitle = r.xpath("td[3]/text()")
-                btitle1 = r.xpath("string(td[3])")
-
-                title = btitle
-                if len(btitle) == 0:
-                    title = btitle1
-                else:
-                    title = " ".join(btitle)
-
-                if title.startswith("(") and title.endswith(")"):
-                    title = title[1:-1]
-
-                bdate = r.xpath("td[4]/text()")
-                bcandidate = r.xpath("td[5]/text()")
-
-                bayes = r.xpath("td[6]/text()")
-                bnayes = r.xpath("td[7]/text()")
-                bnv = r.xpath("td[8]/text()")
-                excabs = r.xpath("td[9]/text()")
-                abstain = r.xpath("td[10]/text()")
-                total = r.xpath("td[11]/text()")
-                result = r.xpath("td[5]/text()")
-
-                bill_id = " ".join(bname)
-                if bill_id in bills_seen:
-                    dupcount = dupcount + 1
-                    self.debug("votepage: duplicate |%s| |%s|" % (bill_id, title))
-                else:
-                    bills_seen.add( bill_id )
-
-                    bill = Bill(session, chamber, bill_id, title)
-                    bill['vote_url'] = bill_vote_url
-                    bills_on_this_page.append(bill)
-                    bills_seen.add( bill_id )
-                    self.debug("   votepage: found bill |%s| |%s| |%s|", bill_id, title, bill_vote_url )
-            except UnicodeEncodeError:
-                self.error("scrape vote page : unicode error")
-
-        self.debug( "votepage: found %d bills: %d dups " % (len(bills_seen),dupcount))
-        return bills_on_this_page
-
-
-    def get_sponsors(self, d):
-        # this matches the sponsor
-        sponsor_regexp = re.compile("--(.*):")
-        result = sponsor_regexp.search(d)
-        if result != None:
-            self.log("get_sponsors found sponsors %s "  % result.group(0))
-            return result.group(1)
-
-
-
-    def find_part( self, alist, line, start=0 ):
+    def find_part(self, alist, line, start=0):
         for ii in range(start,len(alist)):
             if line.find(alist[ii]) != -1:
                 return ii
         return -1
+
 
     def count_votes(self, url,chamber,bill_id,data):
         yays,nays, other, valid_data = [],[],[], False
@@ -215,7 +69,7 @@ class SCBillScraper(BillScraper):
             yes_section = house_yes_section
         elif re.match("Joint", first_line):
             self.warning("Bill[%s] Joint votes not handled: %s " % (bill_id,first_line))
-            return ( False, expected, areas, yays, nays, other )
+            return (False, expected, areas, yays, nays, other )
         else:
             self.warning("Bill[%s] unknown votes not handled: %s" % (bill_id,first_line))
             return (valid_data, expected, areas, yays, nays, other )
@@ -237,7 +91,7 @@ class SCBillScraper(BillScraper):
             linenum += 1
 
         if linenum < nlines:
-            result_match = result_pat.search( lines[linenum] )
+            result_match = result_pat.search(lines[linenum])
             if not result_match:
                 self.warning("Bill[%s] failed to get roll call votes, because failed to find RESULT (url=%s)" % (bill_id,url))
                 return (valid_data, expected, areas, yays, nays, other )
@@ -267,7 +121,7 @@ class SCBillScraper(BillScraper):
         done = False
         while linenum < nlines and not done:
             line = lines[linenum]
-            result_match = epat.search( lines[linenum] )
+            result_match = epat.search(lines[linenum])
             if result_match:
                 #self.debug ("277 %s %d found result: %s |%s|" % (bill_id, linenum, result_match.group(1), line))
                 current_expected = int(result_match.group(1))
@@ -285,7 +139,7 @@ class SCBillScraper(BillScraper):
 
             nn = self.find_part(sections, line, section )
             if nn != -1:
-                #self.debug( "FOUND: %s linenum=%d line=|%s| section=%s"  % (nn, linenum, line, section ))
+                #self.debug("FOUND: %s linenum=%d line=|%s| section=%s"  % (nn, linenum, line, section ))
 
                 # get specified value to verify we get them all
                 eresult = epat.search(line)
@@ -299,7 +153,7 @@ class SCBillScraper(BillScraper):
                 section = nn
 
             elif len(line) > 0 and not re.search("Page \d+ of \d+", line):
-                # if not page footer ( Page x of Y ), add voters
+                # if not page footer (Page x of Y ), add voters
                 possible = line.split("  ")
                 nonblank = [s.strip() for s in possible if len(s) >0]
                 areas[skey].extend(nonblank)
@@ -322,8 +176,8 @@ class SCBillScraper(BillScraper):
             yays = areas[ yes_section ]
             nays = areas['NAYS']
             other = areas['EXCUSED ABSENCE']
-            other.extend( areas['NOT VOTING'] )
-            other.extend( areas['ABSTAIN'] )
+            other.extend(areas['NOT VOTING'] )
+            other.extend(areas['ABSTAIN'] )
             msg = "SUCCESSFUL (y/n/o) (%d/%d/%d)" % (len(yays), len(nays), len(other) )
             self.debug ("%s %s ROLL_CALL %s: %s" % (bill_id, chamber, msg, url) )
             valid_data = True
@@ -466,7 +320,7 @@ class SCBillScraper(BillScraper):
             For each vote row, fetch the pdf and extract the votes.  Add this vote information to the bill.
 
             """
-            with self.urlopen( vurl ) as votepage:
+            with self.urlopen(vurl) as votepage:
                 if votepage.find("No Votes Returned") != -1:
                     return
 
@@ -532,7 +386,7 @@ class SCBillScraper(BillScraper):
                 bill.add_vote(vote)
                except Exception as error:
                 #self.warning("VOTE_HISTORY: Processing a vote: %s" % d)
-                self.warning("scrape_vote_history: Failed bill=%s %s %s" % ( bill_id, d, traceback.format_exc()) )
+                self.warning("scrape_vote_history: Failed bill=%s %s %s" % (bill_id, d, traceback.format_exc()))
 
 
     def split_page_into_parts(self, data, session, bill_number):
@@ -549,9 +403,9 @@ class SCBillScraper(BillScraper):
             for part in sim.group(1).split(","):
                 simparts_pat = re.compile('\(<A HREF=".+">(.+)</A>\)')
                 #self.debug("VVV CCC Part==[%s]\n========" % part)
-                sr = simparts_pat.match( part.strip() )
+                sr = simparts_pat.match(part.strip())
                 if sr:
-                    similar_to_list.append( sr.group(1) )
+                    similar_to_list.append(sr.group(1))
             data = data[sim.end():]
 
         bb = data.find("<A HREF")
@@ -570,7 +424,7 @@ class SCBillScraper(BillScraper):
         else:
             summary = re.sub(r'\s+', ' ', data)
 
-        return ( similar_to_list, summary, after_summary, vurl )
+        return (similar_to_list, summary, after_summary, vurl)
 
 
     def emit_bill(self, bill):
@@ -586,7 +440,7 @@ class SCBillScraper(BillScraper):
             pat1 = re.compile('<a href="(.+)" target="_blank">Ayes-(\d+)\s+Nays-(\d+)</a>')
         else:
             pat1 = re.compile('<a href="(.+)" target="_blank">Yeas-(\d+)\s+Nays-(\d+)</a>')
-        sr1 = pat1.search( action )
+        sr1 = pat1.search(action)
         if not sr1:
             self.debug("515 Roll call: NO MATCH " )
             return
@@ -630,7 +484,7 @@ class SCBillScraper(BillScraper):
             raise ScrapeError("scrape_details(3) - unable to parse (no </pre>) %s"  % bill_detail_url)
 
         pre_section = page[pre_start:pre_stop]
-        #self.debug( "DETAILS PRE (%d,%d) [%s] " % (pre_start, pre_stop, pre_section))
+        #self.debug("DETAILS PRE (%d,%d) [%s] " % (pre_start, pre_stop, pre_section))
 
         data = pre_section
         vurl = None
@@ -649,14 +503,9 @@ class SCBillScraper(BillScraper):
         newspon = []
         if results != None and results1 != None:
             spondata = data[:results1.start()]
-            mysponsors = sponsorsToList( spondata )
+            mysponsors = sponsorsToList(spondata)
             for s in mysponsors:
-                if s in self.people:
-                    #self.log( "DETAIL SPONSOR FOUND [%s]=[%s]" % (s,self.people[s]) )
-                    newspon.append(self.people[s])
-                else:
-                    self.debug( "DETAIL [%s] SPONSOR NOT FOUND [%s]" % (bill_id,s) )
-                    newspon.append(s)
+                newspon.append(s)
             data = data[results1.end():]
 
         apat = re.compile(">(H|S) (\d*)<")
@@ -697,7 +546,7 @@ class SCBillScraper(BillScraper):
 
                 #self.debug("543 scrape details ACTION: [%s] is [%s]" % (action,t))
                 bill.add_action(chamber, action, date, t )
-                #self.debug( "     bill %s action: %s %s" % (bill_id,the_date,action))
+                #self.debug("     bill %s action: %s %s" % (bill_id,the_date,action))
             elif len(line) > 0:
                 self.debug("Skipping line %d [%s] line:[%s]" % (linenum, bill_id, line))
 
@@ -718,14 +567,10 @@ class SCBillScraper(BillScraper):
                 bill.add_source(vurl)
                 self.debug("Scraped votes: (chamber=%s,bill=%s,url=%s)" % (chamber,bill_id,vurl) )
             except Exception as error:
-                self.warning("Failed to scrape votes: chamber=%s bill=%s vurl=%s %s" % ( chamber,bill_id, vurl, traceback.format_exc()) )
+                self.warning("Failed to scrape votes: chamber=%s bill=%s vurl=%s %s" % (chamber,bill_id, vurl, traceback.format_exc()) )
 
         self.save_bill(bill)
 
-
-    def fix_bill_id(self,s):
-        "Adds a period to the bill, eg from H 8000 to H. 8000"
-        return "%s.%s" % (s[0:1],s[1:])
 
     def recap(self, data):
         """Extract bill ids from daily recap page.
@@ -738,7 +583,7 @@ class SCBillScraper(BillScraper):
         bill_id_exp = re.compile(">(?P<id>\w\. \d{1,4}?)</a> \(<a href=")
         billids = set()
         if stop >= 0 and stop > start:
-          all = re.compile( "/cgi-bin/web_bh10.exe" ).split(data[start:stop])
+          all = re.compile("/cgi-bin/web_bh10.exe" ).split(data[start:stop])
           for part in all[1:]:
             result = bill_id_exp.search(part)
             if result:
@@ -755,22 +600,21 @@ class SCBillScraper(BillScraper):
         #    which will have one link for each day in the session.
         # 2. Scan each of the days and collect a list of bill numbers.
         # 3. Get Bill info.
-        self.initLegislators()
 
         index_url = self.urls[chamber]['daily-bill-index']
 
         days = []
-        with self.urlopen( index_url ) as page:
+        with self.urlopen(index_url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(index_url)
             days = [str(link.attrib['href']) for link in page.find_class('contentlink')]
 
-        self.log( "Session days: %d" % len(days) )
+        self.log("Session days: %d" % len(days))
 
         bills_with_votes = []
         vhistory_url = self.urls[chamber]['vote-history']
 
-        self.debug( "Bills with votes: %d" % len(bills_with_votes))
+        self.debug("Bills with votes: %d" % len(bills_with_votes))
 
         # visit each day and extract bill ids
         all_bills = set()
@@ -782,26 +626,26 @@ class SCBillScraper(BillScraper):
             newdays = days[1:nn]
             self.debug("newdays %s" % newdays )
             days = newdays
-            self.debug("Just looking at last %d days" % (len(days)) )
+            self.debug("Just looking at last %d days" % (len(days)))
 
         for dayurl in days:
-            self.debug( "processing day %s %s" % (dayurl,chamber) )
-            with self.urlopen( dayurl ) as data:
+            self.debug("processing day %s %s" % (dayurl,chamber))
+            with self.urlopen(dayurl) as data:
                 billids = self.recap(data)
                 all_bills |= billids;
-                self.debug( "  Day count: #bills %d all %d on %s" % (len(billids),len(all_bills),dayurl))
+                self.debug("  Day count: #bills %d all %d on %s" % (len(billids),len(all_bills),dayurl))
 
-        regexp = re.compile( "\d+" )
+        regexp = re.compile("\d+")
         for bill_id in all_bills:
             pat = regexp.search(bill_id)
             if not pat:
-                self.warning( "Missing billid [%s]" % bill_id )
+                self.warning("Missing billid [%s]" % bill_id)
                 continue
 
             bn = pat.group(0)
             dtl_url = self.urls['bill-detail'] % (bn,session)
 
             with self.urlopen(dtl_url) as page:
-                self.scrape_details( dtl_url, session, chamber, bill_id, page)
+                self.scrape_details(dtl_url, session, chamber, bill_id, page)
 
-        self.log( "Total bills processed: %d : " % len(all_bills) )
+        self.log("Total bills processed: %d : " % len(all_bills))
