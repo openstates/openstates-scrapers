@@ -23,13 +23,35 @@ class MyMOLegislatorScraper(MOLegislatorScraper):
                 'file://%s/openstates/mo/tests/%s.aspx' % (os.getcwd(),self.member_details_options[len(self.legs) % 3])
             ).read()))
         return contextlib.closing(ClosableString(urllib2.urlopen(url).read()))
+    def get_senator_url(self,session):
+        return 'file://%s/openstates/mo/tests/11-2011senatelist.html' % (os.getcwd())
+    def get_senator_list_url(self,session,district):
+        return 'file://%s/openstates/mo/tests/11-senatordetails.html' % (os.getcwd())
+    def get_senator_address_url(self,session,key):
+        return 'file://%s/openstates/mo/tests/11-senatordetailsofficeinfo.html' % (os.getcwd())
     def save_legislator(self,leg):
         self.legs.append(leg)
     def save_vacant_legislator(self,leg):
         self.vac_legs.append(leg)
+    def reset(self):
+        self.legs = []
+        self.vac_legs = []
+
+def test_senators():
+    scraper = MyMOLegislatorScraper({})
+    scraper.reset()
+    scraper.senator_details_url = 'file://%s/openstates/mo/tests/%s-senatordetails.html' % (os.getcwd(),'%s')
+    scraper.scrape_senators('upper','2011','')
+    eq_(len(scraper.legs),34)
+    eq_(scraper.legs[-1]['full_name'],'Robin Wright-Jones')
+    eq_(scraper.legs[-1]['photo_url'],'http://www.senate.mo.gov/11info/graphics/d16-photo.gif')
+    eq_(scraper.legs[-1]['email'],'Dan.Brown@senate.mo.gov')
+    eq_(scraper.legs[-1]['roles'][0]['district'],'5')
+    eq_(scraper.legs[-1]['roles'][0]['party'],'Democratic')
 
 def test_reps():
     scraper = MyMOLegislatorScraper({})
+    scraper.reset()
     scraper.reps_url = 'file://%s/openstates/mo/tests/member%s.aspx' % (os.getcwd(),'%s')
     scraper.rep_details_url = 'memberdetails%s%s'
 
@@ -55,8 +77,7 @@ def test_reps():
     eq_(scraper.vac_legs[-1]['roles'][0]['party'],'')
 
     # scraping 2000 - fewer vacant seats
-    scraper.legs = []
-    scraper.vac_legs = []
+    scraper.reset()
     scraper.scrape_reps('lower','2000','')
     eq_(len(scraper.legs),70)
     eq_(len(scraper.vac_legs),93)

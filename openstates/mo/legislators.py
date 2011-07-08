@@ -1,15 +1,15 @@
 import lxml.html
-import xlrd
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
-
 
 class MOLegislatorScraper(LegislatorScraper):
     state = 'mo'
     assumed_telephone_prefix = '573'
     assumed_address_fmt = ('201 West Capitol Avenue %s, '
                             'Jefferson City, MO 65101')
-    senator_url = 'http://www.senate.mo.gov/%sinfo/%sSenateRoster.xls'
+    senator_url = 'http://www.senate.mo.gov/%sinfo/senalpha.htm'
+    senator_details_url = 'http://www.senate.mo.gov/%sinfo/members/mem%s.htm'
+    senator_address_url = 'http://www.senate.mo.gov/%sinfo/members/%s/OfficeInfo.htm'
     reps_url = 'http://www.house.mo.gov/member.aspx?year=%s'
     rep_details_url = 'http://www.house.mo.gov/member.aspx?year=%s&district=%s'
     vacant_legislators = []
@@ -22,39 +22,58 @@ class MOLegislatorScraper(LegislatorScraper):
             self.scrape_reps(chamber, session, term)
 
     def scrape_senators(self, chamber, session, term):
-        url = (self.senator_url % (session[2:], session))
-        with self.urlopen(url) as senator_xls:
-            with open('mo_senate.xls', 'w') as f:
-                f.write(senator_xls)
-
-        wb = xlrd.open_workbook('mo_senate.xls')
-        sh = wb.sheet_by_index(0)
-
-        for rownum in xrange(0, sh.nrows):
-            district = str(int(sh.cell(rownum, 0).value))
-            party = sh.cell(rownum, 1).value
-            if party == 'D':
-                party = 'Democratic'
-            elif party == 'R':
-                party = 'Republican'
-            last_name = sh.cell(rownum, 2).value
-            first_name = sh.cell(rownum, 4).value
-            middle_name = sh.cell(rownum, 5).value
-            full_name = ' '.join([n
-                for n in [first_name, middle_name, last_name] if n])
-            address = sh.cell(rownum, 6).value + ' ' + sh.cell(rownum, 7).value
-
-            phone = sh.cell(rownum, 8).value
-            if not phone.startswith(self.assumed_telephone_prefix):
-                # Add the prefix for the region (assuming it's right)
-                phone = self.assumed_telephone_prefix + '-' + phone
-            leg = Legislator(term, chamber, district, full_name,
-                            first_name, last_name, middle_name,
-                            party,
-                            office_address=address,
-                            office_phone=phone)
-            leg.add_source(url)
-            self.save_legislator(leg)
+        url = self.get_senator_url(session)
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            table = page.xpath('//*[@id="mainContent"]/table//table/tr')
+            rowcount = 0
+            for tr in table:
+                rowcount += 1
+                # the first two rows are headers, skip:
+                if rowcount < 2:
+                    continue
+                tds = tr.xpath('td')
+                full_name = tds[0].xpath('div/a')[0].text_content().strip()
+                party_and_district = tds[1].xpath('div')[0].text_content().strip().split('-')
+                if party_and_district[0] == 'D':
+                    party = 'Democratic'
+                elif party_and_district[0] == 'R':
+                    party = 'Republican'
+                else:
+                    party = None
+                print "party %s" % (party)
+                senator_key = "%s%s" % (party_and_district[0].lower(),party_and_district[1])
+                district = party_and_district[1]
+                phone = tds[3].xpath('div')[0].text_content().strip()
+                url = self.get_senator_list_url(session,district)
+                with self.urlopen(url) as details_page:
+                    page = lxml.html.fromstring(details_page)
+                    photo_url = page.xpath('/html/body/div[2]/div/img/@src')[0]
+                    print "photo = %s" % photo_url
+                url = self.get_senator_address_url(session,senator_key)
+                with self.urlopen(url) as details_page:
+                    page = lxml.html.fromstring(details_page)
+                    address = page.xpath('/html/body/p/span[2]')[0]
+                    email = page.xpath('/html/body/p/span[2]/a/@href')
+                    if len(email) > 0 and email[0] != 'mailto:':
+                        #print "Found email : %s" % email[0]
+                        email = email[0].split(':')[1]
+                    else:
+                        email = None
+                    print "add = %s" % address
+                    print "em = %s" % email
+                first_name = None
+                last_name = None
+                middle_name = None
+                leg = Legislator(term, chamber, district, full_name,
+                                first_name, last_name, middle_name,
+                                party,
+                                office_address=address,
+                                office_phone=phone, photo_url=photo_url,
+                                email=email)
+                leg.add_source(url)
+                self.save_legislator(leg)
+                # TODO more details are to be had at: http://www.senate.mo.gov/11info/members/mem16.htm
 
     def scrape_reps(self, chamber, session, term):
         url = (self.reps_url % (session))
@@ -125,3 +144,9 @@ class MOLegislatorScraper(LegislatorScraper):
         # since the current infrastructure pays attention to the legislators and not
         # the seats. See: http://bit.ly/jOtrhd
         self.vacant_legislators.append(leg)
+    def get_senator_url(self,session):
+        return (self.senator_url % (session[2:]))
+    def get_senator_list_url(self,session,district):
+        return (self.senator_details_url % (session[2:],district))
+    def get_senator_address_url(self,session,key):
+        return (self.senator_address_url % (session[2:]))
