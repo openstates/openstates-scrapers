@@ -1,5 +1,6 @@
 from nose.tools import *
 
+#from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.mo.legislators import MOLegislatorScraper
 
 import urllib2
@@ -31,9 +32,12 @@ class MyMOLegislatorScraper(MOLegislatorScraper):
         return 'file://%s/openstates/mo/tests/11-senatordetailsofficeinfo.html' % (os.getcwd())
     def save_legislator(self,leg):
         self.legs.append(leg)
+        #print "leg = %s" % leg
+        #LegislatorScraper.validate_json(self,leg)
     def save_vacant_legislator(self,leg):
         self.vac_legs.append(leg)
     def reset(self):
+        #self.output_dir = 'data/mo/'
         self.legs = []
         self.vac_legs = []
 
@@ -46,6 +50,7 @@ def test_senators():
     eq_(scraper.legs[-1]['full_name'],'Robin Wright-Jones')
     eq_(scraper.legs[-1]['photo_url'],'http://www.senate.mo.gov/11info/graphics/d16-photo.gif')
     eq_(scraper.legs[-1]['email'],'Dan.Brown@senate.mo.gov')
+    eq_(scraper.legs[-1]['office_address'],u'\xa0\xa0201 W Capitol Ave., Rm. 434\r\xa0\xa0Jefferson City, Missouri  65101\r')
     eq_(scraper.legs[-1]['roles'][0]['district'],'5')
     eq_(scraper.legs[-1]['roles'][0]['party'],'Democratic')
 

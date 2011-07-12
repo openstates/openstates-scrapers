@@ -5,11 +5,10 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 class MOLegislatorScraper(LegislatorScraper):
     state = 'mo'
     assumed_telephone_prefix = '573'
-    assumed_address_fmt = ('201 West Capitol Avenue %s, '
-                            'Jefferson City, MO 65101')
+    assumed_address_fmt = ('201 West Capitol Avenue %s, ' 'Jefferson City, MO 65101')
     senator_url = 'http://www.senate.mo.gov/%sinfo/senalpha.htm'
     senator_details_url = 'http://www.senate.mo.gov/%sinfo/members/mem%s.htm'
-    senator_address_url = 'http://www.senate.mo.gov/%sinfo/members/%s/OfficeInfo.htm'
+    senator_address_url = 'http://www.senate.mo.gov/%sinfo/members/d%s/OfficeInfo.htm'
     reps_url = 'http://www.house.mo.gov/member.aspx?year=%s'
     rep_details_url = 'http://www.house.mo.gov/member.aspx?year=%s&district=%s'
     vacant_legislators = []
@@ -46,29 +45,36 @@ class MOLegislatorScraper(LegislatorScraper):
                 district = party_and_district[1]
                 phone = tds[3].xpath('div')[0].text_content().strip()
                 url = self.get_senator_list_url(session,district)
+                print "leg url = %s" % url
                 with self.urlopen(url) as details_page:
                     page = lxml.html.fromstring(details_page)
                     photo_url = page.xpath('/html/body/div[2]/div/img/@src')[0]
-                    print "photo = %s" % photo_url
+                    #print "photo = %s" % photo_url
+                    #print "office details = %s" % page.xpath('//iframe/@src')[0]
+                    print "session and key = %s, %s" % (session,senator_key)
                 url = self.get_senator_address_url(session,senator_key)
+                print "office url = %s" % url
                 with self.urlopen(url) as details_page:
                     page = lxml.html.fromstring(details_page)
-                    address = page.xpath('/html/body/p/span[2]')[0]
+                    address = page.xpath('/html/body//span[2]')[0].text_content().split('\n')
+                    # TODO This is only true if the href doesn't contain 'mail_form'. If it does,
+                    # then there is only a webform. So...no email?
                     email = page.xpath('/html/body/p/span[2]/a/@href')
                     if len(email) > 0 and email[0] != 'mailto:':
                         #print "Found email : %s" % email[0]
                         email = email[0].split(':')[1]
                     else:
                         email = None
-                    print "add = %s" % address
-                    print "em = %s" % email
+                #print "add = %s" % address
+                #print "em = %s" % email
                 first_name = None
                 last_name = None
                 middle_name = None
+                # TODO a lot of these have fax numbers. Include?
                 leg = Legislator(term, chamber, district, full_name,
                                 first_name, last_name, middle_name,
                                 party,
-                                office_address=address,
+                                office_address="%s%s" % (address[0],address[1]),
                                 office_phone=phone, photo_url=photo_url,
                                 email=email)
                 leg.add_source(url)
@@ -120,6 +126,7 @@ class MOLegislatorScraper(LegislatorScraper):
                             email = email[0].split(':')[1]
                         else:
                             email = None
+                        terms = page.xpath('//*[@id="ContentPlaceHolder1_lblElected"]')
                         # TODO the detailed page also includes:
                         # sponsored bills
                         # committees
@@ -149,4 +156,4 @@ class MOLegislatorScraper(LegislatorScraper):
     def get_senator_list_url(self,session,district):
         return (self.senator_details_url % (session[2:],district))
     def get_senator_address_url(self,session,key):
-        return (self.senator_address_url % (session[2:]))
+        return (self.senator_address_url % (session[2:],key[1:]))
