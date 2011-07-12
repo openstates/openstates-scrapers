@@ -308,7 +308,7 @@ class SCBillScraper(BillScraper):
         self.debug("VOTE_DATA %s returning %d items, %s" % (bill_id, len(vote_data), vote_data))
         return vote_data
 
-        def scrape_vote_history(self, vurl, chamber, bill, bill_id ):
+    def scrape_vote_history(self, vurl, chamber, bill, bill_id ):
             """Get information from the vote history page.
 
             The bill title will appear. If this is shorter than the bill title we have,
