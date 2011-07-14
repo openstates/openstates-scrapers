@@ -49,7 +49,7 @@ class RICommitteeScraper(CommitteeScraper):
                   membertable = membertable.getnext()
         except:
           pass
-        
+
     def scrape_reps_comm(self):
        base = 'http://www.rilin.state.ri.us'
 

@@ -2,6 +2,7 @@ Rhode Island Progress
 =====================
 
 Sources:
+http://www.rilin.state.ri.us/Sitemap.html
 http://www.rilin.state.ri.us/Documents/Senators.xls
 http://www.rilin.state.ri.us/Documents/Representatives.xls
 http://www.rilin.state.ri.us/BillText11/HouseText11/HouseText11.html
@@ -29,5 +30,17 @@ Data scraped:
 
 Notes: The source information does not provide separate first/last name information, so only
 full name is scraped.
+
+
+committees.py
+-------------
+Progress: finished
+Data scraped:
+  * chamber
+  * membernames
+  * roles
+
+Notes: It seems like the committee links from http://www.rilin.state.ri.us/Sitemap.html are
+intermittently timing-out. There is a try/except clause to handle these timeouts.
 
 
