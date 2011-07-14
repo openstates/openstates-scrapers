@@ -9,19 +9,22 @@ from billy.scrape.votes import Vote
 import pytz
 import lxml.html
 
+BILL_INFO_URL="http://dirac.rilin.state.ri.us/billstatus/WebClass1.ASP?WCI=BillStatus&WCE=ifrmBillStatus&WCU"
+
 class RIBillScraper(BillScraper):
     state = 'ri'
 
     _tz = pytz.timezone('US/Eastern')
 
     def __init__(self, metadata, **kwargs):
+        super(RIBillScraper, self).__init__(metadata, **kwargs)
         self.metadata = metadata
 
-        this_year = date.today().year
         self.house_bill_list_urls = {}
         self.senate_bill_list_urls = {}
-        for year in range(1998, this_year):
-            year_stub = str(year)[2:4]
+        for term in metadata['terms']:
+            year = str(term['start_year'])
+            year_stub = year[2:4]
             house_url = "".join(["http://www.rilin.state.ri.us/BillText", year_stub, "/HouseText", year_stub,
               "/HouseText", year_stub, ".html"])
             senate_url = "".join(["http://www.rilin.state.ri.us/BillText", year_stub, "/SenateText",
@@ -37,14 +40,16 @@ class RIBillScraper(BillScraper):
         self.type_regs = map(lambda x: re.compile(x), self.bill_types)
 
     def scrape(self, chamber, session):
-        # should maybe do validation here
-
+        self.log("Scraping for session " + session)
+        self.validate_session(session)
         self.scrape_bill_list(chamber, session)
 
     def scrape_bill_list(self, chamber, session):
         if chamber == 'upper':
+            self.log("Scraping the upper chamber bills")
             url = getattr(self, 'senate_' + 'bill_list_urls')[session]
         else:
+            self.log("Scraping the lower chamber bills")
             url = getattr(self, 'house_' + 'bill_list_urls')[session]
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
@@ -54,11 +59,15 @@ class RIBillScraper(BillScraper):
                     continue
                 else:
                     bill_id = link.split('/')[-1].strip('.htmlHS')
-                    bill = self.get_bill_information(bill_id, chamber)
+                    self.log("Getting info for bill ID: " + bill_id)
+                    bill = self.get_bill_information(bill_id, chamber, session)
                     self.save_bill(bill)
+                    self.log("Saved the bill!")
 
-    def get_bill_information(self, bill_id, chamber):
-        with self.urlopen(url, 'POST', body="hListBills," + bill_id) as bill_info_page:
+    def get_bill_information(self, bill_id, chamber, session):
+        with self.urlopen(BILL_INFO_URL, 'POST', body="hListBills=" + bill_id) as bill_info_page:
+            self.log("Got bill info")
+            self.log(bill_info_page)
             page = lxml.html.fromstring(bill_info_page)
             bs = page.xpath('//div/b')
             for b in bs:
