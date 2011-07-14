@@ -1,3 +1,5 @@
+import datetime
+
 metadata = dict(
     name='Rhode Island and Providence Plantations',
     abbreviation='ri',
@@ -10,9 +12,18 @@ metadata = dict(
     lower_chamber_term=2,
     terms=[{'name': '2011',
             'start_year': 2011,
+            'start_date': datetime.date(2011, 1, 4),
             'end_year': 2011,
-            'sessions': ['2011']}
+            'sessions': ['2011']},
+           {'name': '2012',
+            'start_year': 2012,
+            'start_date': datetime.date(2012, 1, 3),
+            'end_year': 2012,
+            'sessions': ['2012']},
             ],
-    session_details={'2011': {'type': 'primary'}
+    session_details={'2011': {'start_date': datetime.date(2011, 1, 4),
+                              'type': 'primary'},
+                     '2012': {'start_date': datetime.date(2012, 1, 3),
+                              'type': 'primary'},
                      },
 )
