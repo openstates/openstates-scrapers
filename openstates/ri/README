@@ -1,0 +1,33 @@
+Rhode Island Progress
+=====================
+
+Sources:
+http://www.rilin.state.ri.us/Documents/Senators.xls
+http://www.rilin.state.ri.us/Documents/Representatives.xls
+http://www.rilin.state.ri.us/BillText11/HouseText11/HouseText11.html
+http://www.rilin.state.ri.us/BillText11/SenateText11/SenateText11.html
+http://www.rilin.state.ri.us/Journals11/HouseJournals11/Housejournals11.html
+http://www.rilin.state.ri.us/Journals11/SenateJournals11/Senatejournals11.html
+
+(NOTE: a POST with a comma delimited list of bill numbers passed as the 'hListBills' form
+parameter to the following URL provides information on bills)
+http://dirac.rilin.state.ri.us/billstatus/WebClass1.ASP?WCI=BillStatus&WCE=ifrmBillStatus&WCU
+
+
+legislators.py
+--------------
+Progress: finished
+Data scraped:
+  * term
+  * chamber
+  * district_name
+  * full_name
+  * party
+  * office_address
+  * town_represented (comma delimited list of towns)
+  * email
+
+Notes: The source information does not provide separate first/last name information, so only
+full name is scraped.
+
+

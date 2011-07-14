@@ -9,7 +9,7 @@ import xlrd
 
 excel_mapping = {
     'district': 0,
-    'town_represented': 2,        
+    'town_represented': 2,
     'full_name': 3,
     'party': 4,
     'address': 5,
@@ -28,7 +28,7 @@ class RILegislatorScraper(LegislatorScraper):
     elif chamber == 'lower':
       url = ('http://www.rilin.state.ri.us/Documents/Representatives.xls')
       rep_type = 'Representative '
-      
+
     with self.urlopen(url) as senator_xls:
       with open('ri_senate.xls', 'w') as f:
         f.write(senator_xls)
@@ -46,8 +46,9 @@ class RILegislatorScraper(LegislatorScraper):
                        '', '', '',
                        d['party'], 
                        office_address=d['address'],
+                       town_represented=d['town_represented'],
                        email=d['email'])
       leg.add_source(url)
-      
+
       self.save_legislator(leg)
-        
+
