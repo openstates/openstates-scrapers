@@ -14,32 +14,38 @@ class RIBillScraper(BillScraper):
 
     _tz = pytz.timezone('US/Eastern')
 
-    def __init__(self):
+    def __init__(self, metadata, **kwargs):
+        self.metadata = metadata
+
         this_year = date.today().year
         self.house_bill_list_urls = {}
+        self.senate_bill_list_urls = {}
         for year in range(1998, this_year):
             year_stub = str(year)[2:4]
-            url = "".join(["http://www.rilin.state.ri.us/BillText", year_stub, "/HouseText", year_stub,
+            house_url = "".join(["http://www.rilin.state.ri.us/BillText", year_stub, "/HouseText", year_stub,
               "/HouseText", year_stub, ".html"])
-            self.house_bill_list_urls[year] = url
+            senate_url = "".join(["http://www.rilin.state.ri.us/BillText", year_stub, "/SenateText",
+              year_stub, "/SenateText", year_stub, ".html"])
+            self.house_bill_list_urls[year] = house_url
+            self.senate_bill_list_urls[year] = senate_url
 
         self.bill_types = ['house bill',
                       'senate bill',
                       'house resolution',
                       'senate resolution',
                       'joint resolution'] # TODO check if there are others
-        self.type_regs = map(lambda x: re.compile(x), bill_types)
+        self.type_regs = map(lambda x: re.compile(x), self.bill_types)
 
     def scrape(self, chamber, session):
-        # self.validate_session(session)
+        # should maybe do validation here
 
         self.scrape_bill_list(chamber, session)
 
     def scrape_bill_list(self, chamber, session):
         if chamber == 'upper':
-            url = getattr(self, 'senate' + bill_list_urls)[session]
+            url = getattr(self, 'senate_' + 'bill_list_urls')[session]
         else:
-            url = getattr(self, 'house' + bill_list_urls)[session]
+            url = getattr(self, 'house_' + 'bill_list_urls')[session]
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             for elem in page.xpath('//option'):
@@ -58,7 +64,7 @@ class RIBillScraper(BillScraper):
             for b in bs:
                 containing_div = b.getparent()
                 if b.text == "BY":
-                    l = containing_div.text_content().strip(u'BY\xa0')).split(',')
+                    l = containing_div.text_content().strip(u'BY\xa0').split(',')
                     sponsors = map(lambda x: x.strip(' '), l)
                 if b.text.strip(u',\xa0') == "ENTITLED":
                     title = containing_div.text_content().lstrip(u'ENTITLED,\xa0')
@@ -79,5 +85,3 @@ class RIBillScraper(BillScraper):
                     bill.add_sponsor('cosponsor', sponsor)
         return bill
 
-    def validate_session(self, session):
-        raise NotImplementedError
