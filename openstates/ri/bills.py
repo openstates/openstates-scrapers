@@ -9,6 +9,12 @@ from billy.scrape.votes import Vote
 import pytz
 import lxml.html
 
+class ResourceNotAvailableError(Exception):
+    def __init__(self, message):
+        self.message = message
+    def __str__(self):
+        return message
+
 BILL_INFO_URL="http://dirac.rilin.state.ri.us/billstatus/WebClass1.ASP?WCI=BillStatus&WCE=ifrmBillStatus&WCU"
 
 class RIBillScraper(BillScraper):
@@ -60,15 +66,21 @@ class RIBillScraper(BillScraper):
                 else:
                     bill_id = link.split('/')[-1].strip('.htmlHS')
                     self.log("Getting info for bill ID: " + bill_id)
-                    bill = self.get_bill_information(bill_id, chamber, session)
+                    try:
+                        bill = self.get_bill_information(bill_id, chamber, session)
+                    except:
+                        self.log("Getting bill information failed")
+                        continue
                     self.save_bill(bill)
                     self.log("Saved the bill!")
 
     def get_bill_information(self, bill_id, chamber, session):
         with self.urlopen(BILL_INFO_URL, 'POST', body="hListBills=" + bill_id) as bill_info_page:
             self.log("Got bill info")
-            self.log(bill_info_page)
             page = lxml.html.fromstring(bill_info_page)
+
+            # TODO: check whether page is error page and raise custom exception defined above
+
             bs = page.xpath('//div/b')
             for b in bs:
                 containing_div = b.getparent()
