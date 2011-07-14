@@ -24,74 +24,74 @@ class RICommitteeScraper(CommitteeScraper):
         url = 'http://www.rilin.state.ri.us/Sitemap.html'
         self.log("looking for "+ctype)
         try:
-          with self.urlopen(url) as page:
-              root = lxml.html.fromstring(page)
-              return root.xpath("//a[contains(@href,'"+ctype+"')]")
+            with self.urlopen(url) as page:
+                root = lxml.html.fromstring(page)
+                return root.xpath("//a[contains(@href,'"+ctype+"')]")
         except:
-          pass
+            pass
 
     def add_members(self,comm,url):
         try:
-          with self.urlopen(url) as page:
-              self.log(comm)
-              root = lxml.html.fromstring(page)
-              # The first <tr> in the table of members
-              membertable=root.xpath('//p[@class="style28"]')[0].getparent().getparent().getnext()
-              while membertable is not None and membertable.tag == 'tr':
-                  flds=membertable.xpath('td//text()')
-                  mname = flds[0]
-                  role = flds[1][2:]
-                  idx = mname.find("Senator ")
-                  if idx == -1: continue
-                  membername=mname[idx+8:]
-                  self.log("name "+membername+" role "+role)
-                  comm.add_member(membername, role)
-                  membertable = membertable.getnext()
+            with self.urlopen(url) as page:
+                self.log(comm)
+                root = lxml.html.fromstring(page)
+                # The first <tr> in the table of members
+                membertable=root.xpath('//p[@class="style28"]')[0].getparent().getparent().getnext()
+                while membertable is not None and membertable.tag == 'tr':
+                    flds=membertable.xpath('td//text()')
+                    mname = flds[0]
+                    role = flds[1][2:]
+                    idx = mname.find("Senator ")
+                    if idx == -1: continue
+                    membername=mname[idx+8:]
+                    self.log("name "+membername+" role "+role)
+                    comm.add_member(membername, role)
+                    membertable = membertable.getnext()
         except:
-          pass
+            pass
 
     def scrape_reps_comm(self):
-       base = 'http://www.rilin.state.ri.us'
+        base = 'http://www.rilin.state.ri.us'
 
-       linklist = self.scrape_comm_list('ComMemR')
-       if linklist is not None:
-        for a in linklist:
-            link=a.attrib['href']
-            commName=a.text
-            url=base+link
-            self.log("url "+url)
-            c=Committee('lower',commName)
-            self.add_members(c,url)
-            c.add_source(url)
-            self.save_committee(c)
+        linklist = self.scrape_comm_list('ComMemR')
+        if linklist is not None:
+            for a in linklist:
+                link=a.attrib['href']
+                commName=a.text
+                url=base+link
+                self.log("url "+url)
+                c=Committee('lower',commName)
+                self.add_members(c,url)
+                c.add_source(url)
+                self.save_committee(c)
 
     def scrape_senate_comm(self):
-       base = 'http://www.rilin.state.ri.us'
+        base = 'http://www.rilin.state.ri.us'
 
-       linklist = self.scrape_comm_list('ComMemS')
-       if linklist is not None:
-        for a in linklist:
-            link=a.attrib['href']
-            commName=a.text
-            url=base+link
-            self.log("url "+url)
-            c=Committee('upper',commName)
-            self.add_members(c,url)
-            c.add_source(url)
-            self.save_committee(c)
+        linklist = self.scrape_comm_list('ComMemS')
+        if linklist is not None:
+            for a in linklist:
+                link=a.attrib['href']
+                commName=a.text
+                url=base+link
+                self.log("url "+url)
+                c=Committee('upper',commName)
+                self.add_members(c,url)
+                c.add_source(url)
+                self.save_committee(c)
 
     def scrape_joint_comm(self):
-       base = 'http://www.rilin.state.ri.us'
+        base = 'http://www.rilin.state.ri.us'
 
-       linklist = self.scrape_comm_list('ComMemJ')
-       if linklist is not None:
-        for a in linklist:
-            link=a.attrib['href']
-            commName=a.text
-            url=base+link
-            self.log("url "+url)
-            c=Committee('joint',commName)
-            self.add_members(c,url)
-            c.add_source(url)
-            self.save_committee(c)
+        linklist = self.scrape_comm_list('ComMemJ')
+        if linklist is not None:
+            for a in linklist:
+                link=a.attrib['href']
+                commName=a.text
+                url=base+link
+                self.log("url "+url)
+                c=Committee('joint',commName)
+                self.add_members(c,url)
+                c.add_source(url)
+                self.save_committee(c)
 
