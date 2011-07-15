@@ -38,45 +38,46 @@ class MOLegislatorScraper(LegislatorScraper):
                     party = 'Democratic'
                 elif party_and_district[0] == 'R':
                     party = 'Republican'
-                else:
-                    party = None
                 senator_key = "%s%s" % (party_and_district[0].lower(),party_and_district[1])
                 district = party_and_district[1]
                 phone = tds[3].xpath('div')[0].text_content().strip()
+                leg = Legislator(term, chamber, district, full_name, '', '', '', party)
+                leg.add_source(url)
                 url = self.senator_details_url % (session[2:],int(district))
-                #print "leg url = %s" % url
                 with self.urlopen(url) as details_page:
+                    leg.add_source(url)
                     page = lxml.html.fromstring(details_page)
                     photo_url = page.xpath('/html/body/div[2]/div/img/@src')[0]
-                    #print "photo = %s" % photo_url
-                    #print "office details = %s" % page.xpath('//iframe/@src')[0]
-                    #print "session and key = %s, %s" % (session,senator_key)
+                    committees = page.xpath('/html/body/div[2]//span[@class="style3"]/a')
+                    for c in committees:
+                        if c.attrib.get('href').find('info/comm/') == -1:
+                            continue
+                        parts = c.text_content().split('\n')
+                        #print "committee = '%s'" % parts[0].strip()
+                        subcommittee = None
+                        if len(parts) > 1:
+                            subcommittee = parts[1].strip().replace('- ','').replace(', Vice-Chairman','').replace(', Chairman','')
+                        committee = parts[0].strip().replace(', Vice-Chairman','').replace(', Chairman','')
+                        if subcommittee:
+                            leg.add_role('committee member', term, committee=committee, subcommittee=subcommittee, chamber=chamber)
+                        else:
+                            leg.add_role('committee member', term, committee=committee, chamber=chamber)
                 url = self.senator_address_url % (session[2:],int(senator_key[1:]))
-                #print "office url = %s" % url
                 with self.urlopen(url) as details_page:
+                    leg.add_source(url)
                     page = lxml.html.fromstring(details_page)
                     address = page.xpath('/html/body//span[2]')[0].text_content().split('\n')
                     email = page.xpath('/html/body/p/span[2]/a/@href')
                     # TODO This is only true if the href doesn't contain 'mail_form'. If it does,
                     # then there is only a webform. So...no email?
-                #print "add = %s" % address
-                first_name = ''
-                last_name = ''
-                middle_name = ''
-                # TODO a lot of these have fax numbers. Include?
-                leg = Legislator(term, chamber, district, full_name,
-                                first_name, last_name, middle_name,
-                                party,
-                                office_address="%s%s" % (address[0],address[1]),
-                                office_phone=phone, 
-                                photo_url=photo_url
-                                )
+                    # TODO a lot of these have fax numbers. Include?
+                leg['office_phone'] = phone
+                leg['office_address'] = "%s%s" % (address[0],address[1])
+                leg['photo_url'] = photo_url
                 if email and len(email) > 0 and email[0] != 'mailto:':
                     leg['email'] = email[0].split(':')[1]
                     #print "em = %s" % email
-                leg.add_source(url)
                 self.save_legislator(leg)
-                # TODO more details are to be had at: http://www.senate.mo.gov/11info/members/mem16.htm
 
     def scrape_reps(self, chamber, session, term):
         url = (self.reps_url % (session))
@@ -108,33 +109,28 @@ class MOLegislatorScraper(LegislatorScraper):
                     leg.add_source(url)
                     self.save_vacant_legislator(leg)
                 else:
+                    leg = Legislator(term, chamber, district, full_name=full_name,
+                              first_name=first_name, last_name=last_name,
+                              party=party, phone=phone, office_address=address,
+                              _code=leg_code)
+                    leg.add_source(url)
                     url = (self.rep_details_url % (session,district))
+                    leg.add_source(url)
                     with self.urlopen(url) as details_page:
                         page = lxml.html.fromstring(details_page)
                         picture = page.xpath('//*[@id="ContentPlaceHolder1_imgPhoto"]/@src')
                         email = page.xpath('//*[@id="ContentPlaceHolder1_lblAddresses"]/table/tr[4]/td/a/@href')
                         terms = page.xpath('//*[@id="ContentPlaceHolder1_lblElected"]')
-                        # TODO the detailed page includes:
-                        # sponsored bills
-                        # committees
-                        # when elected
-                        # terms served
-                        # counties
-                        # hometown
-                        # biography
-                        # home address
-                        # district map details
-                        leg = Legislator(term, chamber, district, full_name=full_name,
-                                  first_name=first_name, last_name=last_name,
-                                  party=party, phone=phone, office_address=address,
-                                  _code=leg_code)
+                        committees = page.xpath('//*[@id="ContentPlaceHolder1_lblCommittees"]/li/a')
+                        for c in committees:
+                            leg.add_role('committee member', term, committee=c.text_content().strip(), chamber=chamber)
+                        # TODO home address?
                         if len(email) > 0 and email[0] != 'mailto:':
                             #print "Found email : %s" % email[0]
                             leg['email'] = email[0].split(':')[1]
                         if len(picture) > 0:
                             #print "Found picture : %s" % picture[0]
                             leg['photo_url'] = picture[0]
-                        # TODO are both sources supposed to be saved?
                         leg.add_source(url)
                         self.save_legislator(leg)
 
