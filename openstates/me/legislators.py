@@ -77,12 +77,12 @@ class MELegislatorScraper(LegislatorScraper):
             'last_name': 5,
             'suffix': 6,
             'party': 7,
-            'resident_county': 9,
-            'street_addr': 10,
-            'city': 11,
-            'zip_code': 13,
-            'phone': 14,
-            'email': 15,
+            'resident_county': 8,
+            'street_addr': 9,
+            'city': 10,
+            'zip_code': 12,
+            'phone': 13,
+            'email': 14,
         }
 
         with self.urlopen(url) as senator_xls:
@@ -122,7 +122,7 @@ class MELegislatorScraper(LegislatorScraper):
                              office_address=address,
                              office_phone=phone,
                              email=d['email'],
-                             disctict_name=district_name)
+                             district_name=district_name)
             leg.add_source(url)
 
             self.save_legislator(leg)
