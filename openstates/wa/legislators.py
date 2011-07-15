@@ -50,8 +50,9 @@ class WALegislatorScraper(LegislatorScraper):
                         leg_page.make_links_absolute(leg_url)
 
                         photo_link = leg_page.xpath(
-                            "//a[contains(@href, 'publishingimages')]")[0]
-                        photo_url = photo_link.attrib['href']
+                            "//a[contains(@href, 'publishingimages')]")
+                        if photo_link:
+                            photo_url = photo_link[0].attrib['href']
                 except scrapelib.HTTPError:
                     # Sometimes the API and website are out of sync
                     # with respect to legislator resignations/appointments
