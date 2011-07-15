@@ -13,3 +13,4 @@ dist/
 MANIFEST
 *.class
 *.jar
+build
