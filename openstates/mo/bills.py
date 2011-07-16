@@ -2,7 +2,7 @@ import re
 import datetime as dt
 import urllib2
 
-from BeautifulSoup import BeautifulSoup
+import lxml.html
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
@@ -14,8 +14,6 @@ class MOBillScraper(BillScraper):
 
     state = 'mo'
 
-    house_root = 'http://www.house.mo.gov'
-    senate_root = 'http://www.senate.mo.gov'
 
     def scrape(self, chamber, year):
         # wrapper to call senate or house scraper. No year check
@@ -34,13 +32,14 @@ class MOBillScraper(BillScraper):
 
         # year is mixed in to the directory. set a root_url, since
         # we'll use it later
-        bill_root = self.senate_root + '/' + year2 + 'info/BTS_Web/'
+        bill_root = 'http://www.senate.mo.gov/%sinfo/BTS_Web/' % year2
         index_url = bill_root + 'BillList.aspx?SessionType=R'
+        #print "index = %s" % index_url
 
         with self.urlopen(index_url) as index_page:
-            index_page = BeautifulSoup(index_page)
+            index_page = lxml.html.fromstring(index_page)
             # each bill is in it's own table (nested in a larger table)
-            bill_tables = index_page.findAll(id="Table2")
+            bill_tables = index_page.xpath('//a[@id]')
 
             if not bill_tables:
                 return
@@ -48,96 +47,95 @@ class MOBillScraper(BillScraper):
             for bill_table in bill_tables:
                 # here we just search the whole table string to get
                 # the BillID that the MO senate site uses
-                m = re.search(r"BillID=(\d*)", str(bill_table))
-                if m:
-                    bill_web_id = m.group(1)
-                    bill_url = (bill_root + '/Bill.aspx?SessionType=R&BillID='
-                                + bill_web_id)
-
-                    self.parse_senate_billpage(bill_url, year)
+                if re.search(r'dgBillList.*hlBillNum',bill_table.attrib['id']):
+                    #print "keys = %s" % bill_table.attrib['id']
+                    #print "table = %s " % bill_table.attrib.get('href')
+                    self.parse_senate_billpage(bill_root + bill_table.attrib.get('href'), year)
+                    #print "one down!"
 
     def parse_senate_billpage(self, bill_url, year):
         with self.urlopen(bill_url) as bill_page:
-            bill_page = BeautifulSoup(bill_page)
+            bill_page = lxml.html.fromstring(bill_page)
             # get all the info needed to record the bill
-            bill_id = bill_page.find(id="lblBillNum").b.font.contents[0]
-            bill_title = bill_page.find(id="lblBillTitle").font.string
-            bill_desc = bill_page.find(id="lblBriefDesc").font.contents[0]
-            bill_lr = bill_page.find(id="lblLRNum").font.string
+            # TODO probably still needs to be fixed
+            bill_id = bill_page.xpath('//*[@id="lblBillNum"]')[0].text_content()
+            bill_title = bill_page.xpath('//*[@id="lblBillTitle"]')[0].text_content()
+            bill_desc = bill_page.xpath('//*[@id="lblBriefDesc"]')[0].text_content()
+            bill_lr = bill_page.xpath('//*[@id="lblLRNum"]')[0].text_content()
+            #print "bill id = "+ bill_id
 
             bill = Bill(year, 'upper', bill_id, bill_desc, bill_url=bill_url,
                         bill_lr=bill_lr, official_title=bill_title)
             bill.add_source(bill_url)
 
             # Get the primary sponsor
-            bill_sponsor = bill_page.find(id="hlSponsor").i.font.contents[0]
-            bill_sponsor_link = bill_page.find(id="hlSponsor").href
-            bill.add_sponsor('primary', bill_sponsor,
-                             sponsor_link=bill_sponsor_link)
+            sponsor = bill_page.xpath('//*[@id="hlSponsor"]')[0]
+            bill_sponsor = sponsor.text_content()
+            bill_sponsor_link = sponsor.attrib.get('href')
+            bill.add_sponsor('primary', bill_sponsor, sponsor_link=bill_sponsor_link)
 
             # cosponsors show up on their own page, if they exist
-            cosponsor_tag = bill_page.find(id="hlCoSponsors")
-            if cosponsor_tag and 'href' in cosponsor_tag:
-                self.parse_senate_cosponsors(bill, cosponsor_tag['href'])
+            cosponsor_tag = bill_page.xpath('//*[@id="hlCoSponsors"]')
+            if len(cosponsor_tag) > 0 and cosponsor_tag[0].attrib.has_key('href'):
+                self.parse_senate_cosponsors(bill, cosponsor_tag[0].attrib['href'])
 
             # get the actions
-            action_url = bill_page.find(id="hlAllActions")['href']
-            self.parse_senate_actions(bill, action_url)
+            action_url = bill_page.xpath('//*[@id="hlAllActions"]')
+            if len(action_url) > 0:
+                action_url =  action_url[0].attrib['href']
+                #print "actions = %s" % action_url
+                self.parse_senate_actions(bill, action_url)
 
             # stored on a separate page
-            versions_url = bill_page.find(id="hlFullBillText")
-            if versions_url:
-                self.parse_senate_bill_versions(bill, versions_url['href'])
+            versions_url = bill_page.xpath('//*[@id="hlFullBillText"]')
+            if len(versions_url) > 0 and versions_url[0].attrib.has_key('href'):
+                self.parse_senate_bill_versions(bill, versions_url[0].attrib['href'])
 
         self.save_bill(bill)
 
     def parse_senate_bill_versions(self, bill, url):
         bill.add_source(url)
         with self.urlopen(url) as versions_page:
-            versions_page = BeautifulSoup(versions_page)
-            version_tags = versions_page.findAll('li')
-            if version_tags != None:
-                for version_tag in version_tags:
-                    pdf_url = version_tag.font.a['href']
-                    version = version_tag.font.a.string
-                    bill.add_version(version, pdf_url)
+            versions_page = lxml.html.fromstring(versions_page)
+            version_tags = versions_page.xpath('//li/font/a')
+            for version_tag in version_tags:
+                description = version_tag.text_content()
+                pdf_url = version_tag.attrib['href']
+                bill.add_version(description, pdf_url)
 
     def parse_senate_actions(self, bill, url):
         bill.add_source(url)
         with self.urlopen(url) as actions_page:
-            actions_page = BeautifulSoup(actions_page)
-            bigtable = actions_page.find(id='Table5')
-            act_row = bigtable.next.next.nextSibling.next
-            act_row = act_row.nextSibling.nextSibling
+            actions_page = lxml.html.fromstring(actions_page)
+            bigtable = actions_page.xpath('/html/body/font/form/table/tr[3]/td/div/table/tr')
 
-            act_table = act_row.td.div.table
-
-            for row in act_table.findAll('tr'):
-                date = row.td.contents[0]
+            for row in bigtable:
+                date = row[0].text_content()
                 date = dt.datetime.strptime(date, '%m/%d/%Y')
-                action = row.td.nextSibling.nextSibling.contents[0]
+                action = row[1].text_content()
                 actor = senate_get_actor_from_action(action)
+                # TODO add the type of action
                 bill.add_action(actor, action, date)
 
     def parse_senate_cosponsors(self, bill, url):
         bill.add_source(url)
         with self.urlopen(url) as cosponsors_page:
-            cosponsors_page = BeautifulSoup(cosponsors_page)
+            cosponsors_page = lxml.html.fromstring(cosponsors_page)
             # cosponsors are all in a table
-            cosponsor_table = cosponsors_page.find(id="dgCoSponsors")
-            cosponsors = cosponsor_table.findAll("tr")
+            cosponsors = cosponsors_page.xpath('//table[@id="dgCoSponsors"]/tr/td/a')
+            #print "looking for cosponsors = %s" % cosponsors
 
             for cosponsor_row in cosponsors:
                 # cosponsors include district, so parse that out
-                cosponsor_string = cosponsor_row.font.contents[0]
+                cosponsor_string = cosponsor_row.text_content()
                 cosponsor = clean_text(cosponsor_string)
+                cosponsor = cosponsor.split(',')[0]
 
                 # they give us a link to the congressperson, so we might
                 # as well keep it.
-                cosponsor_url = cosponsor_row.a.href
+                cosponsor_url = cosponsor_row.attrib['href']
 
-                bill.add_sponsor('cosponsor', cosponsor,
-                                 sponsor_link=cosponsor_url)
+                bill.add_sponsor('cosponsor', cosponsor, sponsor_link=cosponsor_url)
 
     def scrape_house(self, year):
         #we only have data from 1998-2009
@@ -159,8 +157,7 @@ class MOBillScraper(BillScraper):
             2009: ['bills091']}
 
         for session_code in sessions[int(year)]:
-            bill_page_url = (self.house_root + '/billtracking/' +
-                             session_code + '/billist.htm')
+            bill_page_url = ('http://www.house.mo.gov/billtracking/%s/billist.htm' % session_code)
             self.parse_house_billpage(bill_page_url, year)
 
     def parse_house_billpage(self, url, year):
@@ -276,6 +273,7 @@ class MOBillScraper(BillScraper):
                 if row.td != None:
                     if len(row.td.contents) > 0 and row.td.contents[0] != ' ':
                         actor = house_get_actor_from_action(action)
+                        #TODO probably need to add the type here as well
                         bill.add_action(actor, action, date)
                         date = row.td.contents[0].strip()
                         date = dt.datetime.strptime(date, '%m/%d/%Y')
@@ -288,6 +286,7 @@ class MOBillScraper(BillScraper):
 
         # add that last action
         actor = house_get_actor_from_action(action)
+        #TODO probably need to add the type here as well
         bill.add_action(actor, action, date)
 
     def parse_house_cosponsors(self, bill, cell):

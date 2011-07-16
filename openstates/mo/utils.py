@@ -13,7 +13,7 @@ def clean_text(text):
 
 
 def house_get_actor_from_action(text):
-    m = re.search(r"\((H|S)\)", text)
+    m = re.search(r"\((\bH\b|\bS\b)\)", text)
     if not m:
         if text.endswith('Governor'):
             return 'Governor'
@@ -30,7 +30,7 @@ def senate_get_actor_from_action(text):
     if re.search("Prefiled", text):
         return 'upper'
 
-    m = re.search(r"(H|S)", text)
+    m = re.search(r"(\bH\b|\bS\b|House)", text)
     if not m:
         if text.endswith('Governor'):
             return 'Governor'

@@ -7,13 +7,7 @@ import urllib2
 import contextlib
 import os
 from mox import *
-
-class ClosableString(str):
-    def close(self):
-        return self
-
-def openFile(url):
-    return contextlib.closing(ClosableString(urllib2.urlopen(url).read()))
+from test_utils import *
 
 class MyMOLegislatorScraper(MOLegislatorScraper):
     def __init__(self,options):
@@ -30,7 +24,6 @@ class MyMOLegislatorScraper(MOLegislatorScraper):
 
 def test_senators():
     scraper = MyMOLegislatorScraper({})
-    scraper.reset()
     m = Mox()
     m.StubOutWithMock(scraper,'urlopen')
     # Expect:
@@ -98,7 +91,6 @@ def test_senators():
 
 def test_reps():
     scraper = MyMOLegislatorScraper({})
-    scraper.reset()
     m = Mox()
     m.StubOutWithMock(scraper,'urlopen')
     scraper.urlopen(Regex('^.*gov\/member.aspx\?year=2011$')) \
