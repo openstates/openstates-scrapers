@@ -325,11 +325,14 @@ class IDBillScraper(BillScraper):
         vote = Vote(actor, date, motion, passed, int(yes_count), int(no_count),
                     int(other_count))
         for name in yes_votes:
-            vote.yes(name)
+            if name:
+                vote.yes(name)
         for name in no_votes:
-            vote.no(name)
+            if name:
+                vote.no(name)
         for name in other_votes:
-            vote.other(name)
+            if name:
+                vote.other(name)
         return vote
 
     def flag(self, ayes=False, nays=False, other=False):
