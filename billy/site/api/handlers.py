@@ -115,8 +115,9 @@ class BillyHandler(BaseHandler):
 
 class AllMetadataHandler(BillyHandler):
     def read(self, request):
-        return list(db.metadata.find(fields={'level':1, 'abbreviation':1,
-                                             'name':1, '_id':0}))
+        data = db.metadata.find(fields={'level':1, 'abbreviation':1,
+                                        'name':1, '_id':0})).sort('name')
+        return list(data)
 
 
 class MetadataHandler(BillyHandler):
