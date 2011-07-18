@@ -33,11 +33,11 @@ class IDCommitteeScraper(CommitteeScraper):
                 senate, house = row.xpath('td/strong')
                 senate = senate.text.replace(u'\xa0', ' ')
                 house = house.text.replace(u'\xa0', ' ')
-                if ',' in senate.text:
+                if ',' in senate:
                     committee.add_member(*senate.split(','), chamber='upper')
                 else:
                     committee.add_member(senate, chamber='upper')
-                if ',' in house.text:
+                if ',' in house:
                     committee.add_member(*house.split(','), chamber='lower')
                 else:
                     committee.add_member(house, chamber='lower')
