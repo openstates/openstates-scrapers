@@ -9,6 +9,9 @@ _REV_CHAMBERS = {'senate':'upper', 'house':'lower'}
 _TD_ONE = ('committee', 'description', 'office_hours', 'secretary', 'office_phone')
 _TD_TWO = ('committee', 'office_hours', 'secretary', 'office_phone')
 
+def clean_name(name):
+    return name.replace(u'\xa0', ' ')
+    
 class IDCommitteeScraper(CommitteeScraper):
     """Currently only committees from the latest regular session are
     available through html. Membership for prior terms are available via the
@@ -28,14 +31,16 @@ class IDCommitteeScraper(CommitteeScraper):
             committee = Committee('joint', name)
             for row in table.xpath('tr')[1:]:
                 senate, house = row.xpath('td/strong')
+                senate = senate.text.replace(u'\xa0', ' ')
+                house = house.text.replace(u'\xa0', ' ')
                 if ',' in senate.text:
-                    committee.add_member(*senate.text.split(','), chamber='upper')
+                    committee.add_member(*senate.split(','), chamber='upper')
                 else:
-                    committee.add_member(senate.text, chamber='upper')
+                    committee.add_member(senate, chamber='upper')
                 if ',' in house.text:
-                    committee.add_member(*house.text.split(','), chamber='lower')
+                    committee.add_member(*house.split(','), chamber='lower')
                 else:
-                    committee.add_member(house.text, chamber='lower')
+                    committee.add_member(house, chamber='lower')
 
             committee.add_source(url)
             self.save_committee(committee)
@@ -51,7 +56,7 @@ class IDCommitteeScraper(CommitteeScraper):
                               .text_content().split('\r\n')
                 for member in members:
                     if member.strip():
-                        committee.add_member(*member.split(','),
+                        committee.add_member(*member.replace(u'\xa0', ' ').split(','),
                                          chamber=_REV_CHAMBERS[chamber.lower()])
             committee.add_source(url)
             self.save_committee(committee)
@@ -63,7 +68,7 @@ class IDCommitteeScraper(CommitteeScraper):
             committee = Committee('joint', name)
             table = html.xpath('//table')[2]
             for row in table.xpath('tbody/tr'):
-                senate, house = [ td.text.replace('\r\n', ' ') \
+                senate, house = [ td.text.replace('\r\n', ' ').replace(u'\xa0', ' ') \
                                   for td in row.xpath('td') ]
                 committee.add_member( *senate.strip('Sen.').strip().split(',') )
                 committee.add_member( *house.strip('Rep.').strip().split(',') )
@@ -92,9 +97,9 @@ class IDCommitteeScraper(CommitteeScraper):
                     for elem in td:
                         position, leg = elem.text, elem.tail
                         if position and leg:
-                            committee.add_member(leg, role=position)
+                            committee.add_member(leg.replace(u'\xa0', ' '), role=position)
                         elif leg:
-                            committee.add_member(leg)
+                            committee.add_member(leg.replace(u'\xa0', ' '))
                 self.save_committee(committee)
 
     def scrape_joint_committees(self):

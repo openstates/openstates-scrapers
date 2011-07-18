@@ -313,11 +313,18 @@ class IDBillScraper(BillScraper):
         spans = row.xpath('.//span')
         motion = row.text
         passed, yes_count, no_count, other_count = spans[0].text_content().split('-')
-        yes_votes = spans[1].tail.replace(u'\xa0--\xa0', '').split(',')
-        no_votes = spans[2].tail.replace(u'\xa0--\xa0', '').split(',')
+        yes_votes = [ name for name in \
+                      spans[1].tail.replace(u'\xa0--\xa0', '').split(',') \
+                      if name ]
+        
+        no_votes = [ name for name in \
+                     spans[2].tail.replace(u'\xa0--\xa0', '').split(',') \
+                     if name ]
         other_votes = []
         if spans[3].text.startswith('Absent'):
-            other_votes = spans[3].tail.replace(u'\xa0--\xa0', '').split(',')
+            other_votes = [ name for name in \
+                            spans[3].tail.replace(u'\xa0--\xa0', '').split(',') \
+                            if name ]
         for key, val in {'adopted': True, 'passed': True, 'failed':False}.items():
             if key in passed.lower():
                 passed = val
@@ -336,7 +343,7 @@ class IDBillScraper(BillScraper):
         return vote
 
     def flag(self, ayes=False, nays=False, other=False):
-        """ help to keep track of """
+        """ help to keep track of where we are at parsing votes from text"""
         self.ayes = ayes
         self.nays = nays
         self.other = other
