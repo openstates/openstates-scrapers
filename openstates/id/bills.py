@@ -1,105 +1,336 @@
-import re
-import datetime
-
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-
+import re
+import datetime
 import lxml.html
 
+BILLS_URL = 'http://legislature.idaho.gov/legislation/%s/minidata.htm'
+BILL_URL = 'http://legislature.idaho.gov/legislation/%s/%s.htm'
 
-def split_names(text):
-    text = text.replace(u'\xa0', ' ')
-    for name in text.split(' -- ')[1].split(','):
-        name = name.strip()
-        if name and name != 'None':
-            yield name
+_CHAMBERS = {'upper':'Senate', 'lower':'House'}
 
+_BILL_TYPES = {'CR':'concurrent resolution',
+              'JM': 'joint memorial', 'JR': 'joint resolution',
+              'P': 'proclamation', 'R': 'resolution'}
+_COMMITTEES = { 'lower': {'Loc Gov':'Local Government',
+                     'Jud':'Judiciary, Rules and Administration',
+                     'Res/Con':'Resources and Conservation', 
+                     'Com/HuRes':'Commerce and Human Resources', 
+                     'Transp':'Transportation and Defense', 
+                     'St Aff': 'State Affairs', 
+                     'Rev/Tax':'Revenues and Taxation', 
+                     'Health/Wel':'Health and Welfare',
+                     'Env':'Environment, Energy and Technology',
+                     'Bus':'Business', 'Educ':'Education',
+                     'Agric Aff':'Agricultural Affairs',
+                     'Approp': 'Appropriations','W/M': 'Ways and Means'},
+                'upper': {'Agric Aff': 'Agricultural Affairs',
+                     'Com/HuRes':'Commerce and Human Resources',
+                     'Educ': 'Education', 'Fin':'Finance',
+                     'Health/Wel':'Health and Welfare', 
+                     'Jud': 'Judiciary and Rules', 
+                     'Loc Gov': 'Local Government and Taxation',
+                     'Res/Env': 'Resources and Environment',
+                     'St Aff': 'State Affairs', 'Transp': 'Transportation'}
+                }
+    
+# a full list of the abbreviations and definitions can be found at:
+# http://legislature.idaho.gov/sessioninfo/glossary.htm
+# background on bill to law can be found at:
+# http://legislature.idaho.gov/about/jointrules.htm
+_ACTIONS = (
+     # bill:reading:1
+     (r'(\w+) intro - (\d)\w+ rdg - to (\w+/?\s?\w+\s?\w+)',
+      lambda mch, ch: ["bill:introduced", "bill:reading:1", "committee:referred"] \
+                        if mch.groups()[2] in _COMMITTEES[ch] else ["bill:introduced", "bill:reading:1"] ),
+     # committee actions
+     (r'rpt prt - to\s(\w+/?\s?\w+)',
+      lambda mch, ch: ["committee:referred"] if mch.groups()[0] in _COMMITTEES[ch] \
+                                             else "other"),
+     # it is difficult to figure out which committee passed/reported out a bill
+     # but i guess we at least know that only committees report out
+     (r'rpt out - rec d/p', "committee:passed:favorable"),
+     (r'^rpt out', 'committee:passed'),
+     
+     # I dont recall seeing a 2nd rdg by itself
+     (r'^1st rdg - to 2nd rdg', "bill:reading:2"),
+     # second to third will count as a third read if there is no
+     # explicit third reading action
+     (r'2nd rdg - to 3rd rdg', "bill:reading:3"),
+     (r'^3rd rdg$', "bill:reading:3"),
+     # bill:reading:3, bill:passed
+     (r'^3rd rdg as amen - (ADOPTED|PASSED)', ["bill:reading:3", "bill:passed"]),
+     (r'^3rd rdg - (ADOPTED|PASSED)', ["bill:reading:3", "bill:passed"]),
+     # bill:reading:3, bill:failed
+     (r'^3rd rdg as amen - (FAILED)', ["bill:reading:3", "bill:failed"]),
+     (r'^3rd rdg - (FAILED)', ["bill:reading:3", "bill:failed"]),
+     # rules suspended
+     (r'^Rls susp - (ADOPTED|PASSED|FAILED)', lambda mch, ch: {
+                                                       'ADOPTED': "bill:passed",
+                                                        'PASSED': "bill:passed",
+                                                        'FAILED': "bill:failed"
+                                                   }[mch.groups()[0]]),
+     (r'^to governor', "governor:received"),
+     (r'^Governor signed', "governor:signed"),
+)
+def get_action(actor, text):
+    # the biggest issue with actions is that some lines seem to indicate more 
+    # than one action
+    for pattern, action in _ACTIONS:
+        match = re.match(pattern, text, re.I)
+        if match:
+            if callable(action):
+                return action(match, actor)
+            else:
+                return action
+    return "other"
+    
+def get_bill_type(bill_id):
+    suffix = bill_id.split(' ')[0]
+    if len(suffix) == 1:
+        return 'bill'
+    else:
+        return _BILL_TYPES[suffix[1:]]
 
 class IDBillScraper(BillScraper):
     state = 'id'
-
+    
+    # the following are only used for parsing legislation from 2008 and earlier
+    vote = None
+    in_vote = False
+    ayes = False
+    nays = False
+    other = False
+    last_date = None
+    
     def scrape(self, chamber, session):
-        url = ("http://www.legislature.idaho.gov/legislation"
-               "/%s/minidata.htm" % session)
-        page = lxml.html.fromstring(self.urlopen(url))
-        page.make_links_absolute(url)
-
-        bill_abbrev = {'lower': 'H', 'upper': 'S'}[chamber]
-        for link in page.xpath("//a[contains(@href, 'legislation')]"):
-            bill_id = link.text.strip()
-            match = re.match(r'%s(CR|JM|P|R)?\d+' % bill_abbrev, bill_id)
-            if not match:
-                continue
-
-            bill_type = {'CR': 'concurrent resolution',
-                         'JM': 'joint memorial',
-                         'P': 'proclamation',
-                         'R': 'resolution'}.get(match.group(1), 'bill')
-
-            title = link.xpath("string(../../td[2])").strip()
-            bill = Bill(session, chamber, bill_id, title,
-                        type=bill_type)
-            self.scrape_bill(bill, link.attrib['href'])
-            self.save_bill(bill)
-
-    def scrape_bill(self, bill, url):
-        bill.add_source(url)
-        page = lxml.html.fromstring(self.urlopen(url))
-
-        version_link = page.xpath("//a[contains(., 'Bill Text')]")[0]
-        bill.add_version('Text', version_link.attrib['href'])
-
-        act_table = page.xpath("//table")[5]
-        actor = bill['chamber']
-        prev_date = None
-        for tr in act_table.xpath("tr"):
-            if len(tr.xpath("td")) < 4:
-                continue
-
-            date = tr.xpath("string(td[2])").strip()
-            if not date:
-                date = prev_date
-            prev_date = date
-            date = datetime.datetime.strptime(date + "/" + bill['session'],
-                                              "%m/%d/%Y").date()
-
-            action = tr.xpath("string(td[3])").strip().replace(u'\xa0', ' ')
-
-            if re.match(r"[^-]+\s+-\s+(PASSED|FAILED)\s+-", action):
-                self.scrape_vote(bill, actor, date, tr.xpath("td[3]")[0])
-                action = tr.xpath("td[3]")[0].text
-                action += tr.xpath("string(td[3]/span[1])")
-                action += ". " + tr.xpath("td[3]/br")[-1].tail
+        """
+        Scrapes all the bills for a given session and chamber
+        """
+        self.validate_session(session)
+          
+        #url = BILLS_URL % session
+        if int(session[:4]) < 2009:
+            self.scrape_pre_2009(chamber, session)
+        else:
+            self.scrape_post_2009(chamber, session)
+            
+    def scrape_post_2009(self, chamber, session):
+        "scrapes legislation for 2009 and above"
+        url = BILLS_URL % session
+        with self.urlopen(url) as bill_index:
+            html = lxml.html.fromstring(bill_index)
+            # I check for rows with an id that contains 'bill' and startswith
+            # 'H' or 'S' to make sure I dont get any links from the menus
+            # might not be necessary
+            bill_rows = html.xpath('//tr[contains(@id, "bill") and '\
+                                   'starts-with(descendant::td/a/text(), "%s")]'\
+                                   % _CHAMBERS[chamber][0])
+            for row in bill_rows:
+                matches = re.match(r'([A-Z]*)([0-9]+)', 
+                                            row[0].text_content().strip())
+                bill_id = " ".join(matches.groups()).strip()
+                short_title = row[1].text_content().strip()
+                self.scrape_bill(chamber, session, bill_id, short_title)
+                
+    def scrape_pre_2009(self, chamber, session):
+        """scrapes legislation from 2008 and below."""
+        url = BILLS_URL + 'l'
+        url = url % session
+        with self.urlopen(url) as bill_index:
+            html = lxml.html.fromstring(bill_index)
+            html.make_links_absolute(url)
+            links = html.xpath('//a')
+            exprs = r'(%s[A-Z]*)([0-9]+)' % _CHAMBERS[chamber][0]
+            for link in links:
+                matches = re.match(exprs, link.text)
+                if matches:
+                    bill_id = " ".join(matches.groups())
+                    short_title = link.tail[:link.tail.index('..')]
+                    self.scrape_pre_2009_bill(chamber, session, bill_id, short_title)
+                    
+    def scrape_bill(self, chamber, session, bill_id, short_title=None):
+        """
+        Scrapes documents, actions, vote counts and votes for 
+        bills from the 2009 session and above.
+        """
+        url = BILL_URL % (session, bill_id.replace(' ', ''))
+        with self.urlopen(url) as bill_page:
+            html = lxml.html.fromstring(bill_page)
+            html.make_links_absolute('http://legislature.idaho.gov/legislation/%s/' % session)
+            bill_tables = html.xpath('./body/table/tr/td[2]')[0].xpath('.//table')
+            title = " - ".join([ x.strip() for x in bill_tables[1].text_content().split('-') if x.isupper() ])
+            bill_type = get_bill_type(bill_id)
+            bill = Bill(session, chamber, bill_id, title, type=bill_type)
+            bill.add_source(url)
+            
+            if short_title and bill['title'].lower() != short_title.lower():
+                bill.add_title(short_title)
+                
+            # documents
+            doc_links = html.xpath('//span/a')
+            for link in doc_links:
+                name = link.text_content().strip()
+                href = link.get('href')
+                if 'Engrossment' in name or 'Bill Text' in name:
+                    bill.add_version(name, href)
+                else:
+                    bill.add_document(name, href)
+                    
+            # sponsors range from a committee to one legislator to a group of legs
+            sponsor_lists = bill_tables[0].text_content().split('by')
+            if len(sponsor_lists) > 1:
+                for sponsors in sponsor_lists[1:]:
+                    for person in sponsors.split(','):
+                        bill.add_sponsor('primary', person)
+                        
+            actor = chamber
+            last_date = None
+            for row in bill_tables[2]:
+                # lots of empty rows
+                if len(row) == 1:
+                    continue
+                _, date, action, _ = [x.text_content().strip() for x in row]
+                
+                if date:
+                    last_date = date
+                else:
+                    date = last_date
+                    
+                date = datetime.datetime.strptime(date+ '/' + session[0:4],
+                                                  "%m/%d/%Y")
+                if action.startswith('House'):
+                    actor = 'lower'
+                elif action.startswith('Senate'):
+                    actor = 'upper'
+                    
+                # votes
+                if 'AYES' in action or 'NAYS' in action:
+                    vote = self.parse_vote(actor, date, row[2])  
+                    vote.add_source(url)
+                    bill.add_vote(vote)
+                # some td's text is seperated by br elements
+                if len(row[2]):
+                    action = "".join(row[2].itertext())
                 action = action.replace(u'\xa0', ' ').strip()
-
-            action = re.sub(r'\s+', ' ', action)
-
-            bill.add_action(actor, action, date)
-
-            if 'to House' in action:
-                actor = 'lower'
-            elif 'to Senate' in action:
-                actor = 'upper'
-
-    def scrape_vote(self, bill, chamber, date, td):
-        motion = td.text
-        result = td.xpath("string(span[1])").strip()
-        passed = result.split()[0] == "PASSED"
-        yes, no, other = [
-            int(g) for g in re.search(r'(\d+)-(\d+)-(\d+)$', result).groups()]
-
-        vote = Vote(chamber, date, motion, passed, yes, no, other)
-
-        for name in split_names(td.xpath("span[. = 'AYES']")[0].tail):
+                atype = get_action(actor, action)
+                bill.add_action(actor, action, date, type=atype)
+                # after voice vote/roll call and some actions the bill is sent
+                # 'to House' or 'to Senate'
+                if 'to House' in action:
+                    actor = 'lower'
+                elif 'to Senate' in action:
+                    actor = 'upper'
+            self.save_bill(bill)
+            
+    def scrape_pre_2009_bill(self, chamber, session, bill_id, short_title=''):
+        """bills from 2008 and below are in a 'pre' element and is simpler to
+        parse them as text"""
+        url = 'http://legislature.idaho.gov/legislation/%s/%s.html' % (session, bill_id.replace(' ', ''))
+        with self.urlopen(url) as bill_page:
+            html = lxml.html.fromstring(bill_page)
+            text = html.xpath('//pre')[0].text.split('\r\n')
+            
+            # title
+            title = " - ".join([ x.strip() for x in text[1].split('-') if x.isupper() ])
+            # bill type
+            bill_type = get_bill_type(bill_id)
+            
+            bill = Bill(session, chamber, bill_id, title, type=bill_type)
+            # sponsors
+            sponsors = text[0].split('by')[-1]
+            for sponsor in sponsors.split(','):
+                bill.add_sponsor('primary', sponsor)
+                
+            actor = chamber
+            self.flag() # clear last bills vote flags
+            self.vote = None #
+            
+            for line in text:
+                
+                if re.match(r'^\d\d/\d\d', line):
+                    date = date = datetime.datetime.strptime(line[0:5] + '/' + session[0:4],
+                                                  "%m/%d/%Y")
+                    self.last_date = date
+                    action_text = line[5:].strip()
+                    # actor
+                    if action_text.lower().startswith('house') or \
+                       action_text.lower().startswith('senate'):
+                        actor = {'H':'lower', 'S':'upper'}[action_text[0]]
+                    
+                    action = get_action(actor, action_text)
+                    bill.add_action(actor,action_text, date, type=action)
+                    if "bill:passed" in action or "bill:failed" in action:
+                        passed = False if 'FAILED' in action_text else True
+                        votes = re.search(r'(\d+)-(\d+)-(\d+)', action_text)
+                        if votes:
+                            yes, no, other = votes.groups()
+                            self.in_vote = True
+                            self.vote = Vote(chamber, date, action_text, passed,
+                                         int(yes), int(no), int(other))
+                else:
+                    date = self.last_date
+                    # nothing to do if its not a vote
+                    if "Floor Sponsor" in line:
+                        self.in_vote = False
+                        if self.vote:
+                            bill.add_vote(self.vote)
+                            self.vote = None
+                        
+                    if not self.in_vote:
+                        continue
+                    if 'AYES --' in line:
+                        self.flag(ayes=True)
+                    elif 'NAYS --' in line:
+                        self.flag(nays=True)
+                    elif 'Absent and excused' in line:
+                        self.flag(other=True)
+                    
+                    if self.ayes:
+                        for name in line.replace('AYES --', '').split(','):
+                            if name:
+                                self.vote.yes(name.strip())
+                            
+                    if self.nays:
+                        for name in line.replace('NAYS --', '').split(','):
+                            if name:
+                                self.vote.no(name.strip())
+                        
+                    if self.other:
+                        for name in line.replace('Absent and excused --', '').split(','):
+                            if name:
+                                self.vote.other(name.strip())
+                            
+            self.save_bill(bill)
+            
+    def parse_vote(self, actor, date, row):
+        """
+        takes the actor, date and row element and returns a Vote object
+        """
+        spans = row.xpath('.//span')
+        motion = row.text
+        passed, yes_count, no_count, other_count = spans[0].text_content().split('-')
+        yes_votes = spans[1].tail.replace(u'\xa0--\xa0', '').split(',')
+        no_votes = spans[2].tail.replace(u'\xa0--\xa0', '').split(',')
+        other_votes = []
+        if spans[3].text.startswith('Absent'):
+            other_votes = spans[3].tail.replace(u'\xa0--\xa0', '').split(',')
+        for key, val in {'adopted': True, 'passed': True, 'failed':False}.items():
+            if key in passed.lower():
+                passed = val
+                break
+        vote = Vote(actor, date, motion, passed, int(yes_count), int(no_count), 
+                    int(other_count))
+        for name in yes_votes:
             vote.yes(name)
-        for name in split_names(td.xpath("span[. = 'NAYS']")[0].tail):
+        for name in no_votes:
             vote.no(name)
-        for name in split_names(td.xpath(
-            "span[contains(., 'Absent')]")[0].tail):
+        for name in other_votes:
             vote.other(name)
-
-        assert len(vote['yes_votes']) == vote['yes_count']
-        assert len(vote['no_votes']) == vote['no_count']
-        assert len(vote['other_votes']) == vote['other_count']
-
-        bill.add_vote(vote)
+        return vote
+    
+    def flag(self, ayes=False, nays=False, other=False):
+        """ help to keep track of """
+        self.ayes = ayes
+        self.nays = nays
+        self.other = other
