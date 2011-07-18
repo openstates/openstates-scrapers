@@ -52,6 +52,8 @@ Emitter.unregister('yaml')
 Emitter.unregister('django')
 Emitter.unregister('pickle')
 
+all_metadata_handler = Resource(handlers.AllMetadataHandler,
+                                authentication=authorizer)
 metadata_handler = Resource(handlers.MetadataHandler,
                             authentication=authorizer)
 bill_handler = Resource(handlers.BillHandler,
@@ -78,7 +80,8 @@ legislator_geo_handler = Resource(handlers.LegislatorGeoHandler,
                                       authentication=authorizer)
 
 urlpatterns = patterns('',
-    # v1 urls
+    # metadata
+    url(r'^v1/metadata/$', all_metadata_handler),
     url(r'^v1/metadata/(?P<abbr>[a-zA-Z]{2,2})/$', metadata_handler),
 
     # two urls for bill handler

@@ -113,6 +113,12 @@ class BillyHandler(BaseHandler):
     allowed_methods = ('GET',)
 
 
+class AllMetadataHandler(BillyHandler):
+    def read(self, request):
+        return list(db.metadata.find(fields={'level':1, 'abbreviation':1,
+                                             'name':1, '_id':0}))
+
+
 class MetadataHandler(BillyHandler):
     def read(self, request, abbr):
         """
