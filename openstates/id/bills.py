@@ -14,11 +14,11 @@ _BILL_TYPES = {'CR':'concurrent resolution',
               'P': 'proclamation', 'R': 'resolution'}
 _COMMITTEES = { 'lower': {'Loc Gov':'Local Government',
                      'Jud':'Judiciary, Rules and Administration',
-                     'Res/Con':'Resources and Conservation', 
-                     'Com/HuRes':'Commerce and Human Resources', 
-                     'Transp':'Transportation and Defense', 
-                     'St Aff': 'State Affairs', 
-                     'Rev/Tax':'Revenues and Taxation', 
+                     'Res/Con':'Resources and Conservation',
+                     'Com/HuRes':'Commerce and Human Resources',
+                     'Transp':'Transportation and Defense',
+                     'St Aff': 'State Affairs',
+                     'Rev/Tax':'Revenues and Taxation',
                      'Health/Wel':'Health and Welfare',
                      'Env':'Environment, Energy and Technology',
                      'Bus':'Business', 'Educ':'Education',
@@ -27,13 +27,13 @@ _COMMITTEES = { 'lower': {'Loc Gov':'Local Government',
                 'upper': {'Agric Aff': 'Agricultural Affairs',
                      'Com/HuRes':'Commerce and Human Resources',
                      'Educ': 'Education', 'Fin':'Finance',
-                     'Health/Wel':'Health and Welfare', 
-                     'Jud': 'Judiciary and Rules', 
+                     'Health/Wel':'Health and Welfare',
+                     'Jud': 'Judiciary and Rules',
                      'Loc Gov': 'Local Government and Taxation',
                      'Res/Env': 'Resources and Environment',
                      'St Aff': 'State Affairs', 'Transp': 'Transportation'}
                 }
-    
+
 # a full list of the abbreviations and definitions can be found at:
 # http://legislature.idaho.gov/sessioninfo/glossary.htm
 # background on bill to law can be found at:
@@ -51,7 +51,7 @@ _ACTIONS = (
      # but i guess we at least know that only committees report out
      (r'rpt out - rec d/p', "committee:passed:favorable"),
      (r'^rpt out', 'committee:passed'),
-     
+
      # I dont recall seeing a 2nd rdg by itself
      (r'^1st rdg - to 2nd rdg', "bill:reading:2"),
      # second to third will count as a third read if there is no
@@ -74,7 +74,7 @@ _ACTIONS = (
      (r'^Governor signed', "governor:signed"),
 )
 def get_action(actor, text):
-    # the biggest issue with actions is that some lines seem to indicate more 
+    # the biggest issue with actions is that some lines seem to indicate more
     # than one action
     for pattern, action in _ACTIONS:
         match = re.match(pattern, text, re.I)
@@ -84,7 +84,7 @@ def get_action(actor, text):
             else:
                 return action
     return "other"
-    
+
 def get_bill_type(bill_id):
     suffix = bill_id.split(' ')[0]
     if len(suffix) == 1:
@@ -94,7 +94,7 @@ def get_bill_type(bill_id):
 
 class IDBillScraper(BillScraper):
     state = 'id'
-    
+
     # the following are only used for parsing legislation from 2008 and earlier
     vote = None
     in_vote = False
@@ -102,19 +102,19 @@ class IDBillScraper(BillScraper):
     nays = False
     other = False
     last_date = None
-    
+
     def scrape(self, chamber, session):
         """
         Scrapes all the bills for a given session and chamber
         """
         self.validate_session(session)
-          
+
         #url = BILLS_URL % session
         if int(session[:4]) < 2009:
             self.scrape_pre_2009(chamber, session)
         else:
             self.scrape_post_2009(chamber, session)
-            
+
     def scrape_post_2009(self, chamber, session):
         "scrapes legislation for 2009 and above"
         url = BILLS_URL % session
@@ -127,12 +127,12 @@ class IDBillScraper(BillScraper):
                                    'starts-with(descendant::td/a/text(), "%s")]'\
                                    % _CHAMBERS[chamber][0])
             for row in bill_rows:
-                matches = re.match(r'([A-Z]*)([0-9]+)', 
+                matches = re.match(r'([A-Z]*)([0-9]+)',
                                             row[0].text_content().strip())
                 bill_id = " ".join(matches.groups()).strip()
                 short_title = row[1].text_content().strip()
                 self.scrape_bill(chamber, session, bill_id, short_title)
-                
+
     def scrape_pre_2009(self, chamber, session):
         """scrapes legislation from 2008 and below."""
         url = BILLS_URL + 'l'
@@ -148,10 +148,10 @@ class IDBillScraper(BillScraper):
                     bill_id = " ".join(matches.groups())
                     short_title = link.tail[:link.tail.index('..')]
                     self.scrape_pre_2009_bill(chamber, session, bill_id, short_title)
-                    
+
     def scrape_bill(self, chamber, session, bill_id, short_title=None):
         """
-        Scrapes documents, actions, vote counts and votes for 
+        Scrapes documents, actions, vote counts and votes for
         bills from the 2009 session and above.
         """
         url = BILL_URL % (session, bill_id.replace(' ', ''))
@@ -163,10 +163,10 @@ class IDBillScraper(BillScraper):
             bill_type = get_bill_type(bill_id)
             bill = Bill(session, chamber, bill_id, title, type=bill_type)
             bill.add_source(url)
-            
+
             if short_title and bill['title'].lower() != short_title.lower():
                 bill.add_title(short_title)
-                
+
             # documents
             doc_links = html.xpath('//span/a')
             for link in doc_links:
@@ -176,14 +176,14 @@ class IDBillScraper(BillScraper):
                     bill.add_version(name, href)
                 else:
                     bill.add_document(name, href)
-                    
+
             # sponsors range from a committee to one legislator to a group of legs
             sponsor_lists = bill_tables[0].text_content().split('by')
             if len(sponsor_lists) > 1:
                 for sponsors in sponsor_lists[1:]:
                     for person in sponsors.split(','):
                         bill.add_sponsor('primary', person)
-                        
+
             actor = chamber
             last_date = None
             for row in bill_tables[2]:
@@ -191,22 +191,22 @@ class IDBillScraper(BillScraper):
                 if len(row) == 1:
                     continue
                 _, date, action, _ = [x.text_content().strip() for x in row]
-                
+
                 if date:
                     last_date = date
                 else:
                     date = last_date
-                    
+
                 date = datetime.datetime.strptime(date+ '/' + session[0:4],
                                                   "%m/%d/%Y")
                 if action.startswith('House'):
                     actor = 'lower'
                 elif action.startswith('Senate'):
                     actor = 'upper'
-                    
+
                 # votes
                 if 'AYES' in action or 'NAYS' in action:
-                    vote = self.parse_vote(actor, date, row[2])  
+                    vote = self.parse_vote(actor, date, row[2])
                     vote.add_source(url)
                     bill.add_vote(vote)
                 # some td's text is seperated by br elements
@@ -222,7 +222,7 @@ class IDBillScraper(BillScraper):
                 elif 'to Senate' in action:
                     actor = 'upper'
             self.save_bill(bill)
-            
+
     def scrape_pre_2009_bill(self, chamber, session, bill_id, short_title=''):
         """bills from 2008 and below are in a 'pre' element and is simpler to
         parse them as text"""
@@ -230,24 +230,24 @@ class IDBillScraper(BillScraper):
         with self.urlopen(url) as bill_page:
             html = lxml.html.fromstring(bill_page)
             text = html.xpath('//pre')[0].text.split('\r\n')
-            
+
             # title
             title = " - ".join([ x.strip() for x in text[1].split('-') if x.isupper() ])
             # bill type
             bill_type = get_bill_type(bill_id)
-            
+
             bill = Bill(session, chamber, bill_id, title, type=bill_type)
             # sponsors
             sponsors = text[0].split('by')[-1]
             for sponsor in sponsors.split(','):
                 bill.add_sponsor('primary', sponsor)
-                
+
             actor = chamber
             self.flag() # clear last bills vote flags
             self.vote = None #
-            
+
             for line in text:
-                
+
                 if re.match(r'^\d\d/\d\d', line):
                     date = date = datetime.datetime.strptime(line[0:5] + '/' + session[0:4],
                                                   "%m/%d/%Y")
@@ -257,7 +257,7 @@ class IDBillScraper(BillScraper):
                     if action_text.lower().startswith('house') or \
                        action_text.lower().startswith('senate'):
                         actor = {'H':'lower', 'S':'upper'}[action_text[0]]
-                    
+
                     action = get_action(actor, action_text)
                     bill.add_action(actor,action_text, date, type=action)
                     if "bill:passed" in action or "bill:failed" in action:
@@ -276,7 +276,7 @@ class IDBillScraper(BillScraper):
                         if self.vote:
                             bill.add_vote(self.vote)
                             self.vote = None
-                        
+
                     if not self.in_vote:
                         continue
                     if 'AYES --' in line:
@@ -285,24 +285,27 @@ class IDBillScraper(BillScraper):
                         self.flag(nays=True)
                     elif 'Absent and excused' in line:
                         self.flag(other=True)
-                    
+
                     if self.ayes:
                         for name in line.replace('AYES --', '').split(','):
+                            name = name.strip()
                             if name:
-                                self.vote.yes(name.strip())
-                            
+                                self.vote.yes(name)
+
                     if self.nays:
                         for name in line.replace('NAYS --', '').split(','):
+                            name = name.strip()
                             if name:
-                                self.vote.no(name.strip())
-                        
+                                self.vote.no(name)
+
                     if self.other:
                         for name in line.replace('Absent and excused --', '').split(','):
+                            name = name.strip()
                             if name:
-                                self.vote.other(name.strip())
-                            
+                                self.vote.other(name)
+
             self.save_bill(bill)
-            
+
     def parse_vote(self, actor, date, row):
         """
         takes the actor, date and row element and returns a Vote object
@@ -319,7 +322,7 @@ class IDBillScraper(BillScraper):
             if key in passed.lower():
                 passed = val
                 break
-        vote = Vote(actor, date, motion, passed, int(yes_count), int(no_count), 
+        vote = Vote(actor, date, motion, passed, int(yes_count), int(no_count),
                     int(other_count))
         for name in yes_votes:
             vote.yes(name)
@@ -328,7 +331,7 @@ class IDBillScraper(BillScraper):
         for name in other_votes:
             vote.other(name)
         return vote
-    
+
     def flag(self, ayes=False, nays=False, other=False):
         """ help to keep track of """
         self.ayes = ayes
