@@ -153,7 +153,7 @@ class BillSearchHandler(BillyHandler):
             _filter['_keywords'] = {'$all': keywords}
 
         # process search_window
-        search_window = request.GET.get('search_window', '').lower()
+        search_window = request.GET.get('search_window', '')
         if search_window:
             if search_window == 'session':
                 _filter['_current_session'] = True
