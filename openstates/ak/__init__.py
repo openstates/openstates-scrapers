@@ -13,5 +13,10 @@ metadata = dict(
              start_year=2009, end_year=2010),
         dict(name='27', sessions=['27'],
              start_year=2011, end_year=2012),
-        ],
-    )
+    ],
+    session_details={
+        '26': {'display_name': '26th Legislature'},
+        '27': {'display_name': '27th Legislature'},
+    },
+    feature_flags=['subjects'],
+)

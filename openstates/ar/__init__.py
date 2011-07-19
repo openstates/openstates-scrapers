@@ -18,6 +18,8 @@ metadata = dict(
         ],
     session_details={
         '2011': {'start_date': datetime.date(2011, 1, 10),
+                 'end_date': datetime.date(2011, 4, 27),
+                 'display_name': '2011 Regular Session',
                  'type': 'primary'}
         },
     )

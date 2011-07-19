@@ -1,5 +1,8 @@
 import datetime
 
+# TODO: this state isn't live and so we're letting it get away with violations
+# of https://github.com/sunlightlabs/openstates/wiki/Session-Naming-Style-Guide
+
 metadata =  {
     'name': 'Alabama',
     'abbreviation': 'al',
