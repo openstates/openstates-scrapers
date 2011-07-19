@@ -45,27 +45,27 @@ metadata = {
     'session_details': {
         '2009 Regular Session': {'start_date': datetime.date(2009,1,13),
                                  'end_date': datetime.date(2011,1,3),
-                                 'type': 'primary'},
-        'June 2009 Special Session': {'type': 'special', 'site_id': 'jn9'},
-        'December 2009 Special Session': {'type': 'special', 'site_id': 'de9'},
+                                 'type': 'primary',
+                                 'display_name': '2009 Regular Session',
+                                },
+        'June 2009 Special Session': {
+            'type': 'special', 'site_id': 'jn9',
+            'display_name': 'Jun 2009 Special Session',
+        },
+        'December 2009 Special Session': {
+            'type': 'special', 'site_id': 'de9',
+            'display_name': 'Dec 2009 Special Session',
+        },
         '2011 Regular Session': {'start_date': datetime.date(2009,1,11),
                                  'end_date': datetime.date(2013,1,7),
-                                 'type': 'primary'},
-        'January 2011 Special Session': {'type': 'special', 'site_id': 'jr1'},
-    }
+                                 'type': 'primary',
+                                 'display_name': '2011 Regular Session'
+                                },
+        'January 2011 Special Session': {
+            'type': 'special', 'site_id': 'jr1',
+            'display_name': 'Jan 2011 Special Session',
+        }
+    },
+    'feature_flags': ['subjects'],
 }
 
-"""
-/2009/DE9: Dec 2009 Special Session
-/2009/JN9: June 2009 Special Session
-/2007/AP8: April 2008 Special Session
-/2007/MR8: March 2008 Special Session
-/2007/de7: Dec 2007 Special Session
-/2007/oc7: Oct 2007 Special Session
-/2007/jr7: Jan 2007 Special Session
-/2005/jr5: Jan 2005 Special Session
-/2003/jr3: Jan 2003 Special Session
-/2001/my2: May 2002 Special Session
-/2001/jr2: Jan 2002 Special Session
-/2001/my1: May 2001 Special Session
-"""

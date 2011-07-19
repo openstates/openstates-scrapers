@@ -20,9 +20,16 @@ metadata = dict(
                  '2011-2012']),
         ],
     session_details={
-        '2009-2010': {'type': 'primary'},
+        '2009-2010': {'type': 'primary',
+                      'display_name': '2009-2010 Regular Session',
+                     },
         '2009-2010 Special Session #1 (Transportation)': {
-            'type': 'special'},
-        '2011-2012': {'type': 'primary'},
-        }
-    )
+            'type': 'special',
+            'display_name': '2009-2010, 1st Special Session',
+        },
+        '2011-2012': {'type': 'primary',
+                      'display_name': '2011-2012 Regular Session',
+                     },
+        },
+    feature_flags=['events'],
+)
