@@ -51,6 +51,7 @@ def browse_index(request, template='billy/index.html'):
             row['bill_types'] = len(db.bills.find(s_spec).distinct('type')) > 1
             row['legislators'] = db.legislators.find(s_spec).count()
             row['committees'] = db.committees.find(s_spec).count()
+            row['events'] = db.events.find(s_spec).count()
             id_counts = _get_leg_id_stats(level, row['id'])
             active_legs = db.legislators.find({'level': level,
                                                level: row['id'],
@@ -81,6 +82,7 @@ def browse_index(request, template='billy/index.html'):
             row['bill_types'] = 'n/a'
             row['legislators'] = db.legislators.find().count()
             row['committees'] = db.committees.find().count()
+            row['events'] = db.events.find().count()
 
         rows.append(row)
 
