@@ -28,9 +28,13 @@ metadata = dict(
          'sessions': ['76']
         }
     ],
-    session_details= {
-        '2010Special26': {'type':'special'},
-        '75': {'type': 'primary'},
-        '76': {'type': 'primary'},
-    }
+    session_details={
+        '2010Special26': {'type':'special',
+                          'display_name': '26th Special Session (2010)'},
+        '75': {'type': 'primary',
+               'display_name': '2009 Regular Session'},
+        '76': {'type': 'primary',
+               'display_name': '2011 Regular Session'},
+    },
+    feature_flags=['subjects'],
 )

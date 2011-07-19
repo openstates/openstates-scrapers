@@ -24,6 +24,8 @@ metadata = dict(
         {'name': '2010-2011', 'sessions': ['214'],
          'start_year': 2010, 'end_year': 2011},
     ],
-    session_details={'214': {'start_date': datetime.date(2010, 1, 12)}},
+    session_details={'214': {'start_date': datetime.date(2010, 1, 12),
+                             'display_name': '2010-2011 Regular Session'}
+                    },
+    feature_flags=['subjects'],
 )
-
