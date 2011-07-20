@@ -22,4 +22,5 @@ metadata = dict(
                  'display_name': '2011 Regular Session',
                  'type': 'primary'}
         },
+    feature_flags=[],
     )

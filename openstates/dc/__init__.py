@@ -23,4 +23,5 @@ metadata = dict(
     session_details={
         '19': {'display_name': '19th Council Period',}
     },
+    feature_flags=[],
 )

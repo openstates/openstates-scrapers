@@ -25,7 +25,7 @@ metadata = dict(
          'start_year': 2011, 'end_year': 2012},
      ],
     session_details={
-        '2011 Regular Session': {'verbose_name': '2011 Regular Session'},
+        '2011 Regular Session': {'display_name': '2011 Regular Session'},
     },
     feature_flags=['subjects'],
 )

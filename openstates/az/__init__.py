@@ -422,5 +422,6 @@ metadata = dict(
                 'display_name': '50th Legislature, 1st Regular Session',
                 'start_date': datetime.date(2011, 1, 10),
                 'end_date': datetime.date(2011,4,20)},
-        }
+        },
+        feature_flags=[],
     )
