@@ -27,5 +27,6 @@
          "end_date": {"type": "datetime", "required": false}
        }
      }
-   }
+   },
+   "feature_flags": { "type": "array", "items": {"type": "string"}}
 }}
