@@ -152,7 +152,7 @@ class BillSearchHandler(BillyHandler):
 
         # normal mongo search logic
         _filter = _build_mongo_filter(request, ('state', 'chamber',
-                                                'subjects'))
+                                                'subjects', 'bill_id'))
 
         # process full-text query
         query = request.GET.get('q')
