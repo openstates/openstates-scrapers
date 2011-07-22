@@ -43,14 +43,14 @@ Metadata Fields
     * ``name``: The name of this session.
     * ``sessions``: List of sessions that took place inside the given term.
 ``session_details``
-    Optional extra details about sessions.
+    Details about sessions.
 
-    If present will be a dictionary with keys corresponding to ``sessions`` and values are dictionaries
+    Dictionary keys correspond to ``sessions`` and values are dictionaries
     of extra metadata about a session.
 
-    Fields that may be present include ``start_date`` and
-    ``end_date``, as well as ``type`` indicating whether the session
-    was a normally scheduled or special session.
+    Currently the only required field is ``display_name``, though fields that may be
+    present include ``start_date`` and ``end_date``, as well as ``type`` indicating
+    whether the session was a normally scheduled or special session.
 
 Example
 -------
