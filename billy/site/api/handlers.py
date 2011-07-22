@@ -53,6 +53,9 @@ def _build_mongo_filter(request, keys, icase=True):
             if key == 'chamber':
                 value = value.lower()
                 _filter[key] = _chamber_aliases.get(value, value)
+            elif key.endswith('__in'):
+                values = value.split('|')
+                _filter[key[:-4]] = {'$in': values}
             else:
                 _filter[key] = re.compile('^%s$' % value, re.IGNORECASE)
 
@@ -152,7 +155,8 @@ class BillSearchHandler(BillyHandler):
 
         # normal mongo search logic
         _filter = _build_mongo_filter(request, ('state', 'chamber',
-                                                'subjects', 'bill_id'))
+                                                'subjects', 'bill_id',
+                                                'bill_id__in'))
 
         # process full-text query
         query = request.GET.get('q')
