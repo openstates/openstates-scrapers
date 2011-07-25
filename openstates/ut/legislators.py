@@ -7,53 +7,86 @@ class UTLegislatorScraper(LegislatorScraper):
     state = 'ut'
 
     def scrape(self, chamber, term):
-        self.validate_term(term)
-
-        year = term[0:4]
-
-        lower_gone_2011 = set(["Ferry, Ben C.", "Hunsaker, Fred R",
-                               "Gibson, Kerry W.", "Hansen, Neil A.",
-                               "Wallis, C. Brent", "Aagard, Douglas C.",
-                               "Allen, Sheryl L.", "Riesen, Phil",
-                               "Black, Laura", "Mascaro, Steven R.",
-                               "Beck, Trisha S.", "Seegmiller, F. Jay",
-                               "Fowlke, Lorie D.", "Gowans, James R."])
-
-        upper_gone_2011 = set(["Greiner, Jon J.", "Goodfellow, Brent H."])
+        self.validate_term(term, latest_only=True)
 
         if chamber == 'lower':
-            title = 'Representative'
+            self.scrape_lower(term)
         else:
-            title = 'Senator'
+            self.scrape_upper(term)
 
-        url = 'http://www.le.state.ut.us/asp/roster/roster.asp?year=%s' % year
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+    def scrape_lower(self, term):
+        url = 'http://le.utah.gov/house2/representatives.jsp'
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
 
-            for row in page.xpath('//table[2]/tr')[1:]:
-                row_title = row.xpath('string(td[2])')
+        for row in doc.xpath('//tr')[1:]:
+            tds = row.xpath('td')
 
-                if row_title == title:
-                    full_name = row.xpath('string(td[1])')
-                    district = row.xpath('string(td[4])')
-                    party = row.xpath('string(td[3])')
+            district = tds[0].text_content()
+            a = tds[1].xpath('a')[0]
+            name = a.text_content()
+            leg_url = a.get('href')
 
-                    if party == "Democrat":
-                        party = "Democratic"
+            party = tds[2].text_content()
+            if party == 'D':
+                party = 'Democratic'
+            elif party == 'R':
+                party = 'Republican'
+            else:
+                raise ValueError('unknown party')
 
-                    # The UT legislator list still shows incumbents that
-                    # lost or retired (as of Jan 11 2011)
-                    if term == '2011-2012':
-                        if chamber == 'lower' and full_name in lower_gone_2011:
-                            print "Skipping %s" % full_name
-                            continue
-                        elif chamber == 'upper' and full_name in upper_gone_2011:
-                            print "Skipping %s" % full_name
-                            continue
+            # get photo
+            leg_html = self.urlopen(leg_url)
+            leg_doc = lxml.html.fromstring(leg_html)
+            leg_doc.make_links_absolute(leg_url)
+            photo_url = leg_doc.xpath('//img[@alt="photo"]/@src')[0]
 
-                    leg = Legislator(term, chamber, district,
-                                     full_name, '', '', '',
-                                     party)
-                    leg.add_source(url)
-                    self.save_legislator(leg)
+            leg = Legislator(term, 'lower', district, name,
+                             party=party, photo_url=photo_url)
+            leg.add_source(url)
+            leg.add_source(leg_url)
+            self.save_legislator(leg)
+
+
+    def scrape_upper(self, term):
+        url = 'http://www.utahsenate.org/aspx/roster.aspx'
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+
+        for row in doc.xpath('//tr')[1:]:
+            tds = row.xpath('td')
+
+            # 1st has district
+            district = tds[0].text_content()
+
+            # 3rd has name and email
+            person = tds[2].xpath('span[@class="person"]')[0]
+            if '(D)' in person.text_content():
+                party = 'Democratic'
+            elif '(R)' in person.text_content():
+                party = 'Republican'
+            else:
+                raise ValueError('unknown party')
+            a = person.xpath('a')[0]
+            name = a.text_content()
+            leg_url = a.get('href')
+            email = tds[2].xpath('span[@class="email"]/a/text()')[0]
+
+            # text is split by br in 4th td, join with a space
+            address = ' '.join(row.xpath('td[4]/font/text()'))
+
+            # get photo
+            leg_html = self.urlopen(leg_url)
+            leg_doc = lxml.html.fromstring(leg_html)
+            leg_doc.make_links_absolute(leg_url)
+            photo_url = leg_doc.xpath('//p[@class="photo"]/img/@src')[0]
+
+            leg = Legislator(term, 'upper', district, name,
+                             party=party, email=email, address=address,
+                             photo_url=photo_url)
+            leg.add_source(url)
+            leg.add_source(leg_url)
+            self.save_legislator(leg)
