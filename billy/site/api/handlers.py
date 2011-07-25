@@ -147,9 +147,9 @@ class BillSearchHandler(BillyHandler):
     def read(self, request):
 
         bill_fields = {'title': 1, 'created_at': 1, 'updated_at': 1,
-                       'bill_id': 1, 'type': 1, 'state': 1,
-                       'session': 1, 'chamber': 1,
-                       'subjects': 1, '_type': 1}
+                       'bill_id': 1, 'type': 1, 'state': 1, 'level': 1,
+                       'session': 1, 'chamber': 1, 'subjects': 1,
+                       '_type': 1}
         # replace with request's fields if they exist
         bill_fields = _build_field_list(request, bill_fields)
 
