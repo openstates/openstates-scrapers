@@ -14,7 +14,7 @@ metadata = dict(
          'start_year': 2009, 'end_year': 2012},
      ],
     session_details={
-        '2009-2012': '2009-2012 Session',
+        '2009-2012': {'display_name': '2009-2012 Session'},
     },
     feature_flags=[],
 )
