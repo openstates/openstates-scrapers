@@ -23,7 +23,7 @@ class LazyDb(object):
         return getattr(self._db, attr)
 
 
-class LazyFs():
+class LazyFs(object):
 
     def __init__(self):
         self._fs = None

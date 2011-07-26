@@ -9,7 +9,7 @@ from collections import defaultdict
 from pymongo.son import SON
 import pymongo.errors
 
-from billy import db, fs
+from billy import db
 
 import name_tools
 
