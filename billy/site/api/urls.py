@@ -9,7 +9,7 @@ import piston.resource
 from piston.emitters import Emitter
 
 from billy.site.api import handlers
-from billy.site.api.views import document, legislator_preview
+from billy.site.api.views import legislator_preview
 from billy.site.api.emitters import BillyJSONEmitter, BillyXMLEmitter
 from billy.site.api.emitters import FeedEmitter, ICalendarEmitter
 
@@ -96,8 +96,6 @@ urlpatterns = patterns('',
 
     url(r'^v1/committees/(?P<id>[A-Z]{2,2}C\d{6,6})/$', committee_handler),
     url(r'^v1/committees/$', committee_search_handler),
-
-    url(r'^v1/documents/(?P<id>[A-Z]{2,2}D\d{8,8})/$', document),
 
     url(r'^v1/events/$', events_handler),
     url(r'^v1/events/(?P<id>[A-Z]{2,2}E\d{8,8})/$', events_handler),
