@@ -25,6 +25,9 @@ class UTLegislatorScraper(LegislatorScraper):
             tds = row.xpath('td')
 
             district = tds[0].text_content()
+            if tds[1].text_content() == 'Empty':
+                self.log('district %s is empty' % district)
+                continue
             a = tds[1].xpath('a')[0]
             name = a.text_content()
             leg_url = a.get('href')
