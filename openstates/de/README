@@ -1,0 +1,36 @@
+Deleware Progress
+=====================
+
+Sources:
+http://legis.delaware.gov/
+http://legis.delaware.gov/legislature.nsf/sen?openview&nav=senate
+http://legis.delaware.gov/legislature.nsf/Reps?openview&nav=house
+http://legis.delaware.gov/LIS/LIS146.nsf/SCommittees
+http://legis.delaware.gov/LIS/LIS146.nsf/HCommittees
+
+
+
+legislators.py
+--------------
+Progress: finished
+Data scraped:
+  * term
+  * chamber
+  * district_name
+  * full_name
+
+Note: Legislator party affiliation could be obtained by scraping the linked legislator bio pages.
+
+
+committees.py
+-------------
+Progress: finished
+Data scraped:
+  * chamber
+  * membernames
+  * roles
+
+
+bills.py
+--------
+Progress: none
