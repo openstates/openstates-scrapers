@@ -1,0 +1,21 @@
+Missouri
+=================
+
+Sources:
+
+legislators.py
+=================
+Last revisited:
+
+bills.py
+=================
+Last revisited:
+
+Its sad: the latest version of the MO House site only goes back to 2000. But
+the old system that this scraper was designed for goes back to 1995. Should we
+make the scraper fetch this old data as well? If so...look back at the old git
+revisions I guess...
+
+committees.py
+=================
+Last revisited:

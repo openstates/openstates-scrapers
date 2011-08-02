@@ -85,3 +85,21 @@ def test_senate():
     eq_('Bill Placed on Informal Calendar',scraper.bills[1]['actions'][7]['action'])
     m.UnsetStubs()
     m.VerifyAll()
+
+def test_house():
+    scraper = MyMOBillScraper({})
+    m = Mox()
+    m.StubOutWithMock(scraper,'urlopen')
+    # first, get the list of all house bills for the given year.
+    scraper.urlopen(StrContains('BillList.aspx?year=')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/bills-house.html' % os.getcwd()))
+    scraper.urlopen(StrContains('billsummaryprn.aspx?bill=')) \
+            .MultipleTimes() \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billdetail-house.html' % os.getcwd()))
+    scraper.urlopen(StrContains('BillActionsPrn.aspx?bill=')) \
+            .MultipleTimes() \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billactions-house.html' % os.getcwd()))
+    m.ReplayAll()
+    scraper.scrape_house('2011')
+    m.UnsetStubs()
+    m.VerifyAll()
