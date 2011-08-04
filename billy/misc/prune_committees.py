@@ -25,7 +25,7 @@ def prune_committees(state, remove=False):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='validate API results',
+    parser = argparse.ArgumentParser(description='prune empty committees',
                                      parents=[base_arg_parser])
     parser.add_argument('states', nargs='+', help='states to validate')
     args = parser.parse_args()
@@ -33,4 +33,4 @@ if __name__ == '__main__':
 
     for state in args.states:
         print "Pruning committees for %s" % state
-        validate_api(state, args.schema_dir)
+        prune_committees(state)
