@@ -7,13 +7,13 @@ class DEBillScraper(BillScraper):
 
     urls = {
         '2011-2012': {
-            'upper': (
+            'lower': (
                 'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=1',
                 'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=2',
                 'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=3',
                 'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=4'
             ),
-            'lower': (
+            'upper': (
                 'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=5',
                 'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=6',
                 'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=7',
@@ -47,6 +47,8 @@ class DEBillScraper(BillScraper):
         self.log(bill['id'])
         self.log(bill['url'])
 
+        bill_id = bill['id'].replace('w/','with ')
+
         page = lxml.html.fromstring(self.urlopen(bill['url']))
         page.make_links_absolute(bill['url'])
 
@@ -62,7 +64,8 @@ class DEBillScraper(BillScraper):
         cosponsors = cosponsors if cosponsors != '{ NONE...}' else ''
 
         title_row = page.xpath('//tr[td/b[contains(font,"Long Title")]]')[0]
-        title = title_row.xpath('td[@width="79%"]/font')[0].text
+        # text_content() == make sure any tags in the title don't cause issues
+        title = title_row.xpath('td[@width="79%"]/font')[0].text_content() 
 
         self.log('Title: ' + title)
         self.log('Sponsor: ' + sponsor)
@@ -71,6 +74,6 @@ class DEBillScraper(BillScraper):
         self.log('*'*50)
 
         # Save bill
-        b = Bill(bill['session'], bill['chamber'], bill['id'], title)
+        b = Bill(bill['session'], bill['chamber'], bill_id, title)
         b.add_source(bill['url'])
         self.save_bill(b)
