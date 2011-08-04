@@ -50,6 +50,27 @@ class DEBillScraper(BillScraper):
         page = lxml.html.fromstring(self.urlopen(bill['url']))
         page.make_links_absolute(bill['url'])
 
-        # scrape away ...
-        #b = Bill(bill['session'], bill['chamber'], bill['id'], ...)
-        #self.save_bill(b)
+        sponsors_row = page.xpath('//tr[td/b[contains(font,"Primary Sponsor")]]')[0]
+        sponsor = sponsors_row.xpath('td[@width="31%"]/font')[0].text
+
+        additional = sponsors_row.xpath('td[@width="48%"]/font')
+        additional_sponsors = additional[0].text if len(additional) > 0 else ""
+        additional_sponsors = additional_sponsors.replace('&nbsp&nbsp&nbsp','')
+
+        cosponsors_row = page.xpath('//tr[td/b[contains(font,"CoSponsors")]]')[0]
+        cosponsors = cosponsors_row.xpath('td[@width="79%"]/font')[0].text
+        cosponsors = cosponsors if cosponsors != '{ NONE...}' else ''
+
+        title_row = page.xpath('//tr[td/b[contains(font,"Long Title")]]')[0]
+        title = title_row.xpath('td[@width="79%"]/font')[0].text
+
+        self.log('Title: ' + title)
+        self.log('Sponsor: ' + sponsor)
+        self.log('Additional sponsors: ' + additional_sponsors)
+        self.log('Co-sponsors: ' + cosponsors)
+        self.log('*'*50)
+
+        # Save bill
+        b = Bill(bill['session'], bill['chamber'], bill['id'], title)
+        b.add_source(bill['url'])
+        self.save_bill(b)
