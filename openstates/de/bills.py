@@ -23,6 +23,9 @@ class DEBillScraper(BillScraper):
         }
     }
 
+    vote_urls = {}
+
+
     def scrape(self, chamber, session):
         urls = self.urls[session][chamber]
         bills_to_scrape = []
@@ -43,6 +46,13 @@ class DEBillScraper(BillScraper):
 
         for bill in bills_to_scrape:
             self.scrape_bill(bill)
+
+        for bill_id, votes in self.vote_urls.iteritems():
+            for url in votes['urls']:
+                self.scrape_votes(bill_id, url)
+        
+        self.vote_urls = {}
+
 
     def scrape_bill(self, bill):
         self.log(bill['id'])
@@ -88,7 +98,20 @@ class DEBillScraper(BillScraper):
                act = act.partition(' - ')
                date = datetime.strptime(act[0], '%b %d, %Y')
                b.add_action(bill['chamber'], act[2], date)
+        
 
+        # resources = page.xpath('//tr[td/b[contains(font, "Full text of Legislation")]]')
+
+        # save vote urls for scraping later
+        voting_reports = page.xpath('//tr[td/b[contains(font, "Voting Reports")]]')
+        if(len(voting_reports) > 0):
+            for report in voting_reports[0].xpath('td/font/a'):
+                if self.vote_urls.has_key(bill_id):
+                    self.vote_urls[bill_id]['urls'].append(report.attrib['href'])
+                else:
+                    self.vote_urls[bill_id] = { 'urls': [report.attrib['href']] }
+        
+        
         self.log('Title: ' + title)
         self.log('Sponsor: ' + sponsor)
         self.log('Additional sponsors: ' + additional_sponsors)
@@ -97,4 +120,9 @@ class DEBillScraper(BillScraper):
 
         # Save bill
         self.save_bill(b)
+    
 
+    def scrape_votes(self, bill_id, url):
+        self.log(bill_id)
+        self.log(url)
+        self.log('*'*50)
