@@ -1,4 +1,5 @@
 from billy.scrape.bills import BillScraper, Bill
+from datetime import datetime
 import lxml.html
 import re
 
@@ -52,9 +53,20 @@ class DEBillScraper(BillScraper):
         page = lxml.html.fromstring(self.urlopen(bill['url']))
         page.make_links_absolute(bill['url'])
 
+        title_row = page.xpath('//tr[td/b[contains(font,"Long Title")]]')[0]
+        # text_content() == make sure any tags in the title don't cause issues
+        title = title_row.xpath('td[@width="79%"]/font')[0].text_content() 
+
+        # now we can create a bill object
+        b = Bill(bill['session'], bill['chamber'], bill_id, title)
+        b.add_source(bill['url'])
+
         sponsors_row = page.xpath('//tr[td/b[contains(font,"Primary Sponsor")]]')[0]
         sponsor = sponsors_row.xpath('td[@width="31%"]/font')[0].text
+        b.add_sponsor('primary', sponsor)
 
+        # scraping these and co-sponsors, but not doing anything with them until 
+        # it's decided whether or not to attempt to split 'em up
         additional = sponsors_row.xpath('td[@width="48%"]/font')
         additional_sponsors = additional[0].text if len(additional) > 0 else ""
         additional_sponsors = additional_sponsors.replace('&nbsp&nbsp&nbsp','')
@@ -63,9 +75,19 @@ class DEBillScraper(BillScraper):
         cosponsors = cosponsors_row.xpath('td[@width="79%"]/font')[0].text
         cosponsors = cosponsors if cosponsors != '{ NONE...}' else ''
 
-        title_row = page.xpath('//tr[td/b[contains(font,"Long Title")]]')[0]
-        # text_content() == make sure any tags in the title don't cause issues
-        title = title_row.xpath('td[@width="79%"]/font')[0].text_content() 
+        introduced_row = page.xpath('//tr[td/b[contains(font,"Introduced On")]]')
+        if len(introduced_row) > 0:
+            introduced = introduced_row[0].expath('/td[@width="31%"]/font')[0].text
+            introduced = datetime.strptime(introduced, '%b %d, %Y')
+            b.add_action(bill['chamber'], 'introduced', introduced, 'bill:introduced')
+
+        actions = page.xpath('//table[preceding-sibling::b[contains(font,"Actions History:")]]/tr/td[@width="79%"]/font')
+        if len(actions) > 0:
+           actions = actions[0].text_content().split('\n') 
+           for act in actions:
+               act = act.partition(' - ')
+               date = datetime.strptime(act[0], '%b %d, %Y')
+               b.add_action(bill['chamber'], act[2], date)
 
         self.log('Title: ' + title)
         self.log('Sponsor: ' + sponsor)
@@ -74,6 +96,5 @@ class DEBillScraper(BillScraper):
         self.log('*'*50)
 
         # Save bill
-        b = Bill(bill['session'], bill['chamber'], bill_id, title)
-        b.add_source(bill['url'])
         self.save_bill(b)
+

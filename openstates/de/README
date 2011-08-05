@@ -41,6 +41,7 @@ Data scraped:
   * bill_id
   * title
   * primary sponsor
+  * actions
   * co-sponsors*
   * additional sponsors*
 
