@@ -96,10 +96,31 @@ def test_house():
     scraper.urlopen(StrContains('billsummaryprn.aspx?bill=')) \
             .MultipleTimes() \
             .AndReturn(openFile('file://%s/openstates/mo/tests/billdetail-house.html' % os.getcwd()))
+    scraper.urlopen(StrContains('biltxt/intro')) \
+            .MultipleTimes() \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billtext-house.html' % os.getcwd()))
     scraper.urlopen(StrContains('BillActionsPrn.aspx?bill=')) \
             .MultipleTimes() \
             .AndReturn(openFile('file://%s/openstates/mo/tests/billactions-house.html' % os.getcwd()))
     m.ReplayAll()
     scraper.scrape_house('2011')
+    eq_(1144,len(scraper.bills))
+    eq_('HB 45',scraper.bills[0]['bill_id'])
+    eq_('http://www.house.mo.gov/billsummaryprn.aspx?bill=HB1&year=2011&code=R',scraper.bills[0]['bill_url'])
+    eq_('SS SCS HCS HB 45',scraper.bills[0]['official_title'])
+    eq_(8,len(scraper.bills[0]['sponsors']))
+    eq_('Hoskins, Denny',scraper.bills[0]['sponsors'][0]['name'])
+    eq_('http://www.house.mo.gov/member.aspx?district=121&year=2011',scraper.bills[0]['sponsors'][0]['sponsor_link'])
+    eq_('primary',scraper.bills[0]['sponsors'][0]['type'])
+    eq_('cosponsor',scraper.bills[0]['sponsors'][1]['type'])
+    eq_('ALLEN',scraper.bills[0]['sponsors'][1]['name'])
+    eq_('SCHARNHORST',scraper.bills[0]['sponsors'][-1]['name'])
+    # TODO actions (need to download the HB45 actions)
+    eq_(42,len(scraper.bills[0]['actions']))
+    eq_(5,len(scraper.bills[0]['versions']))
+    eq_(['Introduced','Committee','Perfected','Senate Comm Sub','Truly Agreed'], [x['name'] for x in scraper.bills[0]['versions']])
+    eq_('http://www.house.mo.gov//billtracking/bills111/biltxt/intro/HB0045I.htm',scraper.bills[0]['versions'][0]['url'])
+    eq_('Truly Agreed',scraper.bills[0]['versions'][-1]['name'])
+    eq_('http://www.house.mo.gov//billtracking/bills111/biltxt/truly/HB0045T.htm',scraper.bills[0]['versions'][-1]['url'])
     m.UnsetStubs()
     m.VerifyAll()

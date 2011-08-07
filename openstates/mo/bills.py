@@ -176,8 +176,9 @@ class MOBillScraper(BillScraper):
     def parse_house_bill(self, url, session):
         # using the print page makes the page simpler, and also *drastically* smaller (8k rather than 100k)
         url = re.sub("billsummary", "billsummaryprn", url)
+        url = '%s/%s' % (self.senate_base_url,url)
 
-        with self.urlopen('%s/%s' % (self.senate_base_url,url)) as bill_page:
+        with self.urlopen(url) as bill_page:
             bill_page = lxml.html.fromstring(bill_page)
 
             # get all the info needed to record the bill
@@ -194,14 +195,16 @@ class MOBillScraper(BillScraper):
                 cosponsorOffset = 1
                 
             lr_label_tag = table_rows[3+cosponsorOffset]
-            print "row = "+ lr_label_tag.text_content()
             assert lr_label_tag[0].text_content().strip() == 'LR Number:'
             bill_lr = lr_label_tag[1].text_content()
 
+            official_title_tag = table_rows[6+cosponsorOffset]
+            assert official_title_tag[0].text_content().strip() == 'Bill String:'
+            official_title = official_title_tag[1].text_content()
+
             # could substitute the description for the name,
             # but keeping it separate for now.
-            bill = Bill(session, 'lower', bill_id, bill_desc,
-                        bill_url=url, bill_lr=bill_lr)
+            bill = Bill(session, 'lower', bill_id, bill_desc, bill_url=url, bill_lr=bill_lr, official_title=official_title)
             bill.add_source(url)
 
             # get the sponsors and cosponsors
@@ -209,17 +212,13 @@ class MOBillScraper(BillScraper):
             sponsor_dirty = table_rows[0][1].text_content().strip()
             m = re.search("(.*)\(.*\)", sponsor_dirty)
             if m:
-                bill_sponsor = m.group(1)
+                bill_sponsor = m.group(1).strip()
             else:
-                bill_sponsor = sponsor_dirty
-
-            # find the table with bill details...it'll be useful later
-            # TODO need to find an example with a link
-            #bill_details_tbl = bill_page.table.nextSibling.nextSibling
+                bill_sponsor = sponsor_dirty.strip()
 
             bill_sponsor_link = table_rows[0][1][0].attrib['href']
             if bill_sponsor_link:
-                bill_sponsor_link = '%s/%s' % (self.senate_base_url,bill_sponsor_link)
+                bill_sponsor_link = '%s%s' % (self.senate_base_url,bill_sponsor_link)
 
             bill.add_sponsor('primary', bill_sponsor, sponsor_link=bill_sponsor_link)
 
@@ -229,8 +228,7 @@ class MOBillScraper(BillScraper):
                     cosponsor_cell = table_rows[2][1][0]
                     bill.add_sponsor('cosponsor', cosponsor.text_content(), sponsor_link='%s/%s' % (self.senate_base_url,cosponsor.attrib['href']))
                 else: # name ... etal
-                    # TODO go to the bill and parse out the additional cosponsors
-                    pass
+                    self.parse_cosponsors_from_bill(bill,'%s/%s' % (self.senate_base_url,table_rows[2][1][1].attrib['href']))
 
             actions_link_tag = bill_page.xpath('//div[@class="Sections"]/a')[0]
             actions_link = '%s/%s' % (self.senate_base_url,actions_link_tag.attrib['href'])
@@ -238,16 +236,23 @@ class MOBillScraper(BillScraper):
             self.parse_house_actions(bill, actions_link)
 
             # get bill versions
-            #version_tags = bill_page.findAll(href=re.compile("biltxt"))
             version_tags = bill_page.xpath('//div[@class="BillDocsSection"][2]/span')
-            for version_tag in version_tags:
-                # TODO I may need to reorder these - they appear in reverse order
+            for version_tag in reversed(version_tags):
                 version = clean_text(version_tag.text_content())
                 text_url = '%s/%s' % (self.senate_base_url,version_tag[0].attrib['href'])
                 pdf_url = '%s/%s' % (self.senate_base_url,version_tag[1].attrib['href'])
                 bill.add_version(version, text_url, pdf_url=pdf_url)
 
         self.save_bill(bill)
+
+    def parse_cosponsors_from_bill(self, bill, url):
+        with self.urlopen(url) as bill_page:
+            bill_page = lxml.html.fromstring(bill_page)
+            sponsors_text = bill_page.xpath('/html/body/p[6]/span')[0].text_content()
+            sponsors = clean_text(sponsors_text).split(',')
+            for part in sponsors[1::]:
+                for sponsor in part.split(' AND '):
+                    bill.add_sponsor('cosponsor', clean_text(sponsor))
 
     def parse_house_actions(self, bill, url):
         url = re.sub("BillActions", "BillActionsPrn", url)
@@ -256,28 +261,21 @@ class MOBillScraper(BillScraper):
             actions_page = lxml.html.fromstring(actions_page)
             rows = actions_page.xpath('//table/tr')
 
-            # start with index 0 because the table doesn't have an opening <tr>
-            first_row = rows[0]
-            date = first_row[0].text_content().strip()
-            date = dt.datetime.strptime(date, '%m/%d/%Y')
-            action = first_row[2].text_content().strip()
-
             for row in rows[1:]:
                 # new actions are represented by having dates in the first td
                 # otherwise, it's a continuation of the description from the
                 # previous action
                 if len(row) > 0 and row[0].tag == 'td':
                     if len(row[0].text_content().strip()) > 0:
-                        actor = house_get_actor_from_action(action)
-                        #TODO probably need to add the type here as well
-                        bill.add_action(actor, action, date)
                         date = row[0].text_content().strip()
-                        print "date = %s" % date
                         date = dt.datetime.strptime(date, '%m/%d/%Y')
                         action = row[2].text_content().strip()
                     else:
                         action += ('\n' + row[2].text_content())
                         action = action.rstrip()
+                    actor = house_get_actor_from_action(action)
+                    #TODO probably need to add the type here as well
+                    bill.add_action(actor, action, date)
 
         # add that last action
         actor = house_get_actor_from_action(action)
