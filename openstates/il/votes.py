@@ -1,17 +1,15 @@
 #!/usr/local/bin/python
 # -*- coding: utf-8 -*-
 
-import sys
-from urllib2 import urlopen
-from BeautifulSoup import BeautifulSoup 
-from urlparse import urljoin, urlparse, urlunparse
-import re
-from urllib import urlencode
-import os, os.path
-import tempfile
-from urllib import urlretrieve
 
+from urllib import urlencode, urlretrieve
+from urlparse import urljoin, urlparse, urlunparse, parse_qsl
 import csv
+import os, os.path
+import re
+import sys
+import tempfile
+
 from util import get_soup
 
 from billy.scrape.votes import Vote
@@ -28,7 +26,7 @@ BASE_LEGISLATION_URL = "http://ilga.gov/legislation/default.asp"
 VOTE_ACTION_PATTERN = re.compile("^(.+)(\d{3})-(\d{3})-(\d{3}).*$")
 
 def get_pdf_content(path):
-    """Return the text content of the PDF at the given path. Requires the pdftotext application be reachable.  
+    """Return the text content of the PDF at the given path. Requires the pdftotext application be reachable.
        If the given path begins with 'http' then the URL will be downloaded to a temp file.
        TODO: Cache PDFs?
     """
@@ -66,8 +64,8 @@ def get_bill_pages(scraper, url=None,doc_types=None):
         if d.has_key(type):
             simplified_url = min_max(d[type])
             pages.extend(extract_bill_links(scraper, simplified_url))
-    
-    return pages            
+
+    return pages
 
 def min_max(l):
     """Given a list of document URLs, return a url which compresses them into one.
@@ -80,7 +78,7 @@ def min_max(l):
             for num in match.groups():
                 if int(num) < low: low = int(num)
                 if int(num) > hi: hi = int(num)
-                
+
     urlparts = urlparse(l[0])
     query = parse_qsl(urlparts.query)
     for (i,tup) in enumerate(query):
@@ -109,7 +107,7 @@ def extract_bill_links(scraper, url):
 def vote_history_link(url):
     """Assuming that everything about the URL should remain the same except for the server path,
        return a URL for the vote history.
-       e.g. convert 
+       e.g. convert
          http://ilga.gov/legislation/BillStatus.asp?DocNum=1&GAID=10&DocTypeID=HB&LegId=39979&SessionID=76&GA=96
        to
          http://ilga.gov/legislation/votehistory.asp?DocNum=1&GAID=10&DocTypeID=HB&LegId=39979&SessionID=76&GA=96
@@ -120,9 +118,9 @@ def vote_history_link(url):
 
 
 def extract_vote_pdf_links(scraper, url,chamber_filter=None):
-    """Given a URL to a "votehistory.asp" page, return a sequence of tuples, each of which 
+    """Given a URL to a "votehistory.asp" page, return a sequence of tuples, each of which
        has the form (chamber,label,url)
-       
+
        It's expected that the URLs are for PDF files.
     """
     l = []
@@ -144,13 +142,13 @@ def extract_vote_pdf_links(scraper, url,chamber_filter=None):
                 href = urljoin(url,link['href'])
                 label = link(text=True)[0]
                 if (not chamber_filter) or chamber_filter.lower() == chamber.lower():
-                    l.append((chamber,label,href))        
-    return l        
+                    l.append((chamber,label,href))
+    return l
 
 def is_vote_line(line):
     for code in EXPECTED_VOTE_CODES:
         if line.startswith(code + " "): return True
-    return False        
+    return False
 
 def _identify_candidate_columns(line):
     """Given a vote line, identify all columns in the line which contain valid vote codes.
@@ -162,7 +160,7 @@ def _identify_candidate_columns(line):
         while index != -1:
             indices.add(index)
             index = line.find(code,index + 1)
-    return indices        
+    return indices
 
 def mode(seq):
     max_count = None
@@ -189,7 +187,7 @@ def _identify_columns(lines):
         # elif cols != m: # comment this out because it seems to get mucked up by unicode Muñoz
         #     raise Exception("Equal sized row doesn't match expected column grid: [equal: %s] [expected: %s]" % (cols,m))
     return tuple(m)
-                
+
 def is_vote_code_at(line,idx):
     for code in EXPECTED_VOTE_CODES:
         if line.find(code,idx) == idx: return True
@@ -198,7 +196,7 @@ def is_vote_code_at(line,idx):
 def parse_vote_document(pdf_path):
     """
         Given the path to a PDF (such as might be retrieved from extract_vote_pdf_links), extract the votes and return as a dict with keys of voter names and values
-        as codes like "Y", "N", "NV", "E", etc.  This is heavily dependent upon the columnar format 
+        as codes like "Y", "N", "NV", "E", etc.  This is heavily dependent upon the columnar format
         discovered experimentally.
     """
     if pdf_path.endswith(".txt"):
@@ -217,14 +215,14 @@ def parse_vote_document(pdf_path):
                 votedict[name.strip()] = vote
             except ValueError:
                 pass
-                
+
     for (voter,vote) in votedict.iteritems():
         if vote not in EXPECTED_VOTE_CODES:
             raise Exception("Unexpected vote code %s by voter %s" % (vote,voter))
     return votedict
 
 def columnize(line,indices):
-    """Given a string and a sequence of index columns, cut the line into pieces where each begins at an index 
+    """Given a string and a sequence of index columns, cut the line into pieces where each begins at an index
        and runs until just before the next index begins.  The sequence which is returned may have less items than there are indices, if it is shorter.
     """
     indices = list(indices)
@@ -237,7 +235,7 @@ def columnize(line,indices):
         if part: part = part.strip()
         parts.append(part)
     return parts
-    
+
 def _filename_from_url(url):
     parts = urlparse(url)
     path = parts[2]
@@ -262,7 +260,7 @@ def _dump_votes_file_namer(voter,ga,session):
 
 def all_votes_for_url(scraper, status_url):
     result = []
-    votes = extract_vote_pdf_links(scraper, vote_history_link(status_url))        
+    votes = extract_vote_pdf_links(scraper, vote_history_link(status_url))
     for (chamber,vote_desc,pdf_url) in votes:
         bill_votes = parse_vote_document(pdf_url)
         result.append((chamber,vote_desc,pdf_url,bill_votes))
@@ -274,9 +272,9 @@ def dump_votes(scraper, voter,chamber=None,ga=None,session=None,output=None):
 
     url = legislation_url(ga,session)
     pages = get_bill_pages(scraper, url)
-    
+
     if output is None:
-        output = _dump_votes_file_namer(voter,ga,session)                
+        output = _dump_votes_file_namer(voter,ga,session)
 
     writer = csv.writer(open(output,"w"))
     writer.writerow(['bill_id','short_name','status_url','vote_desc','voters_vote','vote_pdf'])
@@ -287,73 +285,3 @@ def dump_votes(scraper, voter,chamber=None,ga=None,session=None,output=None):
             voters_vote = bill_votes.get(voter,"VOTER %s NOT FOUND" % voter)
             writer.writerow([bill_id,short_name,status_url,vote_desc,voters_vote,pdf_url])
 
-#---------------------
-# parse_qsl lifted from Python 2.6 source:
-def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
-    """Parse a query given as a string argument.
-
-    Arguments:
-
-    qs: URL-encoded query string to be parsed
-
-    keep_blank_values: flag indicating whether blank values in
-        URL encoded queries should be treated as blank strings.  A
-        true value indicates that blanks should be retained as blank
-        strings.  The default false value indicates that blank values
-        are to be ignored and treated as if they were  not included.
-
-    strict_parsing: flag indicating what to do with parsing errors. If
-        false (the default), errors are silently ignored. If true,
-        errors raise a ValueError exception.
-
-    Returns a list, as G-d intended.
-    """
-    pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
-    r = []
-    for name_value in pairs:
-        if not name_value and not strict_parsing:
-            continue
-        nv = name_value.split('=', 1)
-        if len(nv) != 2:
-            if strict_parsing:
-                raise ValueError, "bad query field: %r" % (name_value,)
-            # Handle case of a control-name with no equal sign
-            if keep_blank_values:
-                nv.append('')
-            else:
-                continue
-        if len(nv[1]) or keep_blank_values:
-            name = unquote(nv[0].replace('+', ' '))
-            value = unquote(nv[1].replace('+', ' '))
-            r.append((name, value))
-
-    return r
-
-# and unquote lifted to support parse_qsl
-_hextochr = dict(('%02x' % i, chr(i)) for i in range(256))
-_hextochr.update(('%02X' % i, chr(i)) for i in range(256))
-
-def unquote(s):
-    """unquote('abc%20def') -> 'abc def'."""
-    res = s.split('%')
-    for i in xrange(1, len(res)):
-        item = res[i]
-        try:
-            res[i] = _hextochr[item[:2]] + item[2:]
-        except KeyError:
-            res[i] = '%' + item
-        except UnicodeDecodeError:
-            res[i] = unichr(int(item[:2], 16)) + item[2:]
-    return "".join(res)
-
-
-#---------------------------
-def main(argv=None):
-    if argv is None:   
-        argv = sys.argv
-
-    print "nothing implemented yet!!!"
-    
-
-if __name__ == "__main__":
-    sys.exit(main())
