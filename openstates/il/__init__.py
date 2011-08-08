@@ -13,5 +13,6 @@ metadata = {
     'terms': [
         {'name': '97th', 'sessions': ['97th Regular Session'],
          'start_year': 2011, 'end_year': 2012},
-    ]
+    ],
+    'feature_flags': []
 }
