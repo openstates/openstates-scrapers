@@ -10,18 +10,28 @@ class DEBillScraper(BillScraper):
         '2011-2012': {
             'lower': (
                 'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=1',
-                'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=2',
-                'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=3',
-                'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=4'
             ),
             'upper': (
                 'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=5',
-                'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=6',
-                'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=7',
-                'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=8'
             )
         }
     }
+    #urls = {
+    #    '2011-2012': {
+    #        'lower': (
+    #            'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=1',
+    #            'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=2',
+    #            'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=3',
+    #            'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=4'
+    #        ),
+    #        'upper': (
+    #            'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=5',
+    #            'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=6',
+    #            'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=7',
+    #            'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=8'
+    #        )
+    #    }
+    #}
 
     vote_urls = {}
 
@@ -123,6 +133,26 @@ class DEBillScraper(BillScraper):
     
 
     def scrape_votes(self, bill_id, url):
+        page = lxml.html.fromstring(self.urlopen(url))
+
+        # there's got to be a cleaner, less redundant way to ferret this out
+        summary_row = page.xpath('//b[font[contains(text(),"Date:")]]')
+        if(len(summary_row) == 0):
+            summary_row = page.xpath('//font[contains(text(),"Date:")]')
+        summary_row = summary_row[0]
+
+        vote_date = summary_row.xpath('following-sibling::font[2]')[0].text
+
+        vote_result = summary_row.xpath('following-sibling::b/font')
+        if(len(summary_row) > 0):
+            vote_result = vote_result[0].text
+        else:
+            vote_result = summary_row.xpath('following-sibling::font[4]')[0].text
+        vote_passed = True if vote_result == 'Passed' else False
+
         self.log(bill_id)
         self.log(url)
+        self.log(vote_date)
+        self.log(vote_result)
+        self.log(vote_passed)
         self.log('*'*50)
