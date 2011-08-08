@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
 import re
+import os
 import datetime
 import lxml.html
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-import votes
-
-def standardize_chamber(s):
-    if s is not None:
-        if s.lower() == 'house':
-            return 'lower'
-        if s.lower() == 'senate':
-            return 'upper'
-    return s
+from billy.scrape.utils import convert_pdf
 
 def group(lst, n):
     # from http://code.activestate.com/recipes/303060-group-a-list-into-sequential-n-tuples/
@@ -96,10 +89,14 @@ class ILBillScraper(BillScraper):
             bill.add_action(actor, action, date)
 
         # versions
-        version_url = doc.xpath('//a[text()="Full Text"]')[0].get('href')
+        version_url = doc.xpath('//a[text()="Full Text"]/@href')[0]
         self.scrape_documents(bill, version_url)
 
+        votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
+        self.scrape_votes(bill, votes_url)
+
         bill.add_source(url)
+        bill.add_source(votes_url)
         self.save_bill(bill)
 
 
@@ -121,32 +118,51 @@ class ILBillScraper(BillScraper):
                 self.warning('unknown document type %s' % name)
 
 
-    def apply_votes(self, bill):
-        """Given a bill (and assuming it has a status_url in its dict), parse all of the votes
-        """
-        bill_votes = votes.all_votes_for_url(self, bill['status_url'])
-        for (chamber,vote_desc,pdf_url,these_votes) in bill_votes:
-            try:
-                date = vote_desc.split("-")[-1]
-            except IndexError:
-                self.warning("[%s] Couldn't get date out of [%s]" % (bill['bill_id'],vote_desc))
-                continue
-            yes_votes = []
-            no_votes = []
-            other_votes = []
-            for voter,vote in these_votes.iteritems():
-                if vote == 'Y':
-                    yes_votes.append(voter)
-                elif vote == 'N':
-                    no_votes.append(voter)
-                else:
-                    other_votes.append(voter)
-            passed = len(yes_votes) > len(no_votes) # not necessarily correct, but not sure where else to get it. maybe from pdf
-            vote = Vote(standardize_chamber(chamber),date,vote_desc,passed, len(yes_votes), len(no_votes), len(other_votes),pdf_url=pdf_url)
-            for voter in yes_votes:
-                vote.yes(voter)
-            for voter in no_votes:
-                vote.no(voter)
-            for voter in other_votes:
-                vote.other(voter)
+    def scrape_votes(self, bill, votes_url):
+        html = self.urlopen(votes_url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(votes_url)
+
+        EXPECTED_VOTE_CODES = ['Y','N','E','NV','A','P','-']
+
+        # vote indicator, a few spaces, a name, newline or multiple spaces
+        VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
+
+        for link in doc.xpath('//a[contains(@href, "votehistory")]'):
+            _, motion, date = link.text.split(' - ')
+
+            chamber = link.xpath('../following-sibling::td/text()')[0]
+            if chamber == 'HOUSE':
+                chamber = 'lower'
+            elif chamber == 'SENATE':
+                chamber = 'upper'
+            else:
+                self.warning('unknown chamber %s' % chamber)
+
+            date = datetime.datetime.strptime(date, "%A, %B %d, %Y")
+
+            # download the file
+            fname, resp = self.urlretrieve(link.get('href'))
+            pdflines = convert_pdf(fname, 'text').splitlines()
+            os.remove(fname)
+
+            vote = Vote(chamber, date, motion.strip(), False, 0, 0, 0)
+
+            for line in pdflines:
+                for match in VOTE_RE.findall(line):
+                    vcode, name = match
+                    if vcode == 'Y':
+                        vote.yes(name)
+                    elif vcode == 'N':
+                        vote.no(name)
+                    else:
+                        vote.other(name)
+
+            # fake the counts
+            vote['yes_count'] = len(vote['yes_votes'])
+            vote['no_count'] = len(vote['no_votes'])
+            vote['other_count'] = len(vote['other_votes'])
+            vote['passed'] = vote['yes_count'] > vote['no_count']
+            vote.add_source(link.get('href'))
+
             bill.add_vote(vote)
