@@ -1,108 +1,12 @@
-#!/usr/local/bin/python
 # -*- coding: utf-8 -*-
-
-
-from urllib import urlencode, urlretrieve
-from urlparse import urljoin, urlparse, urlunparse, parse_qsl
-import csv
-import os, os.path
+from urlparse import urljoin, urlparse, urlunparse
 import re
-import sys
-import tempfile
-
-from util import get_soup
 
 from billy.scrape.votes import Vote
 
 EXPECTED_VOTE_CODES = ['Y','N','E','NV','A','P','-']
-DOCUMENT_TYPES = ['EO', 'HB', 'HJR', 'HJRCA', 'HR', 'JSR', 'SB', 'SJR', 'SJRCA', 'SR']
-
-
 VOTE_HISTORY_RELPATH = '/legislation/votehistory.asp'
-BILL_STATUS_RELPATH = '/legislation/BillStatus.asp'
 
-BASE_LEGISLATION_URL = "http://ilga.gov/legislation/default.asp"
-
-VOTE_ACTION_PATTERN = re.compile("^(.+)(\d{3})-(\d{3})-(\d{3}).*$")
-
-def get_pdf_content(path):
-    """Return the text content of the PDF at the given path. Requires the pdftotext application be reachable.
-       If the given path begins with 'http' then the URL will be downloaded to a temp file.
-       TODO: Cache PDFs?
-    """
-    if path.startswith("http"):
-        f = tempfile.NamedTemporaryFile(suffix=".pdf")
-        urlretrieve(path,f.name)
-        path = f.name
-
-    error_code = os.system("pdftotext -enc UTF-8 -layout %s" % path)
-    if error_code:
-        raise Exception("Error %i attempting to convert %s" % (error_code,path))
-    txtpath = path[:-3] + "txt"
-    return open(txtpath).readlines()
-
-def get_bill_pages(scraper, url=None,doc_types=None):
-    if url is None: url = legislation_url()
-    """Return a sequence of tuples by retrieving all the documents described in the given url (representing
-        a specific GA and session.)  Optionally filter the sequence to only the given document types ('house bill',
-        'senate bill', etc.).  Each tuple returned will be in the form:
-            (bill_id,short_name,status_url)
-    """
-    s = get_soup(scraper, url)
-    links = s("a", { "href": lambda x: x is not None and x.find("grplist.asp") != -1 })
-    links = map(lambda x: x['href'], links)
-    d = {}
-    for link in links:
-        types = re.findall("DocTypeID=(.+?)&",link)
-        for t in types:
-            d.setdefault(t,[]).append(urljoin(url,link))
-
-    pages = []
-    if not doc_types:
-        doc_types = ['HB','SB'] # sane default
-    for type in doc_types:
-        if d.has_key(type):
-            simplified_url = min_max(d[type])
-            pages.extend(extract_bill_links(scraper, simplified_url))
-
-    return pages
-
-def min_max(l):
-    """Given a list of document URLs, return a url which compresses them into one.
-    """
-    hi = 0
-    low=100000000
-    for url in l:
-        match = re.match("^.+num1=(\d+)&.*num2=(\d+)&.+",url)
-        if match:
-            for num in match.groups():
-                if int(num) < low: low = int(num)
-                if int(num) > hi: hi = int(num)
-
-    urlparts = urlparse(l[0])
-    query = parse_qsl(urlparts.query)
-    for (i,tup) in enumerate(query):
-        if tup[0] == 'num1':
-            query[i] = ('num1',low)
-        elif tup[0] == 'num2':
-            query[i] = ('num2',hi)
-    urlparts = list(urlparts)
-    urlparts[4] = urlencode(query)
-    return urlunparse(urlparts)
-
-def extract_bill_links(scraper, url):
-    """Given a url to a page of BillStatus links (as expected from min_max),
-       return a list of tuples of the form (id, title, url)
-    """
-    s = get_soup(scraper, url)
-    links = s("a", { "href": lambda x: x is not None and x.find("BillStatus") != -1})
-    l = []
-    for link in links:
-        text = link(text=True)[0].replace("&nbsp;"," ")
-        match = re.match("^(\S+)\s+(.+)$",text)
-        if match:
-            l.append((match.groups()[0],match.groups()[1],urljoin(url,link['href'])))
-    return l
 
 def vote_history_link(url):
     """Assuming that everything about the URL should remain the same except for the server path,
@@ -188,11 +92,6 @@ def _identify_columns(lines):
         #     raise Exception("Equal sized row doesn't match expected column grid: [equal: %s] [expected: %s]" % (cols,m))
     return tuple(m)
 
-def is_vote_code_at(line,idx):
-    for code in EXPECTED_VOTE_CODES:
-        if line.find(code,idx) == idx: return True
-    return False
-
 def parse_vote_document(pdf_path):
     """
         Given the path to a PDF (such as might be retrieved from extract_vote_pdf_links), extract the votes and return as a dict with keys of voter names and values
@@ -236,27 +135,6 @@ def columnize(line,indices):
         parts.append(part)
     return parts
 
-def _filename_from_url(url):
-    parts = urlparse(url)
-    path = parts[2]
-    (path,filename) = os.path.split(path)
-    return filename
-
-def legislation_url(ga=None,session=None):
-    query = {}
-    if ga: query['GA'] = ga
-    if session: query['SessionID'] = session
-    url = BASE_LEGISLATION_URL
-    if query:
-        url += "?%s" % urlencode(query)
-    return url
-
-def _dump_votes_file_namer(voter,ga,session):
-    output=re.sub("[^A-Za-z]","",voter)
-    if ga: output += "_%s" % ga
-    if session: output += "_%s" % session
-    output += ".csv"
-    return output
 
 def all_votes_for_url(scraper, status_url):
     result = []
@@ -265,23 +143,3 @@ def all_votes_for_url(scraper, status_url):
         bill_votes = parse_vote_document(pdf_url)
         result.append((chamber,vote_desc,pdf_url,bill_votes))
     return result
-
-def dump_votes(scraper, voter,chamber=None,ga=None,session=None,output=None):
-    if voter is None:
-        raise ValueError("A voter must be specified.")
-
-    url = legislation_url(ga,session)
-    pages = get_bill_pages(scraper, url)
-
-    if output is None:
-        output = _dump_votes_file_namer(voter,ga,session)
-
-    writer = csv.writer(open(output,"w"))
-    writer.writerow(['bill_id','short_name','status_url','vote_desc','voters_vote','vote_pdf'])
-    for (bill_id,short_name,status_url) in pages:
-        votes = extract_vote_pdf_links(scraper, vote_history_link(status_url),chamber)
-        for (chamber,vote_desc,pdf_url) in votes:
-            bill_votes = parse_vote_document(pdf_url)
-            voters_vote = bill_votes.get(voter,"VOTER %s NOT FOUND" % voter)
-            writer.writerow([bill_id,short_name,status_url,vote_desc,voters_vote,pdf_url])
-
