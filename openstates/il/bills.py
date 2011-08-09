@@ -92,11 +92,13 @@ class ILBillScraper(BillScraper):
         version_url = doc.xpath('//a[text()="Full Text"]/@href')[0]
         self.scrape_documents(bill, version_url)
 
-        votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-        self.scrape_votes(bill, votes_url)
+        # if there's more than 1 votehistory link, there are votes to grab
+        if len(doc.xpath('//a[contains(@href, "votehistory")]')) > 1:
+            votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
+            self.scrape_votes(bill, votes_url)
+            bill.add_source(votes_url)
 
         bill.add_source(url)
-        bill.add_source(votes_url)
         self.save_bill(bill)
 
 
