@@ -12,7 +12,7 @@ class DEBillScraper(BillScraper):
                 'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=1',
             ),
             'upper': (
-                'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=5',
+                'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=7',
             )
         }
     }
@@ -150,9 +150,24 @@ class DEBillScraper(BillScraper):
             vote_result = summary_row.xpath('following-sibling::font[4]')[0].text
         vote_passed = True if vote_result == 'Passed' else False
 
+        yes_votes = page.xpath('//font[contains(text(),"Yes:")]/following::font[normalize-space()!=""]')
+        yes_count = yes_votes[0].text if len(yes_votes) > 0 else 0
+
+        no_votes = page.xpath('//font[contains(text(),"No:")]/following::font[normalize-space()!=""]')
+        no_count = no_votes[0].text if len(no_votes) > 0 else 0
+
+        not_voting = page.xpath('//font[contains(text(),"Not Voting:")]/following::font[normalize-space()!=""]')
+        other_count = int(not_voting[0].text) if len(not_voting) > 0 else 0
+
+        absent = page.xpath('//font[contains(text(),"Absent:")]/following::font[normalize-space()!=""]')
+        other_count += int(absent[0].text) if len(absent) > 0 else 0
+
         self.log(bill_id)
         self.log(url)
         self.log(vote_date)
         self.log(vote_result)
         self.log(vote_passed)
+        self.log(yes_count)
+        self.log(no_count)
+        self.log(other_count)
         self.log('*'*50)
