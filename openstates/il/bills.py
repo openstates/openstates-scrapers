@@ -129,7 +129,13 @@ class ILBillScraper(BillScraper):
         VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
 
         for link in doc.xpath('//a[contains(@href, "votehistory")]'):
-            _, motion, date = link.text.split(' - ')
+
+            pieces = link.text.split(' - ')
+            date = pieces[-1]
+            if len(pieces) == 3:
+                motion = pieces[1]
+            else:
+                motion = 'Third Reading'
 
             chamber = link.xpath('../following-sibling::td/text()')[0]
             if chamber == 'HOUSE':
