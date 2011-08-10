@@ -218,7 +218,8 @@ class LegislatorSearchHandler(BillyHandler):
                                                'last_name'))
         elemMatch = _build_mongo_filter(request, ('chamber', 'term',
                                                   'district', 'party'))
-        _filter['roles'] = {'$elemMatch': elemMatch}
+        if elemMatch:
+            _filter['roles'] = {'$elemMatch': elemMatch}
 
         active = request.GET.get('active')
         if not active and 'term' not in request.GET:
@@ -228,8 +229,6 @@ class LegislatorSearchHandler(BillyHandler):
         elif active.lower() == 'true':
             _filter['active'] = True
 
-        if 'debug' in request.GET:
-            return _filter
         return list(db.legislators.find(_filter, legislator_fields))
 
 
