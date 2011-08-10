@@ -225,8 +225,8 @@ class LegislatorSearchHandler(BillyHandler):
             # Default to only searching active legislators if no term
             # is supplied
             _filter['active'] = True
-        elif active:
-            _filter['active'] = (active.lower() == 'true')
+        elif active.lower() == 'true':
+            _filter['active'] = True
 
         return list(db.legislators.find(_filter, legislator_fields))
 
