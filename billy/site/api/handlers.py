@@ -483,3 +483,9 @@ class LegislatorGeoHandler(BillyHandler):
 
         return list(db.legislators.find({'$or': filters},
                                         _build_field_list(request)))
+
+
+class DistrictHandler(BillyHandler):
+
+    def read(self, request, abbr, chamber=None, name=None):
+        pass
