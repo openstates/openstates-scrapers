@@ -1,0 +1,201 @@
+"state","chamber","name","num_legislators"
+"ma","lower","Barnstable, Dukes And Nantucket",1
+"ma","lower","Eighteenth Essex",1
+"ma","lower","Eighteenth Middlesex",1
+"ma","lower","Eighteenth Suffolk",1
+"ma","lower","Eighteenth Worcester",1
+"ma","lower","Eighth Bristol",1
+"ma","lower","Eighth Essex",1
+"ma","lower","Eighth Hampden",1
+"ma","lower","Eighth Middlesex",1
+"ma","lower","Eighth Norfolk",1
+"ma","lower","Eighth Plymouth",1
+"ma","lower","Eighth Suffolk",1
+"ma","lower","Eighth Worcester",1
+"ma","lower","Eleventh Bristol",1
+"ma","lower","Eleventh Essex",1
+"ma","lower","Eleventh Hampden",1
+"ma","lower","Eleventh Middlesex",1
+"ma","lower","Eleventh Norfolk",1
+"ma","lower","Eleventh Plymouth",1
+"ma","lower","Eleventh Suffolk",1
+"ma","lower","Eleventh Worcester",1
+"ma","lower","Fifteenth Essex",1
+"ma","lower","Fifteenth Middlesex",1
+"ma","lower","Fifteenth Norfolk",1
+"ma","lower","Fifteenth Suffolk",1
+"ma","lower","Fifteenth Worcester",1
+"ma","lower","Fifth Barnstable",1
+"ma","lower","Fifth Bristol",1
+"ma","lower","Fifth Essex",1
+"ma","lower","Fifth Hampden",1
+"ma","lower","Fifth Middlesex",1
+"ma","lower","Fifth Norfolk",1
+"ma","lower","Fifth Plymouth",1
+"ma","lower","Fifth Suffolk",1
+"ma","lower","Fifth Worcester",1
+"ma","lower","First Barnstable",1
+"ma","lower","First Berkshire",1
+"ma","lower","First Bristol",1
+"ma","lower","First Essex",1
+"ma","lower","First Franklin",1
+"ma","lower","First Hampden",1
+"ma","lower","First Hampshire",1
+"ma","lower","First Middlesex",1
+"ma","lower","First Norfolk",1
+"ma","lower","First Plymouth",1
+"ma","lower","First Suffolk",1
+"ma","lower","First Worcester",1
+"ma","lower","Fourteenth Bristol",1
+"ma","lower","Fourteenth Essex",1
+"ma","lower","Fourteenth Middlesex",1
+"ma","lower","Fourteenth Norfolk",1
+"ma","lower","Fourteenth Suffolk",1
+"ma","lower","Fourteenth Worcester",1
+"ma","lower","Fourth Barnstable",1
+"ma","lower","Fourth Berkshire",1
+"ma","lower","Fourth Bristol",1
+"ma","lower","Fourth Essex",1
+"ma","lower","Fourth Hampden",1
+"ma","lower","Fourth Middlesex",1
+"ma","lower","Fourth Norfolk",1
+"ma","lower","Fourth Plymouth",1
+"ma","lower","Fourth Suffolk",1
+"ma","lower","Fourth Worcester",1
+"ma","lower","Nineteenth Middlesex",1
+"ma","lower","Nineteenth Suffolk",1
+"ma","lower","Ninth Bristol",1
+"ma","lower","Ninth Essex",1
+"ma","lower","Ninth Hampden",1
+"ma","lower","Ninth Middlesex",1
+"ma","lower","Ninth Norfolk",1
+"ma","lower","Ninth Plymouth",1
+"ma","lower","Ninth Suffolk",1
+"ma","lower","Ninth Worcester",1
+"ma","lower","Second Barnstable",1
+"ma","lower","Second Berkshire",1
+"ma","lower","Second Bristol",1
+"ma","lower","Second Essex",1
+"ma","lower","Second Franklin",1
+"ma","lower","Second Hampden",1
+"ma","lower","Second Hampshire",1
+"ma","lower","Second Middlesex",1
+"ma","lower","Second Norfolk",1
+"ma","lower","Second Plymouth",1
+"ma","lower","Second Suffolk",1
+"ma","lower","Second Worcester",1
+"ma","lower","Seventeenth Essex",1
+"ma","lower","Seventeenth Middlesex",1
+"ma","lower","Seventeenth Suffolk",1
+"ma","lower","Seventeenth Worcester",1
+"ma","lower","Seventh Bristol",1
+"ma","lower","Seventh Essex",1
+"ma","lower","Seventh Hampden",1
+"ma","lower","Seventh Middlesex",1
+"ma","lower","Seventh Norfolk",1
+"ma","lower","Seventh Plymouth",1
+"ma","lower","Seventh Suffolk",1
+"ma","lower","Seventh Worcester",1
+"ma","lower","Sixteenth Essex",1
+"ma","lower","Sixteenth Middlesex",1
+"ma","lower","Sixteenth Suffolk",1
+"ma","lower","Sixteenth Worcester",1
+"ma","lower","Sixth Bristol",1
+"ma","lower","Sixth Essex",1
+"ma","lower","Sixth Hampden",1
+"ma","lower","Sixth Middlesex",1
+"ma","lower","Sixth Norfolk",1
+"ma","lower","Sixth Plymouth",1
+"ma","lower","Sixth Suffolk",1
+"ma","lower","Sixth Worcester",1
+"ma","lower","Tenth Bristol",1
+"ma","lower","Tenth Essex",1
+"ma","lower","Tenth Hampden",1
+"ma","lower","Tenth Middlesex",1
+"ma","lower","Tenth Norfolk",1
+"ma","lower","Tenth Plymouth",1
+"ma","lower","Tenth Suffolk",1
+"ma","lower","Tenth Worcester",1
+"ma","lower","Third Barnstable",1
+"ma","lower","Third Berkshire",1
+"ma","lower","Third Bristol",1
+"ma","lower","Third Essex",1
+"ma","lower","Third Hampden",1
+"ma","lower","Third Hampshire",1
+"ma","lower","Third Middlesex",1
+"ma","lower","Third Norfolk",1
+"ma","lower","Third Plymouth",1
+"ma","lower","Third Suffolk",1
+"ma","lower","Third Worcester",1
+"ma","lower","Thirteenth Bristol",1
+"ma","lower","Thirteenth Essex",1
+"ma","lower","Thirteenth Middlesex",1
+"ma","lower","Thirteenth Norfolk",1
+"ma","lower","Thirteenth Suffolk",1
+"ma","lower","Thirteenth Worcester",1
+"ma","lower","Thirtieth Middlesex",1
+"ma","lower","Thirty-Fifth Middlesex",1
+"ma","lower","Thirty-First Middlesex",1
+"ma","lower","Thirty-Fourth Middlesex",1
+"ma","lower","Thirty-Second Middlesex",1
+"ma","lower","Thirty-Seventh Middlesex",1
+"ma","lower","Thirty-Sixth Middlesex",1
+"ma","lower","Thirty-Third Middlesex",1
+"ma","lower","Twelfth Bristol",1
+"ma","lower","Twelfth Essex",1
+"ma","lower","Twelfth Hampden",1
+"ma","lower","Twelfth Middlesex",1
+"ma","lower","Twelfth Norfolk",1
+"ma","lower","Twelfth Plymouth",1
+"ma","lower","Twelfth Suffolk",1
+"ma","lower","Twelfth Worcester",1
+"ma","lower","Twentieth Middlesex",1
+"ma","lower","Twenty-Eighth Middlesex",1
+"ma","lower","Twenty-Fifth Middlesex",1
+"ma","lower","Twenty-First Middlesex",1
+"ma","lower","Twenty-Fourth Middlesex",1
+"ma","lower","Twenty-Ninth Middlesex",1
+"ma","lower","Twenty-Second Middlesex",1
+"ma","lower","Twenty-Seventh Middlesex",1
+"ma","lower","Twenty-Sixth Middlesex",1
+"ma","lower","Twenty-Third Middlesex",1
+"ma","upper","Berkshire, Hampshire And Franklin",1
+"ma","upper","Bristol And Norfolk",1
+"ma","upper","Cape And Islands",1
+"ma","upper","First Bristol And Plymouth",1
+"ma","upper","First Essex",1
+"ma","upper","First Essex And Middlesex",1
+"ma","upper","First Hampden And Hampshire",1
+"ma","upper","First Middlesex",1
+"ma","upper","First Middlesex And Norfolk",1
+"ma","upper","First Plymouth And Bristol",1
+"ma","upper","First Suffolk",1
+"ma","upper","First Suffolk And Middlesex",1
+"ma","upper","First Worcester",1
+"ma","upper","Fourth Middlesex",1
+"ma","upper","Hampden",1
+"ma","upper","Hampshire And Franklin",1
+"ma","upper","Middlesex And Essex",1
+"ma","upper","Middlesex And Worcester",1
+"ma","upper","Middlesex, Suffolk And Essex",1
+"ma","upper","Norfolk And Plymouth",1
+"ma","upper","Norfolk, Bristol And Middlesex",1
+"ma","upper","Norfolk, Bristol And Plymouth",1
+"ma","upper","Plymouth And Barnstable",1
+"ma","upper","Plymouth And Norfolk",1
+"ma","upper","Second Bristol And Plymouth",1
+"ma","upper","Second Essex",1
+"ma","upper","Second Essex And Middlesex",1
+"ma","upper","Second Hampden And Hampshire",1
+"ma","upper","Second Middlesex",1
+"ma","upper","Second Middlesex And Norfolk",1
+"ma","upper","Second Plymouth And Bristol",1
+"ma","upper","Second Suffolk",1
+"ma","upper","Second Suffolk And Middlesex",1
+"ma","upper","Second Worcester",1
+"ma","upper","Suffolk And Norfolk",1
+"ma","upper","Third Essex And Middlesex",1
+"ma","upper","Third Middlesex",1
+"ma","upper","Worcester And Middlesex",1
+"ma","upper","Worcester And Norfolk",1
+"ma","upper","Worcester, Hampden, Hampshire And Franklin",1
