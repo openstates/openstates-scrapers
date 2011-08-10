@@ -228,6 +228,8 @@ class LegislatorSearchHandler(BillyHandler):
         elif active.lower() == 'true':
             _filter['active'] = True
 
+        if 'debug' in request.GET:
+            return _filter
         return list(db.legislators.find(_filter, legislator_fields))
 
 
