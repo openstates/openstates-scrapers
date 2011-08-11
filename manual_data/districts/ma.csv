@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "ma","lower","Barnstable, Dukes And Nantucket",1,"sldl-ma-barnstable-dukes-nantucket-district"
 "ma","lower","Eighteenth Essex",1,"sldl-ma-eighteenth-essex-district"
 "ma","lower","Eighteenth Middlesex",1,"sldl-ma-eighteenth-middlesex-district"

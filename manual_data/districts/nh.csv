@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "nh","lower","Belknap 1",1,"sldl-nh-state-house-district-1-belknap-county"
 "nh","lower","Belknap 2",2,"sldl-nh-state-house-district-2-belknap-county"
 "nh","lower","Belknap 3",2,"sldl-nh-state-house-district-3-belknap-county"

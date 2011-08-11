@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "wa","lower",1,2,"sldl-wa-state-house-district-%(name)s"
 "wa","lower",2,2,"sldl-wa-state-house-district-%(name)s"
 "wa","lower",3,2,"sldl-wa-state-house-district-%(name)s"

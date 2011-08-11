@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "ak","lower",1,1,"sldl-ak-state-house-district-1-ketchikan"
 "ak","lower",2,1,"sldl-ak-state-house-district-2-sitka-wrangell-petersburg"
 "ak","lower",3,1,"sldl-ak-state-house-district-3-juneau-downtown-douglas"

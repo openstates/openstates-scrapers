@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "oh","lower",1,1,"sldl-oh-state-house-district-%(name)s"
 "oh","lower",2,1,"sldl-oh-state-house-district-%(name)s"
 "oh","lower",3,1,"sldl-oh-state-house-district-%(name)s"

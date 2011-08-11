@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "mn","lower","01A",1,"sldl-mn-state-house-district-1a"
 "mn","lower","01B",1,"sldl-mn-state-house-district-1b"
 "mn","lower","02A",1,"sldl-mn-state-house-district-2a"

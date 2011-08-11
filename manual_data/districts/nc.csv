@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "nc","lower",1,1,"sldl-nc-state-house-district-%(name)s"
 "nc","lower",2,1,"sldl-nc-state-house-district-%(name)s"
 "nc","lower",3,1,"sldl-nc-state-house-district-%(name)s"

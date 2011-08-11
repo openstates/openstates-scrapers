@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "ut","lower",1,1,"sldl-ut-state-house-district-%(name)s"
 "ut","lower",2,1,"sldl-ut-state-house-district-%(name)s"
 "ut","lower",3,1,"sldl-ut-state-house-district-%(name)s"

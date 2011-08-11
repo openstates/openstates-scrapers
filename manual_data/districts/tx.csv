@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "tx","lower",1,1,"sldl-tx-state-house-district-%(name)s"
 "tx","lower",2,1,"sldl-tx-state-house-district-%(name)s"
 "tx","lower",3,1,"sldl-tx-state-house-district-%(name)s"

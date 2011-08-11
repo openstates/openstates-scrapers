@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "nj","lower",1,2,"sldl-nj-general-assembly-district-%(name)s"
 "nj","lower",2,2,"sldl-nj-general-assembly-district-%(name)s"
 "nj","lower",3,2,"sldl-nj-general-assembly-district-%(name)s"

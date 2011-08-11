@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "nv","lower",1,1,"sldl-nv-assembly-district-%(name)s"
 "nv","lower",2,1,"sldl-nv-assembly-district-%(name)s"
 "nv","lower",3,1,"sldl-nv-assembly-district-%(name)s"

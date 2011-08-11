@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "wi","lower",1,1,"sldl-wi-assembly-district-%(name)s"
 "wi","lower",2,1,"sldl-wi-assembly-district-%(name)s"
 "wi","lower",3,1,"sldl-wi-assembly-district-%(name)s"

@@ -1,4 +1,4 @@
-"state","chamber","name","num_legislators","boundary"
+"abbr","chamber","name","num_legislators","boundary_id"
 "mi","lower",1,1,"sldl-mi-state-house-district-%(name)s"
 "mi","lower",2,1,"sldl-mi-state-house-district-%(name)s"
 "mi","lower",3,1,"sldl-mi-state-house-district-%(name)s"
