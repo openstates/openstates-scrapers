@@ -5,6 +5,7 @@ from collections import defaultdict
 from billy import db
 from billy.conf import settings, base_arg_parser
 
+
 def keyfunc(x):
     try:
         district = int(x[2])
@@ -12,8 +13,9 @@ def keyfunc(x):
         district = x[2]
     return x[1], district
 
+
 def generate_csv(state):
-    fields = ('state', 'chamber', 'name', 'num_legislators')
+    fields = ('abbr', 'chamber', 'name', 'num_legislators')
     out = csv.writer(open(state+'_districts.csv', 'w'))
     out.writerow(fields)
 
@@ -32,12 +34,13 @@ def generate_csv(state):
     for item in data:
         out.writerow(item)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='generate district CSV files',
                                      parents=[base_arg_parser])
     parser.add_argument('states', nargs='*', help='states to validate')
     parser.add_argument('--all', action='store_true', default=False,
-                        help='prune all states')
+                        help='generate csv for all states')
     args = parser.parse_args()
     settings.update(args)
 
