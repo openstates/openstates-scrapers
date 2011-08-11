@@ -478,12 +478,8 @@ class LegislatorGeoHandler(BillyHandler):
             districts = db.districts.find({'chamber': chamber,
                                            'boundary_id': census_name})
             count = districts.count()
-            if count == 0:
-                raise KeyError('unknown boundary_id %s' % census_name)
-            elif count > 1:
-                raise KeyError('ambiguous boundary_id %s' % census_name)
-            else:
-                our_name = districts[0]['name']
+            if count != 1:
+                return rc.NOT_FOUND
 
             filters.append({'state': state, 'district': our_name,
                             'chamber': chamber})
