@@ -36,9 +36,13 @@ class NHLegislatorScraper(LegislatorScraper):
                     address += (' ' + street2)
                 address += '\n%s, %s %s' % (city, astate, zipcode)
 
+                district = str(int(district))
+                if county:
+                    district = '%s %s' % (county, district)
+
                 leg = Legislator(term, chamber, district, full, first, last,
                                  middle, party_map[party],
-                                 county=county, address=address,
+                                 address=address,
                                  home_phone=home_phone,
                                  office_phone=office_phone, office_fax=fax,
                                  email=email)
