@@ -115,8 +115,22 @@ def test_house():
     # the third one doesn't have or a summary page to begin with:
     scraper.urlopen(StrContains('billsummaryprn.aspx?bill=')) \
             .AndReturn(openFile('file://%s/openstates/mo/tests/billdetail3-house.html' % os.getcwd()))
-    #scraper.urlopen(Regex('^.*biltxt\/intro\/HB.*$')) \
-            #.AndRaise(scrapelib.HTTPError(scrapelib.Response('url','url'),None))
+
+    # the fourth one in the list has a funky text (non standard) for the cosponsors
+    scraper.urlopen(StrContains('billsummaryprn.aspx?bill=')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billdetail2-house.html' % os.getcwd()))
+    scraper.urlopen(Regex('^.*biltxt\/intro\/HB.*$')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billtext3-house.html' % os.getcwd()))
+    scraper.urlopen(StrContains('BillActionsPrn.aspx?bill=')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billactions-house.html' % os.getcwd()))
+
+    # the fifth one was withdrawn - no real text
+    scraper.urlopen(StrContains('billsummaryprn.aspx?bill=')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billdetail2-house.html' % os.getcwd()))
+    scraper.urlopen(Regex('^.*biltxt\/intro\/HB.*$')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billtext4-house.html' % os.getcwd()))
+    scraper.urlopen(StrContains('BillActionsPrn.aspx?bill=')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billactions-house.html' % os.getcwd()))
 
     # do the rest are normal/fine:
     scraper.urlopen(StrContains('billsummaryprn.aspx?bill=')) \
@@ -141,7 +155,7 @@ def test_house():
     eq_('HB 26',scraper.bills[0]['official_title'])
     eq_(2,len(scraper.bills[0]['sponsors']))
     eq_('Jones, Tishaura',scraper.bills[0]['sponsors'][0]['name'])
-    eq_('KANDER',scraper.bills[0]['sponsors'][1]['name'])
+    eq_('Curls, Shalonn',scraper.bills[0]['sponsors'][1]['name'])
     eq_('http://www.house.mo.gov/member.aspx?district=063&year=2011',scraper.bills[0]['sponsors'][0]['sponsor_link'])
 
     # the second bill doesn't have any cosponsor info.
@@ -153,13 +167,16 @@ def test_house():
     # the third bill doesn't have any info at all. It didn't get logged, but I've recorded
     # it in another data structure for later fixing maybe.
 
+    # 4th
+
     # the rest of the bills are pretty detailed
-    eq_(8,len(scraper.bills[2]['sponsors']))
-    eq_('http://www.house.mo.gov/member.aspx?district=121&year=2011',scraper.bills[2]['sponsors'][0]['sponsor_link'])
-    eq_('primary',scraper.bills[2]['sponsors'][0]['type'])
-    eq_('cosponsor',scraper.bills[2]['sponsors'][1]['type'])
-    eq_('ALLEN',scraper.bills[2]['sponsors'][1]['name'])
-    eq_('SCHARNHORST',scraper.bills[2]['sponsors'][-1]['name'])
+    therestindex=4
+    eq_(8,len(scraper.bills[therestindex]['sponsors']))
+    eq_('http://www.house.mo.gov/member.aspx?district=121&year=2011',scraper.bills[therestindex]['sponsors'][0]['sponsor_link'])
+    eq_('primary',scraper.bills[therestindex]['sponsors'][0]['type'])
+    eq_('cosponsor',scraper.bills[therestindex]['sponsors'][1]['type'])
+    eq_('Allen, Sue',scraper.bills[therestindex]['sponsors'][1]['name'])
+    eq_('SCHARNHORST',scraper.bills[therestindex]['sponsors'][-1]['name'])
 
     eq_(42,len(scraper.bills[0]['actions']))
     eq_(1,len(scraper.bills[0]['versions']))

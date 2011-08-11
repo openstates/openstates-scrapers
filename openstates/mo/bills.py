@@ -25,9 +25,9 @@ class MOBillScraper(BillScraper):
             self.scrape_senate(year)
         elif chamber == 'lower':
             self.scrape_house(year)
-        if len(bad_urls) > 0:
+        if len(self.bad_urls) > 0:
             print "WARNINGS:"
-            for url in bad_urls:
+            for url in self.bad_urls:
                 print "%s" % url
 
     def scrape_senate(self, year):
@@ -170,12 +170,15 @@ class MOBillScraper(BillScraper):
             bills = bill_list_page.xpath('//table[@id="billAssignGroup"]/tr')
 
             isEven = False
+            count = 0
             for bill in bills:
                 if not isEven: 
                     # the non even rows contain bill links, the other rows contain brief
                     # descriptions of the bill.
                     #print "bill = %s" % bill[0][0].attrib['href']
-                    self.parse_house_bill(bill[0][0].attrib['href'], session)
+                    count = count + 1
+                    if (count > 1140):
+                        self.parse_house_bill(bill[0][0].attrib['href'], session)
                 isEven = not isEven
 
 
@@ -220,15 +223,7 @@ class MOBillScraper(BillScraper):
             bill = Bill(session, 'lower', bill_id, bill_desc, bill_url=url, bill_lr=bill_lr, official_title=official_title)
             bill.add_source(url)
 
-            # get the sponsors and cosponsors
-            # badly formed html: the first row has now <tr> tag:
-            sponsor_dirty = table_rows[0][1].text_content().strip()
-            m = re.search("(.*)\(.*\)", sponsor_dirty)
-            if m:
-                bill_sponsor = m.group(1).strip()
-            else:
-                bill_sponsor = sponsor_dirty.strip()
-
+            bill_sponsor = clean_text(table_rows[0][1].text_content())
             bill_sponsor_link = table_rows[0][1][0].attrib['href']
             if bill_sponsor_link:
                 bill_sponsor_link = '%s%s' % (self.senate_base_url,bill_sponsor_link)
@@ -242,13 +237,12 @@ class MOBillScraper(BillScraper):
                     bill.add_sponsor('cosponsor', cosponsor.text_content(), sponsor_link='%s/%s' % (self.senate_base_url,cosponsor.attrib['href']))
                 else: # name ... etal
                     try:
+                        cosponsor = table_rows[2][1][0]
+                        bill.add_sponsor('cosponsor', clean_text(cosponsor.text_content()), sponsor_link='%s/%s' % (self.senate_base_url,cosponsor.attrib['href']))
                         self.parse_cosponsors_from_bill(bill,'%s/%s' % (self.senate_base_url,table_rows[2][1][1].attrib['href']))
                     except scrapelib.HTTPError:
                         self.bad_urls.append(url)
                         print "WARNING: no bill summary page (%s)" % url
-                        # recover, just use the one cosponsor listed on the summary page and forget about the rest:
-                        cosponsor = table_rows[2][1][0]
-                        bill.add_sponsor('cosponsor', cosponsor.text_content(), sponsor_link='%s/%s' % (self.senate_base_url,cosponsor.attrib['href']))
 
             actions_link_tag = bill_page.xpath('//div[@class="Sections"]/a')[0]
             actions_link = '%s/%s' % (self.senate_base_url,actions_link_tag.attrib['href'])
@@ -268,19 +262,19 @@ class MOBillScraper(BillScraper):
     def parse_cosponsors_from_bill(self, bill, url):
         with self.urlopen(url) as bill_page:
             bill_page = lxml.html.fromstring(bill_page)
-            sponsors_text = find_nodes_with_matching_text(bill_page,'//p/span',r'\s*INTRODUCED.*')[0].text_content()
-            #import pdb; pdb.set_trace()
+            sponsors_text = find_nodes_with_matching_text(bill_page,'//p/span',r'\s*INTRODUCED.*')
+            if len(sponsors_text) == 0:
+                # probably its withdrawn
+                return
+            sponsors_text = sponsors_text[0].text_content()
             sponsors = clean_text(sponsors_text).split(',')
-            many = False
             if len(sponsors) > 1: # if there are several comma separated entries, list them.
-                sponsors = sponsors[1::]
-                many = True
-            for part in sponsors:
-                parts = part.split(' AND ')
-                if not many:
-                    parts = [parts[1]]
-                for sponsor in parts:
-                    bill.add_sponsor('cosponsor', clean_text(sponsor))
+                # the sponsor and the cosponsor were already got from the previous page, so ignore those:
+                sponsors = sponsors[2::]
+                for part in sponsors:
+                    parts = re.split(r' (?i)and ',part)
+                    for sponsor in parts:
+                        bill.add_sponsor('cosponsor', clean_text(sponsor))
 
     def parse_house_actions(self, bill, url):
         url = re.sub("BillActions", "BillActionsPrn", url)
