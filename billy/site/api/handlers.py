@@ -472,9 +472,18 @@ class LegislatorGeoHandler(BillyHandler):
             state = dist['name'][0:2].lower()
             chamber = {'/1.0/boundary-set/sldu/': 'upper',
                        '/1.0/boundary-set/sldl/': 'lower'}[dist['set']]
-            census_name = dist['name'][3:]
+            census_name = dist['slug']
 
-            our_name = district_from_census_name(state, chamber, census_name)
+            # look up district slug
+            districts = db.districts.find({'chamber': chamber,
+                                           'boundary_id': census_name})
+            count = districts.count()
+            if count == 0:
+                raise KeyError('unknown boundary_id %s' % census_name)
+            elif count > 1:
+                raise KeyError('ambiguous boundary_id %s' % census_name)
+            else:
+                our_name = districts[0]['name']
 
             filters.append({'state': state, 'district': our_name,
                             'chamber': chamber})
@@ -484,3 +493,9 @@ class LegislatorGeoHandler(BillyHandler):
 
         return list(db.legislators.find({'$or': filters},
                                         _build_field_list(request)))
+
+
+class DistrictHandler(BillyHandler):
+
+    def read(self, request, abbr, chamber=None, name=None):
+        pass
