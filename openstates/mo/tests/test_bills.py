@@ -5,6 +5,7 @@ from openstates.mo.bills import MOBillScraper
 
 import datetime
 import urllib2
+import scrapelib
 import contextlib
 import os
 from mox import *
@@ -93,34 +94,81 @@ def test_house():
     # first, get the list of all house bills for the given year.
     scraper.urlopen(StrContains('BillList.aspx?year=')) \
             .AndReturn(openFile('file://%s/openstates/mo/tests/bills-house.html' % os.getcwd()))
+
+    # then the details...
+    # the first one in the list has a funky text (non standard)
+    scraper.urlopen(StrContains('billsummaryprn.aspx?bill=')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billdetail2-house.html' % os.getcwd()))
+    scraper.urlopen(Regex('^.*biltxt\/intro\/HB.*$')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billtext2-house.html' % os.getcwd()))
+    scraper.urlopen(StrContains('BillActionsPrn.aspx?bill=')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billactions-house.html' % os.getcwd()))
+
+    # the second one doesn't have text:
+    scraper.urlopen(StrContains('billsummaryprn.aspx?bill=')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billdetail-house.html' % os.getcwd()))
+    scraper.urlopen(Regex('^.*biltxt\/intro\/HB.*$')) \
+            .AndRaise(scrapelib.HTTPError(scrapelib.Response('url','url'),None))
+    scraper.urlopen(StrContains('BillActionsPrn.aspx?bill=')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billactions-house.html' % os.getcwd()))
+
+    # the third one doesn't have or a summary page to begin with:
+    scraper.urlopen(StrContains('billsummaryprn.aspx?bill=')) \
+            .AndReturn(openFile('file://%s/openstates/mo/tests/billdetail3-house.html' % os.getcwd()))
+    #scraper.urlopen(Regex('^.*biltxt\/intro\/HB.*$')) \
+            #.AndRaise(scrapelib.HTTPError(scrapelib.Response('url','url'),None))
+
+    # do the rest are normal/fine:
     scraper.urlopen(StrContains('billsummaryprn.aspx?bill=')) \
             .MultipleTimes() \
             .AndReturn(openFile('file://%s/openstates/mo/tests/billdetail-house.html' % os.getcwd()))
-    scraper.urlopen(StrContains('biltxt/intro')) \
+    scraper.urlopen(Regex('^.*biltxt\/intro\/HB.*$')) \
             .MultipleTimes() \
             .AndReturn(openFile('file://%s/openstates/mo/tests/billtext-house.html' % os.getcwd()))
     scraper.urlopen(StrContains('BillActionsPrn.aspx?bill=')) \
             .MultipleTimes() \
             .AndReturn(openFile('file://%s/openstates/mo/tests/billactions-house.html' % os.getcwd()))
+
     m.ReplayAll()
     scraper.scrape_house('2011')
-    eq_(1144,len(scraper.bills))
-    eq_('HB 45',scraper.bills[0]['bill_id'])
+
+    eq_(1143,len(scraper.bills))
+    eq_(2,len(scraper.bad_urls))
+
+    # the first bill is mostly standard.
+    eq_('HB 26',scraper.bills[0]['bill_id'])
     eq_('http://www.house.mo.gov/billsummaryprn.aspx?bill=HB1&year=2011&code=R',scraper.bills[0]['bill_url'])
-    eq_('SS SCS HCS HB 45',scraper.bills[0]['official_title'])
-    eq_(8,len(scraper.bills[0]['sponsors']))
-    eq_('Hoskins, Denny',scraper.bills[0]['sponsors'][0]['name'])
-    eq_('http://www.house.mo.gov/member.aspx?district=121&year=2011',scraper.bills[0]['sponsors'][0]['sponsor_link'])
-    eq_('primary',scraper.bills[0]['sponsors'][0]['type'])
-    eq_('cosponsor',scraper.bills[0]['sponsors'][1]['type'])
-    eq_('ALLEN',scraper.bills[0]['sponsors'][1]['name'])
-    eq_('SCHARNHORST',scraper.bills[0]['sponsors'][-1]['name'])
-    # TODO actions (need to download the HB45 actions)
+    eq_('HB 26',scraper.bills[0]['official_title'])
+    eq_(2,len(scraper.bills[0]['sponsors']))
+    eq_('Jones, Tishaura',scraper.bills[0]['sponsors'][0]['name'])
+    eq_('KANDER',scraper.bills[0]['sponsors'][1]['name'])
+    eq_('http://www.house.mo.gov/member.aspx?district=063&year=2011',scraper.bills[0]['sponsors'][0]['sponsor_link'])
+
+    # the second bill doesn't have any cosponsor info.
+    eq_('HB 45',scraper.bills[1]['bill_id'])
+    eq_('SS SCS HCS HB 45',scraper.bills[1]['official_title'])
+    eq_('Hoskins, Denny',scraper.bills[1]['sponsors'][0]['name'])
+    eq_('http://www.house.mo.gov/member.aspx?district=121&year=2011',scraper.bills[1]['sponsors'][0]['sponsor_link'])
+
+    # the third bill doesn't have any info at all. It didn't get logged, but I've recorded
+    # it in another data structure for later fixing maybe.
+
+    # the rest of the bills are pretty detailed
+    eq_(8,len(scraper.bills[2]['sponsors']))
+    eq_('http://www.house.mo.gov/member.aspx?district=121&year=2011',scraper.bills[2]['sponsors'][0]['sponsor_link'])
+    eq_('primary',scraper.bills[2]['sponsors'][0]['type'])
+    eq_('cosponsor',scraper.bills[2]['sponsors'][1]['type'])
+    eq_('ALLEN',scraper.bills[2]['sponsors'][1]['name'])
+    eq_('SCHARNHORST',scraper.bills[2]['sponsors'][-1]['name'])
+
     eq_(42,len(scraper.bills[0]['actions']))
-    eq_(5,len(scraper.bills[0]['versions']))
-    eq_(['Introduced','Committee','Perfected','Senate Comm Sub','Truly Agreed'], [x['name'] for x in scraper.bills[0]['versions']])
-    eq_('http://www.house.mo.gov//billtracking/bills111/biltxt/intro/HB0045I.htm',scraper.bills[0]['versions'][0]['url'])
-    eq_('Truly Agreed',scraper.bills[0]['versions'][-1]['name'])
-    eq_('http://www.house.mo.gov//billtracking/bills111/biltxt/truly/HB0045T.htm',scraper.bills[0]['versions'][-1]['url'])
+    eq_(1,len(scraper.bills[0]['versions']))
+    eq_(5,len(scraper.bills[1]['versions']))
+    eq_(['Introduced','Committee','Perfected','Senate Comm Sub','Truly Agreed'], [x['name'] for x in scraper.bills[1]['versions']])
+    eq_('http://www.house.mo.gov/billtracking/bills111/biltxt/intro/HB0026I.htm',scraper.bills[0]['versions'][0]['url'])
+    eq_('Introduced',scraper.bills[0]['versions'][-1]['name'])
+    eq_('Truly Agreed',scraper.bills[1]['versions'][-1]['name'])
+    eq_('http://www.house.mo.gov/billtracking/bills111/biltxt/intro/HB0045I.htm',scraper.bills[1]['versions'][0]['url'])
+    eq_('http://www.house.mo.gov/billtracking/bills111/biltxt/truly/HB0045T.htm',scraper.bills[1]['versions'][-1]['url'])
     m.UnsetStubs()
     m.VerifyAll()

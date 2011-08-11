@@ -1,6 +1,7 @@
 import re
 import datetime as dt
 import urllib2
+import scrapelib
 
 import lxml.html
 
@@ -8,13 +9,14 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 
 from utils import (clean_text, house_get_actor_from_action,
-                   senate_get_actor_from_action)
+                   senate_get_actor_from_action,find_nodes_with_matching_text)
 
 class MOBillScraper(BillScraper):
 
     state = 'mo'
     senate_base_url = 'http://www.house.mo.gov'
-
+    # a list of URLS that aren't working when we try to visit them (but probably should work):
+    bad_urls = []
 
     def scrape(self, chamber, year):
         # wrapper to call senate or house scraper. No year check
@@ -23,6 +25,10 @@ class MOBillScraper(BillScraper):
             self.scrape_senate(year)
         elif chamber == 'lower':
             self.scrape_house(year)
+        if len(bad_urls) > 0:
+            print "WARNINGS:"
+            for url in bad_urls:
+                print "%s" % url
 
     def scrape_senate(self, year):
         # We only have data from 2005-present
@@ -181,8 +187,12 @@ class MOBillScraper(BillScraper):
         with self.urlopen(url) as bill_page:
             bill_page = lxml.html.fromstring(bill_page)
 
-            # get all the info needed to record the bill
-            bill_id = bill_page.xpath('//*[@class="entry-title"]')[0].text_content()
+            bill_id = bill_page.xpath('//*[@class="entry-title"]')
+            if len(bill_id) == 0:
+                print "WARNING: bill summary page is blank! (%s)" % url
+                self.bad_urls.append(url)
+                return
+            bill_id = bill_id[0].text_content()
             bill_id = clean_text(bill_id)
 
             bill_desc = bill_page.xpath('//*[@class="BillDescription"]')[0].text_content()
@@ -198,7 +208,10 @@ class MOBillScraper(BillScraper):
             assert lr_label_tag[0].text_content().strip() == 'LR Number:'
             bill_lr = lr_label_tag[1].text_content()
 
-            official_title_tag = table_rows[6+cosponsorOffset]
+            lastActionOffset = 0
+            if table_rows[4+cosponsorOffset][0].text_content().strip() == 'Governor Action:':
+                lastActionOffset = 1
+            official_title_tag = table_rows[5+cosponsorOffset+lastActionOffset]
             assert official_title_tag[0].text_content().strip() == 'Bill String:'
             official_title = official_title_tag[1].text_content()
 
@@ -225,10 +238,17 @@ class MOBillScraper(BillScraper):
             # check for cosponsors
             if cosponsorOffset == 1:
                 if len(table_rows[2][1]) == 1: # just a name
-                    cosponsor_cell = table_rows[2][1][0]
+                    cosponsor = table_rows[2][1][0]
                     bill.add_sponsor('cosponsor', cosponsor.text_content(), sponsor_link='%s/%s' % (self.senate_base_url,cosponsor.attrib['href']))
                 else: # name ... etal
-                    self.parse_cosponsors_from_bill(bill,'%s/%s' % (self.senate_base_url,table_rows[2][1][1].attrib['href']))
+                    try:
+                        self.parse_cosponsors_from_bill(bill,'%s/%s' % (self.senate_base_url,table_rows[2][1][1].attrib['href']))
+                    except scrapelib.HTTPError:
+                        self.bad_urls.append(url)
+                        print "WARNING: no bill summary page (%s)" % url
+                        # recover, just use the one cosponsor listed on the summary page and forget about the rest:
+                        cosponsor = table_rows[2][1][0]
+                        bill.add_sponsor('cosponsor', cosponsor.text_content(), sponsor_link='%s/%s' % (self.senate_base_url,cosponsor.attrib['href']))
 
             actions_link_tag = bill_page.xpath('//div[@class="Sections"]/a')[0]
             actions_link = '%s/%s' % (self.senate_base_url,actions_link_tag.attrib['href'])
@@ -239,8 +259,8 @@ class MOBillScraper(BillScraper):
             version_tags = bill_page.xpath('//div[@class="BillDocsSection"][2]/span')
             for version_tag in reversed(version_tags):
                 version = clean_text(version_tag.text_content())
-                text_url = '%s/%s' % (self.senate_base_url,version_tag[0].attrib['href'])
-                pdf_url = '%s/%s' % (self.senate_base_url,version_tag[1].attrib['href'])
+                text_url = '%s%s' % (self.senate_base_url,version_tag[0].attrib['href'])
+                pdf_url = '%s%s' % (self.senate_base_url,version_tag[1].attrib['href'])
                 bill.add_version(version, text_url, pdf_url=pdf_url)
 
         self.save_bill(bill)
@@ -248,10 +268,18 @@ class MOBillScraper(BillScraper):
     def parse_cosponsors_from_bill(self, bill, url):
         with self.urlopen(url) as bill_page:
             bill_page = lxml.html.fromstring(bill_page)
-            sponsors_text = bill_page.xpath('/html/body/p[6]/span')[0].text_content()
+            sponsors_text = find_nodes_with_matching_text(bill_page,'//p/span',r'\s*INTRODUCED.*')[0].text_content()
+            #import pdb; pdb.set_trace()
             sponsors = clean_text(sponsors_text).split(',')
-            for part in sponsors[1::]:
-                for sponsor in part.split(' AND '):
+            many = False
+            if len(sponsors) > 1: # if there are several comma separated entries, list them.
+                sponsors = sponsors[1::]
+                many = True
+            for part in sponsors:
+                parts = part.split(' AND ')
+                if not many:
+                    parts = [parts[1]]
+                for sponsor in parts:
                     bill.add_sponsor('cosponsor', clean_text(sponsor))
 
     def parse_house_actions(self, bill, url):
