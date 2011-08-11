@@ -1,4 +1,4 @@
-"abbr","chamber","name","num_legislators","district"
+"abbr","chamber","name","num_legislators","boundary_id"
 "ok","lower",1,1,"sldl-ok-state-house-district-%(name)s"
 "ok","lower",2,1,"sldl-ok-state-house-district-%(name)s"
 "ok","lower",3,1,"sldl-ok-state-house-district-%(name)s"
