@@ -177,8 +177,8 @@ class MOBillScraper(BillScraper):
                     # descriptions of the bill.
                     #print "bill = %s" % bill[0][0].attrib['href']
                     count = count + 1
-                    if (count > 1140):
-                        self.parse_house_bill(bill[0][0].attrib['href'], session)
+                    #if (count > 1140):
+                    self.parse_house_bill(bill[0][0].attrib['href'], session)
                 isEven = not isEven
 
 
