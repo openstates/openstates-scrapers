@@ -478,11 +478,9 @@ class LegislatorGeoHandler(BillyHandler):
             districts = db.districts.find({'chamber': chamber,
                                            'boundary_id': census_name})
             count = districts.count()
-            if count != 1:
-                return rc.NOT_FOUND
-
-            filters.append({'state': state, 'district': our_name,
-                            'chamber': chamber})
+            if count == 1:
+                filters.append({'state': state, 'district': our_name,
+                                'chamber': chamber})
 
         if not filters:
             return []
