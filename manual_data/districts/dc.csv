@@ -1,11 +1,11 @@
-"state","chamber","name","num_legislators"
-"dc","upper","At-Large",4
-"dc","upper","Chairman",1
-"dc","upper","Ward 1",1
-"dc","upper","Ward 2",1
-"dc","upper","Ward 3",1
-"dc","upper","Ward 4",1
-"dc","upper","Ward 5",1
-"dc","upper","Ward 6",1
-"dc","upper","Ward 7",1
-"dc","upper","Ward 8",1
+"state","chamber","name","num_legislators","boundary"
+"dc","upper","At-Large",4,"cd-dc-delegate-district-at-large"
+"dc","upper","Chairman",1,"cd-dc-delegate-district-at-large"
+"dc","upper","Ward 1",1,"sldu-dc-ward-1"
+"dc","upper","Ward 2",1,"sldu-dc-ward-2"
+"dc","upper","Ward 3",1,"sldu-dc-ward-3"
+"dc","upper","Ward 4",1,"sldu-dc-ward-4"
+"dc","upper","Ward 5",1,"sldu-dc-ward-5"
+"dc","upper","Ward 6",1,"sldu-dc-ward-6"
+"dc","upper","Ward 7",1,"sldu-dc-ward-7"
+"dc","upper","Ward 8",1,"sldu-dc-ward-8"
