@@ -148,5 +148,6 @@ metadata = dict(
             'verbose_name': 'Sixty-first Legislature - First Regular Session',
             'start_date': datetime.date(2011, 1, 10),
             'end_date': datetime.date(2011, 4, 7)},
-    }
+    },
+    feature_flags=[],
     )
