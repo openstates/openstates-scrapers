@@ -479,7 +479,8 @@ class LegislatorGeoHandler(BillyHandler):
                                            'boundary_id': census_name})
             count = districts.count()
             if count == 1:
-                filters.append({'state': state, 'district': our_name,
+                filters.append({'state': state,
+                                'district': districts[0]['name'],
                                 'chamber': chamber})
 
         if not filters:
