@@ -3,6 +3,7 @@ import urllib2
 import datetime
 import json
 import itertools
+from collections import defaultdict
 
 from django.http import HttpResponse
 
@@ -499,5 +500,23 @@ class DistrictHandler(BillyHandler):
         if name:
             filter['name'] = name
         districts = list(db.districts.find(filter))
+
+        # change leg filter
+        filter['state'] = filter.pop('abbr')
+        if name:
+            filter['district'] = filter.pop('name')
+        legislators = db.legislators.find(filter, fields={'_id': 0,
+                                                          'leg_id': 1,
+                                                          'chamber': 1,
+                                                          'district': 1,
+                                                          'full_name': 1})
+
+        leg_dict = defaultdict(list)
+        for leg in legislators:
+            leg_dict[(leg['chamber'], leg['district'])].append(leg)
+            leg.pop('chamber')
+            leg.pop('district')
+        for dist in districts:
+            dist['legislators'] = leg_dict[(dist['chamber'], dist['name'])]
 
         return districts

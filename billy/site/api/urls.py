@@ -114,10 +114,14 @@ urlpatterns = patterns('',
     url(r'v1/legislators/geo/$', legislator_geo_handler),
 
 
-    url(r'v1/districts/(?P<abbr>[a-zA-Z]{2})/',
+    # district
+    url(r'v1/districts/(?P<abbr>[a-zA-Z]{2})/$',
         district_handler),
-    url(r'v1/districts/(?P<abbr>[a-zA-Z]{2})/(?P<chamber>upper|lower)/',
+    url(r'v1/districts/(?P<abbr>[a-zA-Z]{2})/(?P<chamber>upper|lower)/$',
         district_handler),
+    url(r'v1/districts/(?P<abbr>[a-zA-Z]{2})/(?P<chamber>upper|lower)/(?P<name>.+)/$',
+        district_handler),
+
 
     url(r'^v1/stats/$', stats_handler),
 )
