@@ -331,8 +331,6 @@ class IDBillScraper(BillScraper):
                 break
         vote = Vote(actor, date, motion, passed, int(yes_count), int(no_count),
                     int(other_count))
-        if name == 'None':
-            raise Exception('break!')
         for name in yes_votes:
             if name and name != 'None':
                 vote.yes(name)
