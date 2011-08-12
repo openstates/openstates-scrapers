@@ -494,7 +494,7 @@ class LegislatorGeoHandler(BillyHandler):
 class DistrictHandler(BillyHandler):
 
     def read(self, request, abbr, chamber=None, name=None):
-        filter = {'abbr': abbr}
+        filter = {'abbr': abbr, 'active': True}
         if chamber:
             filter['chamber'] = chamber
         if name:
