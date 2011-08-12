@@ -493,4 +493,11 @@ class LegislatorGeoHandler(BillyHandler):
 class DistrictHandler(BillyHandler):
 
     def read(self, request, abbr, chamber=None, name=None):
-        pass
+        filter = {'abbr': abbr}
+        if chamber:
+            filter['chamber'] = chamber
+        if name:
+            filter['name'] = name
+        districts = list(db.districts.find(filter))
+
+        return districts
