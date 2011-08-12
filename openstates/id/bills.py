@@ -313,17 +313,17 @@ class IDBillScraper(BillScraper):
         spans = row.xpath('.//span')
         motion = row.text
         passed, yes_count, no_count, other_count = spans[0].text_content().split('-')
-        yes_votes = [ name for name in \
-                      spans[1].tail.replace(u'\xa0--\xa0', '').split(',') \
+        yes_votes = [ name for name in
+                      spans[1].tail.replace(u'\xa0--\xa0', '').split(',')
                       if name ]
-        
-        no_votes = [ name for name in \
-                     spans[2].tail.replace(u'\xa0--\xa0', '').split(',') \
+
+        no_votes = [ name for name in
+                     spans[2].tail.replace(u'\xa0--\xa0', '').split(',')
                      if name ]
         other_votes = []
         if spans[3].text.startswith('Absent'):
-            other_votes = [ name for name in \
-                            spans[3].tail.replace(u'\xa0--\xa0', '').split(',') \
+            other_votes = [ name for name in
+                            spans[3].tail.replace(u'\xa0--\xa0', '').split(',')
                             if name ]
         for key, val in {'adopted': True, 'passed': True, 'failed':False}.items():
             if key in passed.lower():
@@ -331,14 +331,16 @@ class IDBillScraper(BillScraper):
                 break
         vote = Vote(actor, date, motion, passed, int(yes_count), int(no_count),
                     int(other_count))
+        if name == 'None':
+            raise Exception('break!')
         for name in yes_votes:
-            if name:
+            if name and name != 'None':
                 vote.yes(name)
         for name in no_votes:
-            if name:
+            if name and name != 'None':
                 vote.no(name)
         for name in other_votes:
-            if name:
+            if name and name != 'None':
                 vote.other(name)
         return vote
 
