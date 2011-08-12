@@ -494,7 +494,7 @@ class LegislatorGeoHandler(BillyHandler):
 class DistrictHandler(BillyHandler):
 
     def read(self, request, abbr, chamber=None, name=None):
-        filter = {'abbr': abbr, 'active': True}
+        filter = {'abbr': abbr}
         if chamber:
             filter['chamber'] = chamber
         if name:
@@ -503,6 +503,7 @@ class DistrictHandler(BillyHandler):
 
         # change leg filter
         filter['state'] = filter.pop('abbr')
+        filter['active'] = True
         if name:
             filter['district'] = filter.pop('name')
         legislators = db.legislators.find(filter, fields={'_id': 0,
