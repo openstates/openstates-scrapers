@@ -58,11 +58,14 @@ class PABillScraper(BillScraper):
 
             self.parse_bill_versions(bill, page)
 
-            self.parse_history(bill, history_url(chamber, session, special,
-                                                 type_abbr, bill_num))
-
-            self.parse_votes(bill, vote_url(chamber, session, special,
+            vote_count = self.parse_history(bill,
+                                history_url(chamber, session, special,
                                             type_abbr, bill_num))
+
+            # only fetch votes if votes were seen in history
+            if vote_count:
+                self.parse_votes(bill, vote_url(chamber, session, special,
+                                                type_abbr, bill_num))
 
             self.save_bill(bill)
 
@@ -80,6 +83,8 @@ class PABillScraper(BillScraper):
             page.make_links_absolute(url)
             self.parse_sponsors(bill, page)
             self.parse_actions(bill, page)
+            # vote count
+            return len(page.xpath('//a[contains(@href, "rc_view_action1")]/text()'))
 
     def parse_sponsors(self, bill, page):
         first = True

@@ -1,4 +1,5 @@
 -r billy/requirements.txt
 -r billy/site/requirements.txt
+-r openstates/requirements.txt
 
 nose

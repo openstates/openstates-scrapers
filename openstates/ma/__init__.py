@@ -18,7 +18,7 @@ metadata = {
             'sessions': [ '187th' ]
         }
     ],
-    'name': 'Massachussetts',
+    'name': 'Massachusetts',
     'upper_chamber_term': 2,
     'abbreviation': 'ma',
     'upper_chamber_name': 'Senate',
@@ -32,7 +32,7 @@ metadata = {
             'display_name': '187th Legislature',
         }
     },
-    'legislature_name': 'Massachussetts General Court',
+    'legislature_name': 'Massachusetts General Court',
     'lower_chamber_term': 2,
     'feature_flags': [],
 }

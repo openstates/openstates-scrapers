@@ -9,11 +9,11 @@ metadata = {
     'upper_chamber_term': 4,
     'lower_chamber_term': 2,
     'terms': [
-        {'name': '61st',
-         'sessions': ['61st'],
-         'start_year': 2009, 'end_year': 2010},
         {'name': '62nd',
          'sessions': ['62nd'],
          'start_year': 2011, 'end_year': 2012},
-        ],
+    ],
+    'session_details': {
+        '62nd': {'display_name': '62nd Regular Session'},
     }
+}

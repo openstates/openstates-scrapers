@@ -3,6 +3,7 @@ import urllib2
 import datetime
 import json
 import itertools
+from collections import defaultdict
 
 from django.http import HttpResponse
 
@@ -218,15 +219,16 @@ class LegislatorSearchHandler(BillyHandler):
                                                'last_name'))
         elemMatch = _build_mongo_filter(request, ('chamber', 'term',
                                                   'district', 'party'))
-        _filter['roles'] = {'$elemMatch': elemMatch}
+        if elemMatch:
+            _filter['roles'] = {'$elemMatch': elemMatch}
 
         active = request.GET.get('active')
         if not active and 'term' not in request.GET:
             # Default to only searching active legislators if no term
             # is supplied
             _filter['active'] = True
-        elif active:
-            _filter['active'] = (active.lower() == 'true')
+        elif active and active.lower() == 'true':
+            _filter['active'] = True
 
         return list(db.legislators.find(_filter, legislator_fields))
 
@@ -471,15 +473,51 @@ class LegislatorGeoHandler(BillyHandler):
             state = dist['name'][0:2].lower()
             chamber = {'/1.0/boundary-set/sldu/': 'upper',
                        '/1.0/boundary-set/sldl/': 'lower'}[dist['set']]
-            census_name = dist['name'][3:]
+            census_name = dist['slug']
 
-            our_name = district_from_census_name(state, chamber, census_name)
-
-            filters.append({'state': state, 'district': our_name,
-                            'chamber': chamber})
+            # look up district slug
+            districts = db.districts.find({'chamber': chamber,
+                                           'boundary_id': census_name})
+            count = districts.count()
+            if count == 1:
+                filters.append({'state': state,
+                                'district': districts[0]['name'],
+                                'chamber': chamber})
 
         if not filters:
             return []
 
         return list(db.legislators.find({'$or': filters},
                                         _build_field_list(request)))
+
+
+class DistrictHandler(BillyHandler):
+
+    def read(self, request, abbr, chamber=None, name=None):
+        filter = {'abbr': abbr}
+        if chamber:
+            filter['chamber'] = chamber
+        if name:
+            filter['name'] = name
+        districts = list(db.districts.find(filter))
+
+        # change leg filter
+        filter['state'] = filter.pop('abbr')
+        filter['active'] = True
+        if name:
+            filter['district'] = filter.pop('name')
+        legislators = db.legislators.find(filter, fields={'_id': 0,
+                                                          'leg_id': 1,
+                                                          'chamber': 1,
+                                                          'district': 1,
+                                                          'full_name': 1})
+
+        leg_dict = defaultdict(list)
+        for leg in legislators:
+            leg_dict[(leg['chamber'], leg['district'])].append(leg)
+            leg.pop('chamber')
+            leg.pop('district')
+        for dist in districts:
+            dist['legislators'] = leg_dict[(dist['chamber'], dist['name'])]
+
+        return districts

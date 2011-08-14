@@ -92,11 +92,13 @@ class ILBillScraper(BillScraper):
         version_url = doc.xpath('//a[text()="Full Text"]/@href')[0]
         self.scrape_documents(bill, version_url)
 
-        votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-        self.scrape_votes(bill, votes_url)
+        # if there's more than 1 votehistory link, there are votes to grab
+        if len(doc.xpath('//a[contains(@href, "votehistory")]')) > 1:
+            votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
+            self.scrape_votes(bill, votes_url)
+            bill.add_source(votes_url)
 
         bill.add_source(url)
-        bill.add_source(votes_url)
         self.save_bill(bill)
 
 
@@ -129,7 +131,13 @@ class ILBillScraper(BillScraper):
         VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
 
         for link in doc.xpath('//a[contains(@href, "votehistory")]'):
-            _, motion, date = link.text.split(' - ')
+
+            pieces = link.text.split(' - ')
+            date = pieces[-1]
+            if len(pieces) == 3:
+                motion = pieces[1]
+            else:
+                motion = 'Third Reading'
 
             chamber = link.xpath('../following-sibling::td/text()')[0]
             if chamber == 'HOUSE':

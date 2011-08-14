@@ -1,0 +1,2 @@
+# testing requirements
+mox>=0.5.3
