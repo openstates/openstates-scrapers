@@ -1,4 +1,5 @@
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 from datetime import datetime
 import lxml.html
 import re
@@ -12,7 +13,7 @@ class DEBillScraper(BillScraper):
                 'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=1',
             ),
             'upper': (
-                'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=7',
+                'http://legis.delaware.gov/LIS/lis146.nsf/Legislation?OpenView&Start=1&Count=10000&Expand=5',
             )
         }
     }
@@ -33,9 +34,6 @@ class DEBillScraper(BillScraper):
     #    }
     #}
 
-    vote_urls = {}
-
-
     def scrape(self, chamber, session):
         urls = self.urls[session][chamber]
         bills_to_scrape = []
@@ -55,19 +53,10 @@ class DEBillScraper(BillScraper):
                 })
 
         for bill in bills_to_scrape:
-            self.scrape_bill(bill)
-
-        for bill_id, votes in self.vote_urls.iteritems():
-            for url in votes['urls']:
-                self.scrape_votes(bill_id, url)
-        
-        self.vote_urls = {}
+            self.scrape_bill(chamber, bill)
 
 
-    def scrape_bill(self, bill):
-        self.log(bill['id'])
-        self.log(bill['url'])
-
+    def scrape_bill(self, chamber, bill):
         bill_id = bill['id'].replace('w/','with ')
 
         page = lxml.html.fromstring(self.urlopen(bill['url']))
@@ -109,30 +98,25 @@ class DEBillScraper(BillScraper):
                date = datetime.strptime(act[0], '%b %d, %Y')
                b.add_action(bill['chamber'], act[2], date)
         
-
         # resources = page.xpath('//tr[td/b[contains(font, "Full text of Legislation")]]')
 
         # save vote urls for scraping later
+        vote_urls = []
         voting_reports = page.xpath('//tr[td/b[contains(font, "Voting Reports")]]')
         if(len(voting_reports) > 0):
             for report in voting_reports[0].xpath('td/font/a'):
-                if self.vote_urls.has_key(bill_id):
-                    self.vote_urls[bill_id]['urls'].append(report.attrib['href'])
-                else:
-                    self.vote_urls[bill_id] = { 'urls': [report.attrib['href']] }
+                vote_urls.append(report.attrib['href'])
         
-        
-        self.log('Title: ' + title)
-        self.log('Sponsor: ' + sponsor)
-        self.log('Additional sponsors: ' + additional_sponsors)
-        self.log('Co-sponsors: ' + cosponsors)
-        self.log('*'*50)
+        # Scrape votes
+        for url in vote_urls:
+            vote = self.scrape_votes(chamber, title, bill_id, url)
+            b.add_vote(vote)
 
         # Save bill
         self.save_bill(b)
     
 
-    def scrape_votes(self, bill_id, url):
+    def scrape_votes(self, chamber, title, bill_id, url):
         page = lxml.html.fromstring(self.urlopen(url))
 
         # there's got to be a cleaner, less redundant way to ferret this out
@@ -142,6 +126,7 @@ class DEBillScraper(BillScraper):
         summary_row = summary_row[0]
 
         vote_date = summary_row.xpath('following-sibling::font[2]')[0].text
+        vote_date = datetime.strptime(vote_date, '%m/%d/%Y %I:%M %p')
 
         vote_result = summary_row.xpath('following-sibling::b/font')
         if(len(summary_row) > 0):
@@ -151,10 +136,10 @@ class DEBillScraper(BillScraper):
         vote_passed = True if vote_result == 'Passed' else False
 
         yes_votes = page.xpath('//font[contains(text(),"Yes:")]/following::font[normalize-space()!=""]')
-        yes_count = yes_votes[0].text if len(yes_votes) > 0 else 0
+        yes_count = int(yes_votes[0].text) if len(yes_votes) > 0 else 0
 
         no_votes = page.xpath('//font[contains(text(),"No:")]/following::font[normalize-space()!=""]')
-        no_count = no_votes[0].text if len(no_votes) > 0 else 0
+        no_count = int(no_votes[0].text) if len(no_votes) > 0 else 0
 
         not_voting = page.xpath('//font[contains(text(),"Not Voting:")]/following::font[normalize-space()!=""]')
         other_count = int(not_voting[0].text) if len(not_voting) > 0 else 0
@@ -162,12 +147,5 @@ class DEBillScraper(BillScraper):
         absent = page.xpath('//font[contains(text(),"Absent:")]/following::font[normalize-space()!=""]')
         other_count += int(absent[0].text) if len(absent) > 0 else 0
 
-        self.log(bill_id)
-        self.log(url)
-        self.log(vote_date)
-        self.log(vote_result)
-        self.log(vote_passed)
-        self.log(yes_count)
-        self.log(no_count)
-        self.log(other_count)
-        self.log('*'*50)
+        vote = Vote(chamber, vote_date, title, vote_passed, yes_count, no_count, other_count, 'passage')
+        return vote
