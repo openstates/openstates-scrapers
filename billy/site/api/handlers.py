@@ -3,6 +3,7 @@ import urllib2
 import datetime
 import json
 import itertools
+import struct
 from collections import defaultdict
 
 from django.http import HttpResponse
