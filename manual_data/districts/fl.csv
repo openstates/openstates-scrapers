@@ -1,4 +1,4 @@
-"abbr","chamber","name","num_legislators","boundary_id"
+"abbr","chamber","name","num_seats","boundary_id"
 "fl","lower",1,1,"sldl-fl-state-house-district-%(name)s"
 "fl","lower",2,1,"sldl-fl-state-house-district-%(name)s"
 "fl","lower",3,1,"sldl-fl-state-house-district-%(name)s"

@@ -1,4 +1,4 @@
-"abbr","chamber","name","num_legislators","boundary_id"
+"abbr","chamber","name","num_seats","boundary_id"
 "hi","lower",1,1,"sldl-hi-state-house-district-%(name)s"
 "hi","lower",2,1,"sldl-hi-state-house-district-%(name)s"
 "hi","lower",3,1,"sldl-hi-state-house-district-%(name)s"
