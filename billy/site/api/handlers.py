@@ -4,6 +4,7 @@ import datetime
 import json
 import itertools
 import struct
+import base64
 from collections import defaultdict
 
 from django.http import HttpResponse
@@ -511,7 +512,8 @@ class DistrictHandler(BillyHandler):
         for coords in shape['coordinates']:
             newcoords = []
             for subshape in coords:
-                newcoords.append(' '.join(struct.pack('dd', *p) for p in subshape))
+                newcoords.append(base64.encodestring(' '.join(
+                    struct.pack('dd', *p) for p in subshape)))
             new_coord_arr.append(newcoords)
         shape['coordinates'] = new_coord_arr
         return shape
