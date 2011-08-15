@@ -12,10 +12,11 @@ metadata = dict(
     upper_chamber_term=2,
     terms=[
         {'name': '2011-2012', 'sessions': ['102'],
-        'start_year'; 2011, 'end_year': 2012},
+        'start_year': 2011, 'end_year': 2012},
     ],
     session_details={
-        '102': {'display_name': '102nd Legislature',}
+        '102': { 'start_date': datetime.date(2011, 1, 5),
+        'display_name': '102nd Legislature',}
     },
     feature_flags=[],
 )
