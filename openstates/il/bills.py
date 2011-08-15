@@ -30,9 +30,42 @@ DOC_TYPES = {
     'JRCA': 'constitutional amendment',
 }
 
+_action_classifiers = (
+    ('(Pref|F)iled with', 'bill:filed'),
+    ('Arrived? in', 'bill:introduced'),
+    ('First Reading', 'bill:reading:1'),
+    ('(Recalled to )?Second Reading', 'bill:reading:2'),
+    ('(Re-r|R)eferred to', 'committee:referred'),
+    ('(Re-a|A)ssigned to', 'committee:referred'),
+    ('Sent to the Governor', 'governor:received'),
+    ('Governor Approved', 'governor:signed'),
+    ('Governor Vetoed', 'governor:vetoed'),
+    ('Governor Item', 'governor:vetoed:line-item'),
+    ('Governor Amendatory Veto', 'governor:vetoed'),
+    ('Amendment No. \d+ Filed', 'amendment:introduced'),
+    ('Amendment No. \d+ Tabled', 'amendment:failed'),
+    ('Amendment No. \d+ Adopted', 'amendment:passed'),
+    ('Do Pass', 'committee:passed'),
+    ('Recommends Be Adopted', 'committee:passed:favorable'),
+    ('Third Reading .+? Passed', ['bill:reading:3', 'bill:passed']),
+    ('Third Reading .+? Lost', ['bill:reading:3', 'bill:failed']),
+    ('Resolution Adopted', 'bill:passed'),
+    ('Resolution Lost', 'bill:failed'),
+    ('Tabled', 'bill:withdrawn'),
+)
+
+
+def _categorize_action(action):
+    for pattern, atype in _action_classifiers:
+        if re.findall(pattern, action):
+            return atype
+    return 'other'
+
+
 class ILBillScraper(BillScraper):
 
     state = 'il'
+
 
 
     def scrape(self, chamber, session):
@@ -84,9 +117,8 @@ class ILBillScraper(BillScraper):
 
             action = action.text_content()
 
-            # TODO: categorize actions
-
-            bill.add_action(actor, action, date)
+            bill.add_action(actor, action, date,
+                            type=_categorize_action(action))
 
         # versions
         version_url = doc.xpath('//a[text()="Full Text"]/@href')[0]
