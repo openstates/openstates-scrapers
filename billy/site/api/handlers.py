@@ -505,7 +505,7 @@ class DistrictHandler(BillyHandler):
             return shape
 
 
-    def _json_to_bin(shape):
+    def _json_to_bin(self, shape):
         new_coord_arr = []
         for coords in shape['coordinates']:
             newcoords = []
@@ -546,6 +546,6 @@ class DistrictHandler(BillyHandler):
         shape_type = request.GET.get('shape', None)
         if shape_type:
             for dist in districts:
-                dist['shape'] = self._get_shape(dist['name'], shape_type)
+                dist['shape'] = self._get_shape(dist['boundary_id'], shape_type)
 
         return districts
