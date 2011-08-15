@@ -492,6 +492,29 @@ class LegislatorGeoHandler(BillyHandler):
 
 
 class DistrictHandler(BillyHandler):
+    base_url = getattr(settings, 'BOUNDARY_SERVICE_URL',
+                       'http://localhost:8001/1.0/')
+
+
+    def _get_shape(self, name, type):
+        url = "%sshape/%s/" % (self.base_url, name)
+        shape = json.load(urllib2.urlopen(url))['shape']
+        if type == 'binary':
+            return self._json_to_bin(shape)
+        else:
+            return shape
+
+
+    def _json_to_bin(shape):
+        new_coord_arr = []
+        for coords in shape['coordinates']:
+            newcoords = []
+            for subshape in coords:
+                newcoords.append(' '.join(struct.pack('dd', *p) for p in subshape))
+            new_coord_arr.append(newcoords)
+        shape['coordinates'] = new_coord_arr
+        return shape
+
 
     def read(self, request, abbr, chamber=None, name=None):
         filter = {'abbr': abbr}
@@ -519,5 +542,10 @@ class DistrictHandler(BillyHandler):
             leg.pop('district')
         for dist in districts:
             dist['legislators'] = leg_dict[(dist['chamber'], dist['name'])]
+
+        shape_type = request.GET.get('shape', None)
+        if shape_type:
+            for dist in districts:
+                dist['shape'] = self._get_shape(dist['name'], shape_type)
 
         return districts
