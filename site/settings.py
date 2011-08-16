@@ -5,7 +5,6 @@ TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
     ('James Turk', 'jturk@sunlightfoundation.com'),
-    ('Michael Stephens', 'mstephens@sunlightfoundation.com'),
 )
 
 MANAGERS = ADMINS
@@ -48,7 +47,6 @@ ROOT_URLCONF = 'urls'
 
 INSTALLED_APPS = (
     'django.contrib.humanize',
-    'django.contrib.gis',
     'billy.site.api',
     'billy.site.browse',
     'locksmith.mongoauth',
