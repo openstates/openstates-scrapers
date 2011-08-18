@@ -24,20 +24,3 @@ def get_leg_ids_csv(state):
               state)
         get('/tmp/%s_missing_leg_ids.csv' % state,
             '%s_missing_leg_ids.csv' % state)
-
-def dump_json(state):
-    with cd('/tmp/'):
-        cmd = '~openstates/src/openstates/billy/bin/dump_json.py --upload '
-        # special case those known to have reasons not to pass validation
-        # la: missing dates on votes sometimes
-        # ca: version URLs missing
-        schemas = {'la': '--schema_dir=/projects/openstates/src/openstates/openstates/la/schemas/api/ ',
-                   'ca': '--schema_dir=/projects/openstates/src/openstates/openstates/ca/schemas/api/ ',}
-        if state in schemas:
-            cmd += schemas[state]
-        _venv(cmd + state)
-
-def dump_csv(state):
-    with cd('/tmp/'):
-        cmd = '~openstates/src/openstates/billy/bin/dump_csv.py --upload '
-        _venv(cmd + state)
