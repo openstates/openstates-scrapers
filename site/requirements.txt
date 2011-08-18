@@ -1,0 +1,3 @@
+sphinx
+markdown
+django-mediasync
