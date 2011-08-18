@@ -12,7 +12,6 @@ from django.http import HttpResponse
 from billy import db
 from billy.conf import settings
 from billy.utils import keywordize, metadata
-from billy.site.api.utils import district_from_census_name
 
 import pymongo
 
