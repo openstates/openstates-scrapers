@@ -18,12 +18,9 @@ python-votesmart==0.3.0
 nimsp==0.3.3
 jellyfish>=0.1.2
 
-# required for obsolete states
+# required for Alaska
 #BeautifulSoup>=3.1
 #html5lib
-
-# Required for Michigan
-#PdfMiner>=20091219
 
 # Required for California
 #SQLAlchemy>=0.5.3
