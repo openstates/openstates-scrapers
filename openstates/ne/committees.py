@@ -17,20 +17,21 @@ class NECommitteeScraper(CommitteeScraper):
         with self.urlopen(main_url) as page:
             page = lxml.html.fromstring(page)
 
-            comm_names = page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[@class="content_box_container"]/div[@class="content_box"]/h2/a')
-            for x in range(len(comm_names)):
-                print comm_names[x].text
-
-                #senators = page.xpath('/ul[@class="nobullet"]/li/a')
-                #print senators
-            #print "\n"
-            for comm_links in page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[@class="content_box_container"]/div[@class="content_box"]/h2'):
-                comm_name = comm_links.text
-                if comm_name != None:
-                    print comm_name + '\n'
-                    senator = comm_links.xpath('/ul[@class="nobullet"]/li/a').text
-                    print senator
-
+            for comm_names in page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[@class="content_box_container"]/div[@class="content_box"]'):
+               name = comm_names.xpath('h2')[0].text
+               if name != None:
+                   committee = Committee('upper', name)
+                   committee.add_source(main_url)
+                   for senators in comm_names.xpath('ul[@class="nobullet"]/li'):
+                       senator = senators[0].text
+                       if 'Chairperson' in senator:
+                           role = 'Chairperson'
+                           senator = senator[5:-13]
+                       else:
+                           role = 'member'
+                           senator = senator[5:-1]
+                       committee.add_member(senator, role)
+                   self.save_committee(committee)
 
 
     def standing_comm(self):
