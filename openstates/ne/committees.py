@@ -9,7 +9,10 @@ class NECommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
 
-        #self.standing_comm()
+        if chamber == 'lower':
+            raise Exception('Nebraska is unicameral. Call again with upper')
+
+        self.standing_comm()
         self.select_special_comm()
 
     def select_special_comm(self):
@@ -32,6 +35,21 @@ class NECommitteeScraper(CommitteeScraper):
                            senator = senator[5:-1]
                        committee.add_member(senator, role)
                    self.save_committee(committee)
+               else:
+                   name = comm_names.xpath('h2/a')[0].text
+                   committee = Committee('upper', name)
+                   committee.add_source(main_url)
+                   for senators in comm_names.xpath('ul[@class="nobullet"]/li'):
+                       senator = senators[0].text
+                       if 'Chairperson' in senator:
+                           role = 'chairperson'
+                           senator = senator[5:-13]
+                       else:
+                           role = 'member'
+                           senator = senator[5:-1]
+                       committee.add_member(senator, role)
+                   self.save_committee(committee)
+
 
 
     def standing_comm(self):
