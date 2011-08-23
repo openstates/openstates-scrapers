@@ -1,10 +1,14 @@
 from fabric.api import run, env, cd, sudo, get
 
+KEY_FILENAME = '/home/james/.ssh/openstates_master.pem'
+
 def staging():
-    env.hosts = ['ubuntu@greenbelt.sunlightlabs.net']
+    env.hosts = ['ubuntu@harrisburg.sunlightlabs.net']
+    env.key_filename = KEY_FILENAME
 
 def production():
     env.hosts = ['ubuntu@openstates.sunlightlabs.com']
+    env.key_filename = KEY_FILENAME
 
 def update():
     sudo('cd ~openstates/src/openstates && git pull', user='openstates')
