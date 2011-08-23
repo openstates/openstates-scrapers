@@ -520,8 +520,9 @@ class DistrictHandler(BillyHandler):
 
     def read(self, request, abbr, chamber=None, name=None):
         filter = {'abbr': abbr}
-        if chamber:
-            filter['chamber'] = chamber
+        if not chamber:
+            chamber = {'$exists': True}
+        filter['chamber'] = chamber
         if name:
             filter['name'] = name
         districts = list(db.districts.find(filter))
@@ -539,7 +540,7 @@ class DistrictHandler(BillyHandler):
 
         leg_dict = defaultdict(list)
         for leg in legislators:
-            leg_dict[(leg.get('chamber'), leg.get('district'))].append(leg)
+            leg_dict[(leg['chamber'], leg['district'])].append(leg)
             leg.pop('chamber')
             leg.pop('district')
         for dist in districts:

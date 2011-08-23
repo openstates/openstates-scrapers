@@ -4,7 +4,7 @@ def staging():
     env.hosts = ['ubuntu@greenbelt.sunlightlabs.net']
 
 def production():
-    env.hosts = ['ubuntu@columbia.sunlightlabs.net']
+    env.hosts = ['ubuntu@openstates.sunlightlabs.com']
 
 def update():
     sudo('cd ~openstates/src/openstates && git pull', user='openstates')
