@@ -502,6 +502,7 @@ class DistrictHandler(BillyHandler):
         data = json.load(urllib2.urlopen(url))
         shape = data['shape']
         centroid = data['centroid']['coordinates']
+        centroid = {'lon': centroid[0], 'lat': centroid[1]}
         if type == 'binary':
             return self._json_to_bin(shape), centroid
         else:
