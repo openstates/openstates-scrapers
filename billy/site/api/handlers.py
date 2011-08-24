@@ -497,13 +497,15 @@ class DistrictHandler(BillyHandler):
                        'http://localhost:8001/1.0/')
 
 
-    def _get_shape(self, name, type):
+    def _get_shape_and_centroid(self, name, type):
         url = "%sshape/%s/" % (self.base_url, name)
-        shape = json.load(urllib2.urlopen(url))['shape']
+        data = json.load(urllib2.urlopen(url))
+        shape = data['shape']
+        centroid = data['centroid']['coordinates']
         if type == 'binary':
-            return self._json_to_bin(shape)
+            return self._json_to_bin(shape), centroid
         else:
-            return shape
+            return shape, centroid
 
 
     def _json_to_bin(self, shape):
@@ -549,6 +551,7 @@ class DistrictHandler(BillyHandler):
         shape_type = request.GET.get('shape', None)
         if shape_type:
             for dist in districts:
-                dist['shape'] = self._get_shape(dist['boundary_id'], shape_type)
+                (dist['shape'], dist['centroid']) = \
+                 self._get_shape_and_centroid(dist['boundary_id'], shape_type)
 
         return districts
