@@ -10,6 +10,7 @@ def import_district_csv(filename):
     for dist in csvfile:
         dist['_id'] = '%(abbr)s-%(chamber)s-%(name)s' % dist
         dist['boundary_id'] = dist['boundary_id'] % dist
+        dist['num_seats'] = int(dist['num_seats'])
         db.districts.save(dist, safe=True)
 
 if __name__ == '__main__':
