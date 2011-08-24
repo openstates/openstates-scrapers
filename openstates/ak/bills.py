@@ -174,8 +174,8 @@ class AKBillScraper(BillScraper):
                                                act_chamber, act_date,
                                                cols[1].a['href'])
                         bill.add_vote(vote)
-                    except:
-                        self.log("Failed parsing vote")
+                    except Exception, e:
+                        self.warning("Failed parsing vote: %s" % e)
 
                 action, atype = self.clean_action(action)
 
@@ -217,9 +217,9 @@ class AKBillScraper(BillScraper):
         url = "http://www.legis.state.ak.us/basis/%s" % url
         info_page = self.soup_parser(self.urlopen(url))
 
-        tally = re.findall('Y(\d+) N(\d+)\s*(?:\w(\d+))*\s*(?:\w(\d+))*'
+        tally = re.findall('Y(\d+) N(-|\d+)\s*(?:\w(\d+))*\s*(?:\w(\d+))*'
                            '\s*(?:\w(\d+))*', action)[0]
-        yes, no, o1, o2, o3 = [0 if not x else int(x) for x in tally]
+        yes, no, o1, o2, o3 = [0 if not x or x == '-' else int(x) for x in tally]
         other = o1 + o2 + o3
 
         votes = info_page.findAll('pre', text=re.compile('Yeas'),
