@@ -11,7 +11,11 @@ metadata = {
                              # senatorial term is only 2 years. See
                              # Article IV, Section 2(a) for more information.
     'terms': [
-        {'name': '97th', 'sessions': ['97th Regular Session'],
+        {'name': '97th', 'sessions': ['97th'],
          'start_year': 2011, 'end_year': 2012},
-    ]
+    ],
+    'feature_flags': [],
+    'session_details': {
+        '97th': {'display_name': '97th Regular Session', 'session_id': '84'},
+    }
 }

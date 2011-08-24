@@ -13,6 +13,9 @@ metadata = {
          'start_year': 2011, 'end_year': 2012},
     ],
     'session_details': {
-        '2011-2012': {'type':'primary'},
-    }
+        '2011-2012': {'type':'primary',
+                      'display_name': '2011-2012 Regular Session'
+                     },
+    },
+    'feature_flags': ['subjects'],
 }

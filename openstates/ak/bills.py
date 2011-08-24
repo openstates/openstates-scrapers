@@ -168,7 +168,7 @@ class AKBillScraper(BillScraper):
                     act_chamber = chamber
 
                 action = cols[3].font.contents[0].strip()
-                if re.match("\w+ Y(\d+) N(\d+)", action):
+                if re.match("\w+ Y(\d+)", action):
                     try:
                         vote = self.parse_vote(bill, action,
                                                act_chamber, act_date,

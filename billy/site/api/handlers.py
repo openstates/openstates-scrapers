@@ -3,13 +3,15 @@ import urllib2
 import datetime
 import json
 import itertools
+import struct
+import base64
+from collections import defaultdict
 
 from django.http import HttpResponse
 
 from billy import db
 from billy.conf import settings
 from billy.utils import keywordize, metadata
-from billy.site.api.utils import district_from_census_name
 
 import pymongo
 
@@ -53,6 +55,9 @@ def _build_mongo_filter(request, keys, icase=True):
             if key == 'chamber':
                 value = value.lower()
                 _filter[key] = _chamber_aliases.get(value, value)
+            elif key.endswith('__in'):
+                values = value.split('|')
+                _filter[key[:-4]] = {'$in': values}
             else:
                 _filter[key] = re.compile('^%s$' % value, re.IGNORECASE)
 
@@ -116,7 +121,8 @@ class BillyHandler(BaseHandler):
 class AllMetadataHandler(BillyHandler):
     def read(self, request):
         data = db.metadata.find(fields={'level':1, 'abbreviation':1,
-                                        'name':1, '_id':0}).sort('name')
+                                        'name':1, 'feature_flags': 1,
+                                        '_id':0}).sort('name')
         return list(data)
 
 
@@ -143,15 +149,16 @@ class BillSearchHandler(BillyHandler):
     def read(self, request):
 
         bill_fields = {'title': 1, 'created_at': 1, 'updated_at': 1,
-                       'bill_id': 1, 'type': 1, 'state': 1,
-                       'session': 1, 'chamber': 1,
-                       'subjects': 1, '_type': 1}
+                       'bill_id': 1, 'type': 1, 'state': 1, 'level': 1,
+                       'country': 1, 'session': 1, 'chamber': 1, 'subjects': 1,
+                       '_type': 1}
         # replace with request's fields if they exist
         bill_fields = _build_field_list(request, bill_fields)
 
         # normal mongo search logic
         _filter = _build_mongo_filter(request, ('state', 'chamber',
-                                                'subjects'))
+                                                'subjects', 'bill_id',
+                                                'bill_id__in'))
 
         # process full-text query
         query = request.GET.get('q')
@@ -213,15 +220,16 @@ class LegislatorSearchHandler(BillyHandler):
                                                'last_name'))
         elemMatch = _build_mongo_filter(request, ('chamber', 'term',
                                                   'district', 'party'))
-        _filter['roles'] = {'$elemMatch': elemMatch}
+        if elemMatch:
+            _filter['roles'] = {'$elemMatch': elemMatch}
 
         active = request.GET.get('active')
         if not active and 'term' not in request.GET:
             # Default to only searching active legislators if no term
             # is supplied
             _filter['active'] = True
-        elif active:
-            _filter['active'] = (active.lower() == 'true')
+        elif active and active.lower() == 'true':
+            _filter['active'] = True
 
         return list(db.legislators.find(_filter, legislator_fields))
 
@@ -466,15 +474,81 @@ class LegislatorGeoHandler(BillyHandler):
             state = dist['name'][0:2].lower()
             chamber = {'/1.0/boundary-set/sldu/': 'upper',
                        '/1.0/boundary-set/sldl/': 'lower'}[dist['set']]
-            census_name = dist['name'][3:]
+            census_name = dist['slug']
 
-            our_name = district_from_census_name(state, chamber, census_name)
-
-            filters.append({'state': state, 'district': our_name,
-                            'chamber': chamber})
+            # look up district slug
+            districts = db.districts.find({'chamber': chamber,
+                                           'boundary_id': census_name})
+            count = districts.count()
+            if count == 1:
+                filters.append({'state': state,
+                                'district': districts[0]['name'],
+                                'chamber': chamber})
 
         if not filters:
             return []
 
         return list(db.legislators.find({'$or': filters},
                                         _build_field_list(request)))
+
+
+class DistrictHandler(BillyHandler):
+    base_url = getattr(settings, 'BOUNDARY_SERVICE_URL',
+                       'http://localhost:8001/1.0/')
+
+
+    def _get_shape(self, name, type):
+        url = "%sshape/%s/" % (self.base_url, name)
+        shape = json.load(urllib2.urlopen(url))['shape']
+        if type == 'binary':
+            return self._json_to_bin(shape)
+        else:
+            return shape
+
+
+    def _json_to_bin(self, shape):
+        new_coord_arr = []
+        for coords in shape['coordinates']:
+            newcoords = []
+            for subshape in coords:
+                newcoords.append(base64.encodestring(' '.join(
+                    struct.pack('dd', *p) for p in subshape)))
+            new_coord_arr.append(newcoords)
+        shape['coordinates'] = new_coord_arr
+        return shape
+
+
+    def read(self, request, abbr, chamber=None, name=None):
+        filter = {'abbr': abbr}
+        if not chamber:
+            chamber = {'$exists': True}
+        filter['chamber'] = chamber
+        if name:
+            filter['name'] = name
+        districts = list(db.districts.find(filter))
+
+        # change leg filter
+        filter['state'] = filter.pop('abbr')
+        filter['active'] = True
+        if name:
+            filter['district'] = filter.pop('name')
+        legislators = db.legislators.find(filter, fields={'_id': 0,
+                                                          'leg_id': 1,
+                                                          'chamber': 1,
+                                                          'district': 1,
+                                                          'full_name': 1})
+
+        leg_dict = defaultdict(list)
+        for leg in legislators:
+            leg_dict[(leg['chamber'], leg['district'])].append(leg)
+            leg.pop('chamber')
+            leg.pop('district')
+        for dist in districts:
+            dist['legislators'] = leg_dict[(dist['chamber'], dist['name'])]
+
+        shape_type = request.GET.get('shape', None)
+        if shape_type:
+            for dist in districts:
+                dist['shape'] = self._get_shape(dist['boundary_id'], shape_type)
+
+        return districts

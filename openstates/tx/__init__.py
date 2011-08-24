@@ -22,11 +22,21 @@ metadata = dict(
     session_details={
         '81': {'start_date': datetime.date(2009, 1, 13),
                'end_date': datetime.date(2009, 6, 1),
-               'type': 'primary'},
+               'type': 'primary',
+               'display_name': '81st Legislature',
+              },
         '811': {'start_date': datetime.date(2009, 7, 1),
                 'end_date': datetime.date(2009, 7, 10),
-                'type': 'special'},
+                'type': 'special',
+                'display_name': '81st Legislature, 1st Called Session',
+               },
         '82': {'start_date': datetime.date(2011, 1, 11),
-               'type': 'primary'},
-        },
-    )
+               'type': 'primary',
+               'display_name': '82nd Legislature',
+              },
+        '821': {'type': 'special',
+                'display_name': '82nd Legislature, 1st Called Session'
+               }
+    },
+    feature_flags=['events', 'subjects'],
+)

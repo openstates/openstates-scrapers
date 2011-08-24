@@ -20,4 +20,8 @@ metadata = dict(
         {'name': '2011-2012', 'sessions': ['19'],
          'start_year': 2011, 'end_year': 2012},
         ],
+    session_details={
+        '19': {'display_name': '19th Council Period',}
+    },
+    feature_flags=[],
 )

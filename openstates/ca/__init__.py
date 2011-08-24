@@ -33,18 +33,52 @@ metadata = dict(
          },
         ],
     session_details={
-        '20092010': {'start_date': datetime.date(2008, 12, 1),
-                     'type': 'primary'},
-        '20092010 Special Session 1': {'type': 'special'},
-        '20092010 Special Session 2': {'type': 'special'},
-        '20092010 Special Session 3': {'type': 'special'},
-        '20092010 Special Session 4': {'type': 'special'},
-        '20092010 Special Session 5': {'type': 'special'},
-        '20092010 Special Session 6': {'type': 'special'},
-        '20092010 Special Session 7': {'type': 'special'},
-        '20092010 Special Session 8': {'type': 'special'},
-        '20112012 Special Session 1': {'type': 'special'},
-        '20112012': {'start_date': datetime.date(2010, 12, 6),
-                     'type': 'primary'},
+        '20092010': {
+            'start_date': datetime.date(2008, 12, 1),
+            'display_name': '2009-2010 Regular Session',
+            'type': 'primary'
         },
-    )
+        '20092010 Special Session 1': {
+            'type': 'special',
+            'display_name': '2009-2010, 1st Special Session',
+        },
+        '20092010 Special Session 2': {
+            'type': 'special',
+            'display_name': '2009-2010, 2nd Special Session',
+        },
+        '20092010 Special Session 3': {
+            'type': 'special',
+            'display_name': '2009-2010, 3rd Special Session',
+        },
+        '20092010 Special Session 4': {
+            'type': 'special',
+            'display_name': '2009-2010, 4th Special Session',
+        },
+        '20092010 Special Session 5': {
+            'type': 'special',
+            'display_name': '2009-2010, 5th Special Session',
+        },
+        '20092010 Special Session 6': {
+            'type': 'special',
+            'display_name': '2009-2010, 6th Special Session',
+        },
+        '20092010 Special Session 7': {
+            'type': 'special',
+            'display_name': '2009-2010, 7th Special Session',
+        },
+        '20092010 Special Session 8': {
+            'type': 'special',
+            'display_name': '2009-2010, 8th Special Session',
+        },
+        '20112012 Special Session 1': {
+            'type': 'special',
+            'display_name': '2011-2012, 1st Special Session',
+        },
+        '20112012': {
+            'start_date': datetime.date(2010, 12, 6),
+            'display_name': '2011-2012 Regular Session',
+            'type': 'primary'
+        },
+    },
+    feature_flags=['subjects'],
+)

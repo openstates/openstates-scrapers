@@ -31,10 +31,17 @@ metadata = dict(
             ])
     ],
     session_details={
-        '2009 Regular Session': {'type': 'primary'},
-        '2009 Special Session': {'type': 'special'},
-        '2010 Regular Session': {'type': 'primary'},
-        '2010 Extraordinary Session': {'type': 'special'},
-        '2011 Regular Session': {'type': 'primary'}
-        }
-    )
+        '2009 Regular Session': {'type': 'primary',
+                                 'display_name': '2009 Regular Session'},
+        '2009 Special Session': {'type': 'special',
+                                 'display_name': '2009 Special Session'},
+        '2010 Regular Session': {'type': 'primary',
+                                 'display_name': '2010 Regular Session'},
+        '2010 Extraordinary Session': {
+            'type': 'special', 'display_name': '2010 Extraordinary Session',
+        },
+        '2011 Regular Session': {'type': 'primary',
+                                 'display_name': '2011 Regular Session'}
+    },
+    feature_flags=['subjects', 'events'],
+)

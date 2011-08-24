@@ -26,12 +26,25 @@ metadata = dict(
         },
     ],
     session_details={
-        '2009-2010': {'site_id': '0862009', 'type':'primary',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls86.asp'},
-        '2010 1st Special Session': {'site_id': '1862010', 'type':'special',
-             'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8620101.asp'},
-        '2010 2nd Special Session': {'site_id': '2862010', 'type':'special'},
-        '2011-2012': {'site_id': '0872011', 'type':'primary',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls87.asp'},
-    }
+        '2009-2010': {
+            'site_id': '0862009', 'type':'primary',
+            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls86.asp',
+            'display_name': '2009-2010 Regular Session',
+        },
+        '2010 1st Special Session': {
+            'site_id': '1862010', 'type':'special',
+            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8620101.asp',
+            'display_name': '2010, 1st Special Session',
+        },
+        '2010 2nd Special Session': {
+            'site_id': '2862010', 'type':'special',
+            'display_name': '2010, 2nd Special Session',
+        },
+        '2011-2012': {
+            'site_id': '0872011', 'type':'primary',
+            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls87.asp',
+            'display_name': '2011-2012 Regular Session',
+        },
+    },
+    feature_flags=['subjects'],
 )

@@ -22,20 +22,4 @@ class LazyDb(object):
 
         return getattr(self._db, attr)
 
-
-class LazyFs():
-
-    def __init__(self):
-        self._fs = None
-
-    def __getattr__(self, attr):
-        import gridfs
-
-        if not self._fs:
-            self._fs = gridfs.GridFS(db._db, collection="documents")
-
-        return getattr(self._fs, attr)
-
-
 db = LazyDb()
-fs = LazyFs()

@@ -14,6 +14,13 @@ class WALegislatorScraper(LegislatorScraper):
 
         url = ("http://wslwebservices.leg.wa.gov/SponsorService.asmx/"
                "GetSponsors?biennium=%s" % biennium)
+
+        # these pages are useful for checking if a leg is still in office
+        if chamber == 'upper':
+            cur_members = self.urlopen('http://www.leg.wa.gov/senate/senators/Pages/default.aspx').decode('utf8')
+        else:
+            cur_members = self.urlopen('http://www.leg.wa.gov/house/representatives/Pages/default.aspx').decode('utf8')
+
         with self.urlopen(url) as page:
             page = lxml.etree.fromstring(page)
 
@@ -25,6 +32,12 @@ class WALegislatorScraper(LegislatorScraper):
                     continue
 
                 name = xpath(member, "string(wa:Name)")
+
+                # if the legislator isn't in the listing, skip them
+                if name not in cur_members:
+                    self.warning('%s is no longer in office' % name)
+                    continue
+
                 party = xpath(member, "string(wa:Party)")
                 party = {'R': 'Republican', 'D': 'Democratic'}.get(
                     party, party)

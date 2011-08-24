@@ -100,7 +100,7 @@ class WVBillScraper(BillScraper):
                 if not line:
                     break
                 for sponsor in line.split(', '):
-                    bill.add_sponsor('sponsor', sponsor)
+                    bill.add_sponsor('sponsor', sponsor.strip())
 
 
         for link in page.xpath("//a[contains(@href, 'House/Votes')]"):

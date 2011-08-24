@@ -1,18 +1,7 @@
-from billy import db, fs
+from billy import db
 
 from django.http import HttpResponse, Http404
 from django.shortcuts import render_to_response
-
-import gridfs
-
-
-def document(request, id):
-    try:
-        doc = fs.get(id)
-    except gridfs.NoFile:
-        raise Http404
-
-    return HttpResponse(doc.read(), mimetype=doc.content_type)
 
 
 def legislator_preview(request, id):

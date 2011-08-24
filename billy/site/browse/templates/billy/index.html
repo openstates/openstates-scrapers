@@ -13,8 +13,9 @@
     <tr>
         <th>State</th>
         <th>Legislators</th>
-        <th>Bills</th>
         <th>Committees</th>
+        <th>Events</th>
+        <th>Bills</th>
         <th>Votes</th>
         <th>Versions</th>
         <th>Bill Types</th>
@@ -31,10 +32,12 @@
         <td><a href="{{row.id}}/">{{row.name}}</a></td>
         <td class="{{row.legislators|yesno:"good,bad"}}">
             {{row.legislators}}</td>
-        <td class="{{row.bills|yesno:"good,bad"}}">
-            {{row.bills}}</td>
         <td class="{{row.committees|yesno:"good,bad"}}">
             {{row.committees}}</td>
+        <td class="{{row.events|yesno:"good,warning"}}">
+            {{row.events}}</td>
+        <td class="{{row.bills|yesno:"good,bad"}}">
+            {{row.bills}}</td>
         <td class="{{row.votes|yesno:"good,bad"}}">
             {{row.votes}}</td>
         <td class="{{row.versions|yesno:"good,bad"}}">

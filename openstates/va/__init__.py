@@ -15,7 +15,12 @@ metadata = {
          'start_year': 2010, 'end_year': 2011},
     ],
     'session_details': {
-        '2010': {'start_date': datetime.date(2010, 1, 13), 'site_id': '101'},
-        '2011': {'start_date': datetime.date(2011, 1, 12), 'site_id': '111'},
-    }
+        '2010': {'start_date': datetime.date(2010, 1, 13), 'site_id': '101',
+                 'display_name': '2010 Regular Session',
+                },
+        '2011': {'start_date': datetime.date(2011, 1, 12), 'site_id': '111',
+                 'display_name': '2011 Regular Session',
+                },
+    },
+    'feature_flags': ['subjects'],
 }

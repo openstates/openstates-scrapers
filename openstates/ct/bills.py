@@ -22,11 +22,13 @@ class CTBillScraper(BillScraper):
 
     _committee_names = {}
     _introducers = defaultdict(set)
+    _subjects = defaultdict(list)
 
     def __init__(self, *args, **kwargs):
         super(CTBillScraper, self).__init__(*args, **kwargs)
         self.raise_errors = False
         self.scrape_committee_names()
+        self.scrape_subjects()
         self.scrape_introducers('upper')
         self.scrape_introducers('lower')
 
@@ -69,7 +71,9 @@ class CTBillScraper(BillScraper):
             self.scrape_bill_page(bill)
 
             for introducer in self._introducers[bill_id]:
-                    bill.add_sponsor('introducer', introducer)
+                bill.add_sponsor('introducer', introducer)
+
+            bill['subjects'] = self._subjects[bill_id]
 
             self.bills[bill_id] = bill
 
@@ -92,9 +96,6 @@ class CTBillScraper(BillScraper):
             for link in page.xpath("//a[contains(@href, 'VOTE')]"):
                 self.scrape_vote(bill, link.text.strip(),
                                  link.attrib['href'])
-
-            subject_link = page.xpath("//a[contains(@href, 'Similar')]")[0]
-            self.scrape_subjects(bill, subject_link.attrib['href'])
 
     def scrape_vote(self, bill, name, url):
         if "VOTE/H" in url:
@@ -164,11 +165,20 @@ class CTBillScraper(BillScraper):
 
             bill.add_vote(vote)
 
-    def scrape_subjects(self, bill, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            bill['subjects'] = [td.text.replace('&nbsp', '').strip()
-                                for td in page.xpath("//td[@colspan='4']")]
+
+    def scrape_subjects(self):
+        for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+            url = ('http://www.cga.ct.gov/asp/cgasubjectsearch/'
+                   'default.asp?LeadingChar=' + letter)
+            html = self.urlopen(url)
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(url)
+
+            for subj in doc.xpath('//a[contains(@href, "subbills")]'):
+                subj_html = self.urlopen(subj.get('href'))
+                for bill_id in doc.xpath('//a[contains(@href, "CGABillStatus")]/text()'):
+                    self._subjects[bill_id].append(subj.text)
+
 
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"

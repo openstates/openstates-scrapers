@@ -9,7 +9,7 @@ import piston.resource
 from piston.emitters import Emitter
 
 from billy.site.api import handlers
-from billy.site.api.views import document, legislator_preview
+from billy.site.api.views import legislator_preview
 from billy.site.api.emitters import BillyJSONEmitter, BillyXMLEmitter
 from billy.site.api.emitters import FeedEmitter, ICalendarEmitter
 
@@ -78,6 +78,8 @@ reconciliation_handler = Resource(handlers.ReconciliationHandler,
                                   authentication=authorizer)
 legislator_geo_handler = Resource(handlers.LegislatorGeoHandler,
                                       authentication=authorizer)
+district_handler = Resource(handlers.DistrictHandler,
+                            authentication=authorizer)
 
 urlpatterns = patterns('',
     # metadata
@@ -97,8 +99,6 @@ urlpatterns = patterns('',
     url(r'^v1/committees/(?P<id>[A-Z]{2,2}C\d{6,6})/$', committee_handler),
     url(r'^v1/committees/$', committee_search_handler),
 
-    url(r'^v1/documents/(?P<id>[A-Z]{2,2}D\d{8,8})/$', document),
-
     url(r'^v1/events/$', events_handler),
     url(r'^v1/events/(?P<id>[A-Z]{2,2}E\d{8,8})/$', events_handler),
 
@@ -112,6 +112,16 @@ urlpatterns = patterns('',
         legislator_preview),
 
     url(r'v1/legislators/geo/$', legislator_geo_handler),
+
+
+    # district
+    url(r'v1/districts/(?P<abbr>[a-zA-Z]{2})/$',
+        district_handler),
+    url(r'v1/districts/(?P<abbr>[a-zA-Z]{2})/(?P<chamber>upper|lower)/$',
+        district_handler),
+    url(r'v1/districts/(?P<abbr>[a-zA-Z]{2})/(?P<chamber>upper|lower)/(?P<name>.+)/$',
+        district_handler),
+
 
     url(r'^v1/stats/$', stats_handler),
 )
