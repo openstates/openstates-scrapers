@@ -42,6 +42,8 @@ urlpatterns = patterns('',
      {'template':'api_legislators.html'}),
     (r'^api/events/$', 'django.views.generic.simple.direct_to_template',
      {'template':'api_events.html'}),
+    (r'^api/districts/$', 'django.views.generic.simple.direct_to_template',
+     {'template':'api_districts.html'}),
 )
 
 if settings.DEBUG:

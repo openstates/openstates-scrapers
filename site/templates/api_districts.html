@@ -1,0 +1,67 @@
+{% extends "flatpage.html" %}
+{% load markup_tags %}
+
+{% block title %}Open State Project API: District Methods{% endblock %}
+
+{% block breadcrumb %}
+<li class="home">
+    <a href="/api/">API</a>
+</li>
+<li class="live">
+<a href="#">Districts</a>
+</li>
+{% endblock %}
+
+
+{% block content %}
+
+<h2>Districts API</h2>
+
+{% rest %}
+
+Sometimes it is necessary to get a listing of all districts in a state or get information on the centroid and boundaries of the districts.  The Districts API makes this information available.
+
+These methods return district objects with the following fields.
+
+District Fields
+===============
+
+All district methods return District objects consisting of the following fields:
+
+``name``
+    Traditional name for the district, corresponds to the ``district`` field on associated legislators.
+``chamber``
+    'upper' or 'lower'
+``abbr``
+    abbreviation for the state/entity containing the district (corresponds to metadata ``abbreviation``)
+``num_seats``
+    number of seats in the legislature represented by this district (1 unless this is a multi-member seat)
+``legislators``
+    a list of legislators serving in this district currently, consisting of:
+
+    * ``leg_id`` - Open States Legislator ID
+    * ``full_name`` - display name for the legislator
+
+
+URL formats
+===========
+
+There are three levels of specification available, state, state/chamber, or state/chamber/name:
+
+`http://openstates.sunlightlabs.com/api/v1/districts/{STATE-ABBR}/?apikey={YOUR_API_KEY}`
+
+`http://openstates.sunlightlabs.com/api/v1/districts/{STATE-ABBR}/{CHAMBER}/?apikey={YOUR_API_KEY}`
+
+`http://openstates.sunlightlabs.com/api/v1/districts/{STATE-ABBR}/{CHAMBER}/{NAME}?apikey={YOUR_API_KEY}`
+
+Example
+-------
+
+http://openstates.sunlightlabs.com/api/v1/districts/nc/upper/?apikey=YOUR_API_KEY
+
+.. raw:: html
+
+    <script src="https://gist.github.com/1169257.js?file=districts.js"></script>
+
+{% endrest %}
+{% endblock %}
