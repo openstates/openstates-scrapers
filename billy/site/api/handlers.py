@@ -493,11 +493,41 @@ class LegislatorGeoHandler(BillyHandler):
 
 
 class DistrictHandler(BillyHandler):
+
+    def read(self, request, abbr, chamber=None):
+        filter = {'abbr': abbr}
+        if not chamber:
+            chamber = {'$exists': True}
+        filter['chamber'] = chamber
+        districts = list(db.districts.find(filter))
+
+        # change leg filter
+        filter['state'] = filter.pop('abbr')
+        filter['active'] = True
+        legislators = db.legislators.find(filter, fields={'_id': 0,
+                                                          'leg_id': 1,
+                                                          'chamber': 1,
+                                                          'district': 1,
+                                                          'full_name': 1})
+
+        leg_dict = defaultdict(list)
+        for leg in legislators:
+            leg_dict[(leg['chamber'], leg['district'])].append(leg)
+            leg.pop('chamber')
+            leg.pop('district')
+        for dist in districts:
+            dist['legislators'] = leg_dict[(dist['chamber'], dist['name'])]
+
+        return districts
+
+
+class BoundaryHandler(BillyHandler):
     base_url = getattr(settings, 'BOUNDARY_SERVICE_URL',
                        'http://localhost:8001/1.0/')
 
-    def _get_shape(self, name):
-        url = "%sshape/%s/" % (self.base_url, name)
+
+    def read(self, request, boundary_id):
+        url = "%sshape/%s/" % (self.base_url, boundary_id)
         data = json.load(urllib2.urlopen(url))
         shape = data['shape']
         centroid = data['centroid']['coordinates']
@@ -515,41 +545,8 @@ class DistrictHandler(BillyHandler):
                   'lon_delta': lon_delta, 'lat_delta': lat_delta,
                  }
 
-        return shape, region
+        district = db.districts.find_one({'boundary_id': boundary_id})
+        district['shape'] = shape
+        district['region'] = region
 
-
-    def read(self, request, abbr, chamber=None, name=None):
-        filter = {'abbr': abbr}
-        if not chamber:
-            chamber = {'$exists': True}
-        filter['chamber'] = chamber
-        if name:
-            filter['name'] = name
-        districts = list(db.districts.find(filter))
-
-        # change leg filter
-        filter['state'] = filter.pop('abbr')
-        filter['active'] = True
-        if name:
-            filter['district'] = filter.pop('name')
-        legislators = db.legislators.find(filter, fields={'_id': 0,
-                                                          'leg_id': 1,
-                                                          'chamber': 1,
-                                                          'district': 1,
-                                                          'full_name': 1})
-
-        leg_dict = defaultdict(list)
-        for leg in legislators:
-            leg_dict[(leg['chamber'], leg['district'])].append(leg)
-            leg.pop('chamber')
-            leg.pop('district')
-        for dist in districts:
-            dist['legislators'] = leg_dict[(dist['chamber'], dist['name'])]
-
-        shape = 'shape' in request.GET
-        if shape:
-            for dist in districts:
-                (dist['shape'], dist['region']) = \
-                 self._get_shape(dist['boundary_id'])
-
-        return districts
+        return district
