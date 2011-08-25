@@ -49,4 +49,14 @@ class NEBillScraper(BillScraper):
                             else:
                                 actor = chamber
                             bill.add_action(actor, action, date, None)
+                    
+                    #versions
+                    for versions in bill_page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[2]/table/tr[2]/td[2]/a'):
+                        version_url = versions.attrib['href']
+                        version_url = 'http://nebraskalegislature.gov/' + version_url[3:len(version_url)]
+                        version_name = versions.text
+                        bill.add_version(version_name, version_url)
+
+                    
                     self.save_bill(bill)
+
