@@ -19,14 +19,21 @@
 
 {% rest %}
 
-Sometimes it is necessary to get a listing of all districts in a state or get information on the centroid and boundaries of the districts.  The Districts API makes this information available.
+Sometimes it is necessary to get a listing of all districts in a state or get information on the centroid and boundaries of the districts.
+
+Two methods are available for working with bills:
+
+`District Search`_
+    Get list of districts for a state.
+`District Boundary Lookup`_
+    Get detailed geographical data for a single district.
 
 These methods return district objects with the following fields.
 
 District Fields
 ===============
 
-All district methods return District objects consisting of the following fields:
+All district methods return a subset of the following fields:
 
 ``name``
     Traditional name for the district, corresponds to the ``district`` field on associated legislators.
@@ -36,23 +43,39 @@ All district methods return District objects consisting of the following fields:
     abbreviation for the state/entity containing the district (corresponds to metadata ``abbreviation``)
 ``num_seats``
     number of seats in the legislature represented by this district (1 unless this is a multi-member seat)
+``boundary_id``
+    a unique ID used in `District Boundary Lookup`_ to get geographical details about the district
 ``legislators``
+    (only returned for `District Search`_)
     a list of legislators serving in this district currently, consisting of:
 
     * ``leg_id`` - Open States Legislator ID
     * ``full_name`` - display name for the legislator
 
+``shape``
+    `GeoJSON <http://geojson.org/geojson-spec.html>`_-style MultiPolygon coordinates array.
+
+``region``
+    Geographical extents of the boundary:
+
+    * ``center_lon`` - Longitude of centroid.
+    * ``center_lat`` - Latitude of centroid.
+    * ``lon_delta`` - Range between max/min longitude.
+    * ``lat_delta`` - Range between max/min latitude.
+
+District Search
+===============
+
+Get a listing of all districts in a state (optionally just for a certain chamber).
 
 URL formats
-===========
+-----------
 
-There are three levels of specification available, state, state/chamber, or state/chamber/name:
+It is possible to lookup by state alone or by a combination of state and chamber:
 
 `http://openstates.sunlightlabs.com/api/v1/districts/{STATE-ABBR}/?apikey={YOUR_API_KEY}`
 
 `http://openstates.sunlightlabs.com/api/v1/districts/{STATE-ABBR}/{CHAMBER}/?apikey={YOUR_API_KEY}`
-
-`http://openstates.sunlightlabs.com/api/v1/districts/{STATE-ABBR}/{CHAMBER}/{NAME}?apikey={YOUR_API_KEY}`
 
 Example
 -------
@@ -62,6 +85,26 @@ http://openstates.sunlightlabs.com/api/v1/districts/nc/upper/?apikey=YOUR_API_KE
 .. raw:: html
 
     <script src="https://gist.github.com/1169257.js?file=districts.js"></script>
+
+
+District Boundary Lookup
+========================
+
+Get detailed geographic detail for a given district specified by ``boundary_id``.
+
+URL format
+----------
+
+`http://openstates.sunlightlabs.com/api/v1/districts/boundary/{BOUNDARY-ID}/?apikey={YOUR_API_KEY}`
+
+
+Example
+-------
+
+.. raw:: html
+
+    <script src="https://gist.github.com/1169257.js?file=boundary.js"></script>
+
 
 {% endrest %}
 {% endblock %}
