@@ -528,7 +528,15 @@ class BoundaryHandler(BillyHandler):
 
     def read(self, request, boundary_id):
         url = "%sshape/%s/" % (self.base_url, boundary_id)
-        data = json.load(urllib2.urlopen(url))
+        try:
+            data = json.load(urllib2.urlopen(url))
+        except urllib2.HTTPError, e:
+            if 400 <= e.code < 500:
+                resp = rc.NOT_FOUND
+                return resp
+            else:
+                raise e
+
         shape = data['shape']
         centroid = data['centroid']['coordinates']
 
