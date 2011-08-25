@@ -496,29 +496,26 @@ class DistrictHandler(BillyHandler):
     base_url = getattr(settings, 'BOUNDARY_SERVICE_URL',
                        'http://localhost:8001/1.0/')
 
-
-    def _get_shape_and_centroid(self, name, type):
+    def _get_shape(self, name):
         url = "%sshape/%s/" % (self.base_url, name)
         data = json.load(urllib2.urlopen(url))
         shape = data['shape']
         centroid = data['centroid']['coordinates']
-        centroid = {'lon': centroid[0], 'lat': centroid[1]}
-        if type == 'binary':
-            return self._json_to_bin(shape), centroid
-        else:
-            return shape, centroid
 
+        all_lon = []
+        all_lat = []
+        for shape in data['shape']['coordinates']:
+            for coord_set in shape:
+                all_lon.extend(c[0] for c in coord_set)
+                all_lat.extend(c[1] for c in coord_set)
+        lon_delta = abs(max(all_lon) - min(all_lon))
+        lat_delta = abs(max(all_lat) - min(all_lat))
 
-    def _json_to_bin(self, shape):
-        new_coord_arr = []
-        for coords in shape['coordinates']:
-            newcoords = []
-            for subshape in coords:
-                newcoords.append(base64.encodestring(' '.join(
-                    struct.pack('dd', *p) for p in subshape)))
-            new_coord_arr.append(newcoords)
-        shape['coordinates'] = new_coord_arr
-        return shape
+        region = {'center_lon': centroid[0], 'center_lat': centroid[1],
+                  'lon_delta': lon_delta, 'lat_delta': lat_delta,
+                 }
+
+        return shape, region
 
 
     def read(self, request, abbr, chamber=None, name=None):
@@ -549,10 +546,10 @@ class DistrictHandler(BillyHandler):
         for dist in districts:
             dist['legislators'] = leg_dict[(dist['chamber'], dist['name'])]
 
-        shape_type = request.GET.get('shape', None)
-        if shape_type:
+        shape = 'shape' in request.GET
+        if shape:
             for dist in districts:
-                (dist['shape'], dist['centroid']) = \
-                 self._get_shape_and_centroid(dist['boundary_id'], shape_type)
+                (dist['shape'], dist['region']) = \
+                 self._get_shape(dist['boundary_id'])
 
         return districts
