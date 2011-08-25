@@ -1,5 +1,6 @@
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
+from datetime import datetime
 import lxml.html
 
 class NEBillScraper(BillScraper):
@@ -18,6 +19,7 @@ class NEBillScraper(BillScraper):
                 with self.urlopen(bill_link) as bill_page:
                     bill_page = lxml.html.fromstring(bill_page)
 
+                    #basic info
                     long_title = bill_page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/h2')[0].text.split()
                     bill_id = long_title[0]
                     title = ''
@@ -26,16 +28,25 @@ class NEBillScraper(BillScraper):
                     title = title[0:-1]
                     bill = Bill(term, chamber, bill_id, title)
                     
+                    #sources
                     bill.add_source(main_url)
                     bill.add_source(bill_link)
                     
+                    #Sponsor
                     introduced_by = bill_page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[2]/table/tr[2]/td[1]/a[1]')[0].text
                     bill.add_sponsor('primary', introduced_by)
 
-                    date_introduced = bill_page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[2]/table/tr[2]/td[1]/a[2]')[0].text
-                    #print date_introduce
-                    print bill_id
-                    for actions in bill_page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[3]/table/tbody/tr[1]/td[1]/table/tr'):
-                        date = actions.xpath('/td[1]')[0].text
-                        print date
-                    #self.save_bill(bill)
+                    #actions
+                    for actions in bill_page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[3]/table/tr[1]/td[1]/table/tr'):
+                        date = actions[0].text
+                        if 'Date' not in date:
+                            date = datetime.strptime(date, '%b %d, %Y')
+                            action = actions[1].text
+                            if 'Governor' in action:
+                                actor = 'Governor'
+                            elif 'Speaker' in action:
+                                actor = 'Speaker'
+                            else:
+                                actor = chamber
+                            bill.add_action(actor, action, date, None)
+                    self.save_bill(bill)
