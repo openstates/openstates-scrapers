@@ -68,10 +68,16 @@ class NEBillScraper(BillScraper):
 
 
                     #amendments
-                    for admendments in bill_page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[3]/table/tbody/tr[1]/td[2]/table/tr/td/a'):
+                    for admendments in bill_page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[3]/table/tr[1]/td[2]/table/tr/td/a'):
                         admendment_name = admendments.text
-                        admendment_url = admendment.attrib['href']
+                        admendment_url = admendments.attrib['href']
                         admendment_url = 'http://nebraskalegislature.gov/' + admendment_url[3:len(admendment_url)]
                         bill.add_document(admendment_name, admendment_url)
-                    self.save_bill(bill)
 
+                    #related transcripts
+                    for transcripts in bill_page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[3]/table/tr[2]/td[2]/a'):
+                        transcript_name = transcripts.text
+                        transcript_url = transcripts.attrib['href']
+                        bill.add_document(transcript_name, transcript_url)
+
+                    self.save_bill(bill)
