@@ -62,7 +62,9 @@ class NEBillScraper(BillScraper):
                                 actor = 'Speaker'
                             else:
                                 actor = chamber
-                            bill.add_action(actor, action, date, None)
+
+                            action_type = self.action_types(action)
+                            bill.add_action(actor, action, date, action_type)
                     
                     #versions
                     for versions in bill_page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[2]/table/tr[2]/td[2]/a'):
@@ -95,3 +97,31 @@ class NEBillScraper(BillScraper):
                         bill.add_document(transcript_name, transcript_url)
 
                     self.save_bill(bill)
+
+
+    #Setting action types
+    def action_types(self, action):
+        
+        if 'Date of introduction' in action:
+            action_type = 'bill:introduced'
+        elif 'Referred to' in action:
+            action_type = 'committee:referred'
+        elif 'Indefinitely postponed' in action:
+            action_type = 'committee:failed'
+        elif ('File' in action) or ('filed' in action):
+            action_type = 'bill:filed'
+        elif 'Placed on Final Reading' in action:
+            action_type = 'bill:reading:3'
+        elif 'Passed' in action:
+            action_type = 'bill:passed'
+        elif 'Presented to Governor' in action:
+            action_type = 'governor:received'
+        elif 'Approved by Governor' in action:
+            action_type = 'governor:signed'
+        elif 'Failed to pass notwithstanding the objections of the Governor' in action:
+            action_type = 'governor:vetoed'
+        elif 'Failed' in action:
+            action_type = 'bill:failed'
+        else:
+            action_type = ''
+        return action_type
