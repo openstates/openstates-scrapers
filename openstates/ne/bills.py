@@ -42,6 +42,20 @@ class NEBillScraper(BillScraper):
                         if 'Date' not in date:
                             date = datetime.strptime(date, '%b %d, %Y')
                             action = actions[1].text
+
+                            if '-' in action:
+                                vote_info = action.split()[-1].split('-')
+                                yes_count = int(vote_info[0])
+                                no_count = int(vote_info[1])
+                                abstention_count = int(vote_info[2])
+                                if yes_count > no_count:
+                                    passed = True
+                                else:
+                                    passed = False
+                                vote = Vote(chamber, date, action, passed, yes_count, no_count, abstention_count)
+                                vote.add_source(bill_link)
+                                bill.add_vote(vote)
+
                             if 'Governor' in action:
                                 actor = 'Governor'
                             elif 'Speaker' in action:
