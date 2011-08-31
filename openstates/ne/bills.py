@@ -26,7 +26,15 @@ class NEBillScraper(BillScraper):
                     for x in range(2, len(long_title)):
                         title += long_title[x] + ' '
                     title = title[0:-1]
-                    bill = Bill(term, chamber, bill_id, title)
+                    #bill = Bill(term, chamber, bill_id, title)
+
+                    #bill_type
+                    if 'LR' in bill_id:
+                        bill_type = 'resolution'
+                    else:
+                        bill_type = 'bill'
+
+                    bill = Bill(term, chamber, bill_id, title, type = bill_type)
                     
                     #sources
                     bill.add_source(main_url)
