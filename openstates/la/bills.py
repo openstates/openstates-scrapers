@@ -262,7 +262,7 @@ class LABillScraper(BillScraper):
             try:
                 date = date_match.group(1)
             except AttributeError:
-                print "BAD VOTE"
+                self.warning("BAD VOTE: date error")
                 return
             month = int(date[0:2])
             day = int(date[2:4])
