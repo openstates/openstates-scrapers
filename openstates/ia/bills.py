@@ -30,7 +30,8 @@ class IABillScraper(BillScraper):
 
         # get all subjects from dropdown
         for option in doc.xpath('//select[@name="SelectOrig"]/option')[1:]:
-            subject = option.text
+            # if it has a "See also" strip that part off
+            subject = option.text.strip().split(' - See also')[0]
             # skip sub-subjects
             if subject.startswith('--'):
                 continue
