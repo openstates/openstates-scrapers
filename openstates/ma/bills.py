@@ -31,7 +31,8 @@ class MABillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         # for the chamber of the action
-        chamber_map = {'House': 'lower', 'Senate':'upper', 'Joint': 'joint'}
+        chamber_map = {'House': 'lower', 'Senate':'upper', 'Joint': 'joint',
+                       'Governor': 'executive'}
 
         session_slug = session[:-2]
         chamber_slug = 'House' if chamber == 'lower' else 'Senate'
