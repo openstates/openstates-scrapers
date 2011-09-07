@@ -44,7 +44,7 @@ class IABillScraper(BillScraper):
             subj_doc = lxml.html.fromstring(self.urlopen(subj_url))
             bill_ids = doc.xpath('//td[@width="10%"]/a/text()')
             for bill_id in bill_ids:
-                self._subjects[bill_id].append(subject)
+                self._subjects[bill_id.replace(' ', '')].append(subject)
 
 
     def scrape(self, chamber, session):
