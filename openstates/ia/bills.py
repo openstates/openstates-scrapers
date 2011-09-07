@@ -42,7 +42,7 @@ class IABillScraper(BillScraper):
                         '?Category=BillInfo&Service=DsplData&var=gasi&ga=%s&'
                         'typ=o&key=%s') % (session_id, value)
             subj_doc = lxml.html.fromstring(self.urlopen(subj_url))
-            bill_ids = doc.xpath('//td[@width="10%"]/a/text()')
+            bill_ids = subj_doc.xpath('//td[@width="10%"]/a/text()')
             for bill_id in bill_ids:
                 self._subjects[bill_id.replace(' ', '')].append(subject)
 
