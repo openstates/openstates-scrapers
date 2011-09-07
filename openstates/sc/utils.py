@@ -68,12 +68,7 @@ def sponsorsToList(str):
         sponlist.extend( corrected_sponsor(n) )
     return sponlist
 
-def removeNonAscii(s):
-    return "".join(i for i in s if ord(i)<128)
 
-
-
-#20:02:42 billy WARNING sc Failed to validate field 'actions' list schema: Failed to validate field 'type' list schema: Value 'committee:referred:1' for field '_data' is not in the enumeration: [u'bill:introduced', u'bill:passed', u'bill:failed', u'bill:withdrawn', u'bill:substituted', u'bill:filed', u'bill:veto_override:passed', u'bill:veto_override:failed', u'governor:received', u'governor:signed', u'governor:vetoed', u'governor:vetoed:line-item', u'amendment:introduced', u'amendment:passed', u'amendment:failed', u'amendment:tabled', u'amendment:amended', u'amendment:withdrawn', u'committee:referred', u'committee:failed', u'committee:passed', u'committee:passed:favorable', u'committee:passed:unfavorable', u'bill:reading:1', u'bill:reading:2', u'bill:reading:3', u'other']
 def action_type(action):
     action = action.lower()
     atypes = []

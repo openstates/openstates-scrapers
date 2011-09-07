@@ -5,7 +5,7 @@ import sys
 import tempfile
 import traceback
 
-from .utils import action_type, bill_type, removeNonAscii, sponsorsToList
+from .utils import action_type, bill_type, sponsorsToList
 
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
@@ -461,7 +461,7 @@ class SCBillScraper(BillScraper):
         newspon = []
         if results != None and results1 != None:
             spondata = data[:results1.start()]
-            mysponsors = sponsorsToList(spondata)
+            mysponsors = rponsorsToList(spondata)
             for s in mysponsors:
                 newspon.append(s)
             data = data[results1.end():]
@@ -472,12 +472,7 @@ class SCBillScraper(BillScraper):
 
         (similar_bills, summary, after_summary,vurl) = self.split_page_into_parts(data,session, bill_number)
 
-        bill_summary = summary.strip()
-        try:
-            bs = bill_summary.decode('utf8')
-        except:
-            self.log("scrubbing %s, originally %s" % (bill_id,bill_summary) )
-            bill_summary = removeNonAscii(bill_summary)
+        bill_summary = summary.strip().decode('utf8', 'ignore')
 
         bill = Bill(session, chamber, bill_id, bill_summary,
                     type=bill_type(bill_summary))
