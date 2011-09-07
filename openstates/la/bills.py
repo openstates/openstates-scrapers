@@ -275,6 +275,8 @@ class LABillScraper(BillScraper):
                 if line in ('YEAS', 'NAYS', 'ABSENT'):
                     vote_type = {'YEAS': 'yes', 'NAYS': 'no',
                                  'ABSENT': 'other'}[line]
+                elif line in ('Total', '--'):
+                    vote_type = None
                 elif vote_type:
                     match = total_re.match(line)
                     if match:
