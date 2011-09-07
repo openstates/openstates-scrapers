@@ -258,16 +258,14 @@ class LABillScraper(BillScraper):
             total_re = re.compile('^Total--(\d+)$')
             body = html.xpath('string(/html/body)')
 
-            date_match = re.search('%s (\d{4,4})' % bill['bill_id'], body)
+            date_match = re.search('Date: (\d{1,2}/\d{1,2}/\d{4})', body)
             try:
                 date = date_match.group(1)
             except AttributeError:
                 self.warning("BAD VOTE: date error")
                 return
-            month = int(date[0:2])
-            day = int(date[2:4])
-            date = datetime.date(int(bill['session']), month, day)
-            vote['date'] = date
+
+            vote['date'] = datetime.datetime.strptime(date, '%m/%d/%Y')
 
             for line in body.replace(u'\xa0', '\n').split('\n'):
                 line = line.replace('&nbsp;', '').strip()
@@ -287,6 +285,11 @@ class LABillScraper(BillScraper):
                         vote.no(line)
                     elif vote_type == 'other':
                         vote.other(line)
+
+        # tally counts
+        vote['yes_count'] = len(vote['yes_votes'])
+        vote['no_count'] = len(vote['no_votes'])
+        vote['other_count'] = len(vote['other_votes'])
 
         # The PDFs oddly don't say whether a vote passed or failed.
         # Hopefully passage just requires yes_votes > not_yes_votes
