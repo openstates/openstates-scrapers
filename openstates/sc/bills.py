@@ -521,7 +521,8 @@ class SCBillScraper(BillScraper):
             self.log("scrubbing %s, originally %s" % (bill_id,bill_summary) )
             bill_summary = removeNonAscii(bill_summary)
 
-        bill = Bill(session, chamber, bill_id, bill_summary, type=bill_type(bill_summary))
+        bill = Bill(session, chamber, bill_id, bill_summary,
+                    type=bill_type(bill_summary))
 
         linenum = 0
         for line in after_summary.splitlines():

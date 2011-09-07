@@ -109,16 +109,16 @@ def action_type(action):
 
 def bill_type(s):
     action = s.lower()
-    if re.match('house resolution', s):
+    if re.findall('house resolution', s):
         return 'resolution'
 
-    if re.match('senate resolution', s):
+    if re.findall('senate resolution', s):
         return 'resolution'
 
-    if re.match('concurrent resolution', s):
+    if re.findall('concurrent resolution', s):
         return 'concurrent resolution'
 
-    if re.match('joint resolution', s):
+    if re.findall('joint resolution', s):
         return 'joint resolution'
 
     return 'bill'
