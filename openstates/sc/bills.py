@@ -461,7 +461,7 @@ class SCBillScraper(BillScraper):
         newspon = []
         if results != None and results1 != None:
             spondata = data[:results1.start()]
-            mysponsors = rponsorsToList(spondata)
+            mysponsors = sponsorsToList(spondata)
             for s in mysponsors:
                 newspon.append(s)
             data = data[results1.end():]
