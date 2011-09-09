@@ -1,87 +1,153 @@
-#!/usr/bin/env python
+import datetime
 import urlparse
 import lxml.html
-import contextlib
-import datetime
 
 from billy.scrape.bills import BillScraper, Bill
 
 class GABillScraper(BillScraper):
     """
-    The GA files are compiled every two years.  They are in different formats
-    between them, unfortunately, although it seems to coalesce around 2004.
+        1995-2005 HTML scrapers have been written, we're not currently
+        hooked up to do the old data, but the scrape1995 function
+        is left intact for future use as it is clean and may prove useful
+        if/when historical information is desired for Georgia.
 
-    There are both bills and resolutions, each are included in this parser.
-
-    The main search: http://www.legis.ga.gov/search.php
-    It sucks, as you are forced to search for specific words.
-
-    So, instead you can go directly a summary of each bill:
-
-    From 1995 to 2000:
-    http://www.legis.ga.gov/legis/<session>/leg/sum/<chamber><type><number>.htm
-    e.g. http://www.legis.ga.gov/legis/1997_98/leg/sum/hb1.htm
-
-    From 2001 on:
-    http://www.legis.ga.gov/legis/<session>/sum/<chamber><type><number>.htm
-    e.g. http://www.legis.ga.gov/legis/2009_10/sum/hb1.htm
-
-    Where:
-        <session> is the years of the session
-        <chamber> is "h" or "s" for house and senate
-        <type> is "b" or "r" for bill and resolution
-        <number> is the number of the resoltion or bill
-
-    Each session needs its own parser, so we will do it manually...
+        Starting in the 2005-2006 session a BillSummary.xml file exists
+        that we use for all bill info going forward.
     """
 
     state = 'ga'
 
-    @contextlib.contextmanager
-    def lxml_context(self, url):
-        body = unicode(self.urlopen(url), 'latin-1')
-        elem = lxml.html.fromstring(body)
-        try:
-            yield elem
-        except:
-            self.show_error(url, body)
-            raise
+    _action_codes = {
+        'EFF': 'other',
+        'HASAS': 'other', #'House Agree Senate Amend or Sub',
+        'HCA': 'other',   #'House Conference Committee Report Adopted',
+        'HCAP': 'other',  #'House Conference Committee Appointed',
+        'HCFR': 'committee:passed:favorable',
+        'HCUF': 'committee:passed:unfavorable',
+        'HDSAS': 'other', #'House Disagrees Senate Amend/Sub',
+        'HDSG': 'other',
+        'HFR': 'bill:reading:1',
+        'HH': 'other',   # hopper
+        'HI': 'other',   # insists
+        'HNOM': 'other', # notice to reconsider
+        'HPA': 'bill:passed',
+        'HPF': 'bill:filed',
+        'HPOST': 'other', # postponed
+        'HRA': 'bill:passed',
+        'HRAR': 'committee:referred',
+        'HRECL': 'bill:failed',
+        'HRECM': 'bill:withdrawn',
+        'HRECO': 'other',
+        'HSG': 'governor:received',
+        'HSR': 'bill:reading:2',
+        'HTABL': 'bill:failed',
+        'HTR': 'bill:reading:3',
+        'HTRL': ['bill:reading:3', 'bill:failed'],
+        'HTS': 'other', # 'House Immediately Transmitted to Senate',
+        'S1REF': ['bill:reading:1', 'bill:failed'],
+        'S2R': 'bill:reading:2',
+        'S3RLT': ['bill:reading:3', 'bill:failed'],
+        'SAHAS': 'other', # 'Senate Agrees House Amend or Sub',
+        'SAPPT': 'other', # 'Senate Conference Committee Appointed',
+        'SCFR': 'committee:passed:favorable',
+        'SCRA': 'other',  #'Senate Conference Committee Report Adopted',
+        'SCUF': 'committee:passed:unfavorable',
+        'SDHAS': 'other', # 'Senate Disagrees House Amend/Sub',
+        'SDSG': 'other', # 'Senate Date Signed by Governor ',
+        'SENG': 'other', #'Senate Engrossed',
+        'SH': 'other', # hopper
+        'SI': 'other', # Senate Insists
+        'SNE': 'other', #'Senate Notice to Engross',
+        'SNOM': 'other', #'Senate Notice to Reconsider',
+        'SPA': 'bill:passed',
+        'SPF': 'bill:filed',
+        'SR': 'committee:referred',  # recommittal
+        'SR7-1': 'other', #'Senate Rule 7-1.6(b)',
+        'SRA': 'bill:passed',
+        'SRAR': 'committee:referred',
+        'SREC': 'other', #'Senate Recedes from amend/sub ',
+        'SRECO': 'other', #'Senate Reconsidered',
+        'SRI': 'bill:introduced', #'Senate Resolution Introduced',
+        'SSG': 'governor:received',
+        'STAB': 'other',
+        'STH': 'other', # transmits to house
+        'STR': 'bill:reading:3',
+        'STT': 'other', #'Senate Taken from Table',
+        'SW&C': 'committee:referred', # withdrawn & recommitted
+        'SWREC': 'bill:withdrawn',
+        'Signed Gov': 'governor:signed'
+    }
+
 
     def scrape(self, chamber, session):
-        year = int(session.split(' ')[0])
-        
-        if (year < 1995):
-            raise NoDataForPeriod(year)
-        if (year % 2 == 0):
-            raise NoDataForPeriod(year)
+        # for now just go to scrape_xml, but we can add logic to decide
+        self.scrape_xml(chamber, session)
 
-        if year <= 2000:
-            base = "http://www.legis.ga.gov/legis/%s/leg/sum/%s%s%d.htm"
-        else:
-            base = "http://www.legis.ga.gov/legis/%s/sum/%s%s%d.htm"
 
-        session = "%s_%s" % (year, str(year + 1))
+    def scrape_xml(self, chamber, session):
+        start_letter = 'S' if chamber == 'upper' else 'H'
+        sponsor_type_dict = {'3': 'senate cosponsor',
+                             '4': 'sponsor', '5': 'sponsor',}
+        version_url = 'http://www1.legis.ga.gov/legis/%s/versions/' % session
 
-        chamberName = chamber
-        chamber = {'lower': 'h', 'upper': 's'}[chamber]
+        summary_url = ('http://www1.legis.ga.gov/legis/%s/list/BillSummary.xml'
+                       % session)
+        xml = self.urlopen(summary_url)
+        doc = lxml.etree.fromstring(xml)
 
-        try:
-            scraper = getattr(self, 'scrape%s' % year)
-        except AttributeError:
-            raise NoDataForPeriod(year)
+        for bxml in  doc.xpath('//Bill'):
+            type = bxml.get('Type')
 
-        for type in ('b', 'r'):
-            number = 1
-            while True:
-                url_session = "%s_%s" % (session[0:4],
-                                         session[-2:len(session)])
-                url = base % (url_session, chamber, type, number)
-                try:
-                    scraper(url, year, chamberName, session, number)
-                except IOError:
-                    break
-                number += 1
+            # if this is from the other chamber skip it
+            if not type.startswith(start_letter):
+                continue
 
+            bill_id = type + bxml.get('Num')
+            if type in ('HB', 'SB'):
+                type = 'bill'
+            elif type in ('HR', 'SR'):
+                type = 'resolution'
+            else:
+                raise ValueError('unknown type: %s' % type)
+
+            # use short_title as title and long as description
+            title = bxml.xpath('Short_Title/text()')[0]
+            description = bxml.xpath('Title/text()')[0]
+
+            bill = Bill(session, chamber, bill_id, title, type=type,
+                        description=description)
+            bill.add_source(summary_url)
+
+            for sponsor in bxml.xpath('Sponsor'):
+                bill.add_sponsor(sponsor_type_dict[sponsor.get('Type')],
+                                 sponsor.text)
+
+            for version in bxml.xpath('Versions/Version'):
+                # NOTE: it is possible to get PDF versions by using .get('Id')
+                # ex. URL:  legis.ga.gov/Legislation/20112012/108025.pdf
+                # for now we just get HTML
+                description, file_id = version.xpath('*/text()')
+                bill.add_version(description, version_url + file_id)
+
+            for action in bxml.xpath('StatusHistory/Status'):
+                date = datetime.datetime.strptime(action.get('StatusDate'),
+                                                  "%Y-%m-%dT%H:%M:%S")
+                code = action.get('StatusCode')
+                if code in ('EFF', 'Signed Gov'):
+                    actor = 'executive'
+                elif code[0] == 'S':
+                    actor = 'upper'
+                elif code[0] == 'H':
+                    actor = 'lower'
+
+                atype = self._action_codes[code]
+
+                bill.add_action(actor, action.text, date, atype)
+
+            self.save_bill(bill)
+
+
+    # HTML scrapers for 1995-2003 probably still work, disabled for now
     def scrape1995(self, url, year, chamberName, session, number):
         "e.g. http://www.legis.ga.gov/legis/1995_96/leg/sum/sb1.htm"
         with self.lxml_context(url) as page:
@@ -267,98 +333,3 @@ class GABillScraper(BillScraper):
                                  urlparse.urljoin(url, a.get('href')))
 
             self.save_bill(bill)
-
-    def scrape2005(self, url, year, chamberName, session, number):
-        "e.g. http://www.legis.ga.gov/legis/2005_06/sum/sum/sb1.htm"
-        with self.lxml_context(url) as page:
-            # Bill
-            name = page.cssselect('#legislation h1')[0].text_content().strip()
-            bill = Bill(session, chamberName, number, name)
-
-            # Sponsorships
-            for a in page.cssselect("#sponsors a"):
-                bill.add_sponsor('', a.text_content().strip())
-
-            # Actions
-            for row in page.cssselect('#history tr')[1:]:
-                date = row[0].text_content().strip()
-                action_text = row[1].text_content().strip()
-                if '/' not in date:
-                    continue
-                if action_text.startswith('Senate'):
-                    bill.add_action('upper', action_text, date)
-                elif action_text.startswith('House'):
-                    bill.add_action('lower', action_text, date)
-
-            # Versions
-            for row in page.cssselect('#versions a'):
-                bill.add_version(a.text_content(),
-                                 urlparse.urljoin(url, a.get('href')))
-
-            self.save_bill(bill)
-
-    def scrape2007(self, url, year, chamberName, session, number):
-        "e.g. http://www.legis.ga.gov/legis/2007_09/sum/sum/sb1.htm"
-        with self.lxml_context(url) as page:
-            # Bill
-            name = page.cssselect('#legislation h1')[0].text_content().strip()
-            bill = Bill(session, chamberName, number, name)
-
-            # Sponsorships
-            for a in page.cssselect("#sponsors a"):
-                bill.add_sponsor('', a.text_content().strip())
-
-            # Actions
-            for row in page.cssselect('#history tr')[1:]:
-                date = row[0].text_content().strip()
-                action_text = row[1].text_content().strip()
-                if '/' not in date:
-                    continue
-                if action_text.startswith('Senate'):
-                    bill.add_action('upper', action_text, date)
-                elif action_text.startswith('House'):
-                    bill.add_action('lower', action_text, date)
-
-            # Versions
-            for row in page.cssselect('#versions a'):
-                bill.add_version(a.text_content(),
-                                 urlparse.urljoin(url, a.get('href')))
-
-            self.save_bill(bill)
-
-    def scrape2009(self, url, year, chamberName, session, number):
-        "e.g. http://www.legis.ga.gov/legis/2009_10/sum/sum/sb1.htm"
-        with self.lxml_context(url) as page:
-            # Bill
-            name = page.cssselect('#legislation h1')[0].text_content().strip()
-
-            bill_id = name.split(' - ')[0].strip()
-
-            bill = Bill(session, chamberName, bill_id, name)
-
-            # Sponsorships
-            for a in page.cssselect("#sponsors a"):
-                bill.add_sponsor('', a.text_content().strip())
-
-            # Actions
-            for row in page.cssselect('#history tr')[1:]:
-                date = row[0].text_content().strip()
-                action_text = row[1].text_content().strip()
-
-                if '/' not in date:
-                    continue
-
-                date = datetime.datetime.strptime(date, '%m/%d/%Y')
-
-                if action_text.startswith('Senate'):
-                    bill.add_action('upper', action_text, date)
-                elif action_text.startswith('House'):
-                    bill.add_action('lower', action_text, date)
-
-            # Versions
-            for row in page.cssselect('#versions a'):
-                bill.add_version(a.text_content(),
-                                 urlparse.urljoin(url, a.get('href')))
-
-            self.save_bill(bill)
-
