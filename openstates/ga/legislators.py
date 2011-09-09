@@ -35,12 +35,7 @@ class GALegislatorScraper(LegislatorScraper):
             url = "http://www.senate.ga.gov/senators/en-US/SenateMembersList.aspx"
             self.scrape_upper_house(url, chamber, term)
         else:
-            year = int(term[0: term.index('_')])
-
-            if (year < 2000):
-                raise NoDataForPeriod(year)
-            if (year % 2 == 0):
-                raise NoDataForPeriod(year)
+            year = int(term[0: term.index('-')])
 
             session = "%s_%s" % (year, str(year + 1)[-2:])
 
