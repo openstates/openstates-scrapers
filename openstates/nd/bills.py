@@ -64,4 +64,8 @@ class NDBillScraper(BillScraper):
                                 else:
                                     sponsor_type = 'cosponsor'
                                 curr_bill.add_sponsor(sponsor_type, rep + sponsor)
+                        else:
+                            #title
+                            title = info.strip()
+                            curr_bill["title"] = title
                 self.save_bill(curr_bill)
