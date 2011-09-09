@@ -15,7 +15,7 @@ def keyfunc(x):
 
 
 def generate_csv(state):
-    fields = ('abbr', 'chamber', 'name', 'num_legislators')
+    fields = ('abbr', 'chamber', 'name', 'num_seats')
     out = csv.writer(open(state+'_districts.csv', 'w'))
     out.writerow(fields)
 

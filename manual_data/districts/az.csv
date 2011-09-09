@@ -1,4 +1,4 @@
-"abbr","chamber","name","num_legislators","boundary_id"
+"abbr","chamber","name","num_seats","boundary_id"
 "az","lower",1,2,"sldl-az-state-house-district-%s(name)s"
 "az","lower",2,2,"sldl-az-state-house-district-%s(name)s"
 "az","lower",3,2,"sldl-az-state-house-district-%s(name)s"

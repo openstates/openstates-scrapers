@@ -80,6 +80,8 @@ legislator_geo_handler = Resource(handlers.LegislatorGeoHandler,
                                       authentication=authorizer)
 district_handler = Resource(handlers.DistrictHandler,
                             authentication=authorizer)
+boundary_handler = Resource(handlers.BoundaryHandler,
+                            authentication=authorizer)
 
 urlpatterns = patterns('',
     # metadata
@@ -113,14 +115,12 @@ urlpatterns = patterns('',
 
     url(r'v1/legislators/geo/$', legislator_geo_handler),
 
-
-    # district
+    # districts & boundaries
     url(r'v1/districts/(?P<abbr>[a-zA-Z]{2})/$',
         district_handler),
     url(r'v1/districts/(?P<abbr>[a-zA-Z]{2})/(?P<chamber>upper|lower)/$',
         district_handler),
-    url(r'v1/districts/(?P<abbr>[a-zA-Z]{2})/(?P<chamber>upper|lower)/(?P<name>.+)/$',
-        district_handler),
+    url(r'v1/districts/boundary/(?P<boundary_id>.+)/$', boundary_handler),
 
 
     url(r'^v1/stats/$', stats_handler),

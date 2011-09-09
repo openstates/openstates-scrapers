@@ -168,14 +168,14 @@ class AKBillScraper(BillScraper):
                     act_chamber = chamber
 
                 action = cols[3].font.contents[0].strip()
-                if re.match("\w+ Y(\d+) N(\d+)", action):
+                if re.match("\w+ Y(\d+)", action):
                     try:
                         vote = self.parse_vote(bill, action,
                                                act_chamber, act_date,
                                                cols[1].a['href'])
                         bill.add_vote(vote)
-                    except:
-                        self.log("Failed parsing vote")
+                    except Exception, e:
+                        self.warning("Failed parsing vote: %s" % e)
 
                 action, atype = self.clean_action(action)
 
@@ -217,10 +217,18 @@ class AKBillScraper(BillScraper):
         url = "http://www.legis.state.ak.us/basis/%s" % url
         info_page = self.soup_parser(self.urlopen(url))
 
-        tally = re.findall('Y(\d+) N(\d+)\s*(?:\w(\d+))*\s*(?:\w(\d+))*'
-                           '\s*(?:\w(\d+))*', action)[0]
-        yes, no, o1, o2, o3 = [0 if not x else int(x) for x in tally]
-        other = o1 + o2 + o3
+        yes = no = other = 0
+
+        tally = re.findall('(?:(Y|N|E|A)(-|\d+)\s*)', action)
+
+        for vtype, vcount in tally:
+            vcount = int(vcount) if vcount != '-' else 0
+            if vtype == 'Y':
+                yes = vcount
+            elif vtype == 'N':
+                no = vcount
+            else:
+                other += vcount
 
         votes = info_page.findAll('pre', text=re.compile('Yeas'),
                                   limit=1)[0].split('\n\n')

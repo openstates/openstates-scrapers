@@ -1,4 +1,4 @@
-"abbr","chamber","name","num_legislators","boundary_id"
+"abbr","chamber","name","num_seats","boundary_id"
 "pa","lower",1,1,"sldl-pa-state-house-district-%(name)s"
 "pa","lower",2,1,"sldl-pa-state-house-district-%(name)s"
 "pa","lower",3,1,"sldl-pa-state-house-district-%(name)s"

@@ -2,6 +2,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 import re
 import datetime
+from collections import defaultdict
 import lxml.html
 
 BILLS_URL = 'http://legislature.idaho.gov/legislation/%s/minidata.htm'
@@ -103,6 +104,29 @@ class IDBillScraper(BillScraper):
     other = False
     last_date = None
 
+    def __init__(self, *args, **kwargs):
+        super(IDBillScraper, self).__init__(*args, **kwargs)
+
+        self.scrape_subjects()
+
+    def scrape_subjects(self):
+        self._subjects = defaultdict(list)
+
+        url = 'http://legislature.idaho.gov/legislation/2011/topicind.htm'
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+
+        # loop through anchors
+        anchors = doc.xpath('//td[@width="95%"]//a')
+        for a in anchors:
+            # if anchor has a name, that's the subject
+            if a.get('name'):
+                subject = a.get('name')
+            # if anchor is a link to a bill, save that reference
+            elif 'legislation' in a.get('href'):
+                self._subjects[a.text].append(subject)
+
+
     def scrape(self, chamber, session):
         """
         Scrapes all the bills for a given session and chamber
@@ -163,6 +187,7 @@ class IDBillScraper(BillScraper):
             bill_type = get_bill_type(bill_id)
             bill = Bill(session, chamber, bill_id, title, type=bill_type)
             bill.add_source(url)
+            bill['subjects'] = self._subjects[bill_id.replace(' ', '')]
 
             if short_title and bill['title'].lower() != short_title.lower():
                 bill.add_title(short_title)
@@ -313,17 +338,17 @@ class IDBillScraper(BillScraper):
         spans = row.xpath('.//span')
         motion = row.text
         passed, yes_count, no_count, other_count = spans[0].text_content().split('-')
-        yes_votes = [ name for name in \
-                      spans[1].tail.replace(u'\xa0--\xa0', '').split(',') \
+        yes_votes = [ name for name in
+                      spans[1].tail.replace(u'\xa0--\xa0', '').split(',')
                       if name ]
-        
-        no_votes = [ name for name in \
-                     spans[2].tail.replace(u'\xa0--\xa0', '').split(',') \
+
+        no_votes = [ name for name in
+                     spans[2].tail.replace(u'\xa0--\xa0', '').split(',')
                      if name ]
         other_votes = []
         if spans[3].text.startswith('Absent'):
-            other_votes = [ name for name in \
-                            spans[3].tail.replace(u'\xa0--\xa0', '').split(',') \
+            other_votes = [ name for name in
+                            spans[3].tail.replace(u'\xa0--\xa0', '').split(',')
                             if name ]
         for key, val in {'adopted': True, 'passed': True, 'failed':False}.items():
             if key in passed.lower():
@@ -332,13 +357,13 @@ class IDBillScraper(BillScraper):
         vote = Vote(actor, date, motion, passed, int(yes_count), int(no_count),
                     int(other_count))
         for name in yes_votes:
-            if name:
+            if name and name != 'None':
                 vote.yes(name)
         for name in no_votes:
-            if name:
+            if name and name != 'None':
                 vote.no(name)
         for name in other_votes:
-            if name:
+            if name and name != 'None':
                 vote.other(name)
         return vote
 

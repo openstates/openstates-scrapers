@@ -53,13 +53,13 @@ metadata = dict(
         #    ],
         #    'start_year': 2007, 'end_year': 2008
         #},
-        {'name': '2009-2010',
-            'sessions': [
-                '2009',
-                '2010'
-            ],
-            'start_year': 2009, 'end_year': 2010
-        },
+        #{'name': '2009-2010',
+        #    'sessions': [
+        #        '2009',
+        #        '2010'
+        #    ],
+        #    'start_year': 2009, 'end_year': 2010
+        #},
         {'name': '2011-2012',
             'sessions': [
                 '2011',
@@ -133,19 +133,19 @@ metadata = dict(
         #    'verbose_name': 'Fifty-ninth Legislature - Second Regular Session',
         #    'start_date': datetime.date(2008, 1, 7),
         #    'end_date': datetime.date(2008, 4, 2)},
-        '2009':
-            {'type': 'primary',
-            'verbose_name': 'Sixtieth Legislature - First Regular Session',
-            'start_date': datetime.date(2009, 1, 12),
-            'end_date': datetime.date(2009, 3, 8)},
-        '2010':
-            {'type': 'primary',
-            'verbose_name': 'Sixtieth Legislature - Second Regular Session',
-            'start_date': datetime.date(2010, 1, 11),
-            'end_date': datetime.date(2010, 3, 29)},
+        #'2009':
+        #    {'type': 'primary',
+        #    'verbose_name': 'Sixtieth Legislature - First Regular Session',
+        #    'start_date': datetime.date(2009, 1, 12),
+        #    'end_date': datetime.date(2009, 3, 8)},
+        #'2010':
+        #    {'type': 'primary',
+        #    'verbose_name': 'Sixtieth Legislature - Second Regular Session',
+        #    'start_date': datetime.date(2010, 1, 11),
+        #    'end_date': datetime.date(2010, 3, 29)},
         '2011':
             {'type': 'primary',
-            'verbose_name': 'Sixty-first Legislature - First Regular Session',
+            'display_name': '61st Legislature, 1st Regular Session',
             'start_date': datetime.date(2011, 1, 10),
             'end_date': datetime.date(2011, 4, 7)},
     },

@@ -126,6 +126,15 @@ class Scraper(scrapelib.Scraper):
         self.metadata = metadata
         self.output_dir = output_dir
 
+        # make output dir, error dir, and cache dir
+        for d in (self.output_dir, kwargs['cache_dir'], kwargs['error_dir']):
+            try:
+                if d:
+                    os.makedirs(d)
+            except OSError as e:
+                if e.errno != 17:
+                    raise e
+
         # validation
         self.strict_validation = strict_validation
         self.validator = DatetimeValidator()

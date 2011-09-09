@@ -31,11 +31,11 @@ class IDLegislatorScraper(LegislatorScraper):
             full_name = div[1][2].text.replace(u'\xa0', ' ')
             party = _PARTY[div[1][2].tail.strip()]
             leg['contact_form'] = div[1][3].xpath('string(a/@href)')
-            leg = Legislator(term, chamber, district, full_name, party, **leg)
+            leg = Legislator(term, chamber, district.strip(), full_name, party, **leg)
             leg['roles'][0] = {'chamber': chamber, 'state': self.state,
                                'term': term, 'role':'substitute',
                                'legislator': subfor[subfor.rindex('for'):],
-                               'district': district.replace('District', ''),
+                               'district': district.replace('District', '').strip(),
                                'party': party,
                                'start_date':None, 'end_date':None}
             leg.add_source(sub_url)
@@ -76,7 +76,8 @@ class IDLegislatorScraper(LegislatorScraper):
                     district = pieces.pop(0)
 
                 leg = Legislator(term, chamber,
-                                 district.replace('District', ''), full_name,
+                                 district.replace('District', '').strip(),
+                                 full_name,
                                  party=party)
                 leg.add_source(url)
                 leg['photo_url'] = img_url

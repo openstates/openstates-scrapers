@@ -1,4 +1,4 @@
-Core Developers: Michael Stephens, James Turk
+Core Developers: James Turk, Michael Stephens, Dan Schneiderman
 
 Additional Utilities Improvements: Mark Olson, Ian Bicking, Jeremy Dunck
 
@@ -11,12 +11,13 @@ Additional Contributions:
     CT: Rebecca Shapiro
     GA: Brantley Harris, Doug Morgan
     HI: Gabriel J. Pérez, Richard House
+    ID: Brandon Lewis
     IL: Joe Germuska, Christopher Groskopf
     KY: Clayton Clark
     LA: Mark Olson
     MA: Rebecca Shapiro, Ray Kiddy, Adam Friedman, Mark Hildreth
     MD: Jeremy Carbaugh
-    ME: M. Jackson Wilkinson, Dan Schneiderman
+    ME: M. Jackson Wilkinson
     MI: Mark Olson
     MN: Jeff Ramnani
     MO: Matt Brennan, Craig Dennis, Dane Summers
@@ -24,11 +25,9 @@ Additional Contributions:
     MT: James Falcon, Tim Freund
     ND: Christopher Groskopf
     NH: Rebecca Shapiro
-    NJ: Greg Osuri, Dan Schneiderman
-    NV: Dan Schneiderman
+    NJ: Greg Osuri
     NY: Ben Woosley
     NM: Rishabh Manocha
-    OH: Dan Schneiderman
     OR: Gabriel J. Pérez, James Cooper
     PR: Gabriel J. Pérez, Anner J. Bonilla
     SC: Carson McDonald, Daniel Schep, Tami Crawford
