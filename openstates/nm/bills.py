@@ -91,18 +91,27 @@ class NMBillScraper(BillScraper):
     state = 'nm'
 
     # update as sessions update
-    session_paths = {'2011': '11%20Regular'}
+    session_paths = {'2011': '11%20Regular', '2011S': '11%20Special'}
 
-    def __init__(self, *args, **kwargs):
-        super(NMBillScraper, self).__init__(*args, **kwargs)
+
+    def _init_mdb(self, session):
+        if session == '2011S':
+            fname = 'LegInfo11S'
+        else:
+            raise ValueError('no zip file present for %s' % session)
+
 
         # all of the data is in this Access DB, download & retrieve it
-        self.mdbfile = 'LegInfo11.mdb'
-        remote_file = 'ftp://www.nmlegis.gov/other/LegInfo11.zip'
-        fname, resp = self.urlretrieve(remote_file)
-        zf = zipfile.ZipFile(fname)
-        zf.extract(self.mdbfile)
-        os.remove(fname)
+        mdbfile = '%s.mdb' % fname
+
+        # if a new mdbfile or it has changed
+        if getattr(self, 'mdbfile', None) != mdbfile:
+            self.mdbfile = mdbfile
+            remote_file = 'ftp://www.nmlegis.gov/other/%s.zip' % fname
+            fname, resp = self.urlretrieve(remote_file)
+            zf = zipfile.ZipFile(fname)
+            zf.extract(self.mdbfile)
+            os.remove(fname)
 
 
     def access_to_csv(self, table):
@@ -126,6 +135,8 @@ class NMBillScraper(BillScraper):
 
         # used for faking sources
         session_year = session[2:]
+
+        self._init_mdb(session)
 
         # read in sponsor & subject mappings
         sponsor_map = {}
@@ -158,7 +169,7 @@ class NMBillScraper(BillScraper):
                 data['Chamber'], data['LegType'], data['LegNo'], session_year))
 
             bill.add_sponsor('primary', sponsor_map[data['SponsorCode']])
-            if data['SponsorCode2'] != 'NONE':
+            if data['SponsorCode2'] not in ('NONE', 'X'):
                 bill.add_sponsor('primary', sponsor_map[data['SponsorCode2']])
 
             # maybe use data['emergency'] data['passed'] data['signed'] as well

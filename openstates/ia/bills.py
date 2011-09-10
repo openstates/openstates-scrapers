@@ -1,5 +1,6 @@
 import re
 import datetime
+from collections import defaultdict
 
 from billy.scrape.bills import BillScraper, Bill
 
@@ -14,12 +15,48 @@ def get_popup_url(link):
 class IABillScraper(BillScraper):
     state = 'ia'
 
+    session_id_map = {'2011-2012': '84'}
+    _subjects = defaultdict(list)
+
+    def _build_subject_map(self, session):
+        # if already built a subject map, skip doing it again
+        if self._subjects:
+            return
+
+        session_id = self.session_id_map[session]
+        url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp?'
+               'Category=BillInfo&Service=DspGASI&ga=%s&frame=y') % session_id
+        doc = lxml.html.fromstring(self.urlopen(url))
+
+        # get all subjects from dropdown
+        for option in doc.xpath('//select[@name="SelectOrig"]/option')[1:]:
+            # if it has a "See also" strip that part off
+            subject = option.text.strip().split(' - See also')[0]
+            # skip sub-subjects
+            if subject.startswith('--'):
+                continue
+
+            value = option.get('value')
+
+            # open the subject url and get all bill_ids
+            subj_url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp'
+                        '?Category=BillInfo&Service=DsplData&var=gasi&ga=%s&'
+                        'typ=o&key=%s') % (session_id, value)
+            subj_doc = lxml.html.fromstring(self.urlopen(subj_url))
+            bill_ids = subj_doc.xpath('//td[@width="10%"]/a/text()')
+            for bill_id in bill_ids:
+                self._subjects[bill_id.replace(' ', '')].append(subject)
+
+
     def scrape(self, chamber, session):
+
+        self._build_subject_map(session)
+
         url = ("http://coolice.legis.state.ia.us/Cool-ICE/default.asp?"
                "category=billinfo&service=Billbook&frm=2&hbill=HF697%20"
                "%20%20%20&cham=House&amend=%20%20%20%20%20%20&am2nd=%20"
                "%20%20%20%20%20&am3rd=%20%20%20%20%20%20&version=red;"
-               "%20%20%20%20&menu=true&ga=84")
+               "%20%20%20%20&menu=true&ga=") + self.session_id_map[session]
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 
@@ -112,7 +149,7 @@ class IABillScraper(BillScraper):
             elif 'H.J.' in action or 'HCS' in action:
                 actor = 'lower'
 
-            action = re.sub(r'(H|S)\.J\.\s+\d+\.$', '', action)
+            action = re.sub(r'(H|S)\.J\.\s+\d+\.$', '', action).strip()
 
             if action.startswith('Introduced'):
                 atype = ['bill:introduced']
@@ -148,9 +185,12 @@ class IABillScraper(BillScraper):
             elif (action.startswith('Committee report') and
                   action.endswith('passage.')):
                   atype = 'committee:passed'
+            elif action.startswith('Withdrawn'):
+                atype = 'bill:withdrawn'
             else:
                 atype = 'other'
 
             bill.add_action(actor, action, date, type=atype)
 
+        bill['subjects'] = self._subjects[bill_id]
         self.save_bill(bill)

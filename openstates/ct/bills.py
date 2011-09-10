@@ -94,8 +94,10 @@ class CTBillScraper(BillScraper):
                 bill.add_document(link.text.strip(), link.attrib['href'])
 
             for link in page.xpath("//a[contains(@href, 'VOTE')]"):
-                self.scrape_vote(bill, link.text.strip(),
-                                 link.attrib['href'])
+                # 2011 HJ 31 has a blank vote, others might too
+                if link.text:
+                    self.scrape_vote(bill, link.text.strip(),
+                                     link.attrib['href'])
 
     def scrape_vote(self, bill, name, url):
         if "VOTE/H" in url:

@@ -63,7 +63,7 @@ def metadata(abbr):
 
 
 def chamber_name(abbr, chamber):
-    if chamber == 'joint':
+    if chamber in ('joint', 'other'):
         return 'Joint'
 
     return metadata(abbr)['%s_chamber_name' % chamber].split()[0]

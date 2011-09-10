@@ -61,10 +61,10 @@ class MALegislatorScraper(LegislatorScraper):
             root = lxml.html.fromstring(page)
             root.make_links_absolute(member_url)
 
-        photo_url = root.xpath('//div[@class="bioPicContainer"]/img/@src')[0]
-        full_name = root.xpath('//div[@class="bioPicContainer"]/img/@alt')[0]
+        photo_url = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@src')[0]
+        full_name = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@alt')[0]
 
-        district = root.xpath('//div[@id="District"]//div[@class="widgetContent"]')
+        district = root.xpath('//div[@id="District"]//div[starts-with(@class,"widgetContent")]')
         if len(district):
             district = district[0].text.strip()
             district = clean_district(district)

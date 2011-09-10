@@ -493,45 +493,17 @@ class LegislatorGeoHandler(BillyHandler):
 
 
 class DistrictHandler(BillyHandler):
-    base_url = getattr(settings, 'BOUNDARY_SERVICE_URL',
-                       'http://localhost:8001/1.0/')
 
-
-    def _get_shape(self, name, type):
-        url = "%sshape/%s/" % (self.base_url, name)
-        shape = json.load(urllib2.urlopen(url))['shape']
-        if type == 'binary':
-            return self._json_to_bin(shape)
-        else:
-            return shape
-
-
-    def _json_to_bin(self, shape):
-        new_coord_arr = []
-        for coords in shape['coordinates']:
-            newcoords = []
-            for subshape in coords:
-                newcoords.append(base64.encodestring(' '.join(
-                    struct.pack('dd', *p) for p in subshape)))
-            new_coord_arr.append(newcoords)
-        shape['coordinates'] = new_coord_arr
-        return shape
-
-
-    def read(self, request, abbr, chamber=None, name=None):
+    def read(self, request, abbr, chamber=None):
         filter = {'abbr': abbr}
         if not chamber:
             chamber = {'$exists': True}
         filter['chamber'] = chamber
-        if name:
-            filter['name'] = name
         districts = list(db.districts.find(filter))
 
         # change leg filter
         filter['state'] = filter.pop('abbr')
         filter['active'] = True
-        if name:
-            filter['district'] = filter.pop('name')
         legislators = db.legislators.find(filter, fields={'_id': 0,
                                                           'leg_id': 1,
                                                           'chamber': 1,
@@ -546,9 +518,43 @@ class DistrictHandler(BillyHandler):
         for dist in districts:
             dist['legislators'] = leg_dict[(dist['chamber'], dist['name'])]
 
-        shape_type = request.GET.get('shape', None)
-        if shape_type:
-            for dist in districts:
-                dist['shape'] = self._get_shape(dist['boundary_id'], shape_type)
-
         return districts
+
+
+class BoundaryHandler(BillyHandler):
+    base_url = getattr(settings, 'BOUNDARY_SERVICE_URL',
+                       'http://localhost:8001/1.0/')
+
+
+    def read(self, request, boundary_id):
+        url = "%sshape/%s/" % (self.base_url, boundary_id)
+        try:
+            data = json.load(urllib2.urlopen(url))
+        except urllib2.HTTPError, e:
+            if 400 <= e.code < 500:
+                resp = rc.NOT_FOUND
+                return resp
+            else:
+                raise e
+
+        shape = data['shape']
+        centroid = data['centroid']['coordinates']
+
+        all_lon = []
+        all_lat = []
+        for shape in data['shape']['coordinates']:
+            for coord_set in shape:
+                all_lon.extend(c[0] for c in coord_set)
+                all_lat.extend(c[1] for c in coord_set)
+        lon_delta = abs(max(all_lon) - min(all_lon))
+        lat_delta = abs(max(all_lat) - min(all_lat))
+
+        region = {'center_lon': centroid[0], 'center_lat': centroid[1],
+                  'lon_delta': lon_delta, 'lat_delta': lat_delta,
+                 }
+
+        district = db.districts.find_one({'boundary_id': boundary_id})
+        district['shape'] = shape
+        district['region'] = region
+
+        return district
