@@ -21,7 +21,7 @@ class IDCommitteeScraper(CommitteeScraper):
     consistantly, so we could get membership and committee minutes if we really
     want."""
     state = 'id'
-    
+
     def get_jfac(self, name, url):
         """gets membership info for the Joint Finance and Appropriations
         Committee."""
@@ -41,10 +41,10 @@ class IDCommitteeScraper(CommitteeScraper):
                     committee.add_member(*house.split(','), chamber='lower')
                 else:
                     committee.add_member(house, chamber='lower')
-                    
+
             committee.add_source(url)
             self.save_committee(committee)
-            
+
     def get_jlfc(self, name, url):
         """Gets info for the Joint Legislative Oversight Committee"""
         with self.urlopen(url) as jlfc_page:
@@ -60,7 +60,7 @@ class IDCommitteeScraper(CommitteeScraper):
                                          chamber=_REV_CHAMBERS[chamber.lower()])
             committee.add_source(url)
             self.save_committee(committee)
-            
+
     def get_jmfc(self, name, url):
         """Gets the Joint Millennium Fund Committee info"""
         with self.urlopen(url) as jfmc_page:
@@ -74,13 +74,13 @@ class IDCommitteeScraper(CommitteeScraper):
                 committee.add_member( *house.strip('Rep.').strip().split(',') )
             committee.add_source(url)
             self.save_committee(committee)
-            
+
     def scrape_committees(self, chamber):
         url = _COMMITTEE_URL % _CHAMBERS[chamber]
         with self.urlopen(url) as page:
             html = lxml.html.fromstring(page)
             table = html.xpath('body/table/tr/td[2]/table')[0]
-            
+
             for row in table.xpath('tr')[1:]:
                 # committee name, description, hours of operation,
                 # secretary and office_phone
@@ -91,7 +91,7 @@ class IDCommitteeScraper(CommitteeScraper):
                     com = dict(zip(_TD_TWO, text))
                 committee = Committee(chamber, **com)
                 committee.add_source(url)
-                
+
                 # membership
                 for td in row[1:]:
                     for elem in td:
@@ -99,9 +99,9 @@ class IDCommitteeScraper(CommitteeScraper):
                         if position and leg:
                             committee.add_member(leg.replace(u'\xa0', ' '), role=position)
                         elif leg:
-                            committee.add_member(leg.replace(u'xa0', ' '))
+                            committee.add_member(leg.replace(u'\xa0', ' '))
                 self.save_committee(committee)
-                
+
     def scrape_joint_committees(self):
         url = 'http://legislature.idaho.gov/about/jointcommittees.htm'
         with self.urlopen(url) as page:
@@ -123,13 +123,13 @@ class IDCommitteeScraper(CommitteeScraper):
                     self.save_committee(committee)
                 else:
                     self.log('Unknown committee: %s %s' % (name, url))
-                
-    
+
+
     def scrape(self, chamber, term):
         """
         Scrapes Idaho committees for the latest term.
         """
         self.validate_term(term, latest_only=True)
-        
+
         self.scrape_committees(chamber)
         self.scrape_joint_committees()
