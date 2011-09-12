@@ -28,10 +28,14 @@ _chamber_aliases = {
 
 
 def parse_param_dt(dt):
-    try:
-        return datetime.datetime.strptime(dt, "%Y-%m-%d %H:%M")
-    except ValueError:
-        return datetime.datetime.strptime(dt, "%Y-%m-%d")
+    formats = ['%Y-%m-%d %H:%M',    # here for legacy reasons
+               '%Y-%m-%dT%H:%M:%S',
+               '%Y-%m-%d']
+    for format in formats:
+        try:
+            return datetime.datetime.strptime(dt, format)
+        except ValueError:
+            pass
 
 
 def _build_mongo_filter(request, keys, icase=True):
