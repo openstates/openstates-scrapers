@@ -209,7 +209,7 @@ class BillSearchHandler(BillyHandler):
         # sorting
         sort = request.GET.get('sort')
         if sort == 'updated_at':
-            query = query.sort({'updated_at': -1})
+            query = query.sort([('updated_at', -1)])
 
         return list(query)
 
