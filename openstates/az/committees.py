@@ -54,9 +54,20 @@ class AZCommitteeScraper(CommitteeScraper):
                                                      'lower': 'H'}[chamber]
             for com in root.xpath(body):
                 c_id, name, short_name, sub = com.values()
+                # the really good thing about AZ xml api is that their committee element
+                # tells you whether this is a sub committee or not
                 if sub == '1':
+                    # bad thing is that the committee names are no longer consistant
+                    # so we can try to get the parent name:
                     parent = name.split('Subcommittee')[0].strip()
-                    name = name[name.index('Subcommittee'):]
+                    # and maybe the Sub Committee's name
+                    try:
+                        name = name[name.index('Subcommittee'):]
+                    except ValueError:
+                        # but if that doesn't work out then we will fix it manually
+                        # shouldnt be too hard since parent and subcommittee will be the same
+                        #self.log("I am my own grandpa: %s" % name)
+                        pass
                     
                     c = Committee(chamber, parent, short_name=short_name, 
                               subcommittee=name, session=session,
