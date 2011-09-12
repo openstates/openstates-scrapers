@@ -3,8 +3,6 @@ import urllib2
 import datetime
 import json
 import itertools
-import struct
-import base64
 from collections import defaultdict
 
 from django.http import HttpResponse
@@ -66,6 +64,7 @@ def _build_mongo_filter(request, keys, icase=True):
                 _filter[key] = re.compile('^%s$' % value, re.IGNORECASE)
 
     return _filter
+
 
 def _build_field_list(request, default_fields=None):
     # if 'fields' key is specified in request split it on comma
@@ -205,7 +204,14 @@ class BillSearchHandler(BillyHandler):
         if sponsor_id:
             _filter['sponsors.leg_id'] = sponsor_id
 
-        return list(db.bills.find(_filter, bill_fields))
+        query = db.bills.find(_filter, bill_fields)
+
+        # sorting
+        sort = request.GET.get('sort')
+        if sort == 'updated_at':
+            query = query.sort({'updated_at': -1})
+
+        return list(query)
 
 
 class LegislatorHandler(BillyHandler):
