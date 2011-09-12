@@ -68,15 +68,15 @@ All code specific to a state should be within this directory, common files are:
 __init__.py
     When starting a new state you should first create an ``__init__.py`` that contains `metadata </docs/metadata.html>`_.
 bills.py
-    `Scraping of bills <http://openstates.sunlightlabs.com/docs/scrapers.html#bills>`_, including sponsorship information, actions, and (optionally) votes. **Required**
+    `Scraping of bills <http://openstates.org/docs/scrapers.html#bills>`_, including sponsorship information, actions, and (optionally) votes. **Required**
 legislators.py
-    `Scraping of legislators <http://openstates.sunlightlabs.com/docs/scrapers.html#legislators>`_, optionally may scrape committees as well. **Required**
+    `Scraping of legislators <http://openstates.org/docs/scrapers.html#legislators>`_, optionally may scrape committees as well. **Required**
 committees.py
-    `Scraping of committees, <http://openstates.sunlightlabs.com/docs/scrapers.html#legislators>`_.  (*Only required if legislators.py does not add committees to legislators.*)
+    `Scraping of committees, <http://openstates.org/docs/scrapers.html#legislators>`_.  (*Only required if legislators.py does not add committees to legislators.*)
 votes.py
-    `Scraping of votes <http://openstates.sunlightlabs.com/scrapers.html#votes>`_. (*Only required if bills.py does not scrape votes.*)
+    `Scraping of votes <http://openstates.org/scrapers.html#votes>`_. (*Only required if bills.py does not scrape votes.*)
 
-When implementing these files be sure to refer to the `scraper documentation <http://openstates.sunlightlabs.com/scrapers.html>`_ and completed states.
+When implementing these files be sure to refer to the `scraper documentation <http://openstates.org/scrapers.html>`_ and completed states.
 
 Running Your Scraper
 ====================

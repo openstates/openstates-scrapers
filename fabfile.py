@@ -7,7 +7,7 @@ def staging():
     env.key_filename = KEY_FILENAME
 
 def production():
-    env.hosts = ['ubuntu@openstates.sunlightlabs.com']
+    env.hosts = ['ubuntu@openstates.org']
     env.key_filename = KEY_FILENAME
 
 def update():
