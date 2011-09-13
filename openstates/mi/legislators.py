@@ -20,6 +20,9 @@ class MILegislatorScraper(LegislatorScraper):
                     tds = [x.text_content().strip() for x in row.xpath('td')]
                     (district, last_name, first_name,
                      party, office, phone, email) = tds
+                    # vacancies
+                    if last_name == 'District':
+                        continue
                     leg = Legislator(term=term, chamber=chamber,
                                      district=str(int(district)),
                                      full_name=first_name + " " + last_name,
