@@ -5,8 +5,12 @@ def convert_pdf(filename, type='xml'):
                 'text-nolayout': ['pdftotext', filename, '-'],
                 'xml':  ['pdftohtml', '-xml', '-stdout', filename],
                 'html': ['pdftohtml', '-stdout', filename]}
-    pipe = subprocess.Popen(commands[type], stdout=subprocess.PIPE,
-                            close_fds=True).stdout
+    try:
+        pipe = subprocess.Popen(commands[type], stdout=subprocess.PIPE,
+                                close_fds=True).stdout
+    except OSError:
+        raise EnvironmentError("error running %s, missing executable?" %
+                               ' '.join(commands[type]))
     data = pipe.read()
     pipe.close()
     return data
