@@ -3,15 +3,15 @@ STATE README TEMPLATE
 
 Metadata
 --------
-Name:  
-Abbreviation:  
-Legislature Name:  
-Upper Chamber Name:  
-Lower Chamber Name:  
-Upper Chamber Title:  
-Lower Chamber Title:  
-Upper Chamber Term:  
-Lower Chamber Term:  
+Name:  South Carolina  
+Abbreviation:  SC  
+Legislature Name:South Carolina General Assembly    
+Upper Chamber Name:  Senate  
+Lower Chamber Name:  House of Representatives  
+Upper Chamber Title:  Senator  
+Lower Chamber Title:  Representative  
+Upper Chamber Term:  4 years  
+Lower Chamber Term:  2 years 
 
 
 Information Locations
@@ -19,6 +19,9 @@ Information Locations
 
 Legislators
 -----------
+lower chamber legislators url = 'http://www.scstatehouse.gov/html-pages/housemembers.html'
+upper chamber legislators url = 'http://www.scstatehouse.gov/html-pages/senatemembersd.html'
+
 Missing Info
 
 * term
