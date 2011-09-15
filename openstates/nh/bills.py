@@ -78,6 +78,8 @@ class NHBillScraper(BillScraper):
             if body == body_code[chamber] and session_yr == session:
                 if expanded_bill_id.startswith('CACR'):
                     bill_type = 'constitutional amendment'
+                elif expanded_bill_id.startswith('PET'):
+                    bill_type = 'petition'
                 else:
                     bill_type = bill_type_map[expanded_bill_id.split(' ')[0][1:]]
                 if title.startswith('('):
