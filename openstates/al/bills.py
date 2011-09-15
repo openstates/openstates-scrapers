@@ -3,19 +3,28 @@ from billy.scrape.bills import BillScraper, Bill
 import re
 import datetime
 import lxml.html
+import urllib
 
 bill_id_re = re.compile('(H|S)B\d+')
 btn_re = re.compile('BTN(\d+)')
+
+class FakeFirefoxURLopener(urllib.FancyURLopener):
+    version = "firefox"
+
+urllib._urlopener = FakeFirefoxURLopener()
 
 class ALBillScraper(BillScraper):
 
     state = 'al'
 
     def refresh_session(self):
-        url = 'http://alisondb.legislature.state.al.us/acas/ACASLogin.asp?SESSION=%s' % self.site_id
-        self.urlopen(url)
+        url = 'http://alisondb.legislature.state.al.us/acas/ACASLoginFire.asp?SESSION=%s' % self.site_id
+        page = urllib.urlopen(url)
+        cookie = page.info()['set-cookie'].strip(';')
+        return cookie
 
     def scrape(self, chamber, session):
+        self.log(self.metadata['session_details'])
         self.site_id = self.metadata['session_details'][session]['internal_id']
         chamber_piece = {'upper': 'Senate',
                          'lower': 'House+of+Representatives'}[chamber]
@@ -25,49 +34,52 @@ class ALBillScraper(BillScraper):
 
         url = 'http://alisondb.legislature.state.al.us/acas/SESSBillsBySelectedMatterTransResults.asp?TransCodes={All}&LegDay={All}&WhichBills=%s' % chamber_piece
 
-        self.refresh_session()
+        cookie = self.refresh_session()
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
+        agent = FakeFirefoxURLopener()
+        agent.addheader('Cookie', cookie)
+        page = agent.open(url)
+        doc = lxml.html.fromstring(page.read())
 
-            # bills are all their own table with cellspacing=4 (skip first)
-            bill_tables = doc.xpath('//table[@cellspacing="4"]')
-            for bt in bill_tables[1:]:
+        # bills are all their own table with cellspacing=4 (skip first)
+        bill_tables = doc.xpath('//table[@cellspacing="4"]')
+        for bt in bill_tables[1:]:
 
-                # each table has 3 rows: detail row, description, blank
-                details, desc, _ = bt.xpath('tr')
+            # each table has 3 rows: detail row, description, blank
+            details, desc, _ = bt.xpath('tr')
 
-                # first <tr> has img, button, sponsor, topic, current house
-                #   current status, committee, committee2, last action
-                _, button, sponsor, topic, _, _, com1, com2, _ = details.xpath('td')
+            # first <tr> has img, button, sponsor, topic, current house
+            #   current status, committee, committee2, last action
+            _, button, sponsor, topic, _, _, com1, com2, _ = details.xpath('td')
 
-                # pull bill_id out of script tag (gross)
-                bill_id = bill_id_re.search(button.text_content()).group()
-                oid = btn_re.search(button.text_content()).groups()[0]
+            # pull bill_id out of script tag (gross)
+            bill_id = bill_id_re.search(button.text_content()).group()
+            self.log(bill_id)
+            oid = btn_re.search(button.text_content()).groups()[0]
 
-                sponsor = sponsor.text_content()
-                topic = topic.text_content()
-                com1 = com1.text_content()
-                com2 = com2.text_content()
-                desc = desc.text_content()
+            sponsor = sponsor.text_content()
+            topic = topic.text_content()
+            com1 = com1.text_content()
+            com2 = com2.text_content()
+            desc = desc.text_content()
 
-                # create bill
-                bill = Bill(session, chamber, bill_id, desc.strip(),
-                            topic=topic)
-                bill.add_sponsor(sponsor, 'primary')
+            # create bill
+            bill = Bill(session, chamber, bill_id, desc.strip(),
+                        topic=topic)
+            bill.add_sponsor(sponsor, 'primary')
 
-                self.get_sponsors(bill, oid)
-                self.get_actions(bill, oid)
+            self.get_sponsors(bill, oid)
+            self.get_actions(bill, oid)
 
-                # craft bill URL
-                session_fragment = '2010rs'
-                type_fragment = 'bills'
-                bill_id_fragment = bill_id.lower()
-                bill_text_url = 'http://alisondb.legislature.state.al.us/acas/searchableinstruments/%s/%s/%s.htm' % (
-                    session_fragment, type_fragment, bill_id_fragment)
-                bill.add_version('bill text', bill_text_url)
+            # craft bill URL
+            session_fragment = '2010rs'
+            type_fragment = 'bills'
+            bill_id_fragment = bill_id.lower()
+            bill_text_url = 'http://alisondb.legislature.state.al.us/acas/searchableinstruments/%s/%s/%s.htm' % (
+                session_fragment, type_fragment, bill_id_fragment)
+            bill.add_version('bill text', bill_text_url)
 
-                self.save_bill(bill)
+            self.save_bill(bill)
 
 
     def get_actions(self, bill, oid):
