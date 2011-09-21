@@ -21,16 +21,20 @@ def oysterize_versions(state, update_mins=20000):
         for version in bill['versions']:
             if 'url' in version and '_oyster_id' not in version:
                 try:
-                    oclient.track_url(version['url'],
-                                      update_mins=update_mins,
-                                      name=version['name'],
-                                      state=bill['state'],
-                                      session=bill['session'],
-                                      chamber=bill['chamber'],
-                                      bill_id=bill['bill_id'],
-                                      openstates_bill_id=bill['_id'])
+                    _id = oclient.track_url(version['url'],
+                                            update_mins=update_mins,
+                                            name=version['name'],
+                                            state=bill['state'],
+                                            session=bill['session'],
+                                            chamber=bill['chamber'],
+                                            bill_id=bill['bill_id'],
+                                            openstates_bill_id=bill['_id'])
+                    version['_oyster_id'] = _id
                 except Exception as e:
                     print e
+
+        # save bill after updating all versions
+        db.bills.save(version, safe=True)
 
 
 if __name__ == '__main__':
