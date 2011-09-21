@@ -34,7 +34,7 @@ def oysterize_versions(state, update_mins=20000):
                     print e
 
         # save bill after updating all versions
-        db.bills.save(version, safe=True)
+        db.bills.save(bill, safe=True)
 
 
 if __name__ == '__main__':
