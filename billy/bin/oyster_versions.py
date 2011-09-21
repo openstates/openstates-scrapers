@@ -8,8 +8,10 @@ from billy.conf import settings, base_arg_parser
 
 import scrapelib
 import lxml.etree
+from oyster.client import get_configured_client
 
 def oysterize_versions(state, update_mins=20000):
+    oclient = get_configured_client()
     new_bills = list(db.bills.find({'state': state,
                                     'versions.url': {'$exists': True},
                                     'versions._oyster_id': {'$exists': False}})
