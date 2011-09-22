@@ -24,7 +24,7 @@ def _venv(cmd):
 
 def get_leg_ids_csv(state):
     with cd('/tmp/'):
-        _venv('~openstates/src/openstates/billy/bin/dump_missing_leg_ids.py ' +
+        _venv('billy-dump-missing-leg-ids ' +
               state)
         get('/tmp/%s_missing_leg_ids.csv' % state,
             '%s_missing_leg_ids.csv' % state)
