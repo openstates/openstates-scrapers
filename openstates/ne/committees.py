@@ -75,10 +75,10 @@ class NECommitteeScraper(CommitteeScraper):
                        senator = senators.text
                        if 'Chairperson' in senator:
                            role = 'Chairperson'
-                           senator = senator[6: -13].strip()
+                           senator = senator[6:-13].strip()
                        else:
                             role = 'member'
-                            senator = senator[6:-1].strip()
+                            senator = senator[6:].strip()
                        committee.add_member(senator, role)
                    committee.add_source(main_url)
                    committee.add_source(detail_link)
