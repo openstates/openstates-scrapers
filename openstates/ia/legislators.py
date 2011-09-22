@@ -21,8 +21,8 @@ class IALegislatorScraper(LegislatorScraper):
         url = "http://www.legis.iowa.gov/Legislators/%s.aspx" % chamber_name
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
-
-        for link in page.xpath("//a[contains(@href, 'legislator.aspx')]"):
+        table = page.xpath('//table[@class="legis"]')[0]
+        for link in table.xpath(".//a[contains(@href, 'legislator.aspx')]"):
             name = link.text.strip()
             district = link.xpath("string(../../td[2])")
             party = link.xpath("string(../../td[3])")
