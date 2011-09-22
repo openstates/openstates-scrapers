@@ -10,7 +10,7 @@ from billy.importers.committees import import_committees
 from billy.importers.events import import_events
 from billy.utils import configure_logging
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         description='Import scraped data into database.',
         parents=[base_arg_parser],
@@ -60,3 +60,7 @@ if __name__ == '__main__':
     # events currently excluded from --alldata
     if args.events:
         import_events(args.abbreviation, data_dir)
+
+
+if __name__ == '__main__':
+    main()

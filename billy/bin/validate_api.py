@@ -121,7 +121,7 @@ def validate_api(abbr, schema_dir=None):
             validate_xml(url, xml_schema)
 
 
-if __name__ == '__main__':
+def main():
     import sys
     import argparse
 
@@ -137,3 +137,7 @@ if __name__ == '__main__':
     for state in args.states:
         print "Validating %s" % state
         validate_api(state, args.schema_dir)
+
+
+if __name__ == '__main__':
+    main()

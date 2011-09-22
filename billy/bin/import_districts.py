@@ -13,7 +13,7 @@ def import_district_csv(filename):
         dist['num_seats'] = int(dist['num_seats'])
         db.districts.save(dist, safe=True)
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         description='Populate database with district information.',
         parents=[base_arg_parser],
@@ -28,3 +28,7 @@ if __name__ == '__main__':
 
     for file in args.files:
         import_district_csv(file)
+
+
+if __name__ == '__main__':
+    main()

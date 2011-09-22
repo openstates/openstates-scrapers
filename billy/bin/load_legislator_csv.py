@@ -73,7 +73,7 @@ def process_file(filename, save=False):
         print 'missing tdata', db.legislators.find({'state': state,
                                     'transparencydata_id': None}).count()
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         description='load a CSV of legislator data',
         parents=[base_arg_parser],
@@ -90,3 +90,7 @@ if __name__ == '__main__':
 
     for file in args.files:
         process_file(file, args.save)
+
+
+if __name__ == '__main__':
+    main()

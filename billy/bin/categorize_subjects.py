@@ -63,7 +63,8 @@ def categorize_subjects(abbr, data_dir, process_all):
     for n, category in subjects_i:
         print '%s,"%s"' % (n, category.encode('ascii', 'replace'))
 
-if __name__ == '__main__':
+
+def main():
     parser = argparse.ArgumentParser(
         description='apply subject categorization for bills',
         parents=[base_arg_parser],
@@ -83,3 +84,7 @@ if __name__ == '__main__':
     settings.update(args)
 
     categorize_subjects(args.abbr, args.data_dir, args.all)
+
+
+if __name__ == '__main__':
+    main()

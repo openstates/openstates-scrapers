@@ -116,7 +116,7 @@ def upload(abbr, filename):
     logging.info('upload complete')
 
 
-if __name__ == '__main__':
+def main():
     import argparse
 
     configure_logging(1)
@@ -153,3 +153,7 @@ if __name__ == '__main__':
 
         if args.upload:
             upload(abbr, args.file)
+
+
+if __name__ == '__main__':
+    main()

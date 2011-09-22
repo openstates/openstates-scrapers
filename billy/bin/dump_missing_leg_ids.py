@@ -90,7 +90,7 @@ def dump_missing_leg_ids(abbr, detailed=False):
         missing_csv.writerow(item)
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         description="dump a CSV of missing leg_id's",
         parents=[base_arg_parser],
@@ -105,3 +105,7 @@ if __name__ == '__main__':
 
     for abbr in args.abbrs:
         dump_missing_leg_ids(abbr, args.detailed)
+
+
+if __name__ == '__main__':
+    main()

@@ -37,7 +37,7 @@ def oysterize_versions(state, update_mins=20000):
         db.bills.save(bill, safe=True)
 
 
-if __name__ == '__main__':
+def main():
     import sys
     import argparse
 
@@ -50,3 +50,7 @@ if __name__ == '__main__':
     for state in args.states:
         print "Oysterizing %s bill versions" % state
         oysterize_versions(state)
+
+
+if __name__ == '__main__':
+    main()
