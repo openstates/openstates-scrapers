@@ -46,7 +46,7 @@ class NECommitteeScraper(CommitteeScraper):
                            senator = senator[5:-13].strip()
                        else:
                            role = 'member'
-                           senator = senator[5:-1].strip()
+                           senator = senator[5:].strip()
                        committee.add_member(senator, role)
                    self.save_committee(committee)
 
