@@ -81,18 +81,18 @@ When implementing these files be sure to refer to the `scraper documentation <ht
 Running Your Scraper
 ====================
 
-There is an executable located at ``billy/bin/scrape.py`` that is used to run scrapers and takes a number of command line options.
+There is an command named billy-scrape (executable assuming you've run ``python setup.py develop``) that is used to run scrapers and takes a number of command line options.
 
 Examples of Common Usage
 ------------------------
 
 Getting all legislators for Vermont from the latest session::
 
-    python billy/bin/scrape.py vt --legislators -v
+    billy-scrape vt --legislators -v
 
 Getting all committees and bills for Pennsylvania from the 204th session::
 
-    python billy/bin/scrape.py pa --committees --bills --session 204 -v
+    billy-scrape pa --committees --bills --session 204 -v
 
 Submitting Your Code
 ====================
