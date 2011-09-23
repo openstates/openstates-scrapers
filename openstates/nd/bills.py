@@ -72,6 +72,7 @@ class NDBillScraper(BillScraper):
 
                     #actions
                     last_date = datetime
+                    last_actor = ''
                     action_num = len(bill_page.xpath('/html/body/table[5]//tr'))
                     for actions in range(2, action_num, 2):
                         path = '//table[5]/tr[%s]/' % (actions)
@@ -79,11 +80,17 @@ class NDBillScraper(BillScraper):
                         action_actor = bill_page.xpath(path + 'td[2]')[0].text
                         action =  bill_page.xpath(path + 'td[4]')[0].text
                         
+                        if action_actor == "":
+                            action_actor = last_actor
+                        last_actor = action_actor
+                        action_actor = 'upper' if action_actor == 'senate' else 'lower' 
+
                         if action_date == ('/' + session[-4:len(session)]):
                             action_date = last_date
                         else:
                             action_date = datetime.strptime(action_date, '%m/%d/%Y')
                         last_date = action_date
+
                         curr_bill.add_action(action_actor, action, action_date, '')
 
                         #document within actions
