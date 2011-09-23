@@ -16,7 +16,7 @@ metadata = dict(
     ],
     session_details={
         '102': { 'start_date': datetime.date(2011, 1, 5),
-        'display_name': '102nd Legislature',}
+        'display_name': '102nd Legislature First Session',}
     },
     feature_flags=[],
 )
