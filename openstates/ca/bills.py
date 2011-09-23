@@ -5,7 +5,7 @@ import datetime
 from billy.conf import settings
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from openstates.ca.models import CABill
+from .models import CABill
 
 from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy import create_engine

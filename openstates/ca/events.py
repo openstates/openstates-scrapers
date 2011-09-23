@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from billy.conf import settings
 from billy.scrape.events import EventScraper, Event
-from openstates.ca.models import CACommitteeHearing, CALocation
+from .models import CACommitteeHearing, CALocation
 
 from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy import create_engine

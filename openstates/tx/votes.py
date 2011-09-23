@@ -5,7 +5,7 @@ import urlparse
 import datetime
 
 from billy.scrape.votes import VoteScraper, Vote
-from openstates.tx.utils import parse_ftp_listing
+from .utils import parse_ftp_listing
 
 import lxml.etree
 

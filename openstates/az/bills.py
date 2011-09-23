@@ -3,8 +3,8 @@ import re
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from openstates.az import utils
-from openstates.az.action_utils import get_action_type, get_verbose_action
+from . import utils
+from .action_utils import get_action_type, get_verbose_action
 
 from lxml import html
 

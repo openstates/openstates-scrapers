@@ -1,6 +1,5 @@
 from datetime import datetime
-from openstates.nj import metadata
-from openstates.nj.utils import chamber_name, DBFMixin
+from .utils import chamber_name, DBFMixin
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import VoteScraper, Vote
 

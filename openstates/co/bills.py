@@ -1,7 +1,7 @@
 from billy.scrape import ScrapeError, NoDataForPeriod
 from billy.scrape.votes import Vote
 from billy.scrape.bills import BillScraper, Bill
-from openstates.co.utils import year_from_session, BASE_URL
+from .utils import year_from_session, BASE_URL
 
 import lxml.html
 import re

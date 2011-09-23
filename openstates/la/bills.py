@@ -7,7 +7,6 @@ from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import pdf_to_lxml
-from openstates.la import metadata
 
 import lxml.html
 
@@ -19,7 +18,7 @@ class LABillScraper(BillScraper):
         types = {'upper': ['SB', 'SR', 'SCR'], 'lower': ['HB', 'HR', 'HCR']}
 
         try:
-            s_id = metadata["session_details"][session]['_id']
+            s_id = self.metadata["session_details"][session]['_id']
         except KeyError:
             s_id = session[2:4] + "rs"
 

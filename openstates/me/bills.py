@@ -1,7 +1,6 @@
 import datetime
 
-from openstates.me import metadata
-from openstates.me.utils import chamber_name
+from .utils import chamber_name
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import VoteScraper, Vote
 

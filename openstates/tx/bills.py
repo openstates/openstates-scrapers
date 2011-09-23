@@ -7,7 +7,7 @@ from billy.utils import urlescape
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 
-from openstates.tx.utils import chamber_name, parse_ftp_listing
+from .utils import chamber_name, parse_ftp_listing
 
 import lxml.etree
 

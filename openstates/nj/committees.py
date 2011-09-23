@@ -2,7 +2,7 @@ import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
-from openstates.nj.utils import clean_committee_name, DBFMixin
+from .utils import clean_committee_name, DBFMixin
 
 import lxml.etree
 from dbfpy import dbf

@@ -4,7 +4,7 @@ from billy.utils import urlescape
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import (LegislatorScraper, Legislator,
                                             Person)
-from openstates.tx.utils import clean_committee_name
+from .utils import clean_committee_name
 
 import lxml.html
 

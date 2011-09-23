@@ -2,8 +2,7 @@ import re
 from datetime import datetime
 from collections import defaultdict
 
-from openstates.nv import metadata
-from openstates.nv.utils import chamber_name, parse_ftp_listing
+from .utils import chamber_name, parse_ftp_listing
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import VoteScraper, Vote
 

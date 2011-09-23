@@ -1,7 +1,7 @@
 from nose.tools import *
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.mo.legislators import MOLegislatorScraper
+from ..legislators import MOLegislatorScraper
 
 import urllib2
 import contextlib

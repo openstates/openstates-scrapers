@@ -130,6 +130,6 @@ class AZTermScraper(Scraper):
             session_file.close()
         
 if __name__ == '__main__':
-    from openstates.az import metadata
+    from . import metadata
     scraper = AZTermScraper(metadata)
     scraper.scrape_session_details()

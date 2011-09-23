@@ -4,7 +4,7 @@ import htmlentitydefs
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.nj.utils import clean_committee_name, DBFMixin
+from .utils import clean_committee_name, DBFMixin
 
 import scrapelib
 from dbfpy import dbf

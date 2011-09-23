@@ -4,7 +4,7 @@ import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.nv.utils import clean_committee_name
+from .utils import clean_committee_name
 
 import lxml.etree
 import urllib

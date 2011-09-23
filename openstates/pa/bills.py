@@ -3,10 +3,8 @@ import datetime
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from openstates.pa.utils import (bill_abbr,
-                                 parse_action_date,
-                                 bill_list_url, history_url, info_url,
-                                 vote_url)
+from .utils import (bill_abbr, parse_action_date, bill_list_url, history_url,
+                    info_url, vote_url)
 
 import lxml.html
 

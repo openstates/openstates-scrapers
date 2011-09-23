@@ -3,7 +3,6 @@ import datetime
 from collections import defaultdict
 
 from billy.scrape.bills import BillScraper, Bill
-from openstates.ky import metadata
 
 import lxml.html
 
@@ -48,7 +47,7 @@ class KYBillScraper(BillScraper):
     def scrape(self, chamber, session):
         self.scrape_subjects(session)
         self.scrape_session(chamber, session)
-        for sub in metadata['session_details'][session].get('sub_sessions', []):
+        for sub in self.metadata['session_details'][session].get('sub_sessions', []):
             self.scrape_session(chamber, sub)
 
     def scrape_session(self, chamber, session):

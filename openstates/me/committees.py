@@ -4,7 +4,7 @@ import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
-from openstates.me.utils import clean_committee_name
+from .utils import clean_committee_name
 
 import lxml.etree, lxml.html
 import xlrd

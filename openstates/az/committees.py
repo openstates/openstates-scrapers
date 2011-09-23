@@ -1,7 +1,7 @@
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 from lxml import etree, html
-from openstates.az import utils
+from . import utils
 from scrapelib import HTTPError
 import re, datetime
 

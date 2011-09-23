@@ -2,7 +2,7 @@ import os
 
 from billy.conf import settings
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.ca.models import CALegislator
+from .models import CALegislator
 
 from sqlalchemy.orm import sessionmaker, relation, backref
 from sqlalchemy import create_engine

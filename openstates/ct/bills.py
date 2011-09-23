@@ -12,7 +12,7 @@ except ImportError:
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from openstates.ct.utils import parse_directory_listing
+from .utils import parse_directory_listing
 
 import lxml.html
 
