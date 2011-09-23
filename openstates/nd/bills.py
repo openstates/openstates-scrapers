@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import re
 import lxml.html
 from billy.scrape import NoDataForPeriod, ScrapeError
@@ -41,6 +41,7 @@ class NDBillScraper(BillScraper):
                 bills_url_dict[bill_id] = bill_url
                 bills_id_dict[bill_id] = bill
 
+            #bill details page
             for bill_keys in bills_url_dict.keys():
                 url = bills_url_dict[bill_keys]
                 curr_bill = bills_id_dict[bill_keys]
@@ -68,4 +69,26 @@ class NDBillScraper(BillScraper):
                             #title
                             title = info.strip()
                             curr_bill["title"] = title
+
+                    #actions
+                    last_date = datetime
+                    action_num = len(bill_page.xpath('/html/body/table[5]//tr'))
+                    for actions in range(2, action_num, 2):
+                        path = '//table[5]/tr[%s]/' % (actions)
+                        action_date = bill_page.xpath(path + 'th')[0].text.strip() + '/' + session[-4:len(session)]
+                        action_actor = bill_page.xpath(path + 'td[2]')[0].text
+                        action =  bill_page.xpath(path + 'td[4]')[0].text
+                        
+                        if action_date == ('/' + session[-4:len(session)]):
+                            action_date = last_date
+                        else:
+                            action_date = datetime.strptime(action_date, '%m/%d/%Y')
+                        last_date = action_date
+                        curr_bill.add_action(action_actor, action, action_date, '')
+
+                        #document within actions
+                        doc_num_pos = len(bill_page.xpath(path + 'td'))
+                        if doc_num_pos >5:
+                            doc_name = bill_page.xpath(path + 'td[6]/a')[0].attrib['href']
+                            doc_url = url[0: url.find('bill')].replace('///', '/') + doc_name[3:len(doc_name)]
                 self.save_bill(curr_bill)
