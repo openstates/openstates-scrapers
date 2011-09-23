@@ -1,3 +1,5 @@
+billy>=0.9.1
+
 lxml>=2.2
 feedparser>=4.1
 pytz>=2010l
