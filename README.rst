@@ -3,8 +3,8 @@ The Open State Project collects and makes available data about state legislative
 Links
 =====
 
-* `Open State Project API <http://openstates.sunlightlabs.com/api/>`_
-* `Contributing Guidelines <http://openstates.sunlightlabs.com/contributing/>`_
+* `Open State Project API <http://openstates.org/api/>`_
+* `Contributing Guidelines <http://openstates.org/contributing/>`_
 * `Code on GitHub <http://github.com/sunlightlabs/openstates/>`_
 * `Open State Project Google Group <http://groups.google.com/group/fifty-state-project>`_
 * `Sunlight Labs <http://sunlightlabs.com>`_

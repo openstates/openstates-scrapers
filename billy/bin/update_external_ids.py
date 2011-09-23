@@ -112,7 +112,7 @@ def update_missing_ids(abbr, sunlight_key):
     update_transparencydata_legislators(meta, sunlight_key)
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         description=('attempt to match legislators with ids in other'
                      'relevant APIs'),
@@ -131,3 +131,7 @@ if __name__ == '__main__':
     for abbr in args.abbrs:
         update_missing_ids(abbr, settings.SUNLIGHT_SERVICES_KEY)
         time.sleep(30)
+
+
+if __name__ == '__main__':
+    main()

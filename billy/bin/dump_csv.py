@@ -170,7 +170,7 @@ def upload(abbr, filename):
     print('uploaded to %s' % s3_url)
 
 
-if __name__ == '__main__':
+def main():
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -204,3 +204,7 @@ if __name__ == '__main__':
                 raise Warning('Unable to --upload if --nozip is specified')
             else:
                 upload(abbr, args.file)
+
+
+if __name__ == '__main__':
+    main()

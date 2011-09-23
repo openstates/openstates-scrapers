@@ -7,9 +7,9 @@ Billy is primarily composed of a handful of scripts that help facilitate the scr
 Scraping
 ========
 
-.. program:: scrape.py
+.. program:: billy-scrape
 
-:program:`scrape.py` <STATE>
+:program:`billy-scrape` <STATE>
 ----------------------------
 
 .. option:: STATE

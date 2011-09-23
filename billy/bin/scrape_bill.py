@@ -32,56 +32,57 @@ def _run_scraper(options, metadata):
 
 
 def main():
-
-    parser = argparse.ArgumentParser(
-        description='Scrape data for single bill, saving data to disk.',
-        parents=[base_arg_parser],
-    )
-
-    parser.add_argument('module', type=str, help='scraper module (eg. nc)')
-    parser.add_argument('chamber', type=str, help='chamber for bill to scrape')
-    parser.add_argument('session', type=str, help='session for bill to scrape')
-    parser.add_argument('bill_id', type=str, help='bill_id to scrape')
-
-    parser.add_argument('--strict', action='store_true', dest='strict',
-                        default=False, help="fail immediately when"
-                        "encountering validation warning")
-    parser.add_argument('-n', '--no_cache', action='store_true',
-                        dest='no_cache', help="don't use web page cache")
-    parser.add_argument('--fastmode', help="scrape in fast mode",
-                        action="store_true", default=False)
-    parser.add_argument('-r', '--rpm', action='store', type=int, dest='rpm',
-                        default=60),
-    parser.add_argument('--import', dest='do_import',
-                        help="import bill after scrape",
-                        action="store_true", default=False)
-
-    args = parser.parse_args()
-
-    settings.update(args)
-
-    # set up search path
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__),
-                                    '../../openstates'))
-
-    # get metadata
-    metadata = __import__(args.module, fromlist=['metadata']).metadata
-    abbr = metadata['abbreviation']
-
-    # configure logger
-    configure_logging(args.verbose, abbr)
-
-    args.output_dir = os.path.join(settings.BILLY_DATA_DIR, abbr)
-
-    _run_scraper(args, metadata)
-
-    if args.do_import:
-        import_bills(abbr, settings.BILLY_DATA_DIR)
-
-
-if __name__ == '__main__':
     try:
-        result = main()
+        parser = argparse.ArgumentParser(
+            description='Scrape data for single bill, saving data to disk.',
+            parents=[base_arg_parser],
+        )
+
+        parser.add_argument('module', type=str, help='scraper module (eg. nc)')
+        parser.add_argument('chamber', type=str,
+                            help='chamber for bill to scrape')
+        parser.add_argument('session', type=str,
+                            help='session for bill to scrape')
+        parser.add_argument('bill_id', type=str, help='bill_id to scrape')
+
+        parser.add_argument('--strict', action='store_true', dest='strict',
+                            default=False, help="fail immediately when"
+                            "encountering validation warning")
+        parser.add_argument('-n', '--no_cache', action='store_true',
+                            dest='no_cache', help="don't use web page cache")
+        parser.add_argument('--fastmode', help="scrape in fast mode",
+                            action="store_true", default=False)
+        parser.add_argument('-r', '--rpm', action='store', type=int,
+                            dest='rpm', default=60),
+        parser.add_argument('--import', dest='do_import',
+                            help="import bill after scrape",
+                            action="store_true", default=False)
+
+        args = parser.parse_args()
+
+        settings.update(args)
+
+        # set up search path
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__),
+                                        '../../openstates'))
+
+        # get metadata
+        metadata = __import__(args.module, fromlist=['metadata']).metadata
+        abbr = metadata['abbreviation']
+
+        # configure logger
+        configure_logging(args.verbose, abbr)
+
+        args.output_dir = os.path.join(settings.BILLY_DATA_DIR, abbr)
+
+        _run_scraper(args, metadata)
+
+        if args.do_import:
+            import_bills(abbr, settings.BILLY_DATA_DIR)
     except ScrapeError as e:
         print 'Error:', e
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

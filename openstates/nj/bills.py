@@ -84,6 +84,7 @@ class NJBillScraper(BillScraper, DBFMixin):
     _com_vote_motions = {
         'r w/o rec.': 'Reported without recommendation',
         'r w/o rec. ACS': 'Reported without recommendation out of Assembly committee as a substitute',
+        'r w/o rec. SCS': 'Reported without recommendation out of Senate committee as a substitute',
         'r w/o rec. Sca': 'Reported without recommendation out of Senate committee with amendments',
         'r/ACS': 'Reported out of Assembly committee as a substitute',
         'r/Aca': 'Reported out of Assembly committee with amendments',

@@ -24,7 +24,8 @@ def retire_legislator(leg_id, date):
     print('deactivating legislator {0}'.format(leg_id))
     deactivate_legislators(term, abbr, level)
 
-if __name__ == '__main__':
+
+def main():
     parser = argparse.ArgumentParser(
         description='set a legislators term end_date',
         parents=[base_arg_parser],
@@ -40,3 +41,7 @@ if __name__ == '__main__':
     settings.update(args)
 
     retire_legislator(args.leg_id, args.date)
+
+
+if __name__ == '__main__':
+    main()

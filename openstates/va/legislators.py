@@ -29,6 +29,9 @@ class VALegislatorScraper(LegislatorScraper):
             doc = lxml.html.fromstring(html)
 
             for link in doc.xpath('//div[@class="%s"]/ul/li/a' % column):
+                if 'resigned' in link.text:
+                    self.log('skipping %s' % link.text)
+                    continue
                 self.fetch_member(link.get('href'), link.text, term, chamber)
 
     def fetch_member(self, url, name, term, chamber):

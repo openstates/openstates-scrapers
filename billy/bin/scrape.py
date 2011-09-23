@@ -97,127 +97,127 @@ def _run_scraper(scraper_type, options, metadata):
 
 
 def main():
-
-    parser = argparse.ArgumentParser(
-        description='Scrape legislative data, saving data to disk as JSON.',
-        parents=[base_arg_parser],
-    )
-
-    parser.add_argument('module', type=str, help='scraper module (eg. nc)')
-    parser.add_argument('-s', '--session', action='append', dest='sessions',
-                        help='session(s) to scrape')
-    parser.add_argument('-t', '--term', action='append', dest='terms',
-                        help='term(s) to scrape')
-    parser.add_argument('--upper', action='store_true', dest='upper',
-                        default=False, help='scrape upper chamber')
-    parser.add_argument('--lower', action='store_true', dest='lower',
-                        default=False, help='scrape lower chamber')
-    parser.add_argument('--bills', action='store_true', dest='bills',
-                        default=False, help="scrape bill data")
-    parser.add_argument('--legislators', action='store_true',
-                        dest='legislators', default=False,
-                        help="scrape legislator data")
-    parser.add_argument('--committees', action='store_true', dest='committees',
-                        default=False, help="scrape committee data")
-    parser.add_argument('--votes', action='store_true', dest='votes',
-                        default=False, help="scrape vote data")
-    parser.add_argument('--events', action='store_true', dest='events',
-                        default=False, help='scrape event data')
-    parser.add_argument('--alldata', action='store_true', dest='alldata',
-                        default=False,
-                        help="scrape all available types of data")
-    parser.add_argument('--strict', action='store_true', dest='strict',
-                        default=False, help="fail immediately when"
-                        "encountering validation warning")
-    parser.add_argument('-n', '--no_cache', action='store_true',
-                        dest='no_cache', help="don't use web page cache")
-    parser.add_argument('--fastmode', help="scrape in fast mode",
-                        action="store_true", default=False)
-    parser.add_argument('-r', '--rpm', action='store', type=int, dest='rpm',
-                        default=60)
-    parser.add_argument('--timeout', action='store', type=int, dest='timeout',
-                        default=10)
-
-    args = parser.parse_args()
-
-    settings.update(args)
-
-    # set up search path
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__),
-                                    '../../openstates'))
-
-    # get metadata
-    metadata = __import__(args.module, fromlist=['metadata']).metadata
-
-    configure_logging(args.verbose, args.module)
-
-    # make output dir
-    args.output_dir = os.path.join(settings.BILLY_DATA_DIR,
-                                   metadata['abbreviation'])
     try:
-        os.makedirs(args.output_dir)
-    except OSError as e:
-        if e.errno != 17:
-            raise e
+        parser = argparse.ArgumentParser(
+          description='Scrape legislative data, saving data to disk as JSON.',
+          parents=[base_arg_parser],
+        )
 
-    # write metadata
-    try:
-        schema_path = os.path.join(os.path.split(__file__)[0],
-                                   '../schemas/metadata.json')
-        schema = json.load(open(schema_path))
+        parser.add_argument('module', type=str, help='scraper module (eg. nc)')
+        parser.add_argument('-s', '--session', action='append',
+                            dest='sessions', help='session(s) to scrape')
+        parser.add_argument('-t', '--term', action='append', dest='terms',
+                            help='term(s) to scrape')
+        parser.add_argument('--upper', action='store_true', dest='upper',
+                            default=False, help='scrape upper chamber')
+        parser.add_argument('--lower', action='store_true', dest='lower',
+                            default=False, help='scrape lower chamber')
+        parser.add_argument('--bills', action='store_true', dest='bills',
+                            default=False, help="scrape bill data")
+        parser.add_argument('--legislators', action='store_true',
+                            dest='legislators', default=False,
+                            help="scrape legislator data")
+        parser.add_argument('--committees', action='store_true',
+                            dest='committees', default=False,
+                            help="scrape committee data")
+        parser.add_argument('--votes', action='store_true', dest='votes',
+                            default=False, help="scrape vote data")
+        parser.add_argument('--events', action='store_true', dest='events',
+                            default=False, help='scrape event data')
+        parser.add_argument('--alldata', action='store_true', dest='alldata',
+                            default=False,
+                            help="scrape all available types of data")
+        parser.add_argument('--strict', action='store_true', dest='strict',
+                            default=False, help="fail immediately when"
+                            "encountering validation warning")
+        parser.add_argument('-n', '--no_cache', action='store_true',
+                            dest='no_cache', help="don't use web page cache")
+        parser.add_argument('--fastmode', help="scrape in fast mode",
+                            action="store_true", default=False)
+        parser.add_argument('-r', '--rpm', action='store', type=int,
+                            dest='rpm', default=60)
+        parser.add_argument('--timeout', action='store', type=int,
+                            dest='timeout', default=10)
 
-        validator = DatetimeValidator()
-        validator.validate(metadata, schema)
-    except ValueError as e:
-        logging.getLogger('billy').warning('metadata validation error: '
-                                                 + str(e))
+        args = parser.parse_args()
 
-    with open(os.path.join(args.output_dir, 'metadata.json'), 'w') as f:
-        json.dump(metadata, f, cls=JSONDateEncoder)
+        settings.update(args)
 
-    # determine time period to run for
-    if args.terms:
-        for term in metadata['terms']:
-            if term in args.terms:
-                args.sessions.extend(term['sessions'])
-    args.sessions = set(args.sessions or [])
+        # set up search path
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__),
+                                        '../../openstates'))
 
-    # determine chambers
-    args.chambers = []
-    if args.upper:
-        args.chambers.append('upper')
-    if args.lower:
-        args.chambers.append('lower')
-    if not args.chambers:
-        args.chambers = ['upper', 'lower']
+        # get metadata
+        metadata = __import__(args.module, fromlist=['metadata']).metadata
 
-    if not (args.bills or args.legislators or args.votes or
-            args.committees or args.events or args.alldata):
-        raise ScrapeError("Must specify at least one of --bills, "
-                          "--legislators, --committees, --votes, --events, "
-                          "--alldata")
+        configure_logging(args.verbose, args.module)
 
-    if args.alldata:
-        args.bills = True
-        args.legislators = True
-        args.votes = True
-        args.committees = True
+        # make output dir
+        args.output_dir = os.path.join(settings.BILLY_DATA_DIR,
+                                       metadata['abbreviation'])
+        try:
+            os.makedirs(args.output_dir)
+        except OSError as e:
+            if e.errno != 17:
+                raise e
 
-    if args.legislators:
-        _run_scraper('legislators', args, metadata)
-    if args.committees:
-        _run_scraper('committees', args, metadata)
-    if args.votes:
-        _run_scraper('votes', args, metadata)
-    if args.events:
-        _run_scraper('events', args, metadata)
-    if args.bills:
-        _run_scraper('bills', args, metadata)
+        # write metadata
+        try:
+            schema_path = os.path.join(os.path.split(__file__)[0],
+                                       '../schemas/metadata.json')
+            schema = json.load(open(schema_path))
 
+            validator = DatetimeValidator()
+            validator.validate(metadata, schema)
+        except ValueError as e:
+            logging.getLogger('billy').warning('metadata validation error: '
+                                                     + str(e))
 
-if __name__ == '__main__':
-    try:
-        result = main()
+        with open(os.path.join(args.output_dir, 'metadata.json'), 'w') as f:
+            json.dump(metadata, f, cls=JSONDateEncoder)
+
+        # determine time period to run for
+        if args.terms:
+            for term in metadata['terms']:
+                if term in args.terms:
+                    args.sessions.extend(term['sessions'])
+        args.sessions = set(args.sessions or [])
+
+        # determine chambers
+        args.chambers = []
+        if args.upper:
+            args.chambers.append('upper')
+        if args.lower:
+            args.chambers.append('lower')
+        if not args.chambers:
+            args.chambers = ['upper', 'lower']
+
+        if not (args.bills or args.legislators or args.votes or
+                args.committees or args.events or args.alldata):
+            raise ScrapeError("Must specify at least one of --bills, "
+                              "--legislators, --committees, --votes, --events,"
+                              " --alldata")
+
+        if args.alldata:
+            args.bills = True
+            args.legislators = True
+            args.votes = True
+            args.committees = True
+
+        if args.legislators:
+            _run_scraper('legislators', args, metadata)
+        if args.committees:
+            _run_scraper('committees', args, metadata)
+        if args.votes:
+            _run_scraper('votes', args, metadata)
+        if args.events:
+            _run_scraper('events', args, metadata)
+        if args.bills:
+            _run_scraper('bills', args, metadata)
     except ScrapeError as e:
         print 'Error:', e
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

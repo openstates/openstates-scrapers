@@ -126,19 +126,19 @@ All other parameters are optional and can be combined as needed.
 ``subject``
     filter by bills that are about a given subject. If multiple subject
     parameters are supplied then only bills that match all of them
-    will be returned. See `list of subjects <http://openstates.sunlightlabs.com/categorization/#subjects>`_
+    will be returned. See `list of subjects <http://openstates.org/categorization/#subjects>`_
 ``sponsor_id``
     only return bills sponsored by the legislator with the given id (corresponds to `leg_id`)
 
 URL Format
 ^^^^^^^^^^
 
-`http://openstates.sunlightlabs.com/api/v1/bills/?{SEARCH-PARAMS}&apikey={YOUR_API_KEY}`
+`http://openstates.org/api/v1/bills/?{SEARCH-PARAMS}&apikey={YOUR_API_KEY}`
 
 Example
 ^^^^^^^
 
-http://openstates.sunlightlabs.com/api/v1/bills/?q=agriculture&state=vt&chamber=upper&apikey=YOUR_API_KEY
+http://openstates.org/api/v1/bills/?q=agriculture&state=vt&chamber=upper&apikey=YOUR_API_KEY
 
 .. raw:: html
 
@@ -152,16 +152,16 @@ This endpoint exists to get all information about a bill given its state/session
 URL Format
 ^^^^^^^^^^
 
-`http://openstates.sunlightlabs.com/api/v1/bills/{STATE-ABBREV}/{SESSION}/{BILL-ID}h?apikey={YOUR_API_KEY}`
+`http://openstates.org/api/v1/bills/{STATE-ABBREV}/{SESSION}/{BILL-ID}h?apikey={YOUR_API_KEY}`
 
 alternatively, if BILL-ID is ambiguous, chamber may be prepended as part of the path:
 
-`http://openstates.sunlightlabs.com/api/v1/bills/{STATE-ABBREV}/{SESSION}/{CHAMBER}/{BILL-ID}h?apikey={YOUR_API_KEY}`
+`http://openstates.org/api/v1/bills/{STATE-ABBREV}/{SESSION}/{CHAMBER}/{BILL-ID}h?apikey={YOUR_API_KEY}`
 
 Example
 ^^^^^^^
 
-http://openstates.sunlightlabs.com/api/v1/bills/ca/20092010/AB%20667/?apikey=YOUR_API_KEY
+http://openstates.org/api/v1/bills/ca/20092010/AB%20667/?apikey=YOUR_API_KEY
 
 .. raw:: html
 

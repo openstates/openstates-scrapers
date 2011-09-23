@@ -35,7 +35,8 @@ def match_names(abbr, term):
                                                        vote['chamber'])
             db.bills.save(bill, safe=True)
 
-if __name__ == '__main__':
+
+def main():
     parser = argparse.ArgumentParser(
         description='run name matching against a session',
         parents=[base_arg_parser],
@@ -49,3 +50,7 @@ if __name__ == '__main__':
     settings.update(args)
 
     match_names(args.abbr, args.term)
+
+
+if __name__ == '__main__':
+    main()
