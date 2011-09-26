@@ -46,22 +46,18 @@ Once you have the code checked out you'll need to set up your environment.
 
 (It is strongly recommended that you use both `virtualenv <http://pypi.python.org/pypi/virtualenv>` and `pip <http://pypi.python.org/pypi/pip>`_ if you aren't using these tools adjust these steps to suit your environment.)
 
-The first thing to ensure is that the base ``openstates`` directory has been
-added to your path.  The easiest way to do this is by running 
-``python setup.py develop`` from within this directory.
-
-The preferred library for scraping is `lxml <http://lxml.de>`_ which 
-offers robust support for several different methods of scraping.  For cases where lxml is not
-an option (such as scraping from Text or PDF files) other libraries may be used.
-
 To install all recommended libraries::
 
-    pip install -r ./billy/requirements.txt
+    pip install -r requirements.txt
 
 Writing a Scraper
 =================
 
 All state scrapers should exist within a subdirectory of ``openstates/`` with the two letter postal abbreviation of your state (ie. wy for wyoming).
+
+The preferred library for scraping is `lxml <http://lxml.de>`_ which 
+offers robust support for several different methods of scraping.  For cases where lxml is not
+an option (such as scraping from Text or PDF files) other libraries may be used.
 
 All code specific to a state should be within this directory, common files are:
 
