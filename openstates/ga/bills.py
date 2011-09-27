@@ -102,7 +102,7 @@ class GABillScraper(BillScraper):
             if not type.startswith(start_letter):
                 continue
 
-            bill_id = type + bxml.get('Num')
+            bill_id = type + bxml.get('Num') + bxml.get('Suffix')
             if type in ('HB', 'SB'):
                 type = 'bill'
             elif type in ('HR', 'SR'):
