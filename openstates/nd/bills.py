@@ -37,7 +37,8 @@ class NDBillScraper(BillScraper):
             for bills in list_page.xpath('/html/body/table[3]/tr/th/a'):
                 bill_id = bills.text
                 bill_url = bill_list_url[0: -26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
-                bill = Bill(session, chamber, bill_id, title)
+                bill_type = self.bill_type_info(bill_id)
+                bill = Bill(session, chamber, bill_id, title, bill_type=bill_type)
                 bills_url_dict[bill_id] = bill_url
                 bills_id_dict[bill_id] = bill
 
@@ -124,3 +125,15 @@ class NDBillScraper(BillScraper):
         else:
             vote_type = 'other'
         return vote_type
+
+    #Returns bill type
+    def bill_type_info(self, bill_id):
+        if (int(bill_id) > 1000) and (int(bill_id) < 3000):
+            bill_type = 'bill'
+        elif (int(bill_id) > 3000) and (int(bill_id) < 5000):
+            bill_type = 'concurrent resolution'
+        elif(int(bill_id) > 5000) and (int(bill_id) < 7000):
+            bill_type = 'resolution'
+        elif (int(bill_id) > 7000) and (int(bill_id) < 9000):
+            bill_type = 'memorial'
+        return bill_type
