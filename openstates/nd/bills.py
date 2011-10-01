@@ -1,8 +1,8 @@
 from datetime import datetime
-import re
 import lxml.html
 from billy.scrape import NoDataForPeriod, ScrapeError
 from billy.scrape.bills import Bill, BillScraper
+from billy.scrape.votes import Vote
 
 class NDBillScraper(BillScraper):
     """
@@ -90,8 +90,19 @@ class NDBillScraper(BillScraper):
                         else:
                             action_date = datetime.strptime(action_date, '%m/%d/%Y')
                         last_date = action_date
-
                         curr_bill.add_action(action_actor, action, action_date, '')
+
+
+                        #votes
+                        if "yeas" in action:
+                            yes_count = int(action.split()[action.split().index('yeas')+1])
+                            no_count = action.split()[action.split().index('nays')+1]
+                            no_count = int(no_count[0:-1]) if ',' in no_count else int(no_count)
+                            passed = True if yes_count > no_count else False
+                            vote_type = self.vote_type_info(action)
+
+                            vote = Vote(action_actor, action_date, action, passed, yes_count, no_count, 0, vote_type)
+                            curr_bill.add_vote(vote)
 
                         #document within actions
                         doc_num_pos = len(bill_page.xpath(path + 'td'))
@@ -99,3 +110,17 @@ class NDBillScraper(BillScraper):
                             doc_name = bill_page.xpath(path + 'td[6]/a')[0].attrib['href']
                             doc_url = url[0: url.find('bill')].replace('///', '/') + doc_name[3:len(doc_name)]
                 self.save_bill(curr_bill)
+
+    #Returns action type
+    def vote_type_info(self, action):
+        if "Second reading" in action:
+            vote_type = 'reading:2'
+        elif "reading" in action:
+            vote_type = 'reading:1'
+        elif "Override" in action:
+            vote_type = 'veto_override'
+        elif "Amendment" in action:
+            vote_type = 'amendment'
+        else:
+            vote_type = 'other'
+        return vote_type
