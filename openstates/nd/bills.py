@@ -12,7 +12,12 @@ class NDBillScraper(BillScraper):
     state = 'nd'
     site_root = 'http://www.legis.nd.gov'
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber, term):
+        self.validate_term(term, latest_only=True)
+        
+        if int(term) == 62:
+            start_year = 2011
+
         # URL building
         if chamber == 'upper':
             url_chamber_name = 'senate'
@@ -21,11 +26,13 @@ class NDBillScraper(BillScraper):
             url_chamber_name = 'house'
             norm_chamber_name = 'House'
 
-        assembly_url = '/assembly/%s' % session
+        assembly_url = '/assembly/%s-%s' % (term, start_year)
 
         chamber_url = '/bill-text/%s-bill.html' % (url_chamber_name)
 
         bill_list_url = self.site_root + assembly_url + chamber_url
+
+        print bill_list_url
 
         with self.urlopen(bill_list_url) as html:
             list_page = lxml.html.fromstring(html)
@@ -38,7 +45,7 @@ class NDBillScraper(BillScraper):
                 bill_id = bills.text
                 bill_url = bill_list_url[0: -26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
                 bill_type = self.bill_type_info(bill_id)
-                bill = Bill(session, chamber, bill_id, title, bill_type=bill_type)
+                bill = Bill(term, chamber, bill_id, title, bill_type=bill_type)
                 bills_url_dict[bill_id] = bill_url
                 bills_id_dict[bill_id] = bill
 
@@ -77,7 +84,7 @@ class NDBillScraper(BillScraper):
                     action_num = len(bill_page.xpath('/html/body/table[5]//tr'))
                     for actions in range(2, action_num, 2):
                         path = '//table[5]/tr[%s]/' % (actions)
-                        action_date = bill_page.xpath(path + 'th')[0].text.strip() + '/' + session[-4:len(session)]
+                        action_date = bill_page.xpath(path + 'th')[0].text.strip() + '/' + str(start_year)
                         action_actor = bill_page.xpath(path + 'td[2]')[0].text
                         action =  bill_page.xpath(path + 'td[4]')[0].text
                         
@@ -86,7 +93,7 @@ class NDBillScraper(BillScraper):
                         last_actor = action_actor
                         action_actor = 'upper' if action_actor == 'senate' else 'lower' 
 
-                        if action_date == ('/' + session[-4:len(session)]):
+                        if action_date == ('/' + str(start_year)):
                             action_date = last_date
                         else:
                             action_date = datetime.strptime(action_date, '%m/%d/%Y')
