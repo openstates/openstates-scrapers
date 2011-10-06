@@ -120,6 +120,7 @@ class GABillScraper(BillScraper):
 
             for sponsor in bxml.xpath('Sponsor'):
                 sponsor_name, code = sponsor.text.rsplit(' ', 1)
+                sponsor_name = sponsor_name.replace(',', ', ')
                 bill.add_sponsor(sponsor_type_dict[sponsor.get('Type')],
                                  sponsor_name, _code=code)
 
