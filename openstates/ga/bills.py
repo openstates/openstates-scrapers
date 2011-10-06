@@ -119,7 +119,7 @@ class GABillScraper(BillScraper):
             bill.add_source(summary_url)
 
             for sponsor in bxml.xpath('Sponsor'):
-                sponsor_name, code = sponsor.text.split(' ')
+                sponsor_name, code = sponsor.text.rsplit(' ', 1)
                 bill.add_sponsor(sponsor_type_dict[sponsor.get('Type')],
                                  sponsor_name, _code=code)
 
