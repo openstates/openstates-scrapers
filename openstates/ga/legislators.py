@@ -70,7 +70,7 @@ class GALegislatorScraper(LegislatorScraper):
 
                 # Parse Party
                 if 'Democrat' in name_and_party_tag:
-                    party = "Democrat"
+                    party = "Democratic"
                 elif 'Republican' in name_and_party_tag:
                     party = "Republican"
                 elif "Independent" == name_and_party_tag:
