@@ -78,8 +78,14 @@ class GALegislatorScraper(LegislatorScraper):
 
                 # Parse name
                 name_parts = name_and_party_tag.split()
-                last_name = name_parts[0].strip(",")
-                first_name = name_parts[1]
+                if len(name_parts) == 2:
+                    last_name = name_parts[0].strip(",")
+                    first_name = name_parts[1]
+                    suffix = None
+                elif len(name_parts) == 3:
+                    last_name = name_parts[0].strip(",")
+                    suffix = name_parts[1].strip(",")
+                    first_name = name_parts[2]
 
                 # Parse district
                 district = district_tag.strip()
@@ -93,6 +99,7 @@ class GALegislatorScraper(LegislatorScraper):
                                         first_name + " " + last_name,
                                         first_name = first_name,
                                         last_name = last_name,
+                                        suffix = suffix,
                                         party=party,
                                         city=city)
                 legislator.add_source(url)
