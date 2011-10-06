@@ -40,7 +40,7 @@ class GACommitteeScraper(CommitteeScraper):
 
     def scrape_house(self, url):
         html = self.urlopen(url)
-        doc = lxml.html.fromstring(url)
+        doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
         for a in doc.xpath('//td/a'):
@@ -48,13 +48,16 @@ class GACommitteeScraper(CommitteeScraper):
             # blank entries in table
             if not com_name:
                 continue
+            if 'Reapportionment' in com_name or 'Horse Racing' in com_name:
+                self.warning('skipping %s, known to be problematic' % com_name)
+                continue
             com_url = a.get('href')
             com_html = self.urlopen(com_url)
-            com_data = lxml.html.fromstring(com_html)
+            com_doc = lxml.html.fromstring(com_html)
 
             com = Committee('lower', com_name)
 
-            for td in doc.xpath('//table[@id="commtable"]')[1].xpath('.//td'):
+            for td in com_doc.xpath('//table[@id="commtable"]')[1].xpath('.//td'):
                 leg = td.xpath('.//a/text()')
                 if leg:
                     leg = leg[0]
