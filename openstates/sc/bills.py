@@ -477,6 +477,17 @@ class SCBillScraper(BillScraper):
         bill = Bill(session, chamber, bill_id, bill_summary,
                     type=bill_type(bill_summary))
 
+        # find versions
+        doc = lxml.html.fromstring(page)
+        doc.make_links_absolute(bill_detail_url)
+        version_url = doc.xpath('//a[text()="View full text"]/@href')
+        version_html = self.urlopen(version_url)
+        version_doc = lxml.html.fromstring(version_html)
+        version_doc.make_links_absolute(bill_detail_url)
+        for version in doc.xpath('//a[contains(@href, "/prever/")]'):
+            bill.add_version(version.text, version.get('href'))
+
+        # actions
         linenum = 0
         for line in after_summary.splitlines():
             #get rid of the parenthesis
