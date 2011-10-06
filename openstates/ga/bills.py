@@ -119,8 +119,9 @@ class GABillScraper(BillScraper):
             bill.add_source(summary_url)
 
             for sponsor in bxml.xpath('Sponsor'):
+                sponsor_name, code = sponsor.text.split(' ')
                 bill.add_sponsor(sponsor_type_dict[sponsor.get('Type')],
-                                 sponsor.text)
+                                 sponsor_name, _code=code)
 
             for version in bxml.xpath('Versions/Version'):
                 # NOTE: it is possible to get PDF versions by using .get('Id')
