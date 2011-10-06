@@ -55,12 +55,11 @@ class GAVoteScraper(VoteScraper):
             for m in vxml.xpath('member'):
                 vote_letter = m.get('vote')
                 member = m.get('name')
-                member, code = member.rsplit(' ')
                 if vote_letter == 'Y':
-                    vote.yes(member, _code=code)
+                    vote.yes(member)
                 elif vote_letter == 'N':
-                    vote.no(member, _code=code)
+                    vote.no(member)
                 else:
-                    vote.other(member, _code=code)
+                    vote.other(member)
 
             self.save_vote(vote)
