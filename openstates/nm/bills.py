@@ -95,10 +95,20 @@ class NMBillScraper(BillScraper):
 
 
     def _init_mdb(self, session):
+        ftp_base = 'ftp://www.nmlegis.gov/other/'
         if session == '2011S':
             fname = 'LegInfo11S'
+            fname_re = '(\d{2}-\d{2}-\d{2}  \d{2}:\d{2}(?:A|P)M) .* (LegInfo11S.*zip)'
         else:
             raise ValueError('no zip file present for %s' % session)
+
+        # use listing to get latest modified LegInfo zip
+        listing = self.urlopen(ftp_base)
+        matches = re.findall(fname_re, listing)
+        matches = sorted([
+            (datetime.strptime(date, '%m-%d-%y  %H:%M%p'), filename)
+            for date, filename in matches])
+        remote_file = ftp_base + matches[-1][1]
 
 
         # all of the data is in this Access DB, download & retrieve it
@@ -107,7 +117,6 @@ class NMBillScraper(BillScraper):
         # if a new mdbfile or it has changed
         if getattr(self, 'mdbfile', None) != mdbfile:
             self.mdbfile = mdbfile
-            remote_file = 'ftp://www.nmlegis.gov/other/%s.zip' % fname
             fname, resp = self.urlretrieve(remote_file)
             zf = zipfile.ZipFile(fname)
             zf.extract(self.mdbfile)
@@ -252,6 +261,7 @@ class NMBillScraper(BillScraper):
             '7611': ('withdrawn from committee', 'bill:withdrawn'),
             '7612': ('withdrawn from all committees', 'bill:withdrawn'),
             '7613': ('withdrawn and tabled', 'bill:withdrawn'),
+            '7615': ('germane', 'other'),
             # 7621-7629 are same as 760*s but add the speakers table (-T)
             '7621': ("DO PASS committee report adopted, placed on Speaker's table", 'committee:passed:favorable'),
             '7622': ("DO PASS, as amended, committee report adopted, placed on Speaker's table", 'committee:passed:favorable'),
@@ -484,7 +494,7 @@ class NMBillScraper(BillScraper):
         return vote
 
     # house totals
-    HOUSE_TOTAL_RE = re.compile('\s+Absent: (\d+)\s+Yeas: (\d+)\s+Nays: (\d+)\s+Excused: (\d+)')
+    HOUSE_TOTAL_RE = re.compile('\s+Absent:\s+(\d+)\s+Yeas:\s+(\d+)\s+Nays:\s+(\d+)\s+Excused:\s+(\d+)')
 
 
     def parse_house_vote(self, url):
