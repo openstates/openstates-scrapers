@@ -174,7 +174,7 @@ class GALegislatorScraper(LegislatorScraper):
                                         chamber,
                                         district,
                                         '"Coach" Williams',
-                                        party="Democrate")
+                                        party="Democratic")
                 return legislator
 
             # See if we got to the first row, some templates don't start with their table as 'hoverTable'
@@ -186,7 +186,7 @@ class GALegislatorScraper(LegislatorScraper):
             first_row = legislator_info[0]
 
             td_elements = first_row.getchildren()[0]
-            name = td_elements[0].text_content().strip()
+            name = td_elements[0].text_content().split('\n')[0].strip()
             party = td_elements[1].text_content().strip()[0:1].upper()
             # There was some cases where the party wasn't in a <p> it was after the
             # <h2>name</h2> foo <br />, seriously wtf
