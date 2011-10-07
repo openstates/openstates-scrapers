@@ -484,7 +484,7 @@ class SCBillScraper(BillScraper):
         version_html = self.urlopen(version_url)
         version_doc = lxml.html.fromstring(version_html)
         version_doc.make_links_absolute(bill_detail_url)
-        for version in doc.xpath('//a[contains(@href, "/prever/")]'):
+        for version in version_doc.xpath('//a[contains(@href, "/prever/")]'):
             bill.add_version(version.text, version.get('href'))
 
         # actions
