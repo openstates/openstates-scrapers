@@ -262,6 +262,7 @@ class NMBillScraper(BillScraper):
             '7612': ('withdrawn from all committees', 'bill:withdrawn'),
             '7613': ('withdrawn and tabled', 'bill:withdrawn'),
             '7615': ('germane', 'other'),
+            '7616': ('germane & printed', 'other'),
             # 7621-7629 are same as 760*s but add the speakers table (-T)
             '7621': ("DO PASS committee report adopted, placed on Speaker's table", 'committee:passed:favorable'),
             '7622': ("DO PASS, as amended, committee report adopted, placed on Speaker's table", 'committee:passed:favorable'),
@@ -277,6 +278,7 @@ class NMBillScraper(BillScraper):
             '7643': ('floor substitute adopted (2 amendment)', 'other'),
             '7644': ('floor substitute adopted (3 amendment)', 'other'),
             '7645': ('motion to reconsider adopted', 'other'),
+            '7649': ('printed', 'other'),
             '7650': ('not printed %s', 'other'),
             '7652': ('not printed, not referred to committee, tabled', 'other'),
             '7654': ('referred to %s', 'committee:referred'),
