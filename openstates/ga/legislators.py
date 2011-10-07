@@ -221,16 +221,16 @@ class GALegislatorScraper(LegislatorScraper):
             except:
                 pass
 
-            facebook_url = None
+            facebook_url = ''
             try:
                 facebook_url = td_elements[5].get('href')
             except:
                 pass
 
-            photo_url = None
+            photo_url = ''
             try:
                 td_elements = first_row.getchildren()[1]
-                photo_url = td_elements[0].getchildren()[0].get('src')#.replace("../", "")
+                photo_url = td_elements[0].getchildren()[0].get('src') or ''
             except:
                 pass
 
@@ -240,7 +240,7 @@ class GALegislatorScraper(LegislatorScraper):
             phone_number = address_info.pop()
             address = " ".join(address_info)
 
-            email = None
+            email = ''
             try:
                 text_content = second_row.text_content().split('\n')
                 for content in text_content:
