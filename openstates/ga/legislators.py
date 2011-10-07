@@ -29,8 +29,8 @@ class GALegislatorScraper(LegislatorScraper):
                 #self.show_error(url, body)
                 raise
 
-    def scrape(self, chamber, term):
 
+    def scrape(self, chamber, term):
         if chamber == "upper":
             url = "http://www.senate.ga.gov/senators/en-US/SenateMembersList.aspx"
             self.scrape_upper_house(url, chamber, term)
@@ -45,6 +45,7 @@ class GALegislatorScraper(LegislatorScraper):
                 base = "http://www.legis.ga.gov/legis/%s/leg/sum/%s%s%d.htm"
 
             self.scrape_lower_house(base, chamber, term)
+
 
     def scrape_upper_house(self, url, chamber, term):
         """Scrape the 'upper' (Senate) GA House.
@@ -77,15 +78,15 @@ class GALegislatorScraper(LegislatorScraper):
                     party = "Independent"
 
                 # Parse name
-                name_parts = name_and_party_tag.split()
+                name_parts = name_and_party_tag.split('(')[0].split(', ')
                 if len(name_parts) == 2:
-                    last_name = name_parts[0].strip(",")
-                    first_name = name_parts[1]
+                    last_name = name_parts[0].strip()
+                    first_name = name_parts[1].strip()
                     suffix = None
                 elif len(name_parts) == 3:
-                    last_name = name_parts[0].strip(",")
-                    suffix = name_parts[1].strip(",")
-                    first_name = name_parts[2]
+                    last_name = name_parts[0].strip()
+                    suffix = name_parts[1].strip()
+                    first_name = name_parts[2].strip()
 
                 # Parse district
                 district = district_tag.strip()
