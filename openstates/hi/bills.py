@@ -18,11 +18,6 @@ def split_specific_votes(voters):
     return voters.split(', ')
 
 
-def get_table_text(doc, bheader):
-    xpath = '//td/b[contains(text(), "%s")]/../following-sibling::td[1]/text()'
-    return doc.xpath(xpath % bheader)[0].strip()
-
-
 def categorize_action(action):
     classifiers = (
         ('Pass(ed)? First Reading', 'bill:reading:1'),
@@ -140,14 +135,12 @@ class HIBillScraper(BillScraper):
             page.make_links_absolute(bill_url)
 
             # split "SB1 SD2 HD2" to get SB1
-            bill_id = page.xpath('//a[@class="headerlink"]')[0].text.split()[0]
+            bill_id = page.xpath('//a[@id="LinkButtonMeasure"]')[0].text_content().split()[0]
 
-            table = page.xpath('//table[@cellspacing="4px"]')[0]
-
-            title = get_table_text(table, "Measure Title")
-            subjects = get_table_text(table, "Report Title").split('; ')
-            description = get_table_text(table, "Description")
-            sponsors = get_table_text(table, "Introducer(s)")
+            title = page.xpath('//span[@id="ListView1_ctrl0_measure_titleLabel"]')[0].text
+            subjects = page.xpath('//span[@id="ListView1_ctrl0_report_titleLabel"]')[0].text.split('; ')
+            description = page.xpath('//span[@id="ListView1_ctrl0_descriptionLabel"]')[0].text
+            sponsors = page.xpath('//span[@id="ListView1_ctrl0_introducerLabel"]')[0].text
 
             bill = Bill(session, chamber, bill_id, title, subjects=subjects,
                         type=bill_type, description=description)
@@ -159,7 +152,7 @@ class HIBillScraper(BillScraper):
             # actions
             actions = []
 
-            table = page.xpath('//table[contains(@id, "GridView1")]')[0]
+            table = page.xpath('//table[@id="GridViewStatus"]')[0]
             for row in table.xpath('tr'):
                 action_params = {}
                 cells = row.xpath('td')
@@ -288,7 +281,7 @@ class HIBillScraper(BillScraper):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
-            params['bill_id'] = page.xpath('//a[contains(@class, "headerlink")]')[0].text
+            params['bill_id'] = page.xpath('//a[@id="LinkButtonMeasure"]')[0].text_content()
             params['title'] = page.xpath(
                 '//td[contains(preceding::td[1]/b/text(), "Report Title")]')[0].text.strip()
             sponsors = page.xpath(
