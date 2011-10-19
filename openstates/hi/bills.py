@@ -139,6 +139,7 @@ class HIBillScraper(BillScraper):
 
             title = page.xpath('//span[@id="ListView1_ctrl0_measure_titleLabel"]')[0].text
             subjects = page.xpath('//span[@id="ListView1_ctrl0_report_titleLabel"]')[0].text.split('; ')
+            subjects = [s.strip() for s in subjects if s.strip()]
             description = page.xpath('//span[@id="ListView1_ctrl0_descriptionLabel"]')[0].text
             sponsors = page.xpath('//span[@id="ListView1_ctrl0_introducerLabel"]')[0].text
 
