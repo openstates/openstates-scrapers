@@ -56,12 +56,6 @@ class WVBillScraper(BillScraper):
     def scrape_bill(self, session, chamber, bill_id, title, url):
         html = self.urlopen(url)
 
-        # sometimes sponsors are missing from bill
-        if 'SPONSOR(S)' not in html:
-            self.warning('got a truncated bill, sleeping for 10s')
-            time.sleep(10)
-            html = self.urlopen(url)
-
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
 
@@ -70,11 +64,10 @@ class WVBillScraper(BillScraper):
         bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(url)
 
-        for link in page.xpath("//a[contains(@href, 'billdoc=')]"):
-            name = link.xpath("string()").strip()
-            if name in ['html', 'wpd']:
-                continue
-            bill.add_version(name, link.attrib['href'])
+        for link in page.xpath("//a[starts-with(@title, 'HTML -')]"):
+            # split name out of HTML - Introduced Version - SB 1
+            name = link.get('title').split(' - ')[1]
+            bill.add_version(name, link.get('href'))
 
         subjects = []
         # skip first 'Subject' link
@@ -107,14 +100,14 @@ class WVBillScraper(BillScraper):
             self.scrape_vote(bill, link.attrib['href'])
 
         actor = chamber
-        for tr in reversed(page.xpath("//div[@id='bhisttab']/table/tr")[1:]):
-            if len(tr.xpath("td")) < 3:
-                # Effective date row
+        for tr in reversed(page.xpath("//table[@class='tabborder']/tr")[1:]):
+            tds = tr.xpath('td')
+            if len(tds) < 3:
                 continue
 
-            date = tr.xpath("string(td[1])").strip()
+            date = tds[2].text_content().strip()
             date = datetime.datetime.strptime(date, "%m/%d/%y").date()
-            action = tr.xpath("string(td[2])").strip()
+            action = tds[1].text_content().strip()
 
             if (action == 'Communicated to Senate' or
                 action.startswith('Senate received') or
