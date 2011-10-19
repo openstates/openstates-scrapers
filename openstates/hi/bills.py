@@ -171,10 +171,11 @@ class HIBillScraper(BillScraper):
                 self.parse_vote(bill, action_params['action'],
                                 action_params['actor'], action_params['date'])
 
-            # Add version document if not on a javascript link.
+            # add versions
             try:
-                bill_version = page.xpath('//a[contains(@id, "HyperLinkPDF")]')[0].attrib['href']
-                bill.add_version('Current version', bill_version)
+                for version in page.xpath('//a[contains(@id, "StatusLink")]'):
+                    bill.add_version(version.text.replace('_', ' '),
+                                     version.get('href'))
             except IndexError: # href not found.
                 pass
 
