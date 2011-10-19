@@ -1,6 +1,7 @@
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
+import re
 
 class NECommitteeScraper(CommitteeScraper):
     state = 'nd'
@@ -24,3 +25,18 @@ class NECommitteeScraper(CommitteeScraper):
            
            with self.urlopen(url) as page:
                page = lxml.html.fromstring(page)
+
+               if committee == 'standing-comm':
+                   self.scrapeStanding(chamber, page)
+               else:
+                   self.scrapeProcedural(chamber, page)
+
+    def scrapeStanding(self, chamber, page):
+        for comm_names in page.xpath('//div[@class="content"][1]/p/a/span'):
+            name = re.sub('[^A-Za-z0-9]+', ' ', comm_names.text)
+            print name
+
+    def scrapeProcedural(self, chamber, page):
+        for comm_names in page.xpath('//div[@class="content"][1]/p/a'):
+            name = re.sub('[^A-Za-z0-9]+', ' ', comm_names.text)
+            print name
