@@ -105,7 +105,12 @@ class WVBillScraper(BillScraper):
             if len(tds) < 3:
                 continue
 
-            date = tds[2].text_content().strip()
+            # order varies on resolutions
+            if bill_type == 'bill':
+                date = tds[2].text_content().strip()
+            else:
+                date = tds[0].text_content().strip()
+
             date = datetime.datetime.strptime(date, "%m/%d/%y").date()
             action = tds[1].text_content().strip()
 
