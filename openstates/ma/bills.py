@@ -46,10 +46,14 @@ class MABillScraper(BillScraper):
                 session_slug, chamber_slug, bill_id)
 
             with self.urlopen(bill_url) as html:
-                # sometimes the site breaks
-                if '</html>' not in html:
+                # sometimes the site breaks, missing vital data
+                if 'billShortDesc' not in html:
                     self.warning('truncated page on %s' % bill_url)
-                    continue
+                    time.sleep(1)
+                    html = self.urlopen(bill_url)
+                    if 'billShortDesc' not in html:
+                        self.warning('skipping %s' % bill_url)
+                        continue
 
                 # lets assume if 10 bills are missing we're done
                 if skipped == 10:
