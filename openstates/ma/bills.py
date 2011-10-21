@@ -5,6 +5,7 @@ from billy.scrape.bills import BillScraper, Bill
 
 import itertools
 from datetime import datetime
+import time
 import re
 
 _classifiers = (
