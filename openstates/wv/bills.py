@@ -77,11 +77,12 @@ class WVBillScraper(BillScraper):
         bill['subjects'] = subjects
 
         sponsor_links = page.xpath("//a[contains(@href, 'Bills_Sponsors')]")
-        if len(sponsor_links) > 1:
-            for link in sponsor_links[1:]:
-                sponsor = link.xpath("string()").strip()
-                bill.add_sponsor('sponsor', sponsor)
-        else:
+        for link in sponsor_links[1:]:
+            sponsor = link.xpath("string()").strip()
+            bill.add_sponsor('sponsor', sponsor)
+
+        # resolutions
+        if bill_type != 'bill':
             # sometimes (resolutions only?) there aren't links so we have to
             # use a regex to get sponsors
             block = page.xpath('//div[@id="bhistleft"]')[0].text_content()
