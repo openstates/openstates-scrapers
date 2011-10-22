@@ -1,5 +1,6 @@
 from billy.scrape.legislators import Legislator, LegislatorScraper
 import lxml.html
+import scrapelib
 
 class NELegislatorScraper(LegislatorScraper):
     state = 'ne'
@@ -19,7 +20,8 @@ class NELegislatorScraper(LegislatorScraper):
             else:
                 rep_url = base_url + str(district) + '/biography/'
 
-            with self.urlopen(rep_url) as html:
+            try:
+                html = self.urlopen(rep_url)
                 page = lxml.html.fromstring(html)
 
                 full_name = page.xpath('//div[@class="content_header_right"]/a')[0].text.split()
@@ -37,3 +39,6 @@ class NELegislatorScraper(LegislatorScraper):
                 first_name, last_name, middle_name, party, email=email, phone=phone)
                 leg.add_source(rep_url)
                 self.save_legislator(leg)
+            except scrapelib.HTTPError:
+                self.warning('could not retrieve %s' % rep_url)
+
