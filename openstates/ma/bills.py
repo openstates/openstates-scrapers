@@ -46,6 +46,10 @@ class MABillScraper(BillScraper):
             bill_url = 'http://www.malegislature.gov/Bills/%s/%s/%s' % (
                 session_slug, chamber_slug, bill_id)
 
+            # lets assume if 10 bills are missing we're done
+            if skipped == 10:
+                break
+
             with self.urlopen(bill_url) as html:
                 # sometimes the site breaks, missing vital data
                 if 'billShortDesc' not in html:
@@ -60,10 +64,6 @@ class MABillScraper(BillScraper):
                         skipped = 0
                 else:
                     skipped = 0
-
-                # lets assume if 10 bills are missing we're done
-                if skipped == 10:
-                    break
 
                 doc = lxml.html.fromstring(html)
                 doc.make_links_absolute('http://www.malegislature.gov/')
