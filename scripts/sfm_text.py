@@ -153,9 +153,9 @@ handlers = {
 }
 
 
-def process_state_files(state):
+def process_state_files(state, server):
     oclient = get_configured_client()
-    sfm_client = Client()  #'http://ec2-174-129-105-103.compute-1.amazonaws.com/'
+    sfm_client = Client(server)
 
     new_versions = list(oclient.db.tracked.find({'metadata.state': state,
                                      'superfastmatch_id': {'$exists': False}}))
@@ -178,6 +178,8 @@ def main():
         parents=[base_arg_parser],
     )
     parser.add_argument('state', type=str, help='state')
+    parser.add_argument('--sfm_server', type=str, help='URL of SFM instance',
+                        default='http://localhost:8080/')
 
     args = parser.parse_args()
 
@@ -185,7 +187,7 @@ def main():
 
     configure_logging(args.verbose, args.state)
 
-    process_state_files(args.state)
+    process_state_files(args.state, args.sfm_server)
 
 if __name__ == '__main__':
     main()
