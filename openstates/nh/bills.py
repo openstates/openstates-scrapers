@@ -45,7 +45,7 @@ class NHBillScraper(BillScraper):
     state = 'nh'
 
     def scrape(self, chamber, session):
-        zip_url = 'http://gencourt.state.nh.us/downloads/Bill%20Status%20Tables.zip'
+        zip_url = 'http://gencourt.state.nh.us/downloads/2011%20Session%20Bill%20Status%20Tables.zip'
 
         fname, resp = self.urlretrieve(zip_url)
         self.zf = zipfile.ZipFile(open(fname))
