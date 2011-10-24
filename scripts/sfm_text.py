@@ -25,7 +25,7 @@ def text_after_line_numbers(lines):
     # text winds up being all real bill text joined w/ spaces
     return text.decode('utf-8', 'ignore')
 
-def ca_handler(file, chamber):
+def ca_handler(filedata, metadata):
     if file.endswith('.pdf'):
         # NOTE: this strips the summary, it'd be useful for search (but not SFM)
         lines = convert_pdf(file, 'text').splitlines()
@@ -35,10 +35,9 @@ def ca_handler(file, chamber):
         text = doc.xpath('//pre')[0].text_content()
         return collapse_spaces(text)
 
-def ny_handler(file, chamber):
-    html = open(file).read()
-    if html:
-        doc = lxml.html.fromstring(open(file).read())
+def ny_handler(filedata, metadata):
+    if filedata:
+        doc = lxml.html.fromstring(filedata)
         text = doc.xpath('//pre')[0].text_content()
         # if there's a header above a _________, ditch it
         text = text.rsplit('__________', 1)[-1]
@@ -49,20 +48,19 @@ def ny_handler(file, chamber):
     else:
         return ''
 
-def md_handler(file, chamber):
+def md_handler(filedata, metadata):
     lines = convert_pdf(file, 'text').splitlines()
     return text_after_line_numbers(lines)
 
 
-def fl_handler(file, chamber):
-    data = open(file).read()
+def fl_handler(filedata, metadata):
 
     # check for beginning of tag, MS throws in some xmlns stuff
-    if '<html' not in data:
+    if '<html' not in filedata:
         return ''
 
-    doc = lxml.html.fromstring(data)
-    if chamber == 'lower':
+    doc = lxml.html.fromstring(filedata)
+    if metadata['chamber'] == 'lower':
         # 2nd column of the table has all of the good stuff, first is line #
         return ' '.join(x.text_content() for x in doc.xpath('//tr/td[2]'))
     else:
@@ -70,64 +68,65 @@ def fl_handler(file, chamber):
         return text_after_line_numbers(text.splitlines())
 
 
-def pa_handler(file, chamber):
-    doc = lxml.html.fromstring(open(file).read())
+def pa_handler(filedata, metadata):
+    doc = lxml.html.fromstring(filedata)
     # another state where the second column of the table is the good stuff
     text = ' '.join(x.text_content() for x in doc.xpath('//tr/td[2]'))
     return collapse_spaces(text)
 
-def oh_handler(file, chamber):
-    doc = lxml.html.fromstring(open(file).read())
+
+def oh_handler(filedata, metadata):
+    doc = lxml.html.fromstring(filedata)
     # left-aligned columns
     text = ' '.join(x.text_content() for x in doc.xpath('//td[@align="LEFT"]'))
     return collapse_spaces(text)
 
 
-def mi_handler(file, chamber):
+def mi_handler(filedata, metadata):
     # no real pattern here, just grab the text from the body
-    doc = lxml.html.fromstring(open(file).read())
+    doc = lxml.html.fromstring(filedata)
     return collapse_spaces(doc.xpath('//body')[0].text_content())
 
 
-def nc_handler(file, chamber):
-    doc = lxml.html.fromstring(open(file).read())
+def nc_handler(filedata, metadata):
+    doc = lxml.html.fromstring(filedata)
     # all content has a class that starts with a (aSection, aTitle, etc)
     text = ' '.join([x.text_content() for x in
                      doc.xpath('//p[starts-with(@class, "a")]')])
     return collapse_spaces(text)
 
 
-def nj_handler(file, chamber):
-    if file.endswith('.WPD'):
+def nj_handler(filedata, metadata):
+    if metadata['filename'].endswith('.WPD'):
         return ''
     else:
-        doc = lxml.html.fromstring(open(file).read())
+        doc = lxml.html.fromstring(filedata)
         text = doc.xpath('//div[@class="Section3"]')[0].text_content()
         return collapse_spaces(text)
 
 
-def va_handler(file, chamber):
-    doc = lxml.html.fromstring(open(file).read())
+def va_handler(filedata, metadata):
+    doc = lxml.html.fromstring(filedata)
     text = ' '.join(x.text_content()
                     for x in doc.xpath('//div[@id="mainC"]/p'))
     return collapse_spaces(text)
 
 
-def wa_handler(file, chamber):
-    doc = lxml.html.fromstring(open(file).read())
+def wa_handler(filedata, metadata):
+    doc = lxml.html.fromstring(filedata)
     text = '\n'.join(collapse_spaces(x.text_content()) for x in
                      doc.xpath('//body/p'))
     return text
 
 
-def ma_handler(file, chamber):
-    doc = lxml.html.fromstring(open(file).read())
+def ma_handler(filedata, metadata):
+    doc = lxml.html.fromstring(filedata)
     return ' '.join([x.text_content()
                      for x in doc.xpath('//td[@class="longTextContent"]//p')])
 
 
-def az_handler(file, chamber):
-    doc = lxml.html.fromstring(open(file).read())
+def az_handler(filedata, metadata):
+    doc = lxml.html.fromstring(filedata)
     text = doc.xpath('//div[@class="Section2"]')[0].text_content()
     return collapse_spaces(text)
 
@@ -138,17 +137,17 @@ def wv_handler(filedata, metadata):
 
 handlers = {
     #'ca': ca_handler,
-    #'ny': ny_handler,
-    #'fl': fl_handler,
-    #'pa': pa_handler,
-    #'oh': oh_handler,
-    #'mi': mi_handler,
-    #'nc': nc_handler,
-    #'nj': nj_handler,
-    #'ma': ma_handler,
-    #'va': va_handler,
-    #'az': az_handler,
-    #'wa': wa_handler,
+    'ny': ny_handler,
+    'fl': fl_handler,
+    'pa': pa_handler,
+    'oh': oh_handler,
+    'mi': mi_handler,
+    'nc': nc_handler,
+    'nj': nj_handler,
+    'ma': ma_handler,
+    'va': va_handler,
+    'az': az_handler,
+    'wa': wa_handler,
     #'md': md_handler,
     'wv': wv_handler,
 }
