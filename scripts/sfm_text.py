@@ -3,6 +3,8 @@ import time
 import argparse
 import lxml.html
 
+import gridfs
+
 from billy.conf import settings, base_arg_parser
 from billy.scrape.utils import convert_pdf
 from billy.utils import configure_logging
@@ -164,7 +166,10 @@ def process_state_files(state, server):
 
     for version in new_versions:
         _id = int(time.time()*10000)
-        filedata = oclient.get_version(version['url']).read()
+        try:
+            filedata = oclient.get_version(version['url']).read()
+        except gridfs.errors.NoFile:
+            continue
         metadata = version['metadata']
         text = extract_text(filedata, metadata)
         sfm_client.add(1, _id, text, defer=True,
