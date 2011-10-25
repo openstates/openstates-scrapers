@@ -5,14 +5,44 @@ import sys
 import tempfile
 import traceback
 
-from .utils import action_type
-
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
 
 import lxml.html
+
+
+def action_type(action):
+    action = action.lower()
+    atypes = []
+    if re.match('^read (the )?(first|1st) time', action):
+        atypes.append('bill:introduced')
+        atypes.append('bill:reading:1')
+    elif re.match('^read second time', action):
+        atypes.append('bill:reading:2')
+    elif re.match('^read third time', action):
+        atypes.append('bill:reading:3')
+
+    if re.match('^referred to (the )?committee', action):
+        atypes.append('committee:referred')
+    elif re.match('^referred to (the )?subcommittee', action):
+        atypes.append('committee:referred')
+
+    if re.match('^introduced and adopted', action):
+        atypes.append('bill:introduced')
+        #not sure if adopted means passed
+        atypes.append('bill:passed')
+    elif re.match('^introduced and read first time', action):
+        atypes.append('bill:introduced')
+        atypes.append('bill:reading:1')
+    elif re.match('^introduced', action):
+        atypes.append('bill:introduced')
+
+    if atypes:
+        return atypes
+
+    return ['other']
 
 
 class SCBillScraper(BillScraper):
@@ -30,6 +60,7 @@ class SCBillScraper(BillScraper):
           'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.htm",
         }
     }
+
 
     def find_part(self, alist, line, start=0):
         for ii in range(start,len(alist)):
@@ -386,6 +417,11 @@ class SCBillScraper(BillScraper):
 
 
     def scrape_details(self, bill_detail_url, session, chamber, bill_id, page):
+
+        # these crop up from time to time
+        if 'INVALID BILL' in page:
+            return
+
         doc = lxml.html.fromstring(page)
         doc.make_links_absolute(bill_detail_url)
 
