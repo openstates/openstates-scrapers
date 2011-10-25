@@ -41,6 +41,19 @@ class WYBillScraper(BillScraper):
 
             self.scrape_digest(bill)
 
+            # versions
+            for a in (tr.xpath('td[6]//a') + tr.xpath('td[9]//a') +
+                      tr.xpath('td[10]//a')):
+                bill.add_version(a.text, a.get('href'))
+
+            # documents
+            fnote = tr.xpath('td[7]//a')
+            if fnote:
+                bill.add_document('Fiscal Note', fnote[0].get('href'))
+            summary = tr.xpath('td[12]//a')
+            if summary:
+                bill.add_document('Summary', summary[0].get('href'))
+
             bill.add_source(url)
             bill.add_sponsor('sponsor', sponsor)
             self.save_bill(bill)
