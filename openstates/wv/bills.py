@@ -97,7 +97,7 @@ class WVBillScraper(BillScraper):
                     bill.add_sponsor('sponsor', sponsor.strip())
 
 
-        for link in page.xpath("//a[contains(@href, 'House/Votes')]"):
+        for link in page.xpath("//a[contains(@href, 'votes/house')]"):
             self.scrape_vote(bill, link.attrib['href'])
 
         actor = chamber
