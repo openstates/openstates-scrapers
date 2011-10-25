@@ -47,6 +47,9 @@ class WYBillScraper(BillScraper):
 
     def scrape_digest(self, bill):
         digest_url = 'http://legisweb.state.wy.us/%(session)s/Digest/%(bill_id)s.htm' % bill
+
+        bill.add_source(digest_url)
+
         html = self.urlopen(digest_url).decode('utf-8', 'ignore')
         doc = lxml.html.fromstring(html)
 
