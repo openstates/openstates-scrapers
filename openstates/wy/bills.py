@@ -14,6 +14,9 @@ def split_voters(voters):
     return re.split('(?:, (?!\w+\.))|(?:and )', voters)
 
 
+def clean_line(line):
+    return line.replace(u'\xa0', '').replace('\r\n', ' ').strip()
+
 class WYBillScraper(BillScraper):
     state = 'wy'
 
@@ -57,14 +60,14 @@ class WYBillScraper(BillScraper):
         actor = bill['chamber']
 
         aiter = iter(actions)
-        for action in aiter:
-            action = action.replace(u'\xa0', '').replace('\r\n', ' ').strip()
+        for line in aiter:
+            line = clean_line(line)
 
             # skip blank lines
-            if not action:
+            if not line:
                 continue
 
-            amatch = action_re.match(action)
+            amatch = action_re.match(line)
             if amatch:
                 date, achamber, action = amatch.groups()
 
@@ -76,7 +79,7 @@ class WYBillScraper(BillScraper):
 
                 date = datetime.datetime.strptime(date, '%m/%d/%Y')
                 bill.add_action(actor, action, date)
-            elif action == 'ROLL CALL':
+            elif line == 'ROLL CALL':
                 voters = {}
                 # if we hit a roll call, use an inner loop to consume lines
                 # in a psuedo-state machine manner, 3 types
@@ -84,7 +87,7 @@ class WYBillScraper(BillScraper):
                 # : (Senators|Representatives): ... - voters
                 # \d+ Nays \d+ Excused ... - totals
                 while True:
-                    nextline = aiter.next().replace('\r\n', ' ').strip()
+                    nextline = clean_line(aiter.next())
 
                     if not nextline:
                         continue
@@ -115,4 +118,4 @@ class WYBillScraper(BillScraper):
                     else:
                         print 'skipping in vote loop', nextline
             else:
-                print 'skipping', action
+                print 'skipping', line
