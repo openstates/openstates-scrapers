@@ -8,7 +8,7 @@ import lxml.html
 
 def split_voters(voters):
     """Representative(s) Barbuto, Berger, Blake, Blikre, Bonner, Botten, Buchanan, Burkhart, Byrd, Campbell, Cannady, Childers, Connolly, Craft, Eklund, Esquibel, K., Freeman, Gingery, Greear, Greene, Harshman, Illoway, Jaggi, Kasperik, Krone, Lockhart, Loucks, Lubnau, Madden, McOmie, Moniz, Nicholas, B., Patton, Pederson, Petersen, Petroff, Roscoe, Semlek, Steward, Stubson, Teeters, Throne, Vranish, Wallis, Zwonitzer, Dn. and Zwonitzer, Dv."""
-    voters = voters.split(') ',1)[1]
+    voters = voters.split(')',1)[1]
     # split on comma space as long as it isn't followed by an initial (\w+\.)
     # or split on 'and '
     return re.split('(?:, (?!\w+\.))|(?:and )', voters)
@@ -104,6 +104,7 @@ class WYBillScraper(BillScraper):
                         passed = ('Passed' in action or 'Do Pass' in action)
                         vote = Vote(actor, date, action, passed, int(ayes),
                                     int(nays), int(exc)+int(abs)+int(con))
+
                         for vtype, voters in voters.iteritems():
                             for voter in split_voters(voters):
                                 if vtype == 'Ayes':
