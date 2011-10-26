@@ -48,7 +48,7 @@ class WYCommitteeScraper(CommitteeScraper):
                 for table in page.xpath(".//table[contains(@id, 'CommitteeMembers')]"):
                     rows = table.xpath(".//tr")
                     chamber = rows[0].xpath('.//td')[0].text_content().strip()
-                    chamber = 'upper' if self.log(chamber) == 'Senator' else 'lower'
+                    chamber = 'upper' if chamber == 'Senator' else 'lower'
                     comm = Committee(chamber, c)
                     for row in rows[1:]:
                         tds = row.xpath('.//td')
@@ -57,4 +57,5 @@ class WYCommitteeScraper(CommitteeScraper):
                         self.log(name)
                         self.log(role)
                         comm.add_member(name, role)
+                    comm.add_source(detail_url)
                     self.save_committee(comm)
