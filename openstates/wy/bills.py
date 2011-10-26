@@ -21,7 +21,7 @@ def categorize_action(action):
     categorizers = (
         ('Introduced and Referred', ('bill:introduced', 'committee:referred')),
         ('Rereferred to', 'committee:referred'),
-        ('Do Pass Failed', 'bill:failed'),
+        ('Do Pass Failed', 'committee:failed'),
         ('Passed 2nd Reading', 'bill:reading:2'),
         ('Passed 3rd Reading', ('bill:reading:3', 'bill:passed')),
         ('Failed 3rd Reading', ('bill:reading:3', 'bill:failed')),
