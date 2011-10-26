@@ -28,8 +28,8 @@ def categorize_action(action):
         ('Did Not Adopt', 'amendment:failed'),
         ('Withdrawn by Sponsor', 'bill:withdrawn'),
         ('Governor Signed', 'governor:signed'),
-        ('Recommended (Amend and)? Do Pass', 'committee:passed:favorable'),
-        ('Recommended (Amend and)? Do NotPass', 'committee:passed:unfavorable'),
+        ('Recommended (Amend and )?Do Pass', 'committee:passed:favorable'),
+        ('Recommended (Amend and )?Do NotPass', 'committee:passed:unfavorable'),
     )
 
     for pattern, types in categorizers:
