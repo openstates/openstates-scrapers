@@ -17,6 +17,27 @@ def split_voters(voters):
 def clean_line(line):
     return line.replace(u'\xa0', '').replace('\r\n', ' ').strip()
 
+def categorize_action(action):
+    categorizers = (
+        ('Introduced and Referred', ('bill:introduced', 'committee:referred')),
+        ('Rereferred to', 'committee:referred'),
+        ('Do Pass Failed', 'bill:failed'),
+        ('Passed 2nd Reading', 'bill:reading:2'),
+        ('Passed 3rd Reading', ('bill:reading:3', 'bill:passed')),
+        ('Failed 3rd Reading', ('bill:reading:3', 'bill:failed')),
+        ('Did Not Adopt', 'amendment:failed'),
+        ('Withdrawn by Sponsor', 'bill:withdrawn'),
+        ('Governor Signed', 'governor:signed'),
+        ('Recommended (Amend and)? Do Pass', 'committee:passed:favorable'),
+        ('Recommended (Amend and)? Do NotPass', 'committee:passed:unfavorable'),
+    )
+
+    for pattern, types in categorizers:
+        if re.findall(pattern, action):
+            return types
+    return 'other'
+
+
 class WYBillScraper(BillScraper):
     state = 'wy'
 
@@ -94,7 +115,8 @@ class WYBillScraper(BillScraper):
                     actor = 'upper'
 
                 date = datetime.datetime.strptime(date, '%m/%d/%Y')
-                bill.add_action(actor, action, date)
+                bill.add_action(actor, action, date,
+                                type=categorize_action(action))
             elif line == 'ROLL CALL':
                 voters = {}
                 # if we hit a roll call, use an inner loop to consume lines
@@ -116,8 +138,8 @@ class WYBillScraper(BillScraper):
                     elif vote_total_re.match(nextline):
                         ayes, nays, exc, abs, con = \
                                 vote_total_re.match(nextline).groups()
-                        # TODO: look at this in depth to find out what doesn't pass
-                        passed = ('Passed' in action or 'Do Pass' in action)
+                        passed = ('Passed' in action or 'Do Pass' in action
+                                  and 'Failed' not in action)
                         vote = Vote(actor, date, action, passed, int(ayes),
                                     int(nays), int(exc)+int(abs)+int(con))
 
