@@ -155,8 +155,10 @@ class WYBillScraper(BillScraper):
                     elif vote_total_re.match(nextline):
                         ayes, nays, exc, abs, con = \
                                 vote_total_re.match(nextline).groups()
-                        passed = ('Passed' in action or 'Do Pass' in action
-                                  and 'Failed' not in action)
+                        passed = (('Passed' in action or
+                                   'Do Pass' in action or
+                                   'Did Concur' in action) and
+                                  'Failed' not in action)
                         vote = Vote(actor, date, action, passed, int(ayes),
                                     int(nays), int(exc)+int(abs)+int(con))
 
