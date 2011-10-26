@@ -6,12 +6,12 @@ from billy.scrape.votes import Vote
 
 import lxml.html
 
-def split_voters(voters):
+def split_names(voters):
     """Representative(s) Barbuto, Berger, Blake, Blikre, Bonner, Botten, Buchanan, Burkhart, Byrd, Campbell, Cannady, Childers, Connolly, Craft, Eklund, Esquibel, K., Freeman, Gingery, Greear, Greene, Harshman, Illoway, Jaggi, Kasperik, Krone, Lockhart, Loucks, Lubnau, Madden, McOmie, Moniz, Nicholas, B., Patton, Pederson, Petersen, Petroff, Roscoe, Semlek, Steward, Stubson, Teeters, Throne, Vranish, Wallis, Zwonitzer, Dn. and Zwonitzer, Dv."""
-    voters = voters.split(')',1)[1]
+    voters = voters.split(')',1)[-1]
     # split on comma space as long as it isn't followed by an initial (\w+\.)
     # or split on 'and '
-    return re.split('(?:, (?!\w+\.))|(?:and )', voters)
+    return [x.strip() for x in re.split('(?:, (?!\w+\.))|(?:and )', voters)]
 
 
 def clean_line(line):
@@ -51,7 +51,6 @@ class WYBillScraper(BillScraper):
         for tr in page.xpath("//tr[@valign='middle']")[1:]:
             bill_id = tr.xpath("string(td[1])").strip()
             title = tr.xpath("string(td[2])").strip()
-            sponsor = tr.xpath("string(td[3])").strip()
 
             if bill_id[0:2] in ['SJ', 'HJ']:
                 bill_type = 'joint resolution'
@@ -76,7 +75,6 @@ class WYBillScraper(BillScraper):
                 bill.add_document('Summary', summary[0].get('href'))
 
             bill.add_source(url)
-            bill.add_sponsor('sponsor', sponsor)
             self.save_bill(bill)
 
     def scrape_digest(self, bill):
@@ -86,6 +84,25 @@ class WYBillScraper(BillScraper):
 
         html = self.urlopen(digest_url).decode('utf-8', 'ignore')
         doc = lxml.html.fromstring(html)
+
+        ext_title = doc.xpath('//span[@class="billtitle"]')
+        if ext_title:
+            bill['extended_title'] = ext_title[0].text_content().replace(
+                '\r\n', ' ')
+
+        sponsor_span = doc.xpath('//span[@class="sponsors"]')
+        if sponsor_span:
+            sponsors = sponsor_span[0].text_content().replace('\r\n', ' ')
+            if 'Committee' in sponsors:
+                bill.add_sponsor('sponsor', sponsors)
+            else:
+                if bill['chamber'] == 'lower':
+                    sp_lists = sponsors.split('and Senator(s)')
+                else:
+                    sp_lists = sponsors.split('and Representative(s)')
+                for spl in sp_lists:
+                    for sponsor in split_names(spl):
+                        bill.add_sponsor('sponsor', sponsor)
 
         action_re = re.compile('(\d{1,2}/\d{1,2}/\d{4})\s+(H |S )?(.+)')
         vote_total_re = re.compile('(\d+) Nays (\d+) Excused (\d+) Absent (\d+) Conflicts (\d+)')
@@ -144,7 +161,7 @@ class WYBillScraper(BillScraper):
                                     int(nays), int(exc)+int(abs)+int(con))
 
                         for vtype, voters in voters.iteritems():
-                            for voter in split_voters(voters):
+                            for voter in split_names(voters):
                                 if vtype == 'Ayes':
                                     vote.yes(voter)
                                 elif vtype == 'Nays':
