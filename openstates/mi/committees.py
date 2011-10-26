@@ -47,34 +47,71 @@ class MICommitteeScraper(CommitteeScraper):
                     self.save_committee(com)
 
     def scrape_senate_committees(self):
-        url = 'http://www.senate.michigan.gov/committee/committeeinfo.htm'
+        base_url = 'http://www.senate.michigan.gov/committee/'
+        url = 'http://www.senate.michigan.gov/committee/committeeinfo.shtm'
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
 
-            for strong in doc.xpath('//strong')[2:]:
+            for opt in doc.xpath('//option/@value'):
+                com_url = base_url + opt
+                if opt == 'appropssubcommittee.htm':
+                    self.scrape_approp_subcommittees(com_url)
+                elif opt != 'statutory.htm':
+                    self.scrape_senate_committee(com_url)
 
-                # if this isn't a link, this isn't a normal committee (skip it)
-                if not strong.xpath('a'):
-                    continue
 
-                # trim off trailing :
-                name = strong.text_content()[:-1]
-                com = Committee(chamber='upper', committee=name)
+    def scrape_senate_committee(self, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
-                legislators = strong.tail.replace('Senators', '').strip()
-                for leg in re.split(', | and ', legislators):
-                    if leg.endswith('(C)'):
-                        role = 'chairman'
-                        leg = leg[:-4]
-                    elif leg.endswith('(VC)'):
-                        role = 'vice chairman'
-                        leg = leg[:-5]
-                    elif leg.endswith('(MVC)'):
-                        role = 'minority vice chairman'
-                        leg = leg[:-6]
-                    else:
-                        role = 'member'
-                    com.add_member(leg, role=role)
+        name = doc.xpath('//h6/text()')[0]
 
-                com.add_source(url)
-                self.save_committee(com)
+        com = Committee(chamber='upper', committee=name)
+
+        for member in doc.xpath('//div[@id="committeelist"]//a'):
+            member_name = member.text.strip()
+
+            # don't add clerks
+            if member_name == 'Committee Clerk':
+                continue
+
+            if 'Committee Chair' in member.tail:
+                role = 'chair'
+            elif 'Majority Vice' in member.tail:
+                role = 'majority vice chair'
+            elif 'Minority Vice' in member.tail:
+                role = 'minority vice chair'
+            else:
+                role = 'member'
+
+            com.add_member(member_name, role=role)
+
+        com.add_source(url)
+        self.save_committee(com)
+
+
+    def scrape_approp_subcommittees(self, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+
+        for strong in doc.xpath('//strong'):
+            com = Committee(chamber='upper', committee='Appropriations',
+                            subcommittee=strong.text.strip())
+            com.add_source(url)
+
+            legislators = strong.getnext().tail.replace('Senators', '').strip()
+            for leg in re.split(', | and ', legislators):
+                if leg.endswith('(C)'):
+                    role = 'chairman'
+                    leg = leg[:-4]
+                elif leg.endswith('(VC)'):
+                    role = 'vice chairman'
+                    leg = leg[:-5]
+                elif leg.endswith('(MVC)'):
+                    role = 'minority vice chairman'
+                    leg = leg[:-6]
+                else:
+                    role = 'member'
+                com.add_member(leg, role=role)
+
+            self.save_committee(com)
