@@ -434,6 +434,8 @@ class SCBillScraper(BillScraper):
             bill_type = 'bill'
         elif 'Concurrent Resolution' in bill_type:
             bill_type = 'concurrent resolution'
+        elif 'Joint Resolution' in bill_type:
+            bill_type = 'joint resolution'
         elif 'Resolution' in bill_type:
             bill_type = 'resolution'
         else:
@@ -448,7 +450,7 @@ class SCBillScraper(BillScraper):
 
         bill = Bill(session, chamber, bill_id, bill_summary, type=bill_type)
 
-        for author in re.split(', |and', authors):
+        for author in re.split(', |and ', authors):
             bill.add_sponsor('sponsor', author.strip())
 
         bill_number = re.search("(\d+)", bill_id).group(0)
