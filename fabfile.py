@@ -11,7 +11,7 @@ def production():
     env.key_filename = KEY_FILENAME
 
 def update():
-    #sudo('cd ~openstates/src/openstates && git pull', user='openstates')
+    sudo('cd ~openstates/src/openstates && git pull', user='openstates')
     sudo('cd ~openstates/src/billy && git pull', user='openstates')
 
 def restart_uwsgi():
