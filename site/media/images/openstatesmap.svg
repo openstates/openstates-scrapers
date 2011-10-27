@@ -7,7 +7,6 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    version="1.1"
@@ -36,15 +35,15 @@
    guidetolerance="10"
    inkscape:pageopacity="0"
    inkscape:pageshadow="2"
-   inkscape:window-width="1916"
-   inkscape:window-height="1172"
+   inkscape:window-width="1589"
+   inkscape:window-height="1196"
    id="namedview728"
    showgrid="false"
    inkscape:zoom="2.1527403"
-   inkscape:cx="430.0134"
+   inkscape:cx="345.23773"
    inkscape:cy="246.49919"
    inkscape:window-x="1920"
-   inkscape:window-y="24"
+   inkscape:window-y="0"
    inkscape:window-maximized="0"
    inkscape:current-layer="svg2" />
 <defs
@@ -327,15 +326,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#D5D6C3;stop-opacity:0.6"
+   style="stop-color:#75afa5;stop-opacity:0.60000002;"
    id="stop106" />
 	<stop
    offset="0.9447"
-   style="stop-color:#D5D6C3;stop-opacity:0.9779"
+   style="stop-color:#75afa5;stop-opacity:0.97647059;"
    id="stop108" />
 	<stop
    offset="1"
-   style="stop-color:#D5D6C3"
+   style="stop-color:#75afa5;stop-opacity:1;"
    id="stop110" />
 </radialGradient>
 <polygon
@@ -613,7 +612,9 @@
    r="24.4189"
    gradientTransform="translate(0,-450)"
    gradientUnits="userSpaceOnUse"
-   xlink:href="#SVGID_25_">
+   fx="341.332"
+   fy="667.30267"
+   spreadMethod="pad">
 	<stop
    offset="0"
    style="stop-color:#75afa5;stop-opacity:0.60000002;"
