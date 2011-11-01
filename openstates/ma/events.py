@@ -76,5 +76,4 @@ class MAEventScraper(EventScraper):
                                   description, location=where)
                     event.add_source(url)
                     event['link'] = link
-                    print where
                     self.save_event(event)
