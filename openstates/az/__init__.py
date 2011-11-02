@@ -417,6 +417,16 @@ metadata = dict(
                 'display_name': '50th Legislature, 2nd Special Session',
                 'start_date': datetime.date(2011, 2, 14),
                 'end_date': datetime.date(2011, 2, 16) },
+            '50th-3rd-special':
+                {'type': 'special', 'session_id': 106,
+                'display_name': '50th Legislature, 3rd Special Session',
+                'start_date': datetime.date(2011, 6, 10),
+                'end_date': datetime.date(2011, 6, 13)},
+            '50th-4th-special':
+                {'type': 'special', 'session_id': 108,
+                'display_name': '50th Legislature, 4th Special Session',
+                'start_date': datetime.date(2011, 11, 1),
+                'end_date': datetime.date(2011, 11, 1) },
             '50th-1st-regular':
                 {'type': 'primary', 'session_id': 102,
                 'display_name': '50th Legislature, 1st Regular Session',
