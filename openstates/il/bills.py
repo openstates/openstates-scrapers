@@ -62,12 +62,16 @@ LEGISLATION_URL = ('http://ilga.gov/legislation/grplist.asp')
 
 def build_url_for_legislation_list(metadata, chamber, session, doc_type):
     base_params = metadata['session_details'][session].get('params',{})
-    chamber_slug = 'H' if chamber == 'lower' else 'S'
     base_params['num1'] = '1'
     base_params['num2'] = '10000'
     params = dict(base_params)
-    params['DocTypeID'] = '%s%s' % (chamber_slug,doc_type)
+    params['DocTypeID'] = '%s%s' % (chamber_slug(chamber),doc_type)
     return '?'.join([LEGISLATION_URL,urlencode(params)])
+
+def chamber_slug(chamber):
+    if chamber == 'lower':
+        return 'H'
+    return 'S'
 
 class ILBillScraper(BillScraper):
 
@@ -83,8 +87,8 @@ class ILBillScraper(BillScraper):
     
     def scrape(self, chamber, session):
         for doc_type in DOC_TYPES:
-            for bill_url in get_bill_urls(self.metadata, chamber, session, doc_type):
-                self.scrape_bill(chamber, session, chamber_slug+doc_type, bill_url)
+            for bill_url in self.get_bill_urls(chamber, session, doc_type):
+                self.scrape_bill(chamber, session, chamber_slug(chamber)+doc_type, bill_url)
     
     def scrape_bill(self, chamber, session, doc_type, url):
         html = self.urlopen(url)
