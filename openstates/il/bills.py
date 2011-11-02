@@ -84,8 +84,7 @@ class ILBillScraper(BillScraper):
     def scrape(self, chamber, session):
         for doc_type in DOC_TYPES:
             for bill_url in get_bill_urls(self.metadata, chamber, session, doc_type):
-                self.scrape_bill(chamber, session, chamber_slug+doc_type,
-                                 bill_url)
+                self.scrape_bill(chamber, session, chamber_slug+doc_type, bill_url)
     
     def scrape_bill(self, chamber, session, doc_type, url):
         html = self.urlopen(url)
