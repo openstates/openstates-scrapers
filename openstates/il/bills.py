@@ -3,6 +3,7 @@ import re
 import os
 import datetime
 import lxml.html
+from urllib import urlencode
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -15,10 +16,6 @@ def group(lst, n):
         if len(val) == n:
             yield tuple(val)
 
-
-# chamber prefix, doc id, session_id
-LEGISLATION_URL = ('http://ilga.gov/legislation/grplist.asp?num1=1&num2=10000&'
-                   'DocTypeID=%s%s&SessionID=%s')
 
 TITLE_REMOVING_PATTERN = re.compile(".*(Rep|Sen). (.+)$")
 SPONSOR_PATTERN = re.compile("^(Added |Removed )?(.+Sponsor) (Rep|Sen). (.+)$")
@@ -61,29 +58,35 @@ def _categorize_action(action):
             return atype
     return 'other'
 
+LEGISLATION_URL = ('http://ilga.gov/legislation/grplist.asp')
+
+def build_url_for_legislation_list(metadata, chamber, session, doc_type):
+    base_params = metadata['session_details'][session].get('params',{})
+    chamber_slug = 'H' if chamber == 'lower' else 'S'
+    base_params['num1'] = '1'
+    base_params['num2'] = '10000'
+    params = dict(base_params)
+    params['DocTypeID'] = '%s%s' % (chamber_slug,doc_type)
+    return '?'.join([LEGISLATION_URL,urlencode(params)])
 
 class ILBillScraper(BillScraper):
 
     state = 'il'
 
-
-
+    def get_bill_urls(self, chamber, session, doc_type):
+        url = build_url_for_legislation_list(self.metadata, chamber, session, doc_type)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        for bill_url in doc.xpath('//li/a/@href'):
+            yield bill_url
+    
     def scrape(self, chamber, session):
-        session_id = self.metadata['session_details'][session]['session_id']
-        chamber_slug = 'H' if chamber == 'lower' else 'S'
-
-
         for doc_type in DOC_TYPES:
-            url = LEGISLATION_URL % (chamber_slug, doc_type, session_id)
-            html = self.urlopen(url)
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(url)
-
-            for bill_url in doc.xpath('//li/a/@href'):
+            for bill_url in get_bill_urls(self.metadata, chamber, session, doc_type):
                 self.scrape_bill(chamber, session, chamber_slug+doc_type,
                                  bill_url)
-
-
+    
     def scrape_bill(self, chamber, session, doc_type, url):
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
