@@ -28,7 +28,7 @@ class NELegislatorScraper(LegislatorScraper):
                 first_name = full_name[1]
                 last_name = full_name[2]
 
-                email = page.xpath('//div[@id="sidebar"]/ul[1]/li[7]/a')[0].text
+                email = page.xpath('//div[@id="sidebar"]/ul[1]/li[7]/a')[0].text or ''
                 phone = page.xpath('//div[@id="sidebar"]/ul[1]/li[6]')[0].text.split()
                 phone = phone[1] + '-' + phone[2]
 
