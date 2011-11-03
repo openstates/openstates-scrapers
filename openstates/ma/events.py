@@ -21,15 +21,14 @@ class MAEventScraper(EventScraper):
         year = '2011'
         
         #Search by event type. [post attribute, name]
-        event_type_list = [['Joint','joint:session'],
-                           ['House','house:session'],
-                           ['Senate','senate:session'],
-                           ['Hearings','committee:hearing'],
-                           ['SpecialEvents','special'],
-                           ['Redistricting','redistricting']]
+        event_type_list = [('Joint','joint:session'),
+                           ('House','house:session'),
+                           ('Senate','senate:session'),
+                           ('Hearings','committee:hearing'),
+                           ('SpecialEvents','special'),
+                           ('Redistricting','redistricting')]
         
         for event_type in event_type_list:
-            print event_type[0]
             url = "http://www.malegislature.gov/Events/Search"
             input_string = "Input.%s=true&" % event_type[0]
             post_data = (input_string +
