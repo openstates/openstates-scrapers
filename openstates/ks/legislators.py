@@ -7,7 +7,7 @@ import re
 ksleg = 'http://www.kslegislature.org'
 legislator_list_url = '%s/li/b2011_12/year1/members/' % ksleg
 legislator_name_pattern = re.compile('(Representative|Senator) ([A-Za-z]+) ([A-Za-z]+)')
-legislator_line_pattern = re.compile('Party: ([A-Za-z]+)       First Term: ([0-9]+)')
+legislator_line_pattern = re.compile('Party: ([A-Za-z]+).*First Term: ([0-9]+)')
 
 class KSLegislatorScraper(LegislatorScraper):
     state = 'ks'

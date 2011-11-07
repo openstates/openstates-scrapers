@@ -9,7 +9,7 @@ from billy.scrape import NoDataForPeriod
 
 import ksapi
 
-votes_re = re.compile('(.*) - (.*);? ? ?Yea: ([0-9]+) Nay: ([0-9]+)')
+votes_re = re.compile('(.*)[ ;]+Yea: ([0-9]+) Nay: ([0-9]+)$')
 
 class KSBillScraper(BillScraper):
 	state = 'ks'
@@ -36,7 +36,8 @@ class KSBillScraper(BillScraper):
 				# main
 				bill = Bill(term, chamber, bill_data['BILLNO'], bill_data['SHORTTITLE'])
 				bill.add_source(ksapi.url + 'bill_status/' + bill_data['BILLNO'].lower())
-				bill.add_title(bill_data['LONGTITLE'])
+				if bill_data['LONGTITLE']:
+					bill.add_title(bill_data['LONGTITLE'])
 				bill.add_document('apn', ksapi.ksleg + bill_data['apn'])
 				bill.add_version('Latest', ksapi.ksleg + bill_data['apn'])
 
@@ -59,7 +60,7 @@ class KSBillScraper(BillScraper):
 					if event['action_code'] in ksapi.voted:
 						votes = votes_re.match(event['status'])
 						if votes:
-							vote = Vote(chamber, date, votes.group(2), event['action_code'] in ksapi.passed, int(votes.group(3)), int(votes.group(4)), 0)
+							vote = Vote(chamber, date, votes.group(1), event['action_code'] in ksapi.passed, int(votes.group(2)), int(votes.group(3)), 0)
 							vote.add_source(ksapi.ksleg + 'bill_status/' + bill_data['BILLNO'].lower())
 							bill.add_vote(vote)
 
