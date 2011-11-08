@@ -11,31 +11,23 @@ class DCCommitteeScraper(CommitteeScraper):
         if chamber == 'lower':
             return
 
-        url = 'http://www.dccouncil.washington.dc.us/committeesoveriew'
+        com_url = 'http://www.dccouncil.washington.dc.us/committees'
+        data = self.urlopen(com_url)
+        doc = lxml.html.fromstring(data)
 
-        with self.urlopen(url) as data:
+        urls = set(doc.xpath('//a[contains(@href, "committee-on")]/@href'))
+        for url in urls:
+            data = self.urlopen(url)
             doc = lxml.html.fromstring(data)
 
-            # skip first & last (non-committees)
-            for c in doc.xpath('//strong[starts-with(text(), "COMMITTEE ON")]'):
-                com = Committee('upper', c.text_content())
+            name = doc.xpath('//h1/text()')[0].replace('Committee on ', '')
+            com = Committee('upper', name)
 
-                following_divs = c.xpath('../following-sibling::div')
-                if not following_divs:
-                    following_divs = c.xpath('../../following-sibling::div')
+            for chair in doc.xpath('//h3[text()="Committee Chair"]/following-sibling::p'):
+                com.add_member(chair.text_content(), role='chairperson')
 
-                for div in following_divs:
-                    name = div.text_content().strip()
+            for member in doc.xpath('//h3[text()="Councilmembers"]/following-sibling::p/a'):
+                com.add_member(member.text_content(), role='member')
 
-                    if name and 'COMMITTEE' not in name:
-                        if name.endswith('Chairperson'):
-                            name = name[:-13]
-                            role = 'chairperson'
-                        else:
-                            role = 'member'
-                        com.add_member(name, role=role)
-                    else:
-                        break
-
-                com.add_source(url)
-                self.save_committee(com)
+            com.add_source(url)
+            self.save_committee(com)
