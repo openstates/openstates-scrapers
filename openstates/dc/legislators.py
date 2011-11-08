@@ -48,7 +48,11 @@ class DCLegislatorScraper(LegislatorScraper):
             else:
                 party = 'Independent'
 
-            photo_url = doc.xpath('//div[@id="member-thumb"]/img/@src')[0]
+            photo_url = doc.xpath('//div[@id="member-thumb"]/img/@src')
+            if photo_url:
+                photo_url = photo_url[0]
+            else:
+                photo_url = ''
 
             office_address = get_field(doc, "Office:")
             phone = get_field(doc, "Tel:")
