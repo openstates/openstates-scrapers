@@ -1,19 +1,26 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
-def get_surrounding_block(doc, key):
-    value = doc.xpath('//*[contains(text(), "%s")]/..' % key)[0]
-    return value.text_content()
+def get_field(doc, key):
+    # get text_content of parent of the element containing the key
+    elem = doc.xpath('//div[@id="member-info"]/p/strong[text()="%s"]/..' % key)
+    if elem:
+        return elem[0].text_content().replace(key, '').strip()
+    else:
+        return ''
 
 
 class DCLegislatorScraper(LegislatorScraper):
     state = 'dc'
 
     def scrape(self, chamber, term):
-        urls = ['http://www.dccouncil.washington.dc.us/chairman',
-                'http://www.dccouncil.washington.dc.us/chairprotempore',
-                'http://www.dccouncil.washington.dc.us/at-largemembers',
-                'http://www.dccouncil.washington.dc.us/wardmembers']
+        council_url = 'http://www.dccouncil.washington.dc.us/council'
+        data = self.urlopen(council_url)
+        doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(council_url)
+        # page should have 13 unique council URLs
+        urls = set(doc.xpath('//a[contains(@href, "/council/")]/@href'))
+        assert len(urls) == 13, "should have 13 unique councilmember URLs"
 
         # do nothing if they're trying to get a lower chamber
         if chamber == 'lower':
@@ -21,29 +28,35 @@ class DCLegislatorScraper(LegislatorScraper):
 
         for url in urls:
 
-            with self.urlopen(url) as data:
-                doc = lxml.html.fromstring(data)
+            data = self.urlopen(url)
+            doc = lxml.html.fromstring(data)
+            doc.make_links_absolute(url)
 
-                for link in doc.xpath('//div[@style="padding-right: 5px;"]/a'):
-                    leg_url = ('http://www.dccouncil.washington.dc.us/' +
-                               link.get('href'))
-                    with self.urlopen(leg_url) as leg_html:
-                        ldoc = lxml.html.fromstring(leg_html)
-                        name = link.text
+            name = doc.xpath('//h2/text()')[0]
+            if 'Chairman' in name:
+                district = 'Chairman'
+            else:
+                district = get_field(doc, 'Represents: ')
 
-                        # Name, District
-                        title = ldoc.get_element_by_id('PageTitle')
-                        district = title.text.rsplit(', ')[-1]
+            if not district:
+                district = 'At-Large'
 
-                        # party
-                        party = get_surrounding_block(ldoc,
-                                                      'Political Affiliation')
-                        if 'Democratic' in party:
-                            party = 'Democratic'
-                        else:
-                            party = 'Independent'
+            # party
+            party = get_field(doc, "Political Affiliation:")
+            if 'Democratic' in party:
+                party = 'Democratic'
+            else:
+                party = 'Independent'
 
-                        legislator = Legislator(term, 'upper', district, name,
-                                                party=party)
-                        legislator.add_source(leg_url)
-                    self.save_legislator(legislator)
+            photo_url = doc.xpath('//div[@id="member-thumb"]/img/@src')[0]
+
+            office_address = get_field(doc, "Office:")
+            phone = get_field(doc, "Tel:")
+            phone, fax = phone.split(' | Fax: ')
+
+            legislator = Legislator(term, 'upper', district, name,
+                                    party=party, office_address=office_address,
+                                    phone=phone, fax=fax
+                                   )
+            legislator.add_source(url)
+            self.save_legislator(legislator)
