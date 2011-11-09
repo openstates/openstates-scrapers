@@ -258,130 +258,39 @@ class SCBillScraper(BillScraper):
             [vote.other(legislator) for legislator in other]
 
 
-    def extract_vote_rows(self, bill_id,fb ):
-        vote_data = []
+    def scrape_vote_history(self, bill, vurl):
+        html = self.urlopen(vurl)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(vurl)
 
-        tables = fb.xpath("//div/div/table")
-        if len(tables) > 1:
-            fb = tables[1]
-            rows = fb.xpath("tr")
-        else:
-            self.warning("problem handling vote history div")
-            return vote_data
+        # skip first two rows
+        for row in doc.xpath('//table/tr')[2:]:
+            (timestamp, motion, vote, yeas, nays,
+             nv, exc, abst, total, result) = row.getchildren()
 
-        if len(rows) >= 3:
-            header_row = rows[0]
-            data_row = rows[2]
+            timestamp = timestamp.text.replace(u'\xa0', ' ')
+            timestamp = datetime.datetime.strptime(timestamp,
+                                                   '%m/%d/%Y %H:%M %p')
+            yeas = int(yeas.text)
+            nays = int(nays.text)
+            others = int(nv.text) + int(exc.text) + int(abst.text)
+            assert yeas + nays + others == int(total.text)
 
-            rowtd = data_row.xpath("td")
-            rowth = header_row.xpath("th")
+            passed = (result.text == 'Passed')
 
-            for rr in range(2,len(rows)):
-                data_row = rows[rr]
-                rowtd = data_row.xpath("td")
-                item = dict()
-                for ii in range(0,len(rowtd)):
-                    links = rowtd[ii].xpath("a/@href")
-                    if len(links) == 1:
-                        #self.debug("item %d LINKS %s s" % (ii, links ) )
-                        item['vote_link'] = links[0]
+            vote_link = vote.xpath('a')[0]
+            if '[H]' in vote_link.text:
+                chamber = 'lower'
+            else:
+                chamber = 'upper'
 
-                    key = rowth[ii].text_content()
-                    value = rowtd[ii].text_content()
-                    item[key] = value
+            vote = Vote(chamber, timestamp, motion.text, passed, yeas, nays,
+                        others)
+            vote.add_source(vurl)
 
-                vote_data.append(item)
+            # TODO: handle roll call
 
-        else:
-            self.warning("Failed to parse vote hisstory div, expecting 3 rows")
-            return []
-
-        self.debug("VOTE_DATA %s returning %d items, %s" %
-                   (bill_id, len(vote_data), vote_data))
-        return vote_data
-
-    def scrape_vote_history(self, vurl, chamber, bill, bill_id ):
-        """Get information from the vote history page.
-
-        The bill title will appear. If this is shorter than the bill title we
-        have, add it to the bill.
-
-        Collect data for each vote row, which will have a link to the pdf file
-        containing the votes, the motion, the counts (yeas,nays,etc).
-
-        For each vote row, fetch the pdf and extract the votes.  Add this vote
-        information to the bill.
-        """
-        with self.urlopen(vurl) as votepage:
-            if votepage.find("No Votes Returned") != -1:
-                return
-
-            bill_title_xpath = "//div[@id='votecontent']/div[1]"
-            fb_vxpath = '/html/body/table/tbody/tr/td/div[@id="tablecontent"]/table/tbody/tr/td[@class="content"]/div[@id="votecontent"]/div'
-            doc = lxml.html.fromstring(votepage)
-            doc.make_links_absolute(vurl)
-
-            fb_vote_row = doc.xpath(fb_vxpath)
-
-            if len(fb_vote_row) != 3:
-                self.warning("vote history page, expected 3 rows, returning")
-                return
-
-            bname = fb_vote_row[0].text_content().strip()
-            btitle = fb_vote_row[1].text_content().strip()
-
-            l1 = len(bill['title'])
-            l2 = len(btitle)
-            if l1 - l2 > 20 and l2 > 4 and l2 < l1:
-                self.debug("Bill[%s] Setting title: %s" % (bill_id,btitle))
-                #bill['alternate_title'] = btitle
-                #bill['short_title'] = btitle
-                bill.add_title(btitle)
-
-            vote_details = self.extract_vote_rows(bill_id,fb_vote_row[2])
-
-        #now everyting ins in vote_details
-        for d in vote_details:
-            try:
-                vote_date_time = d['Date/Time']
-                motion = d['Motion']
-                try:
-                    result = d['Result']
-                except KeyError:
-                    self.warning("Bill[%s] Roll call data has no result %s %s"
-                                 % (bill_id, vurl, d))
-                    continue
-
-                # Get link to PDF containing roll call votes
-                link_to_votes_href = d['vote_link']
-
-                y, no, total_count = int(d['Yeas']), int(d['Nays']), int(d['Total'])
-
-                other_count = total_count - (y + no)
-                self.debug("VOTE %s[%s] %s Y/N/Other %d/%d/%d %s %s" %
-                           (bill_id, motion, result, y, no, other_count,
-                            vote_date_time, link_to_votes_href ) )
-
-                vote_date_1 = vote_date_time.split()
-                vote_date = " ".join(vote_date_1)
-
-                vvote_date = datetime.datetime.strptime(vote_date, "%m/%d/%Y %I:%M %p")
-                vvote_date = vvote_date.date()
-
-                passed = result.find("Passed") != -1
-                vote = Vote(chamber, vvote_date, motion, passed, y, no,
-                            other_count)
-
-                if link_to_votes_href:
-                    bill.add_source(link_to_votes_href)
-                    vote['pdf-source'] = link_to_votes_href
-                    vote['source'] = link_to_votes_href
-                    self.extract_rollcall_from_pdf(chamber, vote, bill,
-                                                   link_to_votes_href, bill_id)
-                bill.add_vote(vote)
-            except Exception as error:
-                self.warning("scrape_vote_history: Failed bill=%s %s %s" %
-                             (bill_id, d, traceback.format_exc()))
+            bill.add_vote(vote)
 
 
     def process_rollcall(self,chamber,vvote_date,bill,bill_id,action):
@@ -418,6 +327,11 @@ class SCBillScraper(BillScraper):
 
     def scrape_details(self, bill_detail_url, session, chamber, bill_id):
         page = self.urlopen(bill_detail_url)
+
+        if 'INVALID BILL NUMBER' in page:
+            self.warning('INVALID BILL %s' % bill_detail_url)
+            return
+
         doc = lxml.html.fromstring(page)
         doc.make_links_absolute(bill_detail_url)
 
@@ -475,14 +389,7 @@ class SCBillScraper(BillScraper):
         vurl = doc.xpath('//a[text()="View Vote History"]/@href')
         if vurl:
             vurl = vurl[0]
-            try:
-                self.scrape_vote_history(vurl, chamber, bill, bill_id)
-                bill.add_source(vurl)
-                self.debug("Scraped votes: (chamber=%s,bill=%s,url=%s)" %
-                           (chamber,bill_id,vurl) )
-            except Exception as error:
-                self.warning("Failed to scrape votes: chamber=%s bill=%s vurl=%s %s" %
-                             (chamber,bill_id, vurl, traceback.format_exc()))
+            self.scrape_vote_history(bill, vurl)
 
         bill.add_source(bill_detail_url)
         self.save_bill(bill)
