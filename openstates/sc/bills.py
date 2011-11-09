@@ -61,203 +61,6 @@ class SCBillScraper(BillScraper):
         }
     }
 
-
-    def find_part(self, alist, line, start=0):
-        for ii in range(start,len(alist)):
-            if line.find(alist[ii]) != -1:
-                return ii
-        return -1
-
-
-    def count_votes(self, url,chamber,bill_id,data):
-        yays,nays, other, valid_data = [],[],[], False
-
-        house_sections =  ['FIRST', 'RESULT', 'Yeas:', 'YEAS', 'NAYS',
-                           'EXCUSED ABSENCE', 'ABSTAIN', 'NOT VOTING', 'REST']
-        senate_sections = ['FIRST', 'RESULT', 'Ayes:', 'AYES', 'NAYS',
-                           'EXCUSED ABSENCE', 'ABSTAIN', 'NOT VOTING', 'REST']
-
-        result_pat = re.compile("RESULT: (.+)$")
-
-        house_yes_section, hyes = 'YEAS', 'Yeas:'
-        senate_yes_section, syes = 'AYES', 'Ayes:'
-        yes_section = house_yes_section
-
-        #replace multiple lines with single lines?
-        data = re.sub(r'\n+', '\n', data)
-
-        lines = data.split("\n")
-        section, linenum, expected, areas = 0, 0, dict(), dict()
-
-        first_line = lines[0].strip()
-        if re.match("Senate", first_line):
-            sections = senate_sections
-            yes_section = senate_yes_section
-        elif re.match("House", first_line):
-            sections = house_sections
-            yes_section = house_yes_section
-        elif re.match("Joint", first_line):
-            self.warning("Bill[%s] Joint votes not handled: %s " %
-                         (bill_id, first_line))
-            return (False, expected, areas, yays, nays, other )
-        else:
-            self.warning("Bill[%s] unknown votes not handled: %s" %
-                         (bill_id, first_line))
-            return (valid_data, expected, areas, yays, nays, other )
-
-        for s in sections:
-            areas[s] = []
-            if not s in ['REST','FIRST','RESULT','Yeas:', 'Ayes:']:
-                expected[s] = 0
-
-
-        # Get the result line
-        nlines = len(lines)
-        result_pat = re.compile("RESULT: (.+)$")
-        epat = re.compile("\w - (\d+)")
-        #section_header_pat = re.compile("\w - (\d+)")
-        done, vresult, vtitle = False, "", ""
-        #while linenum < nlines and not done:
-        while linenum < nlines and not result_pat.search(lines[linenum]):
-            linenum += 1
-
-        if linenum < nlines:
-            result_match = result_pat.search(lines[linenum])
-            if not result_match:
-                self.warning("Bill[%s] failed to get roll call votes, because failed to find RESULT (url=%s)" % (bill_id,url))
-                return (valid_data, expected, areas, yays, nays, other )
-        else:
-            self.warning("(2) Bill[%s] failed to get roll call votes, because failed to find RESULT (url=%s)" % (bill_id,url))
-            return (valid_data, expected, areas, yays, nays, other )
-
-        vresult = result_match.group(1)
-
-        # Get the summary line
-        # Get the bill title line
-        # get the YEAS line, starting adding to YEAS
-        done = False
-        while linenum < nlines and not done:
-            line = lines[linenum]
-            if line.find(sections[2]):
-                self.debug ("%s %d got VOTE TOTALS section[%s] line|%s|" %
-                            (bill_id, linenum, sections[2], line ))
-                linenum += 1
-                vtitle = lines[linenum]
-                done = True
-            linenum += 1
-
-        self.debug("%s %d ==> VOTE |%s| |%s| " %
-                   (bill_id, linenum, vtitle, vresult))
-
-        current_expected = 0
-        done = False
-        while linenum < nlines and not done:
-            line = lines[linenum]
-            result_match = epat.search(lines[linenum])
-            if result_match:
-                current_expected = int(result_match.group(1))
-                expected[ sections[3] ] = current_expected
-                done = True
-                section = 3
-            linenum += 1
-
-        skey = sections[section]
-
-        done = False
-        while linenum < nlines and not done:
-            line = lines[linenum].strip()
-
-            nn = self.find_part(sections, line, section )
-            if nn != -1:
-
-                # get specified value to verify we get them all
-                eresult = epat.search(line)
-                section_count = 0
-                if eresult:
-                    section_count = int(eresult.group(1))
-
-                skey = sections[nn]
-                expected[ skey ] = section_count
-
-                section = nn
-
-            elif len(line) > 0 and not re.search("Page \d+ of \d+", line):
-                # if not page footer (Page x of Y ), add voters
-                possible = line.split("  ")
-                nonblank = [s.strip() for s in possible if len(s) >0]
-                areas[skey].extend(nonblank)
-
-            linenum += 1
-
-        counts_match = True
-        counts_in_error = expected_counts_in_error = 0
-        area_errors = []
-        self.debug ("EXPECTED %s " % expected )
-        for k in expected.keys():
-            v = areas[k]
-            expected_len = expected[k]
-            if len(v) != expected[k]:
-                self.warning("%s VOTE COUNT FOR %s: Got %d expected %d (%s)" %
-                             (bill_id, k, len(v) , expected[k], v ) )
-                counts_match = False
-                counts_in_error += len(v)
-                expected_counts_in_error += expected_len
-                area_errors.append(k)
-
-        if counts_match:
-            yays = areas[ yes_section ]
-            nays = areas['NAYS']
-            other = areas['EXCUSED ABSENCE']
-            other.extend(areas['NOT VOTING'] )
-            other.extend(areas['ABSTAIN'] )
-            msg = "SUCCESSFUL (y/n/o) (%d/%d/%d)" % (len(yays), len(nays),
-                                                     len(other))
-            self.debug("%s %s ROLL_CALL %s: %s" %
-                       (bill_id, chamber, msg, url))
-            valid_data = True
-        else:
-            self.warning("%s %s ROLL_CALL FAILED: %s" %
-                         (bill_id, chamber, url) )
-
-        return (valid_data, expected, areas, yays, nays, other)
-
-
-    def extract_rollcall_from_pdf(self,chamber,vote, bill, url,bill_id):
-        billnum = re.search("(\d+)", bill_id).group(1)
-        self.debug("Scraping rollcall %s|%s|" % (billnum, url))
-
-        bill_prefix = "vote_%s_%s_"  % (chamber, re.sub(r'\s+', '_', bill_id ))
-
-        bill.add_source(url)
-        #billnum = re.search("(\d+)", bill_id).group(1)
-
-        # Save roll call pdf to a local file
-        temp_file = tempfile.NamedTemporaryFile(delete=False,suffix='.pdf',
-                                                prefix=bill_prefix )
-        pdf_temp_name = temp_file.name
-
-        self.debug("Parsing pdf votes, saving to tempfile [%s]" %
-                   temp_file.name)
-        with self.urlopen(url) as pdata:
-            pdf_file = file(pdf_temp_name, 'w')
-            pdf_file.write(pdata)
-            pdf_file.close()
-
-        # Pdf is in pdf_temp_name
-        rollcall_data  = convert_pdf(pdf_temp_name, type='text')
-        (valid_data, expected, areas, yays, nays, other) = self.count_votes(url,chamber,bill_id,rollcall_data)
-
-        os.unlink(pdf_temp_name)
-
-        if valid_data:
-            self.debug("VOTE %s %s yays %d nays %d other %d pdf=%s" %
-                       (bill_id, chamber, len(yays), len(nays), len(other),
-                        pdf_temp_name ))
-            [vote.yes(legislator) for legislator in yays]
-            [vote.no(legislator) for legislator in nays]
-            [vote.other(legislator) for legislator in other]
-
-
     def scrape_vote_history(self, bill, vurl):
         html = self.urlopen(vurl)
         doc = lxml.html.fromstring(html)
@@ -288,9 +91,42 @@ class SCBillScraper(BillScraper):
                         others)
             vote.add_source(vurl)
 
-            # TODO: handle roll call
+            rollcall_pdf = vote_link.get('href')
+            self.scrape_rollcall(vote, rollcall_pdf)
+            vote.add_source(rollcall_pdf)
 
             bill.add_vote(vote)
+
+    def scrape_rollcall(self, vote, vurl):
+        (path, resp) = self.urlretrieve(vurl)
+        pdflines = convert_pdf(path, 'text')
+        os.remove(path)
+
+        current_vfunc = None
+
+        for line in pdflines.split('\n'):
+            line = line.strip()
+
+            # change what is being recorded
+            if line.startswith('YEAS'):
+                current_vfunc = vote.yes
+            elif line.startswith('NAYS'):
+                current_vfunc = vote.no
+            elif (line.startswith('EXCUSED') or
+                  line.startswith('NOT VOTING') or
+                  line.startswith('ABSTAIN')):
+                current_vfunc = vote.other
+            # skip these
+            elif not line or line.startswith('Page '):
+                continue
+
+            # if a vfunc is active
+            elif current_vfunc:
+                # split names apart by 4 spaces
+                names = line.split('    ')
+                for name in names:
+                    if name:
+                        current_vfunc(name.strip())
 
 
     def process_rollcall(self,chamber,vvote_date,bill,bill_id,action):
