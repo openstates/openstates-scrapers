@@ -17,5 +17,6 @@ metadata = dict(
         ],
     session_details={
         '119': {'start_date': datetime.date(2010,11,17), 'type': 'primary'},
-    }
+    },
+    feature_flags=[],
 )

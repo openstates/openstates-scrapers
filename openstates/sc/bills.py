@@ -53,11 +53,11 @@ class SCBillScraper(BillScraper):
         'vote-url-base' : "http://www.scstatehouse.gov",
 
         'lower' : {
-          'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.htm",
+          'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.php",
         },
 
         'upper' : {
-          'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.htm",
+          'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.php",
         }
     }
 
@@ -416,20 +416,15 @@ class SCBillScraper(BillScraper):
         bill.add_vote(vote)
 
 
-    def scrape_details(self, bill_detail_url, session, chamber, bill_id, page):
-
-        # these crop up from time to time
-        if 'INVALID BILL' in page:
-            return
-
+    def scrape_details(self, bill_detail_url, session, chamber, bill_id):
+        page = self.urlopen(bill_detail_url)
         doc = lxml.html.fromstring(page)
         doc.make_links_absolute(bill_detail_url)
 
-        pre = doc.xpath('//form/following-sibling::pre')[0]
+        bill_div = doc.xpath('//div[@style="margin:0 0 40px 0;"]')[0]
 
-        # Concurrent Resolution, By Rybert, Rose, Campsen, and \r\nMassey
-        by_stuff = pre.xpath('a/b/font')[0].tail.strip().replace('\r\n', ' ')
-        bill_type, authors = by_stuff.split(', By ')
+        bill_type = bill_div.xpath('span/text()')[0]
+
         if 'General Bill' in bill_type:
             bill_type = 'bill'
         elif 'Concurrent Resolution' in bill_type:
@@ -441,19 +436,15 @@ class SCBillScraper(BillScraper):
         else:
             raise ValueError('unknown bill type: %s' % bill_type)
 
-        bill_summary = pre.xpath('a/b')[0].tail.strip().replace('\r\n', ' ')
-        # if similar bills are present then this isn't really the summary
-        if 'Similar (' in bill_summary:
-            similar_bills = pre.xpath('a[starts-with(@href,"javascript:show_bill")]')
-            # chop off leading )
-            bill_summary = similar_bills[-1].tail[3:].strip().replace('\r\n', ' ')
+        # this is fragile, but less fragile than it was
+        b = bill_div.xpath('./b[text()="Summary:"]')[0]
+        bill_summary = b.getnext().tail.strip()
 
         bill = Bill(session, chamber, bill_id, bill_summary, type=bill_type)
 
-        for author in re.split(', |and ', authors):
-            bill.add_sponsor('sponsor', author.strip())
-
-        bill_number = re.search("(\d+)", bill_id).group(0)
+        # sponsors
+        for sponsor in doc.xpath('//a[contains(@href, "member.php")]/text()'):
+            bill.add_sponsor('sponsor', sponsor)
 
         # find versions
         version_url = doc.xpath('//a[text()="View full text"]/@href')[0]
@@ -464,26 +455,21 @@ class SCBillScraper(BillScraper):
             bill.add_version(version.text, version.get('href'))
 
         # actions
-        action_line_re = re.compile(r'(\d\d/\d\d/\d\d)\s+(\w+)\s+(.+)')
-        action_text = pre.text_content().split('View full text')[1]
-        for line in action_text.splitlines():
-            #get rid of the parenthesis
-            action_line = line.split("(")[0].strip()
-            r = action_line_re.search(action_line)
+        for row in bill_div.xpath('table/tr'):
+            date_td, chamber_td, action_td = row.xpath('td')
 
-            if r:
-                the_date = r.group(1)
-                action_chamber = r.group(2)
-                action = r.group(3)
+            date = datetime.datetime.strptime(date_td.text, "%m/%d/%y")
+            action_chamber = {'Senate':'upper',
+                              'House':'lower',
+                              None: 'other'}[chamber_td.text]
 
-                date = datetime.datetime.strptime(the_date, "%m/%d/%y")
-                date = date.date()
+            action = action_td.text_content()
+            action = action.split('(House Journal')[0]
+            action = action.split('(Senate Journal')[0]
 
-                t = action_type(action)
-                bill.add_action(chamber, action, date, t)
+            atype = action_type(action)
+            bill.add_action(action_chamber, action, date, atype)
 
-            elif len(action_line) > 0:
-                self.debug("Skipping line [%s] [%s]" % (bill_id, line))
 
         # votes
         vurl = doc.xpath('//a[text()="View Vote History"]/@href')
@@ -502,67 +488,20 @@ class SCBillScraper(BillScraper):
         self.save_bill(bill)
 
 
-    def recap(self, data):
-        """Extract bill ids from daily recap page.
-        Splits page into sections, and returns list containing bill ids
-        """
-        # throw away everything before <body>
-        start = data.index("<body>")
-        stop = data.index("</body>",start)
-
-        bill_id_exp = re.compile(">(?P<id>\w\. \d{1,4}?)</a> \(<a href=")
-        billids = set()
-        if stop >= 0 and stop > start:
-          all = re.compile("/cgi-bin/web_bh10.exe" ).split(data[start:stop])
-          for part in all[1:]:
-            result = bill_id_exp.search(part)
-            if result:
-                bill_id = result.group('id')
-                billids.add(bill_id)
-
-          return billids
-
-        raise ScrapeError("recap: bad format %s" % data )
-
-
     def scrape(self, chamber, session):
-        # 1. Get list of days with information by parsing daily url
-        #    which will have one link for each day in the session.
-        # 2. Scan each of the days and collect a list of bill numbers.
-        # 3. Get Bill info.
-
         index_url = self.urls[chamber]['daily-bill-index']
 
-        days = []
-        with self.urlopen(index_url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(index_url)
-            days = [str(link.attrib['href']) for link in
-                    page.find_class('contentlink')]
-
-        self.log("Session days: %d" % len(days))
+        page = self.urlopen(index_url)
+        doc = lxml.html.fromstring(page)
+        doc.make_links_absolute(index_url)
 
         # visit each day and extract bill ids
-        all_bills = set()
+        days = doc.xpath('//div/b/a/@href')
+        for day_url in days:
+            data = self.urlopen(day_url)
+            doc = lxml.html.fromstring(data)
+            doc.make_links_absolute(day_url)
 
-        for dayurl in days:
-            self.debug("processing day %s %s" % (dayurl,chamber))
-            with self.urlopen(dayurl) as data:
-                billids = self.recap(data)
-                all_bills |= billids;
-                self.debug("  Day count: #bills %d all %d on %s" %
-                           (len(billids), len(all_bills), dayurl))
-
-        for bill_id in all_bills:
-            pat = re.search("\d+", bill_id)
-            if not pat:
-                self.warning("Missing billid [%s]" % bill_id)
-                continue
-
-            bn = pat.group(0)
-            dtl_url = self.urls['bill-detail'] % (bn,session)
-
-            with self.urlopen(dtl_url) as page:
-                self.scrape_details(dtl_url, session, chamber, bill_id, page)
-
-        self.log("Total bills processed: %d : " % len(all_bills))
+            for bill_a in doc.xpath('//p/a[1]'):
+                self.scrape_details(bill_a.get('href'), session, chamber,
+                                    bill_a.text)
