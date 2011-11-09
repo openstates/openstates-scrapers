@@ -490,6 +490,7 @@ class SCBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         index_url = self.urls[chamber]['daily-bill-index']
+        chamber_letter = 'S' if chamber == 'upper' else 'H'
 
         page = self.urlopen(index_url)
         doc = lxml.html.fromstring(page)
@@ -503,5 +504,7 @@ class SCBillScraper(BillScraper):
             doc.make_links_absolute(day_url)
 
             for bill_a in doc.xpath('//p/a[1]'):
-                self.scrape_details(bill_a.get('href'), session, chamber,
-                                    bill_a.text)
+                bill_id = bill_a.text
+                if bill_id.startswith(chamber_letter):
+                    self.scrape_details(bill_a.get('href'), session, chamber,
+                                        bill_id)
