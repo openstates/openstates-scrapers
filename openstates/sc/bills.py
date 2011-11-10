@@ -122,7 +122,7 @@ class SCBillScraper(BillScraper):
             line = line.strip()
 
             # change what is being recorded
-            if line.startswith('YEAS'):
+            if line.startswith('YEAS') or line.startswith('AYES'):
                 current_vfunc = vote.yes
             elif line.startswith('NAYS'):
                 current_vfunc = vote.no
@@ -141,38 +141,6 @@ class SCBillScraper(BillScraper):
                 for name in names:
                     if name:
                         current_vfunc(name.strip())
-
-
-    def process_rollcall(self,chamber,vvote_date,bill,bill_id,action):
-        self.debug("508 Roll call: [%s]" % action )
-        if re.search(action,'Ayes'):
-            pat1 = re.compile('<a href="(.+)" target="_blank">Ayes-(\d+)\s+Nays-(\d+)</a>')
-        else:
-            pat1 = re.compile('<a href="(.+)" target="_blank">Yeas-(\d+)\s+Nays-(\d+)</a>')
-        sr1 = pat1.search(action)
-        if not sr1:
-            self.debug("515 Roll call: NO MATCH " )
-            return
-
-        the_link = sr1.group(1)
-        the_ayes = sr1.group(2)
-        the_nays = sr1.group(3)
-
-        vbase = self.urls['vote-url-base']
-        vurl = "%s%s" % (self.urls['vote-url-base'], the_link)
-        self.debug("VOTE 512 Roll call: link [%s] AYES [%s] NAYS[%s] vurl[%s]"
-                   % (the_link, the_ayes, the_nays, vurl ))
-
-        motion = "some rollcall action"
-        yes_count = int(the_ayes)
-        no_count = int(the_nays)
-        other_count = 0
-        passed = True
-        vote = Vote(chamber, vvote_date, motion, passed, yes_count, no_count,
-                    other_count)
-        self.extract_rollcall_from_pdf(chamber,vote, bill,vurl,bill_id)
-        self.debug("2 ADD VOTE %s" % bill_id)
-        bill.add_vote(vote)
 
 
     def scrape_details(self, bill_detail_url, session, chamber, bill_id):
