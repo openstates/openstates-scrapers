@@ -39,6 +39,7 @@ def action_type(action):
                    ('Read second time', 'bill:reading:2'),
                    ('Read third time', ['bill:passed', 'bill:reading:3']),
                    ('Recommitted to Committee', 'committee:referred'),
+                   ('Referred to Committee', 'committee:referred'),
                    ('Rejected', 'bill:failed'),
                    ('Senate amendment amended', 'amendment:amended'),
                    ('Signed by governor', 'governor:signed'),
