@@ -20,6 +20,8 @@ def group(lst, n):
 TITLE_REMOVING_PATTERN = re.compile(".*(Rep|Sen). (.+)$")
 SPONSOR_PATTERN = re.compile("^(Added |Removed )?(.+Sponsor) (Rep|Sen). (.+)$")
 
+VERSION_TYPES = ('Introduced', 'Engrossed', 'Enrolled', 'Re-Enrolled')
+FULLTEXT_DOCUMENT_TYPES = ('Public Act',)
 DOC_TYPES = {
     'B': 'bill',
     'R': 'resolution',
@@ -148,15 +150,15 @@ class ILBillScraper(BillScraper):
         for link in doc.xpath('//a[contains(@href, "fulltext")]'):
             name = link.text
             url = link.get('href')
-            if name in ('Introduced', 'Engrossed', 'Enrolled'):
+            if name in VERSION_TYPES:
                 bill.add_version(name, url)
-            elif 'Amendment' in name:
+            elif 'Amendment' in name or name in FULLTEXT_DOCUMENT_TYPES:
                 bill.add_document(name, url)
             elif 'Printer-Friendly' in name:
                 pass
             else:
-                self.warning('unknown document type %s' % name)
-
+                self.warning('unknown document type %s - adding as document' % name)
+                bill.add_document(name, url)
 
     def scrape_votes(self, bill, votes_url):
         html = self.urlopen(votes_url)
