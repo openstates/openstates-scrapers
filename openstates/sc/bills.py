@@ -11,35 +11,47 @@ import lxml.html
 
 
 def action_type(action):
-    action = action.lower()
-    atypes = []
-    if re.match('^read (the )?(first|1st) time', action):
-        atypes.append('bill:introduced')
-        atypes.append('bill:reading:1')
-    elif re.match('^read second time', action):
-        atypes.append('bill:reading:2')
-    elif re.match('^read third time', action):
-        atypes.append('bill:reading:3')
-
-    if re.match('^referred to (the )?committee', action):
-        atypes.append('committee:referred')
-    elif re.match('^referred to (the )?subcommittee', action):
-        atypes.append('committee:referred')
-
-    if re.match('^introduced and adopted', action):
-        atypes.append('bill:introduced')
-        #not sure if adopted means passed
-        atypes.append('bill:passed')
-    elif re.match('^introduced and read first time', action):
-        atypes.append('bill:introduced')
-        atypes.append('bill:reading:1')
-    elif re.match('^introduced', action):
-        atypes.append('bill:introduced')
-
-    if atypes:
-        return atypes
-
-    return ['other']
+    # http://www.scstatehouse.gov/actionsearch.php is very useful for this
+    _classifiers = (('Adopted', 'bill:passed'),
+                    ('Amended and adopted',
+                     ['bill:passed', 'amendment:passed']),
+                    ('Amended', 'amendment:passed'),
+                    ('Certain items vetoed', 'governor:vetoed:line-item'),
+                    ('Committed to', 'committee:referred'),
+                    ('Committee Amendment Adopted', 'amendment:passed'),
+                    ('Committee Amendment Amended and Adopted',
+                     ['amendment:passed', 'amendment:amended']),
+                    ('Committee Amendment Amended', 'amendment:amended'),
+                    ('Committee Amendment Tabled', 'amendment:tabled'),
+                    ('Committee report: Favorable',
+                     'committee:passed:favorable'),
+                    ('Committee report: Majority favorable',
+                     'committee:passed'),
+                    ('House amendment amended', 'amendment:amended'),
+                    ('Introduced and adopted',
+                     ['bill:introduced', 'bill:passed']),
+                    ('Introduced, adopted',
+                     ['bill:introduced', 'bill:passed']),
+                    ('Introduced and read first time', ['bill:introduced', 'bill:reading:1']),
+                    ('Introduced, read first time', ['bill:introduced', 'bill:reading:1']),
+                    ('Introduced', 'bill:introduced'),
+                    ('Prefiled', 'bill:filed'),
+                    ('Read second time', 'bill:reading:2'),
+                    ('Read third time', ['bill:passed', 'bill:reading:3']),
+                    ('Recommitted to Committee', 'committee:referred'),
+                    ('Rejected': 'bill:failed'),
+                    ('Senate amendment amended', 'amendment:amended'),
+                    ('Signed by governor', 'governor:signed'),
+                    ('Tabled', 'bill:failed'),
+                    ('Veto overridden', 'bill:veto_override:passed'),
+                    ('Veto sustained', 'bill:veto_override:failed'),
+                    ('Vetoed by Governor', 'governor:vetoed'),
+                   )
+    for prefix, atype in action:
+        if action.startswith(prefix):
+            return atype
+    # otherwise
+    return 'other'
 
 
 class SCBillScraper(BillScraper):
