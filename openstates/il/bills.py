@@ -30,6 +30,9 @@ DOC_TYPES = {
 }
 
 _action_classifiers = (
+    ('Amendment No. \d+ Filed', 'amendment:introduced'),
+    ('Amendment No. \d+ Tabled', 'amendment:failed'),
+    ('Amendment No. \d+ Adopted', 'amendment:passed'),
     ('(Pref|F)iled with', 'bill:filed'),
     ('Arrived? in', 'bill:introduced'),
     ('First Reading', 'bill:reading:1'),
@@ -41,9 +44,6 @@ _action_classifiers = (
     ('Governor Vetoed', 'governor:vetoed'),
     ('Governor Item', 'governor:vetoed:line-item'),
     ('Governor Amendatory Veto', 'governor:vetoed'),
-    ('Amendment No. \d+ Filed', 'amendment:introduced'),
-    ('Amendment No. \d+ Tabled', 'amendment:failed'),
-    ('Amendment No. \d+ Adopted', 'amendment:passed'),
     ('Do Pass', 'committee:passed'),
     ('Recommends Be Adopted', 'committee:passed:favorable'),
     ('Third Reading .+? Passed', ['bill:reading:3', 'bill:passed']),
