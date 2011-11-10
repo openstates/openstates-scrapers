@@ -124,7 +124,7 @@ class SCBillScraper(BillScraper):
             # if a vfunc is active
             elif current_vfunc:
                 # split names apart by 3 or more spaces
-                names = re.split('\s{3,}', name)
+                names = re.split('\s{3,}', line)
                 for name in names:
                     if name:
                         current_vfunc(name.strip())
