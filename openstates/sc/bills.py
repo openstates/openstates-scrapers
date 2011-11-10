@@ -228,7 +228,7 @@ class SCBillScraper(BillScraper):
 
             action = action_td.text_content()
             action = action.split('(House Journal')[0]
-            action = action.split('(Senate Journal')[0]
+            action = action.split('(Senate Journal')[0].strip()
 
             atype = action_type(action)
             bill.add_action(action_chamber, action, date, atype)
