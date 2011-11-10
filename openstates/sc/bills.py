@@ -1,9 +1,6 @@
 import datetime
 import os
 import re
-import sys
-import tempfile
-import traceback
 
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
@@ -126,8 +123,8 @@ class SCBillScraper(BillScraper):
 
             # if a vfunc is active
             elif current_vfunc:
-                # split names apart by 4 spaces
-                names = line.split('    ')
+                # split names apart by 3 or more spaces
+                names = re.split('\s{3,}', name)
                 for name in names:
                     if name:
                         current_vfunc(name.strip())
