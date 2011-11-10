@@ -68,8 +68,12 @@ class SCBillScraper(BillScraper):
 
         # skip first two rows
         for row in doc.xpath('//table/tr')[2:]:
-            (timestamp, motion, vote, yeas, nays,
-             nv, exc, abst, total, result) = row.getchildren()
+            tds = row.getchildren()
+            if len(tds) != 10:
+                self.warning('irregular vote row: %s' % vurl)
+                continue
+            (timestamp, motion, vote, yeas, nays, nv, exc, abst,
+             total, result) = tds
 
             timestamp = timestamp.text.replace(u'\xa0', ' ')
             timestamp = datetime.datetime.strptime(timestamp,
