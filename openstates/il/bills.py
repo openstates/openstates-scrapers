@@ -21,7 +21,7 @@ TITLE_REMOVING_PATTERN = re.compile(".*(Rep|Sen). (.+)$")
 SPONSOR_PATTERN = re.compile("^(Added |Removed )?(.+Sponsor) (Rep|Sen). (.+)$")
 
 VERSION_TYPES = ('Introduced', 'Engrossed', 'Enrolled', 'Re-Enrolled')
-FULLTEXT_DOCUMENT_TYPES = ('Public Act',)
+FULLTEXT_DOCUMENT_TYPES = ('Public Act', "Governor's Message", )
 DOC_TYPES = {
     'B': 'bill',
     'R': 'resolution',
