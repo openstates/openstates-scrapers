@@ -1,6 +1,7 @@
 import datetime
 import os
 import re
+from collections import defaultdict
 
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
@@ -58,18 +59,43 @@ def action_type(action):
 class SCBillScraper(BillScraper):
     state = 'sc'
     urls = {
-        'bill-detail' : "http://scstatehouse.gov/cgi-bin/web_bh10.exe?bill1=%s&session=%s" ,
-        'vote-url' : "http://www.scstatehouse.gov/php/votehistory.php?type=BILL&session=%s&bill_number=%s",
-        'vote-url-base' : "http://www.scstatehouse.gov",
-
         'lower' : {
           'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.php",
         },
-
         'upper' : {
           'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.php",
         }
     }
+
+    _subjects = defaultdict(set)
+
+    def scrape_subjects(self, session):
+
+        # only need to do it once
+        if self._subjects:
+            return
+
+        subject_search_url = 'http://www.scstatehouse.gov/subjectsearch.php'
+        data = self.urlopen(subject_search_url, 'POST',
+                            'GETINDEX=Y&SESSION=%s&INDEXCODE=0&INDEXTEXT=&AORB=B&PAGETYPE=0' % session)
+        doc = lxml.html.fromstring(data)
+        # skip first two subjects, filler options
+        for option in doc.xpath('//option')[2:]:
+            subject = option.text
+            code = option.get('value')
+
+            url = '%s?AORB=B&session=%s&indexcode=%s' % (subject_search_url,
+                                                         session, code)
+            data = self.urlopen(url)
+            doc = lxml.html.fromstring(data)
+            for bill in doc.xpath('//span[@style="font-weight:bold;"]'):
+                match = re.match('(?:H|S) \d{4}', bill.text)
+                if match:
+                    # remove * and leading zeroes
+                    bill_id = match.group().replace('*', ' ')
+                    bill_id = re.sub(' 0*', ' ', bill_id)
+                    self._subjects[bill_id].add(subject)
+
 
     def scrape_vote_history(self, bill, vurl):
         html = self.urlopen(vurl)
@@ -173,6 +199,7 @@ class SCBillScraper(BillScraper):
         bill_summary = b.getnext().tail.strip()
 
         bill = Bill(session, chamber, bill_id, bill_summary, type=bill_type)
+        bill['subjects'] = list(self._subjects[bill_id])
 
         # sponsors
         for sponsor in doc.xpath('//a[contains(@href, "member.php")]/text()'):
@@ -214,6 +241,10 @@ class SCBillScraper(BillScraper):
 
 
     def scrape(self, chamber, session):
+        # start with subjects
+        self.scrape_subjects(session)
+
+        # get bill index
         index_url = self.urls[chamber]['daily-bill-index']
         chamber_letter = 'S' if chamber == 'upper' else 'H'
 
@@ -229,7 +260,7 @@ class SCBillScraper(BillScraper):
             doc.make_links_absolute(day_url)
 
             for bill_a in doc.xpath('//p/a[1]'):
-                bill_id = bill_a.text
+                bill_id = bill_a.text.replace('.', '')
                 if bill_id.startswith(chamber_letter):
                     self.scrape_details(bill_a.get('href'), session, chamber,
                                         bill_id)
