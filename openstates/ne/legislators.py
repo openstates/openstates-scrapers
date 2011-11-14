@@ -24,19 +24,15 @@ class NELegislatorScraper(LegislatorScraper):
                 html = self.urlopen(rep_url)
                 page = lxml.html.fromstring(html)
 
-                full_name = page.xpath('//div[@class="content_header_right"]/a')[0].text.split()
-                first_name = full_name[1]
-                last_name = full_name[2]
-
+                full_name = page.xpath('//div[@class="content_header_right"]/a')[0].text.split(' ',1)[1].strip()
                 email = page.xpath('//div[@id="sidebar"]/ul[1]/li[7]/a')[0].text or ''
                 phone = page.xpath('//div[@id="sidebar"]/ul[1]/li[6]')[0].text.split()
                 phone = phone[1] + '-' + phone[2]
 
                 #Nebraska is offically nonpartisan
                 party = 'Nonpartisan'
-                middle_name = ''
-                leg = Legislator(term, chamber, str(district), first_name + ' ' + last_name,
-                first_name, last_name, middle_name, party, email=email, phone=phone)
+                leg = Legislator(term, chamber, str(district), full_name,
+                                 party=party, email=email, phone=phone)
                 leg.add_source(rep_url)
                 self.save_legislator(leg)
             except scrapelib.HTTPError:
