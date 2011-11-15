@@ -3,15 +3,15 @@ STATE README TEMPLATE
 
 Metadata
 --------
-Name:  
-Abbreviation:  
-Legislature Name:  
-Upper Chamber Name:  
-Lower Chamber Name:  
-Upper Chamber Title:  
-Lower Chamber Title:  
-Upper Chamber Term:  
-Lower Chamber Term:  
+Name: Georgia
+Abbreviation: GA
+Legislature Name: Georgia State Assembly 
+Upper Chamber Name: State Senate
+Lower Chamber Name: House of Representatives 
+Upper Chamber Title: Senator 
+Lower Chamber Title: Representative  
+Upper Chamber Term: 2 years 
+Lower Chamber Term: 2 years 
 
 
 Information Locations
