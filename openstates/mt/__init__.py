@@ -15,5 +15,6 @@ metadata = {
     ],
     'session_details': {
         '62nd': {'display_name': '62nd Regular Session'},
-    }
+    },
+    'feature_flags': []
 }
