@@ -1,5 +1,4 @@
 import lxml.html
-import lxml.html.soupparser
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
@@ -49,7 +48,7 @@ class MOLegislatorScraper(LegislatorScraper):
                     leg.add_source(url)
                     
                     #Using soupparser as legislator pages are very soupy
-                    page = lxml.html.soupparser.fromstring(details_page)
+                    page = lxml.html.fromstring(details_page)
                     photo_url = page.xpath('//html/body/div[2]/div/img/@src')[0]
                     committees = page.xpath('//html/body/div[2]//span[@class="style3"]/a')
                     for c in committees:
