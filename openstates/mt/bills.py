@@ -130,8 +130,8 @@ class MTBillScraper(BillScraper):
                 actor = actor_map[action.xpath("td[1]")[0].text_content().split(" ")[0]]
                 action_name = action.xpath("td[1]")[0].text_content().replace(actor, "")[4:].strip()
             except KeyError:
-                actor = ''
                 action_name = action.xpath("td[1]")[0].text_content().strip()
+                actor = 'clerk' if action_name == 'Chapter Number Assigned' else ''
 
             action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y')
             action_votes_yes = action.xpath("td[3]")[0].text_content().replace("&nbsp", "")
