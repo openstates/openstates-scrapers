@@ -2,6 +2,8 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
+from tn import metadata
+
 import datetime
 import lxml.html
 import re
@@ -10,7 +12,8 @@ import re
 class TNBillScraper(BillScraper):
     state = 'tn'
     urls = {
-        'index': 'http://wapp.capitol.tn.gov/apps/archives/default.aspx?year=%s',
+        'cur_index': 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%(chamber_type)sB0001&EndNum=%(chamber_type)sB9999&Year=%(year)s',
+        'arch_index': 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%(chamber_type)sB0001&EndNum=%(chamber_type)sB9999&Year=%(year)s',
         'info': 'http://wapp.capitol.tn.gov/apps/Billinfo/default.aspx?BillNumber=%s&ga=%s',
         'special': {
             '106th Special Session': 'http://wapp.capitol.tn.gov/apps/indexes/SpSession1.aspx',
@@ -29,24 +32,18 @@ class TNBillScraper(BillScraper):
         if 'Special' in session:
             bills_index_url = self.urls['special'][session]
         else:
-            bills_index_url = self.urls['index'] % (ga_num,)
+            if session in metadata["terms"][-1]["sessions"]:
+              bills_index_url = self.urls['cur_index'] % {"chamber_type": chamber_type, "year": ga_num}
+            else:
+              bills_index_url = self.urls['arch_index'] % {"chamber_type": chamber_type, "year": ga_num}
         
         # Scrape session bills index to get bill numbers for current chamber
         with self.urlopen(bills_index_url) as page:
             page = lxml.html.fromstring(page)
-            for bills_range in page.xpath(".//td[@width='16.6%']/a[last()]"):
-                bills_range = bills_range.text_content()
-                name, first, last = re.search("^([A-Z]+)(\d+)-[A-Z]+(\d+)$", bills_range).groups()
-                if name.startswith(chamber_type):
-                    bill_types[name] = { 'start': int(first), 'end': int(last) }
-        
         # Scrape bills
-        for bt in bill_types.keys():
-            bill_num_range = range(bill_types[bt]['start'], bill_types[bt]['end']+1)
-            #bill_nums += [("%s%0*d" % (bt, 4, bn)) for bn in bill_num_range]
-            for bn in bill_num_range:
-                bn_formatted = "%s%0*d" % (bt, 4, bn)
-                self.scrape_bill(chamber, session, bn_formatted, ga_num)
+            for bill_link in page.xpath(".//div[@id='open']//a"):
+               bn_formatted = bill_link.text
+               self.scrape_bill(chamber, session, bn_formatted, ga_num)
         
     
     def scrape_bill(self, chamber, session, bill_number, ga_num):
