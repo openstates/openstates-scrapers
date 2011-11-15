@@ -115,7 +115,6 @@ class MOLegislatorScraper(LegislatorScraper):
                               first_name=first_name, last_name=last_name,
                               party=party, phone=phone, office_address=address,
                               _code=leg_code)
-                    leg.add_source(url)
                     url = (self.rep_details_url % (session,district))
                     leg.add_source(url)
                     with self.urlopen(url) as details_page:
@@ -133,7 +132,7 @@ class MOLegislatorScraper(LegislatorScraper):
                         if len(picture) > 0:
                             #print "Found picture : %s" % picture[0]
                             leg['photo_url'] = picture[0]
-                        leg.add_source(url)
+                        #leg.add_source(url)
                         self.save_legislator(leg)
 
     def save_vacant_legislator(self,leg):
