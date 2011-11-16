@@ -20,7 +20,7 @@ class NMLegislatorScraper(LegislatorScraper):
             for link in doc.xpath(xpath):
                 # dummy id used for empty seat
                 if 'SNULL' in link:
-                    pass
+                    continue
                 self.scrape_legislator(chamber, term, link)
 
     def scrape_legislator(self, chamber, term, url):
