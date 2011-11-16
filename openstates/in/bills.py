@@ -76,6 +76,9 @@ class INBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
+            if page.get('//h1/text()')[0] == 'Bill Withdrawn':
+                return
+
             title = page.xpath("//br")[8].tail
             if not title:
                 title = short_title
