@@ -18,6 +18,9 @@ class NMLegislatorScraper(LegislatorScraper):
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute('http://www.nmlegis.gov/lcs/')
             for link in doc.xpath(xpath):
+                # dummy id used for empty seat
+                if 'SNULL' in link:
+                    pass
                 self.scrape_legislator(chamber, term, link)
 
     def scrape_legislator(self, chamber, term, url):
