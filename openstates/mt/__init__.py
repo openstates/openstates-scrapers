@@ -14,6 +14,9 @@ metadata = {
          'start_year': 2011, 'end_year': 2012},
     ],
     'session_details': {
-        '62nd': {'display_name': '62nd Regular Session'},
-    }
+        '62nd': {'display_name': '62nd Regular Session',
+                 'years': [2011, 2012]
+                },
+    },
+    'feature_flags': [],
 }

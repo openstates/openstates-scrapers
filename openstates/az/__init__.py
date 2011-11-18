@@ -126,7 +126,10 @@ metadata = dict(
             'sessions': [
             '50th-1st-special',
             '50th-2nd-special',
+            '50th-3rd-special',
+            '50th-4th-special',
             '50th-1st-regular',
+            '50th-2nd-regular',
             ],
             'start_year': 2011, 'end_year': 2012
         },
@@ -432,6 +435,13 @@ metadata = dict(
                 'display_name': '50th Legislature, 1st Regular Session',
                 'start_date': datetime.date(2011, 1, 10),
                 'end_date': datetime.date(2011,4,20)},
+            # Not even close to beginning of next session
+            # but bill are being prefiled
+            '50th-2nd-regular':
+                {'type': 'primary', 'session_id': 107,
+                'display_name': '50th Legislature, 2nd Regular Session',
+                #'start_date': , 'end_date': 
+                },
         },
         feature_flags=[],
     )

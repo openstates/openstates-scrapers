@@ -30,6 +30,12 @@ def classify_action(action):
 class MABillScraper(BillScraper):
     state = 'ma'
 
+    def __init__(self, *args, **kwargs):
+        super(MABillScraper, self).__init__(*args, **kwargs)
+        # forcing these values so that 500s come back as skipped bills
+        self.retry_attempts = 0
+        self.raise_errors = False
+
     def scrape(self, chamber, session):
         # for the chamber of the action
         chamber_map = {'House': 'lower', 'Senate':'upper', 'Joint': 'joint',
@@ -108,7 +114,7 @@ class MABillScraper(BillScraper):
                     bill.add_sponsor('cosponsor', petitioner)
 
                 # sometimes version link is just missing
-                bill_text_url = doc.xpath('//a[@title="Show and Print Bill Text"]/@href')
+                bill_text_url = doc.xpath('//a[contains(@href, "BillHtml")]/@href')
                 if bill_text_url:
                     bill.add_version('Current Text', bill_text_url[0])
 

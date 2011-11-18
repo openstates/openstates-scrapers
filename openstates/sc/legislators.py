@@ -1,43 +1,73 @@
-import re
 import lxml.html
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
+
 
 class SCLegislatorScraper(LegislatorScraper):
     state = 'sc'
 
     def scrape(self, chamber, term):
         if chamber == 'lower':
-            url = 'http://www.scstatehouse.gov/html-pages/housemembers.html'
+            url = 'http://www.scstatehouse.gov/member.php?chamber=H'
         else:
-            url = 'http://www.scstatehouse.gov/html-pages/senatemembersd.html'
+            url = 'http://www.scstatehouse.gov/member.php?chamber=S'
 
-        with self.urlopen(url) as data:
-            doc = lxml.html.fromstring(data)
-            rows = doc.xpath('//pre/div[@class="sansSerifNormal"]')
+        data = self.urlopen(url)
+        doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(url)
 
-            for row in rows:
-                member_a = row.xpath('a')[0]
+        for a in doc.xpath('//a[contains(@href, "code=")]'):
+            full_name = a.text
+            leg_url = a.get('href')
 
-                name_party = member_a.text_content()
-                if name_party.find('[D]') != -1:
-                    party = 'Democratic'
-                    full_name = name_party.partition('[D]')[0].strip()
-                elif name_party.find('[R]') != -1:
-                    party = 'Republican'
-                    full_name = name_party.partition('[R]')[0].strip()
+            leg_html = self.urlopen(leg_url)
+            leg_doc = lxml.html.fromstring(leg_html)
+            leg_doc.make_links_absolute(leg_url)
 
-                photo_url = 'http://www.scstatehouse.gov/members/gif/' + re.search('(\d+)\.html', member_a.attrib['href']).group(1) + '.jpg'
+            party, district, _ = leg_doc.xpath('//p[@style="font-size: 17px; margin: 0 0 0 0; padding: 0;"]/text()')
+            if 'Republican' in party:
+                party = 'Republican'
+            elif 'Democrat' in party:
+                party = 'Democratic'
 
-                other_data = row.text_content().encode('ascii', 'ignore')
-                od_result = re.search('^.+District (\d+) - (.+)Count.+$', other_data)
-                district = od_result.group(1)
+            # District # - County - Map
+            district = district.split()[1]
 
-                contentb = re.search('^.+\(C\) (.+,.*\d+).*Bus. (\(\d+\) \d+-\d+).+$', other_data)
-                if contentb is not None:
-                    office_address = contentb.group(1)
-                    office_phone = contentb.group(2)
+            photo_url = leg_doc.xpath('//img[contains(@src,"/members/")]/@src')[0]
 
-                legislator = Legislator(term, chamber, district, full_name, party=party, photo_url=photo_url, office_address=office_address, office_phone=office_phone)
-                legislator.add_source(url)
-                self.save_legislator(legislator)
+            # office address / phone
+            addr_div = leg_doc.xpath('//div[@style="float: left; width: 225px; margin: 10px 5px 0 20px; padding: 0;"]')[0]
+            office_addr = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 10px 0; padding: 0;"]')[0].text_content()
+
+            office_phone = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 0 0; padding: 0;"]/text()')[0]
+            office_phone = office_phone.strip()
+
+            legislator = Legislator(term, chamber, district, full_name,
+                                    party=party, photo_url=photo_url,
+                                    office_address=office_addr,
+                                    office_phone=office_phone)
+            legislator.add_source(url)
+
+
+            # committees (skip first link)
+            for com in leg_doc.xpath('//a[contains(@href, "committee.php")]')[1:]:
+                if com.text.endswith(', '):
+                    committee, role = com.text_content().rsplit(', ',1)
+                    # known roles
+                    role = {'Treas.': 'treasurer',
+                            'Secy.': 'secretary',
+                            'Secy./Treas.': 'secretary/treasurer',
+                            'V.C.': 'vice-chair',
+                            '1st V.C.': 'first vice-chair',
+                            '2nd V.C.': 'second vice-chair',
+                            '3rd V.C.': 'third vice-chair',
+                            'Ex.Officio Member': 'ex-officio member',
+                            'Chairman': 'chairman'}[role]
+                else:
+                    committee = com.text
+                    role = 'member'
+                legislator.add_role('committee member', term=term,
+                                    chamber=chamber, committee=committee,
+                                    position=role)
+
+            self.save_legislator(legislator)

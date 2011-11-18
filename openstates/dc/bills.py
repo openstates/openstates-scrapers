@@ -25,7 +25,7 @@ class DCBillScraper(BillScraper):
     state = 'dc'
 
     def scrape_bill(self, bill):
-        bill_url = 'http://www.dccouncil.washington.dc.us/lims/legislation.aspx?LegNo=' + bill['bill_id']
+        bill_url = 'http://dcclims1.dccouncil.us/lims/legislation.aspx?LegNo=' + bill['bill_id']
 
         bill.add_source(bill_url)
 
@@ -120,7 +120,7 @@ class DCBillScraper(BillScraper):
 
 
     def scrape_vote(self, bill, vote_type_id, vote_type):
-        base_url = 'http://www.dccouncil.washington.dc.us/lims/voting.aspx?VoteTypeID=%s&LegID=%s'
+        base_url = 'http://dcclims1.dccouncil.us/lims/voting.aspx?VoteTypeID=%s&LegID=%s'
         url = base_url % (vote_type_id, bill['bill_id'])
 
         with self.urlopen(url) as html:
@@ -165,7 +165,7 @@ class DCBillScraper(BillScraper):
         if chamber == 'lower':
             return
 
-        url = 'http://www.dccouncil.washington.dc.us/lims/print/list.aspx?FullPage=True&Period=' + session
+        url = 'http://dcclims1.dccouncil.us/lims/print/list.aspx?FullPage=True&Period=' + session
 
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)

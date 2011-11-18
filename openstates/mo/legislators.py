@@ -46,9 +46,11 @@ class MOLegislatorScraper(LegislatorScraper):
                 url = self.senator_details_url % (session[2:],int(district))
                 with self.urlopen(url) as details_page:
                     leg.add_source(url)
+                    
+                    #Using soupparser as legislator pages are very soupy
                     page = lxml.html.fromstring(details_page)
-                    photo_url = page.xpath('/html/body/div[2]/div/img/@src')[0]
-                    committees = page.xpath('/html/body/div[2]//span[@class="style3"]/a')
+                    photo_url = page.xpath('//html/body/div[2]/div/img/@src')[0]
+                    committees = page.xpath('//html/body/div[2]//span[@class="style3"]/a')
                     for c in committees:
                         if c.attrib.get('href').find('info/comm/') == -1:
                             continue
@@ -84,10 +86,10 @@ class MOLegislatorScraper(LegislatorScraper):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             # This is the ASP.net table container
-            table_xpath = ('id("ctl00_ContentPlaceHolder1_'
+            table_xpath = ('id("ContentPlaceHolder1_'
                             'gridMembers_DXMainTable")')
             table = page.xpath(table_xpath)[0]
-            for tr in table.xpath('tr'):
+            for tr in table.xpath('tr')[1:]:
                 tds = tr.xpath('td')
                 leg_code = tds[0].xpath('a[1]')[0].attrib.get('href')
                 last_name = tds[0].text_content().strip()
@@ -113,7 +115,6 @@ class MOLegislatorScraper(LegislatorScraper):
                               first_name=first_name, last_name=last_name,
                               party=party, phone=phone, office_address=address,
                               _code=leg_code)
-                    leg.add_source(url)
                     url = (self.rep_details_url % (session,district))
                     leg.add_source(url)
                     with self.urlopen(url) as details_page:
@@ -131,7 +132,7 @@ class MOLegislatorScraper(LegislatorScraper):
                         if len(picture) > 0:
                             #print "Found picture : %s" % picture[0]
                             leg['photo_url'] = picture[0]
-                        leg.add_source(url)
+                        #leg.add_source(url)
                         self.save_legislator(leg)
 
     def save_vacant_legislator(self,leg):
