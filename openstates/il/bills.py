@@ -18,7 +18,6 @@ def group(lst, n):
 
 
 TITLE_REMOVING_PATTERN = re.compile(".*(Rep|Sen). (.+)$")
-SPONSOR_PATTERN = re.compile("^(Added |Removed )?(.+Sponsor) (Rep|Sen). (.+)$")
 
 VERSION_TYPES = ('Introduced', 'Engrossed', 'Enrolled', 'Re-Enrolled')
 FULLTEXT_DOCUMENT_TYPES = ('Public Act', "Governor's Message", )
@@ -156,8 +155,11 @@ class ILBillScraper(BillScraper):
 
         bill.add_source(url)
         # sponsors
-        for sponsor in doc.xpath('//a[@class="content"]/text()'):
-            bill.add_sponsor('cosponsor', sponsor)
+        for spontype,sponsor,chamber in build_sponsor_list(doc.xpath('//a[@class="content"]')):
+            if chamber:
+                bill.add_sponsor(spontype, sponsor, chamber=chamber)
+            else:
+                bill.add_sponsor(spontype, sponsor)
 
         # actions
         action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
@@ -171,10 +173,8 @@ class ILBillScraper(BillScraper):
                 actor = 'upper'
 
             action = action.text_content()
-
             bill.add_action(actor, action, date,
                             type=_categorize_action(action))
-
         # versions
         version_url = doc.xpath('//a[text()="Full Text"]/@href')[0]
         self.scrape_documents(bill, version_url)
@@ -261,4 +261,28 @@ class ILBillScraper(BillScraper):
             bill.add_vote(vote)
         
         bill.add_source(votes_url)
-        
+
+def build_sponsor_list(sponsor_atags):
+    """return a list of (spontype,sponsor,chamber) tuples"""
+    sponsors = []
+    house_chief = senate_chief = None
+    spontype = 'cosponsor'
+    for atag in sponsor_atags:
+        sponsor = atag.text
+        if atag.attrib['href'].split('/')[1] == 'house':
+            chamber = 'lower'
+        elif atag.attrib['href'].split('/')[1] == 'senate':
+            chamber = 'upper'
+        else:
+            chamber = None
+        if chamber == 'lower' and house_chief is None:
+            spontype = 'chief'
+            house_chief = sponsor
+        elif chamber == 'upper' and senate_chief is None:
+            spontype = 'chief'
+            senate_chief = sponsor
+        else:
+            spontype = 'cosponsor'
+        sponsors.append((spontype, sponsor, chamber))
+    return sponsors
+
