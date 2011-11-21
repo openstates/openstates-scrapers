@@ -28,10 +28,8 @@ class NECommitteeScraper(CommitteeScraper):
 
                if committee == 'standing-comm':
                    self.scrapeStanding(chamber, page, url)
-                   test = True
                else:
-                   #self.scrapeProcedural(chamber, page, url)
-                   test = True
+                   self.scrapeProcedural(chamber, page, url)
 
     def scrapeStanding(self, chamber, page, url):
         comm_count = 1
@@ -75,12 +73,19 @@ class NECommitteeScraper(CommitteeScraper):
         comm_count = 1
         for comm_names in page.xpath('//div[@class="content"][1]/p/a'):
             name = re.sub('[^A-Za-z0-9]+', ' ', comm_names.text).replace(' ', '')
-            comm = Committee(chamber, page)
+            comm = Committee(chamber, name)
             
-            print '\n\n' + name + '\n'
             members_path = '//div[@class="content"][1]/table[@class="p"][%s]//tr/td[2]/a' % (str(comm_count))
-            print members_path
-            #for members in comm_names.xpath(members_path):
-            #    member = members.text
-            #    member = re.sub('[^A-Za-z0-9]+', ' ', member)
-            #    #print member
+            for members in comm_names.xpath(members_path):
+                member = members.text
+                member = re.sub('[^A-Za-z0-9]+', ' ', member)
+                role = members.tail
+                if (role != None) and ('Chairman' in role):
+                    role = 'Chairman'
+                else:
+                    role = 'Member'
+                comm.add_member(member, role)
+
+            comm.add_source(url)
+            self.save_committee(comm)
+            comm_count += 1
