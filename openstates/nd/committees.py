@@ -15,9 +15,8 @@ class NECommitteeScraper(CommitteeScraper):
         else:
             url_chamber_name = 'house'
 
-        #testing for starting year
-        if int(term) == 62:
-            start_year = 2011
+        #figuring out starting year for url
+        start_year = (int(term) - 62) + 2011
 
         committee_types = ["standing-comm", "pro-comm"]
         for committee in committee_types:
