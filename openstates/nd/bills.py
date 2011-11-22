@@ -43,7 +43,7 @@ class NDBillScraper(BillScraper):
                 bill_id = bills.text
                 bill_url = bill_list_url[0: -26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
                 bill_type = self.bill_type_info(bill_id)
-                bill = Bill(term, chamber, bill_id, title, bill_type=bill_type)
+                bill = Bill(term, chamber, bill_id, title, type=bill_type)
                 
                 #sources
                 bill.add_source(bill_url)
