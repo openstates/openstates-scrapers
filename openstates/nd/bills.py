@@ -44,7 +44,10 @@ class NDBillScraper(BillScraper):
                 bill_url = bill_list_url[0: -26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
                 bill_type = self.bill_type_info(bill_id)
                 bill = Bill(term, chamber, bill_id, title, type=bill_type)
-                
+               
+                #versions
+                versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_id + '.html'
+
                 #sources
                 bill.add_source(bill_url)
                 bill.add_source(bill_list_url)
@@ -81,7 +84,6 @@ class NDBillScraper(BillScraper):
                             #title
                             title = info.strip()
                             curr_bill["title"] = title
-
 
                     #actions
                     last_date = datetime
@@ -122,6 +124,22 @@ class NDBillScraper(BillScraper):
                         if doc_num_pos >5:
                             doc_name = bill_page.xpath(path + 'td[6]/a')[0].attrib['href']
                             doc_url = url[0: url.find('bill')].replace('///', '/') + doc_name[3:len(doc_name)]
+                
+                
+                
+                #versions
+                versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_id + '.html'
+                with self.urlopen(versions_url) as versions_page:
+                    versions_page = lxml.html.fromstring(versions_page)
+                    version_count = 2
+                    for versions in versions_page.xpath('//table[4]//tr/td/a'):
+                       version = versions.attrib['href'][2:len(versions.attrib['href'])]
+                       version = self.site_root + assembly_url + version
+                       version_name = versions.xpath('//table[4]//tr['+str(version_count)+']/td[4]')[0].text
+                       version_count += 2
+                       curr_bill.add_version(version_name, version)
+                curr_bill.add_source(versions_url)
+
                 self.save_bill(curr_bill)
 
     #Returns action type
