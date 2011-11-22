@@ -32,8 +32,6 @@ class NDBillScraper(BillScraper):
 
         bill_list_url = self.site_root + assembly_url + chamber_url
 
-        print bill_list_url
-
         with self.urlopen(bill_list_url) as html:
             list_page = lxml.html.fromstring(html)
             # connects bill_id with bill details page
@@ -46,6 +44,12 @@ class NDBillScraper(BillScraper):
                 bill_url = bill_list_url[0: -26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
                 bill_type = self.bill_type_info(bill_id)
                 bill = Bill(term, chamber, bill_id, title, bill_type=bill_type)
+                
+                #sources
+                bill.add_source(bill_url)
+                bill.add_source(bill_list_url)
+                
+                #storing bills to be accessed
                 bills_url_dict[bill_id] = bill_url
                 bills_id_dict[bill_id] = bill
 
@@ -77,6 +81,7 @@ class NDBillScraper(BillScraper):
                             #title
                             title = info.strip()
                             curr_bill["title"] = title
+
 
                     #actions
                     last_date = datetime
