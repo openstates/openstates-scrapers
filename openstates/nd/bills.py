@@ -7,7 +7,7 @@ from billy.scrape.votes import Vote
 class NDBillScraper(BillScraper):
     """
     Scrapes available legislative information from the website of the North
-    Dakota legislature and stores it in the fiftystates backend.
+    Dakota legislature and stores it in the openstates  backend.
     """
     state = 'nd'
     site_root = 'http://www.legis.nd.gov'
@@ -15,8 +15,8 @@ class NDBillScraper(BillScraper):
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
         
-        if int(term) == 62:
-            start_year = 2011
+        #determining the start year of the term
+        start_year = ((int(term) - 62)*2) + 2011
 
         # URL building
         if chamber == 'upper':

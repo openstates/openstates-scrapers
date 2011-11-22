@@ -16,7 +16,7 @@ class NECommitteeScraper(CommitteeScraper):
             url_chamber_name = 'house'
 
         #figuring out starting year for url
-        start_year = (int(term) - 62) + 2011
+        start_year = ((int(term) - 62)*2) + 2011
 
         committee_types = ["standing-comm", "pro-comm"]
         for committee in committee_types:
