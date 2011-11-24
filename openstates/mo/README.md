@@ -1,5 +1,12 @@
-STATE README TEMPLATE
-=====================
+Missouri
+========
+
+Notes
+-----
+To run test cases for the MO scraper alone do:
+
+    nosetests openstates/mo
+
 
 Metadata
 --------
@@ -12,6 +19,20 @@ Upper Chamber Title:
 Lower Chamber Title:  
 Upper Chamber Term:  
 Lower Chamber Term:  
+
+legislators.py
+--------------
+Last revisited: June, 2011
+
+bills.py
+--------
+Last revisited: August, 2011
+
+committees.py
+-------------
+Last revisited: August, 2011
+
+No test cases for this yet.
 
 
 Information Locations
