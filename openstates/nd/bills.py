@@ -7,7 +7,7 @@ from billy.scrape.votes import Vote
 class NDBillScraper(BillScraper):
     """
     Scrapes available legislative information from the website of the North
-    Dakota legislature and stores it in the fiftystates backend.
+    Dakota legislature and stores it in the openstates  backend.
     """
     state = 'nd'
     site_root = 'http://www.legis.nd.gov'
@@ -15,8 +15,8 @@ class NDBillScraper(BillScraper):
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
         
-        if int(term) == 62:
-            start_year = 2011
+        #determining the start year of the term
+        start_year = ((int(term) - 62)*2) + 2011
 
         # URL building
         if chamber == 'upper':
@@ -32,8 +32,6 @@ class NDBillScraper(BillScraper):
 
         bill_list_url = self.site_root + assembly_url + chamber_url
 
-        print bill_list_url
-
         with self.urlopen(bill_list_url) as html:
             list_page = lxml.html.fromstring(html)
             # connects bill_id with bill details page
@@ -45,7 +43,16 @@ class NDBillScraper(BillScraper):
                 bill_id = bills.text
                 bill_url = bill_list_url[0: -26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
                 bill_type = self.bill_type_info(bill_id)
-                bill = Bill(term, chamber, bill_id, title, bill_type=bill_type)
+                bill = Bill(term, chamber, bill_id, title, type=bill_type)
+               
+                #versions
+                versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_id + '.html'
+
+                #sources
+                bill.add_source(bill_url)
+                bill.add_source(bill_list_url)
+                
+                #storing bills to be accessed
                 bills_url_dict[bill_id] = bill_url
                 bills_id_dict[bill_id] = bill
 
@@ -117,6 +124,22 @@ class NDBillScraper(BillScraper):
                         if doc_num_pos >5:
                             doc_name = bill_page.xpath(path + 'td[6]/a')[0].attrib['href']
                             doc_url = url[0: url.find('bill')].replace('///', '/') + doc_name[3:len(doc_name)]
+                
+                
+                
+                #versions
+                versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_id + '.html'
+                with self.urlopen(versions_url) as versions_page:
+                    versions_page = lxml.html.fromstring(versions_page)
+                    version_count = 2
+                    for versions in versions_page.xpath('//table[4]//tr/td/a'):
+                       version = versions.attrib['href'][2:len(versions.attrib['href'])]
+                       version = self.site_root + assembly_url + version
+                       version_name = versions.xpath('//table[4]//tr['+str(version_count)+']/td[4]')[0].text
+                       version_count += 2
+                       curr_bill.add_version(version_name, version)
+                curr_bill.add_source(versions_url)
+
                 self.save_bill(curr_bill)
 
     #Returns action type

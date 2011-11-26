@@ -30,6 +30,12 @@ def classify_action(action):
 class MABillScraper(BillScraper):
     state = 'ma'
 
+    def __init__(self, *args, **kwargs):
+        super(MABillScraper, self).__init__(*args, **kwargs)
+        # forcing these values so that 500s come back as skipped bills
+        self.retry_attempts = 0
+        self.raise_errors = False
+
     def scrape(self, chamber, session):
         # for the chamber of the action
         chamber_map = {'House': 'lower', 'Senate':'upper', 'Joint': 'joint',

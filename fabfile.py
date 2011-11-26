@@ -24,8 +24,8 @@ def _venv(cmd):
     sudo('source ~openstates/site-venv/bin/activate && ' + cmd)
 
 def get_leg_ids_csv(state):
-    with cd('/tmp/'):
+    with cd('~openstates/src/openstates/'):
         _venv('billy-dump-missing-leg-ids ' +
               state)
-        get('/tmp/%s_missing_leg_ids.csv' % state,
+        get('/ext/openstates/src/openstates/%s_missing_leg_ids.csv' % state,
             '%s_missing_leg_ids.csv' % state)
