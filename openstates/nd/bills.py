@@ -36,28 +36,28 @@ class NDBillScraper(BillScraper):
 
         with self.urlopen(bill_list_url) as html:
             list_page = lxml.html.fromstring(html)
-            # connects bill_id with bill details page
+            # connects bill_num with bill details page
             bills_url_dict = {}
-            #connects bill id with bills to be accessed later.
+            #connects bill_num with bills to be accessed later.
             bills_id_dict = {}
             title = ''
             for bills in list_page.xpath('/html/body/table[3]/tr/th/a'):
-                bill_id = bills.text
-                bill_url = bill_list_url[0: -26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
-                bill_prefix, bill_type = self.bill_type_info(bill_id)
-                bill_id = chamber_letter + bill_prefix + bill_id
+                bill_num = bills.text
+                bill_url = bill_list_url[0:-26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
+                bill_prefix, bill_type = self.bill_type_info(bill_num)
+                bill_id = chamber_letter + bill_prefix + bill_num
                 bill = Bill(term, chamber, bill_id, title, type=bill_type)
 
                 #versions
-                versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_id + '.html'
+                versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_num + '.html'
 
                 #sources
                 bill.add_source(bill_url)
                 bill.add_source(bill_list_url)
 
                 #storing bills to be accessed
-                bills_url_dict[bill_id] = bill_url
-                bills_id_dict[bill_id] = bill
+                bills_url_dict[bill_num] = bill_url
+                bills_id_dict[bill_num] = bill
 
             #bill details page
             for bill_keys in bills_url_dict.keys():
@@ -132,7 +132,7 @@ class NDBillScraper(BillScraper):
 
 
                 #versions
-                versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_id + '.html'
+                versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_num + '.html'
                 with self.urlopen(versions_url) as versions_page:
                     versions_page = lxml.html.fromstring(versions_page)
                     version_count = 2
@@ -161,8 +161,8 @@ class NDBillScraper(BillScraper):
         return vote_type
 
     #Returns bill type
-    def bill_type_info(self, bill_id):
-        bill_num = int(bill_id)
+    def bill_type_info(self, bill_num):
+        bill_num = int(bill_num)
         if 1000 < bill_num < 3000:
             return 'B', 'bill'
         elif 3000 < bill_num < 5000:
