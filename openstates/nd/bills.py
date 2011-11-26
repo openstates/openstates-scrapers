@@ -14,7 +14,7 @@ class NDBillScraper(BillScraper):
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
-        
+
         #determining the start year of the term
         start_year = ((int(term) - 62)*2) + 2011
 
@@ -44,14 +44,14 @@ class NDBillScraper(BillScraper):
                 bill_url = bill_list_url[0: -26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
                 bill_type = self.bill_type_info(bill_id)
                 bill = Bill(term, chamber, bill_id, title, type=bill_type)
-               
+
                 #versions
                 versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_id + '.html'
 
                 #sources
                 bill.add_source(bill_url)
                 bill.add_source(bill_list_url)
-                
+
                 #storing bills to be accessed
                 bills_url_dict[bill_id] = bill_url
                 bills_id_dict[bill_id] = bill
@@ -68,18 +68,19 @@ class NDBillScraper(BillScraper):
                         #Sponsors
                         if "Introduced" in info:
                             if ('Rep' in info) or ('Sen' in info):
-                                rep = info[14: 17]
-                                info = info[18: len(info)]
+                                rep = info[14:17]
+                                info = info[18:len(info)]
                                 sponsors = info.split(',')
                             else:
-                                sponsors = info[13: len(info)]
+                                sponsors = [info[13: len(info)]]
                                 rep = ''
                             for sponsor in sponsors:
                                 if sponsor == sponsors[0]:
                                     sponsor_type = 'primary'
                                 else:
                                     sponsor_type = 'cosponsor'
-                                curr_bill.add_sponsor(sponsor_type, rep + sponsor)
+                                curr_bill.add_sponsor(sponsor_type,
+                                                      sponsor.strip())
                         else:
                             #title
                             title = info.strip()
@@ -94,11 +95,11 @@ class NDBillScraper(BillScraper):
                         action_date = bill_page.xpath(path + 'th')[0].text.strip() + '/' + str(start_year)
                         action_actor = bill_page.xpath(path + 'td[2]')[0].text
                         action =  bill_page.xpath(path + 'td[4]')[0].text
-                        
+
                         if action_actor == "":
                             action_actor = last_actor
                         last_actor = action_actor
-                        action_actor = 'upper' if action_actor == 'senate' else 'lower' 
+                        action_actor = 'upper' if action_actor == 'senate' else 'lower'
 
                         if action_date == ('/' + str(start_year)):
                             action_date = last_date
@@ -124,9 +125,9 @@ class NDBillScraper(BillScraper):
                         if doc_num_pos >5:
                             doc_name = bill_page.xpath(path + 'td[6]/a')[0].attrib['href']
                             doc_url = url[0: url.find('bill')].replace('///', '/') + doc_name[3:len(doc_name)]
-                
-                
-                
+
+
+
                 #versions
                 versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_id + '.html'
                 with self.urlopen(versions_url) as versions_page:
