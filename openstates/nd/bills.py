@@ -22,9 +22,11 @@ class NDBillScraper(BillScraper):
         if chamber == 'upper':
             url_chamber_name = 'senate'
             norm_chamber_name = 'Senate'
+            chamber_letter = 'S'
         else:
             url_chamber_name = 'house'
             norm_chamber_name = 'House'
+            chamber_letter = 'H'
 
         assembly_url = '/assembly/%s-%s' % (term, start_year)
 
@@ -42,7 +44,8 @@ class NDBillScraper(BillScraper):
             for bills in list_page.xpath('/html/body/table[3]/tr/th/a'):
                 bill_id = bills.text
                 bill_url = bill_list_url[0: -26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
-                bill_type = self.bill_type_info(bill_id)
+                bill_prefix, bill_type = self.bill_type_info(bill_id)
+                bill_id = chamber_letter + bill_prefix + bill_id
                 bill = Bill(term, chamber, bill_id, title, type=bill_type)
 
                 #versions
@@ -159,12 +162,12 @@ class NDBillScraper(BillScraper):
 
     #Returns bill type
     def bill_type_info(self, bill_id):
-        if (int(bill_id) > 1000) and (int(bill_id) < 3000):
-            bill_type = 'bill'
-        elif (int(bill_id) > 3000) and (int(bill_id) < 5000):
-            bill_type = 'concurrent resolution'
-        elif(int(bill_id) > 5000) and (int(bill_id) < 7000):
-            bill_type = 'resolution'
-        elif (int(bill_id) > 7000) and (int(bill_id) < 9000):
-            bill_type = 'memorial'
-        return bill_type
+        bill_num = int(bill_id)
+        if 1000 < bill_num < 3000:
+            return 'B', 'bill'
+        elif 3000 < bill_num < 5000:
+            return 'CR', 'concurrent resolution'
+        elif 5000 < bill_num < 7000:
+            return 'R', 'resolution'
+        elif 7000 < bill_num < 9000:
+            return 'MR', 'memorial'
