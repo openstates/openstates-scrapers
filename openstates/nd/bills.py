@@ -1,3 +1,5 @@
+from collections import defaultdict
+from urlparse import urljoin
 from datetime import datetime
 import lxml.html
 from billy.scrape import NoDataForPeriod, ScrapeError
@@ -41,6 +43,29 @@ class NDBillScraper(BillScraper):
     state = 'nd'
     site_root = 'http://www.legis.nd.gov'
 
+    # bill_id : subject list
+    subjects = defaultdict(list)
+
+    def _scrape_subjects(self, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+
+        table = doc.xpath('//table[@summary="Links table"]')[1]
+
+        for link in table.xpath('.//a[@href]'):
+            subject = link.text
+            # skip these non-subjects
+            if not subject or subject == 'Back to top':
+                continue
+            sub_html = self.urlopen(link.get('href'))
+            sub_doc = lxml.html.fromstring(sub_html)
+            for bill_id in sub_doc.xpath('//table[@summary="Measure Number Breakdown"]//td[2]/a/text()'):
+                # links have text like 'HB 1033 Text'
+                bill_id = bill_id[:-5]
+                self.subjects[bill_id].append(subject)
+
+
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
 
@@ -57,11 +82,15 @@ class NDBillScraper(BillScraper):
             norm_chamber_name = 'House'
             chamber_letter = 'H'
 
-        assembly_url = '/assembly/%s-%s' % (term, start_year)
+        assembly_url = urljoin(self.site_root,
+                               '/assembly/%s-%s' % (term, start_year))
 
         chamber_url = '/bill-text/%s-bill.html' % (url_chamber_name)
+        bill_list_url = assembly_url + chamber_url
+        subject_url = assembly_url + '/subject-index/major-topic.html'
 
-        bill_list_url = self.site_root + assembly_url + chamber_url
+        if not self.subjects:
+            self._scrape_subjects(subject_url)
 
         with self.urlopen(bill_list_url) as html:
             list_page = lxml.html.fromstring(html)
@@ -74,11 +103,12 @@ class NDBillScraper(BillScraper):
                 bill_num = bills.text
                 bill_url = bill_list_url[0:-26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
                 bill_prefix, bill_type = self.bill_type_info(bill_num)
-                bill_id = chamber_letter + bill_prefix + bill_num
-                bill = Bill(term, chamber, bill_id, title, type=bill_type)
+                bill_id = '%s%s %s' % (chamber_letter, bill_prefix, bill_num)
+                bill = Bill(term, chamber, bill_id, title, type=bill_type,
+                            subjects=self.subjects[bill_id])
 
                 #versions
-                versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_num + '.html'
+                versions_url = assembly_url + '/bill-index/bi' + bill_num + '.html'
 
                 #sources
                 bill.add_source(bill_url)
@@ -165,13 +195,13 @@ class NDBillScraper(BillScraper):
 
 
                 #versions
-                versions_url = self.site_root + assembly_url + '//bill-index/bi' + bill_num + '.html'
+                versions_url = assembly_url + '/bill-index/bi' + bill_num + '.html'
                 with self.urlopen(versions_url) as versions_page:
                     versions_page = lxml.html.fromstring(versions_page)
                     version_count = 2
                     for versions in versions_page.xpath('//table[4]//tr/td/a'):
                        version = versions.attrib['href'][2:len(versions.attrib['href'])]
-                       version = self.site_root + assembly_url + version
+                       version = assembly_url + version
                        version_name = versions.xpath('//table[4]//tr['+str(version_count)+']/td[4]')[0].text
                        version_count += 2
                        curr_bill.add_version(version_name, version)
