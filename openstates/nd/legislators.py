@@ -57,6 +57,8 @@ class NDLegislatorScraper(LegislatorScraper):
         phone = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[3]/td[2]')[0].text
         email = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[4]/td[2]/a')[0].text
         
+        if party == 'Democrat':
+            party = 'Democratic'
         leg = Legislator(chamber, term, district, full_name, first_name, last_name, middle_name, party, full_address=full_address, phone=phone, email=email)
         leg.add_source(member_url)
         leg.add_source(main_url)
