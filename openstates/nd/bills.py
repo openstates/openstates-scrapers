@@ -120,27 +120,29 @@ class NDBillScraper(BillScraper):
 
                     #actions
                     last_date = datetime
-                    last_actor = ''
+                    actor = ''
                     action_num = len(bill_page.xpath('/html/body/table[5]//tr'))
                     for actions in range(2, action_num, 2):
                         path = '//table[5]/tr[%s]/' % (actions)
-                        action_date = bill_page.xpath(path + 'th')[0].text.strip() + '/' + str(start_year)
-                        action_actor = bill_page.xpath(path + 'td[2]')[0].text
                         action =  bill_page.xpath(path + 'td[4]')[0].text
 
-                        if action_actor == "":
-                            action_actor = last_actor
-                        last_actor = action_actor
-                        action_actor = 'upper' if action_actor == 'senate' else 'lower'
+                        raw_actor = bill_page.xpath(path + 'td[2]')[0].text
+                        if not raw_actor:
+                            pass
+                        elif raw_actor.strip() == 'Senate':
+                            actor = 'upper'
+                        else:
+                            actor = 'lower'
 
+                        action_date = bill_page.xpath(path + 'th')[0].text.strip() + '/' + str(start_year)
                         if action_date == ('/' + str(start_year)):
                             action_date = last_date
                         else:
                             action_date = datetime.strptime(action_date, '%m/%d/%Y')
                         last_date = action_date
+
                         atype = categorize_action(action)
-                        curr_bill.add_action(action_actor, action, action_date,
-                                             atype)
+                        curr_bill.add_action(actor, action, action_date, atype)
 
 
                         #votes
@@ -151,7 +153,7 @@ class NDBillScraper(BillScraper):
                             passed = True if yes_count > no_count else False
                             vote_type = self.vote_type_info(action)
 
-                            vote = Vote(action_actor, action_date, action, passed, yes_count, no_count, 0, vote_type)
+                            vote = Vote(actor, action_date, action, passed, yes_count, no_count, 0, vote_type)
                             curr_bill.add_vote(vote)
 
                         #document within actions
