@@ -4,6 +4,35 @@ from billy.scrape import NoDataForPeriod, ScrapeError
 from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote
 
+_categorizers = (
+    ('Amendment adopted', 'amendment:passed'),
+    ('Amendment failed', 'amendment:failed'),
+    ('Amendment proposed', 'amendment:introduced'),
+    ('Divided committee report', 'committee:passed'),
+    ('Introduced, first reading', ['bill:introduced', 'bill:reading:1']),
+    ('Reported back amended, do not pass', 'committee:passed:unfavorable'),
+    ('Reported back amended, do pass', 'committee:passed:favorable'),
+    ('Reported back amended, without recommendation', 'committee:passed'),
+    ('Reported back, do not pass', 'committee:passed:unfavorable'),
+    ('Reported back, do pass', 'committee:passed:favorable'),
+    ('Rereferred', 'committee:referred'),
+    ('Recieved from House', 'bill:introduced'),
+    ('Recieved from Senate', 'bill:introduced'),
+    ('Second reading, adopted', ['bill:passed', 'bill:reading:2']),
+    ('Second reading, failed', ['bill:failed', 'bill:reading:2']),
+    ('Second reading, passed', ['bill:passed', 'bill:reading:2']),
+    ('Sent to Governor', 'governor:received'),
+    ('Signed by Governor, but item veto', 'governor:vetoed:line-item'),
+    ('Signed by Governor', 'governor:signed'),
+    ('Withdranw from further consideration', 'bill:withdrawn'),
+)
+
+def categorize_action(action):
+    for prefix, types in _categorizers:
+        if action.startswith(prefix):
+            return types
+    return 'other'
+
 class NDBillScraper(BillScraper):
     """
     Scrapes available legislative information from the website of the North
@@ -109,7 +138,9 @@ class NDBillScraper(BillScraper):
                         else:
                             action_date = datetime.strptime(action_date, '%m/%d/%Y')
                         last_date = action_date
-                        curr_bill.add_action(action_actor, action, action_date, '')
+                        atype = categorize_action(action)
+                        curr_bill.add_action(action_actor, action, action_date,
+                                             atype)
 
 
                         #votes
