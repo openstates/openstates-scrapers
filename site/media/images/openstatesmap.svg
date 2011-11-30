@@ -35,13 +35,13 @@
    guidetolerance="10"
    inkscape:pageopacity="0"
    inkscape:pageshadow="2"
-   inkscape:window-width="898"
+   inkscape:window-width="956"
    inkscape:window-height="1196"
    id="namedview728"
    showgrid="false"
    inkscape:zoom="2.1527403"
-   inkscape:cx="319.14838"
-   inkscape:cy="246.49919"
+   inkscape:cx="231.89532"
+   inkscape:cy="230.19736"
    inkscape:window-x="0"
    inkscape:window-y="0"
    inkscape:window-maximized="0"
@@ -158,15 +158,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75afa5;stop-opacity:0.60000002;"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop43" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75afa5;stop-opacity:0.97647059;"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop45" />
 	<stop
    offset="1"
-   style="stop-color:#75afa5;stop-opacity:1;"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop47" />
 </radialGradient>
 <polygon
@@ -206,15 +206,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75AFA5;stop-opacity:0.75"
+   style="stop-color:#a5b765;stop-opacity:0.74901962;"
    id="stop61" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75AFA5;stop-opacity:0.9862"
+   style="stop-color:#a5b765;stop-opacity:0.98431373;"
    id="stop63" />
 	<stop
    offset="1"
-   style="stop-color:#75AFA5"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop65" />
 </radialGradient>
 <polygon
@@ -254,15 +254,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75afa5;stop-opacity:0.60000002;"
+   style="stop-color:#a5b765;stop-opacity:0.62352943;"
    id="stop79" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75afa5;stop-opacity:0.97647059;"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop81" />
 	<stop
    offset="1"
-   style="stop-color:#75afa5;stop-opacity:1;"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop83" />
 </radialGradient>
 <polygon
@@ -470,15 +470,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#D5D6C3;stop-opacity:0.6"
+   style="stop-color:#75afa5;stop-opacity:0.60000002;"
    id="stop160" />
 	<stop
    offset="0.9447"
-   style="stop-color:#D5D6C3;stop-opacity:0.9779"
+   style="stop-color:#75afa5;stop-opacity:0.97647059;"
    id="stop162" />
 	<stop
    offset="1"
-   style="stop-color:#D5D6C3"
+   style="stop-color:#75afa5;stop-opacity:1;"
    id="stop164" />
 </radialGradient>
 <polygon
@@ -617,15 +617,15 @@
    spreadMethod="pad">
 	<stop
    offset="0"
-   style="stop-color:#75afa5;stop-opacity:0.60000002;"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop214" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75afa5;stop-opacity:0.97647059;"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop216" />
 	<stop
    offset="1"
-   style="stop-color:#75afa5;stop-opacity:1;"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop218" />
 </radialGradient>
 <polygon
@@ -762,20 +762,20 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#75afa5;stop-opacity:0.60000002;"
+   style="stop-color:#a5b765;stop-opacity:0.60000002;"
    id="stop268" />
 	<stop
    offset="0.9447"
-   style="stop-color:#75afa5;stop-opacity:0.97647059;"
+   style="stop-color:#a5b765;stop-opacity:0.97647059;"
    id="stop270" />
 	<stop
    offset="1"
-   style="stop-color:#75afa5;stop-opacity:1;"
+   style="stop-color:#a5b765;stop-opacity:1;"
    id="stop272" />
 </radialGradient>
-<polygon
-   fill="url(#SVGID_30_)"
-   points="370.662,191.823 372.969,189.953 373.458,185.075 376.484,183.965 383.956,177.537   384.177,173.638 389.56,172.098 392.636,173.638 405.052,169.187 405.725,165.191 415.161,157.199 414.708,153.324 419.035,153.954   420.781,156.568 431.078,157.518 433.379,155.456 437.023,159.263 437.102,162.668 444.947,169.563 435.433,180.688   432.112,182.792 384.729,188.184 385.202,190.638 "
+<path
+   style="fill:url(#SVGID_30_)"
+   d="m 370.662,191.823 2.307,-1.87 0.489,-4.878 3.026,-1.11 7.472,-6.428 0.221,-3.899 5.383,-1.54 3.076,1.54 12.416,-4.451 0.673,-3.996 9.436,-7.992 -0.453,-3.875 4.327,0.63 1.746,2.614 10.297,0.95 2.301,-2.062 3.644,3.807 0.079,3.405 7.845,6.895 -9.514,11.125 -3.321,2.104 -47.383,5.392 0.473,2.454 z"
    id="polygon274" />
 <radialGradient
    id="SVGID_31_"

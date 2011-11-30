@@ -11,16 +11,16 @@ metadata = {
                              # senatorial term is only 2 years. See
                              # Article IV, Section 2(a) for more information.
     'terms': [
-        {'name': '97th', 'sessions': ['97th'],
-         'start_year': 2011, 'end_year': 2012},
-        {'name': '96th', 'sessions': ['96th'],
-         'start_year': 2009, 'end_year': 2010},
-        {'name': '95th', 'sessions': ['95th', 'Special_95th'],
-         'start_year': 2007, 'end_year': 2008},
-        {'name': '94th', 'sessions': ['94th'],
-         'start_year': 2005, 'end_year': 2006},
         {'name': '93rd', 'sessions': ['93rd'],
          'start_year': 2003, 'end_year': 2004},
+        {'name': '94th', 'sessions': ['94th'],
+         'start_year': 2005, 'end_year': 2006},
+        {'name': '95th', 'sessions': ['95th', 'Special_95th'],
+         'start_year': 2007, 'end_year': 2008},
+        {'name': '96th', 'sessions': ['96th'],
+         'start_year': 2009, 'end_year': 2010},
+        {'name': '97th', 'sessions': ['97th'],
+         'start_year': 2011, 'end_year': 2012},
     ],
     'feature_flags': [],
     'session_details': {

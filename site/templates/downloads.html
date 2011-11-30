@@ -44,7 +44,7 @@ required you should use the JSON downloads or `API </api/>`_.
     <tr><th>State</th><th>JSON</th><th>CSV</th></tr>
     {% for state in states %}
     <tr><td>{{state.name}}</td>
-        <td><a href="{{state.latest_dump_url}}">{{state.latest_dump_date|date}}</a></td>
+        <td><a href="{{state.latest_json_url}}">{{state.latest_json_date|date}}</a></td>
         <td><a href="{{state.latest_csv_url}}">{{state.latest_csv_date|date}}</a></td>
     </tr>
     {% endfor %}
