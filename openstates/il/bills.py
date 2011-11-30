@@ -19,6 +19,16 @@ def group(lst, n):
 
 TITLE_REMOVING_PATTERN = re.compile(".*(Rep|Sen). (.+)$")
 
+SPONSOR_REFINE_PATTERN = re.compile(r'^Added (?P<spontype>.+) (?P<title>Rep|Sen)\. (?P<name>.+)')
+SPONSOR_TYPE_REFINEMENTS = {
+    'Chief Co-Sponsor': 'chief-cosponsor',
+    'as Chief Co-Sponsor': 'chief-cosponsor',
+    'Alternate Chief Co-Sponsor': 'chief-cosponsor',
+    'as Co-Sponsor': 'cosponsor',
+    'Alternate Co-Sponsor':  'cosponsor',
+}
+
+
 VERSION_TYPES = ('Introduced', 'Engrossed', 'Enrolled', 'Re-Enrolled')
 FULLTEXT_DOCUMENT_TYPES = ('Public Act', "Governor's Message", )
 # not as common, but maybe should just be added to FULLTEXT_DOCUMENT_TYPES?
@@ -124,11 +134,15 @@ class ILBillScraper(BillScraper):
 
     state = 'il'
 
-    def get_bill_urls(self, chamber, session, doc_type):
-        url = build_url_for_legislation_list(self.metadata, chamber, session, doc_type)
+    def url_to_doc(self, url):
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
+        return doc
+
+    def get_bill_urls(self, chamber, session, doc_type):
+        url = build_url_for_legislation_list(self.metadata, chamber, session, doc_type)
+        doc = self.url_to_doc(url)
         for bill_url in doc.xpath('//li/a/@href'):
             yield bill_url
     
@@ -136,12 +150,9 @@ class ILBillScraper(BillScraper):
         for doc_type in DOC_TYPES:
             for bill_url in self.get_bill_urls(chamber, session, doc_type):
                 self.scrape_bill(chamber, session, chamber_slug(chamber)+doc_type, bill_url)
-    
-    def scrape_bill(self, chamber, session, doc_type, url):
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
 
+    def scrape_bill(self, chamber, session, doc_type, url):
+        doc = self.url_to_doc(url)
         # bill id, title, synopsis
         bill_num = re.findall('DocNum=(\d+)', url)[0]
         bill_type = DOC_TYPES[doc_type[1:]]
@@ -155,12 +166,9 @@ class ILBillScraper(BillScraper):
 
         bill.add_source(url)
         # sponsors
-        for spontype,sponsor,chamber in build_sponsor_list(doc.xpath('//a[@class="content"]')):
-            if chamber:
-                bill.add_sponsor(spontype, sponsor, chamber=chamber)
-            else:
-                bill.add_sponsor(spontype, sponsor)
-
+        sponsor_list = build_sponsor_list(doc.xpath('//a[@class="content"]'))
+        # don't add just yet; we can make them better using action data
+        
         # actions
         action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
         for date, actor, action in group(action_tds, 3):
@@ -175,6 +183,17 @@ class ILBillScraper(BillScraper):
             action = action.text_content()
             bill.add_action(actor, action, date,
                             type=_categorize_action(action))
+            if action.lower().find('sponsor') != -1:
+                self.refine_sponsor_list(actor, action, sponsor_list, bill_id)
+
+        # now add sponsors
+        for spontype,sponsor,chamber in sponsor_list:
+            if chamber:
+                bill.add_sponsor(spontype, sponsor, chamber=chamber)
+            else:
+                bill.add_sponsor(spontype, sponsor)
+
+
         # versions
         version_url = doc.xpath('//a[text()="Full Text"]/@href')[0]
         self.scrape_documents(bill, version_url)
@@ -188,9 +207,7 @@ class ILBillScraper(BillScraper):
 
 
     def scrape_documents(self, bill, version_url):
-        html = self.urlopen(version_url)
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(version_url)
+        doc = self.url_to_doc(version_url)
 
         for link in doc.xpath('//a[contains(@href, "fulltext")]'):
             name = link.text
@@ -206,9 +223,7 @@ class ILBillScraper(BillScraper):
                 bill.add_document(name, url)
 
     def scrape_votes(self, bill, votes_url):
-        html = self.urlopen(votes_url)
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(votes_url)
+        doc = self.url_to_doc(votes_url)
         
         EXPECTED_VOTE_CODES = ['Y','N','E','NV','A','P','-']
         
@@ -262,6 +277,30 @@ class ILBillScraper(BillScraper):
         
         bill.add_source(votes_url)
 
+    def refine_sponsor_list(self, chamber, action, sponsor_list,bill_id):
+        if action.lower().find('removed') != -1:
+            return
+        if action.startswith('Chief'):
+            self.debug("[%s] Assuming we already caught 'chief' for %s" % (bill_id, action))
+            return
+        match = SPONSOR_REFINE_PATTERN.match(action)
+        if match:
+            if match.groupdict()['title'] == 'Rep':
+                chamber = 'lower'
+            else:
+                chamber = 'upper'
+            for i,tup in enumerate(sponsor_list):
+                spontype,sponsor, this_chamber = tup
+                if this_chamber == chamber and sponsor == match.groupdict()['name']:
+                    try:
+                        sponsor_list[i] = (SPONSOR_TYPE_REFINEMENTS[match.groupdict()['spontype']], sponsor, this_chamber)
+                    except KeyError:
+                        self.warning('[%s] Unknown sponsor refinement type [%s]' % (bill_id, match.groupdict()['spontype']))
+                    return
+            self.warning("[%s] Couldn't find sponsor [%s,%s] to refine" % (bill_id, chamber, match.groupdict()['name']))
+        else:
+            self.debug("[%s] Don't know how to refine [%s]" % (bill_id,action))
+
 def build_sponsor_list(sponsor_atags):
     """return a list of (spontype,sponsor,chamber) tuples"""
     sponsors = []
@@ -269,9 +308,9 @@ def build_sponsor_list(sponsor_atags):
     spontype = 'cosponsor'
     for atag in sponsor_atags:
         sponsor = atag.text
-        if atag.attrib['href'].split('/')[1] == 'house':
+        if 'house' in atag.attrib['href'].split('/'):
             chamber = 'lower'
-        elif atag.attrib['href'].split('/')[1] == 'senate':
+        elif 'senate' in atag.attrib['href'].split('/'):
             chamber = 'upper'
         else:
             chamber = None
