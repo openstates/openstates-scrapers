@@ -92,8 +92,9 @@ class ALBillScraper(BillScraper):
                 if tds[0].text_content():
                     date = datetime.datetime.strptime(tds[0].text_content(),
                                                       '%m/%d/%Y')
-
-                bill.add_action(bill['chamber'], tds[2].text_content(), date)
+                action = tds[2].text_content()
+                if action:
+                    bill.add_action(bill['chamber'], action, date)
 
     def get_sponsors(self, bill, oid):
         url = "http://alisondb.legislature.state.al.us/acas/ACTIONSponsorsResultsMac.asp?OID=%s&LABEL=%s" % (oid, bill['bill_id'])
