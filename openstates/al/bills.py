@@ -12,8 +12,8 @@ class ALBillScraper(BillScraper):
     state = 'al'
 
     def refresh_session(self):
-        url = 'http://alisondb.legislature.state.al.us/acas/ACASLogin.asp?SESSION=%s' % self.site_id
-        self.urlopen(url)
+        url = 'http://alisondb.legislature.state.al.us/acas/ACASLoginFire.asp?SESSION=%s' % self.site_id
+        html = self.urlopen(url)
 
     def scrape(self, chamber, session):
         self.site_id = self.metadata['session_details'][session]['internal_id']
