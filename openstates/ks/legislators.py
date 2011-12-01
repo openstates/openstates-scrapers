@@ -44,7 +44,7 @@ class KSLegislatorScraper(LegislatorScraper):
             if match:
                 first_name = match.group(2)
                 last_name = match.group(3)
-            
+
                 match = legislator_line_pattern.match(info)
                 if match:
                     party = match.group(1)
