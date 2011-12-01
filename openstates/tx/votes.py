@@ -245,6 +245,10 @@ class TXVoteScraper(VoteScraper):
     def scrape(self, chamber, session):
         self.validate_session(session)
 
+        if session == '821':
+            self.warning('no journals for session 821')
+            return
+
         if len(session) == 2:
             session = "%sR" % session
 
