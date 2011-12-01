@@ -26,7 +26,7 @@ class KSBillScraper(BillScraper):
             bills = bill_request_json['content']
             for bill_data in bills:
                 # filtering out other chambers
-                bill_equal_chamber = False
+                bill_is_in_chamber = False
                 for history in bill_data['HISTORY']:
                     if history['chamber'] == chamber_name:
                         bill_is_in_chamber = True
