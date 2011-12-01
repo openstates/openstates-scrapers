@@ -61,8 +61,8 @@ class ALLegislatorScraper(LegislatorScraper):
                     office = office.text_content()
                     phone = phone.text_content()
 
-                    leg = Legislator(term, chamber, district, name, party,
-                                     phone=phone, office=office,
-                                     url=link[0].get('href'))
+                    leg = Legislator(term, chamber, district, name,
+                                     party=party, phone=phone,
+                                     office=office, url=link[0].get('href'))
                     leg.add_source(url)
                     self.save_legislator(leg)
