@@ -54,7 +54,7 @@ class ALBillScraper(BillScraper):
                 # create bill
                 bill = Bill(session, chamber, bill_id, desc.strip(),
                             topic=topic)
-                bill.add_sponsor(sponsor, 'primary')
+                bill.add_sponsor('primary', sponsor)
 
                 self.get_sponsors(bill, oid)
                 self.get_actions(bill, oid)
@@ -105,7 +105,7 @@ class ALBillScraper(BillScraper):
             doc = lxml.html.fromstring(html)
             # cosponsors in really weird table layout (likely to break)
             for cs in doc.xpath('//table[2]/tr/td[2]/table/tr/td/text()'):
-                bill.add_sponsor(cs, 'cosponsor')
+                bill.add_sponsor('cosponsor', cs)
 
 
     #def getvote(moid, bill_type, bill_number, voteid, bodyoid, sessionid):
