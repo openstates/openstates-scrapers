@@ -4,7 +4,7 @@ import re
 import datetime
 import lxml.html
 
-bill_id_re = re.compile('(H|S)B\d+')
+bill_id_re = re.compile('(H|S)(B|R|JR)\d+')
 btn_re = re.compile('BTN(\d+)')
 
 class ALBillScraper(BillScraper):
@@ -12,18 +12,28 @@ class ALBillScraper(BillScraper):
     state = 'al'
 
     def refresh_session(self):
-        url = 'http://alisondb.legislature.state.al.us/acas/ACASLoginFire.asp?SESSION=%s' % self.site_id
+        url = ('http://alisondb.legislature.state.al.us/acas/ACASLoginFire.asp'
+               '?SESSION=%s') % self.site_id
         html = self.urlopen(url)
 
     def scrape(self, chamber, session):
         self.site_id = self.metadata['session_details'][session]['internal_id']
+
         chamber_piece = {'upper': 'Senate',
                          'lower': 'House+of+Representatives'}[chamber]
-
         # resolutions
-        # http://alisondb.legislature.state.al.us/acas/SESSResosBySelectedMatterTransResults.asp?WhichResos=Senate&TransCodes={All}&LegDay={All}%22&GetBillsTrans=Get+Resolutions+by+Transaction
+        res_url = ('http://alisondb.legislature.state.al.us/acas/SESSResosBySe'
+                   'lectedMatterTransResults.asp?WhichResos=%s&TransCodes='
+                   '{All}&LegDay={All}') % chamber_piece
+        self.scrape_for_bill_type(chamber, session, res_url)
 
-        url = 'http://alisondb.legislature.state.al.us/acas/SESSBillsBySelectedMatterTransResults.asp?TransCodes={All}&LegDay={All}&WhichBills=%s' % chamber_piece
+        bill_url = ('http://alisondb.legislature.state.al.us/acas/SESSBillsByS'
+                    'electedMatterTransResults.asp?TransCodes={All}'
+                    '&LegDay={All}&WhichBills=%s') % chamber_piece
+        self.scrape_for_bill_type(chamber, session, bill_url)
+
+
+    def scrape_for_bill_type(self, chamber, session, url):
 
         self.refresh_session()
 
@@ -41,15 +51,27 @@ class ALBillScraper(BillScraper):
                 #   current status, committee, committee2, last action
                 _, button, sponsor, topic, _, _, com1, com2, _ = details.xpath('td')
 
-                # pull bill_id out of script tag (gross)
-                bill_id = bill_id_re.search(button.text_content()).group()
-                oid = btn_re.search(button.text_content()).groups()[0]
+                # contains script tag that has a document.write that writes the
+                # bill_id, we have to pull that out (gross, but only way)
+                script_text = button.text_content()
+                # skip SBIR/HBIR
+                if 'SBIR' in script_text or 'HBIR' in script_text:
+                    continue
+                bill_id = bill_id_re.search(script_text).group()
+                oid = btn_re.search(script_text).groups()[0]
 
                 sponsor = sponsor.text_content()
                 topic = topic.text_content()
                 com1 = com1.text_content()
                 com2 = com2.text_content()
                 desc = desc.text_content()
+
+                if 'B' in bill_id:
+                    bill_type = 'bill'
+                elif 'JR' in bill_id:
+                    bill_type = 'joint resolution'
+                elif 'R' in bill_id:
+                    bill_type = 'resolution'
 
                 # create bill
                 bill = Bill(session, chamber, bill_id, desc.strip(),
