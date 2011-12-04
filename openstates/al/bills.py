@@ -73,9 +73,11 @@ class ALBillScraper(BillScraper):
                 elif 'R' in bill_id:
                     bill_type = 'resolution'
 
+                # title is missing on a few bills
+                title = desc.strip() or '(missing title)'
+
                 # create bill
-                bill = Bill(session, chamber, bill_id, desc.strip(),
-                            topic=topic)
+                bill = Bill(session, chamber, bill_id, title, topic=topic)
                 bill.add_sponsor('primary', sponsor)
 
                 self.get_sponsors(bill, oid)
