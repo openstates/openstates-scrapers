@@ -49,7 +49,7 @@ class ALBillScraper(BillScraper):
 
                 # first <tr> has img, button, sponsor, topic, current house
                 #   current status, committee, committee2, last action
-                _, button, sponsor, topic, _, _, com1, com2, _ = details.xpath('td')
+                _, button, sponsor, subject, _, _, com1, com2, _ = details.xpath('td')
 
                 # contains script tag that has a document.write that writes the
                 # bill_id, we have to pull that out (gross, but only way)
@@ -61,7 +61,7 @@ class ALBillScraper(BillScraper):
                 oid = btn_re.search(script_text).groups()[0]
 
                 sponsor = sponsor.text_content()
-                topic = topic.text_content()
+                subject = subject.text_content()
                 com1 = com1.text_content()
                 com2 = com2.text_content()
                 desc = desc.text_content()
@@ -77,7 +77,8 @@ class ALBillScraper(BillScraper):
                 title = desc.strip() or '(missing title)'
 
                 # create bill
-                bill = Bill(session, chamber, bill_id, title, topic=topic)
+                bill = Bill(session, chamber, bill_id, title,
+                            subjects=[subject])
                 bill.add_sponsor('primary', sponsor)
 
                 self.get_sponsors(bill, oid)
