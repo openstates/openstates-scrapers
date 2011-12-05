@@ -156,7 +156,7 @@ class ALBillScraper(BillScraper):
                 action = tds[2].text_content()
                 if action:
                     atype = _categorize_action(action)
-                    bill.add_action(bill['chamber'], action, date)
+                    bill.add_action(bill['chamber'], action, date, type=atype)
 
     def get_sponsors(self, bill, oid):
         url = "http://alisondb.legislature.state.al.us/acas/ACTIONSponsorsResultsMac.asp?OID=%s&LABEL=%s" % (oid, bill['bill_id'])
