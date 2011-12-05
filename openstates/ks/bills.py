@@ -21,47 +21,60 @@ class KSBillScraper(BillScraper):
 
     def scrape_current(self, chamber, term):
         chamber_name = 'Senate' if chamber == 'upper' else 'House'
-        with self.urlopen(ksapi.url + 'bill_status/') as bill_request: # perhaps we should save this data so we can make on request for both chambers?
+        chamber_letter = chamber_name[0]
+        # perhaps we should save this data so we can make one request for both?
+        with self.urlopen(ksapi.url + 'bill_status/') as bill_request:
             bill_request_json = json.loads(bill_request)
             bills = bill_request_json['content']
             for bill_data in bills:
-                # filtering out other chambers
-                bill_is_in_chamber = False
-                for history in bill_data['HISTORY']:
-                    if history['chamber'] == chamber_name:
-                        bill_is_in_chamber = True
-                if not bill_is_in_chamber:
+                # filter other chambers
+                if not bill_data['BILLNO'].startswith(chamber_letter):
                     continue
 
                 # main
-                bill = Bill(term, chamber, bill_data['BILLNO'], bill_data['SHORTTITLE'])
-                bill.add_source(ksapi.url + 'bill_status/' + bill_data['BILLNO'].lower())
+                bill = Bill(term, chamber, bill_data['BILLNO'],
+                            bill_data['SHORTTITLE'])
+                bill.add_source(ksapi.url + 'bill_status/' +
+                                bill_data['BILLNO'].lower())
                 if bill_data['LONGTITLE']:
                     bill.add_title(bill_data['LONGTITLE'])
-                bill.add_document('apn', ksapi.ksleg + bill_data['apn'])
                 bill.add_version('Latest', ksapi.ksleg + bill_data['apn'])
 
                 for sponsor in bill_data['SPONSOR_NAMES']:
-                    bill.add_sponsor('primary' if len(bill_data['SPONSOR_NAMES']) == 1 else 'cosponsor', sponsor)
+                    stype = ('primary' if len(bill_data['SPONSOR_NAMES']) == 1
+                             else 'cosponsor')
+                    bill.add_sponsor(stype, sponsor)
 
                 for event in bill_data['HISTORY']:
+                    append = ''
                     if 'committee_names' in event and 'conferee_names' in event:
-                        actor = ' and '.join(bill_data['committee_names'] + bill_data['conferee_names'])
+                        actor = ' and '.join(bill_data['committee_names'] +
+                                             bill_data['conferee_names'])
+                        append = actor
                     elif 'committee_names' in history:
                         actor = ' and '.join(bill_data['committee_names'])
+                        append = ''
                     elif 'conferee_names' in history:
                         actor = ' and '.join(bill_data['conferee_names'])
+                        append = ''
                     else:
                         actor = 'upper' if chamber == 'Senate' else 'lower'
 
                     date = datetime.datetime.strptime(event['occurred_datetime'], "%Y-%m-%dT%H:%M:%S")
+                    # append committee name if present
+                    action = event['status'] + append
                     bill.add_action(actor, event['status'], date)
 
                     if event['action_code'] in ksapi.voted:
                         votes = votes_re.match(event['status'])
                         if votes:
-                            vote = Vote(chamber, date, votes.group(1), event['action_code'] in ksapi.passed, int(votes.group(2)), int(votes.group(3)), 0)
-                            vote.add_source(ksapi.ksleg + 'bill_status/' + bill_data['BILLNO'].lower())
+                            vote = Vote(chamber, date, votes.group(1),
+                                        event['action_code'] in ksapi.passed,
+                                        int(votes.group(2)),
+                                        int(votes.group(3)),
+                                        0)
+                            vote.add_source(ksapi.ksleg + 'bill_status/' +
+                                            bill_data['BILLNO'].lower())
                             bill.add_vote(vote)
 
                 self.save_bill(bill)
