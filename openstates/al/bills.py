@@ -74,7 +74,9 @@ class ALBillScraper(BillScraper):
                     bill_type = 'resolution'
 
                 # title is missing on a few bills
-                title = desc.strip() or '(missing title)'
+                title = desc.strip()
+                if not title:
+                    return
 
                 # create bill
                 bill = Bill(session, chamber, bill_id, title,
