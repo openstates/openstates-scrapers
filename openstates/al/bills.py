@@ -7,6 +7,39 @@ import lxml.html
 bill_id_re = re.compile('(H|S)(B|R|JR)\d+')
 btn_re = re.compile('BTN(\d+)')
 
+_action_re = (
+    ('Introduced', 'bill:introduced'),
+    ('(Forwarded|Delivered) to Governor', 'governor:recieved'),
+    ('Amendment (?:.*)Offered', 'amendment:introduced'),
+    ('Substitute (?:.*)Offered', 'amendment:introduced'),
+    ('Amendment (?:.*)adopted', 'amendment:passed'),
+    ('Amendment lost', 'amendment:failed'),
+    ('Read for the first time and referred to',
+       ['bill:reading:1', 'committee:referred']),
+    ('(r|R)eferred to', 'committee:referred'),
+    ('Read for the second time', 'bill:reading:2'),
+    ('(S|s)ubstitute adopted', 'bill:substituted'),
+    ('(m|M)otion to Adopt (?:.*)adopted', 'amendment:passed'),
+    ('(m|M)otion to (t|T)able (?:.*)adopted', 'amendment:passed'),
+    ('(m|M)otion to Adopt (?:.*)lost', 'amendment:failed'),
+    ('(m|M)otion to Read a Third Time and Pass adopted', 'bill:passed'),
+    ('(m|M)otion to Concur In and Adopt adopted', 'bill:passed'),
+    ('Third Reading Passed', 'bill:passed'),
+    ('Reported from', 'committee:passed'),
+    ('Indefinitely Postponed', 'bill:failed'),
+    ('Passed Second House', 'bill:passed'),
+    # memorial resolutions can pass w/o debate
+    ('Joint Rule 11', ['bill:introduced', 'bill:passed']),
+    ('Lost in', 'bill:failed'),
+    ('Favorable from', 'committee:passed:favorable'),
+)
+
+def _categorize_action(action):
+    for pattern, types in _action_re:
+        if re.findall(pattern):
+            return types
+    return 'other'
+
 class ALBillScraper(BillScraper):
 
     state = 'al'
@@ -122,6 +155,7 @@ class ALBillScraper(BillScraper):
                                                       '%m/%d/%Y')
                 action = tds[2].text_content()
                 if action:
+                    atype = _categorize_action(action)
                     bill.add_action(bill['chamber'], action, date)
 
     def get_sponsors(self, bill, oid):
