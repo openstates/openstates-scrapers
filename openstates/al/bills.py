@@ -36,7 +36,7 @@ _action_re = (
 
 def _categorize_action(action):
     for pattern, types in _action_re:
-        if re.findall(pattern):
+        if re.findall(pattern, action):
             return types
     return 'other'
 
