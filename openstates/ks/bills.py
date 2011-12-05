@@ -48,14 +48,14 @@ class KSBillScraper(BillScraper):
                 for event in bill_data['HISTORY']:
                     append = ''
                     if 'committee_names' in event and 'conferee_names' in event:
-                        actor = ' and '.join(bill_data['committee_names'] +
-                                             bill_data['conferee_names'])
+                        actor = ' and '.join(event['committee_names'] +
+                                             event['conferee_names'])
                         append = actor
                     elif 'committee_names' in event:
-                        actor = ' and '.join(bill_data['committee_names'])
+                        actor = ' and '.join(event['committee_names'])
                         append = ''
                     elif 'conferee_names' in event:
-                        actor = ' and '.join(bill_data['conferee_names'])
+                        actor = ' and '.join(event['conferee_names'])
                         append = ''
                     else:
                         actor = 'upper' if chamber == 'Senate' else 'lower'
