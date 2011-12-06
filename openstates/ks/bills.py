@@ -65,8 +65,8 @@ class KSBillScraper(BillScraper):
                     action = event['status'] + append
                     if event['action_code']  not in ksapi.action_codes:
                         self.warning('unknown action code on %s: %s %s' %
-                                     bill_data['BILLNO'], event['action_code'],
-                                     event['status'])
+                                     (bill_data['BILLNO'], event['action_code'],
+                                     event['status']))
                         atype = 'other'
                     else:
                         atype = ksapi.action_codes[event['action_code']]
