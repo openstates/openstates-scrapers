@@ -76,7 +76,9 @@ class ALLegislatorScraper(LegislatorScraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        leg['photo_url'] = doc.xpath('//img[@height="250"]/@src')[0]
+        photo = doc.xpath('//img[@height="250"]/@src')
+        if photo:
+            leg['photo_url'] = photo[0]
         for com in doc.xpath('//ul/li'):
             com = com.text_content()
             if '(' in com:
