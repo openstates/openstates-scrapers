@@ -96,8 +96,11 @@ class ALBillScraper(BillScraper):
 
                 oid, bill_id, fnotes = re.findall(r"instrumentSelected\(this,'(\d+)','(\w+)','ON','ON','(ON|OFF)'",
                                                   script_text)[0]
-                amend, intver, engver, enrver = re.findall(r"status \+ \"','(ON|OFF)','([^,]*?),([^,]*?),([^,]*?)",
-                                                           script_text)[0]
+                second_piece = re.findall(r"status \+ \"','(ON|OFF)','([^,]*?),([^,]*?),([^,]*?)", script_text)
+                if second_piece:
+                    amend, intver, engver, enrver = second_piece[0]
+                else:
+                    intver = engver = enrver = None
 
                 sponsor = sponsor.text_content()
                 subject = subject.text_content()
