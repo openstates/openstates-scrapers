@@ -65,6 +65,9 @@ class KSBillScraper(BillScraper):
                     if 'committee_names' in event:
                         action = (event['status'] + ' ' +
                                   ' and '.join(event['committee_names']))
+                    else:
+                        action = event['status']
+
                     if event['action_code'] not in ksapi.action_codes:
                         self.warning('unknown action code on %s: %s %s' %
                                      (bill_id, event['action_code'],

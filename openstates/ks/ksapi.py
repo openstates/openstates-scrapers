@@ -1,4 +1,3 @@
-
 ksleg = 'http://www.kslegislature.org/li'
 url = '%s/api/v5/rev-1/' % ksleg
 
@@ -9,42 +8,6 @@ bad_committees = ['ctte_s_phw_1',
                   'ctte_leg_budget_1',
                   'ctte_h_corr_juv_jus_1',
                  ]
-
-voted = ['efa_fabc_343', 'efa_fabc_342', 'gov_avm_336', 'mot_cgo_201',
-         'mot_cgo_202', 'fa_fabc_115', 'mot_tab_402', 'mot_tab_403',
-         'mot_tab_401', 'mot_tab_404', 'mot_rcon_303', 'mot_rcon_302',
-         'mot_pspn_405', 'efa_fabc_933', 'efa_fabc_936', 'efa_fabc_934',
-         'cur_con_875', 'cur_con_876', 'cur_con_873', 'fa_fabc_341',
-         'fa_fabc_340', 'ccac_ccr_860', 'efa_fabc_115', 'fa_fabc_116',
-         'mot_pspn_404', 'mot_pspn_403', 'mot_pspn_402', 'mot_susp_216',
-         'mot_susp_214', 'mot_susp_215', 'cur_con_337', 'cur_con_336',
-         'cur_con_335', 'efa_fabc_352', 'efa_fabc_351', 'mot_wd_126',
-         'mot_wd_127', 'mot_strk_504', 'mot_strk_501', 'ccac_om_832',
-         'ccac_ccr_862', 'ccac_ccr_863', 'ccac_ccr_865', 'gov_avm_885',
-         'gov_avm_887', 'mot_ref_102', 'mot_ref_105', 'efa_fabc_925',
-         'efa_fabc_926', 'efa_fabc_923', 'efa_fabc_922', 'fa_fabc_105',
-         'fa_fabc_104', 'fa_fabc_352', 'ccac_ccr_145', 'fa_fabc_351',
-         'mot_adv_303', 'mot_adv_302', 'efa_fabc_106', 'efa_fabc_105',
-         'efa_fabc_104', 'ccac_ccr_833', 'ccac_ccr_883', 'ccac_ccr_880',
-         'ccac_ccr_881', 'fa_fabc_925', 'fa_fabc_924', 'fa_fabc_926',
-         'fa_fabc_921', 'fa_fabc_920', 'fa_fabc_923', 'fa_fabc_922',
-         'gov_avm_349', 'mot_susp_203', 'mot_susp_202', 'mot_susp_206',
-         'cur_con_101']
-passed = ['efa_fabc_343', 'efa_fabc_342', 'mot_cgo_201', 'mot_cgo_202',
-          'fa_fabc_115', 'mot_tab_402', 'mot_tab_403', 'mot_tab_401',
-          'mot_tab_404', 'mot_rcon_302', 'mot_pspn_405', 'efa_fabc_933',
-          'efa_fabc_936', 'efa_fabc_934', 'cur_con_875', 'fa_fabc_341',
-          'fa_fabc_340', 'ccac_ccr_860', 'efa_fabc_115', 'fa_fabc_116',
-          'mot_pspn_403', 'mot_pspn_402', 'mot_susp_216', 'mot_susp_214',
-          'mot_susp_215', 'efa_fabc_352', 'efa_fabc_351', 'mot_wd_126',
-          'mot_wd_127', 'mot_strk_504', 'mot_strk_501', 'ccac_om_832',
-          'ccac_ccr_863', 'mot_ref_102', 'mot_ref_105', 'efa_fabc_925',
-          'efa_fabc_926', 'efa_fabc_923', 'efa_fabc_922', 'fa_fabc_105',
-          'fa_fabc_104', 'fa_fabc_352', 'ccac_ccr_145', 'fa_fabc_351',
-          'mot_adv_302', 'efa_fabc_106', 'efa_fabc_105', 'efa_fabc_104',
-          'ccac_ccr_833', 'ccac_ccr_881', 'fa_fabc_925', 'fa_fabc_924',
-          'fa_fabc_926', 'fa_fabc_921', 'fa_fabc_920', 'fa_fabc_923',
-          'fa_fabc_922', 'mot_susp_203', 'mot_susp_202', 'mot_susp_206']
 
 # in order from sec 10.1 of KLISS doc
 action_codes = {
