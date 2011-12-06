@@ -75,21 +75,21 @@ action_codes = {
      # withdrawn from consent cal.'
     'ccal_rcc_233': 'other',
     'efa_fabc_933': 'bill:passed', # these 3 are 2/3 emergency clause votes...
-    'efa_fabc_936:': 'bill:failed',
-    'efa_fabc_934:': 'bill:passed',
-    'cref_cref_316:': ['bill:withdrawn','committee:referred'],
-    'cref_cref_315:':  ['bill:withdrawn','committee:referred'],
-    'cur_con_374:': 'other', # non-concur, conf. com. requested
-    'cr_rsc_801:': 'committee:passed:unfavorable', # these 3 are appointments..
-    'cr_rsc_800:': 'committee:passed:favorable',
-    'cr_rsc_802:': 'committee:passed',
-    'gov_mg_150:': 'governor:signed',
-    'gov_mg_151:': 'other', # law w/o signature
-    'gov_mg_154:': 'governor:vetoed',
-    'cow_jcow_180:': 'bill:passed', # COW
-    'ar_adj_605:': 'other',  # adjourn
-    'ee_enrb_888:': 'other',   # enrolled and presented to Sec. of State
-    'cow_jcow_239:': 'bill:passed', # adopted
+    'efa_fabc_936': 'bill:failed',
+    'efa_fabc_934': 'bill:passed',
+    'cref_cref_316': ['bill:withdrawn','committee:referred'],
+    'cref_cref_315':  ['bill:withdrawn','committee:referred'],
+    'cur_con_374': 'other', # non-concur, conf. com. requested
+    'cr_rsc_801': 'committee:passed:unfavorable', # these 3 are appointments..
+    'cr_rsc_800': 'committee:passed:favorable',
+    'cr_rsc_802': 'committee:passed',
+    'gov_mg_150': 'governor:signed',
+    'gov_mg_151': 'other', # law w/o signature
+    'gov_mg_154': 'governor:vetoed',
+    'cow_jcow_180': 'bill:passed', # COW
+    'ar_adj_605': 'other',  # adjourn
+    'ee_enrb_888': 'other',   # enrolled and presented to Sec. of State
+    'cow_jcow_239': 'bill:passed', # adopted
     'cur_con_875': 'other', # nonconcurrences
     'cur_con_876': 'other',
     'cur_con_873': 'other',
