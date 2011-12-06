@@ -6,7 +6,9 @@ bad_committees = ['ctte_s_phw_1',
                   'ctte_spc_special_committee_on_kan_ed_study_commission_1',
                   'ctte_emp_pay_plan_ovst_1',
                   'ctte_2011_redistricting_advisory_group_1',
-                  'ctte_leg_budget_1']
+                  'ctte_leg_budget_1',
+                  'ctte_h_corr_juv_jus_1',
+                 ]
 
 voted = ['efa_fabc_343', 'efa_fabc_342', 'gov_avm_336', 'mot_cgo_201',
          'mot_cgo_202', 'fa_fabc_115', 'mot_tab_402', 'mot_tab_403',
