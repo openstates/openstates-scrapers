@@ -86,6 +86,8 @@ class KSBillScraper(BillScraper):
         doc = lxml.html.fromstring(self.urlopen(url))
         doc.make_links_absolute(url)
 
+        bill.add_source(url)
+
         # versions & notes
         version_rows = doc.xpath('//tbody[starts-with(@id, "version-tab")]/tr')
         for row in version_rows:
