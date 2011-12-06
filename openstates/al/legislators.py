@@ -59,9 +59,9 @@ class ALLegislatorScraper(LegislatorScraper):
                     name = ' '.join(normalize_name(name))
 
                     party = party_dict[party.text_content()]
-                    district = district.text_content()
-                    office = office.text_content()
-                    phone = phone.text_content()
+                    district = district.text_content().strip()
+                    office = office.text_content().strip()
+                    phone = phone.text_content().strip()
                     leg_url = link[0].get('href')
 
                     office_address = 'Room %s\n11 S. Union Street\nMontgomery, AL 36130' % office
