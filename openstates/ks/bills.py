@@ -57,16 +57,14 @@ class KSBillScraper(BillScraper):
 
                 # history is backwards
                 for event in reversed(bill_data['HISTORY']):
-                    append = ''
-                    if 'committee_names' in event:
-                        actor = ' and '.join(event['committee_names'])
-                        append = ' %s' % actor
-                    else:
-                        actor = 'upper' if chamber == 'Senate' else 'lower'
+
+                    actor = 'upper' if chamber == 'Senate' else 'lower'
 
                     date = datetime.datetime.strptime(event['occurred_datetime'], "%Y-%m-%dT%H:%M:%S")
-                    # append committee name if present
-                    action = event['status'] + append
+                    # append committee names if present
+                    if 'committee_names' in event:
+                        action = (event['status'] + ' ' +
+                                  ' and '.join(event['committee_names']))
                     if event['action_code'] not in ksapi.action_codes:
                         self.warning('unknown action code on %s: %s %s' %
                                      (bill_id, event['action_code'],
