@@ -159,22 +159,22 @@ class KSBillScraper(BillScraper):
                 vote = Vote(vote_chamber, vote_date, vote_status,
                             True, yeas, nays, nv+absent)
             elif line.startswith('Yeas:'):
-                line = line.replace('Yeas:', '').strip()
+                line = line.split(':', 1)[0].strip()
                 for member in line.split(', '):
                     if member != 'None.':
                         vote.yes(member)
             elif line.startswith('Nays:'):
-                line = line.replace('Nays:', '').strip()
+                line = line.split(':', 1)[0].strip()
                 for member in line.split(', '):
                     if member != 'None.':
                         vote.no(member)
-            elif line.startswith('Present but not voting:'):
-                line = line.replace('Present but not voting:', '').strip()
+            elif line.startswith('Present but'):
+                line = line.split(':', 1)[0].strip()
                 for member in line.split(', '):
                     if member != 'None.':
                         vote.other(member)
-            elif line.startswith('Absent or not voting:'):
-                line = line.replace('Absent or not voting:', '').strip()
+            elif line.startswith('Absent or'):
+                line = line.split(':', 1)[0].strip()
                 for member in line.split(', '):
                     if member != 'None.':
                         vote.other(member)
