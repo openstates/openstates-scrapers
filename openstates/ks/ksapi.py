@@ -96,7 +96,7 @@ action_codes = {
     'fa_fabc_341': 'bill:passed',
     'fa_fabc_340': 'bill:passed',
     'ccac_ccr_860': 'other',
-    'efa_fabc_115:' 'bill:failed',
+    'efa_fabc_115': 'bill:failed',
     'intro_iopbc_158': 'bill:introduced',
     'cr_rsc_291': 'committee:passed',
     'fa_fabc_116': 'bill:failed',
