@@ -47,7 +47,8 @@ class KSBillScraper(BillScraper):
                                 bill_data['BILLNO'].lower())
                 if bill_data['LONGTITLE']:
                     bill.add_title(bill_data['LONGTITLE'])
-                bill.add_version('Latest', ksapi.ksleg + bill_data['apn'])
+                bill.add_version('Latest', ksapi.ksleg + '/' +
+                                 bill_data['apn'])
 
                 for sponsor in bill_data['SPONSOR_NAMES']:
                     stype = ('primary' if len(bill_data['SPONSOR_NAMES']) == 1
