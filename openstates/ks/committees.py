@@ -51,4 +51,8 @@ class KSBillScraper(CommitteeScraper):
                             committee.add_member(rankedmember['FULLNAME'], 'ranking member')
                         for member in details['MEMBERS']:
                             committee.add_member(member['FULLNAME'])
-                    self.save_committee(committee)
+                    if not committee['members']:
+                        self.warning('skipping blank committee %s' %
+                                     committee_data['TITLE'])
+                    else:
+                        self.save_committee(committee)
