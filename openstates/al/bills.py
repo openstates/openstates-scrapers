@@ -48,6 +48,7 @@ class ALBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         self.site_id = self.metadata['session_details'][session]['internal_id']
+        self.base_doc_url = 'http://alisondb.legislature.state.al.us/acas/searchableinstruments/%s/PrintFiles/' % session
 
         chamber_piece = {'upper': 'Senate',
                          'lower': 'House+of+Representatives'}[chamber]
@@ -134,13 +135,12 @@ class ALBillScraper(BillScraper):
                 self.get_actions(bill, oid)
 
                 # craft bill URLs
-                base_doc_url = 'http://alisondb.legislature.state.al.us/acas/searchableinstruments/%s/PrintFiles/' % session
                 if intver:
-                    bill.add_version('introduced', base_doc_url + intver)
+                    bill.add_version('introduced', self.base_doc_url + intver)
                 if engver:
-                    bill.add_version('engrossed', base_doc_url + engver)
+                    bill.add_version('engrossed', self.base_doc_url + engver)
                 if enrver:
-                    bill.add_version('enrolled', base_doc_url + enrver)
+                    bill.add_version('enrolled', self.base_doc_url + enrver)
 
                 self.save_bill(bill)
 
@@ -154,12 +154,10 @@ class ALBillScraper(BillScraper):
             doc = lxml.html.fromstring(html)
 
             for row in doc.xpath('//tr[@valign="top"]'):
-                tds = row.xpath('td')
                 # date, amend/subst, matter, committee, nay, yea, abs, vote
+                tds = row.xpath('td')
 
                 # TODO: action parsing could be greatly improved
-                #   - it is unclear what it means when date is missing
-                #   - nothing done with amend/subst
                 #   - votes not handled yet
                 #   - actor isn't provided.. unclear what can be done
 
@@ -167,10 +165,21 @@ class ALBillScraper(BillScraper):
                 if tds[0].text_content():
                     date = datetime.datetime.strptime(tds[0].text_content(),
                                                       '%m/%d/%Y')
+
+                amendment = tds[1].xpath('.//input/@value')
+                if amendment:
+                    amendment = amendment[0]
+                    bill.add_document('amendment ' + amendment,
+                                      self.base_doc_url + amendment + '.pdf')
+                else:
+                    amendment = None
+
                 action = tds[2].text_content()
                 if action:
                     atype = _categorize_action(action)
-                    bill.add_action(bill['chamber'], action, date, type=atype)
+                    bill.add_action(bill['chamber'], action, date,
+                                    type=atype, amendment=amendment)
+
 
     def get_sponsors(self, bill, oid):
         url = "http://alisondb.legislature.state.al.us/acas/ACTIONSponsorsResultsMac.asp?OID=%s&LABEL=%s" % (oid, bill['bill_id'])
