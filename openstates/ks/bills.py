@@ -58,7 +58,7 @@ class KSBillScraper(BillScraper):
                 # history is backwards
                 for event in reversed(bill_data['HISTORY']):
 
-                    actor = ('upper' if bill_data['Chamber'] == 'Senate'
+                    actor = ('upper' if event['chamber'] == 'Senate'
                              else 'lower')
 
                     date = datetime.datetime.strptime(event['occurred_datetime'], "%Y-%m-%dT%H:%M:%S")
