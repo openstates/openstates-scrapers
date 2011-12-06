@@ -9,7 +9,7 @@ btn_re = re.compile('BTN(\d+)')
 
 _action_re = (
     ('Introduced', 'bill:introduced'),
-    ('(Forwarded|Delivered) to Governor', 'governor:recieved'),
+    ('(Forwarded|Delivered) to Governor', 'governor:received'),
     ('Amendment (?:.*)Offered', 'amendment:introduced'),
     ('Substitute (?:.*)Offered', 'amendment:introduced'),
     ('Amendment (?:.*)adopted', 'amendment:passed'),
