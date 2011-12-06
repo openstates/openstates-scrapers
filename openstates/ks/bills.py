@@ -15,8 +15,7 @@ class KSBillScraper(BillScraper):
     state = 'ks'
 
     def scrape(self, chamber, term):
-        if term != '2011-2012': # kslegislature.org doesn't provide old bills
-            raise NoDataForPeriod(term)
+        self.validate_term(term, latest_only=True)
         self.scrape_current(chamber, term)
 
     def scrape_current(self, chamber, term):
@@ -58,16 +57,9 @@ class KSBillScraper(BillScraper):
                 # history is backwards
                 for event in reversed(bill_data['HISTORY']):
                     append = ''
-                    if 'committee_names' in event and 'conferee_names' in event:
-                        actor = ' and '.join(event['committee_names'] +
-                                             event['conferee_names'])
-                        append = actor
-                    elif 'committee_names' in event:
+                    if 'committee_names' in event:
                         actor = ' and '.join(event['committee_names'])
-                        append = ''
-                    elif 'conferee_names' in event:
-                        actor = ' and '.join(event['conferee_names'])
-                        append = ''
+                        append = actor
                     else:
                         actor = 'upper' if chamber == 'Senate' else 'lower'
 
@@ -83,17 +75,13 @@ class KSBillScraper(BillScraper):
                         atype = ksapi.action_codes[event['action_code']]
                     bill.add_action(actor, action, date, type=atype)
 
-                    if event['action_code'] in ksapi.voted:
-                        votes = votes_re.match(event['status'])
-                        if votes:
-                            vote = Vote(chamber, date, votes.group(1),
-                                        event['action_code'] in ksapi.passed,
-                                        int(votes.group(2)),
-                                        int(votes.group(3)),
-                                        0)
-                            vote.add_source(ksapi.ksleg + 'bill_status/' +
-                                            bill_data['BILLNO'].lower())
-                            bill.add_vote(vote)
+                    votes = votes_re.match(event['status'])
+                    if votes:
+                        vote = Vote(chamber, date, votes.group(1),
+                                    event['action_code'] in ksapi.passed,
+                                    int(votes.group(2)),
+                                    int(votes.group(3)),
+                                    0)
+                        bill.add_vote(vote)
 
                 self.save_bill(bill)
-
