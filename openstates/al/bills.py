@@ -4,9 +4,6 @@ import re
 import datetime
 import lxml.html
 
-bill_id_re = re.compile('(H|S)(B|R|JR)\d+')
-btn_re = re.compile('BTN(\d+)')
-
 _action_re = (
     ('Introduced', 'bill:introduced'),
     ('(Forwarded|Delivered) to Governor', 'governor:received'),
@@ -90,8 +87,17 @@ class ALBillScraper(BillScraper):
                 # skip SBIR/HBIR
                 if 'SBIR' in script_text or 'HBIR' in script_text:
                     continue
-                bill_id = bill_id_re.search(script_text).group()
-                oid = btn_re.search(script_text).groups()[0]
+
+                """ script text looks like:
+                   document.write("<input type=button id=BTN71139 name=BTN71139 style='font-weight:normal' value='SB1'");
+                   document.write(" onClick=\"javascript:instrumentSelected(this,'71139','SB1','ON','ON','ON','");
+                   document.write(status + "','OFF','SB1-int.pdf,,','SB1-int.pdf,,')\">");
+                """
+
+                oid, bill_id, fnotes = re.findall(r"instrumentSelected\(this,'(\d+)','(\w+)','ON','ON','(ON|OFF)'",
+                                                  script_text)[0]
+                amend, intver, engver, enrver = re.findall(r"status \+ \"','(ON|OFF)','([^,]*?),([^,]*?),([^,]*?)",
+                                                           script_text)[0]
 
                 sponsor = sponsor.text_content()
                 subject = subject.text_content()
@@ -117,16 +123,21 @@ class ALBillScraper(BillScraper):
                 if sponsor:
                     bill.add_sponsor('primary', sponsor)
 
+                if fnotes == 'ON':
+                    bill.add_document('fiscal notes', 'http://alisondb.legislature.state.al.us/acas/ACTIONFiscalNotesFrameMac.asp?OID=%s&LABEL=%s' %
+                                      (oid, bill_id))
+
                 self.get_sponsors(bill, oid)
                 self.get_actions(bill, oid)
 
-                # craft bill URL
-                session_fragment = '2010rs'
-                type_fragment = 'bills'
-                bill_id_fragment = bill_id.lower()
-                bill_text_url = 'http://alisondb.legislature.state.al.us/acas/searchableinstruments/%s/%s/%s.htm' % (
-                    session_fragment, type_fragment, bill_id_fragment)
-                bill.add_version('bill text', bill_text_url)
+                # craft bill URLs
+                base_doc_url = 'http://alisondb.legislature.state.al.us/acas/searchableinstruments/%s/PrintFiles/' % session
+                if intver:
+                    bill.add_version('introduced', base_doc_url + intver)
+                if engver:
+                    bill.add_version('engrossed', base_doc_url + engver)
+                if enrver:
+                    bill.add_version('enrolled', base_doc_url + enrver)
 
                 self.save_bill(bill)
 

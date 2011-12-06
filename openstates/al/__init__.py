@@ -25,7 +25,7 @@ metadata =  {
         # 'start_year': 2009,
         # 'end_year': 2010},
         {'name': '2011-2014',
-         'sessions': ['2011s1',],
+         'sessions': ['2011rs',],
         }
     ],
     'feature_flags': ['subjects',],
@@ -72,12 +72,12 @@ metadata =  {
         #    'type': 'primary',
         #    'internal_id': 1051,
         #},
-        '2011s1': {
+        '2011rs': {
             'name': '2011 Regular Session',
             'internal_id': '1058',
             'type': 'primary',
         },
-        '2012s1': {
+        '2012rs': {
             'name': '2012 Regular Session',
             'internal_id': '1059',
             'type': 'primary',
