@@ -33,7 +33,8 @@ class KSBillScraper(BillScraper):
 
                 # main
                 bill = Bill(term, chamber, bill_data['BILLNO'],
-                            bill_data['SHORTTITLE'])
+                            bill_data['SHORTTITLE'],
+                            status=bill_data['STATUS'])
                 bill.add_source(ksapi.url + 'bill_status/' +
                                 bill_data['BILLNO'].lower())
                 if bill_data['LONGTITLE']:
@@ -63,14 +64,14 @@ class KSBillScraper(BillScraper):
                     date = datetime.datetime.strptime(event['occurred_datetime'], "%Y-%m-%dT%H:%M:%S")
                     # append committee name if present
                     action = event['status'] + append
-                    if event['action_code']  not in ksapi.action_codes:
+                    if event['action_code'] not in ksapi.action_codes:
                         self.warning('unknown action code on %s: %s %s' %
                                      (bill_data['BILLNO'], event['action_code'],
                                      event['status']))
                         atype = 'other'
                     else:
                         atype = ksapi.action_codes[event['action_code']]
-                    bill.add_action(actor, event['status'], date, type=atype)
+                    bill.add_action(actor, action, date, type=atype)
 
                     if event['action_code'] in ksapi.voted:
                         votes = votes_re.match(event['status'])
