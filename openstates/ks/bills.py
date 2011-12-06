@@ -27,14 +27,23 @@ class KSBillScraper(BillScraper):
             bill_request_json = json.loads(bill_request)
             bills = bill_request_json['content']
             for bill_data in bills:
+
+                bill_id = bill_data['BILLNO']
+
                 # filter other chambers
-                if not bill_data['BILLNO'].startswith(chamber_letter):
+                if not bill_id.startswith(chamber_letter):
                     continue
 
+                if 'CR' in bill_id:
+                    btype = 'concurrent resolution'
+                elif 'R' in bill_id:
+                    btype = 'resolution'
+                elif 'B' in bill_id:
+                    btype = 'bill'
+
                 # main
-                bill = Bill(term, chamber, bill_data['BILLNO'],
-                            bill_data['SHORTTITLE'],
-                            status=bill_data['STATUS'])
+                bill = Bill(term, chamber, bill_id, bill_data['SHORTTITLE'],
+                            type=btype, status=bill_data['STATUS'])
                 bill.add_source(ksapi.url + 'bill_status/' +
                                 bill_data['BILLNO'].lower())
                 if bill_data['LONGTITLE']:
