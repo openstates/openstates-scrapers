@@ -41,6 +41,7 @@ class ALLegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, term):
         urls = {'upper': 'http://www.legislature.state.al.us/senate/senators/senateroster_alpha.html',
                 'lower': 'http://www.legislature.state.al.us/house/representatives/houseroster_alpha.html'}
+        party_dict = {'(D)': 'Democratic', '(R)': 'Republican'}
 
         url = urls[chamber]
 
@@ -57,15 +58,18 @@ class ALLegislatorScraper(LegislatorScraper):
                     name = name.text_content()
                     name = ' '.join(normalize_name(name))
 
-                    party = party.text_content()
+                    party = party_dict[party.text_content()]
                     district = district.text_content()
                     office = office.text_content()
                     phone = phone.text_content()
                     leg_url = link[0].get('href')
 
+                    office_address = 'Room %s\n11 S. Union Street\nMontgomery, AL 36130' % office
+
                     leg = Legislator(term, chamber, district, name,
-                                     party=party, phone=phone,
-                                     office=office, url=leg_url)
+                                     party=party, office_phone=phone,
+                                     office_address=office_address,
+                                     url=leg_url)
                     self.get_details(leg, term, leg_url)
 
                     leg.add_source(url)
