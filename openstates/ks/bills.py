@@ -46,7 +46,8 @@ class KSBillScraper(BillScraper):
                              else 'cosponsor')
                     bill.add_sponsor(stype, sponsor)
 
-                for event in bill_data['HISTORY']:
+                # history is backwards
+                for event in reversed(bill_data['HISTORY']):
                     append = ''
                     if 'committee_names' in event and 'conferee_names' in event:
                         actor = ' and '.join(event['committee_names'] +
