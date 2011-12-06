@@ -63,7 +63,8 @@ class KSBillScraper(BillScraper):
                     date = datetime.datetime.strptime(event['occurred_datetime'], "%Y-%m-%dT%H:%M:%S")
                     # append committee name if present
                     action = event['status'] + append
-                    bill.add_action(actor, event['status'], date)
+                    atype = ksapi.action_codes[event['action_code']]
+                    bill.add_action(actor, event['status'], date, type=atype)
 
                     if event['action_code'] in ksapi.voted:
                         votes = votes_re.match(event['status'])
