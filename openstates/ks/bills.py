@@ -142,6 +142,7 @@ class KSBillScraper(BillScraper):
         os.remove(vote_doc)
 
         vote = None
+        passed = True
         for line in vote_lines:
             line = line.strip()
             totals = re.findall('Yeas (\d+)[;,] Nays (\d+)[;,] (?:Present but not voting:|Present and Passing) (\d+)[;,] (?:Absent or not voting:|Absent or Not Voting) (\d+)',
@@ -176,8 +177,9 @@ class KSBillScraper(BillScraper):
                     if member != 'None.':
                         vote.other(member)
             elif 'the motion did not prevail' in line:
-                vote['passed'] = False
+                passed = False
 
+        vote['passed'] = passed
         vote.add_source(vote_url)
         bill.add_vote(vote)
 
