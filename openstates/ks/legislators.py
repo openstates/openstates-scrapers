@@ -34,6 +34,7 @@ class KSLegislatorScraper(LegislatorScraper):
     def scrape_legislator(self, chamber, term, url, district, phone, email):
         with self.urlopen(url) as legislator_page:
             legislator_page = lxml.html.fromstring(legislator_page)
+            legislator_page.make_links_absolute(url)
 
             main = legislator_page.xpath("//div[@id='main']")[0]
             name = main.xpath('h1')[0].text_content()
