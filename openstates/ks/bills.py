@@ -125,7 +125,7 @@ class KSBillScraper(BillScraper):
             if amendment:
                 if 'Motion to Amend' in row_text:
                     _, offered_by = row_text.split('Motion to Amend -')
-                    amendment_name = 'Amendment' + offered_by.strip()
+                    amendment_name = 'Amendment ' + offered_by.strip()
                 elif 'Conference committee report now available' in row_text:
                     amendment_name = 'Conference Committee Report'
                 else:
@@ -170,7 +170,7 @@ class KSBillScraper(BillScraper):
                 for member in line.split(', '):
                     if member != 'None.':
                         vote.no(member)
-            elif line.startswith('Present but'):
+            elif line.startswith('Present '):
                 line = line.split(':', 1)[1].strip()
                 for member in line.split(', '):
                     if member != 'None.':
