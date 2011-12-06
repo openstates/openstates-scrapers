@@ -58,7 +58,8 @@ class LALegislatorScraper(LegislatorScraper):
             else:
                 party = "Other"
 
-            leg = Legislator(term, 'lower', district, name, party=party)
+            leg = Legislator(term, 'lower', district, name, party=party,
+                             url=url)
             leg.add_source(url)
             self.save_legislator(leg)
 
@@ -83,6 +84,7 @@ class LALegislatorScraper(LegislatorScraper):
             elif party == 'Democrat':
                 party = 'Democratic'
 
-            leg = Legislator(term, 'upper', district, name, party=party)
+            leg = Legislator(term, 'upper', district, name, party=party,
+                             url=url)
             leg.add_source(url)
             self.save_legislator(leg)
