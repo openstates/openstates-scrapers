@@ -179,9 +179,10 @@ class KSBillScraper(BillScraper):
             elif 'the motion did not prevail' in line:
                 passed = False
 
-        vote['passed'] = passed
-        vote.add_source(vote_url)
-        bill.add_vote(vote)
+        if vote:
+            vote['passed'] = passed
+            vote.add_source(vote_url)
+            bill.add_vote(vote)
 
 
 def get_doc_link(elem):
