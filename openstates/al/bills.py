@@ -1,4 +1,5 @@
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 import re
 import datetime
@@ -149,6 +150,8 @@ class ALBillScraper(BillScraper):
         url = 'http://alisondb.legislature.state.al.us/acas/ACTIONHistoryResultsMac.asp?OID=%s&LABEL=%s' % (oid, bill['bill_id'])
 
         bill.add_source(url)
+        # TODO: actor isn't provided.. unclear what can be done
+        action_chamber = bill['chamber']
 
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
@@ -157,9 +160,6 @@ class ALBillScraper(BillScraper):
                 # date, amend/subst, matter, committee, nay, yea, abs, vote
                 tds = row.xpath('td')
 
-                # TODO: action parsing could be greatly improved
-                #   - votes not handled yet
-                #   - actor isn't provided.. unclear what can be done
 
                 # only change date if it exists (actions w/o date get old date)
                 if tds[0].text_content():
@@ -174,16 +174,19 @@ class ALBillScraper(BillScraper):
                 else:
                     amendment = None
 
-                # pulling values out of javascript
-                vote_js = tds[8].xpath('input').get('onclick')
-                moid, vote, body, inst = re.match(".*\('(\d+)','(\d+)','(\d+)','(\w+)'", vote_js).groups()
-                self.scrape_vote(bill, moid, vote, body, inst)
-
                 action = tds[2].text_content()
                 if action:
                     atype = _categorize_action(action)
-                    bill.add_action(bill['chamber'], action, date,
+                    bill.add_action(action_chamber, action, date,
                                     type=atype, amendment=amendment)
+
+                # pulling values out of javascript
+                vote_button = tds[7].xpath('input')
+                if vote_button:
+                    vote_js = vote_button[0].get('onclick')
+                    moid, vote, body, inst = re.match(".*\('(\d+)','(\d+)','(\d+)','(\w+)'", vote_js).groups()
+                    self.scrape_vote(bill, moid, vote, body, inst, action,
+                                     action_chamber)
 
 
 
@@ -200,8 +203,37 @@ class ALBillScraper(BillScraper):
                     bill.add_sponsor('cosponsor', cs)
 
 
-    def scrape_vote(self, bill, moid, vote, body, inst):
-        url = "http://alisondb.legislature.state.al.us/acas/GetRollCallVoteResults.asp?MOID=%s&VOTE=%s&BODY=%s&INST=%s%s&SESS=%s" % (
-            moid, vote, body, inst, self.session_id)
+    def scrape_vote(self, bill, moid, vote_id, body, inst, motion, chamber):
+        url = "http://alisondb.legislature.state.al.us/acas/GetRollCallVoteResults.asp?MOID=%s&VOTE=%s&BODY=%s&INST=%s&SESS=%s" % (
+            moid, vote_id, body, inst, self.session_id)
         doc = lxml.html.fromstring(self.urlopen(url))
 
+        voters = {'Y': [], 'N': [], 'P': [], 'A': []}
+
+        leg_tds = doc.xpath('//td[@width="33%"]')
+        for td in leg_tds:
+            name = td.text
+            two_after = td.xpath('following-sibling::td')[1].text
+            if name == 'Total Yea:':
+                total_yea = int(two_after)
+            elif name == 'Total Nay:':
+                total_nay = int(two_after)
+            elif name == 'Total Abs:':
+                total_abs = int(two_after)
+            elif name == 'Legislative Date:':
+                vote_date = datetime.datetime.strptime(two_after, '%m/%d/%Y')
+            elif name in ('Legislative Day:', 'Vote ID:'):
+                pass
+            else:
+                # add legislator to list of voters
+                voters[two_after].append(name)
+
+        # TODO: passed is faked
+        vote = Vote(chamber, vote_date, motion, total_yea > total_nay,
+                    total_yea, total_nay, total_abs)
+        for member in voters['Y']:
+            vote.yes(member)
+        for member in voters['N']:
+            vote.no(member)
+        for member in (voters['A'] + voters['P']):
+            vote.other(member)
