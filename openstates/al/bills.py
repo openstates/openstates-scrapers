@@ -222,15 +222,19 @@ class ALBillScraper(BillScraper):
                 total_abs = int(two_after)
             elif name == 'Legislative Date:':
                 vote_date = datetime.datetime.strptime(two_after, '%m/%d/%Y')
+            # lines to ignore
             elif name in ('Legislative Day:', 'Vote ID:'):
+                pass
+            elif 'Vacant' in name:
                 pass
             else:
                 # add legislator to list of voters
                 voters[two_after].append(name)
 
         # TODO: passed is faked
+        total_other = total_abs + len(voters['P'])
         vote = Vote(chamber, vote_date, motion, total_yea > total_nay,
-                    total_yea, total_nay, total_abs)
+                    total_yea, total_nay, total_other)
         vote.add_source(url)
         for member in voters['Y']:
             vote.yes(member)
