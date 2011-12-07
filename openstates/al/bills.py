@@ -43,11 +43,11 @@ class ALBillScraper(BillScraper):
 
     def refresh_session(self):
         url = ('http://alisondb.legislature.state.al.us/acas/ACASLoginFire.asp'
-               '?SESSION=%s') % self.site_id
+               '?SESSION=%s') % self.session_id
         html = self.urlopen(url)
 
     def scrape(self, chamber, session):
-        self.site_id = self.metadata['session_details'][session]['internal_id']
+        self.session_id = self.metadata['session_details'][session]['internal_id']
         self.base_doc_url = 'http://alisondb.legislature.state.al.us/acas/searchableinstruments/%s/PrintFiles/' % session
 
         chamber_piece = {'upper': 'Senate',
@@ -174,11 +174,17 @@ class ALBillScraper(BillScraper):
                 else:
                     amendment = None
 
+                # pulling values out of javascript
+                vote_js = tds[8].xpath('input').get('onclick')
+                moid, vote, body, inst = re.match(".*\('(\d+)','(\d+)','(\d+)','(\w+)'", vote_js).groups()
+                self.scrape_vote(bill, moid, vote, body, inst)
+
                 action = tds[2].text_content()
                 if action:
                     atype = _categorize_action(action)
                     bill.add_action(bill['chamber'], action, date,
                                     type=atype, amendment=amendment)
+
 
 
     def get_sponsors(self, bill, oid):
@@ -194,5 +200,8 @@ class ALBillScraper(BillScraper):
                     bill.add_sponsor('cosponsor', cs)
 
 
-    #def getvote(moid, bill_type, bill_number, voteid, bodyoid, sessionid):
-    #    url = "http://alisondb.legislature.state.al.us/acas/GetRollCallVoteResults.asp?MOID=%s&VOTE=%s&BODY=%s&INST=%s%s&SESS=%s" % (moid,voteid,bodyoid,bill_type,bill_number,sessionid)
+    def scrape_vote(self, bill, moid, vote, body, inst):
+        url = "http://alisondb.legislature.state.al.us/acas/GetRollCallVoteResults.asp?MOID=%s&VOTE=%s&BODY=%s&INST=%s%s&SESS=%s" % (
+            moid, vote, body, inst, self.session_id)
+        doc = lxml.html.fromstring(self.urlopen(url))
+
