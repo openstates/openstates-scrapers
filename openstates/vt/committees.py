@@ -26,22 +26,23 @@ class VTCommitteeScraper(CommitteeScraper):
                 # Strip chamber from beginning of committee name
                 comm_name = re.sub(r'^(HOUSE|SENATE) COMMITTEE ON ', '',
                                    comm_name)
-
+                # normalize case of committee name
                 comm_name = comm_name.title()
 
                 comm = Committee(chamber, comm_name)
                 comm.add_source(url)
 
                 for tr in li.xpath("../../following-sibling::tr"):
-                    # Break when we reach the next committee
-                    if tr.xpath("th/li"):
-                        break
 
-                    name = tr.xpath("string()").strip()
+                    name = tr.text_content().strip()
+
+                    # Break when we reach the next committee
+                    if 'COMMITTEE' in name:
+                        break
 
                     match = re.search(
                         '^([\w\s\.]+),\s+'
-                        '(Chair|Vice Chair|Ranking Member|Clerk)$',
+                        '(Chair|Vice Chair|Vice-Chair|Ranking Member|Clerk)$',
                         name)
                     if match:
                         name = match.group(1)
