@@ -2,38 +2,6 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
 
-def normalize_name(name):
-    """
-        normalize names like DeMARCO, John and GOOSE, Ann for AL legislators
-    """
-    pieces = name.split(', ',)
-    last = pieces[0]
-    first = pieces[1]
-
-    # handle suffixes either in the comma split or at end of first name
-    if len(pieces) == 3:
-        suffixes = pieces[2]
-    else:
-        suffixes = ''
-
-    # move suffix off first name
-    if first.endswith('Jr.') or first.endswith('Sr.'):
-        suffixes = first[-3:]
-        first = first[:-4]
-
-    # lowercasing letters not preceeded by a lower case letter
-    newlast = ''
-    next_lower = False
-    for letter in last:
-        if next_lower:
-            newlast += letter.lower()
-        else:
-            newlast += letter
-        next_lower = not letter.islower()
-
-    return first, newlast, suffixes
-
-
 
 class ALLegislatorScraper(LegislatorScraper):
     state = 'al'
@@ -41,7 +9,8 @@ class ALLegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, term):
         urls = {'upper': 'http://www.legislature.state.al.us/senate/senators/senateroster_alpha.html',
                 'lower': 'http://www.legislature.state.al.us/house/representatives/houseroster_alpha.html'}
-        party_dict = {'(D)': 'Democratic', '(R)': 'Republican'}
+        party_dict = {'(D)': 'Democratic', '(R)': 'Republican', 
+                      '(I)': 'Independent'}
 
         url = urls[chamber]
 
@@ -56,7 +25,6 @@ class ALLegislatorScraper(LegislatorScraper):
                 link = name.xpath('a')
                 if link:
                     name = name.text_content()
-                    name = ' '.join(normalize_name(name))
 
                     party = party_dict[party.text_content()]
                     district = district.text_content().strip()
