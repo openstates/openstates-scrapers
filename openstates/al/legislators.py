@@ -1,3 +1,4 @@
+import re
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
