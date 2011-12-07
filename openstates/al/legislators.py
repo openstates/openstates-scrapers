@@ -26,7 +26,7 @@ class ALLegislatorScraper(LegislatorScraper):
                 if link:
                     name = name.text_content()
 
-                    party = party_dict[party.text_content()]
+                    party = party_dict[party.text_content().strip()]
                     district = district.text_content().strip()
                     office = office.text_content().strip()
                     phone = phone.text_content().strip()
