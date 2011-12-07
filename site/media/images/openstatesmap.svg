@@ -35,15 +35,15 @@
    guidetolerance="10"
    inkscape:pageopacity="0"
    inkscape:pageshadow="2"
-   inkscape:window-width="956"
-   inkscape:window-height="1196"
+   inkscape:window-width="1596"
+   inkscape:window-height="872"
    id="namedview728"
    showgrid="false"
    inkscape:zoom="2.1527403"
-   inkscape:cx="231.89532"
+   inkscape:cx="153.85525"
    inkscape:cy="230.19736"
    inkscape:window-x="0"
-   inkscape:window-y="0"
+   inkscape:window-y="24"
    inkscape:window-maximized="0"
    inkscape:current-layer="svg2" />
 <defs
@@ -518,15 +518,15 @@
    gradientUnits="userSpaceOnUse">
 	<stop
    offset="0"
-   style="stop-color:#D5D6C3;stop-opacity:0.6"
+   style="stop-color:#75afa5;stop-opacity:0.60000002;"
    id="stop178" />
 	<stop
    offset="0.9447"
-   style="stop-color:#D5D6C3;stop-opacity:0.9779"
+   style="stop-color:#75afa5;stop-opacity:0.97647059;"
    id="stop180" />
 	<stop
    offset="1"
-   style="stop-color:#D5D6C3"
+   style="stop-color:#75afa5;stop-opacity:1;"
    id="stop182" />
 </radialGradient>
 <polygon
