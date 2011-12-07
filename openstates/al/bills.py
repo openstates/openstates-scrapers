@@ -150,7 +150,6 @@ class ALBillScraper(BillScraper):
         url = 'http://alisondb.legislature.state.al.us/acas/ACTIONHistoryResultsMac.asp?OID=%s&LABEL=%s' % (oid, bill['bill_id'])
 
         bill.add_source(url)
-        # TODO: actor isn't provided.. unclear what can be done
         action_chamber = bill['chamber']
 
         with self.urlopen(url) as html:
@@ -159,7 +158,6 @@ class ALBillScraper(BillScraper):
             for row in doc.xpath('//tr[@valign="top"]'):
                 # date, amend/subst, matter, committee, nay, yea, abs, vote
                 tds = row.xpath('td')
-
 
                 # only change date if it exists (actions w/o date get old date)
                 if tds[0].text_content():
@@ -174,7 +172,15 @@ class ALBillScraper(BillScraper):
                 else:
                     amendment = None
 
-                action = tds[2].text_content()
+                action = tds[2].text_content().strip()
+                if ('Received in Senate' in action or
+                    'referred to the Senate' in action):
+                    action_chamber = 'upper'
+                elif ('Recieved in House' in action or
+                      'referred to the House' in action
+                     ):
+                    action_chamber = 'lower'
+
                 if action:
                     atype = _categorize_action(action)
                     bill.add_action(action_chamber, action, date,
