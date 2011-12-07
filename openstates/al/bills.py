@@ -181,7 +181,7 @@ class ALBillScraper(BillScraper):
                                     type=atype, amendment=amendment)
 
                 # pulling values out of javascript
-                vote_button = tds[7].xpath('input')
+                vote_button = tds[-1].xpath('input')
                 if vote_button:
                     vote_js = vote_button[0].get('onclick')
                     moid, vote, body, inst = re.match(".*\('(\d+)','(\d+)','(\d+)','(\w+)'", vote_js).groups()
@@ -231,9 +231,12 @@ class ALBillScraper(BillScraper):
         # TODO: passed is faked
         vote = Vote(chamber, vote_date, motion, total_yea > total_nay,
                     total_yea, total_nay, total_abs)
+        vote.add_source(url)
         for member in voters['Y']:
             vote.yes(member)
         for member in voters['N']:
             vote.no(member)
         for member in (voters['A'] + voters['P']):
             vote.other(member)
+
+        bill.add_vote(vote)
