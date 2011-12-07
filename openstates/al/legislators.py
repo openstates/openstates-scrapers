@@ -3,16 +3,6 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
 
-def normalize_case(word):
-    word_pieces = re.split('([a-z])', word, 1)
-    word_pieces[0] = word_pieces[0].title()
-    word_pieces[-1] = word_pieces[-1].title()
-    return ''.join(word_pieces)
-
-def normalize_name(name):
-    before, after = name.split(', ', 1)
-    return '%s, %s' % (normalize_case(before), after)
-
 class ALLegislatorScraper(LegislatorScraper):
     state = 'al'
 
@@ -34,7 +24,7 @@ class ALLegislatorScraper(LegislatorScraper):
                 # if the name column contains a link it isn't vacant
                 link = name.xpath('a')
                 if link:
-                    name = normalize_name(name.text_content().strip())
+                    name = name.text_content().strip()
 
                     party = party_dict[party.text_content().strip()]
                     district = district.text_content().strip()
