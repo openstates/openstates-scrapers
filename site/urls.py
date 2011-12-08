@@ -10,7 +10,6 @@ urlpatterns = patterns('',
 
     # site-specific views
     (r'^downloads/$', 'views.downloads'),
-    (r'^data/(?P<state>\w\w).zip$', 'views.data_zip'),
 
     # flat pages
     (r'^$', 'django.views.generic.simple.direct_to_template',
