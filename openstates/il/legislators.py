@@ -31,7 +31,7 @@ class ILLegislatorScraper(LegislatorScraper):
             if name.endswith('*'):
                 continue
 
-            leg = Legislator(term, chamber, district, name, party=party)
+            leg = Legislator(term, chamber, district, name, party=party,
+                             url=leg_url)
             leg.add_source(url)
-            leg.add_source(leg_url)
             self.save_legislator(leg)
