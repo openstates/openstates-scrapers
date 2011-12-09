@@ -24,6 +24,7 @@ class IALegislatorScraper(LegislatorScraper):
         table = page.xpath('//table[@class="legis"]')[0]
         for link in table.xpath(".//a[contains(@href, 'legislator.aspx')]"):
             name = link.text.strip()
+            leg_url = link.get('href')
             district = link.xpath("string(../../td[2])")
             party = link.xpath("string(../../td[3])")
             email = link.xpath("string(../../td[5])")
@@ -36,7 +37,7 @@ class IALegislatorScraper(LegislatorScraper):
                          "?GA=84&PID=%s" % pid)
 
             leg = Legislator(term, chamber, district, name, party=party,
-                             email_address=email, photo_url=photo_url)
+                             email=email, photo_url=photo_url, url=url)
             leg.add_source(url)
 
             leg_page = lxml.html.fromstring(self.urlopen(link.attrib['href']))
