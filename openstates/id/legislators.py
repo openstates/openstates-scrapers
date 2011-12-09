@@ -82,7 +82,7 @@ class IDLegislatorScraper(LegislatorScraper):
                 leg.add_source(url)
                 leg['photo_url'] = img_url
                 leg['contact_form'] = contact_form
-                leg['additional_info_url'] = additional_info_url
+                leg['url'] = additional_info_url
                 leg['address'] = pieces.pop(0)
 
                 # at this point 'pieces' still contains phone numbers and profession
