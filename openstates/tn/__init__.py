@@ -13,34 +13,23 @@ metadata = dict(
     lower_chamber_term = 2,
     upper_chamber_term = 4,
     terms = [
-        {
-            'name': '106th General Assembly', 
-            'start_year': 2009, 
-            'end_year': 2010, 
-            'sessions': ['106th Regular Session', '106th Special Session']
-        },
-        {
-            'name': '107th General Assembly', 
-            'start_year': 2010, 
-            'end_year': 2011, 
-            'sessions': ['107th Regular Session']
-        }       
+        {'name': '106', 'sessions' : ['106', '106S'],
+            'start_year': 2009, 'end_year': 2010},
+        {'name': '107', 'sessions': ['107'],
+            'start_year': 2010, 'end_year': 2011} 
     ],
     session_details={
-        '107th Regular Session': {
-            'start_date': datetime.date(2011, 1, 11),
-            'end_date': datetime.date(2012, 1, 10),
-            'number': 107,
-            'type': 'primary' },
-        '106th Regular Session': {
-            'start_date': None,
-            'end_date': None,
-            'number': 106,
-            'type': 'primary'},
-        '106th Special Session': {
-            'start_date': None,
-            'end_date': None,
-            'number': 106,
-            'type': 'special'},
-    }
+        '107': {
+            'start_date' : datetime.date(2011, 1, 11),
+            'end_date' : datetime.date(2012, 1, 10),
+            'type' : 'primary',
+            'display_name': '107th Regular Session',},
+        '106': {
+            'type' : 'primary',
+            'display_name' : '106th Regular Session',},
+        '106S': {
+            'type' : 'special',
+            'display_name' : '106th Special Session',},
+    },
+    feature_flags=[],
 )
