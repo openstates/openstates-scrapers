@@ -60,7 +60,6 @@ class DCLegislatorScraper(LegislatorScraper):
 
             legislator = Legislator(term, 'upper', district, name,
                                     party=party, office_address=office_address,
-                                    phone=phone, fax=fax
-                                   )
+                                    phone=phone, fax=fax, url=url,)
             legislator.add_source(url)
             self.save_legislator(legislator)
