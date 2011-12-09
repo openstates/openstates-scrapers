@@ -73,7 +73,7 @@ class SDLegislatorScraper(LegislatorScraper):
             legislator = Legislator(term, chamber, district, name,
                                     party=party, occupation=occupation,
                                     photo_url=photo_url,
-                                    office_phone=office_phone)
+                                    office_phone=office_phone, url=url)
             legislator.add_source(url)
 
             comm_url = page.xpath("//a[. = 'Committees']")[0].attrib['href']
