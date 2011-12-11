@@ -81,7 +81,7 @@ class MSLegislatorScraper(LegislatorScraper):
                                  home_phone = home_phone, bis_phone=bis_phone,
                                  capital_phone=capital_phone,
                                  other_phone=other_phone, org_info=org_info,
-                                 email=email)
+                                 email=email, url=url)
                 leg.add_source(url)
                 self.save_legislator(leg)
         except scrapelib.HTTPError, e:

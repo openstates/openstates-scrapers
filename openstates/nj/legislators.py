@@ -35,7 +35,7 @@ class NJLegislatorScraper(LegislatorScraper, DBFMixin):
             full_name = first_name + " " + middle_name + " " + last_name + " " + suffix
             full_name = full_name.replace('  ', ' ')
             full_name = full_name[0: len(full_name) - 1]
-            
+
             district = int(rec["district"])
             party = rec["party"]
             if party == 'R':
@@ -58,12 +58,14 @@ class NJLegislatorScraper(LegislatorScraper, DBFMixin):
             state = rec["state"]
             zipcode = rec["zipcode"]
             phone = rec["phone"]
+            email = rec["email"]
 
             leg = Legislator(term_name, chamber, str(district), full_name,
                              first_name, last_name, middle_name, party,
                              suffixes=suffix, title=title,
                              legal_position=legal_position,
                              leg_status=leg_status, address=address, city=city,
-                             state=state, zipcode=zipcode, phone=phone)
+                             state=state, zipcode=zipcode, phone=phone,
+                             email=email)
             leg.add_source(file_url)
             self.save_legislator(leg)

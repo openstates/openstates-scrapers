@@ -32,7 +32,8 @@ class NELegislatorScraper(LegislatorScraper):
                 #Nebraska is offically nonpartisan
                 party = 'Nonpartisan'
                 leg = Legislator(term, chamber, str(district), full_name,
-                                 party=party, email=email, phone=phone)
+                                 party=party, email=email, phone=phone,
+                                 url=url)
                 leg.add_source(rep_url)
                 self.save_legislator(leg)
             except scrapelib.HTTPError:

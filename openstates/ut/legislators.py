@@ -47,7 +47,8 @@ class UTLegislatorScraper(LegislatorScraper):
             photo_url = leg_doc.xpath('//img[@alt="photo"]/@src')[0]
 
             leg = Legislator(term, 'lower', district, name,
-                             party=party, photo_url=photo_url)
+                             party=party, photo_url=photo_url,
+                             url=leg_url)
             leg.add_source(url)
             leg.add_source(leg_url)
             self.save_legislator(leg)
@@ -89,7 +90,7 @@ class UTLegislatorScraper(LegislatorScraper):
 
             leg = Legislator(term, 'upper', district, name,
                              party=party, email=email, address=address,
-                             photo_url=photo_url)
+                             photo_url=photo_url, url=leg_url)
             leg.add_source(url)
             leg.add_source(leg_url)
             self.save_legislator(leg)
