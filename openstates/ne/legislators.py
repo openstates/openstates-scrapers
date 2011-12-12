@@ -33,7 +33,7 @@ class NELegislatorScraper(LegislatorScraper):
                 party = 'Nonpartisan'
                 leg = Legislator(term, chamber, str(district), full_name,
                                  party=party, email=email, phone=phone,
-                                 url=url)
+                                 url=rep_url)
                 leg.add_source(rep_url)
                 self.save_legislator(leg)
             except scrapelib.HTTPError:
