@@ -52,7 +52,7 @@ class OHLegislatorScraper(LegislatorScraper):
 
             for el in page.xpath('//table[@class="fullWidth"]/tr/td'):
                 sen_link = el.xpath('a[@class="senatorLN"]')[1]
-                sen_url = el.get('href')
+                sen_url = sen_link.get('href')
 
                 full_name = sen_link.text
                 full_name = full_name[0:-2]
