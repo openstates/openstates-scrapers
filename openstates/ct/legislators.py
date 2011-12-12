@@ -53,6 +53,8 @@ class CTLegislatorScraper(LegislatorScraper):
                              middle_name=row['middle initial'],
                              suffixes=row['suffix'],
                              party=party,
+                             email=row['email'],
+                             url=row['URL'],
                              office_address=office_address,
                              office_phone=row['capitol phone'])
             leg.add_source(leg_url)
