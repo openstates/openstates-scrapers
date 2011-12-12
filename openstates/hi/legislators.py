@@ -46,7 +46,9 @@ class HILegislatorScraper(LegislatorScraper):
             for row in table.xpath('tr[td/a[contains(@href, "memberpage")]]'):
                 params = {}
                 district = row.xpath('td/span[contains(@id, "LabelDistrict")]/font')[0].text
-                last_name = row.xpath('td/a[contains(@id, "HyperLinkLast")]/font')[0].text.strip()
+                last_name_a = row.xpath('td/a[contains(@id, "HyperLinkLast")]')[0]
+                member_url = last_name_a.get('href')
+                last_name = last_name_a.text_content().strip()
                 first_names = row.xpath('td/span[contains(@id, "LabelFirst")]/font')[0].text.strip()
                 first_name = first_names.split()[0]
                 middle_name = ' '.join(first_names.split()[1:])
@@ -60,6 +62,7 @@ class HILegislatorScraper(LegislatorScraper):
 
                 full_name = first_names + " " + last_name
                 leg = Legislator(term, chamber, district, full_name,
-                        first_name, last_name, middle_name, party, **params)
+                                 first_name, last_name, middle_name, party,
+                                 url=member_url, **params)
                 leg.add_source(url)
                 self.save_legislator(leg)
