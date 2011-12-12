@@ -15,9 +15,12 @@ class MILegislatorScraper(LegislatorScraper):
             url = 'http://house.michigan.gov/replist.asp'
             with self.urlopen(url) as html:
                 doc = lxml.html.fromstring(html)
+                doc.make_links_absolute(url)
                 # skip two rows at top
                 for row in doc.xpath('//table[@cellspacing=0]/tr')[2:]:
-                    tds = [x.text_content().strip() for x in row.xpath('td')]
+                    tds = row.xpath('td')
+                    leg_url = tds[1].xpath('.//a/@href')[0]
+                    tds = [x.text_content().strip() for x in tds]
                     (district, last_name, first_name,
                      party, office, phone, email) = tds
                     # vacancies
@@ -31,8 +34,8 @@ class MILegislatorScraper(LegislatorScraper):
                                      party=abbr[party],
                                      office=office,
                                      phone=phone,
-                                     email=email
-                                    )
+                                     email=email,
+                                     leg_url=leg_url)
                     leg.add_source(url)
                     self.save_legislator(leg)
         else:
@@ -43,6 +46,7 @@ class MILegislatorScraper(LegislatorScraper):
                     # party, dist, member, office_phone, office_fax, office_loc
                     party = abbr[row.xpath('td[1]/text()')[0]]
                     district = row.xpath('td[2]/a/text()')[0]
+                    leg_url = row.xpath('td[3]/a/@href')[0]
                     name = row.xpath('td[3]/a/text()')[0]
                     office_phone = row.xpath('td[4]/text()')[0]
                     office_fax = row.xpath('td[5]/text()')[0]
@@ -50,6 +54,7 @@ class MILegislatorScraper(LegislatorScraper):
                     leg = Legislator(term=term, chamber=chamber,
                                      district=district, full_name=name,
                                      party=party, office_phone=office_phone,
+                                     url=leg_url,
                                      office_fax=office_fax,
                                      office_loc=office_loc)
                     leg.add_source(url)
