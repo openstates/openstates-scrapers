@@ -62,27 +62,25 @@ class FLLegislatorScraper(LegislatorScraper):
 
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page.decode('utf8'))
+            page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'MemberId')]"):
-                name = re.sub(r"\s+", " ", link.text).strip()
-                if 'Special Election' in name:
-                    continue
+            for div in page.xpath('//div[@id="rep_icondocks2"]'):
+                link = div.xpath('.//div[@class="membername"]/a')[0]
+                name = link.text_content().strip()
 
-                party = link.xpath('string(../../td[3])').strip()
-                if party == 'D':
+                party = div.xpath('.//div[@class="partyname"]/text()')[0].strip()
+                if party == 'Democrat':
                     party = 'Democratic'
-                elif party == 'R':
-                    party = 'Republican'
 
-                district = link.xpath('string(../../td[4])').strip()
+                district = div.xpath('.//div[@class="districtnumber"]/text()')[0].strip()
 
-                split_url = urlparse.urlsplit(link.attrib['href'])
-                member_id = urlparse.parse_qs(split_url.query)[
-                    'MemberId'][0]
+                leg_url = link.get('href')
+                split_url = urlparse.urlsplit(leg_url)
+                member_id = urlparse.parse_qs(split_url.query)['MemberId'][0]
                 photo_url = ("http://www.flhouse.gov/FileStores/Web/"
                              "Imaging/Member/%s.jpg" % member_id)
 
                 leg = Legislator(term, 'lower', district, name,
-                                 party=party, photo_url=photo_url)
+                                 party=party, photo_url=photo_url, url=leg_url)
                 leg.add_source(url)
                 self.save_legislator(leg)
