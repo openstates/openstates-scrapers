@@ -25,6 +25,7 @@ Saint Paul, Minnesota 55155'''
 
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(url)
 
             # skip first header row
             for row in doc.xpath('//tr')[1:]:
@@ -36,14 +37,15 @@ Saint Paul, Minnesota 55155'''
                         party = 'Republican'
                     elif party == '(DFL)':
                         party = 'Democratic-Farmer-Labor'
-                    leg_url = 'http://www.house.leg.state.mn.us/members/' + row.xpath('td[2]/p/a/@href')[0]
+                    leg_url = row.xpath('td[2]/p/a/@href')[0]
                     addr = tds[2] + office_addr
                     phone = tds[3]
                     email = tds[4]
 
                 leg = Legislator(term, 'lower', district, name,
                                  party=party, office_address=addr,
-                                 office_phone=phone, email=email)
+                                 office_phone=phone, email=email,
+                                 url=leg_url)
 
                 # add photo_url
                 with self.urlopen(leg_url) as leg_html:
@@ -53,6 +55,7 @@ Saint Paul, Minnesota 55155'''
                         leg['photo_url'] = img_src[0]
 
                 leg.add_source(url)
+                leg.add_source(leg_url)
                 self.save_legislator(leg)
 
     def scrape_senate(self, term):
@@ -75,7 +78,8 @@ Saint Paul, Minnesota 55155'''
 
                     leg = Legislator(term, 'upper', district, name,
                                      party=self._parties[party],
-                                     office_address=addr, office_phone=phone)
+                                     office_address=addr, office_phone=phone,
+                                     url=leg_url)
 
                     if '@' in email:
                         leg['email'] = email
