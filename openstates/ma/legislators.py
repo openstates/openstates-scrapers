@@ -62,7 +62,11 @@ class MALegislatorScraper(LegislatorScraper):
             root.make_links_absolute(member_url)
 
         photo_url = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@src')[0]
+        photo_url = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@src')[0]
         full_name = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@alt')[0]
+
+        email = root.xpath('//a[contains(@href, "mailto")]/@href')[0]
+        email = email.replace('mailto:','')
 
         district = root.xpath('//div[@id="District"]//div[starts-with(@class,"widgetContent")]')
         if len(district):
@@ -73,7 +77,7 @@ class MALegislatorScraper(LegislatorScraper):
         party = 'Democratic' if party == '(D)' else 'Republican'
 
         leg = Legislator(term, chamber, district, full_name, party=party,
-                         photo_url=photo_url, url=member_url)
+                         photo_url=photo_url, url=member_url, email=email)
         leg.add_source(member_url)
 
         self.save_legislator(leg)
