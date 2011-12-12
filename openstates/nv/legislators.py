@@ -93,7 +93,7 @@ class NVLegislatorScraper(LegislatorScraper):
 
                 leg = Legislator(term_name, chamber, district, full_name,
                                  first_name, last_name, middle_name, party,
-                                 email=email, address=address)
+                                 email=email, address=address, url=leg_url)
                 leg.add_source(leg_url)
                 self.save_legislator(leg)
 
