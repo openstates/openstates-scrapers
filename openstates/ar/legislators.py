@@ -55,7 +55,7 @@ class ARLegislatorScraper(LegislatorScraper):
             district = re.search(r'District(.+)\r', info_box).group(1)
 
             leg = Legislator(term, chamber, district, full_name, party=party,
-                             photo_url=photo_url)
+                             photo_url=photo_url, url=member_url)
             leg.add_source(member_url)
 
             try:
