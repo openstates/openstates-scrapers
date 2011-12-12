@@ -84,6 +84,7 @@ class KYLegislatorScraper(LegislatorScraper):
                              member['full_name'],
                              party=member['party'],
                              photo_url=member['photo_url'],
+                             url=member_url,
                              office_address=member['office_address'],
                              office_phone=member['office_phone'])
             leg.add_source(member_url)
