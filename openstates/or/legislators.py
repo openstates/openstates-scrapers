@@ -67,7 +67,7 @@ class ORLegislatorScraper(LegislatorScraper):
                          middle_name=member.get('middle-initial'),
                          party=party,
                          email=member.get('e-mail'),
-                         website=member.get('website'),
+                         url=member.get('website'),
                          oregon_member_id=member.get('leg-member-id'),
                          **extra_dict)
 
