@@ -227,6 +227,7 @@ class HIBillScraper(BillScraper):
                 ., "Description")]]/div[contains(@class, "rightside")]')[0].text
             params['companion'] = page.xpath('//div[div[contains( \
                 ., "Companion")]]/div[contains(@class, "rightside")]')[0].text
+            params['referral'] = doc.xpath('//span[contains(@id, "referral")]/text()')[0]
             if params['title'] == '':
                 params['title'] = params['subject']
             actions = []
