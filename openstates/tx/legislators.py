@@ -1,7 +1,6 @@
 import re
 
 from billy.utils import urlescape
-from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import (LegislatorScraper, Legislator,
                                             Person)
 from .utils import clean_committee_name
@@ -13,9 +12,7 @@ class TXLegislatorScraper(LegislatorScraper):
     state = 'tx'
 
     def scrape(self, chamber, term):
-        if term != '82':
-            # Data only available for current term
-            raise NoDataForPeriod(term)
+        self.validate_term(term, latest_only=True)
 
         if chamber == 'upper':
             chamber_type = 'S'
@@ -81,7 +78,7 @@ class TXLegislatorScraper(LegislatorScraper):
             else:
                 leg = Legislator(term, chamber, district, full_name,
                                  party=party, photo_url=photo_url,
-                                 **addrs)
+                                 url=member_url, **addrs)
 
             leg.add_source(urlescape(member_url))
 
