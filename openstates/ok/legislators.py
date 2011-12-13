@@ -67,6 +67,6 @@ class OKLegislatorScraper(LegislatorScraper):
             email = str(sheet.cell(rownum, 6).value)
 
             leg = Legislator(term, 'upper', district, name, party=party,
-                             email_address=email)
+                             email=email)
             leg.add_source(url)
             self.save_legislator(leg)
