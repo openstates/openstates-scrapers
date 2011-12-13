@@ -35,7 +35,7 @@ class MILegislatorScraper(LegislatorScraper):
                                      office=office,
                                      phone=phone,
                                      email=email,
-                                     leg_url=leg_url)
+                                     url=leg_url)
                     leg.add_source(url)
                     self.save_legislator(leg)
         else:
