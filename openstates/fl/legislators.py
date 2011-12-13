@@ -28,6 +28,7 @@ class FLLegislatorScraper(LegislatorScraper):
             for link in page.xpath("//a[contains(@href, 'Senators/s')]"):
                 name = link.text.strip()
                 name = re.sub(r'\s+', ' ', name)
+                leg_url = link.get('href')
 
                 if name == 'Vacant':
                     continue
@@ -51,7 +52,7 @@ class FLLegislatorScraper(LegislatorScraper):
                                  int(district)))
 
                 leg = Legislator(term, 'upper', district, name,
-                                 party=party, photo_url=photo_url)
+                                 party=party, photo_url=photo_url, url=leg_url)
                 leg.add_source(url)
 
                 self.save_legislator(leg)
