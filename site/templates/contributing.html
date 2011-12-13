@@ -44,7 +44,7 @@ Setting Up Your Environment
 
 Once you have the code checked out you'll need to set up your environment.
 
-(It is strongly recommended that you use both `virtualenv <http://pypi.python.org/pypi/virtualenv>` and `pip <http://pypi.python.org/pypi/pip>`_ if you aren't using these tools adjust these steps to suit your environment.)
+(It is strongly recommended that you use both `virtualenv <http://pypi.python.org/pypi/virtualenv>`_ and `pip <http://pypi.python.org/pypi/pip>`_ if you aren't using these tools you will need to adjust these steps to suit your environment.)
 
 To install all recommended libraries::
 
@@ -53,13 +53,14 @@ To install all recommended libraries::
 Writing a Scraper
 =================
 
-All state scrapers should exist within a subdirectory of ``openstates/`` with the two letter postal abbreviation of your state (ie. wy for wyoming).
+All scrapers exist within a subdirectory of ``openstates/`` with the two letter postal abbreviation of your state (e.g. wy for wyoming).
 
-The preferred library for scraping is `lxml <http://lxml.de>`_ which 
-offers robust support for several different methods of scraping.  For cases where lxml is not
-an option (such as scraping from Text or PDF files) other libraries may be used.
+Scrapers that rely on parsing HTML use `lxml <http://lxml.de>`_ which
+offers robust support for several different methods of scraping.  For cases
+where lxml is not an option (such as scraping from text, CSV, or PDF files) other
+libraries may be used.
 
-All code specific to a state should be within this directory, common files are:
+All code specific to a stays within its directory, common files are:
 
 __init__.py
     When starting a new state you should first create an ``__init__.py`` that contains `metadata <http://readthedocs.org/docs/billy/en/latest/metadata.html>`_.
@@ -89,6 +90,24 @@ Getting all legislators for Vermont from the latest session::
 Getting all committees and bills for Pennsylvania from the 204th session::
 
     billy-scrape pa --committees --bills --session 204 -v
+
+Viewing the Data
+================
+
+By default data is scraped and stored in JSON files on the local file system (in the data/ directory relative to where you ran billy-scrape)
+
+If you wish to gain a more useful view on your scraped data you may wish to import the data into a local database.  Doing so requires you to install
+`MongoDB <http://mongodb.org>`_ on your system.
+
+If you have MongoDB installed you can run::
+
+    billy-update --import --report pa --alldata
+
+Which would import all scraped data from Pennsylvania.  The data is then available to be queried in your local MongoDB database or viewed with::
+
+    billy-util serve
+
+Which starts a web server (`Django <http://djangoproject.org>`_ required) at http://127.0.0.1:8000/browse/ that allows you to view the locally scraped data.
 
 Submitting Your Code
 ====================
