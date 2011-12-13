@@ -21,3 +21,8 @@ metadata = dict(
         },
     feature_flags=['subjects'],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    # cool URL bro
+    return url_xpath('http://www.in.gov/legislative/2414.htm', '//h3/text()')

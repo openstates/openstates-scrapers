@@ -29,3 +29,8 @@ metadata = dict(
     },
     feature_flags=['subjects'],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.capitol.hawaii.gov/site1/archives/'
+                     'archives.asp', '//li/a/text()')

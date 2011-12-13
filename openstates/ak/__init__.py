@@ -22,9 +22,6 @@ metadata = dict(
 )
 
 def session_list():
-    import scrapelib
-    import lxml.html
-    url = 'http://www.legis.state.ak.us/basis/start.asp'
-    doc = lxml.html.fromstring(scrapelib.urlopen(url))
-    sessions = doc.xpath('//ul')[-1].xpath('li/a/nobr/text()')
-    return sessions
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.legis.state.ak.us/basis/start.asp',
+                     '(//ul)[last()]/li/a/nobr/text()')

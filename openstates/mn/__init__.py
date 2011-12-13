@@ -48,3 +48,10 @@ metadata = dict(
     },
     feature_flags=['subjects'],
 )
+
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('https://www.revisor.mn.gov/revisor/pages/search_status/'
+                     'status_search.php?body=House',
+                     '//select[@name="session"]/option/text()')

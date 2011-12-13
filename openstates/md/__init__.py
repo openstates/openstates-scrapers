@@ -51,3 +51,9 @@ metadata = dict(
     },
     feature_flags=['subjects'],
 )
+
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://mlis.state.md.us/other/PriorSession/index.htm',
+                     '(//table)[2]//th/text()')

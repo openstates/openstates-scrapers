@@ -29,3 +29,8 @@ metadata = dict(
                     },
     feature_flags=['subjects'],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.njleg.state.nj.us/',
+                     '//select[@name="DBNAME"]/option/text()')

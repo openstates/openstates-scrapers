@@ -448,9 +448,6 @@ metadata = dict(
 
 
 def session_list():
-    import scrapelib
-    import lxml.html
-    url = 'http://www.azleg.gov/xml/sessions.asp?sort=SessionID'
-    doc = lxml.html.fromstring(scrapelib.urlopen(url))
-    sessions = doc.xpath('//session/@session_full_name')
-    return sessions
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.azleg.gov/xml/sessions.asp?sort=SessionID',
+                     '//session/@session_full_name')
