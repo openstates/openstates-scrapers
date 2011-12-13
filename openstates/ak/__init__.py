@@ -20,3 +20,11 @@ metadata = dict(
     },
     feature_flags=['subjects'],
 )
+
+def session_list():
+    import scrapelib
+    import lxml.html
+    url = 'http://www.legis.state.ak.us/basis/start.asp'
+    doc = lxml.html.fromstring(scrapelib.urlopen(url))
+    sessions = doc.xpath('//ul')[-1].xpath('li/a/nobr/text()')
+    return sessions
