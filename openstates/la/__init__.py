@@ -48,3 +48,9 @@ metadata = {
     "lower_chamber_term": 4,
     'feature_flags': ['subjects'],
 }
+
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.legis.state.la.us/session.htm',
+                     'string(//strong)')

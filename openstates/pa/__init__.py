@@ -33,3 +33,9 @@ metadata = dict(
         },
     feature_flags=['events'],
 )
+
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.legis.state.pa.us/cfdocs/legis/home/'
+                     'session.cfm', '//select[@id="BTI_sess"]/option/text()')

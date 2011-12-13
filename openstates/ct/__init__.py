@@ -20,3 +20,11 @@ metadata = dict(
     },
     feature_flags=['subjects'],
 )
+
+def session_list():
+    import scrapelib
+    text = scrapelib.urlopen('ftp://ftp.cga.ct.gov')
+    sessions = [line.split()[-1] for line in text.splitlines()]
+    sessions.remove('incoming')
+    sessions.remove('pub')
+    return sessions

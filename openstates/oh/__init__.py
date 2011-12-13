@@ -25,3 +25,8 @@ metadata = dict(
     },
     feature_flags=[],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.legislature.state.oh.us/search.cfm',
+                     '//form[@action="bill_search.cfm"]//input[@type="RADIO" and @name="SESSION"]/@value')

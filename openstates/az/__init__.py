@@ -445,3 +445,9 @@ metadata = dict(
         },
         feature_flags=[],
     )
+
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.azleg.gov/xml/sessions.asp?sort=SessionID',
+                     '//session/@session_full_name')

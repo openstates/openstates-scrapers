@@ -20,3 +20,8 @@ metadata = dict(
     },
     feature_flags=['subjects'],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.legis.state.ak.us/basis/start.asp',
+                     '(//ul)[last()]/li/a/nobr/text()')
