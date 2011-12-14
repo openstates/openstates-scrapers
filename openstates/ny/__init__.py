@@ -18,6 +18,6 @@ metadata = dict(
     feature_flags=['subjects'],
 )
 
-def session_list()
+def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://assembly.state.ny.us/leg/', '//option/text()')
