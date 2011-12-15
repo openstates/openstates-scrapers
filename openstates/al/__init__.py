@@ -26,6 +26,8 @@ metadata =  {
         # 'end_year': 2010},
         {'name': '2011-2014',
          'sessions': ['2011rs',],
+         'start_year': 2011,
+         'end_year': 2014,
         }
     ],
     'feature_flags': ['subjects',],
