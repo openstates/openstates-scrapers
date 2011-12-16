@@ -4,7 +4,7 @@ import lxml.html
 import re
 
 ksleg = 'http://www.kslegislature.org'
-legislator_list_url = '%s/li/b2011_12/year1/members/' % ksleg
+legislator_list_url = ksleg + '/li/b2011_12/chamber/%s/roster/'
 legislator_name_pattern = re.compile('(Representative|Senator) (.*)')
 legislator_line_pattern = re.compile('Party: ([A-Za-z]+).*First Term: ([0-9]+)')
 
@@ -13,13 +13,15 @@ class KSLegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, term):
         if chamber == 'lower':
-            legislator_list_url = 'http://www.kslegislature.org/li/chamber/house/roster/'
+            url = legislator_list_url % 'house'
         else:
-            legislator_list_url = 'http://www.kslegislature.org/li/chamber/senate/roster/'
+            url = legislator_list_url % 'senate'
 
-        with self.urlopen(legislator_list_url) as legislator_list_page:
+        print url
+
+        with self.urlopen(url) as legislator_list_page:
             doc = lxml.html.fromstring(legislator_list_page)
-            doc.make_links_absolute(legislator_list_url)
+            doc.make_links_absolute(url)
 
             rows = doc.xpath('//table/tr')[1:]
             for row in rows:
