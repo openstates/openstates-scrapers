@@ -43,4 +43,4 @@ metadata = dict(
 def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.leg.state.nv.us/Session/',
-                     '//string(*[@class="MainHeading"])')
+                     'string(//*[@class="MainHeading"])')
