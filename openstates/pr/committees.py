@@ -6,7 +6,8 @@ import re
 
 def clean_spaces(s):
     """ remove \xa0, collapse spaces, strip ends """
-    return re.sub('\s+', ' ', s.replace(u'\xa0', ' ')).strip()
+    if s is not None:
+    	return re.sub('\s+', ' ', s.replace(u'\xa0', ' ')).strip()
 
 class PRCommitteeScraper(CommitteeScraper):
     state = 'pr'
