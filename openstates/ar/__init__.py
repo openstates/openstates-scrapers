@@ -24,3 +24,12 @@ metadata = dict(
         },
     feature_flags=[],
     )
+
+# dxtl dxtl__B0
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    sessions = url_xpath(
+        'http://www.arkleg.state.ar.us/SearchCenter/Pages/historicalbil.aspx',
+        "//td[@class='dxtl dxtl__B0']/text()" )
+    return sessions
