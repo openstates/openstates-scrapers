@@ -82,3 +82,14 @@ metadata = dict(
     },
     feature_flags=['subjects'],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    import re
+    sessions = url_xpath('http://www.leginfo.ca.gov/bilinfo.html',
+        "//select[@name='sess']/option/text()")
+    sessions = [
+        re.findall('\(.*\)', session)[0][1:-1] \
+        for session in sessions
+    ]
+    return sessions

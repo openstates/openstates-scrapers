@@ -25,8 +25,6 @@ metadata = dict(
     feature_flags=[],
     )
 
-# dxtl dxtl__B0
-
 def session_list():
     from billy.scrape.utils import url_xpath
     sessions = url_xpath(
