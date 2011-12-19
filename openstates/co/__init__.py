@@ -23,3 +23,25 @@ metadata = dict(
     },
     feature_flags=['subjects'],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    import re
+    tags = url_xpath('http://www.leg.state.co.us/clics/clics2011a/cslFrontPages.nsf/PrevSessionInfo?OpenForm',
+        "//font/text()")
+    sessions = []
+    regex = "2[0-9][0-9][0-9]\ .*\ Session"
+
+    for tag in tags:
+        sess = re.findall(regex, tag)
+        for session in sess:
+            sessions.append( session )
+
+    tags = url_xpath('http://www.leg.state.co.us/CLICS/CLICS2011A/csl.nsf/Home?OpenForm&amp;BaseTarget=Bottom',
+        "//font/text()")
+    for tag in tags:
+        sess = re.findall(regex, tag)
+        for session in sess:
+            sessions.append( session )
+
+    return sessions
