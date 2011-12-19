@@ -86,3 +86,15 @@ metadata =  {
         },
     }
 }
+
+def session_list():
+    import re
+    from billy.scrape.utils import url_xpath
+    pblocks = url_xpath('http://www.legislature.state.al.us/',
+        '//div/p/text()' )
+    sessions = []
+    for pblock in pblocks:
+        pb_sessions = re.findall('2[0-9][0-9][0-9]\ Regular\ Session', pblock)
+        for session in pb_sessions:
+            sessions.append( session )
+    return sessions
