@@ -17,3 +17,11 @@ metadata = dict(
     ],
     feature_flags=[]
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    sessions = url_xpath('http://legis.delaware.gov/',
+        "//select[@name='gSession']/option/text()")
+    sessions = [ session.strip() for session in sessions ]
+    sessions.remove("Session")
+    return sessions
