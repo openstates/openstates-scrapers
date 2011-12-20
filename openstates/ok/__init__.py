@@ -19,3 +19,8 @@ metadata = dict(
     },
     feature_flags=['subjects'],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://webserver1.lsb.state.ok.us/WebApplication2/WebForm1.aspx',
+        "//select[@name='cbxSession']/option/text()")
