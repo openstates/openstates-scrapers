@@ -13,3 +13,9 @@ metadata = {
          'end_year': 2012}
     ],
 }
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.senate.mo.gov/pastsessions.htm',
+        "//div[@id='list']/li/a/text()") 
+
