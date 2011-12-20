@@ -17,3 +17,9 @@ metadata = {
     },
     'feature_flags': [],
 }
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.gencourt.state.nh.us/Senate/Media/past_years.aspx',
+        '//center/table/tr/td/a/text()')
+
