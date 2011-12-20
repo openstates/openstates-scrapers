@@ -18,3 +18,8 @@ metadata = dict(
     },
     feature_flags=[],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.oslpr.org/library/master.asp?NAV=LEYES',
+        "//td[@background='tilepaper-bg.jpg']/ul/li/a/font/b/text()")
