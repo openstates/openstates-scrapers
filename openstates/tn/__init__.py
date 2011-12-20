@@ -33,3 +33,8 @@ metadata = dict(
     },
     feature_flags=[],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath( 'http://www.capitol.tn.gov/legislation/archives.html',
+        "//div[@class='col1']/ul/li[@class='show']/text()")
