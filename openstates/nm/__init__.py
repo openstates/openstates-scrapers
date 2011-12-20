@@ -20,3 +20,9 @@ metadata = {
     },
     'feature_flags': ['subjects'],
 }
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath( 'http://www.nmlegis.gov/lcs/BillFinderNumber.aspx',
+        "//select[@name='ctl00$mainCopy$SessionList']/option/text()" )
+
