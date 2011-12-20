@@ -18,3 +18,8 @@ metadata = dict(
     },
     feature_flags=[],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.leg.state.or.us/bills_laws/billsinfo.htm',
+        "//table[@class='stanTable']/tr/td/a/text()")
