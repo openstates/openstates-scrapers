@@ -21,3 +21,9 @@ metadata = dict(
     },
     feature_flags=['events', 'subjects'],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    sessions = url_xpath( 'http://le.utah.gov/',
+        "//select[@name='Sess']/option/text()" )
+    return [ session.strip() for session in sessions ]
