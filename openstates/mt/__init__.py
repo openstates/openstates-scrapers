@@ -20,3 +20,9 @@ metadata = {
     },
     'feature_flags': [],
 }
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://leg.mt.gov/css/bills/Default.asp',
+        "//td[@id='cont']/ul/li/a/text()")
+
