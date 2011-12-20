@@ -20,3 +20,8 @@ metadata = dict(
     },
     feature_flags=[],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath( 'http://legisweb.state.wy.us/LSOWeb/SessionArchives.aspx',
+        "//div[@id='divLegContent']/a/p/text()" )
