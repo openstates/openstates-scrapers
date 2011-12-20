@@ -142,9 +142,10 @@ class HIBillScraper(BillScraper):
             subjects = [s.strip() for s in subjects if s.strip()]
             description = page.xpath('//span[@id="ListView1_ctrl0_descriptionLabel"]')[0].text
             sponsors = page.xpath('//span[@id="ListView1_ctrl0_introducerLabel"]')[0].text
+            referral = page.xpath('//span[contains(@id, "referral")]/text()')[0]
 
             bill = Bill(session, chamber, bill_id, title, subjects=subjects,
-                        type=bill_type, description=description)
+                        type=bill_type, description=description, referral=referral)
             for sponsor in sponsors.split(', '):
                 if sponsor.endswith(' (BR)'):
                     sponsor = sponsor[:-5]
@@ -227,7 +228,6 @@ class HIBillScraper(BillScraper):
                 ., "Description")]]/div[contains(@class, "rightside")]')[0].text
             params['companion'] = page.xpath('//div[div[contains( \
                 ., "Companion")]]/div[contains(@class, "rightside")]')[0].text
-            params['referral'] = doc.xpath('//span[contains(@id, "referral")]/text()')[0]
             if params['title'] == '':
                 params['title'] = params['subject']
             actions = []

@@ -31,7 +31,6 @@ metadata = dict(
 )
 
 def session_list():
-    # class = roundedrect gradientgray shadow
     from billy.scrape.utils import url_xpath
     sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
             "//div[@class='roundedrect gradientgray shadow']/a/text()"
