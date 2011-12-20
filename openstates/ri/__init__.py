@@ -20,3 +20,8 @@ metadata = dict(
                               'type': 'primary'},
                     },
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath( 'http://status.rilin.state.ri.us/bill_history.aspx?mode=previous',
+        "//select[@name='ctl00$rilinContent$cbYear']/option/text()" )
