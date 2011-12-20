@@ -20,3 +20,8 @@ metadata = dict(
     },
     feature_flags=['subjects'],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.maine.gov/legis/senate/Records.html',
+        "//td[@class='XSP_MAIN_PANEL']/ul/li/a/text()")
