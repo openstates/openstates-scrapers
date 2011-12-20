@@ -24,3 +24,27 @@ metadata = {
     },
     'feature_flags': ['subjects'],
 }
+
+def session_list():
+
+    to_rm = [
+        'QUICK LINKS',
+        '- - - - - - - - - - - - - -', 'Log in', 'LIS Home',
+        'General Assembly Home', '- - - - - - - - - - - - - -',
+        'Session Tracking:', 'Bills & Resolutions', 'Members', 'Committees',
+        'Meetings', 'Calendars', 'Communications', 'Minutes', 'Statistics',
+        'Lobbyist-in-a-Box', 'Personal lists', '- - - - - - - - - - - - - -',
+        'Search:', 'Code of Virginia', 'Administrative Code',
+        'Bills & Resolutions', 'Summaries', u'OTHER SESSIONS',
+        '- - - - - - - - - - - - - -'
+    ]
+
+    from billy.scrape.utils import url_xpath
+    sessions = url_xpath( 'http://lis.virginia.gov/121/lis.htm',
+        "//select[@name='val']/option/text()")
+    sessions = [ session.strip() for session in sessions ]
+
+    for x in to_rm:
+        sessions.remove( x )
+
+    return sessions
