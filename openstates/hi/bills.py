@@ -145,7 +145,7 @@ class HIBillScraper(BillScraper):
             referral = page.xpath('//span[contains(@id, "referral")]/text()')[0]
 
             bill = Bill(session, chamber, bill_id, title, subjects=subjects,
-                        type=bill_type, description=description)
+                        type=bill_type, description=description, referral=referral)
             for sponsor in sponsors.split(', '):
                 if sponsor.endswith(' (BR)'):
                     sponsor = sponsor[:-5]
