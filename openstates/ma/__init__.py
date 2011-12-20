@@ -36,3 +36,13 @@ metadata = {
     'lower_chamber_term': 2,
     'feature_flags': [],
 }
+
+def session_list():
+    import re
+    from billy.scrape.utils import url_xpath
+    sessions = url_xpath('http://www.malegislature.gov/Bills/Search',
+        "//select[@id='Input_GeneralCourtId']/option/text()")
+    # Ok, this is actually a mess. Let's clean it up.
+    sessions.remove('--Select Value--')
+    sessions = [ re.sub("\(.*$", "", session).strip() for session in sessions ]
+    return sessions

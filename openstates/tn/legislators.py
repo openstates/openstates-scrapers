@@ -5,19 +5,6 @@ import lxml.html
 class TNLegislatorScraper(LegislatorScraper):
     state = 'tn'
     
-    urls = {
-        '106th General Assembly': {
-            'lower': 'http://www.capitol.tn.gov/house/archives/106GA/Members/index.html',
-            'upper': 'http://www.capitol.tn.gov/senate/archives/106GA/Members/index.html',
-            'version': 2
-        },
-        '107th General Assembly': {
-            'lower': 'http://www.capitol.tn.gov/house/members/',
-            'upper': 'http://www.capitol.tn.gov/senate/members/',
-            'version': 3
-        }
-    }
-
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=False)

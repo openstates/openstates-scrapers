@@ -22,3 +22,15 @@ metadata = dict(
     },
     feature_flags=[],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    import re
+    sessions = url_xpath(
+        'https://www.legis.iowa.gov/Legislation/Find/findLegislation.aspx',
+        "//div[@id='ctl00_ctl00_ctl00_cphMainContent_cphCenterCol_cphCenterCol_ucGASelect_divLinks']/ul/li/a/text()" )
+    sessions = [
+        re.findall(".*\(", session)[0][:-1].strip()
+        for session in sessions
+    ]
+    return sessions

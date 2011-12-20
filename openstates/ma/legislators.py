@@ -74,7 +74,13 @@ class MALegislatorScraper(LegislatorScraper):
             district = clean_district(district)
 
         party = root.xpath('//span[@class="legislatorAffiliation"]/text()')[0]
-        party = 'Democratic' if party == '(D)' else 'Republican'
+
+        if party == 'D':
+            party = 'Democratic'
+        elif party == 'R':
+            party = 'Republican'
+        else:
+            party = 'Other'
 
         leg = Legislator(term, chamber, district, full_name, party=party,
                          photo_url=photo_url, url=member_url, email=email)

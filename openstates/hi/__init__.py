@@ -31,7 +31,9 @@ metadata = dict(
 )
 
 def session_list():
-    return []
-    #from billy.scrape.utils import url_xpath
-    #return url_xpath('http://www.capitol.hawaii.gov/site1/archives/'
-    #                 'archives.asp', '//li/a/text()')
+    from billy.scrape.utils import url_xpath
+    sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
+            "//div[@class='roundedrect gradientgray shadow']/a/text()"
+        )
+    sessions.remove('Archives Main')
+    return sessions

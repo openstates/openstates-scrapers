@@ -1,70 +1,125 @@
 from billy.scrape import ScrapeError, NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from .utils import BASE_URL, year_from_session
+from billy.scrape.committees  import Committee
 
 import lxml.html
 import re, contextlib
 
-def legs_url(chamber):
-    url = 'http://www.leg.state.co.us/Clics/CLICS2010A/directory.nsf/MIWeb?OpenForm&chamber='
-    if chamber == 'upper':
-        return url + 'Senate'
-    else:
-        return url + 'House'
+CO_BASE_URL = "http://www.leg.state.co.us/"
 
-def party_name(party_letter):
-    if party_letter == 'D':
-        return 'Republican'
-    elif party_letter == 'R':
-        return 'Democrat'
-    else:
-        return 'Independent'
-
-def leg_form_url():
-    return 'http://www.leg.state.co.us/clics/clics2010a/directory.nsf/d1325833be2cc8ec0725664900682205?SearchView'
-
+def clean_input( line ):
+    if line != None:
+        return re.sub( " +", " ", re.sub( "(\n|\r)+", " ", line ))
 
 class COLegislatorScraper(LegislatorScraper):
     state = 'co'
 
-    def scrape(self, chamber, session):
-        # Legislator data only available for the current session
-        if year_from_session(session) != 2009:
-            raise NoDataForPeriod(session)
+    def get_district_list(self, chamber, session ):
+        session = session[:4] + "A"
 
-        with self.urlopen(legs_url(chamber)) as html:
+        chamber = {
+            "upper" : "%5Ce.%20Senate%20Districts%20&%20Members",
+            "lower" : "h.%20House%20Districts%20&%20Members"
+        }[chamber]
+
+        url = "http://www.leg.state.co.us/clics/clics" + session + \
+            "/directory.nsf/Pink%20Book/" + chamber + "?OpenView&Start=1"
+        return url
+
+    def scrape_directory(self, next_page, chamber, session):
+        ret = {}
+        with self.urlopen(next_page) as html:
             page = lxml.html.fromstring(html)
+            # Alright. We'll get all the districts.
+            dID = page.xpath( "//div[@id='viewBody']" )[0] # should be only one
+            distr = dID.xpath( "./table/tr/td/b/font/a" ) # What a mess...
+            for d in distr:
+                url = CO_BASE_URL + d.attrib['href']
+                ret[d.text] = url
 
-            # Iterate through legislator names
-            page.make_links_absolute(BASE_URL)
-            for link in set([a.get('href') for a in page.xpath('//b/a')]):
-                with self.urlopen(link) as legislator_html:
-                    legislator_page = lxml.html.fromstring(legislator_html)
+            nextPage = page.xpath( "//table/tr" )
+            navBar = nextPage[0]
+            np = CO_BASE_URL + navBar[len(navBar) - 1][0].attrib['href']
+            #     ^ TR   ^^^^ TD         ^^^ a
+            if not next_page == np:
+                subnodes = self.scrape_directory( np, chamber, session )
+                for node in subnodes:
+                    ret[node] = subnodes[node]
+            return ret
 
-                    leg_elements = legislator_page.cssselect('b')
-                    leg_name = leg_elements[0].text_content()
+    def normalize_party( self, party_id ):
+        try:
+            return { "R" : "Republican", "D" : "Democrat" }[party_id]
+        except KeyError as e:
+            return "Other"
 
-                    district = ""
-                    district_match = re.search("District [0-9]+", legislator_page.text_content())
-                    if (district_match != None):
-                        district = district_match.group(0)
+    def parse_homepage_for_ctty( self, hp_url ):
+        ret = []
+        with self.urlopen(hp_url) as html:
+            page = lxml.html.fromstring(html)
+            ctty_apptmts = page.xpath('//ul/li/b/a')
+            for ctty in ctty_apptmts:
+                cttyid = clean_input(ctty.text)
+                if cttyid != None:
+                    ret.append(cttyid)
+        return ret
 
-                    email = ""
-                    email_match = re.search('E-mail: (.*)', legislator_page.text_content())
-                    if (email_match != None):
-                        email = email_match.group(1)
+    def process_person( self, p_url ):
+        ret = {}
 
-                    form_page = lxml.html.parse(leg_form_url()).getroot()
-                    form_page.forms[0].fields['Query'] = leg_name
-                    result = lxml.html.parse(lxml.html.submit_form(form_page.forms[0])).getroot()
-                    elements = result.cssselect('td')
-                    party_letter = elements[7].text_content()
+        with self.urlopen(p_url) as html:
+            page = lxml.html.fromstring(html)
+            info = page.xpath( '//table/tr' )[1]
+            tds = {
+                "name"  : 0,
+                "dist"  : 1,
+                "party" : 3,
+                "occup" : 4,
+                "cont"  : 6
+            }
 
-                    party = party_name(party_letter)
+            party_id = info[tds['party']].text_content()
 
-                    leg = Legislator(session, chamber, district, leg_name,
-                                 "", "", "", party,
-                                 official_email=email)
-                    leg.add_source(link)
+            person_name = clean_input(info[tds['name']].text_content())
+            person_name = clean_input(re.sub( '\(.*$', '', person_name).strip())
+            occupation  = clean_input(info[tds['occup']].text_content())
 
-                    self.save_legislator(leg)
+            urls = page.xpath( '//a' )
+
+            if len(urls) > 0:
+                home_page = urls[0]
+                # home_page.attrib['href']
+                ret['ctty'] = self.parse_homepage_for_ctty(
+                    home_page.attrib['href'] )
+
+            ret['party'] = self.normalize_party(party_id)
+            ret['name']  = person_name
+            ret['occupation'] = occupation
+
+        return ret
+
+    def scrape(self, chamber, session):
+        url = self.get_district_list(chamber, session)
+        people_pages = self.scrape_directory( url, chamber, session )
+
+        for person in people_pages:
+            district = person
+            p_url = people_pages[district]
+            metainf = self.process_person( p_url )
+
+            p = Legislator( session, chamber, district, metainf['name'],
+                party=metainf['party'],
+                # some additional things the website provides:
+                occupation=metainf['occupation'])
+            p.add_source( p_url )
+
+            if 'ctty' in metainf:
+                print metainf['ctty']
+                for ctty in metainf['ctty']:
+                    p.add_role( 'committee member',
+                        term=session,
+                        chamber=chamber,
+                        committee=ctty,
+                        position="member"
+                    )
+            self.save_legislator( p )
