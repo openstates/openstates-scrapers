@@ -20,3 +20,8 @@ metadata = dict(
     },
     feature_flags=[],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://nebraskalegislature.gov/bills/',
+        "//select[@name='Legislature']/option/text()")
