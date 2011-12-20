@@ -20,3 +20,8 @@ metadata = dict(
     },
     feature_flags=[],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.legis.nd.gov/assembly/',
+        "//div[@class='linkblockassembly']/div/span/a/text()")
