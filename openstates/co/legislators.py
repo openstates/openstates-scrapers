@@ -53,8 +53,10 @@ class COLegislatorScraper(LegislatorScraper):
         except KeyError as e:
             return "Other"
 
-    def parse_homepage_for_ctty( self, hp_url ):
+    def parse_homepage( self, hp_url ):
+        image_base = "http://www.state.co.us/gov_dir/leg_dir/senate/members/"
         ret = []
+        image = ""
         with self.urlopen(hp_url) as html:
             page = lxml.html.fromstring(html)
             ctty_apptmts = page.xpath('//ul/li/b/a')
@@ -62,7 +64,13 @@ class COLegislatorScraper(LegislatorScraper):
                 cttyid = clean_input(ctty.text)
                 if cttyid != None:
                     ret.append(cttyid)
-        return ret
+            # image = page.xpath('//img')[1].attrib['src']
+            # image = image_base + image # XXX: perhaps fix this?
+            image = hp_url[:-3] + "jpg"
+        return {
+            "ctty"  : ret,
+            "photo" : image
+        }
 
     def process_person( self, p_url ):
         ret = {}
@@ -85,17 +93,21 @@ class COLegislatorScraper(LegislatorScraper):
             occupation  = clean_input(info[tds['occup']].text_content())
 
             urls = page.xpath( '//a' )
+            ret['photo_url'] = ""
+
 
             if len(urls) > 0:
                 home_page = urls[0]
                 # home_page.attrib['href']
-                ret['ctty'] = self.parse_homepage_for_ctty(
+                homepage = self.parse_homepage(
                     home_page.attrib['href'] )
+
+                ret['ctty'] = homepage['ctty']
+                ret['photo_url'] = homepage['photo']
 
             ret['party'] = self.normalize_party(party_id)
             ret['name']  = person_name
             ret['occupation'] = occupation
-
         return ret
 
     def scrape(self, chamber, session):
@@ -110,11 +122,11 @@ class COLegislatorScraper(LegislatorScraper):
             p = Legislator( session, chamber, district, metainf['name'],
                 party=metainf['party'],
                 # some additional things the website provides:
-                occupation=metainf['occupation'])
+                occupation=metainf['occupation'],
+                photo_url=metainf['photo_url'])
             p.add_source( p_url )
 
             if 'ctty' in metainf:
-                print metainf['ctty']
                 for ctty in metainf['ctty']:
                     p.add_role( 'committee member',
                         term=session,
