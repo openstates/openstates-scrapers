@@ -109,14 +109,11 @@ class MTBillScraper(BillScraper):
             bill_id = status_page.xpath("//tr[2]/td[2]")[0].text_content()
         except IndexError:
             bill_id = status_page.xpath('//tr[1]/td[2]')[0].text_content()
-        print bill_id
 
         try:
             title = status_page.xpath("//form[1]/table[2]/tr[3]/td[2]")[0].text_content()
         except IndexError:
             title = status_page.xpath('//tr[1]/td[2]')[0].text_content()
-
-        print title
 
         bill = Bill(session, chamber, bill_id, title)
         bill.add_source(bill_url)
