@@ -21,7 +21,7 @@ metadata = dict(
         '2011A': {'start_date': datetime.date(2011,1,26), 'type': 'primary',
                  'display_name': '2011 Regular Session'}, # XXX: Fixme
     },
-    feature_flags=['subjects'],
+    feature_flags=[],
 )
 
 def session_list():
