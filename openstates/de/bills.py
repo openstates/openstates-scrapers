@@ -72,7 +72,9 @@ class DEBillScraper(BillScraper):
 
         sponsors_row = page.xpath('//tr[td/b[contains(font,"Primary Sponsor")]]')[0]
         sponsor = sponsors_row.xpath('td[@width="31%"]/font')[0].text
-        b.add_sponsor('primary', sponsor)
+
+        if sponsor != None:
+            b.add_sponsor('primary', sponsor)
 
         # scraping these and co-sponsors, but not doing anything with them until 
         # it's decided whether or not to attempt to split 'em up
