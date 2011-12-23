@@ -426,7 +426,7 @@ class COBillScraper(BillScraper):
                 bill_title_and_sponsor = title_and_sponsor.text_content()
                 sponsors = bill_title_and_sponsor.replace(bill_title, "").\
                     replace(" & ...", "").split("--")
-                
+               
                 bill_history_href = CO_URL_BASE + \
                     bill[index["history"]][0][0].attrib['href']
                     # ^^^^^^^ We assume this is a full path to the target.
@@ -438,7 +438,10 @@ class COBillScraper(BillScraper):
                 
                 for action in history:
                     self.add_action_to_bill( b, action )
-                
+               
+                for sponsor in sponsors:
+                    b.add_sponsor("primary", sponsor)
+
                 # Now that we have history, let's see if we can't grab some
                 # votes
 
