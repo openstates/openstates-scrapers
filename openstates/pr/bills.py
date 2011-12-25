@@ -28,7 +28,7 @@ _classifiers = (
     #sent is not the same as received
     ('Enviado al Gobernador', 'governor:received'),
     ('Veto', 'governor:vetoed'),
-    #comissions give a report but sometimes they dont do any amendments and live them as they are.
+    #comissions give a report but sometimes they dont do any amendments and leave them as they are.
     #i am not checking if they did or not. but it be easy just read the end and if it dosnt have amendments it should say 'sin enmiendas'
     ('1er Informe','amendment:amended'),
     ('2do Informe','amendment:amended'),
