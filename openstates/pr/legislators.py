@@ -30,18 +30,17 @@ class PRLegislatorScraper(LegislatorScraper):
         for counter, url in enumerate(urls):
             with self.urlopen(url) as leg_page_html:
                 doc = lxml.html.fromstring(leg_page_html)
+                doc.make_links_absolute(url)
                 table = doc.xpath('//table[@summary="Listado de Senadores"]')[0]
 
                 # skip first row
                 for row in table.xpath('tr')[1:]:
                     tds = row.xpath('td')
-                    img = row.xpath('.//img/@src')
-                    if len(img) != 0:
-                        photo_url = img[0]
-                    name = tds[1].text_content().title()
-                    party = tds[2].text_content()
-                    phone = tds[3].text_content()
-                    email = tds[4].text_content()
+		   
+                    name = tds[0].text_content().title()
+                    party = tds[1].text_content()
+                    phone = tds[2].text_content()
+                    email = tds[3].text_content()
 
                     if counter == 0:
                         district = 'At-Large'
@@ -49,8 +48,7 @@ class PRLegislatorScraper(LegislatorScraper):
                         district = str(counter)
 
                     leg = Legislator(term, 'upper', district, name,
-                                     party=party, photo_url=photo_url,
-                                     phone=phone, email=email)
+                                     party=party, phone=phone, email=email)
 
                     leg.add_source(url)
                     self.save_legislator(leg)
@@ -63,7 +61,7 @@ class PRLegislatorScraper(LegislatorScraper):
 
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
-
+            doc.make_links_absolute(url)
             tables = doc.xpath('//table[@class="img_news"]')
 
             # first table is district-based, second is at-large
@@ -71,7 +69,6 @@ class PRLegislatorScraper(LegislatorScraper):
                 # skip last td in each table
                 for td in table.xpath('.//td')[:-1]:
                     photo_url = td.xpath('.//img/@src')[0]
-
                     # for these we can split names and get district
                     if not at_large:
                         name, district = td.xpath('.//b/text()')
@@ -80,7 +77,7 @@ class PRLegislatorScraper(LegislatorScraper):
                         district = district.rsplit(' ', 1)[-1]
                     else:
                         name = td.xpath('.//b/text()')[0]
-                        district = 'At-Large'
+                        district = '0'#for at large districts
                         first_name = last_name = ''
 
                     party = party_map[td.xpath('.//font')[1].text_content()]
