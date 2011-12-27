@@ -71,14 +71,19 @@ class PRCommitteeScraper(CommitteeScraper):
             chair = directiva.xpath('b[text()="Presidente:"]/following-sibling::img[1]')
             vchair = directiva.xpath('b[text()="Vice Presidente:"]/following-sibling::img[1]')
             sec = directiva.xpath('b[text()="Secretario(a):"]/following-sibling::img[1]')
+            member = 0;
             if chair:
                 com.add_member(clean_spaces(chair[0].tail), 'chairman')
+                ++member
             if vchair:
                 com.add_member(clean_spaces(vchair[0].tail), 'vice chairman')
+                ++member
             if sec:
                 com.add_member(clean_spaces(sec[0].tail), 'secretary')
+                ++member
 
             for img in reps.xpath('.//img'):
                 com.add_member(clean_spaces(img.tail))
-
-            self.save_committee(com)
+                ++member
+            if member > 0:
+                self.save_committee(com)
