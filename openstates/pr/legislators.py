@@ -36,8 +36,8 @@ class PRLegislatorScraper(LegislatorScraper):
                 # skip first row
                 for row in table.xpath('tr')[1:]:
                     tds = row.xpath('td')
-		   
-                    name = tds[0].text_content().title()
+                    
+                    name = tds[0].text_content().title().replace('Hon.','',1).strip()
                     party = tds[1].text_content()
                     phone = tds[2].text_content()
                     email = tds[3].text_content()
