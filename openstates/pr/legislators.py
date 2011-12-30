@@ -41,9 +41,9 @@ class PRLegislatorScraper(LegislatorScraper):
                     party = tds[1].text_content()
                     phone = tds[2].text_content()
                     email = tds[3].text_content()
-
+		    #shapefiles denote 0 as At-Large Districts
                     if counter == 0:
-                        district = 'At-Large'
+                        district = '0'
                     else:
                         district = str(counter)
 
