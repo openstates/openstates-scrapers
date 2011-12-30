@@ -24,36 +24,59 @@ class TNBillScraper(BillScraper):
         }
     }
     
-    def scrape(self, chamber, session):
-        chamber_type = 'S' if chamber == 'upper' else 'H'
-        ga_num = re.search("^(\d+)", session).groups()[0]
-        bill_types = {}
+    def scrape(self, chamber, term):
         
-        if 'Special' in session:
-            bills_index_url = self.urls['special'][session]
-        else:
-            if session in metadata["terms"][-1]["sessions"]:
-              bills_index_url = self.urls['cur_index'] % {"chamber_type": chamber_type, "year": ga_num}
+        abbrs = ['HB', 'HJR', 'HR']
+
+        for abbr in abbrs:
+            if term == '107':
+                bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999' % (abbr, abbr)
+            elif 'S' in term:
+                #Need to add in special session
+                special_session = True
+                raise Exception('Working on Special Session')
             else:
-              bills_index_url = self.urls['arch_index'] % {"chamber_type": chamber_type, "year": ga_num}
-        
-        # Scrape session bills index to get bill numbers for current chamber
-        with self.urlopen(bills_index_url) as page:
-            page = lxml.html.fromstring(page)
-        # Scrape bills
-            for bill_link in page.xpath(".//div[@id='open']//a"):
-               bn_formatted = bill_link.text
-               self.scrape_bill(chamber, session, bn_formatted, ga_num)
-        
+                bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999&Year=%s' % (abbr, abbr, term)
+            
+            with self.urlopen(bill_listing) as bill_list_page:
+                bill_list_page = lxml.html.fromstring(bill_list_page)
+                for bill_links in bill_list_page.xpath('////div[@id="open"]//a'):
+                    bill_link = bill_links.attrib['href']
+                    if '..' in bill_link:
+                        bill_link = 'http://wapp.capitol.tn.gov/apps' + bill_link[2:len(bill_link)]
+                    self.scrape_bill(term, bill_link)
     
-    def scrape_bill(self, chamber, session, bill_number, ga_num):
-        bill_url = self.urls['info'] % (bill_number, ga_num)
+    def scrape_bill(self, term, bill_url):
 
         with self.urlopen(bill_url) as page:
             page = lxml.html.fromstring(page)
-            title = page.xpath("//span[@id='lblAbstract']")[0].text
             
-            bill = Bill(session, chamber, bill_number, title)
+            chamber1 = page.xpath('//span[@id="lblBillSponsor"]/a[1]')[0].text
+            
+            if len(page.xpath('//span[@id="lblCoBillSponsor"]/a[1]')) > 0:
+            
+                chamber2 = page.xpath('//span[@id="lblCoBillSponsor"]/a[1]')[0].text
+
+                if '*' in chamber1:
+                    bill_number = chamber1.split()[1]
+                    secondary_bill_number = chamber2.split()[1]
+                else:
+                    bill_number = chamber2.split()[1]
+                    secondary_bill_number = chamber1.split()[1]
+
+                if 'HB' in chamber1:
+                    primary_chamber = 'lower'
+                    secondary_chamber = 'upper'
+                else:
+                    primary_chamber = 'upper'
+                    secondary_chamber = 'lower'
+            else:
+                primary_chamber = 'lower' if 'HB' in chamber1 else 'upper'
+                bill_number = chamber1.split()[1]
+            
+            title = page.xpath("//span[@id='lblAbstract']")[0].text
+
+            bill = Bill(term, primary_chamber, bill_number, title)
             bill.add_source(bill_url)
             
             # Primary Sponsor
@@ -74,7 +97,8 @@ class TNBillScraper(BillScraper):
             for ar in action_rows:
                 action_taken = ar.xpath("td")[0].text
                 action_date = datetime.datetime.strptime(ar.xpath("td")[1].text.strip(), '%m/%d/%Y')
-                bill.add_action(chamber, action_taken, action_date)
+                #NEED TO ADD SECONDARY ACTIONS
+                bill.add_action(primary_chamber, action_taken, action_date)
 
             votes_link = page.xpath("//span[@id='lblBillVotes']/a")
             if(len(votes_link) > 0):
