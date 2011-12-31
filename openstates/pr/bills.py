@@ -76,12 +76,12 @@ class PRBillScraper(BillScraper):
             bill = Bill(session, chamber, bill_id, title[0], type=bill_type)
             author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
             for aname in author.split(','):
-                bill.add_sponsor('primary', aname.strip())
+                bill.add_sponsor('primary', aname.replace('Rep.','',1).replace('Sen.','',1).strip())
 
             co_authors = doc.xpath(u'//td/b[contains(text(),"Co-autor")]/../text()')
             if len(co_authors) != 0:
                 for co_author in co_authors[1].split(','):
-                    bill.add_sponsor('cosponsor', co_author.strip());
+                    bill.add_sponsor('cosponsor', co_author.replace('Rep.','',1).replace('Sen.','',1).strip());
 
 
             action_table = doc.xpath('//table')[-1]
