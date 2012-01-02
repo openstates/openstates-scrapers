@@ -58,25 +58,22 @@ class TNBillScraper(BillScraper):
                 chamber2 = page.xpath('//span[@id="lblCoBillSponsor"]/a[1]')[0].text
 
                 if '*' in chamber1:
-                    bill_number = chamber1.split()[1]
-                    secondary_bill_number = chamber2.split()[1]
+                    bill_id = chamber1.replace(' ', '')[1:len(chamber1)]
+                    secondary_bill_id = chamber2.replace(' ', '')
                 else:
-                    bill_number = chamber2.split()[1]
-                    secondary_bill_number = chamber1.split()[1]
+                    bill_id = chamber2.replace(' ', '')[1:len(chamber2)]
+                    secondary_bill_id = chamber1.replace(' ', '')
+                
+                primary_chamber = 'lower' if 'H' in bill_id else 'upper'
 
-                if 'HB' in chamber1:
-                    primary_chamber = 'lower'
-                    secondary_chamber = 'upper'
-                else:
-                    primary_chamber = 'upper'
-                    secondary_chamber = 'lower'
             else:
-                primary_chamber = 'lower' if 'HB' in chamber1 else 'upper'
-                bill_number = chamber1.split()[1]
+                primary_chamber = 'lower' if 'H' in chamber1 else 'upper'
+                bill_id = chamber1.replace(' ', '')[1:len(chamber1)]
+                secondary_bill_id = None
             
             title = page.xpath("//span[@id='lblAbstract']")[0].text
 
-            bill = Bill(term, primary_chamber, bill_number, title)
+            bill = Bill(term, primary_chamber, bill_id, title, secondary_bill_id=secondary_bill_id)
             bill.add_source(bill_url)
             
             # Primary Sponsor
