@@ -151,9 +151,11 @@ class MDBillScraper(BillScraper):
                 vote_url = BASE_URL + href
 
                 vote = self.parse_vote_page(vote_url)
+                vote.add_source(vote_url)
                 bill.add_vote(vote)
 
-    def parse_vote_page(self, vote_url):
+    def parse_old_vote_page(self, vote_url):
+        """ 2007 - 2011 """
         params = {
             'chamber': None,
             'date': None,
@@ -210,13 +212,58 @@ class MDBillScraper(BillScraper):
                 else:
                     for cell in row.cssselect('a'):
                         getattr(vote, status)(cell.text.strip())
+        return vote
 
-            vote.add_source(vote_url)
+    def parse_vote_page(self, vote_url):
+        vote_html = self.urlopen(vote_url)
+        doc = lxml.html.fromstring(vote_html)
+
+        # chamber
+        if 'senate' in vote_url:
+            chamber = 'upper'
+        else:
+            chamber = 'lower'
+
+        # date in the following format: Mar 23, 2009
+        date = doc.xpath('//td[@class="csF2A77DD1"]/text()')[2]
+        date = date.replace(u'\xa0', ' ')
+        date = datetime.datetime.strptime(date[18:], '%b %d, %Y')
+
+        # motion
+        motion = doc.xpath('//td[@class="cs54BDD041"]/text()')[-1]
+
+        # totals
+        totals = doc.xpath('//td[@class="cs7A884F1E"]/text()')[1:]
+        yes_count = int(totals[0].split()[-1])
+        no_count = int(totals[1].split()[-1])
+        other_count = int(totals[2].split()[-1])
+        other_count += int(totals[3].split()[-1])
+        other_count += int(totals[4].split()[-1])
+        passed = yes_count > no_count
+
+        vote = Vote(chamber=chamber, date=date, motion=motion,
+                    yes_count=yes_count, no_count=no_count,
+                    other_count=other_count, passed=passed)
+
+        # go through, find Voting Yea/Voting Nay/etc. and next tds are voters
+        func = None
+        for td in doc.xpath('//td/text()'):
+            td = td.replace(u'\xa0', ' ')
+            if td.startswith('Voting Yea'):
+                func = vote.yes
+            elif td.startswith('Voting Nay'):
+                func = vote.no
+            elif td.startswith('Not Voting'):
+                func = vote.other
+            elif td.startswith('Excused'):
+                func = vote.other
+            elif func:
+                func(td)
+
         return vote
 
     def scrape_bill(self, chamber, session, bill_type, number):
-        """ Creates a bill object
-        """
+        """ Creates a bill object """
         if len(session) == 4:
             session_url = session+'rs'
         else:
