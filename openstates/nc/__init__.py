@@ -64,7 +64,7 @@ metadata = dict(
                  '_scraped_name': '2011-2012 Session',
                 },
     },
-    _ignored_scraped_names=['2008 Extra Session', '2007-2008 Session',
+    _ignored_scraped_sessions=['2008 Extra Session', '2007-2008 Session',
                              '2007 Extra Session', '2005-2006 Session',
                              '2004 Extra Session', '2003-2004 Session',
                              '2003 Extra Session 1', '2003 Extra Session 2',
