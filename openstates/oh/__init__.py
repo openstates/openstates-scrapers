@@ -18,12 +18,16 @@ metadata = dict(
     ],
     session_details={
         '128': { 'display_name': '128th Legislature',
+                '_scraped_name': '128',
                },
         '129': {'start_date': datetime.date(2011, 1, 3),
                 'display_name': '129th Legislature',
+                '_scraped_name': '129',
                },
     },
     feature_flags=[],
+    _ignored_scraped_sessions=['127', '126', '125', '124', '123', '122']
+
 )
 
 def session_list():
