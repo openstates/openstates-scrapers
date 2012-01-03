@@ -149,56 +149,70 @@ class MDBillScraper(BillScraper):
                 href not in seen_votes):
                 seen_votes.add(href)
                 vote_url = BASE_URL + href
-                with self.urlopen(vote_url) as vote_html:
-                    vote_doc = lxml.html.fromstring(vote_html)
 
-                    # motion
-                    box = vote_doc.xpath('//td[@colspan=3]/font[@size=-1]/text()')
-                    params['motion'] = box[-1]
-                    params['type'] = 'other'
-                    if 'senate' in href:
-                        params['chamber'] = 'upper'
-                    else:
-                        params['chamber'] = 'lower'
-                    for regex, vtype in vote_classifiers.iteritems():
-                        if re.findall(regex, params['motion'], re.IGNORECASE):
-                            params['type'] = vtype
+                vote = self.parse_vote_page(vote_url)
+                bill.add_vote(vote)
 
-                    # counts
-                    bs = vote_doc.xpath('//td[@width="20%"]/font/b/text()')
-                    yeas = int(bs[0].split()[0])
-                    nays = int(bs[1].split()[0])
-                    excused = int(bs[2].split()[0])
-                    not_voting = int(bs[3].split()[0])
-                    absent = int(bs[4].split()[0])
-                    params['yes_count'] = yeas
-                    params['no_count'] = nays
-                    params['other_count'] = excused + not_voting + absent
-                    params['passed'] = yeas > nays
+    def parse_vote_page(self, vote_url):
+        params = {
+            'chamber': None,
+            'date': None,
+            'motion': None,
+            'passed': None,
+            'yes_count': None,
+            'no_count': None,
+            'other_count': None,
+        }
 
-                    # date
-                    # parse the following format: March 23, 2009
-                    date_elem = vote_doc.xpath('//font[starts-with(text(), "Legislative Date")]')[0]
-                    params['date'] = datetime.datetime.strptime(date_elem.text[18:], '%B %d, %Y')
+        with self.urlopen(vote_url) as vote_html:
+            vote_doc = lxml.html.fromstring(vote_html)
 
-                    vote = Vote(**params)
+            # motion
+            box = vote_doc.xpath('//td[@colspan=3]/font[@size=-1]/text()')
+            params['motion'] = box[-1]
+            params['type'] = 'other'
+            if 'senate' in vote_url:
+                params['chamber'] = 'upper'
+            else:
+                params['chamber'] = 'lower'
+            for regex, vtype in vote_classifiers.iteritems():
+                if re.findall(regex, params['motion'], re.IGNORECASE):
+                    params['type'] = vtype
 
-                    status = None
-                    for row in vote_doc.cssselect('table')[3].cssselect('tr'):
-                        text = row.text_content()
-                        if text.startswith('Voting Yea'):
-                            status = 'yes'
-                        elif text.startswith('Voting Nay'):
-                            status = 'no'
-                        elif text.startswith('Not Voting') or text.startswith('Excused'):
-                            status = 'other'
-                        else:
-                            for cell in row.cssselect('a'):
-                                getattr(vote, status)(cell.text.strip())
+            # counts
+            bs = vote_doc.xpath('//td[@width="20%"]/font/b/text()')
+            yeas = int(bs[0].split()[0])
+            nays = int(bs[1].split()[0])
+            excused = int(bs[2].split()[0])
+            not_voting = int(bs[3].split()[0])
+            absent = int(bs[4].split()[0])
+            params['yes_count'] = yeas
+            params['no_count'] = nays
+            params['other_count'] = excused + not_voting + absent
+            params['passed'] = yeas > nays
 
-                    vote.add_source(vote_url)
-                    bill.add_vote(vote)
+            # date
+            # parse the following format: March 23, 2009
+            date_elem = vote_doc.xpath('//font[starts-with(text(), "Legislative Date")]')[0]
+            params['date'] = datetime.datetime.strptime(date_elem.text[18:], '%B %d, %Y')
 
+            vote = Vote(**params)
+
+            status = None
+            for row in vote_doc.cssselect('table')[3].cssselect('tr'):
+                text = row.text_content()
+                if text.startswith('Voting Yea'):
+                    status = 'yes'
+                elif text.startswith('Voting Nay'):
+                    status = 'no'
+                elif text.startswith('Not Voting') or text.startswith('Excused'):
+                    status = 'other'
+                else:
+                    for cell in row.cssselect('a'):
+                        getattr(vote, status)(cell.text.strip())
+
+            vote.add_source(vote_url)
+        return vote
 
     def scrape_bill(self, chamber, session, bill_type, number):
         """ Creates a bill object
