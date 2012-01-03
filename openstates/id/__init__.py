@@ -147,7 +147,26 @@ metadata = dict(
             {'type': 'primary',
             'display_name': '61st Legislature, 1st Regular Session',
             'start_date': datetime.date(2011, 1, 10),
-            'end_date': datetime.date(2011, 4, 7)},
+            'end_date': datetime.date(2011, 4, 7),
+            '_scraped_name': '2011 Session Information',
+            },
     },
     feature_flags=[],
+    _ignored_scraped_sessions=['2010 Session Information',
+                               '2009 Session Information',
+                               '2008 Session Information',
+                               '2007 Session Information',
+                               '2006 Extraordinary Session Information',
+                               '2006 Session Information',
+                               '2005 Session Information',
+                               '2004 Session Information',
+                               '2003 Session Information ',
+                               '2002 Session Information ',
+                               '2001 Session Information ',
+                               '2000 - 1998 Session Information '],
     )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://legislature.idaho.gov/priorsessions.htm',
+                     '//td[@width="95%"]/ul/li/a/text()')[:-1]
