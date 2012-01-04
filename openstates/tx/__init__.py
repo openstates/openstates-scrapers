@@ -42,7 +42,42 @@ metadata = dict(
                 '_scraped_name': '82(1) - 2011',
                }
     },
-    feature_flags=['events', 'subjects'],
+    feature_flags=['events', 'subjects', 'capitol_maps'],
+    capitol_maps=[
+        {"name": "Capitol Complex",
+         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.CapitolComplex.pdf'
+        },
+        {"name": "Floor 1",
+         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.Floor1.pdf'
+        },
+        {"name": "Floor 2",
+         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.Floor2.pdf'
+        },
+        {"name": "Floor 3",
+         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.Floor3.pdf'
+        },
+        {"name": "Floor 4",
+         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.Floor4.pdf'
+        },
+        {"name": "Floor E1",
+         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.FloorE1.pdf'
+        },
+        {"name": "Floor E2",
+         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.FloorE2.pdf'
+        },
+        {"name": "Floor G",
+         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.FloorG.pdf'
+        },
+        {"name": "Monument Guide",
+         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.MonumentGuide.pdf'
+        },
+        {"name": "Sam Houston",
+         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.SamHoustonLoc.pdf'
+        },
+        {"name": "Wheelchair Access",
+         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.WheelchairAccess.pdf'
+        },
+    ],
     _ignored_scraped_sessions=['80(R) - 2007', '79(3) - 2006', '79(2) - 2005',
                                '79(1) - 2005', '79(R) - 2005', '78(4) - 2004',
                                '78(3) - 2003', '78(2) - 2003', '78(1) - 2003',
