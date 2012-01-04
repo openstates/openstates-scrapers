@@ -10,8 +10,7 @@ class IALegislatorScraper(LegislatorScraper):
     state = 'ia'
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
+        self.validate_term(term, latest_only=True)
 
         if chamber == 'upper':
             chamber_name = 'senate'
