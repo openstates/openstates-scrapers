@@ -4,10 +4,9 @@ import lxml.html
 
 class HICommitteeScraper(CommitteeScraper):
     state = 'hi'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-
         urls = {'lower': 'http://www.capitol.hawaii.gov/session2011/HouseCommittees/housecommittees.aspx',
                 'upper': 'http://www.capitol.hawaii.gov/session2011/senatecommittees/committeepage.aspx?committee=AGL'}
 
