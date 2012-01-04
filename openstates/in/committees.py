@@ -10,8 +10,7 @@ class INCommitteeScraper(CommitteeScraper):
     state = 'in'
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
+        self.validate_term(term, latest_only=True)
 
         chamber_abbr = {'upper': 'S', 'lower': 'H'}[chamber]
 
