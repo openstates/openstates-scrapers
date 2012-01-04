@@ -151,12 +151,15 @@ class MDBillScraper(BillScraper):
                 seen_votes.add(href)
                 vote_url = BASE_URL + href
 
-                vote = self.parse_vote_page(vote_url)
+                if bill['session'] in ('2007', '2007s1', '2008', '2009',
+                                       '2010', '2011'):
+                    vote = self.parse_old_vote_page(vote_url)
+                else:
+                    vote = self.parse_vote_page(vote_url)
                 vote.add_source(vote_url)
                 bill.add_vote(vote)
 
     def parse_old_vote_page(self, vote_url):
-        """ 2007 - 2011 """
         params = {
             'chamber': None,
             'date': None,
