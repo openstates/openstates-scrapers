@@ -11,8 +11,7 @@ class WVLegislatorScraper(LegislatorScraper):
     state = 'wv'
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
+        self.validate_term(term, latest_only=True)
 
         if chamber == 'upper':
             chamber_abbrev = 'sen'
