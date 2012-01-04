@@ -9,11 +9,9 @@ import lxml.html
 
 class OKLegislatorScraper(LegislatorScraper):
     state = 'ok'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
-
         if chamber == 'lower':
             self.scrape_lower(term)
         else:
