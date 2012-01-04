@@ -17,6 +17,7 @@ metadata = dict(
         '2011 Regular Session': {
             'display_name': '2011 Regular Session',
             '_scraped_name': '2011 Regular Session (February 1 - June 30)',
+            'slug': '11reg',
         },
     },
     feature_flags=[],
