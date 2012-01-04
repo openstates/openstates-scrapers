@@ -41,10 +41,7 @@ class MNBillScraper(BillScraper):
 
     def get_bill_topics(self, chamber, session):
         search_chamber = {'lower':'House', 'upper':'Senate'}[chamber]
-        search_session = {'2009-2010': '0862009',
-                          '2010 1st Special Session': '1862010',
-                          '2010 2nd Special Session': '2862010',
-                          '2011-2012': '0872011'}[session]
+        search_session = self.metadata['session_details'][session]['site_id']
         self._subject_mapping = defaultdict(list)
 
         url = '%sstatus_search.php?body=%s&search=topic&session=%s' % (
