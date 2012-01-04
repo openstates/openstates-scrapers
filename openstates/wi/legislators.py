@@ -30,7 +30,7 @@ class WILegislatorScraper(LegislatorScraper):
                     if legpart:
                         full_name, party = legpart[0]
 
-                        # skip if the legislator is vacant (occurred in 2011 session)
+                        # skip if the legislator is vacant
                         if full_name == 'Vacant':
                             continue
 
