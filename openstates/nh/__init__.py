@@ -13,7 +13,9 @@ metadata = {
          'start_year': 2011, 'end_year': 2012}
     ],
     'session_details': {
-        '2011': {'display_name': '2011 Regular Session'},
+        '2011': {'display_name': '2011 Regular Session',
+                 'zip_url': 'http://gencourt.state.nh.us/downloads/2011Session%20Bill%20Status%20Tables.zip'
+                },
     },
     'feature_flags': [],
 }
