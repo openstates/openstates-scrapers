@@ -15,8 +15,12 @@ metadata = {
         }
     ],
     'session_details': {
-        '2011': {'display_name': '2011 Regular Session'},
-        '2011S': {'display_name': '2011 Special Session'},
+        '2011': {'display_name': '2011 Regular Session',
+                 'slug': '11%20Regular',
+                },
+        '2011S': {'display_name': '2011 Special Session',
+                  'slug': '11%20Special',
+                 },
     },
     'feature_flags': ['subjects'],
 }

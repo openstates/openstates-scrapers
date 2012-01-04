@@ -90,10 +90,6 @@ def convert_sv_char(c):
 class NMBillScraper(BillScraper):
     state = 'nm'
 
-    # update as sessions update
-    session_paths = {'2011': '11%20Regular', '2011S': '11%20Special'}
-
-
     def _init_mdb(self, session):
         ftp_base = 'ftp://www.nmlegis.gov/other/'
         if session == '2011S':
@@ -206,7 +202,7 @@ class NMBillScraper(BillScraper):
     def check_other_documents(self, session, chamber):
         """ check for documents that reside in their own directory """
 
-        s_slug = self.session_paths[session]
+        s_slug = self.metadata['session_details'][session]['slug']
         firs_url = 'http://www.nmlegis.gov/Sessions/%s/firs/' % s_slug
         lesc_url = 'http://www.nmlegis.gov/Sessions/%s/LESCAnalysis/' % s_slug
         final_url = 'http://www.nmlegis.gov/Sessions/%s/final/' % s_slug
@@ -358,7 +354,7 @@ class NMBillScraper(BillScraper):
         """ most document types (+ Votes)are in this common directory go
         through it and attach them to their related bills """
 
-        session_path = self.session_paths[session]
+        session_path = self.metadata['session_details'][session]['slug']
 
         chamber_name = 'house' if chamber == 'lower' else 'senate'
 
