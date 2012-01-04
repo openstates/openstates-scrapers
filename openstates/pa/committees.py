@@ -8,11 +8,9 @@ import lxml.html
 
 class PACommitteeScraper(CommitteeScraper):
     state = 'pa'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
-
         if chamber == 'upper':
             url = ('http://www.legis.state.pa.us/cfdocs/legis/'
                    'home/member_information/senators_ca.cfm')
