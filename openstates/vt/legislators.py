@@ -8,11 +8,9 @@ import lxml.html
 
 class VTLegislatorScraper(LegislatorScraper):
     state = 'vt'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
-
         # What Vermont claims are Word and Excel files are actually
         # just HTML tables
         # What Vermont claims is a CSV file is actually one row of comma
