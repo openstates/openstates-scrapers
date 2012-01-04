@@ -12,18 +12,14 @@ from dbfpy import dbf
 class NJLegislatorScraper(LegislatorScraper, DBFMixin):
     state = 'nj'
 
-    def scrape(self, chamber, term_name):
-        self.save_errors=False
-
-        year = int(term_name[0:4])
-        session = (year - 2010)/2 + 214
-
+    def scrape(self, chamber, term):
+        year = term[0:4]
         if chamber == 'upper':
-            self.scrape_legislators(year, session, term_name)
+            self.scrape_legislators(year, term)
         elif chamber == 'lower':
-            self.scrape_legislators(year, session, term_name)
+            self.scrape_legislators(year, term)
 
-    def scrape_legislators(self, year_abr, session, term_name):
+    def scrape_legislators(self, year_abr, term_name):
 
         file_url, db = self.get_dbf(year_abr, 'ROSTER')
 
