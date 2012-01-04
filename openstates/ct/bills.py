@@ -33,9 +33,6 @@ class CTBillScraper(BillScraper):
         self.scrape_introducers('lower')
 
     def scrape(self, chamber, session):
-        if session != '2011':
-            raise NoDataForPeriod(session)
-
         self.bills = {}
         self.scrape_bill_info(chamber, session)
         self.scrape_bill_history()
