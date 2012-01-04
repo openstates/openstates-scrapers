@@ -14,13 +14,11 @@ COMM_TYPES = {'joint': 'Joint',
 
 class ARCommitteeScraper(CommitteeScraper):
     state = 'ar'
+    latest_only = True
 
     _seen = set()
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod
-
         base_url = ("http://www.arkleg.state.ar.us/assembly/2011/2011R/"
                     "Pages/Committees.aspx?committeetype=")
 

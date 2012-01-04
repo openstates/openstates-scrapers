@@ -29,9 +29,6 @@ class ARBillScraper(BillScraper):
     state = 'ar'
 
     def scrape(self, chamber, session):
-        if session != '2011':
-            raise NoDataForPeriod(session)
-
         self.bills = {}
         self.scrape_bill(chamber, session)
         self.scrape_actions()
