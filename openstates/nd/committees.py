@@ -3,7 +3,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
 import re
 
-class NECommitteeScraper(CommitteeScraper):
+class NDCommitteeScraper(CommitteeScraper):
     state = 'nd'
 
     def scrape(self, chamber, term):
@@ -15,8 +15,11 @@ class NECommitteeScraper(CommitteeScraper):
         else:
             url_chamber_name = 'house'
 
-        #figuring out starting year for url
-        start_year = ((int(term) - 62)*2) + 2011
+        # figuring out starting year from metadata
+        for t in self.metadata['terms']:
+            if t['name'] == term:
+                start_year = t['start_year']
+                break
 
         committee_types = ["standing-comm", "pro-comm"]
         for committee in committee_types:

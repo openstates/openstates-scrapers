@@ -66,11 +66,9 @@ class NDBillScraper(BillScraper):
                 self.subjects[bill_id].append(subject)
 
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-
+    def scrape(self, chamber, session):
         #determining the start year of the term
-        start_year = ((int(term) - 62)*2) + 2011
+        start_year = self.metadata['session_details'][session]['start_date'].year
 
         # URL building
         if chamber == 'upper':
