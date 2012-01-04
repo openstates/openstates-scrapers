@@ -21,8 +21,8 @@ classifiers = {
     r'First Reading': 'committee:referred',
     r'Floor (Committee )?Amendment\s?\(.+?\)$': 'amendment:introduced',
     r'Floor Amendment .+? Rejected': 'amendment:failed',
-    r'Floor (Committee )?Amendment .+? Adopted': 'amendment:passed',
-    r'Floor Amendment .+? Withrdawn': 'amendment:withdrawn',
+    r'Floor (Committee )?Amendment.+?Adopted': 'amendment:passed',
+    r'Floor Amendment.+? Withdrawn': 'amendment:withdrawn',
     r'Pre\-filed': 'bill:introduced',
     r'Re\-(referred|assigned)': 'committee:referred',
     r'Recommit to Committee': 'committee:referred',
@@ -89,30 +89,31 @@ class MDBillScraper(BillScraper):
             for dt in dts:
                 action_date = dt.text.strip()
                 if action_date != 'No Action':
-                    try:
-                        action_date = datetime.datetime.strptime(action_date,
-                                                                 '%m/%d')
-                        # no actions after June?, decrement the year on these
-                        year = int(bill['session'])
-                        if action_date.month > 6:
-                            year -= 1
-                        action_date = action_date.replace(year)
+                    action_date = datetime.datetime.strptime(action_date,
+                                                             '%m/%d')
+                    # no actions after June?, decrement the year on these
+                    year = int(bill['session'][:4])
+                    if action_date.month > 6:
+                        year -= 1
+                    action_date = action_date.replace(year)
 
-                        # iterate over all dds following the dt
-                        dcursor = dt
-                        while (dcursor.getnext() is not None and
-                               dcursor.getnext().tag == 'dd'):
-                            dcursor = dcursor.getnext()
-                            actions = dcursor.text_content().split('\r\n')
-                            for act in actions:
-                                act = act.strip()
-                                atype = _classify_action(act)
-                                if atype:
-                                    bill.add_action(chamber, act, action_date,
-                                                   type=atype)
+                    # iterate over all dds following the dt
+                    dcursor = dt
+                    while (dcursor.getnext() is not None and
+                           dcursor.getnext().tag == 'dd'):
+                        dcursor = dcursor.getnext()
+                        actions = dcursor.text_content().split('\r\n')
+                        for act in actions:
+                            act = act.strip()
+                            if not act:
+                                continue
+                            atype = _classify_action(act)
+                            if atype:
+                                bill.add_action(chamber, act, action_date,
+                                                type=atype)
+                            else:
+                                self.log('unknown action: %s' % act)
 
-                    except ValueError:
-                        pass # probably trying to parse a bad entry
 
 
     def parse_bill_documents(self, doc, bill):
