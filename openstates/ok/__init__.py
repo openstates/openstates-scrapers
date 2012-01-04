@@ -15,7 +15,9 @@ metadata = dict(
          'sessions': ['2011']}
         ],
     session_details={
-        '2011': {'display_name': '2011 Regular Session'},
+        '2011': {'display_name': '2011 Regular Session',
+                 'session_id': '1100',
+                },
     },
     feature_flags=['subjects'],
 )

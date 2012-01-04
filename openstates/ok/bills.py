@@ -42,14 +42,10 @@ class OKBillScraper(BillScraper):
     state = 'ok'
 
     bill_types = ['B', 'JR', 'CR', 'R']
-    session_id_map = {'2011': '1100'}
     subject_map = collections.defaultdict(list)
 
 
     def scrape(self, chamber, session):
-        if session != '2011':
-            raise NoDataForPeriod(session)
-
         # start by building subject map
         self.scrape_subjects(chamber, session)
 
@@ -60,8 +56,9 @@ class OKBillScraper(BillScraper):
             chamber_letter = 'S'
         else:
             chamber_letter = 'H'
+        session_id = self.metadata['session_details'][session]['session_id']
 
-        values = [('cbxSessionId', self.session_id_map[session]),
+        values = [('cbxSessionId', session_id,
                   ('cbxActiveStatus', 'All'),
                   ('RadioButtonList1', 'On Any day'),
                   ('Button1', 'Retrieve')]
@@ -229,12 +226,14 @@ class OKBillScraper(BillScraper):
         letter = 'H' if chamber == 'lower' else 'S'
         types = [letter+t for t in self.bill_types]
 
+        session_id = self.metadata['session_details'][session]['session_id']
+
         # do a request per subject
         for subj in fdoc.xpath('//select[@name="lbxSubjects"]/option/@value'):
             # these forms require us to get hidden session keys
             values = {'cbxInclude': 'All', 'Button1': 'Retrieve',
                       'RadioButtonList1': 'On Any Day',
-                      'cbxSessionID': self.session_id_map[session],
+                      'cbxSessionID': session_id,
                       'lbxSubjects': subj, 'lbxTypes': types}
             for hidden in fdoc.xpath("//input[@type='hidden']"):
                 values[hidden.attrib['name']] =  hidden.attrib['value']
