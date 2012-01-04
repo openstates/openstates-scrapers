@@ -100,9 +100,6 @@ class VTBillScraper(BillScraper):
     state = 'vt'
 
     def scrape(self, chamber, session):
-        if session != '2011-2012':
-            raise NoDataForPeriod(session)
-
         if chamber == 'lower':
             bill_abbr = "H."
         else:
