@@ -14,10 +14,15 @@ metadata = {
     ],
     'session_details': {
         '2011-2012': {'type':'primary',
-                      'display_name': '2011-2012 Regular Session'
+                      'display_name': '2011-2012 Regular Session',
+                      '_scraped_name': '2011-2012',
                      },
     },
     'feature_flags': ['subjects'],
+    '_ignored_scraped_sessions': ['2009-2010', '2007-2008', '2005-2006',
+                                  '2003-2004', '2001-2002', '1999-2000',
+                                  '1997-1998', '1995-1996']
+
 }
 
 
