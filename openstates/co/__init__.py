@@ -16,8 +16,8 @@ metadata = dict(
          'start_year': 2011, 'end_year': 2012},
         ],
     session_details={
-        '2010A': {'start_date': datetime.date(2010,1,28), 'type': 'primary',
-                 'display_name': '2010 Regular Session'}, # XXX: Fixme
+        #'2010A': {'start_date': datetime.date(2010,1,28), 'type': 'primary',
+        #         'display_name': '2010 Regular Session'}, # XXX: Fixme
         '2011A': {'start_date': datetime.date(2011,1,26), 'type': 'primary',
                  'display_name': '2011 Regular Session'}, # XXX: Fixme
     },
