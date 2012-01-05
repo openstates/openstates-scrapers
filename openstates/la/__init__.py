@@ -16,6 +16,14 @@ metadata = {
                 "2011"
                 ]
         },
+        {
+            "name": "2012-2015",
+            "start_year": 2012,
+            "end_year": 2015,
+            "sessions": [
+                "2012",
+                ]
+        }
     ],
     "name": "Louisiana",
     "upper_chamber_term": 4,
@@ -43,15 +51,21 @@ metadata = {
             '_scraped_name': '2011 1st Extraordinary Session',
         },
         "2011": {
-            "type": "special",
+            "type": "primary",
             'display_name': '2011 Regular Session',
             '_scraped_name': '2011 Regular Legislative Session',
+        },
+        "2012": {
+            "type": "primary",
+            'display_name': '2012 Regular Session',
+            '_scraped_name': '2012 Regular Legislative Session',
         },
     },
     "legislature_name": "Louisiana Legislature",
     "lower_chamber_term": 4,
     'feature_flags': ['subjects'],
     '_ignored_scraped_sessions': [
+        '2012 Organizational Session',
         '2008 Regular Legislative Session',
         '2008 2nd Extraordinary Session',
         '2008 1st Extraordinary Session',
