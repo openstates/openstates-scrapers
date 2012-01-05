@@ -21,7 +21,18 @@ metadata = dict(
          'start_year': 2011, 'end_year': 2012},
         ],
     session_details={
-        '19': {'display_name': '19th Council Period',}
+        '19': {'display_name': '19th Council Period',
+               '_scraped_name': '19',
+              }
     },
     feature_flags=[],
+    _ignored_scraped_sessions=['18', '17', '16', '15', '14', '13', '12', '11',
+                               '10', '9', '8']
+
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://dcclims1.dccouncil.us/lims/list.aspx',
+                     '//option/text()')
+
