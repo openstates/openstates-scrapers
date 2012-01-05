@@ -13,11 +13,15 @@ metadata = dict(
     session_details={
         '2011-2012': {
             'display_name': '2011 Regular Session',
+            '_scraped_name': '2011',
         }
     },
     feature_flags=['subjects'],
+    _ignored_scraped_sessions=['2009']
 )
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath('http://assembly.state.ny.us/leg/', '//option/text()')
+    return url_xpath('http://open.nysenate.gov/legislation/advanced/',
+                     '//select[@name="session"]/option/text()')
+
