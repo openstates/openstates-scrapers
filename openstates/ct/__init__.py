@@ -16,9 +16,12 @@ metadata = dict(
     session_details={
         '2011': {
             'display_name': '2011 Regular Session',
+            '_scraped_name': '2011',
         }
     },
     feature_flags=['subjects'],
+    _ignored_scraped_sessions=['2005', '2006', '2007', '2008', '2009', '2010',
+                               '2012']
 )
 
 def session_list():
