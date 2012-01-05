@@ -9,12 +9,17 @@ metadata = {
     'upper_chamber_term': 2,
     'lower_chamber_term': 2,
     'terms': [
-        {'name': '2011-2012', 'sessions': ['2011'],
+        {'name': '2011-2012', 'sessions': ['2011', '2012'],
          'start_year': 2011, 'end_year': 2012}
     ],
     'session_details': {
         '2011': {'display_name': '2011 Regular Session',
-                 'zip_url': 'http://gencourt.state.nh.us/downloads/2011Session%20Bill%20Status%20Tables.zip'
+                 'zip_url': 'http://gencourt.state.nh.us/downloads/2011%20Session%20Bill%20Status%20Tables.zip',
+                 '_scraped_name': '2011 Session',
+                },
+        '2012': {'display_name': '2012 Regular Session',
+                 'zip_url': 'http://gencourt.state.nh.us/downloads/2012%20Session%20Bill%20Status%20Tables.zip',
+                 '_scraped_name': '2012 Session',
                 },
     },
     'feature_flags': [],
@@ -22,6 +27,9 @@ metadata = {
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath('http://www.gencourt.state.nh.us/Senate/Media/past_years.aspx',
-        '//center/table/tr/td/a/text()')
+    zips = url_xpath('http://gencourt.state.nh.us/downloads/',
+                     '//a[contains(@href, "Bill%20Status")]/text()')
+    return [zip.replace(' Bill Status Tables.zip', '') for zip in zips]
+
+
 
