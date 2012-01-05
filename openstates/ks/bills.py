@@ -16,11 +16,11 @@ import ksapi
 class KSBillScraper(BillScraper):
     state = 'ks'
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-        self.scrape_current(chamber, term)
+    def scrape(self, chamber, session):
+        self.validate_term(session, latest_only=True)
+        self.scrape_current(chamber, session)
 
-    def scrape_current(self, chamber, term):
+    def scrape_current(self, chamber, session):
         chamber_name = 'Senate' if chamber == 'upper' else 'House'
         chamber_letter = chamber_name[0]
         # perhaps we should save this data so we can make one request for both?
@@ -43,7 +43,7 @@ class KSBillScraper(BillScraper):
                     btype = 'bill'
 
                 # main
-                bill = Bill(term, chamber, bill_id, bill_data['SHORTTITLE'],
+                bill = Bill(session, chamber, bill_id, bill_data['SHORTTITLE'],
                             type=btype, status=bill_data['STATUS'])
                 bill.add_source(ksapi.url + 'bill_status/' + bill_id.lower())
 
@@ -83,7 +83,7 @@ class KSBillScraper(BillScraper):
 
     def scrape_html(self, bill):
         # we have to go to the HTML for the versions & votes
-        base_url = 'http://www.kslegislature.org/li/b2011_12/year1/measures/'
+        base_url = 'http://www.kslegislature.org/li/b2011_12/measures/'
         url = base_url + bill['bill_id'].lower()
         doc = lxml.html.fromstring(self.urlopen(url))
         doc.make_links_absolute(url)
