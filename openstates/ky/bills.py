@@ -15,10 +15,7 @@ def chamber_abbr(chamber):
 
 
 def session_url(session):
-    if session.endswith('Special Session'):
-        return "http://www.lrc.ky.gov/record/%s/" % (session[2:4] + 'SS')
-    else:
-        return "http://www.lrc.ky.gov/record/%s/" % (session[2:4] + 'RS')
+    return "http://www.lrc.ky.gov/record/%s/" % session[2:]
 
 
 class KYBillScraper(BillScraper):
@@ -41,7 +38,6 @@ class KYBillScraper(BillScraper):
                     subject = sdoc.xpath('//a[@name="TopOfPage"]/text()')[0]
                     for bill in sdoc.xpath('//table[@id="table2"]//a/text()'):
                         self._subjects[bill.replace(' ', '')].append(subject)
-        print self._subjects
 
 
     def scrape(self, chamber, session):
@@ -125,9 +121,10 @@ class KYBillScraper(BillScraper):
             for line in action_p.xpath("string()").split("\n"):
                 action = line.strip()
                 if (not action or action == 'last action' or
-                    'Prefiled' in action):
+                    'Prefiled' in action or 'vetoed' in action):
                     continue
 
+                # add year onto date
                 action_date = "%s %s" % (action.split('-')[0],
                                          session[0:4])
                 action_date = datetime.datetime.strptime(
