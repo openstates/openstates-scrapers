@@ -97,7 +97,8 @@ class KSBillScraper(BillScraper):
             tds = row.getchildren()
             title = tds[0].text_content()
             doc_url = get_doc_link(tds[1])
-            bill.add_version(title, doc_url)
+            if doc_url:
+                bill.add_version(title, doc_url)
             if len(tds) > 2:
                 sn_url = get_doc_link(tds[2])
                 if sn_url:
