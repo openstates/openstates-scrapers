@@ -259,10 +259,7 @@ class DEBillScraper(BillScraper):
         bill = Bill(**kw)
         
         bill.add_source(url)
-
-        url = "http://legis.delaware.gov/LIS/lis146.nsf/2bede841c6272c888025698400433a04/9608aad0dd75b215852578b6005d042c?OpenDocument"
-        #url = 'http://www.legis.delaware.gov/LIS/LIS146.NSF/vwLegislation/HCR+25?Opendocument'
-
+        #url = 'http://www.legis.delaware.gov/LIS/lis146.nsf/2bede841c6272c888025698400433a04/d1aa71f6e1ed51a2852578a1006c7734?OpenDocument'
 
         #---------------------------------------------------------------------
         # A few helpers.
@@ -456,9 +453,6 @@ class DEBillScraper(BillScraper):
                 # xpath lookup failed.
                 pass
 
-        pdb.set_trace()
-        self.save_bill(bill)   
-
 
     def scrape_vote(self, url, date, chamber, passed, motion,
                     re_digit=re.compile(r'\d{1,3}')):
@@ -477,10 +471,9 @@ class DEBillScraper(BillScraper):
             yes_count, no_count, abstentions, absent = map(int, totals)
             
         except ValueError:
-            # There were'nt any votes listed on this page.
-            msg = 'Skipping vote; no yes/no counts available: "%s"'
-            self.warning(msg % url)
-            return 
+            # There were'nt any votes listed on this page. This is probably
+            # a "voice vote" lacking actual vote tallies.
+            yes_count, no_count, other_count = 0, 0, 0
             
         else:                
             other_count = abstentions + absent
@@ -524,7 +517,14 @@ class DEBillScraper(BillScraper):
         Returns a list list [{'name': 'docname', 'url': 'docurl}]
         '''
         source = source.replace(' ', '+')
-        _doc = self._url_2_lxml(source)   
+        _doc = self._url_2_lxml(source)
+
+        if _doc.xpath('//font[contains(., "DRAFT INFORMATION")]'):
+            # This amendment is apparently still in draft form or can't
+            # be viewed for security reasons, but we can still link to
+            # its status page.
+            yield dict(name=docname, url=source)
+            return 
         
         # The full-text urls are generated using onlick javascript and
         # window-level vars named "moniker" and "docnum".
