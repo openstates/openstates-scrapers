@@ -81,7 +81,7 @@ class NDBillScraper(BillScraper):
             chamber_letter = 'H'
 
         assembly_url = urljoin(self.site_root,
-                               '/assembly/%s-%s' % (term, start_year))
+                               '/assembly/%s-%s' % (session, start_year))
 
         chamber_url = '/bill-text/%s-bill.html' % (url_chamber_name)
         bill_list_url = assembly_url + chamber_url
