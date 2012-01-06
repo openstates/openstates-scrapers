@@ -15,7 +15,20 @@ metadata = {
          }
         ],
     'session_details': {
-        '2011': {'display_name': '2011 Regular Session'},
+        '2011': {'display_name': '2011 Regular Session',
+                 '_scraped_name': '2011'
+                 },
     },
     'feature_flags': ['subjects'],
+    '_ignored_scraped_sessions': ['2010', '2009', '2008', '2007', '2006',
+                                  '2005', '2004', '2003', '2002', '2001',
+                                  '2000', '1999', '1998', '1997', '1996',
+                                  '1995', '1994', '1993']
+
 }
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm',
+                     '//select[@name="year"]/option/text()')
+
