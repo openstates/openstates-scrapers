@@ -56,9 +56,10 @@ class OKBillScraper(BillScraper):
             chamber_letter = 'S'
         else:
             chamber_letter = 'H'
+
         session_id = self.metadata['session_details'][session]['session_id']
 
-        values = [('cbxSessionId', session_id,
+        values = [('cbxSessionId', session_id),
                   ('cbxActiveStatus', 'All'),
                   ('RadioButtonList1', 'On Any day'),
                   ('Button1', 'Retrieve')]
