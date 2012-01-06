@@ -22,6 +22,25 @@ metadata = dict(
                  'display_name': '2011 Regular Session'}, # XXX: Fixme
     },
     feature_flags=[],
+    _ignored_scraped_sessions = [
+        '2010 Legislative Session',
+        '2009 Legislative Session',
+        '2008 Legislative Session',
+        '2007 Legislative Session',
+        '2006 First Special Session',
+        '2006 Legislative Session',
+        '2005 Legislative Session',
+        '2004 Legislative Session',
+        '2003 Legislative Session',
+        '2002 First Special Session',
+        '2002 Legislative Session',
+        '2001 Second Special Session',
+        '2001 First Special Session',
+        '2001 Legislative Session',
+        '2000 Legislative Session',
+        '2011 Regular Session',
+        '2010 Regular/Special Session'
+    ]
 )
 
 def session_list():
