@@ -20,7 +20,7 @@ class DCLegislatorScraper(LegislatorScraper):
         doc.make_links_absolute(council_url)
         # page should have 13 unique council URLs
         urls = set(doc.xpath('//a[contains(@href, "/council/")]/@href'))
-        assert len(urls) == 13, "should have 13 unique councilmember URLs"
+        assert len(urls) <= 13, "should have 13 unique councilmember URLs"
 
         # do nothing if they're trying to get a lower chamber
         if chamber == 'lower':
