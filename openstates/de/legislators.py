@@ -1,5 +1,9 @@
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from collections import defaultdict
+
 import lxml.html
+
+from billy.scrape.legislators import LegislatorScraper, Legislator
+
 
 
 class DELegislatorScraper(LegislatorScraper):
@@ -36,24 +40,33 @@ class DELegislatorScraper(LegislatorScraper):
         elif '(R)' in party:
             party = 'Republican'
 
-
         leg = Legislator(term, chamber, district, name, party=party, url=url)
 
         photo_url = doc.xpath('//img[contains(@src, "FieldElemFormat")]/@src')
         if photo_url:
             leg['photo_url'] = photo_url[0]
 
-        #position = 'member'
-        #for child in doc.xpath('//td[@width="584"]'):
-        #    text = child.text_content().strip()
-        #    if text == 'Committee Chair:':
-        #        position = 'chair'
-        #    elif text == 'Committee Co-chair:':
-        #        position = 'co-chair'
-        #    else:
-        #        for com in text.splitlines():
-        #            leg.add_role('committee member', term=term,
-        #                         chamber=chamber, committee=com,
-        #                         position=position)
+        roles = defaultdict(lambda: {})
+        
+        position = 'member'            
+        for text in doc.xpath('//td[@width="584"]/descendant::font/text()'):
+            text = text.strip()
+            if text == 'Committee Chair:':
+                position = 'chair'
+            elif text == 'Committee Co-chair:':
+                position = 'co-chair'
+            else:
+                for committee in text.splitlines():
+                    roles[committee].update(
+                        role='committee member',
+                        term=term,
+                        chamber=chamber,
+                        committee=committee,
+                        party=party,
+                        position=position)
+
+        for role in roles.values():
+            leg.add_role(**role)
+            
 
         return leg
