@@ -24,7 +24,7 @@ metadata = {
         '2011': {'start_date': datetime.date(2011, 1, 12), 'site_id': '111',
                  '_scraped_name': '2011 Session',
                 },
-        '2011specialI': {'site_id': '121',
+        '2011specialI': {'site_id': '112',
                  '_scraped_name': '2011 Special Session I',
                 },
         #'2012': {'start_date': datetime.date(2012, 1, 11), 'site_id': '121',
