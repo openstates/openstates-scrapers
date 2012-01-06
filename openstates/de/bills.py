@@ -320,18 +320,17 @@ class DEBillScraper(BillScraper):
                 continue
 
             if f == '.Docx':
-                vals = (docnum, f)
-                
+                vals = (docnum, f)                
             else:
                 vals = ('Legis', f)
 
+            url = tmp % vals
+
             try:
-                self.urlopen(tmp % vals)
-                
+                self.urlopen(url)            
             except scrapelib.HTTPError:
                 msg = 'Could\'t fetch %s version at url: "%s".'
-                self.warning(msg % (f, url))
-                
+                self.warning(msg % (f, url))                
             else:
                 bill.add_version('introduced%s' % f.lower(), url)
 
@@ -424,8 +423,10 @@ class DEBillScraper(BillScraper):
                 else:
                     vals = ('Engross', f)
 
+                url = tmp % vals
+
                 try:
-                    self.urlopen(tmp % vals)                    
+                    self.urlopen(url)                    
                 except scrapelib.HTTPError:
                     msg = 'Could\'t fetch %s version at url: "%s".'
                     self.warning(msg % (f, url))                    
