@@ -1,3 +1,4 @@
+import pdb
 import re
 import urllib
 from urlparse import urlparse
@@ -259,6 +260,7 @@ class DEBillScraper(BillScraper):
         
         bill.add_source(url)
 
+        url = "http://legis.delaware.gov/LIS/lis146.nsf/2bede841c6272c888025698400433a04/9608aad0dd75b215852578b6005d042c?OpenDocument"
         #url = 'http://www.legis.delaware.gov/LIS/LIS146.NSF/vwLegislation/HCR+25?Opendocument'
 
 
@@ -375,63 +377,53 @@ class DEBillScraper(BillScraper):
             if vote:
                 bill.add_vote(vote)
 
+
+
         #---------------------------------------------------------------------
         # Amendments
         xpath = ("//font[contains(., 'Amendments')]/"
                  "../../../td[2]/font/a")
+
+        tmp = ('http://www.legis.delaware.gov/LIS/lis{session_num}.nsf/'
+               'vwLegislation/{id_}/$file/{filename}{format_}?open')
         
-        for url, id_ in zip(doc.xpath(xpath + '/@href'),
-                            doc.xpath(xpath + '/text()')):
+        for source, id_ in zip(doc.xpath(xpath + '/@href'),
+                               doc.xpath(xpath + '/text()')):
 
-            id_ = re_amendment.match(id_).group(1)
-            
-            _kw = kw.copy()
-            _kw.update(bill_id=id_)
+            short_id = re_amendment.match(id_).group(1)
 
-            # Silly geese. No spaces allowed in urls...
-            url = url.replace(' ', '+')
+            documents = self.scrape_documents(source=source,
+                                              docname=short_id,
+                                              filename='Legis',
+                                              tmp=tmp, lxmldoc=doc,
+                                              id_=id_)
 
-            bill.add_document(id_, url, _type='amendment')
+            for d in documents:
+                bill.add_document(**d)
 
-
+    
         #---------------------------------------------------------------------
         # Add any related "Engrossments".
         # See www.ncsl.org/documents/legismgt/ILP/98Tab3Pt4.pdf for
         # an explanation of the engrossment process in DE.
-        url = doc.xpath('//img[@alt="Engrossment"]/../@href')
-        if url:
-            url = url[0]
-            _doc = _url_2_lxml(url)
+        source = doc.xpath('//img[@alt="Engrossment"]/../@href')
+        
+        if source:
             
-            script_text = get_text(_doc, 0, '//script[contains(., "var docnum")]')
-            docnum = re_docnum.search(script_text).group(1)
-            moniker = re_moniker.search(script_text).group(1)
+            tmp = '/'.join([
+                'http://www.legis.delaware.gov',
+                'LIS/lis{session_num}.nsf/EngrossmentsforLookup',
+                '{moniker}/$file/{filename}{format_}?open'])
+            
+            documents = self.scrape_documents(source=source[0],
+                                         docname="Engrossment",
+                                         filename="Engross",
+                                         tmp=tmp, lxmldoc=doc,
+                                         id_=bill['bill_id'])
 
-            tmp = '/'.join(['http://www.legis.delaware.gov',
-                            'LIS/lis%s.nsf/EngrossmentsforLookup' % session_num,
-                            moniker, '$file/%s%s?open'])
-
-            formats = ['.html', '.pdf', '.docx']
-
-            for f in formats:
-
-                if not _doc.xpath('//font[contains(., "Engross%s")]' % f):
-                    continue
-
-                if f == '.docx':
-                    vals = (docnum, f) 
-                else:
-                    vals = ('Engross', f)
-
-                url = tmp % vals
-
-                try:
-                    self.urlopen(url)                    
-                except scrapelib.HTTPError:
-                    msg = 'Could\'t fetch %s version at url: "%s".'
-                    self.warning(msg % (f, url))                    
-                else:
-                    bill.add_document('engrossment%s' % f, url)
+            for d in documents:
+                bill.add_document(**d)
+                
 
         #---------------------------------------------------------------------
         # Extra fields
@@ -464,6 +456,7 @@ class DEBillScraper(BillScraper):
                 # xpath lookup failed.
                 pass
 
+        pdb.set_trace()
         self.save_bill(bill)   
 
 
@@ -522,3 +515,48 @@ class DEBillScraper(BillScraper):
                 break
 
         return vote
+
+    def scrape_documents(self, source, docname, filename, tmp, lxmldoc,
+                         re_docnum=re.compile(r'var docnum="(.+?)"'),
+                         re_moniker=re.compile(r'var moniker="(.+?)"'),
+                         re_digits=re.compile(r'\d{,5}'), **kwargs):
+        '''
+        Returns a list list [{'name': 'docname', 'url': 'docurl}]
+        '''
+        source = source.replace(' ', '+')
+        _doc = self._url_2_lxml(source)   
+        
+        # The full-text urls are generated using onlick javascript and
+        # window-level vars named "moniker" and "docnum".
+        xpath = '//script[contains(., "var docnum")]'
+        script_text = _doc.xpath(xpath)[0].text_content()
+        docnum = re_docnum.search(script_text).group(1)
+        moniker = re_moniker.search(script_text).group(1)
+
+        # Get session number.
+        xpath = '//font[contains(., "General Assembly") and @face="Arial"]'
+        session_num = lxmldoc.xpath(xpath)[0].text_content()
+        session_num = re_digits.match(session_num).group()
+
+        for format_ in ['.html', '.pdf', '.docx', '.Docx']:
+
+            el =_doc.xpath('//font[contains(., "%s%s")]' % (filename, format_))            
+
+            if not el:
+                continue
+
+            _kwargs = kwargs.copy()
+            _kwargs.update(**locals())
+            
+            if format_.lower() == '.docx':
+                _kwargs['filename'] = docnum
+
+            url = tmp.format(**_kwargs).replace(' ', '+')
+
+            try:
+                self.urlopen(url)                    
+            except scrapelib.HTTPError:
+                msg = 'Could\'t fetch %s version at url: "%s".'
+                self.warning(msg % (format_, url))                    
+            else:
+                yield dict(name=docname, url=url, format=format_)
