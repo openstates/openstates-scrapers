@@ -174,7 +174,7 @@ class NMBillScraper(BillScraper):
                 data['Chamber'], data['LegType'], data['LegNo'], session_year))
 
             bill.add_sponsor('primary', sponsor_map[data['SponsorCode']])
-            if data['SponsorCode2'] not in ('NONE', 'X'):
+            if data['SponsorCode2'] not in ('NONE', 'X', ''):
                 bill.add_sponsor('primary', sponsor_map[data['SponsorCode2']])
 
             # maybe use data['emergency'] data['passed'] data['signed'] as well

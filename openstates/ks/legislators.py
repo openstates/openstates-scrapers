@@ -17,8 +17,6 @@ class KSLegislatorScraper(LegislatorScraper):
         else:
             url = legislator_list_url % 'senate'
 
-        print url
-
         with self.urlopen(url) as legislator_list_page:
             doc = lxml.html.fromstring(legislator_list_page)
             doc.make_links_absolute(url)
