@@ -18,13 +18,6 @@ from billy.scrape.votes import Vote
 import scrapelib
 
 
-##class UnidentifiedActorError(ScrapeError):
-##    '''
-##    Raised when function `get_action_actor` fails to guess any actor
-##    for a particular action.
-##    '''
-##    pass
-
 
 class BillIdParseError(ScrapeError):
     '''
@@ -65,8 +58,6 @@ def get_action_actor(action_text, chamber, rgxs=(
         if m:
             return actor
     return chamber
-##    msg = 'Couldn\'t identify the actor for action: "%s"'
-##    raise UnidentifiedActorError(msg % action_text)
 
         
 def get_action_type(action_text):
@@ -152,6 +143,7 @@ class DEBillScraper(BillScraper):
         urldata = urlparse(url)
         doc.make_links_absolute(base_url(urldata))
         return doc
+
 
     def _cleanup_sponsors(self, string, chamber,
 
@@ -253,16 +245,12 @@ class DEBillScraper(BillScraper):
             
 
     def scrape_bill(self, url, kw,        
-                    re_docnum=re.compile(r'var docnum="(.+?)"'),
-                    re_moniker=re.compile(r'var moniker="(.+?)"'),
-                    re_digits=re.compile(r'\d{,5}'),
                     re_amendment=re.compile(r'(^[A-Z]A \d{1,3}) to'),
                     re_substitution=re.compile(r'(^[A-Z]S \d{1,2}) for')):
 
         bill = Bill(**kw)
         
         bill.add_source(url)
-        #url = 'http://www.legis.delaware.gov/LIS/lis146.nsf/2bede841c6272c888025698400433a04/d1aa71f6e1ed51a2852578a1006c7734?OpenDocument'
 
         #---------------------------------------------------------------------
         # A few helpers.
@@ -434,6 +422,8 @@ class DEBillScraper(BillScraper):
                 # xpath lookup failed.
                 pass
 
+        self.save_bill(bill)
+
 
     def scrape_vote(self, url, date, chamber, passed, motion,
                     re_digit=re.compile(r'\d{1,3}')):
@@ -504,7 +494,7 @@ class DEBillScraper(BillScraper):
                          re_moniker=re.compile(r'var moniker="(.+?)"'),
                          re_digits=re.compile(r'\d{,5}'), **kwargs):
         '''
-        Returns a list list [{'name': 'docname', 'url': 'docurl}]
+        Returns a generator like [{'name': 'docname', 'url': 'docurl'}, ...]
         '''
         source = source.replace(' ', '+')
         _doc = self._url_2_lxml(source)
