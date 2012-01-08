@@ -1,7 +1,3 @@
-'''
-Add "vote type" field
-Make sure amendments are scraping the original doc, not the detail page.
-'''
 import pdb
 import re
 import urllib
