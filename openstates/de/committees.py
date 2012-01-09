@@ -1,6 +1,8 @@
-from billy.scrape.committees import CommitteeScraper, Committee 
-import lxml.html
 import re
+import lxml.html
+
+from billy.scrape.committees import CommitteeScraper, Committee 
+
 
 class DECommitteeScraper(CommitteeScraper):
     state = "de"

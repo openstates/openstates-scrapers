@@ -1,29 +1,18 @@
-'''
-01/03/2012 - Changed link-gathering function to get resolutions, etc.
-'''
-import re
 import pdb
+import re
 import urllib
 from urlparse import urlparse
 from datetime import datetime
 from operator import methodcaller
+from functools import partial
 
 import lxml.html
-from functional import partial
 
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-
 import scrapelib
 
-
-class UnidentifiedActorError(ScrapeError):
-    '''
-    Raised when function `get_action_actor` fails to guess any actor
-    for a particular action.
-    '''
-    pass
 
 
 class BillIdParseError(ScrapeError):
@@ -52,7 +41,7 @@ def slugify(s):
     return s.lower().replace(' ', '_').rstrip(':')
 
 
-def get_action_actor(action_text, rgxs=(
+def get_action_actor(action_text, chamber, rgxs=(
     (re.compile(r'(in|by) senate', re.I), 'upper'),
     (re.compile(r'(in|by) house', re.I), 'lower'),
     (re.compile(r'by governor', re.I), 'governor'),
@@ -64,8 +53,7 @@ def get_action_actor(action_text, rgxs=(
         m = r.search(action_text)
         if m:
             return actor
-    msg = 'Couldn\'t identify the actor for action: "%s"'
-    raise UnidentifiedActorError(msg % action_text)
+    return chamber
 
         
 def get_action_type(action_text):
@@ -81,11 +69,12 @@ def parse_votestring(v, strptime=datetime.strptime,
     describing a vote.
     '''
     motion, _ = v.split(':', 1)
+    motion = motion.strip()
     
     date = strptime(re_date.search(v).group(), '%m/%d/%Y %I:%M:%S %p')
 
     chamber, _ = v.split(' ', 1)
-    chamber = chambers[chamber]
+    chamber = chambers[chamber.strip()]
     
     passed = ('Passed' in v)
 
@@ -104,7 +93,7 @@ def extract_bill_id(bill_id, fns=(
         SB 112 w/SA 1 + HA 1 --> SB 112
         SS 1 for SB 156 --> SB 156
 
-    Complains if the result doesn't look like a normla bill id.
+    Complains if the result doesn't look like a normal bill id.
     '''
     for f in fns:
         bill_id = f(bill_id)
@@ -126,6 +115,8 @@ class DEBillScraper(BillScraper):
     
     state = 'de'
 
+    encoding = 'iso-8859-1'
+
     legislation_types = {
         'House Bill': 'bill',
         'House Concurrent Resolution': 'concurrent resolution',
@@ -138,17 +129,17 @@ class DEBillScraper(BillScraper):
         'Senate Nominations': 'nomination',
         }
 
-    def _url_2_lxml(self, url, encoding='ascii',
-                    base_url='{0.scheme}://{0.netloc}'.format):
+    def _url_2_lxml(self, url, base_url='{0.scheme}://{0.netloc}'.format):
         '''
         Fetch the url as a string, convert it to unicode,
         and parse with lxml.
         '''
         html = self.urlopen(url)
-        doc = lxml.html.fromstring(html.decode(encoding))
+        doc = lxml.html.fromstring(html.decode(self.encoding))
         urldata = urlparse(url)
         doc.make_links_absolute(base_url(urldata))
         return doc
+
 
     def _cleanup_sponsors(self, string, chamber,
 
@@ -168,16 +159,13 @@ class DEBillScraper(BillScraper):
             'Sen': 'upper',
             'Rep': 'lower',
             }
-
         ):
         
         '''
         Sponsor names are sometimes joined with an ampersand,
         are '{ NONE...}', or contain '&nbsp'. This helper removes
         that stuff and returns a list minus any non-name strings found. 
-        '''
-        res = []
-        
+        '''      
         for string in string.split('; '):
 
             # Override the chamber based on presence of "Sens." or "Rep."
@@ -191,9 +179,9 @@ class DEBillScraper(BillScraper):
             names = map(methodcaller('replace', '&nbsp', ''), names)
             names  = filter(None, [name_map.get(n, n) for n in names])
 
-            res += [(n, chamber) for n in names]
+            for n in names:
+                yield (n, chamber)
 
-        return res
     
     def _get_urls(self, chamber, session):
         '''
@@ -253,22 +241,15 @@ class DEBillScraper(BillScraper):
             
 
     def scrape_bill(self, url, kw,        
-                    re_docnum=re.compile(r'var docnum="(.+?)"'),
-                    re_moniker=re.compile(r'var moniker="(.+?)"'),
-                    re_digits=re.compile(r'\d{,5}'),
                     re_amendment=re.compile(r'(^[A-Z]A \d{1,3}) to'),
                     re_substitution=re.compile(r'(^[A-Z]S \d{1,2}) for')):
 
-        url = 'http://legis.delaware.gov/LIS/lis146.nsf/2bede841c6272c888025698400433a04/60ea60e782adddf5852578b10062fe03?OpenDocument'
-            
         bill = Bill(**kw)
         
         bill.add_source(url)
 
-
         #---------------------------------------------------------------------
         # A few helpers.
-        
         _url_2_lxml = self._url_2_lxml
         _cleanup_sponsors = self._cleanup_sponsors
 
@@ -279,7 +260,6 @@ class DEBillScraper(BillScraper):
 
         #---------------------------------------------------------------------
         # Sponsors
-
         chamber = bill['chamber']
         
         sponsor_types = {
@@ -304,44 +284,18 @@ class DEBillScraper(BillScraper):
         #---------------------------------------------------------------------
         # Versions
 
-        # The full-text urls are generated using onlick javascript and
-        # window-level vars named "moniker" and "docnum". 
-        script_text = _get_text('//script[contains(., "var docnum")]')
-        docnum = re_docnum.search(script_text).group(1)
-        moniker = re_moniker.search(script_text).group(1)
+        tmp = '/'.join([
+            'http://www.legis.delaware.gov',
+            'LIS/lis{session_num}.nsf/vwLegislation',
+            '{moniker}/$file/{filename}{format_}?open'])
+        
+        documents = self.scrape_documents(source=url,
+                                     docname="introduced",
+                                     filename="Legis",
+                                     tmp=tmp, lxmldoc=doc)
 
-        # Get session number.
-        session_num = _get_text('//font[contains(., "General Assembly") and @face="Arial"]')
-        session_num = re_digits.match(session_num).group()
-
-        tmp = '/'.join(['http://www.legis.delaware.gov',
-                        'LIS/lis%s.nsf/vwLegislation' % session_num,
-                        moniker, '$file/%s%s?open'])
-
-        formats = ['.html', '.pdf', '.docx']
-
-        for f in formats:
-
-            if not doc.xpath('//font[contains(., "Legis%s")]' % f):
-                continue
-
-            if f == '.docx':
-                vals = (docnum, f)
-                
-            else:
-                vals = ('Legis', f)
-
-            url = tmp % vals
-
-            try:
-                self.urlopen(url)
-                
-            except scrapelib.HTTPError:
-                msg = 'Could\'t fetch %s version at url: "%s".'
-                self.warning(msg % (f, url))
-                
-            else:
-                bill.add_version('introduced', url, format=f)
+        for d in documents:
+            bill.add_version(**d)
 
 
         # If bill is a substitution, add the original as a version.
@@ -357,6 +311,7 @@ class DEBillScraper(BillScraper):
             bill.add_version(name, url,
                              description='original bill')
 
+
         #---------------------------------------------------------------------
         # Actions
         actions = doc.xpath('//font[contains(., "Actions History")]'
@@ -367,14 +322,13 @@ class DEBillScraper(BillScraper):
         for a in actions:
             date, action = a.split(' - ', 1)
             date = datetime.strptime(date, '%b %d, %Y')
-            actor = get_action_actor(action)
+            actor = get_action_actor(action, bill['chamber'])
             type_ = get_action_type(action)
             bill.add_action(actor, action, date, type_)
 
         
         #---------------------------------------------------------------------
         # Votes
-        
         vote_strings = doc.xpath('//*[contains(text(), "vote:")]/text()')
         vote_urls = doc.xpath('//*[contains(text(), "vote:")]'
                               '/following-sibling::a/@href')
@@ -382,70 +336,56 @@ class DEBillScraper(BillScraper):
             
             vote_data = parse_votestring(string)
             vote = self.scrape_vote(url, **vote_data)
-            bill.add_vote(vote)
+            if vote:
+                bill.add_vote(vote)
+
 
         #---------------------------------------------------------------------
         # Amendments
-
         xpath = ("//font[contains(., 'Amendments')]/"
                  "../../../td[2]/font/a")
+
+        tmp = ('http://www.legis.delaware.gov/LIS/lis{session_num}.nsf/'
+               'vwLegislation/{id_}/$file/{filename}{format_}?open')
         
-        for url, id_ in zip(doc.xpath(xpath + '/@href'),
-                            doc.xpath(xpath + '/text()')):
+        for source, id_ in zip(doc.xpath(xpath + '/@href'),
+                               doc.xpath(xpath + '/text()')):
 
-            id_ = re_amendment.match(id_).group(1)
-            
-            _kw = kw.copy()
-            _kw.update(bill_id=id_)
+            short_id = re_amendment.match(id_).group(1)
 
-            # Silly geese. No spaces allowed in urls...
-            url = url.replace(' ', '+')
+            documents = self.scrape_documents(
+                source=source,
+                docname='amendment (%s)' % short_id,
+                filename='Legis',
+                tmp=tmp, lxmldoc=doc,
+                id_=id_)
 
-            bill.add_document(id_, url, _type='amendment')
+            for d in documents:
+                bill.add_document(**d)
 
-
+    
         #---------------------------------------------------------------------
         # Add any related "Engrossments".
         # See www.ncsl.org/documents/legismgt/ILP/98Tab3Pt4.pdf for
         # an explanation of the engrossment process in DE.
-
-        pdb.set_trace()
-        url = doc.xpath('//img[@alt="Engrossment"]/../@href')[0]
-        if url:
-            _doc = _url_2_lxml(url)
+        source = doc.xpath('//img[@alt="Engrossment"]/../@href')
+        
+        if source:
             
-            script_text = get_text(_doc, 0, '//script[contains(., "var docnum")]')
-            docnum = re_docnum.search(script_text).group(1)
-            moniker = re_moniker.search(script_text).group(1)
+            tmp = '/'.join([
+                'http://www.legis.delaware.gov',
+                'LIS/lis{session_num}.nsf/EngrossmentsforLookup',
+                '{moniker}/$file/{filename}{format_}?open'])
+            
+            documents = self.scrape_documents(source=source[0],
+                                         docname="Engrossment",
+                                         filename="Engross",
+                                         tmp=tmp, lxmldoc=doc,
+                                         id_=bill['bill_id'])
 
-            tmp = '/'.join(['http://www.legis.delaware.gov',
-                            'LIS/lis%s.nsf/EngrossmentsforLookup' % session_num,
-                            moniker, '$file/%s%s?open'])
-
-            formats = ['.html', '.pdf', '.docx']
-
-            for f in formats:
-
-                if not _doc.xpath('//font[contains(., "Engross%s")]' % f):
-                    continue
-
-                if f == '.docx':
-                    vals = (docnum, f)
-                    
-                else:
-                    vals = ('Engross', f)
-
-                url = tmp % vals
-
-                try:
-                    self.urlopen(url)
-                    
-                except scrapelib.HTTPError:
-                    msg = 'Could\'t fetch %s version at url: "%s".'
-                    self.warning(msg % (f, url))
-                    
-                else:
-                    bill.add_document('engrossment', url, format=f)
+            for d in documents:
+                bill.add_document(**d)
+                
 
         #---------------------------------------------------------------------
         # Extra fields
@@ -463,7 +403,9 @@ class DEBillScraper(BillScraper):
             "Volume Chapter",
 
             # Presumably the date of approval/veto.
-            "Date Governor Acted"
+            "Date Governor Acted",
+
+            "Fiscal Notes",
 
             )
 
@@ -476,8 +418,7 @@ class DEBillScraper(BillScraper):
                 # xpath lookup failed.
                 pass
 
-
-        pdb.set_trace()
+        self.save_bill(bill)
 
 
     def scrape_vote(self, url, date, chamber, passed, motion,
@@ -487,14 +428,22 @@ class DEBillScraper(BillScraper):
         doc = lxml.html.fromstring(self.urlopen(url))
 
         xpath = ("//font[re:match(., '^(Yes|No|Not Voting|Absent):', 'i')]"
-              "/ancestor::tr[1]")
+                 "/ancestor::tr[1]")
 
         # Get the vote tallies.
         totals = doc.xpath(xpath, namespaces=namespaces)[0].text_content()
         totals = re_digit.findall(totals)
 
-        yes_count, no_count, abstentions, absent = map(int, totals)
-        other_count = abstentions + absent
+        try:
+            yes_count, no_count, abstentions, absent = map(int, totals)
+            
+        except ValueError:
+            # There were'nt any votes listed on this page. This is probably
+            # a "voice vote" lacking actual vote tallies.
+            yes_count, no_count, other_count = 0, 0, 0
+            
+        else:                
+            other_count = abstentions + absent
 
         # Create the vote object.
         vote = Vote(chamber, date, motion, passed,
@@ -503,9 +452,18 @@ class DEBillScraper(BillScraper):
         # Add source.
         vote.add_source(url)
 
+        # Get the "vote type"
+        el = doc.xpath('//font[contains(., "Vote Type:")]')[0]
+        try:
+            vote_type = el.xpath('following-sibling::font[1]/text()')[0]
+        except IndexError:
+            vote_type = el.xpath('../following-sibling::font[1]/text()')[0]
+                                        
+        vote['vote_type'] = vote_type
+
         # Get an iterator like: name1, vote1, name2, vote2, ...
         xpath = ("//font[re:match(., '^[A-Z]$')]"
-              "/../../../descendant::td/font/text()")
+                 "/../../../descendant::td/font/text()")
         data = doc.xpath(xpath, namespaces=namespaces)
         data = iter(filter(lambda s: s.strip(), data))
 
@@ -527,18 +485,55 @@ class DEBillScraper(BillScraper):
 
         return vote
 
-    def scrape_amendment(self, url, kw):
+    def scrape_documents(self, source, docname, filename, tmp, lxmldoc,
+                         re_docnum=re.compile(r'var docnum="(.+?)"'),
+                         re_moniker=re.compile(r'var moniker="(.+?)"'),
+                         re_digits=re.compile(r'\d{,5}'), **kwargs):
         '''
-        Add another bill object for the amendment at this url.
+        Returns a generator like [{'name': 'docname', 'url': 'docurl'}, ...]
         '''
+        source = source.replace(' ', '+')
+        _doc = self._url_2_lxml(source)
 
-        doc = self._url_2_lxml(url)
-
-        title = doc.xpath('//font[contains(., "AMENDMENT NO:")]')
-        pdb.set_trace()
+        if _doc.xpath('//font[contains(., "DRAFT INFORMATION")]'):
+            # This amendment is apparently still in draft form or can't
+            # be viewed for security reasons, but we can still link to
+            # its status page.
+            yield dict(name=docname, url=source)
+            return 
         
-        bill = Bill(**kw)
-        
-        bill.add_source(url)
+        # The full-text urls are generated using onlick javascript and
+        # window-level vars named "moniker" and "docnum".
+        xpath = '//script[contains(., "var docnum")]'
+        script_text = _doc.xpath(xpath)[0].text_content()
+        docnum = re_docnum.search(script_text).group(1)
+        moniker = re_moniker.search(script_text).group(1)
 
-        pdb.set_trace()
+        # Get session number.
+        xpath = '//font[contains(., "General Assembly") and @face="Arial"]'
+        session_num = lxmldoc.xpath(xpath)[0].text_content()
+        session_num = re_digits.match(session_num).group()
+
+        for format_ in ['.html', '.pdf', '.docx', '.Docx']:
+
+            el =_doc.xpath('//font[contains(., "%s%s")]' % (filename, format_))            
+
+            if not el:
+                continue
+
+            _kwargs = kwargs.copy()
+            _kwargs.update(**locals())
+            
+            if format_.lower() == '.docx':
+                _kwargs['filename'] = docnum
+
+            url = tmp.format(**_kwargs).replace(' ', '+')
+
+            try:
+                self.urlopen(url)                    
+            except scrapelib.HTTPError:
+                msg = 'Could\'t fetch %s version at url: "%s".'
+                self.warning(msg % (format_, url))                    
+            else:
+                yield dict(name=docname, url=url, format=format_,
+                           source=source)
