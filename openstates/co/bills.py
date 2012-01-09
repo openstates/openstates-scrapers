@@ -268,11 +268,11 @@ class COBillScraper(BillScraper):
                     action['date'], brief_action_name=normalized_brief)
                 return True
 
-            simple_intro_match = [
-                "House Second Reading Passed",
-                "House Third Reading Passed",
-                "Signed by the Speaker of the House"
-            ]
+            simple_intro_match = {
+                "House Second Reading Passed"        : "",
+                "House Third Reading Passed"         : "",
+                "Signed by the Speaker of the House" : ""
+            }
 
             for testStr in simple_intro_match:
                 if aText[:len(testStr)] == testStr:
@@ -309,16 +309,17 @@ class COBillScraper(BillScraper):
                     action['date'], brief_action_name=normalized_brief)
                 return True
 
-            simple_intro_match = [
-                "Senate Second Reading Passed",
-                "Senate Third Reading Passed",
-                "Signed by the President of the Senate"
-            ]
+            simple_intro_match = {
+                "Senate Second Reading Passed"          : [ "bill:reading:2" ],
+                "Senate Third Reading Passed"           : [ "bill:reading:3" ],
+                "Signed by the President of the Senate" : [ "other" ]
+            }
 
             for testStr in simple_intro_match:
                 if aText[:len(testStr)] == testStr:
                     bill.add_action( actor, action['orig'],
-                        action['date'], brief_action_name=testStr )
+                        action['date'], brief_action_name=testStr,
+                        type=simple_intro_match[testStr] )
                     return True
 
             if aText == "Introduced In Senate":
@@ -348,14 +349,13 @@ class COBillScraper(BillScraper):
 
             if aText == "Sent to the Governor":
                 bill.add_action( "legislature", action['orig'], action['date'],
-                    brief_action_name=aText)
+                    brief_action_name=aText, type="governor:received" )
                 return True
 
             if aText == "Governor Action":
                 bill.add_action( actor, action['orig'], action['date'],
                     brief_action_name=action['args'][0] )
                 return True
-
             return False
 
         """
