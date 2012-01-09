@@ -8,6 +8,7 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 
 class CTLegislatorScraper(LegislatorScraper):
     state = 'ct'
+    latest_only = True
 
     _committee_names = {}
 
@@ -16,8 +17,6 @@ class CTLegislatorScraper(LegislatorScraper):
         self._scrape_committee_names()
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
 
         office_code = {'upper': 'S', 'lower': 'H'}[chamber]
 

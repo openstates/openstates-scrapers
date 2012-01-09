@@ -7,6 +7,7 @@ bad_committees = ['ctte_s_phw_1',
                   'ctte_2011_redistricting_advisory_group_1',
                   'ctte_leg_budget_1',
                   'ctte_h_corr_juv_jus_1',
+                  'ctte_spc_kan_ed_study_1',
                  ]
 
 # in order from sec 10.1 of KLISS doc

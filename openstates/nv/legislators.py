@@ -13,38 +13,17 @@ class NVLegislatorScraper(LegislatorScraper):
     state = 'nv'
 
     def scrape(self, chamber, term_name):
-        year = term_name[0:4]
-        if int(year) < 2001:
-            raise NoDataForPeriod(year)
 
-        if ((int(year) - 2010) % 2) == 1:
-            session = ((int(year) -  2010) / 2) + 76
-        elif( ((int(year) - 2010) % 2) == 0) and year >= 2010:
-            session = ((int(year) - 2010) / 2) + 26
-        else:
-            raise NoDataForPeriod(term_name)
-
-        self.scrape_legislators(chamber, session, year, term_name)
-
-    def scrape_legislators(self, chamber, session, year, term_name):
-
-        sessionsuffix = 'th'
-        if str(session)[-1] == '1':
-            sessionsuffix = 'st'
-        elif str(session)[-1] == '2':
-            sessionsuffix = 'nd'
-        elif str(session)[-1] == '3':
-            sessionsuffix = 'rd'
-
-        insert = str(session) + sessionsuffix + str(year)
-        if session == 26:
-            insert = str(session) + sessionsuffix + str(year) + "Special"
+        for t in self.metadata['terms']:
+            if t['name'] == term_name:
+                session = t['sessions'][-1]
+                slug = self.metadata['session_details'][session]['slug']
 
         if chamber == 'upper':
-            leg_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/legislators/Senators/slist.cfm'
+            leg_url = 'http://www.leg.state.nv.us/Session/' + slug  + '/legislators/Senators/slist.cfm'
             num_districts = 22
         elif chamber == 'lower':
-            leg_url = 'http://www.leg.state.nv.us/Session/' + insert  + '/legislators/Assembly/alist.cfm'
+            leg_url = 'http://www.leg.state.nv.us/Session/' + slug  + '/legislators/Assembly/alist.cfm'
             num_districts = 43
 
         with self.urlopen(leg_url) as page:

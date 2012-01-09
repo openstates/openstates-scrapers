@@ -28,12 +28,28 @@ metadata = dict(
         '2011 Regular Session': {'display_name': '2011 Regular Session'},
     },
     feature_flags=['subjects'],
+    _ignored_scraped_sessions = [
+        '2011 Regular Session',
+        '2009 Regular Session',
+        '2007 Regular Session',
+        '2005 Regular Session',
+        '2003 Regular Session',
+        '2001 Regular Session',
+        '1999 Regular Session'
+    ]
 )
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
+    raw_sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
             "//div[@class='roundedrect gradientgray shadow']/a/text()"
         )
-    sessions.remove('Archives Main')
+    raw_sessions.remove('Archives Main')
+    # OK. It's in the Hawaii Constitution that all sessions start on odd
+    # years.
+    sessions = []
+    for session in raw_sessions:
+        if int(session) % 2 == 1:
+            sessions.append("%s Regular Session" % session)
+            # XXX: Let's fix this hack at some point.
     return sessions

@@ -25,9 +25,15 @@ metadata = dict(
          'start_year': 2010, 'end_year': 2011},
     ],
     session_details={'214': {'start_date': datetime.date(2010, 1, 12),
-                             'display_name': '2010-2011 Regular Session'}
+                             'display_name': '2010-2011 Regular Session',
+                             '_scraped_name': '2010-2011',
+                             }
                     },
     feature_flags=['subjects'],
+    _ignored_scraped_sessions = ['2008-2009', '2006-2007', '2004-2005',
+                                 '2002-2003', '2000-2001', '1998-1999',
+                                 '1996-1997'],
+
 )
 
 def session_list():

@@ -18,21 +18,19 @@ metadata = dict(
          'start_year': 2011, 'end_year': 2012,},
     ],
     session_details={
-#        '2009-2010': {
-#            'start_date': datetime.date(2009, 1, 12),
-#            'display_name': '2009 Regular Session',},
-#        '2010': {
-#            'start_date': datetime.date(2010, 1, 11),
-#            'end_date': datetime.date(2010, 5, 28), # extended
-#            'display_name': '2010 Regular Session',},
         '2011-2012': {
             'start_date': datetime.date(2011, 1, 12),
             'display_name': '2011-2012 Regular Session',
-            'type': 'primary',},
-#        '2012': {
-#            'start_date': datetime.date(2012, 1, 13),
-#            'display_name': '2012 Regular Session',},
+            'type': 'primary',
+            '_scraped_name': 'b2011_12',
+        },
     },
     feature_flags=[],
 )
 
+def session_list():
+    from billy.scrape.utils import url_xpath
+    url = url_xpath('http://www.kslegislature.org/li',
+                     '//a[contains(text(), "Senate Bills")]/@href')[0]
+    slug = url.split('/')[2]
+    return [slug]

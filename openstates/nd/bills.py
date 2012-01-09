@@ -66,11 +66,9 @@ class NDBillScraper(BillScraper):
                 self.subjects[bill_id].append(subject)
 
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-
+    def scrape(self, chamber, session):
         #determining the start year of the term
-        start_year = ((int(term) - 62)*2) + 2011
+        start_year = self.metadata['session_details'][session]['start_date'].year
 
         # URL building
         if chamber == 'upper':
@@ -83,7 +81,7 @@ class NDBillScraper(BillScraper):
             chamber_letter = 'H'
 
         assembly_url = urljoin(self.site_root,
-                               '/assembly/%s-%s' % (term, start_year))
+                               '/assembly/%s-%s' % (session, start_year))
 
         chamber_url = '/bill-text/%s-bill.html' % (url_chamber_name)
         bill_list_url = assembly_url + chamber_url
@@ -104,7 +102,7 @@ class NDBillScraper(BillScraper):
                 bill_url = bill_list_url[0:-26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
                 bill_prefix, bill_type = self.bill_type_info(bill_num)
                 bill_id = '%s%s %s' % (chamber_letter, bill_prefix, bill_num)
-                bill = Bill(term, chamber, bill_id, title, type=bill_type,
+                bill = Bill(session, chamber, bill_id, title, type=bill_type,
                             subjects=self.subjects[bill_id])
 
                 #versions

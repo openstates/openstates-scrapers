@@ -1,6 +1,5 @@
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import Legislator, LegislatorScraper
 
 import lxml.html
@@ -8,11 +7,9 @@ import lxml.html
 
 class KYLegislatorScraper(LegislatorScraper):
     state = 'ky'
+    latest_only = True
 
     def scrape(self, chamber, year):
-        if year != self.metadata['terms'][-1]['name']:
-            # Data only available for current term
-            raise NoDataForPeriod(year)
 
         if chamber == 'upper':
             leg_list_url = 'http://www.lrc.ky.gov/senate/senmembers.htm'

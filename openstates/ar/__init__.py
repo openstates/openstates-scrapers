@@ -24,7 +24,8 @@ metadata = dict(
                  'type': 'primary'}
         },
     feature_flags=[],
-    _ignored_scraped_sessions=['Regular Session, 2009',
+    _ignored_scraped_sessions=['Fiscal Session 2012',
+                               'Regular Session, 2009',
                                'Fiscal Session, 2010',
                                'Regular Session, 2007',
                                'First Extraordinary Session, 2008',

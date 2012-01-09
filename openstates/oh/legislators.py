@@ -8,11 +8,9 @@ import lxml.html
 
 class OHLegislatorScraper(LegislatorScraper):
     state = 'oh'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
-
         if chamber == 'upper':
             self.scrape_senators(chamber, term)
         else:

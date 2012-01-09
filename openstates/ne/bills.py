@@ -6,9 +6,9 @@ import lxml.html
 class NEBillScraper(BillScraper):
     state = 'ne'
 
-    def scrape(self, chamber, term):        
-        years = {'102' : 2011}
-        main_url = 'http://nebraskalegislature.gov/bills/search_by_date.php?SessionDay=%s' % (years[term])
+    def scrape(self, chamber, session):
+        year = self.metadata['session_details'][session]['start_date'].year
+        main_url = 'http://nebraskalegislature.gov/bills/search_by_date.php?SessionDay=%s' % year
 
         with self.urlopen(main_url) as page:
             page = lxml.html.fromstring(page)
@@ -26,7 +26,7 @@ class NEBillScraper(BillScraper):
                     for x in range(2, len(long_title)):
                         title += long_title[x] + ' '
                     title = title[0:-1]
-                    #bill = Bill(term, chamber, bill_id, title)
+                    #bill = Bill(session, chamber, bill_id, title)
 
                     #bill_type
                     if 'LR' in bill_id:
@@ -34,7 +34,7 @@ class NEBillScraper(BillScraper):
                     else:
                         bill_type = 'bill'
 
-                    bill = Bill(term, chamber, bill_id, title, type = bill_type)
+                    bill = Bill(session, chamber, bill_id, title, type = bill_type)
                     
                     #sources
                     bill.add_source(main_url)

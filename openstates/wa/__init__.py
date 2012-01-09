@@ -15,8 +15,19 @@ metadata = dict(
          'sessions': ['2011-2012']},
         ],
     session_details = {
-        '2009-2010': {'display_name': '2009 Regular Session',},
-        '2011-2012': {'display_name': '2011 Regular Session',},
+        '2009-2010': {'display_name': '2009-2010 Regular Session',
+                      '_scraped_name': '2009-10',
+                     },
+        '2011-2012': {'display_name': '2011-2012 Regular Session',
+                      '_scraped_name': '2011-12',
+                     },
     },
     feature_flags = ['events', 'subjects'],
+    _ignored_scraped_sessions=['2007-08'],
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://apps.leg.wa.gov/billinfo/',
+     '//td[starts-with(@id, "ctl00_ContentPlaceHolder1_TabControl1")]/text()')
+

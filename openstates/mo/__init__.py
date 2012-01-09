@@ -20,6 +20,25 @@ metadata = dict(
                  'display_name': '2011 Regular Session'},
     },
     feature_flags=[],
+    _ignored_scraped_sessions = [
+        '2011 - 96th General Assembly - 1st Regular Session',
+        '2010 - 95th General Assembly - 2nd Regular Session',
+        '2009 - 95th General Assembly - 1st Regular Session',
+        '2008 - 94th General Assembly - 2nd Regular Session',
+        '2007 - 94th General Assembly - 1st Regular Session',
+        '2006 - 93rd General Assembly - 2nd Regular Session',
+        '2005 - 93rd General Assembly - 1st Regular Session',
+        '2004 - 92nd General Assembly - 2nd Regular Session',
+        '2003 - 92nd General Assembly - 1st Regular Session',
+        '2002 - 91st General Assembly - 2nd Regular Session',
+        '2001 - 91st General Assembly - 1st Regular Session',
+        '2000 - 90th General Assembly - 2nd Regular Session',
+        '1999 - 90th General Assembly - 1st Regular Session',
+        '1998 - 89th General Assembly - 2nd Regular Session',
+        '1997 - 89th General Assembly - 1st Regular Session',
+        '1996 - 88th General Assembly - 2nd Regular Session',
+        '1995 - 88th General Assembly - 1st Regular Session'
+    ]
 )
 
 def session_list():

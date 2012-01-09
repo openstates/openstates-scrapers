@@ -123,8 +123,9 @@ class ALBillScraper(BillScraper):
                     return
 
                 # create bill
-                bill = Bill(session, chamber, bill_id, title, type=bill_type,
-                            subjects=[subject])
+                bill = Bill(session, chamber, bill_id, title, type=bill_type)
+                if subject:
+                    bill['subjects'] = [subject]
                 if sponsor:
                     bill.add_sponsor('primary', sponsor)
 

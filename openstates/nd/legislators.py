@@ -15,8 +15,12 @@ class NDLegislatorScraper(LegislatorScraper):
         else:
             url_chamber_name = 'house'
 
-        #figuring out starting year for url
-        start_year = ((int(term) - 62)*2) + 2011
+        # figuring out starting year from metadata
+        for t in self.metadata['terms']:
+            if t['name'] == term:
+                start_year = t['start_year']
+                break
+
         root_url = 'http://www.legis.nd.gov/assembly/%s-%s/%s/' % (term, start_year, url_chamber_name)
         main_url = root_url + 'members/district.html'
 

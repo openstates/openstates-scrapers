@@ -22,7 +22,7 @@ metadata = dict(
         # 'sessions': ['2007Special23', '2008Special24', '2008Special25', '74']
         #},
         {'name': '2009-2010', 'start_year': 2009, 'end_year': 2010,
-         'sessions': ['2010Special26', '75']
+         'sessions': ['2010Special26', '75'],
         },
         {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
          'sessions': ['76']
@@ -30,17 +30,50 @@ metadata = dict(
     ],
     session_details={
         '2010Special26': {'type':'special',
-                          'display_name': '26th Special Session (2010)'},
+                          'display_name': '26th Special Session (2010)',
+                          '_scraped_name': '26th Special Session (2010)',
+                          'slug': '26th2010Special',
+                         },
         '75': {'type': 'primary',
-               'display_name': '2009 Regular Session'},
+               'display_name': '2009 Regular Session',
+               '_scraped_name': '2009 Session',
+               'slug': '75th2009',
+              },
         '76': {'type': 'primary',
-               'display_name': '2011 Regular Session'},
+               'display_name': '2011 Regular Session',
+               '_scraped_name': '76th Session (2011)',
+               'slug': '76th2011',
+              },
     },
     feature_flags=['subjects'],
+    _ignored_scraped_sessions=['25th Special Session (2008)',
+                               '24th Special Session (2008)',
+                               '23rd Special Session (2007)',
+                               '2007 Session',
+                               '22nd Special Session (2005)',
+                               '2005 Session',
+                               '21st Special (2004)',
+                               '20th Special (2003)',
+                               '19th Special (2003)',
+                               '2003 Session',
+                               '18th Special (2002)',
+                               '17th Special (2001)',
+                               '2001 Session',
+                               '1999 Session',
+                               '1997 Session',
+                               '1995 Session',
+                               '1993 Session',
+                               '1991 Session',
+                               '16th Special (1989)',
+                               '1989 Session',
+                               '1987 Session',
+                               '1985 Session'],
+
 )
 
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath('http://www.leg.state.nv.us/Session/',
-                     'string(//*[@class="MainHeading"])')
+    return [x.text_content() for x in
+            url_xpath('http://www.leg.state.nv.us/Session/',
+                      '//*[@class="MainHeading"]')]

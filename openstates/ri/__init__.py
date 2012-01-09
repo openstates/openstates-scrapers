@@ -10,15 +10,16 @@ metadata = dict(
     lower_chamber_title='Representative',
     upper_chamber_term=2,
     lower_chamber_term=2,
-    terms=[{'name': '2011',
-            'start_year': 2011,
-            'start_date': datetime.date(2011, 1, 4),
-            'end_year': 2011,
-            'sessions': ['2011']},
+    terms=[{'name': '2012',
+            'start_year': 2012,
+            'start_date': datetime.date(2012, 1, 4),
+            'end_year': 2012,
+            'sessions': ['2012']},
             ],
-    session_details={'2011': {'start_date': datetime.date(2011, 1, 4),
+    session_details={'2012': {'start_date': datetime.date(2012, 1, 4),
                               'type': 'primary'},
                     },
+    _ignored_scraped_sessions = ['2012', '2011', '2010', '2009', '2008', '2007']
 )
 
 def session_list():

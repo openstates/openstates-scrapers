@@ -4,6 +4,7 @@ import datetime
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
+import scrapelib
 import lxml.html
 
 def split_names(voters):
@@ -82,7 +83,13 @@ class WYBillScraper(BillScraper):
 
         bill.add_source(digest_url)
 
-        html = self.urlopen(digest_url).decode('utf-8', 'ignore')
+        try:
+            html = self.urlopen(digest_url)
+        except scrapelib.HTTPError:
+            self.warning('no digest for %s' % bill['bill_id'])
+            return
+
+        html = html.decode('utf-8', 'ignore')
         doc = lxml.html.fromstring(html)
 
         ext_title = doc.xpath('//span[@class="billtitle"]')

@@ -81,11 +81,6 @@ class ORBillScraper(BillScraper):
                   'JR': 'joint resolution',
                   'CR': 'concurrent resolution'}
 
-    # mapping of sessions to 'lookin' search values for search_url
-    session_to_lookin = {
-        '2011 Regular Session' : '11reg',
-    }
-
     action_classifiers = (
         ('Introduction and first reading', ['bill:introduced', 'bill:reading:1']),
         ('First reading', ['bill:introduced', 'bill:reading:1']),
@@ -123,7 +118,7 @@ class ORBillScraper(BillScraper):
             self.parse_actions(action_data, chamber_letter)
 
         # add versions
-        session_slug = self.session_to_lookin[session]
+        session_slug = self.metadata['session_details'][session]['slug']
         version_url = 'http://www.leg.state.or.us/%s/measures/main.html' % (
             session_slug)
         self.parse_versions(version_url, chamber)

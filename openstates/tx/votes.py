@@ -270,6 +270,7 @@ class TXVoteScraper(VoteScraper):
                 self.scrape_journal(url, chamber, session)
 
     def scrape_journal(self, url, chamber, session):
+        year = metadata['session_details'][session]['start_date'].year
         with self.urlopen(url) as page:
             root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
             clean_journal(root)
@@ -282,7 +283,7 @@ class TXVoteScraper(VoteScraper):
             else:
                 fname = os.path.split(urlparse.urlparse(url).path)[-1]
                 date_str = re.match(r'%sSJ(\d\d-\d\d).*\.htm' % session,
-                                fname).group(1) + " 2011"
+                                fname).group(1) + " %s" % year
                 date = datetime.datetime.strptime(date_str,
                                                   "%m-%d %Y").date()
 

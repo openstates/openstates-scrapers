@@ -1,3 +1,5 @@
+import datetime
+
 metadata = dict(
     name='Iowa',
     abbreviation='ia',
@@ -18,9 +20,16 @@ metadata = dict(
     ],
     session_details={
         '2011-2012': {'display_name': '2011-2012 Regular Session',
-                      'number': '84'},
+                      '_scraped_name': 'General Assembly: 84',
+                      'number': '84',
+                      'start_date': datetime.date(2011,1,10),
+                      'end_date': datetime.date(2013,1,13),
+                     },
     },
     feature_flags=[],
+    _ignored_scraped_sessions=['General Assembly: 83', 'General Assembly: 82',
+                               'General Assembly: 81', 'General Assembly: 80']
+
 )
 
 def session_list():

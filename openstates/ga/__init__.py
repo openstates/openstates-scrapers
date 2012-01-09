@@ -13,10 +13,23 @@ metadata = {
          'sessions': ['2011_12', '2011_ss']}
      ],
     'session_details': {
-        '2011_12': {'display_name': '2011-2012 Regular Session'},
-        '2011_ss': {'display_name': '2011 Special Session'},
+        '2011_12': {'display_name': '2011-2012 Regular Session',
+                    '_scraped_name': '2011-2012 Regular Session',
+                   },
+        '2011_ss': {'display_name': '2011 Special Session',
+                    '_scraped_name': '2011 Special Session',
+                   },
     },
     'feature_flags': [],
+    '_ignored_scraped_sessions': ['2009-2010 Regular Session',
+                                  '2007-2008 Regular Session',
+                                  '2005 Special Session',
+                                  '2005-2006 Regular Session',
+                                  '2004 Special Session',
+                                  '2003-2004 Regular Session',
+                                  '2001 2nd Special Session',
+                                  '2001 1st Special Session',
+                                  '2001-2002 Regular Session']
 }
 
 def session_list():

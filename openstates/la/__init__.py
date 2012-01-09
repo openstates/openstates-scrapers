@@ -16,6 +16,14 @@ metadata = {
                 "2011"
                 ]
         },
+        {
+            "name": "2012-2015",
+            "start_year": 2012,
+            "end_year": 2015,
+            "sessions": [
+                "2012",
+                ]
+        }
     ],
     "name": "Louisiana",
     "upper_chamber_term": 4,
@@ -27,30 +35,69 @@ metadata = {
             "start_date": datetime.date(2010, 4, 27),
             "end_date": datetime.date(2010, 6, 24),
             'display_name': '2009 Regular Session',
+            '_scraped_name': '2009 Regular Legislative Session'
         },
         "2010": {
             "type": "primary",
             "start_date": datetime.date(2010, 3, 29),
             "end_date": datetime.date(2010, 6, 21),
             'display_name': '2010 Regular Session',
+            '_scraped_name': '2010 Regular Legislative Session',
         },
         "2011 1st Extraordinary Session": {
             "type": "special",
             "_id": "111es",
             'display_name': '2011, 1st Extraordinary Session',
+            '_scraped_name': '2011 1st Extraordinary Session',
         },
         "2011": {
-            "type": "special",
+            "type": "primary",
             'display_name': '2011 Regular Session',
+            '_scraped_name': '2011 Regular Legislative Session',
+        },
+        "2012": {
+            "type": "primary",
+            'display_name': '2012 Regular Session',
+            '_scraped_name': '2012 Regular Legislative Session',
         },
     },
     "legislature_name": "Louisiana Legislature",
     "lower_chamber_term": 4,
     'feature_flags': ['subjects'],
+    '_ignored_scraped_sessions': [
+        '2012 Organizational Session',
+        '2008 Regular Legislative Session',
+        '2008 2nd Extraordinary Session',
+        '2008 1st Extraordinary Session',
+        '2008 Organizational Session',
+        '2007 Regular Legislative Session',
+        '2006 2nd Extraordinary Session',
+        '2006 Regular Legislative Session',
+        '2006 1st Extraordinary Session',
+        '2005 1st Extraordinary Session',
+        '2005 Regular Legislative Session',
+        '2004 Regular Legislative Session',
+        '2004 1st Extraordinary Session',
+        '2004 Organizational Session',
+        '2003 Regular Legislative Session',
+        '2002 Regular Legislative Session',
+        '2002 1st Extraordinary Session',
+        '2001 2nd Extraordinary Session',
+        '2001 Regular Legislative Session',
+        '2001 1st Extraordinary Session',
+        '2000 2nd Extraordinary Session',
+        '2000 Regular Legislative Session',
+        '2000 1st Extraordinary Session',
+        '2000 Organizational Session',
+        '1999 Regular Legislative Session',
+        '1998 Regular Legislative Session',
+        '1998 1st Extraordinary Session',
+        '1997 Regular Legislative Session']
 }
 
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath('http://www.legis.state.la.us/session.htm',
-                     'string(//strong)')
+    import re
+    return [re.sub('\s+', ' ', x.text_content()) for x in
+            url_xpath('http://www.legis.state.la.us/session.htm', '//strong')][:-1]

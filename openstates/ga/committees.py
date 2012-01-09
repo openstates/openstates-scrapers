@@ -31,7 +31,14 @@ class GACommitteeScraper(CommitteeScraper):
 
             for span in com_data.xpath('//span[@style="float:left; width:45%;"]'):
                 member = span.xpath('a/text()')[0]
-                role = span.xpath('following-sibling::span/text()')[0].lower()
+                role = span.xpath('following-sibling::span/text()')
+                if role:
+                    role = role[0].lower().replace(u'\xa0', ' ')
+                    # skip former members
+                    if 'until' in role:
+                        continue
+                else:
+                    role = 'member'
                 com.add_member(member, role)
 
             com.add_source(com_url)
