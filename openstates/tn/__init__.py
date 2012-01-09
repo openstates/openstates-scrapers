@@ -32,6 +32,13 @@ metadata = dict(
             'display_name' : '106th Special Session',},
     },
     feature_flags=[],
+    _ignored_scraped_sessions = [
+        '106th General Assembly',
+        '105th General Assembly', '104th General Assembly',
+        '103rd General Assembly', '102nd General Assembly',
+        '101st General Assembly', '100th General Assembly',
+        '99th General Assembly'
+    ]
 )
 
 def session_list():
