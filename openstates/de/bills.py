@@ -95,11 +95,14 @@ def extract_bill_id(bill_id, fns=(
 
     Complains if the result doesn't look like a normal bill id.
     '''
+    _bill_id = bill_id
+
     for f in fns:
         bill_id = f(bill_id)
 
     if not is_valid(bill_id):
-        raise 
+        msg = 'Not a valid bill id: "%s" ' % _bill_id 
+        raise BillIdParseError(msg)
 
     return bill_id
             
@@ -198,9 +201,14 @@ class DEBillScraper(BillScraper):
 
         legislation_types = self.legislation_types
         
-        index_page = self._url_2_lxml(index_url)      
+        index_page = self._url_2_lxml(index_url)
 
-        for el in index_page.xpath('//a[contains(@href, "Expand=")]'):
+        # The last link on the "all legis'n" page pertains to senate
+        # nominations, so skip it.
+        index_links = index_page.xpath('//a[contains(@href, "Expand=")]')
+        index_links = index_links[:-1]
+
+        for el in index_links:
 
             type_ = el.xpath('../following-sibling::td')[0].text_content()
             type_ = legislation_types[type_]
@@ -218,7 +226,12 @@ class DEBillScraper(BillScraper):
             doc = self._url_2_lxml(url)
 
             # Parse urls and bill kwargs for listed legislation.
-            for el in doc.xpath('//a[contains(@href, "OpenDocument")]'):
+            legislation_links = doc.xpath('//a[contains(@href, "OpenDocument")]')
+ 
+            # The final link on the "all legislation" page pertains to Senate nominations...skip.
+            legislation_links = legislation_links[:-1]
+
+            for el in legislation_links:
                 
                 title = el.xpath('./../../../td[4]')[0].text_content()
 
