@@ -85,6 +85,7 @@ class KSBillScraper(BillScraper):
         # we have to go to the HTML for the versions & votes
         base_url = 'http://www.kslegislature.org/li/b2011_12/measures/'
         if bill['type'] == 'resolution':
+            print base_url
             base_url = 'http://www.kslegislature.org/li/b2011_12/year1/measures/'
 
         url = base_url + bill['bill_id'].lower()
