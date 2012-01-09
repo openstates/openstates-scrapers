@@ -84,6 +84,9 @@ class KSBillScraper(BillScraper):
     def scrape_html(self, bill):
         # we have to go to the HTML for the versions & votes
         base_url = 'http://www.kslegislature.org/li/b2011_12/measures/'
+        if bill['type'] == 'resolution':
+            base_url = 'http://www.kslegislature.org/li/b2011_12/year1/measures/'
+
         url = base_url + bill['bill_id'].lower()
         doc = lxml.html.fromstring(self.urlopen(url))
         doc.make_links_absolute(url)
