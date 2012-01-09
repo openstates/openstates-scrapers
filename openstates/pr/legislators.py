@@ -36,14 +36,14 @@ class PRLegislatorScraper(LegislatorScraper):
                 # skip first row
                 for row in table.xpath('tr')[1:]:
                     tds = row.xpath('td')
-                    
+
                     name = tds[0].text_content().title().replace('Hon.','',1).strip()
                     party = tds[1].text_content()
                     phone = tds[2].text_content()
                     email = tds[3].text_content()
-		    #shapefiles denote 0 as At-Large Districts
+                    #shapefiles denote 0 as At-Large Districts
                     if counter == 0:
-                        district = '0'
+                        district = 'At-Large'
                     else:
                         district = str(counter)
 
@@ -77,7 +77,7 @@ class PRLegislatorScraper(LegislatorScraper):
                         district = district.rsplit(' ', 1)[-1]
                     else:
                         name = td.xpath('.//b/text()')[0]
-                        district = '0'#for at large districts
+                        district = 'At-Large'   #for at large districts
                         first_name = last_name = ''
 
                     party = party_map[td.xpath('.//font')[1].text_content()]
