@@ -269,15 +269,16 @@ class COBillScraper(BillScraper):
                 return True
 
             simple_intro_match = {
-                "House Second Reading Passed"        : "",
-                "House Third Reading Passed"         : "",
-                "Signed by the Speaker of the House" : ""
+                "House Second Reading Passed"        : [ "bill:reading:2" ],
+                "House Third Reading Passed"         : [ "bill:reading:3" ],
+                "Signed by the Speaker of the House" : [ "other" ]
             }
 
             for testStr in simple_intro_match:
                 if aText[:len(testStr)] == testStr:
                     bill.add_action( actor, action['orig'],
-                        action['date'], brief_action_name=testStr )
+                        action['date'], brief_action_name=testStr,
+                        type=simple_intro_match[testStr])
                     return True
             return False
 
