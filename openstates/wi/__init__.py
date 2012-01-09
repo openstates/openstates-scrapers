@@ -39,7 +39,8 @@ metadata = {
                       '2009 Regular Session'],
          'start_year': 2009, 'end_year': 2010},
         {'name': '2011-2012',
-         'sessions': ['2011 Regular Session', 'January 2011 Special Session'],
+         'sessions': ['2011 Regular Session', 'January 2011 Special Session',
+                      'September 2011 Special Session'],
          'start_year': 2011, 'end_year': 2011},
     ],
     'session_details': {
@@ -69,7 +70,12 @@ metadata = {
             'type': 'special', 'site_id': 'jr1',
             'display_name': 'Jan 2011 Special Session',
             '_scraped_name': 'Jan 2011 Special Session',
-        }
+        },
+        'September 2011 Special Session': {
+            'type': 'special', 'site_id': 'SE1',
+            'display_name': 'Sep 2011 Special Session',
+            '_scraped_name': 'Sept 2011 Special Session',
+        },
     },
     'feature_flags': ['subjects'],
     '_ignored_scraped_sessions': [
@@ -91,4 +97,4 @@ def session_list():
     from billy.scrape.utils import url_xpath
     sessions = url_xpath( 'http://legis.wisconsin.gov/',
         "//select[@name='session']/option/text()" )
-    return [ session.strip() for session in sessions ]
+    return [session.strip() for session in sessions]
