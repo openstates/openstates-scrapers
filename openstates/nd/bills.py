@@ -102,7 +102,7 @@ class NDBillScraper(BillScraper):
                 bill_url = bill_list_url[0:-26] + '/' + bills.attrib['href'][2:len(bills.attrib['href'])]
                 bill_prefix, bill_type = self.bill_type_info(bill_num)
                 bill_id = '%s%s %s' % (chamber_letter, bill_prefix, bill_num)
-                bill = Bill(term, chamber, bill_id, title, type=bill_type,
+                bill = Bill(session, chamber, bill_id, title, type=bill_type,
                             subjects=self.subjects[bill_id])
 
                 #versions
