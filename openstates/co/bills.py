@@ -15,7 +15,7 @@ CO_URL_BASE = "http://www.leg.state.co.us"
 """
 This scraper is a bit bigger then some of the others, but it's just
 a standard billy scraper. Methods are documented just because this
-does both bill and vote scraping, and can be a big overwhelming.
+does both bill and vote scraping, and can be a bit overwhelming.
 """
 class COBillScraper(BillScraper):
     
