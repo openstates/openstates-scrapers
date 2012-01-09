@@ -8,11 +8,18 @@ class DECommitteeScraper(CommitteeScraper):
     state = "de"
 
     def scrape(self, chamber, term):
+
         urls = {
             'upper': 'http://legis.delaware.gov/LIS/LIS%s.nsf/SCommittees', 
             'lower': 'http://legis.delaware.gov/LIS/LIS%s.nsf/HCommittees'
         }
-        url = urls[chamber] % (term,)
+
+        # Mapping of term names to session numbers (see metatdata).
+        term2session = {"2011-2012": "146"}
+        
+        session = term2session[term]
+
+        url = urls[chamber] % (session,)
         self.log(url)
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
