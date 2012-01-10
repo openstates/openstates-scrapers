@@ -54,7 +54,10 @@ class NJLegislatorScraper(LegislatorScraper, DBFMixin):
             state = rec["state"]
             zipcode = rec["zipcode"]
             phone = rec["phone"]
-            email = rec["email"]
+            if 'email' in rec:
+                email = rec["email"]
+            else:
+                email = ''
 
             leg = Legislator(term_name, chamber, str(district), full_name,
                              first_name, last_name, middle_name, party,
