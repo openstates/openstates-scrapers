@@ -484,7 +484,14 @@ class COBillScraper(BillScraper):
                     "HM"  : "memorial"
                 }
 
-                b = Bill(session, bill_chamber, bill_id, bill_title)
+                bill_type = None
+                
+                for cat in cats:
+                    if bill_id[:len(cat)] == cat:
+                        bill_type = cats[cat]
+
+                b = Bill(session, bill_chamber, bill_id, bill_title,
+                    type=bill_type )
 
                 versions_url = \
                     bill[index["version"]].xpath('font/a')[0].attrib["href"]
@@ -492,7 +499,7 @@ class COBillScraper(BillScraper):
                 versions = self.parse_versions( versions_url )
                 for version in versions:
                     b.add_version( version['name'], version['link'],
-                        format=version['format'])
+                        mimetype=version['mimetype'])
                
                 bill_history_href = CO_URL_BASE + \
                     bill[index["history"]][0][0].attrib['href']
