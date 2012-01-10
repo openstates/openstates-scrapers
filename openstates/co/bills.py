@@ -157,6 +157,50 @@ class COBillScraper(BillScraper):
             "%5Ccommsumm.nsf/IndSumm?OpenView&StartKey=" + billid + "&Count=4"
 
     """
+    Parse a bill versions page for all the versions
+    """
+    def parse_versions( self, bill_versions_url ):
+        with self.urlopen(bill_versions_url) as versions_html:
+            bill_versions_page = lxml.html.fromstring(versions_html)
+            trs = bill_versions_page.xpath('//form/table/tr')[3:]
+            cols = {
+                "type" : 0,
+                "pdf"  : 1,
+                "wpd"  : 2
+            }
+            versions = []
+            for tr in trs:
+                if len(tr) == 3: # jeezum crackers.
+                    name = tr[cols["type"]].text_content()
+                    if name[-1:] == ":":
+                        name = name[:-1]
+                    wpd_link = tr[cols["wpd"]][0]
+                    pdf_link = tr[cols["pdf"]][0]
+
+                    wpd_link = wpd_link.attrib["href"]
+                    pdf_link = pdf_link.attrib["href"]
+
+                    format = None
+
+                    if pdf_link.strip() != "":
+                        link = CO_URL_BASE + pdf_link
+                        format = "pdf"
+
+                    elif wpd_link.strip() != "":
+                        link = CO_URL_BASE + wpd_link
+                        format = "wpd"
+
+                    if format != None:
+                        versions.append({
+                            "name"   : name,
+                            "format" : format,
+                            "link"   : link
+                        })
+
+            return versions
+
+
+    """
     Parse a bill history page for as much data as we can gleen, such as when
     the bill was introduced (as well as a number of other things)
     """
@@ -427,15 +471,23 @@ class COBillScraper(BillScraper):
                 bill_title_and_sponsor = title_and_sponsor.text_content()
                 sponsors = bill_title_and_sponsor.replace(bill_title, "").\
                     replace(" & ...", "").split("--")
+
+                b = Bill(session, bill_chamber, bill_id, bill_title)
+
+                versions_url = \
+                    bill[index["version"]].xpath('font/a')[0].attrib["href"]
+                versions_url = CO_URL_BASE + versions_url
+                versions = self.parse_versions( versions_url )
+                for version in versions:
+                    print version
                
                 bill_history_href = CO_URL_BASE + \
                     bill[index["history"]][0][0].attrib['href']
                     # ^^^^^^^ We assume this is a full path to the target.
                     # might want to consider some better rel-path support
                     # XXX: Look at this ^
-                
+
                 history = self.parse_history( bill_history_href )
-                b = Bill(session, bill_chamber, bill_id, bill_title)
                 b.add_source( bill_history_href )
                 
                 for action in history:
