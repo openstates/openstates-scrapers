@@ -41,15 +41,7 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    raw_sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
+    sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
             "//div[@class='roundedrect gradientgray shadow']/a/text()"
         )
-    raw_sessions.remove('Archives Main')
-    # OK. It's in the Hawaii Constitution that all sessions start on odd
-    # years.
-    sessions = []
-    for session in raw_sessions:
-        if int(session) % 2 == 1:
-            sessions.append("%s Regular Session" % session)
-            # XXX: Let's fix this hack at some point.
     return sessions
