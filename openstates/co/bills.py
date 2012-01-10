@@ -183,17 +183,17 @@ class COBillScraper(BillScraper):
 
                     if pdf_link.strip() != "":
                         link = CO_URL_BASE + pdf_link
-                        format = "pdf"
+                        format = "application/pdf"
 
                     elif wpd_link.strip() != "":
                         link = CO_URL_BASE + wpd_link
-                        format = "wpd"
+                        format = "application/vnd.wordperfect"
 
                     if format != None:
                         versions.append({
-                            "name"   : name,
-                            "format" : format,
-                            "link"   : link
+                            "name"     : name,
+                            "mimetype" : format,
+                            "link"     : link
                         })
 
             return versions
@@ -470,6 +470,19 @@ class COBillScraper(BillScraper):
                 bill_title_and_sponsor = title_and_sponsor.text_content()
                 sponsors = bill_title_and_sponsor.replace(bill_title, "").\
                     replace(" & ...", "").split("--")
+
+                cats = {
+                    "SB" : "bill",
+                    "HB" : "bill",
+                    "HR" : "resolution",
+                    "SR" : "resolution",
+                    "SCR" : "concurrent resolution",
+                    "HCR" : "concurrent resolution",
+                    "SJR" : "joint resolution",
+                    "HJR" : "joint resolution",
+                    "SM"  : "memorial",
+                    "HM"  : "memorial"
+                }
 
                 b = Bill(session, bill_chamber, bill_id, bill_title)
 
