@@ -225,13 +225,7 @@ class DEBillScraper(BillScraper):
             # Get the index page.
             doc = self._url_2_lxml(url)
 
-            # Parse urls and bill kwargs for listed legislation.
-            legislation_links = doc.xpath('//a[contains(@href, "OpenDocument")]')
- 
-            # The final link on the "all legislation" page pertains to Senate nominations...skip.
-            legislation_links = legislation_links[:-1]
-
-            for el in legislation_links:
+            for el in doc.xpath('//a[contains(@href, "OpenDocument")]'):
                 
                 title = el.xpath('./../../../td[4]')[0].text_content()
 
