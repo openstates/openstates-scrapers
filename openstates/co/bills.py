@@ -479,7 +479,8 @@ class COBillScraper(BillScraper):
                 versions_url = CO_URL_BASE + versions_url
                 versions = self.parse_versions( versions_url )
                 for version in versions:
-                    print version
+                    b.add_version( version['name'], version['link'],
+                        format=version['format'])
                
                 bill_history_href = CO_URL_BASE + \
                     bill[index["history"]][0][0].attrib['href']
