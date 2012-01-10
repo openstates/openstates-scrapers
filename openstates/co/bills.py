@@ -89,7 +89,7 @@ class COBillScraper(BillScraper):
                         ret['result'] = final_score
                     else:
                         # We've got a vote.
-                        person = line[1].text_content() # it's inside a <div><font>
+                        person = line[1].text_content() # <div><font>
                         vote   = line[2].text_content()
                         if person.strip() != "":
                             ret['votes'][person] = vote
@@ -268,16 +268,17 @@ class COBillScraper(BillScraper):
                     action['date'], brief_action_name=normalized_brief)
                 return True
 
-            simple_intro_match = [
-                "House Second Reading Passed",
-                "House Third Reading Passed",
-                "Signed by the Speaker of the House"
-            ]
+            simple_intro_match = {
+                "House Second Reading Passed"        : [ "bill:reading:2" ],
+                "House Third Reading Passed"         : [ "bill:reading:3" ],
+                "Signed by the Speaker of the House" : [ "other" ]
+            }
 
             for testStr in simple_intro_match:
                 if aText[:len(testStr)] == testStr:
                     bill.add_action( actor, action['orig'],
-                        action['date'], brief_action_name=testStr )
+                        action['date'], brief_action_name=testStr,
+                        type=simple_intro_match[testStr])
                     return True
             return False
 
@@ -309,16 +310,17 @@ class COBillScraper(BillScraper):
                     action['date'], brief_action_name=normalized_brief)
                 return True
 
-            simple_intro_match = [
-                "Senate Second Reading Passed",
-                "Senate Third Reading Passed",
-                "Signed by the President of the Senate"
-            ]
+            simple_intro_match = {
+                "Senate Second Reading Passed"          : [ "bill:reading:2" ],
+                "Senate Third Reading Passed"           : [ "bill:reading:3" ],
+                "Signed by the President of the Senate" : [ "other" ]
+            }
 
             for testStr in simple_intro_match:
                 if aText[:len(testStr)] == testStr:
                     bill.add_action( actor, action['orig'],
-                        action['date'], brief_action_name=testStr )
+                        action['date'], brief_action_name=testStr,
+                        type=simple_intro_match[testStr] )
                     return True
 
             if aText == "Introduced In Senate":
@@ -348,14 +350,13 @@ class COBillScraper(BillScraper):
 
             if aText == "Sent to the Governor":
                 bill.add_action( "legislature", action['orig'], action['date'],
-                    brief_action_name=aText)
+                    brief_action_name=aText, type="governor:received" )
                 return True
 
             if aText == "Governor Action":
                 bill.add_action( actor, action['orig'], action['date'],
                     brief_action_name=action['args'][0] )
                 return True
-
             return False
 
         """
@@ -435,12 +436,14 @@ class COBillScraper(BillScraper):
                 
                 history = self.parse_history( bill_history_href )
                 b = Bill(session, bill_chamber, bill_id, bill_title)
+                b.add_source( bill_history_href )
                 
                 for action in history:
                     self.add_action_to_bill( b, action )
                
                 for sponsor in sponsors:
-                    b.add_sponsor("primary", sponsor)
+                    if sponsor != None:
+                        b.add_sponsor("primary", sponsor)
 
                 # Now that we have history, let's see if we can't grab some
                 # votes
@@ -449,7 +452,7 @@ class COBillScraper(BillScraper):
                 votes = self.parse_votes( bill_vote_href )
 
                 if votes['sanity-check'] != bill_id:
-                    print "XXX: READ ME!"
+                    print "XXX: READ ME! Sanity check failed!"
                     print " -> Scraped ID: " + votes['sanity-check']
                     print " -> 'Real' ID:  " + bill_id
                     assert votes['sanity-check'] == bill_id
