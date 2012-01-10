@@ -131,8 +131,7 @@ class COBillScraper(BillScraper):
                     # We have a vote line for the previous line
                     try:
                         vote_url = line.xpath('a')[0].attrib['href']
-                        vote_page = CO_URL_BASE + \
-                            vote_url
+                        vote_page = CO_URL_BASE + vote_url
                         vote_dict = self.parse_all_votes( vote_page )  
 
                         vote_dict['meta']['x-parent-date'] = date
@@ -533,8 +532,10 @@ class COBillScraper(BillScraper):
                     else:
                         actor = "upper"
 
+                    print result
+
                     v = Vote( actor, pydate, passage['MOTION'],
-                        (result['FINAL_ACTION'] == "YES"),
+                        (result['FINAL_ACTION'] == "PASS"),
                         int(result['YES']), int(result['NO']),
                         int( result['EXC'] + result['ABS'] ),
                         moved=passage['MOVED'],
