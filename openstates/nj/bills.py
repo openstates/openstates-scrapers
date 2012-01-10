@@ -321,7 +321,7 @@ class NJBillScraper(BillScraper, DBFMixin):
 
         #Actions
         bill_action_url, bill_action_db = self.get_dbf(year_abr, 'BILLHIST')
-
+        actor_map = {'A': 'lower', 'G': 'executive', 'S': 'upper'}
 
         for rec in bill_action_db:
             bill_type = rec["billtype"]
@@ -330,7 +330,7 @@ class NJBillScraper(BillScraper, DBFMixin):
             bill = bill_dict[bill_id]
             action = rec["action"]
             date = rec["dateaction"]
-            actor = rec["house"]
+            actor = actor_map[rec["house"]]
             comment = rec["comment"]
             action, atype = self.categorize_action(action)
             if comment:
