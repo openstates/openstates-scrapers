@@ -28,15 +28,8 @@ metadata = dict(
         '2011 Regular Session': {'display_name': '2011 Regular Session'},
     },
     feature_flags=['subjects'],
-    _ignored_scraped_sessions = [
-        '2011 Regular Session',
-        '2009 Regular Session',
-        '2007 Regular Session',
-        '2005 Regular Session',
-        '2003 Regular Session',
-        '2001 Regular Session',
-        '1999 Regular Session'
-    ]
+    _ignored_scraped_sessions = ['2011', '2010', '2009', '2008', '2007', '2006',
+        '2005', '2004', '2003', '2002', '2001', '2000', '1999']    
 )
 
 def session_list():
@@ -44,4 +37,5 @@ def session_list():
     sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
             "//div[@class='roundedrect gradientgray shadow']/a/text()"
         )
+    sessions.remove("Archives Main")
     return sessions
