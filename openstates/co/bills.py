@@ -89,7 +89,7 @@ class COBillScraper(BillScraper):
                         ret['result'] = final_score
                     else:
                         # We've got a vote.
-                        person = line[1].text_content() # it's inside a <div><font>
+                        person = line[1].text_content() # <div><font>
                         vote   = line[2].text_content()
                         if person.strip() != "":
                             ret['votes'][person] = vote
@@ -436,12 +436,14 @@ class COBillScraper(BillScraper):
                 
                 history = self.parse_history( bill_history_href )
                 b = Bill(session, bill_chamber, bill_id, bill_title)
+                b.add_source( bill_history_href )
                 
                 for action in history:
                     self.add_action_to_bill( b, action )
                
                 for sponsor in sponsors:
-                    b.add_sponsor("primary", sponsor)
+                    if sponsor != None:
+                        b.add_sponsor("primary", sponsor)
 
                 # Now that we have history, let's see if we can't grab some
                 # votes
@@ -450,7 +452,7 @@ class COBillScraper(BillScraper):
                 votes = self.parse_votes( bill_vote_href )
 
                 if votes['sanity-check'] != bill_id:
-                    print "XXX: READ ME!"
+                    print "XXX: READ ME! Sanity check failed!"
                     print " -> Scraped ID: " + votes['sanity-check']
                     print " -> 'Real' ID:  " + bill_id
                     assert votes['sanity-check'] == bill_id
