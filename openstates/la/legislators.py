@@ -3,6 +3,7 @@ import re
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
+import scrapelib
 import lxml.html
 
 
@@ -19,17 +20,21 @@ class LALegislatorScraper(LegislatorScraper):
             page.make_links_absolute(list_url)
 
             if chamber == 'upper':
-                contains = 'senate.legis'
+                contains = 'senate'
             else:
-                contains = 'house.louisiana'
+                contains = 'house'
 
             for a in page.xpath("//a[contains(@href, '%s')]" % contains):
                 name = a.text.strip().decode('utf8')
                 leg_url = a.attrib['href']
-                if chamber == 'upper':
-                    self.scrape_senator(name, term, leg_url)
-                else:
-                    self.scrape_rep(name, term, leg_url)
+                try:
+                    if chamber == 'upper':
+                        self.scrape_senator(name, term, leg_url)
+                    else:
+                        self.scrape_rep(name, term, leg_url)
+                except scrapelib.HTTPError:
+                    self.warning('Unable to retrieve legislator %s (%s) ' % (
+                        name, leg_url))
 
     def scrape_rep(self, name, term, url):
         # special case names that confuses name_tools
@@ -46,7 +51,7 @@ class LALegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(text)
 
             district = page.xpath(
-                "//a[contains(@href, 'Maps')]")[0].attrib['href']
+                "//a[contains(@href, 'district')]")[0].attrib['href']
             district = re.search("district(\d+).pdf", district).group(1)
 
             if "Democrat&nbsp;District" in text:
