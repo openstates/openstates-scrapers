@@ -14,29 +14,17 @@ metadata = dict(
          'start_year': 2009, 'end_year': 2012},
      ],
     session_details={
-        '2009-2012': {'display_name': '2009-2012 Session'},
+        '2009-2012': {'display_name': '2009-2012 Session',
+                      '_scraped_name': '2009-2012'
+                     },
     },
     feature_flags=[],
-    _ignored_scraped_sessions = [
-        '1997',
-        '1998',
-        '1999',
-        '2000',
-        '2001',
-        '2002',
-        '2003',
-        '2004',
-        '2005',
-        '2006',
-        '2007',
-        '2008',
-        '2009',
-        '2010',
-        '2011'
-    ]
+    _ignored_scraped_sessions = ['2005-2008', '2001-2004',
+                                 '1997-2000', '1993-1996']
 )
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath('http://www.oslpr.org/library/master.asp?NAV=LEYES',
-        "//td[@background='tilepaper-bg.jpg']/ul/li/a/font/b/text()")
+    # this URL should work even for future sessions
+    return url_xpath('http://www.oslpr.org/legislatura/tl2009/buscar_2009.asp',
+                     '//select[@name="URL"]/option/text()')
