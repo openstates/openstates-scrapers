@@ -193,11 +193,11 @@ class DEBillScraper(BillScraper):
         '''
         re_count = re.compile(r'count=\d+', re.I)
         
-        index_url = ('http://legis.delaware.gov/LIS/lis146.nsf'
-                     '/Legislation/?openview')
+        index_url = ('http://legis.delaware.gov/LIS/lis%s.nsf'
+                     '/Legislation/?openview' % session)
 
-        chamber_map = {'s': 'upper',
-                       'a': 'lower'}
+        chamber_map = {'Senate': 'upper',
+                       'House': 'lower'}
 
         legislation_types = self.legislation_types
         
@@ -210,12 +210,12 @@ class DEBillScraper(BillScraper):
 
         for el in index_links:
 
-            type_ = el.xpath('../following-sibling::td')[0].text_content()
-            type_ = legislation_types[type_]
+            type_raw = el.xpath('../following-sibling::td')[0].text_content()
+            type_ = legislation_types[type_raw]
 
             # Skip any links that aren't for this chamber.
-            el_text = el.text_content()
-            if el_text and chamber_map[el_text[0].lower()] != chamber:
+            _chamber, _ = type_raw.split(' ', 1)
+            if chamber != chamber_map[_chamber]:
                 continue
 
             # Tweak the url to ask the server for 10000 results (i.e., all)
@@ -253,9 +253,6 @@ class DEBillScraper(BillScraper):
                     re_digits=re.compile(r'\d{,5}'),):
 
         bill = Bill(**kw)
-
-        #url = 'http://legis.delaware.gov/LIS/lis146.nsf/2bede841c6272c888025698400433a04/6b003ac8125d1cc68525783f005ff9a6?OpenDocument'
-
         bill.add_source(url)
 
         #---------------------------------------------------------------------
