@@ -131,8 +131,7 @@ class COBillScraper(BillScraper):
                     # We have a vote line for the previous line
                     try:
                         vote_url = line.xpath('a')[0].attrib['href']
-                        vote_page = CO_URL_BASE + \
-                            vote_url
+                        vote_page = CO_URL_BASE + vote_url
                         vote_dict = self.parse_all_votes( vote_page )  
 
                         vote_dict['meta']['x-parent-date'] = date
@@ -155,6 +154,50 @@ class COBillScraper(BillScraper):
         return CO_URL_BASE + \
             "/CLICS%5CCLICS" + session + \
             "%5Ccommsumm.nsf/IndSumm?OpenView&StartKey=" + billid + "&Count=4"
+
+    """
+    Parse a bill versions page for all the versions
+    """
+    def parse_versions( self, bill_versions_url ):
+        with self.urlopen(bill_versions_url) as versions_html:
+            bill_versions_page = lxml.html.fromstring(versions_html)
+            trs = bill_versions_page.xpath('//form/table/tr')[3:]
+            cols = {
+                "type" : 0,
+                "pdf"  : 1,
+                "wpd"  : 2
+            }
+            versions = []
+            for tr in trs:
+                if len(tr) == 3: # jeezum crackers.
+                    name = tr[cols["type"]].text_content()
+                    if name[-1:] == ":":
+                        name = name[:-1]
+                    wpd_link = tr[cols["wpd"]][0]
+                    pdf_link = tr[cols["pdf"]][0]
+
+                    wpd_link = wpd_link.attrib["href"]
+                    pdf_link = pdf_link.attrib["href"]
+
+                    format = None
+
+                    if pdf_link.strip() != "":
+                        link = CO_URL_BASE + pdf_link
+                        format = "application/pdf"
+
+                    elif wpd_link.strip() != "":
+                        link = CO_URL_BASE + wpd_link
+                        format = "application/vnd.wordperfect"
+
+                    if format != None:
+                        versions.append({
+                            "name"     : name,
+                            "mimetype" : format,
+                            "link"     : link
+                        })
+
+            return versions
+
 
     """
     Parse a bill history page for as much data as we can gleen, such as when
@@ -427,15 +470,44 @@ class COBillScraper(BillScraper):
                 bill_title_and_sponsor = title_and_sponsor.text_content()
                 sponsors = bill_title_and_sponsor.replace(bill_title, "").\
                     replace(" & ...", "").split("--")
+
+                cats = {
+                    "SB" : "bill",
+                    "HB" : "bill",
+                    "HR" : "resolution",
+                    "SR" : "resolution",
+                    "SCR" : "concurrent resolution",
+                    "HCR" : "concurrent resolution",
+                    "SJR" : "joint resolution",
+                    "HJR" : "joint resolution",
+                    "SM"  : "memorial",
+                    "HM"  : "memorial"
+                }
+
+                bill_type = None
+                
+                for cat in cats:
+                    if bill_id[:len(cat)] == cat:
+                        bill_type = cats[cat]
+
+                b = Bill(session, bill_chamber, bill_id, bill_title,
+                    type=bill_type )
+
+                versions_url = \
+                    bill[index["version"]].xpath('font/a')[0].attrib["href"]
+                versions_url = CO_URL_BASE + versions_url
+                versions = self.parse_versions( versions_url )
+                for version in versions:
+                    b.add_version( version['name'], version['link'],
+                        mimetype=version['mimetype'])
                
                 bill_history_href = CO_URL_BASE + \
                     bill[index["history"]][0][0].attrib['href']
                     # ^^^^^^^ We assume this is a full path to the target.
                     # might want to consider some better rel-path support
                     # XXX: Look at this ^
-                
+
                 history = self.parse_history( bill_history_href )
-                b = Bill(session, bill_chamber, bill_id, bill_title)
                 b.add_source( bill_history_href )
                 
                 for action in history:
@@ -480,10 +552,12 @@ class COBillScraper(BillScraper):
                     else:
                         actor = "upper"
 
+                    print result
+
                     v = Vote( actor, pydate, passage['MOTION'],
-                        (result['FINAL_ACTION'] == "YES"),
+                        (result['FINAL_ACTION'] == "PASS"),
                         int(result['YES']), int(result['NO']),
-                        int( result['EXC'] + result['ABS'] ),
+                        (int(result['EXC']) + int(result['ABS'])),
                         moved=passage['MOVED'],
                         seconded=passage['SECONDED'] )
                     # XXX: Add more stuff to kwargs, we have a ton of data

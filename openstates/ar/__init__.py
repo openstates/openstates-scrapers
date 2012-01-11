@@ -14,18 +14,25 @@ metadata = dict(
         {'name': '2011-2012',
          'start_year': 2011,
          'end_year': 2012,
-         'sessions': ['2011']}
+         'sessions': ['2011', '2012F']}
         ],
     session_details={
         '2011': {'start_date': datetime.date(2011, 1, 10),
                  'end_date': datetime.date(2011, 4, 27),
                  'display_name': '2011 Regular Session',
                  '_scraped_name': 'Regular Session, 2011',
-                 'type': 'primary'}
+                 'type': 'primary',
+                 'slug': '2011R',
+                },
+        '2012F': {'start_date': datetime.date(2012, 2, 13),
+                 'display_name': '2012 Fiscal Session',
+                 '_scraped_name': 'Fiscal Session 2012',
+                 'type': 'special',
+                 'slug': '2012F',
+                }
         },
     feature_flags=[],
-    _ignored_scraped_sessions=['Fiscal Session 2012',
-                               'Regular Session, 2009',
+    _ignored_scraped_sessions=['Regular Session, 2009',
                                'Fiscal Session, 2010',
                                'Regular Session, 2007',
                                'First Extraordinary Session, 2008',
