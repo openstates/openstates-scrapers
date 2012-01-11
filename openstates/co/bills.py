@@ -397,13 +397,17 @@ class COBillScraper(BillScraper):
                 return True
 
             if aText == "Governor Action":
-
                 action_types = {
-                    "Signed" : [ "governor:signed" ]    
+                    "Signed"       : [ "governor:signed" ],
+                    "Partial Veto" : [ "governor:vetoed:line-item" ],
+                    "Vetoed"       : [ "governor:vetoed" ],
+                    "Became Law"   : [ "other" ],
                 }
                 scraped_type = "other"
                 if action['args'][0] in action_types:
                     scraped_type = action_types[action['args'][0]]
+                else:
+                    print " - gov. fallback handler for %s" % action['args'][0]
 
                 bill.add_action( actor, action['orig'], action['date'],
                     brief_action_name=action['args'][0],
