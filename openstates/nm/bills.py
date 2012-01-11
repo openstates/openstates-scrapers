@@ -381,6 +381,7 @@ class NMBillScraper(BillScraper):
                     bill = self.bills[bill_id]
                 except KeyError:
                     self.warning('document for unknown bill %s' % fname)
+                    continue
 
                 # no suffix = just the bill
                 if suffix == '':
