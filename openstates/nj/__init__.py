@@ -23,6 +23,8 @@ metadata = dict(
          'start_year': 2008, 'end_year': 2009},
         {'name': '2010-2011', 'sessions': ['214'],
          'start_year': 2010, 'end_year': 2011},
+        {'name': '2012-2013', 'sessions': ['215'],
+         'start_year': 2012, 'end_year': 2013},
     ],
     session_details={
         '213': {'start_date': datetime.date(2008, 1, 12),
@@ -32,12 +34,15 @@ metadata = dict(
         '214': {'start_date': datetime.date(2010, 1, 12),
                              'display_name': '2010-2011 Regular Session',
                              '_scraped_name': '2010-2011',
-                             }
+                             },
+        '215': {'start_date': datetime.date(2012, 1, 10),
+                             'display_name': '2012-2013 Regular Session',
+                             '_scraped_name': '2012-2013',
+                             },
                     },
     feature_flags=['subjects'],
-    _ignored_scraped_sessions = ['2008-2009', '2006-2007', '2004-2005',
-                                 '2002-2003', '2000-2001', '1998-1999',
-                                 '1996-1997'],
+    _ignored_scraped_sessions = ['2006-2007', '2004-2005', '2002-2003',
+                                 '2000-2001', '1998-1999', '1996-1997'],
 
 )
 
