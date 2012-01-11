@@ -3,7 +3,7 @@ from urlparse import urlunsplit
 from urllib import urlencode
 from operator import methodcaller
 import pdb
-
+import re
 
 import lxml.html
 
@@ -14,7 +14,8 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 class DELegislatorScraper(LegislatorScraper):
     state = 'de'
 
-    def scrape(self, chamber, term, text=methodcaller('text_content')):
+    def scrape(self, chamber, term, text=methodcaller('text_content'),
+               re_spaces=re.compile(r'\s{,5}')):
 
         url = {
             'upper': 'http://legis.delaware.gov/legislature.nsf/sen?openview&nav=senate',
@@ -36,6 +37,7 @@ class DELegislatorScraper(LegislatorScraper):
 
             bio_url = tr.xpath('descendant::a/@href')[0]
             name, _, district = map(text, tr.xpath("td"))
+            name = ' '.join(re_spaces.split(name))
 
             leg = self.scrape_bio(term, chamber, district, name, bio_url)
             leg.add_source(url)
