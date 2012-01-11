@@ -131,8 +131,7 @@ class COBillScraper(BillScraper):
                     # We have a vote line for the previous line
                     try:
                         vote_url = line.xpath('a')[0].attrib['href']
-                        vote_page = CO_URL_BASE + \
-                            vote_url
+                        vote_page = CO_URL_BASE + vote_url
                         vote_dict = self.parse_all_votes( vote_page )  
 
                         vote_dict['meta']['x-parent-date'] = date
@@ -184,17 +183,17 @@ class COBillScraper(BillScraper):
 
                     if pdf_link.strip() != "":
                         link = CO_URL_BASE + pdf_link
-                        format = "pdf"
+                        format = "application/pdf"
 
                     elif wpd_link.strip() != "":
                         link = CO_URL_BASE + wpd_link
-                        format = "wpd"
+                        format = "application/vnd.wordperfect"
 
                     if format != None:
                         versions.append({
-                            "name"   : name,
-                            "format" : format,
-                            "link"   : link
+                            "name"     : name,
+                            "mimetype" : format,
+                            "link"     : link
                         })
 
             return versions
@@ -398,8 +397,21 @@ class COBillScraper(BillScraper):
                 return True
 
             if aText == "Governor Action":
+                action_types = {
+                    "Signed"       : [ "governor:signed" ],
+                    "Partial Veto" : [ "governor:vetoed:line-item" ],
+                    "Vetoed"       : [ "governor:vetoed" ],
+                    "Became Law"   : [ "other" ],
+                }
+                scraped_type = "other"
+                if action['args'][0] in action_types:
+                    scraped_type = action_types[action['args'][0]]
+                else:
+                    print " - gov. fallback handler for %s" % action['args'][0]
+
                 bill.add_action( actor, action['orig'], action['date'],
-                    brief_action_name=action['args'][0] )
+                    brief_action_name=action['args'][0],
+                    type=scraped_type)
                 return True
             return False
 
@@ -419,9 +431,11 @@ class COBillScraper(BillScraper):
             else:
                 actor = 'upper'
 
+            print " - fallback handler for %s" % action['orig'] 
+
             bill.add_action( actor, action['orig'], action['date'],
                 brief_action_name=action['action'],
-                type="other" ) # XXX: Fix this
+                type="other" )
 
         translation_routines = {
             "House"    : _parse_house_action,
@@ -472,7 +486,27 @@ class COBillScraper(BillScraper):
                 sponsors = bill_title_and_sponsor.replace(bill_title, "").\
                     replace(" & ...", "").split("--")
 
-                b = Bill(session, bill_chamber, bill_id, bill_title)
+                cats = {
+                    "SB" : "bill",
+                    "HB" : "bill",
+                    "HR" : "resolution",
+                    "SR" : "resolution",
+                    "SCR" : "concurrent resolution",
+                    "HCR" : "concurrent resolution",
+                    "SJR" : "joint resolution",
+                    "HJR" : "joint resolution",
+                    "SM"  : "memorial",
+                    "HM"  : "memorial"
+                }
+
+                bill_type = None
+                
+                for cat in cats:
+                    if bill_id[:len(cat)] == cat:
+                        bill_type = cats[cat]
+
+                b = Bill(session, bill_chamber, bill_id, bill_title,
+                    type=bill_type )
 
                 versions_url = \
                     bill[index["version"]].xpath('font/a')[0].attrib["href"]
@@ -480,7 +514,7 @@ class COBillScraper(BillScraper):
                 versions = self.parse_versions( versions_url )
                 for version in versions:
                     b.add_version( version['name'], version['link'],
-                        format=version['format'])
+                        mimetype=version['mimetype'])
                
                 bill_history_href = CO_URL_BASE + \
                     bill[index["history"]][0][0].attrib['href']
@@ -533,10 +567,12 @@ class COBillScraper(BillScraper):
                     else:
                         actor = "upper"
 
+                    print result
+
                     v = Vote( actor, pydate, passage['MOTION'],
-                        (result['FINAL_ACTION'] == "YES"),
+                        (result['FINAL_ACTION'] == "PASS"),
                         int(result['YES']), int(result['NO']),
-                        int( result['EXC'] + result['ABS'] ),
+                        (int(result['EXC']) + int(result['ABS'])),
                         moved=passage['MOVED'],
                         seconded=passage['SECONDED'] )
                     # XXX: Add more stuff to kwargs, we have a ton of data
