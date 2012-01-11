@@ -82,8 +82,8 @@ def parse_votestring(v, strptime=datetime.strptime,
 
 
 def extract_bill_id(bill_id, fns=(
-    partial(re.compile(r' w/.A \d{1,3}.{,20}$').sub, ''),
-    partial(re.compile(r'^.{,20}for ').sub, '')),
+    partial(re.compile(r'( w/.A \d{1,3}.{,200},?)+$', re.I).sub, ''),
+    partial(re.compile(r'^.{,20}for ', re.I).sub, '')),
     is_valid=re.compile(r'[A-Z]{2,4} \d{1,6}$').match):
     '''
     Given a bill id string from the website's index pages, removes
@@ -191,7 +191,7 @@ class DEBillScraper(BillScraper):
         A generator of urls to legislation types listed on the
         index_url page.
         '''
-        re_count = re.compile(r'count=\d+')
+        re_count = re.compile(r'count=\d+', re.I)
         
         index_url = ('http://legis.delaware.gov/LIS/lis146.nsf'
                      '/Legislation/?openview')
@@ -249,7 +249,8 @@ class DEBillScraper(BillScraper):
 
     def scrape_bill(self, url, kw,        
                     re_amendment=re.compile(r'(^[A-Z]A \d{1,3}) to'),
-                    re_substitution=re.compile(r'(^[A-Z]S \d{1,2}) for')):
+                    re_substitution=re.compile(r'(^[A-Z]S \d{1,2}) for'),
+                    re_digits=re.compile(r'\d{,5}'),):
 
         bill = Bill(**kw)
         
@@ -263,6 +264,11 @@ class DEBillScraper(BillScraper):
         # Shortcut function partial to get text at a particular xpath:
         doc = _url_2_lxml(url)
         _get_text = partial(get_text, doc, 0)
+
+        # Get session number--needed for fetching related documents (see below).
+        xpath = '//font[contains(., "General Assembly") and @face="Arial"]'
+        session_num = doc.xpath(xpath)[0].text_content()
+        session_num = re_digits.match(session_num).group()
 
 
         #---------------------------------------------------------------------
@@ -299,7 +305,8 @@ class DEBillScraper(BillScraper):
         documents = self.scrape_documents(source=url,
                                      docname="introduced",
                                      filename="Legis",
-                                     tmp=tmp, lxmldoc=doc)
+                                     tmp=tmp,
+                                     session_num=session_num)
 
         for d in documents:
             bill.add_version(**d)
@@ -364,7 +371,7 @@ class DEBillScraper(BillScraper):
                 source=source,
                 docname='amendment (%s)' % short_id,
                 filename='Legis',
-                tmp=tmp, lxmldoc=doc,
+                tmp=tmp, session_num=session_num,
                 id_=id_)
 
             for d in documents:
@@ -384,11 +391,13 @@ class DEBillScraper(BillScraper):
                 'LIS/lis{session_num}.nsf/EngrossmentsforLookup',
                 '{moniker}/$file/{filename}{format_}?open'])
             
-            documents = self.scrape_documents(source=source[0],
-                                         docname="Engrossment",
-                                         filename="Engross",
-                                         tmp=tmp, lxmldoc=doc,
-                                         id_=bill['bill_id'])
+            documents = self.scrape_documents(
+                source=source[0],
+                docname="Engrossment",
+                filename="Engross",
+                tmp=tmp,
+                session_num=session_num,
+                id_=bill['bill_id'])
 
             for d in documents:
                 bill.add_document(**d)
@@ -492,10 +501,10 @@ class DEBillScraper(BillScraper):
 
         return vote
 
-    def scrape_documents(self, source, docname, filename, tmp, lxmldoc,
+    def scrape_documents(self, source, docname, filename, tmp, session_num,
                          re_docnum=re.compile(r'var docnum="(.+?)"'),
                          re_moniker=re.compile(r'var moniker="(.+?)"'),
-                         re_digits=re.compile(r'\d{,5}'), **kwargs):
+                         **kwargs):
         '''
         Returns a generator like [{'name': 'docname', 'url': 'docurl'}, ...]
         '''
@@ -515,11 +524,6 @@ class DEBillScraper(BillScraper):
         script_text = _doc.xpath(xpath)[0].text_content()
         docnum = re_docnum.search(script_text).group(1)
         moniker = re_moniker.search(script_text).group(1)
-
-        # Get session number.
-        xpath = '//font[contains(., "General Assembly") and @face="Arial"]'
-        session_num = lxmldoc.xpath(xpath)[0].text_content()
-        session_num = re_digits.match(session_num).group()
 
         for format_ in ['.html', '.pdf', '.docx', '.Docx']:
 
