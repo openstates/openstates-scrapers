@@ -253,7 +253,9 @@ class DEBillScraper(BillScraper):
                     re_digits=re.compile(r'\d{,5}'),):
 
         bill = Bill(**kw)
-        
+
+        #url = 'http://legis.delaware.gov/LIS/lis146.nsf/2bede841c6272c888025698400433a04/6b003ac8125d1cc68525783f005ff9a6?OpenDocument'
+
         bill.add_source(url)
 
         #---------------------------------------------------------------------
@@ -437,8 +439,11 @@ class DEBillScraper(BillScraper):
         self.save_bill(bill)
 
 
+
     def scrape_vote(self, url, date, chamber, passed, motion,
-                    re_digit=re.compile(r'\d{1,3}')):
+                    re_digit=re.compile(r'\d{1,3}'),
+                    re_totals=re.compile(
+                        r'(?:Yes|No|Not Voting|Absent):\s{,3}(\d{,3})', re.I)):
 
         namespaces = {"re": "http://exslt.org/regular-expressions"}
         doc = lxml.html.fromstring(self.urlopen(url))
@@ -447,9 +452,23 @@ class DEBillScraper(BillScraper):
                  "/ancestor::tr[1]")
 
         # Get the vote tallies.
-        totals = doc.xpath(xpath, namespaces=namespaces)[0].text_content()
-        totals = re_digit.findall(totals)
+        try:
+            totals = doc.xpath(xpath, namespaces=namespaces)
+            totals = totals[0].text_content()
+            
+        except IndexError:
+            # Here the vote page didn't have have the typical format.
+            # Maybe it's a hand edited page. Log and try to parse
+            # the vitals from plain text.
+            self.log('Found an unusual votes page at url: "%s"' % url)
+            totals = re_totals.findall(doc.text_content())
+            if len(totals) == 4:
+                self.log('...was able to parse vote tallies from "%s"' % url)
 
+        else:
+            totals = re_digit.findall(totals)
+            
+        
         try:
             yes_count, no_count, abstentions, absent = map(int, totals)
             
@@ -500,6 +519,8 @@ class DEBillScraper(BillScraper):
                 break
 
         return vote
+
+    
 
     def scrape_documents(self, source, docname, filename, tmp, session_num,
                          re_docnum=re.compile(r'var docnum="(.+?)"'),
