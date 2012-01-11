@@ -397,8 +397,17 @@ class COBillScraper(BillScraper):
                 return True
 
             if aText == "Governor Action":
+
+                action_types = {
+                    "Signed" : [ "governor:signed" ]    
+                }
+                scraped_type = "other"
+                if action['args'][0] in action_types:
+                    scraped_type = action_types[action['args'][0]]
+
                 bill.add_action( actor, action['orig'], action['date'],
-                    brief_action_name=action['args'][0] )
+                    brief_action_name=action['args'][0],
+                    type=scraped_type)
                 return True
             return False
 
@@ -418,9 +427,11 @@ class COBillScraper(BillScraper):
             else:
                 actor = 'upper'
 
+            print " - fallback handler for %s" % action['orig'] 
+
             bill.add_action( actor, action['orig'], action['date'],
                 brief_action_name=action['action'],
-                type="other" ) # XXX: Fix this
+                type="other" )
 
         translation_routines = {
             "House"    : _parse_house_action,
