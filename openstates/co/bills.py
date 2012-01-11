@@ -557,7 +557,7 @@ class COBillScraper(BillScraper):
                     v = Vote( actor, pydate, passage['MOTION'],
                         (result['FINAL_ACTION'] == "PASS"),
                         int(result['YES']), int(result['NO']),
-                        int( result['EXC'] + result['ABS'] ),
+                        (int(result['EXC']) + int(result['ABS'])),
                         moved=passage['MOVED'],
                         seconded=passage['SECONDED'] )
                     # XXX: Add more stuff to kwargs, we have a ton of data
