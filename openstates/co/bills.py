@@ -45,6 +45,7 @@ class COBillScraper(BillScraper):
     """
     def parse_all_votes( self, bill_vote_url ):
         ret = { "meta" : {}, 'votes' : {} }
+        ret['meta']['url'] = bill_vote_url
         with self.urlopen(bill_vote_url) as vote_html:
             bill_vote_page = lxml.html.fromstring(vote_html)
             nodes = bill_vote_page.xpath('//table/tr')
@@ -575,6 +576,10 @@ class COBillScraper(BillScraper):
                         (int(result['EXC']) + int(result['ABS'])),
                         moved=passage['MOVED'],
                         seconded=passage['SECONDED'] )
+
+                    v.add_source( vote['meta']['url'] )
+                    # v.add_source( bill_vote_href )
+
                     # XXX: Add more stuff to kwargs, we have a ton of data
                     for voter in filed_votes:
                         who  = voter
@@ -585,7 +590,6 @@ class COBillScraper(BillScraper):
                             v.no( who )
                         else:
                             v.other( who )
-                    v.add_source( bill_vote_href )
                     b.add_vote( v )
                 self.save_bill(b)
             
