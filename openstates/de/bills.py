@@ -255,6 +255,7 @@ class DEBillScraper(BillScraper):
         bill = Bill(**kw)
         bill.add_source(url)
 
+
         #---------------------------------------------------------------------
         # A few helpers.
         _url_2_lxml = self._url_2_lxml
@@ -436,7 +437,6 @@ class DEBillScraper(BillScraper):
         self.save_bill(bill)
 
 
-
     def scrape_vote(self, url, date, chamber, passed, motion,
                     re_digit=re.compile(r'\d{1,3}'),
                     re_totals=re.compile(
@@ -502,15 +502,24 @@ class DEBillScraper(BillScraper):
         # Add names and vote values.
         vote_map = {
             'Y': 'yes',
-            'N': 'no'
+            'N': 'no',
             }
 
         while True:
             
             try:
                 name = data.next()
-                vote_ = vote_map.get(data.next(), 'other')
-                getattr(vote, vote_)(name)
+                _vote = data.next()
+
+                # Evidently, the motion for vote can be rescinded before
+                # the vote is cast, perhaps due to a quorum failure.
+                # (See the Senate vote (1/26/2011) for HB 10 w/HA 1.) In
+                # this rare case, values in the vote col are whitespace. Skip.
+                if not _vote.strip():
+                    continue
+                
+                _vote = vote_map.get(_vote, 'other')
+                getattr(vote, _vote)(name)
                 
             except StopIteration:
                 break
@@ -518,7 +527,6 @@ class DEBillScraper(BillScraper):
         return vote
 
     
-
     def scrape_documents(self, source, docname, filename, tmp, session_num,
                          re_docnum=re.compile(r'var docnum="(.+?)"'),
                          re_moniker=re.compile(r'var moniker="(.+?)"'),
