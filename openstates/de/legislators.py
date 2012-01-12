@@ -40,7 +40,8 @@ class DELegislatorScraper(LegislatorScraper):
             name = ' '.join(re_spaces.split(name))
 
             leg = self.scrape_bio(term, chamber, district, name, bio_url)
-            leg.add_source(url)
+            leg.add_source(bio_url, page="legislator detail page")
+            leg.add_source(url, page="legislator list page")
             self.save_legislator(leg)
             
 
