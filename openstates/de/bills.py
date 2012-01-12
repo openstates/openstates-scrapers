@@ -15,6 +15,8 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 import scrapelib
 
+import actions
+
 
 
 class BillIdParseError(ScrapeError):
@@ -42,26 +44,6 @@ def slugify(s):
     '''
     return s.lower().replace(' ', '_').rstrip(':')
 
-
-def get_action_actor(action_text, chamber, rgxs=(
-    (re.compile(r'(in|by) senate', re.I), 'upper'),
-    (re.compile(r'(in|by) house', re.I), 'lower'),
-    (re.compile(r'by governor', re.I), 'governor'),
-    )):
-    '''
-    Guess the actor for a particular action.
-    '''
-    for r, actor in rgxs:
-        m = r.search(action_text)
-        if m:
-            return actor
-    return chamber
-
-        
-def get_action_type(action_text):
-    '''
-    Apply an action type to an action.
-    '''
 
 def parse_votestring(v, strptime=datetime.strptime,
     re_date = re.compile('\d{,2}/\d{,2}/\d{,4} [\d:]{,8} [AP]M'),
@@ -260,12 +242,13 @@ class DEBillScraper(BillScraper):
     def scrape_bill(self, url, kw,        
                     re_amendment=re.compile(r'(^[A-Z]A \d{1,3}) to'),
                     re_substitution=re.compile(r'(^[A-Z]S \d{1,2}) for'),
-                    re_digits=re.compile(r'\d{,5}')):
+                    re_digits=re.compile(r'\d{,5}'),
+                    actions_categorize=actions.categorize,
+                    actions_get_actor=actions.get_actor):
 
         bill = Bill(**kw)
         bill.add_source(url)
 
-        url = "http://legis.delaware.gov/LIS/lis146.nsf/2bede841c6272c888025698400433a04/b5b606315e78b8d88525784c004ddb60?OpenDocument"
 
         #---------------------------------------------------------------------
         # A few helpers.
@@ -347,8 +330,8 @@ class DEBillScraper(BillScraper):
         for a in reversed(actions):
             date, action = a.split(' - ', 1)
             date = datetime.strptime(date, '%b %d, %Y')
-            actor = get_action_actor(action, bill['chamber'])
-            type_ = get_action_type(action)
+            actor = actions_get_actor(action, bill['chamber'])
+            type_ = actions_categorize(action)
             bill.add_action(actor, action, date, type_)
 
         
@@ -446,7 +429,6 @@ class DEBillScraper(BillScraper):
                 pass
 
         self.save_bill(bill)
-        pdb.set_trace()
 
 
     def scrape_vote(self, url, date, chamber, passed, motion,
