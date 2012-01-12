@@ -45,6 +45,7 @@ class COBillScraper(BillScraper):
     """
     def parse_all_votes( self, bill_vote_url ):
         ret = { "meta" : {}, 'votes' : {} }
+        ret['meta']['url'] = bill_vote_url
         with self.urlopen(bill_vote_url) as vote_html:
             bill_vote_page = lxml.html.fromstring(vote_html)
             nodes = bill_vote_page.xpath('//table/tr')
@@ -397,8 +398,21 @@ class COBillScraper(BillScraper):
                 return True
 
             if aText == "Governor Action":
+                action_types = {
+                    "Signed"       : [ "governor:signed" ],
+                    "Partial Veto" : [ "governor:vetoed:line-item" ],
+                    "Vetoed"       : [ "governor:vetoed" ],
+                    "Became Law"   : [ "other" ],
+                }
+                scraped_type = "other"
+                if action['args'][0] in action_types:
+                    scraped_type = action_types[action['args'][0]]
+                else:
+                    print " - gov. fallback handler for %s" % action['args'][0]
+
                 bill.add_action( actor, action['orig'], action['date'],
-                    brief_action_name=action['args'][0] )
+                    brief_action_name=action['args'][0],
+                    type=scraped_type)
                 return True
             return False
 
@@ -418,9 +432,11 @@ class COBillScraper(BillScraper):
             else:
                 actor = 'upper'
 
+            print " - fallback handler for %s" % action['orig'] 
+
             bill.add_action( actor, action['orig'], action['date'],
                 brief_action_name=action['action'],
-                type="other" ) # XXX: Fix this
+                type="other" )
 
         translation_routines = {
             "House"    : _parse_house_action,
@@ -514,7 +530,7 @@ class COBillScraper(BillScraper):
                     self.add_action_to_bill( b, action )
                
                 for sponsor in sponsors:
-                    if sponsor != None:
+                    if sponsor != None and sponsor != "(NONE)":
                         b.add_sponsor("primary", sponsor)
 
                 # Now that we have history, let's see if we can't grab some
@@ -560,6 +576,10 @@ class COBillScraper(BillScraper):
                         (int(result['EXC']) + int(result['ABS'])),
                         moved=passage['MOVED'],
                         seconded=passage['SECONDED'] )
+
+                    v.add_source( vote['meta']['url'] )
+                    # v.add_source( bill_vote_href )
+
                     # XXX: Add more stuff to kwargs, we have a ton of data
                     for voter in filed_votes:
                         who  = voter
@@ -570,7 +590,6 @@ class COBillScraper(BillScraper):
                             v.no( who )
                         else:
                             v.other( who )
-                    v.add_source( bill_vote_href )
                     b.add_vote( v )
                 self.save_bill(b)
             

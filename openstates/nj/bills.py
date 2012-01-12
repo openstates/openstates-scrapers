@@ -1,10 +1,10 @@
 from datetime import datetime
 from .utils import chamber_name, DBFMixin
 from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import VoteScraper, Vote
+from billy.scrape.votes import Vote
 
 import lxml.etree
-import scrapelib
+import urllib2
 import zipfile
 import csv
 import os
@@ -246,7 +246,11 @@ class NJBillScraper(BillScraper, DBFMixin):
 
         for filename in vote_info_list:
             s_vote_url = 'ftp://www.njleg.state.nj.us/votes/%s.zip' % filename
-            s_vote_zip, resp = self.urlretrieve(s_vote_url)
+            try:
+                s_vote_zip, resp = self.urlretrieve(s_vote_url)
+            except urllib2.URLError:
+                self.warning('could not find %s' % s_vote_url)
+                continue
             zipedfile = zipfile.ZipFile(s_vote_zip)
             vfile = "%s.txt" % filename
             vote_file = zipedfile.open(vfile, 'U')
