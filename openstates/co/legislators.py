@@ -49,7 +49,7 @@ class COLegislatorScraper(LegislatorScraper):
 
     def normalize_party( self, party_id ):
         try:
-            return { "R" : "Republican", "D" : "Democrat" }[party_id]
+            return { "R" : "Republican", "D" : "Democratic" }[party_id]
         except KeyError as e:
             return "Other"
 
