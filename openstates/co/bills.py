@@ -315,7 +315,11 @@ class COBillScraper(BillScraper):
             simple_intro_match = {
                 "House Second Reading Passed"        : [ "bill:reading:2" ],
                 "House Third Reading Passed"         : [ "bill:reading:3" ],
-                "Signed by the Speaker of the House" : [ "other" ]
+                "Signed by the Speaker of the House" : [ "other" ],
+                "House Vote to Override Passed"      : \
+                    [ "bill:veto_override:passed" ],
+                "House Vote to Override Failed"      : \
+                    [ "bill:veto_override:failed" ],
             }
 
             for testStr in simple_intro_match:
@@ -357,7 +361,11 @@ class COBillScraper(BillScraper):
             simple_intro_match = {
                 "Senate Second Reading Passed"          : [ "bill:reading:2" ],
                 "Senate Third Reading Passed"           : [ "bill:reading:3" ],
-                "Signed by the President of the Senate" : [ "other" ]
+                "Signed by the President of the Senate" : [ "other" ],
+                "Senate Vote to Override Passed"        : \
+                    [ "bill:veto_override:passed" ],
+                "Senate Vote to Override Failed"        : \
+                    [ "bill:veto_override:failed" ],
             }
 
             for testStr in simple_intro_match:
@@ -434,9 +442,10 @@ class COBillScraper(BillScraper):
 
             print " - fallback handler for %s" % action['orig'] 
 
-            bill.add_action( actor, action['orig'], action['date'],
+            bill.add_action( actor, action['orig'],
+                action['date'],
                 brief_action_name=action['action'],
-                type="other" )
+                type="other")
 
         translation_routines = {
             "House"    : _parse_house_action,
