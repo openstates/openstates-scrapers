@@ -333,7 +333,7 @@ class DEBillScraper(BillScraper):
         actions = actions[0].text_content()
         actions = filter(None, actions.splitlines())
 
-        for a in actions:
+        for a in reversed(actions):
             date, action = a.split(' - ', 1)
             date = datetime.strptime(date, '%b %d, %Y')
             actor = get_action_actor(action, bill['chamber'])
