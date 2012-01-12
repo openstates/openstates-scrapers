@@ -73,7 +73,7 @@ class COLegislatorScraper(LegislatorScraper):
         }
 
     def process_person( self, p_url ):
-        ret = {}
+        ret = { "homepage" : p_url }
 
         with self.urlopen(p_url) as html:
             page = lxml.html.fromstring(html)
@@ -95,9 +95,9 @@ class COLegislatorScraper(LegislatorScraper):
             urls = page.xpath( '//a' )
             ret['photo_url'] = ""
 
-
             if len(urls) > 0:
                 home_page = urls[0]
+                ret['homepage'] = home_page.attrib['href']
                 # home_page.attrib['href']
                 homepage = self.parse_homepage(
                     home_page.attrib['href'] )
@@ -123,7 +123,8 @@ class COLegislatorScraper(LegislatorScraper):
                 party=metainf['party'],
                 # some additional things the website provides:
                 occupation=metainf['occupation'],
-                photo_url=metainf['photo_url'])
+                photo_url=metainf['photo_url'],
+                url=metainf['homepage'])
             p.add_source( p_url )
 
             if 'ctty' in metainf:
