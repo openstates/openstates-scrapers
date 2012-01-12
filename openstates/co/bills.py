@@ -529,7 +529,7 @@ class COBillScraper(BillScraper):
                     self.add_action_to_bill( b, action )
                
                 for sponsor in sponsors:
-                    if sponsor != None:
+                    if sponsor != None and sponsor != "(NONE)":
                         b.add_sponsor("primary", sponsor)
 
                 # Now that we have history, let's see if we can't grab some
