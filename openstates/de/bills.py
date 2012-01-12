@@ -1,10 +1,12 @@
 import pdb
 import re
 import urllib
+import itertools
 from urlparse import urlparse
 from datetime import datetime
 from operator import methodcaller
 from functools import partial
+
 
 import lxml.html
 
@@ -152,6 +154,9 @@ class DEBillScraper(BillScraper):
         # Changes "Sen. Jones" into "Jones"
         re_title=re.compile(r'(Sen|Rep)s?\.\s'),
 
+        # Tokenize multiple names in a single string.
+        tokenize=re.compile(r'(?:(?:[A-Z]\.){,5} )?[A-Z][^.]\S{,50}').findall,
+
         # Map to clean up sponsor name data.
         name_map={
             '{ NONE...}': '',
@@ -161,7 +166,11 @@ class DEBillScraper(BillScraper):
         chamber_map={
             'Sen': 'upper',
             'Rep': 'lower',
-            }
+            },
+
+        chain=itertools.chain.from_iterable,
+        replace=methodcaller('replace', '&nbsp', ''),
+        strip=methodcaller('strip'),
         ):
         
         '''
@@ -179,11 +188,12 @@ class DEBillScraper(BillScraper):
             # Remove junk.    
             names = re_amp.split(string)
             names = map(lambda s: re_title.sub('', s), names)
-            names = map(methodcaller('replace', '&nbsp', ''), names)
-            names  = filter(None, [name_map.get(n, n) for n in names])
-
-            for n in names:
-                yield (n, chamber)
+            names = map(replace, names)
+            names = filter(None, [name_map.get(n, n) for n in names])
+            names = map(tokenize, names)
+            
+            for n in chain(names):
+                yield (strip(n), chamber)
 
     
     def _get_urls(self, chamber, session):
@@ -250,11 +260,12 @@ class DEBillScraper(BillScraper):
     def scrape_bill(self, url, kw,        
                     re_amendment=re.compile(r'(^[A-Z]A \d{1,3}) to'),
                     re_substitution=re.compile(r'(^[A-Z]S \d{1,2}) for'),
-                    re_digits=re.compile(r'\d{,5}'),):
+                    re_digits=re.compile(r'\d{,5}')):
 
         bill = Bill(**kw)
         bill.add_source(url)
 
+        url = "http://legis.delaware.gov/LIS/lis146.nsf/2bede841c6272c888025698400433a04/b5b606315e78b8d88525784c004ddb60?OpenDocument"
 
         #---------------------------------------------------------------------
         # A few helpers.
@@ -292,7 +303,7 @@ class DEBillScraper(BillScraper):
             if names:
                 for name, _chamber in names:
                     bill.add_sponsor(type_, name, chamber=_chamber)
-
+                    
         
         #---------------------------------------------------------------------
         # Versions
@@ -435,6 +446,7 @@ class DEBillScraper(BillScraper):
                 pass
 
         self.save_bill(bill)
+        pdb.set_trace()
 
 
     def scrape_vote(self, url, date, chamber, passed, motion,
