@@ -18,15 +18,22 @@ class HIBillScraper(BillScraper):
     state = 'hi'
 
     def parse_bill_metainf_table( self, metainf_table ):
+        def _sponsor_interceptor(line):
+            return [ guy.strip() for guy in line.split(",") ]
+
+        interceptors = {
+            "Introducer(s)" : _sponsor_interceptor    
+        }
+
         ret = {}
         for tr in metainf_table:
             row = tr.xpath( "td" )
-
             key   = row[0].text_content().strip()
             value = row[1].text_content().strip()
-
             if key[-1:] == ":":
                 key = key[:-1]
+            if key in interceptors:
+                value = interceptors[key](value)
 
             ret[key] = value
         return ret
