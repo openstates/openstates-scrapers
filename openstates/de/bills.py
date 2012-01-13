@@ -130,8 +130,8 @@ class DEBillScraper(BillScraper):
 
     def _cleanup_sponsors(self, string, chamber,
 
-        # Splits at ' & '                  
-        re_amp=re.compile(r'\s{,5}[,&]\s{1,5}'),
+        # Splits at ampersands and commas.                  
+        re_amp=re.compile(r'[,&]'),
 
         # Changes "Sen. Jones" into "Jones"
         re_title=re.compile(r'(Sen|Rep)s?\.\s'),
@@ -153,14 +153,17 @@ class DEBillScraper(BillScraper):
         chain=itertools.chain.from_iterable,
         replace=methodcaller('replace', '&nbsp', ''),
         strip=methodcaller('strip'),
+
+        splitter=re.compile('(?:; |on behalf of all \w+)'),
         ):
         
         '''
         Sponsor names are sometimes joined with an ampersand,
         are '{ NONE...}', or contain '&nbsp'. This helper removes
         that stuff and returns a list minus any non-name strings found. 
-        '''      
-        for string in string.split('; '):
+        '''
+
+        for string in splitter.split(string):
 
             # Override the chamber based on presence of "Sens." or "Rep."
             m = re_title.search(string)
@@ -248,7 +251,7 @@ class DEBillScraper(BillScraper):
 
         bill = Bill(**kw)
         bill.add_source(url)
-
+        
 
         #---------------------------------------------------------------------
         # A few helpers.
