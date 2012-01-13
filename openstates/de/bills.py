@@ -569,5 +569,5 @@ class DEBillScraper(BillScraper):
                 msg = 'Could\'t fetch %s version at url: "%s".'
                 self.warning(msg % (format_, url))                    
             else:
-                yield dict(name=docname, url=url, format=format_,
+                yield dict(name=docname, url=url, format=format_.lower(),
                            source=source)
