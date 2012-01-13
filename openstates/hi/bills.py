@@ -56,18 +56,40 @@ class HIBillScraper(BillScraper):
 
             metainf = self.parse_bill_metainf_table( metainf_table )
             actions = self.parse_bill_actions_table( action_table )
-            print metainf, actions
+            ret['metainf'] = metainf
+            ret['actions'] = actions
+        return ret
 
     def scrape_report_page(self, url):
+        ret = []
         with self.urlopen(url) as list_html: 
             list_page = lxml.html.fromstring(list_html)
             bills = [ HI_URL_BASE + bill.attrib['href'] for bill in \
                 list_page.xpath("//a[@class='report']") ]
             for bill in bills:
-                self.scrape_bill( bill )
+                b_data = self.scrape_bill( bill )
+                ret.append( b_data )
+        return ret
 
     def scrape(self, chamber, session):
         session_urlslug = \
             self.metadata['session_details'][session]['_scraped_name']
-        print self.scrape_report_page( \
+        bills = self.scrape_report_page( \
             create_bill_report_url( chamber, session_urlslug ) )
+        for bill in bills:
+            meta = bill['metainf']
+            companion = meta['Companion']
+            name      = bill['bill_name']
+            descr     = meta['Description']
+            title     = meta['Report Title']
+            ref       = meta['Current Referral']
+            sponsors  = meta['Introducer(s)']
+            m_title   = meta['Measure Title']
+
+            b = Bill(session, chamber, name, title,
+                companion=companion,
+                description=descr,
+                referral=ref,
+                measure_title=m_title)
+            b.add_source( bill['url'] )
+            self.save_bill(b)
