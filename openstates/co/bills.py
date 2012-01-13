@@ -577,12 +577,25 @@ class COBillScraper(BillScraper):
                     else:
                         actor = "upper"
 
-                    print result
+                    other = (int(result['EXC']) + int(result['ABS']))
+                    # OK, sometimes the Other count is wrong.
+                    local_other = 0
+                    for voter in filed_votes:
+                        l_vote = filed_votes[voter].lower()
+                        if l_vote != "yes" and l_vote != "no":
+                            local_other = local_other + 1
+
+                    if local_other != other:
+                        print "XXX: !!!WARNING!!! - resetting the 'OTHER' VOTES"
+                        print " -> Old: %s // New: %s" % (
+                            other, local_other
+                        )
+                        other = local_other
 
                     v = Vote( actor, pydate, passage['MOTION'],
                         (result['FINAL_ACTION'] == "PASS"),
                         int(result['YES']), int(result['NO']),
-                        (int(result['EXC']) + int(result['ABS'])),
+                        other,
                         moved=passage['MOVED'],
                         seconded=passage['SECONDED'] )
 
