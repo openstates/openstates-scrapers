@@ -17,12 +17,17 @@ class HIBillScraper(BillScraper):
     
     state = 'hi'
 
+    def scrape_bill( self, url ):
+        with self.urlopen(url) as bill_html: 
+            bill_page = lxml.html.fromstring(bill_html)
+
     def scrape_report_page(self, url):
         with self.urlopen(url) as list_html: 
             list_page = lxml.html.fromstring(list_html)
             bills = [ HI_URL_BASE + bill.attrib['href'] for bill in \
                 list_page.xpath("//a[@class='report']") ]
-            print bills
+            for bill in bills:
+                self.scrape_bill( bill )
 
     def scrape(self, chamber, session):
         session_urlslug = \
