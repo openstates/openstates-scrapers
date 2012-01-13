@@ -20,8 +20,9 @@ class HIBillScraper(BillScraper):
     def scrape_report_page(self, url):
         with self.urlopen(url) as list_html: 
             list_page = lxml.html.fromstring(list_html)
-            for bill in list_page.xpath("//a[@class='report']"):
-                print bill.attrib['href']
+            bills = [ HI_URL_BASE + bill.attrib['href'] for bill in \
+                list_page.xpath("//a[@class='report']") ]
+            print bills
 
     def scrape(self, chamber, session):
         session_urlslug = \
