@@ -8,9 +8,16 @@ from billy.scrape.votes import Vote
 
 HI_URL_BASE = "http://capitol.hawaii.gov/"
 
+
+def create_bill_report_url( chamber, year ):
+    cname = { "upper" : "s", "lower" : "h" }[chamber]
+    return HI_URL_BASE + "report.aspx?type=intro" + cname + "b&year=" + year
+
 class HIBillScraper(BillScraper):
     
     state = 'hi'
 
     def scrape(self, chamber, session):
-        pass
+        session_urlslug = \
+            self.metadata['session_details'][session]['_scraped_name']
+        print create_bill_report_url( chamber, session_urlslug )
