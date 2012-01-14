@@ -134,7 +134,7 @@ class DEBillScraper(BillScraper):
         re_amp=re.compile(r'[,&]'),
 
         # Changes "Sen. Jones" into "Jones"
-        re_title=re.compile(r'(Sen|Rep)s?\.\s'),
+        re_title=re.compile(r'(Sen|Rep)s?[.;]\s'),
 
         # Tokenize multiple names in a single string.
         tokenize=re.compile(r'(?:(?:[A-Z]\.){,5} )?[A-Z][^.]\S{,50}').findall,
@@ -154,7 +154,7 @@ class DEBillScraper(BillScraper):
         replace=methodcaller('replace', '&nbsp', ''),
         strip=methodcaller('strip'),
 
-        splitter=re.compile('(?:; |on behalf of all \w+)'),
+        splitter=re.compile('(?:; (?:NewLine)?|on behalf of all \w+)'),
         ):
         
         '''
