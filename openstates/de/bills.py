@@ -134,7 +134,7 @@ class DEBillScraper(BillScraper):
         re_amp=re.compile(r'[,&]'),
 
         # Changes "Sen. Jones" into "Jones"
-        re_title=re.compile(r'(Sen|Rep)s?[.;]\s'),
+        re_title=re.compile(r'(Sen|Rep)s?[.;]\s?'),
 
         # Tokenize multiple names in a single string.
         tokenize=re.compile(r'(?:(?:[A-Z]\.){,5} )?[A-Z][^.]\S{,50}').findall,
@@ -154,7 +154,7 @@ class DEBillScraper(BillScraper):
         replace=methodcaller('replace', '&nbsp', ''),
         strip=methodcaller('strip'),
 
-        splitter=re.compile('(?:; (?:NewLine)?|on behalf of all \w+)'),
+        splitter=re.compile('(?:[,;] NewLine|(?<!Reps); |on behalf of all \w+)'),
         ):
         
         '''
@@ -250,8 +250,8 @@ class DEBillScraper(BillScraper):
                     actions_get_actor=actions.get_actor):
 
         bill = Bill(**kw)
-        bill.add_source(url)
-        
+        bill.add_source(url)        
+
 
         #---------------------------------------------------------------------
         # A few helpers.
@@ -437,7 +437,7 @@ class DEBillScraper(BillScraper):
     def scrape_vote(self, url, date, chamber, passed, motion,
                     re_digit=re.compile(r'\d{1,3}'),
                     re_totals=re.compile(
-                        r'(?:Yes|No|Not Voting|Absent):\s{,3}(\d{,3})', re.I)):
+                        r'(?:Yes|No|Not Voting|Absent):\s{,3}(\d{,3})', re.I)): 
 
         namespaces = {"re": "http://exslt.org/regular-expressions"}
         doc = lxml.html.fromstring(self.urlopen(url))
@@ -492,9 +492,9 @@ class DEBillScraper(BillScraper):
 
         # Get an iterator like: name1, vote1, name2, vote2, ...
         xpath = ("//font[re:match(., '^[A-Z]$')]"
-                 "/../../../descendant::td/font/text()")
-        data = doc.xpath(xpath, namespaces=namespaces)
-        data = iter(filter(lambda s: s.strip(), data))
+                 "/../../../descendant::td")
+        els = doc.xpath(xpath, namespaces=namespaces)
+        data = (node.text_content() for node in els)
 
         # Add names and vote values.
         vote_map = {
