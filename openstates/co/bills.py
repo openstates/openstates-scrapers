@@ -322,6 +322,18 @@ class COBillScraper(BillScraper):
                     [ "bill:veto_override:failed" ],
             }
 
+            simple_contain = {
+                "Refer Amended to"   : [ "committee:passed" ],
+                "Refer Unamended to" : [ "committee:passed" ]
+            }
+
+            for testStr in simple_contain:
+                if testStr in aText:
+                    bill.add_action( actor, action['orig'],
+                        action['date'], brief_action_name=action['orig'],
+                        type=simple_contain[testStr])
+                    return True
+
             for testStr in simple_intro_match:
                 if aText[:len(testStr)] == testStr:
                     bill.add_action( actor, action['orig'],
@@ -367,6 +379,18 @@ class COBillScraper(BillScraper):
                 "Senate Vote to Override Failed"        : \
                     [ "bill:veto_override:failed" ],
             }
+
+            simple_contain = {
+                "Refer Amended to"   : [ "committee:passed" ],
+                "Refer Unamended to" : [ "committee:passed" ]
+            }
+
+            for testStr in simple_contain:
+                if testStr in aText:
+                    bill.add_action( actor, action['orig'],
+                        action['date'], brief_action_name=action['orig'],
+                        type=simple_contain[testStr])
+                    return True
 
             for testStr in simple_intro_match:
                 if aText[:len(testStr)] == testStr:
