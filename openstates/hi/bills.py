@@ -43,7 +43,7 @@ class HIBillScraper(BillScraper):
 
     def scrape_bill( self, url ):
         ret = {
-            url : url    
+            "url" : url
         }
         with self.urlopen(url) as bill_html: 
             bill_page = lxml.html.fromstring(bill_html)
@@ -77,6 +77,7 @@ class HIBillScraper(BillScraper):
         bills = self.scrape_report_page( \
             create_bill_report_url( chamber, session_urlslug ) )
         for bill in bills:
+            print bill
             meta = bill['metainf']
             companion = meta['Companion']
             name      = bill['bill_name']

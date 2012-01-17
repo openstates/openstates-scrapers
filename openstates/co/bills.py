@@ -384,7 +384,7 @@ class COBillScraper(BillScraper):
                     bill_assignd_ctty = bill_assignd_ctty[len(assgnd_to)+1:]
 
                 bill.add_action( actor, action['orig'], action['date'],
-                    type="bill:introduced",
+                    type=[ "bill:introduced", "committee:referred" ],
                     assigned_ctty = bill_assignd_ctty,
                     brief_action_name="Introduced")
                 return True
