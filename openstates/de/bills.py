@@ -252,7 +252,7 @@ class DEBillScraper(BillScraper):
         bill = Bill(**kw)
         bill.add_source(url)
         
-
+        
         #---------------------------------------------------------------------
         # A few helpers.
         _url_2_lxml = self._url_2_lxml
@@ -494,8 +494,21 @@ class DEBillScraper(BillScraper):
         xpath = ("//font[re:match(., '^[A-Z]$')]"
                  "/../../../descendant::td/font/text()")
         data = doc.xpath(xpath, namespaces=namespaces)
-        data = iter(filter(lambda s: s.strip(), data))
+        data = filter(lambda s: s.strip(), data)
 
+        # Handle the rare case where not all names have corresponding
+        # text indicating vote value. See e.g. session 146 HB10.
+        data_len = len(data)/2
+        tally = sum(v for (k, v) in vote.items() if '_count' in k)
+
+        if (0 < data_len) and ((data_len) != tally):
+            xpath = ("//font[re:match(., '^[A-Z]$')]/ancestor::table")
+            els = doc.xpath(xpath, namespaces=namespaces)[-1]
+            els = els.xpath('descendant::td')
+            data = [e.text_content().strip() for e in els]
+                
+        data = iter(data)
+        
         # Add names and vote values.
         vote_map = {
             'Y': 'yes',
@@ -519,6 +532,14 @@ class DEBillScraper(BillScraper):
                 getattr(vote, _vote)(name)
                 
             except StopIteration:
+                break
+
+        for v in 'yes no other'.split():
+            if vote['%s_count' % v] != len(vote['%s_votes' % v]):
+                if len(vote['%s_votes' % v]) == 0:
+                    continue
+                import webbrowser
+                webbrowser.open(vote['sources'][0]['url'])
                 break
 
         return vote
@@ -548,18 +569,31 @@ class DEBillScraper(BillScraper):
         docnum = re_docnum.search(script_text).group(1)
         moniker = re_moniker.search(script_text).group(1)
 
-        for format_ in ['.html', '.pdf', '.docx', '.Docx']:
 
-            el =_doc.xpath('//font[contains(., "%s%s")]' % (filename, format_))            
+        # Mimetypes.
+        formats = ['.html', '.pdf', '.docx', '.Docx']
+        mimetypes = {
+            '.html': 'text/html',
+            '.pdf': 'application/pdf',
+            '.docx': 'application/msword'
+            }
+
+        for format_ in formats::
+
+            format_ = format_.lower()
+
+            el =_doc.xpath('//font[contains(., "%s%s")]' % (filename, format_))
 
             if not el:
                 continue
 
             _kwargs = kwargs.copy()
-            _kwargs.update(**locals())
+            _kwargs.update(**locals(), mimetype=mimetypes[format_])
             
             if format_.lower() == '.docx':
                 _kwargs['filename'] = docnum
+            else:
+                _kwargs['filename'] = _kwargs['filename'].lower()
 
             url = tmp.format(**_kwargs).replace(' ', '+')
 
@@ -569,5 +603,5 @@ class DEBillScraper(BillScraper):
                 msg = 'Could\'t fetch %s version at url: "%s".'
                 self.warning(msg % (format_, url))                    
             else:
-                yield dict(name=docname, url=url, format=format_.lower(),
+                yield dict(name=docname, url=url, format=format_,
                            source=source)
