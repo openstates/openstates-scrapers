@@ -277,7 +277,6 @@ class COBillScraper(BillScraper):
         """
         def _parse_house_action():
             actor = "lower"
-            HRActor = "House"
             aText = action['action']
             
             if aText == 'Introduced In House':
@@ -323,8 +322,8 @@ class COBillScraper(BillScraper):
             }
 
             simple_contain = {
-                "Refer Amended to"   : [ "committee:passed" ],
-                "Refer Unamended to" : [ "committee:passed" ]
+                "Refer Amended"   : [ "committee:passed" ],
+                "Refer Unamended" : [ "committee:passed" ]
             }
 
             for testStr in simple_contain:
@@ -348,7 +347,6 @@ class COBillScraper(BillScraper):
         """
         def _parse_senate_action():
             actor = "upper"
-            HRActor = "Senate"
             aText = action['action']
 
             testStr = "Senate Second Reading Special Order"
@@ -381,8 +379,8 @@ class COBillScraper(BillScraper):
             }
 
             simple_contain = {
-                "Refer Amended to"   : [ "committee:passed" ],
-                "Refer Unamended to" : [ "committee:passed" ]
+                "Refer Amended"   : [ "committee:passed" ],
+                "Refer Unamended" : [ "committee:passed" ]
             }
 
             for testStr in simple_contain:
@@ -421,7 +419,6 @@ class COBillScraper(BillScraper):
         """
         def _parse_governor_action():
             actor = "governor"
-            HRActor = "Governor"
             aText = action['action']
 
             if aText == "Sent to the Governor":
