@@ -422,7 +422,7 @@ class COBillScraper(BillScraper):
             aText = action['action']
 
             if aText == "Sent to the Governor":
-                bill.add_action( "legislature", action['orig'], action['date'],
+                bill.add_action( "joint", action['orig'], action['date'],
                     brief_action_name=aText, type="governor:received" )
                 return True
 
@@ -456,7 +456,7 @@ class COBillScraper(BillScraper):
             hasSenate = "Senate" in action['action']
             
             if hasHouse and hasSenate:
-                actor = 'legislature'
+                actor = 'joint'
             elif hasHouse:
                 actor = 'lower'
             else:
@@ -594,7 +594,7 @@ class COBillScraper(BillScraper):
                     hasSenate = "Senate" in passage['x-parent-ctty']
 
                     if hasHouse and hasSenate:
-                        actor = "legislature"
+                        actor = "joint"
                     elif hasHouse:
                         actor = "lower"
                     else:
