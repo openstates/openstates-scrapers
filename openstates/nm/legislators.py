@@ -36,7 +36,12 @@ class NMLegislatorScraper(LegislatorScraper):
                           'capitol_phone': 'OFF_PHONE', 'office_phone': 'WKPH'}
             for key, value in properties.iteritems():
                 id = 'ctl00_mainCopy_LegisInfo_%sLabel' % value
-                val = doc.get_element_by_id(id).text
+                try:
+                    val = doc.get_element_by_id(id).text
+                except KeyError:
+                    self.warning('bad legislator page %s missing %s' %
+                                 (url, id))
+                    return
                 if val:
                     properties[key] = val.strip()
 
