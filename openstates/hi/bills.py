@@ -34,7 +34,6 @@ class HIBillScraper(BillScraper):
                 key = key[:-1]
             if key in interceptors:
                 value = interceptors[key](value)
-
             ret[key] = value
         return ret
 
