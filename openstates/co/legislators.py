@@ -7,6 +7,12 @@ import re, contextlib
 
 CO_BASE_URL = "http://www.leg.state.co.us/"
 
+CTTY_BLACKLIST = [ # Invalid HTML causes us to snag these tags. Super annoying.
+    "Top",
+    "State Home",
+    "Colorado Legislature"
+]
+
 def clean_input( line ):
     if line != None:
         return re.sub( " +", " ", re.sub( "(\n|\r)+", " ", line ))
@@ -62,10 +68,8 @@ class COLegislatorScraper(LegislatorScraper):
             ctty_apptmts = page.xpath('//ul/li/b/a')
             for ctty in ctty_apptmts:
                 cttyid = clean_input(ctty.text)
-                if cttyid != None:
+                if cttyid != None and cttyid not in CTTY_BLACKLIST:
                     ret.append(cttyid)
-            # image = page.xpath('//img')[1].attrib['src']
-            # image = image_base + image # XXX: perhaps fix this?
             image = hp_url[:-3] + "jpg"
         return {
             "ctty"  : ret,
