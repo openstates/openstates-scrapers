@@ -134,7 +134,7 @@ class DEBillScraper(BillScraper):
         re_amp=re.compile(r'[,&]'),
 
         # Changes "Sen. Jones" into "Jones"
-        re_title=re.compile(r'(Sen|Rep)s?[.;]\s'),
+        re_title=re.compile(r'(Sen|Rep)s?[.;]\s?'),
 
         # Tokenize multiple names in a single string.
         tokenize=re.compile(r'(?:(?:[A-Z]\.){,5} )?[A-Z][^.]\S{,50}').findall,
@@ -154,8 +154,7 @@ class DEBillScraper(BillScraper):
         replace=methodcaller('replace', '&nbsp', ''),
         strip=methodcaller('strip'),
 
-        splitter=re.compile('(?:; (?:NewLine)?|on behalf of all \w+)'),
-        ):
+        splitter=re.compile('(?:[,;] NewLine|(?<!Reps); |on behalf of all \w+)')):
         
         '''
         Sponsor names are sometimes joined with an ampersand,
@@ -250,9 +249,9 @@ class DEBillScraper(BillScraper):
                     actions_get_actor=actions.get_actor):
 
         bill = Bill(**kw)
-        bill.add_source(url)
-        
-        
+        bill.add_source(url)        
+  
+  
         #---------------------------------------------------------------------
         # A few helpers.
         _url_2_lxml = self._url_2_lxml
@@ -437,7 +436,7 @@ class DEBillScraper(BillScraper):
     def scrape_vote(self, url, date, chamber, passed, motion,
                     re_digit=re.compile(r'\d{1,3}'),
                     re_totals=re.compile(
-                        r'(?:Yes|No|Not Voting|Absent):\s{,3}(\d{,3})', re.I)):
+                        r'(?:Yes|No|Not Voting|Absent):\s{,3}(\d{,3})', re.I)): 
 
         namespaces = {"re": "http://exslt.org/regular-expressions"}
         doc = lxml.html.fromstring(self.urlopen(url))
@@ -534,14 +533,6 @@ class DEBillScraper(BillScraper):
             except StopIteration:
                 break
 
-        for v in 'yes no other'.split():
-            if vote['%s_count' % v] != len(vote['%s_votes' % v]):
-                if len(vote['%s_votes' % v]) == 0:
-                    continue
-                import webbrowser
-                webbrowser.open(vote['sources'][0]['url'])
-                break
-
         return vote
 
     
@@ -578,17 +569,17 @@ class DEBillScraper(BillScraper):
             '.docx': 'application/msword'
             }
 
-        for format_ in formats::
+        for format_ in formats:
 
-            format_ = format_.lower()
 
             el =_doc.xpath('//font[contains(., "%s%s")]' % (filename, format_))
 
             if not el:
                 continue
 
+            format_ = format_.lower()
             _kwargs = kwargs.copy()
-            _kwargs.update(**locals(), mimetype=mimetypes[format_])
+            _kwargs.update(**locals())
             
             if format_.lower() == '.docx':
                 _kwargs['filename'] = docnum
@@ -603,5 +594,5 @@ class DEBillScraper(BillScraper):
                 msg = 'Could\'t fetch %s version at url: "%s".'
                 self.warning(msg % (format_, url))                    
             else:
-                yield dict(name=docname, url=url, format=format_,
-                           source=source)
+                yield dict(name=docname, url=url,
+                           source=source, mimetype=mimetypes[format_])
