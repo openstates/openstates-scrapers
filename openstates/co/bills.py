@@ -539,6 +539,8 @@ class COBillScraper(BillScraper):
                 b = Bill(session, bill_chamber, bill_id, bill_title,
                     type=bill_type )
 
+                b.add_source( sheet_url )
+
                 versions_url = \
                     bill[index["version"]].xpath('font/a')[0].attrib["href"]
                 versions_url = CO_URL_BASE + versions_url
