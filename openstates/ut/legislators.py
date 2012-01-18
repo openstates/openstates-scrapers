@@ -77,16 +77,22 @@ class UTLegislatorScraper(LegislatorScraper):
             a = person.xpath('a')[0]
             name = a.text_content()
             leg_url = a.get('href')
-            email = tds[2].xpath('span[@class="email"]/a/text()')[0]
+            email = tds[2].xpath('span[@class="email"]/a/text()')
+            if email:
+                email = email[0]
 
             # text is split by br in 4th td, join with a space
             address = ' '.join(row.xpath('td[4]/font/text()'))
 
             # get photo
-            leg_html = self.urlopen(leg_url)
-            leg_doc = lxml.html.fromstring(leg_html)
-            leg_doc.make_links_absolute(leg_url)
-            photo_url = leg_doc.xpath('//p[@class="photo"]/img/@src')[0]
+            try:
+                leg_html = self.urlopen(leg_url)
+                leg_doc = lxml.html.fromstring(leg_html)
+                leg_doc.make_links_absolute(leg_url)
+                photo_url = leg_doc.xpath('//p[@class="photo"]/img/@src')[0]
+            except:
+                self.warning('could not fetch %s' % leg_url)
+                photo_url = None
 
             leg = Legislator(term, 'upper', district, name,
                              party=party, email=email, address=address,
