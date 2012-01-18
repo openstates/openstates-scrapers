@@ -80,6 +80,8 @@ class UTLegislatorScraper(LegislatorScraper):
             email = tds[2].xpath('span[@class="email"]/a/text()')
             if email:
                 email = email[0]
+            else:
+                email = ''
 
             # text is split by br in 4th td, join with a space
             address = ' '.join(row.xpath('td[4]/font/text()'))
@@ -92,7 +94,7 @@ class UTLegislatorScraper(LegislatorScraper):
                 photo_url = leg_doc.xpath('//p[@class="photo"]/img/@src')[0]
             except:
                 self.warning('could not fetch %s' % leg_url)
-                photo_url = None
+                photo_url = ''
 
             leg = Legislator(term, 'upper', district, name,
                              party=party, email=email, address=address,
