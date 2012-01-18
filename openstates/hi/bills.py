@@ -34,7 +34,6 @@ class HIBillScraper(BillScraper):
                 key = key[:-1]
             if key in interceptors:
                 value = interceptors[key](value)
-
             ret[key] = value
         return ret
 
@@ -93,4 +92,6 @@ class HIBillScraper(BillScraper):
                 referral=ref,
                 measure_title=m_title)
             b.add_source( bill['url'] )
+            for sponsor in sponsors:
+                b.add_sponsor( type="primary", name=sponsor )
             self.save_bill(b)

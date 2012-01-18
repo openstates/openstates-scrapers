@@ -140,9 +140,9 @@ class COBillScraper(BillScraper):
 
                         ret['votes'].append( vote_dict )
                     except KeyError as e:
-                        pass# print e
+                        pass
                     except IndexError as e:
-                        pass# print e
+                        pass
 
         return ret
 
@@ -422,7 +422,7 @@ class COBillScraper(BillScraper):
             aText = action['action']
 
             if aText == "Sent to the Governor":
-                bill.add_action( "legislature", action['orig'], action['date'],
+                bill.add_action( "joint", action['orig'], action['date'],
                     brief_action_name=aText, type="governor:received" )
                 return True
 
@@ -437,7 +437,8 @@ class COBillScraper(BillScraper):
                 if action['args'][0] in action_types:
                     scraped_type = action_types[action['args'][0]]
                 else:
-                    print " - gov. fallback handler for %s" % action['args'][0]
+                    self.log(" - gov. fallback handler for %s" % \
+                        action['args'][0])
 
                 bill.add_action( actor, action['orig'], action['date'],
                     brief_action_name=action['args'][0],
@@ -455,13 +456,13 @@ class COBillScraper(BillScraper):
             hasSenate = "Senate" in action['action']
             
             if hasHouse and hasSenate:
-                actor = 'legislature'
+                actor = 'joint'
             elif hasHouse:
                 actor = 'lower'
             else:
                 actor = 'upper'
 
-            print " - fallback handler for %s" % action['orig'] 
+            self.log( " - fallback handler for %s" % action['orig'] )
 
             bill.add_action( actor, action['orig'],
                 action['date'],
@@ -539,6 +540,8 @@ class COBillScraper(BillScraper):
                 b = Bill(session, bill_chamber, bill_id, bill_title,
                     type=bill_type )
 
+                b.add_source( sheet_url )
+
                 versions_url = \
                     bill[index["version"]].xpath('font/a')[0].attrib["href"]
                 versions_url = CO_URL_BASE + versions_url
@@ -570,13 +573,12 @@ class COBillScraper(BillScraper):
                 votes = self.parse_votes( bill_vote_href )
 
                 if votes['sanity-check'] != bill_id:
-                    print "XXX: READ ME! Sanity check failed!"
-                    print " -> Scraped ID: " + votes['sanity-check']
-                    print " -> 'Real' ID:  " + bill_id
+                    self.warning( "XXX: READ ME! Sanity check failed!" )
+                    self.warning( " -> Scraped ID: " + votes['sanity-check'] )
+                    self.warning( " -> 'Real' ID:  " + bill_id )
                     assert votes['sanity-check'] == bill_id
 
                 for vote in votes['votes']:
-                    print vote
                     filed_votes = vote['votes']
                     passage     = vote['meta']
                     result      = vote['result']
@@ -592,7 +594,7 @@ class COBillScraper(BillScraper):
                     hasSenate = "Senate" in passage['x-parent-ctty']
 
                     if hasHouse and hasSenate:
-                        actor = "legislature"
+                        actor = "joint"
                     elif hasHouse:
                         actor = "lower"
                     else:
@@ -607,10 +609,11 @@ class COBillScraper(BillScraper):
                             local_other = local_other + 1
 
                     if local_other != other:
-                        print "XXX: !!!WARNING!!! - resetting the 'OTHER' VOTES"
-                        print " -> Old: %s // New: %s" % (
+                        self.warning( \
+                            "XXX: !!!WARNING!!! - resetting the 'OTHER' VOTES" )
+                        self.warning( " -> Old: %s // New: %s" % (
                             other, local_other
-                        )
+                        ) )
                         other = local_other
 
                     v = Vote( actor, pydate, passage['MOTION'],
