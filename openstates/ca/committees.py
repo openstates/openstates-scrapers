@@ -1,113 +1,132 @@
 import re
-import urllib2
-
-from billy.scrape import NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee
+import pdb
+from operator import methodcaller
+import pprint
 
 import lxml.html
 
+from billy.scrape.committees import CommitteeScraper, Committee 
+
+strip = methodcaller('strip')
 
 class CACommitteeScraper(CommitteeScraper):
+    
     state = 'ca'
-    latest_only = True
+    encoding = 'utf-8'
+
+    urls = {'upper': 'http://senate.ca.gov/committees',
+            'lower': 'http://assembly.ca.gov/committees'}
 
     def scrape(self, chamber, term):
 
-        if chamber == 'upper':
-            self.scrape_upper_committees(term)
-        elif chamber == 'lower':
-            self.scrape_lower_committees(term)
+        url = self.urls[chamber]
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
-    def scrape_upper_committees(self, term):
-        url = "http://senate.ca.gov/committees"
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        for type_ in 'Standing Select Joint'.split():
+            div = doc.xpath('//div[contains(@class, "view-view-%sCommittee")]' % type_)[0]
+            committees = div.xpath('descendant::span[@class="field-content"]/a/text()')
+            committees = map(strip, committees)
+            urls = div.xpath('descendant::span[@class="field-content"]/a/@href')
 
-            for link in page.xpath("//h3[. = 'Standing Committees']/..//a"):
-                if not link.text:
-                    continue
-
-                comm = Committee('upper',
-                                 'Committee on %s' % link.text.strip())
-                self.scrape_upper_committee_members(comm, link.attrib['href'])
-                self.save_committee(comm)
-
-            for link in page.xpath("//h3[. = 'Select Committees']/..//a"):
-                if not link.text:
-                    continue
-
-                comm = Committee('upper',
-                                 'Select Committee on %s' % link.text.strip())
-                self.scrape_upper_committee_members(comm, link.attrib['href'])
-                self.save_committee(comm)
-
-    def scrape_upper_committee_members(self, committee, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            committee.add_source(url)
-
-            for link in page.xpath("//a[contains(., 'Senator')]"):
-                name = link.text.strip().replace('Senator ', '')
-
-                match = re.search(r'(.+)\s+\(((Vice )?Chair)\)$', name)
-                if match:
-                    role = match.group(2).lower()
-                    name = match.group(1)
+            for c, _url in zip(committees, urls):
+                
+                if c.endswith('Committee'):
+                    c = '%s %s' % (type_, c)
                 else:
-                    role = 'member'
+                    c = '%s Committee on %s' % (type_, c)
+                    
+                c = Committee(chamber, c)
+                c.add_source(_url)
+                c.add_source(url)
+                scrape_members = getattr(self, 'scrape_%s_members' % chamber)
+                c = scrape_members(c, _url, chamber, term)
 
-                committee.add_member(name, role)
+                pprint.pprint(c)
+                self.save_committee(c)
+                
+        # Subcommittees
+        div = doc.xpath('//div[contains(@class, "view-view-SubCommittee")]')[0]
+        for subcom in div.xpath('div/div[@class="item-list"]'):
+            committee = subcom.xpath('h4/text()')
+            names = subcom.xpath('descendant::a/text()')
+            names = map(strip, names)
+            urls = subcom.xpath('descendant::a/@href')
+            for n, _url in zip(names, urls):
+                c = Committee(chamber, n)
+                c.add_source(_url)
+                c.add_source(url)
+                scrape_members = getattr(self, 'scrape_%s_members' % chamber)
+                c = scrape_members(c, _url, chamber, term)
+                
+                pprint.pprint(c)
+                self.save_committee(c)
 
-    def scrape_lower_committees(self, term):
-        list_url = 'http://www.assembly.ca.gov/acs/comDir.asp'
-        with self.urlopen(list_url) as list_page:
-            list_page = lxml.html.fromstring(list_page)
-            list_page.make_links_absolute(list_url)
+    def scrape_lower_members(self, committee, url, chamber, term,
+        re_name=re.compile(r'^(Senator|Assemblymember)'),):
 
-            for a in list_page.xpath('//ul/a'):
-                name = a.text.strip()
-                name = name.replace(u'\u0092', "'")
+        try:
+            # Some committees display the members @ /memberstaff
+            html = self.urlopen(url + '/membersstaff')
+        except:
+            # Others display the members table on the homepage.
+            html = self.urlopen(url)
 
-                if re.search(r' X\d$', name):
-                    continue
+        html = html.decode(self.encoding)
+        doc = lxml.html.fromstring(html)
+        members = doc.xpath('//table/descendant::td/a/text()')
+        members = map(strip, members)
+        members = members[::2]
 
-                if name.startswith('Joint'):
-                    comm_chamber = 'joint'
-                else:
-                    comm_chamber = 'lower'
+        if not members:
+            self.warn('Dind\'t find any committe members at url: %s' % url)
+        
+        for member in members:
+            
+            if ' - ' in member:
+                member, role = member.split(' - ')
+            else:
+                role = 'member'
 
-                comm = Committee(comm_chamber, name)
-                self.scrape_lower_committee_members(comm,
-                                                    a.attrib['href'])
+            member = re_name.sub('', member)
+            member = member.strip()
+            committee.add_member(member, role)
+            
+        return committee
+        
 
-                if comm['members']:
-                    self.save_committee(comm)
+    def scrape_upper_members(self, committee, url, chamber, term,
+        re_name=re.compile(r'^(Senator|Assemblymember)'),
+        roles=[re.compile(r'(.+?)\s+\((.+?)\)'),
+               re.compile(r'(.+?),\s+(.+)')]):
 
-    def scrape_lower_committee_members(self, committee, url):
-        # break out of frame
-        url = url.replace('newcomframeset.asp', 'welcome.asp')
-        committee.add_source(url)
+        html = self.urlopen(url).decode(self.encoding)
+        doc = lxml.html.fromstring(html)
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        if url == 'http://autism.senate.ca.gov':
+            members = doc.xpath('//h2[contains(., "Member Roster")]/'
+                                'following-sibling::ul[1]/descendant::strong')
+            members = [e.text_content() for e in members]
+        else:
+            members = doc.xpath('//h2[contains(., "Members")]/'
+                                'following-sibling::p[1]/descendant::a/text()')
+        members = map(strip, members)
 
-            for a in page.xpath('//tr/td/font/a'):
-                if re.match('^(mailto:)', a.attrib['href']):
-                    continue
+        if not members:
+            self.warning('Dind\'t find any committe members at url: %s' % url)
+        
+        for member in members:
+            role = 'member'
+            for rgx in roles:
+                m = rgx.match(member)
+                if m:
+                    member, role = m.groups()
 
-                name = a.xpath('string(ul)').strip()
-                name = re.sub('\s+', ' ', name)
+            member = re_name.sub('', member)
+            member = member.strip()
+                    
+            committee.add_member(member, role)
 
-                parts = name.split('-', 2)
-                if len(parts) > 1:
-                    name = parts[0].strip()
-                    mtype = parts[1].strip().lower()
-                else:
-                    mtype = 'member'
-
-                if not name:
-                    self.warning("Empty member name")
-                    continue
-
-                committee.add_member(name, mtype)
+        return committee
+        
+        
