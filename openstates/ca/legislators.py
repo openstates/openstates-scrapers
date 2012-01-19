@@ -16,6 +16,10 @@ def parse_address(s, split=re.compile(r'[;,]\s{,3}').split):
     '''
     Extract address fields from text.
     '''
+    # If the address isn't formatted correctly, skip for now. 
+    if ';' not in s:
+        return []
+    
     fields = 'city zip phone'.split()
     vals = split(s)
     res = []
