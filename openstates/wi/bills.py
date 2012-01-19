@@ -2,7 +2,6 @@ import datetime as dt
 import lxml.html
 import os
 import re
-from StringIO import StringIO
 from collections import defaultdict
 
 import scrapelib
@@ -41,31 +40,46 @@ action_classifiers = {
 class WIBillScraper(BillScraper):
     state = 'wi'
 
-    def __init__(self, *args, **kwargs):
-        super(WIBillScraper, self).__init__(*args, **kwargs)
-        self.build_issue_index()
+    def scrape_subjects(self, year=2011):
+        last_url = None
+        next_url = 'https://docs.legis.wisconsin.gov/%s/related/subject_index/index/' % year
 
-    def build_issue_index(self):
-        self.log('building WI issue index')
-        self._subjects = defaultdict(list)
+        self.subjects = defaultdict(list)
 
-        n = 2
-        try:
-            while True:
-                url = 'http://nxt.legis.state.wi.us/nxt/gateway.dll/Session%%20Related/indxsubj/%s' % n
-                with self.urlopen(url) as html:
-                    doc = lxml.html.fromstring(html)
-                    title = doc.xpath('//title/text()')[0]
-                    links = doc.xpath('//a/text()')
-                    for link in links:
-                        if '-' in link:  # check that its a bill
-                            link = link.replace('-', ' ').strip()
-                            self._subjects[link].append(title)
-                n += 1
-        except scrapelib.ScrapeError:
-            pass
+        while last_url != next_url:
+            html = self.urlopen(next_url)
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(next_url)
+
+            last_url = next_url
+            # get the 'Down' url
+            next_url = doc.xpath('//a[text()="Down"]/@href')[0]
+
+            a_path = '/document/session/2011/reg/'
+
+            # find all bill links
+            for bill_a in doc.xpath('//a[contains(@href, "%s")]' % a_path):
+                bill_id = bill_a.text_content()
+
+                # subject is in the immediately preceding span
+                preceding_subject = bill_a.xpath(
+                    './preceding::span[@class="qs_subjecthead_"]/text()')
+                # there wasn't a subject get the one from end of the prior page
+                if not preceding_subject:
+                    preceding_subject = last_subject
+                else:
+                    preceding_subject = preceding_subject[-1]
+                self.subjects[bill_id].append(preceding_subject)
+
+            # last subject on the page, in case we get a bill_id on next page
+            last_subject = bill_a.xpath(
+                '//span[@class="qs_subjecthead_"]/text()')[-1]
+
 
     def scrape(self, chamber, session):
+
+        self.scrape_subjects()
+
         types = {'lower': ['ab', 'ajr', 'ar', 'ap'],
                  'upper': ['sb', 'sjr', 'sr', 'sp']}
         base_url = 'http://www.legis.state.wi.us/%s/data/%s_list.html'
