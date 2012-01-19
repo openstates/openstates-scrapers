@@ -103,6 +103,10 @@ class AKBillScraper(BillScraper):
             bill_name = link.parent.parent.findNext('td').find(
                 'font').contents[0].strip()
 
+            if not bill_name:
+                self.warning('skipping blank bill: %s' % bill_id)
+                continue
+
             if bill_id.startswith('HB') or bill_id.startswith('SB'):
                 btype = ['bill']
             elif bill_id.startswith('SJR') or bill_id.startswith('HJR'):

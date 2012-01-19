@@ -111,8 +111,14 @@ class GABillScraper(BillScraper):
                 raise ValueError('unknown type: %s' % type)
 
             # use short_title as title and long as description
-            title = bxml.xpath('Short_Title/text()')[0]
+            title = bxml.xpath('Short_Title/text()')
             description = bxml.xpath('Title/text()')[0]
+
+            if title:
+                title = title[0]
+            else:
+                title = description
+                description = ''
 
             bill = Bill(session, chamber, bill_id, title, type=type,
                         description=description)
