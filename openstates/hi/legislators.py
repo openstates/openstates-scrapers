@@ -44,6 +44,7 @@ class HILegislatorScraper(LegislatorScraper):
             contact  = person[display_order["contact"]]
             district = person[display_order["district"]]
             metainf = self.scrape_contact_info( contact )
+            district = self.scrape_district_info( district )
 
             image = "%s/%s" % (
                 HI_BASE_URL,
@@ -51,8 +52,9 @@ class HILegislatorScraper(LegislatorScraper):
             )
 
             pmeta = {
-                "image" : image,
-                "source" : url
+                "image"    : image,
+                "source"   : url,
+                "district" : district
             }
 
             for meta in metainf:
@@ -61,12 +63,7 @@ class HILegislatorScraper(LegislatorScraper):
             ret.append(pmeta)
         return ret
 
-    def scrape_contact_info( self, contact ):
-        homepage = "%s/%s" % ( # XXX: Dispatch a read on this page
-            HI_BASE_URL,
-            contact.xpath("./a")[0].attrib['href']
-        )
-
+    def br_split( self, contact ):
         cel = []
         els = [ cel ]
 
@@ -78,6 +75,18 @@ class HILegislatorScraper(LegislatorScraper):
                 els.append(cel)
             else:
                 cel.append( element )
+        return els
+
+    def scrape_district_info( self, district ):
+        return district[2].text_content()
+
+    def scrape_contact_info( self, contact ):
+        homepage = "%s/%s" % ( # XXX: Dispatch a read on this page
+            HI_BASE_URL,
+            contact.xpath("./a")[0].attrib['href']
+        )
+
+        els = self.br_split( contact )
 
         def _scrape_title( els ):
             return els[0].text_content()
@@ -139,15 +148,15 @@ class HILegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, session):
         metainf = self.scrape_leg_page(get_chamber_listing_url( chamber ))
         for leg in metainf:
-            district = None
-            p = Legislator( session, chamber, district, leg['name'],
+            print leg
+            p = Legislator( session, chamber, leg['district'], leg['name'],
                 party=leg['party'],
                 # some additional things the website provides:
                 photo_url=leg['image'],
                 url=leg['homepage'],
                 room=leg['room'],
                 phone=leg['phone'],
-                fax=leg['fax'], #XXX: Do we want this?
+                fax=leg['fax'],
                 email=leg['email'],
                 address=leg['addr'])
             p.add_source( leg['source'] )
