@@ -149,7 +149,7 @@ class WIBillScraper(BillScraper):
                   'Memo' in a.text or
                   'Government Accountability Board' in a.text or
                   'Redistricting Attachment' in a.text or
-                  'Budget Index Report' in a.text or
+                  'Budget Index Report' in a.text
                  ):
                 bill.add_document(a.text, a.get('href'))
             elif ('Bill Text' in a.text or
