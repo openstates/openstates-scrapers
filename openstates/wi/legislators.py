@@ -9,9 +9,9 @@ PARTY_DICT = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
 
 class WILegislatorScraper(LegislatorScraper):
     state = 'wi'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        self.validate_term(term)
 
         if chamber == 'upper':
             url = "http://legis.wi.gov/w3asp/contact/legislatorslist.aspx?house=senate"
