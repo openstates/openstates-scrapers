@@ -198,8 +198,8 @@ class HILegislatorScraper(LegislatorScraper):
                         chamber=ctty_chamber,
                         committee=ctty['name'],
                         position="member")
-
             except KeyError:
-                pass
+                self.log( "XXX: Warning, %s has no scraped Commities" %
+                    leg['name'] )
 
             self.save_legislator( p )
