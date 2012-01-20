@@ -60,11 +60,11 @@ metadata = {
             'display_name': 'Dec 2009 Special Session',
             '_scraped_name': 'Dec 2009 Special Session',
         },
-        '2011 Regular Session': {'start_date': datetime.date(2009,1,11),
+        '2011 Regular Session': {'start_date': datetime.date(2011,1,11),
                                  'end_date': datetime.date(2013,1,7),
                                  'type': 'primary',
                                  'display_name': '2011 Regular Session',
-                                 '_scraped_name': '2011 Regular Session'
+                                 '_scraped_name': '2011 Regular Session',
                                 },
         'January 2011 Special Session': {
             'type': 'special', 'site_id': 'jr1',
@@ -72,7 +72,7 @@ metadata = {
             '_scraped_name': 'Jan 2011 Special Session',
         },
         'September 2011 Special Session': {
-            'type': 'special', 'site_id': 'SE1',
+            'type': 'special', 'site_id': 'se1',
             'display_name': 'Sep 2011 Special Session',
             '_scraped_name': 'Sept 2011 Special Session',
         },
