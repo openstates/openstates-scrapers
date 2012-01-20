@@ -96,7 +96,7 @@ class WIBillScraper(BillScraper):
                                                                 'reg')
         chamber_slug = {'upper': 'sen', 'lower': 'asm'}[chamber]
 
-        #self.scrape_subjects(year, site_id)
+        self.scrape_subjects(year, site_id)
 
         types = ('bill', 'joint_resolution', 'resolution')
 
@@ -130,7 +130,7 @@ class WIBillScraper(BillScraper):
 
             bill = Bill(session, chamber, bill_id, title,
                         type=bill_type)
-            #bill['subjects'] = list(set(self.subjects[bill_id]))
+            bill['subjects'] = list(set(self.subjects[bill_id]))
             self.scrape_bill_history(bill, bill_url)
 
     def scrape_bill_history(self, bill, url):
@@ -138,7 +138,7 @@ class WIBillScraper(BillScraper):
         doc = lxml.html.fromstring(body)
         doc.make_links_absolute(url)
 
-        bill['status'] = doc.xpath('//div[@class="propStatus"]/h2/text()')
+        bill['status'] = doc.xpath('//div[@class="propStatus"]/h2/text()')[0]
 
         # add versions
         for a in doc.xpath('//ul[@class="docLinks"]/li//a'):
@@ -160,7 +160,11 @@ class WIBillScraper(BillScraper):
                 bill.add_version(a.text, a.get('href'))
             elif a.text in ('Amendments', 'Fiscal Estimates',
                             'Record of Committee Proceedings'):
-                pass
+                extra_doc_url = a.get('href')
+                extra_doc = lxml.html.fromstring(self.urlopen(extra_doc_url))
+                for extra_a in extra_doc.xpath('//li//a'):
+                    if extra_a.text:
+                        bill.add_document(extra_a.text, extra_a.get('href'))
             else:
                 self.warning('unknown document %s %s' % (bill['bill_id'],
                                                          a.text))
@@ -173,7 +177,12 @@ class WIBillScraper(BillScraper):
             actor = dt.xpath('abbr/text()')[0]
             actor = {'Asm.': 'lower', 'Sen.': 'upper'}[actor]
             # text is in the dd immediately following
-            action = dt.xpath('following-sibling::dd[1]')[0].text_content()
+            dd = dt.xpath('following-sibling::dd[1]')[0]
+            action = dd.text_content()
+            # get the journal number from the end of the line & strip it
+            jspan = dd.xpath('string(.//span[@class="journal noprint"])')
+            if jspan:
+                action = action[:-len(jspan)]
 
             if 'Introduced by' in action:
                 self.parse_sponsors(bill, action)
@@ -185,7 +194,7 @@ class WIBillScraper(BillScraper):
                     atype = type
                     break
 
-            bill.add_action(actor, action, date, type)
+            bill.add_action(actor, action, date, atype)
 
             # if this is a vote, add a Vote to the bill
             if 'Ayes' in action:
