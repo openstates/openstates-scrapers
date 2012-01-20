@@ -26,7 +26,7 @@ class TNBillScraper(BillScraper):
     
     def scrape(self, chamber, term):
         
-        abbrs = ['HB', 'HJR', 'HR']
+        abbrs = ['HB', 'HJR', 'HR', 'SB','SJR', 'SR']
 
         for abbr in abbrs:
             if term == '107':
@@ -87,16 +87,26 @@ class TNBillScraper(BillScraper):
             summary = page.xpath("//span[@id='lblBillSponsor']/a")[0]
             bill.add_document('Full summary', summary.get('href'))
             
-            # Actions
+            #Primary Actions
             tables = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvBillActionHistory']")
             actions_table = tables[0]
             action_rows = actions_table.xpath("tr[position()>1]")
             for ar in action_rows:
                 action_taken = ar.xpath("td")[0].text
                 action_date = datetime.datetime.strptime(ar.xpath("td")[1].text.strip(), '%m/%d/%Y')
-                #NEED TO ADD SECONDARY ACTIONS
                 bill.add_action(primary_chamber, action_taken, action_date)
 
+
+            #Secondary Actions
+            tables2 = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvCoActionHistory']")
+            actions2_table = tables2[0]
+            action2_rows = actions2_table.xpath("tr[position()>1]")
+            for ar2 in action2_rows:
+                action2_taken = ar2.xpath("td")[0].text
+                action2_date = datetime.datetime.strptime(ar2.xpath("td")[1].text.strip(), '%m/%d/%Y')
+                bill.add_action(chamber2, action2_taken, action2_date)
+
+            #Primary Votes
             votes_link = page.xpath("//span[@id='lblBillVotes']/a")
             if(len(votes_link) > 0):
                 votes_link = votes_link[0].get('href')
