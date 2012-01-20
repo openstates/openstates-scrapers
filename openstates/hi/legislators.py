@@ -164,6 +164,7 @@ class HILegislatorScraper(LegislatorScraper):
                 fax=leg['fax'],
                 email=leg['email'],
                 address=leg['addr'])
-            p.add_source( leg['source'] )
+            for source in leg['source']:
+                p.add_source( source )
             self.save_legislator( p )
 
