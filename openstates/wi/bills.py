@@ -86,7 +86,6 @@ class WIBillScraper(BillScraper):
 
 
     def scrape(self, chamber, session):
-
         # get year
         for t in self.metadata['terms']:
             if session in t['sessions']:
@@ -168,6 +167,9 @@ class WIBillScraper(BillScraper):
             # text is in the dd immediately following
             action = dt.xpath('following-sibling::dd[1]')[0].text_content()
 
+            if 'Introduced by' in action:
+                self.parse_sponsors(bill, action)
+
             # classify actions
             atype = 'other'
             for regex, type in action_classifiers.iteritems():
@@ -185,23 +187,34 @@ class WIBillScraper(BillScraper):
         bill.add_source(url)
         self.save_bill(bill)
 
-    def parse_sponsors(self, bill, line, chamber):
-        sponsor_type = None
-        if chamber == 'upper':
-            leg_chamber = {'primary': 'upper', 'cosponsor': 'lower'}
+    def parse_sponsors(self, bill, action):
+        if ';' in action:
+            lines = action.split(';')
         else:
-            leg_chamber = {'primary': 'lower', 'cosponsor': 'upper'}
-        for r in re.split(r'\sand\s|\,|;', line):
-            r = r.strip()
-            if r.find('Introduced by') != -1:
+            lines = [action]
+
+        for line in lines:
+            match = re.match(
+                '(Introduced|Cosponsored) by (Senators|Representatives|committee) (.*)',
+                line)
+            type, title, people = match.groups()
+            if type == 'Introduced':
                 sponsor_type = 'primary'
-                r = re.split(r'Introduced by \w+', r)[1]
-            if r.find('cosponsored by') != -1:
+            elif type == 'Cosponsored':
                 sponsor_type = 'cosponsor'
-                r = re.split(r'cosponsored by \w+', r)[1]
-            if r.strip():
-                bill.add_sponsor(sponsor_type, r.strip(),
-                                 chamber=leg_chamber[sponsor_type])
+
+            if title == 'Senators':
+                sponsor_chamber = 'upper'
+            elif title == 'Representatives':
+                sponsor_chamber = 'lower'
+            elif title == 'committee':
+                sponsor_chamber = bill['chamber']
+                people = 'Committee ' + people
+
+            for r in re.split(r'\sand\s|\,', people):
+                if r.strip():
+                    bill.add_sponsor(sponsor_type, r.strip(),
+                                     chamber=sponsor_chamber)
 
     def add_vote(self, bill, chamber, date, text, dd):
         votes = re.findall(r'Ayes (\d+)\, N(?:oes|ays) (\d+)', text)
