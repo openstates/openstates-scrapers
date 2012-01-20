@@ -148,7 +148,6 @@ class HILegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, session):
         metainf = self.scrape_leg_page(get_chamber_listing_url( chamber ))
         for leg in metainf:
-            print leg
             p = Legislator( session, chamber, leg['district'], leg['name'],
                 party=leg['party'],
                 # some additional things the website provides:
@@ -160,3 +159,4 @@ class HILegislatorScraper(LegislatorScraper):
                 email=leg['email'],
                 address=leg['addr'])
             p.add_source( leg['source'] )
+            self.save_legislator( p )
