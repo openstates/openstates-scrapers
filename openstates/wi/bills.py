@@ -73,7 +73,7 @@ class WIBillScraper(BillScraper):
                     './preceding::span[@class="qs_subjecthead_"]/text()')
                 # there wasn't a subject get the one from end of the prior page
                 if not preceding_subject:
-                    preceding_subject = last_subject
+                    preceding_subject = last_subject[0]
                 else:
                     preceding_subject = preceding_subject[-1]
                 preceding_subject = preceding_subject.replace(u'\xe2\x80\x94',
@@ -81,8 +81,10 @@ class WIBillScraper(BillScraper):
                 self.subjects[bill_id].append(preceding_subject)
 
             # last subject on the page, in case we get a bill_id on next page
-            last_subject = doc.xpath(
-                '//span[@class="qs_subjecthead_"]/text()')[-1]
+            last_subject_span = doc.xpath(
+                '//span[@class="qs_subjecthead_"]/text()')
+            if last_subject_span:
+                last_subject = last_subject_span[0]
 
 
     def scrape(self, chamber, session):
