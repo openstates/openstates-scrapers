@@ -28,7 +28,23 @@ class HILegislatorScraper(LegislatorScraper):
 
     def scrape_homepage( self, url ):
         page, html = self.get_page( url )
-        ret = { "source" : url }
+        ret = { "source" : url, 'ctty' : [] }
+
+        table = page.xpath(
+            "//table[@id='ctl00_ContentPlaceHolderCol1_GridViewMemberof']")
+        if len(table) > 0:
+            table = table[0]
+        else:
+            return None
+
+        cttys = table.xpath( "./tr/td/a" )
+        for ctty in cttys:
+            ret['ctty'].append({
+                "name" : ctty.text,
+                "page" : "%s/%s" % (HI_BASE_URL, ctty.attrib['href'])
+            })
+
+        print ret
 
         return ret
 
@@ -60,9 +76,12 @@ class HILegislatorScraper(LegislatorScraper):
 
             pmeta = {
                 "image"    : image,
-                "source"   : [ url, homepage['source'] ],
+                "source"   : [ url ],
                 "district" : district
             }
+
+            if homepage != None:
+                pmeta['source'].append(homepage['source'])
 
             for meta in metainf:
                 pmeta[meta] = metainf[meta]
@@ -164,7 +183,9 @@ class HILegislatorScraper(LegislatorScraper):
                 fax=leg['fax'],
                 email=leg['email'],
                 address=leg['addr'])
+
             for source in leg['source']:
                 p.add_source( source )
+
             self.save_legislator( p )
 
