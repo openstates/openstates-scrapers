@@ -26,6 +26,12 @@ class HILegislatorScraper(LegislatorScraper):
             return ( page, html )
         raise ScrapeError("Error getting the page. Sorry, man.")
 
+    def scrape_homepage( self, url ):
+        page, html = self.get_page( url )
+        ret = { "source" : url }
+
+        return ret
+
     def scrape_leg_page( self, url ):
         page, html = self.get_page(url)
         people = page.xpath( \
@@ -43,8 +49,9 @@ class HILegislatorScraper(LegislatorScraper):
             image    = person[display_order["image"]]
             contact  = person[display_order["contact"]]
             district = person[display_order["district"]]
-            metainf = self.scrape_contact_info( contact )
+            metainf  = self.scrape_contact_info( contact )
             district = self.scrape_district_info( district )
+            homepage = self.scrape_homepage( metainf['homepage'] )
 
             image = "%s/%s" % (
                 HI_BASE_URL,
@@ -53,7 +60,7 @@ class HILegislatorScraper(LegislatorScraper):
 
             pmeta = {
                 "image"    : image,
-                "source"   : url,
+                "source"   : [ url, homepage['source'] ],
                 "district" : district
             }
 
@@ -136,13 +143,12 @@ class HILegislatorScraper(LegislatorScraper):
         }
 
         ret = {
-            "homepage" : homepage    
+            "homepage" : homepage
         }
 
         for entry in contact_entries:
             index, callback = contact_entries[entry]
             ret[entry] = callback( els[index] )
-
         return ret
 
     def scrape(self, chamber, session):
@@ -160,3 +166,4 @@ class HILegislatorScraper(LegislatorScraper):
                 address=leg['addr'])
             p.add_source( leg['source'] )
             self.save_legislator( p )
+
