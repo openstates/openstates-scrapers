@@ -42,18 +42,19 @@ class HILegislatorScraper(LegislatorScraper):
             contact  = person[display_order["contact"]]
             district = person[display_order["district"]]
 
-            print self.scrape_contact_info( contact )
+            metainf = self.scrape_contact_info( contact )
 
             image = "%s/%s" % (
                 HI_BASE_URL,
                 image.xpath("./*/img")[0].attrib['src']
             )
-            homepage = "%s/%s" % ( # XXX: Dispatch a read on this page
-                HI_BASE_URL,
-                contact.xpath("./a")[0].attrib['href']
-            )
 
     def scrape_contact_info( self, contact ):
+        homepage = "%s/%s" % ( # XXX: Dispatch a read on this page
+            HI_BASE_URL,
+            contact.xpath("./a")[0].attrib['href']
+        )
+
         cel = []
         els = [ cel ]
 
@@ -113,7 +114,9 @@ class HILegislatorScraper(LegislatorScraper):
             "email" : ( 5, _scrape_email )
         }
 
-        ret = {}
+        ret = {
+            "homepage" : homepage    
+        }
 
         for entry in contact_entries:
             index, callback = contact_entries[entry]
