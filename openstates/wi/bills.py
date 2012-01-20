@@ -145,10 +145,18 @@ class WIBillScraper(BillScraper):
             # blank ones are PDFs that follow HTML
             if not a.text:
                 continue
-            elif ('Wisconsin Act' in a.text or 'Memo' in a.text or
-                  'Government Accountability Board' in a.text):
+            elif ('Wisconsin Act' in a.text or
+                  'Memo' in a.text or
+                  'Government Accountability Board' in a.text or
+                  'Redistricting Attachment' in a.text or
+                  'Budget Index Report' in a.text or
+                 ):
                 bill.add_document(a.text, a.get('href'))
-            elif 'Bill Text' in a.text:
+            elif ('Bill Text' in a.text or
+                  'Resolution Text' in a.text or
+                  'Enrolled Joint Resolution' in a.text or
+                  'Engrossed Resolution' in a.text
+                 ):
                 bill.add_version(a.text, a.get('href'))
             elif a.text in ('Amendments', 'Fiscal Estimates',
                             'Record of Committee Proceedings'):
@@ -195,7 +203,7 @@ class WIBillScraper(BillScraper):
 
         for line in lines:
             match = re.match(
-                '(Introduced|Cosponsored) by (Senators|Representatives|committee) (.*)',
+                '(Introduced|Cosponsored) by (?:joint )?(Senator|Representative|committee|Joint Legislative Council|Law Revision Committee)s?(.*)',
                 line)
             type, title, people = match.groups()
             if type == 'Introduced':
@@ -203,13 +211,17 @@ class WIBillScraper(BillScraper):
             elif type == 'Cosponsored':
                 sponsor_type = 'cosponsor'
 
-            if title == 'Senators':
+            if title == 'Senator':
                 sponsor_chamber = 'upper'
-            elif title == 'Representatives':
+            elif title == 'Representative':
                 sponsor_chamber = 'lower'
             elif title == 'committee':
                 sponsor_chamber = bill['chamber']
                 people = 'Committee ' + people
+            elif title in ('Joint Legislative Council',
+                           'Law Revision Committee'):
+                sponsor_chamber = bill['chamber']
+                people = title
 
             for r in re.split(r'\sand\s|\,', people):
                 if r.strip():
