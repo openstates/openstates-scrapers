@@ -86,30 +86,40 @@ class HILegislatorScraper(LegislatorScraper):
                 return "Other"
 
         def _scrape_addr( els ):
-            pass
+            room_number = els[1].text_content()
+            slug        = els[0].text_content()
+            return "%s %s" % ( slug, room_number )
+
+        def _scrape_room( els ):
+            return els[1].text_content()
 
         def _scrape_phone( els ):
-            pass
+            return els[1].text_content()
 
         def _scrape_fax( els ):
-            pass
+            return els[1].text_content()
 
         def _scrape_email( els ):
-            pass
+            return els[1].text_content()
 
         contact_entries = {
             "title" : ( 0, _scrape_title ),
             "name"  : ( 1, _scrape_name ),
             "party" : ( 1, _scrape_party ),
             "addr"  : ( 2, _scrape_addr ),
+            "room"  : ( 2, _scrape_room ),
             "phone" : ( 3, _scrape_phone ),
             "fax"   : ( 4, _scrape_fax ),
             "email" : ( 5, _scrape_email )
         }
 
+        ret = {}
+
         for entry in contact_entries:
             index, callback = contact_entries[entry]
-            print callback( els[index] )
+            ret[entry] = callback( els[index] )
+
+        return ret
 
     def scrape(self, chamber, session):
         print self.scrape_leg_page(get_chamber_listing_url( chamber ))
