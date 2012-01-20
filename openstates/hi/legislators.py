@@ -144,5 +144,10 @@ class HILegislatorScraper(LegislatorScraper):
                 party=leg['party'],
                 # some additional things the website provides:
                 photo_url=leg['image'],
-                url=leg['homepage'])
+                url=leg['homepage'],
+                room=leg['room'],
+                phone=leg['phone'],
+                fax=leg['fax'], #XXX: Do we want this?
+                email=leg['email'],
+                address=leg['addr'])
             p.add_source( leg['source'] )
