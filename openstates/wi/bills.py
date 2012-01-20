@@ -306,8 +306,9 @@ class WIBillScraper(BillScraper):
             if textitem.startswith('AYES'):
                 ayes, nays, nv, paired = vcount_re.match(textitem).groups()
                 vote['yes_count'] = int(ayes)
-                vote['no_count'] = int(nays)
-                vote['other_count'] = int(nv)+int(paired)
+                vote['no_count'] = int(nays) + in
+                vote['other_count'] = int(nv)
+                # NOTE: paired do not count in WI's counts so we omit them
             elif textitem == 'N':
                 vfunc = vote.no
                 name = ''
