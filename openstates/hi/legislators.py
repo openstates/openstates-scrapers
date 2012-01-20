@@ -187,9 +187,15 @@ class HILegislatorScraper(LegislatorScraper):
 
             try:
                 for ctty in leg['ctty']:
+                    flag='Joint Legislative'
+                    if ctty['name'][:len(flag)] == flag:
+                        ctty_chamber = "joint"
+                    else:
+                        ctty_chamber = chamber
+
                     p.add_role( 'committee member',
                         term=session,
-                        chamber=chamber,
+                        chamber=ctty_chamber,
                         committee=ctty['name'],
                         position="member")
 
