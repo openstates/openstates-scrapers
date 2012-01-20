@@ -43,9 +43,6 @@ class HILegislatorScraper(LegislatorScraper):
                 "name" : ctty.text,
                 "page" : "%s/%s" % (HI_BASE_URL, ctty.attrib['href'])
             })
-
-        print ret
-
         return ret
 
     def scrape_leg_page( self, url ):
@@ -77,11 +74,12 @@ class HILegislatorScraper(LegislatorScraper):
             pmeta = {
                 "image"    : image,
                 "source"   : [ url ],
-                "district" : district
+                "district" : district,
             }
 
             if homepage != None:
                 pmeta['source'].append(homepage['source'])
+                pmeta['ctty'] = homepage['ctty']
 
             for meta in metainf:
                 pmeta[meta] = metainf[meta]
@@ -187,5 +185,15 @@ class HILegislatorScraper(LegislatorScraper):
             for source in leg['source']:
                 p.add_source( source )
 
-            self.save_legislator( p )
+            try:
+                for ctty in leg['ctty']:
+                    p.add_role( 'committee member',
+                        term=session,
+                        chamber=chamber,
+                        committee=ctty['name'],
+                        position="member")
 
+            except KeyError:
+                pass
+
+            self.save_legislator( p )
