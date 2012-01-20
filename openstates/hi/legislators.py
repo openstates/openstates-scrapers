@@ -37,17 +37,29 @@ class HILegislatorScraper(LegislatorScraper):
             "district" : 2
         }
 
+        ret = []
+
         for person in people:
             image    = person[display_order["image"]]
             contact  = person[display_order["contact"]]
             district = person[display_order["district"]]
-
             metainf = self.scrape_contact_info( contact )
 
             image = "%s/%s" % (
                 HI_BASE_URL,
                 image.xpath("./*/img")[0].attrib['src']
             )
+
+            pmeta = {
+                "image" : image,
+                "source" : url
+            }
+
+            for meta in metainf:
+                pmeta[meta] = metainf[meta]
+
+            ret.append(pmeta)
+        return ret
 
     def scrape_contact_info( self, contact ):
         homepage = "%s/%s" % ( # XXX: Dispatch a read on this page
@@ -125,4 +137,12 @@ class HILegislatorScraper(LegislatorScraper):
         return ret
 
     def scrape(self, chamber, session):
-        print self.scrape_leg_page(get_chamber_listing_url( chamber ))
+        metainf = self.scrape_leg_page(get_chamber_listing_url( chamber ))
+        for leg in metainf:
+            district = None
+            p = Legislator( session, chamber, district, leg['name'],
+                party=leg['party'],
+                # some additional things the website provides:
+                photo_url=leg['image'],
+                url=leg['homepage'])
+            p.add_source( leg['source'] )
