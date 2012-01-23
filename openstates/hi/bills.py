@@ -14,7 +14,8 @@ def create_bill_report_url( chamber, year, bill_type ):
     cname = { "upper" : "s", "lower" : "h" }[chamber]
     bill_slug = {
         "bill" : "intro%sb" % ( cname ),
-        "cr"   : "%sCR" % ( cname.upper() )
+        "cr"   : "%sCR" % ( cname.upper() ),
+        "r"    : "%sR"  % ( cname.upper() )
     }
 
     return HI_URL_BASE + "/report.aspx?type=" + bill_slug[bill_type] + \
@@ -225,7 +226,7 @@ class HIBillScraper(BillScraper):
             self.save_bill(b)
 
     def scrape( self, session, chamber ):
-        bill_types = [ "bill", "cr" ]
+        bill_types = [ "bill", "cr", "r" ]
         for typ in bill_types:
             self.scrape_type( session, chamber, typ )
 
