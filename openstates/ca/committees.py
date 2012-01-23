@@ -30,6 +30,10 @@ class CACommitteeScraper(CommitteeScraper):
                            'lower': ['Standing', 'Select']}
 
         for type_ in committee_types[chamber]:
+
+            if type_ == 'joint':
+                chamber = type_
+
             div = doc.xpath('//div[contains(@class, "view-view-%sCommittee")]' % type_)[0]
             committees = div.xpath('descendant::span[@class="field-content"]/a/text()')
             committees = map(strip, committees)
@@ -85,7 +89,7 @@ class CACommitteeScraper(CommitteeScraper):
         members = members[::2]
 
         if not members:
-            self.warn('Dind\'t find any committe members at url: %s' % url)
+            self.warning('Dind\'t find any committe members at url: %s' % url)
         
         for member in members:
             
