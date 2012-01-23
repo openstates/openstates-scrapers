@@ -10,9 +10,15 @@ from billy.scrape.votes import Vote
 HI_URL_BASE = "http://capitol.hawaii.gov"
 
 
-def create_bill_report_url( chamber, year ):
+def create_bill_report_url( chamber, year, bill_type ):
     cname = { "upper" : "s", "lower" : "h" }[chamber]
-    return HI_URL_BASE + "/report.aspx?type=intro" + cname + "b&year=" + year
+    bill_slug = {
+        "bill" : "intro%sb" % ( cname ),
+        "cr"   : "%sCR" % ( cname.upper() )
+    }
+
+    return HI_URL_BASE + "/report.aspx?type=" + bill_slug[bill_type] + \
+        "&year=" + year
 
 def categorize_action(action):
     classifiers = (
@@ -160,11 +166,11 @@ class HIBillScraper(BillScraper):
             return result, motion
         return None
 
-    def scrape(self, chamber, session):
+    def scrape_type(self, chamber, session, billtype):
         session_urlslug = \
             self.metadata['session_details'][session]['_scraped_name']
         bills = self.scrape_report_page( \
-            create_bill_report_url( chamber, session_urlslug ) )
+            create_bill_report_url( chamber, session_urlslug, billtype ))
         for bill in bills:
             meta      = bill['metainf']
             versions  = bill['versions']
@@ -181,7 +187,8 @@ class HIBillScraper(BillScraper):
                 companion=companion,
                 description=descr,
                 referral=ref,
-                measure_title=m_title)
+                measure_title=m_title,
+                type=billtype)
             b.add_source( bill['url'] )
             for version in versions:
                 for link in version['links']:
@@ -216,3 +223,9 @@ class HIBillScraper(BillScraper):
                     b.add_vote( vote )
 
             self.save_bill(b)
+
+    def scrape( self, session, chamber ):
+        bill_types = [ "bill", "cr" ]
+        for typ in bill_types:
+            self.scrape_type( session, chamber, typ )
+
