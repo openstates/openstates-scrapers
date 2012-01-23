@@ -25,7 +25,8 @@ class TNBillScraper(BillScraper):
     }
     
     def scrape(self, chamber, term):
-        
+
+        #types of bills
         abbrs = ['HB', 'HJR', 'HR', 'SB','SJR', 'SR']
 
         for abbr in abbrs:
@@ -50,11 +51,13 @@ class TNBillScraper(BillScraper):
 
         with self.urlopen(bill_url) as page:
             page = lxml.html.fromstring(page)
-            
+            matching_bill = False
             chamber1 = page.xpath('//span[@id="lblBillSponsor"]/a[1]')[0].text
             
+            #Checking if there is a matching bill
             if len(page.xpath('//span[@id="lblCoBillSponsor"]/a[1]')) > 0:
-            
+                matching_bill = True
+
                 chamber2 = page.xpath('//span[@id="lblCoBillSponsor"]/a[1]')[0].text
 
                 if '*' in chamber1:
@@ -96,21 +99,34 @@ class TNBillScraper(BillScraper):
                 action_date = datetime.datetime.strptime(ar.xpath("td")[1].text.strip(), '%m/%d/%Y')
                 bill.add_action(primary_chamber, action_taken, action_date)
 
-
-            #Secondary Actions
-            tables2 = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvCoActionHistory']")
-            actions2_table = tables2[0]
-            action2_rows = actions2_table.xpath("tr[position()>1]")
-            for ar2 in action2_rows:
-                action2_taken = ar2.xpath("td")[0].text
-                action2_date = datetime.datetime.strptime(ar2.xpath("td")[1].text.strip(), '%m/%d/%Y')
-                bill.add_action(chamber2, action2_taken, action2_date)
-
             #Primary Votes
             votes_link = page.xpath("//span[@id='lblBillVotes']/a")
             if(len(votes_link) > 0):
                 votes_link = votes_link[0].get('href')
                 bill = self.scrape_votes(bill, sponsor, 'http://wapp.capitol.tn.gov/apps/Billinfo/%s' % (votes_link,))
+
+            #If there is a matching bill            
+            if matching_bill == True:
+                
+                #Secondary Sponsor
+                secondary_sponsor = page.xpath("//span[@id='lblCoBillSponsor']")[0].text_content().split("by")[-1]
+                secondary_sponsor = secondary_sponsor.replace('*','').strip()
+                bill.add_sponsor('secondary', secondary_sponsor)
+
+                #Secondary Actions
+                tables2 = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvCoActionHistory']")
+                actions2_table = tables2[0]
+                action2_rows = actions2_table.xpath("tr[position()>1]")
+                for ar2 in action2_rows:
+                    action2_taken = ar2.xpath("td")[0].text
+                    action2_date = datetime.datetime.strptime(ar2.xpath("td")[1].text.strip(), '%m/%d/%Y')
+                    bill.add_action(chamber2, action2_taken, action2_date)
+
+                #Secondary Votes
+                votes2_link = page.xpath("//span[@id='lblBillVotes']/a")
+                if(len(votes_link) > 0):
+                    votes2_link = votes2_link[0].get('href')
+                    bill = self.scrape_votes(bill, secondary_sponsor, 'http://wapp.capitol.tn.gov/apps/Billinfo/%s' % (votes_link,))
 
             self.save_bill(bill)
 

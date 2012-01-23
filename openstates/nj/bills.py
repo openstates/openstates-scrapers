@@ -210,6 +210,9 @@ class NJBillScraper(BillScraper, DBFMixin):
             bill_type = rec["billtype"]
             bill_number = int(rec["billnumber"])
             bill_id = bill_type + str(bill_number)
+            if bill_id not in bill:
+                self.warning('unknown bill %s in document database' % bill_id)
+                continue
             bill = bill_dict[bill_id]
             document = rec["document"]
             document = document.split('\\')

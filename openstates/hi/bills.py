@@ -1,5 +1,6 @@
 import datetime as dt
 import lxml.html
+import re
 
 from urlparse import urlparse
 
@@ -12,6 +13,43 @@ HI_URL_BASE = "http://capitol.hawaii.gov"
 def create_bill_report_url( chamber, year ):
     cname = { "upper" : "s", "lower" : "h" }[chamber]
     return HI_URL_BASE + "/report.aspx?type=intro" + cname + "b&year=" + year
+
+def categorize_action(action):
+    classifiers = (
+        ('Pass(ed)? First Reading', 'bill:reading:1'),
+        ('Introduced and Pass(ed)? First Reading',
+             ['bill:introduced', 'bill:reading:1']),
+        ('Introduced', 'bill:introduced'),
+        #('The committee\(s\) recommends that the measure be deferred', ?
+        ('Re(-re)?ferred to ', 'committee:referred'),
+        ('Passed Second Reading .* referred to the committee',
+         ['bill:reading:2', 'committee:referred']),
+        ('.* that the measure be PASSED', 'committee:passed:favorable'),
+        ('Received from (House|Senate)', 'bill:introduced'),
+        ('Floor amendment .* offered', 'amendment:introduced'),
+        ('Floor amendment adopted', 'amendment:passed'),
+        ('Floor amendment failed', 'amendment:failed'),
+        ('.*Passed Third Reading', 'bill:passed'),
+        ('Enrolled to Governor', 'governor:received'),
+        ('Act ', 'governor:signed'),
+        # these are for resolutions
+        ('Offered', 'bill:introduced'),
+        ('Adopted', 'bill:passed'),
+    )
+    for pattern, types in classifiers:
+        if re.match(pattern, action):
+            return types
+    # return other by default
+    return 'other'
+
+def split_specific_votes(voters):
+    if voters.startswith('none'):
+        return []
+    elif voters.startswith('Senator(s)'):
+        voters = voters.replace('Senator(s) ', '')
+    elif voters.startswith('Representative(s)'):
+        voters = voters.replace('Representative(s)', '')
+    return voters.split(', ')
 
 class HIBillScraper(BillScraper):
     
@@ -38,7 +76,28 @@ class HIBillScraper(BillScraper):
         return ret
 
     def parse_bill_actions_table( self, action_table ):
-        pass
+        ret = []
+        for action in action_table.xpath('*')[1:]:
+            date   = action[0].text_content()
+            actor  = action[1].text_content()
+            string = action[2].text_content()
+            actor = {
+                "S" : "Senate",
+                "H" : "House",
+                "D" : "Data Systems",
+                "$" : "Appropriation measure",
+                "ConAm" : "Constitutional Amendment"
+            }[actor]
+            cat = categorize_action( string )
+            vote = self.parse_vote( string )
+            ret.append({
+                "date"   : date,
+                "actor"  : actor,
+                "string" : string,
+                "cat"    : cat,
+                "vote"   : vote
+            })
+        return ret
 
     def scrape_bill( self, url ):
         ret = {
@@ -55,6 +114,7 @@ class HIBillScraper(BillScraper):
 
             metainf = self.parse_bill_metainf_table( metainf_table )
             actions = self.parse_bill_actions_table( action_table )
+
             ret['metainf'] = metainf
             ret['actions'] = actions
         return ret
@@ -70,13 +130,20 @@ class HIBillScraper(BillScraper):
                 ret.append( b_data )
         return ret
 
+    def parse_vote(self, action):
+        pattern = r"were as follows: (?P<n_yes>\d+) Aye\(?s\)?:\s+(?P<yes>.*?);\s+Aye\(?s\)? with reservations:\s+(?P<yes_resv>.*?);\s+(?P<n_no>\d*) No\(?es\)?:\s+(?P<no>.*?);\s+and (?P<n_excused>\d*) Excused: (?P<excused>.*)"
+        if 'as follows' in action:
+            result = re.search(pattern, action).groupdict()
+            motion = action.split('.')[0] + '.'
+            return result, motion
+        return None
+
     def scrape(self, chamber, session):
         session_urlslug = \
             self.metadata['session_details'][session]['_scraped_name']
         bills = self.scrape_report_page( \
             create_bill_report_url( chamber, session_urlslug ) )
         for bill in bills:
-            print bill
             meta = bill['metainf']
             companion = meta['Companion']
             name      = bill['bill_name']
@@ -94,4 +161,7 @@ class HIBillScraper(BillScraper):
             b.add_source( bill['url'] )
             for sponsor in sponsors:
                 b.add_sponsor( type="primary", name=sponsor )
+
+            print bill['actions']
+
             self.save_bill(b)
