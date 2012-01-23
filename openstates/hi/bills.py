@@ -187,4 +187,6 @@ class HIBillScraper(BillScraper):
                     _add_votes( 'no',    v['no'],       vote )
                     _add_votes( 'other', v['excused'],  vote )
 
+                    b.add_vote( vote )
+
             self.save_bill(b)
