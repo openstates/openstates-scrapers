@@ -1,12 +1,30 @@
+'''
+to-do: make sure packet size is large enough to accomodate large bills
+'''
+
 import os
 import re
+import glob
+import time
 import os.path
 import zipfile
 import datetime
 import tempfile
-import scrapelib
 
+import MySQLdb
+
+import scrapelib
 from billy import db, settings
+
+
+MYSQL_USER = getattr(settings, 'MYSQL_USER', '')
+MYSQL_USER = os.environ.get('MYSQL_USER', MYSQL_USER)
+
+MYSQL_PASSWORD = getattr(settings, 'MYSQL_PASSWORD', '')
+MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', MYSQL_PASSWORD)
+
+data_dir = getattr(settings, 'CA_DATA_DIR',
+                   '/projects/openstates/ext/capublic/')
 
 
 def get_latest():
@@ -16,17 +34,20 @@ def get_latest():
     scraper = scrapelib.Scraper()
 
     meta = db.metadata.find_one({'_id': 'ca'})
-    last_update = meta['_last_update']
+    #last_update = meta['_last_update']
 
     base_url = "ftp://www.leginfo.ca.gov/pub/bill/"
     with scraper.urlopen(base_url) as page:
-        next_day = last_update + datetime.timedelta(days=1)
+
+        #next_day = last_update + datetime.timedelta(days=1)
+        next_day = datetime.date.today() - datetime.timedelta(weeks=1)
+        next_day = datetime.datetime.combine(next_day, datetime.time())
 
         while next_day.date() < datetime.date.today():
             for f in parse_directory_listing(page):
                 if (re.match(r'pubinfo_(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\.zip',
-                             f['filename'])
-                    and f['mtime'].date() == next_day.date()):
+                             f['filename'])) \
+                             and f['mtime'].date() == next_day.date():
 
                     url = base_url + f['filename']
                     print "Getting %s" % url
@@ -42,24 +63,89 @@ def get_latest():
             next_day = next_day + datetime.timedelta(days=1)
 
 
-def get_and_load(url):
-    user = os.environ.get('MYSQL_USER', getattr(settings, 'MYSQL_USER',
-                                                ''))
-    password = os.environ.get('MYSQL_PASSWORD', getattr(settings,
-                                                        'MYSQL_PASSWORD',
-                                                        ''))
+def _drop():
+    '''Drop the database.'''
+    connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
+                                 db='capublic')
+    cursor = connection.cursor()
+    cursor.execute('DROP DATABASE capublic')
+    connection.close()
 
+
+def _create():
+    os.chdir(data_dir)
+    with open('capublic.sql') as f:
+        sql = f.read()
+    
+
+    connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD)
+    cursor = connection.cursor()
+
+    for sql in ["CREATE DATABASE capublic", "USE capublic", sql]:     
+        cursor.execute(sql)
+   
+    connection.close()
+
+    
+def _startover():
+    _drop()
+    _create()
+
+
+    
+
+def load_data():
+    '''
+    Import any data files located in $CA_DATA_DIR.
+
+    First get a list of filenames like *.dat, then for each, execute
+    the corresponding .sql file after swapping out windows paths for
+    $CA_DATA_DIR.
+    '''
+    os.chdir(data_dir)
+
+    connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
+                                 db='capublic')
+
+    # For each .dat file, run its corresponding .sql file.
+    for filename in glob.glob(os.path.join(data_dir, '*.dat')):
+
+        filename = filename.replace('.dat', '.sql').lower()
+        with open(os.path.join(data_dir, filename)) as f:
+
+            # Swap out windows paths.
+            script = f.read().replace(r'c:\\pubinfo\\', data_dir)
+            
+            cursor = connection.cursor()
+            cursor.execute(script)
+            #cursor.connection.commit()
+            cursor.close()
+
+    # Remove the .dat and .log filenames.
     cmd_path = os.path.dirname(__file__)
-    data_dir = getattr(settings, 'CA_DATA_DIR',
-                       '/projects/openstates/ext/capublic/')
-    zip_path = download(url)
-    extract(zip_path, data_dir)
-
-    os.system("%s localhost %s %s %s" % (os.path.join(cmd_path, "load_data"),
-                                         user, password, data_dir))
     os.system("%s %s" % (os.path.join(cmd_path, "cleanup"), data_dir))
 
-    os.remove(zip_path)
+    connection.close()
+
+def cleanup(folder=data_dir):
+    '''
+    Delete all .dat and .lob files from folder.
+    '''
+    os.chdir(folder)
+    
+    # Remove the files.
+    for fn in glob.glob('*.dat') + glob.glob('*.lob'):
+        os.remove(fn)
+
+    
+
+def get_and_load(url):
+    '''
+    Download and extract a zipfile, then load the data.
+    '''
+    zip_path = download(url)
+    extract(zip_path, data_dir)
+    load_data()
 
 def download(url):
     scraper = scrapelib.Scraper()
