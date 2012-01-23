@@ -184,12 +184,18 @@ class HIBillScraper(BillScraper):
             sponsors  = meta['Introducer(s)']
             m_title   = meta['Measure Title']
 
+            billy_billtype = {
+                "bill" : "bill",
+                "cr"   : "concurrent resolution",
+                "r"    : "resolution"
+            }[billtype]
+
             b = Bill(session, chamber, name, title,
                 companion=companion,
                 description=descr,
                 referral=ref,
                 measure_title=m_title,
-                type=billtype)
+                type=billy_billtype)
             b.add_source( bill['url'] )
             for version in versions:
                 for link in version['links']:
