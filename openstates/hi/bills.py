@@ -100,6 +100,23 @@ class HIBillScraper(BillScraper):
             })
         return ret
 
+    def parse_bill_versions_table( self, versions ):
+        vs = []
+        for version in versions.xpath("./*")[1:]:
+            tds = version.xpath("./*")
+            http_href = tds[0].xpath("./a")
+            name      = tds[1].text_content().strip()
+            pdf_href  = tds[2].xpath("./a")
+
+            http_link = http_href[0].attrib['href']
+            pdf_link  = pdf_href[0].attrib['href']
+
+            vs.append( { "name" : name, "links" : {
+                "application/pdf" : pdf_link,
+                "text/html"       : http_link
+            }})
+        return vs
+
     def scrape_bill( self, url ):
         ret = {
             "url" : url
@@ -109,15 +126,19 @@ class HIBillScraper(BillScraper):
             scraped_bill_name = bill_page.xpath(
                 "//a[@id='LinkButtonMeasure']")[0].text_content()
             ret['bill_name'] = scraped_bill_name # for sanity checking
+            versions = bill_page.xpath( "//table[@id='GridViewVersions']" )[0]
+
             tables = bill_page.xpath("//table")
             metainf_table = tables[0]
             action_table  = tables[1]
 
-            metainf = self.parse_bill_metainf_table( metainf_table )
-            actions = self.parse_bill_actions_table( action_table )
+            metainf  = self.parse_bill_metainf_table( metainf_table )
+            actions  = self.parse_bill_actions_table( action_table )
+            versions = self.parse_bill_versions_table( versions )
 
-            ret['metainf'] = metainf
-            ret['actions'] = actions
+            ret['metainf']  = metainf
+            ret['versions'] = versions
+            ret['actions']  = actions
         return ret
 
     def scrape_report_page(self, url):
@@ -145,7 +166,8 @@ class HIBillScraper(BillScraper):
         bills = self.scrape_report_page( \
             create_bill_report_url( chamber, session_urlslug ) )
         for bill in bills:
-            meta = bill['metainf']
+            meta      = bill['metainf']
+            versions  = bill['versions']
             actions   = bill['actions']
             companion = meta['Companion']
             name      = bill['bill_name']
@@ -161,6 +183,11 @@ class HIBillScraper(BillScraper):
                 referral=ref,
                 measure_title=m_title)
             b.add_source( bill['url'] )
+            for version in versions:
+                for link in version['links']:
+                    b.add_version(version['name'], version['links'][link],
+                        mimetype=link)
+
             for sponsor in sponsors:
                 b.add_sponsor( type="primary", name=sponsor )
 
@@ -171,7 +198,6 @@ class HIBillScraper(BillScraper):
 
                 if action['vote'] != None:
                     v, motion = action['vote']
-                    print v
                     vote = Vote(chamber, action['date'], motion,
                         'PASSED' in action['string'],
                         int( v['n_yes'] or 0 ),
