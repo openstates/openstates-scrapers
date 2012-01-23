@@ -79,6 +79,7 @@ class HIBillScraper(BillScraper):
         ret = []
         for action in action_table.xpath('*')[1:]:
             date   = action[0].text_content()
+            date   = dt.datetime.strptime(date, "%m/%d/%Y")
             actor  = action[1].text_content()
             string = action[2].text_content()
             actor = {
