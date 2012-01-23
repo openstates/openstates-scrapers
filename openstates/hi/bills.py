@@ -145,6 +145,7 @@ class HIBillScraper(BillScraper):
             create_bill_report_url( chamber, session_urlslug ) )
         for bill in bills:
             meta = bill['metainf']
+            actions   = bill['actions']
             companion = meta['Companion']
             name      = bill['bill_name']
             descr     = meta['Description']
@@ -162,6 +163,19 @@ class HIBillScraper(BillScraper):
             for sponsor in sponsors:
                 b.add_sponsor( type="primary", name=sponsor )
 
-            print bill['actions']
+            for action in actions:
+
+                b.add_action(action['actor'], action['string'], action['date'])
+
+                if action['vote'] != None:
+                    v, motion = action['vote']
+                    print v
+                    vote = Vote(chamber, v['date'], motion,
+                        'PASSED' in v['action'],
+                        int( v['n_yes'] or 0 ),
+                        int( v['n_no'] or 0 ),
+                        int( v['n_excused'] or 0))
+                    for voter in split_specific_votes(v['yes']):
+                        vote.yes(voter)
 
             self.save_bill(b)
