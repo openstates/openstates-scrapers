@@ -151,19 +151,22 @@ class WIBillScraper(BillScraper):
                   'Memo' in a.text or
                   'Government Accountability Board' in a.text or
                   'Redistricting Attachment' in a.text or
-                  'Budget Index Report' in a.text
+                  'Budget Index Report' in a.text or
+                  'Veto Message' in a.text
                  ):
                 bill.add_document(a.text, a.get('href'))
             elif ('Bill Text' in a.text or
                   'Resolution Text' in a.text or
                   'Enrolled Joint Resolution' in a.text or
-                  'Engrossed Resolution' in a.text
+                  'Engrossed Resolution' in a.text or
+                  'Text as Enrolled' in a.text
                  ):
                 bill.add_version(a.text, a.get('href'))
             elif a.text in ('Amendments', 'Fiscal Estimates',
                             'Record of Committee Proceedings'):
                 extra_doc_url = a.get('href')
                 extra_doc = lxml.html.fromstring(self.urlopen(extra_doc_url))
+                extra_doc.make_links_absolute(extra_doc_url)
                 for extra_a in extra_doc.xpath('//li//a'):
                     if extra_a.text:
                         bill.add_document(extra_a.text, extra_a.get('href'))
