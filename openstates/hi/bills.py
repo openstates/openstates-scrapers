@@ -170,12 +170,18 @@ class HIBillScraper(BillScraper):
                 if action['vote'] != None:
                     v, motion = action['vote']
                     print v
-                    vote = Vote(chamber, v['date'], motion,
-                        'PASSED' in v['action'],
+                    vote = Vote(chamber, action['date'], motion,
+                        'PASSED' in action['string'],
                         int( v['n_yes'] or 0 ),
                         int( v['n_no'] or 0 ),
                         int( v['n_excused'] or 0))
-                    for voter in split_specific_votes(v['yes']):
-                        vote.yes(voter)
+                    def _add_votes( attrib, v, vote ):
+                        for voter in split_specific_votes(v):
+                            getattr(vote, attrib)(voter)
+
+                    _add_votes( 'yes',   v['yes'],      vote )
+                    _add_votes( 'yes',   v['yes_resv'], vote )
+                    _add_votes( 'no',    v['no'],       vote )
+                    _add_votes( 'other', v['excused'],  vote )
 
             self.save_bill(b)
