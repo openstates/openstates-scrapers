@@ -35,6 +35,10 @@ class KSBillScraper(BillScraper):
                 if not bill_id.startswith(chamber_letter):
                     continue
 
+                # skipping 1611, some weird 500 error
+                if bill_id == 'SCR1611':
+                    continue
+
                 if 'CR' in bill_id:
                     btype = 'concurrent resolution'
                 elif 'R' in bill_id:
@@ -84,7 +88,6 @@ class KSBillScraper(BillScraper):
     def scrape_html(self, bill):
         # we have to go to the HTML for the versions & votes
         base_url = 'http://www.kslegislature.org/li/b2011_12/measures/'
-        print bill['type']
         if 'resolution' in bill['type']:
             base_url = 'http://www.kslegislature.org/li/b2011_12/year1/measures/'
 

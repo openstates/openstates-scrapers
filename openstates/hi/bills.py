@@ -10,9 +10,16 @@ from billy.scrape.votes import Vote
 HI_URL_BASE = "http://capitol.hawaii.gov"
 
 
-def create_bill_report_url( chamber, year ):
+def create_bill_report_url( chamber, year, bill_type ):
     cname = { "upper" : "s", "lower" : "h" }[chamber]
-    return HI_URL_BASE + "/report.aspx?type=intro" + cname + "b&year=" + year
+    bill_slug = {
+        "bill" : "intro%sb" % ( cname ),
+        "cr"   : "%sCR" % ( cname.upper() ),
+        "r"    : "%sR"  % ( cname.upper() )
+    }
+
+    return HI_URL_BASE + "/report.aspx?type=" + bill_slug[bill_type] + \
+        "&year=" + year
 
 def categorize_action(action):
     classifiers = (
@@ -79,6 +86,7 @@ class HIBillScraper(BillScraper):
         ret = []
         for action in action_table.xpath('*')[1:]:
             date   = action[0].text_content()
+            date   = dt.datetime.strptime(date, "%m/%d/%Y")
             actor  = action[1].text_content()
             string = action[2].text_content()
             actor = {
@@ -99,6 +107,23 @@ class HIBillScraper(BillScraper):
             })
         return ret
 
+    def parse_bill_versions_table( self, versions ):
+        vs = []
+        for version in versions.xpath("./*")[1:]:
+            tds = version.xpath("./*")
+            http_href = tds[0].xpath("./a")
+            name      = tds[1].text_content().strip()
+            pdf_href  = tds[2].xpath("./a")
+
+            http_link = http_href[0].attrib['href']
+            pdf_link  = pdf_href[0].attrib['href']
+
+            vs.append( { "name" : name, "links" : {
+                "application/pdf" : pdf_link,
+                "text/html"       : http_link
+            }})
+        return vs
+
     def scrape_bill( self, url ):
         ret = {
             "url" : url
@@ -108,15 +133,19 @@ class HIBillScraper(BillScraper):
             scraped_bill_name = bill_page.xpath(
                 "//a[@id='LinkButtonMeasure']")[0].text_content()
             ret['bill_name'] = scraped_bill_name # for sanity checking
+            versions = bill_page.xpath( "//table[@id='GridViewVersions']" )[0]
+
             tables = bill_page.xpath("//table")
             metainf_table = tables[0]
             action_table  = tables[1]
 
-            metainf = self.parse_bill_metainf_table( metainf_table )
-            actions = self.parse_bill_actions_table( action_table )
+            metainf  = self.parse_bill_metainf_table( metainf_table )
+            actions  = self.parse_bill_actions_table( action_table )
+            versions = self.parse_bill_versions_table( versions )
 
-            ret['metainf'] = metainf
-            ret['actions'] = actions
+            ret['metainf']  = metainf
+            ret['versions'] = versions
+            ret['actions']  = actions
         return ret
 
     def scrape_report_page(self, url):
@@ -138,13 +167,15 @@ class HIBillScraper(BillScraper):
             return result, motion
         return None
 
-    def scrape(self, chamber, session):
+    def scrape_type(self, chamber, session, billtype):
         session_urlslug = \
             self.metadata['session_details'][session]['_scraped_name']
         bills = self.scrape_report_page( \
-            create_bill_report_url( chamber, session_urlslug ) )
+            create_bill_report_url( chamber, session_urlslug, billtype ))
         for bill in bills:
-            meta = bill['metainf']
+            meta      = bill['metainf']
+            versions  = bill['versions']
+            actions   = bill['actions']
             companion = meta['Companion']
             name      = bill['bill_name']
             descr     = meta['Description']
@@ -153,15 +184,55 @@ class HIBillScraper(BillScraper):
             sponsors  = meta['Introducer(s)']
             m_title   = meta['Measure Title']
 
+            billy_billtype = {
+                "bill" : "bill",
+                "cr"   : "concurrent resolution",
+                "r"    : "resolution"
+            }[billtype]
+
             b = Bill(session, chamber, name, title,
                 companion=companion,
                 description=descr,
                 referral=ref,
-                measure_title=m_title)
+                measure_title=m_title,
+                type=billy_billtype)
             b.add_source( bill['url'] )
+            for version in versions:
+                for link in version['links']:
+                    b.add_version(version['name'], version['links'][link],
+                        mimetype=link)
+
             for sponsor in sponsors:
                 b.add_sponsor( type="primary", name=sponsor )
 
-            print bill['actions']
+            for action in actions:
+
+                b.add_action(action['actor'], action['string'], action['date'],
+                    type=action['cat'])
+
+                if action['vote'] != None:
+                    v, motion = action['vote']
+                    vote = Vote(chamber, action['date'], motion,
+                        'PASSED' in action['string'],
+                        int( v['n_yes'] or 0 ),
+                        int( v['n_no'] or 0 ),
+                        int( v['n_excused'] or 0))
+
+                    def _add_votes( attrib, v, vote ):
+                        for voter in split_specific_votes(v):
+                            getattr(vote, attrib)(voter)
+
+                    _add_votes( 'yes',   v['yes'],      vote )
+                    _add_votes( 'yes',   v['yes_resv'], vote )
+                    _add_votes( 'no',    v['no'],       vote )
+                    _add_votes( 'other', v['excused'],  vote )
+
+                    b.add_vote( vote )
 
             self.save_bill(b)
+
+    def scrape( self, session, chamber ):
+        bill_types = [ "bill", "cr", "r" ]
+        for typ in bill_types:
+            self.scrape_type( session, chamber, typ )
+
