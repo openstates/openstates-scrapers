@@ -166,7 +166,8 @@ class HIBillScraper(BillScraper):
 
             for action in actions:
 
-                b.add_action(action['actor'], action['string'], action['date'])
+                b.add_action(action['actor'], action['string'], action['date'],
+                    type=action['cat'])
 
                 if action['vote'] != None:
                     v, motion = action['vote']
@@ -176,6 +177,7 @@ class HIBillScraper(BillScraper):
                         int( v['n_yes'] or 0 ),
                         int( v['n_no'] or 0 ),
                         int( v['n_excused'] or 0))
+
                     def _add_votes( attrib, v, vote ):
                         for voter in split_specific_votes(v):
                             getattr(vote, attrib)(voter)
