@@ -190,12 +190,17 @@ class HIBillScraper(BillScraper):
                 "r"    : "resolution"
             }[billtype]
 
-            b = Bill(session, chamber, name, title,
-                companion=companion,
-                description=descr,
-                referral=ref,
-                measure_title=m_title,
-                type=billy_billtype)
+            keywordargs = {
+                "description" : descr,
+                "referral" : ref,
+                "measure_title" : m_title,
+                "type" : billy_billtype
+            }
+
+            if companion != None:
+                keywordargs["companion"] = companion
+
+            b = Bill(session, chamber, name, title, **keywordargs)
             b.add_source( bill['url'] )
             for version in versions:
                 for link in version['links']:
