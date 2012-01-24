@@ -1,3 +1,6 @@
+'''
+California has Joint Committees.
+'''
 import re
 import pdb
 from operator import methodcaller
@@ -23,7 +26,14 @@ class CACommitteeScraper(CommitteeScraper):
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
 
-        for type_ in 'Standing Select Joint'.split():
+        committee_types = {'upper': ['Standing', 'Select', 'Joint'],
+                           'lower': ['Standing', 'Select']}
+
+        for type_ in committee_types[chamber]:
+
+            if type_ == 'joint':
+                chamber = type_
+
             div = doc.xpath('//div[contains(@class, "view-view-%sCommittee")]' % type_)[0]
             committees = div.xpath('descendant::span[@class="field-content"]/a/text()')
             committees = map(strip, committees)
@@ -79,7 +89,7 @@ class CACommitteeScraper(CommitteeScraper):
         members = members[::2]
 
         if not members:
-            self.warn('Dind\'t find any committe members at url: %s' % url)
+            self.warning('Dind\'t find any committe members at url: %s' % url)
         
         for member in members:
             
@@ -113,8 +123,8 @@ class CACommitteeScraper(CommitteeScraper):
         members = map(strip, members)
 
         if not members:
-            self.warning('Dind\'t find any committe members at url: %s' % url)
-        
+            self.warning('Didn\'t find any committe members at url: %s' % url)
+
         for member in members:
             role = 'member'
             for rgx in roles:
@@ -122,10 +132,15 @@ class CACommitteeScraper(CommitteeScraper):
                 if m:
                     member, role = m.groups()
 
+            kw = {}
+            for s, ch in (('Senator', 'upper'),
+                          ('Assemblymember', 'lower')):
+                if s in member:
+                    kw = {'chamber': ch}
             member = re_name.sub('', member)
             member = member.strip()
                     
-            committee.add_member(member, role)
+            committee.add_member(member, role, **kw)
 
         return committee
         

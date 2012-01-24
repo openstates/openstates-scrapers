@@ -99,7 +99,7 @@ class CALegislatorScraper(LegislatorScraper):
             pass
 
         # Addresses.
-        addresses = map(dict, res['address'])
+        addresses = map(dict, filter(None, res['address']))
         for x in addresses:
             try:
                 x['zip'] = x['zip'].replace('CA ', '')
