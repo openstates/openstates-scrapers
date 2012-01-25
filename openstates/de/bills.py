@@ -544,7 +544,13 @@ class DEBillScraper(BillScraper):
         Returns a generator like [{'name': 'docname', 'url': 'docurl'}, ...]
         '''
         source = source.replace(' ', '+')
-        _doc = self._url_2_lxml(source)
+
+        try:
+            _doc = self._url_2_lxml(source)
+        except scrapelib.HTTPError:
+            # Grrr...there a dead link posted. Warn and skip.
+            self.warn('Related document download failed (dead link): ' % source)
+            yield
 
         if _doc.xpath('//font[contains(., "DRAFT INFORMATION")]'):
             # This amendment is apparently still in draft form or can't
