@@ -1,7 +1,8 @@
 '''
 to-do: make sure packet size is large enough to accomodate large bills
 '''
-
+import pdb
+import sys
 import os
 import re
 import glob
@@ -10,11 +11,17 @@ import os.path
 import zipfile
 import datetime
 import tempfile
+import subprocess
+import logging
+from os.path import join, split
+from functools import partial
+from zipfile import ZipFile
 
 import MySQLdb
 
 import scrapelib
 from billy import db, settings
+
 
 
 MYSQL_USER = getattr(settings, 'MYSQL_USER', '')
@@ -23,61 +30,47 @@ MYSQL_USER = os.environ.get('MYSQL_USER', MYSQL_USER)
 MYSQL_PASSWORD = getattr(settings, 'MYSQL_PASSWORD', '')
 MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', MYSQL_PASSWORD)
 
-data_dir = getattr(settings, 'CA_DATA_DIR',
-                   '/projects/openstates/ext/capublic/')
+data_dir = getattr(settings, 'CA_DATA_DIR', '/projects/openstates/ext/capublic/')
+
+PROJECT = settings.PROJECT_DIR
+DATA = settings.DATA_DIR
+DOWNLOADS = join(DATA, 'ca', 'downloads')
+DBADMIN = join(DATA, 'ca', 'dbadmin')
 
 
-def get_latest():
-    """
-    Get and load the latest SQL dumps from the California legislature.
-    """
-    scraper = scrapelib.Scraper()
+# ----------------------------------------------------------------------------
+# Logging config
+logger = logging.getLogger('CA[mysql-update]')
+logger.setLevel(logging.INFO)
 
-    meta = db.metadata.find_one({'_id': 'ca'})
-    #last_update = meta['_last_update']
-
-    base_url = "ftp://www.leginfo.ca.gov/pub/bill/"
-    with scraper.urlopen(base_url) as page:
-
-        #next_day = last_update + datetime.timedelta(days=1)
-        next_day = datetime.date.today() - datetime.timedelta(weeks=1)
-        next_day = datetime.datetime.combine(next_day, datetime.time())
-
-        while next_day.date() < datetime.date.today():
-            for f in parse_directory_listing(page):
-                if (re.match(r'pubinfo_(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\.zip',
-                             f['filename'])) \
-                             and f['mtime'].date() == next_day.date():
-
-                    url = base_url + f['filename']
-                    print "Getting %s" % url
-                    get_and_load(url)
-
-                    meta['_last_update'] = next_day
-                    db.metadata.save(meta, safe=True)
-                    break
-            else:
-                print "Couldn't find entry for %s" % str(next_day.date())
-                break
-
-            next_day = next_day + datetime.timedelta(days=1)
+ch = logging.StreamHandler()
+formatter = logging.Formatter('%(name)s %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 
+
+# ---------------------------------------------------------------------------
+# Miscellaneous db admin commands.
 def _drop():
     '''Drop the database.'''
+    logger.info('dropping capublic...')
     connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
                                  db='capublic')
     cursor = connection.cursor()
     cursor.execute('DROP DATABASE capublic')
     connection.close()
+    logger.info('dropping capublic')
 
 
 def _create():
-    os.chdir(data_dir)
+
+    logger.info('Creating capublic...')
+    os.chdir(DBADMIN)
+    
     with open('capublic.sql') as f:
         sql = f.read()
     
-
     connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD)
     cursor = connection.cursor()
 
@@ -85,116 +78,227 @@ def _create():
         cursor.execute(sql)
    
     connection.close()
+    logger.info('...done creating capublic')
 
     
 def _startover():
     _drop()
     _create()
 
-
     
+# ---------------------------------------------------------------------------
+# Functions for updating the data.
 
-def load_data():
+def download():
     '''
-    Import any data files located in $CA_DATA_DIR.
+    Update the wget mirror of ftp://www.leginfo.ca.gov/pub/bill/
+
+    Uses wget -m with default behavior and will automatically skip over any files
+    that haven't been updated on the server since the file's current timestamp.
+    '''
+    logger.info('Updating mirror: ftp://www.leginfo.ca.gov/pub/bill/ ...')
+
+    # For short: wget -m -l1 -nd -A.zip ftp://www.leginfo.ca.gov/pub/bill/
+    out = subprocess.check_output(["wget",
+                                   '--mirror', '--level=1',
+                                   '--no-directories',
+                                   '--accept=.zip', 
+                                   '--directory-prefix=%s' % DOWNLOADS, 
+                                   'ftp://www.leginfo.ca.gov/pub/bill/'],
+                                  stderr=subprocess.STDOUT)    
+
+    # Figure out which files where updated.
+    updated_files = re.findall(r"([^/]+?\.zip)' saved \[\d+\]", out)
+    logger.info('...Done. Found %d updated files: %r' % (len(updated_files),
+                                                         updated_files))
+                
+    return updated_files
+
+
+
+def extract(zipfile_names, strip=partial(re.compile(r'\.zip$').sub, '')):
+    '''
+    Extract any zipfiles in our cache that have been updated.
+    '''
+    logger.info('Extracting zipfiles. This could take a while...')
+    os.chdir(DOWNLOADS)
+    folder_names = []
+    for z in zipfile_names:
+        folder = strip(z) + os.path.sep
+        zp = ZipFile(z)
+
+        msg = 'Extracting %d files to %s...' % (len(zp.namelist()), folder)
+        logger.debug(msg)
+        
+        zp.extractall(folder)
+        folder_names.append(folder)
+        
+    logger.info('done extracting zipfiles.')
+    return folder_names
+
+
+
+def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
+    '''
+    Import any data files located in `folder`.
 
     First get a list of filenames like *.dat, then for each, execute
     the corresponding .sql file after swapping out windows paths for
-    $CA_DATA_DIR.
+    `folder`.
+
+    This function doesn't bother to delete the imported data files afterwards.
+    They'll be overwritten within a week, and leaving them around makes testing
+    easier (they're huge).
     '''
-    os.chdir(data_dir)
+    logger.info('Loading data from %s...' % folder)
+    
+    folder = join(DOWNLOADS, folder)
+    os.chdir(folder)
 
     connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
                                  db='capublic')
 
-    # For each .dat file, run its corresponding .sql file.
-    for filename in glob.glob(os.path.join(data_dir, '*.dat')):
+    # For each .dat folder, run its corresponding .sql file.
+    for filename in glob.glob(join(folder, '*.dat')):
 
-        filename = filename.replace('.dat', '.sql').lower()
-        with open(os.path.join(data_dir, filename)) as f:
+        # The corresponding sql file is in the data/ca/dbadmin...
+        _, filename = split(filename)
+        sql_filename = join(DBADMIN, sql_name(filename).lower())
+        with open(sql_filename) as f:
 
             # Swap out windows paths.
-            script = f.read().replace(r'c:\\pubinfo\\', data_dir)
+            script = f.read().replace(r'c:\\pubinfo\\', folder)
             
-            cursor = connection.cursor()
-            cursor.execute(script)
-            #cursor.connection.commit()
-            cursor.close()
+            
+        cursor = connection.cursor()
 
-    # Remove the .dat and .log filenames.
-    cmd_path = os.path.dirname(__file__)
-    os.system("%s %s" % (os.path.join(cmd_path, "cleanup"), data_dir))
+        _, slq_filename = split(sql_filename)
+        #logger.debug('Running .sql file %s...' % sql_filename)
+        cursor.execute(script)
 
+    cursor.close()
     connection.close()
+    logging.info('...Done loading from %s' % folder)
 
-def cleanup(folder=data_dir):
+
+def delete_session(session_year):
     '''
-    Delete all .dat and .lob files from folder.
+    This is the python equivalent (or at least, is supposed to be)
+    of the deleteSession.bat file included in the pubinfo_load.zip file.
+
+    It deletes all the entries for the specified session.
+    Used before the weekly import of the new database dump on Sunday.
     '''
-    os.chdir(folder)
+    tables = {
+        'bill_id': [
+            'bill_detail_vote_tbl',
+            'bill_history_tbl',
+            'bill_summary_vote_tbl',
+            'bill_analysis_tbl',
+            'bill_tbl',
+            'committee_hearing_tbl',
+            'daily_file_tbl'
+            ],
+        
+        'bill_version_id': [
+            'bill_version_authors_tbl',
+            'bill_version_tbl'
+            ],
+
+        'session_year': [
+            'legislator_tbl',
+            'location_code_tbl'
+            ]
+        }
+
+
+    logger.info('Deleting all data for session year %s...' % session_year)
+
+    connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
+                                 db='capublic')
+    cursor = connection.cursor()
+        
+    for token, names in tables.items():
+        for table_name in names:
+            sql = ("DELETE FROM capublic.{table_name} "
+                   "where {token} like '{session_year}%';")
+            sql = sql.format(**locals())
+            logger.debug('executing sql: "%s"' % sql)
+            cursor.execute(sql)
+            cursor.connection.commit()
+
+    cursor.close()
+    connection.close()
+    logger.info('...done deleting session data.')
+
     
-    # Remove the files.
-    for fn in glob.glob('*.dat') + glob.glob('*.lob'):
-        os.remove(fn)
+def update(*zipfile_names):
+    '''
+    If a file named `pubinfo_(?P<session_year>\d{4}).zip` has been updated, delete
+    all records in the database session_year indicated in the file's name, then load
+    the data from the zip file.
 
+    Otherwise, load each the data from each updated `{weekday}.zip` file in
+    weekday order.
+
+    Optionally, pass the names of one or more zipfiles to this module
+    on the command line, and it will import those instead.
+    '''
+    logger.info('Updating capublic...')
+    days='Mon Tue Wed Thu Fri Sat Sun'.split()
+
+    if not zipfile_names:
+        
+        zipfile_names = download()
+        
+        if not zipfile_names:
+            logger.info('No updated files found; exiting.')
+            sys.exit(1)
+            
+        folder_names = extract(zipfile_names)
+        
+    else:
+        folder_names = [x.replace('.zip', '') + '/' for x in zipfile_names]
+
+
+    # ------------------------------------------------------------------------
+    # Update any session updates in order.
     
+    # Get a list of session folder names, usually only one, like ['pubinfo_2011']
+    session_folders = filter(re.compile(r'\d{4}').search, folder_names)
 
-def get_and_load(url):
-    '''
-    Download and extract a zipfile, then load the data.
-    '''
-    zip_path = download(url)
-    extract(zip_path, data_dir)
-    load_data()
+    for folder in session_folders:
 
-def download(url):
-    scraper = scrapelib.Scraper()
-    with scraper.urlopen(url) as resp:
-        (fd, path) = tempfile.mkstemp('.zip')
+        # Delete all records relating to this session year.
+        session_year = re.search('\d{4}', folder).group()
+        delete_session(session_year)
 
-        with os.fdopen(fd, 'wb') as w:
-            w.write(resp)
-
-        return path
+        # Load the new data.
+        load(folder)
 
 
-def extract(path, directory):
-    z = zipfile.ZipFile(path, 'r')
-    z.extractall(directory)
-    z.close()
+    # ------------------------------------------------------------------------
+    # Apply any daily updates in order.
 
+    for s in session_folders:
+        folder_names.remove(s)
 
-def parse_directory_listing(s):
-    """
-    Parse a directory listing as returned by California's legislative FTP
-    server, returning entries as dictionaries with "filename", "size",
-    "mtime" and "type" ('file' or 'directory') keys.
-    """
-    dir_re = (r'^(?P<type>[-d])[rwx-]{9,9}\s+\d+\s+\d+\s+\d+\s+'
-              r'(?P<size>\d+)\s(?P<mtime>[A-Z][a-z]{2,2}\s+\d+\s+\d+:?\d*)\s+'
-              r'(?P<filename>[^\n]+)$')
-    dir_re = re.compile(dir_re, re.MULTILINE)
+    def sorter(foldername, re_day=re.compile(r'Mon|Tue|Wed|Thu|Fri|Sat', re.I)):
+        day = re_day.search(foldername).group()
+        return days.index(day)
 
-    for match in dir_re.finditer(s):
-        entry = {'size': match.group('size'),
-                 'filename': match.group('filename')}
+    # Get a list of daily folder names, like ['pubinfo_Mon', 'pubinf_Tue']
+    daily_folders = list(sorted(folder_names, key=sorter))
 
-        mtime = re.sub(r'\s+', ' ', match.group('mtime'))
-        if ':' in mtime:
-            mtime = datetime.datetime.strptime(mtime, '%b %d %H:%M')
-            mtime = mtime.replace(datetime.datetime.now().year)
-        else:
-            mtime = datetime.datetime.strptime(mtime, '%b %d %Y').date()
-
-        entry['mtime'] = mtime
-
-        if match.group('type') == 'd':
-            entry['type'] = 'directory'
-        else:
-            entry['type'] = 'file'
-
-        yield entry
-
+    for folder in daily_folders:
+        load(folder)
+        
+    
 
 if __name__ == '__main__':
-    get_latest()
+    #pdb.set_trace()
+    import sys
+    if sys.argv[0]:
+        update(*sys.argv[1:])
+    else:
+        update()
