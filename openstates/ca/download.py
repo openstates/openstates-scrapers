@@ -37,6 +37,11 @@ DATA = settings.DATA_DIR
 DOWNLOADS = join(DATA, 'ca', 'downloads')
 DBADMIN = join(DATA, 'ca', 'dbadmin')
 
+try:
+    os.makedirs(DOWNLOADS)
+    os.makedirs(DBADMIN)
+except OSError:
+    pass
 
 # ----------------------------------------------------------------------------
 # Logging config
