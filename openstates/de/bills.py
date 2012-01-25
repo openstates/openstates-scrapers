@@ -248,8 +248,6 @@ class DEBillScraper(BillScraper):
                     actions_categorize=actions.categorize,
                     actions_get_actor=actions.get_actor):
 
-        pdb.set_trace()
-
         bill = Bill(**kw)
         bill.add_source(url)        
   
@@ -551,8 +549,9 @@ class DEBillScraper(BillScraper):
             _doc = self._url_2_lxml(source)
         except scrapelib.HTTPError:
             # Grrr...there a dead link posted. Warn and skip.
-            self.warning('Related document download failed (dead link): ' % source)
-            yield
+            msg = 'Related document download failed (dead link): %r' % source
+            self.warning(msg)
+            return
 
         if _doc.xpath('//font[contains(., "DRAFT INFORMATION")]'):
             # This amendment is apparently still in draft form or can't
