@@ -101,6 +101,9 @@ class NYLegislatorScraper(LegislatorScraper):
                 name = link.text.strip()
                 if name == 'Assembly Members':
                     continue
+                # empty seats
+                if 'Assembly District' in name:
+                    continue
                 leg_url = link.get('href')
 
                 district = link.xpath("string(../following-sibling::"

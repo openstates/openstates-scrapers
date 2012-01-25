@@ -197,7 +197,7 @@ class HIBillScraper(BillScraper):
                 "type" : billy_billtype
             }
 
-            if companion != None:
+            if companion != None and companion.strip() != "":
                 keywordargs["companion"] = companion
 
             b = Bill(session, chamber, name, title, **keywordargs)

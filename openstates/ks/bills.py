@@ -35,10 +35,6 @@ class KSBillScraper(BillScraper):
                 if not bill_id.startswith(chamber_letter):
                     continue
 
-                # skipping 1611, some weird 500 error
-                if bill_id == 'SCR1611':
-                    continue
-
                 if 'CR' in bill_id:
                     btype = 'concurrent resolution'
                 elif 'R' in bill_id:
