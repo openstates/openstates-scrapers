@@ -52,8 +52,8 @@ class CACommitteeScraper(CommitteeScraper):
                 scrape_members = getattr(self, 'scrape_%s_members' % chamber)
                 c = scrape_members(c, _url, chamber, term)
 
-                pprint.pprint(c)
                 self.save_committee(c)
+
                 
         # Subcommittees
         div = doc.xpath('//div[contains(@class, "view-view-SubCommittee")]')[0]
@@ -69,7 +69,7 @@ class CACommitteeScraper(CommitteeScraper):
                 scrape_members = getattr(self, 'scrape_%s_members' % chamber)
                 c = scrape_members(c, _url, chamber, term)
                 
-                pprint.pprint(c)
+                #pprint.pprint(c)
                 self.save_committee(c)
 
     def scrape_lower_members(self, committee, url, chamber, term,
@@ -86,7 +86,8 @@ class CACommitteeScraper(CommitteeScraper):
         doc = lxml.html.fromstring(html)
         members = doc.xpath('//table/descendant::td/a/text()')
         members = map(strip, members)
-        members = members[::2]
+        members = filter(None, members)[::2]
+
 
         if not members:
             self.warning('Dind\'t find any committe members at url: %s' % url)
@@ -97,7 +98,7 @@ class CACommitteeScraper(CommitteeScraper):
                 member, role = member.split(' - ')
             else:
                 role = 'member'
-
+            
             member = re_name.sub('', member)
             member = member.strip()
             committee.add_member(member, role)
