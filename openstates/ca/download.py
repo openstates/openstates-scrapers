@@ -339,7 +339,7 @@ def bootstrap(unzipped=True, zipped=True):
         update(zipped)
 
 def add2011():
-    update(('pubinfo_2011.zip pubinfo_Mon.zip pubinfo_Tue.zip pubinfo_Wed.zip'
+    update(('pubinfo_Wed.zip '
             'pubinfo_Thu.zip pubinfo_Fri.zip').split(), unzip=False)
 
 if __name__ == '__main__':
