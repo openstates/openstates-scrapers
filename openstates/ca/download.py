@@ -37,11 +37,13 @@ DATA = settings.DATA_DIR
 DOWNLOADS = join(DATA, 'ca', 'downloads')
 DBADMIN = join(DATA, 'ca', 'dbadmin')
 
-try:
-    os.makedirs(DOWNLOADS)
-    os.makedirs(DBADMIN)
-except OSError:
-    pass
+def setup():
+    try:
+        os.makedirs(DOWNLOADS)
+    except OSError:
+        pass
+    zipfile.ZipFile(join(DOWNLOADS, 'pubinfo_load.zip')).extractall(DBADMIN)
+    
 
 # ----------------------------------------------------------------------------
 # Logging config
@@ -101,21 +103,28 @@ def download():
     Uses wget -m with default behavior and will automatically skip over any files
     that haven't been updated on the server since the file's current timestamp.
     '''
-    logger.info('Updating mirror: ftp://www.leginfo.ca.gov/pub/bill/ ...')
+    logger.info('Updating files from ftp://www.leginfo.ca.gov/pub/bill/ ...')
 
     # For short: wget -m -l1 -nd -A.zip ftp://www.leginfo.ca.gov/pub/bill/
-    out = subprocess.check_output(["wget",
-                                   '--mirror', '--level=1',
-                                   '--no-directories',
-                                   '--accept=.zip', 
-                                   '--directory-prefix=%s' % DOWNLOADS, 
-                                   'ftp://www.leginfo.ca.gov/pub/bill/'],
-                                  stderr=subprocess.STDOUT)    
+    command = ["wget",
+               '--output-file="wget-output"',
+               '--mirror',
+               '--level=1',
+               '--no-directories',
+               '--accept=.zip', 
+               '--directory-prefix=%s' % DOWNLOADS, 
+               'ftp://www.leginfo.ca.gov/pub/bill/']
 
-    # Figure out which files where updated.
-    updated_files = re.findall(r"([^/]+?\.zip)' saved \[\d+\]", out)
-    logger.info('...Done. Found %d updated files: %r' % (len(updated_files),
-                                                         updated_files))
+    # wget the ftp directory, and display wget output and also log to file.
+    command = ' '.join(command) + ' && tail wget-output'
+    subprocess.call(command, shell=True)
+
+    # Figure out which files were updated.
+    with open('wget-output') as f:
+        output = f.read()
+    updated_files = re.findall(r"([^/]+?\.zip)' saved \[\d+\]", output)
+    msg = '...Done. Found %d updated files: %r'
+    logger.info(msg % (len(updated_files), updated_files))
                 
     return updated_files
 
@@ -251,6 +260,9 @@ def update(*zipfile_names):
     '''
     logger.info('Updating capublic...')
     days='Mon Tue Wed Thu Fri Sat Sun'.split()
+
+    # Make sure the sql scripts are unzipped in DBADMIN. 
+    setup()
 
     if not zipfile_names:
         
