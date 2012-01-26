@@ -7,6 +7,12 @@ from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.etree, lxml.html
 
+COMM_BLACKLIST = [
+    "Constitutional and Regulatory Issues"
+    # This page is timing out. This is most likely an issue with Upstream,
+    # it seems to happen all over the place.
+]
+
 class RICommitteeScraper(CommitteeScraper):
     state = 'ri'
 
@@ -32,17 +38,24 @@ class RICommitteeScraper(CommitteeScraper):
             self.log(comm)
             root = lxml.html.fromstring(page)
             # The first <tr> in the table of members
-            membertable=root.xpath('//p[@class="style28"]')[0].getparent().getparent().getnext()
-            while membertable is not None and membertable.tag == 'tr':
-                flds=membertable.xpath('td//text()')
-                mname = flds[0]
-                role = flds[1][2:]
-                idx = mname.find("Senator ")
-                if idx == -1: continue
-                membername=mname[idx+8:]
-                self.log("name "+membername+" role "+role)
-                comm.add_member(membername, role)
-                membertable = membertable.getnext()
+            membertable=root.xpath('//p[@class="style28"]/ancestor::table[1]')[0]
+            members = membertable.xpath("*")[1:]
+   
+            order = {
+                "name" : 0,
+                "appt" : 1,
+                "email" : 2
+            }
+
+            prefix = "Senator"
+
+            for member in members:
+                name = member[order['name']].text_content().strip()
+                if name[:len(prefix)] == prefix:
+                    name = name[len(prefix):].strip()
+                appt = member[order['appt']].text_content().strip()
+                self.log("name "+ name +" role " + appt)
+                comm.add_member(name, appt)
 
     def scrape_reps_comm(self):
         base = 'http://www.rilin.state.ri.us'
@@ -67,6 +80,10 @@ class RICommitteeScraper(CommitteeScraper):
             for a in linklist:
                 link=a.attrib['href']
                 commName=a.text
+                print commName
+                if commName in COMM_BLACKLIST:
+                    print "XXX: Blacklisted"
+                    continue
                 url=base+link
                 self.log("url "+url)
                 c=Committee('upper',commName)
