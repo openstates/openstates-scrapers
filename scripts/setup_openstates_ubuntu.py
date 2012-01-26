@@ -1,3 +1,14 @@
+'''
+This script sets up a virtualenv with openstates on ubunt.
+
+usage: python setup_openstates_ubuntu.py myvirtualenv [whenIputmycode]
+
+If you don't specify a second argument, the code goes in the virtualenv.
+
+Todo: add download of mongo.
+Todo: add build of MySQLdb
+'''
+
 import re
 import os
 from os import chdir as cd
@@ -145,10 +156,16 @@ if __name__ == "__main__":
     except ValueError:
         ENV = CODE = abspath(sys.argv[1])
 
+    for path in [ENV, CODE]:
+        try:
+            os.makedirs(ENV)
+            os.makedirs(CODE)
+        except OSError:
+            pass
+
     pip = join(ENV, 'bin', 'pip')
     python = join(ENV, 'bin', 'python')
 
     setup_openstates()
 
 
-    pdb.set_trace()
