@@ -268,12 +268,13 @@ def update(*zipfile_names):
         
         if not zipfile_names:
             logger.info('No updated files found; exiting.')
-            sys.exit(1)
+            sys.exit(0)
             
         folder_names = extract(zipfile_names)
         
     else:
-        folder_names = [x.replace('.zip', '') + '/' for x in zipfile_names]
+        folder_names = extract(zipfile_names)
+        #folder_names = [x.replace('.zip', '') + '/' for x in zipfile_names]
 
 
     # ------------------------------------------------------------------------
