@@ -261,6 +261,7 @@ def update(*zipfile_names):
 
     # Make sure the sql scripts are unzipped in DBADMIN. 
     setup()
+    _create()
 
     if not zipfile_names:
         
