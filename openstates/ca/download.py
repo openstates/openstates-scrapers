@@ -49,7 +49,8 @@ logger = logging.getLogger('CA[mysql-update]')
 logger.setLevel(logging.INFO)
 
 ch = logging.StreamHandler()
-formatter = logging.Formatter('%(name)s %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(name)s %(asctime)s - %(message)s',
+                              datefmt='%H:%M:%S')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -121,8 +122,13 @@ def download():
     with open('wget-output') as f:
         output = f.read()
     updated_files = re.findall(r"([^/]+?\.zip)' saved \[\d+\]", output)
-    msg = '...Done. Found %d updated files: %r'
-    logger.info(msg % (len(updated_files), updated_files))
+
+    if updated_files:
+        msg = '...Done. Found %d updated files: %r'
+        msg = msg % (len(updated_files), updated_files)
+    else:
+        msg = '...Done. Found no updated files.'
+    logger.info(msg)
                 
     return updated_files
 
@@ -261,7 +267,6 @@ def update(*zipfile_names):
 
     # Make sure the sql scripts are unzipped in DBADMIN. 
     setup()
-    _create()
 
     if not zipfile_names:
         
