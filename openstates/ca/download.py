@@ -30,6 +30,8 @@ MYSQL_USER = os.environ.get('MYSQL_USER', MYSQL_USER)
 MYSQL_PASSWORD = getattr(settings, 'MYSQL_PASSWORD', '')
 MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', MYSQL_PASSWORD)
 
+print '%%%%%%%', MYSQL_USER, MYSQL_PASSWORD
+
 data_dir = getattr(settings, 'CA_DATA_DIR', '/projects/openstates/ext/capublic/')
 
 PROJECT = settings.PROJECT_DIR
