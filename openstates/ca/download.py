@@ -35,6 +35,7 @@ DATA = settings.DATA_DIR
 DOWNLOADS = join(DATA, 'ca', 'downloads')
 DBADMIN = join(DATA, 'ca', 'dbadmin')
 
+
 def setup():
     try:
         os.makedirs(DOWNLOADS)
@@ -64,7 +65,7 @@ def _drop():
     connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
                                  db='capublic')
     cursor = connection.cursor()
-    cursor.execute('DROP DATABASE capublic')
+    cursor.execute('DROP DATABASE capublic;')
     connection.close()
     logger.info('dropping capublic')
 
@@ -80,7 +81,7 @@ def _create():
     connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD)
     cursor = connection.cursor()
 
-    for sql in ["CREATE DATABASE capublic", "USE capublic", sql]:     
+    for sql in ["CREATE DATABASE capublic;", sql]:     
         cursor.execute(sql)
    
     connection.close()
@@ -250,7 +251,7 @@ def delete_session(session_year):
     logger.info('...done deleting session data.')
 
     
-def update(*zipfile_names):
+def update(zipfile_names, unzip=True):
     '''
     If a file named `pubinfo_(?P<session_year>\d{4}).zip` has been updated, delete
     all records in the database session_year indicated in the file's name, then load
@@ -275,12 +276,13 @@ def update(*zipfile_names):
         if not zipfile_names:
             logger.info('No updated files found; exiting.')
             sys.exit(0)
-            
+
+    if unzip:
         folder_names = extract(zipfile_names)
-        
     else:
-        folder_names = extract(zipfile_names)
-        #folder_names = [x.replace('.zip', '') + '/' for x in zipfile_names]
+        folder_names = [x.replace('.zip', '') + '/' for x in zipfile_names]
+        
+        
 
 
     # ------------------------------------------------------------------------
@@ -314,13 +316,41 @@ def update(*zipfile_names):
 
     for folder in daily_folders:
         load(folder)
-        
-    
+
+
+def bootstrap(unzipped=True, zipped=True):
+    '''
+    Drop then create the database and load all zipfiles in DOWNLOADS. If those
+    files are already unzipped, skip unzipping them.
+    '''
+    _drop()
+    _create()
+
+    files = glob.glob(join(DOWNLOADS, '*.zip'))
+
+    is_unzipped = lambda fn: os.path.isdir(fn.replace('.zip', ''))
+    unzipped = filter(is_unzipped, files)
+    zipped = set(files) - set(unzipped)
+
+    if unzipped:
+        update(unzipped, unzip=False)
+
+    if zipped:
+        update(zipped)
+
+def add2011():
+    update(('pubinfo_2011.zip pubinfo_Mon.zip pubinfo_Tue.zip pubinfo_Wed.zip'
+            'pubinfo_Thu.zip pubinfo_Fri.zip').split(), unzip=False)
 
 if __name__ == '__main__':
-    #pdb.set_trace()
+
     import sys
     if sys.argv[0]:
-        update(*sys.argv[1:])
+        if sys.argv[1] == "bootstrap":
+            bootstrap()
+        elif sys.argv[1] == 'add2011':
+           add2011()
+        else:
+            update(*sys.argv[1:])
     else:
         update()
