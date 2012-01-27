@@ -51,18 +51,6 @@ class RIBillScraper(BillScraper):
 
     def digest_results_page( self, nodes ):
 
-        def _bill_id_int( node ):
-            return node.text_content()
-
-        def _spos_int( node ):
-            return node.text
-
-        def _title_int( node ):
-            return node.text
-
-        def _doc_int( node ):
-            return node.text_content()
-
         headers = [
             "bill_id",
             "sponsors",
@@ -70,12 +58,6 @@ class RIBillScraper(BillScraper):
             "docid"
         ]
 
-        headers_int = {
-            "bill_id"  : _bill_id_int,
-            "sponsors" : _spos_int,
-            "title"    : _title_int,
-            "docid"    : _doc_int
-        }
         ret = {}
 
         for node in nodes:
@@ -88,7 +70,8 @@ class RIBillScraper(BillScraper):
             for div in node:
                 idex += 1
                 try:
-                    nret[headers[idex]] = headers_int[headers[idex]](div)
+                    nret[headers[idex]] = div.text_content()
+                    print headers[idex], nret[headers[idex]]
                 except IndexError:
                     actions.append(div.text_content())
             ret[nret["bill_id"]] = nret
