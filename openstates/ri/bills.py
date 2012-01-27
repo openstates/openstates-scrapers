@@ -49,7 +49,54 @@ class RIBillScraper(BillScraper):
                 current.append(node)
         return blocks
 
+    def digest_results_page( self, nodes ):
+
+        def _bill_id_int( node ):
+            return node.text_content()
+
+        def _spos_int( node ):
+            return node.text
+
+        def _title_int( node ):
+            return node.text
+
+        def _doc_int( node ):
+            return node.text_content()
+
+        headers = [
+            "bill_id",
+            "sponsors",
+            "title",
+            "docid"
+        ]
+
+        headers_int = {
+            "bill_id"  : _bill_id_int,
+            "sponsors" : _spos_int,
+            "title"    : _title_int,
+            "docid"    : _doc_int
+        }
+        ret = {}
+
+        for node in nodes:
+            idex = -1
+            actions = []
+            nret = {
+                "actions" : actions    
+            }
+
+            for div in node:
+                idex += 1
+                try:
+                    nret[headers[idex]] = headers_int[headers[idex]](div)
+                except IndexError:
+                    actions.append(div.text_content())
+            ret[nret["bill_id"]] = nret
+        return ret
+
+
     def get_subject_bill_dict(self):
+        ret = {}
         global bill_subjects
         if bill_subjects == None:
             subjects = get_postable_subjects()
@@ -62,17 +109,12 @@ class RIBillScraper(BillScraper):
                 default_headers['ctl00$rilinContent$cbYear'] = \
                     "2012" # XXX: Fixme
 
-                #for header in default_headers:
-                #    print header, default_headers[header]
-
                 headers = urllib.urlencode( default_headers )
                 blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
                     method="POST", body=headers))
-                for block in blocks:
-                    for div in block:
-                        print div.text_content()
-
-        return bill_subjects
+                blocks = blocks[1:-1]
+                ret[subject] = self.digest_results_page(blocks)
+        return ret
 
     def scrape(self, chamber, session):
         print self.get_subject_bill_dict()
