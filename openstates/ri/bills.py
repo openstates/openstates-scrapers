@@ -71,12 +71,14 @@ class RIBillScraper(BillScraper):
                 idex += 1
                 try:
                     nret[headers[idex]] = div.text_content()
-                    print headers[idex], nret[headers[idex]]
+                    hrefs = div.xpath("./a")
+                    if len(hrefs) > 0:
+                        nret[headers[idex] + "_href"] = hrefs
                 except IndexError:
                     actions.append(div.text_content())
+            print nret
             ret[nret["bill_id"]] = nret
         return ret
-
 
     def get_subject_bill_dict(self):
         global bill_subjects
