@@ -67,7 +67,7 @@ def _drop():
     cursor = connection.cursor()
     cursor.execute('DROP DATABASE capublic;')
     connection.close()
-    logger.info('dropping capublic')
+    logger.info('...done dropping capublic')
 
 
 def _create():
@@ -107,6 +107,9 @@ def download():
 
     # For short: wget -m -l1 -nd -A.zip ftp://www.leginfo.ca.gov/pub/bill/
     command = ["wget",
+
+               # We'll examine the output to determine which files where
+               # updated.
                '--output-file="wget-output"',
                '--mirror',
                '--level=1',
@@ -180,14 +183,14 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
     # For each .dat folder, run its corresponding .sql file.
     for filename in glob.glob(join(folder, '*.dat')):
 
-        # The corresponding sql file is in the data/ca/dbadmin...
+        # The corresponding sql file is in data/ca/dbadmin
         _, filename = split(filename)
         sql_filename = join(DBADMIN, sql_name(filename).lower())
         with open(sql_filename) as f:
 
             # Swap out windows paths.
             script = f.read().replace(r'c:\\pubinfo\\', folder)
-            
+    
             
         cursor = connection.cursor()
 
