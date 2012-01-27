@@ -31,8 +31,6 @@ class CABillScraper(BillScraper):
                  db='capublic', **kwargs):
         super(CABillScraper, self).__init__(metadata, **kwargs)
 
-        pdb.set_trace()
-
         if user is None:
             user = os.environ.get('MYSQL_USER',
                                   getattr(settings, 'MYSQL_USER', ''))
