@@ -345,7 +345,7 @@ def add2011():
 if __name__ == '__main__':
 
     import sys
-    if sys.argv[0]:
+    if 1 < len(sys.argv):
         if sys.argv[1] == "bootstrap":
             bootstrap()
         elif sys.argv[1] == 'add2011':
