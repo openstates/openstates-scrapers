@@ -76,13 +76,19 @@ def _create():
     os.chdir(DBADMIN)
     
     with open('capublic.sql') as f:
-        sql = f.read()
+        # Note: MySQLdb is incapable of executing compound SQL statements,
+        # so we have to split them up.
+        sql_statements = f.read().split(';')
     
     connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD)
     cursor = connection.cursor()
 
-    for sql in ["CREATE DATABASE capublic;", sql]:     
+    for sql in sql_statements:
+        #try:
         cursor.execute(sql)
+        #except MySQLdb.Warning:
+            # mysql warns if table doesn't exist..."create TABLE if not exists"
+         #   pass
    
     connection.close()
     logger.info('...done creating capublic')
@@ -177,8 +183,10 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
     folder = join(DOWNLOADS, folder)
     os.chdir(folder)
 
+
     connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
                                  db='capublic')
+
 
     # For each .dat folder, run its corresponding .sql file.
     for filename in glob.glob(join(folder, '*.dat')):
@@ -190,15 +198,14 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
 
             # Swap out windows paths.
             script = f.read().replace(r'c:\\pubinfo\\', folder)
-    
-            
-        cursor = connection.cursor()
+     
 
         _, slq_filename = split(sql_filename)
-        #logger.debug('Running .sql file %s...' % sql_filename)
+        logger.info('Running .sql file %s...' % sql_filename)
+        cursor = connection.cursor()
         cursor.execute(script)
+        cursor.close()
 
-    cursor.close()
     connection.close()
     logging.info('...Done loading from %s' % folder)
 
@@ -342,7 +349,9 @@ def bootstrap(unzipped=True, zipped=True):
         update(zipped)
 
 def add2011():
-    update(('pubinfo_Wed.zip '
+    _drop()
+    _create()
+    update(('pubinfo_2011.zip pubinfo_Mon.zip pubinfo_Tue.zip pubinfo_Wed.zip '
             'pubinfo_Thu.zip pubinfo_Fri.zip').split(), unzip=False)
 
 if __name__ == '__main__':
@@ -353,6 +362,8 @@ if __name__ == '__main__':
             bootstrap()
         elif sys.argv[1] == 'add2011':
            add2011()
+        elif sys.argv[1] == 'pdb':
+            pdb.set_trace()
         else:
             update(*sys.argv[1:])
     else:
