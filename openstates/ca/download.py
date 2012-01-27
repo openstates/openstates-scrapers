@@ -251,7 +251,7 @@ def delete_session(session_year):
     logger.info('...done deleting session data.')
 
     
-def update(zipfile_names, unzip=True):
+def update(zipfile_names=None, unzip=True):
     '''
     If a file named `pubinfo_(?P<session_year>\d{4}).zip` has been updated, delete
     all records in the database session_year indicated in the file's name, then load
@@ -269,7 +269,7 @@ def update(zipfile_names, unzip=True):
     # Make sure the sql scripts are unzipped in DBADMIN. 
     setup()
 
-    if not zipfile_names:
+    if zipfile_names is None:
         
         zipfile_names = download()
         
