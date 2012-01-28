@@ -30,6 +30,14 @@ class TNBillScraper(BillScraper):
         abbrs = ['HB', 'HJR', 'HR', 'SB','SJR', 'SR']
 
         for abbr in abbrs:
+
+            if 'B' in abbr:
+                bill_type = 'bill'
+            elif 'JR' in abbr:
+                bill_type = 'joint resolution'
+            else:
+                bill_type = 'resolution'
+
             if term == '107':
                 bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999' % (abbr, abbr)
             elif 'S' in term:
@@ -45,9 +53,9 @@ class TNBillScraper(BillScraper):
                     bill_link = bill_links.attrib['href']
                     if '..' in bill_link:
                         bill_link = 'http://wapp.capitol.tn.gov/apps' + bill_link[2:len(bill_link)]
-                    self.scrape_bill(term, bill_link)
+                    self.scrape_bill(term, bill_link, bill_type)
     
-    def scrape_bill(self, term, bill_url):
+    def scrape_bill(self, term, bill_url, bill_type):
 
         with self.urlopen(bill_url) as page:
             page = lxml.html.fromstring(page)
@@ -76,7 +84,7 @@ class TNBillScraper(BillScraper):
             
             title = page.xpath("//span[@id='lblAbstract']")[0].text
 
-            bill = Bill(term, primary_chamber, bill_id, title, secondary_bill_id=secondary_bill_id)
+            bill = Bill(term, primary_chamber, bill_id, title, type=bill_type, secondary_bill_id=secondary_bill_id)
             bill.add_source(bill_url)
             
             # Primary Sponsor
