@@ -42,7 +42,6 @@ import MySQLdb, _mysql_exceptions
 import scrapelib
 from billy import db, settings
 
-from fabric.api import task
 
 
 MYSQL_USER = getattr(settings, 'MYSQL_USER', '')
@@ -56,7 +55,7 @@ DATA = settings.DATA_DIR
 DOWNLOADS = join(DATA, 'ca', 'downloads')
 DBADMIN = join(DATA, 'ca', 'dbadmin')
 
-@task
+
 def setup():
     try:
         os.makedirs(DOWNLOADS)
@@ -82,7 +81,6 @@ logger.addHandler(ch)
 # ---------------------------------------------------------------------------
 # Miscellaneous db admin commands.
 
-@task
 def db_drop():
     '''Drop the database.'''
     logger.info('dropping capublic...')
@@ -106,7 +104,6 @@ def db_drop():
     logger.info('...done.')
 
 
-@task
 def db_create():
     '''Create the database'''
 
@@ -135,7 +132,7 @@ def db_create():
     logger.info('...done.')
 
 
-@task    
+
 def db_startover():
     db_drop()
     db_create()
@@ -143,7 +140,6 @@ def db_startover():
     
 # ---------------------------------------------------------------------------
 # Functions for updating the data.
-@task
 def download():
     '''
     Update the wget mirror of ftp://www.leginfo.ca.gov/pub/bill/
@@ -178,7 +174,6 @@ def download():
     return updated_files
 
 
-@task
 def extract(zipfile_names, strip=partial(re.compile(r'\.zip$').sub, '')):
     '''
     Extract any zipfiles in our cache that have been updated.
@@ -200,7 +195,7 @@ def extract(zipfile_names, strip=partial(re.compile(r'\.zip$').sub, '')):
     return folder_names
 
 
-@task
+
 def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
     '''
     Import into mysql any .dat files located in `folder`.
@@ -249,7 +244,7 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
     logging.info('...Done loading from %s' % folder)
 
 
-@task
+
 def delete_session(session_year):
     '''
     This is the python equivalent (or at least, is supposed to be)
@@ -302,7 +297,7 @@ def delete_session(session_year):
     logger.info('...done deleting session data.')
 
 
-@task
+
 def update(zipfile_names=None, unzip=True):
     '''
     If a file named `pubinfo_(?P<session_year>\d{4}).zip` has been 
@@ -371,7 +366,7 @@ def update(zipfile_names=None, unzip=True):
         load(folder)
 
 
-@task
+
 def bootstrap(unzipped=True, zipped=True):
     '''
     Drop then create the database and load all zipfiles in DOWNLOADS. If those
@@ -391,13 +386,13 @@ def bootstrap(unzipped=True, zipped=True):
     if zipped:
         update(zipped)
 
-@task
+
 def add2011():
     db_startover()
     update(('pubinfo_2011.zip pubinfo_Mon.zip pubinfo_Tue.zip pubinfo_Wed.zip '
             'pubinfo_Thu.zip pubinfo_Fri.zip').split(), unzip=False)
 
-@task
+
 def pdb():
     pdb.set_trace()
 
