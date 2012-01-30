@@ -118,23 +118,22 @@ class RIBillScraper(BillScraper):
         FROM="ctl00$rilinContent$txtBillFrom"
         TO="ctl00$rilinContent$txtBillTo"
         YEAR="ctl00$rilinContent$cbYear"
-
-
         blocks = "FOO" # Ugh.
-
         while len(blocks) > 0:
             default_headers = get_default_headers( SEARCH_URL )
             default_headers[FROM] = idex
             default_headers[TO]   = idex + MAXQUERY
             default_headers[YEAR] = session
-
             idex += MAXQUERY
-
             headers = urllib.urlencode( default_headers )
             blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
                 method="POST", body=headers))
             blocks = blocks[1:-1]
-            print self.digest_results_page(blocks)
+            blocks = self.digest_results_page(blocks)
+
+            for block in blocks:
+                bill = blocks[block]
+                print bill['title']
 
     def scrape(self, chamber, session):
         # subjects = self.get_subject_bill_dict()
