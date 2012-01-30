@@ -115,7 +115,21 @@ class RIBillScraper(BillScraper):
 
     def scrape_bills(self, chamber, session, subjects):
         idex = START_IDEX[chamber]
-        print idex
+        default_headers = get_default_headers( SEARCH_URL )
+        FROM="ctl00$rilinContent$txtBillFrom"
+        TO="ctl00$rilinContent$txtBillTo"
+        YEAR="ctl00$rilinContent$cbYear"
+
+        default_headers[FROM] = idex
+        default_headers[TO]   = idex + MAXQUERY
+        default_headers[YEAR] = session
+
+        for x in range(0,1):
+            headers = urllib.urlencode( default_headers )
+            blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
+                method="POST", body=headers))
+            blocks = blocks[1:-1]
+            print self.digest_results_page(blocks)
 
     def scrape(self, chamber, session):
         # subjects = self.get_subject_bill_dict()
