@@ -8,6 +8,17 @@ from billy.scrape.utils import url_xpath
 subjects      = None
 bill_subjects = None
 
+HB_START_BILLNO=7000
+SB_START_BILLNO=2000
+
+START_IDEX = {
+    "lower" : HB_START_BILLNO,
+    "upper" : SB_START_BILLNO
+}
+
+MAXQUERY=250 # What a silly low number. This is just putting more load on the
+# server, not even helping with that. Sheesh.
+
 def get_postable_subjects():
     global subjects
     if subjects == None:
@@ -76,7 +87,6 @@ class RIBillScraper(BillScraper):
                         nret[headers[idex] + "_href"] = hrefs
                 except IndexError:
                     actions.append(div.text_content())
-            print nret
             ret[nret["bill_id"]] = nret
         return ret
 
@@ -103,5 +113,10 @@ class RIBillScraper(BillScraper):
         bill_subjects = ret
         return bill_subjects
 
+    def scrape_bills(self, chamber, session, subjects):
+        idex = START_IDEX[chamber]
+        print idex
+
     def scrape(self, chamber, session):
-        print self.get_subject_bill_dict()
+        # subjects = self.get_subject_bill_dict()
+        self.scrape_bills( chamber, session, subjects )
