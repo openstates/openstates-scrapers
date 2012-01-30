@@ -11,18 +11,15 @@ import re
 
 class TNBillScraper(BillScraper):
     state = 'tn'
-    urls = {
-        'cur_index': 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%(chamber_type)sB0001&EndNum=%(chamber_type)sB9999&Year=%(year)s',
-        'arch_index': 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%(chamber_type)sB0001&EndNum=%(chamber_type)sB9999&Year=%(year)s',
-        'info': 'http://wapp.capitol.tn.gov/apps/Billinfo/default.aspx?BillNumber=%s&ga=%s',
-        'special': {
-            '106th Special Session': 'http://wapp.capitol.tn.gov/apps/indexes/SpSession1.aspx',
-            '104th Special Session': 'http://www.capitol.tn.gov/legislation/Archives/104GA/bills/SpecSessIndex.htm',
-            '101st, 1st Special Session': 'http://www.capitol.tn.gov/legislation/Archives/101GA/bills/SpecSessIndex.htm',
-            '101st, 2nd Special Session': 'http://www.capitol.tn.gov/legislation/Archives/101GA/bills/SpecSessIndex2.htm',
-            '99th Special Session': 'http://www.capitol.tn.gov/legislation/Archives/99GA/bills/SpecSessIndex.htm'
-        }
-    }
+    #urls = {
+    #    'special': {
+    #        '106th Special Session': 'http://wapp.capitol.tn.gov/apps/indexes/SpSession1.aspx',
+    #        '104th Special Session': 'http://www.capitol.tn.gov/legislation/Archives/104GA/bills/SpecSessIndex.htm',
+    #        '101st, 1st Special Session': 'http://www.capitol.tn.gov/legislation/Archives/101GA/bills/SpecSessIndex.htm',
+    #        '101st, 2nd Special Session': 'http://www.capitol.tn.gov/legislation/Archives/101GA/bills/SpecSessIndex2.htm',
+    #        '99th Special Session': 'http://www.capitol.tn.gov/legislation/Archives/99GA/bills/SpecSessIndex.htm'
+    #    }
+    #}
     
     def scrape(self, chamber, term):
 
@@ -30,14 +27,22 @@ class TNBillScraper(BillScraper):
         abbrs = ['HB', 'HJR', 'HR', 'SB','SJR', 'SR']
 
         for abbr in abbrs:
-            if term == '107':
-                bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999' % (abbr, abbr)
-            elif 'S' in term:
-                #Need to add in special session
-                special_session = True
-                raise Exception('Working on Special Session')
+
+            if 'B' in abbr:
+                bill_type = 'bill'
+            elif 'JR' in abbr:
+                bill_type = 'joint resolution'
             else:
-                bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999&Year=%s' % (abbr, abbr, term)
+                bill_type = 'resolution'
+
+            if term == '107':
+                bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s7000' % (abbr, abbr)
+            elif 'S' in term:
+                #Special session bills is between 7001-7099
+                if term == '106S':
+                    bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s7001&EndNum=%s7099&Year=%s' % (abbr, abbr, '106')
+            else:
+                bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s0001&EndNum=%s7000&Year=%s' % (abbr, abbr, term)
             
             with self.urlopen(bill_listing) as bill_list_page:
                 bill_list_page = lxml.html.fromstring(bill_list_page)
@@ -45,9 +50,9 @@ class TNBillScraper(BillScraper):
                     bill_link = bill_links.attrib['href']
                     if '..' in bill_link:
                         bill_link = 'http://wapp.capitol.tn.gov/apps' + bill_link[2:len(bill_link)]
-                    self.scrape_bill(term, bill_link)
+                    self.scrape_bill(term, bill_link, bill_type)
     
-    def scrape_bill(self, term, bill_url):
+    def scrape_bill(self, term, bill_url, bill_type):
 
         with self.urlopen(bill_url) as page:
             page = lxml.html.fromstring(page)
@@ -76,7 +81,7 @@ class TNBillScraper(BillScraper):
             
             title = page.xpath("//span[@id='lblAbstract']")[0].text
 
-            bill = Bill(term, primary_chamber, bill_id, title, secondary_bill_id=secondary_bill_id)
+            bill = Bill(term, primary_chamber, bill_id, title, type=bill_type, secondary_bill_id=secondary_bill_id)
             bill.add_source(bill_url)
             
             # Primary Sponsor
