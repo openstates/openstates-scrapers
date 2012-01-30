@@ -12,8 +12,14 @@ or simply:
 python download.py # runs update()
 
 
-The workflow is as follows:
- - First, wget -m the contents of the 
+The workflow is:
+ - First, wget -m the contents of the the capublic ftp directory.
+ - Inspect the wget output with regex and determine which files have
+   been updated, if any.
+ - For each such file, unzip it in the DOWNLOADS folder.
+ - For each such unzipped folder, call the import function.
+ - If the folder is a sesion folder (i.e., 2011.zip, etc.), delete all 
+   records pertaining to that session before importing the new data.
 '''
 import pdb
 import sys
