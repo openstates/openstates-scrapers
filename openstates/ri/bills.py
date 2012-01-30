@@ -106,7 +106,12 @@ class RIBillScraper(BillScraper):
             blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
                 method="POST", body=headers))
             blocks = blocks[1:-1]
-            ret[subject] = self.digest_results_page(blocks)
+            blocks = self.digest_results_page(blocks)
+            for block in blocks:
+                try:
+                    ret[block].append(subject)
+                except KeyError:
+                    ret[block] = [ subject ]
         bill_subjects = ret
         return bill_subjects
 
@@ -130,8 +135,22 @@ class RIBillScraper(BillScraper):
 
             for block in blocks:
                 bill = blocks[block]
-                # print bill['title']
+                subs = []
+                try:
+                    subs = subjects[bill['bill_id']]
+                except KeyError:
+                    pass
+
+                b = Bill(session, chamber, bill['bill_id'], bill['title'])
+                #for action in bill['actions']:
+                #    b.add_action("unknwon", action )
+                sponsors = bill['sponsor'][len("BY"):].strip()
+                sponsors = sponsors.split(",")
+                sponsors = [ s.strip() for s in sponsors ]
+                self.save_bill(b)
+
+                print bill['bill_id'], subs
 
     def scrape(self, chamber, session):
-        # subjects = self.get_subject_bill_dict()
+        subjects = self.get_subject_bill_dict()
         self.scrape_bills( chamber, session, subjects )
