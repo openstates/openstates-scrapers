@@ -1,6 +1,7 @@
 import datetime as dt
 import lxml.html
 import urllib
+import re
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.utils import url_xpath
@@ -42,6 +43,12 @@ def get_default_headers( page ):
 
 SEARCH_URL = "http://status.rilin.state.ri.us/"
 
+BILL_STRING_FLAGS = {
+    "bill_id"  : r"^[House|Senate].*",
+    "sponsors" : r"^BY.*",
+    "title"    : "ENTITLED,.*"
+}
+
 class RIBillScraper(BillScraper):
     state = 'ri'
 
@@ -61,34 +68,24 @@ class RIBillScraper(BillScraper):
         return blocks
 
     def digest_results_page( self, nodes ):
-
-        headers = [
-            "bill_id",
-            "sponsors",
-            "title",
-            "docid"
-        ]
-
-        ret = {}
-
+        blocks = {}
         for node in nodes:
-            idex = -1
-            actions = []
-            nret = {
-                "actions" : actions    
-            }
-
-            for div in node:
-                idex += 1
-                try:
-                    nret[headers[idex]] = div.text_content()
-                    hrefs = div.xpath("./a")
-                    if len(hrefs) > 0:
-                        nret[headers[idex] + "_href"] = hrefs
-                except IndexError:
-                    actions.append(div.text_content())
-            ret[nret["bill_id"]] = nret
-        return ret
+            nblock = { 'actions' : [] }
+            lines = [ n.text_content() for n in node ]
+            for line in lines:
+                found = False
+                for regexp in BILL_STRING_FLAGS:
+                    if re.match(BILL_STRING_FLAGS[regexp], line):
+                        nblock[regexp] = line
+                        found = True
+                if not found:
+                    nblock['actions'].append(line)
+            if "bill_id" in nblock:
+                blocks[nblock['bill_id']] = nblock
+            else:
+                self.warning("ERROR! Can not find bill_id for current entry!")
+                self.warning("This should never happen!!! Oh noes!!!")
+        return blocks
 
     def get_subject_bill_dict(self):
         global bill_subjects
@@ -133,7 +130,7 @@ class RIBillScraper(BillScraper):
 
             for block in blocks:
                 bill = blocks[block]
-                print bill['title']
+                # print bill['title']
 
     def scrape(self, chamber, session):
         # subjects = self.get_subject_bill_dict()
