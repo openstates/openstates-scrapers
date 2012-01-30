@@ -154,14 +154,9 @@ def download():
     '''
     logger.info('Updating files from ftp://www.leginfo.ca.gov/pub/bill/ ...')
 
-    wget_output = join(DOWNLOADS, 'wget-output')
 
     # For short: wget -m -l1 -nd -A.zip ftp://www.leginfo.ca.gov/pub/bill/
     command = ["wget",
-
-               # We'll examine the output to determine which files where
-               # updated, so spit into a file.
-               '--output-file=' + wget_output,
                '--mirror',
                '--level=1',
                '--no-directories',
@@ -170,14 +165,9 @@ def download():
                'ftp://www.leginfo.ca.gov/pub/bill/']
 
     # wget the ftp directory, and display wget output and also log to file.
-    command = '%s && tail -f %s' % (' '.join(command), wget_output)
-    subprocess.call(command, shell=True)
-
-    # Figure out which files were updated.    
-    with open(wget_output) as f:
-        output = f.read()
+    output = subprocess.check_output(command, stderr=subprocess.STDOUT)
     updated_files = re.findall(r"([^/]+?\.zip)' saved \[\d+\]", output)
-
+    
     if updated_files:
         msg = '...Done. Found %d updated files: %r'
         msg = msg % (len(updated_files), updated_files)
@@ -201,7 +191,7 @@ def extract(zipfile_names, strip=partial(re.compile(r'\.zip$').sub, '')):
         zp = ZipFile(z)
 
         msg = 'Extracting %d files to %s...' % (len(zp.namelist()), folder)
-        logger.debug(msg)
+        logger.info(msg)
         
         zp.extractall(folder)
         folder_names.append(folder)
@@ -235,7 +225,11 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
 
 
     # For each .dat folder, run its corresponding .sql file.
-    for filename in glob.glob(join(folder, '*.dat')):
+    filenames = glob.glob(join(folder, '*.dat'))
+    if filenames:
+        logger.info('Running sql files:')
+
+    for filename in filenames:
 
         # The corresponding sql file is in data/ca/dbadmin
         _, filename = split(filename)
@@ -244,10 +238,9 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
 
             # Swap out windows paths.
             script = f.read().replace(r'c:\\pubinfo\\', folder)
-     
 
-        _, slq_filename = split(sql_filename)
-        logger.info('Running .sql file %s...' % sql_filename)
+        _, sql_filename = split(sql_filename)
+        logger.info('...' + sql_filename)
         cursor = connection.cursor()
         cursor.execute(script)
         cursor.close()
@@ -319,8 +312,10 @@ def update(zipfile_names=None, unzip=True):
     Otherwise, load each the data from each updated `{weekday}.zip` 
     file in weekday order.
 
-    Optionally, pass the names of one or more zipfiles to this module
-    on the command line, and it will import those instead.
+    Optionally, pass the names of one or more zipfiles as fabric kwargs
+    and import those instead, i.e.:
+
+    fab -fdownload.py update:zipfile_names=zipfile1.zip,zipfile2.zip
     '''
     logger.info('Updating capublic...')
     days='Mon Tue Wed Thu Fri Sat Sun'.split()
@@ -342,7 +337,6 @@ def update(zipfile_names=None, unzip=True):
         folder_names = [x.replace('.zip', '') + '/' for x in zipfile_names]
         
         
-
 
     # ------------------------------------------------------------------------
     # Update any session updates in order.
