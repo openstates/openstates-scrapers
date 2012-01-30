@@ -144,9 +144,13 @@ class RIBillScraper(BillScraper):
                 b = Bill(session, chamber, bill['bill_id'], bill['title'])
                 #for action in bill['actions']:
                 #    b.add_action("unknwon", action )
-                sponsors = bill['sponsor'][len("BY"):].strip()
+                sponsors = bill['sponsors'][len("BY"):].strip()
                 sponsors = sponsors.split(",")
                 sponsors = [ s.strip() for s in sponsors ]
+
+                for sponsor in sponsors:
+                    b.add_sponsor( "co-sponsor", sponsor )
+
                 self.save_bill(b)
 
                 print bill['bill_id'], subs
