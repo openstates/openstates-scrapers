@@ -118,8 +118,6 @@ class CALegislatorScraper(LegislatorScraper):
 
         # Add a source for the url.
         leg = Legislator(term, chamber, **res)
-        leg.add_source(res['url'])
-        del leg['url']
         return leg
 
         
