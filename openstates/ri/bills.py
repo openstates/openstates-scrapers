@@ -153,7 +153,7 @@ class RIBillScraper(BillScraper):
 
                 self.save_bill(b)
 
-                print bill['bill_id'], subs
+                # print bill['bill_id'], subs
 
     def scrape(self, chamber, session):
         subjects = self.get_subject_bill_dict()
