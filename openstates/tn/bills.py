@@ -11,18 +11,15 @@ import re
 
 class TNBillScraper(BillScraper):
     state = 'tn'
-    urls = {
-        'cur_index': 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%(chamber_type)sB0001&EndNum=%(chamber_type)sB9999&Year=%(year)s',
-        'arch_index': 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%(chamber_type)sB0001&EndNum=%(chamber_type)sB9999&Year=%(year)s',
-        'info': 'http://wapp.capitol.tn.gov/apps/Billinfo/default.aspx?BillNumber=%s&ga=%s',
-        'special': {
-            '106th Special Session': 'http://wapp.capitol.tn.gov/apps/indexes/SpSession1.aspx',
-            '104th Special Session': 'http://www.capitol.tn.gov/legislation/Archives/104GA/bills/SpecSessIndex.htm',
-            '101st, 1st Special Session': 'http://www.capitol.tn.gov/legislation/Archives/101GA/bills/SpecSessIndex.htm',
-            '101st, 2nd Special Session': 'http://www.capitol.tn.gov/legislation/Archives/101GA/bills/SpecSessIndex2.htm',
-            '99th Special Session': 'http://www.capitol.tn.gov/legislation/Archives/99GA/bills/SpecSessIndex.htm'
-        }
-    }
+    #urls = {
+    #    'special': {
+    #        '106th Special Session': 'http://wapp.capitol.tn.gov/apps/indexes/SpSession1.aspx',
+    #        '104th Special Session': 'http://www.capitol.tn.gov/legislation/Archives/104GA/bills/SpecSessIndex.htm',
+    #        '101st, 1st Special Session': 'http://www.capitol.tn.gov/legislation/Archives/101GA/bills/SpecSessIndex.htm',
+    #        '101st, 2nd Special Session': 'http://www.capitol.tn.gov/legislation/Archives/101GA/bills/SpecSessIndex2.htm',
+    #        '99th Special Session': 'http://www.capitol.tn.gov/legislation/Archives/99GA/bills/SpecSessIndex.htm'
+    #    }
+    #}
     
     def scrape(self, chamber, term):
 
@@ -39,13 +36,13 @@ class TNBillScraper(BillScraper):
                 bill_type = 'resolution'
 
             if term == '107':
-                bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999' % (abbr, abbr)
+                bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s7000' % (abbr, abbr)
             elif 'S' in term:
-                #Need to add in special session
-                special_session = True
-                raise Exception('Working on Special Session')
+                #Special session bills is between 7001-7099
+                if term == '106S':
+                    bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s7001&EndNum=%s7099&Year=%s' % (abbr, abbr, '106')
             else:
-                bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999&Year=%s' % (abbr, abbr, term)
+                bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s0001&EndNum=%s7000&Year=%s' % (abbr, abbr, term)
             
             with self.urlopen(bill_listing) as bill_list_page:
                 bill_list_page = lxml.html.fromstring(bill_list_page)
