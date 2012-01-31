@@ -136,6 +136,8 @@ class RIBillScraper(BillScraper):
                     actor = "upper"
                 else:
                     actor = "joint"
+            if "governor" in action.lower():
+                actor = "governor"
             date = action.split(" ")[0]
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             bill.add_action( actor, action, date,
