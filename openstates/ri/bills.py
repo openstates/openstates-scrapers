@@ -46,7 +46,8 @@ SEARCH_URL = "http://status.rilin.state.ri.us/"
 BILL_STRING_FLAGS = {
     "bill_id"  : r"^[House|Senate].*",
     "sponsors" : r"^BY.*",
-    "title"    : "ENTITLED,.*"
+    "title"    : "ENTITLED,.*",
+    "version"  : "\{.*\}"
 }
 
 class RIBillScraper(BillScraper):
@@ -141,7 +142,9 @@ class RIBillScraper(BillScraper):
                 except KeyError:
                     pass
 
-                b = Bill(session, chamber, bill['bill_id'], bill['title'])
+                title = bill['title'][len("ENTITLED, "):]
+
+                b = Bill(session, chamber, bill['bill_id'], title)
                 #for action in bill['actions']:
                 #    b.add_action("unknwon", action )
                 sponsors = bill['sponsors'][len("BY"):].strip()
@@ -152,9 +155,7 @@ class RIBillScraper(BillScraper):
                     b.add_sponsor( "co-sponsor", sponsor )
 
                 b.add_source( SEARCH_URL )
-
                 self.save_bill(b)
-
                 # print bill['bill_id'], subs
 
     def scrape(self, chamber, session):
