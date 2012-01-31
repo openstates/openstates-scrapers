@@ -7,6 +7,7 @@ from collections import defaultdict
 import datetime as dt
 import re
 import lxml.html
+import scrapelib
 
 # OR only provides people not voting yes,  this is fragile and annoying
 # these regexes will pull the appropriate numbers/voters out
@@ -130,9 +131,11 @@ class ORBillScraper(BillScraper):
 
         # add authors
         if chamber == 'upper':
-            author_url = 'http://www.leg.state.or.us/11reg/pubs/senmh.html'
+            author_url = 'http://www.leg.state.or.us/%s/pubs/senmh.html' % (
+                session_slug)
         else:
-            author_url = 'http://www.leg.state.or.us/11reg/pubs/hsemh.html'
+            author_url = 'http://www.leg.state.or.us/%s/pubs/hsemh.html' % (
+                session_slug)
         self.parse_authors(author_url)
 
         # save all bills
@@ -264,7 +267,11 @@ class ORBillScraper(BillScraper):
 
 
     def parse_subjects(self, url, chamber_letter):
-        pdf, resp = self.urlretrieve(url)
+        try:
+            pdf, resp = self.urlretrieve(url)
+        except scrapelib.HTTPError:
+            self.warning("could not fetch subject index %s" % url)
+            return
         lines = convert_pdf(pdf, 'text-nolayout').splitlines()
 
         last_line = ''
