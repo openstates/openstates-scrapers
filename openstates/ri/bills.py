@@ -138,6 +138,26 @@ class RIBillScraper(BillScraper):
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             bill.add_action( actor, action, date )
 
+    def get_type_by_name(self, name):
+        name = name.lower()
+        self.log(name)
+
+        things = [
+            "resolution",
+            "joint resolution"
+            "memorial",
+            "memorandum",
+            "bill"
+        ]
+
+        for t in things:
+            if t in name:
+                self.log( "Returning %s" % t )
+                return t
+
+        self.warning("XXX: Bill type fallthrough. This ain't great.")
+        return "bill"
+
     def scrape_bills(self, chamber, session, subjects):
         idex = START_IDEX[chamber]
         FROM="ctl00$rilinContent$txtBillFrom"
@@ -164,10 +184,10 @@ class RIBillScraper(BillScraper):
                 except KeyError:
                     pass
 
-                print bill
-
                 title = bill['title'][len("ENTITLED, "):]
-                b = Bill(session, chamber, bill['bill_id'], title)
+                b = Bill(session, chamber, bill['bill_id'], title,
+                    type=self.get_type_by_name(bill['bill_id']))
+
                 self.process_actions( bill['actions'], b )
                 sponsors = bill['sponsors'][len("BY"):].strip()
                 sponsors = sponsors.split(",")
@@ -185,5 +205,5 @@ class RIBillScraper(BillScraper):
                 # print bill['bill_id'], subs
 
     def scrape(self, chamber, session):
-        subjects = self.get_subject_bill_dict()
+        subjects = {} # self.get_subject_bill_dict()
         self.scrape_bills( chamber, session, subjects )
