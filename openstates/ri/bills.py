@@ -75,11 +75,15 @@ class RIBillScraper(BillScraper):
         blocks = {}
         for node in nodes:
             nblock = { 'actions' : [] }
-            lines = [ n.text_content() for n in node ]
+            lines = [ ( n.text_content(), n ) for n in node ]
             for line in lines:
+                line, node = line
                 found = False
                 for regexp in BILL_STRING_FLAGS:
                     if re.match(BILL_STRING_FLAGS[regexp], line):
+                        hrefs = node.xpath("./a")
+                        if len(hrefs) > 0:
+                             nblock[regexp + "_hrefs"] = hrefs
                         nblock[regexp] = line
                         found = True
                 if not found:
@@ -160,15 +164,18 @@ class RIBillScraper(BillScraper):
                 except KeyError:
                     pass
 
+                print bill
+
                 title = bill['title'][len("ENTITLED, "):]
-
                 b = Bill(session, chamber, bill['bill_id'], title)
-
                 self.process_actions( bill['actions'], b )
-
                 sponsors = bill['sponsors'][len("BY"):].strip()
                 sponsors = sponsors.split(",")
                 sponsors = [ s.strip() for s in sponsors ]
+
+                for href in bill['bill_id_hrefs']:
+                    b.add_version( href.text, href.attrib['href'],
+                        mimetype="application/pdf" )
 
                 for sponsor in sponsors:
                     b.add_sponsor( "co-sponsor", sponsor )
@@ -178,5 +185,5 @@ class RIBillScraper(BillScraper):
                 # print bill['bill_id'], subs
 
     def scrape(self, chamber, session):
-        subjects = self.get_subject_bill_dict()
+        subjects = {} # self.get_subject_bill_dict()
         self.scrape_bills( chamber, session, subjects )
