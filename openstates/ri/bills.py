@@ -44,10 +44,13 @@ def get_default_headers( page ):
 SEARCH_URL = "http://status.rilin.state.ri.us/"
 
 BILL_STRING_FLAGS = {
-    "bill_id"  : r"^[House|Senate].*",
-    "sponsors" : r"^BY.*",
-    "title"    : "ENTITLED,.*",
-    "version"  : "\{.*\}"
+    "bill_id"    : r"^[House|Senate].*",
+    "sponsors"   : r"^BY.*",
+    "title"      : r"ENTITLED,.*",
+    "version"    : r"\{.*\}",
+    "resolution" : r"Resolution.*",
+    "chapter"    : r"^Chapter.*",
+    "by_request" : r"^\(.*\)$"
 }
 
 class RIBillScraper(BillScraper):
@@ -117,10 +120,11 @@ class RIBillScraper(BillScraper):
         return bill_subjects
 
     def process_actions( self, actions, bill ):
-        actor = None
+        print actions
+        actor = "joint"
         for action in actions:
             if "house"  in action.lower():
-                actor = upper
+                actor = "lower"
             if "senate" in action.lower():
                 if actor == None:
                     actor = "upper"
@@ -128,8 +132,7 @@ class RIBillScraper(BillScraper):
                     actor = "joint"
             date = action.split(" ")[0]
             date = dt.datetime.strptime(date, "%m/%d/%Y")
-            b.add_action( actor, action, date )
-            
+            bill.add_action( actor, action, date )
 
     def scrape_bills(self, chamber, session, subjects):
         idex = START_IDEX[chamber]
