@@ -116,6 +116,21 @@ class RIBillScraper(BillScraper):
         bill_subjects = ret
         return bill_subjects
 
+    def process_actions( self, actions, bill ):
+        actor = None
+        for action in actions:
+            if "house"  in action.lower():
+                actor = upper
+            if "senate" in action.lower():
+                if actor == None:
+                    actor = "upper"
+                else:
+                    actor = "joint"
+            date = action.split(" ")[0]
+            date = dt.datetime.strptime(date, "%m/%d/%Y")
+            b.add_action( actor, action, date )
+            
+
     def scrape_bills(self, chamber, session, subjects):
         idex = START_IDEX[chamber]
         FROM="ctl00$rilinContent$txtBillFrom"
@@ -145,8 +160,9 @@ class RIBillScraper(BillScraper):
                 title = bill['title'][len("ENTITLED, "):]
 
                 b = Bill(session, chamber, bill['bill_id'], title)
-                #for action in bill['actions']:
-                #    b.add_action("unknwon", action )
+
+                self.process_actions( bill['actions'], b )
+
                 sponsors = bill['sponsors'][len("BY"):].strip()
                 sponsors = sponsors.split(",")
                 sponsors = [ s.strip() for s in sponsors ]
