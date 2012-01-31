@@ -151,6 +151,8 @@ class RIBillScraper(BillScraper):
                 for sponsor in sponsors:
                     b.add_sponsor( "co-sponsor", sponsor )
 
+                b.add_source( SEARCH_URL )
+
                 self.save_bill(b)
 
                 # print bill['bill_id'], subs
