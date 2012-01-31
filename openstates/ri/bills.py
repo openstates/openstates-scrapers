@@ -125,8 +125,9 @@ class RIBillScraper(BillScraper):
 
     def process_actions( self, actions, bill ):
         print actions
-        actor = "joint"
         for action in actions:
+            actor = "joint"
+
             if "house"  in action.lower():
                 actor = "lower"
 
