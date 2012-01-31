@@ -129,8 +129,9 @@ class RIBillScraper(BillScraper):
         for action in actions:
             if "house"  in action.lower():
                 actor = "lower"
+
             if "senate" in action.lower():
-                if actor == None:
+                if actor == "joint":
                     actor = "upper"
                 else:
                     actor = "joint"
