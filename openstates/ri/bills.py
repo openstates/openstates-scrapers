@@ -136,7 +136,8 @@ class RIBillScraper(BillScraper):
                     actor = "joint"
             date = action.split(" ")[0]
             date = dt.datetime.strptime(date, "%m/%d/%Y")
-            bill.add_action( actor, action, date )
+            bill.add_action( actor, action, date,
+                type=self.get_type_by_action(action))
 
     def get_type_by_name(self, name):
         name = name.lower()
@@ -157,6 +158,22 @@ class RIBillScraper(BillScraper):
 
         self.warning("XXX: Bill type fallthrough. This ain't great.")
         return "bill"
+
+    def get_type_by_action(self, name):
+        types = {
+            "introduced" : "bill:introduced",
+            "referred"   : "committee:referred",
+            "passed"     : "bill:passed",
+        }
+        ret = []
+        name = name.lower()
+        for flag in types:
+            if flag in name:
+                ret.append(types[flag])
+
+        if len(ret) > 0:
+            return ret
+        return "other"
 
     def scrape_bills(self, chamber, session, subjects):
         idex = START_IDEX[chamber]
