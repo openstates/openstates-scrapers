@@ -170,7 +170,10 @@ class RIBillScraper(BillScraper):
             "passed"     : "bill:passed",
             "recommends passage" : "committee:passed:favorable",
             # XXX: need to find the unfavorable string
-            "withdrawn"  : "bill:withdrawn"
+            # XXX: What's "recommended measure be held for further study"?
+            "withdrawn"               : "bill:withdrawn",
+            "signed by governor"      : "governor:signed",
+            "transmitted to governor" : "governor:received"
         }
         ret = []
         name = name.lower()
