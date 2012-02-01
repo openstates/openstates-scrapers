@@ -108,7 +108,11 @@ class TNBillScraper(BillScraper):
             
             title = page.xpath("//span[@id='lblAbstract']")[0].text
 
-            bill = Bill(term, primary_chamber, bill_id, title, type=bill_type, secondary_bill_id=secondary_bill_id)
+            #Bill subject
+            subject_pos = title.find('-')
+            subject = title[0:subject_pos - 1]
+
+            bill = Bill(term, primary_chamber, bill_id, title, type=bill_type, secondary_bill_id=secondary_bill_id, subject=subject)
             bill.add_source(bill_url)
             
             # Primary Sponsor
