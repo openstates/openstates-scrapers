@@ -1,13 +1,40 @@
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-
 from tn import metadata
-
 import datetime
 import lxml.html
 import re
 
+_categorizers = (
+    ('Amendment adopted', 'amendment:passed'),
+    ('Amendment failed', 'amendment:failed'),
+    ('Amendment proposed', 'amendment:introduced'),
+    ('Divided committee report', 'committee:passed'),
+    ('Filed for intro.', ['bill:introduced', 'bill:reading:1']),
+    ('Reported back amended, do not pass', 'committee:passed:unfavorable'),
+    ('Reported back amended, do pass', 'committee:passed:favorable'),
+    ('Reported back amended, without recommendation', 'committee:passed'),
+    ('Reported back, do not pass', 'committee:passed:unfavorable'),
+    ('w/ recommend', 'committee:passed:favorable'),
+    ('Ref. to', 'committee:referred'),
+    ('Recieved from House', 'bill:introduced'),
+    ('Recieved from Senate', 'bill:introduced'),
+    ('Second reading, adopted', ['bill:passed', 'bill:reading:2']),
+    ('Second reading, failed', ['bill:failed', 'bill:reading:2']),
+    ('Second reading, passed', ['bill:passed', 'bill:reading:2']),
+    ('Transmitted to Gov. for action.', 'governor:received'),
+    ('Signed by Governor, but item veto', 'governor:vetoed:line-item'),
+    ('Signed by Governor', 'governor:signed'),
+    ('Withdrawn', 'bill:withdrawn'),
+)
+
+def categorize_action(action):
+    for prefix, types in _categorizers:
+        #if action.startswith(prefix):
+        if prefix in action:
+            return types
+    return 'other'
 
 class TNBillScraper(BillScraper):
     state = 'tn'
@@ -81,7 +108,11 @@ class TNBillScraper(BillScraper):
             
             title = page.xpath("//span[@id='lblAbstract']")[0].text
 
-            bill = Bill(term, primary_chamber, bill_id, title, type=bill_type, secondary_bill_id=secondary_bill_id)
+            #Bill subject
+            subject_pos = title.find('-')
+            subject = title[0:subject_pos - 1]
+
+            bill = Bill(term, primary_chamber, bill_id, title, type=bill_type, secondary_bill_id=secondary_bill_id, subject=subject)
             bill.add_source(bill_url)
             
             # Primary Sponsor
@@ -102,7 +133,8 @@ class TNBillScraper(BillScraper):
             for ar in action_rows:
                 action_taken = ar.xpath("td")[0].text
                 action_date = datetime.datetime.strptime(ar.xpath("td")[1].text.strip(), '%m/%d/%Y')
-                bill.add_action(primary_chamber, action_taken, action_date)
+                action_type = categorize_action(action_taken)
+                bill.add_action(primary_chamber, action_taken, action_date, action_type)
 
             #Primary Votes
             votes_link = page.xpath("//span[@id='lblBillVotes']/a")
@@ -125,7 +157,8 @@ class TNBillScraper(BillScraper):
                 for ar2 in action2_rows:
                     action2_taken = ar2.xpath("td")[0].text
                     action2_date = datetime.datetime.strptime(ar2.xpath("td")[1].text.strip(), '%m/%d/%Y')
-                    bill.add_action(chamber2, action2_taken, action2_date)
+                    action2_type = categorize_action(action2_taken)
+                    bill.add_action(chamber2, action2_taken, action2_date, action2_type)
 
                 #Secondary Votes
                 votes2_link = page.xpath("//span[@id='lblBillVotes']/a")

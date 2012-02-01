@@ -75,11 +75,15 @@ class RIBillScraper(BillScraper):
         blocks = {}
         for node in nodes:
             nblock = { 'actions' : [] }
-            lines = [ n.text_content() for n in node ]
+            lines = [ ( n.text_content(), n ) for n in node ]
             for line in lines:
+                line, node = line
                 found = False
                 for regexp in BILL_STRING_FLAGS:
                     if re.match(BILL_STRING_FLAGS[regexp], line):
+                        hrefs = node.xpath("./a")
+                        if len(hrefs) > 0:
+                             nblock[regexp + "_hrefs"] = hrefs
                         nblock[regexp] = line
                         found = True
                 if not found:
@@ -121,18 +125,65 @@ class RIBillScraper(BillScraper):
 
     def process_actions( self, actions, bill ):
         print actions
-        actor = "joint"
         for action in actions:
+            actor = "joint"
+
             if "house"  in action.lower():
                 actor = "lower"
+
             if "senate" in action.lower():
-                if actor == None:
+                if actor == "joint":
                     actor = "upper"
                 else:
                     actor = "joint"
+            if "governor" in action.lower():
+                actor = "governor"
             date = action.split(" ")[0]
             date = dt.datetime.strptime(date, "%m/%d/%Y")
-            bill.add_action( actor, action, date )
+            bill.add_action( actor, action, date,
+                type=self.get_type_by_action(action))
+
+    def get_type_by_name(self, name):
+        name = name.lower()
+        self.log(name)
+
+        things = [
+            "resolution",
+            "joint resolution"
+            "memorial",
+            "memorandum",
+            "bill"
+        ]
+
+        for t in things:
+            if t in name:
+                self.log( "Returning %s" % t )
+                return t
+
+        self.warning("XXX: Bill type fallthrough. This ain't great.")
+        return "bill"
+
+    def get_type_by_action(self, name):
+        types = {
+            "introduced" : "bill:introduced",
+            "referred"   : "committee:referred",
+            "passed"     : "bill:passed",
+            "recommends passage" : "committee:passed:favorable",
+            # XXX: need to find the unfavorable string
+            # XXX: What's "recommended measure be held for further study"?
+            "withdrawn"               : "bill:withdrawn",
+            "signed by governor"      : "governor:signed",
+            "transmitted to governor" : "governor:received"
+        }
+        ret = []
+        name = name.lower()
+        for flag in types:
+            if flag in name:
+                ret.append(types[flag])
+
+        if len(ret) > 0:
+            return ret
+        return "other"
 
     def scrape_bills(self, chamber, session, subjects):
         idex = START_IDEX[chamber]
@@ -161,14 +212,17 @@ class RIBillScraper(BillScraper):
                     pass
 
                 title = bill['title'][len("ENTITLED, "):]
-
-                b = Bill(session, chamber, bill['bill_id'], title)
+                b = Bill(session, chamber, bill['bill_id'], title,
+                    type=self.get_type_by_name(bill['bill_id']))
 
                 self.process_actions( bill['actions'], b )
-
                 sponsors = bill['sponsors'][len("BY"):].strip()
                 sponsors = sponsors.split(",")
                 sponsors = [ s.strip() for s in sponsors ]
+
+                for href in bill['bill_id_hrefs']:
+                    b.add_version( href.text, href.attrib['href'],
+                        mimetype="application/pdf" )
 
                 for sponsor in sponsors:
                     b.add_sponsor( "co-sponsor", sponsor )
