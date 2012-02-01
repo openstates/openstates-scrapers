@@ -116,10 +116,14 @@ class CALegislatorScraper(LegislatorScraper):
         junk = 'Contact Assembly Member '
         res['full_name'] = res['full_name'].replace(junk, '')
 
+        # convert party
+        if res['party'] == 'Democrat':
+            res['party'] = 'Democratic'
+        # strip leading zero
+        res['district'] = str(int(res['district']))
+
         # Add a source for the url.
         leg = Legislator(term, chamber, **res)
-        leg.add_source(res['url'])
-        del leg['url']
         return leg
 
         

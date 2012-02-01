@@ -1,7 +1,7 @@
 import datetime
 
 metadata = dict(
-    name='Rhode Island and Providence Plantations',
+    name='Rhode Island',
     abbreviation='ri',
     legislature_name='Rhode Island General Assembly',
     upper_chamber_name='Senate',

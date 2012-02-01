@@ -1,12 +1,24 @@
 import datetime as dt
 import lxml.html
 import urllib
+import re
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.utils import url_xpath
 
 subjects      = None
 bill_subjects = None
+
+HB_START_BILLNO=7000
+SB_START_BILLNO=2000
+
+START_IDEX = {
+    "lower" : HB_START_BILLNO,
+    "upper" : SB_START_BILLNO
+}
+
+MAXQUERY=250 # What a silly low number. This is just putting more load on the
+# server, not even helping with that. Sheesh.
 
 def get_postable_subjects():
     global subjects
@@ -31,6 +43,16 @@ def get_default_headers( page ):
 
 SEARCH_URL = "http://status.rilin.state.ri.us/"
 
+BILL_STRING_FLAGS = {
+    "bill_id"    : r"^[House|Senate].*",
+    "sponsors"   : r"^BY.*",
+    "title"      : r"ENTITLED,.*",
+    "version"    : r"\{.*\}",
+    "resolution" : r"Resolution.*",
+    "chapter"    : r"^Chapter.*",
+    "by_request" : r"^\(.*\)$"
+}
+
 class RIBillScraper(BillScraper):
     state = 'ri'
 
@@ -50,33 +72,28 @@ class RIBillScraper(BillScraper):
         return blocks
 
     def digest_results_page( self, nodes ):
-
-        headers = [
-            "bill_id",
-            "sponsors",
-            "title",
-            "docid"
-        ]
-
-        ret = {}
-
+        blocks = {}
         for node in nodes:
-            idex = -1
-            actions = []
-            nret = {
-                "actions" : actions    
-            }
-
-            for div in node:
-                idex += 1
-                try:
-                    nret[headers[idex]] = div.text_content()
-                    print headers[idex], nret[headers[idex]]
-                except IndexError:
-                    actions.append(div.text_content())
-            ret[nret["bill_id"]] = nret
-        return ret
-
+            nblock = { 'actions' : [] }
+            lines = [ ( n.text_content(), n ) for n in node ]
+            for line in lines:
+                line, node = line
+                found = False
+                for regexp in BILL_STRING_FLAGS:
+                    if re.match(BILL_STRING_FLAGS[regexp], line):
+                        hrefs = node.xpath("./a")
+                        if len(hrefs) > 0:
+                             nblock[regexp + "_hrefs"] = hrefs
+                        nblock[regexp] = line
+                        found = True
+                if not found:
+                    nblock['actions'].append(line)
+            if "bill_id" in nblock:
+                blocks[nblock['bill_id']] = nblock
+            else:
+                self.warning("ERROR! Can not find bill_id for current entry!")
+                self.warning("This should never happen!!! Oh noes!!!")
+        return blocks
 
     def get_subject_bill_dict(self):
         global bill_subjects
@@ -97,9 +114,117 @@ class RIBillScraper(BillScraper):
             blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
                 method="POST", body=headers))
             blocks = blocks[1:-1]
-            ret[subject] = self.digest_results_page(blocks)
+            blocks = self.digest_results_page(blocks)
+            for block in blocks:
+                try:
+                    ret[block].append(subject)
+                except KeyError:
+                    ret[block] = [ subject ]
         bill_subjects = ret
         return bill_subjects
 
+    def process_actions( self, actions, bill ):
+        print actions
+        for action in actions:
+            actor = "joint"
+
+            if "house"  in action.lower():
+                actor = "lower"
+
+            if "senate" in action.lower():
+                if actor == "joint":
+                    actor = "upper"
+                else:
+                    actor = "joint"
+            if "governor" in action.lower():
+                actor = "governor"
+            date = action.split(" ")[0]
+            date = dt.datetime.strptime(date, "%m/%d/%Y")
+            bill.add_action( actor, action, date,
+                type=self.get_type_by_action(action))
+
+    def get_type_by_name(self, name):
+        name = name.lower()
+        self.log(name)
+
+        things = [
+            "resolution",
+            "joint resolution"
+            "memorial",
+            "memorandum",
+            "bill"
+        ]
+
+        for t in things:
+            if t in name:
+                self.log( "Returning %s" % t )
+                return t
+
+        self.warning("XXX: Bill type fallthrough. This ain't great.")
+        return "bill"
+
+    def get_type_by_action(self, name):
+        types = {
+            "introduced" : "bill:introduced",
+            "referred"   : "committee:referred",
+            "passed"     : "bill:passed",
+        }
+        ret = []
+        name = name.lower()
+        for flag in types:
+            if flag in name:
+                ret.append(types[flag])
+
+        if len(ret) > 0:
+            return ret
+        return "other"
+
+    def scrape_bills(self, chamber, session, subjects):
+        idex = START_IDEX[chamber]
+        FROM="ctl00$rilinContent$txtBillFrom"
+        TO="ctl00$rilinContent$txtBillTo"
+        YEAR="ctl00$rilinContent$cbYear"
+        blocks = "FOO" # Ugh.
+        while len(blocks) > 0:
+            default_headers = get_default_headers( SEARCH_URL )
+            default_headers[FROM] = idex
+            default_headers[TO]   = idex + MAXQUERY
+            default_headers[YEAR] = session
+            idex += MAXQUERY
+            headers = urllib.urlencode( default_headers )
+            blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
+                method="POST", body=headers))
+            blocks = blocks[1:-1]
+            blocks = self.digest_results_page(blocks)
+
+            for block in blocks:
+                bill = blocks[block]
+                subs = []
+                try:
+                    subs = subjects[bill['bill_id']]
+                except KeyError:
+                    pass
+
+                title = bill['title'][len("ENTITLED, "):]
+                b = Bill(session, chamber, bill['bill_id'], title,
+                    type=self.get_type_by_name(bill['bill_id']))
+
+                self.process_actions( bill['actions'], b )
+                sponsors = bill['sponsors'][len("BY"):].strip()
+                sponsors = sponsors.split(",")
+                sponsors = [ s.strip() for s in sponsors ]
+
+                for href in bill['bill_id_hrefs']:
+                    b.add_version( href.text, href.attrib['href'],
+                        mimetype="application/pdf" )
+
+                for sponsor in sponsors:
+                    b.add_sponsor( "co-sponsor", sponsor )
+
+                b.add_source( SEARCH_URL )
+                self.save_bill(b)
+                # print bill['bill_id'], subs
+
     def scrape(self, chamber, session):
-        print self.get_subject_bill_dict()
+        subjects = self.get_subject_bill_dict()
+        self.scrape_bills( chamber, session, subjects )
