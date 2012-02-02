@@ -205,6 +205,10 @@ class ORBillScraper(BillScraper):
             bill_id = "%s %s" % (type, number)
             # lookup type without chamber prefix
             bill_type = self.bill_types[type[1:]]
+
+            # may encounter an ellipsis in the source data
+            title = title.replace('\x85', '...')
+
             self.all_bills[bill_id] =  Bill(session, chamber, bill_id, title,
                                             type=bill_type)
 
