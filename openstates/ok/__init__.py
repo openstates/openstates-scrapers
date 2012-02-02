@@ -12,20 +12,22 @@ metadata = dict(
         {'name': '2011-2012',
          'start_year': 2011,
          'end_year': 2012,
-         'sessions': ['2011', '2012']}
+         'sessions': ['2011-2012']}
         ],
     session_details={
-        '2011': {'display_name': '2011 Regular Session',
-                 'session_id': '1100',
-                 '_scraped_name': '2011 Regular Session'
-                },
-        '2012': {'display_name': '2012 Regular Session',
-                 'session_id': '1200',
-                 '_scraped_name': '2012 Regular Session'
-                },
+        # On the Oklahoma website they list 2011/2012 as separate sessions, but
+        # bill numbering does not restart in even year sessions so we treat
+        # them as the same session.  This means the session_id/_scraped_name
+        # will change in even years and we'll need to ignore odd years
+        '2011-2012':
+            {'display_name': '2011-2012 Regular Session',
+             'session_id': '1200',
+             '_scraped_name': '2012 Regular Session'
+            },
     },
     feature_flags=['subjects'],
-    _ignored_scraped_sessions=['2010 Regular Session',
+    _ignored_scraped_sessions=[
+                               '2011 Regular Session', '2010 Regular Session',
                                '2009 Regular Session', '2008 Regular Session',
                                '2007 Regular Session',
                                '2006 Second Special Session',

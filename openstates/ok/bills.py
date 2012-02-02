@@ -76,6 +76,10 @@ class OKBillScraper(BillScraper):
 
         for link in page.xpath("//a[contains(@href, 'BillInfo')]"):
             bill_id = link.text.strip()
+            bill_num = int(re.findall('\d+', bill_id)[0])
+            if bill_num >= 9900:
+                self.info('skipping likely bad bill %s' % bill_id)
+                continue
             self.scrape_bill(chamber, session, bill_id, link.attrib['href'])
 
     def scrape_bill(self, chamber, session, bill_id, url):
