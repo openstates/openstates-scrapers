@@ -31,7 +31,7 @@ class CACommitteeScraper(CommitteeScraper):
 
         for type_ in committee_types[chamber]:
 
-            if type_ == 'joint':
+            if type_ == 'Joint':
                 chamber = type_
 
             div = doc.xpath('//div[contains(@class, "view-view-%sCommittee")]' % type_)[0]
