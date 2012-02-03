@@ -2,11 +2,13 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from datetime import datetime
 import lxml.html
+import urllib
 
 class NEBillScraper(BillScraper):
     state = 'ne'
 
     def scrape(self, chamber, session):
+
         year = self.metadata['session_details'][session]['start_date'].year
         main_url = 'http://nebraskalegislature.gov/bills/search_by_date.php?SessionDay=%s' % year
 
@@ -14,20 +16,28 @@ class NEBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
 
             for docs in page.xpath('//div[@class="cal_content_full"]/table[@id="bill_results"]/tr/td[1]/a'):
-                bill_link = docs.attrib['href']
-                bill_link = 'http://nebraskalegislature.gov/' + bill_link
+                bill_abbr = docs.text
                 
+                #POST request for search form
+                post_dict = {'DocumentNumber': bill_abbr, 'Legislature': session}
+                headers = urllib.urlencode(post_dict)
+                bill_page = self.urlopen( 'http://nebraskalegislature.gov/bills/search_by_number.php', method="POST", body=headers)
+                bill_link = bill_page.response.url
+
                 #scrapes info from bill page
-                self.bill_info(bill_link, session, chamber, main_url)
+                self.bill_info(bill_link, session, chamber, main_url, bill_page)
 
     #Scrapes info from the bill page
-    def bill_info(self, bill_link, session, chamber, main_url):
-                
-        with self.urlopen(bill_link) as bill_page:
+    def bill_info(self, bill_link, session, chamber, main_url, bill_page):
+           
+
             bill_page = lxml.html.fromstring(bill_page)
 
             #basic info
-            long_title = bill_page.xpath('//div[@id="content_text"]/h2')[0].text.split()
+            try:
+                long_title = bill_page.xpath('//div[@id="content_text"]/h2')[0].text.split()
+            except IndexError:
+                return None
             bill_id = long_title[0]
             title = ''
             for x in range(2, len(long_title)):
