@@ -5,7 +5,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
 import lxml.html
-
+import scrapelib
 
 class UTBillScraper(BillScraper):
     state = 'ut'
@@ -44,46 +44,50 @@ class UTBillScraper(BillScraper):
                                  link.attrib['href'])
 
     def scrape_bill(self, chamber, session, bill_id, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        try:
+            page = self.urlopen(url)
+        except scrapelib.HTTPError:
+            self.warning("couldn't open %s, skipping bill" % url)
+            return
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            header = page.xpath('//h3/br')[0].tail.replace('&nbsp;', ' ')
-            title, primary_sponsor = header.split(' -- ')
+        header = page.xpath('//h3/br')[0].tail.replace('&nbsp;', ' ')
+        title, primary_sponsor = header.split(' -- ')
 
-            if bill_id.startswith('H.B.') or bill_id.startswith('S.B.'):
-                bill_type = ['bill']
-            elif bill_id.startswith('H.R.') or bill_id.startswith('S.R.'):
-                bill_type = ['resolution']
-            elif bill_id.startswith('H.C.R.') or bill_id.startswith('S.C.R.'):
-                bill_type = ['concurrent resolution']
-            elif bill_id.startswith('H.J.R.') or bill_id.startswith('S.J.R.'):
-                bill_type = ['joint resolution']
+        if bill_id.startswith('H.B.') or bill_id.startswith('S.B.'):
+            bill_type = ['bill']
+        elif bill_id.startswith('H.R.') or bill_id.startswith('S.R.'):
+            bill_type = ['resolution']
+        elif bill_id.startswith('H.C.R.') or bill_id.startswith('S.C.R.'):
+            bill_type = ['concurrent resolution']
+        elif bill_id.startswith('H.J.R.') or bill_id.startswith('S.J.R.'):
+            bill_type = ['joint resolution']
 
-            bill = Bill(session, chamber, bill_id, title, type=bill_type)
-            bill.add_sponsor('primary', primary_sponsor)
-            bill.add_source(url)
+        bill = Bill(session, chamber, bill_id, title, type=bill_type)
+        bill.add_sponsor('primary', primary_sponsor)
+        bill.add_source(url)
 
-            for link in page.xpath(
-                '//a[contains(@href, "bills/") and text() = "HTML"]'):
+        for link in page.xpath(
+            '//a[contains(@href, "bills/") and text() = "HTML"]'):
 
-                name = link.getprevious().tail.strip()
-                bill.add_version(name, link.attrib['href'])
+            name = link.getprevious().tail.strip()
+            bill.add_version(name, link.attrib['href'])
 
-            for link in page.xpath(
-                "//a[contains(@href, 'fnotes') and text() = 'HTML']"):
+        for link in page.xpath(
+            "//a[contains(@href, 'fnotes') and text() = 'HTML']"):
 
-                bill.add_document("Fiscal Note", link.attrib['href'])
+            bill.add_document("Fiscal Note", link.attrib['href'])
 
-            subjects = []
-            for link in page.xpath("//a[contains(@href, 'RelatedBill')]"):
-                subjects.append(link.text.strip())
-            bill['subjects'] = subjects
+        subjects = []
+        for link in page.xpath("//a[contains(@href, 'RelatedBill')]"):
+            subjects.append(link.text.strip())
+        bill['subjects'] = subjects
 
-            status_link = page.xpath('//a[contains(@href, "billsta")]')[0]
-            self.parse_status(bill, status_link.attrib['href'])
+        status_link = page.xpath('//a[contains(@href, "billsta")]')[0]
+        self.parse_status(bill, status_link.attrib['href'])
 
-            self.save_bill(bill)
+        self.save_bill(bill)
 
     def parse_status(self, bill, url):
         with self.urlopen(url) as page:
