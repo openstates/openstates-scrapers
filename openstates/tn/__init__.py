@@ -13,7 +13,7 @@ metadata = dict(
     lower_chamber_term = 2,
     upper_chamber_term = 4,
     terms = [
-        {'name': '106', 'sessions' : ['106', '106S'],
+        {'name': '106', 'sessions' : ['106'],
             'start_year': 2009, 'end_year': 2010},
         {'name': '107', 'sessions': ['107'],
             'start_year': 2010, 'end_year': 2011} 
@@ -27,9 +27,6 @@ metadata = dict(
         '106': {
             'type' : 'primary',
             'display_name' : '106th Regular Session',},
-        '106S': {
-            'type' : 'special',
-            'display_name' : '106th Special Session',},
     },
     feature_flags=[],
     _ignored_scraped_sessions = [
@@ -42,6 +39,8 @@ metadata = dict(
 )
 
 def session_list():
+    # Special sessions are aviable in the archive, but not in current session.
+    # Solution is to scrape special session as part of regular session
     from billy.scrape.utils import url_xpath
     return url_xpath( 'http://www.capitol.tn.gov/legislation/archives.html',
         "//div[@class='col1']/ul/li[@class='show']/text()")
