@@ -49,7 +49,7 @@ class CACommitteeScraper(CommitteeScraper):
                 c = Committee(chamber, c)
                 c.add_source(_url)
                 c.add_source(url)
-                scrape_members = getattr(self, 'scrape_%s_members' % chamber)
+                scrape_members = getattr(self, 'scrape_%s_members' % chamber.lower())
                 c = scrape_members(c, _url, chamber, term)
 
                 self.save_committee(c)
