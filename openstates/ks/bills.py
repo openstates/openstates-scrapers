@@ -154,7 +154,7 @@ class KSBillScraper(BillScraper):
         vote = None
         passed = True
         for line in vote_lines:
-            totals = re.findall('Yeas (\d+)[;,] Nays (\d+)[;,] (?:Present but not voting:|Present and Passing:) (\d+)[;,] (?:Absent or not voting:|Absent or Not Voting:) (\d+)',
+            totals = re.findall('Yeas (\d+)[;,] Nays (\d+)[;,] (?:Present but not voting|Present and Passing):? (\d+)[;,] (?:Absent or not voting|Absent or Not Voting):? (\d+)',
                                 line)
             if totals:
                 totals = totals[0]
