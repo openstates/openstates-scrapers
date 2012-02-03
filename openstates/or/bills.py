@@ -251,7 +251,7 @@ class ORBillScraper(BillScraper):
 
                 # bill_id is first part
                 bill_id = measure_str.rsplit('\t', 1)[0]
-                bill_id = bill_id.replace('\t', ' ').strip()
+                bill_id = re.sub('\s+', ' ', bill_id.strip())
 
                 # pull out everything within the By -- bookends
                 inner_str = re.search('By (.+) --', measure_str)

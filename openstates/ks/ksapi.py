@@ -190,4 +190,5 @@ action_codes = {
     'mot_susp_206': 'other',
     'cur_con_101': 'other', # concur. failed
     'cur_om_141': 'committee:referred',
+    'misc_he_200': 'other', # hearing
     }

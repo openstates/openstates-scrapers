@@ -38,8 +38,11 @@ def categorize_action(action):
 
 class TNBillScraper(BillScraper):
     state = 'tn'
-    
+
     def scrape(self, chamber, term):
+
+        if chamber == 'lower':
+            raise ValueError('TN can only be run with chamber=upper')
 
         #types of bills
         abbrs = ['HB', 'HJR', 'HR', 'SB','SJR', 'SR']
@@ -58,7 +61,7 @@ class TNBillScraper(BillScraper):
                 bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999' % (abbr, abbr)
             else:
                 bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999&Year=%s' % (abbr, abbr, term)
-            
+
             with self.urlopen(bill_listing) as bill_list_page:
                 bill_list_page = lxml.html.fromstring(bill_list_page)
                 for bill_links in bill_list_page.xpath('////div[@id="open"]//a'):
@@ -66,14 +69,14 @@ class TNBillScraper(BillScraper):
                     if '..' in bill_link:
                         bill_link = 'http://wapp.capitol.tn.gov/apps' + bill_link[2:len(bill_link)]
                     self.scrape_bill(term, bill_link, bill_type)
-    
+
     def scrape_bill(self, term, bill_url, bill_type):
 
         with self.urlopen(bill_url) as page:
             page = lxml.html.fromstring(page)
             matching_bill = False
             chamber1 = page.xpath('//span[@id="lblBillSponsor"]/a[1]')[0].text
-            
+
             #Checking if there is a matching bill
             if len(page.xpath('//span[@id="lblCoBillSponsor"]/a[1]')) > 0:
                 matching_bill = True
@@ -86,34 +89,35 @@ class TNBillScraper(BillScraper):
                 else:
                     bill_id = chamber2.replace(' ', '')[1:len(chamber2)]
                     secondary_bill_id = chamber1.replace(' ', '')
-                
+
                 primary_chamber = 'lower' if 'H' in bill_id else 'upper'
 
             else:
                 primary_chamber = 'lower' if 'H' in chamber1 else 'upper'
                 bill_id = chamber1.replace(' ', '')[1:len(chamber1)]
                 secondary_bill_id = None
-            
+
             title = page.xpath("//span[@id='lblAbstract']")[0].text
 
             #Bill subject
             subject_pos = title.find('-')
             subject = title[0:subject_pos - 1]
 
-            bill = Bill(term, primary_chamber, bill_id, title, type=bill_type, secondary_bill_id=secondary_bill_id, subject=subject)
+            bill = Bill(term, primary_chamber, bill_id, title, type=bill_type,
+                        secondary_bill_id=secondary_bill_id, subject=subject)
             bill.add_source(bill_url)
-            
+
             # Primary Sponsor
             sponsor = page.xpath("//span[@id='lblBillSponsor']")[0].text_content().split("by")[-1]
             sponsor = sponsor.replace('*','').strip()
             bill.add_sponsor('primary',sponsor)
-            
+
             # Co-sponsors unavailable for scraping (loaded into page via AJAX)
-            
+
             # Full summary doc
             summary = page.xpath("//span[@id='lblBillSponsor']/a")[0]
             bill.add_document('Full summary', summary.get('href'))
-            
+
             #Primary Actions
             tables = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvBillActionHistory']")
             actions_table = tables[0]
@@ -130,9 +134,9 @@ class TNBillScraper(BillScraper):
                 votes_link = votes_link[0].get('href')
                 bill = self.scrape_votes(bill, sponsor, 'http://wapp.capitol.tn.gov/apps/Billinfo/%s' % (votes_link,))
 
-            #If there is a matching bill            
+            #If there is a matching bill
             if matching_bill == True:
-                
+
                 #Secondary Sponsor
                 secondary_sponsor = page.xpath("//span[@id='lblCoBillSponsor']")[0].text_content().split("by")[-1]
                 secondary_sponsor = secondary_sponsor.replace('*','').strip()
@@ -168,7 +172,7 @@ class TNBillScraper(BillScraper):
 
                 vote_date = re.search('(\d+/\d+/\d+)', motion)
                 if vote_date:
-                    vote_date = datetime.datetime.strptime(vote_date.group(), '%m/%d/%Y') 
+                    vote_date = datetime.datetime.strptime(vote_date.group(), '%m/%d/%Y')
 
                 passed = ('Passed' in motion) or ('Adopted' in raw_vote[1])
                 vote_regex = re.compile('\d+$')
@@ -179,7 +183,7 @@ class TNBillScraper(BillScraper):
                 other_count = 0
                 ayes = []
                 nos = []
-                
+
                 for v in raw_vote[1:]:
                     if v.startswith('Ayes...') and vote_regex.search(v):
                         yes_count = int(vote_regex.search(v).group())
@@ -196,7 +200,7 @@ class TNBillScraper(BillScraper):
                     yes_count = no_count = 0
 
 
-                vote = Vote(bill['chamber'], vote_date, motion, passed, yes_count, no_count, other_count) 
+                vote = Vote(bill['chamber'], vote_date, motion, passed, yes_count, no_count, other_count)
                 vote.add_source(link)
                 for a in ayes:
                     vote.yes(a)

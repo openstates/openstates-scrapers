@@ -82,8 +82,9 @@ class NHBillScraper(BillScraper):
                     bill_type = 'petition'
                 else:
                     bill_type = bill_type_map[expanded_bill_id.split(' ')[0][1:]]
+
                 if title.startswith('('):
-                    title = title.split(') ', 1)[1]
+                    title = title.split(')', 1)[1].strip()
 
                 self.bills[lsr] = Bill(session, chamber, bill_id, title,
                                        type=bill_type)

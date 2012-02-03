@@ -42,12 +42,15 @@ class KSBillScraper(BillScraper):
                 elif 'B' in bill_id:
                     btype = 'bill'
 
+                title = bill_data['SHORTTITLE'] or bill_data['LONGTITLE']
+
                 # main
-                bill = Bill(session, chamber, bill_id, bill_data['SHORTTITLE'],
+                bill = Bill(session, chamber, bill_id, title,
                             type=btype, status=bill_data['STATUS'])
                 bill.add_source(ksapi.url + 'bill_status/' + bill_id.lower())
 
-                if bill_data['LONGTITLE']:
+                if (bill_data['LONGTITLE'] and
+                    bill_data['LONGTITLE'] != bill['title']):
                     bill.add_title(bill_data['LONGTITLE'])
 
                 for sponsor in bill_data['SPONSOR_NAMES']:
@@ -152,8 +155,7 @@ class KSBillScraper(BillScraper):
         vote = None
         passed = True
         for line in vote_lines:
-            line = line.strip()
-            totals = re.findall('Yeas (\d+)[;,] Nays (\d+)[;,] (?:Present but not voting:|Present and Passing) (\d+)[;,] (?:Absent or not voting:|Absent or Not Voting) (\d+)',
+            totals = re.findall('Yeas (\d+)[;,] Nays (\d+)[;,] (?:Present but not voting|Present and Passing):? (\d+)[;,] (?:Absent or not voting|Absent or Not Voting):? (\d+)',
                                 line)
             if totals:
                 totals = totals[0]
