@@ -336,7 +336,12 @@ class NMBillScraper(BillScraper):
             else:
                 actor = 'other'
             action_code = action['ActionCode']
-            action_name, action_type = action_map[action_code]
+            try:
+                action_name, action_type = action_map[action_code]
+            except KeyError:
+                self.warning('unknown action code %s on %s' % (action_code,
+                                                               bill_key))
+                raise
 
             # if there's room in this action for a location name, map locations
             # to their names from the Location table
