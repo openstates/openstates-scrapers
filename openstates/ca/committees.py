@@ -32,7 +32,7 @@ class CACommitteeScraper(CommitteeScraper):
         for type_ in committee_types[chamber]:
 
             if type_ == 'Joint':
-                chamber = type_
+                chamber = type_.lower()
 
             div = doc.xpath('//div[contains(@class, "view-view-%sCommittee")]' % type_)[0]
             committees = div.xpath('descendant::span[@class="field-content"]/a/text()')
@@ -144,5 +144,8 @@ class CACommitteeScraper(CommitteeScraper):
             committee.add_member(member, role, **kw)
 
         return committee
+
+    # The same selections work on both upper chamber comm's and joint comm's.
+    scrape_joint_members = scrape_upper_members
         
         
