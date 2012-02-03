@@ -23,7 +23,7 @@ class CACommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term):
 
         url = self.urls[chamber]
-        html = self.urlopen(url)
+        html = self.urlopen(url).decode(self.encoding)
         doc = lxml.html.fromstring(html)
 
         committee_types = {'upper': ['Standing', 'Select', 'Joint'],
@@ -66,7 +66,7 @@ class CACommitteeScraper(CommitteeScraper):
                 c = Committee(chamber, n)
                 c.add_source(_url)
                 c.add_source(url)
-                scrape_members = getattr(self, 'scrape_%s_members' % chamber)
+                scrape_members = getattr(self, 'scrape_%s_members' % chamber.lower())
                 c = scrape_members(c, _url, chamber, term)
                 
                 #pprint.pprint(c)
