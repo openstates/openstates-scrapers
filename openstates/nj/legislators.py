@@ -12,18 +12,14 @@ from dbfpy import dbf
 class NJLegislatorScraper(LegislatorScraper, DBFMixin):
     state = 'nj'
 
-    def scrape(self, chamber, term_name):
-        self.save_errors=False
-
-        year = int(term_name[0:4])
-        session = (year - 2010)/2 + 214
-
+    def scrape(self, chamber, term):
+        year = term[0:4]
         if chamber == 'upper':
-            self.scrape_legislators(year, session, term_name)
+            self.scrape_legislators(year, term)
         elif chamber == 'lower':
-            self.scrape_legislators(year, session, term_name)
+            self.scrape_legislators(year, term)
 
-    def scrape_legislators(self, year_abr, session, term_name):
+    def scrape_legislators(self, year_abr, term_name):
 
         file_url, db = self.get_dbf(year_abr, 'ROSTER')
 
@@ -35,7 +31,7 @@ class NJLegislatorScraper(LegislatorScraper, DBFMixin):
             full_name = first_name + " " + middle_name + " " + last_name + " " + suffix
             full_name = full_name.replace('  ', ' ')
             full_name = full_name[0: len(full_name) - 1]
-            
+
             district = int(rec["district"])
             party = rec["party"]
             if party == 'R':
@@ -58,12 +54,17 @@ class NJLegislatorScraper(LegislatorScraper, DBFMixin):
             state = rec["state"]
             zipcode = rec["zipcode"]
             phone = rec["phone"]
+            if 'email' in rec:
+                email = rec["email"]
+            else:
+                email = ''
 
             leg = Legislator(term_name, chamber, str(district), full_name,
                              first_name, last_name, middle_name, party,
                              suffixes=suffix, title=title,
                              legal_position=legal_position,
                              leg_status=leg_status, address=address, city=city,
-                             state=state, zipcode=zipcode, phone=phone)
+                             state=state, zipcode=zipcode, phone=phone,
+                             email=email)
             leg.add_source(file_url)
             self.save_legislator(leg)

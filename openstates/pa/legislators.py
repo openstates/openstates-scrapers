@@ -13,13 +13,13 @@ class PALegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, term):
         # Pennsylvania doesn't make member lists easily available
         # for previous sessions, unfortunately
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
+        self.validate_term(term, latest_only=True)
 
         leg_list_url = legislators_url(chamber)
 
         with self.urlopen(leg_list_url) as page:
             page = lxml.html.fromstring(page)
+            page.make_links_absolute(leg_list_url)
 
             for link in page.xpath("//a[contains(@href, '_bio.cfm')]"):
                 full_name = link.text[0:-4]
@@ -31,7 +31,9 @@ class PALegislatorScraper(LegislatorScraper):
                 elif party == 'D':
                     party = 'Democratic'
 
+                url = link.get('href')
+
                 legislator = Legislator(term, chamber, district,
-                                        full_name, party=party)
+                                        full_name, party=party, url=url)
                 legislator.add_source(leg_list_url)
                 self.save_legislator(legislator)

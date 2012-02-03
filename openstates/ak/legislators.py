@@ -63,7 +63,7 @@ class AKLegislatorScraper(LegislatorScraper):
                 party = 'Democratic'
 
             leg = Legislator(term, chamber, district, name, party=party,
-                             email=email)
+                             email=email, url=url)
             leg.add_source(url)
 
             self.save_legislator(leg)

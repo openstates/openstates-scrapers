@@ -1,74 +1,130 @@
-import os
+import re
+import pdb
+import httplib2
+import pprint
+from functools import partial
+from operator import methodcaller, itemgetter
 
-from billy.conf import settings
+import lxml.html
+
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from .models import CALegislator
 
-from sqlalchemy.orm import sessionmaker, relation, backref
-from sqlalchemy import create_engine
+
+
+
+def parse_address(s, split=re.compile(r'[;,]\s{,3}').split):
+    '''
+    Extract address fields from text.
+    '''
+    # If the address isn't formatted correctly, skip for now. 
+    if ';' not in s:
+        return []
+    
+    fields = 'city zip phone'.split()
+    vals = split(s)
+    res = []
+    while True:
+        try:
+            res.append((fields.pop(), vals.pop()))
+        except  IndexError:
+            break
+    res.append(('street', ', '.join(vals)))
+    return res
 
 
 class CALegislatorScraper(LegislatorScraper):
+
     state = 'ca'
 
-    def __init__(self, metadata, host='localhost', user='', pw='',
-                 db='capublic', **kwargs):
-        super(CALegislatorScraper, self).__init__(metadata, **kwargs)
+    encoding = 'utf-8'
 
-        if not user:
-            user = os.environ.get('MYSQL_USER',
-                                  getattr(settings, 'MYSQL_USER', ''))
-        if not pw:
-            pw = os.environ.get('MYSQL_PASSWORD',
-                                getattr(settings, 'MYSQL_PASSWORD', ''))
+    urls = {'upper': 'http://senate.ca.gov/senators',
+            'lower': 'http://assembly.ca.gov/assemblymembers',}
 
-        if user and pw:
-            conn_str = 'mysql://%s:%s@' % (user, pw)
-        else:
-            conn_str = 'mysql://'
-        conn_str = '%s%s/%s?charset=utf8' % (
-            conn_str, host, db)
-        self.engine = create_engine(conn_str)
-        self.Session = sessionmaker(bind=self.engine)
-        self.session = self.Session()
 
     def scrape(self, chamber, term):
-        self.validate_term(term)
 
-        if chamber == 'upper':
-            house_type = 'S'
-        else:
-            house_type = 'A'
+        url = self.urls[chamber]
+        html = self.urlopen(url).decode(self.encoding)
+        doc = lxml.html.fromstring(html)
+        rows = doc.xpath('//table/tbody/tr')
 
-        legislators = self.session.query(CALegislator).filter_by(
-            session_year=term).filter_by(
-            house_type=house_type)
+        parse = self.parse_legislator
+        for tr in rows:
+            legislator = parse(tr, term, chamber)
+            legislator.add_source(url)
+            #pprint.pprint(legislator)
+            self.save_legislator(legislator)
+            
 
-        for legislator in legislators:
-            if legislator.legislator_name.endswith('Vacancy'):
-                continue
+    def parse_legislator(self, tr, term, chamber,
 
-            district = legislator.district[2:].lstrip('0')
-            party = legislator.party
+            strip=methodcaller('strip'),
 
-            if party == 'DEM':
-                party = 'Democratic'
-            elif party == 'REP':
-                party = 'Republican'
+            xpath='td[contains(@class, "views-field-field-%s-%s")]%s',
 
-            full_name = legislator.legislator_name
-            first_name = legislator.first_name or ''
-            last_name = legislator.last_name or ''
-            middle_name = legislator.middle_initial or ''
-            suffixes = legislator.name_suffix or ''
+            xp={'url':      ('lname-value-1', '/a/@href'),
+                'district': ('district-value', '/text()'),
+                'party':    ('party-value', '/text()'),
+                'full_name':     ('feedbackurl-value', '/a/text()'),
+                'address':  ('feedbackurl-value', '/p/text()')},
 
-            leg = Legislator(term, chamber, district,
-                             full_name.decode('utf8').strip(),
-                             first_name=first_name.decode('utf8').strip(),
-                             last_name=last_name.decode('utf8').strip(),
-                             middle_name=middle_name.decode('utf8').strip(),
-                             party=party,
-                             suffixes=suffixes.decode('utf8').strip())
-            leg['roles'][0]['active'] = legislator.active_flg == 'Y'
+            titles={'upper': 'senator', 'lower': 'member'},
 
-            self.save_legislator(leg)
+            funcs={
+                'full_name': lambda s: s.replace('Contact Senator', '').strip(),
+                'address': parse_address,
+                }):
+        '''
+        Given a tr element, get specific data from it. 
+        '''
+        rubberstamp = lambda _: _
+        tr_xpath = tr.xpath
+        res = {}
+        for k, v in xp.items():
+            
+            f = funcs.get(k, rubberstamp)
+            v = (titles[chamber],) + v
+            v = map(f, map(strip, tr_xpath(xpath % v)))
+            
+            if len(v) == 1:
+                res[k] = v[0]
+            else:
+                res[k] = v
+
+        # Photo.
+        try:
+            res['photo_url'] = tr_xpath('td/p/img/@src')[0]
+        except IndexError:
+            pass
+
+        # Addresses.
+        addresses = map(dict, filter(None, res['address']))
+        for x in addresses:
+            try:
+                x['zip'] = x['zip'].replace('CA ', '')
+            except KeyError:
+                # No zip? Toss.
+                addresses.remove(x)
+
+        # Re-key te addresses
+        res['capitol_office'] = addresses[0]
+        res['district_offices'] = addresses[1:]
+        del res['address']
+
+        # Remove junk from assembly member names.
+        junk = 'Contact Assembly Member '
+        res['full_name'] = res['full_name'].replace(junk, '')
+
+        # convert party
+        if res['party'] == 'Democrat':
+            res['party'] = 'Democratic'
+        # strip leading zero
+        res['district'] = str(int(res['district']))
+
+        # Add a source for the url.
+        leg = Legislator(term, chamber, **res)
+        return leg
+
+        
+

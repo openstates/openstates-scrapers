@@ -10,8 +10,7 @@ class INCommitteeScraper(CommitteeScraper):
     state = 'in'
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
+        self.validate_term(term, latest_only=True)
 
         chamber_abbr = {'upper': 'S', 'lower': 'H'}[chamber]
 
@@ -39,8 +38,9 @@ class INCommitteeScraper(CommitteeScraper):
             committee.add_source(url)
 
             for member in mlist.split(','):
-                member = re.sub(r'R\.M\.(M\.)?$', '', member.strip())
-                committee.add_member(member.strip())
+                member = re.sub(r'R\.M\.(M\.)?$', '', member.strip()).strip()
+                if member:
+                    committee.add_member(member)
 
             chair = page.xpath("//strong[contains(., 'Chair:')]")[0]
             chair_name = chair.tail.strip()

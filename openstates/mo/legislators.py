@@ -46,8 +46,7 @@ class MOLegislatorScraper(LegislatorScraper):
                 url = self.senator_details_url % (session[2:],int(district))
                 with self.urlopen(url) as details_page:
                     leg.add_source(url)
-                    
-                    #Using soupparser as legislator pages are very soupy
+
                     page = lxml.html.fromstring(details_page)
                     photo_url = page.xpath('//html/body/div[2]/div/img/@src')[0]
                     committees = page.xpath('//html/body/div[2]//span[@class="style3"]/a')

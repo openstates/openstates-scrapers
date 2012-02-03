@@ -11,9 +11,7 @@ class MSLegislatorScraper(LegislatorScraper):
     state = 'ms'
 
     def scrape(self, chamber, term_name):
-        self.save_errors=False
-        if int(term_name[0:4]) < 2008:
-            raise NoDataForPeriod(term_name)
+        self.validate_term(term_name, latest_only=True)
         self.scrape_legs(chamber, term_name)
 
     def scrape_legs(self, chamber, term_name):
@@ -81,7 +79,7 @@ class MSLegislatorScraper(LegislatorScraper):
                                  home_phone = home_phone, bis_phone=bis_phone,
                                  capital_phone=capital_phone,
                                  other_phone=other_phone, org_info=org_info,
-                                 email=email)
+                                 email=email, url=url)
                 leg.add_source(url)
                 self.save_legislator(leg)
         except scrapelib.HTTPError, e:

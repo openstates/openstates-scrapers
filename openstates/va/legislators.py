@@ -27,6 +27,7 @@ class VALegislatorScraper(LegislatorScraper):
 
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(url)
 
             for link in doc.xpath('//div[@class="%s"]/ul/li/a' % column):
                 if 'resigned' in link.text:
@@ -38,8 +39,6 @@ class VALegislatorScraper(LegislatorScraper):
         party_map = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}
         party_district_re = re.compile(
             r'\((R|D|I)\) - (?:House|Senate) District\s+(\d+)')
-
-        url = 'http://leg6.state.va.us' + url
 
         # handle resignations, special elections
         match = re.search(r'-(Resigned|Member) (\d{1,2}/\d{1,2})?', name)
@@ -58,7 +57,7 @@ class VALegislatorScraper(LegislatorScraper):
             party, district = party_district_re.match(party_district_line).groups()
 
             leg = Legislator(term, chamber, district, name.strip(),
-                             party=party_map[party])
+                             party=party_map[party], url=url)
             leg.add_source(url)
 
             for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):

@@ -21,8 +21,8 @@ class NYLegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//span[@class='field-content']/a"):
-                if not link.text:
+            for link in page.xpath('//a[contains(@href, "/senator/")]'):
+                if link.text in (None, 'Contact', 'RSS'):
                     continue
                 name = link.text.strip()
 
@@ -38,8 +38,10 @@ class NYLegislatorScraper(LegislatorScraper):
                 legislator.add_source(url)
 
                 contact_link = link.xpath("../span[@class = 'contact']/a")[0]
-                self.scrape_upper_contact_info(
-                    legislator, contact_link.attrib['href'])
+                contact_url = contact_link.attrib['href']
+                self.scrape_upper_contact_info(legislator, contact_url)
+
+                legislator['url'] = contact_url.replace('/contact', '')
 
                 self.save_legislator(legislator)
 
@@ -93,18 +95,24 @@ class NYLegislatorScraper(LegislatorScraper):
         url = "http://assembly.state.ny.us/mem/?sh=email"
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
             for link in page.xpath("//a[contains(@href, '/mem/')]"):
                 name = link.text.strip()
                 if name == 'Assembly Members':
                     continue
+                # empty seats
+                if 'Assembly District' in name:
+                    continue
+                leg_url = link.get('href')
 
                 district = link.xpath("string(../following-sibling::"
                                       "div[@class = 'email2'][1])")
                 district = district.rstrip('rthnds')
 
                 legislator = Legislator(term, 'lower', district,
-                                        name, party="Unknown")
+                                        name, party="Unknown",
+                                        url=leg_url)
                 legislator.add_source(url)
 
                 self.save_legislator(legislator)

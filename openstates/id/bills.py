@@ -104,15 +104,11 @@ class IDBillScraper(BillScraper):
     other = False
     last_date = None
 
-    def __init__(self, *args, **kwargs):
-        super(IDBillScraper, self).__init__(*args, **kwargs)
 
-        self.scrape_subjects()
-
-    def scrape_subjects(self):
+    def scrape_subjects(self, session):
         self._subjects = defaultdict(list)
 
-        url = 'http://legislature.idaho.gov/legislation/2011/topicind.htm'
+        url = 'http://legislature.idaho.gov/legislation/%s/topicind.htm' % session
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
 
@@ -131,12 +127,12 @@ class IDBillScraper(BillScraper):
         """
         Scrapes all the bills for a given session and chamber
         """
-        self.validate_session(session)
 
         #url = BILLS_URL % session
         if int(session[:4]) < 2009:
             self.scrape_pre_2009(chamber, session)
         else:
+            self.scrape_subjects(session)
             self.scrape_post_2009(chamber, session)
 
     def scrape_post_2009(self, chamber, session):

@@ -18,10 +18,19 @@ metadata = dict(
     ],
     session_details={
         '128': { 'display_name': '128th Legislature',
+                '_scraped_name': '128',
                },
         '129': {'start_date': datetime.date(2011, 1, 3),
                 'display_name': '129th Legislature',
+                '_scraped_name': '129',
                },
     },
     feature_flags=[],
+    _ignored_scraped_sessions=['127', '126', '125', '124', '123', '122']
+
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    return url_xpath('http://www.legislature.state.oh.us/search.cfm',
+                     '//form[@action="bill_search.cfm"]//input[@type="RADIO" and @name="SESSION"]/@value')

@@ -26,6 +26,7 @@ class NMLegislatorScraper(LegislatorScraper):
     def scrape_legislator(self, chamber, term, url):
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(url)
 
             # most properties are easy to pull
             properties = {'first_name': 'FNAME', 'last_name': 'LNAME',
@@ -35,15 +36,22 @@ class NMLegislatorScraper(LegislatorScraper):
                           'capitol_phone': 'OFF_PHONE', 'office_phone': 'WKPH'}
             for key, value in properties.iteritems():
                 id = 'ctl00_mainCopy_LegisInfo_%sLabel' % value
-                val = doc.get_element_by_id(id).text
+                try:
+                    val = doc.get_element_by_id(id).text
+                except KeyError:
+                    self.warning('bad legislator page %s missing %s' %
+                                 (url, id))
+                    return
                 if val:
                     properties[key] = val.strip()
 
             # image & email are a bit different
-            properties['image_url'] = doc.xpath('//img[@id="ctl00_mainCopy_LegisInfo_LegislatorPhoto"]/@src')[0]
+            properties['photo_url'] = doc.xpath('//img[@id="ctl00_mainCopy_LegisInfo_LegislatorPhoto"]/@src')[0]
             email = doc.get_element_by_id('ctl00_mainCopy_LegisInfo_lnkEmail').text
             if email:
                 properties['email'] = email.strip()
+
+            properties['url'] = url
 
             properties['chamber'] = chamber
             properties['term'] = term

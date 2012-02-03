@@ -13,13 +13,13 @@ class AZLegislatorScraper(LegislatorScraper):
         'I': 'Independant',
         'G': 'Green'
     }
-    
+
     def get_party(self, abbr):
         return self.parties[abbr]
-        
+
     def get_session_id(self, session):
         return self.metadata['session_details'][session]['session_id']
-        
+
     def get_session_for_term(self, term):
         # ideally this should be either first or second regular session
         # and probably first and second when applicable
@@ -30,7 +30,7 @@ class AZLegislatorScraper(LegislatorScraper):
                     return session
                 else:
                     return t['sessions'][0]
-                
+
     def scrape(self, chamber, term):
         self.validate_term(term)
         session = self.get_session_for_term(term)
@@ -38,7 +38,7 @@ class AZLegislatorScraper(LegislatorScraper):
             session_id = self.get_session_id(session)
         except KeyError:
             raise NoDataForPeriod(session)
-            
+
         body = {'lower': 'H', 'upper': 'S'}[chamber]
         url = 'http://www.azleg.gov/MemberRoster.asp?Session_ID=%s&body=%s' % (
                                                                session_id, body)
@@ -50,7 +50,7 @@ class AZLegislatorScraper(LegislatorScraper):
                 position = ''
                 vacated = ''
                 name, district, party, email, room, phone, fax = row.getchildren()
-                
+
                 link = name.xpath('string(a/@href)')
                 link = "http://www.azleg.gov" + link
                 if len(name) == 1:
@@ -58,20 +58,20 @@ class AZLegislatorScraper(LegislatorScraper):
                 else:
                     position = name.tail.strip()
                     name = name[0].text_content().strip()
-                    
+
                 district = district.text_content()
                 party = party.text_content().strip()
                 email = email.text_content().strip()
-                
+
                 if 'Vacated' in email:
-                    # comment out the following 'continue' for historical 
+                    # comment out the following 'continue' for historical
                     # legislative sessions
                     # for the current session, if a legislator has left we will
                     # skip him/her to keep from overwriting their information
                     continue
                     vacated = re.search('[0-9]*/[0-9]*/\d{4}', email).group()
                     email = ''
-                
+
                 party = self.get_party(party)
                 room = room.text_content().strip()
                 if chamber == 'lower':
@@ -80,7 +80,7 @@ class AZLegislatorScraper(LegislatorScraper):
                     address = "Senate\n"
                 address = address + "1700 West Washington\n" + room  \
                                   + "\nPhoenix, AZ 85007"
-                
+
                 phone = phone.text_content().strip()
                 if not phone.startswith('602'):
                     phone = "602-" + phone
@@ -97,17 +97,17 @@ class AZLegislatorScraper(LegislatorScraper):
                                       party=party, office_phone=phone,
                                       office_fax=fax, office_address=address,
                                       email=email, url=link)
-                
+
                 if position:
-                    leg.add_role( position, term, chamber=chamber, 
+                    leg.add_role( position, term, chamber=chamber,
                                  district=district, party=party)
-                      
+
                 leg.add_source(url)
-                
+
                 #Probably just get this from the committee scraper
                 #self.scrape_member_page(link, session, chamber, leg)
                 self.save_legislator(leg)
-                
+
     def scrape_member_page(self, url, session, chamber, leg):
         with self.urlopen(url) as member_page:
             root = html.fromstring(member_page)
@@ -117,5 +117,5 @@ class AZLegislatorScraper(LegislatorScraper):
                 name = row[0].text_content().strip()
                 role = row[1].text_content().strip()
                 leg.add_role(role, session, chamber=chamber, committee=name)
-                        
-            leg.add_source(url)       
+
+            leg.add_source(url)

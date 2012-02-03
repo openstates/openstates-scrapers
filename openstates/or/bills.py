@@ -7,6 +7,7 @@ from collections import defaultdict
 import datetime as dt
 import re
 import lxml.html
+import scrapelib
 
 # OR only provides people not voting yes,  this is fragile and annoying
 # these regexes will pull the appropriate numbers/voters out
@@ -81,11 +82,6 @@ class ORBillScraper(BillScraper):
                   'JR': 'joint resolution',
                   'CR': 'concurrent resolution'}
 
-    # mapping of sessions to 'lookin' search values for search_url
-    session_to_lookin = {
-        '2011 Regular Session' : '11reg',
-    }
-
     action_classifiers = (
         ('Introduction and first reading', ['bill:introduced', 'bill:reading:1']),
         ('First reading', ['bill:introduced', 'bill:reading:1']),
@@ -123,7 +119,7 @@ class ORBillScraper(BillScraper):
             self.parse_actions(action_data, chamber_letter)
 
         # add versions
-        session_slug = self.session_to_lookin[session]
+        session_slug = self.metadata['session_details'][session]['slug']
         version_url = 'http://www.leg.state.or.us/%s/measures/main.html' % (
             session_slug)
         self.parse_versions(version_url, chamber)
@@ -135,9 +131,11 @@ class ORBillScraper(BillScraper):
 
         # add authors
         if chamber == 'upper':
-            author_url = 'http://www.leg.state.or.us/11reg/pubs/senmh.html'
+            author_url = 'http://www.leg.state.or.us/%s/pubs/senmh.html' % (
+                session_slug)
         else:
-            author_url = 'http://www.leg.state.or.us/11reg/pubs/hsemh.html'
+            author_url = 'http://www.leg.state.or.us/%s/pubs/hsemh.html' % (
+                session_slug)
         self.parse_authors(author_url)
 
         # save all bills
@@ -207,6 +205,10 @@ class ORBillScraper(BillScraper):
             bill_id = "%s %s" % (type, number)
             # lookup type without chamber prefix
             bill_type = self.bill_types[type[1:]]
+
+            # may encounter an ellipsis in the source data
+            title = title.replace('\x85', '...')
+
             self.all_bills[bill_id] =  Bill(session, chamber, bill_id, title,
                                             type=bill_type)
 
@@ -249,7 +251,7 @@ class ORBillScraper(BillScraper):
 
                 # bill_id is first part
                 bill_id = measure_str.rsplit('\t', 1)[0]
-                bill_id = bill_id.replace('\t', ' ').strip()
+                bill_id = re.sub('\s+', ' ', bill_id.strip())
 
                 # pull out everything within the By -- bookends
                 inner_str = re.search('By (.+) --', measure_str)
@@ -269,7 +271,11 @@ class ORBillScraper(BillScraper):
 
 
     def parse_subjects(self, url, chamber_letter):
-        pdf, resp = self.urlretrieve(url)
+        try:
+            pdf, resp = self.urlretrieve(url)
+        except scrapelib.HTTPError:
+            self.warning("could not fetch subject index %s" % url)
+            return
         lines = convert_pdf(pdf, 'text-nolayout').splitlines()
 
         last_line = ''

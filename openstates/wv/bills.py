@@ -83,6 +83,15 @@ class WVBillScraper(BillScraper):
 
         # resolutions
         if bill_type != 'bill':
+            if 'SPONSOR(S)' not in html:
+                self.warning('incomplete page %s, trying again' + url)
+                html = self.urlopen(url)
+                page = lxml.html.fromstring(html)
+                page.make_links_absolute(url)
+                if 'SPONSOR(S)' not in html:
+                    self.warning('incomplete page %s, giving up' + url)
+                    return
+
             # sometimes (resolutions only?) there aren't links so we have to
             # use a regex to get sponsors
             block = page.xpath('//div[@id="bhistleft"]')[0].text_content()

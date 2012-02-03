@@ -9,11 +9,9 @@ import lxml.html
 
 class ARLegislatorScraper(LegislatorScraper):
     state = 'ar'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod
-
         url = ('http://www.arkleg.state.ar.us/assembly/2011/2011R/Pages/'
                'LegislatorSearchResults.aspx?member=&committee=All&chamber=')
 
@@ -55,7 +53,7 @@ class ARLegislatorScraper(LegislatorScraper):
             district = re.search(r'District(.+)\r', info_box).group(1)
 
             leg = Legislator(term, chamber, district, full_name, party=party,
-                             photo_url=photo_url)
+                             photo_url=photo_url, url=member_url)
             leg.add_source(member_url)
 
             try:

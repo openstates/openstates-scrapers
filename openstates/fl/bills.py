@@ -128,16 +128,17 @@ class FLBillScraper(BillScraper):
                 vote_table = page.xpath(
                     "//div[@id = 'tabBodyVoteHistory']/table")[1]
                 for tr in vote_table.xpath("tbody/tr"):
-                    vote_chamber = tr.xpath("string(td[2])").strip()
+                    vote_chamber = tr.xpath("string(td[3])").strip()
+                    vote_date = tr.xpath("string(td[2])").strip()
+                    # sometimes these are flipped
+                    if ' at ' in vote_chamber:
+                        vote_date, vote_chamber = vote_chamber, vote_date
                     vote_chamber = {'Senate': 'upper',
                                     'House': 'lower'}[vote_chamber]
-                    rc_num = tr.xpath("string(td[3])")
-
-                    vote_date = tr.xpath("string(td[4])")
                     vote_date = datetime.datetime.strptime(
-                        vote_date, "%m/%d/%Y").date()
+                        vote_date, "%m/%d/%Y at %H:%M %p").date()
 
-                    vote_url = tr.xpath("td[5]/a")[0].attrib['href']
+                    vote_url = tr.xpath("td[4]/a")[0].attrib['href']
                     self.scrape_vote(bill, vote_chamber, vote_date,
                                      vote_url)
             except IndexError:

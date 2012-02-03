@@ -28,10 +28,14 @@ class MELegislatorScraper(LegislatorScraper):
             # There are 151 districts
             for district in xrange(1, 152):
                 if (district % 10) == 0:
-                    path = 'string(/html/body/p[%s]/a[3])' % (district + 4)
+                    path = '/html/body/p[%s]/a[3]' % (district + 4)
                 else:
-                    path = 'string(/html/body/p[%s]/a[2])' % (district + 4)
-                name = page.xpath(path)
+                    path = '/html/body/p[%s]/a[2]' % (district + 4)
+
+                link = page.xpath(path)[0]
+
+                leg_url = link.get('href')
+                name = link.text_content()
 
                 if len(name) > 0:
                     if name.split()[0] != 'District':
@@ -39,10 +43,6 @@ class MELegislatorScraper(LegislatorScraper):
                         party = name[mark + 1]
                         district_name = name[mark + 3:-1]
                         name = name[15:mark]
-
-                        firstname = ""
-                        lastname = ""
-                        middlename = ""
 
                         # vacant
                         if party == "V":
@@ -52,8 +52,7 @@ class MELegislatorScraper(LegislatorScraper):
 
 
                         leg = Legislator(term_name, chamber, str(district),
-                                         name, firstname, lastname,
-                                         middlename, party,
+                                         name, party=party, url=url,
                                          district_name=district_name)
                         leg.add_source(url)
 
@@ -114,6 +113,8 @@ class MELegislatorScraper(LegislatorScraper):
                 phone = phone[1:4] + phone[6:9] + phone[10:14]
 
             district = d['district'].split('.')[0]
+
+            leg_url = 'http://www.maine.gov/legis/senate/bio%02ds.htm' % int(district)
 
             leg = Legislator(term, chamber, district, full_name,
                              d['first_name'], d['last_name'], d['middle_name'],

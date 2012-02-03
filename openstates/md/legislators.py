@@ -46,11 +46,13 @@ class MDLegislatorScraper(LegislatorScraper):
                     party, district = detail_re.match(details).groups()
                     party = PARTY_DICT[party]
 
+                    leg_url = BASE_URL+link
+
                     leg = Legislator(term, chamber, district,
                                      ' '.join((first_name, last_name)),
-                                     first_name, last_name, '',
-                                     party, suffixes=suffixes)
-                    leg_url = BASE_URL+link
+                                     first_name, last_name,
+                                     party=party, suffixes=suffixes,
+                                     url=leg_url)
                     leg.add_source(url=leg_url)
 
                     with self.urlopen(leg_url) as leg_html:

@@ -74,7 +74,7 @@ class WALegislatorScraper(LegislatorScraper):
                 leg = Legislator(term, chamber, district,
                                  name, '', '', '', party, email=email,
                                  _code=leg_id, office_phone=phone,
-                                 photo_url=photo_url)
+                                 photo_url=photo_url, url=leg_url)
                 leg.add_source(leg_url)
 
                 self.save_legislator(leg)

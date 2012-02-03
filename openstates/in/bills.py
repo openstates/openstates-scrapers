@@ -77,7 +77,7 @@ class INBillScraper(BillScraper):
             page.make_links_absolute(url)
 
             # check for Bill Withdrawn header
-            h1text = page.get('//h1/text()')
+            h1text = page.xpath('//h1/text()')
             if h1text and h1text[0] == 'Bill Withdrawn':
                 return
 

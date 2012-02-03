@@ -1,6 +1,7 @@
 import re
 import os
 import datetime
+import pdb
 
 from billy.conf import settings
 from billy.scrape.bills import BillScraper, Bill
@@ -26,18 +27,19 @@ class CABillScraper(BillScraper):
 
     _tz = pytz.timezone('US/Pacific')
 
-    def __init__(self, metadata, host='localhost', user='', pw='',
+    def __init__(self, metadata, host='localhost', user=None, pw=None,
                  db='capublic', **kwargs):
         super(CABillScraper, self).__init__(metadata, **kwargs)
 
-        if not user:
+        if user is None:
             user = os.environ.get('MYSQL_USER',
                                   getattr(settings, 'MYSQL_USER', ''))
-        if not pw:
+        if pw is None:
             pw = os.environ.get('MYSQL_PASSWORD',
                                 getattr(settings, 'MYSQL_PASSWORD', ''))
 
-        if user and pw:
+
+        if (user is not None) and (pw is not None):
             conn_str = 'mysql://%s:%s@' % (user, pw)
         else:
             conn_str = 'mysql://'

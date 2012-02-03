@@ -11,8 +11,7 @@ class WVLegislatorScraper(LegislatorScraper):
     state = 'wv'
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
+        self.validate_term(term, latest_only=True)
 
         if chamber == 'upper':
             chamber_abbrev = 'sen'
@@ -56,12 +55,12 @@ class WVLegislatorScraper(LegislatorScraper):
         photo_url = page.xpath(
             "//img[contains(@src, 'images/members/')]")[0].attrib['src']
 
-        email_address = page.xpath(
+        email = page.xpath(
             "//a[contains(@href, 'mailto:')]")[1].attrib['href'].split(
             'mailto:')[1]
 
         leg = Legislator(term, chamber, district, name, party=party,
-                         photo_url=photo_url, email_address=email_address)
+                         photo_url=photo_url, email=email, url=url)
         leg.add_source(url)
 
         for link in page.xpath("//a[contains(@href, 'committee.cfm')]"):

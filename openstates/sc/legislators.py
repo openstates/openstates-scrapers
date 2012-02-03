@@ -45,7 +45,8 @@ class SCLegislatorScraper(LegislatorScraper):
             legislator = Legislator(term, chamber, district, full_name,
                                     party=party, photo_url=photo_url,
                                     office_address=office_addr,
-                                    office_phone=office_phone)
+                                    office_phone=office_phone, url=leg_url)
+            legislator.add_source(leg_url)
             legislator.add_source(url)
 
 

@@ -90,15 +90,11 @@ def convert_sv_char(c):
 class NMBillScraper(BillScraper):
     state = 'nm'
 
-    # update as sessions update
-    session_paths = {'2011': '11%20Regular', '2011S': '11%20Special'}
-
-
     def _init_mdb(self, session):
         ftp_base = 'ftp://www.nmlegis.gov/other/'
-        if session == '2011S':
-            fname = 'LegInfo11S'
-            fname_re = '(\d{2}-\d{2}-\d{2}  \d{2}:\d{2}(?:A|P)M) .* (LegInfo11S.*zip)'
+        if session == '2012':
+            fname = 'LegInfo12'
+            fname_re = '(\d{2}-\d{2}-\d{2}  \d{2}:\d{2}(?:A|P)M) .* (LegInfo12.*zip)'
         else:
             raise ValueError('no zip file present for %s' % session)
 
@@ -178,7 +174,7 @@ class NMBillScraper(BillScraper):
                 data['Chamber'], data['LegType'], data['LegNo'], session_year))
 
             bill.add_sponsor('primary', sponsor_map[data['SponsorCode']])
-            if data['SponsorCode2'] not in ('NONE', 'X'):
+            if data['SponsorCode2'] not in ('NONE', 'X', ''):
                 bill.add_sponsor('primary', sponsor_map[data['SponsorCode2']])
 
             # maybe use data['emergency'] data['passed'] data['signed'] as well
@@ -206,7 +202,7 @@ class NMBillScraper(BillScraper):
     def check_other_documents(self, session, chamber):
         """ check for documents that reside in their own directory """
 
-        s_slug = self.session_paths[session]
+        s_slug = self.metadata['session_details'][session]['slug']
         firs_url = 'http://www.nmlegis.gov/Sessions/%s/firs/' % s_slug
         lesc_url = 'http://www.nmlegis.gov/Sessions/%s/LESCAnalysis/' % s_slug
         final_url = 'http://www.nmlegis.gov/Sessions/%s/final/' % s_slug
@@ -300,6 +296,7 @@ class NMBillScraper(BillScraper):
             '7701': ('failed passage in House', 'bill:failed'),
             '7702': ('failed passage in Senate', 'bill:failed'),
             '7704': ('tabled indefinitely', 'other'),
+            '7708': ('action postponed indefinitely', 'other'),
             '7711': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
             '7798': ('Succeeding entries', 'other'),
             '7805': ('Signed', 'governor:signed'),
@@ -339,7 +336,12 @@ class NMBillScraper(BillScraper):
             else:
                 actor = 'other'
             action_code = action['ActionCode']
-            action_name, action_type = action_map[action_code]
+            try:
+                action_name, action_type = action_map[action_code]
+            except KeyError:
+                self.warning('unknown action code %s on %s' % (action_code,
+                                                               bill_key))
+                raise
 
             # if there's room in this action for a location name, map locations
             # to their names from the Location table
@@ -357,7 +359,7 @@ class NMBillScraper(BillScraper):
         """ most document types (+ Votes)are in this common directory go
         through it and attach them to their related bills """
 
-        session_path = self.session_paths[session]
+        session_path = self.metadata['session_details'][session]['slug']
 
         chamber_name = 'house' if chamber == 'lower' else 'senate'
 
@@ -384,6 +386,7 @@ class NMBillScraper(BillScraper):
                     bill = self.bills[bill_id]
                 except KeyError:
                     self.warning('document for unknown bill %s' % fname)
+                    continue
 
                 # no suffix = just the bill
                 if suffix == '':

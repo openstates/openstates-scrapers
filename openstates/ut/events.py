@@ -13,8 +13,9 @@ class UTEventScraper(EventScraper):
     _tz = pytz.timezone('US/Mountain')
 
     def scrape(self, chamber, session):
-        for month in xrange(1, 13):
-            self.scrape_month(chamber, session, int(session), month,)
+        pass
+        #for month in xrange(1, 13):
+        #    self.scrape_month(chamber, session, int(session), month,)
 
     def scrape_month(self, chamber, session, year, month):
         url = ("http://le.utah.gov/asp/interim/"

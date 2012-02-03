@@ -206,7 +206,7 @@ class MOBillScraper(BillScraper):
             cosponsorOffset = 0
             if table_rows[2][0].text_content().strip() == 'Co-Sponsor:':
                 cosponsorOffset = 1
-                
+               
             lr_label_tag = table_rows[3+cosponsorOffset]
             assert lr_label_tag[0].text_content().strip() == 'LR Number:'
             bill_lr = lr_label_tag[1].text_content()
@@ -274,7 +274,9 @@ class MOBillScraper(BillScraper):
                 for part in sponsors:
                     parts = re.split(r' (?i)and ',part)
                     for sponsor in parts:
-                        bill.add_sponsor('cosponsor', clean_text(sponsor))
+                        cosponsor_name = clean_text(sponsor)
+                        if cosponsor_name != "":
+                            bill.add_sponsor('cosponsor', cosponsor_name)
 
     def parse_house_actions(self, bill, url):
         url = re.sub("BillActions", "BillActionsPrn", url)

@@ -46,6 +46,6 @@ class NCLegislatorScraper(LegislatorScraper):
 
                 legislator = Legislator(term, chamber, district, full_name,
                                         photo_url=photo_url, party=party,
-                                        notice=notice)
+                                        url=link, notice=notice)
                 legislator.add_source(link)
                 self.save_legislator(legislator)

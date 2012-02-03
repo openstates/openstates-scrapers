@@ -174,7 +174,8 @@ class GALegislatorScraper(LegislatorScraper):
                                         chamber,
                                         district,
                                         '"Coach" Williams',
-                                        party="Democratic")
+                                        party="Democratic",
+                                        url=url)
                 return legislator
 
             # See if we got to the first row, some templates don't start with their table as 'hoverTable'
@@ -262,7 +263,8 @@ class GALegislatorScraper(LegislatorScraper):
                                     facebook_url=facebook_url,
                                     address=address,
                                     sworn_in_date=sworn_in,
-                                    office_phone=phone_number)
+                                    office_phone=phone_number,
+                                    url = url)
             legislator.add_source(url)
             return legislator
 

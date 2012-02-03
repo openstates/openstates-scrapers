@@ -28,7 +28,7 @@ _classifiers = (
     #sent is not the same as received
     ('Enviado al Gobernador', 'governor:received'),
     ('Veto', 'governor:vetoed'),
-    #comissions give a report but sometimes they dont do any amendments and live them as they are.
+    #comissions give a report but sometimes they dont do any amendments and leave them as they are.
     #i am not checking if they did or not. but it be easy just read the end and if it dosnt have amendments it should say 'sin enmiendas'
     ('1er Informe','amendment:amended'),
     ('2do Informe','amendment:amended'),
@@ -76,12 +76,12 @@ class PRBillScraper(BillScraper):
             bill = Bill(session, chamber, bill_id, title[0], type=bill_type)
             author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
             for aname in author.split(','):
-                bill.add_sponsor('primary', aname.strip())
+                bill.add_sponsor('primary', aname.replace('Rep.','',1).replace('Sen.','',1).strip())
 
             co_authors = doc.xpath(u'//td/b[contains(text(),"Co-autor")]/../text()')
             if len(co_authors) != 0:
                 for co_author in co_authors[1].split(','):
-                    bill.add_sponsor('cosponsor', co_author.strip());
+                    bill.add_sponsor('cosponsor', co_author.replace('Rep.','',1).replace('Sen.','',1).strip());
 
 
             action_table = doc.xpath('//table')[-1]

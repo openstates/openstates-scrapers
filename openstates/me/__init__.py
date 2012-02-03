@@ -15,8 +15,21 @@ metadata = dict(
          'end_year': 2012}
     ],
     session_details={
-        '124': {'display_name':  '124th Legislature'},
-        '125': {'display_name':  '125th Legislature'},
+        '124': {'display_name':  '124th Legislature',
+                '_scraped_name': '124th Legislature'},
+        '125': {'display_name':  '125th Legislature',
+                '_scraped_name': '125th Legislature'},
     },
     feature_flags=['subjects'],
+    _ignored_scraped_sessions=['121st Legislature', '122nd Legislature',
+                               '123rd Legislature']
+
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    sessions =  url_xpath('http://www.mainelegislature.org/LawMakerWeb/advancedsearch.asp',
+                          '//select[@name="LegSession"]/option/text()')
+    sessions.remove('jb-Test')
+    sessions.remove('2001-2002')
+    return sessions

@@ -15,7 +15,6 @@ def get_popup_url(link):
 class IABillScraper(BillScraper):
     state = 'ia'
 
-    session_id_map = {'2011-2012': '84'}
     _subjects = defaultdict(list)
 
     def _build_subject_map(self, session):
@@ -23,7 +22,7 @@ class IABillScraper(BillScraper):
         if self._subjects:
             return
 
-        session_id = self.session_id_map[session]
+        session_id = self.metadata['session_details'][session]['number']
         url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp?'
                'Category=BillInfo&Service=DspGASI&ga=%s&frame=y') % session_id
         doc = lxml.html.fromstring(self.urlopen(url))
@@ -52,11 +51,12 @@ class IABillScraper(BillScraper):
 
         self._build_subject_map(session)
 
+        session_id = self.metadata['session_details'][session]['number']
         url = ("http://coolice.legis.state.ia.us/Cool-ICE/default.asp?"
                "category=billinfo&service=Billbook&frm=2&hbill=HF697%20"
                "%20%20%20&cham=House&amend=%20%20%20%20%20%20&am2nd=%20"
                "%20%20%20%20%20&am3rd=%20%20%20%20%20%20&version=red;"
-               "%20%20%20%20&menu=true&ga=") + self.session_id_map[session]
+               "%20%20%20%20&menu=true&ga=") + session_id
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 

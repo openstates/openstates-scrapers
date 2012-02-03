@@ -1,8 +1,7 @@
-import datetime as dt
+import datetime
 import lxml.html
 import os
 import re
-from StringIO import StringIO
 from collections import defaultdict
 
 import scrapelib
@@ -41,215 +40,209 @@ action_classifiers = {
 class WIBillScraper(BillScraper):
     state = 'wi'
 
-    def __init__(self, *args, **kwargs):
-        super(WIBillScraper, self).__init__(*args, **kwargs)
-        self.build_issue_index()
+    def scrape_subjects(self, year, site_id):
+        last_url = None
+        next_url = 'https://docs.legis.wisconsin.gov/%s/related/subject_index/index/' % year
 
-    def build_issue_index(self):
-        self.log('building WI issue index')
-        self._subjects = defaultdict(list)
+        # if you visit this page in your browser it is infinite-scrolled
+        # but if you disable javascript you'll see the 'Down' links
+        # that we use to scrape the data
 
-        n = 2
-        try:
-            while True:
-                url = 'http://nxt.legis.state.wi.us/nxt/gateway.dll/Session%%20Related/indxsubj/%s' % n
-                with self.urlopen(url) as html:
-                    doc = lxml.html.fromstring(html)
-                    title = doc.xpath('//title/text()')[0]
-                    links = doc.xpath('//a/text()')
-                    for link in links:
-                        if '-' in link:  # check that its a bill
-                            link = link.replace('-', ' ').strip()
-                            self._subjects[link].append(title)
-                n += 1
-        except scrapelib.ScrapeError:
-            pass
+        self.subjects = defaultdict(list)
+
+        while last_url != next_url:
+            html = self.urlopen(next_url)
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(next_url)
+
+            last_url = next_url
+            # get the 'Down' url
+            next_url = doc.xpath('//a[text()="Down"]/@href')[0]
+
+            # slug is upper case in links for special sessions
+            if site_id != 'reg':
+                site_id = site_id.upper()
+            a_path = '/document/session/%s/%s/' % (year, site_id)
+
+            # find all bill links to bills in this session
+            for bill_a in doc.xpath('//a[contains(@href, "%s")]' % a_path):
+                bill_id = bill_a.text_content().split()[-1]
+
+                # subject is in the immediately preceding span
+                preceding_subject = bill_a.xpath(
+                    './preceding::span[@class="qs_subjecthead_"]/text()')
+                # there wasn't a subject get the one from end of the prior page
+                if not preceding_subject:
+                    preceding_subject = last_subject[0]
+                else:
+                    preceding_subject = preceding_subject[-1]
+                preceding_subject = preceding_subject.replace(u'\xe2\x80\x94',
+                                                              '')
+                self.subjects[bill_id].append(preceding_subject)
+
+            # last subject on the page, in case we get a bill_id on next page
+            last_subject_span = doc.xpath(
+                '//span[@class="qs_subjecthead_"]/text()')
+            if last_subject_span:
+                last_subject = last_subject_span[0]
+
 
     def scrape(self, chamber, session):
-        types = {'lower': ['ab', 'ajr', 'ar', 'ap'],
-                 'upper': ['sb', 'sjr', 'sr', 'sp']}
-        base_url = 'http://www.legis.state.wi.us/%s/data/%s_list.html'
-        year = None
-        for term in self.metadata['terms']:
-            if session in term['sessions']:
-                year = term['name'][0:4]
+        # get year
+        for t in self.metadata['terms']:
+            if session in t['sessions']:
+                year = t['name'][0:4]
                 break
 
-        if 'Regular' in session:
-            for t in types[chamber]:
-                url =  base_url % (year, t)
-                self.scrape_bill_list(chamber, session, url)
-        else:
-            site_id = self.metadata['session_details'][session]['site_id']
-            url = base_url % (year, site_id)
+        site_id = self.metadata['session_details'][session].get('site_id',
+                                                                'reg')
+        chamber_slug = {'upper': 'sen', 'lower': 'asm'}[chamber]
+
+        self.scrape_subjects(year, site_id)
+
+        types = ('bill', 'joint_resolution', 'resolution')
+
+        for type in types:
+            url = 'http://docs.legis.wisconsin.gov/%s/proposals/%s/%s/%s' % (
+                year, site_id, chamber_slug, type)
+
             self.scrape_bill_list(chamber, session, url)
 
     def scrape_bill_list(self, chamber, session, url):
-        bill_types = {'B': 'bill', 'R': 'resolution',
-                      'JR': 'joint resolution', 'P': 'petition' }
+        if 'joint_resolution' in url:
+            bill_type = 'joint resolution'
+        elif 'resolution' in url:
+            bill_type = 'resolution'
+        elif 'bill' in url:
+            bill_type = 'bill'
 
         try:
-            with self.urlopen(url) as data:
-                doc = lxml.html.fromstring(data)
-                doc.make_links_absolute(url)
-                rows = doc.xpath('//tr')
-                for row in rows[1:]:
-                    link = row.xpath('td[1]/a')[0]
-                    bill_id = link.text
-                    link = link.get('href')
-                    title = row.xpath('td[2]/text()')[0][13:]
+            data = self.urlopen(url)
+        except scrapelib.HTTPError:
+            self.warning('skipping URL %s' % url)
+            return
+        doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(url)
+        links = doc.xpath('//li//a')
+        for link in links:
+            bill_url = link.get('href')
+            bill_id = bill_url.rsplit('/', 1)[-1]
 
-                    # first part of bill_id with first char stripped off
-                    prefix = bill_id.split()[0]
+            title = link.tail.replace(' - Relating to: ', '').strip()
 
-                    # skip bills from other chamber (for special sessions)
-                    bill_chamber = 'lower' if prefix[0] == 'A' else 'upper'
-                    if bill_chamber != chamber:
-                        continue
-                    bill_type = bill_types[prefix[1:]]
-
-                    bill = Bill(session, chamber, bill_id, title,
-                                type=bill_type)
-                    # unfortunately subjects don't apply to special session
-                    if 'Regular' in session:
-                        bill['subjects'] = list(set(self._subjects[bill_id]))
-                    self.scrape_bill_history(bill, link)
-        except scrapelib.HTTPError, e:
-            if e.response.code == 404:
-                self.log('No data for %s' % url)
+            bill = Bill(session, chamber, bill_id, title,
+                        type=bill_type)
+            bill['subjects'] = list(set(self.subjects[bill_id]))
+            self.scrape_bill_history(bill, bill_url)
 
     def scrape_bill_history(self, bill, url):
-        chambers = {'A': 'lower', 'S': 'upper'}
         body = self.urlopen(url)
         doc = lxml.html.fromstring(body)
+        doc.make_links_absolute(url)
 
-        # first link on page is always official bill text
-        link = doc.xpath('//a')[0].get('href')
-        bill.add_version('Official Version', link)
+        bill['status'] = doc.xpath('//div[@class="propStatus"]/h2/text()')[0]
 
-        page = doc.xpath('//pre')[0]
-        # split the history into each line, exluding all blank lines and title
-        history = [x for x in lxml.html.tostring(page).split('\n')
-                   if len(x.strip()) > 0][2:-1]
-
-        buffer = ''
-        bill_title = None
-        bill_sponsors = False
-        current_year = None
-        action_date = None
-        current_chamber = None
-
-        for line in history:
-            stop = False
-
-            # the year changed
-            if re.match(r'^(\d{4})[\s]{0,1}$', line):
-                current_year = int(line.strip())
+        # add versions
+        for a in doc.xpath('//ul[@class="docLinks"]/li//a'):
+            # blank ones are PDFs that follow HTML
+            if not a.text:
                 continue
+            elif ('Wisconsin Act' in a.text or
+                  'Memo' in a.text or
+                  'Government Accountability Board' in a.text or
+                  'Redistricting Attachment' in a.text or
+                  'Budget Index Report' in a.text or
+                  'Veto Message' in a.text
+                 ):
+                bill.add_document(a.text, a.get('href'))
+            elif ('Bill Text' in a.text or
+                  'Resolution Text' in a.text or
+                  'Enrolled Joint Resolution' in a.text or
+                  'Engrossed Resolution' in a.text or
+                  'Text as Enrolled' in a.text
+                 ):
+                bill.add_version(a.text, a.get('href'))
+            elif a.text in ('Amendments', 'Fiscal Estimates',
+                            'Record of Committee Proceedings'):
+                extra_doc_url = a.get('href')
+                extra_doc = lxml.html.fromstring(self.urlopen(extra_doc_url))
+                extra_doc.make_links_absolute(extra_doc_url)
+                for extra_a in extra_doc.xpath('//li//a'):
+                    if extra_a.text:
+                        bill.add_document(extra_a.text, extra_a.get('href'))
+            else:
+                self.warning('unknown document %s %s' % (bill['bill_id'],
+                                                         a.text))
 
-            # the action changed.
-            if re.match(r'\s+(\d{2})-(\d{2}).\s\s([AS])\.\s', line):
-               dm = re.findall(r'\s+(\d{2})-(\d{2}).\s\s([AS])\.\s', line)[0]
-               workdata = buffer
-               buffer = ''
-               stop = True
+        # add actions (second history dl is the full list)
+        history_dl = doc.xpath('//dl[@class="history"]')[-1]
+        for dt in history_dl.xpath('dt'):
+            date = dt.text.strip()
+            date = datetime.datetime.strptime(date, '%m/%d/%Y')
+            actor = dt.xpath('abbr/text()')[0]
+            actor = {'Asm.': 'lower', 'Sen.': 'upper'}[actor]
+            # text is in the dd immediately following
+            dd = dt.xpath('following-sibling::dd[1]')[0]
+            action = dd.text_content()
+            # get the journal number from the end of the line & strip it
+            jspan = dd.xpath('string(.//span[@class="journal noprint"])')
+            if jspan:
+                action = action[:-len(jspan)]
 
-            buffer += (' ' + line.strip())
+            if 'Introduced by' in action:
+                self.parse_sponsors(bill, action)
 
-            if stop and not bill_title:
-                bill_title = workdata
-                continue
+            # classify actions
+            atype = 'other'
+            for regex, type in action_classifiers.iteritems():
+                if re.match(regex, action):
+                    atype = type
+                    break
 
-            if stop and not bill_sponsors:
-                self.parse_sponsors(bill, workdata, bill['chamber'])
-                bill_sponsors = True
-                current_chamber = chambers[dm[2]]
-                action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
-                self.parse_action(bill, workdata, current_chamber, action_date)
-                continue
+            bill.add_action(actor, action, date, atype)
 
-            if stop:
-                self.parse_action(bill, workdata, current_chamber, action_date)
-                #now update the date
-                current_chamber = chambers[dm[2]]
-                action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
+            # if this is a vote, add a Vote to the bill
+            if 'Ayes' in action:
+                dd = dt.xpath('following-sibling::dd[1]')[0]
+                self.add_vote(bill, actor, date, action, dd)
 
-        current_chamber = chambers[dm[2]]
-        action_date = dt.datetime(current_year, int(dm[0]), int(dm[1]))
-        self.parse_action(bill, buffer, current_chamber, action_date)
         bill.add_source(url)
         self.save_bill(bill)
 
-    def parse_sponsors(self, bill, line, chamber):
-        sponsor_type = None
-        if chamber == 'upper':
-            leg_chamber = {'primary': 'upper', 'cosponsor': 'lower'}
+    def parse_sponsors(self, bill, action):
+        if ';' in action:
+            lines = action.split(';')
         else:
-            leg_chamber = {'primary': 'lower', 'cosponsor': 'upper'}
-        for r in re.split(r'\sand\s|\,|;', line):
-            r = r.strip()
-            if r.find('Introduced by') != -1:
+            lines = [action]
+
+        for line in lines:
+            match = re.match(
+                '(Introduced|Cosponsored) by (?:joint )?(Senator|Representative|committee|Joint Legislative Council|Law Revision Committee)s?(.*)',
+                line)
+            type, title, people = match.groups()
+            if type == 'Introduced':
                 sponsor_type = 'primary'
-                r = re.split(r'Introduced by \w+', r)[1]
-            if r.find('cosponsored by') != -1:
+            elif type == 'Cosponsored':
                 sponsor_type = 'cosponsor'
-                r = re.split(r'cosponsored by \w+', r)[1]
-            if r.strip():
-                bill.add_sponsor(sponsor_type, r.strip(),
-                                 chamber=leg_chamber[sponsor_type])
 
-    def parse_action(self, bill, line, actor, date):
-        line = lxml.html.fromstring(line)
-        sane = line.text_content()
-        # "06-18.  S. Received from Assembly  ................................... 220 "
-        # "___________                      __________________________________________"
-        #    11
-        sane = sane.strip()[11:]  #take out the date and house
-        if sane.find('..') != -1:
-            sane = sane[0:sane.find(' ..')]  #clear out bookkeeping
+            if title == 'Senator':
+                sponsor_chamber = 'upper'
+            elif title == 'Representative':
+                sponsor_chamber = 'lower'
+            elif title == 'committee':
+                sponsor_chamber = bill['chamber']
+                people = 'Committee ' + people
+            elif title in ('Joint Legislative Council',
+                           'Law Revision Committee'):
+                sponsor_chamber = bill['chamber']
+                people = title
 
-        # classify actions
-        atype = 'other'
-        for regex, type in action_classifiers.iteritems():
-            if re.match(regex, sane):
-                atype = type
-                break
-        bill.add_action(actor, sane, date, type=atype)
+            for r in re.split(r'\sand\s|\,', people):
+                if r.strip():
+                    bill.add_sponsor(sponsor_type, r.strip(),
+                                     chamber=sponsor_chamber)
 
-        # add documents
-        self.add_documents(bill, line, sane)
-
-        if 'Ayes' in sane:
-            self.add_vote(bill, actor, date, line, sane)
-
-    def add_documents(self, bill, line, sane):
-        for a in line.findall('a'):
-            link_text = a.text_content()
-            link = a.get('href')
-
-            if 'Ayes' in sane or 'Noes' in sane or 'Paired' in sane:
-                pass
-            elif link_text == 'Fiscal estimate received':
-                self.add_document(bill, 'Fiscal estimate', link)
-            elif len(link_text) <= 3 and 'offered' in sane:
-                self.add_document(bill, sane.split(' offered')[0], link)
-            elif link_text.startswith('Act'):
-                name = '%s Wisconsin %s' % (bill['session'], link_text)
-                self.add_document(bill, name, link)
-            elif link_text == 'Printed engrossed':
-                self.add_document(bill, 'Engrossed Printing', link)
-            else:
-                self.add_document(bill, sane, link)
-
-    def add_document(self, bill, name, link):
-        """ avoid adding duplicate documents """
-
-        for doc in bill['documents']:
-            if link == doc['url']:
-                return
-        bill.add_document(name, link)
-
-    def add_vote(self, bill, chamber, date, line, text):
+    def add_vote(self, bill, chamber, date, text, dd):
         votes = re.findall(r'Ayes (\d+)\, N(?:oes|ays) (\d+)', text)
         (yes, no) = int(votes[0][0]), int(votes[0][1])
 
@@ -262,7 +255,7 @@ class WIBillScraper(BillScraper):
         v = Vote(chamber, date, text, yes > no, yes, no, 0, type=vtype)
 
         # fetch the vote itself
-        link = line.xpath('//a[contains(@href, "/votes/")]')
+        link = dd.xpath('.//a[contains(@href, "/votes/")]')
         if link:
             link = link[0].get('href')
             v.add_source(link)
@@ -319,7 +312,8 @@ class WIBillScraper(BillScraper):
                 ayes, nays, nv, paired = vcount_re.match(textitem).groups()
                 vote['yes_count'] = int(ayes)
                 vote['no_count'] = int(nays)
-                vote['other_count'] = int(nv)+int(paired)
+                vote['other_count'] = int(nv)
+                # NOTE: paired do not count in WI's counts so we omit them
             elif textitem == 'N':
                 vfunc = vote.no
                 name = ''

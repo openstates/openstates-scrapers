@@ -8,10 +8,9 @@ import lxml.html
 
 class KYCommitteeScraper(CommitteeScraper):
     state = 'ky'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        if term != '2011':
-            raise NoDataForPeriod(term)
 
         if chamber == 'upper':
             url = "http://www.lrc.ky.gov/org_adm/committe/standing_senate.htm"

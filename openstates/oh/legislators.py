@@ -8,11 +8,9 @@ import lxml.html
 
 class OHLegislatorScraper(LegislatorScraper):
     state = 'oh'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
-
         if chamber == 'upper':
             self.scrape_senators(chamber, term)
         else:
@@ -39,7 +37,7 @@ class OHLegislatorScraper(LegislatorScraper):
                         party = "Republican"
 
                     leg = Legislator(term, chamber, str(district),
-                                     full_name, '', '', '', party)
+                                     full_name, party=party, url=rep_url)
                     leg.add_source(rep_url)
 
                 self.save_legislator(leg)
@@ -52,6 +50,7 @@ class OHLegislatorScraper(LegislatorScraper):
 
             for el in page.xpath('//table[@class="fullWidth"]/tr/td'):
                 sen_link = el.xpath('a[@class="senatorLN"]')[1]
+                sen_url = sen_link.get('href')
 
                 full_name = sen_link.text
                 full_name = full_name[0:-2]
@@ -71,11 +70,11 @@ class OHLegislatorScraper(LegislatorScraper):
                 office_phone = office_phone.strip(' :')
 
                 photo_url = el.xpath("a/img")[0].attrib['src']
+                email = el.xpath('.//span[@class="tan"]/text()')[1]
 
                 leg = Legislator(term, chamber, district, full_name,
-                                 '', '', '', party,
-                                 photo_url=photo_url,
-                                 office_phone=office_phone)
+                                 party=party, photo_url=photo_url, url=sen_url,
+                                 office_phone=office_phone, email=email)
                 leg.add_source(url)
 
                 self.save_legislator(leg)

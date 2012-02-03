@@ -1,108 +1,236 @@
-import re
-import os
-from datetime import date
-
-from billy.conf import settings
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-
-import pytz
+import datetime as dt
 import lxml.html
+import urllib
+import re
 
-class ResourceNotAvailableError(Exception):
-    def __init__(self, message):
-        self.message = message
-    def __str__(self):
-        return message
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.utils import url_xpath
 
-BILL_INFO_URL="http://dirac.rilin.state.ri.us/billstatus/WebClass1.ASP?WCI=BillStatus&WCE=ifrmBillStatus&WCU"
+subjects      = None
+bill_subjects = None
+
+HB_START_BILLNO=7000
+SB_START_BILLNO=2000
+
+START_IDEX = {
+    "lower" : HB_START_BILLNO,
+    "upper" : SB_START_BILLNO
+}
+
+MAXQUERY=250 # What a silly low number. This is just putting more load on the
+# server, not even helping with that. Sheesh.
+
+def get_postable_subjects():
+    global subjects
+    if subjects == None:
+        subs = url_xpath( "http://status.rilin.state.ri.us/",
+            "//select[@id='rilinContent_cbCategory']" )[0].xpath("./*")
+        subjects = { o.text : o.attrib['value'] for o in subs }
+        subjects.pop(None)
+    return subjects
+
+def get_default_headers( page ):
+    headers = {}
+    for el in url_xpath( page, "//*[@name]" ):
+        name = el.attrib['name']
+        value = ""
+        try:
+            value = el.attrib['value']
+        except KeyError:
+            value = el.text
+        headers[name] = value or ""
+    return headers
+
+SEARCH_URL = "http://status.rilin.state.ri.us/"
+
+BILL_STRING_FLAGS = {
+    "bill_id"    : r"^[House|Senate].*",
+    "sponsors"   : r"^BY.*",
+    "title"      : r"ENTITLED,.*",
+    "version"    : r"\{.*\}",
+    "resolution" : r"Resolution.*",
+    "chapter"    : r"^Chapter.*",
+    "by_request" : r"^\(.*\)$"
+}
 
 class RIBillScraper(BillScraper):
     state = 'ri'
 
-    _tz = pytz.timezone('US/Eastern')
+    def parse_results_page( self, page ):
+        blocks  = []
+        current = []
 
-    def __init__(self, metadata, **kwargs):
-        super(RIBillScraper, self).__init__(metadata, **kwargs)
-        self.metadata = metadata
+        p = lxml.html.fromstring(page)
+        nodes = p.xpath("//span[@id='lblBills']/*")
+        for node in nodes:
+            if node.tag == "br":
+                if len(current) > 0:
+                    current = []
+                    blocks.append(current)
+            else:
+                current.append(node)
+        return blocks
 
-        self.house_bill_list_urls = {}
-        self.senate_bill_list_urls = {}
-        for term in metadata['terms']:
-            year = str(term['start_year'])
-            year_stub = year[2:4]
-            house_url = "".join(["http://www.rilin.state.ri.us/BillText", year_stub, "/HouseText", year_stub,
-              "/HouseText", year_stub, ".html"])
-            senate_url = "".join(["http://www.rilin.state.ri.us/BillText", year_stub, "/SenateText",
-              year_stub, "/SenateText", year_stub, ".html"])
-            self.house_bill_list_urls[year] = house_url
-            self.senate_bill_list_urls[year] = senate_url
+    def digest_results_page( self, nodes ):
+        blocks = {}
+        for node in nodes:
+            nblock = { 'actions' : [] }
+            lines = [ ( n.text_content(), n ) for n in node ]
+            for line in lines:
+                line, node = line
+                found = False
+                for regexp in BILL_STRING_FLAGS:
+                    if re.match(BILL_STRING_FLAGS[regexp], line):
+                        hrefs = node.xpath("./a")
+                        if len(hrefs) > 0:
+                             nblock[regexp + "_hrefs"] = hrefs
+                        nblock[regexp] = line
+                        found = True
+                if not found:
+                    nblock['actions'].append(line)
+            if "bill_id" in nblock:
+                blocks[nblock['bill_id']] = nblock
+            else:
+                self.warning("ERROR! Can not find bill_id for current entry!")
+                self.warning("This should never happen!!! Oh noes!!!")
+        return blocks
 
-        self.bill_types = ['house bill',
-                      'senate bill',
-                      'house resolution',
-                      'senate resolution',
-                      'joint resolution'] # TODO check if there are others
-        self.type_regs = map(lambda x: re.compile(x), self.bill_types)
+    def get_subject_bill_dict(self):
+        global bill_subjects
+        if bill_subjects != None:
+            return bill_subjects
+        ret = {}
+        subjects = get_postable_subjects()
+        for subject in subjects:
+            default_headers = get_default_headers( SEARCH_URL )
+
+            default_headers['ctl00$rilinContent$cbCategory'] = \
+                subjects[subject]
+
+            default_headers['ctl00$rilinContent$cbYear'] = \
+                "2012" # XXX: Fixme
+
+            headers = urllib.urlencode( default_headers )
+            blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
+                method="POST", body=headers))
+            blocks = blocks[1:-1]
+            blocks = self.digest_results_page(blocks)
+            for block in blocks:
+                try:
+                    ret[block].append(subject)
+                except KeyError:
+                    ret[block] = [ subject ]
+        bill_subjects = ret
+        return bill_subjects
+
+    def process_actions( self, actions, bill ):
+        print actions
+        for action in actions:
+            actor = "joint"
+
+            if "house"  in action.lower():
+                actor = "lower"
+
+            if "senate" in action.lower():
+                if actor == "joint":
+                    actor = "upper"
+                else:
+                    actor = "joint"
+            if "governor" in action.lower():
+                actor = "governor"
+            date = action.split(" ")[0]
+            date = dt.datetime.strptime(date, "%m/%d/%Y")
+            bill.add_action( actor, action, date,
+                type=self.get_type_by_action(action))
+
+    def get_type_by_name(self, name):
+        name = name.lower()
+        self.log(name)
+
+        things = [
+            "resolution",
+            "joint resolution"
+            "memorial",
+            "memorandum",
+            "bill"
+        ]
+
+        for t in things:
+            if t in name:
+                self.log( "Returning %s" % t )
+                return t
+
+        self.warning("XXX: Bill type fallthrough. This ain't great.")
+        return "bill"
+
+    def get_type_by_action(self, name):
+        types = {
+            "introduced" : "bill:introduced",
+            "referred"   : "committee:referred",
+            "passed"     : "bill:passed",
+            "recommends passage" : "committee:passed:favorable",
+            # XXX: need to find the unfavorable string
+            # XXX: What's "recommended measure be held for further study"?
+            "withdrawn"               : "bill:withdrawn",
+            "signed by governor"      : "governor:signed",
+            "transmitted to governor" : "governor:received"
+        }
+        ret = []
+        name = name.lower()
+        for flag in types:
+            if flag in name:
+                ret.append(types[flag])
+
+        if len(ret) > 0:
+            return ret
+        return "other"
+
+    def scrape_bills(self, chamber, session, subjects):
+        idex = START_IDEX[chamber]
+        FROM="ctl00$rilinContent$txtBillFrom"
+        TO="ctl00$rilinContent$txtBillTo"
+        YEAR="ctl00$rilinContent$cbYear"
+        blocks = "FOO" # Ugh.
+        while len(blocks) > 0:
+            default_headers = get_default_headers( SEARCH_URL )
+            default_headers[FROM] = idex
+            default_headers[TO]   = idex + MAXQUERY
+            default_headers[YEAR] = session
+            idex += MAXQUERY
+            headers = urllib.urlencode( default_headers )
+            blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
+                method="POST", body=headers))
+            blocks = blocks[1:-1]
+            blocks = self.digest_results_page(blocks)
+
+            for block in blocks:
+                bill = blocks[block]
+                subs = []
+                try:
+                    subs = subjects[bill['bill_id']]
+                except KeyError:
+                    pass
+
+                title = bill['title'][len("ENTITLED, "):]
+                b = Bill(session, chamber, bill['bill_id'], title,
+                    type=self.get_type_by_name(bill['bill_id']))
+
+                self.process_actions( bill['actions'], b )
+                sponsors = bill['sponsors'][len("BY"):].strip()
+                sponsors = sponsors.split(",")
+                sponsors = [ s.strip() for s in sponsors ]
+
+                for href in bill['bill_id_hrefs']:
+                    b.add_version( href.text, href.attrib['href'],
+                        mimetype="application/pdf" )
+
+                for sponsor in sponsors:
+                    b.add_sponsor( "co-sponsor", sponsor )
+
+                b.add_source( SEARCH_URL )
+                self.save_bill(b)
+                # print bill['bill_id'], subs
 
     def scrape(self, chamber, session):
-        self.log("Scraping for session " + session)
-        self.validate_session(session)
-        self.scrape_bill_list(chamber, session)
-
-    def scrape_bill_list(self, chamber, session):
-        if chamber == 'upper':
-            self.log("Scraping the upper chamber bills")
-            url = getattr(self, 'senate_' + 'bill_list_urls')[session]
-        else:
-            self.log("Scraping the lower chamber bills")
-            url = getattr(self, 'house_' + 'bill_list_urls')[session]
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            for elem in page.xpath('//option'):
-                link = elem.attrib['value']
-                if re.match('.*\.pdf$', link):
-                    continue
-                else:
-                    bill_id = link.split('/')[-1].strip('.htmlHS')
-                    self.log("Getting info for bill ID: " + bill_id)
-                    try:
-                        bill = self.get_bill_information(bill_id, chamber, session)
-                    except:
-                        self.log("Getting bill information failed")
-                        continue
-                    self.save_bill(bill)
-                    self.log("Saved the bill!")
-
-    def get_bill_information(self, bill_id, chamber, session):
-        with self.urlopen(BILL_INFO_URL, 'POST', body="hListBills=" + bill_id) as bill_info_page:
-            self.log("Got bill info")
-            page = lxml.html.fromstring(bill_info_page)
-
-            # TODO: check whether page is error page and raise custom exception defined above
-
-            bs = page.xpath('//div/b')
-            for b in bs:
-                containing_div = b.getparent()
-                if b.text == "BY":
-                    l = containing_div.text_content().strip(u'BY\xa0').split(',')
-                    sponsors = map(lambda x: x.strip(' '), l)
-                if b.text.strip(u',\xa0') == "ENTITLED":
-                    title = containing_div.text_content().lstrip(u'ENTITLED,\xa0')
-
-            divs = page.xpath('//div')
-            bill_type = ""
-            for div in divs:
-                text = div.text_content()
-                for ind, reg in enumerate(self.type_regs):
-                    if reg.match(text):
-                        bill_type = self.bill_types[ind]
-
-            bill = Bill(session, chamber, bill_id, title, type=bill_type)
-            for ind, sponsor in enumerate(sponsors):
-                if ind == 0:
-                    bill.add_sponsor('primary', sponsor)
-                else:
-                    bill.add_sponsor('cosponsor', sponsor)
-        return bill
-
+        subjects = self.get_subject_bill_dict()
+        self.scrape_bills( chamber, session, subjects )

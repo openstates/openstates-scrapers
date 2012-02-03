@@ -29,10 +29,10 @@ class ARBillScraper(BillScraper):
     state = 'ar'
 
     def scrape(self, chamber, session):
-        if session != '2011':
-            raise NoDataForPeriod(session)
-
         self.bills = {}
+
+        self.slug = self.metadata['session_details'][session]['slug']
+
         self.scrape_bill(chamber, session)
         self.scrape_actions()
 
@@ -60,7 +60,10 @@ class ARBillScraper(BillScraper):
                 'MR': 'memorial resolution',
                 'CMR': 'concurrent memorial resolution'}[type_spec]
 
-            bill = Bill('2011', chamber, bill_id, row[3], type=bill_type)
+            if row[-1] != self.slug:
+                continue
+
+            bill = Bill(session, chamber, bill_id, row[3], type=bill_type)
             bill.add_source(url)
             bill.add_sponsor('lead sponsor', row[11])
 
@@ -80,7 +83,11 @@ class ARBillScraper(BillScraper):
 
         for row in page:
             bill_id = "%s%s %s" % (row[1], row[2], row[3])
+
             if bill_id not in self.bills:
+                continue
+            # different term
+            if row[-2] != self.slug:
                 continue
 
             # Commas aren't escaped, but only one field (the action) can
@@ -128,9 +135,14 @@ class ARBillScraper(BillScraper):
         # It's still more efficient to get the rest of the data we're
         # interested in from the CSVs, though, because their site splits
         # other info (e.g. actions) across many pages
+        for t in self.metadata['terms']:
+            if bill['session'] in t['sessions']:
+                term_year = t['start_year']
+                break
         measureno = bill['bill_id'].replace(' ', '')
-        url = ("http://www.arkleg.state.ar.us/assembly/2011/2011R/"
-               "Pages/BillInformation.aspx?measureno=%s" % measureno)
+        url = ("http://www.arkleg.state.ar.us/assembly/%s/%s/"
+               "Pages/BillInformation.aspx?measureno=%s" % (
+                   term_year, self.slug, measureno))
         bill.add_source(url)
 
         page = lxml.html.fromstring(self.urlopen(url))
@@ -204,4 +216,3 @@ class ARBillScraper(BillScraper):
     def scrape_cosponsors(self, bill, url):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
-            

@@ -21,8 +21,8 @@ classifiers = {
     r'First Reading': 'committee:referred',
     r'Floor (Committee )?Amendment\s?\(.+?\)$': 'amendment:introduced',
     r'Floor Amendment .+? Rejected': 'amendment:failed',
-    r'Floor (Committee )?Amendment .+? Adopted': 'amendment:passed',
-    r'Floor Amendment .+? Withrdawn': 'amendment:withdrawn',
+    r'Floor (Committee )?Amendment.+?Adopted': 'amendment:passed',
+    r'Floor Amendment.+? Withdrawn': 'amendment:withdrawn',
     r'Pre\-filed': 'bill:introduced',
     r'Re\-(referred|assigned)': 'committee:referred',
     r'Recommit to Committee': 'committee:referred',
@@ -89,30 +89,31 @@ class MDBillScraper(BillScraper):
             for dt in dts:
                 action_date = dt.text.strip()
                 if action_date != 'No Action':
-                    try:
-                        action_date = datetime.datetime.strptime(action_date,
-                                                                 '%m/%d')
-                        # no actions after June?, decrement the year on these
-                        year = int(bill['session'])
-                        if action_date.month > 6:
-                            year -= 1
-                        action_date = action_date.replace(year)
+                    action_date = datetime.datetime.strptime(action_date,
+                                                             '%m/%d')
+                    # no actions after June?, decrement the year on these
+                    year = int(bill['session'][:4])
+                    if action_date.month > 6:
+                        year -= 1
+                    action_date = action_date.replace(year)
 
-                        # iterate over all dds following the dt
-                        dcursor = dt
-                        while (dcursor.getnext() is not None and
-                               dcursor.getnext().tag == 'dd'):
-                            dcursor = dcursor.getnext()
-                            actions = dcursor.text_content().split('\r\n')
-                            for act in actions:
-                                act = act.strip()
-                                atype = _classify_action(act)
-                                if atype:
-                                    bill.add_action(chamber, act, action_date,
-                                                   type=atype)
+                    # iterate over all dds following the dt
+                    dcursor = dt
+                    while (dcursor.getnext() is not None and
+                           dcursor.getnext().tag == 'dd'):
+                        dcursor = dcursor.getnext()
+                        actions = dcursor.text_content().split('\r\n')
+                        for act in actions:
+                            act = act.strip()
+                            if not act:
+                                continue
+                            atype = _classify_action(act)
+                            if atype:
+                                bill.add_action(chamber, act, action_date,
+                                                type=atype)
+                            else:
+                                self.log('unknown action: %s' % act)
 
-                    except ValueError:
-                        pass # probably trying to parse a bad entry
 
 
     def parse_bill_documents(self, doc, bill):
@@ -149,60 +150,124 @@ class MDBillScraper(BillScraper):
                 href not in seen_votes):
                 seen_votes.add(href)
                 vote_url = BASE_URL + href
-                with self.urlopen(vote_url) as vote_html:
-                    vote_doc = lxml.html.fromstring(vote_html)
 
-                    # motion
-                    box = vote_doc.xpath('//td[@colspan=3]/font[@size=-1]/text()')
-                    params['motion'] = box[-1]
-                    params['type'] = 'other'
-                    if 'senate' in href:
-                        params['chamber'] = 'upper'
-                    else:
-                        params['chamber'] = 'lower'
-                    for regex, vtype in vote_classifiers.iteritems():
-                        if re.findall(regex, params['motion'], re.IGNORECASE):
-                            params['type'] = vtype
+                if bill['session'] in ('2007', '2007s1', '2008', '2009',
+                                       '2010', '2011'):
+                    vote = self.parse_old_vote_page(vote_url)
+                else:
+                    vote = self.parse_vote_page(vote_url)
+                vote.add_source(vote_url)
+                bill.add_vote(vote)
 
-                    # counts
-                    bs = vote_doc.xpath('//td[@width="20%"]/font/b/text()')
-                    yeas = int(bs[0].split()[0])
-                    nays = int(bs[1].split()[0])
-                    excused = int(bs[2].split()[0])
-                    not_voting = int(bs[3].split()[0])
-                    absent = int(bs[4].split()[0])
-                    params['yes_count'] = yeas
-                    params['no_count'] = nays
-                    params['other_count'] = excused + not_voting + absent
-                    params['passed'] = yeas > nays
+    def parse_old_vote_page(self, vote_url):
+        params = {
+            'chamber': None,
+            'date': None,
+            'motion': None,
+            'passed': None,
+            'yes_count': None,
+            'no_count': None,
+            'other_count': None,
+        }
 
-                    # date
-                    # parse the following format: March 23, 2009
-                    date_elem = vote_doc.xpath('//font[starts-with(text(), "Legislative Date")]')[0]
-                    params['date'] = datetime.datetime.strptime(date_elem.text[18:], '%B %d, %Y')
+        with self.urlopen(vote_url) as vote_html:
+            vote_doc = lxml.html.fromstring(vote_html)
 
-                    vote = Vote(**params)
+            # motion
+            box = vote_doc.xpath('//td[@colspan=3]/font[@size=-1]/text()')
+            params['motion'] = box[-1]
+            params['type'] = 'other'
+            if 'senate' in vote_url:
+                params['chamber'] = 'upper'
+            else:
+                params['chamber'] = 'lower'
+            for regex, vtype in vote_classifiers.iteritems():
+                if re.findall(regex, params['motion'], re.IGNORECASE):
+                    params['type'] = vtype
 
-                    status = None
-                    for row in vote_doc.cssselect('table')[3].cssselect('tr'):
-                        text = row.text_content()
-                        if text.startswith('Voting Yea'):
-                            status = 'yes'
-                        elif text.startswith('Voting Nay'):
-                            status = 'no'
-                        elif text.startswith('Not Voting') or text.startswith('Excused'):
-                            status = 'other'
-                        else:
-                            for cell in row.cssselect('a'):
-                                getattr(vote, status)(cell.text.strip())
+            # counts
+            bs = vote_doc.xpath('//td[@width="20%"]/font/b/text()')
+            yeas = int(bs[0].split()[0])
+            nays = int(bs[1].split()[0])
+            excused = int(bs[2].split()[0])
+            not_voting = int(bs[3].split()[0])
+            absent = int(bs[4].split()[0])
+            params['yes_count'] = yeas
+            params['no_count'] = nays
+            params['other_count'] = excused + not_voting + absent
+            params['passed'] = yeas > nays
 
-                    vote.add_source(vote_url)
-                    bill.add_vote(vote)
+            # date
+            # parse the following format: March 23, 2009
+            date_elem = vote_doc.xpath('//font[starts-with(text(), "Legislative Date")]')[0]
+            params['date'] = datetime.datetime.strptime(date_elem.text[18:], '%B %d, %Y')
 
+            vote = Vote(**params)
+
+            status = None
+            for row in vote_doc.cssselect('table')[3].cssselect('tr'):
+                text = row.text_content()
+                if text.startswith('Voting Yea'):
+                    status = 'yes'
+                elif text.startswith('Voting Nay'):
+                    status = 'no'
+                elif text.startswith('Not Voting') or text.startswith('Excused'):
+                    status = 'other'
+                else:
+                    for cell in row.cssselect('a'):
+                        getattr(vote, status)(cell.text.strip())
+        return vote
+
+    def parse_vote_page(self, vote_url):
+        vote_html = self.urlopen(vote_url)
+        doc = lxml.html.fromstring(vote_html)
+
+        # chamber
+        if 'senate' in vote_url:
+            chamber = 'upper'
+        else:
+            chamber = 'lower'
+
+        # date in the following format: Mar 23, 2009
+        date = doc.xpath('//td[@class="csF2A77DD1"]/text()')[2]
+        date = date.replace(u'\xa0', ' ')
+        date = datetime.datetime.strptime(date[18:], '%b %d, %Y')
+
+        # motion
+        motion = doc.xpath('//td[@class="cs54BDD041"]/text()')[-1]
+
+        # totals
+        totals = doc.xpath('//td[@class="cs7A884F1E"]/text()')[1:]
+        yes_count = int(totals[0].split()[-1])
+        no_count = int(totals[1].split()[-1])
+        other_count = int(totals[2].split()[-1])
+        other_count += int(totals[3].split()[-1])
+        other_count += int(totals[4].split()[-1])
+        passed = yes_count > no_count
+
+        vote = Vote(chamber=chamber, date=date, motion=motion,
+                    yes_count=yes_count, no_count=no_count,
+                    other_count=other_count, passed=passed)
+
+        # go through, find Voting Yea/Voting Nay/etc. and next tds are voters
+        func = None
+        for td in doc.xpath('//td/text()'):
+            td = td.replace(u'\xa0', ' ')
+            if td.startswith('Voting Yea'):
+                func = vote.yes
+            elif td.startswith('Voting Nay'):
+                func = vote.no
+            elif td.startswith('Not Voting'):
+                func = vote.other
+            elif td.startswith('Excused'):
+                func = vote.other
+            elif func:
+                func(td)
+
+        return vote
 
     def scrape_bill(self, chamber, session, bill_type, number):
-        """ Creates a bill object
-        """
+        """ Creates a bill object """
         if len(session) == 4:
             session_url = session+'rs'
         else:

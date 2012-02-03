@@ -1,10 +1,10 @@
 from datetime import datetime
 from .utils import chamber_name, DBFMixin
 from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import VoteScraper, Vote
+from billy.scrape.votes import Vote
 
 import lxml.etree
-import scrapelib
+import urllib2
 import zipfile
 import csv
 import os
@@ -85,6 +85,7 @@ class NJBillScraper(BillScraper, DBFMixin):
         'r w/o rec. ACS': 'Reported without recommendation out of Assembly committee as a substitute',
         'r w/o rec. SCS': 'Reported without recommendation out of Senate committee as a substitute',
         'r w/o rec. Sca': 'Reported without recommendation out of Senate committee with amendments',
+        'r w/o rec. Aca': 'Reported without recommendation out of Assembly committee with amendments',
         'r/ACS': 'Reported out of Assembly committee as a substitute',
         'r/Aca': 'Reported out of Assembly committee with amendments',
         'r/SCS': 'Reported out of Senate committee as a substitute',
@@ -98,6 +99,7 @@ class NJBillScraper(BillScraper, DBFMixin):
         'S':   'Statement',
         'V':   'Veto',
         'FN':  'Fiscal Note',
+        'F':   'Fiscal Note',
         'R':   'Reprint',
         'FS':  'Floor Statement',
         'TR':  'Technical Report',
@@ -208,6 +210,9 @@ class NJBillScraper(BillScraper, DBFMixin):
             bill_type = rec["billtype"]
             bill_number = int(rec["billnumber"])
             bill_id = bill_type + str(bill_number)
+            if bill_id not in bill:
+                self.warning('unknown bill %s in document database' % bill_id)
+                continue
             bill = bill_dict[bill_id]
             document = rec["document"]
             document = document.split('\\')
@@ -244,7 +249,11 @@ class NJBillScraper(BillScraper, DBFMixin):
 
         for filename in vote_info_list:
             s_vote_url = 'ftp://www.njleg.state.nj.us/votes/%s.zip' % filename
-            s_vote_zip, resp = self.urlretrieve(s_vote_url)
+            try:
+                s_vote_zip, resp = self.urlretrieve(s_vote_url)
+            except urllib2.URLError:
+                self.warning('could not find %s' % s_vote_url)
+                continue
             zipedfile = zipfile.ZipFile(s_vote_zip)
             vfile = "%s.txt" % filename
             vote_file = zipedfile.open(vfile, 'U')
@@ -319,7 +328,7 @@ class NJBillScraper(BillScraper, DBFMixin):
 
         #Actions
         bill_action_url, bill_action_db = self.get_dbf(year_abr, 'BILLHIST')
-
+        actor_map = {'A': 'lower', 'G': 'executive', 'S': 'upper'}
 
         for rec in bill_action_db:
             bill_type = rec["billtype"]
@@ -328,7 +337,7 @@ class NJBillScraper(BillScraper, DBFMixin):
             bill = bill_dict[bill_id]
             action = rec["action"]
             date = rec["dateaction"]
-            actor = rec["house"]
+            actor = actor_map[rec["house"]]
             comment = rec["comment"]
             action, atype = self.categorize_action(action)
             if comment:

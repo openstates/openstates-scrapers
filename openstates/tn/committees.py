@@ -32,7 +32,7 @@ class TNCommitteeScraper(CommitteeScraper):
 
     base_href = 'http://www.capitol.tn.gov'
     urls = {
-        '107th General Assembly': {
+        '107': {
             'lower': 'http://www.capitol.tn.gov/house/committees/',
             'upper': 'http://www.capitol.tn.gov/senate/committees/'
         }

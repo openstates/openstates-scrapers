@@ -2,67 +2,204 @@ import re
 import os
 import datetime
 import json
+import subprocess
+
+import lxml.html
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape import NoDataForPeriod
 
+
 import ksapi
 
-votes_re = re.compile('(.*)[ ;]+Yea: ([0-9]+) Nay: ([0-9]+)$')
-
 class KSBillScraper(BillScraper):
-	state = 'ks'
+    state = 'ks'
 
-	def scrape(self, chamber, term):
-		if term != '2011-2012': # kslegislature.org doesn't provide old bills
-			raise NoDataForPeriod(term)
-		self.scrape_current(chamber, term)
+    def scrape(self, chamber, session):
+        self.validate_term(session, latest_only=True)
+        self.scrape_current(chamber, session)
 
-	def scrape_current(self, chamber, term):
-		chamber_name = 'Senate' if chamber == 'upper' else 'House'
-		with self.urlopen(ksapi.url + 'bill_status/') as bill_request: # perhaps we should save this data so we can make on request for both chambers?
-			bill_request_json = json.loads(bill_request)
-			bills = bill_request_json['content']
-			for bill_data in bills:
-				# filtering out other chambers
-				bill_equal_chamber = False
-				for history in bill_data['HISTORY']:
-					if history['chamber'] == chamber_name:
-						bill_is_in_chamber = True
-				if not bill_is_in_chamber:
-					continue
+    def scrape_current(self, chamber, session):
+        chamber_name = 'Senate' if chamber == 'upper' else 'House'
+        chamber_letter = chamber_name[0]
+        # perhaps we should save this data so we can make one request for both?
+        with self.urlopen(ksapi.url + 'bill_status/') as bill_request:
+            bill_request_json = json.loads(bill_request)
+            bills = bill_request_json['content']
+            for bill_data in bills:
 
-				# main
-				bill = Bill(term, chamber, bill_data['BILLNO'], bill_data['SHORTTITLE'])
-				bill.add_source(ksapi.url + 'bill_status/' + bill_data['BILLNO'].lower())
-				if bill_data['LONGTITLE']:
-					bill.add_title(bill_data['LONGTITLE'])
-				bill.add_document('apn', ksapi.ksleg + bill_data['apn'])
-				bill.add_version('Latest', ksapi.ksleg + bill_data['apn'])
+                bill_id = bill_data['BILLNO']
 
-				for sponsor in bill_data['SPONSOR_NAMES']:
-					bill.add_sponsor('primary' if len(bill_data['SPONSOR_NAMES']) == 1 else 'cosponsor', sponsor)
+                # filter other chambers
+                if not bill_id.startswith(chamber_letter):
+                    continue
 
-				for event in bill_data['HISTORY']:
-					if 'committee_names' in event and 'conferee_names' in event:
-						actor = ' and '.join(bill_data['committee_names'] + bill_data['conferee_names'])
-					elif 'committee_names' in history:
-						actor = ' and '.join(bill_data['committee_names'])
-					elif 'conferee_names' in history:
-						actor = ' and '.join(bill_data['conferee_names'])
-					else:
-						actor = 'upper' if chamber == 'Senate' else 'lower'
+                if 'CR' in bill_id:
+                    btype = 'concurrent resolution'
+                elif 'R' in bill_id:
+                    btype = 'resolution'
+                elif 'B' in bill_id:
+                    btype = 'bill'
 
-					date = datetime.datetime.strptime(event['occurred_datetime'], "%Y-%m-%dT%H:%M:%S")
-					bill.add_action(actor, event['status'], date)
+                title = bill_data['SHORTTITLE'] or bill_data['LONGTITLE']
 
-					if event['action_code'] in ksapi.voted:
-						votes = votes_re.match(event['status'])
-						if votes:
-							vote = Vote(chamber, date, votes.group(1), event['action_code'] in ksapi.passed, int(votes.group(2)), int(votes.group(3)), 0)
-							vote.add_source(ksapi.ksleg + 'bill_status/' + bill_data['BILLNO'].lower())
-							bill.add_vote(vote)
+                # main
+                bill = Bill(session, chamber, bill_id, title,
+                            type=btype, status=bill_data['STATUS'])
+                bill.add_source(ksapi.url + 'bill_status/' + bill_id.lower())
 
-				self.save_bill(bill)
+                if (bill_data['LONGTITLE'] and
+                    bill_data['LONGTITLE'] != bill['title']):
+                    bill.add_title(bill_data['LONGTITLE'])
 
+                for sponsor in bill_data['SPONSOR_NAMES']:
+                    stype = ('primary' if len(bill_data['SPONSOR_NAMES']) == 1
+                             else 'cosponsor')
+                    bill.add_sponsor(stype, sponsor)
+
+                # history is backwards
+                for event in reversed(bill_data['HISTORY']):
+
+                    actor = ('upper' if event['chamber'] == 'Senate'
+                             else 'lower')
+
+                    date = datetime.datetime.strptime(event['occurred_datetime'], "%Y-%m-%dT%H:%M:%S")
+                    # append committee names if present
+                    if 'committee_names' in event:
+                        action = (event['status'] + ' ' +
+                                  ' and '.join(event['committee_names']))
+                    else:
+                        action = event['status']
+
+                    if event['action_code'] not in ksapi.action_codes:
+                        self.warning('unknown action code on %s: %s %s' %
+                                     (bill_id, event['action_code'],
+                                      event['status']))
+                        atype = 'other'
+                    else:
+                        atype = ksapi.action_codes[event['action_code']]
+                    bill.add_action(actor, action, date, type=atype)
+
+                self.scrape_html(bill)
+                self.save_bill(bill)
+
+    def scrape_html(self, bill):
+        # we have to go to the HTML for the versions & votes
+        base_url = 'http://www.kslegislature.org/li/b2011_12/measures/'
+        if 'resolution' in bill['type']:
+            base_url = 'http://www.kslegislature.org/li/b2011_12/year1/measures/'
+
+        url = base_url + bill['bill_id'].lower()
+        doc = lxml.html.fromstring(self.urlopen(url))
+        doc.make_links_absolute(url)
+
+        bill.add_source(url)
+
+        # versions & notes
+        version_rows = doc.xpath('//tbody[starts-with(@id, "version-tab")]/tr')
+        for row in version_rows:
+            # version, docs, sn, fn
+            tds = row.getchildren()
+            title = tds[0].text_content()
+            doc_url = get_doc_link(tds[1])
+            if doc_url:
+                bill.add_version(title, doc_url)
+            if len(tds) > 2:
+                sn_url = get_doc_link(tds[2])
+                if sn_url:
+                    bill.add_document(title + ' - Supplementary Note', sn_url)
+            if len(tds) > 3:
+                fn_url = get_doc_link(tds[3])
+                if sn_url:
+                    bill.add_document(title + ' - Fiscal Note', sn_url)
+
+
+        history_rows = doc.xpath('//tbody[starts-with(@id, "history-tab")]/tr')
+        for row in history_rows:
+            row_text = row.xpath('.//td[3]')[0].text_content()
+
+            # votes
+            vote_url = row.xpath('.//a[contains(text(), "Yea:")]/@href')
+            if vote_url:
+                vote_date = row.xpath('.//td[1]')[0].text_content()
+                vote_chamber = row.xpath('.//td[2]')[0].text_content()
+                self.parse_vote(bill, vote_date, vote_chamber, row_text,
+                                vote_url[0])
+
+            # amendments & reports
+            amendment = get_doc_link(row.xpath('.//td[4]')[0])
+            if amendment:
+                if 'Motion to Amend' in row_text:
+                    _, offered_by = row_text.split('Motion to Amend -')
+                    amendment_name = 'Amendment ' + offered_by.strip()
+                elif 'Conference committee report now available' in row_text:
+                    amendment_name = 'Conference Committee Report'
+                else:
+                    amendment_name = row_text.strip()
+                bill.add_document(amendment_name, amendment)
+
+
+    def parse_vote(self, bill, vote_date, vote_chamber, vote_status, vote_url):
+        vote_chamber = 'upper' if vote_chamber == 'Senate' else 'lower'
+        vote_date = datetime.datetime.strptime(vote_date, '%a %d %b %Y')
+
+        vote_doc, resp = self.urlretrieve(vote_url)
+
+        subprocess.check_call('abiword --to=ksvote.txt %s' % vote_doc,
+                              shell=True, cwd='/tmp/')
+        vote_lines = open('/tmp/ksvote.txt').readlines()
+
+        os.remove(vote_doc)
+
+        vote = None
+        passed = True
+        for line in vote_lines:
+            totals = re.findall('Yeas (\d+)[;,] Nays (\d+)[;,] (?:Present but not voting|Present and Passing):? (\d+)[;,] (?:Absent or not voting|Absent or Not Voting):? (\d+)',
+                                line)
+            if totals:
+                totals = totals[0]
+                yeas = int(totals[0])
+                nays = int(totals[1])
+                nv = int(totals[2])
+                absent = int(totals[3])
+                # default passed to true
+                vote = Vote(vote_chamber, vote_date, vote_status,
+                            True, yeas, nays, nv+absent)
+            elif line.startswith('Yeas:'):
+                line = line.split(':', 1)[1].strip()
+                for member in line.split(', '):
+                    if member != 'None.':
+                        vote.yes(member)
+            elif line.startswith('Nays:'):
+                line = line.split(':', 1)[1].strip()
+                for member in line.split(', '):
+                    if member != 'None.':
+                        vote.no(member)
+            elif line.startswith('Present '):
+                line = line.split(':', 1)[1].strip()
+                for member in line.split(', '):
+                    if member != 'None.':
+                        vote.other(member)
+            elif line.startswith('Absent or'):
+                line = line.split(':', 1)[1].strip()
+                for member in line.split(', '):
+                    if member != 'None.':
+                        vote.other(member)
+            elif 'the motion did not prevail' in line:
+                passed = False
+
+        if vote:
+            vote['passed'] = passed
+            vote.add_source(vote_url)
+            bill.add_vote(vote)
+
+
+def get_doc_link(elem):
+    # try ODT then PDF
+    link = elem.xpath('.//a[contains(@href, ".odt")]/@href')
+    if link:
+        return link[0]
+    link = elem.xpath('.//a[contains(@href, ".pdf")]/@href')
+    if link:
+        return link[0]

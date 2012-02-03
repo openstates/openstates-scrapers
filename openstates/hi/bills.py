@@ -1,22 +1,25 @@
+import datetime as dt
+import lxml.html
+import re
+
+from urlparse import urlparse
+
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
-import lxml.html
-from datetime import datetime
-import re
+HI_URL_BASE = "http://capitol.hawaii.gov"
 
-from utils import STATE_URL, house, chamber_label # Data structures.
-from utils import get_session_details
 
-def split_specific_votes(voters):
-    if voters.startswith('none'):
-        return []
-    elif voters.startswith('Senator(s)'):
-        voters = voters.replace('Senator(s) ', '')
-    elif voters.startswith('Representative(s)'):
-        voters = voters.replace('Representative(s)', '')
-    return voters.split(', ')
+def create_bill_report_url( chamber, year, bill_type ):
+    cname = { "upper" : "s", "lower" : "h" }[chamber]
+    bill_slug = {
+        "bill" : "intro%sb" % ( cname ),
+        "cr"   : "%sCR" % ( cname.upper() ),
+        "r"    : "%sR"  % ( cname.upper() )
+    }
 
+    return HI_URL_BASE + "/report.aspx?type=" + bill_slug[bill_type] + \
+        "&year=" + year
 
 def categorize_action(action):
     classifiers = (
@@ -43,277 +46,198 @@ def categorize_action(action):
     for pattern, types in classifiers:
         if re.match(pattern, action):
             return types
-
     # return other by default
     return 'other'
 
+def split_specific_votes(voters):
+    if voters.startswith('none'):
+        return []
+    elif voters.startswith('Senator(s)'):
+        voters = voters.replace('Senator(s) ', '')
+    elif voters.startswith('Representative(s)'):
+        voters = voters.replace('Representative(s)', '')
+    return voters.split(', ')
 
 class HIBillScraper(BillScraper):
+    
     state = 'hi'
 
-    def __init__(self, *kwargs, **args):
-        super(HIBillScraper, self).__init__(*kwargs, **args)
-        """
-        session_scraper dict associates urls with scrapers for types of
-        session pages. BillScraper.scrape() uses this to find the
-        approriate page url and scrape method to run for a specific
-        chamber and session defined in module __init__.py.
-        """
-        self.session_scraper = {
-            '2009 First Special Session': ["/splsession%s/", self.scrape_20091SS],
-            '2009 Second Special Session': ["/splsession%sb/", self.scrape_20101SS],
-            '2009 Third Special Session': ["/splsession%sc/", self.scrape_20101SS],
-            '2010 First Special Session': ["/splsession%s/", self.scrape_20101SS],
-            '2010 Second Special Session': ["/splsession%sb/", self.scrape_20101SS],
+    def parse_bill_metainf_table( self, metainf_table ):
+        def _sponsor_interceptor(line):
+            return [ guy.strip() for guy in line.split(",") ]
+
+        interceptors = {
+            "Introducer(s)" : _sponsor_interceptor    
         }
 
-    def scrape(self, chamber, session):
-        self.validate_session(session) # Check session is defined in init file.
-        # Work out appropriate scaper for year and session type.
-        year_label, session_type = get_session_details(session)
-        # Check if session scaper already implemented.
-        url, scraper = self.session_scraper.get(session, [None, None])
+        ret = {}
+        for tr in metainf_table:
+            row = tr.xpath( "td" )
+            key   = row[0].text_content().strip()
+            value = row[1].text_content().strip()
+            if key[-1:] == ":":
+                key = key[:-1]
+            if key in interceptors:
+                value = interceptors[key](value)
+            ret[key] = value
+        return ret
 
-        # Configure for general cases.
-        if scraper is None:
-            url = "/session%s/lists/"
-            scraper = self.scrape_regular
+    def parse_bill_actions_table( self, action_table ):
+        ret = []
+        for action in action_table.xpath('*')[1:]:
+            date   = action[0].text_content()
+            date   = dt.datetime.strptime(date, "%m/%d/%Y")
+            actor  = action[1].text_content()
+            string = action[2].text_content()
+            actor = {
+                "S" : "Senate",
+                "H" : "House",
+                "D" : "Data Systems",
+                "$" : "Appropriation measure",
+                "ConAm" : "Constitutional Amendment"
+            }[actor]
+            cat = categorize_action( string )
+            vote = self.parse_vote( string )
+            ret.append({
+                "date"   : date,
+                "actor"  : actor,
+                "string" : string,
+                "cat"    : cat,
+                "vote"   : vote
+            })
+        return ret
 
-        scraper(chamber, session, STATE_URL+url)
+    def parse_bill_versions_table( self, versions ):
+        vs = []
+        for version in versions.xpath("./*")[1:]:
+            tds = version.xpath("./*")
+            http_href = tds[0].xpath("./a")
+            name      = tds[1].text_content().strip()
+            pdf_href  = tds[2].xpath("./a")
 
-    def scrape_regular(self, chamber, session, url):
-        """Scraper for Regular Sessions >= 2009 """
-        year_label, session_type = get_session_details(session)
-        base_url = url % year_label
+            http_link = http_href[0].attrib['href']
+            pdf_link  = pdf_href[0].attrib['href']
 
-        bill_types = {
-            'lower': (
-                ('RptIntroHB.aspx', 'bill'),
-                ('RptHR.aspx', 'resolution'),
-                ('RptHCR.aspx', 'concurrent resolution')),
-            'upper': (
-                ('RptIntroSB.aspx', 'bill'),
-                ('RptSR.aspx', 'resolution'),
-                ('RptSCR.aspx', 'concurrent resolution')),
+            vs.append( { "name" : name, "links" : {
+                "application/pdf" : pdf_link,
+                "text/html"       : http_link
+            }})
+        return vs
+
+    def scrape_bill( self, url ):
+        ret = {
+            "url" : url
         }
+        with self.urlopen(url) as bill_html: 
+            bill_page = lxml.html.fromstring(bill_html)
+            scraped_bill_name = bill_page.xpath(
+                "//a[@id='LinkButtonMeasure']")[0].text_content()
+            ret['bill_name'] = scraped_bill_name # for sanity checking
+            versions = bill_page.xpath( "//table[@id='GridViewVersions']" )[0]
 
-        for suffix, bill_type in bill_types[chamber]:
-            bill_list_url = base_url + suffix
+            tables = bill_page.xpath("//table")
+            metainf_table = tables[0]
+            action_table  = tables[1]
 
-            with self.urlopen(bill_list_url) as page:
-                page = lxml.html.fromstring(page)
-                page.make_links_absolute(bill_list_url)
-                for row in page.xpath('//table/tr'):
-                    b = row.xpath('td//a[contains(@id, "HyperLink1")]')
-                    if b: # Ignore if no match
-                        bill_status_url = b[0].get('href')
-                        self.scrape_bill(session, chamber, bill_type, bill_status_url)
+            metainf  = self.parse_bill_metainf_table( metainf_table )
+            actions  = self.parse_bill_actions_table( action_table )
+            versions = self.parse_bill_versions_table( versions )
 
-    def parse_vote(self, bill, action, chamber, date):
+            ret['metainf']  = metainf
+            ret['versions'] = versions
+            ret['actions']  = actions
+        return ret
+
+    def scrape_report_page(self, url):
+        ret = []
+        with self.urlopen(url) as list_html: 
+            list_page = lxml.html.fromstring(list_html)
+            bills = [ HI_URL_BASE + bill.attrib['href'] for bill in \
+                list_page.xpath("//a[@class='report']") ]
+            for bill in bills:
+                b_data = self.scrape_bill( bill )
+                ret.append( b_data )
+        return ret
+
+    def parse_vote(self, action):
         pattern = r"were as follows: (?P<n_yes>\d+) Aye\(?s\)?:\s+(?P<yes>.*?);\s+Aye\(?s\)? with reservations:\s+(?P<yes_resv>.*?);\s+(?P<n_no>\d*) No\(?es\)?:\s+(?P<no>.*?);\s+and (?P<n_excused>\d*) Excused: (?P<excused>.*)"
         if 'as follows' in action:
             result = re.search(pattern, action).groupdict()
             motion = action.split('.')[0] + '.'
-            vote = Vote(chamber, date, motion, 'PASSED' in action,
-                        int(result['n_yes'] or 0),
-                        int(result['n_no'] or 0),
-                        int(result['n_excused'] or 0))
-            for voter in split_specific_votes(result['yes']):
-                vote.yes(voter)
-            for voter in split_specific_votes(result['yes_resv']):
-                vote.yes(voter)
-            for voter in split_specific_votes(result['no']):
-                vote.no(voter)
-            for voter in split_specific_votes(result['excused']):
-                vote.other(voter)
-            bill.add_vote(vote)
+            return result, motion
+        return None
 
+    def scrape_type(self, chamber, session, billtype):
+        session_urlslug = \
+            self.metadata['session_details'][session]['_scraped_name']
+        bills = self.scrape_report_page( \
+            create_bill_report_url( chamber, session_urlslug, billtype ))
+        for bill in bills:
+            meta      = bill['metainf']
+            versions  = bill['versions']
+            actions   = bill['actions']
+            companion = meta['Companion']
+            name      = bill['bill_name']
+            descr     = meta['Description']
+            title     = meta['Report Title']
+            ref       = meta['Current Referral']
+            sponsors  = meta['Introducer(s)']
+            m_title   = meta['Measure Title']
 
-    def scrape_bill(self, session, chamber, bill_type, bill_url):
-        with self.urlopen(bill_url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(bill_url)
+            billy_billtype = {
+                "bill" : "bill",
+                "cr"   : "concurrent resolution",
+                "r"    : "resolution"
+            }[billtype]
 
-            # split "SB1 SD2 HD2" to get SB1
-            bill_id = page.xpath('//a[@id="LinkButtonMeasure"]')[0].text_content().split()[0]
+            keywordargs = {
+                "description" : descr,
+                "referral" : ref,
+                "measure_title" : m_title,
+                "type" : billy_billtype
+            }
 
-            title = page.xpath('//span[@id="ListView1_ctrl0_measure_titleLabel"]')[0].text
-            subjects = page.xpath('//span[@id="ListView1_ctrl0_report_titleLabel"]')[0].text.split('; ')
-            subjects = [s.strip() for s in subjects if s.strip()]
-            description = page.xpath('//span[@id="ListView1_ctrl0_descriptionLabel"]')[0].text
-            sponsors = page.xpath('//span[@id="ListView1_ctrl0_introducerLabel"]')[0].text
+            if companion != None and companion.strip() != "":
+                keywordargs["companion"] = companion
 
-            bill = Bill(session, chamber, bill_id, title, subjects=subjects,
-                        type=bill_type, description=description)
-            for sponsor in sponsors.split(', '):
-                if sponsor.endswith(' (BR)'):
-                    sponsor = sponsor[:-5]
-                bill.add_sponsor('primary', sponsor)
+            b = Bill(session, chamber, name, title, **keywordargs)
+            b.add_source( bill['url'] )
+            for version in versions:
+                for link in version['links']:
+                    b.add_version(version['name'], version['links'][link],
+                        mimetype=link)
 
-            # actions
-            actions = []
+            for sponsor in sponsors:
+                b.add_sponsor( type="primary", name=sponsor )
 
-            table = page.xpath('//table[@id="GridViewStatus"]')[0]
-            for row in table.xpath('tr'):
-                action_params = {}
-                cells = row.xpath('td')
-                if len(cells) == 3:
-                    ch = cells[1].xpath('font')[0].text
-                    action_params['actor'] = house[ch]
-                    action_params['action'] = cells[2].xpath('font')[0].text
-                    action_date = cells[0].xpath('font')[0].text
-                    action_params['date'] = datetime.strptime(action_date, "%m/%d/%Y")
-                    action_params['type'] = categorize_action(action_params['action'])
-                    actions.append(action_params)
-            for action_params in actions:
-                bill.add_action(**action_params)
+            for action in actions:
 
-                self.parse_vote(bill, action_params['action'],
-                                action_params['actor'], action_params['date'])
+                b.add_action(action['actor'], action['string'], action['date'],
+                    type=action['cat'])
 
-            # add versions
-            try:
-                for version in page.xpath('//a[contains(@id, "StatusLink")]'):
-                    bill.add_version(version.text.replace('_', ' '),
-                                     version.get('href'))
-            except IndexError: # href not found.
-                pass
+                if action['vote'] != None:
+                    v, motion = action['vote']
+                    vote = Vote(chamber, action['date'], motion,
+                        'PASSED' in action['string'],
+                        int( v['n_yes'] or 0 ),
+                        int( v['n_no'] or 0 ),
+                        int( v['n_excused'] or 0))
 
-        bill.add_source(bill_url)
-        self.save_bill(bill)
+                    def _add_votes( attrib, v, vote ):
+                        for voter in split_specific_votes(v):
+                            getattr(vote, attrib)(voter)
 
-    def scrape_20101SS(self, chamber, session, url):
-        """Scraper for 2010 Special Sessions"""
-        year_label, session_type = get_session_details(session)
-        bill_list_url = url%(year_label)
-        with self.urlopen(bill_list_url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(bill_list_url)
-            table = page.xpath('//table[tr/th[contains(., "Measure Status")]]')[0]
-            for row in table.xpath('tr'):
-                self.scrape_20101SS_row(chamber, session, row)
+                    _add_votes( 'yes',   v['yes'],      vote )
+                    _add_votes( 'yes',   v['yes_resv'], vote )
+                    _add_votes( 'no',    v['no'],       vote )
+                    _add_votes( 'other', v['excused'],  vote )
 
-    def scrape_20101SS_row(self, chamber, session, row):
-        """Scrapes rows for scrape_20101SS."""
-        params = {}
-        params['session'] = session
-        params['chamber'] = chamber
-        b = row.xpath('td/a[contains(., "Status")]')
-        if b: # Ignore if no match
-            bill_status_url = b[0].xpath('../a[contains(., "Status")]')[0].attrib['href']
-            bill_url = row.xpath('td/a[contains(@href, ".pdf")]')[0].attrib['href']
-            bill = self.scrape_bill_status_page(bill_status_url, params)
-            bill.add_version('Current version', bill_url)
-            bill.add_source(bill_status_url)
-        return
+                    b.add_vote( vote )
 
-    def scrape_bill_status_page(self, url, params={}):
-        """Scrapes the status page url, populating parameter dict and
-        returns bill
-        """
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
-            params['bill_id'] = page.xpath('//h3[contains(@class, "center")]/a')[0].text.split()[0]
-            params['title'] = page.xpath('//div[div[contains( \
-                ., "Report Title")]]/div[contains(@class, "rightside")]')[0].text.strip()
-            sponsors = page.xpath('//div[div[contains( \
-                ., "Introducer")]]/div[contains(@class, "rightside")]')[0].text
-            subject = page.xpath('//div[div[contains( \
-                ., "Measure Title")]]/div[contains(@class, "rightside")]')[0].text.strip()
-            subject = subject.replace('RELATING TO ', '') # Remove lead text
-            params['subject'] = subject.replace('.', '')
-            params['description'] = page.xpath('//div[div[contains( \
-                ., "Description")]]/div[contains(@class, "rightside")]')[0].text
-            params['companion'] = page.xpath('//div[div[contains( \
-                ., "Companion")]]/div[contains(@class, "rightside")]')[0].text
-            if params['title'] == '':
-                params['title'] = params['subject']
-            actions = []
-            table = page.xpath('//table[tr/th[contains(., "Date")]]')[0]
-            for row in table.xpath('tr[td]'): # Ignore table header row
-                action_params = {}
-                cells = row.xpath('td')
-                if len(cells) == 3:
-                    ch = cells[1].text
-                    action_params['actor'] = house[ch]
-                    action_params['action'] = cells[2].text
-                    action_date = cells[0].text.split()[0] # Just get date, ignore any time.
-                    try:
-                        action_params['date'] = datetime.strptime(action_date, "%m/%d/%y")
-                    except ValueError: # Try a YYYY format.
-                        action_params['date'] = datetime.strptime(action_date, "%m/%d/%Y")
-                    actions.append(action_params)
-            bill = Bill(**params)
-            bill.add_sponsor('primary', sponsors)
-            for action_params in actions:
-                bill.add_action(**action_params)
-        self.save_bill(bill)
-        return bill
+            self.save_bill(b)
 
-    def scrape_20091SS(self, chamber, session, url):
-        """Scraper for 2009 First Special Session"""
-        year_label, session_type = get_session_details(session)
-        bill_list_url = url%(year_label)
-        with self.urlopen(bill_list_url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(bill_list_url)
-            table = page.xpath('//table[@id="ReportGridView"]')[0]
-            for row in table.xpath('tr'):
-                self.scrape_20091SS_row(chamber, session, row)
+    def scrape( self, session, chamber ):
+        bill_types = [ "bill", "cr", "r" ]
+        for typ in bill_types:
+            self.scrape_type( session, chamber, typ )
 
-    def scrape_20091SS_row(self, chamber, session, row):
-        """Scrapes rows for scrape_20091SS."""
-        params = {}
-        params['session'] = session
-        params['chamber'] = chamber
-        b = row.xpath('td/a[contains(@id, "HyperLink1")]')
-        if b: # Ignore if no match
-            bill_status_url = b[0].attrib['href']
-            bill_url = row.xpath('td/a[contains(@id, "HyperLinkgm1")]')[0].attrib['href']
-            bill = self.scrape_2009_special_status_page(bill_status_url, params)
-            bill.add_version('Current version', bill_url)
-            bill.add_source(bill_status_url)
-        return
-
-    def scrape_2009_special_status_page(self, url, params={}):
-        """Scrapes the status page url, populating parameter dict and
-        returns bill
-        """
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
-            params['bill_id'] = page.xpath('//a[@id="LinkButtonMeasure"]')[0].text_content()
-            params['title'] = page.xpath(
-                '//td[contains(preceding::td[1]/b/text(), "Report Title")]')[0].text.strip()
-            sponsors = page.xpath(
-                '//td[contains(preceding::td[1]/b/text(), "Introducer")]')[0].text.strip()
-            subject = page.xpath(
-                '//td[contains(preceding::td[1]/b/text(), "Measure Title")]')[0].text.strip()
-            subject = subject.replace('RELATING TO ', '') # Remove lead text
-            params['subject'] = subject.replace('.', '')
-            params['description'] = page.xpath(
-                '//td[contains(preceding::td[1]/b/text(), "Description")]')[0].text.strip()
-            params['companion'] = page.xpath(
-                '//td[contains(preceding::td[1]/b/text(), "Companion")]')[0].text.strip()
-            actions = []
-            table = page.xpath('//table[contains(@id, "GridView1")]')[0]
-            for row in table.xpath('tr[td]'): # Ignore table header row
-                action_params = {}
-                cells = row.xpath('td')
-                if len(cells) == 3:
-                    ch = cells[1].xpath('font')[0].text
-                    action_params['actor'] = house[ch]
-                    action_params['action'] = cells[2].xpath('font')[0].text
-                    action_date = cells[0].xpath('font')[0].text.split()[0] # Just get date, ignore any time.
-                    try:
-                        action_params['date'] = datetime.strptime(action_date, "%m/%d/%y")
-                    except ValueError: # Try a YYYY format.
-                        action_params['date'] = datetime.strptime(action_date, "%m/%d/%Y")
-                    actions.append(action_params)
-            bill = Bill(**params)
-            bill.add_sponsor('primary', sponsors)
-            for action_params in actions:
-                bill.add_action(**action_params)
-        self.save_bill(bill)
-        return bill

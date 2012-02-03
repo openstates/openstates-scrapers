@@ -81,4 +81,21 @@ metadata = dict(
         },
     },
     feature_flags=['subjects'],
+
+    _ignored_scraped_sessions =  ['2011-2012', '2009-2010', '2007-2008',
+                                  '2005-2006', '2003-2004', '2001-2002',
+                                  '1999-2000', '1997-1998', '1995-1996',
+                                  '1993-1994']
+
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    import re
+    sessions = url_xpath('http://www.leginfo.ca.gov/bilinfo.html',
+        "//select[@name='sess']/option/text()")
+    sessions = [
+        re.findall('\(.*\)', session)[0][1:-1] \
+        for session in sessions
+    ]
+    return sessions

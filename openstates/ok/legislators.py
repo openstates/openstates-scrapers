@@ -9,11 +9,9 @@ import lxml.html
 
 class OKLegislatorScraper(LegislatorScraper):
     state = 'ok'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        if term != '2011-2012':
-            raise NoDataForPeriod(term)
-
         if chamber == 'lower':
             self.scrape_lower(term)
         else:
@@ -33,8 +31,15 @@ class OKLegislatorScraper(LegislatorScraper):
             elif party == 'D':
                 party = 'Democratic'
 
-            leg = Legislator(term, 'lower', district, name, party=party)
+            leg_url = 'http://www.okhouse.gov/District.aspx?District=' + district
+            leg_doc = lxml.html.fromstring(self.urlopen(leg_url))
+            leg_doc.make_links_absolute(leg_url)
+            photo_url = leg_doc.xpath('//a[contains(@href, "HiRes")]/@href')[0]
+
+            leg = Legislator(term, 'lower', district, name, party=party,
+                             photo_url=photo_url, url=leg_url)
             leg.add_source(url)
+            leg.add_source(leg_url)
             self.save_legislator(leg)
 
     def scrape_upper(self, term):
@@ -60,6 +65,6 @@ class OKLegislatorScraper(LegislatorScraper):
             email = str(sheet.cell(rownum, 6).value)
 
             leg = Legislator(term, 'upper', district, name, party=party,
-                             email_address=email)
+                             email=email)
             leg.add_source(url)
             self.save_legislator(leg)

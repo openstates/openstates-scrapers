@@ -1,67 +1,67 @@
-status = dict(
-    bills=True,
-    bill_versions=True,
-    sponsors=True,
-    actions=True,
-    votes=True,
-    legislators=True,
-    contributors=['Gabriel J. Perez-Irizarry'],
-    notes="",
-)
+import datetime
 
 metadata = dict(
     name='Colorado',
     abbreviation='co',
     legislature_name='Colorado General Assembly',
-    upper_chamber_name='Senate',
     lower_chamber_name='House of Representatives',
-    upper_chamber_title='Senator',
+    upper_chamber_name='Senate',
     lower_chamber_title='Representative',
-    upper_chamber_term=4,
+    upper_chamber_title='Senator',
     lower_chamber_term=2,
-    terms = [
-        {'name': '1997',
-         'sessions': ['1997 Regular Session'],
-         'start_year': 1997, 'end_year': 1997},
-        {'name': '1998',
-         'sessions': ['1998 Regular Session'],
-         'start_year': 1998, 'end_year': 1998},
-        {'name': '1999',
-         'sessions': ['1999 Regular Session'],
-         'start_year': 1999, 'end_year': 1999},
-        {'name': '2000',
-         'sessions': ['2000 Regular Session'],
-         'start_year': 2000, 'end_year': 2000},
-        {'name': '2001',
-         'sessions': ['2001 Regular Session',
-                      '2001 First Special Session',
-                      '2001 Second Special Session'],
-         'start_year': 2001, 'end_year': 2001},     
-        {'name': '2002',
-         'sessions': ['2002 Regular Session',
-                      '2002 Special Session'],
-         'start_year': 2002, 'end_year': 2002},
-        {'name': '2003',
-         'sessions': ['2003 Regular Session'],
-         'start_year': 2003, 'end_year': 2003},
-        {'name': '2004',
-         'sessions': ['2004 Regular Session'],
-         'start_year': 2004, 'end_year': 2004},
-        {'name': '2005',
-         'sessions': ['2005 Regular Session'],
-         'start_year': 2005, 'end_year': 2005},
-        {'name': '2006',
-         'sessions': ['2006 Regular Session'],
-         'start_year': 2006, 'end_year': 2006},
-        {'name': '2007',
-         'sessions': ['2007 Regular Session'],
-         'start_year': 2007, 'end_year': 2007},
-        {'name': '2008',
-         'sessions': ['2008 Regular Session',
-                      '2008 Special Session'],
-         'start_year': 2008, 'end_year': 2008}, 
-        {'name': '2009',
-         'sessions': ['2009 Regular Session'],
-         'start_year': 2009, 'end_year': 2009},  
-         ]          
+    upper_chamber_term=4,
+    terms=[
+        {'name': '2011-2012',
+         'sessions': ['2011A'],
+         'start_year': 2011, 'end_year': 2012},
+        ],
+    session_details={
+        '2011A': {
+            'start_date'   : datetime.date(2011,1,26),
+            'type'         : 'primary',
+             'display_name': '2011 Regular Session',
+             '_scraped_name' : "2011 Regular Session"
+         },
+    },
+    feature_flags=[],
+    _ignored_scraped_sessions = [
+        '2010 Legislative Session',
+        '2009 Legislative Session',
+        '2008 Legislative Session',
+        '2007 Legislative Session',
+        '2006 First Special Session',
+        '2006 Legislative Session',
+        '2005 Legislative Session',
+        '2004 Legislative Session',
+        '2003 Legislative Session',
+        '2002 First Special Session',
+        '2002 Legislative Session',
+        '2001 Second Special Session',
+        '2001 First Special Session',
+        '2001 Legislative Session',
+        '2000 Legislative Session',
+        '2010 Regular/Special Session'
+    ]
 )
+
+def session_list():
+    from billy.scrape.utils import url_xpath
+    import re
+    tags = url_xpath('http://www.leg.state.co.us/clics/clics2011a/cslFrontPages.nsf/PrevSessionInfo?OpenForm',
+        "//font/text()")
+    sessions = []
+    regex = "2[0-9][0-9][0-9]\ .*\ Session"
+
+    for tag in tags:
+        sess = re.findall(regex, tag)
+        for session in sess:
+            sessions.append( session )
+
+    tags = url_xpath('http://www.leg.state.co.us/CLICS/CLICS2011A/csl.nsf/Home?OpenForm&amp;BaseTarget=Bottom',
+        "//font/text()")
+    for tag in tags:
+        sess = re.findall(regex, tag)
+        for session in sess:
+            sessions.append( session )
+
+    return sessions

@@ -9,9 +9,9 @@ PARTY_DICT = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
 
 class WILegislatorScraper(LegislatorScraper):
     state = 'wi'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        self.validate_term(term)
 
         if chamber == 'upper':
             url = "http://legis.wi.gov/w3asp/contact/legislatorslist.aspx?house=senate"
@@ -30,7 +30,7 @@ class WILegislatorScraper(LegislatorScraper):
                     if legpart:
                         full_name, party = legpart[0]
 
-                        # skip if the legislator is vacant (occurred in 2011 session)
+                        # skip if the legislator is vacant
                         if full_name == 'Vacant':
                             continue
 
@@ -39,7 +39,7 @@ class WILegislatorScraper(LegislatorScraper):
                         district = str(int(list(row)[2].text_content()))
 
                         leg = Legislator(term, chamber, district, full_name,
-                                         party=party)
+                                         party=party, url=rep_url)
                         leg.add_source(rep_url)
 
                         leg = self.add_committees(leg, rep_url, term, chamber)
