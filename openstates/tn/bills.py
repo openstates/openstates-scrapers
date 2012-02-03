@@ -38,15 +38,6 @@ def categorize_action(action):
 
 class TNBillScraper(BillScraper):
     state = 'tn'
-    #urls = {
-    #    'special': {
-    #        '106th Special Session': 'http://wapp.capitol.tn.gov/apps/indexes/SpSession1.aspx',
-    #        '104th Special Session': 'http://www.capitol.tn.gov/legislation/Archives/104GA/bills/SpecSessIndex.htm',
-    #        '101st, 1st Special Session': 'http://www.capitol.tn.gov/legislation/Archives/101GA/bills/SpecSessIndex.htm',
-    #        '101st, 2nd Special Session': 'http://www.capitol.tn.gov/legislation/Archives/101GA/bills/SpecSessIndex2.htm',
-    #        '99th Special Session': 'http://www.capitol.tn.gov/legislation/Archives/99GA/bills/SpecSessIndex.htm'
-    #    }
-    #}
     
     def scrape(self, chamber, term):
 
