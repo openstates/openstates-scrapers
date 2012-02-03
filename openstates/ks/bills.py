@@ -49,7 +49,8 @@ class KSBillScraper(BillScraper):
                             type=btype, status=bill_data['STATUS'])
                 bill.add_source(ksapi.url + 'bill_status/' + bill_id.lower())
 
-                if bill_data['LONGTITLE'] != bill['title']:
+                if (bill_data['LONGTITLE'] and
+                    bill_data['LONGTITLE'] != bill['title']):
                     bill.add_title(bill_data['LONGTITLE'])
 
                 for sponsor in bill_data['SPONSOR_NAMES']:
