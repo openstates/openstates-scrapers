@@ -62,14 +62,11 @@ class TNBillScraper(BillScraper):
             else:
                 bill_type = 'resolution'
 
-            if term == '107':
-                bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s7000' % (abbr, abbr)
-            elif 'S' in term:
-                #Special session bills is between 7001-7099
-                if term == '106S':
-                    bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s7001&EndNum=%s7099&Year=%s' % (abbr, abbr, '106')
+            #Checks if current term
+            if term == self.metadata["terms"][-1]["sessions"][0]:
+                bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999' % (abbr, abbr)
             else:
-                bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s0001&EndNum=%s7000&Year=%s' % (abbr, abbr, term)
+                bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999&Year=%s' % (abbr, abbr, term)
             
             with self.urlopen(bill_listing) as bill_list_page:
                 bill_list_page = lxml.html.fromstring(bill_list_page)
