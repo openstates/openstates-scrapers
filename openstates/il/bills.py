@@ -227,9 +227,6 @@ class ILBillScraper(BillScraper):
         
         EXPECTED_VOTE_CODES = ['Y','N','E','NV','A','P','-']
         
-        # vote indicator, a few spaces, a name, newline or multiple spaces
-        VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
-        
         for link in doc.xpath('//a[contains(@href, "votehistory")]'):
             
             pieces = link.text.split(' - ')
@@ -249,33 +246,42 @@ class ILBillScraper(BillScraper):
                 
             date = datetime.datetime.strptime(date, "%A, %B %d, %Y")
             
-            # download the file
-            fname, resp = self.urlretrieve(link.get('href'))
-            pdflines = convert_pdf(fname, 'text').splitlines()
-            os.remove(fname)
-            
-            vote = Vote(chamber, date, motion.strip(), False, 0, 0, 0)
-            
-            for line in pdflines:
-                for match in VOTE_RE.findall(line):
-                    vcode, name = match
-                    if vcode == 'Y':
-                        vote.yes(name)
-                    elif vcode == 'N':
-                        vote.no(name)
-                    else:
-                        vote.other(name)
-            
-            # fake the counts
-            vote['yes_count'] = len(vote['yes_votes'])
-            vote['no_count'] = len(vote['no_votes'])
-            vote['other_count'] = len(vote['other_votes'])
-            vote['passed'] = vote['yes_count'] > vote['no_count']
-            vote.add_source(link.get('href'))
+            vote = self.scrape_pdf_for_votes(chamber, date, motion.strip(), link.get('href'))
             
             bill.add_vote(vote)
         
         bill.add_source(votes_url)
+
+
+    def scrape_pdf_for_votes(self, chamber, date, motion, href):
+        # vote indicator, a few spaces, a name, newline or multiple spaces
+        VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
+        
+        # download the file
+        fname, resp = self.urlretrieve(href)
+        pdflines = convert_pdf(fname, 'text').splitlines()
+        os.remove(fname)
+        
+        vote = Vote(chamber, date, motion, False, 0, 0, 0)
+        
+        for line in pdflines:
+            for match in VOTE_RE.findall(line):
+                vcode, name = match
+                if vcode == 'Y':
+                    vote.yes(name)
+                elif vcode == 'N':
+                    vote.no(name)
+                else:
+                    vote.other(name)
+        
+        # fake the counts
+        vote['yes_count'] = len(vote['yes_votes'])
+        vote['no_count'] = len(vote['no_votes'])
+        vote['other_count'] = len(vote['other_votes'])
+        vote['passed'] = vote['yes_count'] > vote['no_count']
+        vote.add_source(href)
+        
+        return vote
 
     def refine_sponsor_list(self, chamber, action, sponsor_list,bill_id):
         if action.lower().find('removed') != -1:
