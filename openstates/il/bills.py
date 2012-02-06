@@ -109,6 +109,8 @@ OTHER_FREQUENT_ACTION_PATTERNS_WHICH_ARE_CURRENTLY_UNCLASSIFIED = [
     r'^Held in (?P<committee>.+)'
 ]
 
+VOTE_VALUES = ['NV','Y','N','E','A','P','-']
+
 def _categorize_action(action):
     for pattern, atype in _action_classifiers:
         if pattern.findall(action):
@@ -201,7 +203,7 @@ class ILBillScraper(BillScraper):
         # if there's more than 1 votehistory link, there are votes to grab
         if len(doc.xpath('//a[contains(@href, "votehistory")]')) > 1:
             votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-            self.scrape_votes(bill, votes_url)
+            self.scrape_votes(session, bill, votes_url)
 
         self.save_bill(bill)
 
@@ -222,10 +224,8 @@ class ILBillScraper(BillScraper):
                 self.warning('unknown document type %s - adding as document' % name)
                 bill.add_document(name, url)
 
-    def scrape_votes(self, bill, votes_url):
+    def scrape_votes(self, session, bill, votes_url):
         doc = self.url_to_doc(votes_url)
-        
-        EXPECTED_VOTE_CODES = ['Y','N','E','NV','A','P','-']
         
         for link in doc.xpath('//a[contains(@href, "votehistory")]'):
             
@@ -246,41 +246,97 @@ class ILBillScraper(BillScraper):
                 
             date = datetime.datetime.strptime(date, "%A, %B %d, %Y")
             
-            vote = self.scrape_pdf_for_votes(chamber, date, motion.strip(), link.get('href'))
+            vote = self.scrape_pdf_for_votes(session, chamber, date, motion.strip(), link.get('href'))
             
             bill.add_vote(vote)
         
         bill.add_source(votes_url)
 
-
-    def scrape_pdf_for_votes(self, chamber, date, motion, href):
+    def scrape_pdf_for_votes(self, session, chamber, date, motion, href):
+        warned = False
         # vote indicator, a few spaces, a name, newline or multiple spaces
         VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
+        COUNT_RE = re.compile('^(\d+) YEAS\s+(\d+) NAYS\s+(\d+) PRESENT$')
+        PASS_FAIL_WORDS = {
+            'PASSED': True,
+            'PREVAILED': True,
+            'ADOPTED': True,
+            'FAILED': False,
+            'LOST': False,
+        }
         
         # download the file
         fname, resp = self.urlretrieve(href)
         pdflines = convert_pdf(fname, 'text').splitlines()
         os.remove(fname)
         
-        vote = Vote(chamber, date, motion, False, 0, 0, 0)
-        
+        yes_count = no_count = present_count = other_count = 0
+        yes_votes = []
+        no_votes = []
+        present_votes = []
+        other_vote_detail = {}
+        passed = None
+        counts_found = False
+        vote_lines = []
         for line in pdflines:
-            for match in VOTE_RE.findall(line):
-                vcode, name = match
-                if vcode == 'Y':
-                    vote.yes(name)
-                elif vcode == 'N':
-                    vote.no(name)
-                else:
-                    vote.other(name)
-        
+            # consider pass/fail as a document property instead of a result of the vote count
+            # extract the vote count from the document instead of just using counts of names
+            if line.strip() in PASS_FAIL_WORDS:
+                if passed is not None:
+                    raise Exception("Duplicate pass/fail matches in [%s]" % href)
+                passed = PASS_FAIL_WORDS[line.strip()]
+            elif COUNT_RE.match(line):
+                yes_count, no_count, present_count = map(int,COUNT_RE.match(line).groups())
+                counts_found = True
+            elif counts_found:
+                if line and not line[0].isspace():
+                    vote_lines.append(line)
+
+        votes = find_columns_and_parse(vote_lines)
+        for name, vcode in votes.items():
+            if name == 'Mr. Speaker':
+                name = self.metadata['session_details'][session]['speaker']
+            elif name == 'Mr. President':
+                name = self.metadata['session_details'][session]['president']
+            if vcode == 'Y':
+                yes_votes.append(name)
+            elif vcode == 'N':
+                no_votes.append(name)
+            else:
+                other_vote_detail[name] = vcode
+                if vcode == 'P': present_votes.append(name)
         # fake the counts
-        vote['yes_count'] = len(vote['yes_votes'])
-        vote['no_count'] = len(vote['no_votes'])
-        vote['other_count'] = len(vote['other_votes'])
-        vote['passed'] = vote['yes_count'] > vote['no_count']
+        if yes_count == 0 and no_count == 0 and present_count == 0:
+            yes_count = len(yes_votes)
+            no_count = len(no_votes)
+        else: # audit
+            if yes_count != len(yes_votes):
+                self.warning("Mismatched yes count [expect: %i] [have: %i]" % (yes_count,len(yes_votes)))
+                warned = True
+            if no_count != len(no_votes):
+                self.warning("Mismatched no count [expect: %i] [have: %i]" % (no_count,len(no_votes)))
+                warned = True
+            if present_count != len(present_votes):
+                self.warning("Mismatched present count [expect: %i] [have: %i]" % (present_count,len(present_votes)))
+                warned = True
+            
+        other_count = len(other_vote_detail) # not necessarily the same as 'present'
+        if passed is None:
+            if chamber == 'lower': # senate doesn't have these lines
+                self.warning("No pass/fail word found; fall back to comparing yes and no vote.")
+                warned = True
+            passed = yes_count > no_count
+        vote = Vote(chamber, date, motion, passed, yes_count, no_count, other_count, other_vote_detail=other_vote_detail)
+        for name in yes_votes:
+            vote.yes(name)
+        for name in no_votes:
+            vote.no(name)
+        for name in other_vote_detail:
+            vote.other(name)
         vote.add_source(href)
-        
+
+        if warned:
+            self.warning("Warnings were issued. Best to check %s" % href)
         return vote
 
     def refine_sponsor_list(self, chamber, action, sponsor_list,bill_id):
@@ -306,6 +362,44 @@ class ILBillScraper(BillScraper):
             self.warning("[%s] Couldn't find sponsor [%s,%s] to refine" % (bill_id, chamber, match.groupdict()['name']))
         else:
             self.debug("[%s] Don't know how to refine [%s]" % (bill_id,action))
+
+def find_columns_and_parse(vote_lines):
+    columns = find_columns(vote_lines)
+    votes = {}
+    for line in vote_lines:
+        for idx in reversed(columns):
+            bit = line[idx:]
+            line = line[:idx]
+            if bit:
+                vote, name = bit.split(' ',1)
+                votes[name.strip()] = vote
+    return votes
+
+def _is_potential_column(line,i):
+    for val in VOTE_VALUES:
+        test_val = val + ' '
+        if line[i:i+len(test_val)] == test_val:
+            return True
+    return False
+    
+def find_columns(vote_lines):
+    potential_columns = []
+    
+    for line in vote_lines:
+        pcols = set()
+        for i,x in enumerate(line):
+            if _is_potential_column(line,i):
+                pcols.add(i)
+        potential_columns.append(pcols)
+    
+    starter = potential_columns[0]
+    for pc in potential_columns[1:-1]:
+        starter.intersection_update(pc)
+    last_row_cols = potential_columns[-1]    
+    if not last_row_cols.issubset(starter):
+        raise Exception("Last row columns [%s] don't align with candidate final columns [%s]" % (last_row_cols,starter))
+    # we should now only have values that appeared in every line
+    return sorted(starter)
 
 def build_sponsor_list(sponsor_atags):
     """return a list of (spontype,sponsor,chamber) tuples"""
