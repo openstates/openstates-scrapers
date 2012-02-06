@@ -38,7 +38,7 @@ class RIVoteScraper(VoteScraper):
 
             if bill_metainf == None:
                 self.warning("No metainf for this bill. Aborting snag")
-                return None
+                return ret
 
             for t in table.xpath("./tr/td"):
                 votes = []
