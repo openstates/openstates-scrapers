@@ -44,8 +44,10 @@ def get_default_headers( page ):
 SEARCH_URL = "http://status.rilin.state.ri.us/"
 
 BILL_NAME_TRANSLATIONS = {
-    "House Bill"  : "HB",
-    "Senate Bill" : "SB",
+    "House Bill No."  : "HB",
+    "Senate Bill No." : "SB",
+    "Senate Resolution No." : "SR",
+    "House Resolution No."  : "HR"
 }
 
 BILL_STRING_FLAGS = {
