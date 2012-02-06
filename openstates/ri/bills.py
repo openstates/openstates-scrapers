@@ -50,7 +50,8 @@ BILL_STRING_FLAGS = {
     "version"    : r"\{.*\}",
     "resolution" : r"Resolution.*",
     "chapter"    : r"^Chapter.*",
-    "by_request" : r"^\(.*\)$"
+    "by_request" : r"^\(.*\)$",
+    "act"        : r"^Act\ \d*$"
 }
 
 class RIBillScraper(BillScraper):
