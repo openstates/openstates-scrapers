@@ -42,9 +42,16 @@ class RILegislatorScraper(LegislatorScraper):
         d[field] = str(sh.cell(rownum, col_num).value)
       district_name = "District " + d['district']
       full_name = re.sub(rep_type, '', d['full_name']).strip()
+
+      translate = {
+          "Democrat"    : "Democratic",
+          "Republican"  : "Republican",
+          "Independent" : "other"
+      }
+
       leg = Legislator(term, chamber, district_name, full_name,
                        '', '', '',
-                       d['party'], 
+                       translate[d['party']],
                        office_address=d['address'],
                        town_represented=d['town_represented'],
                        email=d['email'])
