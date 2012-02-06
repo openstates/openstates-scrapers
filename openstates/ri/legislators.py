@@ -17,31 +17,31 @@ excel_mapping = {
 }
 
 class RILegislatorScraper(LegislatorScraper):
-  state = 'ri'
+    state = 'ri'
 
   def scrape(self, chamber, term):
-    self.validate_term(term, latest_only=True)
+      self.validate_term(term, latest_only=True)
 
     if chamber == 'upper':
-      url = ('http://www.rilin.state.ri.us/Documents/Senators.xls')
-      rep_type = 'Senator '
+        url = ('http://www.rilin.state.ri.us/Documents/Senators.xls')
+        rep_type = 'Senator '
     elif chamber == 'lower':
-      url = ('http://www.rilin.state.ri.us/Documents/Representatives.xls')
-      rep_type = 'Representative '
+        url = ('http://www.rilin.state.ri.us/Documents/Representatives.xls')
+        rep_type = 'Representative '
 
     with self.urlopen(url) as senator_xls:
-      with open('ri_senate.xls', 'w') as f:
-        f.write(senator_xls)
+        with open('ri_senate.xls', 'w') as f:
+            f.write(senator_xls)
 
     wb = xlrd.open_workbook('ri_senate.xls')
     sh = wb.sheet_by_index(0)
 
     for rownum in xrange(1, sh.nrows):
-      d = {}
-      for field, col_num in excel_mapping.iteritems():
-        d[field] = str(sh.cell(rownum, col_num).value)
-      district_name = "District " + d['district']
-      full_name = re.sub(rep_type, '', d['full_name']).strip()
+        d = {}
+        for field, col_num in excel_mapping.iteritems():
+            d[field] = str(sh.cell(rownum, col_num).value)
+            district_name = "District " + d['district']
+            full_name = re.sub(rep_type, '', d['full_name']).strip()
 
       translate = {
           "Democrat"    : "Democratic",

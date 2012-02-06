@@ -15,7 +15,7 @@ metadata = dict(
             'start_date': datetime.date(2012, 1, 4),
             'end_year': 2012,
             'sessions': ['2012']},
-            ],
+          ],
     feature_flags=[],
     session_details={'2012': {'start_date': datetime.date(2012, 1, 4),
                               'type': 'primary'},
@@ -26,4 +26,4 @@ metadata = dict(
 def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath( 'http://status.rilin.state.ri.us/bill_history.aspx?mode=previous',
-        "//select[@name='ctl00$rilinContent$cbYear']/option/text()" )
+                     "//select[@name='ctl00$rilinContent$cbYear']/option/text()" )
