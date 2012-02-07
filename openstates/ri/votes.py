@@ -154,7 +154,6 @@ class RIVoteScraper(VoteScraper):
                              bill_id=vote['meta']['bill'],
                              bill_chamber=chamber,
                              bill_session=vote['meta']['year'],
-                             _partial_bill_id=True
                     )
                     for vt in vote['votes']:
                         if vt['vote'] == "Y":

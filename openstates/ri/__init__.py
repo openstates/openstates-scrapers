@@ -1,6 +1,8 @@
 import datetime
 
 metadata = dict(
+    _partial_vote_bill_id=True,
+
     name='Rhode Island',
     abbreviation='ri',
     legislature_name='Rhode Island General Assembly',
