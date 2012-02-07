@@ -155,5 +155,5 @@ class RIVoteScraper(VoteScraper):
                              bill_chamber=chamber,
                              bill_session=vote['meta']['year'],
                              _partial_bill_id=True
-                            )
+                    )
                     self.save_vote(v)
