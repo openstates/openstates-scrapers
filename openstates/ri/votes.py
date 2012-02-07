@@ -153,6 +153,7 @@ class RIVoteScraper(VoteScraper):
                              session=session,
                              bill_id=vote['meta']['bill'],
                              bill_chamber=chamber,
-                             bill_session=vote['meta']['year']
+                             bill_session=vote['meta']['year'],
+                             _partial_bill_id=True
                             )
                     self.save_vote(v)
