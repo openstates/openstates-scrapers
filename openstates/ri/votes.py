@@ -48,6 +48,10 @@ class RIVoteScraper(VoteScraper):
             il = iter( digest )
             d = dict(zip(il, il))
             vote_count = d
+            vote_count['passage'] = int(vote_count['YEAS']) > \
+                    int(vote_count['NAYS'])
+            # XXX: This here has a greater then normal chance of failing.
+            # However, it's an upstream issue.
 
             time_string = "%s %s" % ( time, date )
 
@@ -61,14 +65,29 @@ class RIVoteScraper(VoteScraper):
             # silly
 
             bill_metainf = None
-            for h in headers:
+            remaining    = None
+
+            for hid in range(0,len(headers)):
+                h = headers[hid]
                 inf = re.search( bill_s_n_no, h )
                 if inf != None:
                     bill_metainf = inf.groupdict()
+                    remaining = headers[hid+1:]
 
             if bill_metainf == None:
                 self.warning("No metainf for this bill. Aborting snag")
                 return ret
+
+            try:
+                motion = remaining[-2]
+            except IndexError:
+                self.warning("Mission motion on this vote")
+                motion = "Unknown" # XXX: Because the motion is not on some
+                #                         pages.
+
+            bill_metainf['extra'] = {
+                "motion" : motion
+            }
 
             for t in table.xpath("./tr/td"):
                 votes = []
@@ -120,6 +139,20 @@ class RIVoteScraper(VoteScraper):
             votes = self.parse_vote_page( self.post_to( action, date ), url )
             for vote_dict in votes:
                 for vote in vote_dict:
-                    print vote
-                    #v = Vote( chamber, vote['time'] , "", # XXX: FIXME
-                    #         True, 0, 0, 0)
+                    vote = vote_dict[vote]
+                    count = vote['count']
+                    chamber = {
+                        "H" : "lower",
+                        "S" : "upper"
+                    }[vote['meta']['chamber']]
+                    v = Vote( chamber, vote['time'] ,
+                             vote['meta']['extra']['motion'],
+                             count['passage'], int(count['YEAS']),
+                             int(count['NAYS']),
+                             int(count['NOT VOTING']),
+                             session=session,
+                             bill_id=vote['meta']['bill'],
+                             bill_chamber=chamber,
+                             bill_session=vote['meta']['year']
+                            )
+                    self.save_vote(v)
