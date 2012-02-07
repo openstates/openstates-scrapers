@@ -156,4 +156,11 @@ class RIVoteScraper(VoteScraper):
                              bill_session=vote['meta']['year'],
                              _partial_bill_id=True
                     )
+                    for vt in vote['votes']:
+                        if vt['vote'] == "Y":
+                            v.yes( vt['name'] )
+                        elif vt['vote'] == "N":
+                            v.no(  vt['name'] )
+                        else:
+                            v.other( vt['name'] )
                     self.save_vote(v)
