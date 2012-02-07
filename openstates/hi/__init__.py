@@ -20,12 +20,16 @@ metadata = dict(
      ],
     session_details={
         '2011 Regular Session' : {
-            'display_name'  : '2011 Regular Session',
-            '_scraped_name' : '2011'
+            'display_name'  : '2011-2012 Regular Session',
+            # was 2011, now 2012 to make scraper keep working for 2011-2012
+            '_scraped_name' : '2012'
         },
+        # name next session 2013-2014 instead of following pattern
     },
     feature_flags=['subjects'],
     _ignored_scraped_sessions = [
+        # ignore odd years after they're over..
+        '2011',
         '2010', '2009', '2008', '2007', '2006',
         '2005', '2004', '2003', '2002', '2001',
         '2000', '1999'
@@ -33,6 +37,7 @@ metadata = dict(
 )
 
 def session_list():
+    # doesn't include current session, we need to change it
     from billy.scrape.utils import url_xpath
     sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
             "//div[@class='roundedrect gradientgray shadow']/a/text()"
