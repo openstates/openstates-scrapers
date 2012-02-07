@@ -43,6 +43,13 @@ def get_default_headers( page ):
 
 SEARCH_URL = "http://status.rilin.state.ri.us/"
 
+BILL_NAME_TRANSLATIONS = {
+    "House Bill No."  : "HB",
+    "Senate Bill No." : "SB",
+    "Senate Resolution No." : "SR",
+    "House Resolution No."  : "HR"
+}
+
 BILL_STRING_FLAGS = {
     "bill_id"    : r"^[House|Senate].*",
     "sponsors"   : r"^BY.*",
@@ -50,7 +57,8 @@ BILL_STRING_FLAGS = {
     "version"    : r"\{.*\}",
     "resolution" : r"Resolution.*",
     "chapter"    : r"^Chapter.*",
-    "by_request" : r"^\(.*\)$"
+    "by_request" : r"^\(.*\)$",
+    "act"        : r"^Act\ \d*$"
 }
 
 class RIBillScraper(BillScraper):
@@ -212,7 +220,12 @@ class RIBillScraper(BillScraper):
                     pass
 
                 title = bill['title'][len("ENTITLED, "):]
-                b = Bill(session, chamber, bill['bill_id'], title,
+                billid = bill['bill_id']
+                for b in BILL_NAME_TRANSLATIONS:
+                    if billid[:len(b)] == b:
+                        billid = BILL_NAME_TRANSLATIONS[b] + \
+                            billid[len(b)+1:]
+                b = Bill(session, chamber, billid, title,
                     type=self.get_type_by_name(bill['bill_id']))
 
                 self.process_actions( bill['actions'], b )
