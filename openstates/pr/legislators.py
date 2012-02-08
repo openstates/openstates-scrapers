@@ -1,6 +1,7 @@
+# coding=utf-8
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
-
+from lxml import etree
 import lxml.html
 import re
 
@@ -38,6 +39,8 @@ class PRLegislatorScraper(LegislatorScraper):
                     tds = row.xpath('td')
 
                     name = tds[0].text_content().title().replace('Hon.','',1).strip()
+		    if name == "Luz Z.Arce Ferrer":
+			name = "Luz Z. Arce Ferrer"
                     party = tds[1].text_content()
                     phone = tds[2].text_content()
                     email = tds[3].text_content()
@@ -46,7 +49,7 @@ class PRLegislatorScraper(LegislatorScraper):
                         district = 'At-Large'
                     else:
                         district = str(counter)
-
+		    
                     leg = Legislator(term, 'upper', district, name,
                                      party=party, phone=phone, email=email)
 
@@ -63,25 +66,28 @@ class PRLegislatorScraper(LegislatorScraper):
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
             tables = doc.xpath('//table[@class="img_news"]')
-
             # first table is district-based, second is at-large
             for table, at_large in zip(tables, [False, True]):
                 # skip last td in each table
-                for td in table.xpath('.//td')[:-1]:
+	
+                for td in table.xpath('.//td'):
+		    print etree.tostring(td)
                     photo_url = td.xpath('.//img/@src')[0]
                     # for these we can split names and get district
                     if not at_large:
                         name, district = td.xpath('.//b/text()')
                         first_name, last_name = name.split(u'\xa0 ')
                         name = '%s %s' % (first_name, last_name)
+			
                         district = district.rsplit(' ', 1)[-1]
                     else:
                         name = td.xpath('.//b/text()')[0]
                         district = 'At-Large'   #for at large districts
                         first_name = last_name = ''
-
+		#    print name.encode('utf-8')
                     party = party_map[td.xpath('.//font')[1].text_content()]
-
+		    if name == u"Carlos  “Johnny” Méndez Nuñez":
+			name = u"Carlos “Johnny” Méndez Nuñez"
                     leg = Legislator(term, 'lower', district, name,
                                      first_name=first_name,
                                      last_name=last_name,

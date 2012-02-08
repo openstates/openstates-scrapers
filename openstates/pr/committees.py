@@ -44,7 +44,11 @@ class PRCommitteeScraper(CommitteeScraper):
                         chamber = 'upper'
                     com = Committee(chamber, com_name)
                     com.add_source(com_source)
-                    com.add_member(clean_spaces(td_column[2].find('a').text.replace('HON.','',1)), 'chairman')
+		    member_name = clean_spaces(td_column[2].find('a').text.replace('HON.','',1));
+		    if member_name == "LUZ Z. ARCE FERRER":
+			member_name = "Luz Z. Arce Ferrer"
+			
+                    com.add_member(member_name, 'chairman')
                     self.save_committee(com)
                     
     def scrape_lower(self):

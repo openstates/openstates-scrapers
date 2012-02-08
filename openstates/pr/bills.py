@@ -111,6 +111,7 @@ class PRBillScraper(BillScraper):
                     if re.match('Entirillado', action):
                         bill.add_version(action, action_url)
                     else:
+			
                         bill.add_document(action, action_url)
 
                 for pattern, atype in _classifiers:
@@ -118,8 +119,11 @@ class PRBillScraper(BillScraper):
                         break
                 else:
                     atype = 'other'
-
-                bill.add_action(chamber, action, date, type=atype)
+		if action.startswith('Ley N'):
+		    action = action[0:42]
+		elif action.startswith('Res. Conj.'):
+		    action = action[0:42]
+                bill.add_action(chamber, action.replace('.',''), date, type=atype)
 
                 if atype == 'bill:passed' and action_url:
                     vote_chamber  = None
