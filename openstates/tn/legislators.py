@@ -9,6 +9,7 @@ class TNLegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=False)
         root_url = 'http://www.capitol.tn.gov/'
+        parties = {'D': 'Democratic', 'R': 'Republican', 'CCR': 'Carter County Republican'}
 
         #testing for chamber
         if chamber == 'upper':
@@ -26,7 +27,8 @@ class TNLegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(page)
 
             for row in page.xpath("//tr")[1:]:
-                party = row.xpath('td[2]')[0].text
+                partyInit = row.xpath('td[2]')[0].text.split()[0]
+                party = parties[partyInit]
                 district = row.xpath('td[4]/a')[0].text.split()[1]
                 phone = row.xpath('td[6]')[0].text
                 email = row.xpath('td[7]/a')[0].text 
