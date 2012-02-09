@@ -18,7 +18,7 @@ class RIVoteScraper(VoteScraper):
         ret = [ a.text for a in dates ]
         return ret
 
-    def get_votes(self, url):
+    def get_votes(self, url, session):
         ret = {}
         with self.urlopen(url) as html:
             p = lxml.html.fromstring(html)
@@ -72,6 +72,14 @@ class RIVoteScraper(VoteScraper):
                 inf = re.search( bill_s_n_no, h )
                 if inf != None:
                     bill_metainf = inf.groupdict()
+                    if bill_metainf['year'][-2:] != session[-2:]:
+                        self.log(
+"Skipping vote - it's in the %s session, we're in the %s session." % (
+    bill_metainf['year'][-2:],
+    session[-2:]
+)
+                        )
+                        return ret
                     remaining = headers[hid+1:]
 
             if bill_metainf == None:
@@ -89,8 +97,9 @@ class RIVoteScraper(VoteScraper):
                 "motion" : motion
             }
 
+            votes = []
+
             for t in table.xpath("./tr/td"):
-                votes = []
                 nodes = t.xpath("./*")
                 for node in nodes:
                     if node.tag == "span":
@@ -111,13 +120,13 @@ class RIVoteScraper(VoteScraper):
                     }
         return ret
 
-    def parse_vote_page(self, page, context_url):
+    def parse_vote_page(self, page, context_url, session):
         ret = []
         p = lxml.html.fromstring(page)
         votes = p.xpath( "//center/div[@class='vote']" )
         for vote in votes:
             votes = self.get_votes( context_url + "/" +
-                            vote.xpath("./a")[0].attrib["href"] )
+                            vote.xpath("./a")[0].attrib["href"], session )
             ret.append(votes)
         return ret
 
@@ -137,7 +146,8 @@ class RIVoteScraper(VoteScraper):
         action = "%s/%s" % ( url, "votes.asp" )
         dates = self.get_dates( url )
         for date in dates:
-            votes = self.parse_vote_page( self.post_to( action, date ), url )
+            votes = self.parse_vote_page( self.post_to( action, date ), url,
+                                         session )
             for vote_dict in votes:
                 for vote in vote_dict:
                     vote = vote_dict[vote]
@@ -165,3 +175,4 @@ class RIVoteScraper(VoteScraper):
                         else:
                             v.other( vt['name'] )
                     self.save_vote(v)
+
