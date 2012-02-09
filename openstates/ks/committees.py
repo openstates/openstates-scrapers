@@ -2,6 +2,7 @@ import re
 import os
 import datetime
 import json
+import scrapelib
 
 from billy.scrape.committees import Committee, CommitteeScraper
 
@@ -13,6 +14,9 @@ class KSBillScraper(CommitteeScraper):
     def scrape(self, chamber, term):
         # older terms are accessible but through an archived site
         self.validate_term(term, latest_only=True)
+
+        # some committees, 500, let them go
+        self.retry_attempts = 0
 
         self.scrape_current(chamber, term)
 
@@ -36,23 +40,25 @@ class KSBillScraper(CommitteeScraper):
 
                     committee = Committee(com_chamber, committee_data['TITLE'])
 
-                    # some committee URLs are broken
-                    if committee_data['KPID'] in ksapi.bad_committees:
+                    com_url = ksapi.url + 'ctte/%s/' % committee_data['KPID']
+                    try:
+                        detail_json = self.urlopen(com_url)
+                    except scrapelib.HTTPError:
+                        self.warning("error fetching committee %s" % com_url)
                         continue
+                    details = json.loads(detail_json)['content']
+                    for chair in details['CHAIR']:
+                        committee.add_member(chair['FULLNAME'], 'chairman')
+                    for vicechair in details['VICECHAIR']:
+                        committee.add_member(vicechair['FULLNAME'], 'vice-chairman')
+                    for rankedmember in details['RMMEM']:
+                        committee.add_member(rankedmember['FULLNAME'], 'ranking member')
+                    for member in details['MEMBERS']:
+                        committee.add_member(member['FULLNAME'])
 
-                    with self.urlopen(ksapi.url + 'ctte/%s/' %
-                                      committee_data['KPID']) as detail_json:
-                        details = json.loads(detail_json)['content']
-                        for chair in details['CHAIR']:
-                            committee.add_member(chair['FULLNAME'], 'chairman')
-                        for vicechair in details['VICECHAIR']:
-                            committee.add_member(vicechair['FULLNAME'], 'vice-chairman')
-                        for rankedmember in details['RMMEM']:
-                            committee.add_member(rankedmember['FULLNAME'], 'ranking member')
-                        for member in details['MEMBERS']:
-                            committee.add_member(member['FULLNAME'])
                     if not committee['members']:
                         self.warning('skipping blank committee %s' %
                                      committee_data['TITLE'])
                     else:
+                        committee.add_source(com_url)
                         self.save_committee(committee)
