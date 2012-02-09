@@ -18,7 +18,7 @@ class TNLegislatorScraper(LegislatorScraper):
         else:
             url_chamber_name = 'house'
             abbr = 'h'
-        if int(term) < 107:
+        if term == self.metadata["terms"][-1]["sessions"][0]:
             chamber_url = root_url + url_chamber_name + '/archives/'+term+'GA/Members/index.html'
         else:
             chamber_url = root_url + url_chamber_name + '/members/'
