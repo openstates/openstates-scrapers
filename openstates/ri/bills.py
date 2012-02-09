@@ -224,7 +224,7 @@ class RIBillScraper(BillScraper):
                 for b in BILL_NAME_TRANSLATIONS:
                     if billid[:len(b)] == b:
                         billid = BILL_NAME_TRANSLATIONS[b] + \
-                            billid[len(b)+1:]
+                            billid[len(b)+1:].split()[0]
                 b = Bill(session, chamber, billid, title,
                     type=self.get_type_by_name(bill['bill_id']))
 
