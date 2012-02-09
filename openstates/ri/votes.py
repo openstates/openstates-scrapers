@@ -97,8 +97,9 @@ class RIVoteScraper(VoteScraper):
                 "motion" : motion
             }
 
+            votes = []
+
             for t in table.xpath("./tr/td"):
-                votes = []
                 nodes = t.xpath("./*")
                 for node in nodes:
                     if node.tag == "span":
