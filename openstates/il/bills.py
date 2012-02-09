@@ -252,11 +252,18 @@ class ILBillScraper(BillScraper):
         
         bill.add_source(votes_url)
 
+    def fetch_pdf_lines(self, href):
+        # download the file
+        fname, resp = self.urlretrieve(href)
+        pdflines = [line.decode('utf-8') for line in convert_pdf(fname, 'text').splitlines()]
+        os.remove(fname)
+        return pdflines
+
     def scrape_pdf_for_votes(self, session, chamber, date, motion, href):
         warned = False
         # vote indicator, a few spaces, a name, newline or multiple spaces
         VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
-        COUNT_RE = re.compile('^(\d+) YEAS\s+(\d+) NAYS\s+(\d+) PRESENT$')
+        COUNT_RE = re.compile('^(\d+) YEAS?\s+(\d+) NAYS?\s+(\d+) PRESENT$')
         PASS_FAIL_WORDS = {
             'PASSED': True,
             'PREVAILED': True,
@@ -265,11 +272,8 @@ class ILBillScraper(BillScraper):
             'LOST': False,
         }
         
-        # download the file
-        fname, resp = self.urlretrieve(href)
-        pdflines = convert_pdf(fname, 'text').splitlines()
-        os.remove(fname)
-        
+        pdflines = self.fetch_pdf_lines(href)
+
         yes_count = no_count = present_count = other_count = 0
         yes_votes = []
         no_votes = []
