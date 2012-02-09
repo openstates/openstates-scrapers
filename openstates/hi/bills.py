@@ -90,8 +90,8 @@ class HIBillScraper(BillScraper):
             actor  = action[1].text_content()
             string = action[2].text_content()
             actor = {
-                "S" : "Senate",
-                "H" : "House",
+                "S" : "upper",
+                "H" : "lower",
                 "D" : "Data Systems",
                 "$" : "Appropriation measure",
                 "ConAm" : "Constitutional Amendment"
@@ -131,13 +131,13 @@ class HIBillScraper(BillScraper):
         with self.urlopen(url) as bill_html: 
             bill_page = lxml.html.fromstring(bill_html)
             scraped_bill_name = bill_page.xpath(
-                "//a[@id='LinkButtonMeasure']")[0].text_content()
-            ret['bill_name'] = scraped_bill_name # for sanity checking
-            versions = bill_page.xpath( "//table[@id='GridViewVersions']" )[0]
+                "//a[contains(@id, 'LinkButtonMeasure')]")[0].text_content()
+            ret['bill_name'] = scraped_bill_name.split(' ')[0]
+            versions = bill_page.xpath( "//table[contains(@id, 'GridViewVersions')]" )[0]
 
             tables = bill_page.xpath("//table")
-            metainf_table = tables[0]
-            action_table  = tables[1]
+            metainf_table = bill_page.xpath('//div[contains(@id, "itemPlaceholder")]//table[1]')[0]
+            action_table  = bill_page.xpath('//div[contains(@id, "UpdatePanel1")]//table[1]')[0]
 
             metainf  = self.parse_bill_metainf_table( metainf_table )
             actions  = self.parse_bill_actions_table( action_table )

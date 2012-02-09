@@ -20,7 +20,7 @@ class NECommitteeScraper(CommitteeScraper):
         with self.urlopen(main_url) as page:
             page = lxml.html.fromstring(page)
 
-            for comm_names in page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[@class="content_box_container"]/div[@class="content_box"]'):
+            for comm_names in page.xpath('//div[@class="content_box"]'):
                name = comm_names.xpath('h2')[0].text
                if name != None:
                    committee = Committee('upper', name)
@@ -57,12 +57,12 @@ class NECommitteeScraper(CommitteeScraper):
        with self.urlopen(main_url) as page:
            page = lxml.html.fromstring(page)
            
-           for comm_links in page.xpath('/html/body/div[@id="wrapper"]/div[@id="content"]/div[@id="content_text"]/div[@class="content_box_container"]/div[@class="content_box"][1]/ul[@class="nobullet"]/li/a'):
+           for comm_links in page.xpath('//div[@id="content_text"]/div[@class="content_box_container"]/div[@class="content_box"][1]/ul[@class="nobullet"]/li/a'):
                detail_link = comm_links.attrib['href']
 
                with self.urlopen(detail_link) as detail_page:
                    detail_page = lxml.html.fromstring(detail_page)
-                   name = detail_page.xpath('/html/body[@class="home blog"]/div[@id="page"]/div[@id="content"]/div[@class="content_header"]/div[@class="content_header_right"]/a')[0].text
+                   name = detail_page.xpath('//div[@id="content"]/div[@class="content_header"]/div[@class="content_header_right"]/a')[0].text
                    name = name.split()
                    name = name[0:-1]
                    comm_name = ''
@@ -71,7 +71,7 @@ class NECommitteeScraper(CommitteeScraper):
                    comm_name = comm_name[0: -1]
                    committee = Committee('upper', comm_name)
 
-                   for senators in detail_page.xpath('/html/body[@class="home blog"]/div[@id="page"]/div[@id="sidebar"]/ul[1]/li[1]/ul/li/a'):
+                   for senators in detail_page.xpath('//div[@id="sidebar"]/ul[1]/li[1]/ul/li/a'):
                        senator = senators.text
                        if 'Chairperson' in senator:
                            role = 'Chairperson'
