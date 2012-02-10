@@ -93,7 +93,11 @@ class AKBillScraper(BillScraper):
         doc = lxml.html.fromstring(self.urlopen(url))
         doc.make_links_absolute(url)
 
-        title = doc.xpath('//b[text()="SPONSOR(s):"]')[0].tail.strip()
+        title = doc.xpath('//b[text()="TITLE:"]')
+        if title:
+            title = title[0].tail.strip()
+        else:
+            title = 'Not Available'
 
         bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(url)
