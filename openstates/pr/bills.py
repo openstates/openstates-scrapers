@@ -84,7 +84,6 @@ class PRBillScraper(BillScraper):
 	   name = 'Luis R. Vega Ramos'
 	elif name == u'Angel Rodríguez Miranda':
            name = 'Angel E. Rodríguez Miranda'
-	   print name
 	return name
 
     def scrape(self, chamber, session):
