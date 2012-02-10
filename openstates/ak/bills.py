@@ -210,8 +210,8 @@ class AKBillScraper(BillScraper):
         vote = Vote(act_chamber, act_date, motion, yes > no, yes, no, other)
 
         vote_lines =  doc.xpath('//b[contains(text(), "YEAS:")]')[0].tail.split('\r\n')
+        vote_type = None
         for vote_list in vote_lines:
-            vote_type = False
             if vote_list.startswith('Yeas: '):
                 vote_list, vote_type = vote_list[6:], vote.yes
             elif vote_list.startswith('Nays: '):
@@ -220,6 +220,8 @@ class AKBillScraper(BillScraper):
                 vote_list, vote_type = vote_list[9:], vote.other
             elif vote_list.startswith('Absent: '):
                 vote_list, vote_type = vote_list[9:], vote.other
+            elif vote_list.strip() == '':
+                vote_type = None
             if vote_type:
                 for name in vote_list.split(','):
                     name = name.strip()
