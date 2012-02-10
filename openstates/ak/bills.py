@@ -201,8 +201,11 @@ class AKBillScraper(BillScraper):
                 other += vcount
 
         # regex against plain html for motion
-        motion = re.findall('The question being:\s*"(.*)\?"', html,
-                            re.DOTALL)[0].replace('\r\n', ' ')
+        try:
+            motion = re.findall('The question being:\s*"(.*)\?"', html,
+                                re.DOTALL)[0].replace('\r\n', ' ')
+        except IndexError:
+            return
 
         vote = Vote(act_chamber, act_date, motion, yes > no, yes, no, other)
 
