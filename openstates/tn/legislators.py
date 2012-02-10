@@ -18,7 +18,7 @@ class TNLegislatorScraper(LegislatorScraper):
         else:
             url_chamber_name = 'house'
             abbr = 'h'
-        if term == self.metadata["terms"][-1]["sessions"][0]:
+        if term != self.metadata["terms"][-1]["sessions"][0]:
             chamber_url = root_url + url_chamber_name + '/archives/'+term+'GA/Members/index.html'
         else:
             chamber_url = root_url + url_chamber_name + '/members/'
@@ -30,7 +30,8 @@ class TNLegislatorScraper(LegislatorScraper):
                 partyInit = row.xpath('td[2]')[0].text.split()[0]
                 party = parties[partyInit]
                 district = row.xpath('td[4]/a')[0].text.split()[1]
-                phone = row.xpath('td[6]')[0].text
+                phone = row.xpath('td[6]')[0].text.split()[0]
+                phone = '615-' + phone
                 email = row.xpath('td[7]/a')[0].text 
                 member_url = root_url + url_chamber_name + '/members/' + abbr + district + '.html'
                 
@@ -46,7 +47,7 @@ class TNLegislatorScraper(LegislatorScraper):
                     else:
                         full_name = name[8:len(name)]
                     
-                    leg = Legislator(term, chamber, district, full_name, party=party, email=email)
+                    leg = Legislator(term, chamber, district, full_name, party=party, email=email, phone=phone)
                     leg.add_source(chamber_url)
                     leg.add_source(member_url)
                     self.save_legislator(leg)
