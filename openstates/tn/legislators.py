@@ -37,7 +37,8 @@ class TNLegislatorScraper(LegislatorScraper):
                 phone = '615-' + phone.split()[0]
                 email = row.xpath('td[7]/a')[0].text 
                 member_url = root_url + url_chamber_name + '/members/' + abbr + district + '.html'
-                
+                member_photo_url = root_url + url_chamber_name + '/members/images/' + abbr + district + '.jpg'
+
                 with self.urlopen(member_url) as member_page:
                     member_page = lxml.html.fromstring(member_page)
                     name = member_page.xpath('//div[@id="membertitle"]/h2')[0].text
@@ -50,7 +51,7 @@ class TNLegislatorScraper(LegislatorScraper):
                     else:
                         full_name = name[8:len(name)]
                     
-                    leg = Legislator(term, chamber, district, full_name, party=party, email=email, phone=phone, url=member_url)
+                    leg = Legislator(term, chamber, district, full_name, party=party, email=email, phone=phone, url=member_url, photo_url=member_photo_url)
                     leg.add_source(chamber_url)
                     leg.add_source(member_url)
                     self.save_legislator(leg)
