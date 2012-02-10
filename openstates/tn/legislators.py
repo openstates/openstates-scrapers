@@ -30,8 +30,11 @@ class TNLegislatorScraper(LegislatorScraper):
                 partyInit = row.xpath('td[2]')[0].text.split()[0]
                 party = parties[partyInit]
                 district = row.xpath('td[4]/a')[0].text.split()[1]
-                phone = row.xpath('td[6]')[0].text.split()[0]
-                phone = '615-' + phone
+                phone = row.xpath('td[6]')[0].text
+                #special case for Karen D. Camper
+                if phone == None:
+                    phone = row.xpath('td[6]/div')[0].text
+                phone = '615-' + phone.split()[0]
                 email = row.xpath('td[7]/a')[0].text 
                 member_url = root_url + url_chamber_name + '/members/' + abbr + district + '.html'
                 
@@ -47,7 +50,7 @@ class TNLegislatorScraper(LegislatorScraper):
                     else:
                         full_name = name[8:len(name)]
                     
-                    leg = Legislator(term, chamber, district, full_name, party=party, email=email, phone=phone)
+                    leg = Legislator(term, chamber, district, full_name, party=party, email=email, phone=phone, url=member_url)
                     leg.add_source(chamber_url)
                     leg.add_source(member_url)
                     self.save_legislator(leg)
