@@ -150,8 +150,8 @@ class AKBillScraper(BillScraper):
             if re.match("\w+ Y(\d+)", action):
                 vote_href = journal.xpath('.//a/@href')
                 if vote_href:
-                    vote = self.parse_vote(bill, action, act_chamber, act_date,
-                                           vote_href[0])
+                    self.parse_vote(bill, action, act_chamber, act_date,
+                                    vote_href[0])
 
             action, atype = self.clean_action(action)
 
@@ -227,7 +227,7 @@ class AKBillScraper(BillScraper):
                         vote_type(name)
 
         vote.add_source(url)
-        return vote
+        bill.add_vote(vote)
 
     def clean_action(self, action):
         # Clean up some acronyms
