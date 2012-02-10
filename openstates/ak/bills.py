@@ -209,7 +209,8 @@ class AKBillScraper(BillScraper):
 
         vote = Vote(act_chamber, act_date, motion, yes > no, yes, no, other)
 
-        vote_lines =  doc.xpath('//b[contains(text(), "YEAS:")]')[0].tail.split('\r\n')
+        #vote_lines =  doc.xpath('//b[contains(text(), "YEAS:")]')[0].tail.split('\r\n')
+        vote_lines = doc.xpath('//pre')[1].text_content().split('\r\n')
         vote_type = None
         for vote_list in vote_lines:
             if vote_list.startswith('Yeas: '):
