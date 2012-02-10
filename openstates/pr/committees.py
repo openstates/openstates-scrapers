@@ -8,7 +8,6 @@ def clean_spaces(s):
     """ remove \xa0, collapse spaces, strip ends """
     if s is not None:
     	return re.sub('\s+', ' ', s.replace(u'\xa0', ' ')).strip()
-
 class PRCommitteeScraper(CommitteeScraper):
     state = 'pr'
 
@@ -38,7 +37,7 @@ class PRCommitteeScraper(CommitteeScraper):
 
                     com_name = name.text
                     #check the committee name to see if it's a join one.
-                    if td_column[1].text == 'Comisi\xf3n Conjunta':
+                    if td_column[1].text == u'Comisión Conjunta':
                         chamber = 'joint'
                     else:
                         chamber = 'upper'
@@ -47,7 +46,6 @@ class PRCommitteeScraper(CommitteeScraper):
 		    member_name = clean_spaces(td_column[2].find('a').text.replace('HON.','',1));
 		    if member_name == "LUZ Z. ARCE FERRER":
 			member_name = "Luz Z. Arce Ferrer"
-			
                     com.add_member(member_name, 'chairman')
                     self.save_committee(com)
                     
@@ -60,7 +58,11 @@ class PRCommitteeScraper(CommitteeScraper):
                 self.scrape_lower_committee(link.text, link.get('href'))
     
     def scrape_lower_committee(self, name, url):
-        com = Committee('lower', name)
+	if name == u'Comisión Conjunta':
+	   chamber = 'joint'
+	else:
+	   chamber = 'lower'
+        com = Committee(chamber, name)
         com.add_source(url)
 
         with self.urlopen(url) as html:

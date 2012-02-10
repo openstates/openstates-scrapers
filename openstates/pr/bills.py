@@ -51,7 +51,41 @@ class PRBillScraper(BillScraper):
 
 
     def clean_name(self, name):
-        return name.replace('Sr,','').replace('Sr.','').replace('Sra.','').replace('Rep.','').replace('Sen.','')
+        name =  name.replace('Sr,','').replace('Sr.','').replace('Sra.','').replace('Rep.','').replace('Sen.','')
+	return name
+    def fix_name(self,name):
+	if name == u'Pedro Rodríguez González':
+	   name = 'Pedro A. Rodríguez González'
+	elif name == u'María de L. Ramos Rivera':
+	   name = 'María de Lourdes Ramos Rivera'
+	elif name == u'Carmen Yulín Cruz Soto':
+	   name = 'Carmen Y. Cruz Soto'
+	elif name == u'Carlos J. Méndez Núñez' or name == u'Carlos J. Méndez Nuñez':
+	   name = 'Carlos “Johnny” Méndez Nuñez'
+	elif name == u'Héctor Torres Calderón':
+	   name = 'Héctor A. Torres Calderón'
+	elif name == u'Pedro Rodríguez González':
+	   name = 'Pedro A. Rodríguez González'
+	elif name == u'Héctor J. Ferrer Ríos':
+	   name = 'Héctor Ferrer Ríos'
+	elif name == u'José Enrique Meléndez Ortiz':
+	   name = 'Jose E. Melendez Ortiz'
+	elif name == u'José L. López Muñoz':
+	   name = 'José  López Muñoz'
+	elif name == u'Liza M. Fernández Rodríguez':
+	   name = 'Liza  Fernández Rodríguez'
+	elif name == u'José E. Torres Zamora':
+	   name = 'Jose Torres Zamora'
+	elif name == u'Angel Pérez Otero':
+	   name = 'Angel A. Pérez Otero'
+	elif name == u'Arnaldo I. Jiménez Valle':
+	   name = 'Arnaldo Jiménez Valle'
+	elif name == 'Luis Vega Ramos':
+	   name = 'Luis R. Vega Ramos'
+	elif name == u'Angel Rodríguez Miranda':
+           name = 'Angel E. Rodríguez Miranda'
+	   print name
+	return name
 
     def scrape(self, chamber, session):
         year = session[0:4]
@@ -81,12 +115,12 @@ class PRBillScraper(BillScraper):
             bill = Bill(session, chamber, bill_id, title[0], type=bill_type)
             author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
             for aname in author.split(','):
-                bill.add_sponsor('primary', self.clean_name(aname).strip())
+                bill.add_sponsor('primary', self.fix_name(self.clean_name(aname)).strip())
 
             co_authors = doc.xpath(u'//td/b[contains(text(),"Co-autor")]/../text()')
             if len(co_authors) != 0:
                 for co_author in co_authors[1].split(','):
-                    bill.add_sponsor('cosponsor', self.clean_name(co_author).strip());
+                    bill.add_sponsor('cosponsor', self.fix_name(self.clean_name(co_author)).strip());
 
 
             action_table = doc.xpath('//table')[-1]
@@ -209,75 +243,75 @@ class PRBillScraper(BillScraper):
 		split_name = name_td.split(',')
 		if len(split_name) > 1:
 		   name_td = split_name[1].strip() + ' ' + split_name[0].strip()
-		if name_td == 'Catherine J. Nolasco Ortiz' or name_td == 'Julissa Nolasco Ortiz':
+		if name_td == u'Catherine J. Nolasco Ortiz' or name_td == u'Julissa Nolasco Ortiz':
 		   name_td = 'Julissa Nolasco Ortíz'
-		elif name_td == 'Angel Pérez Otero' or name_td == 'Ángel Pérez Otero':
+		elif name_td == u'Angel Pérez Otero' or name_td == u'Ángel Pérez Otero':
 		   name_td = 'Angel A. Pérez Otero'
-		elif name_td == 'Alba I. Rivera Ramírez':
+		elif name_td == u'Alba I. Rivera Ramírez':
 		   name_td = 'Albita  Rivera Ramírez'
-		elif name_td == 'Angel Rodríguez Miranda':
+		elif name_td == u'Angel Rodríguez Miranda':
 		   name_td = 'Angel E. Rodríguez Miranda'
-		elif name_td == 'Arnaldo I. Jiménez Valle':
+		elif name_td == u'Arnaldo I. Jiménez Valle':
 		   name_td = 'Arnaldo Jiménez Valle'
-		elif name_td == 'Carmen Yulín Cruz Soto':
+		elif name_td == u'Carmen Yulín Cruz Soto':
 		   name_td = 'Carmen Y. Cruz Soto'
-		elif name_td == 'Cristobal Colón Ruiz':
+		elif name_td == u'Cristobal Colón Ruiz':
 		   name_td = 'Cristóbal Colón Ruiz'
-		elif name_td == 'Héctor J. Ferrer Ríos':
+		elif name_td == u'Héctor J. Ferrer Ríos':
 		   name_td = 'Héctor Ferrer Ríos'
-		elif name_td == 'Héctor Torres Calderón':
+		elif name_td == u'Héctor Torres Calderón':
 		   name_td = 'Héctor A. Torres Calderón'
-		elif name_td == 'Iván Rodriguez Traverzo':
+		elif name_td == u'Iván Rodriguez Traverzo':
 		   name_td == 'Iván Rodríguez Traverzo'
-		elif name_td == 'Jaime Perelló Borrás':
+		elif name_td == u'Jaime Perelló Borrás':
 		   name_td = 'Jaime R. Perelló Borrás'
-		elif name_td == 'Jenniffer González Colón':
+		elif name_td == u'Jenniffer González Colón':
 		   name_td = 'Jenniffer A. González Colón'	
-		elif name_td == 'Jorge L. Navarro Suárez':
+		elif name_td == u'Jorge L. Navarro Suárez':
 		   name_td = 'Jorge  Navarro Suárez'
-		elif name_td == 'José E. Meléndez Ortiz' or name_td == 'José Enrique Meléndez Ortiz' or name_td == 'Meléndez Ortiz':
+		elif name_td == u'José E. Meléndez Ortiz' or name_td == u'José Enrique Meléndez Ortiz' or name_td == u'Meléndez Ortiz':
 		   name_td = 'Jose E. Melendez Ortiz'
-		elif name_td == 'José E. Torres Zamora' or name_td == 'José Torres Zamora':
+		elif name_td == u'José E. Torres Zamora' or name_td == u'José Torres Zamora':
 		   name_td = 'Jose Torres Zamora'
-		elif name_td == 'José J. Chico Vega':
+		elif name_td == u'José J. Chico Vega':
 		   name_td = 'José Chico Vega'
-		elif name_td == 'José L. López Muñoz':
+		elif name_td == u'José L. López Muñoz':
 		   name_td = 'José López Muñoz'
-		elif name_td == 'José Luis Jiménez Negrón':
+		elif name_td == u'José Luis Jiménez Negrón':
 		   name_td = 'José L. Jiménez Negrón'
-		elif name_td == 'Lourdes Ramos Rivera':
+		elif name_td == u'Lourdes Ramos Rivera':
 		   name_td = 'María de Lourdes Ramos Rivera'
-		elif name_td == 'Luis E. Farinacci Morales':
+		elif name_td == u'Luis E. Farinacci Morales':
    	           name_td ='Luis E. Farinacci Morales'
-		elif name_td == 'Luis León Rodríguez':
+		elif name_td == u'Luis León Rodríguez':
 		   name_td = 'Luis G. León Rodríguez'
-		elif name_td == 'Luis R. . Vega Ramos' or name_td == 'Luis Vega Ramos':
+		elif name_td == u'Luis R. . Vega Ramos' or name_td == 'Luis Vega Ramos':
 		   name_td = 'Luis R. Vega Ramos'
-		elif name_td == 'Lydia R. Méndez Silva':
+		elif name_td == u'Lydia R. Méndez Silva':
 		   name_td = 'Lydia Méndez Silva'
-		elif name_td == 'María Vega Pagán':
+		elif name_td == u'María Vega Pagán':
 		   name_td = 'María M. Vega Pagán'
-		elif name_td == 'María de L. Ramos Rivera':
+		elif name_td == u'María de L. Ramos Rivera':
 		   name_td = 'María de Lourdes Ramos '
-		elif name_td == 'Paula Rodríguez Homs':
+		elif name_td == u'Paula Rodríguez Homs':
 		   name_td = 'Paula A. Rodríguez Homs'
-		elif name_td == 'Pedro Rodríguez González':
+		elif name_td == u'Pedro Rodríguez González':
 		   name_td = 'Pedro A. Rodríguez González'
-		elif name_td == 'Rafael E. Rivera Ortega':
+		elif name_td == u'Rafael E. Rivera Ortega':
 		   name_td = 'Rafael Rivera Ortega'
-		elif name_td == 'Rafael Hernandez Montañez':
+		elif name_td == u'Rafael Hernandez Montañez':
 		   name_td = 'Rafael Hernández Montañez'
-		elif name_td == 'Roberto Rivera Ruíz De Porra':
+		elif name_td == u'Roberto Rivera Ruíz De Porra':
 		   name_td = 'Roberto Rivera Ruiz de Porras'
-		elif name_td == 'Sylvia Rodríguez De Corujo' or name_td == 'Sylvia Rodríguez de Corujo':
+		elif name_td == u'Sylvia Rodríguez De Corujo' or name_td == u'Sylvia Rodríguez de Corujo':
 		   name_td = 'Sylvia  Rodríguez Aponte'
-		elif name_td == 'Victor Vasallo Anadón' or name_td == 'Víctor L. Vassallo Anadón':
+		elif name_td == u'Victor Vasallo Anadón' or name_td == u'Víctor L. Vassallo Anadón':
 		   name_td = 'Víctor L. Vasallo Anadón'
-		elif name_td == 'Ángel E. Rodríguez Miranda':
+		elif name_td == u'Ángel E. Rodríguez Miranda':
 		   name_td = 'Angel E. Rodríguez Miranda'
-		elif name_td == 'Ángel L. Bulerín Ramos':
+		elif name_td == u'Ángel L. Bulerín Ramos':
 		   name_td = 'Angel  Bulerín Ramos'
-		elif name_td == 'Ángel R. Peña Ramírez':
+		elif name_td == u'Ángel R. Peña Ramírez':
 		   name_td = 'Angel R. Peña Ramírez'
 
                 if yes_td == 'r':
