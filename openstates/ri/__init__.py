@@ -18,7 +18,7 @@ metadata = dict(
             'end_year': 2012,
             'sessions': ['2012']},
           ],
-    feature_flags=[],
+    feature_flags=[ 'subjects' ],
     session_details={'2012': {'start_date': datetime.date(2012, 1, 4),
                               'type': 'primary'},
                     },
