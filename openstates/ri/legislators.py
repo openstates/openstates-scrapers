@@ -41,7 +41,7 @@ class RILegislatorScraper(LegislatorScraper):
             for field, col_num in excel_mapping.iteritems():
                 d[field] = sh.cell(rownum, col_num).value
             dist = str(int(d['district']))
-            district_name = "District " + dist
+            district_name = dist
             full_name = re.sub(rep_type, '', d['full_name']).strip()
             translate = {
                 "Democrat"    : "Democratic",
