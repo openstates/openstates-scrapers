@@ -144,10 +144,10 @@ class AKBillScraper(BillScraper):
                 act_chamber = "upper"
 
             if re.match("\w+ Y(\d+)", action):
-                vote = self.parse_vote(bill, action,
-                                       act_chamber, act_date,
-                                       journal.xpath('.//a/@href')[0])
-                bill.add_vote(vote)
+                vote_href = journal.xpath('.//a/@href')
+                if vote_href:
+                    vote = self.parse_vote(bill, action, act_chamber, act_date,
+                                           vote_href[0])
 
             action, atype = self.clean_action(action)
 
