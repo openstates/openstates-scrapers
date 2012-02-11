@@ -87,6 +87,7 @@ class OKBillScraper(BillScraper):
             page = lxml.html.fromstring(self.urlopen(url))
         except scrapelib.HTTPError as e:
             self.warning('error (%s) fetching %s, skipping' % (e, url))
+            return
 
         title = page.xpath(
             "string(//span[contains(@id, 'PlaceHolder1_txtST')])").strip()
