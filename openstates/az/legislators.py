@@ -49,7 +49,7 @@ class AZLegislatorScraper(LegislatorScraper):
             for row in roster:
                 position = ''
                 vacated = ''
-                name, district, party, email, room, phone, fax = row.getchildren()
+                name, district, party, email, room, phone, fax = row.xpath('td')
 
                 link = name.xpath('string(a/@href)')
                 link = "http://www.azleg.gov" + link
