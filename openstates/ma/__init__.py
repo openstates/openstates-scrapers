@@ -26,12 +26,12 @@ metadata = {
         '186th': {
             'type': 'primary',
             'display_name': '186th Legislature',
-            '_scraped_name': '186th Session',
+            '_scraped_name': '186th',
         },
         '187th': {
             'type': 'primary',
             'display_name': '187th Legislature',
-            '_scraped_name': '187th Session',
+            '_scraped_name': '187th',
         }
     },
     'legislature_name': 'Massachusetts General Court',
