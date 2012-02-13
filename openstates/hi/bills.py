@@ -149,10 +149,12 @@ class HIBillScraper(BillScraper):
 
             meta  = self.parse_bill_metainf_table(metainf_table)
 
-            b = Bill(session, chamber, bill_id, title=meta['Report Title'],
+            subjects = [ s.strip() for s in meta['Report Title'].split(";") ]
+
+            b = Bill(session, chamber, bill_id, title=meta['Measure Title'],
                      description=meta['Description'],
                      referral=meta['Current Referral'],
-                     measure_title=meta['Measure Title'],
+                     subjects=subjects,
                      type=bill_type)
             b.add_source(url)
 
