@@ -18,23 +18,33 @@ _voteChambers = (
    (u'Aprobado por el Senado en Votac','upper'),
    (u'Aprobado por C','lower'),
 )
+_docVersion = (
+   ('Entirillado del Informe'),
+   ('Texto de Aprobaci'),
+#   ('Ley N'),
+   ('rendido con enmiendas'),
+)
 _classifiers = (
-    ('Radicado', 'bill:introduced'),
-    #votes are here
-    (u'Aprobado por Cámara en Votación Final', 'bill:passed'),
-    (u'Aprobado por el Senado en Votación', 'bill:passed'),
-#    ('Cuerpo de Origen concurre','bill:passed'),
-    ('Aparece en Primera Lectura', 'bill:reading:1'),
-    #sent is not the same as received
-    ('Enviado al Gobernador', 'governor:received'),
-    ('Veto', 'governor:vetoed'),
+    ('Radicado','', 'bill:introduced'),
+    (u'Aprobado por Cámara en Votación Final','lower', 'bill:passed'),
+    (u'Aprobado por el Senado en Votación','upper', 'bill:passed'),
+    ('Aparece en Primera Lectura del', 'upper','bill:reading:1'),
+    ('Aparece en Primera Lectura de la','lower','bill:reading:1'),
+    ('Enviado al Gobernador', 'governor','governor:received'),
+    ('Veto', 'governor','governor:vetoed'),
+    ('Veto de Bolsillo','governor','governor:vetoed'),
     #comissions give a report but sometimes they dont do any amendments and leave them as they are.
     #i am not checking if they did or not. but it be easy just read the end and if it dosnt have amendments it should say 'sin enmiendas'
-    ('1er Informe','amendment:amended'),
-    ('2do Informe','amendment:amended'),
-    ('Aprobado con enmiendas','amendment:passed'),
-    (u'Remitido a Comisión', 'committee:referred'),
-    (u'Referido a Comisión', 'committee:referred'),
+    ('1er Informe','committee','amendment:amended'),
+    ('2do Informe','committee','amendment:amended'),
+    ('Aprobado con enmiendas','','amendment:passed'),
+    (u'Remitido a Comisión','', 'committee:referred'),
+    (u'Referido a Comisión','', 'committee:referred'),
+    ('En el Calendario de Ordenes Especiales de la C','lower','other'),
+    ('Texto de Aprobación Final enviado al Senado','upper','other'),
+    ('Retirada por su Autor','sponsor','bill:withdrawn'),
+    ('Comisión : * no recomienda aprobación de la medida','','committee:passed:unfavorable'),
+    ('Ley N','governor','governor:signed')
 )
 
 
@@ -51,40 +61,7 @@ class PRBillScraper(BillScraper):
 
 
     def clean_name(self, name):
-        name =  name.replace('Sr,','').replace('Sr.','').replace('Sra.','').replace('Rep.','').replace('Sen.','')
-	return name
-    def fix_name(self,name):
-	if name == u'Pedro Rodríguez González':
-	   name = 'Pedro A. Rodríguez González'
-	elif name == u'María de L. Ramos Rivera':
-	   name = 'María de Lourdes Ramos Rivera'
-	elif name == u'Carmen Yulín Cruz Soto':
-	   name = 'Carmen Y. Cruz Soto'
-	elif name == u'Carlos J. Méndez Núñez' or name == u'Carlos J. Méndez Nuñez':
-	   name = 'Carlos “Johnny” Méndez Nuñez'
-	elif name == u'Héctor Torres Calderón':
-	   name = 'Héctor A. Torres Calderón'
-	elif name == u'Pedro Rodríguez González':
-	   name = 'Pedro A. Rodríguez González'
-	elif name == u'Héctor J. Ferrer Ríos':
-	   name = 'Héctor Ferrer Ríos'
-	elif name == u'José Enrique Meléndez Ortiz':
-	   name = 'Jose E. Melendez Ortiz'
-	elif name == u'José L. López Muñoz':
-	   name = 'José  López Muñoz'
-	elif name == u'Liza M. Fernández Rodríguez':
-	   name = 'Liza  Fernández Rodríguez'
-	elif name == u'José E. Torres Zamora':
-	   name = 'Jose Torres Zamora'
-	elif name == u'Angel Pérez Otero':
-	   name = 'Angel A. Pérez Otero'
-	elif name == u'Arnaldo I. Jiménez Valle':
-	   name = 'Arnaldo Jiménez Valle'
-	elif name == 'Luis Vega Ramos':
-	   name = 'Luis R. Vega Ramos'
-	elif name == u'Angel Rodríguez Miranda':
-           name = 'Angel E. Rodríguez Miranda'
-	return name
+        return name.replace('Sr,','').replace('Sr.','').replace('Sra.','').replace('Rep.','').replace('Sen.','')
 
     def scrape(self, chamber, session):
         year = session[0:4]
@@ -114,12 +91,12 @@ class PRBillScraper(BillScraper):
             bill = Bill(session, chamber, bill_id, title[0], type=bill_type)
             author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
             for aname in author.split(','):
-                bill.add_sponsor('primary', self.fix_name(self.clean_name(aname)).strip())
+                bill.add_sponsor('primary', self.clean_name(aname).strip())
 
             co_authors = doc.xpath(u'//td/b[contains(text(),"Co-autor")]/../text()')
             if len(co_authors) != 0:
                 for co_author in co_authors[1].split(','):
-                    bill.add_sponsor('cosponsor', self.fix_name(self.clean_name(co_author)).strip());
+                    bill.add_sponsor('cosponsor', self.clean_name(co_author).strip());
 
 
             action_table = doc.xpath('//table')[-1]
@@ -139,31 +116,35 @@ class PRBillScraper(BillScraper):
 
                 #get url of action
                 action_url = tds[1].xpath('a/@href')
-
                 #check it has a url and is not just text
-
                 if action_url:
                     action_url = action_url[0]
-                    #check if it's a version of the bill or another type of document.
-                    #NOTE: not sure if new versions of the bill are only denoted with 'Entirillado' OR if that's the correct name but from what i gather it looks like it.
-                    if re.match('Entirillado', action):
+		    isVersion = False; 
+		    for text_regex in _docVersion:
+                    	if re.match(text_regex, action):
+			    isVersion = True;
+		    if isVersion:
                         bill.add_version(action, action_url)
                     else:
-			
                         bill.add_document(action, action_url)
 
-                for pattern, atype in _classifiers:
+                for pattern, action_actor,atype in _classifiers:
                     if re.match(pattern, action):
                         break
-                else:
-                    atype = 'other'
+                    else:
+              	  	atype = 'other'
+			action_actor = chamber
+
 		if action.startswith('Ley N'):
 		    action = action[0:42]
 		elif action.startswith('Res. Conj.'):
 		    action = action[0:42]
-                bill.add_action(chamber, action.replace('.',''), date, type=atype)
 
-                if atype == 'bill:passed' and action_url:
+		if action_actor == '':
+	  	    action_actor = chamber
+                bill.add_action(action_actor, action.replace('.',''), date, type=atype)
+
+                if type == 'bill:passed' and action_url:
                     vote_chamber  = None
                     for pattern, vote_chamber in _voteChambers:
                        if re.match(pattern,action):
@@ -242,76 +223,6 @@ class PRBillScraper(BillScraper):
 		split_name = name_td.split(',')
 		if len(split_name) > 1:
 		   name_td = split_name[1].strip() + ' ' + split_name[0].strip()
-		if name_td == u'Catherine J. Nolasco Ortiz' or name_td == u'Julissa Nolasco Ortiz':
-		   name_td = 'Julissa Nolasco Ortíz'
-		elif name_td == u'Angel Pérez Otero' or name_td == u'Ángel Pérez Otero':
-		   name_td = 'Angel A. Pérez Otero'
-		elif name_td == u'Alba I. Rivera Ramírez':
-		   name_td = 'Albita  Rivera Ramírez'
-		elif name_td == u'Angel Rodríguez Miranda':
-		   name_td = 'Angel E. Rodríguez Miranda'
-		elif name_td == u'Arnaldo I. Jiménez Valle':
-		   name_td = 'Arnaldo Jiménez Valle'
-		elif name_td == u'Carmen Yulín Cruz Soto':
-		   name_td = 'Carmen Y. Cruz Soto'
-		elif name_td == u'Cristobal Colón Ruiz':
-		   name_td = 'Cristóbal Colón Ruiz'
-		elif name_td == u'Héctor J. Ferrer Ríos':
-		   name_td = 'Héctor Ferrer Ríos'
-		elif name_td == u'Héctor Torres Calderón':
-		   name_td = 'Héctor A. Torres Calderón'
-		elif name_td == u'Iván Rodriguez Traverzo':
-		   name_td == 'Iván Rodríguez Traverzo'
-		elif name_td == u'Jaime Perelló Borrás':
-		   name_td = 'Jaime R. Perelló Borrás'
-		elif name_td == u'Jenniffer González Colón':
-		   name_td = 'Jenniffer A. González Colón'	
-		elif name_td == u'Jorge L. Navarro Suárez':
-		   name_td = 'Jorge  Navarro Suárez'
-		elif name_td == u'José E. Meléndez Ortiz' or name_td == u'José Enrique Meléndez Ortiz' or name_td == u'Meléndez Ortiz':
-		   name_td = 'Jose E. Melendez Ortiz'
-		elif name_td == u'José E. Torres Zamora' or name_td == u'José Torres Zamora':
-		   name_td = 'Jose Torres Zamora'
-		elif name_td == u'José J. Chico Vega':
-		   name_td = 'José Chico Vega'
-		elif name_td == u'José L. López Muñoz':
-		   name_td = 'José López Muñoz'
-		elif name_td == u'José Luis Jiménez Negrón':
-		   name_td = 'José L. Jiménez Negrón'
-		elif name_td == u'Lourdes Ramos Rivera':
-		   name_td = 'María de Lourdes Ramos Rivera'
-		elif name_td == u'Luis E. Farinacci Morales':
-   	           name_td ='Luis E. Farinacci Morales'
-		elif name_td == u'Luis León Rodríguez':
-		   name_td = 'Luis G. León Rodríguez'
-		elif name_td == u'Luis R. . Vega Ramos' or name_td == 'Luis Vega Ramos':
-		   name_td = 'Luis R. Vega Ramos'
-		elif name_td == u'Lydia R. Méndez Silva':
-		   name_td = 'Lydia Méndez Silva'
-		elif name_td == u'María Vega Pagán':
-		   name_td = 'María M. Vega Pagán'
-		elif name_td == u'María de L. Ramos Rivera':
-		   name_td = 'María de Lourdes Ramos '
-		elif name_td == u'Paula Rodríguez Homs':
-		   name_td = 'Paula A. Rodríguez Homs'
-		elif name_td == u'Pedro Rodríguez González':
-		   name_td = 'Pedro A. Rodríguez González'
-		elif name_td == u'Rafael E. Rivera Ortega':
-		   name_td = 'Rafael Rivera Ortega'
-		elif name_td == u'Rafael Hernandez Montañez':
-		   name_td = 'Rafael Hernández Montañez'
-		elif name_td == u'Roberto Rivera Ruíz De Porra':
-		   name_td = 'Roberto Rivera Ruiz de Porras'
-		elif name_td == u'Sylvia Rodríguez De Corujo' or name_td == u'Sylvia Rodríguez de Corujo':
-		   name_td = 'Sylvia  Rodríguez Aponte'
-		elif name_td == u'Victor Vasallo Anadón' or name_td == u'Víctor L. Vassallo Anadón':
-		   name_td = 'Víctor L. Vasallo Anadón'
-		elif name_td == u'Ángel E. Rodríguez Miranda':
-		   name_td = 'Angel E. Rodríguez Miranda'
-		elif name_td == u'Ángel L. Bulerín Ramos':
-		   name_td = 'Angel  Bulerín Ramos'
-		elif name_td == u'Ángel R. Peña Ramírez':
-		   name_td = 'Angel R. Peña Ramírez'
 
                 if yes_td == 'r':
                     yes_votes.append(name_td)

@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 import lxml.html
+import lxml.etree
+import os
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
+from billy.scrape.utils import convert_pdf
+
 import re
 
 def clean_spaces(s):
     """ remove \xa0, collapse spaces, strip ends """
     if s is not None:
     	return re.sub('\s+', ' ', s.replace(u'\xa0', ' ')).strip()
+
 class PRCommitteeScraper(CommitteeScraper):
     state = 'pr'
 
@@ -20,34 +25,34 @@ class PRCommitteeScraper(CommitteeScraper):
             self.scrape_lower()
             
     def scrape_upper(self):
-        url = 'http://senadopr.us/Lists/Listado%20de%20Comisiones/Comisiones%20del%20Senado.aspx'
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(url)
-            table = doc.xpath('//table[@id="{C05AFE0D-D977-4033-8D7B-C43ABF948A4A}-{3E52C91B-AFC8-4493-967A-C8A47AC4E7B6}"]')
-            
-            for link in table[0].iterchildren('tr'):
-                td_column = list(link)
-                name = td_column[0].find('a')
-                if name is not None:
-                    com_source = name.get('href')
-                    #if committee does not have a url use the default.
-                    if com_source == 'http://senadopr.us/':
-                        com_source = url
-
-                    com_name = name.text
-                    #check the committee name to see if it's a join one.
-                    if td_column[1].text == u'Comisión Conjunta':
-                        chamber = 'joint'
-                    else:
-                        chamber = 'upper'
-                    com = Committee(chamber, com_name)
-                    com.add_source(com_source)
-		    member_name = clean_spaces(td_column[2].find('a').text.replace('HON.','',1));
-		    if member_name == "LUZ Z. ARCE FERRER":
-			member_name = "Luz Z. Arce Ferrer"
-                    com.add_member(member_name, 'chairman')
-                    self.save_committee(com)
+	perm_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Permanentes(2009-2012).pdf'
+	filename, resp = self.urlretrieve(perm_comm)
+        root = lxml.etree.fromstring( convert_pdf(filename,'xml'))
+	for link in root.xpath('/pdf2xml/page'):
+	    comm = None;
+	    for line in link.findall('text'):
+		text = line.findtext('b')
+       		if text is not None and text.startswith('Comisi'):
+		    comm = Committee('upper',text);
+	    	    comm.add_source(perm_comm)
+		else:
+		    if line.text and line.text.startswith('Hon.'):
+			line_text = line.text.replace(u'–','-')
+			name_split = line_text.split(u'-',1)
+			title = 'member'
+			if len(name_split) >= 2:
+	   		    if name_split[1] == 'Presidenta' or name_split[1] == 'Presidente':
+			        title = 'chairman'
+			    elif name_split[1] == 'Vicepresidente' or name_split[1] == 'Vicepresidenta':
+			        title = 'vicechairman'
+			    elif name_split[1] == 'Secretaria' or name_split[1] == 'Secretario':
+			        title = 'secretary'
+			comm.add_member(name_split[0].replace('Hon.',''),title)
+            self.save_committee(comm)
+			
+	
+	os.remove(filename);
+		
                     
     def scrape_lower(self):
         url = 'http://www.camaraderepresentantes.org/comisiones.asp'
@@ -58,11 +63,7 @@ class PRCommitteeScraper(CommitteeScraper):
                 self.scrape_lower_committee(link.text, link.get('href'))
     
     def scrape_lower_committee(self, name, url):
-	if name == u'Comisión Conjunta':
-	   chamber = 'joint'
-	else:
-	   chamber = 'lower'
-        com = Committee(chamber, name)
+        com = Committee('lower', name)
         com.add_source(url)
 
         with self.urlopen(url) as html:
