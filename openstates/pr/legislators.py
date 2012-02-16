@@ -84,7 +84,7 @@ class PRLegislatorScraper(LegislatorScraper):
 		#	    print lxml.etree.tostring(ulu).replace('&#13;','')
 		#	    print '---------'
 #			print leg_tables[1].xpath('//div[@class="sbox2"][2]/div[2]/table/tbody/tr[1]/td[2]')
-			print lxml.etree.tostring(leg_tables[1].xpath('//div[@class="sbox2"]/[1]'))
+#			print lxml.etree.tostring(leg_tables[1].xpath('//div[@class="sbox2"]/[1]'))
 #			print lxml.etree.tostring(leg_tables[1]).find('td').replace('<br>','').replace('<br/>','')
 			email =  leg_tables[1].xpath('//a[starts-with(@href,"mailto")]')[0].text
 			return
