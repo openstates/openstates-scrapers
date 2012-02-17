@@ -29,26 +29,23 @@ def fix_whitespace(s):
 
 class TNCommitteeScraper(CommitteeScraper):
     state = 'tn'
-
     base_href = 'http://www.capitol.tn.gov'
-    urls = {
-        '107': {
-            'lower': 'http://www.capitol.tn.gov/house/committees/',
-            'upper': 'http://www.capitol.tn.gov/senate/committees/'
-        }
+    chambers = {
+        'lower' : 'house',
+        'upper' : 'senate'
     }
     
     
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
-        url = self.urls[term][chamber]
-        
+        url_chamber = self.chambers[chamber]
+        url = 'http://www.capitol.tn.gov/%s/committees/' % (url_chamber)
         if chamber == 'upper':
             self.scrape_senate_committees(url)
         else:
             self.scrape_house_committees(url)
 
-                                        
+    #Scrapes all the Senate committees
     def scrape_senate_committees(self, url):
         find_expr = "//dl[@class='senateCommittees']/dt/a"
         
@@ -62,10 +59,10 @@ class TNCommitteeScraper(CommitteeScraper):
             for committee_name, link in links:
                 self.scrape_senate_committee(committee_name, link)
                 
-
+    #Scrapes the individual Senate committee
     def scrape_senate_committee(self, committee_name, link):
         """Scrape individual committee page and add members"""
-        find_expr = "//div[@class='col1']/ul/li"
+        find_expr = "//div[@class='col1']/ul[position()<3]/li/a[1]"
         
         com = Committee('upper', committee_name)
         
@@ -86,7 +83,7 @@ class TNCommitteeScraper(CommitteeScraper):
         com.add_source(link)
         self.save_committee(com)
 
-
+    #Scrapes all the House Committees
     def scrape_house_committees(self, url):
         # Committees are listed in h3 w/ no attributes. Only indicator is a div w/ 2 classes
         find_expr = "//*[contains(concat(' ', normalize-space(@class), ' '), ' committeelist ')]/h3/a"
@@ -101,10 +98,10 @@ class TNCommitteeScraper(CommitteeScraper):
             for committee_name, link in links:
                 self.scrape_house_committee(committee_name, link)
 
-
+    #Scrapes the individual House Committee
     def scrape_house_committee(self, committee_name, link):
         """Scrape individual committee page and add members"""
-        find_expr = "//div[@class='col1']/ul/li"
+        find_expr = "//div[@class='col1']/ul[position()<3]/li/a[1]"
         
         com = Committee('lower', committee_name)
         
