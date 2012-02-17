@@ -9,7 +9,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
 import lxml.html
-
+import scrapelib
 
 def action_type(action):
     atype = []
@@ -83,7 +83,11 @@ class OKBillScraper(BillScraper):
             self.scrape_bill(chamber, session, bill_id, link.attrib['href'])
 
     def scrape_bill(self, chamber, session, bill_id, url):
-        page = lxml.html.fromstring(self.urlopen(url))
+        try:
+            page = lxml.html.fromstring(self.urlopen(url))
+        except scrapelib.HTTPError as e:
+            self.warning('error (%s) fetching %s, skipping' % (e, url))
+            return
 
         title = page.xpath(
             "string(//span[contains(@id, 'PlaceHolder1_txtST')])").strip()

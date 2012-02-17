@@ -298,7 +298,7 @@ def delete_session(session_year):
 
 
 
-def update(zipfile_names=None, unzip=True):
+def update(zipfile_names=None, zipfile_name=None, unzip=True):
     '''
     If a file named `pubinfo_(?P<session_year>\d{4}).zip` has been 
     updated, delete all records in the database session_year indicated 
@@ -310,7 +310,7 @@ def update(zipfile_names=None, unzip=True):
     Optionally, pass the names of one or more zipfiles as fabric kwargs
     and import those instead, i.e.:
 
-    fab -fdownload.py update:zipfile_names=zipfile1.zip,zipfile2.zip
+    fab -fdownload.py update:zipfile_name=zipfile1.zip
     '''
     logger.info('Updating capublic...')
     days='Mon Tue Wed Thu Fri Sat Sun'.split()
@@ -319,12 +319,14 @@ def update(zipfile_names=None, unzip=True):
     setup()
 
     if zipfile_names is None:
-        
-        zipfile_names = download()
-        
-        if not zipfile_names:
-            logger.info('No updated files found; exiting.')
-            sys.exit(0)
+        if zipfile_name is not None:
+            zipfile_names = [zipfile_name]
+
+        else:
+            zipfile_names = download()
+            if not zipfile_names:
+                logger.info('No updated files found; exiting.')
+                sys.exit(0)
 
     if unzip:
         folder_names = extract(zipfile_names)
@@ -393,8 +395,8 @@ def add2011():
             'pubinfo_Thu.zip pubinfo_Fri.zip').split(), unzip=False)
 
 
-def pdb():
-    pdb.set_trace()
+# def pdb():
+#     pdb.set_trace()
 
 if __name__ == '__main__':
 

@@ -18,9 +18,9 @@ a standard billy scraper. Methods are documented just because this
 does both bill and vote scraping, and can be a bit overwhelming.
 """
 class COBillScraper(BillScraper):
-    
+
     state = 'co'
-    
+
     """
     This returns a URL to the bill "folder" - a list of all the bills for that
     session and chamber. If the URL looks funny, it's because CO has made
@@ -31,12 +31,12 @@ class COBillScraper(BillScraper):
         url = CO_URL_BASE + "/CLICS/CLICS" +  session \
             + "/csl.nsf/" + chamber_id + "?OpenView&Count=20000000"
         return url
-        
-   
+
+
     def read_td( self, td_node ):
         return td_node[0].text
         #      ^^^^^^^^^^ font
-   
+
 
     """
     This will parse a vote page, with a list of who voted which way on what
@@ -72,8 +72,8 @@ class COBillScraper(BillScraper):
                         # They look like:
                         #    Final     YES: 7     NO: 6     EXC: 0     ABS: 0\
                         #        FINAL ACTION: PASS
-                        # 
-                        to_parse = to_parse.replace("FINAL ACTION", 
+                        #
+                        to_parse = to_parse.replace("FINAL ACTION",
                             "FINAL_ACTION").replace(":", "")
                         passage_actions = to_parse.split()
                         # XXX: Verify we can't do this with recursive splits
@@ -100,7 +100,7 @@ class COBillScraper(BillScraper):
     """
     This will parse all the votes on a given bill - basically, it looks on the
     page of all votes, and invokes `parse_all_votes' for each href it finds
-    
+
     We do some minor sanity checking, so the caller will be able to ensure the
     bill IDs match exactly before going ahead with saving the data to the DB
     """
@@ -210,20 +210,20 @@ class COBillScraper(BillScraper):
         get_info = url[4].split("&")
         # This is a bit of a mess. XXX: Better way to get args using
         # url[lib|parse] ?
-        
+
         clean_args = {}
         ret        = []
-        
+
         for arg in get_info:
             try:
-                key, value = ( 
+                key, value = (
                     arg[:arg.index("=")],
                     arg[arg.index("=")+1:]
                 )
                 clean_args[key] = value
             except ValueError as e:
                 pass
-        
+
         # </mess>
 
         try:
@@ -238,29 +238,29 @@ class COBillScraper(BillScraper):
         with self.urlopen(bill_history_url) as history_html:
             bill_history_page = lxml.html.fromstring(history_html)
             nodes = bill_history_page.xpath('//form/b/font')
-            
+
             bill_id = nodes[1].text
             actions = nodes[3].text_content()
-            
+
             for action in actions.split('\n'):
-                
+
                 date_string = action[:action.find(" ")]
                 date_time   = dt.datetime.strptime( date_string, "%m/%d/%Y" )
                 action = action[action.find(" ") + 1:]
-                
+
                 action_ids = [a.strip() for a in action.split('-')]
-                
+
                 item_info = {
                     "action"      : action_ids[0],
                     "date"        : date_time,
                     "args"        : action_ids[1:],
                     "orig"        : action
                 }
-                
+
                 ret.append( item_info )
-            
+
             return ret
-   
+
     """
     We were able to get a bunch of actions, so this method handles
     mangling the human-readable descriptions in well tagged actions
@@ -278,7 +278,7 @@ class COBillScraper(BillScraper):
         def _parse_house_action():
             actor = "lower"
             aText = action['action']
-            
+
             if aText == 'Introduced In House':
                 # Typically, we're also including an assigned ctty
                 bill_assignd_ctty = action['args'][0]
@@ -412,7 +412,7 @@ class COBillScraper(BillScraper):
                 return True
 
             return False
-        
+
         """
         Parse a string that contains "Governor". On failure to handle the string,
         we will return false, and let the fallback handler resolve the string.
@@ -454,7 +454,7 @@ class COBillScraper(BillScraper):
         def _parse_action_fallback():
             hasHouse  = "House"  in action['action']
             hasSenate = "Senate" in action['action']
-            
+
             if hasHouse and hasSenate:
                 actor = 'joint'
             elif hasHouse:
@@ -474,20 +474,20 @@ class COBillScraper(BillScraper):
             "Senate"   : _parse_senate_action,
             "Governor" : _parse_governor_action
         }
-        
+
         for t in translation_routines:
             if t in action['action']:
                 if not translation_routines[t]():
                     _parse_action_fallback()
                 return
         _parse_action_fallback()
-    
+
     """
     Scrape the bill sheet (the page full of bills and other small bits of data)
     """
     def scrape_bill_sheet( self, session, chamber ):
         sheet_url = self.get_bill_folder( session, chamber )
-        
+
         bill_chamber = { "Senate" : "upper", "House" : "lower" }[chamber]
 
         index = {
@@ -497,22 +497,22 @@ class COBillScraper(BillScraper):
             "history"       : 3,
             "votes"         : 7
         }
-        
+
         with self.urlopen(sheet_url) as sheet_html:
             sheet_page = lxml.html.fromstring(sheet_html)
-            
+
             bills = sheet_page.xpath('//table/tr')
-            
+
             for bill in bills:
                 bill_id = self.read_td(bill[index["id"]][0])
-                
+
                 if bill_id == None:
                     # Every other entry is null for some reason
                     continue
-                
+
                 bill_id = bill_id[:bill_id.find(".")]
                 title_and_sponsor = bill[index["title_sponsor"]][0]
-                
+
                 bill_title = title_and_sponsor.text
                 bill_title_and_sponsor = title_and_sponsor.text_content()
                 sponsors = bill_title_and_sponsor.replace(bill_title, "").\
@@ -532,7 +532,7 @@ class COBillScraper(BillScraper):
                 }
 
                 bill_type = None
-                
+
                 for cat in cats:
                     if bill_id[:len(cat)] == cat:
                         bill_type = cats[cat]
@@ -549,7 +549,7 @@ class COBillScraper(BillScraper):
                 for version in versions:
                     b.add_version( version['name'], version['link'],
                         mimetype=version['mimetype'])
-               
+
                 bill_history_href = CO_URL_BASE + \
                     bill[index["history"]][0][0].attrib['href']
                     # ^^^^^^^ We assume this is a full path to the target.
@@ -558,10 +558,10 @@ class COBillScraper(BillScraper):
 
                 history = self.parse_history( bill_history_href )
                 b.add_source( bill_history_href )
-                
+
                 for action in history:
                     self.add_action_to_bill( b, action )
-               
+
                 for sponsor in sponsors:
                     if sponsor != None and sponsor != "(NONE)":
                         b.add_sponsor("primary", sponsor)
@@ -638,7 +638,7 @@ class COBillScraper(BillScraper):
                             v.other( who )
                     b.add_vote( v )
                 self.save_bill(b)
-            
+
     """
     Entry point when invoking this from billy (or really whatever else)
     """

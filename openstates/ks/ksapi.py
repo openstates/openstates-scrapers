@@ -1,15 +1,6 @@
 ksleg = 'http://www.kslegislature.org/li'
 url = '%s/api/v5/rev-1/' % ksleg
 
-bad_committees = ['ctte_s_phw_1',
-                  'ctte_spc_special_committee_on_kan_ed_study_commission_1',
-                  'ctte_emp_pay_plan_ovst_1',
-                  'ctte_2011_redistricting_advisory_group_1',
-                  'ctte_leg_budget_1',
-                  'ctte_h_corr_juv_jus_1',
-                  'ctte_spc_kan_ed_study_1',
-                 ]
-
 # in order from sec 10.1 of KLISS doc
 action_codes = {
      # motion to acede; appointed

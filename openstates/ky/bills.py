@@ -95,6 +95,13 @@ class KYBillScraper(BillScraper):
                 action_p = pars[1]
             else:
                 title = pars[0].getprevious().tail
+                if not title:
+                    self.warning('walking backwards to get bill title, error prone!')
+                    title = pars[0].getprevious().getprevious()
+                    while not title.tail:
+                        title = title.getprevious()
+                    title = title.tail
+                    self.warning('got title the dangerous way: %s' % title)
                 action_p = pars[0]
 
             title = re.sub(ur'[\s\xa0]+', ' ', title).strip()

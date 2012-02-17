@@ -175,12 +175,14 @@ class FLBillScraper(BillScraper):
                 if not col:
                     continue
 
-                match = re.match(r'(Y|N|EX)\s+(.+)$', col)
+                match = re.match(r'(Y|N|EX|\*)\s+(.+)$', col)
                 if match:
                     if match.group(1) == 'Y':
                         vote.yes(match.group(2))
                     elif match.group(1) == 'N':
                         vote.no(match.group(2))
+                    elif match.group(1) == '*':
+                        pass # skip paired voters, don't factor into count
                     else:
                         vote.other(match.group(2))
                 else:

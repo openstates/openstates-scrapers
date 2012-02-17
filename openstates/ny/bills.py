@@ -1,5 +1,7 @@
 import re
 import datetime
+import urllib
+import pdb
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -9,17 +11,33 @@ import lxml.html
 import lxml.etree
 
 
+
 class NYBillScraper(BillScraper):
+
     state = 'ny'
 
     def scrape(self, chamber, session):
-        try:
-            for index in xrange(1, 1000):
+
+        errors = 0
+        index = 0
+
+        while errors < 10:
+
+            index += 1
+
+            try:                
+
                 url = ("http://open.nysenate.gov/legislation/search/"
                        "?search=otype:bill&searchType=&format=xml"
                        "&pageIdx=%d" % index)
+
                 with self.urlopen(url) as page:
                     page = lxml.etree.fromstring(page)
+                    
+                    if not page.getchildren():
+                        # If the result response is empty, we've hit the end of
+                        # the data. Quit.
+                        break
 
                     for result in page.xpath("//result[@type = 'bill']"):
                         bill_id = result.attrib['id'].split('-')[0]
@@ -56,9 +74,14 @@ class NYBillScraper(BillScraper):
                         bill.add_source(bill_url)
 
                         self.save_bill(bill)
-        except scrapelib.HTTPError as e:
-            if e.response.code != 404:
-                raise
+
+                        index += 1
+
+            except scrapelib.HTTPError as e:
+                if e.response.code == 404:
+                    errors += 1
+                else:
+                    raise
 
     def scrape_bill(self, bill, url):
         with self.urlopen(url) as page:

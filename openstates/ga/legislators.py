@@ -175,7 +175,9 @@ class GALegislatorScraper(LegislatorScraper):
                                         district,
                                         '"Coach" Williams',
                                         party="Democratic",
-                                        url=url)
+                                        url=url,
+                                       )
+                legislator.add_source(url)
                 return legislator
 
             # See if we got to the first row, some templates don't start with their table as 'hoverTable'

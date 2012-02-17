@@ -150,7 +150,7 @@ class CTBillScraper(BillScraper):
                     name = row.xpath("string(td[%d])" % (
                         i + name_offset)).strip()
 
-                    if not name:
+                    if not name or name == 'VACANT':
                         continue
 
                     if "Y" in row.xpath("string(td[%d])" %
