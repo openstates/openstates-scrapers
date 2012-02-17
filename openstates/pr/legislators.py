@@ -50,18 +50,18 @@ class PRLegislatorScraper(LegislatorScraper):
                         district = str(counter)
 		    
                     leg = Legislator(term, 'upper', district, name,
-                                     party=party, phone=phone, email=email)
+                                     party=party, office_phone=phone, email=email)
 
                     leg.add_source(url)
                     self.save_legislator(leg)
 
     def scrape_house(self, term):
-        url = 'http://www.camaraderepresentantes.org/cr_legs.asp'
-
         party_map = {'PNP': 'Partido Nuevo Progresista',
                      'PPD': u'Partido Popular Democr\xe1tico'}
+	url = 'http://www.camaraderepresentantes.org/cr_legs.asp'
 
         with self.urlopen(url) as html:
+	
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
             tables = doc.xpath('//table[@class="img_news"]')
@@ -74,23 +74,16 @@ class PRLegislatorScraper(LegislatorScraper):
 		    #go into the legislator page and get his data
 		    with self.urlopen(rep_url) as leg_html:
 			leg_doc = lxml.html.fromstring(leg_html)
-			leg_doc.make_links_absolute(rep_url)
+                        leg_doc.make_links_absolute(rep_url)
+
 			leg_tables = leg_doc.xpath('//table[@class="lcom"]')
-			#if len(tables) == 1:
-	    		#    email = tables[0]
-			#else:
-			#    email = tables[1]
-		#	for ulu in leg_tables:
-		#	    print lxml.etree.tostring(ulu).replace('&#13;','')
-		#	    print '---------'
-#			print leg_tables[1].xpath('//div[@class="sbox2"][2]/div[2]/table/tbody/tr[1]/td[2]')
-#			print lxml.etree.tostring(leg_tables[1].xpath('//div[@class="sbox2"]/[1]'))
-#			print lxml.etree.tostring(leg_tables[1]).find('td').replace('<br>','').replace('<br/>','')
+			leg_info_block = leg_tables[1].xpath('td')
+			#print len(leg_info_block) 
+			if len(leg_info_block) > 0:
+			#	print len(leg_info_block)
+				phone_table = lxml.etree.tostring(leg_info_block[0])
+				phones = re.findall("\d{3}-\d{3}-\d{3}",phone_table)
 			email =  leg_tables[1].xpath('//a[starts-with(@href,"mailto")]')[0].text
-			return
-			#print tables[1].find('font')
-			#print tables[0].find('font')
-			#print lxml.etree.tostring(email)
                     # for these we can split names and get district
                     if not at_large:
                         name, district = td.xpath('.//b/text()')
@@ -105,10 +98,15 @@ class PRLegislatorScraper(LegislatorScraper):
                     party = party_map[td.xpath('.//font')[1].text_content()]
 		    if name == u"Carlos  “Johnny” Méndez Nuñez":
 			name = u"Carlos “Johnny” Méndez Nuñez"
+		    if len(phones) <= 0:
+			phones = ''
+		    else:
+			#there are 2 phone number and a fax i only choose the first one
+			phones = phones[0]
                     leg = Legislator(term, 'lower', district, name,
                                      first_name=first_name,
                                      last_name=last_name,
                                      party=party,
-                                     photo_url=photo_url,email=email)
+                                     photo_url=photo_url,email=email,office_phone=phones)
                     leg.add_source(rep_url)
                     self.save_legislator(leg)

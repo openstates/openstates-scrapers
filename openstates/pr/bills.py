@@ -144,7 +144,7 @@ class PRBillScraper(BillScraper):
 	  	    action_actor = chamber
                 bill.add_action(action_actor, action.replace('.',''), date, type=atype)
 
-                if type == 'bill:passed' and action_url:
+                if atype == 'bill:passed' and action_url:
                     vote_chamber  = None
                     for pattern, vote_chamber in _voteChambers:
                        if re.match(pattern,action):
