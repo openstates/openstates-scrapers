@@ -62,7 +62,7 @@ class TNCommitteeScraper(CommitteeScraper):
     #Scrapes the individual Senate committee
     def scrape_senate_committee(self, committee_name, link):
         """Scrape individual committee page and add members"""
-        find_expr = "//div[@class='col1']/ul[position()<3]/li/a[1]"
+        find_expr = "//div[@class='col1']/ul[position()<3]/li"
         
         com = Committee('upper', committee_name)
         
@@ -101,7 +101,7 @@ class TNCommitteeScraper(CommitteeScraper):
     #Scrapes the individual House Committee
     def scrape_house_committee(self, committee_name, link):
         """Scrape individual committee page and add members"""
-        find_expr = "//div[@class='col1']/ul[position()<3]/li/a[1]"
+        find_expr = "//div[@class='col1']/ul[position()<3]/li"
         
         com = Committee('lower', committee_name)
         
