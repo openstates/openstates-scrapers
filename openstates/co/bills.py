@@ -72,7 +72,7 @@ class COBillScraper(BillScraper):
                         # They look like:
                         #    Final     YES: 7     NO: 6     EXC: 0     ABS: 0\
                         #        FINAL ACTION: PASS
-                        # 
+                        #
                         to_parse = to_parse.replace("FINAL ACTION",
                             "FINAL_ACTION").replace(":", "")
                         passage_actions = to_parse.split()
