@@ -4,12 +4,13 @@ import lxml.html
 
 class TNLegislatorScraper(LegislatorScraper):
     state = 'tn'
-    
+
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=False)
         root_url = 'http://www.capitol.tn.gov/'
-        parties = {'D': 'Democratic', 'R': 'Republican', 'CCR': 'Carter County Republican'}
+        parties = {'D': 'Democratic', 'R': 'Republican',
+                   'CCR': 'Carter County Republican'}
 
         #testing for chamber
         if chamber == 'upper':
@@ -24,6 +25,10 @@ class TNLegislatorScraper(LegislatorScraper):
             chamber_url = root_url + url_chamber_name + '/members/'
 
         with self.urlopen(chamber_url) as page:
+            # horrible hack for missing <tr> on Mark White
+            mark_white_str = '<td><a href="h83.html">White</a>, Mark </td>'
+            page = page.replace(mark_white_str, '<tr>'+mark_white_str)
+
             page = lxml.html.fromstring(page)
 
             for row in page.xpath("//tr")[1:]:
@@ -35,9 +40,12 @@ class TNLegislatorScraper(LegislatorScraper):
                 if phone == None:
                     phone = row.xpath('td[6]/div')[0].text
                 phone = '615-' + phone.split()[0]
-                email = row.xpath('td[7]/a')[0].text 
-                member_url = root_url + url_chamber_name + '/members/' + abbr + district + '.html'
-                member_photo_url = root_url + url_chamber_name + '/members/images/' + abbr + district + '.jpg'
+                email = row.xpath('td[7]/a')[0].text
+                member_url = (root_url + url_chamber_name + '/members/'
+                              + abbr + district + '.html')
+                member_photo_url = (root_url + url_chamber_name +
+                                    '/members/images/' + abbr + district +
+                                    '.jpg')
 
                 with self.urlopen(member_url) as member_page:
                     member_page = lxml.html.fromstring(member_page)
@@ -50,8 +58,11 @@ class TNLegislatorScraper(LegislatorScraper):
                         full_name = name[5: len(name)]
                     else:
                         full_name = name[8:len(name)]
-                    
-                    leg = Legislator(term, chamber, district, full_name, party=party, email=email, phone=phone, url=member_url, photo_url=member_photo_url)
+
+                    leg = Legislator(term, chamber, district, full_name,
+                                     party=party, email=email, phone=phone,
+                                     url=member_url,
+                                     photo_url=member_photo_url)
                     leg.add_source(chamber_url)
                     leg.add_source(member_url)
                     self.save_legislator(leg)
