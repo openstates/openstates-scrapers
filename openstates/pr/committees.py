@@ -26,14 +26,19 @@ class PRCommitteeScraper(CommitteeScraper):
             
     def scrape_upper(self):
 	perm_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Permanentes(2009-2012).pdf'
-	filename, resp = self.urlretrieve(perm_comm)
+	scrape_upper_committee('upper',perm_comm)
+	joint_comm = 'http://senadopr.us/comisiones/Pages/ComposicionComisionesConjuntas.aspx';
+	scrape_upper_committee('joint',joint_comm);
+
+    def scrape_upper_committee(self,committee, url):
+	filename, resp = self.urlretrieve(url)
         root = lxml.etree.fromstring( convert_pdf(filename,'xml'))
 	for link in root.xpath('/pdf2xml/page'):
 	    comm = None;
 	    for line in link.findall('text'):
 		text = line.findtext('b')
        		if text is not None and text.startswith('Comisi'):
-		    comm = Committee('upper',text);
+		    comm = Committee(committee,text);
 	    	    comm.add_source(perm_comm)
 		else:
 		    if line.text and line.text.startswith('Hon.'):
