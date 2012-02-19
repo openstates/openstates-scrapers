@@ -25,20 +25,26 @@ class PRCommitteeScraper(CommitteeScraper):
             self.scrape_lower()
             
     def scrape_upper(self):
-	perm_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Permanentes(2009-2012).pdf'
-	scrape_upper_committee('upper',perm_comm)
-	joint_comm = 'http://senadopr.us/comisiones/Pages/ComposicionComisionesConjuntas.aspx';
-	scrape_upper_committee('joint',joint_comm);
-
-    def scrape_upper_committee(self,committee, url):
+#	perm_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Permanentes(2009-2012).pdf'
+#	self.scrape_upper_committee(perm_comm)
+	joint_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Conjuntas(2009-2012).pdf';
+	self.scrape_joint_committee(joint_comm);
+    def scrape_joint_committee(self,url):
+	filename, resp = self.urlretrieve(url)
+	root = lxml.etree.fromstring(convert_pdf(filename,'xml'))
+	for link in root.xpath('/pdf2xml/page'):
+	    comm = None
+	    print lxml.etree.tostring(root)
+	    return
+    def scrape_upper_committee(self,url):
 	filename, resp = self.urlretrieve(url)
         root = lxml.etree.fromstring( convert_pdf(filename,'xml'))
 	for link in root.xpath('/pdf2xml/page'):
-	    comm = None;
+	    comm = None
 	    for line in link.findall('text'):
 		text = line.findtext('b')
        		if text is not None and text.startswith('Comisi'):
-		    comm = Committee(committee,text);
+		    comm = Committee('upper',text);
 	    	    comm.add_source(perm_comm)
 		else:
 		    if line.text and line.text.startswith('Hon.'):
@@ -52,7 +58,8 @@ class PRCommitteeScraper(CommitteeScraper):
 			        title = 'vicechairman'
 			    elif name_split[1] == 'Secretaria' or name_split[1] == 'Secretario':
 			        title = 'secretary'
-			comm.add_member(name_split[0].replace('Hon.',''),title)
+			if(name_split[0] != 'VACANTE'):
+			    comm.add_member(name_split[0].replace('Hon.',''),title)
             self.save_committee(comm)
 			
 	
