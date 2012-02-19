@@ -102,11 +102,14 @@ class PRLegislatorScraper(LegislatorScraper):
 			phones = ''
 		    else:
 			#there are 2 phone number and a fax i only choose the first one
-			phones = phones[0]
+			first_phone = phones[0]
                     leg = Legislator(term, 'lower', district, name,
                                      first_name=first_name,
                                      last_name=last_name,
                                      party=party,
-                                     photo_url=photo_url,email=email,office_phone=phones)
+                                     photo_url=photo_url,
+				     email=email,
+				     office_phone=first_phone,
+				     phone_list=phones)
                     leg.add_source(rep_url)
                     self.save_legislator(leg)
