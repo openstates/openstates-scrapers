@@ -198,7 +198,7 @@ class SDBillScraper(BillScraper):
             vote.add_source(url)
 
             for td in page.xpath("//table[contains(@id, 'tblVotes')]/tr/td"):
-                if td.text == 'Yea':
+                if td.text in ('Aye', 'Yea'):
                     vote.yes(td.getprevious().text.strip())
                 elif td.text == 'Nay':
                     vote.no(td.getprevious().text.strip())
