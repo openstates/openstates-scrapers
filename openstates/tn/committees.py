@@ -41,8 +41,7 @@ class TNCommitteeScraper(CommitteeScraper):
         url_chamber = self.chambers[chamber]
         url = 'http://www.capitol.tn.gov/%s/committees/' % (url_chamber)
         if chamber == 'upper':
-            #self.scrape_senate_committees(url)
-            test = True
+            self.scrape_senate_committees(url)
         else:
             self.scrape_house_committees(url)
 
