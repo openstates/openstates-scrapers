@@ -42,6 +42,7 @@ class TNCommitteeScraper(CommitteeScraper):
         url = 'http://www.capitol.tn.gov/%s/committees/' % (url_chamber)
         if chamber == 'upper':
             self.scrape_senate_committees(url)
+            self.scrape_joint_committees()
         else:
             self.scrape_house_committees(url)
 
@@ -148,5 +149,63 @@ class TNCommitteeScraper(CommitteeScraper):
                 if member_name != "":
                     com.add_member(member_name, role)
 
+            com.add_source(url)
+            self.save_committee(com)
+
+    #Scrapes joint committees
+    def scrape_joint_committees(self):
+        main_url = 'http://www.capitol.tn.gov/joint/'
+
+        with self.urlopen(main_url) as page:
+            page = lxml.html.fromstring(page)
+            
+            for el in page.xpath("//div[@class='col2']/ul/li/a"):
+                com_name = el.text
+                com_link = el.attrib["href"]
+                #cleaning up links
+                if '..' in com_link:
+                    com_link = self.base_href + com_link[2:len(com_link)]
+                self.scrape_joint_committee(com_name, com_link)
+
+    #Scrapes the individual joint committee - most of it is special case
+    def scrape_joint_committee(self, committee_name, url):
+        com = Committee('joint', committee_name)
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+
+            if 'state.tn.us' in url:
+                for el in page.xpath("//div[@class='Blurb']/table//tr[2 <= position() and  position() < 10]/td[1]/a"):
+                    member_name = el.text
+                    if 'Senator' in member_name:
+                        member_name = member_name[8:len(member_name)]
+                    elif 'Representative' in member_name:
+                        member_name = member_name[15:len(member_name)]
+                    else:
+                        member_name = member_name[17: len(member_name)]
+                    com.add_member(member_name, 'member')
+            elif 'gov-opps' in url:
+                links = ['senate', 'house']
+                for link in links:
+                    chamber_link = self.base_href + '/' + link + '/committees/gov-opps.html'
+                    with self.urlopen(chamber_link) as chamber_page:
+                        chamber_page = lxml.html.fromstring(chamber_page)
+                        for mem in chamber_page.xpath("//div[@class='col1']/ul[position() <= 2]/li/a"):
+                            member = [item.strip() for item in mem.text_content().split(',',1)]
+                            if len(member) > 1:                 
+                                member_name, role = member                      
+                            else:                                                               
+                                member_name, role = member[0], 'member'                                             
+                            if member_name != "":                                                                                   
+                                com.add_member(member_name, role)
+                        com.add_source(chamber_link)
+            else:
+                for el in page.xpath("//div[@class='col1']/ul[position() <= 3]/li/a"):
+                    member = [item.strip() for item in el.text_content().split(',',1)]
+                    if len(member) > 1:
+                        member_name, role = member
+                    else:
+                        member_name, role = member[0], 'member'
+                    if member_name != "":
+                        com.add_member(member_name, role)
             com.add_source(url)
             self.save_committee(com)
