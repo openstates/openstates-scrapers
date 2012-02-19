@@ -41,7 +41,8 @@ class TNCommitteeScraper(CommitteeScraper):
         url_chamber = self.chambers[chamber]
         url = 'http://www.capitol.tn.gov/%s/committees/' % (url_chamber)
         if chamber == 'upper':
-            self.scrape_senate_committees(url)
+            #self.scrape_senate_committees(url)
+            test = True
         else:
             self.scrape_house_committees(url)
 
@@ -103,12 +104,21 @@ class TNCommitteeScraper(CommitteeScraper):
         """Scrape individual committee page and add members"""
         find_expr = "//div[@class='col1']/ul[position()<3]/li"
         
-        com = Committee('lower', committee_name)
         
         with self.urlopen(link) as page:
             # Find individual committee urls
             page = lxml.html.fromstring(page)
             
+            #sub_committee
+            if (len(page.xpath("//div[@class='col2']/h3[3]/a"))>0):
+                sub_committee_url = self.base_href + '/house/committees/' + page.xpath("//div[@class='col2']/h3[3]/a")[0].attrib['href']
+                sub_committee_name = "General Sub of " + committee_name
+                self.scrape_house_sub_committee(sub_committee_name, sub_committee_url)
+            else:
+                sub_committee_name = None
+
+            com = Committee('lower', committee_name, subcommittee=sub_committee_name)
+
             for el in page.xpath(find_expr):
                 member = [item.strip() for item in el.text_content().split(',',1)]
                 if len(member) > 1:
@@ -119,6 +129,25 @@ class TNCommitteeScraper(CommitteeScraper):
                 if member_name != "":
                     com.add_member(member_name, role)
 
-        
         com.add_source(link)
         self.save_committee(com)
+
+    #Scrapes the individual sub committee for the house
+    def scrape_house_sub_committee(self, sub_committee_name, url):
+        find_expr = "//div[@class='col1']/ul[position()<3]/li"
+        
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            com = Committee('lower', sub_committee_name)
+
+            for el in page.xpath(find_expr):
+                member = [item.strip() for item in el.text_content().split(',',1)]
+                if len(member) > 1:
+                    member_name, role = member
+                else:
+                    member_name, role = member[0], 'member'                                                                        
+                if member_name != "":
+                    com.add_member(member_name, role)
+
+            com.add_source(url)
+            self.save_committee(com)
