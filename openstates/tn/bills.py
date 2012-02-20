@@ -101,10 +101,15 @@ class TNBillScraper(BillScraper):
 
             #Bill subject
             subject_pos = title.find('-')
-            subject = title[0:subject_pos - 1]
+            subjects = title[0:subject_pos - 1].split(',')
+            for subj in subjects:
+                if subj[0] == ' ':
+                    subj = subj[1:len(subj)]
+                if subj[-1] == ' ':
+                    subj = subj[0:len(subj)-1]
 
             bill = Bill(term, primary_chamber, bill_id, title, type=bill_type,
-                        secondary_bill_id=secondary_bill_id, subject=subject)
+                        secondary_bill_id=secondary_bill_id, subject=subjects)
             bill.add_source(bill_url)
 
             # Primary Sponsor
