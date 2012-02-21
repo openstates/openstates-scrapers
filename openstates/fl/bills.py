@@ -162,7 +162,13 @@ class FLBillScraper(BillScraper):
                     other_count)
         vote.add_source(url)
 
+        y,n,o = 0,0,0
+        break_outter = False
+
         for line in text.split('\n')[9:]:
+            if break_outter:
+                break
+
             if 'after roll call' in line:
                 break
             if 'Indication of Vote' in line:
@@ -176,17 +182,23 @@ class FLBillScraper(BillScraper):
                     continue
 
                 match = re.match(r'(Y|N|EX|\*)\s+(.+)$', col)
+
                 if match:
+                    print match.group(2), match.group(1)
+
+                    if match.group(2) == "PAIR":
+                        break_outter = True
+                        break
                     if match.group(1) == 'Y':
                         vote.yes(match.group(2))
                     elif match.group(1) == 'N':
                         vote.no(match.group(2))
-                    elif match.group(1) == '*':
-                        pass # skip paired voters, don't factor into count
                     else:
                         vote.other(match.group(2))
                 else:
+                    print "OTHER"
                     vote.other(col.strip())
+        print vote
 
         vote.validate()
         bill.add_vote(vote)
