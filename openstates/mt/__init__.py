@@ -11,6 +11,7 @@ metadata = {
     'terms': [
         {'name': '2011-2012',
          'sessions': ['2011'],
+         'session_number': '62nd',
          'start_year': 2011, 'end_year': 2012},
     ],
     'session_details': {
