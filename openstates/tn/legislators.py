@@ -25,10 +25,6 @@ class TNLegislatorScraper(LegislatorScraper):
             chamber_url = root_url + url_chamber_name + '/members/'
 
         with self.urlopen(chamber_url) as page:
-            # horrible hack for missing <tr> on Mark White
-            mark_white_str = '<td><a href="h83.html">White</a>, Mark </td>'
-            page = page.replace(mark_white_str, '<tr>'+mark_white_str)
-
             page = lxml.html.fromstring(page)
 
             for row in page.xpath("//tr")[1:]:
