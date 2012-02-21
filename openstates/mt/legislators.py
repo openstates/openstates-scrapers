@@ -14,7 +14,7 @@ class MTLegislatorScraper(LegislatorScraper):
     def __init__(self, *args, **kwargs):
         super(MTLegislatorScraper, self).__init__(*args, **kwargs)
 
-    def scrape(self, chamber, term):      
+    def scrape(self, chamber, term):
         for tdata in self.metadata['terms']:
             if term == tdata['name']:
                 year = tdata['start_year']
