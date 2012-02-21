@@ -219,6 +219,9 @@ class WIBillScraper(BillScraper):
             match = re.match(
                 '(Introduced|Cosponsored) by (?:joint )?(Senator|Representative|committee|Joint Legislative Council|Law Revision Committee)s?(.*)',
                 line)
+            if not match:
+                continue
+
             type, title, people = match.groups()
             if type == 'Introduced':
                 sponsor_type = 'primary'
