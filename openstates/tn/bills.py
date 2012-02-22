@@ -1,7 +1,6 @@
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from tn import metadata
 import datetime
 import lxml.html
 import re
@@ -97,19 +96,16 @@ class TNBillScraper(BillScraper):
                 bill_id = chamber1.replace(' ', '')[1:len(chamber1)]
                 secondary_bill_id = None
 
+            secondary_chamber = 'upper' if primary_chamber == 'lower' else 'lower'
+
             title = page.xpath("//span[@id='lblAbstract']")[0].text
 
             #Bill subject
             subject_pos = title.find('-')
-            subjects = title[0:subject_pos - 1].split(',')
-            for subj in subjects:
-                if subj[0] == ' ':
-                    subj = subj[1:len(subj)]
-                if subj[-1] == ' ':
-                    subj = subj[0:len(subj)-1]
+            subjects = [s.strip() for s in title[:subject_pos-1].split(',')]
 
             bill = Bill(term, primary_chamber, bill_id, title, type=bill_type,
-                        subject=subjects)
+                        subjects=subjects)
             if secondary_bill_id:
                 bill['alternate_bill_ids'] = [secondary_bill_id]
             bill.add_source(bill_url)
@@ -146,7 +142,7 @@ class TNBillScraper(BillScraper):
 
                 #Secondary Sponsor
                 secondary_sponsor = page.xpath("//span[@id='lblCoBillSponsor']")[0].text_content().split("by")[-1]
-                secondary_sponsor = secondary_sponsor.replace('*','').strip()
+                secondary_sponsor = secondary_sponsor.replace('*','').replace(')', '').strip()
                 bill.add_sponsor('secondary', secondary_sponsor)
 
                 #Secondary Actions
@@ -157,7 +153,8 @@ class TNBillScraper(BillScraper):
                     action2_taken = ar2.xpath("td")[0].text
                     action2_date = datetime.datetime.strptime(ar2.xpath("td")[1].text.strip(), '%m/%d/%Y')
                     action2_type = categorize_action(action2_taken)
-                    bill.add_action(chamber2, action2_taken, action2_date, action2_type)
+                    bill.add_action(secondary_chamber, action2_taken,
+                                    action2_date, action2_type)
 
                 #Secondary Votes
                 votes2_link = page.xpath("//span[@id='lblBillVotes']/a")
@@ -205,7 +202,6 @@ class TNBillScraper(BillScraper):
                     passed = yes_count > no_count
                 else:
                     yes_count = no_count = 0
-
 
                 vote = Vote(bill['chamber'], vote_date, motion, passed, yes_count, no_count, other_count)
                 vote.add_source(link)
