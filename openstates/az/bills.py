@@ -466,6 +466,13 @@ class AZBillScraper(BillScraper):
                     else:
                         vote[v] = [name]
                     vote.other(name)
+
+            # Warn if the stated other_vote count doesn't add up.
+            if vote['other_count'] != len(vote['other_votes']):
+                self.warning("Other votes count on webpage didn't match "
+                             "len(other_votes)...using length instead.")
+                vote['other_count'] = len(vote['other_votes'])
+
             bill.add_vote(vote)
             
     def sort_bill_actions(self, bill):
