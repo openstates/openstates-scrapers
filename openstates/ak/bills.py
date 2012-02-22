@@ -183,54 +183,60 @@ class AKBillScraper(BillScraper):
 
         self.save_bill(bill)
 
-    def parse_vote(self, bill, action, act_chamber, act_date, url):
+    def parse_vote(self, bill, action, act_chamber, act_date, url,  
+        re_vote_text=re.compile(r'The question being:\s*"(.*?\?)"', re.S),
+        re_header=re.compile(r'\d{2}-\d{2}-\d{4}\s{10,}\w{,20} Journal\s{10,}\d{,6}\s{,4}')):
+
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
 
-        yes = no = other = 0
+        # Find all chunks of text representing voting reports.
+        votes_text = doc.xpath('//pre')[1].text_content()
+        votes_text = re_vote_text.split(votes_text)
+        votes_data = zip(votes_text[1::2], votes_text[2::2])
 
-        tally = re.findall('(?:(Y|N|E|A)(-|\d+)\s*)', action)
+        # Process each.
+        for motion, text in votes_data:
 
-        for vtype, vcount in tally:
-            vcount = int(vcount) if vcount != '-' else 0
-            if vtype == 'Y':
-                yes = vcount
-            elif vtype == 'N':
-                no = vcount
-            else:
-                other += vcount
+            yes = no = other = 0
 
-        # regex against plain html for motion
-        try:
-            motion = re.findall('The question being:\s*"(.*)\?"', html,
-                                re.DOTALL)[0].replace('\r\n', ' ')
-        except IndexError:
-            return
+            tally = re.findall('([YNEA])[A-Z]+:\s{,3}(\d{,3})', text)
+            for vtype, vcount in tally:
+                vcount = int(vcount) if vcount != '-' else 0
+                if vtype == 'Y':
+                    yes = vcount
+                elif vtype == 'N':
+                    no = vcount
+                else:
+                    other += vcount
 
-        vote = Vote(act_chamber, act_date, motion, yes > no, yes, no, other)
+            vote = Vote(act_chamber, act_date, motion, yes > no, yes, no, other)
 
-        #vote_lines =  doc.xpath('//b[contains(text(), "YEAS:")]')[0].tail.split('\r\n')
-        vote_lines = doc.xpath('//pre')[1].text_content().split('\r\n')
-        vote_type = None
-        for vote_list in vote_lines:
-            if vote_list.startswith('Yeas: '):
-                vote_list, vote_type = vote_list[6:], vote.yes
-            elif vote_list.startswith('Nays: '):
-                vote_list, vote_type = vote_list[6:], vote.no
-            elif vote_list.startswith('Excused: '):
-                vote_list, vote_type = vote_list[9:], vote.other
-            elif vote_list.startswith('Absent: '):
-                vote_list, vote_type = vote_list[9:], vote.other
-            elif vote_list.strip() == '':
-                vote_type = None
-            if vote_type:
-                for name in vote_list.split(','):
-                    name = name.strip()
-                    if name:
-                        vote_type(name)
+            # In lengthy documents, the "header" can be repeated in the middle of
+            # content. This regex gets rid of it.
+            vote_lines = re_header.sub('', text)
+            vote_lines = vote_lines.split('\r\n')
 
-        vote.add_source(url)
-        bill.add_vote(vote)
+            vote_type = None
+            for vote_list in vote_lines:
+                if vote_list.startswith('Yeas: '):
+                    vote_list, vote_type = vote_list[6:], vote.yes
+                elif vote_list.startswith('Nays: '):
+                    vote_list, vote_type = vote_list[6:], vote.no
+                elif vote_list.startswith('Excused: '):
+                    vote_list, vote_type = vote_list[9:], vote.other
+                elif vote_list.startswith('Absent: '):
+                    vote_list, vote_type = vote_list[9:], vote.other
+                elif vote_list.strip() == '':
+                    vote_type = None
+                if vote_type:
+                    for name in vote_list.split(','):
+                        name = name.strip()
+                        if name:
+                            vote_type(name)
+
+            vote.add_source(url)
+            bill.add_vote(vote)
 
     def clean_action(self, action):
         # Clean up some acronyms
