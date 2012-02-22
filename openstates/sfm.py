@@ -138,7 +138,7 @@ handlers = {
 def _to_numeric_id(id):
     state,num = id.split('D')
     states = ('AK', 'AL', 'AR', 'AZ')
-    return str(states.index(pieces[0]) + 1) + num
+    return str(states.index(state) + 1) + num
 
 
 def push_to_sfm(doc, newdata):
