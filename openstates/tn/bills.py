@@ -123,7 +123,7 @@ class TNBillScraper(BillScraper):
 
             # bill text
             summary = page.xpath("//span[@id='lblBillSponsor']/a")[0]
-            bill.add_document('Current Version', summary.get('href'))
+            bill.add_version('Current Version', summary.get('href'))
 
             #Primary Actions
             tables = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvBillActionHistory']")
