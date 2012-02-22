@@ -19,6 +19,7 @@ import lxml.html
 
 class CTBillScraper(BillScraper):
     state = 'ct'
+    latest_only = True
 
     _committee_names = {}
     _introducers = defaultdict(set)
