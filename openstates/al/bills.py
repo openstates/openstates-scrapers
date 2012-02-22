@@ -126,8 +126,6 @@ class ALBillScraper(BillScraper):
                 bill = Bill(session, chamber, bill_id, title, type=bill_type)
                 if subject:
                     bill['subjects'] = [subject]
-                if sponsor:
-                    bill.add_sponsor('primary', sponsor)
 
                 if fnotes == 'ON':
                     bill.add_document('fiscal notes', 'http://alisondb.legislature.state.al.us/acas/ACTIONFiscalNotesFrameMac.asp?OID=%s&LABEL=%s' %
@@ -204,6 +202,10 @@ class ALBillScraper(BillScraper):
 
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
+            # primary sponsors
+            for cs in doc.xpath('//table[2]/tr/td[1]/table/tr/td/text()'):
+                if cs:
+                    bill.add_sponsor('primary', cs)
             # cosponsors in really weird table layout (likely to break)
             for cs in doc.xpath('//table[2]/tr/td[2]/table/tr/td/text()'):
                 if cs:
