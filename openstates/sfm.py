@@ -135,6 +135,11 @@ handlers = {
     'az': az_handler,
 }
 
+_to_numeric_id(id):
+    state,num = id.split('D')
+    states = ('AK', 'AL', 'AR', 'AZ')
+    return str(states.index(pieces[0]) + 1) + num
+
 
 def push_to_sfm(doc, newdata):
     server = 'http://ec2-23-20-68-251.compute-1.amazonaws.com/'
@@ -145,7 +150,7 @@ def push_to_sfm(doc, newdata):
     extractor = handlers[state]
     text = extractor(newdata)
 
-    _id = time.time()*1000000
+    _id = _to_numeric_id(doc['_id'])
 
     sfm_client.add(1, _id, text, defer=True,
                    title='%(state)s %(session)s %(bill_id)s %(name)s' % metadata,
