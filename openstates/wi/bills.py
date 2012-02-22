@@ -224,7 +224,6 @@ class WIBillScraper(BillScraper):
                 # http://docs.legis.wisconsin.gov/2011/proposals/ab568
                 # In the following format:
                 # Introduced by Representatives Krusick and J. Ott, by ... ;
-                print line
                 match = re.match(
                     'Introduced by (Representatives|Senators) (.*),',
                     line
@@ -235,7 +234,6 @@ class WIBillScraper(BillScraper):
 
                 type  = "Introduced"
                 title, names = match.groups()
-                print title, names, type
                 raise Exception("Foo")
             else:
                 type, title, people = match.groups()
