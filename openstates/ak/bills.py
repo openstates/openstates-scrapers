@@ -212,8 +212,8 @@ class AKBillScraper(BillScraper):
 
             vote = Vote(act_chamber, act_date, motion, yes > no, yes, no, other)
 
-            # In lengthy documents, the "header" can be repeated in the middle of
-            # content. This regex gets rid of it.
+            # In lengthy documents, the "header" can be repeated in the middle 
+            # of content. This regex gets rid of it.
             vote_lines = re_header.sub('', text)
             vote_lines = vote_lines.split('\r\n')
 
