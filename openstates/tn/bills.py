@@ -109,7 +109,9 @@ class TNBillScraper(BillScraper):
                     subj = subj[0:len(subj)-1]
 
             bill = Bill(term, primary_chamber, bill_id, title, type=bill_type,
-                        secondary_bill_id=secondary_bill_id, subject=subjects)
+                        subject=subjects)
+            if secondary_bill_id:
+                bill['alternate_bill_ids'] = [secondary_bill_id]
             bill.add_source(bill_url)
 
             # Primary Sponsor
@@ -119,9 +121,9 @@ class TNBillScraper(BillScraper):
 
             # Co-sponsors unavailable for scraping (loaded into page via AJAX)
 
-            # Full summary doc
+            # bill text
             summary = page.xpath("//span[@id='lblBillSponsor']/a")[0]
-            bill.add_document('Full summary', summary.get('href'))
+            bill.add_document('Current Version', summary.get('href'))
 
             #Primary Actions
             tables = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvBillActionHistory']")
