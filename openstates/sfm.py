@@ -135,7 +135,7 @@ handlers = {
     'az': az_handler,
 }
 
-_to_numeric_id(id):
+def _to_numeric_id(id):
     state,num = id.split('D')
     states = ('AK', 'AL', 'AR', 'AZ')
     return str(states.index(pieces[0]) + 1) + num
