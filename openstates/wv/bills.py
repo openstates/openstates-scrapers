@@ -1,6 +1,5 @@
 import os
 import re
-import time
 import datetime
 import collections
 
@@ -37,7 +36,6 @@ class WVBillScraper(BillScraper):
             title = link.xpath("string(../../td[2])").strip()
             self.scrape_bill(session, chamber, bill_id, title,
                              link.attrib['href'])
-
 
         # scrape resolutions
         res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?"
@@ -105,12 +103,11 @@ class WVBillScraper(BillScraper):
                 for sponsor in line.split(', '):
                     bill.add_sponsor('sponsor', sponsor.strip())
 
-
         for link in page.xpath("//a[contains(@href, 'votes/house')]"):
             self.scrape_vote(bill, link.attrib['href'])
 
         actor = chamber
-        for tr in reversed(page.xpath("//table[@class='tabborder']/tr")[1:]):
+        for tr in reversed(page.xpath("//table[@class='tabborder']/descendant::tr")[1:]):
             tds = tr.xpath('td')
             if len(tds) < 3:
                 continue
