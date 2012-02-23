@@ -179,7 +179,8 @@ class NHBillScraper(BillScraper):
                                                   '%m/%d/%Y %H:%M:%S %p')
                 # TODO: stop faking passed somehow
                 passed = yeas > nays
-                vote = Vote(actor, time, motion, passed, yeas, nays, absent)
+                vote = Vote(actor, time, motion, passed, yeas, nays, 
+                            other_count=0)
                 votes[body+vote_num] = vote
                 self.bills_by_id[bill_id].add_vote(vote)
 
@@ -196,3 +197,4 @@ class NHBillScraper(BillScraper):
                     votes[body+v_num].no(leg)
                 else:
                     votes[body+v_num].other(leg)
+                    votes[body+v_num]['other_count'] += 1
