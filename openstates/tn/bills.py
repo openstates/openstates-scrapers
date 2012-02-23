@@ -167,8 +167,8 @@ class TNBillScraper(BillScraper):
                 aye_regex = re.compile('^.+voting aye were: (.+) -')
                 no_regex = re.compile('^.+voting no were: (.+) -')
                 other_regex = re.compile('^.+present and not voting were: (.+) -')
-                yes_count = None
-                no_count = None
+                yes_count = 0
+                no_count = 0
                 other_count = 0
                 ayes = []
                 nos = []
