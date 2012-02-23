@@ -153,7 +153,7 @@ class TNBillScraper(BillScraper):
         with self.urlopen(link) as page:
             page = lxml.html.fromstring(page)
             raw_vote_data = page.xpath("//span[@id='lblVoteData']")[0].text_content()
-            raw_vote_data = re.split(raw_vote_data.strip(), '.+ by .+ -')[1:]
+            raw_vote_data = re.split('\w+? by \w+?\s+-', raw_vote_data.strip())[1:]
             for raw_vote in raw_vote_data:
                 raw_vote = raw_vote.split(u'\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0')
                 motion = raw_vote[0]
@@ -166,11 +166,13 @@ class TNBillScraper(BillScraper):
                 vote_regex = re.compile('\d+$')
                 aye_regex = re.compile('^.+voting aye were: (.+) -')
                 no_regex = re.compile('^.+voting no were: (.+) -')
+                other_regex = re.compile('^.+present and not voting were: (.+) -')
                 yes_count = None
                 no_count = None
                 other_count = 0
                 ayes = []
                 nos = []
+                others = []
 
                 for v in raw_vote[1:]:
                     v = v.strip()
@@ -178,15 +180,14 @@ class TNBillScraper(BillScraper):
                         yes_count = int(vote_regex.search(v).group())
                     elif v.startswith('Noes...') and vote_regex.search(v):
                         no_count = int(vote_regex.search(v).group())
+                    elif v.startswith('Present and not voting...') and vote_regex.search(v):
+                        other_count += int(vote_regex.search(v).group())
                     elif aye_regex.search(v):
                         ayes = aye_regex.search(v).groups()[0].split(', ')
                     elif no_regex.search(v):
                         nos = no_regex.search(v).groups()[0].split(', ')
-
-                if yes_count and no_count:
-                    passed = yes_count > no_count
-                else:
-                    yes_count = no_count = 0
+                    elif other_regex.search(v):
+                        others += other_regex.search(v).groups()[0].split(', ')
 
                 vote = Vote(bill['chamber'], vote_date, motion, passed, yes_count, no_count, other_count)
                 vote.add_source(link)
@@ -194,6 +195,8 @@ class TNBillScraper(BillScraper):
                     vote.yes(a)
                 for n in nos:
                     vote.no(n)
+                for o in others:
+                    vote.other(o)
 
                 vote.validate()
                 bill.add_vote(vote)
