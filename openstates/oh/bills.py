@@ -107,12 +107,16 @@ class OHBillScraper(BillScraper):
             piece = '/bills.cfm?ID=%s_%s_%s' % (session, prefix.upper(),
                                                 number)
 
-        def _get_html_version(url):
+        def _get_html_or_pdf_version(url):
             doc = lxml.html.fromstring(url)
             name = doc.xpath('//font[@size="2"]/a/text()')[0]
-            links = doc.xpath('//a[text()="(.html format)"]')
-            if links:
-                link = links[0].get('href')
+            html_links = doc.xpath('//a[text()="(.html format)"]')
+            pdf_links = doc.xpath('//a[text()="(.pdf format)"]')
+            if html_links:
+                link = html_links[0].get('href')
+                bill.add_version(name, base_url + link)
+            elif pdf_links:
+                link = pdf_links[0].get('href')
                 bill.add_version(name, base_url + link)
 
         with self.urlopen(base_url + piece) as html:
@@ -121,11 +125,14 @@ class OHBillScraper(BillScraper):
                 self.warning('missing page: %s' % base_url + piece)
                 return
 
-            _get_html_version(html)
+            _get_html_or_pdf_version(html)
             doc = lxml.html.fromstring(html)
             for a in doc.xpath('//a[starts-with(@href, "/bills.cfm")]/@href'):
                 if a != piece:
-                    _get_html_version(self.urlopen(base_url + a))
+                    _get_html_or_pdf_version(self.urlopen(base_url + a))
+            for a in doc.xpath('//a[starts-with(@href, "/res.cfm")]/@href'):
+                if a != piece:
+                    _get_html_or_pdf_version(self.urlopen(base_url + a))
 
     def scrape_votes(self, bill, bill_prefix, number, session):
         vote_url = ('http://www.legislature.state.oh.us/votes.cfm?ID=' +
