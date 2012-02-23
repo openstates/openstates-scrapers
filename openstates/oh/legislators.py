@@ -31,6 +31,9 @@ class OHLegislatorScraper(LegislatorScraper):
                     party = full_name[-2]
                     full_name = full_name[0:-3]
 
+                    if full_name == 'Vacant Posit':
+                        continue
+
                     if party == "D":
                         party = "Democratic"
                     elif party == "R":
