@@ -31,7 +31,12 @@ class ILLegislatorScraper(LegislatorScraper):
             if name.endswith('*'):
                 continue
 
+            leg_html = self.urlopen(leg_url)
+            leg_doc = lxml.html.fromstring(leg_html)
+            photo_url = leg_doc.xpath('//img[contains(@src, "/members/")]/@src')[0]
+
             leg = Legislator(term, chamber, district, name, party=party,
-                             url=leg_url)
+                             url=leg_url, photo_url=photo_url)
             leg.add_source(url)
+            leg.add_source(leg_url)
             self.save_legislator(leg)
