@@ -146,6 +146,7 @@ class TNBillScraper(BillScraper):
             if len(votes_link) > 0:
                 bill = self.scrape_votes(bill, votes_link[0])
 
+            bill['actions'].sort(key=lambda a: a['date'])
             self.save_bill(bill)
 
 
