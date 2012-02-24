@@ -149,7 +149,11 @@ class GABillScraper(BillScraper):
                 elif code[0] == 'H':
                     actor = 'lower'
 
-                atype = self._action_codes[code]
+                try:
+                    atype = self._action_codes[code]
+                except KeyError:
+                    self.warning("unknown action code %s on %s" % code,
+                                 action.text)
 
                 bill.add_action(actor, action.text, date, atype)
 
