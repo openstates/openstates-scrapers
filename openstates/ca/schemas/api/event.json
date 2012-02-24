@@ -1,0 +1,26 @@
+{"description": "API event response",
+ "type": "object",
+ "properties": {
+   "level": {"type": "string", "enum":["country", "state"]},
+   "country": {"type": "string", "minLength": 2, "maxLength": 2},
+   "state": {"type": "string", "minLength": 2, "maxLength": 2},
+   "session": {"type": "string"},
+   "type": {"type": "string"},
+   "location": {"type": "string"},
+   "description": {"type": "string"},
+   "when": {"type": "datetime"},
+   "end": {"type": ["datetime", "null"]},
+   "all_day": {"type": "boolean", "required": false},
+   "notes": {"type": ["string", "null"], "required": false},
+   "status": {"type": "string", "required": false},
+   "link": {"type": ["string", "null"], "required": false},
+   "participants": {"type": "array", "items":
+     {"type": "object", "properties": {
+       "type": {"type": "string"},
+       "participant": {"type": "string"},
+       "chamber": {"type": "string", "required": false}}}},
+   "sources": {"type": "array", "items": {"type": "object", "properties": {
+        "url": {"type": "string"}
+    }}}
+ }
+}

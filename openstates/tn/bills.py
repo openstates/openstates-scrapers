@@ -1,7 +1,6 @@
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from tn import metadata
 import datetime
 import lxml.html
 import re
@@ -10,20 +9,30 @@ _categorizers = (
     ('Amendment adopted', 'amendment:passed'),
     ('Amendment failed', 'amendment:failed'),
     ('Amendment proposed', 'amendment:introduced'),
+    ('adopted am.', 'amendment:passed'),
+    ('Am. withdrawn', 'amendment:withdrawn'),
     ('Divided committee report', 'committee:passed'),
     ('Filed for intro.', ['bill:introduced', 'bill:reading:1']),
     ('Reported back amended, do not pass', 'committee:passed:unfavorable'),
     ('Reported back amended, do pass', 'committee:passed:favorable'),
+    ('Rec. For Pass.', 'committee:passed:favorable'),
+    ('Rec. For pass.', 'committee:passed:favorable'),
     ('Reported back amended, without recommendation', 'committee:passed'),
     ('Reported back, do not pass', 'committee:passed:unfavorable'),
     ('w/ recommend', 'committee:passed:favorable'),
     ('Ref. to', 'committee:referred'),
+    ('ref. to', 'committee:referred'),
+    ('Assigned to', 'committee:referred'),
     ('Recieved from House', 'bill:introduced'),
     ('Recieved from Senate', 'bill:introduced'),
+    ('Adopted, ', ['bill:passed']),
+    ('Passed H., ', ['bill:passed']),
+    ('Passed S., ', ['bill:passed']),
     ('Second reading, adopted', ['bill:passed', 'bill:reading:2']),
     ('Second reading, failed', ['bill:failed', 'bill:reading:2']),
     ('Second reading, passed', ['bill:passed', 'bill:reading:2']),
     ('Transmitted to Gov. for action.', 'governor:received'),
+    ('Transmitted to Governor for his action.', 'governor:received'),
     ('Signed by Governor, but item veto', 'governor:vetoed:line-item'),
     ('Signed by Governor', 'governor:signed'),
     ('Withdrawn', 'bill:withdrawn'),
@@ -31,10 +40,27 @@ _categorizers = (
 
 def categorize_action(action):
     for prefix, types in _categorizers:
-        #if action.startswith(prefix):
         if prefix in action:
             return types
     return 'other'
+
+def actions_from_table(bill, actions_table):
+    action_rows = actions_table.xpath("tr")
+
+    # first row will say "Actions Taken on S|H(B|R|CR)..."
+    if 'Actions Taken on S' in action_rows[0].text_content():
+        chamber = 'upper'
+    else:
+        chamber = 'lower'
+
+    for ar in action_rows[1:]:
+        tds = ar.xpath('td')
+        action_taken = tds[0].text
+        action_date = datetime.datetime.strptime(tds[1].text.strip(),
+                                                 '%m/%d/%Y')
+        action_type = categorize_action(action_taken)
+        bill.add_action(chamber, action_taken, action_date, action_type)
+
 
 class TNBillScraper(BillScraper):
     state = 'tn'
@@ -74,98 +100,94 @@ class TNBillScraper(BillScraper):
 
         with self.urlopen(bill_url) as page:
             page = lxml.html.fromstring(page)
-            matching_bill = False
-            chamber1 = page.xpath('//span[@id="lblBillSponsor"]/a[1]')[0].text
+            page.make_links_absolute(bill_url)
 
-            #Checking if there is a matching bill
-            if len(page.xpath('//span[@id="lblCoBillSponsor"]/a[1]')) > 0:
-                matching_bill = True
+            bill_id = page.xpath('//span[@id="lblBillSponsor"]/a[1]')[0].text
+            secondary_bill_id = page.xpath('//span[@id="lblCoBillSponsor"]/a[1]')
 
-                chamber2 = page.xpath('//span[@id="lblCoBillSponsor"]/a[1]')[0].text
+            # checking if there is a matching bill
+            if secondary_bill_id:
+                secondary_bill_id = secondary_bill_id[0].text
 
-                if '*' in chamber1:
-                    bill_id = chamber1.replace(' ', '')[1:len(chamber1)]
-                    secondary_bill_id = chamber2.replace(' ', '')
-                else:
-                    bill_id = chamber2.replace(' ', '')[1:len(chamber2)]
-                    secondary_bill_id = chamber1.replace(' ', '')
+                # swap ids if * is in secondary_bill_id
+                if '*' in secondary_bill_id:
+                    bill_id, secondary_bill_id = secondary_bill_id, bill_id
+                    secondary_bill_id = secondary_bill_id.strip()
 
-                primary_chamber = 'lower' if 'H' in bill_id else 'upper'
+            bill_id = bill_id.replace('*', '').strip()
 
-            else:
-                primary_chamber = 'lower' if 'H' in chamber1 else 'upper'
-                bill_id = chamber1.replace(' ', '')[1:len(chamber1)]
-                secondary_bill_id = None
+            primary_chamber = 'lower' if 'H' in bill_id else 'upper'
+            secondary_chamber = 'upper' if primary_chamber == 'lower' else 'lower'
 
             title = page.xpath("//span[@id='lblAbstract']")[0].text
 
-            #Bill subject
+            # bill subject
             subject_pos = title.find('-')
-            subject = title[0:subject_pos - 1]
+            subjects = [s.strip() for s in title[:subject_pos-1].split(',')]
 
             bill = Bill(term, primary_chamber, bill_id, title, type=bill_type,
-                        secondary_bill_id=secondary_bill_id, subject=subject)
+                        subjects=subjects)
+            if secondary_bill_id:
+                bill['alternate_bill_ids'] = [secondary_bill_id]
             bill.add_source(bill_url)
 
             # Primary Sponsor
             sponsor = page.xpath("//span[@id='lblBillSponsor']")[0].text_content().split("by")[-1]
             sponsor = sponsor.replace('*','').strip()
-            bill.add_sponsor('primary',sponsor)
+            bill.add_sponsor('primary', sponsor)
 
-            # Co-sponsors unavailable for scraping (loaded into page via AJAX)
+            # bill text
+            btext = page.xpath("//span[@id='lblBillSponsor']/a")[0]
+            bill.add_version('Current Version', btext.get('href'))
 
-            # Full summary doc
-            summary = page.xpath("//span[@id='lblBillSponsor']/a")[0]
-            bill.add_document('Full summary', summary.get('href'))
+            # documents
+            summary = page.xpath('//a[contains(@href, "BillSummaryArchive")]')
+            if summary:
+                bill.add_document('Summary', summary[0].get('href'))
+            fiscal = page.xpath('//span[@id="lblFiscalNote"]//a')
+            if fiscal:
+                bill.add_document('Fiscal Note', fiscal[0].get('href'))
+            amendments = page.xpath('//a[contains(@href, "/Amend/")]')
+            for amendment in amendments:
+                bill.add_document('Amendment ' + amendment.text,
+                                  amendment.get('href'))
+            # amendment notes in image with alt text describing doc inside <a>
+            amend_fns = page.xpath('//img[contains(@alt, "Fiscal Memo")]')
+            for afn in amend_fns:
+                bill.add_document(afn.get('alt'), afn.getparent().get('href'))
 
-            #Primary Actions
-            tables = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvBillActionHistory']")
-            actions_table = tables[0]
-            action_rows = actions_table.xpath("tr[position()>1]")
-            for ar in action_rows:
-                action_taken = ar.xpath("td")[0].text
-                action_date = datetime.datetime.strptime(ar.xpath("td")[1].text.strip(), '%m/%d/%Y')
-                action_type = categorize_action(action_taken)
-                bill.add_action(primary_chamber, action_taken, action_date, action_type)
+            # actions
+            atable = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvBillActionHistory']")[0]
+            actions_from_table(bill, atable)
 
-            #Primary Votes
-            votes_link = page.xpath("//span[@id='lblBillVotes']/a")
-            if(len(votes_link) > 0):
-                votes_link = votes_link[0].get('href')
-                bill = self.scrape_votes(bill, sponsor, 'http://wapp.capitol.tn.gov/apps/Billinfo/%s' % (votes_link,))
-
-            #If there is a matching bill
-            if matching_bill == True:
-
-                #Secondary Sponsor
+            # if there is a matching bill
+            if secondary_bill_id:
+                # secondary sponsor
                 secondary_sponsor = page.xpath("//span[@id='lblCoBillSponsor']")[0].text_content().split("by")[-1]
-                secondary_sponsor = secondary_sponsor.replace('*','').strip()
-                bill.add_sponsor('secondary', secondary_sponsor)
+                secondary_sponsor = secondary_sponsor.replace('*','').replace(')', '').strip()
+                bill.add_sponsor('primary', secondary_sponsor)
 
-                #Secondary Actions
-                tables2 = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvCoActionHistory']")
-                actions2_table = tables2[0]
-                action2_rows = actions2_table.xpath("tr[position()>1]")
-                for ar2 in action2_rows:
-                    action2_taken = ar2.xpath("td")[0].text
-                    action2_date = datetime.datetime.strptime(ar2.xpath("td")[1].text.strip(), '%m/%d/%Y')
-                    action2_type = categorize_action(action2_taken)
-                    bill.add_action(chamber2, action2_taken, action2_date, action2_type)
+                # secondary actions
+                cotable = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvCoActionHistory']")[0]
+                actions_from_table(bill, cotable)
 
-                #Secondary Votes
-                votes2_link = page.xpath("//span[@id='lblBillVotes']/a")
-                if(len(votes_link) > 0):
-                    votes2_link = votes2_link[0].get('href')
-                    bill = self.scrape_votes(bill, secondary_sponsor, 'http://wapp.capitol.tn.gov/apps/Billinfo/%s' % (votes_link,))
+            # votes
+            votes_link = page.xpath("//span[@id='lblBillVotes']/a/@href")
+            if len(votes_link) > 0:
+                bill = self.scrape_votes(bill, votes_link[0])
+            votes_link = page.xpath("//span[@id='lblCompVotes']/a/@href")
+            if len(votes_link) > 0:
+                bill = self.scrape_votes(bill, votes_link[0])
 
+            bill['actions'].sort(key=lambda a: a['date'])
             self.save_bill(bill)
 
 
-    def scrape_votes(self, bill, sponsor, link):
+    def scrape_votes(self, bill, link):
         with self.urlopen(link) as page:
             page = lxml.html.fromstring(page)
             raw_vote_data = page.xpath("//span[@id='lblVoteData']")[0].text_content()
-            raw_vote_data = raw_vote_data.strip().split('%s by %s - ' % (bill['bill_id'], sponsor))[1:]
+            raw_vote_data = re.split('\w+? by [\w ]+?\s+-', raw_vote_data.strip())[1:]
             for raw_vote in raw_vote_data:
                 raw_vote = raw_vote.split(u'\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0')
                 motion = raw_vote[0]
@@ -174,38 +196,52 @@ class TNBillScraper(BillScraper):
                 if vote_date:
                     vote_date = datetime.datetime.strptime(vote_date.group(), '%m/%d/%Y')
 
-                passed = ('Passed' in motion) or ('Adopted' in raw_vote[1])
+                passed = ('Passed' in motion or
+                          'Recommended for passage' in motion or
+                          'Adopted' in raw_vote[1]
+                         )
                 vote_regex = re.compile('\d+$')
                 aye_regex = re.compile('^.+voting aye were: (.+) -')
                 no_regex = re.compile('^.+voting no were: (.+) -')
-                yes_count = None
-                no_count = None
+                other_regex = re.compile('^.+present and not voting were: (.+) -')
+                yes_count = 0
+                no_count = 0
                 other_count = 0
                 ayes = []
                 nos = []
+                others = []
 
                 for v in raw_vote[1:]:
+                    v = v.strip()
                     if v.startswith('Ayes...') and vote_regex.search(v):
                         yes_count = int(vote_regex.search(v).group())
                     elif v.startswith('Noes...') and vote_regex.search(v):
                         no_count = int(vote_regex.search(v).group())
+                    elif v.startswith('Present and not voting...') and vote_regex.search(v):
+                        other_count += int(vote_regex.search(v).group())
                     elif aye_regex.search(v):
                         ayes = aye_regex.search(v).groups()[0].split(', ')
                     elif no_regex.search(v):
                         nos = no_regex.search(v).groups()[0].split(', ')
+                    elif other_regex.search(v):
+                        others += other_regex.search(v).groups()[0].split(', ')
 
-                if yes_count and no_count:
-                    passed = yes_count > no_count
+                if 'ChamberVoting=H' in link:
+                    chamber = 'lower'
                 else:
-                    yes_count = no_count = 0
+                    chamber = 'upper'
 
-
-                vote = Vote(bill['chamber'], vote_date, motion, passed, yes_count, no_count, other_count)
+                vote = Vote(chamber, vote_date, motion, passed, yes_count,
+                            no_count, other_count)
                 vote.add_source(link)
                 for a in ayes:
                     vote.yes(a)
                 for n in nos:
                     vote.no(n)
+                for o in others:
+                    vote.other(o)
+
+                vote.validate()
                 bill.add_vote(vote)
 
         return bill

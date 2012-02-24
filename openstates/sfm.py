@@ -1,17 +1,10 @@
 import re
 import time
-import argparse
 import lxml.html
 
-import gridfs
-
-from billy.conf import settings, base_arg_parser
 from billy.scrape.utils import convert_pdf
-from billy.utils import configure_logging
 
-from oyster.client import get_configured_client
 from superfastmatch import Client
-
 
 def collapse_spaces(text):
     return re.sub('\s+', ' ', text)
@@ -26,6 +19,11 @@ def text_after_line_numbers(lines):
             text += match.groups()[0] + ' '
     # text winds up being all real bill text joined w/ spaces
     return text.decode('utf-8', 'ignore')
+
+def az_handler(filedata):
+    html = lxml.html.fromstring(filedata)
+    text = html.xpath('//div[@class="Section2"]')[0].text_content()
+    return collapse_spaces(text)
 
 def ca_handler(filedata, metadata):
     if file.endswith('.pdf'):
@@ -127,10 +125,6 @@ def ma_handler(filedata, metadata):
                      for x in doc.xpath('//td[@class="longTextContent"]//p')])
 
 
-def az_handler(filedata, metadata):
-    doc = lxml.html.fromstring(filedata)
-    text = doc.xpath('//div[@class="Section2"]')[0].text_content()
-    return collapse_spaces(text)
 
 def wv_handler(filedata, metadata):
     doc = lxml.html.fromstring(filedata)
@@ -138,61 +132,26 @@ def wv_handler(filedata, metadata):
 
 
 handlers = {
-    #'ca': ca_handler,
-    'ny': ny_handler,
-    'fl': fl_handler,
-    'pa': pa_handler,
-    'oh': oh_handler,
-    'mi': mi_handler,
-    'nc': nc_handler,
-    'nj': nj_handler,
-    'ma': ma_handler,
-    'va': va_handler,
     'az': az_handler,
-    'wa': wa_handler,
-    #'md': md_handler,
-    'wv': wv_handler,
 }
 
+def _to_numeric_id(id):
+    state,num = id.split('D')
+    states = ('AK', 'AL', 'AR', 'AZ')
+    return str(states.index(state) + 1) + num
 
-def process_state_files(state, server):
-    oclient = get_configured_client()
+
+def push_to_sfm(doc, newdata):
+    server = 'http://ec2-23-20-68-251.compute-1.amazonaws.com/'
     sfm_client = Client(server)
 
-    new_versions = list(oclient.db.tracked.find({'metadata.state': state,
-                                     'superfastmatch_id': {'$exists': False}}))
-    extract_text = handlers[state]
-    print '%s new versions to sync' % len(new_versions)
+    metadata = doc['metadata']
+    state = metadata['state']
+    extractor = handlers[state]
+    text = extractor(newdata)
 
-    for version in new_versions:
-        _id = int(time.time()*10000)
-        try:
-            filedata = oclient.get_version(version['url']).read()
-        except gridfs.errors.NoFile:
-            continue
-        metadata = version['metadata']
-        text = extract_text(filedata, metadata)
-        sfm_client.add(1, _id, text, defer=True,
-               title='%(state)s %(session)s %(bill_id)s %(name)s' % metadata,
-                **metadata)
-    sfm_client.update_associations()
+    _id = _to_numeric_id(doc['_id'])
 
-def main():
-    parser = argparse.ArgumentParser(
-        description='Convert state bills to SFM-ready text',
-        parents=[base_arg_parser],
-    )
-    parser.add_argument('state', type=str, help='state')
-    parser.add_argument('--sfm_server', type=str, help='URL of SFM instance',
-                        default='http://localhost:8080/')
-
-    args = parser.parse_args()
-
-    settings.update(args)
-
-    configure_logging(args.verbose, args.state)
-
-    process_state_files(args.state, args.sfm_server)
-
-if __name__ == '__main__':
-    main()
+    sfm_client.add(1, _id, text, defer=True,
+                   title='%(state)s %(session)s %(bill_id)s %(name)s' % metadata,
+                   **metadata)

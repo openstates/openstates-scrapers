@@ -18,10 +18,12 @@ class MTLegislatorScraper(LegislatorScraper):
         for tdata in self.metadata['terms']:
             if term == tdata['name']:
                 year = tdata['start_year']
+                session_number = tdata['session_number']
                 break
 
+
         url = 'http://leg.mt.gov/content/sessions/%s/%d%sMembers.txt' % \
-            (term, year, chamber == 'upper' and 'Senate' or 'House')
+            (session_number, year, chamber == 'upper' and 'Senate' or 'House')
 
         file = self.urlopen(url)
         file = file.replace('"""', '"') # weird triple quotes

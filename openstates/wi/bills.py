@@ -219,7 +219,25 @@ class WIBillScraper(BillScraper):
             match = re.match(
                 '(Introduced|Cosponsored) by (?:joint )?(Senator|Representative|committee|Joint Legislative Council|Law Revision Committee)s?(.*)',
                 line)
-            type, title, people = match.groups()
+            if not match:
+                # So far, the only one that doens't match is
+                # http://docs.legis.wisconsin.gov/2011/proposals/ab568
+                # In the following format:
+                # Introduced by Representatives Krusick and J. Ott, by ... ;
+                match = re.match(
+                    'Introduced by (Representatives|Senators) (.*),',
+                    line
+                )
+                if not match:
+                    # Nothing to do here :)
+                    continue
+
+                type  = "Introduced"
+                title, names = match.groups()
+                raise Exception("Foo")
+            else:
+                type, title, people = match.groups()
+
             if type == 'Introduced':
                 sponsor_type = 'primary'
             elif type == 'Cosponsored':
