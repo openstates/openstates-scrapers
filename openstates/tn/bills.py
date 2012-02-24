@@ -44,9 +44,16 @@ def categorize_action(action):
             return types
     return 'other'
 
-def actions_from_table(bill, chamber, actions_table):
-    action_rows = actions_table.xpath("tr[position()>1]")
-    for ar in action_rows:
+def actions_from_table(bill, actions_table):
+    action_rows = actions_table.xpath("tr")
+
+    # first row will say "Actions Taken on S|H(B|R|CR)..."
+    if 'Actions Taken on S' in action_rows[0].text_content():
+        chamber = 'upper'
+    else:
+        chamber = 'lower'
+
+    for ar in action_rows[1:]:
         tds = ar.xpath('td')
         action_taken = tds[0].text
         action_date = datetime.datetime.strptime(tds[1].text.strip(),
@@ -135,7 +142,7 @@ class TNBillScraper(BillScraper):
 
             # actions
             atable = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvBillActionHistory']")[0]
-            actions_from_table(bill, primary_chamber, atable)
+            actions_from_table(bill, atable)
 
             # if there is a matching bill
             if secondary_bill_id:
@@ -146,7 +153,7 @@ class TNBillScraper(BillScraper):
 
                 # secondary actions
                 cotable = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvCoActionHistory']")[0]
-                actions_from_table(bill, secondary_chamber, cotable)
+                actions_from_table(bill, cotable)
 
             # votes
             votes_link = page.xpath("//span[@id='lblBillVotes']/a/@href")
@@ -173,7 +180,10 @@ class TNBillScraper(BillScraper):
                 if vote_date:
                     vote_date = datetime.datetime.strptime(vote_date.group(), '%m/%d/%Y')
 
-                passed = ('Passed' in motion) or ('Adopted' in raw_vote[1])
+                passed = ('Passed' in motion or
+                          'Recommended for passage' in motion or
+                          'Adopted' in raw_vote[1]
+                         )
                 vote_regex = re.compile('\d+$')
                 aye_regex = re.compile('^.+voting aye were: (.+) -')
                 no_regex = re.compile('^.+voting no were: (.+) -')
@@ -200,7 +210,13 @@ class TNBillScraper(BillScraper):
                     elif other_regex.search(v):
                         others += other_regex.search(v).groups()[0].split(', ')
 
-                vote = Vote(bill['chamber'], vote_date, motion, passed, yes_count, no_count, other_count)
+                if 'ChamberVoting=H' in link:
+                    chamber = 'lower'
+                else:
+                    chamber = 'upper'
+
+                vote = Vote(chamber, vote_date, motion, passed, yes_count,
+                            no_count, other_count)
                 vote.add_source(link)
                 for a in ayes:
                     vote.yes(a)
