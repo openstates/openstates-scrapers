@@ -134,7 +134,7 @@ class TNBillScraper(BillScraper):
             # Primary Sponsor
             sponsor = page.xpath("//span[@id='lblBillSponsor']")[0].text_content().split("by")[-1]
             sponsor = sponsor.replace('*','').strip()
-            bill.add_sponsor('primary',sponsor)
+            bill.add_sponsor('primary', sponsor)
 
             # bill text
             btext = page.xpath("//span[@id='lblBillSponsor']/a")[0]
@@ -165,7 +165,7 @@ class TNBillScraper(BillScraper):
                 # secondary sponsor
                 secondary_sponsor = page.xpath("//span[@id='lblCoBillSponsor']")[0].text_content().split("by")[-1]
                 secondary_sponsor = secondary_sponsor.replace('*','').replace(')', '').strip()
-                bill.add_sponsor('secondary', secondary_sponsor)
+                bill.add_sponsor('primary', secondary_sponsor)
 
                 # secondary actions
                 cotable = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvCoActionHistory']")[0]
