@@ -37,6 +37,7 @@ class GABillScraper(BillScraper):
         'HRAR': 'committee:referred',
         'HRECL': 'bill:failed',
         'HRECM': 'bill:withdrawn',
+        'HRECP': 'bill:passed', # passed a reconsidered bill
         'HRECO': 'other',
         'HSG': 'governor:received',
         'HSR': 'bill:reading:2',
