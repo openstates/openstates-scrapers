@@ -81,7 +81,7 @@ class PRBillScraper(BillScraper):
                     break
     def parse_action(self,chamber,bill,action,action_url,date):
 	if action.startswith('Referido'):
-            committees = action.split(',',1)
+            #committees = action.split(',',1)
             #multiple committees
 	if action.startswith('Ley N'):
             action = action[0:42]
@@ -113,9 +113,9 @@ class PRBillScraper(BillScraper):
                 action_actor = 'lower'
             else:
                 action_actor = chamber
-	if action.startswith('Referido'):
-	    for comme in committees:
-		print comme
+	#if action.startswith('Referido'):
+	    #for comme in committees:
+		#print comme
         bill.add_action(action_actor, action.replace('.',''),date,type=atype)
 	return atype,action
 
