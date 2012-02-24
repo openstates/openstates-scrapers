@@ -166,10 +166,10 @@ class PRBillScraper(BillScraper):
                        self.warning('coudnt find voteChamber pattern')
 
                     if vote_chamber == 'lower' and len(action_url) > 0:
-                        vote = self.scrape_votes(action_url, action,date,
+                        vote = self.scrape_votes(action_url[0], action,date,
                                                  vote_chamber)
                         if not vote[0] == None:
-                            vote[0].add_source(action_url)
+                            vote[0].add_source(action_url[0])
                             bill.add_vote(vote[0])
                         else:
                             self.warning('Problem Reading vote: %s,%s' %
@@ -186,8 +186,10 @@ class PRBillScraper(BillScraper):
             t[1] = t[1][1:]
             return t
     def scrape_votes(self, url, motion, date, bill_chamber):
-        filename1, extension = self.get_filename_parts_from_url(url)
-
+	if isinstance(url,basestring):
+	    filename1, extension = self.get_filename_parts_from_url(url)
+        else:
+	    return None, 'No url'
         if extension == 'pdf':
             return None,'Vote on PDF'
 
