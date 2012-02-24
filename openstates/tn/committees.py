@@ -34,8 +34,8 @@ class TNCommitteeScraper(CommitteeScraper):
         'lower' : 'house',
         'upper' : 'senate'
     }
-    
-    
+
+
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
         url_chamber = self.chambers[chamber]
@@ -49,38 +49,38 @@ class TNCommitteeScraper(CommitteeScraper):
     #Scrapes all the Senate committees
     def scrape_senate_committees(self, url):
         find_expr = "//dl[@class='senateCommittees']/dt/a"
-        
+
         with self.urlopen(url) as page:
             # Find individual committee urls
             page = lxml.html.fromstring(page)
-            
+
             links = [(a.text_content(), self.base_href + a.attrib['href']) for a in page.xpath(find_expr)]
 
             # title, url
             for committee_name, link in links:
                 self.scrape_senate_committee(committee_name, link)
-                
+
     #Scrapes the individual Senate committee
     def scrape_senate_committee(self, committee_name, link):
         """Scrape individual committee page and add members"""
         find_expr = "//div[@class='col1']/ul[position()<3]/li"
-        
+
         com = Committee('upper', committee_name)
-        
+
         with self.urlopen(link) as page:
             # Find individual committee urls
             page = lxml.html.fromstring(page)
-            
+
             for el in page.xpath(find_expr):
                 member = [item.strip() for item in el.text_content().split(',',1)]
                 if len(member) > 1:
                     member_name, role = member
                 else:
                     member_name, role = member[0], 'member'
-                    
+
                 if member_name != "":
                     com.add_member(member_name, role)
-        
+
         com.add_source(link)
         self.save_committee(com)
 
@@ -92,7 +92,7 @@ class TNCommitteeScraper(CommitteeScraper):
         with self.urlopen(url) as page:
             # Find individual committee urls
             page = lxml.html.fromstring(page)
-            
+
             # House links are relative
             links = [(a.text_content(), self.base_href + '/house/committees/' + a.attrib['href']) for a in page.xpath(find_expr)]
 
@@ -103,12 +103,12 @@ class TNCommitteeScraper(CommitteeScraper):
     def scrape_house_committee(self, committee_name, link):
         """Scrape individual committee page and add members"""
         find_expr = "//div[@class='col1']/ul[position()<3]/li"
-        
-        
+
+
         with self.urlopen(link) as page:
             # Find individual committee urls
             page = lxml.html.fromstring(page)
-            
+
             #sub_committee
             if (len(page.xpath("//div[@class='col2']/h3[3]/a"))>0):
                 sub_committee_url = self.base_href + '/house/committees/' + page.xpath("//div[@class='col2']/h3[3]/a")[0].attrib['href']
@@ -125,7 +125,7 @@ class TNCommitteeScraper(CommitteeScraper):
                     member_name, role = member
                 else:
                     member_name, role = member[0], 'member'
-                    
+
                 if member_name != "":
                     com.add_member(member_name, role)
 
@@ -135,7 +135,7 @@ class TNCommitteeScraper(CommitteeScraper):
     #Scrapes the individual sub committee for the house
     def scrape_house_sub_committee(self, sub_committee_name, url):
         find_expr = "//div[@class='col1']/ul[position()<3]/li"
-        
+
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             com = Committee('lower', sub_committee_name)
@@ -145,7 +145,7 @@ class TNCommitteeScraper(CommitteeScraper):
                 if len(member) > 1:
                     member_name, role = member
                 else:
-                    member_name, role = member[0], 'member'                                                                        
+                    member_name, role = member[0], 'member'
                 if member_name != "":
                     com.add_member(member_name, role)
 
@@ -158,7 +158,7 @@ class TNCommitteeScraper(CommitteeScraper):
 
         with self.urlopen(main_url) as page:
             page = lxml.html.fromstring(page)
-            
+
             for el in page.xpath("//div[@class='col2']/ul/li/a"):
                 com_name = el.text
                 com_link = el.attrib["href"]
@@ -191,11 +191,11 @@ class TNCommitteeScraper(CommitteeScraper):
                         chamber_page = lxml.html.fromstring(chamber_page)
                         for mem in chamber_page.xpath("//div[@class='col1']/ul[position() <= 2]/li/a"):
                             member = [item.strip() for item in mem.text_content().split(',',1)]
-                            if len(member) > 1:                 
-                                member_name, role = member                      
-                            else:                                                               
-                                member_name, role = member[0], 'member'                                             
-                            if member_name != "":                                                                                   
+                            if len(member) > 1:
+                                member_name, role = member
+                            else:
+                                member_name, role = member[0], 'member'
+                            if member_name != "":
                                 com.add_member(member_name, role)
                         com.add_source(chamber_link)
             else:
