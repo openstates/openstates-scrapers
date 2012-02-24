@@ -187,7 +187,7 @@ class TNBillScraper(BillScraper):
         with self.urlopen(link) as page:
             page = lxml.html.fromstring(page)
             raw_vote_data = page.xpath("//span[@id='lblVoteData']")[0].text_content()
-            raw_vote_data = re.split('\w+? by \w+?\s+-', raw_vote_data.strip())[1:]
+            raw_vote_data = re.split('\w+? by [\w ]+?\s+-', raw_vote_data.strip())[1:]
             for raw_vote in raw_vote_data:
                 raw_vote = raw_vote.split(u'\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0')
                 motion = raw_vote[0]
