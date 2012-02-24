@@ -25,10 +25,9 @@ class PRCommitteeScraper(CommitteeScraper):
             self.scrape_lower()
             
     def scrape_upper(self):
-#	perm_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Permanentes(2009-2012).pdf'
-#	self.scrape_upper_committee(perm_comm)
-	joint_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Conjuntas(2009-2012).pdf';
-	self.scrape_joint_committee(joint_comm);
+	self.scrape_upper_committee('http://senadopr.us/SiteCollectionDocuments/Comisiones_Permanentes(2009-2012).pdf')
+#	joint_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Conjuntas(2009-2012).pdf';
+#	self.scrape_joint_committee(joint_comm);
     def scrape_joint_committee(self,url):
 	filename, resp = self.urlretrieve(url)
 	root = lxml.etree.fromstring(convert_pdf(filename,'xml'))
@@ -45,7 +44,7 @@ class PRCommitteeScraper(CommitteeScraper):
 		text = line.findtext('b')
        		if text is not None and text.startswith('Comisi'):
 		    comm = Committee('upper',text);
-	    	    comm.add_source(perm_comm)
+	    	    comm.add_source(url)
 		else:
 		    if line.text and line.text.startswith('Hon.'):
 			line_text = line.text.replace(u'–','-')
