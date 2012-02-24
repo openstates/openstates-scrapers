@@ -137,8 +137,24 @@ class TNBillScraper(BillScraper):
             bill.add_sponsor('primary',sponsor)
 
             # bill text
-            summary = page.xpath("//span[@id='lblBillSponsor']/a")[0]
-            bill.add_version('Current Version', summary.get('href'))
+            btext = page.xpath("//span[@id='lblBillSponsor']/a")[0]
+            bill.add_version('Current Version', btext.get('href'))
+
+            # documents
+            summary = page.xpath('//a[contains(@href, "BillSummaryArchive")]')
+            if summary:
+                bill.add_document('Summary', summary[0].get('href'))
+            fiscal = page.xpath('//span[@id="lblFiscalNote"]//a')
+            if fiscal:
+                bill.add_document('Fiscal Note', fiscal[0].get('href'))
+            amendments = page.xpath('//a[contains(@href, "/Amend/")]')
+            for amendment in amendments:
+                bill.add_document('Amendment ' + amendment.text,
+                                  amendment.get('href'))
+            # amendment notes in image with alt text describing doc inside <a>
+            amend_fns = page.xpath('//img[contains(@alt, "Fiscal Memo")]')
+            for afn in amend_fns:
+                bill.add_document(afn.get('alt'), afn.getparent().get('href'))
 
             # actions
             atable = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvBillActionHistory']")[0]
