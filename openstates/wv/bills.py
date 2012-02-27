@@ -379,9 +379,9 @@ class WVBillScraper(BillScraper):
 
         for folder, filename in filenames:
             _filename = quote(filename + '.wpd')
-            url = '/'.join([url, chamber_name, folder, _filename])
+            _url = '/'.join([url, chamber_name, folder, _filename])
 
-            yield {'name': filename, 'url': url,
+            yield {'name': filename, 'url': _url,
                    'mimetype': 'application/wordperfect'}
 
     def scrape_versions(self, session, chamber, page, bill_id):
@@ -417,7 +417,6 @@ class WVBillScraper(BillScraper):
                         if s not in html:
                             continue
 
-                    self.guess_count += 1
                     cache.add(_url)
                     data = {'url': url, 'name': filename,
                             'mimetype': 'text/html'}
