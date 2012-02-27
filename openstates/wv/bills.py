@@ -92,42 +92,42 @@ class WVBillScraper(BillScraper):
         for version in self.scrape_versions(session, chamber, page, bill_id):
             bill.add_version(**version)
 
-        subjects = []
-        # skip first 'Subject' link
-        for link in page.xpath("//a[contains(@href, 'Bills_Subject')]")[1:]:
-            subject = link.xpath("string()").strip()
-            subjects.append(subject)
-        bill['subjects'] = subjects
+        if bill_type != 'bill':
+            subjects = []
+            # skip first 'Subject' link
+            for link in page.xpath("//a[contains(@href, 'Bills_Subject')]")[1:]:
+                subject = link.xpath("string()").strip()
+                subjects.append(subject)
+            bill['subjects'] = subjects
 
-        sponsor_links = page.xpath("//a[contains(@href, 'Bills_Sponsors')]")
-        for link in sponsor_links[1:]:
-            sponsor = link.xpath("string()").strip()
-            bill.add_sponsor('sponsor', sponsor)
+            sponsor_links = page.xpath("//a[contains(@href, 'Bills_Sponsors')]")
+            for link in sponsor_links[1:]:
+                sponsor = link.xpath("string()").strip()
+                bill.add_sponsor('sponsor', sponsor)
 
         # resolutions
-        if bill_type != 'bill':
-            if 'SPONSOR(S)' not in html:
-                self.warning('incomplete page %s, trying again' % url)
-                html = self.urlopen(url)
-                page = lxml.html.fromstring(html)
-                page.make_links_absolute(url)
-                if 'SPONSOR(S)' not in html:
-                    self.warning('incomplete page %s, giving up' % url)
-                    return
+        else:
 
-            # sometimes (resolutions only?) there aren't links so we have to
-            # use a regex to get sponsors
-            block = page.xpath('//div[@id="bhistleft"]')[0].text_content()
+            # Resolution pages have different html. 
+            values = {}
+            trs = page.xpath('//div[@id="bhistcontent"]/table/tr')
+            for tr in trs:
+                heading = tr.xpath('td/strong/text()')
+                if heading:
+                    heading = heading[0]
+                else:
+                    continue
+                value = tr.text_content().replace(heading, '').strip()
+                values[heading] = value
 
-            # just text after sponsors
-            lines = block.split('SPONSORS:')[1].strip().splitlines()
-            for line in lines:
-                line = line.strip()
-                # until we get a blank line
-                if not line:
-                    break
-                for sponsor in line.split(', '):
-                    bill.add_sponsor('sponsor', sponsor.strip())
+            bill['subject'] = values['SUMMARY:']
+
+            # Add primary sponsor.
+            bill.add_sponsor('primary', values['LEAD SPONSOR:'])
+
+            # Add cosponsors.
+            for name in values['SPONSORS:'].split():
+                bill.add_sponsor('secondary', name)
 
         for link in page.xpath("//a[contains(@href, 'votes/house')]"):
             self.scrape_vote(bill, link.attrib['href'])
@@ -138,13 +138,14 @@ class WVBillScraper(BillScraper):
             if len(tds) < 3:
                 continue
 
-            # order varies on resolutions
-            if bill_type == 'bill':
-                date = tds[2].text_content().strip()
-            else:
-                date = tds[0].text_content().strip()
+            # Index of date info no longer varies on resolutions.
+            date = tds[2].text_content().strip()
 
-            date = datetime.datetime.strptime(date, "%m/%d/%y").date()
+            try:
+                date = datetime.datetime.strptime(date, "%m/%d/%y").date()
+            except:
+                import pdb
+                pdb.set_trace()
             action = tds[1].text_content().strip()
 
             if (action == 'Communicated to Senate' or
