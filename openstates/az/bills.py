@@ -52,7 +52,8 @@ class AZBillScraper(BillScraper):
             for row in rows:
                 tds = row.cssselect('td')
                 fact_sheet = tds[1].text_content().strip()
-                fact_sheet_url = tds[1].xpath('string(font/a/@href)')
+                fact_sheet_url = tds[1].xpath('string(font/a/@href)') or \
+                                 tds[2].xpath('string(font/a/@href)')
                 bill.add_document(fact_sheet, fact_sheet_url, type="summary")
                     
             #agendas
