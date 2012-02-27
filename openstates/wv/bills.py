@@ -277,15 +277,6 @@ class WVBillScraper(BillScraper):
         in advance; any bills lacking html versions will get version info
         from this dict.'''
 
-        try:
-            f = open('/tmp/%s.wv_version_filenames.json' % chamber)
-        except IOError:
-            pass
-        else:
-            version_filenames = json.load(f)
-            self._version_filenames = version_filenames
-            return
-
         chamber_name = {'upper': 'senate', 'lower': 'House'}[chamber]
         ftp_url = 'ftp://www.legis.state.wv.us/publicdocs/%s/RS/%s/'
         ftp_url = ftp_url % (session, chamber_name)
@@ -309,9 +300,6 @@ class WVBillScraper(BillScraper):
                 version_filenames[bill_id.lower()].append((d, fn))
 
         self._version_filenames = version_filenames
-
-        with open('/tmp/%s.wv_version_filenames.json' % chamber, 'w') as f:
-            json.dump(version_filenames, f)
 
     def _scrape_versions_normally(self, session, chamber, page, bill_id,
                                   get_name=re.compile(r'\"(.+)"').search):
