@@ -174,7 +174,7 @@ class AZBillScraper(BillScraper):
                         committee = meta_tag.get('content') # @content is committee abbrv
                         #actor is house or senate referring the bill to committee
                         actor = 'lower' if h_or_s.lower() == 'h' else 'upper'
-                        act = 'assigned to committee: ' +
+                        act = 'assigned to committee: ' + \
                             utils.get_committee_name(committee, actor)
                         date = utils.get_date(row[1])
                         bill.add_action(actor, act, date, type='committee:referred')
