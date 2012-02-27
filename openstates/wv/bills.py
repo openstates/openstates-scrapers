@@ -187,7 +187,11 @@ class WVBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_vote(self, bill, url):
-        filename, resp = self.urlretrieve(url)
+        try:
+            filename, resp = self.urlretrieve(url)
+        except scrapelib.HTTPError:
+            self.warning("missing vote file %s" % url)
+            return
         text = convert_pdf(filename, 'text')
         os.remove(filename)
 

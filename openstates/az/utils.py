@@ -20,21 +20,21 @@ def get_bill_type(bill_id):
         return bill_types[prefix]
     else:
         return 'bill'
-    
+
 def legislature_to_number(leg):
     """
-    Takes a full session and splits it down to the values for 
+    Takes a full session and splits it down to the values for
     FormatDocument.asp.
-    
+
     session = '49th-1st-regular'
     legislature_to_number(session) --> '49Leg/1s'
     """
     l = leg.lower().split('-')
     return '%sLeg/%s%s' % (l[0][0:2], l[1][0], l[2][0])
-        
+
 def get_date(elem):
     """
-    Returns the date object or an empty string, silly but it will really save 
+    Returns the date object or an empty string, silly but it will really save
     some typing since a table might have a date field or it might be empty
     """
     try:
@@ -42,7 +42,7 @@ def get_date(elem):
     except ValueError:
         return_date = ''
     return return_date
-    
+
 def img_check(elem):
     """
     Checks if the cell contains an image and returns true or false
@@ -57,7 +57,7 @@ def img_check(elem):
             return 'Y'
         else:
             return 'N'
-            
+
 def get_rows(rows, header):
     """
     takes the rows and header and returns a dict for each row with { key : <td> }
@@ -70,7 +70,7 @@ def get_rows(rows, header):
             dict_row.update({k:v})
         keyed_rows.append(dict_row)
     return keyed_rows
-    
+
 def get_actor(tr, chamber):
     """
     gets the actor of a given action based on presence of a 'TRANSMIT TO' action
@@ -80,7 +80,7 @@ def get_actor(tr, chamber):
         actor = actor[0]
         return {'H': 'lower', 'S': 'upper'}[actor]
     else:
-        h_or_s = tr.xpath('ancestor::table[1]/preceding-sibling::' + 
+        h_or_s = tr.xpath('ancestor::table[1]/preceding-sibling::' +
                                   'table/tr/td/b[contains(text(), "TRANSMIT TO")]')
         if h_or_s:
             # actor is the last B element
@@ -89,13 +89,13 @@ def get_actor(tr, chamber):
         else:
             actor = chamber
         return actor
-    
+
 def get_committee_name(abbrv, chamber):
     try:
         return com_names[chamber][abbrv]
     except KeyError:
         return abbrv
-    
+
 com_names = {
     'lower': {'APPROP': 'Appropriations',
               'AW': 'Agriculture and Water',
@@ -146,5 +146,5 @@ bill_types = {
     'hcr': 'concurrent resolution',
     'hcm': 'concurrent memorial',
     'hjr': 'joint resolution',
-    'mis': 'miscellaneous' 
+    'mis': 'miscellaneous'
 }

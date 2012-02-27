@@ -9,20 +9,30 @@ _categorizers = (
     ('Amendment adopted', 'amendment:passed'),
     ('Amendment failed', 'amendment:failed'),
     ('Amendment proposed', 'amendment:introduced'),
+    ('adopted am.', 'amendment:passed'),
+    ('Am. withdrawn', 'amendment:withdrawn'),
     ('Divided committee report', 'committee:passed'),
     ('Filed for intro.', ['bill:introduced', 'bill:reading:1']),
     ('Reported back amended, do not pass', 'committee:passed:unfavorable'),
     ('Reported back amended, do pass', 'committee:passed:favorable'),
+    ('Rec. For Pass.', 'committee:passed:favorable'),
+    ('Rec. For pass.', 'committee:passed:favorable'),
     ('Reported back amended, without recommendation', 'committee:passed'),
     ('Reported back, do not pass', 'committee:passed:unfavorable'),
     ('w/ recommend', 'committee:passed:favorable'),
     ('Ref. to', 'committee:referred'),
+    ('ref. to', 'committee:referred'),
+    ('Assigned to', 'committee:referred'),
     ('Recieved from House', 'bill:introduced'),
     ('Recieved from Senate', 'bill:introduced'),
+    ('Adopted, ', ['bill:passed']),
+    ('Passed H., ', ['bill:passed']),
+    ('Passed S., ', ['bill:passed']),
     ('Second reading, adopted', ['bill:passed', 'bill:reading:2']),
     ('Second reading, failed', ['bill:failed', 'bill:reading:2']),
     ('Second reading, passed', ['bill:passed', 'bill:reading:2']),
     ('Transmitted to Gov. for action.', 'governor:received'),
+    ('Transmitted to Governor for his action.', 'governor:received'),
     ('Signed by Governor, but item veto', 'governor:vetoed:line-item'),
     ('Signed by Governor', 'governor:signed'),
     ('Withdrawn', 'bill:withdrawn'),
@@ -34,9 +44,16 @@ def categorize_action(action):
             return types
     return 'other'
 
-def actions_from_table(bill, chamber, actions_table):
-    action_rows = actions_table.xpath("tr[position()>1]")
-    for ar in action_rows:
+def actions_from_table(bill, actions_table):
+    action_rows = actions_table.xpath("tr")
+
+    # first row will say "Actions Taken on S|H(B|R|CR)..."
+    if 'Actions Taken on S' in action_rows[0].text_content():
+        chamber = 'upper'
+    else:
+        chamber = 'lower'
+
+    for ar in action_rows[1:]:
         tds = ar.xpath('td')
         action_taken = tds[0].text
         action_date = datetime.datetime.strptime(tds[1].text.strip(),
@@ -117,26 +134,42 @@ class TNBillScraper(BillScraper):
             # Primary Sponsor
             sponsor = page.xpath("//span[@id='lblBillSponsor']")[0].text_content().split("by")[-1]
             sponsor = sponsor.replace('*','').strip()
-            bill.add_sponsor('primary',sponsor)
+            bill.add_sponsor('primary', sponsor)
 
             # bill text
-            summary = page.xpath("//span[@id='lblBillSponsor']/a")[0]
-            bill.add_version('Current Version', summary.get('href'))
+            btext = page.xpath("//span[@id='lblBillSponsor']/a")[0]
+            bill.add_version('Current Version', btext.get('href'))
+
+            # documents
+            summary = page.xpath('//a[contains(@href, "BillSummaryArchive")]')
+            if summary:
+                bill.add_document('Summary', summary[0].get('href'))
+            fiscal = page.xpath('//span[@id="lblFiscalNote"]//a')
+            if fiscal:
+                bill.add_document('Fiscal Note', fiscal[0].get('href'))
+            amendments = page.xpath('//a[contains(@href, "/Amend/")]')
+            for amendment in amendments:
+                bill.add_document('Amendment ' + amendment.text,
+                                  amendment.get('href'))
+            # amendment notes in image with alt text describing doc inside <a>
+            amend_fns = page.xpath('//img[contains(@alt, "Fiscal Memo")]')
+            for afn in amend_fns:
+                bill.add_document(afn.get('alt'), afn.getparent().get('href'))
 
             # actions
             atable = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvBillActionHistory']")[0]
-            actions_from_table(bill, primary_chamber, atable)
+            actions_from_table(bill, atable)
 
             # if there is a matching bill
             if secondary_bill_id:
                 # secondary sponsor
                 secondary_sponsor = page.xpath("//span[@id='lblCoBillSponsor']")[0].text_content().split("by")[-1]
                 secondary_sponsor = secondary_sponsor.replace('*','').replace(')', '').strip()
-                bill.add_sponsor('secondary', secondary_sponsor)
+                bill.add_sponsor('primary', secondary_sponsor)
 
                 # secondary actions
                 cotable = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvCoActionHistory']")[0]
-                actions_from_table(bill, secondary_chamber, cotable)
+                actions_from_table(bill, cotable)
 
             # votes
             votes_link = page.xpath("//span[@id='lblBillVotes']/a/@href")
@@ -146,6 +179,7 @@ class TNBillScraper(BillScraper):
             if len(votes_link) > 0:
                 bill = self.scrape_votes(bill, votes_link[0])
 
+            bill['actions'].sort(key=lambda a: a['date'])
             self.save_bill(bill)
 
 
@@ -153,7 +187,7 @@ class TNBillScraper(BillScraper):
         with self.urlopen(link) as page:
             page = lxml.html.fromstring(page)
             raw_vote_data = page.xpath("//span[@id='lblVoteData']")[0].text_content()
-            raw_vote_data = re.split(raw_vote_data.strip(), '.+ by .+ -')[1:]
+            raw_vote_data = re.split('\w+? by [\w ]+?\s+-', raw_vote_data.strip())[1:]
             for raw_vote in raw_vote_data:
                 raw_vote = raw_vote.split(u'\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0')
                 motion = raw_vote[0]
@@ -162,15 +196,20 @@ class TNBillScraper(BillScraper):
                 if vote_date:
                     vote_date = datetime.datetime.strptime(vote_date.group(), '%m/%d/%Y')
 
-                passed = ('Passed' in motion) or ('Adopted' in raw_vote[1])
+                passed = ('Passed' in motion or
+                          'Recommended for passage' in motion or
+                          'Adopted' in raw_vote[1]
+                         )
                 vote_regex = re.compile('\d+$')
                 aye_regex = re.compile('^.+voting aye were: (.+) -')
                 no_regex = re.compile('^.+voting no were: (.+) -')
-                yes_count = None
-                no_count = None
+                other_regex = re.compile('^.+present and not voting were: (.+) -')
+                yes_count = 0
+                no_count = 0
                 other_count = 0
                 ayes = []
                 nos = []
+                others = []
 
                 for v in raw_vote[1:]:
                     v = v.strip()
@@ -178,22 +217,29 @@ class TNBillScraper(BillScraper):
                         yes_count = int(vote_regex.search(v).group())
                     elif v.startswith('Noes...') and vote_regex.search(v):
                         no_count = int(vote_regex.search(v).group())
+                    elif v.startswith('Present and not voting...') and vote_regex.search(v):
+                        other_count += int(vote_regex.search(v).group())
                     elif aye_regex.search(v):
                         ayes = aye_regex.search(v).groups()[0].split(', ')
                     elif no_regex.search(v):
                         nos = no_regex.search(v).groups()[0].split(', ')
+                    elif other_regex.search(v):
+                        others += other_regex.search(v).groups()[0].split(', ')
 
-                if yes_count and no_count:
-                    passed = yes_count > no_count
+                if 'ChamberVoting=H' in link:
+                    chamber = 'lower'
                 else:
-                    yes_count = no_count = 0
+                    chamber = 'upper'
 
-                vote = Vote(bill['chamber'], vote_date, motion, passed, yes_count, no_count, other_count)
+                vote = Vote(chamber, vote_date, motion, passed, yes_count,
+                            no_count, other_count)
                 vote.add_source(link)
                 for a in ayes:
                     vote.yes(a)
                 for n in nos:
                     vote.no(n)
+                for o in others:
+                    vote.other(o)
 
                 vote.validate()
                 bill.add_vote(vote)
