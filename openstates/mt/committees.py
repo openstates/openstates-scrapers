@@ -72,22 +72,36 @@ def _committees_td(el, chamber, url, name_dict):
     comittees page.
     '''
     edge = '      '
-    predicate = lambda s: s != edge
+
+    # The unreliable HTML (dreamweaver...) is different on upper/lower pages.
+    if chamber == 'lower':
+        not_edge = lambda s: (s != edge and s != 'PDF Version')
+        is_edge = lambda s: (s == edge or s == 'PDF Version')
+        predicate = lambda s: ('Secretary:' not in s)
+    
+    if chamber == 'upper':
+        not_edge = lambda s: s != edge
+        is_edge = lambda s: s == edge
+        predicate = not_edge
+    
+    # for t in el.itertext():
+    #     print repr(t)
+    # raw_input('............')
+
+    itertext = el.itertext()
 
     # Toss preliminary junk.
-    itertext = dropwhile(predicate, el.itertext())
+    itertext = dropwhile(not_edge, itertext)
 
     committees_data = []
     failures = 0
     while True:
 
-        # Get next chunk of committee data.
-        data = list(takewhile(predicate, itertext))
+        # Drop any leading "edge"
+        itertext = dropwhile(is_edge, itertext)
 
-        # A hack to accomodate the different, kooky html for the
-        # Business and Labor committee.
-        if 'Business & Labor' in data:
-            data += list(takewhile(predicate, itertext))
+        # Get the rest of committee data.
+        data = list(takewhile(predicate, itertext))
 
         if not data:
             if failures > 5:
@@ -110,7 +124,7 @@ def _committee_data(lines, chamber, url, name_dict):
     and yeild a committee object. Also yield the name dict incase
     the calling function needs it for something.
     '''
-    name_pattern = r'\s{,20}(?:(.+)\:)?\s{,20}(.+?) \((?:\w\-(.+))\)'
+    name_pattern = r'\s{,20}(?:(.+)\:)?\s{,20}(.+?) \((?:\w\-(.+))\)?'
 
     # Functions to identify unused data.
     junk = [lambda s: s != 'On Call',
@@ -123,7 +137,7 @@ def _committee_data(lines, chamber, url, name_dict):
     for j in junk:
         lines = filter(j, lines)
 
-    if len(lines) < 2:
+    if (len(lines) < 2) or (u'\xa0' in lines):
         return
 
     lines = lines[::-1]
@@ -135,7 +149,11 @@ def _committee_data(lines, chamber, url, name_dict):
 
     c = Committee(**kw)
 
-    for name in lines[2:]:
+
+    # import pdb
+    # pdb.set_trace()
+
+    for name in reversed(lines):
         m = re.search(name_pattern, name)
         if m:
             title, name, city = m.groups()
@@ -143,6 +161,10 @@ def _committee_data(lines, chamber, url, name_dict):
                 title = title.lower()
             name_dict[city.lower()].add(name)
             c.add_member(name, role=(title or 'member'))
+        else:
+            print 'NO MATCH: ', name
+            import pdb
+            #pdb.set_trace()
 
     c.add_source(url)
 
