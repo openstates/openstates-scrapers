@@ -78,15 +78,11 @@ def _committees_td(el, chamber, url, name_dict):
         not_edge = lambda s: (s != edge and s != 'PDF Version')
         is_edge = lambda s: (s == edge or s == 'PDF Version')
         predicate = lambda s: ('Secretary:' not in s)
-    
+
     if chamber == 'upper':
         not_edge = lambda s: s != edge
         is_edge = lambda s: s == edge
         predicate = not_edge
-    
-    # for t in el.itertext():
-    #     print repr(t)
-    # raw_input('............')
 
     itertext = el.itertext()
 
@@ -149,10 +145,6 @@ def _committee_data(lines, chamber, url, name_dict):
 
     c = Committee(**kw)
 
-
-    # import pdb
-    # pdb.set_trace()
-
     for name in reversed(lines):
         m = re.search(name_pattern, name)
         if m:
@@ -161,10 +153,6 @@ def _committee_data(lines, chamber, url, name_dict):
                 title = title.lower()
             name_dict[city.lower()].add(name)
             c.add_member(name, role=(title or 'member'))
-        else:
-            print 'NO MATCH: ', name
-            import pdb
-            #pdb.set_trace()
 
     c.add_source(url)
 
