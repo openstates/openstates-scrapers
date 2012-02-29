@@ -11,6 +11,15 @@ from billy.scrape.bills import BillScraper, Bill
 from utils import (clean_text, house_get_actor_from_action,
                    senate_get_actor_from_action,find_nodes_with_matching_text)
 
+bill_types = {
+    "HB " : "bill",
+    "HJR" : "joint resolution",
+    "HCR" : "concurrent resolution",
+    "SB " : "bill",
+    "SJR" : "joint resolution",
+    "SCR" : "concurrent resolution"
+}
+
 class MOBillScraper(BillScraper):
 
     state = 'mo'
@@ -71,8 +80,14 @@ class MOBillScraper(BillScraper):
             bill_lr = bill_page.xpath('//*[@id="lblLRNum"]')[0].text_content()
             #print "bill id = "+ bill_id
 
+            bill_type = "bill"
+            triplet = bill_id[:3]
+            if triplet in bill_types:
+                bill_type = bill_types[triplet]
+
             bill = Bill(year, 'upper', bill_id, bill_desc, bill_url=bill_url,
-                        bill_lr=bill_lr, official_title=bill_title)
+                        bill_lr=bill_lr, official_title=bill_title,
+                        type=bill_type)
             bill.add_source(bill_url)
 
             # Get the primary sponsor
@@ -172,7 +187,7 @@ class MOBillScraper(BillScraper):
             isEven = False
             count = 0
             for bill in bills:
-                if not isEven: 
+                if not isEven:
                     # the non even rows contain bill links, the other rows contain brief
                     # descriptions of the bill.
                     #print "bill = %s" % bill[0][0].attrib['href']
@@ -206,7 +221,7 @@ class MOBillScraper(BillScraper):
             cosponsorOffset = 0
             if table_rows[2][0].text_content().strip() == 'Co-Sponsor:':
                 cosponsorOffset = 1
-               
+
             lr_label_tag = table_rows[3+cosponsorOffset]
             assert lr_label_tag[0].text_content().strip() == 'LR Number:'
             bill_lr = lr_label_tag[1].text_content()
@@ -220,7 +235,15 @@ class MOBillScraper(BillScraper):
 
             # could substitute the description for the name,
             # but keeping it separate for now.
-            bill = Bill(session, 'lower', bill_id, bill_desc, bill_url=url, bill_lr=bill_lr, official_title=official_title)
+
+            bill_type = "bill"
+            triplet = bill_id[:3]
+            if triplet in bill_types:
+                bill_type = bill_types[triplet]
+
+            bill = Bill(session, 'lower', bill_id, bill_desc, bill_url=url,
+                        bill_lr=bill_lr, official_title=official_title,
+                        type=bill_type)
             bill.add_source(url)
 
             bill_sponsor = clean_text(table_rows[0][1].text_content())
