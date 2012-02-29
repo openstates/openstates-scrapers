@@ -38,7 +38,8 @@ class MOCommitteeScraper(CommitteeScraper):
                 with self.urlopen(committee_url) as committee_page_string:
                     committee_page = lxml.html.fromstring(
                                                         committee_page_string)
-                    lis = committee_page.xpath('id("mainContent")/ul/ul/li')
+                    lis = committee_page.xpath(
+                        "//div[@id='mainContent']/ul/ul[1]/li")
                     for li in lis:
                         mem_parts = li.text_content().strip().split(',')
                         mem_name = mem_parts[0]
@@ -88,7 +89,7 @@ class MOCommitteeScraper(CommitteeScraper):
                         mem_name = (mem_parts[1].strip() + ' ' +
                                     mem_parts[0].strip())
                         # Sometimes Senator abbreviation is in the name
-                        mem_name = mem_name.replace(' Sen. ', '')
+                        mem_name = mem_name.replace('Sen. ', '')
                         mem_role = 'member'
                         if len(mem_parts) > 2:
                             # Handle the case where there is a comma in the
