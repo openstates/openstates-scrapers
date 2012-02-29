@@ -29,7 +29,7 @@ class FLLegislatorScraper(LegislatorScraper):
                 name = re.sub(r'\s+', ' ', name)
                 leg_url = link.get('href')
 
-                if name == 'Vacant':
+                if 'Vacant' in name:
                     continue
 
                 # Special case - name_tools gets confused
