@@ -1,4 +1,16 @@
+'''
+This file has a slightly unusual structure. The urs and the main
+scrape function are defined at the top level because the legislator
+scrape requires data from the committee pages in order to get
+properly capitalized names. So that part needs to be importable and
+hence the need to dcouple it from the scraper instance. If that makes
+sense.
 
+This file currently scrapes only standing committees and doesn't
+bother with the arguably important joint appropriations subcomittees,
+Which contain members of the appropriations committees from each
+and deal with budgetary matters.
+'''
 import re
 from itertools import dropwhile, takewhile
 from collections import defaultdict
@@ -6,6 +18,8 @@ from collections import defaultdict
 import lxml.html
 
 from billy.scrape.committees import CommitteeScraper, Committee
+import scrapelib
+
 
 committee_urls = {
     'lower': {
@@ -28,19 +42,18 @@ class MTCommitteeScraper(CommitteeScraper):
                 year = tdata['start_year']
                 break
 
-        url = committee_urls[chamber][year]
-        html = self.urlopen(url, use_cache_first=True)
-
-        for name_dict, c in scrape_committees(html, year, chamber,
-                                              url, save=True):
+        for name_dict, c in scrape_committees(year, chamber):
             self.save_committee(c)
 
 
-def scrape_committees(html, year, chamber, url, save=False):
+def scrape_committees(year, chamber):
     '''Since the legislator names aren't properly capitalized in the
     csv file, scrape the committee page and use the names listed there
     instead.
     '''
+    url = committee_urls[chamber][year]
+    html = scrapelib.urlopen(url).decode('latin-1')
+
     name_dict = defaultdict(set)
     html = html.decode('latin-1')
     doc = lxml.html.fromstring(html)
@@ -55,19 +68,27 @@ def scrape_committees(html, year, chamber, url, save=False):
 
 
 def _committees_td(el, chamber, url, name_dict):
-
+    '''Get all committees data from a particular td in the
+    comittees page.
+    '''
     edge = '      '
-    until_edge = lambda s: s != edge
+    predicate = lambda s: s != edge
 
     # Toss preliminary junk.
-    itertext = dropwhile(until_edge, el.itertext())
+    itertext = dropwhile(predicate, el.itertext())
 
     committees_data = []
     failures = 0
     while True:
 
         # Get next chunk of committee data.
-        data = list(takewhile(until_edge, itertext))
+        data = list(takewhile(predicate, itertext))
+
+        # A hack to accomodate the different, kooky html for the
+        # Business and Labor committee.
+        if 'Business & Labor' in data:
+            data += list(takewhile(predicate, itertext))
+
         if not data:
             if failures > 5:
                 break
@@ -84,13 +105,17 @@ def _committees_td(el, chamber, url, name_dict):
 
 
 def _committee_data(lines, chamber, url, name_dict):
-
+    '''Given a list of lines of committee data from a td element
+    on the committees page, extract the commitee name, the members,
+    and yeild a committee object. Also yield the name dict incase
+    the calling function needs it for something.
+    '''
     name_pattern = r'\s{,20}(?:(.+)\:)?\s{,20}(.+?) \((?:\w\-(.+))\)'
 
     # Functions to identify unused data.
     junk = [lambda s: s != 'On Call',
             lambda s: 'Staff:' not in s,
-            lambda s: 'Secreetary:' not in s,
+            lambda s: 'Secretary:' not in s,
             lambda s: s.strip(),
             lambda s: not s.isupper()]
 
@@ -98,13 +123,12 @@ def _committee_data(lines, chamber, url, name_dict):
     for j in junk:
         lines = filter(j, lines)
 
+    if len(lines) < 2:
+        return
+
     lines = lines[::-1]
     kw = {'chamber': chamber}
-
     kw['committee'] = lines.pop().strip()
-
-    if not lines:
-        return
 
     if lines[-1].startswith('Meets'):
         kw['meetings_info'] = lines.pop().strip()
