@@ -38,7 +38,9 @@ class MOCommitteeScraper(CommitteeScraper):
                 with self.urlopen(committee_url) as committee_page_string:
                     committee_page = lxml.html.fromstring(
                                                         committee_page_string)
-                    lis = committee_page.xpath('id("mainContent")/ul/ul/li')
+                    lis = committee_page.xpath(
+                        "//div[@id='mainContent']/ul/ul[1]/li")
+                    self.log(lis)
                     for li in lis:
                         mem_parts = li.text_content().strip().split(',')
                         mem_name = mem_parts[0]
