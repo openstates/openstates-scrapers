@@ -50,7 +50,11 @@ class MTBillScraper(BillScraper):
     def __init__(self, *args, **kwargs):
         super(MTBillScraper, self).__init__(*args, **kwargs)
 
-        self.search_url_template = "http://laws.leg.mt.gov/laws%s/LAW0203W$BSRV.ActionQuery?P_BLTP_BILL_TYP_CD=%s&P_BILL_NO=%s&P_BILL_DFT_NO=&Z_ACTION=Find&P_SBJ_DESCR=&P_SBJT_SBJ_CD=&P_LST_NM1=&P_ENTY_ID_SEQ="
+        self.search_url_template = (
+            'http://laws.leg.mt.gov/laws%s/LAW0203W$BSRV.ActionQuery?'
+            'P_BLTP_BILL_TYP_CD=%s&P_BILL_NO=%s&P_BILL_DFT_NO=&'
+            'Z_ACTION=Find&P_SBJ_DESCR=&P_SBJT_SBJ_CD=&P_LST_NM1=&'
+            'P_ENTY_ID_SEQ=')
 
     def scrape(self, chamber, session):
         for term in self.metadata['terms']:
@@ -78,17 +82,12 @@ class MTBillScraper(BillScraper):
     def parse_bill(self, bill_url, session, chamber):
         bill = None
         bill_page = ElementTree(lxml.html.fromstring(self.urlopen(bill_url)))
+        
         for anchor in bill_page.findall('//a'):
             if (anchor.text_content().startswith('status of') or
                 anchor.text_content().startswith('Detailed Information (status)')):
                 status_url = anchor.attrib['href'].replace("\r", "").replace("\n", "")
                 bill = self.parse_bill_status_page(status_url, bill_url, session, chamber)
-            elif anchor.text_content().startswith('This bill in WP'):
-                index_url = anchor.attrib['href']
-                index_url = index_url[0:index_url.rindex('/')]
-                # this looks weird.  See http://data.opi.mt.gov/bills/BillHtml/SB0002.htm for why
-                index_url = index_url[index_url.rindex("http://"):]
-                self.add_bill_versions(bill, index_url)
 
         if bill is None:
             # No bill was found.  Maybe something like HB0790 in the 2005 session?
@@ -100,6 +99,26 @@ class MTBillScraper(BillScraper):
 
             status_url = self.search_url_template % (laws_year, bill_type, bill_number)
             bill = self.parse_bill_status_page(status_url, bill_url, session, chamber)
+
+        # Get versions.
+        versions = [a['action'] for a in bill['actions']]
+        versions = [a for a in versions if 'Version Available' in a]
+        if not versions:
+            version_name = 'Introduced'
+        else:
+            version = versions.pop()
+            if 'New Version' in version:
+                version_name = 'Amended'
+            elif 'Enrolled' in version:
+                version_name = 'Enrolled'
+
+        # Add html.
+        bill.add_version(version_name, bill_url, mimetype='text/html')
+
+        # Add pdf.
+        url = set(bill_page.xpath('//a/@href[contains(., "BillPdf")]')).pop()
+        bill.add_version(version_name, url, mimetype='application/pdf')
+
         return bill
 
     def parse_bill_status_page(self, status_url, bill_url, session, chamber):
@@ -125,7 +144,7 @@ class MTBillScraper(BillScraper):
 
 
     def add_actions(self, bill, status_page):
-        for action in status_page.xpath('/div/form[3]/table[1]/tr')[1:]:
+        for action in reversed(status_page.xpath('/div/form[3]/table[1]/tr')[1:]):
             try:
                 actor = actor_map[action.xpath("td[1]")[0].text_content().split(" ")[0]]
                 action_name = action.xpath("td[1]")[0].text_content().replace(actor, "")[4:].strip()
@@ -133,6 +152,7 @@ class MTBillScraper(BillScraper):
                 action_name = action.xpath("td[1]")[0].text_content().strip()
                 actor = 'clerk' if action_name == 'Chapter Number Assigned' else ''
 
+            action_name = action_name.replace("&nbsp", "")
             action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y')
             action_votes_yes = action.xpath("td[3]")[0].text_content().replace("&nbsp", "")
             action_votes_no = action.xpath("td[4]")[0].text_content().replace("&nbsp", "")
@@ -145,7 +165,8 @@ class MTBillScraper(BillScraper):
                 action_votes_yes = int(action_votes_yes)
                 action_votes_no = int(action_votes_no)
                 passed = None
-                # some actions take a super majority, so we aren't just comparing the yeas and nays here.
+                # some actions take a super majority, so we aren't just 
+                # comparing the yeas and nays here.
                 for i in vote_passage_indicators:
                     if action_name.count(i):
                         passed = True
@@ -162,7 +183,8 @@ class MTBillScraper(BillScraper):
                         if action_votes_no >= action_votes_yes:
                             passed = False
                         else:
-                            raise Exception ("passage and failure indicator both present: %s" % action_name)
+                            raise Exception ("passage and failure indicator"
+                                             "both present: %s" % action_name)
                     if action_name.count(i) and passed == None:
                         passed = False
                 for i in vote_ambiguous_indicators:
@@ -196,19 +218,4 @@ class MTBillScraper(BillScraper):
                 sponsor_type = sponsor_map[sponsor_type]
             bill.add_sponsor(sponsor_type, sponsor_full_name)
 
-    def add_bill_versions(self, bill, index_url):
-        # This method won't pick up bill versions where the bill is published
-        # exclusively in PDF.  See 2009 HB 645 for a sample
-        index_page = ElementTree(lxml.html.fromstring(self.urlopen(index_url)))
-        tokens = bill['bill_id'].split(" ")
-        bill_regex = re.compile("%s0*%s\_" % (tokens[0], tokens[1]))
-        for anchor in index_page.findall('//a'):
-            if bill_regex.match(anchor.text_content()) is not None:
-                file_name = anchor.text_content()
-                version = file_name[file_name.find('_')+1:file_name.find('.')]
-                version_title = 'Final Version'
-                if version != 'x':
-                    version_title = 'Version %s' % version
-
-                version_url = index_url[0:index_url.find('bills')-1] + anchor.attrib['href']
-                bill.add_version(version_title, version_url)
+      
