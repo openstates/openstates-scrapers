@@ -22,6 +22,7 @@ class MOLegislatorScraper(LegislatorScraper):
 
     def scrape_senators(self, chamber, session, term):
         url = self.senator_url % (session[2:])
+        root_url = url
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             table = page.xpath('//*[@id="mainContent"]/table//table/tr')
@@ -41,12 +42,14 @@ class MOLegislatorScraper(LegislatorScraper):
                 senator_key = "%s%s" % (party_and_district[0].lower(),party_and_district[1])
                 district = party_and_district[1]
                 phone = tds[3].xpath('div')[0].text_content().strip()
+                self.log("NEW LEGISLATOR")
                 leg = Legislator(term, chamber, district, full_name, '', '', '', party)
-                leg.add_source(url)
+                leg.add_source(root_url)
+                self.log("ADDING SOURCE %s" % root_url)
                 url = self.senator_details_url % (session[2:],int(district))
                 with self.urlopen(url) as details_page:
                     leg.add_source(url)
-
+                    self.log("ADDING SRC2 %s" % url)
                     page = lxml.html.fromstring(details_page)
                     photo_url = page.xpath('//html/body/div[2]/div/img/@src')[0]
                     committees = page.xpath('//html/body/div[2]//span[@class="style3"]/a')
@@ -57,15 +60,29 @@ class MOLegislatorScraper(LegislatorScraper):
                         #print "committee = '%s'" % parts[0].strip()
                         subcommittee = None
                         if len(parts) > 1:
-                            subcommittee = parts[1].strip().replace('- ','').replace(', Vice-Chairman','').replace(', Chairman','')
-                        committee = parts[0].strip().replace(', Vice-Chairman','').replace(', Chairman','')
+                            subcommittee = parts[1].strip(
+                                           ).replace('- ',''
+                                           ).replace(', Vice-Chairman',''
+                                           ).replace(', Chairman','')
+                        committee = parts[0].strip().replace(
+                            ', Vice-Chairman',''
+                            ).replace(', Chairman','')
                         if subcommittee:
-                            leg.add_role('committee member', term, committee=committee, subcommittee=subcommittee, chamber=chamber)
+                            leg.add_role('committee member',
+                                         term,
+                                         committee=committee,
+                                         subcommittee=subcommittee,
+                                         chamber=chamber)
                         else:
-                            leg.add_role('committee member', term, committee=committee, chamber=chamber)
-                url = self.senator_address_url % (session[2:],int(senator_key[1:]))
+                            leg.add_role('committee member', term,
+                                         committee=committee, chamber=chamber)
+
+                url = self.senator_address_url % (
+                    session[2:],int(senator_key[1:]))
+
                 with self.urlopen(url) as details_page:
                     leg.add_source(url)
+                    self.log("ADD SRC3 %s" % url)
                     page = lxml.html.fromstring(details_page)
                     address = page.xpath('/html/body//span[2]')[0].text_content().split('\n')
                     email = page.xpath('/html/body/p/span[2]/a/@href')
