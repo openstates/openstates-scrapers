@@ -132,7 +132,12 @@ class MOBillScraper(BillScraper):
             "Offered"          : "bill:introduced",
             "First Read"       : "bill:reading:1",
             "Read Second Time" : "bill:reading:2",
+            "Second Read"      : "bill:reading:2",
+            "Third Read"       : "bill:reading:3",
             "Referred"         : "committee:referred",
+            "Withdrawn"        : "bill:withdrawn",
+
+            "Approved by Governor" : "governor:signed",
         }
         ret = []
         for flag in flags:
