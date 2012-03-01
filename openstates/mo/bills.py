@@ -125,6 +125,14 @@ class MOBillScraper(BillScraper):
                 pdf_url = version_tag.attrib['href']
                 bill.add_version(description, pdf_url)
 
+    def get_action(self, actor, action):
+        # Alright. This covers both chambers and everyting else.
+        flags = {
+            "Introduced" : "bill:introduced",
+            "Read Second Time" : "bill:reading:2",
+        }
+        return "other"
+
     def parse_senate_actions(self, bill, url):
         bill.add_source(url)
         with self.urlopen(url) as actions_page:
@@ -136,8 +144,8 @@ class MOBillScraper(BillScraper):
                 date = dt.datetime.strptime(date, '%m/%d/%Y')
                 action = row[1].text_content()
                 actor = senate_get_actor_from_action(action)
-                # TODO add the type of action (see MA for an example)
-                bill.add_action(actor, action, date)
+                type_class = self.get_action(actor, action)
+                bill.add_action(actor, action, date, type=type_class)
 
     def parse_senate_cosponsors(self, bill, url):
         bill.add_source(url)
@@ -351,6 +359,6 @@ class MOBillScraper(BillScraper):
                     bill.add_action(actor, action, date)
 
         # add that last action
-        actor = house_get_actor_from_action(action)
+        # actor = house_get_actor_from_action(action)
         #TODO probably need to add the type here as well
-        bill.add_action(actor, action, date)
+        # bill.add_action(actor, action, date)
