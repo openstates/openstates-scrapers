@@ -68,6 +68,9 @@ class FLLegislatorScraper(LegislatorScraper):
                 link = div.xpath('.//div[@class="membername"]/a')[0]
                 name = link.text_content().strip()
 
+                if 'Vacant' in name:
+                    continue
+
                 party = div.xpath('.//div[@class="partyname"]/text()')[0].strip()
                 if party == 'Democrat':
                     party = 'Democratic'
