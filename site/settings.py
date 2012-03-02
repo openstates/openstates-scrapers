@@ -56,7 +56,10 @@ INSTALLED_APPS = (
     'markup_tags',
 )
 
-STATIC_URL = 'http://assets.openstates.org/static/'
+STATIC_URL = 'http://assets.openstates.org/static/v1/'
+STATICFILES_DIRS = (os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                              'media')),)
+STATIC_ROOT = 'collected_static'
 
 DATE_FORMAT = 'Y-m-d'
 TIME_FORMAT = 'H:i:s'
