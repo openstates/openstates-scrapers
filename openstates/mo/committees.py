@@ -41,11 +41,9 @@ class MOCommitteeScraper(CommitteeScraper):
                     lis = committee_page.xpath(
                         "//div[@id='mainContent']/ul/ul[1]/li")
                     if len(lis) == 0:
-                        self.log("Trying backup method")
                         lis = committee_page.xpath(
                             "//div[@id='mainContent']//li")
                         # This MIGHT cause issues.
-                    self.log(lis)
                     for li in lis:
                         mem_parts = li.text_content().strip().split(',')
                         mem_name = mem_parts[0]
