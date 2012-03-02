@@ -13,11 +13,6 @@ LANGUAGE_CODE = 'en-us'
 SITE_ID = 1
 USE_I18N = False
 
-MEDIA_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                          'media/'))
-MEDIA_URL = '/media/'
-ADMIN_MEDIA_PREFIX = '/admin_media/'
-
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'qe_7q2@i9sskbz&hf5tx)39z0=shicxr*_57yr0jw2bxr7=i8+'
 
@@ -52,7 +47,6 @@ INSTALLED_APPS = (
     'billy.site.api',
     'billy.site.browse',
     'locksmith.mongoauth',
-    'mediasync',
     'markup_tags',
 )
 
