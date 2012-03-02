@@ -47,12 +47,15 @@ ROOT_URLCONF = 'urls'
 
 INSTALLED_APPS = (
     'django.contrib.humanize',
+    'django.contrib.staticfiles',
     'billy.site.api',
     'billy.site.browse',
     'locksmith.mongoauth',
     'mediasync',
     'markup_tags',
 )
+
+STATIC_URL = 'http://assets.openstates.org/static/'
 
 DATE_FORMAT = 'Y-m-d'
 TIME_FORMAT = 'H:i:s'
