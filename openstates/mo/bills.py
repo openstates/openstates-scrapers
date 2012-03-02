@@ -125,6 +125,28 @@ class MOBillScraper(BillScraper):
                 pdf_url = version_tag.attrib['href']
                 bill.add_version(description, pdf_url)
 
+    def get_action(self, actor, action):
+        # Alright. This covers both chambers and everyting else.
+        flags = {
+            "Introduced"       : "bill:introduced",
+            "Offered"          : "bill:introduced",
+            "First Read"       : "bill:reading:1",
+            "Read Second Time" : "bill:reading:2",
+            "Second Read"      : "bill:reading:2",
+            "Third Read"       : "bill:reading:3",
+            "Referred"         : "committee:referred",
+            "Withdrawn"        : "bill:withdrawn",
+
+            "Approved by Governor" : "governor:signed",
+        }
+        ret = []
+        for flag in flags:
+            if flag in action:
+                ret.append(flags[flag])
+        if len(ret) == 0:
+            ret.append("other")
+        return ret
+
     def parse_senate_actions(self, bill, url):
         bill.add_source(url)
         with self.urlopen(url) as actions_page:
@@ -136,8 +158,8 @@ class MOBillScraper(BillScraper):
                 date = dt.datetime.strptime(date, '%m/%d/%Y')
                 action = row[1].text_content()
                 actor = senate_get_actor_from_action(action)
-                # TODO add the type of action (see MA for an example)
-                bill.add_action(actor, action, date)
+                type_class = self.get_action(actor, action)
+                bill.add_action(actor, action, date, type=type_class)
 
     def parse_senate_cosponsors(self, bill, url):
         bill.add_source(url)
@@ -287,8 +309,6 @@ class MOBillScraper(BillScraper):
             doc_tags = bill_page.xpath('//div[@class="BillDocsSection"][1]/span')
             for doc_tag in reversed(doc_tags):
                 doc = clean_text(doc_tag.text_content())
-                self.log(doc)
-                self.log(doc_tag.xpath("./*"))
                 text_url = '%s%s' % (
                     self.senate_base_url,
                     doc_tag[0].attrib['href']
@@ -347,10 +367,5 @@ class MOBillScraper(BillScraper):
                         action += ('\n' + row[2].text_content())
                         action = action.rstrip()
                     actor = house_get_actor_from_action(action)
-                    #TODO probably need to add the type here as well
-                    bill.add_action(actor, action, date)
-
-        # add that last action
-        actor = house_get_actor_from_action(action)
-        #TODO probably need to add the type here as well
-        bill.add_action(actor, action, date)
+                    type_class = self.get_action(actor, action)
+                    bill.add_action(actor, action, date, type=type_class)
