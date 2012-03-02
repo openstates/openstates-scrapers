@@ -1,12 +1,24 @@
 import os
 import re
+import pdb
+import itertools
+import copy
 from datetime import datetime
+from urlparse import urljoin
+from collections import defaultdict
+from operator import getitem
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
+from scrapelib import urlopen
 
 import lxml.html
 from lxml.etree import ElementTree
+
+def url2lxml(url):
+    html = urlopen(url).decode('latin-1')
+    return lxml.html.fromstring(html)
+
 
 actor_map = {
     '(S)': 'upper',
@@ -62,6 +74,8 @@ class MTBillScraper(BillScraper):
                 year = term['start_year']
                 break
 
+        self.versions_dict = self._versions_dict(year)
+
         base_bill_url = 'http://data.opi.mt.gov/bills/%d/BillHtml/' % year
         index_page = ElementTree(lxml.html.fromstring(self.urlopen(base_bill_url)))
 
@@ -100,7 +114,7 @@ class MTBillScraper(BillScraper):
             status_url = self.search_url_template % (laws_year, bill_type, bill_number)
             bill = self.parse_bill_status_page(status_url, bill_url, session, chamber)
 
-        # Get versions.
+        # Get versions on the detail page.
         versions = [a['action'] for a in bill['actions']]
         versions = [a for a in versions if 'Version Available' in a]
         if not versions:
@@ -112,6 +126,8 @@ class MTBillScraper(BillScraper):
             elif 'Enrolled' in version:
                 version_name = 'Enrolled'
 
+        self.add_other_versions(bill)
+
         # Add html.
         bill.add_version(version_name, bill_url, mimetype='text/html')
 
@@ -119,10 +135,13 @@ class MTBillScraper(BillScraper):
         url = set(bill_page.xpath('//a/@href[contains(., "BillPdf")]')).pop()
         bill.add_version(version_name, url, mimetype='application/pdf')
 
+        # Add status url as a source.
+        bill.add_source(status_url)
+
         return bill
 
     def parse_bill_status_page(self, status_url, bill_url, session, chamber):
-        status_page = ElementTree(lxml.html.fromstring(self.urlopen(status_url)))
+        status_page = lxml.html.fromstring(self.urlopen(status_url))
         # see 2007 HB 2... weird.
         try:
             bill_id = status_page.xpath("//tr[2]/td[2]")[0].text_content()
@@ -139,12 +158,14 @@ class MTBillScraper(BillScraper):
 
         self.add_sponsors(bill, status_page)
         self.add_actions(bill, status_page)
+        self.add_votes(bill, status_page, status_url)
 
         return bill
 
 
     def add_actions(self, bill, status_page):
-        for action in reversed(status_page.xpath('/div/form[3]/table[1]/tr')[1:]):
+        
+        for action in reversed(status_page.xpath('//div/form[3]/table[1]/tr')[1:]):
             try:
                 actor = actor_map[action.xpath("td[1]")[0].text_content().split(" ")[0]]
                 action_name = action.xpath("td[1]")[0].text_content().replace(actor, "")[4:].strip()
@@ -160,48 +181,49 @@ class MTBillScraper(BillScraper):
 
             bill.add_action(actor, action_name, action_date)
 
-            # TODO: Review... should something be both an action and a vote?
+            # TODO: Review... should something be both an action and a vote?            
             try:
                 action_votes_yes = int(action_votes_yes)
                 action_votes_no = int(action_votes_no)
-                passed = None
-                # some actions take a super majority, so we aren't just 
-                # comparing the yeas and nays here.
-                for i in vote_passage_indicators:
-                    if action_name.count(i):
-                        passed = True
-                for i in vote_failure_indicators:
-                    if action_name.count(i) and passed == True:
-                        # a quick explanation:  originally an exception was
-                        # thrown if both passage and failure indicators were
-                        # present because I thought that would be a bug in my
-                        # lists.  Then I found 2007 HB 160.
-                        # Now passed = False if the nays outnumber the yays..
-                        # I won't automatically mark it as passed if the yays
-                        # ounumber the nays because I don't know what requires
-                        # a supermajority in MT.
-                        if action_votes_no >= action_votes_yes:
-                            passed = False
-                        else:
-                            raise Exception ("passage and failure indicator"
-                                             "both present: %s" % action_name)
-                    if action_name.count(i) and passed == None:
-                        passed = False
-                for i in vote_ambiguous_indicators:
-                    if action_name.count(i):
-                        passed = action_votes_yes > action_votes_no
-                if passed is None:
-                    raise Exception("Unknown passage: %s" % action_name)
-                bill.add_vote(Vote(bill['chamber'],
-                                   action_date,
-                                   action_name,
-                                   passed,
-                                   action_votes_yes,
-                                   action_votes_no,
-                                   0))
             except ValueError:
-                pass
+                continue
 
+            passed = None
+
+            # some actions take a super majority, so we aren't just 
+            # comparing the yeas and nays here.
+            for i in vote_passage_indicators:
+                if action_name.count(i):
+                    passed = True
+            for i in vote_failure_indicators:
+                if action_name.count(i) and passed == True:
+                    # a quick explanation:  originally an exception was
+                    # thrown if both passage and failure indicators were
+                    # present because I thought that would be a bug in my
+                    # lists.  Then I found 2007 HB 160.
+                    # Now passed = False if the nays outnumber the yays..
+                    # I won't automatically mark it as passed if the yays
+                    # ounumber the nays because I don't know what requires
+                    # a supermajority in MT.
+                    if action_votes_no >= action_votes_yes:
+                        passed = False
+                    else:
+                        raise Exception ("passage and failure indicator"
+                                         "both present: %s" % action_name)
+                if action_name.count(i) and passed == None:
+                    passed = False
+            for i in vote_ambiguous_indicators:
+                if action_name.count(i):
+                    passed = action_votes_yes > action_votes_no
+            if passed is None:
+                raise Exception("Unknown passage: %s" % action_name)
+            bill.add_vote(Vote(bill['chamber'],
+                               action_date,
+                               action_name,
+                               passed,
+                               action_votes_yes,
+                               action_votes_no,
+                               0))
 
     def add_sponsors(self, bill, status_page):
         for sponsor_row in status_page.xpath('/div/form[6]/table[1]/tr')[1:]:
@@ -218,4 +240,135 @@ class MTBillScraper(BillScraper):
                 sponsor_type = sponsor_map[sponsor_type]
             bill.add_sponsor(sponsor_type, sponsor_full_name)
 
-      
+    def _versions_dict(self, year):
+
+        res = defaultdict(dict)
+
+        url = 'http://data.opi.mt.gov/bills/%d/' % year
+        doc = url2lxml(url)
+        for url in doc.xpath('//a[contains(@href, "/bills/")]/@href')[1:]:
+            doc = url2lxml(url)
+            for fn in doc.xpath('//a/@href')[1:]:
+                _url = urljoin(url, fn)
+                _, _, fn = fn.rpartition('/')
+                m = re.search(r'([A-Z]+)0*(\d+)_?([^.]+)', fn)
+                if m:
+                    type_, id_, version = m.groups()
+                    res[(type_, id_)][version] = _url
+
+        return res
+
+    def add_other_versions(self, bill):
+
+        count = itertools.count(1)
+        xcount = itertools.chain([1], itertools.count(1))
+        type_, id_ = bill['bill_id'].split()        
+        version_urls = copy.copy(self.versions_dict[(type_, id_)])
+        mimetype = 'application/pdf'
+        version_strings = [
+            'Introduced Bill Text Available Electronically',
+            'Printed - New Version Available',
+            'Clerical Corrections Made - New Version Available']
+
+        if bill['bill_id'] == 'HB 2':
+            # Need to special-case this one.
+            return
+
+        for i, a in enumerate(bill['actions']):
+            
+            text = a['action']
+            actions = bill['actions']
+            if text in version_strings:
+
+                name = actions[i - 1]['action']
+
+                if 'Clerical Corrections' in text:
+                    name += ' (clerical corrections made)'
+                try:
+                    url = version_urls.pop(str(count.next()))    
+                except KeyError:
+                    msg = "No url found for version: %r" % name
+                    self.warning(msg)
+                else:
+                    bill.add_version(name, url, mimetype)
+                    continue
+
+                try:
+                    url = version_urls['x' + str(xcount.next())]
+                except KeyError:
+                    continue
+
+                name = actions[i - 1]['action']
+                bill.add_version(name, url, mimetype)
+
+    def add_votes(self, bill, status_page, status_url):
+        '''For each row in the actions table that links to a vote,
+        retrieve the vote object created by the scraper in add_actions
+        and update the vote object with the voter data.
+        '''
+        base_url, _, _ = status_url.rpartition('/')
+        base_url += '/'
+        status_page.make_links_absolute(base_url)
+
+        if not bill['votes']:
+            return 
+
+        votes = {}    
+        for vote in bill['votes']:
+            votes[(vote['motion'], vote['date'])] = vote
+
+        for tr in status_page.xpath('//table')[4].xpath('tr')[2:]:
+            tds = list(tr)
+
+            if tds:
+                vote_url = tds[2].xpath('a/@href')
+
+                if vote_url:
+
+                    # Get the matching vote object.
+                    text = tr.itertext()
+                    motion = text.next().strip()
+                    _, motion = motion.split(' ', 1)
+                    date = datetime.strptime(text.next(), '%m/%d/%Y')
+                    vote = votes[(motion, date)]
+
+                    # Add the url as a source.
+                    vote_url = vote_url[0]
+                    vote.add_source(vote_url)
+
+                    # Can't parse the votes from pdf. Frowny face.
+                    if vote_url.lower().endswith('pdf'):
+                        continue
+
+                    # Update the vote object with voters..    
+                    data = self._parse_votes(vote_url, vote)
+                    
+    def _parse_votes(self, url, vote):
+        '''Given a vote url and a vote object, extract the voters and 
+        the vote counts from the vote page and update the vote object.
+        '''
+
+        keymap = {'Y': 'yes',
+                  'N': 'no'}
+
+        html = self.urlopen(url).decode('latin-1')
+        doc = lxml.html.fromstring(html)
+
+        # Yes, no, excused, absent.
+        try:
+            vals = doc.xpath('//table')[1].xpath('tr/td/text()')
+        except IndexError:
+            # Fie upon't! This was a bogus link and lacked actual vote data.
+            return 
+
+        y, n, e, a = map(int, vals)
+
+        # Correct the other count...
+        vote['other_count'] = e + a
+
+        for text in doc.xpath('//table')[2].xpath('tr/td/text()'):
+            if not text.strip(u'\xa0'):
+                continue
+            v, name = filter(None, text.split(u'\xa0'))
+            getattr(vote, keymap.get(v, 'other'))(name)
+
