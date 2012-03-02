@@ -120,7 +120,7 @@ def _committee_data(lines, chamber, url, name_dict):
     and yeild a committee object. Also yield the name dict incase
     the calling function needs it for something.
     '''
-    name_pattern = r'\s{,20}(?:(.+)\:)?\s{,20}(.+?) \((?:\w\-(.+))\)?'
+    name_pattern = r'\s{,20}(?:(.+)\:)?\s{,20}(.+?) \((?:\w\-([^)]+))'
 
     # Functions to identify unused data.
     junk = [lambda s: s != 'On Call',
