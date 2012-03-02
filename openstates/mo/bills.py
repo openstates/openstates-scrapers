@@ -3,7 +3,11 @@ import datetime as dt
 import urllib2
 import scrapelib
 
+from collections import defaultdict
+
 import lxml.html
+
+from billy.scrape.utils import url_xpath
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
@@ -26,6 +30,33 @@ class MOBillScraper(BillScraper):
     senate_base_url = 'http://www.house.mo.gov'
     # a list of URLS that aren't working when we try to visit them (but probably should work):
     bad_urls = []
+    subjects = defaultdict(list)
+
+    def __init__(self, *args, **kwargs):
+        super(BillScraper, self).__init__(*args, **kwargs)
+        self.scrape_subjects()
+
+    def scrape_subjects(self):
+        subject_url = "http://house.mo.gov/subjectindexlist.aspx"
+        with self.urlopen(subject_url) as subject_page:
+            subject_page = lxml.html.fromstring(subject_page)
+        # OK. Let's load all the subjects up.
+        subjects = subject_page.xpath("//ul[@id='subjectindexitems']/div/li")
+        for subject in subjects:
+            ahref = subject.xpath("./a")[0]
+            if ahref.text_content().strip() == "":
+                continue
+            link = ahref.attrib['href']
+            link = self.senate_base_url + "/" + link
+            rows = url_xpath(link, "//table[@id='reportgrid']/tbody/tr")
+            for row in rows:
+                bill_id = row.xpath("./td")[0].xpath("./a")
+                if len(bill_id) == 0:
+                    continue
+                bill_id = bill_id[0].text
+                self.subjects[bill_id].append(subject.text_content())
+            self.log("Got bills that relate to %s" % subject.text_content())
+
 
     def scrape(self, chamber, year):
         # wrapper to call senate or house scraper. No year check
