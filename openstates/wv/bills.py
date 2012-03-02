@@ -1,7 +1,6 @@
 
 import os
 import re
-import json
 import datetime
 import collections
 from urlparse import urlunparse, urlparse, parse_qsl
@@ -78,7 +77,8 @@ class WVBillScraper(BillScraper):
             self.scrape_bill(session, chamber, bill_id, title,
                              link.attrib['href'])
 
-    def scrape_bill(self, session, chamber, bill_id, title, url):
+    def scrape_bill(self, session, chamber, bill_id, title, url,
+                    strip_sponsors=re.compile(r'\s*\(.{,50}\)\s*').sub):
         html = self.urlopen(url)
 
         page = lxml.html.fromstring(html)
@@ -92,41 +92,30 @@ class WVBillScraper(BillScraper):
         for version in self.scrape_versions(session, chamber, page, bill_id):
             bill.add_version(**version)
 
-        if bill_type != 'bill':
-            subjects = []
-            # skip first 'Subject' link
-            for link in page.xpath("//a[contains(@href, 'Bills_Subject')]")[1:]:
-                subject = link.xpath("string()").strip()
-                subjects.append(subject)
-            bill['subjects'] = subjects
+        # Resolution pages have different html.
+        values = {}
+        trs = page.xpath('//div[@id="bhistcontent"]/table/tr')
+        for tr in trs:
+            heading = tr.xpath('td/strong/text()')
+            if heading:
+                heading = heading[0]
+            else:
+                continue
+            value = tr.text_content().replace(heading, '').strip()
+            values[heading] = value
 
-            sponsor_links = page.xpath("//a[contains(@href, 'Bills_Sponsors')]")
-            for link in sponsor_links[1:]:
-                sponsor = link.xpath("string()").strip()
-                bill.add_sponsor('sponsor', sponsor)
+        bill['subject'] = values['SUMMARY:']
 
-        # resolutions
-        else:
+        # Add primary sponsor.
+        primary = strip_sponsors('', values['LEAD SPONSOR:'])
+        if primary:
+            bill.add_sponsor('primary', primary)
 
-            # Resolution pages have different html. 
-            values = {}
-            trs = page.xpath('//div[@id="bhistcontent"]/table/tr')
-            for tr in trs:
-                heading = tr.xpath('td/strong/text()')
-                if heading:
-                    heading = heading[0]
-                else:
-                    continue
-                value = tr.text_content().replace(heading, '').strip()
-                values[heading] = value
-
-            bill['subject'] = values['SUMMARY:']
-
-            # Add primary sponsor.
-            bill.add_sponsor('primary', values['LEAD SPONSOR:'])
-
-            # Add cosponsors.
-            for name in values['SPONSORS:'].split():
+        # Add cosponsors.
+        sponsors = strip_sponsors('', values['SPONSORS:']).split('\r\n')
+        for name in sponsors:
+            name = name.strip(', ')
+            if name:
                 bill.add_sponsor('secondary', name)
 
         for link in page.xpath("//a[contains(@href, 'votes/house')]"):
@@ -185,7 +174,11 @@ class WVBillScraper(BillScraper):
 
             bill.add_action(actor, action, date, type=atype)
 
-        self.save_bill(bill)
+        try:
+            self.save_bill(bill)
+        except:
+            import pdb
+            pdb.set_trace()
 
     def scrape_vote(self, bill, url):
         try:
@@ -277,15 +270,6 @@ class WVBillScraper(BillScraper):
         in advance; any bills lacking html versions will get version info
         from this dict.'''
 
-        try:
-            f = open('/tmp/%s.wv_version_filenames.json' % chamber)
-        except IOError:
-            pass
-        else:
-            version_filenames = json.load(f)
-            self._version_filenames = version_filenames
-            return
-
         chamber_name = {'upper': 'senate', 'lower': 'House'}[chamber]
         ftp_url = 'ftp://www.legis.state.wv.us/publicdocs/%s/RS/%s/'
         ftp_url = ftp_url % (session, chamber_name)
@@ -310,9 +294,6 @@ class WVBillScraper(BillScraper):
 
         self._version_filenames = version_filenames
 
-        with open('/tmp/%s.wv_version_filenames.json' % chamber, 'w') as f:
-            json.dump(version_filenames, f)
-
     def _scrape_versions_normally(self, session, chamber, page, bill_id,
                                   get_name=re.compile(r'\"(.+)"').search):
         '''This first method assumes the bills versions are hyperlinked
@@ -328,40 +309,6 @@ class WVBillScraper(BillScraper):
             name = get_name(link.get('title')).group(1)
             yield {'name': name, 'url': link.get('href'),
                    'mimetype': 'application/wordperfect'}
-
-    def _scrape_versions_guess_url(self, session, chamber, page, bill_id):
-        '''This second method uses the names listed on the legislature's
-        ftp server to guess the link if it's not provided.
-        '''
-
-        _bill_id = bill_id.replace(' ', '').lower()
-        billtype, i = bill_id.split()
-
-        try:
-            filenames = self._version_filenames[_bill_id]
-        except KeyError:
-            # There are no filenames in the dict for this bill_id.
-            # Skip.
-            return
-
-        for folder, filename in filenames:
-
-            _filename = filename.replace('+', '%20') + '.htm'
-
-            urlparts = (
-                'http',
-                'www.legis.state.wv.us',
-                '/Bill_Status/bills_text.cfm',
-                '',
-                urlencode([
-                    ('billdoc', _filename),
-                    ('yr', session),
-                    ('sesstype', 'RS'),
-                    ('i', i)]),
-                '',)
-
-            url = urlunparse(urlparts)
-            yield filename, url
 
     def _scrape_versions_wpd(self, session, chamber, page, bill_id):
         '''This third method scrapes the .wpd document from the legislature's
@@ -399,29 +346,6 @@ class WVBillScraper(BillScraper):
             if _url not in cache:
                 cache.add(_url)
                 res.append(data)
-
-        # For each guessed url not already scraped, add a version.
-        not_available = ('let us know that the text for',
-                         'is not available')
-        for filename, url in self._scrape_versions_guess_url(
-                                        session, chamber, page, bill_id):
-            _url = _Url(url)
-            if _url not in cache:
-                try:
-                    html = self.urlopen(url, retry_on_404=False).lower()
-                except scrapelib.HTTPError:
-                    # There wasn't a version document at the expected
-                    # location.
-                    continue
-                else:
-                    for s in not_available:
-                        if s not in html:
-                            continue
-
-                    cache.add(_url)
-                    data = {'url': url, 'name': filename,
-                            'mimetype': 'text/html'}
-                    res.append(data)
 
         # For each .wpd version not already scraped, add a version.
         for data in self._scrape_versions_wpd(session, chamber, page,

@@ -86,18 +86,21 @@ class PABillScraper(BillScraper):
 
     def parse_sponsors(self, bill, page):
         first = True
-        for link in page.xpath(
-            "//td[text() = 'Sponsors:']/../descendant::a"):
-
+        sponsor_list = page.xpath("//td[text() = 'Sponsors:']/../td[2]")[0].text_content().strip()
+        for sponsor in sponsor_list.split(','):
             if first:
                 sponsor_type = 'primary'
                 first = False
             else:
                 sponsor_type = 'cosponsor'
-
-            name = link.text.strip().title()
-
-            bill.add_sponsor(sponsor_type, name)
+            
+            if sponsor.find(' and ') != -1:
+                dual_sponsors = sponsor.split(' and ')
+                bill.add_sponsor(sponsor_type, dual_sponsors[0].strip().title())
+                bill.add_sponsor('cosponsor', dual_sponsors[1].strip().title())
+            else:
+                name = sponsor.strip().title()
+                bill.add_sponsor(sponsor_type, name)
 
     def parse_actions(self, bill, page):
         chamber = bill['chamber']
