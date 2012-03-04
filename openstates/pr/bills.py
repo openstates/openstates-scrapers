@@ -62,8 +62,10 @@ class PRBillScraper(BillScraper):
 
 
     def clean_name(self, name):
-        return name.replace('Sr,','').replace('Sr.','').replace('Sra.','').replace('Rep.','').replace('Sen.','')
-
+        for ch in ['Sr,','Sr.','Sra.','Rep.','Sen.']:
+            if ch in name:
+                name = name.replace(ch,'') 
+        return name
     def scrape(self, chamber, session):
         year = session[0:4]
 
