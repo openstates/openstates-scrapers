@@ -3,6 +3,8 @@ import datetime as dt
 import urllib2
 import scrapelib
 
+from collections import defaultdict
+
 import lxml.html
 
 from billy.scrape import NoDataForPeriod
@@ -26,6 +28,36 @@ class MOBillScraper(BillScraper):
     senate_base_url = 'http://www.house.mo.gov'
     # a list of URLS that aren't working when we try to visit them (but probably should work):
     bad_urls = []
+    subjects = defaultdict(list)
+
+    def __init__(self, *args, **kwargs):
+        super(BillScraper, self).__init__(*args, **kwargs)
+        self.scrape_subjects()
+
+    def url_xpath(self, url, path):
+        doc = lxml.html.fromstring(self.urlopen(url))
+        return doc.xpath(path)
+
+    def scrape_subjects(self):
+        subject_url = "http://house.mo.gov/subjectindexlist.aspx"
+        with self.urlopen(subject_url) as subject_page:
+            subject_page = lxml.html.fromstring(subject_page)
+        # OK. Let's load all the subjects up.
+        subjects = subject_page.xpath("//ul[@id='subjectindexitems']/div/li")
+        for subject in subjects:
+            ahref = subject.xpath("./a")[0]
+            if ahref.text_content().strip() == "":
+                continue
+            link = ahref.attrib['href']
+            link = self.senate_base_url + "/" + link
+            rows = self.url_xpath(link, "//table[@id='reportgrid']/tbody/tr")
+            for row in rows:
+                bill_id = row.xpath("./td")[0].xpath("./a")
+                if len(bill_id) == 0:
+                    continue
+                bill_id = bill_id[0].text
+                self.subjects[bill_id].append(subject.text_content())
+            self.log("Got bills that relate to %s" % subject.text_content())
 
     def scrape(self, chamber, year):
         # wrapper to call senate or house scraper. No year check
@@ -85,9 +117,18 @@ class MOBillScraper(BillScraper):
             if triplet in bill_types:
                 bill_type = bill_types[triplet]
 
+            subs = []
+            bid = bill_id.replace(" ", "")
+
+            if bid in self.subjects:
+                subs = self.subjects[bid]
+                self.log("With subjects for this bill")
+
+            self.log(bid)
+
             bill = Bill(year, 'upper', bill_id, bill_desc, bill_url=bill_url,
                         bill_lr=bill_lr, official_title=bill_title,
-                        type=bill_type)
+                        type=bill_type, subjects=subs)
             bill.add_source(bill_url)
 
             # Get the primary sponsor
@@ -263,13 +304,26 @@ class MOBillScraper(BillScraper):
             if triplet in bill_types:
                 bill_type = bill_types[triplet]
 
+            subs = []
+            bid = bill_id.replace(" ", "")
+
+            if bid in self.subjects:
+                subs = self.subjects[bid]
+                self.log("With subjects for this bill")
+
+            self.log(bid)
+
             bill = Bill(session, 'lower', bill_id, bill_desc, bill_url=url,
                         bill_lr=bill_lr, official_title=official_title,
-                        type=bill_type)
+                        type=bill_type, subjects=subs)
             bill.add_source(url)
 
             bill_sponsor = clean_text(table_rows[0][1].text_content())
-            bill_sponsor_link = table_rows[0][1][0].attrib['href']
+            try:
+                bill_sponsor_link = table_rows[0][1][0].attrib['href']
+            except IndexError:
+                return
+
             if bill_sponsor_link:
                 bill_sponsor_link = '%s%s' % (self.senate_base_url,bill_sponsor_link)
 
