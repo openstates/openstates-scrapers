@@ -68,6 +68,8 @@ class MTBillScraper(BillScraper):
             'Z_ACTION=Find&P_SBJ_DESCR=&P_SBJT_SBJ_CD=&P_LST_NM1=&'
             'P_ENTY_ID_SEQ=')
 
+        self.vote_results = defaultdict(list)
+
     def scrape(self, chamber, session):
         for term in self.metadata['terms']:
             if session in term['sessions']:
@@ -91,9 +93,15 @@ class MTBillScraper(BillScraper):
 
         for bill_url in bill_urls:
             bill = self.parse_bill(bill_url, session, chamber)
-            self.save_bill(bill)
+            if bill:
+                self.save_bill(bill)
 
     def parse_bill(self, bill_url, session, chamber):
+
+        # Temporarily skip the differently-formatted house budget bill.
+        if '/2011/billhtml/hb0002.htm' in bill_url.lower():
+            return
+
         bill = None
         bill_page = ElementTree(lxml.html.fromstring(self.urlopen(bill_url)))
         
@@ -140,6 +148,26 @@ class MTBillScraper(BillScraper):
 
         return bill
 
+    def _get_tabledata(self, status_page):
+        '''Montana doesn't currently list co/multisponsors on any of the 
+        legislation I've seen. So this function only adds the primary 
+        sponsor.'''
+        tabledata = defaultdict(list)
+        join = ' '.join
+
+        # Get the top data table.
+        for tr in status_page.xpath('//tr'):
+            tds = tr.xpath("td")
+            try:
+                key = tds[0].text_content().lower()
+                val = join(tds[1].text_content().strip().split())
+            except IndexError:
+                continue
+            if not key.startswith('('):
+                tabledata[key].append(val)
+
+        return dict(tabledata)
+
     def parse_bill_status_page(self, status_url, bill_url, session, chamber):
         status_page = lxml.html.fromstring(self.urlopen(status_url))
         # see 2007 HB 2... weird.
@@ -154,14 +182,58 @@ class MTBillScraper(BillScraper):
             title = status_page.xpath('//tr[1]/td[2]')[0].text_content()
 
         bill = Bill(session, chamber, bill_id, title)
-        bill.add_source(bill_url)
-
-        self.add_sponsors(bill, status_page)
         self.add_actions(bill, status_page)
         self.add_votes(bill, status_page, status_url)
 
-        return bill
+        tabledata = self._get_tabledata(status_page)
 
+        # Add sponsor info.
+        bill.add_sponsor('primary', tabledata['primary sponsor:'][0])
+
+        # A various plus fields MT provides.
+        plus_fields = [
+            'requester',
+            ('chapter number:', 'chapter'),
+            'transmittal date:',
+            'drafter',
+            'fiscal note probable:',
+            'bill draft number:',
+            'preintroduction required:',
+            'by request of',
+            'category:']
+
+        for x in plus_fields:
+            if isinstance(x, tuple):
+                _key, key = x
+            else:
+                _key = key = x
+                key = key.replace(' ', '_')
+
+            try:
+                val = tabledata[_key]
+            except KeyError:
+                continue
+
+            if len(val) == 1:
+                val = val[0]
+
+            bill[key] = val
+
+        # Add bill subjects.
+        xp = '//th[contains(., "Revenue/Approp.")]/ancestor::table/tr'
+        subjects = []
+        for tr in status_page.xpath(xp):
+            try:
+                subj = tr.xpath('td')[0].text_content()
+            except:
+                continue
+            subjects.append(subj)
+
+        bill['subjects'] = subjects
+
+        if None in bill['votes'] or bill['votes'] is None:
+            pdb.set_trace()
+        return bill
 
     def add_actions(self, bill, status_page):
         
@@ -181,66 +253,8 @@ class MTBillScraper(BillScraper):
 
             bill.add_action(actor, action_name, action_date)
 
-            # TODO: Review... should something be both an action and a vote?            
-            try:
-                action_votes_yes = int(action_votes_yes)
-                action_votes_no = int(action_votes_no)
-            except ValueError:
-                continue
-
-            passed = None
-
-            # some actions take a super majority, so we aren't just 
-            # comparing the yeas and nays here.
-            for i in vote_passage_indicators:
-                if action_name.count(i):
-                    passed = True
-            for i in vote_failure_indicators:
-                if action_name.count(i) and passed == True:
-                    # a quick explanation:  originally an exception was
-                    # thrown if both passage and failure indicators were
-                    # present because I thought that would be a bug in my
-                    # lists.  Then I found 2007 HB 160.
-                    # Now passed = False if the nays outnumber the yays..
-                    # I won't automatically mark it as passed if the yays
-                    # ounumber the nays because I don't know what requires
-                    # a supermajority in MT.
-                    if action_votes_no >= action_votes_yes:
-                        passed = False
-                    else:
-                        raise Exception ("passage and failure indicator"
-                                         "both present: %s" % action_name)
-                if action_name.count(i) and passed == None:
-                    passed = False
-            for i in vote_ambiguous_indicators:
-                if action_name.count(i):
-                    passed = action_votes_yes > action_votes_no
-            if passed is None:
-                raise Exception("Unknown passage: %s" % action_name)
-            bill.add_vote(Vote(bill['chamber'],
-                               action_date,
-                               action_name,
-                               passed,
-                               action_votes_yes,
-                               action_votes_no,
-                               0))
-
-    def add_sponsors(self, bill, status_page):
-        for sponsor_row in status_page.xpath('/div/form[6]/table[1]/tr')[1:]:
-            sponsor_type = sponsor_row.xpath("td[1]")[0].text
-            sponsor_last_name = sponsor_row.xpath("td[2]")[0].text
-            sponsor_first_name = sponsor_row.xpath("td[3]")[0].text
-            sponsor_middle_initial = sponsor_row.xpath("td[4]")[0].text
-
-            sponsor_middle_initial = sponsor_middle_initial.replace("&nbsp", "")
-            sponsor_full_name = "%s, %s %s" % (sponsor_last_name,  sponsor_first_name, sponsor_middle_initial)
-            sponsor_full_name = sponsor_full_name.strip()
-
-            if sponsor_map.has_key(sponsor_type):
-                sponsor_type = sponsor_map[sponsor_type]
-            bill.add_sponsor(sponsor_type, sponsor_full_name)
-
     def _versions_dict(self, year):
+        '''Get a mapping of ('HB', '2') tuples to version urls.'''
 
         res = defaultdict(dict)
 
@@ -310,9 +324,6 @@ class MTBillScraper(BillScraper):
         base_url += '/'
         status_page.make_links_absolute(base_url)
 
-        if not bill['votes']:
-            return 
-
         votes = {}    
         for vote in bill['votes']:
             votes[(vote['motion'], vote['date'])] = vote
@@ -327,10 +338,14 @@ class MTBillScraper(BillScraper):
 
                     # Get the matching vote object.
                     text = tr.itertext()
-                    motion = text.next().strip()
-                    _, motion = motion.split(' ', 1)
+                    action = text.next().strip()
+                    chamber, action = action.split(' ', 1)
                     date = datetime.strptime(text.next(), '%m/%d/%Y')
-                    vote = votes[(motion, date)]
+
+                    chamber = actor_map[chamber]
+                    vote = Vote(chamber, date, None, 
+                                passed=None, yes_count=None, no_count=None, 
+                                other_count=None, action=action)
 
                     # Add the url as a source.
                     vote_url = vote_url[0]
@@ -341,15 +356,16 @@ class MTBillScraper(BillScraper):
                         continue
 
                     # Update the vote object with voters..    
-                    data = self._parse_votes(vote_url, vote)
+                    vote = self._parse_votes(vote_url, vote)
+                    if vote:
+                        bill.add_vote(vote)
                     
     def _parse_votes(self, url, vote):
         '''Given a vote url and a vote object, extract the voters and 
         the vote counts from the vote page and update the vote object.
         '''
 
-        keymap = {'Y': 'yes',
-                  'N': 'no'}
+        keymap = {'Y': 'yes', 'N': 'no'}
 
         html = self.urlopen(url).decode('latin-1')
         doc = lxml.html.fromstring(html)
@@ -358,7 +374,8 @@ class MTBillScraper(BillScraper):
         try:
             vals = doc.xpath('//table')[1].xpath('tr/td/text()')
         except IndexError:
-            # Fie upon't! This was a bogus link and lacked actual vote data.
+            # Fie upon't! This was a bogus link and lacked actual 
+            # vote data.
             return 
 
         y, n, e, a = map(int, vals)
@@ -372,3 +389,50 @@ class MTBillScraper(BillScraper):
             v, name = filter(None, text.split(u'\xa0'))
             getattr(vote, keymap.get(v, 'other'))(name)
 
+        yes_votes = vote['yes_count'] = len(vote['yes_votes'])
+        no_votes = vote['no_count'] = len(vote['no_votes'])
+        vote['other_count'] = len(vote['other_votes'])
+        action = vote['action']
+
+        try:
+            motion = doc.xpath('//br')[-1].tail.strip()
+        except:
+            # Some of them mysteriously have no motion listed.
+            motion = action
+
+        vote['motion'] = motion
+
+        # Existing code to deterimine value of `passed`
+        passed = None
+
+        # some actions take a super majority, so we aren't just 
+        # comparing the yeas and nays here.
+        for i in vote_passage_indicators:
+            if action.count(i):
+                passed = True
+        for i in vote_failure_indicators:
+            if action.count(i) and passed == True:
+                # a quick explanation:  originally an exception was
+                # thrown if both passage and failure indicators were
+                # present because I thought that would be a bug in my
+                # lists.  Then I found 2007 HB 160.
+                # Now passed = False if the nays outnumber the yays..
+                # I won't automatically mark it as passed if the yays
+                # ounumber the nays because I don't know what requires
+                # a supermajority in MT.
+                if no_votes >= yes_votes:
+                    passed = False
+                else:
+                    raise Exception("passage and failure indicator"
+                                    "both present at: %s" % url)
+            if action.count(i) and passed == None:
+                passed = False
+        for i in vote_ambiguous_indicators:
+            if action.count(i):
+                passed = yes_votes > no_votes
+        if passed is None:
+            raise Exception("Unknown passage at: %s" % url)
+
+        vote['passed'] = passed
+
+        return vote
