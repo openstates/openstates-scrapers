@@ -152,8 +152,8 @@ class GABillScraper(BillScraper):
                 try:
                     atype = self._action_codes[code]
                 except KeyError:
-                    self.warning("unknown action code %s on %s" % code,
-                                 action.text)
+                    self.warning("unknown action code %s on %s" % (code,
+                                 action.text))
 
                 bill.add_action(actor, action.text, date, atype)
 
