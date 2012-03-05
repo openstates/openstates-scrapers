@@ -89,13 +89,15 @@ class MDBillScraper(BillScraper):
             for dt in dts:
                 action_date = dt.text.strip()
                 if action_date != 'No Action':
-                    action_date = datetime.datetime.strptime(action_date,
-                                                             '%m/%d')
-                    # no actions after June?, decrement the year on these
                     year = int(bill['session'][:4])
+                    action_date += ('/%s' % year)
+                    action_date = datetime.datetime.strptime(action_date,
+                                                             '%m/%d/%Y')
+
+                    # no actions after June?, decrement the year on these
                     if action_date.month > 6:
                         year -= 1
-                    action_date = action_date.replace(year)
+                        action_date = action_date.replace(year)
 
                     # iterate over all dds following the dt
                     dcursor = dt
