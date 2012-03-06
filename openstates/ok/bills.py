@@ -187,13 +187,15 @@ class OKBillScraper(BillScraper):
                     break
 
                 match = re.match(
-                    r'(YEAS|VAC[ANT]?|NAYS|EXCUSED|CONSTITUTIONAL PRIVILEGE|NOT VOTING)\s*:\s*(\d+)',
+                    r'(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL PRIVILEGE|NOT VOTING)\s*:\s*(\d+)',
                     line)
                 if match:
                     if match.group(1) == 'YEAS':
                         vtype = 'yes'
                     elif match.group(1) == 'NAYS':
                         vtype = 'no'
+                    elif match.group(1) == 'VACANT':
+                        continue  # skip these
                     else:
                         vtype = 'other'
                     counts[vtype] += int(match.group(2))
