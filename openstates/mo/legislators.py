@@ -42,9 +42,10 @@ class MOLegislatorScraper(LegislatorScraper):
                 senator_key = "%s%s" % (party_and_district[0].lower(),party_and_district[1])
                 district = party_and_district[1]
                 phone = tds[3].xpath('div')[0].text_content().strip()
-                leg = Legislator(term, chamber, district, full_name, '', '', '', party)
-                leg.add_source(root_url)
                 url = self.senator_details_url % (session[2:],int(district))
+                leg = Legislator(term, chamber, district, full_name,
+                                 party=party, url=url)
+                leg.add_source(root_url)
                 with self.urlopen(url) as details_page:
                     leg.add_source(url)
                     homepage = url
@@ -120,14 +121,14 @@ class MOLegislatorScraper(LegislatorScraper):
                                 first_name=first_name, last_name=last_name,
                                 party=party, phone=phone,
                                 office_address=address,
-                                _code=leg_code)
+                                _code=leg_code, url=url)
                     leg.add_source(url)
                     self.save_vacant_legislator(leg)
                 else:
                     leg = Legislator(term, chamber, district, full_name=full_name,
                               first_name=first_name, last_name=last_name,
                               party=party, phone=phone, office_address=address,
-                              _code=leg_code)
+                              _code=leg_code, url=url)
                     url = (self.rep_details_url % (session,district))
                     leg.add_source(url)
                     with self.urlopen(url) as details_page:
