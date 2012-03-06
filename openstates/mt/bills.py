@@ -70,7 +70,7 @@ class MTBillScraper(BillScraper):
             'Z_ACTION=Find&P_SBJ_DESCR=&P_SBJT_SBJ_CD=&P_LST_NM1=&'
             'P_ENTY_ID_SEQ=')
 
-        self.cv = set()
+        self.e = []
 
     def scrape(self, chamber, session):
         for term in self.metadata['terms']:
@@ -96,7 +96,12 @@ class MTBillScraper(BillScraper):
         for bill_url in bill_urls:
             bill = self.parse_bill(bill_url, session, chamber)
             if bill:
+                for v in bill['votes']:
+                    if not isinstance(v['date'], datetime):
+                        pdb.set_trace()
                 self.save_bill(bill)
+
+        pdb.set_trace()
         
     def parse_bill(self, bill_url, session, chamber):
 
@@ -340,21 +345,16 @@ class MTBillScraper(BillScraper):
                     action = text.next().strip()
                     chamber, action = action.split(' ', 1)
                     date = datetime.strptime(text.next(), '%m/%d/%Y')
+                    vote_url = vote_url[0]
 
                     chamber = actor_map[chamber]
-                    vote = Vote(chamber, date, None, 
-                                passed=None, yes_count=None, no_count=None, 
-                                other_count=None, action=action)
-
-                    # Add the url as a source.
-                    vote_url = vote_url[0]
-                    vote.add_source(vote_url)
+                    vote = dict(chamber=chamber, date=date, 
+                                action=action, 
+                                sources=[{'url': vote_url}])
 
                     # Update the vote object with voters..    
                     vote = self._parse_votes(vote_url, vote)
                     if vote:
-                        if not isinstance(vote['other_count'], int):
-                            pdb.set_trace()
                         bill.add_vote(vote)
                     
     def _parse_votes(self, url, vote):
@@ -362,18 +362,22 @@ class MTBillScraper(BillScraper):
         the vote counts from the vote page and update the vote object.
         '''
         if url.lower().endswith('.pdf'):
+
             try:
-                v = PDFCommitteeVote(url, self.urlopen)
-            except PDFCommitteeVoteParseError:
-                # PDF vote triage. 
-                vote['motion'] = vote['action']
-                for key in 'other_count yes_count no_count'.split():
-                    if vote[key] is None:
-                        vote[key] = 0
-                vote['passed'] = vote['no_count'] < vote['yes_count']
-                return vote
-            else: 
+                resp = self.urlopen(url)
+            except HTTPError:
+                # This vote document wasn't found.
+                msg = 'No document found at url %r' % url
+                return
+
+            try:
+                v = PDFCommitteeVote(url, resp)
                 return v.asvote()
+            except PDFCommitteeVoteParseError as e:
+                # Warn and skip.
+                self.warning("Could't parse committee vote at %r" % url)
+                self.e.append((url, e))
+                return
         
         keymap = {'Y': 'yes', 'N': 'no'}
         html = self.urlopen(url).decode('latin-1')
@@ -383,14 +387,25 @@ class MTBillScraper(BillScraper):
         try:
             vals = doc.xpath('//table')[1].xpath('tr/td/text()')
         except IndexError:
-            # Fie upon't! This was a bogus link and lacked actual 
-            # vote data.
+            # Most likely was a bogus link lacking vote data.
             return 
 
         y, n, e, a = map(int, vals)
+        vote.update(yes_count=y, no_count=n, other_count=e + a)
 
-        # Correct the other count...
-        vote['other_count'] = e + a
+        # Get the motion.
+        try:
+            motion = doc.xpath('//br')[-1].tail.strip()
+        except:
+            # Some of them mysteriously have no motion listed.
+            motion = vote['action']
+
+        vote['motion'] = motion
+
+        # Add placeholder for passed (see below)
+        vote['passed'] = False
+
+        vote = Vote(**vote)
 
         for text in doc.xpath('//table')[2].xpath('tr/td/text()'):
             if not text.strip(u'\xa0'):
@@ -398,20 +413,12 @@ class MTBillScraper(BillScraper):
             v, name = filter(None, text.split(u'\xa0'))
             getattr(vote, keymap.get(v, 'other'))(name)
 
-        yes_votes = vote['yes_count'] = len(vote['yes_votes'])
-        no_votes = vote['no_count'] = len(vote['no_votes'])
-        vote['other_count'] = len(vote['other_votes'])
         action = vote['action']
 
-        try:
-            motion = doc.xpath('//br')[-1].tail.strip()
-        except:
-            # Some of them mysteriously have no motion listed.
-            motion = action
-
-        vote['motion'] = motion
-
         # Existing code to deterimine value of `passed`
+        yes_votes = vote['yes_votes']
+        no_votes = vote['no_votes']
+        other_votes = vote['other_votes']
         passed = None
 
         # some actions take a super majority, so we aren't just 
@@ -449,20 +456,17 @@ class MTBillScraper(BillScraper):
 class PDFCommitteeVoteParseError(Exception):
     pass
 
+class PDFCommitteeVote404Error(PDFCommitteeVoteParseError):
+    pass
+
 class PDFCommitteeVote(object):
 
-    def __init__(self, url, urlopen):
+    def __init__(self, url, resp):
 
         self.url = url
 
         # Fetch the document and put it into tempfile.
         fd, filename = tempfile.mkstemp()
-        try:
-            resp = urlopen(url)
-        except HTTPError:
-            # This vote document wasn't found.
-            msg = 'No document found at url %r' % url
-            raise PDFCommitteeVoteParseError(msg)
 
         with open(filename, 'wb') as f:
             f.write(resp)
@@ -504,13 +508,13 @@ class PDFCommitteeVote(object):
             try:
                 line = text.next().strip()
             except StopIteration:
-                msg = 'Couldn\'t locate the vote date.'
+                msg = 'Couldn\'t parse the vote date.'
                 raise PDFCommitteeVoteParseError(msg)
 
         try:
             return datetime.strptime(line, '%B %d, %Y')
         except ValueError:
-            raise
+            raise PDFCommitteeVoteParseError("Could't parse the vote date.")
 
     def motion(self):
 
@@ -577,20 +581,19 @@ class PDFCommitteeVote(object):
     def passed(self):
         return self.no_count() < self.yes_count()
 
-    def sources(self):
-        return [{'url': self.url}]
-
     def asdict(self):
         res = {}
-        methods = '''yes_count no_count yes_votes no_votes motion
-                  chamber other_votes other_count passed date'''.split()
+        methods = '''yes_count no_count motion
+                  chamber other_count passed date'''.split()
         for m in methods:
             res[m] = getattr(self, m)()
         return res
 
     def asvote(self):
         v = Vote(**self.asdict())
-        #v.add_source(self.url)
+        for key in 'yes_votes no_votes other_votes'.split():
+            v[key] = getattr(self, key)()
+        v.add_source(self.url)
         return v
 
 
