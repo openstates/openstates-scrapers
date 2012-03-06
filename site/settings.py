@@ -50,7 +50,7 @@ INSTALLED_APPS = (
     'markup_tags',
 )
 
-STATIC_URL = 'http://assets.openstates.org/static/v1/'
+STATIC_URL = 'http://static.openstates.org/assets/v1/'
 STATICFILES_DIRS = (os.path.abspath(os.path.join(os.path.dirname(__file__),
                                               'media')),)
 STATIC_ROOT = 'collected_static'

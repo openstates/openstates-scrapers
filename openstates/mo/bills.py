@@ -32,13 +32,36 @@ class MOBillScraper(BillScraper):
 
     def __init__(self, *args, **kwargs):
         super(BillScraper, self).__init__(*args, **kwargs)
-        self.scrape_subjects()
+        lk_session = self.metadata['terms'][0]['sessions'][-1]
+        self.scrape_subjects(lk_session)
 
     def url_xpath(self, url, path):
         doc = lxml.html.fromstring(self.urlopen(url))
         return doc.xpath(path)
 
-    def scrape_subjects(self):
+    def scrape_subjects(self, session):
+        self.scrape_house_subjects(session)
+        self.scrape_senate_subjects(session)
+
+    def scrape_senate_subjects(self, session):
+        short = session[2:4]
+        subject_url = "http://www.senate.mo.gov/%sinfo/BTS_Web/Keywords.aspx?SessionType=R" % (
+            short
+        )
+        with self.urlopen(subject_url) as subject_page:
+            subject_page = lxml.html.fromstring(subject_page)
+        subjects = subject_page.xpath("//h3")
+        for subject in subjects:
+            subject_text = subject.text_content()
+            if ")" in subject_text:
+                subject_text = subject_text[:subject_text.find("(")].strip()
+
+            bills = subject.getnext().xpath("./b/a")
+            for bill in bills:
+                bill_id = bill.text.replace(" ", "")
+                self.subjects[bill_id].append(subject_text)
+
+    def scrape_house_subjects(self, session):
         subject_url = "http://house.mo.gov/subjectindexlist.aspx"
         with self.urlopen(subject_url) as subject_page:
             subject_page = lxml.html.fromstring(subject_page)
@@ -57,7 +80,6 @@ class MOBillScraper(BillScraper):
                     continue
                 bill_id = bill_id[0].text
                 self.subjects[bill_id].append(subject.text_content())
-            self.log("Got bills that relate to %s" % subject.text_content())
 
     def scrape(self, chamber, year):
         # wrapper to call senate or house scraper. No year check
