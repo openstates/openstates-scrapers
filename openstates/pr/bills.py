@@ -82,44 +82,44 @@ class PRBillScraper(BillScraper):
                 except NoSuchBill:
                     break
     def parse_action(self,chamber,bill,action,action_url,date):
-    if action.startswith('Referido'):
-            #committees = action.split(',',1)
-            #multiple committees
-    if action.startswith('Ley N'):
-            action = action[0:42]
+        #if action.startswith('Referido'):
+                #committees = action.split(',',1)
+                #multiple committees
+        if action.startswith('Ley N'):
+                action = action[0:42]
         elif action.startswith('Res. Conj.'):
-            action = action[0:42]
-    #check it has a url and is not just text
+                action = action[0:42]
+        action_actor = ''
+        atype = 'other'
+        #check it has a url and is not just text
         if action_url:
             action_url = action_url[0]
             isVersion = False;
             for text_regex in _docVersion:
-               if re.match(text_regex, action):
+                if re.match(text_regex, action):
                    isVersion = True;
             if isVersion:
                 bill.add_version(action, action_url)
             else:
                 bill.add_document(action, action_url)
-
-        for pattern, action_actor,atype in _classifiers:
-            if re.match(pattern, action):
-                break
-            else:
-        action_actor = ''
-        atype = 'other'
-
-    if action_actor == '':
-        if action.find('SENADO') != -1:
+            for pattern, action_actor,atype in _classifiers:
+                if re.match(pattern, action):
+                    break
+                else:
+                    action_actor = ''
+                    atype = 'other'
+        if action_actor == '':
+            if action.find('SENADO') != -1:
                 action_actor = 'upper'
             elif action.find('CAMARA') != -1:
                 action_actor = 'lower'
             else:
                 action_actor = chamber
-    #if action.startswith('Referido'):
-        #for comme in committees:
-        #print comme
+        #if action.startswith('Referido'):
+            #for comme in committees:
+            #print comme
         bill.add_action(action_actor, action.replace('.',''),date,type=atype)
-    return atype,action
+        return atype,action
 
     def scrape_bill(self, chamber, session, bill_id, bill_type):
         url = '%s?r=%s' % (self.base_url, bill_id)
@@ -157,7 +157,7 @@ class PRBillScraper(BillScraper):
 
                 #get url of action
                 action_url = tds[1].xpath('a/@href')
-        atype,action = self.parse_action(chamber,bill,action,action_url,date)
+                atype,action = self.parse_action(chamber,bill,action,action_url,date)
                 if atype == 'bill:passed' and action_url:
                     vote_chamber  = None
                     for pattern, vote_chamber in _voteChambers:
@@ -188,10 +188,10 @@ class PRBillScraper(BillScraper):
             t[1] = t[1][1:]
             return t
     def scrape_votes(self, url, motion, date, bill_chamber):
-    if isinstance(url,basestring):
-        filename1, extension = self.get_filename_parts_from_url(url)
+        if isinstance(url,basestring):
+            filename1, extension = self.get_filename_parts_from_url(url)
         else:
-        return None, 'No url'
+            return None, 'No url'
         if extension == 'pdf':
             return None,'Vote on PDF'
 
@@ -237,9 +237,9 @@ class PRBillScraper(BillScraper):
             abstent_td =  tds[4].text_content().replace('\n', ' ').replace(' ','').replace('&nbsp;','')
             if party != 'Total':
                 name_td = self.clean_name(tds[0].text_content().replace('\n', ' ').replace('','',1)).strip();
-        split_name = name_td.split(',')
-        if len(split_name) > 1:
-           name_td = split_name[1].strip() + ' ' + split_name[0].strip()
+                split_name = name_td.split(',')
+                if len(split_name) > 1:
+                   name_td = split_name[1].strip() + ' ' + split_name[0].strip()
 
                 if yes_td == 'r':
                     yes_votes.append(name_td)
