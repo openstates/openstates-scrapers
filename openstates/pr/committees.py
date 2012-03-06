@@ -52,8 +52,7 @@ class PRCommitteeScraper(CommitteeScraper):
                         title = 'member'
 #           print name_split
                         if len(name_split) >= 2:
-                name_split[1] = name_split[1].strip()
-                
+                            name_split[1] = name_split[1].strip()
                             if name_split[1] == 'Presidenta' or name_split[1] == 'Presidente':
                                 title = 'chairman'
                             elif name_split[1] == 'Vicepresidente' or name_split[1] == 'Vicepresidenta':
