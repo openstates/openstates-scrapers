@@ -88,7 +88,7 @@ class MDBillScraper(BillScraper):
             dts = h5.getnext().xpath('dl/dt')
             for dt in dts:
                 action_date = dt.text.strip()
-                if action_date != 'No Action':
+                if action_date and action_date != 'No Action':
                     year = int(bill['session'][:4])
                     action_date += ('/%s' % year)
                     action_date = datetime.datetime.strptime(action_date,
