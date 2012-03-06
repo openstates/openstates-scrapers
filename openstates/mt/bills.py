@@ -70,8 +70,6 @@ class MTBillScraper(BillScraper):
             'Z_ACTION=Find&P_SBJ_DESCR=&P_SBJT_SBJ_CD=&P_LST_NM1=&'
             'P_ENTY_ID_SEQ=')
 
-        self.e = []
-
     def scrape(self, chamber, session):
         for term in self.metadata['terms']:
             if session in term['sessions']:
@@ -101,8 +99,6 @@ class MTBillScraper(BillScraper):
                         pdb.set_trace()
                 self.save_bill(bill)
 
-        pdb.set_trace()
-        
     def parse_bill(self, bill_url, session, chamber):
 
         # Temporarily skip the differently-formatted house budget bill.
@@ -376,7 +372,6 @@ class MTBillScraper(BillScraper):
             except PDFCommitteeVoteParseError as e:
                 # Warn and skip.
                 self.warning("Could't parse committee vote at %r" % url)
-                self.e.append((url, e))
                 return
         
         keymap = {'Y': 'yes', 'N': 'no'}
@@ -472,7 +467,15 @@ class PDFCommitteeVote(object):
             f.write(resp)
 
         # Convert it to text.
-        text = convert_pdf(filename, type='text')
+        try:
+            text = convert_pdf(filename, type='text')
+        except:
+            msg = "couldn't convert pdf."
+            raise PDFCommitteeVoteParseError(msg)
+
+        # Get rid of the temp file.
+        os.close(fd)
+        os.remove(filename)
 
         if not text.strip():
             msg = 'PDF file was empty.'
@@ -483,6 +486,8 @@ class PDFCommitteeVote(object):
     def chamber(self):
         chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper'}
         chamber, _, _ = self.text.lstrip().partition(' ')
+        if chamber not in chamber_dict:
+            return ''
         return chamber_dict[chamber]
 
     def date(self):
