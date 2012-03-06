@@ -50,14 +50,19 @@ class PRCommitteeScraper(CommitteeScraper):
                         line_text = line.text.replace(u'–','-')
                         name_split = line_text.split(u'-',1)
                         title = 'member'
+#			print name_split
                         if len(name_split) >= 2:
+			    name_split[1] = name_split[1].strip()
+			    
                             if name_split[1] == 'Presidenta' or name_split[1] == 'Presidente':
                                 title = 'chairman'
                             elif name_split[1] == 'Vicepresidente' or name_split[1] == 'Vicepresidenta':
                                 title = 'vicechairman'
                             elif name_split[1] == 'Secretaria' or name_split[1] == 'Secretario':
                                 title = 'secretary'
-                        if(name_split[0] != 'VACANTE'):
+#			if title != 'member':
+#			    print name_split[0]
+                        if name_split[0] != 'VACANTE':
                             comm.add_member(name_split[0].replace('Hon.',''),title)
             self.save_committee(comm)
                         
