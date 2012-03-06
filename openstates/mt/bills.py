@@ -3,6 +3,7 @@ import re
 import pdb
 import itertools
 import copy
+import tempfile
 from datetime import datetime
 from urlparse import urljoin
 from collections import defaultdict
@@ -10,7 +11,8 @@ from operator import getitem
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from scrapelib import urlopen
+from billy.scrape.utils import convert_pdf
+from scrapelib import urlopen, HTTPError
 
 import lxml.html
 from lxml.etree import ElementTree
@@ -68,7 +70,7 @@ class MTBillScraper(BillScraper):
             'Z_ACTION=Find&P_SBJ_DESCR=&P_SBJT_SBJ_CD=&P_LST_NM1=&'
             'P_ENTY_ID_SEQ=')
 
-        self.vote_results = defaultdict(list)
+        self.cv = set()
 
     def scrape(self, chamber, session):
         for term in self.metadata['terms']:
@@ -95,7 +97,7 @@ class MTBillScraper(BillScraper):
             bill = self.parse_bill(bill_url, session, chamber)
             if bill:
                 self.save_bill(bill)
-
+        
     def parse_bill(self, bill_url, session, chamber):
 
         # Temporarily skip the differently-formatted house budget bill.
@@ -231,8 +233,6 @@ class MTBillScraper(BillScraper):
 
         bill['subjects'] = subjects
 
-        if None in bill['votes'] or bill['votes'] is None:
-            pdb.set_trace()
         return bill
 
     def add_actions(self, bill, status_page):
@@ -259,7 +259,10 @@ class MTBillScraper(BillScraper):
         res = defaultdict(dict)
 
         url = 'http://data.opi.mt.gov/bills/%d/' % year
-        doc = url2lxml(url)
+
+        html = self.urlopen(url).decode('latin-1')
+        doc = lxml.html.fromstring(html)
+
         for url in doc.xpath('//a[contains(@href, "/bills/")]/@href')[1:]:
             doc = url2lxml(url)
             for fn in doc.xpath('//a/@href')[1:]:
@@ -324,10 +327,6 @@ class MTBillScraper(BillScraper):
         base_url += '/'
         status_page.make_links_absolute(base_url)
 
-        votes = {}    
-        for vote in bill['votes']:
-            votes[(vote['motion'], vote['date'])] = vote
-
         for tr in status_page.xpath('//table')[4].xpath('tr')[2:]:
             tds = list(tr)
 
@@ -351,22 +350,32 @@ class MTBillScraper(BillScraper):
                     vote_url = vote_url[0]
                     vote.add_source(vote_url)
 
-                    # Can't parse the votes from pdf. Frowny face.
-                    if vote_url.lower().endswith('pdf'):
-                        continue
-
                     # Update the vote object with voters..    
                     vote = self._parse_votes(vote_url, vote)
                     if vote:
+                        if not isinstance(vote['other_count'], int):
+                            pdb.set_trace()
                         bill.add_vote(vote)
                     
     def _parse_votes(self, url, vote):
         '''Given a vote url and a vote object, extract the voters and 
         the vote counts from the vote page and update the vote object.
         '''
-
+        if url.lower().endswith('.pdf'):
+            try:
+                v = PDFCommitteeVote(url, self.urlopen)
+            except PDFCommitteeVoteParseError:
+                # PDF vote triage. 
+                vote['motion'] = vote['action']
+                for key in 'other_count yes_count no_count'.split():
+                    if vote[key] is None:
+                        vote[key] = 0
+                vote['passed'] = vote['no_count'] < vote['yes_count']
+                return vote
+            else: 
+                return v.asvote()
+        
         keymap = {'Y': 'yes', 'N': 'no'}
-
         html = self.urlopen(url).decode('latin-1')
         doc = lxml.html.fromstring(html)
 
@@ -436,3 +445,156 @@ class MTBillScraper(BillScraper):
         vote['passed'] = passed
 
         return vote
+
+class PDFCommitteeVoteParseError(Exception):
+    pass
+
+class PDFCommitteeVote(object):
+
+    def __init__(self, url, urlopen):
+
+        self.url = url
+
+        # Fetch the document and put it into tempfile.
+        fd, filename = tempfile.mkstemp()
+        try:
+            resp = urlopen(url)
+        except HTTPError:
+            # This vote document wasn't found.
+            msg = 'No document found at url %r' % url
+            raise PDFCommitteeVoteParseError(msg)
+
+        with open(filename, 'wb') as f:
+            f.write(resp)
+
+        # Convert it to text.
+        text = convert_pdf(filename, type='text')
+
+        if not text.strip():
+            msg = 'PDF file was empty.'
+            raise PDFCommitteeVoteParseError(msg)
+
+        self.text = '\n'.join(filter(None, text.splitlines()))
+
+    def chamber(self):
+        chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper'}
+        chamber, _, _ = self.text.lstrip().partition(' ')
+        return chamber_dict[chamber]
+
+    def date(self):
+
+        months = '''january february march april may june july
+            august september october november december'''.split()
+            
+        text = iter(self.text.splitlines())
+
+        line = text.next().strip()
+        while True:
+
+            _line = line.lower()
+            break_outer = False
+            for m in months:
+                if m in _line:
+                    break_outer = True
+                    break
+
+            if break_outer:
+                break
+                
+            try:
+                line = text.next().strip()
+            except StopIteration:
+                msg = 'Couldn\'t locate the vote date.'
+                raise PDFCommitteeVoteParseError(msg)
+
+        try:
+            return datetime.strptime(line, '%B %d, %Y')
+        except ValueError:
+            raise
+
+    def motion(self):
+
+        text = iter(self.text.splitlines())
+
+        while True:
+            line = text.next()
+            if 'VOTE TABULATION' in line:
+                break
+            
+        line = text.next()
+        _, motion = line.split(' - ')
+        motion = motion.strip()
+        return motion
+
+    def _getcounts(self):
+        m = re.search(r'YEAS \- .+$', self.text, re.MULTILINE)
+        if m:
+            x = m.group()
+        else:
+            msg = "Couldn't find vote counts."
+            pdb.set_trace()
+            raise PDFCommitteeVoteParseError(msg)
+        self._counts_data = dict(re.findall(r'(\w+) - (\d+)', x))
+
+    def yes_count(self):
+        if not hasattr(self, '_counts_data'):
+            self._getcounts()
+        return int(self._counts_data['YEAS'])
+
+    def no_count(self):
+        if not hasattr(self, '_counts_data'):
+            self._getcounts()
+        return int(self._counts_data['NAYS'])
+
+    def other_count(self):
+        return len(self.other_votes())
+
+    def _getvotes(self):
+        junk = ['; by Proxy']
+        res = defaultdict(list)
+        data = re.findall(r'([A-Z]) {6,7}(.+)', self.text, re.MULTILINE)
+        for val, name in data:
+            for j in junk:
+                name = name.replace(j, '')
+            res[val].append(name)
+        self._votes_data = res
+
+    def yes_votes(self):
+        if not hasattr(self, '_votes_data'):
+            self._getvotes()
+        return self._votes_data['Y']
+
+    def other_votes(self):
+        if not hasattr(self, '_votes_data'):
+            self._getvotes()
+        return self._votes_data['--']
+
+    def no_votes(self):
+        if not hasattr(self, '_votes_data'):
+            self._getvotes()
+        return self._votes_data['N']
+
+    def passed(self):
+        return self.no_count() < self.yes_count()
+
+    def sources(self):
+        return [{'url': self.url}]
+
+    def asdict(self):
+        res = {}
+        methods = '''yes_count no_count yes_votes no_votes motion
+                  chamber other_votes other_count passed date'''.split()
+        for m in methods:
+            res[m] = getattr(self, m)()
+        return res
+
+    def asvote(self):
+        v = Vote(**self.asdict())
+        #v.add_source(self.url)
+        return v
+
+
+
+
+
+
