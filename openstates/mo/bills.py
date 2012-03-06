@@ -126,9 +126,8 @@ class MOBillScraper(BillScraper):
 
             self.log(bid)
 
-            bill = Bill(year, 'upper', bill_id, bill_desc, bill_url=bill_url,
-                        bill_lr=bill_lr, official_title=bill_title,
-                        type=bill_type, subjects=subs)
+            bill = Bill(year, 'upper', bill_id, bill_desc,
+                        bill_lr=bill_lr, type=bill_type, subjects=subs)
             bill.add_source(bill_url)
 
             # Get the primary sponsor
