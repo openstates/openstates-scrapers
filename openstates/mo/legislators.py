@@ -1,4 +1,5 @@
 import lxml.html
+import datetime as dt
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
@@ -14,11 +15,18 @@ class MOLegislatorScraper(LegislatorScraper):
     vacant_legislators = []
 
     def scrape(self, chamber, term):
-        session = term.split('-')[0]
-        if chamber == 'upper':
-            self.scrape_senators(chamber, session, term)
-        elif chamber == 'lower':
-            self.scrape_reps(chamber, session, term)
+        sessions = term.split('-')
+        for session in sessions:
+            if int(session) > int(dt.datetime.now().year):
+                self.log("Not running session %s, it's in the future." % (
+                    session
+                ))
+                continue
+
+            if chamber == 'upper':
+                self.scrape_senators(chamber, session, term)
+            elif chamber == 'lower':
+                self.scrape_reps(chamber, session, term)
 
     def scrape_senators(self, chamber, session, term):
         url = self.senator_url % (session[2:])
