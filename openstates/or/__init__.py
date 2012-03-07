@@ -21,7 +21,7 @@ metadata = dict(
         },
         '2012 Regular Session': {
             'display_name': '2012 Regular Session',
-            '_scraped_name': '2012 Regular Session (Starts February 1)',
+            '_scraped_name': '2012 Regular Session (February 1 - March 5)',
             'slug': '12reg',
         }
     },
