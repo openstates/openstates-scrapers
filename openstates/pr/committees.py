@@ -13,6 +13,7 @@ def clean_spaces(s):
     if s is not None:
         return re.sub('\s+', ' ', s.replace(u'\xa0', ' ')).strip()
 
+
 class PRCommitteeScraper(CommitteeScraper):
     state = 'pr'
 
@@ -23,18 +24,20 @@ class PRCommitteeScraper(CommitteeScraper):
             self.scrape_upper()
         elif chamber == "lower":
             self.scrape_lower()
-            
+
     def scrape_upper(self):
         self.scrape_upper_committee('http://senadopr.us/SiteCollectionDocuments/Comisiones_Permanentes(2009-2012).pdf')
 #       joint_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Conjuntas(2009-2012).pdf';
 #       self.scrape_joint_committee(joint_comm);
+
     def scrape_joint_committee(self,url):
         filename, resp = self.urlretrieve(url)
         root = lxml.etree.fromstring(convert_pdf(filename,'xml'))
         for link in root.xpath('/pdf2xml/page'):
             comm = None
-            print lxml.etree.tostring(root)
+            self.log(lxml.etree.tostring(root))
             return
+
     def scrape_upper_committee(self,url):
         filename, resp = self.urlretrieve(url)
         root = lxml.etree.fromstring( convert_pdf(filename,'xml'))
@@ -64,11 +67,8 @@ class PRCommitteeScraper(CommitteeScraper):
                         if name_split[0] != 'VACANTE':
                             comm.add_member(name_split[0].replace('Hon.',''),title)
             self.save_committee(comm)
-                        
-        
         os.remove(filename);
-                
-                    
+
     def scrape_lower(self):
         url = 'http://www.camaraderepresentantes.org/comisiones.asp'
         with self.urlopen(url) as html:
@@ -76,7 +76,7 @@ class PRCommitteeScraper(CommitteeScraper):
             doc.make_links_absolute(url)
             for link in doc.xpath('//a[contains(@href, "comisiones2")]'):
                 self.scrape_lower_committee(link.text, link.get('href'))
-    
+
     def scrape_lower_committee(self, name, url):
         com = Committee('lower', name)
         com.add_source(url)
@@ -85,9 +85,7 @@ class PRCommitteeScraper(CommitteeScraper):
             doc = lxml.html.fromstring(html)
 
             contact, directiva, reps = doc.xpath('//div[@class="sbox"]/div[2]')
-
             # all members are tails of images (they use img tags for bullets)
-
             # first three members are in the directiva div
             chair = directiva.xpath('b[text()="Presidente:"]/following-sibling::img[1]')
             vchair = directiva.xpath('b[text()="Vice Presidente:"]/following-sibling::img[1]')

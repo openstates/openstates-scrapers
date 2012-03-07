@@ -15,15 +15,15 @@ class NoSuchBill(Exception):
     pass
 
 _voteChambers = (
-   (u'Aprobado por el Senado en Votac','upper'),
-   (u'Aprobado por C','lower'),
+    (u'Aprobado por el Senado en Votac','upper'),
+    (u'Aprobado por C','lower'),
 )
 _docVersion = (
-   ('Entirillado del Informe'),
-   ('Texto de Aprobaci'),
-#   ('Ley N'),
-   ('rendido con enmiendas'),
-   ('Radicado'),
+    ('Entirillado del Informe'),
+    ('Texto de Aprobaci'),
+#    ('Ley N'),
+    ('rendido con enmiendas'),
+    ('Radicado'),
 )
 _classifiers = (
     ('Radicado','', 'bill:introduced'),
@@ -34,8 +34,10 @@ _classifiers = (
     ('Enviado al Gobernador', 'governor','governor:received'),
     ('Veto', 'governor','governor:vetoed'),
     ('Veto de Bolsillo','governor','governor:vetoed'),
-    #comissions give a report but sometimes they dont do any amendments and leave them as they are.
-    #i am not checking if they did or not. but it be easy just read the end and if it dosnt have amendments it should say 'sin enmiendas'
+    # comissions give a report but sometimes they dont do any amendments and
+    # leave them as they are.
+    # i am not checking if they did or not. but it be easy just read the end and
+    # if it dosnt have amendments it should say 'sin enmiendas'
     ('1er Informe','committee','amendment:amended'),
     ('2do Informe','committee','amendment:amended'),
     ('Aprobado con enmiendas','','amendment:passed'),
@@ -52,27 +54,24 @@ _classifiers = (
 class PRBillScraper(BillScraper):
     state = 'pr'
 
-    bill_types = {'P': 'bill',
-                  'R': 'resolution',
-                  'RK': 'concurrent resolution',
-                  'RC': 'joint resolution',
-                  #'PR': 'plan de reorganizacion',
-                 }
-
-
+    bill_types = {
+        'P': 'bill',
+        'R': 'resolution',
+        'RK': 'concurrent resolution',
+        'RC': 'joint resolution',
+        #'PR': 'plan de reorganizacion',
+    }
 
     def clean_name(self, name):
         for ch in ['Sr,','Sr.','Sra.','Rep.','Sen.']:
             if ch in name:
-                name = name.replace(ch,'') 
+                name = name.replace(ch,'')
         return name
+
     def scrape(self, chamber, session):
         year = session[0:4]
-
         self.base_url = 'http://www.oslpr.org/legislatura/tl%s/tl_medida_print2.asp' % year
-
         chamber_letter = {'lower':'C','upper':'S'}[chamber]
-
         for code, type in self.bill_types.iteritems():
             counter = itertools.count(1)
             for n in counter:
@@ -81,6 +80,7 @@ class PRBillScraper(BillScraper):
                     self.scrape_bill(chamber, session, bill_id, type)
                 except NoSuchBill:
                     break
+
     def parse_action(self,chamber,bill,action,action_url,date):
         #if action.startswith('Referido'):
                 #committees = action.split(',',1)
@@ -125,7 +125,6 @@ class PRBillScraper(BillScraper):
         url = '%s?r=%s' % (self.base_url, bill_id)
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
-
             # search for Titulo, accent over i messes up lxml, so use 'tulo'
             title = doc.xpath(u'//td/b[contains(text(),"tulo")]/../following-sibling::td/text()')
             if not title:
@@ -134,21 +133,16 @@ class PRBillScraper(BillScraper):
             author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
             for aname in author.split(','):
                 bill.add_sponsor('primary', self.clean_name(aname).strip())
-
             co_authors = doc.xpath(u'//td/b[contains(text(),"Co-autor")]/../text()')
             if len(co_authors) != 0:
                 for co_author in co_authors[1].split(','):
                     bill.add_sponsor('cosponsor', self.clean_name(co_author).strip());
-
-
             action_table = doc.xpath('//table')[-1]
             for row in action_table[1:]:
                 tds = row.xpath('td')
-
                 # ignore row missing date
                 if len(tds) != 2:
                     continue
-
                 date = datetime.datetime.strptime(tds[0].text_content(),
                                                   "%m/%d/%Y")
                 action = tds[1].text_content().strip()
@@ -163,7 +157,7 @@ class PRBillScraper(BillScraper):
                     for pattern, vote_chamber in _voteChambers:
                        if re.match(pattern,action):
                            break
-            
+
                     else:
                        self.warning('coudnt find voteChamber pattern')
 
@@ -180,13 +174,13 @@ class PRBillScraper(BillScraper):
             bill.add_source(url)
             self.save_bill(bill)
 
-
     def get_filename_parts_from_url(self,url):
         fullname = url.split('/')[-1].split('#')[0].split('?')[0]
         t = list(os.path.splitext(fullname))
         if t[1]:
             t[1] = t[1][1:]
             return t
+
     def scrape_votes(self, url, motion, date, bill_chamber):
         if isinstance(url,basestring):
             filename1, extension = self.get_filename_parts_from_url(url)
@@ -221,7 +215,8 @@ class PRBillScraper(BillScraper):
         if len(table) == 0:
             return None,'Table body Problem'
 
-        #they have documents(PC0600') that have the action name as vote but in reality the actual content is the bill text which breaks the parser
+        # they have documents(PC0600') that have the action name as vote but in
+        # reality the actual content is the bill text which breaks the parser
         try:
             table[0].xpath('tr')[::-1][0].xpath('td')[1]
         except IndexError:
@@ -256,7 +251,8 @@ class PRBillScraper(BillScraper):
         yes_count = len(yes_votes)
         no_count = len(no_votes)
         other_count = len(other_votes)
-        #FixME: Since i am searching for the word passed it means that passed will always be true.
+        #FIXME: Since i am searching for the word passed it means that passed
+        # will always be true.
         vote = Vote(bill_chamber, date, motion, True, yes_count, no_count,
                     other_count)
         vote['yes_votes'] = yes_votes
