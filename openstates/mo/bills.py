@@ -89,9 +89,9 @@ class MOBillScraper(BillScraper):
         elif chamber == 'lower':
             self.scrape_house(year)
         if len(self.bad_urls) > 0:
-            print "WARNINGS:"
+            self.log("WARNINGS:")
             for url in self.bad_urls:
-                print "%s" % url
+                self.log( "%s" % url )
 
     def scrape_senate(self, year):
         # We only have data from 2005-present
@@ -291,7 +291,7 @@ class MOBillScraper(BillScraper):
 
             bill_id = bill_page.xpath('//*[@class="entry-title"]')
             if len(bill_id) == 0:
-                print "WARNING: bill summary page is blank! (%s)" % url
+                self.log("WARNING: bill summary page is blank! (%s)" % url)
                 self.bad_urls.append(url)
                 return
             bill_id = bill_id[0].text_content()
@@ -300,6 +300,7 @@ class MOBillScraper(BillScraper):
             bill_desc = bill_page.xpath('//*[@class="BillDescription"]')[0].text_content()
             bill_desc = clean_text(bill_desc)
 
+            self.log("SET TABLE HERE")
             table_rows = bill_page.xpath('//table/tr')
             # if there is a cosponsor all the rows are pushed down one for the extra row for the cosponsor:
             cosponsorOffset = 0
@@ -361,6 +362,9 @@ class MOBillScraper(BillScraper):
                                     ))
                 else: # name ... etal
                     try:
+                        self.log( "Table: " +
+                                 str(table_rows[2][1][1].text) )
+
                         cosponsor = table_rows[2][1][0]
                         bill.add_sponsor('cosponsor',
                                          clean_text(cosponsor.text_content()),
@@ -371,9 +375,11 @@ class MOBillScraper(BillScraper):
                         self.parse_cosponsors_from_bill(bill,'%s/%s' % (
                             self.senate_base_url,
                             table_rows[2][1][1].attrib['href']))
-                    except scrapelib.HTTPError:
+                    except scrapelib.HTTPError as e:
+                        self.log("WARNING: " + str(e))
                         self.bad_urls.append(url)
-                        print "WARNING: no bill summary page (%s)" % url
+                        self.log( "WARNING: no bill summary page (%s)" % url )
+                        raise
 
             actions_link_tag = bill_page.xpath('//div[@class="Sections"]/a')[0]
             actions_link = '%s/%s' % (self.senate_base_url,actions_link_tag.attrib['href'])
