@@ -418,7 +418,10 @@ class MOBillScraper(BillScraper):
                     for sponsor in parts:
                         cosponsor_name = clean_text(sponsor)
                         if cosponsor_name != "":
-                            for name in cosponsor_name.split("AND"):
+                            cosponsor_name = cosponsor_name.replace(
+                                u'\u00a0', " ") # epic hax
+                            for name in re.split(r'\s+AND\s+', cosponsor_name):
+                            # for name in cosponsor_name.split("AND"):
                                 name = name.strip()
                                 if name:
                                     bill.add_sponsor('cosponsor', name)
