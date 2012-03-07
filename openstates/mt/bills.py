@@ -17,6 +17,8 @@ from scrapelib import urlopen, HTTPError
 import lxml.html
 from lxml.etree import ElementTree
 
+from . import actions
+
 def url2lxml(url):
     html = urlopen(url).decode('latin-1')
     return lxml.html.fromstring(html)
@@ -94,9 +96,6 @@ class MTBillScraper(BillScraper):
         for bill_url in bill_urls:
             bill = self.parse_bill(bill_url, session, chamber)
             if bill:
-                for v in bill['votes']:
-                    if not isinstance(v['date'], datetime):
-                        pdb.set_trace()
                 self.save_bill(bill)
 
     def parse_bill(self, bill_url, session, chamber):
@@ -184,7 +183,21 @@ class MTBillScraper(BillScraper):
         except IndexError:
             title = status_page.xpath('//tr[1]/td[2]')[0].text_content()
 
-        bill = Bill(session, chamber, bill_id, title)
+        # Add bill type.
+        _bill_id = bill_id.lower()
+        if 'b' in _bill_id:
+            type_ = 'bill'
+
+        elif 'j' in _bill_id or 'jr' in _bill_id:
+            type_ = 'joint resolution'
+
+        elif 'cr' in _bill_id:
+            type_ = 'concurrent resolution'
+
+        elif 'r' in _bill_id:
+            type_ = 'resolution'
+
+        bill = Bill(session, chamber, bill_id, title, type=type_)
         self.add_actions(bill, status_page)
         self.add_votes(bill, status_page, status_url)
 
@@ -251,8 +264,9 @@ class MTBillScraper(BillScraper):
             action_votes_yes = action.xpath("td[3]")[0].text_content().replace("&nbsp", "")
             action_votes_no = action.xpath("td[4]")[0].text_content().replace("&nbsp", "")
             action_committee = action.xpath("td[5]")[0].text.replace("&nbsp", "")
+            action_type = actions.categorize(action_name)
 
-            bill.add_action(actor, action_name, action_date)
+            bill.add_action(actor, action_name, action_date, action_type)
 
     def _versions_dict(self, year):
         '''Get a mapping of ('HB', '2') tuples to version urls.'''
@@ -541,7 +555,6 @@ class PDFCommitteeVote(object):
             x = m.group()
         else:
             msg = "Couldn't find vote counts."
-            pdb.set_trace()
             raise PDFCommitteeVoteParseError(msg)
         self._counts_data = dict(re.findall(r'(\w+) - (\d+)', x))
 
