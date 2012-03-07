@@ -149,7 +149,6 @@ class ALBillScraper(BillScraper):
         url = 'http://alisondb.legislature.state.al.us/acas/ACTIONHistoryResultsMac.asp?OID=%s&LABEL=%s' % (oid, bill['bill_id'])
 
         bill.add_source(url)
-        action_chamber = bill['chamber']
 
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
@@ -162,8 +161,15 @@ class ALBillScraper(BillScraper):
                 if tds[0].text_content():
                     date = datetime.datetime.strptime(tds[0].text_content(),
                                                       '%m/%d/%Y')
+                scraped_chamber = tds[1].text_content().strip()
+                if scraped_chamber == 'S':
+                    action_chamber = 'upper'
+                elif scraped_chamber == 'H':
+                    action_chamber = 'lower'
+                else:
+                    action_chamber = 'executive'
 
-                amendment = tds[1].xpath('.//input/@value')
+                amendment = tds[2].xpath('.//input/@value')
                 if amendment:
                     amendment = amendment[0]
                     bill.add_document('amendment ' + amendment,
@@ -171,14 +177,7 @@ class ALBillScraper(BillScraper):
                 else:
                     amendment = None
 
-                action = tds[2].text_content().strip()
-                if ('Received in Senate' in action or
-                    'referred to the Senate' in action):
-                    action_chamber = 'upper'
-                elif ('Recieved in House' in action or
-                      'referred to the House' in action
-                     ):
-                    action_chamber = 'lower'
+                action = tds[3].text_content().strip()
 
                 if action:
                     atype = _categorize_action(action)
