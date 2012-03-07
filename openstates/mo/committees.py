@@ -1,7 +1,8 @@
-import os
 from scrapelib import Response
+import datetime as dt
 import lxml.html
 import xlrd
+import os
 
 from billy.scrape.committees import CommitteeScraper, Committee
 
@@ -24,6 +25,11 @@ class MOCommitteeScraper(CommitteeScraper):
         years = [ t[2:] for t in term_name.split('-') ]
 
         for year in years:
+            if int(year) > int(str(dt.datetime.now().year)[2:]):
+                self.log("Not running session %s, it's in the future." % (
+                    session
+                ))
+                continue
             url = '{base}{year}info/com-standing.htm'.format(
                                             base=self.senate_url_base, year=year)
             with self.urlopen(url) as page_string:
