@@ -9,22 +9,25 @@ _categories = {
 
     # Bill is introduced or prefiled
     "bill:introduced": {
-        'rgxs': ['^(?i)introduced'],
+        'rgxs': ['^Introduced$'],
         'funcs': {},
         },
 
     # Bill has passed a chamber
     "bill:passed": {
-        'rgxs': ['^(?i)third reading passed',
-                 'Resolution Adopted',
-                 'Resolution Adopted'],
+        'rgxs': [u'3rd Reading Passed',
+                 u'^Resolution Adopted',
+                 u'3rd Reading Passed as Amended by Senate',
+                 u'3rd Reading Passed as Amended by House',],
         'funcs': {},
         },
 
     # Bill has failed to pass a chamber
     "bill:failed": {
-        'rgxs': ['^(?i)third reading failed',
-                 'Resolution Adopted'],
+        'rgxs': [
+            u'3rd Reading Failed',
+            u'Died in Process'
+            ],
         'funcs': {},
         },
 
@@ -38,34 +41,64 @@ _categories = {
     # ???
     # The chamber attempted a veto override and succeeded
     "bill:veto_override:passed": {
-        'rgxs': [],
-        'funcs': {},
+        'rgxs': [
+            u'Veto Overridden in House',
+            ]
         },
 
     # ???
     # The chamber attempted a veto override and failed
     "bill:veto_override:failed": {
-        'rgxs': [],
-        'funcs': {},
+        'rgxs': [
+            u'Veto Override Motion Failed',
+            u'Veto Override Failed',
+            ],
         },
 
     # ???
     # A bill has undergone its first reading
     "bill:reading:1": {
-        'rgxs': [],
+        'rgxs': ['First Reading'],
         'funcs': {},
         },
 
     # A bill has undergone its second reading
     "bill:reading:2": {
-        'rgxs': [],
-        'funcs': {},
+        'rgxs': [
+            u'Taken from Committee; Placed on 2nd Reading',
+            u'2nd Reading Passed',
+            u'2nd Reading Conference Committee Report Adopted',
+            u'2nd Reading Senate Amendments Concurred',
+            u'2nd Reading Pass Motion Failed; 3rd Reading Vote Required',
+            u'2nd Reading Not Passed as Amended',
+            u'2nd Reading House Amendments Concurred',
+            u'2nd Reading Concurred',
+            u'Reconsidered Previous Action; Placed on 2nd Reading',
+            u'2nd Reading Indefinitely Postponed',
+            u'Taken from 3rd Reading; Placed on 2nd Reading',
+            u'2nd Reading Concur Motion Failed',
+            u'2nd Reading Not Concurred; 3rd Reading Vote Required',
+            u'Reconsidered Previous Act; Remains in 2nd Reading FCC Process',
+            u'2nd Reading Indefinitely Postpone Motion Failed',
+            u'2nd Reading Pass Motion Failed',
+            u'2nd Reading Not Concurred',
+            u'2nd Reading Not Passed',
+            ],
         },
 
     # A bill has undergone its third (or final) reading
     "bill:reading:3": {
-        'rgxs': [],
-        'funcs': {},
+        'rgxs': [
+            u'3rd Reading Passed as Amended by Senate',
+            u'3rd Reading Passed as Amended by House',
+            u'3rd Reading Pass Consideration',
+            u'3rd Reading Concurred',
+            u'3rd Reading Passed',
+            u'3rd Reading Not Passed as Amended by Senate',
+            u'Reconsidered Previous Action; Remains in 3rd Reading Process',
+            u'3rd Reading Conference Committee Report Adopted',
+            u'3rd Reading Failed',
+            ],
         },
 
     # A bill has been filed (for states where this is a separate event from
@@ -78,103 +111,115 @@ _categories = {
     # A bill has been replaced with a substituted wholesale (called hoghousing
     # in some states)
     "bill:substituted": {
-        'rgxs': ['(?i)adopted in lieu of'],
+        'rgxs': [],
         'funcs': {},
         },
 
     # The bill has been transmitted to the governor for consideration
     "governor:received": {
-        'rgxs': [],
+        'rgxs': ['Transmitted to Governor'],
         'funcs': {},
         },
 
     # The bill has signed into law by the governor
     "governor:signed": {
-        'rgxs': ['^(?i)signed'],
+        'rgxs': ['Signed by Governor'],
         'funcs': {},
         },
 
     # The bill has been vetoed by the governor
     "governor:vetoed": {
-        'rgxs': ['^(?i)vetoed'],
+        'rgxs': ['Vetoed by Governor'],
         'funcs': {},
         },
 
     # The governor has issued a line-item (partial) veto
     "governor:vetoed:line-item": {
-        'rgxs': [],
-        'funcs': {},
+        'rgxs': [
+            u"Returned with Governor's Line-item Veto",
+            ],
         },
 
     # An amendment has been offered on the bill
     "amendment:introduced": {
         'rgxs': ['^(?i)amendment.{,200}introduced'],
-        'funcs': {},
         },
 
     # The bill has been amended
     "amendment:passed": {
-        'rgxs': ['^(?i)amendment.{,200}passed'],
-        'funcs': {},
+        'rgxs': [
+            u"3rd Reading Governor's Proposed Amendments Adopted",
+            u"2nd Reading Governor's Proposed Amendments Adopted",
+            u'2nd Reading House Amendments Concurred',
+            u'2nd Reading Senate Amendments Concurred',
+            ],
         },
 
     # An offered amendment has failed
     "amendment:failed": {
-        'rgxs': ['^(?i)amendment.{,200}defeated'],
-        'funcs': {},
+        'rgxs': [
+            u'2nd Reading House Amendments Not Concur Motion Failed',
+            u'2nd Reading Senate Amendments Concur Motion Failed',
+            u'2nd Reading House Amendments Concur Motion Failed',
+            u"2nd Reading Governor's Proposed Amendments Not Adopted",
+            u"3rd Reading Governor's Proposed Amendments Not Adopted",
+            u"2nd Reading Governor's Proposed Amendments Adopt Motion Failed",
+            u'2nd Reading Motion to Amend Failed',
+            u'2nd Reading House Amendments Not Concurred',
+            ],
         },
 
     # An offered amendment has been amended (seen in Texas)
     "amendment:amended": {
-        'rgxs': [],
-        'funcs': {},
+        'rgxs': [
+            u"3rd Reading Governor's Proposed Amendments Adopted",
+            u"2nd Reading Governor's Proposed Amendments Adopted",
+            u'2nd Reading House Amendments Concurred',
+            u'2nd Reading Senate Amendments Concurred',        
+            ],
         },
 
     # ???
     # An offered amendment has been withdrawn
     "amendment:withdrawn": {
         'rgxs': [],
-        'funcs': {},
         },
 
     # An amendment has been 'laid on the table' (generally
     # preventing further consideration)
     "amendment:tabled": {
-        'rgxs': ['^(?i)amendment.{,200}laid on table'],
-        'funcs': {},
+        'rgxs': [],
         },
 
     # The bill has been referred to a committee
     "committee:referred": {
-        'rgxs': ['(?i)assigned'],
-        'funcs': {},
+        'rgxs': ["Referred to Committee",
+                 "Rereferred to Committee"],
         },
 
     # The bill has been passed out of a committee
     "committee:passed": {
-        'rgxs': [r'Committee Report\-\-Bill Passed',
-                 r'Committee Report--Bill Passed as Amended'],
-        'funcs': {},
+        'rgxs': [r'Committee Executive Action--Bill Passed', 
+                 r'Committee Report--Bill Passed',
+                 r'Committee Executive Action--Resolution Adopted',]
         },
 
     # ??? Looks like this'd require parsing
     # The bill has been passed out of a committee with a favorable report
     "committee:passed:favorable": {
         'rgxs': [],
-        'funcs': {},
         },
 
     # ??? Looks like this'd require parsing
     # The bill has been passed out of a committee with an unfavorable report
     "committee:passed:unfavorable": {
         'rgxs': [],
-        'funcs': {},
         },
 
     # The bill has failed to make it out of committee
     "committee:failed": {
-        'rgxs': [],
-        'funcs': {},
+        'rgxs': [r'Committee Executive Action--Resolution Not Adopted',
+                 r'Committee Executive Action--Bill Not Passed'],
         },
 
     # All other actions will have a type of "other"
@@ -186,9 +231,6 @@ for category, data in _categories.items():
 
     for rgx in data['rgxs']:
         append((category, re.compile(rgx).search))
-
-    for f, args in data['funcs'].items():
-        append((category, partial(f, *args)))
 
 ac = set([u'2nd Reading Concur Motion Failed',
      u'2nd Reading Concur as Amended Motion Failed',
