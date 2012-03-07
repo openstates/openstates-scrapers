@@ -300,7 +300,6 @@ class MOBillScraper(BillScraper):
             bill_desc = bill_page.xpath('//*[@class="BillDescription"]')[0].text_content()
             bill_desc = clean_text(bill_desc)
 
-            self.log("SET TABLE HERE")
             table_rows = bill_page.xpath('//table/tr')
             # if there is a cosponsor all the rows are pushed down one for the extra row for the cosponsor:
             cosponsorOffset = 0
@@ -362,9 +361,6 @@ class MOBillScraper(BillScraper):
                                     ))
                 else: # name ... etal
                     try:
-                        self.log( "Table: " +
-                                 str(table_rows[2][1][1].text) )
-
                         cosponsor = table_rows[2][1][0]
                         bill.add_sponsor('cosponsor',
                                          clean_text(cosponsor.text_content()),
@@ -379,7 +375,6 @@ class MOBillScraper(BillScraper):
                         self.log("WARNING: " + str(e))
                         self.bad_urls.append(url)
                         self.log( "WARNING: no bill summary page (%s)" % url )
-                        raise
 
             actions_link_tag = bill_page.xpath('//div[@class="Sections"]/a')[0]
             actions_link = '%s/%s' % (self.senate_base_url,actions_link_tag.attrib['href'])
