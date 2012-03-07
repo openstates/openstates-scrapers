@@ -1,3 +1,4 @@
+"abbr","chamber","name","num_seats","boundary_id"
 "mt","lower",1,1,"sldl-mt-state-house-district-%(name)s"
 "mt","lower",2,1,"sldl-mt-state-house-district-%(name)s"
 "mt","lower",3,1,"sldl-mt-state-house-district-%(name)s"
