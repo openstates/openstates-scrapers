@@ -1,7 +1,5 @@
 import os
 import tempfile
-import getpass
-import base64
 import logging
 import subprocess
 import urllib
@@ -11,6 +9,7 @@ from os.path import split, join
 from urllib2 import urlopen, Request, HTTPError
 
 from billy.conf import settings
+
 
 states = {
     #'aa': 'Armed Forces Americas',
@@ -92,26 +91,6 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-def _get_credentials(cache={}):
-
-    if 'auth_header' in cache:
-        auth_header = cache['auth_header']
-
-    else:
-        username = getattr(settings, 'JENKINS_USER', None)
-        password = getattr(settings, 'JENKINS_PASSWORD', None)
-        if username is None:
-            username = raw_input('jenkins username: ')
-        if password is None:
-            password = getpass.getpass('jenkins password: ')
-
-        auth_header = '%s:%s' % (username, password)
-        auth_header = 'Basic ' + base64.encodestring(auth_header)[:-1]
-        cache['auth_header'] = auth_header
-
-    return auth_header
-
-
 def _import(abbr, folder):
 
     # Where to put the files.
@@ -119,7 +98,7 @@ def _import(abbr, folder):
     path = join(path, folder)
 
     # Get credentials.
-    auth_header = _get_credentials()
+    # auth_header = _get_credentials()
 
     # Get the data.
     abbr = abbr.lower()
@@ -127,7 +106,7 @@ def _import(abbr, folder):
     zip_url = urls[folder].format(**locals())
     msg = 'requesting {folder} folder for {state}...'
     logger.info(msg.format(**locals()))
-    req = Request(zip_url, headers={'Authorization': auth_header})
+    req = Request(zip_url)
 
     # Save it.
     f = tempfile.NamedTemporaryFile(delete=False)
