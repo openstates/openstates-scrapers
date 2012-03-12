@@ -88,6 +88,7 @@ class NCVoteScraper(VoteScraper):
                     pass
 
         for vote in votes.itervalues():
+            vote.validate()
             self.save_vote(vote)
 
         # remove file
