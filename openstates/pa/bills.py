@@ -73,7 +73,6 @@ class PABillScraper(BillScraper):
                 '//div[@class="pn_table"]/descendant::tr/td[1]/a[@class="imgDim"]'):
             href = link.attrib['href']
             params = urlparse.parse_qs(href[href.find("?")+1:])
-            print params
             printers_number = params['pn']
             version_type = params['txtType']
             mime_type = 'text/html'
