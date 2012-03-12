@@ -1,4 +1,5 @@
-# Copyrigyht 2012 (c) Google, Inc. All rights reserved.
+# Copyright 2012 (c) Google, Inc. All rights reserved.
+# Copyright 2012 (c) Sunlight Foundation, All rights reserved.
 '''
 This script sets up a virtualenv with openstates on ubunt.
 
@@ -6,9 +7,11 @@ usage: python setup_openstates_osx.py myvirtualenv [whenIputmycode]
 
 If you don't specify a second argument, the code goes in the virtualenv.
 
-This requires git, wget, and XCode to be installed.
+This requires git, curl, and XCode to be installed.
 
 TODO(swensn): Clean up unnecessary methods and stuff.
+
+NOTE: Ensure that your PYTHONPATH is empty when you run this script.
 '''
 import sys
 import os
@@ -67,7 +70,8 @@ def create_virtualenv(ENV):
     'Create the virtualenv.'
 
     run_each(
-        ('wget -nc http://pypi.python.org/packages/source/v/virtualenv'
+        ('curl -o virtualenv-1.7.tar.gz '
+         'http://pypi.python.org/packages/source/v/virtualenv'
          '/virtualenv-1.7.tar.gz#md5=dcc105e5a3907a9dcaa978f813a4f526'),
         'tar -zxvf virtualenv-1.7.tar.gz ',
         'python virtualenv-1.7/virtualenv.py %s' % ENV,
