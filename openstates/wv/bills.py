@@ -129,12 +129,8 @@ class WVBillScraper(BillScraper):
 
             # Index of date info no longer varies on resolutions.
             date = tds[2].text_content().strip()
+            date = datetime.datetime.strptime(date, "%m/%d/%y").date()
 
-            try:
-                date = datetime.datetime.strptime(date, "%m/%d/%y").date()
-            except:
-                import pdb
-                pdb.set_trace()
             action = tds[1].text_content().strip()
 
             if (action == 'Communicated to Senate' or
@@ -174,11 +170,8 @@ class WVBillScraper(BillScraper):
 
             bill.add_action(actor, action, date, type=atype)
 
-        try:
-            self.save_bill(bill)
-        except:
-            import pdb
-            pdb.set_trace()
+        self.save_bill(bill)
+
 
     def scrape_vote(self, bill, url):
         try:
