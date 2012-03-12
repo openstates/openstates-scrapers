@@ -2,9 +2,11 @@
 '''
 This script sets up a virtualenv with openstates on ubunt.
 
-usage: python setup_openstates_ubuntu.py myvirtualenv [whenIputmycode]
+usage: python setup_openstates_osx.py myvirtualenv [whenIputmycode]
 
 If you don't specify a second argument, the code goes in the virtualenv.
+
+This requires git, wget, and XCode to be installed.
 
 TODO(swensn): Clean up unnecessary methods and stuff.
 '''
