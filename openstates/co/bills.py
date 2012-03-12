@@ -63,6 +63,7 @@ class COBillScraper(BillScraper):
                 if not inVoteSection:
                     # there are some very header-esque fields if we
                     # grab accross the row
+                    self.log(to_parse)
                     metainf = [a.strip() for a in to_parse.split(":", 1)]
                     ret['meta'][metainf[0]] = metainf[1]
                 else:
@@ -75,14 +76,26 @@ class COBillScraper(BillScraper):
                         #
                         to_parse = to_parse.replace("FINAL ACTION",
                             "FINAL_ACTION").replace(":", "")
-                        passage_actions = to_parse.split()
+                        if re.match("^FINAL.*", to_parse):
+                            to_parse = to_parse[len("FINAL"):]
+
+                        passage_actions = to_parse.split("  ")
+                        final_score = {}
+                        for item in passage_actions:
+                            if item == "":
+                                continue
+                            item = item.strip()
+                            keys = item.split(" ", 1)
+                            final_score[keys[0]] = keys[1]
+                        self.log(final_score)
+
                         # XXX: Verify we can't do this with recursive splits
                         # it now looks like:
                         # ['Final', 'YES:', '7', 'NO:', '6', 'EXC:', '0',
                         #   'ABS:', '0', 'FINAL_ACTION:', 'PASS']
-                        passage_actions = passage_actions[1:]
-                        il = iter(passage_actions)
-                        final_score = dict(zip(il,il))
+                        #passage_actions = passage_actions[1:]
+                        #il = iter(passage_actions)
+                        #final_score = dict(zip(il,il))
 
                         if not "FINAL_ACTION" in final_score:
                             final_score["FINAL_ACTION"] = False
@@ -133,7 +146,7 @@ class COBillScraper(BillScraper):
                     try:
                         vote_url = line.xpath('a')[0].attrib['href']
                         vote_page = CO_URL_BASE + vote_url
-                        vote_dict = self.parse_all_votes( vote_page )  
+                        vote_dict = self.parse_all_votes( vote_page )
 
                         vote_dict['meta']['x-parent-date'] = date
                         vote_dict['meta']['x-parent-ctty'] = ctty
@@ -245,6 +258,9 @@ class COBillScraper(BillScraper):
             for action in actions.split('\n'):
 
                 date_string = action[:action.find(" ")]
+                if ":" in date_string:
+                    date_string = action[:action.find(":")]
+
                 date_time   = dt.datetime.strptime( date_string, "%m/%d/%Y" )
                 action = action[action.find(" ") + 1:]
 
@@ -604,7 +620,7 @@ class COBillScraper(BillScraper):
                     # OK, sometimes the Other count is wrong.
                     local_other = 0
                     for voter in filed_votes:
-                        l_vote = filed_votes[voter].lower()
+                        l_vote = filed_votes[voter].lower().strip()
                         if l_vote != "yes" and l_vote != "no":
                             local_other = local_other + 1
 
