@@ -76,6 +76,9 @@ class COBillScraper(BillScraper):
                         #
                         to_parse = to_parse.replace("FINAL ACTION",
                             "FINAL_ACTION").replace(":", "")
+                        if re.match("^FINAL.*", to_parse):
+                            to_parse = to_parse[len("FINAL"):]
+
                         passage_actions = to_parse.split("  ")
                         final_score = {}
                         for item in passage_actions:
@@ -86,7 +89,6 @@ class COBillScraper(BillScraper):
                             final_score[keys[0]] = keys[1]
                         self.log(final_score)
 
-                        self.log(passage_actions)
                         # XXX: Verify we can't do this with recursive splits
                         # it now looks like:
                         # ['Final', 'YES:', '7', 'NO:', '6', 'EXC:', '0',
@@ -256,6 +258,9 @@ class COBillScraper(BillScraper):
             for action in actions.split('\n'):
 
                 date_string = action[:action.find(" ")]
+                if ":" in date_string:
+                    date_string = action[:action.find(":")]
+
                 date_time   = dt.datetime.strptime( date_string, "%m/%d/%Y" )
                 action = action[action.find(" ") + 1:]
 
