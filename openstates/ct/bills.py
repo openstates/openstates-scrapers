@@ -85,7 +85,7 @@ class CTBillScraper(BillScraper):
             page.make_links_absolute(url)
             bill.add_source(url)
 
-            if not self._introducers[bill_id]:
+            if not bill['sponsors']:
                 intro_com = page.xpath('//td[contains(string(), "Introduced by:")]')[1].text_content().replace('Introduced by:', '').strip()
                 bill.add_sponsor('introducer', intro_com)
 
