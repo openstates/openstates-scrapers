@@ -70,9 +70,6 @@ class CTBillScraper(BillScraper):
 
             for introducer in self._introducers[bill_id]:
                 bill.add_sponsor('introducer', introducer)
-            if not self._introducers[bill_id]:
-                intro_com = page.xpath('//td[contains(string(), "Introduced by:")]')[1].text_content().replace('Introduced by:', '').strip()
-                bill.add_sponsor('introducer', intro_com)
 
             bill['subjects'] = self._subjects[bill_id]
 
@@ -87,6 +84,10 @@ class CTBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
             bill.add_source(url)
+
+            if not self._introducers[bill_id]:
+                intro_com = page.xpath('//td[contains(string(), "Introduced by:")]')[1].text_content().replace('Introduced by:', '').strip()
+                bill.add_sponsor('introducer', intro_com)
 
             for link in page.xpath("//a[contains(@href, '/FN/')]"):
                 bill.add_document(link.text.strip(), link.attrib['href'])
