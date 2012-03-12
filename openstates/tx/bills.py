@@ -48,7 +48,7 @@ class TXBillScraper(BillScraper):
         # HCRnnnnn_HCRnnnnn, HJRnnnnn_HJRnnnnn, HRnnnnn_HRnnnnn.
         history_group_url = urljoin(history_dir_url, group_dir) + '/'
 
-        # For each dir in billhistory/, there is a corresponding dir in
+        # For each group_dir under billhistory, there is a corresponding dir in
         # billtext/html containing the bill versions (texts).  These dirs have
         # similar names, except the prefix is "HC", "HJ", "SC", "SJ" for
         # concurrent/joint resolutions instead of "HCR", "HJR", "SCR", "SJR".
