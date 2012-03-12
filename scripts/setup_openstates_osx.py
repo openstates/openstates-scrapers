@@ -1,5 +1,8 @@
 # Copyright 2012 (c) Google, Inc. All rights reserved.
 # Copyright 2012 (c) Sunlight Foundation, All rights reserved.
+# This file is licensed under the terms and conditions of the BSD-3
+# license.
+
 '''
 This script sets up a virtualenv with openstates on ubunt.
 
