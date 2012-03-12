@@ -620,7 +620,7 @@ class COBillScraper(BillScraper):
                     # OK, sometimes the Other count is wrong.
                     local_other = 0
                     for voter in filed_votes:
-                        l_vote = filed_votes[voter].lower()
+                        l_vote = filed_votes[voter].lower().strip()
                         if l_vote != "yes" and l_vote != "no":
                             local_other = local_other + 1
 
