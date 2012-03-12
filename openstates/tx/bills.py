@@ -1,6 +1,10 @@
+# Copyright 2012 Sunlight Foundation.  All Rights Reserved.
+# Copyright 2012 Google, Inc.  All Rights Reserved.
+
+import os
 import re
 import urllib2
-import urlparse
+from urlparse import urljoin
 import datetime
 
 from billy.utils import urlescape
@@ -17,58 +21,74 @@ class TXBillScraper(BillScraper):
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
 
     def scrape(self, chamber, session):
+        """Scrapes information on all bills for a given chamber and session."""
         self.validate_session(session)
 
         if len(session) == 2:
-            session = "%sR" % session
+            session = '%sR' % session
 
-        for btype in ['bills', 'concurrent_resolutions',
-                      'joint_resolutions', 'resolutions']:
-            billdirs_path = '/bills/%s/billhistory/%s_%s/' % (
-                session, chamber_name(chamber), btype)
-            billdirs_url = urlparse.urljoin(self._ftp_root, billdirs_path)
+        for bill_type in ['bills', 'concurrent_resolutions',
+                          'joint_resolutions', 'resolutions']:
+            # This is the billhistory directory for a particular type of bill
+            # (e.g. senate resolutions).  It should contain subdirectories
+            # with names like "SR00001_SR00099".
+            history_dir_url = urljoin(
+                self._ftp_root, '/bills/%s/billhistory/%s_%s/' % (
+                    session, chamber_name(chamber), bill_type))
 
-            with self.urlopen(billdirs_url) as bill_dirs:
-                for dir in parse_ftp_listing(bill_dirs):
-                    bill_url = urlparse.urljoin(billdirs_url, dir) + '/'
-                    with self.urlopen(bill_url) as bills:
-                        for history in parse_ftp_listing(bills):
-                            self.scrape_bill(chamber, session,
-                                             urlparse.urljoin(bill_url,
-                                                              history))
+            with self.urlopen(history_dir_url) as history_groups_listing:
+                # A group_dir has a name like "HJR00200_HJR00299" and contains
+                # the files for a group of 100 bills.
+                for group_dir in parse_ftp_listing(history_groups_listing):
+                    self.scrape_group(
+                        chamber, session, history_dir_url, group_dir)
 
-    def scrape_bill(self, chamber, session, url):
-        with self.urlopen(url) as data:
-            if "Bill does not exist." in data:
+    def scrape_group(self, chamber, session, history_dir_url, group_dir):
+        """Scrapes information on all bills in a given group of 100 bills."""
+        # Under billhistory, each group dir has a name like HBnnnnn_HBnnnnn,
+        # HCRnnnnn_HCRnnnnn, HJRnnnnn_HJRnnnnn, HRnnnnn_HRnnnnn.
+        history_group_url = urljoin(history_dir_url, group_dir) + '/'
+
+        # For each group_dir under billhistory, there is a corresponding dir in
+        # billtext/html containing the bill versions (texts).  These dirs have
+        # similar names, except the prefix is "HC", "HJ", "SC", "SJ" for
+        # concurrent/joint resolutions instead of "HCR", "HJR", "SCR", "SJR".
+        text_group_url = history_group_url.replace(
+            '/billhistory/', '/billtext/html/')
+        text_group_url = re.sub('([HS][CJ])R', '\\1', text_group_url)
+
+        # {bill_num: [bill_version_url, bill_version_url, ...]}
+        version_urls = {}
+
+        # Get the list of all the bill versions in this group, and collect
+        # the filenames together by bill number.
+        with self.urlopen(text_group_url) as versions_list:
+            for version_file in parse_ftp_listing(versions_list):
+                url = urljoin(text_group_url, version_file)
+                bill_num = int(re.search(r'\d+', version_file).group(0))
+                version_urls.setdefault(bill_num, []).append(url)
+
+        # Now get the history and version data for each bill.
+        with self.urlopen(history_group_url) as histories_list:
+            for history_file in parse_ftp_listing(histories_list):
+                url = urljoin(history_group_url, history_file)
+                bill_num = int(re.search(r'\d+', history_file).group(0))
+                self.scrape_bill(chamber, session, url, version_urls[bill_num])
+
+    def scrape_bill(self, chamber, session, history_url, version_urls):
+        """Scrapes the information for a single bill."""
+        with self.urlopen(history_url) as history_xml:
+            if "Bill does not exist." in history_xml:
                 return
 
-            bill = self.parse_bill_xml(chamber, session, data)
-            bill.add_source(urlescape(url))
+            bill = self.parse_bill_xml(chamber, session, history_xml)
+            bill.add_source(history_url)
 
-            versions_url = url.replace('billhistory', 'billtext/html')
-            # URLs for versions inexplicably (H|S)(J|C) instead of (H|J)(CR|JR)
-            versions_url = versions_url.replace('JR', 'J').replace('CR', 'C')
-            versions_url = '/'.join(versions_url.split('/')[0:-1])
-
-            bill_prefix = bill['bill_id'].split()[0]
-            bill_prefix = bill_prefix.replace('JR', 'J').replace('CR', 'C')
-            bill_num = int(bill['bill_id'].split()[1])
-            long_bill_id = "%s%05d" % (bill_prefix, bill_num)
-
-            try:
-                with self.urlopen(versions_url) as versions_list:
-                    bill.add_source(urlescape(versions_url))
-                    for version in parse_ftp_listing(versions_list):
-                        if version.startswith(long_bill_id):
-                            version_name = version.split('.')[0]
-                            version_url = urlparse.urljoin(
-                                versions_url + '/',
-                                version)
-                            bill.add_version(version_name,
-                                             urlescape(version_url))
-            except urllib2.URLError:
-                # Sometimes the text is missing
-                pass
+            for version_url in version_urls:
+                bill.add_source(version_url)
+                version_name = version_url.split('/')[-1]
+                version_name = os.path.splitext(version_name)[0]  # omit '.htm'
+                bill.add_version(version_name, version_url, 'text/html')
 
             self.save_bill(bill)
 
