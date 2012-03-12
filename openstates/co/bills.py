@@ -103,6 +103,7 @@ class COBillScraper(BillScraper):
                         ret['result'] = final_score
                     else:
                         # We've got a vote.
+                        self.log("FOO: " + str([x.text_content() for x in line]))
                         person = line[1].text_content() # <div><font>
                         vote   = line[2].text_content()
                         if person.strip() != "":
@@ -622,6 +623,7 @@ class COBillScraper(BillScraper):
                     local_other = 0
                     for voter in filed_votes:
                         l_vote = filed_votes[voter].lower().strip()
+                        self.log("BAZ: " + (l_vote))
                         if l_vote != "yes" and l_vote != "no":
                             local_other = local_other + 1
 
