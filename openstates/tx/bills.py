@@ -1,3 +1,6 @@
+# Copyright 2012 Sunlight Foundation.  All Rights Reserved.
+# Copyright 2012 Google, Inc.  All Rights Reserved.
+
 import re
 import urllib2
 from urlparse import urljoin
