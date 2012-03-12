@@ -70,7 +70,7 @@ class PABillScraper(BillScraper):
 
     def parse_bill_versions(self, bill, page):
         for link in page.xpath(
-                '//div[@class="pn_table"]/descendant::tr/td[1]/a[@class="imgDim"]'):
+                '//div[@class="pn_table"]/descendant::tr/td[2]/a[@class="imgDim"]'):
             href = link.attrib['href']
             params = urlparse.parse_qs(href[href.find("?")+1:])
             printers_number = params['pn']
