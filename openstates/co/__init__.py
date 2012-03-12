@@ -12,7 +12,7 @@ metadata = dict(
     upper_chamber_term=4,
     terms=[
         {'name': '2011-2012',
-         'sessions': ['2011A'],
+         'sessions': ['2011A', '2012A'],
          'start_year': 2011, 'end_year': 2012},
         ],
     session_details={
@@ -21,6 +21,11 @@ metadata = dict(
             'type'         : 'primary',
              'display_name': '2011 Regular Session',
              '_scraped_name' : "2011 Regular Session"
+         },
+        '2012A': {
+            'start_date'   : datetime.date(2012,1,11),
+            'type'         : 'primary',
+             'display_name': '2012 Regular Session',
          },
     },
     feature_flags=[],
