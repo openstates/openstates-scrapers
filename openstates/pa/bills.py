@@ -171,7 +171,6 @@ class PABillScraper(BillScraper):
             for td in page.xpath("//td[@class = 'vote']"):
                 caption = td.xpath("string(preceding-sibling::td)").strip()
 
-                location = ''
                 if caption == 'Senate':
                     chamber = 'upper'
                 elif caption == 'House':
