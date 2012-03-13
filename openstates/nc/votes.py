@@ -8,8 +8,17 @@ class NCVoteScraper(VoteScraper):
     state = 'nc'
 
     def scrape(self, chamber, session):
-        vote_data_url = 'ftp://www.ncga.state.nc.us/Bill_Status/Votes%s.zip' % session
+        if session == '2009':
+            # 2009 files have a different delimiter and naming scheme.
+            vote_data_url = 'ftp://www.ncga.state.nc.us/Bill_Status/Vote Data 2009.zip'
+            naming_scheme = '{session}{file_label}.txt'
+            delimiter = ";"
+        else:
+            vote_data_url = 'ftp://www.ncga.state.nc.us/Bill_Status/Votes%s.zip' % session
+            naming_scheme = '{file_label}_{session}.txt'
+            delimiter = "\t"
         fname, resp = self.urlretrieve(vote_data_url)
+        # fname = "/Users/brian/Downloads/Vote Data 2009.zip"
         zf = ZipFile(fname)
 
         chamber_code = 'H' if chamber == 'lower' else 'S'
@@ -20,10 +29,10 @@ class NCVoteScraper(VoteScraper):
         # 2: member name
         # 3-5: county, district, party
         # 6: mmUserId
-        member_file = zf.open('Members_%s.txt' % session)
+        member_file = zf.open(naming_scheme.format(file_label='Members', session=session))
         members = {}
         for line in member_file.readlines():
-            data = line.split('\t')
+            data = line.split(delimiter)
             if data[1] == chamber_code:
                 members[data[0]] = data[2]
 
@@ -44,11 +53,11 @@ class NCVoteScraper(VoteScraper):
         # 13: info
         # 21: PASSED/FAILED
         # 22: legislative day
-        vote_file = zf.open('Votes_%s.txt' % session)
+        vote_file = zf.open(naming_scheme.format(file_label='Votes', session=session))
         bill_chambers = {'H':'lower', 'S':'upper'}
         votes = {}
         for line in vote_file.readlines():
-            data = line.split('\t')
+            data = line.split(delimiter)
             if data[1] == chamber_code:
                 date = datetime.datetime.strptime(data[2][:16],
                                                   '%Y-%m-%d %H:%M')
@@ -65,14 +74,14 @@ class NCVoteScraper(VoteScraper):
                                       bill_chamber=bill_chambers[data[3][0]],
                                       bill_id=data[3]+data[4], session=session)
 
-        member_vote_file = zf.open('MemberVotes_%s.txt' % session)
+        member_vote_file = zf.open(naming_scheme.format(file_label='MemberVotes', session=session))
         # 0: member id
         # 1: chamber (S/H)
         # 2: vote id
         # 3: vote chamber (always same as 1)
         # 4: vote (Y,N,E,X)
         for line in member_vote_file.readlines():
-            data = line.split('\t')
+            data = line.split(delimiter)
             if data[1] == chamber_code:
                 try:
                     vote = votes[data[2]]
