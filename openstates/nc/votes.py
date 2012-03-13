@@ -88,17 +88,22 @@ class NCVoteScraper(VoteScraper):
             data = line.split(delimiter)
             if data[1] == chamber_code:
                 try:
-                    vote = votes[data[2]]
-                    if data[4] == 'Y':
-                        vote.yes(members[data[0]])
-                    elif data[4] == 'N':
-                        vote.no(members[data[0]])
-                    else:
-                        # is either E: excused, X: no vote
-                        vote.other(members[data[0]])
+                    member_voting = members[data[0]]
                 except KeyError:
-                    self.debug('not recording roll call for %s' % data[2])
-                    pass
+                    self.debug('Member %s not found.' % data[0])
+                    continue
+                try:
+                    vote = votes[data[2]]
+                except KeyError:
+                    self.debug('Vote %s not found.' % data[2])
+                    continue
+                if data[4] == 'Y':
+                    vote.yes(member_voting)
+                elif data[4] == 'N':
+                    vote.no(member_voting)
+                else:
+                    # is either E: excused, X: no vote, or paired (doesn't count)
+                    vote.other(member_voting)
 
         for vote in votes.itervalues():
             self.save_vote(vote)
