@@ -99,7 +99,7 @@ def action_type(action):
 class VTBillScraper(BillScraper):
     state = 'vt'
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber, session, only_bills=None):
         if chamber == 'lower':
             bill_abbr = "H."
         else:
@@ -111,140 +111,156 @@ class VTBillScraper(BillScraper):
             "http://www.leg.state.vt.us/docs/resolutn.cfm?Session=%s&Body=%s"
         ]
 
+        bill_ids = []
+
         for url in urls:
             url = url % (session.split('-')[1], bill_abbr[0])
-            with self.urlopen(url) as page:
-                page = lxml.html.fromstring(page)
-                page.make_links_absolute(url)
-
-                for link in page.xpath("//a[contains(@href, 'summary.cfm')]"):
-                    bill_id = link.text
-
-                    if bill_id.startswith('JR'):
-                        bill_type = 'joint resolution'
-                    elif bill_id[1:3] == 'CR':
-                        bill_type = 'concurrent resolution'
-                    elif bill_id[0:2] in ['HR', 'SR']:
-                        bill_type = 'resolution'
-                    else:
-                        bill_type = 'bill'
-
-                    title = link.xpath("string(../../td[2])")
-
-                    bill = Bill(session, chamber, bill_id, title,
-                                type=bill_type)
-                    self.scrape_bill(bill, link.attrib['href'])
-
-    def scrape_bill(self, bill, url):
-        with self.urlopen(url) as page:
-            page.replace('&nbsp;', ' ')
+            page = self.urlopen(url)
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
-            bill.add_source(url)
 
-            for link in page.xpath("//b[text()='Bill Text:']/"
-                                   "following-sibling::blockquote/a"):
-                bill.add_version(link.text, link.attrib['href'])
+            for link in page.xpath("//a[contains(@href, 'summary.cfm')]"):
+                bill_id = link.text
+                if only_bills is not None and bill_id not in only_bills:
+                    self.log("Skipping bill we are not interested in %s" % bill_id)
+                    continue
 
-            more_sponsor_link = page.xpath("//a[text()='More Sponsors']")
-            if page.xpath("//a[text()='More Sponsors']"):
-                sponsor_url = more_sponsor_link[0].attrib['href']
-                self.scrape_sponsors(bill, sponsor_url)
-            else:
-                for b in page.xpath("//td[text()='Sponsor(s):']/../td[2]/b"):
-                    bill.add_sponsor("sponsor", b.text)
-
-            for tr in page.xpath("""
-            //b[text()='Detailed Status:']/
-            following-sibling::blockquote[1]/table/tr""")[1:]:
-                action = tr.xpath("string(td[3])").strip()
-
-                match = re.search('(to|by) Governor on (.*)', action)
-                if match:
-                    date = parse_exec_date(match.group(2).strip()).date()
-                    actor = 'executive'
+                if bill_id.startswith('JR'):
+                    bill_type = 'joint resolution'
+                elif bill_id[1:3] == 'CR':
+                    bill_type = 'concurrent resolution'
+                elif bill_id[0:2] in ['HR', 'SR']:
+                    bill_type = 'resolution'
                 else:
-                    if tr.attrib['bgcolor'] == 'Salmon':
-                        actor = 'lower'
-                    elif tr.attrib['bgcolor'] == 'LightGreen':
-                        actor = 'upper'
-                    else:
-                        raise ScrapeError("Invalid row color: %s" %
-                                          tr.attrib['bgcolor'])
+                    bill_type = 'bill'
 
-                    date = tr.xpath("string(td[1])")
-                    try:
-                        date = re.search(
-                            r"\d\d?/\d\d?/\d{4,4}", date).group(0)
-                    except AttributeError:
-                        # No date, skip
-                        self.warning("skipping action '%s -- %s'" % (
-                            date, action))
-                        continue
+                title = link.xpath("string(../../td[2])")
 
-                    date = datetime.datetime.strptime(date, "%m/%d/%Y")
-                    date = date.date()
+                bill = Bill(session, chamber, bill_id, title,
+                            type=bill_type)
+                if self.scrape_bill(bill, link.attrib['href']):
+                    bill_ids.append(bill_id)
+        return bill_ids
 
-                bill.add_action(actor, action, date,
-                                type=action_type(action))
+    def scrape_bill(self, bill, url):
+        page = self.urlopen(url)
+        page.replace('&nbsp;', ' ')
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+        bill.add_source(url)
 
-                for vote_link in tr.xpath("td[4]/a"):
-                    self.scrape_vote(bill, actor, vote_link.attrib['href'])
+        for link in page.xpath("//b[text()='Bill Text:']/"
+                               "following-sibling::blockquote/a"):
+            bill.add_version(link.text, link.attrib['href'])
 
-            self.save_bill(bill)
+        more_sponsor_link = page.xpath("//a[text()='More Sponsors']")
+        if page.xpath("//a[text()='More Sponsors']"):
+            sponsor_url = more_sponsor_link[0].attrib['href']
+            self.scrape_sponsors(bill, sponsor_url)
+        else:
+            for b in page.xpath("//td[text()='Sponsor(s):']/../td[2]/b"):
+                bill.add_sponsor("sponsor", b.text)
+
+        for tr in page.xpath("""
+        //b[text()='Detailed Status:']/
+        following-sibling::blockquote[1]/table/tr""")[1:]:
+            action = tr.xpath("string(td[3])").strip()
+
+            match = re.search('(to|by) Governor on (.*)', action)
+            if match:
+                date = parse_exec_date(match.group(2).strip()).date()
+                actor = 'executive'
+            else:
+                if tr.attrib['bgcolor'] == 'Salmon':
+                    actor = 'lower'
+                elif tr.attrib['bgcolor'] == 'LightGreen':
+                    actor = 'upper'
+                else:
+                    raise ScrapeError("Invalid row color: %s" %
+                                      tr.attrib['bgcolor'])
+
+                date = tr.xpath("string(td[1])")
+                try:
+                    date = re.search(
+                        r"\d\d?/\d\d?/\d{4,4}", date).group(0)
+                except AttributeError:
+                    # No date, skip
+                    self.warning("skipping action '%s -- %s'" % (
+                        date, action))
+                    continue
+
+                date = datetime.datetime.strptime(date, "%m/%d/%Y")
+                date = date.date()
+
+            bill.add_action(actor, action, date,
+                            type=action_type(action))
+
+            for vote_link in tr.xpath("td[4]/a"):
+                self.scrape_vote(bill, actor, vote_link.attrib['href'])
+
+        # If nearly all of the bill attributes but the title are blank, this is a bad bill.
+        # See Issue #166.
+        if all(len(bill[x]) == 0 for x in ('votes', 'alternate_titles', 'sponsors',
+            'actions', 'versions', 'documents')):
+            return False
+
+        self.save_bill(bill)
+        return True
 
     def scrape_sponsors(self, bill, url):
         bill.add_source(url)
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
 
-            for td in page.xpath("//h3/following-sibling::"
-                                 "blockquote/table/tr/td"):
-                name = td.xpath("string()").strip()
-                bill.add_sponsor("sponsor", name)
+        for td in page.xpath("//h3/following-sibling::"
+                             "blockquote/table/tr/td"):
+            name = td.xpath("string()").strip()
+            bill.add_sponsor("sponsor", name)
 
     def scrape_vote(self, bill, chamber, url):
-        with self.urlopen(url) as page:
-            page = page.replace('&nbsp;', ' ')
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = page.replace('&nbsp;', ' ')
+        page = lxml.html.fromstring(page)
 
-            info_row = page.xpath("//table[1]/tr[2]")[0]
+        info_row = page.xpath("//table[1]/tr[2]")[0]
 
-            date = info_row.xpath("string(td[1])")
-            date = datetime.datetime.strptime(date, "%m/%d/%Y")
+        date = info_row.xpath("string(td[1])")
+        date = datetime.datetime.strptime(date, "%m/%d/%Y")
 
-            motion = info_row.xpath("string(td[2])")
-            yes_count = int(info_row.xpath("string(td[3])"))
-            no_count = int(info_row.xpath("string(td[4])"))
-            other_count = int(info_row.xpath("string(td[5])"))
-            passed = info_row.xpath("string(td[6])") == 'Pass'
+        motion = info_row.xpath("string(td[2])")
+        yes_count = int(info_row.xpath("string(td[3])"))
+        no_count = int(info_row.xpath("string(td[4])"))
+        other_count = int(info_row.xpath("string(td[5])"))
+        passed = info_row.xpath("string(td[6])") == 'Pass'
 
-            if motion == 'Shall the bill pass?':
-                type = 'passage'
-            elif motion == 'Shall the bill be read the third time?':
-                type = 'reading:3'
-            elif 'be amended as' in motion:
-                type = 'amendment'
+        if motion == 'Shall the bill pass?':
+            type = 'passage'
+        elif motion == 'Shall the bill be read the third time?':
+            type = 'reading:3'
+        elif 'be amended as' in motion:
+            type = 'amendment'
+        else:
+            type = 'other'
+
+        vote = Vote(chamber, date, motion, passed,
+                    yes_count, no_count, other_count)
+        vote.add_source(url)
+
+        for tr in page.xpath("//table[1]/tr")[3:]:
+            if len(tr.xpath("td")) != 2:
+                continue
+
+            name = tr.xpath("string(td[1])").split(' of')[0]
+
+            type = tr.xpath("string(td[2])").strip()
+            if type.startswith('Yea'):
+                vote.yes(name)
+            elif type.startswith('Nay'):
+                vote.no(name)
+            elif type.startswith('Not Voting'):
+                pass
             else:
-                type = 'other'
+                vote.other(name)
 
-            vote = Vote(chamber, date, motion, passed,
-                        yes_count, no_count, other_count)
-            vote.add_source(url)
-
-            for tr in page.xpath("//table[1]/tr")[3:]:
-                if len(tr.xpath("td")) != 2:
-                    continue
-
-                name = tr.xpath("string(td[1])").split(' of')[0]
-
-                type = tr.xpath("string(td[2])").strip()
-                if type.startswith('Yea'):
-                    vote.yes(name)
-                elif type.startswith('Nay'):
-                    vote.no(name)
-                else:
-                    vote.other(name)
-
-            bill.add_vote(vote)
+        bill.add_vote(vote)
