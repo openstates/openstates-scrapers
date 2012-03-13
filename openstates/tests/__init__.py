@@ -2,12 +2,20 @@
 
 """Provides some helper methods for running tests on scrapers."""
 
+import logging
 import os.path
 import pickle
 
 import scrapelib
 from billy.scrape import Scraper
 
+# Set up the billy logger.
+logger = logging.getLogger('billy')
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 # Public methods and data.
 saved_data = {}
