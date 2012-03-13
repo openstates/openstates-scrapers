@@ -19,24 +19,30 @@ def get_bill_data(bill_id):
 
 def set_testdata_dir(testdata_dir):
 	"""Load testdata from the named directory (and save to it upon test completion)."""
-	global testdatafile
+	global _testdatafile
 	global _testdata
-	testdatafile = os.path.join(testdata_dir, 'html_data')
-	if os.path.exists(testdatafile):
-		with open(testdatafile) as data:
+	_testdatafile = os.path.join(testdata_dir, 'html_data')
+	if os.path.exists(_testdatafile):
+		with open(_testdatafile) as data:
 			_testdata = pickle.load(data)
 	else:
 		_testdata = {}
 
 def setup():
+	global _old_bill_scraper_url_open
+	global _old_bill_scraper_save_object
 	# Intercept HTTP traffic and serve from cache, or create cache based on fetched results.
+	_old_bill_scraper_url_open = BillScraper.urlopen
 	BillScraper.urlopen = _fake_url_open
 	# Intercept requests to save objects to disk, so that we can inspect them.
+	_old_bill_scraper_save_object = BillScraper.save_object
 	BillScraper.save_object = _fake_save_object
 
 def teardown():
 	if _update_testdata:
 	  _write_testdata()
+	BillScraper.urlopen = _old_bill_scraper_url_open
+	BillScraper.save_object = _old_bill_scraper_save_object
 
 # Internal stuff.
 
@@ -47,6 +53,8 @@ _update_testdata = False
 
 def _write_testdata():
 	"""Save the HTML cached data to a pickled file."""
+	if _testdatafile is None:
+		return
 	with open(_testdatafile, 'w') as outf:
 		pickle.dump(_testdata, outf)
 
@@ -60,9 +68,8 @@ def _fake_url_open(self, url, method='GET', params=""):
 		print "\nFetching", url, params
 		_testdata[(url, method, params)] = str(txt)
 		_update_testdata = True
-		return txt
-	else:
-		return _testdata[(url, method, params)]
+	return _testdata[(url, method, params)]
+
 
 def _fake_save_object(self, obj):
 	saved_data[obj['bill_id']] = obj
