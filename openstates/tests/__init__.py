@@ -65,13 +65,16 @@ def _write_testdata():
 	with open(_testdatafile, 'w') as outf:
 		pickle.dump(_testdata, outf)
 
-def _fake_url_open(self, url, method='GET', params=""):
+def _fake_url_open(self, url, method='GET', params="", retry_on_404=False):
+	url = str(url)
+	method = str(method)
+	params = str(params)
 	global _update_testdata
 	# If we have no test data, we just return an empty string.
 	if _testdata is None:
 		return ""
 	if (url, method, params) not in _testdata:
-		txt = _scraper.urlopen(url, method, params)
+		txt = _scraper.urlopen(url, method, params, retry_on_404=retry_on_404)
 		print "\nFetching", url, params
 		_testdata[(url, method, params)] = str(txt)
 		_update_testdata = True
