@@ -80,6 +80,10 @@ class NCVoteScraper(VoteScraper):
         # 2: vote id
         # 3: vote chamber (always same as 1)
         # 4: vote (Y,N,E,X)
+        # 5: pair ID (member)
+        # 6: pair order
+        # If a vote is paired then it should not be counted as a yes or no vote.
+        # See https://github.com/sunlightlabs/openstates/issues/164
         for line in member_vote_file.readlines():
             data = line.split(delimiter)
             if data[1] == chamber_code:
