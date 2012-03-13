@@ -98,7 +98,7 @@ class FLBillScraper(BillScraper):
 
                         bill.add_action(actor, action, date, type=atype)
             except IndexError:
-                self.log("No bill history for %s" % bill_id)
+                raise Exception("No bill history for %s" % bill_id)
 
             try:
                 version_table = page.xpath(
