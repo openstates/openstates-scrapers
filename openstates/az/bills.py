@@ -1,3 +1,6 @@
+# Copyright (c) 2012 Google, Inc. All rights reserved.
+# Copyright (c) Sunlight Foundation. All rights reserved.
+
 import re
 
 from billy.scrape import NoDataForPeriod
