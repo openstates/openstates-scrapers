@@ -16,7 +16,7 @@ class TestVA(unittest.TestCase):
     def test_no_sponsors_issue_167(self):
     	# Test issue #167
     	# Test that we get the right vote counts.
-    	metadata = {'session_details': {'2011': {'site_id': 111}, '2012': {'site_id': 121}}}
+    	metadata = {'session_details': {'2010': {'site_id': 101}, '2011': {'site_id': 111}, '2012': {'site_id': 121}}}
     	scraper = VABillScraper(metadata)
         only_bills = set(['HB 1585', 'HB 2099', 'HB 2316'])
     	bills = scraper.scrape('lower', '2011', only_bills)
@@ -56,6 +56,14 @@ class TestVA(unittest.TestCase):
                 self.assertEqual(vote['yes_count'], len(vote['yes_votes']))
                 self.assertEqual(vote['no_count'], len(vote['no_votes']))
                 self.assertEqual(vote['other_count'], len(vote['other_votes']))
+            only_bills = set(['SB 432'])
+
+        only_bills = set(['HJ 98', 'HB 1201', 'HB 1025'])
+        bills = scraper.scrape('lower', '2010', only_bills)
+        self.assertEqual(len(only_bills), len(bills))
+        for bill_id in only_bills:
+            bill = openstates.tests.get_bill_data(bill_id)
+            self.assertNotEqual(0, len(bill['sponsors']))
         
     def tearDown(self):
     	openstates.tests.teardown()
