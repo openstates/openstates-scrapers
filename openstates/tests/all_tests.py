@@ -14,6 +14,7 @@ import az_tests
 import me_tests
 import ny_tests
 import ok_tests
+import va_tests
 import vt_tests
 import wy_tests
 
@@ -25,6 +26,7 @@ def main(testdata):
 	suites.append(loader.loadTestsFromTestCase(me_tests.TestME))
 	suites.append(loader.loadTestsFromTestCase(ny_tests.TestNY))
 	suites.append(loader.loadTestsFromTestCase(ok_tests.TestOK))
+	suites.append(loader.loadTestsFromTestCase(va_tests.TestVA))
 	suites.append(loader.loadTestsFromTestCase(vt_tests.TestVT))
 	suites.append(loader.loadTestsFromTestCase(wy_tests.TestWY))
 	alltests = unittest.TestSuite(suites)
