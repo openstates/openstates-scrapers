@@ -39,7 +39,7 @@ def setup():
 
 def teardown():
 	if _update_testdata:
-	  _write_testdata()
+        _write_testdata()
 	Scraper.urlopen = _old_scraper_url_open
 	Scraper.save_object = _old_scraper_save_object
 
