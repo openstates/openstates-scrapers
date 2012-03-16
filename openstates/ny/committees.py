@@ -60,7 +60,7 @@ class NYCommitteeScraper(CommitteeScraper):
 
             url = link.attrib['href']
 
-            if only_names is not None or name not in only_names:
+            if (not only_names) or (only_names and name not in only_names):
                 self.log("skipping committee %s" % name)
                 continue
 
@@ -99,7 +99,7 @@ class NYCommitteeScraper(CommitteeScraper):
                 # stop scraping once we reach the caucuses
                 break
 
-            if only_names is not None or name not in only_names:
+            if (not only_names) or (only_names and name not in only_names):
                 self.log("skipping committee %s" % name)
                 continue
 
