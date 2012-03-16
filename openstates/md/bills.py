@@ -236,10 +236,9 @@ class MDBillScraper(BillScraper):
         date = datetime.datetime.strptime(date[18:], '%b %d, %Y')
 
         # motion
-        motion = doc.xpath("//td[@class='cs54BDD041']")
-        if len(motion):
-            motion = motion[0].text
-        else:
+        motion = ''.join(x.text_content() for x in \
+                         doc.xpath('//td[@colspan="23"]'))
+        if motion == '':
             motion = "No motion given"  # XXX: Double check this. See SJ 3.
         motion = motion.replace(u'\xa0', ' ')
 
