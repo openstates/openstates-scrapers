@@ -24,8 +24,11 @@ SPONSOR_TYPE_REFINEMENTS = {
     'Chief Co-Sponsor': 'chief-cosponsor',
     'as Chief Co-Sponsor': 'chief-cosponsor',
     'Alternate Chief Co-Sponsor': 'chief-cosponsor',
+    'as Alternate Chief Co-Sponsor': 'chief-cosponsor',
     'as Co-Sponsor': 'cosponsor',
     'Alternate Co-Sponsor':  'cosponsor',
+    'as Alternate Co-Sponsor':  'cosponsor',
+    'Co-Sponsor': 'cosponsor',
 }
 
 
@@ -268,6 +271,7 @@ class ILBillScraper(BillScraper):
             'PASSED': True,
             'PREVAILED': True,
             'ADOPTED': True,
+            'CONCURRED': True,
             'FAILED': False,
             'LOST': False,
         }
