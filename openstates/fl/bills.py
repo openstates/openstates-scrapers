@@ -20,8 +20,8 @@ class FLBillScraper(BillScraper):
                "SessionName=%s&PageNumber=1&Chamber=%s&LastAction="
                "&Senator=&SearchQuery=" % (session, cname))
         while True:
-            with self.urlopen(url) as page:
-                page = lxml.html.fromstring(page)
+            with self.urlopen(url) as html:
+                page = lxml.html.fromstring(html)
                 page.make_links_absolute(url)
 
                 link_path = ("//a[contains(@href, '/Session/Bill/%s')"
@@ -43,8 +43,8 @@ class FLBillScraper(BillScraper):
                     break
 
     def scrape_bill(self, chamber, session, bill_id, title, sponsor, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        with self.urlopen(url) as html:
+            page = lxml.html.fromstring(html)
             page.make_links_absolute(url)
 
             bill = Bill(session, chamber, bill_id, title)
@@ -52,53 +52,50 @@ class FLBillScraper(BillScraper):
 
             bill.add_sponsor('introducer', sponsor)
 
-            try:
-                hist_table = page.xpath(
-                    "//div[@id = 'tabBodyBillHistory']/table")[0]
-                for tr in hist_table.xpath("tbody/tr"):
-                    date = tr.xpath("string(td[1])")
-                    date = datetime.datetime.strptime(
-                        date, "%m/%d/%Y").date()
+            hist_table = page.xpath(
+                "//div[@id = 'tabBodyBillHistory']/table")[0]
+            for tr in hist_table.xpath("tbody/tr"):
+                date = tr.xpath("string(td[1])")
+                date = datetime.datetime.strptime(
+                    date, "%m/%d/%Y").date()
 
-                    actor = tr.xpath("string(td[2])")
-                    actor = {'Senate': 'upper', 'House': 'lower'}.get(
-                        actor, actor)
+                actor = tr.xpath("string(td[2])")
+                actor = {'Senate': 'upper', 'House': 'lower'}.get(
+                    actor, actor)
 
-                    if not actor:
+                if not actor:
+                    continue
+
+                act_text = tr.xpath("string(td[3])").strip()
+                for action in act_text.split(u'\u2022'):
+                    action = action.strip()
+                    if not action:
                         continue
 
-                    act_text = tr.xpath("string(td[3])").strip()
-                    for action in act_text.split(u'\u2022'):
-                        action = action.strip()
-                        if not action:
-                            continue
+                    action = re.sub(r'-(H|S)J\s+(\d+)$', '',
+                                    action)
 
-                        action = re.sub(r'-(H|S)J\s+(\d+)$', '',
-                                        action)
+                    atype = []
+                    if action.startswith('Referred to'):
+                        atype.append('committee:referred')
+                    elif action.startswith('Favorable by'):
+                        atype.append('committee:passed')
+                    elif action == "Filed":
+                        atype.append("bill:filed")
+                    elif action.startswith("Withdrawn"):
+                        atype.append("bill:withdrawn")
+                    elif action.startswith("Died"):
+                        atype.append("bill:failed")
+                    elif action.startswith('Introduced'):
+                        atype.append('bill:introduced')
+                    elif action.startswith('Read 2nd time'):
+                        atype.append('bill:reading:2')
+                    elif action.startswith('Read 3rd time'):
+                        atype.append('bill:reading:3')
+                    elif action.startswith('Adopted'):
+                        atype.append('bill:passed')
 
-                        atype = []
-                        if action.startswith('Referred to'):
-                            atype.append('committee:referred')
-                        elif action.startswith('Favorable by'):
-                            atype.append('committee:passed')
-                        elif action == "Filed":
-                            atype.append("bill:filed")
-                        elif action.startswith("Withdrawn"):
-                            atype.append("bill:withdrawn")
-                        elif action.startswith("Died"):
-                            atype.append("bill:failed")
-                        elif action.startswith('Introduced'):
-                            atype.append('bill:introduced')
-                        elif action.startswith('Read 2nd time'):
-                            atype.append('bill:reading:2')
-                        elif action.startswith('Read 3rd time'):
-                            atype.append('bill:reading:3')
-                        elif action.startswith('Adopted'):
-                            atype.append('bill:passed')
-
-                        bill.add_action(actor, action, date, type=atype)
-            except IndexError:
-                raise Exception("No bill history for %s" % bill_id)
+                    bill.add_action(actor, action, date, type=atype)
 
             try:
                 version_table = page.xpath(
