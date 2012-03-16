@@ -88,14 +88,16 @@ class MDBillScraper(BillScraper):
             dts = h5.getnext().xpath('dl/dt')
             for dt in dts:
                 action_date = dt.text.strip()
-                if action_date != 'No Action':
-                    action_date = datetime.datetime.strptime(action_date,
-                                                             '%m/%d')
-                    # no actions after June?, decrement the year on these
+                if action_date and action_date != 'No Action':
                     year = int(bill['session'][:4])
+                    action_date += ('/%s' % year)
+                    action_date = datetime.datetime.strptime(action_date,
+                                                             '%m/%d/%Y')
+
+                    # no actions after June?, decrement the year on these
                     if action_date.month > 6:
                         year -= 1
-                    action_date = action_date.replace(year)
+                        action_date = action_date.replace(year)
 
                     # iterate over all dds following the dt
                     dcursor = dt
@@ -229,15 +231,18 @@ class MDBillScraper(BillScraper):
             chamber = 'lower'
 
         # date in the following format: Mar 23, 2009
-        date = doc.xpath('//td[@class="csF2A77DD1"]/text()')[2]
+        date = doc.xpath('//td[starts-with(text(), "Legislative")]')[0].text
         date = date.replace(u'\xa0', ' ')
         date = datetime.datetime.strptime(date[18:], '%b %d, %Y')
 
         # motion
-        motion = doc.xpath('//td[@class="cs54BDD041"]/text()')[-1]
+        motion = ''.join(x.text_content() for x in
+                         doc.xpath('//td[@colspan="23"]'))
+        motion = motion.replace(u'\xa0', ' ')
 
         # totals
-        totals = doc.xpath('//td[@class="cs7A884F1E"]/text()')[1:]
+        tot_class = doc.xpath('//td[contains(text(), "Yeas")]')[0].get('class')
+        totals = doc.xpath('//td[@class="%s"]/text()' % tot_class)[1:]
         yes_count = int(totals[0].split()[-1])
         no_count = int(totals[1].split()[-1])
         other_count = int(totals[2].split()[-1])

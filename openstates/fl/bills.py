@@ -20,8 +20,8 @@ class FLBillScraper(BillScraper):
                "SessionName=%s&PageNumber=1&Chamber=%s&LastAction="
                "&Senator=&SearchQuery=" % (session, cname))
         while True:
-            with self.urlopen(url) as page:
-                page = lxml.html.fromstring(page)
+            with self.urlopen(url) as html:
+                page = lxml.html.fromstring(html)
                 page.make_links_absolute(url)
 
                 link_path = ("//a[contains(@href, '/Session/Bill/%s')"
@@ -43,8 +43,8 @@ class FLBillScraper(BillScraper):
                     break
 
     def scrape_bill(self, chamber, session, bill_id, title, sponsor, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        with self.urlopen(url) as html:
+            page = lxml.html.fromstring(html)
             page.make_links_absolute(url)
 
             bill = Bill(session, chamber, bill_id, title)
@@ -52,53 +52,50 @@ class FLBillScraper(BillScraper):
 
             bill.add_sponsor('introducer', sponsor)
 
-            try:
-                hist_table = page.xpath(
-                    "//div[@id = 'tabBodyBillHistory']/table")[0]
-                for tr in hist_table.xpath("tbody/tr"):
-                    date = tr.xpath("string(td[1])")
-                    date = datetime.datetime.strptime(
-                        date, "%m/%d/%Y").date()
+            hist_table = page.xpath(
+                "//div[@id = 'tabBodyBillHistory']/table")[0]
+            for tr in hist_table.xpath("tbody/tr"):
+                date = tr.xpath("string(td[1])")
+                date = datetime.datetime.strptime(
+                    date, "%m/%d/%Y").date()
 
-                    actor = tr.xpath("string(td[2])")
-                    actor = {'Senate': 'upper', 'House': 'lower'}.get(
-                        actor, actor)
+                actor = tr.xpath("string(td[2])")
+                actor = {'Senate': 'upper', 'House': 'lower'}.get(
+                    actor, actor)
 
-                    if not actor:
+                if not actor:
+                    continue
+
+                act_text = tr.xpath("string(td[3])").strip()
+                for action in act_text.split(u'\u2022'):
+                    action = action.strip()
+                    if not action:
                         continue
 
-                    act_text = tr.xpath("string(td[3])").strip()
-                    for action in act_text.split(u'\u2022'):
-                        action = action.strip()
-                        if not action:
-                            continue
+                    action = re.sub(r'-(H|S)J\s+(\d+)$', '',
+                                    action)
 
-                        action = re.sub(r'-(H|S)J\s+(\d+)$', '',
-                                        action)
+                    atype = []
+                    if action.startswith('Referred to'):
+                        atype.append('committee:referred')
+                    elif action.startswith('Favorable by'):
+                        atype.append('committee:passed')
+                    elif action == "Filed":
+                        atype.append("bill:filed")
+                    elif action.startswith("Withdrawn"):
+                        atype.append("bill:withdrawn")
+                    elif action.startswith("Died"):
+                        atype.append("bill:failed")
+                    elif action.startswith('Introduced'):
+                        atype.append('bill:introduced')
+                    elif action.startswith('Read 2nd time'):
+                        atype.append('bill:reading:2')
+                    elif action.startswith('Read 3rd time'):
+                        atype.append('bill:reading:3')
+                    elif action.startswith('Adopted'):
+                        atype.append('bill:passed')
 
-                        atype = []
-                        if action.startswith('Referred to'):
-                            atype.append('committee:referred')
-                        elif action.startswith('Favorable by'):
-                            atype.append('committee:passed')
-                        elif action == "Filed":
-                            atype.append("bill:filed")
-                        elif action.startswith("Withdrawn"):
-                            atype.append("bill:withdrawn")
-                        elif action.startswith("Died"):
-                            atype.append("bill:failed")
-                        elif action.startswith('Introduced'):
-                            atype.append('bill:introduced')
-                        elif action.startswith('Read 2nd time'):
-                            atype.append('bill:reading:2')
-                        elif action.startswith('Read 3rd time'):
-                            atype.append('bill:reading:3')
-                        elif action.startswith('Adopted'):
-                            atype.append('bill:passed')
-
-                        bill.add_action(actor, action, date, type=atype)
-            except IndexError:
-                self.log("No bill history for %s" % bill_id)
+                    bill.add_action(actor, action, date, type=atype)
 
             try:
                 version_table = page.xpath(
@@ -162,7 +159,13 @@ class FLBillScraper(BillScraper):
                     other_count)
         vote.add_source(url)
 
+        y,n,o = 0,0,0
+        break_outter = False
+
         for line in text.split('\n')[9:]:
+            if break_outter:
+                break
+
             if 'after roll call' in line:
                 break
             if 'Indication of Vote' in line:
@@ -175,8 +178,14 @@ class FLBillScraper(BillScraper):
                 if not col:
                     continue
 
-                match = re.match(r'(Y|N|EX)\s+(.+)$', col)
+                match = re.match(r'(Y|N|EX|\*)\s+(.+)$', col)
+
                 if match:
+                    print match.group(2), match.group(1)
+
+                    if match.group(2) == "PAIR":
+                        break_outter = True
+                        break
                     if match.group(1) == 'Y':
                         vote.yes(match.group(2))
                     elif match.group(1) == 'N':
@@ -184,7 +193,9 @@ class FLBillScraper(BillScraper):
                     else:
                         vote.other(match.group(2))
                 else:
+                    print "OTHER"
                     vote.other(col.strip())
+        print vote
 
         vote.validate()
         bill.add_vote(vote)

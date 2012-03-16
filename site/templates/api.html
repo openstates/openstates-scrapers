@@ -24,8 +24,8 @@ All changes to the API will be announced on the `Open State Project Google Group
 Client Libraries
 ================
 
-    * We make an official `python-openstates <http://github.com/sunlightlabs/python-openstates>`_ library available.
-    * The team working on `OpenGovernment.org <http://opengovernment.org>`_ has put together the `govkit ruby gem <https://github.com/opengovernment/govkit>`_ that interfaces with the Open States API as well as many others.
+    * We make an official `python-sunlight <http://python-sunlight.readthedocs.org>`_ library available that supports our API.
+    * There's also a `govkit ruby gem <https://github.com/opengovernment/govkit>`_ that interfaces with the Open States API as well as many others.
 
 Methods
 =======
@@ -56,16 +56,6 @@ With the exception of metadata, all have a generic search method and a direct lo
 
     * `District Search </api/districts/#district-search>`_
     * `District Boundary Lookup </api/districts/#district-boundary-lookup>`_
-
-
-Experimental XML Output
-=======================
-
-In addition to the default JSON, experimental XML support exists as well, append ``&format=xml`` to any request to get XML output.
-
-When using XML, field names are the same as those found in the documentation.  For specifics on how JSON-specific constructs like lists translate look at the XML examples.
-
-Several features (notably extra fields and the custom fieldset behavior documented below) are not compatible with the XML output option.
 
 
 Requesting A Custom Fieldset

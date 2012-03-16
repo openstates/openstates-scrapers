@@ -1,17 +1,15 @@
-{% load media %}
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>{% block title %}Open State Project: freeing state legislative information {% endblock %}</title>
     <meta name="keywords" content="Sunlight, Sunlight Foundation, Government Transparency, Bills, Legislators, Committees, Votes, Schedules, Developers, State, Open States" /> 
     <meta name="description" content="The Open State Project gathers legislative data directly from the states and makes it available in a common format for interested developers." />
-    <link rel="stylesheet" href="{% media_url %}/css/main.css" media="screen" title="no title" charset="utf-8"/>
-    <!--[if IE 7]>{% css "css/buggy_7.css" %}<![endif]-->
-    <!--[if IE 7]><script src="{% media_url %}/js/html5.js"></script><![endif]-->
+    <link rel="stylesheet" href="{{STATIC_URL}}css/main.css" media="screen" title="no title" charset="utf-8"/>
+    <!--[if IE 7]><link rel="stylesheet" href="{{STATIC_URL}}css/buggy_7.css" %}" media="screen" /><![endif]-->
+    <!--[if IE 7]><script src="{{STATIC_URL}}js/html5.js"></script><![endif]-->
     <script src="http://use.typekit.com/xau7dem.js"></script>
-    <script src="{% media_url %}/js/jquery-1.5.min.js"></script>
-    <script src="{% media_url %}/js/jquery.placeholder.js"></script>
+    <script src="{{STATIC_URL}}js/jquery-1.5.min.js"></script>
+    <script src="{{STATIC_URL}}js/jquery.placeholder.js"></script>
     <script>try{Typekit.load();}catch(e){}</script>
     <script type="text/javascript">
         $(function() {

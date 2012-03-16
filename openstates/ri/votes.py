@@ -103,7 +103,7 @@ class RIVoteScraper(VoteScraper):
                 nodes = t.xpath("./*")
                 for node in nodes:
                     if node.tag == "span":
-                        vote = node.text.strip()
+                        vote = node.text.strip().upper()
                         name = node.tail.strip()
                         votes.append({
                             "name" : name,

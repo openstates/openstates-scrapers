@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load media %}
 {% block body %}
     <div class="wrapper">
         <div class="header-shadow"></div>
@@ -9,7 +8,7 @@
                 <h1 id="logo">
                     <a href="/">OpenStates</a>
                 </h1>
-                <img class="arrow" src="{% media_url %}/images/header_arrow.png" alt="Header Arrow" />
+                <img class="arrow" src="{{STATIC_URL}}images/header_arrow.png" alt="Header Arrow" />
                 <p class="intro">
                     We're gathering legislative data directly from the states and making it available in a common format through a <a href="/api/">RESTful API</a> and <a href="/downloads/">regular bulk downloads.</a>  Join our <a href="http://groups.google.com/group/fifty-state-project">Google Group</a> to get involved.
                 </p>
@@ -26,7 +25,7 @@
                     <li><span class="orange">&#42;</span> Schedules <span class="orange">&#42;</span></li>
                 </ul>
             </div>
-            
+
             <div class="clear">
             </div>
         </header>
@@ -37,7 +36,7 @@
                         Open States Project Status
                     </h3>
                     <p>
-                        We currently have data available for 46 states, Washington DC, and Puerto Rico.  If your state isn't available yet learn how to <a href="/contributing/">contribute.</a>
+                    We currently have data available for all 50 states, Washington DC, and Puerto Rico. <br /> <a href="/api/">Use our Data</a> or <a href="/contributing/">Help Us Improve It</a>!
                     </p>
                 </div>
                 <div class="map-key">
@@ -52,28 +51,9 @@
                 </div>
                 <div class="clear">
                 </div>
-                <img src="{% media_url %}/images/openstatesmap.png?jan12" id="map" alt="Open States Map" />
+                <img src="{{STATIC_URL}}images/openstatesmap.png?50" id="map" alt="Open States Map" />
             </div>
             <div class="main-right">
-                <div class="contribute">
-                        <h3>
-                        Contribute
-                        </h3>
-                    <p>
-                        This goal is bigger than any our community has tackled before and can only be a success with the sustained effort of many volunteer developers.
-                    </p>
-                        <ul>
-                            <li>
-                                <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="/contributing/">Contributor's Guide</a>
-                            </li>
-                            <li>
-                                <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="http://github.com/sunlightlabs/openstates/">Code on GitHub</a>
-                            </li>
-                            <li>
-                                <img src="{% media_url %}/images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="http://readthedocs.org/docs/billy/en/latest/scrapers.html">Writing Scrapers</a>
-                            </li>
-                        </ul>
-                </div>
                 <div class="use">
                         <h3>
                             Use Our Data
@@ -83,16 +63,35 @@
                     </p>
                         <ul>
                             <li>
-                                <img src="{% media_url %}/images/use_bullet.png" alt="Use Bullet" /> <a href="/api/">Open States API</a>
+                                <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /> <a href="/api/">Open States API</a>
                             </li>
                             <li>
-                                <img src="{% media_url %}/images/use_bullet.png" alt="Use Bullet" /> <a href="/downloads/">Bulk Downloads</a>
+                                <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /> <a href="/downloads/">Bulk Downloads</a>
                             </li>
                             <li>
-                                <img src="{% media_url %}/images/use_bullet.png" alt="Use Bullet" /> <a href="http://github.com/sunlightlabs/python-openstates">Python Client Library</a>
+                                    <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /> <a href="http://python-sunlight.readthedocs.org/">Python Client Library</a>
                             </li>
                             <li>
-                                <img src="{% media_url %}/images/use_bullet.png" alt="Use Bullet" /> <a href="https://github.com/sunlightlabs/openstates/issues">Issue Tracker</a>
+                                <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /> <a href="https://github.com/sunlightlabs/openstates/issues">Issue Tracker</a>
+                            </li>
+                        </ul>
+                </div>
+                <div class="contribute">
+                        <h3>
+                        Contribute
+                        </h3>
+                    <p>
+                        This goal is bigger than any our community has tackled before and can only be a success with the sustained effort of many volunteer developers.
+                    </p>
+                        <ul>
+                            <li>
+                                <img src="{{STATIC_URL}}images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="/contributing/">Contributor's Guide</a>
+                            </li>
+                            <li>
+                                <img src="{{STATIC_URL}}images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="http://github.com/sunlightlabs/openstates/">Code on GitHub</a>
+                            </li>
+                            <li>
+                                <img src="{{STATIC_URL}}images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="http://readthedocs.org/docs/billy/en/latest/scrapers.html">Writing Scrapers</a>
                             </li>
                         </ul>
                 </div>
@@ -102,7 +101,7 @@
         </div>
         <div id="join">
             <div id="join-borders">
-                <img id="sf-product" src="{% media_url %}/images/sf_product_badge.png" alt="Sf Product Badge" />
+                <img id="sf-product" src="{{STATIC_URL}}images/sf_product_badge.png" alt="Sf Product Badge" />
                 <div class="join-left">
                         <h3>
                             Like this Project and Want to Discover Others Like It?

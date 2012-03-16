@@ -1,3 +1,6 @@
+# Copyright 2012 Google, Inc. All rights reserved.
+# Copyright 2012 Sunlight Foundation. All rights reserved.
+
 import re
 import urllib
 import datetime
@@ -9,7 +12,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
 import lxml.html
-
+import scrapelib
 
 def action_type(action):
     atype = []
@@ -45,7 +48,7 @@ class OKBillScraper(BillScraper):
     subject_map = collections.defaultdict(list)
 
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber, session, only_bills=None):
         # start by building subject map
         self.scrape_subjects(chamber, session)
 
@@ -74,16 +77,26 @@ class OKBillScraper(BillScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
+        bill_nums = []
         for link in page.xpath("//a[contains(@href, 'BillInfo')]"):
             bill_id = link.text.strip()
             bill_num = int(re.findall('\d+', bill_id)[0])
             if bill_num >= 9900:
                 self.log('skipping likely bad bill %s' % bill_id)
                 continue
+            if only_bills is not None and bill_id not in only_bills:
+                self.log('skipping bill we are not interested in %s' % bill_id)
+                continue
+            bill_nums.append(bill_num)
             self.scrape_bill(chamber, session, bill_id, link.attrib['href'])
+        return bill_nums
 
     def scrape_bill(self, chamber, session, bill_id, url):
-        page = lxml.html.fromstring(self.urlopen(url))
+        try:
+            page = lxml.html.fromstring(self.urlopen(url))
+        except scrapelib.HTTPError as e:
+            self.warning('error (%s) fetching %s, skipping' % (e, url))
+            return
 
         title = page.xpath(
             "string(//span[contains(@id, 'PlaceHolder1_txtST')])").strip()
@@ -183,13 +196,15 @@ class OKBillScraper(BillScraper):
                     break
 
                 match = re.match(
-                    r'(YEAS|NAYS|EXCUSED|CONSTITUTIONAL PRIVILEGE|NOT VOTING)\s*:\s*(\d+)',
+                    r'(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL PRIVILEGE|NOT VOTING)\s*:\s*(\d+)',
                     line)
                 if match:
                     if match.group(1) == 'YEAS':
                         vtype = 'yes'
                     elif match.group(1) == 'NAYS':
                         vtype = 'no'
+                    elif match.group(1) == 'VACANT':
+                        continue  # skip these
                     else:
                         vtype = 'other'
                     counts[vtype] += int(match.group(2))

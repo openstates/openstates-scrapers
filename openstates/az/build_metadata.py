@@ -37,7 +37,7 @@ def ordinal(value):
     if value % 100 in (11, 12, 13): # special case
         return u"%d%s" % (value, t[0])
     return u'%d%s' % (value, t[value % 10])
-    
+
 def get_session_name(leg):
     l = leg.lower().replace('-', ' ').split()
     session = [x[1] for y in l for x in word_key if x[0] == y]
@@ -62,7 +62,7 @@ def get_date(d):
 
 class AZTermScraper(Scraper):
     state = 'az'
-        
+
     def scrape_session_details(self):
         """
         writes the terms and session details to session_detail.py
@@ -119,7 +119,7 @@ class AZTermScraper(Scraper):
                     term_list[s_name]['sessions'] = "'%s',\n" % session_name
                     term_list[s_name]['end_date'] = end_date[0:4]
                     term_list[s_name]['start_date'] = start_date[0:4]
-            
+
             for key in sorted(term_list.keys()):
                 session_file.write(terms % (
                         key, term_list[key]['sessions'],
@@ -128,7 +128,7 @@ class AZTermScraper(Scraper):
                     ))
             session_file.write(details_text)
             session_file.close()
-        
+
 if __name__ == '__main__':
     from . import metadata
     scraper = AZTermScraper(metadata)

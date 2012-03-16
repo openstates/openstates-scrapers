@@ -7,6 +7,7 @@ from .utils import (bill_abbr, parse_action_date, bill_list_url, history_url,
                     info_url, vote_url)
 
 import lxml.html
+import urlparse
 
 
 class PABillScraper(BillScraper):
@@ -69,10 +70,21 @@ class PABillScraper(BillScraper):
 
     def parse_bill_versions(self, bill, page):
         for link in page.xpath(
-            '//div[@class="pn_table"]/descendant::a[@class="link2"]'):
+                '//div[@class="pn_table"]/descendant::tr/td[2]/a[@class="imgDim"]'):
+            href = link.attrib['href']
+            params = urlparse.parse_qs(href[href.find("?")+1:])
+            printers_number = params['pn'][0]
+            version_type = params['txtType'][0]
+            mime_type = 'text/html'
+            if version_type == 'PDF':
+                mime_type = 'application/pdf'
+            elif version_type == 'DOC':
+                mime_type = 'application/msword'
+            elif 'HTML':
+                mime_type = 'text/html'
 
-            bill.add_version("Printer's No. %s" % link.text.strip(),
-                             link.attrib['href'])
+            bill.add_version("Printer's No. %s" % printers_number,
+                             href, mime_type)
 
     def parse_history(self, bill, url):
         bill.add_source(url)
@@ -86,18 +98,21 @@ class PABillScraper(BillScraper):
 
     def parse_sponsors(self, bill, page):
         first = True
-        for link in page.xpath(
-            "//td[text() = 'Sponsors:']/../descendant::a"):
-
+        sponsor_list = page.xpath("//td[text() = 'Sponsors:']/../td[2]")[0].text_content().strip()
+        for sponsor in sponsor_list.split(','):
             if first:
                 sponsor_type = 'primary'
                 first = False
             else:
                 sponsor_type = 'cosponsor'
-
-            name = link.text.strip().title()
-
-            bill.add_sponsor(sponsor_type, name)
+            
+            if sponsor.find(' and ') != -1:
+                dual_sponsors = sponsor.split(' and ')
+                bill.add_sponsor(sponsor_type, dual_sponsors[0].strip().title())
+                bill.add_sponsor('cosponsor', dual_sponsors[1].strip().title())
+            else:
+                name = sponsor.strip().title()
+                bill.add_sponsor(sponsor_type, name)
 
     def parse_actions(self, bill, page):
         chamber = bill['chamber']
@@ -168,7 +183,6 @@ class PABillScraper(BillScraper):
             for td in page.xpath("//td[@class = 'vote']"):
                 caption = td.xpath("string(preceding-sibling::td)").strip()
 
-                location = ''
                 if caption == 'Senate':
                     chamber = 'upper'
                 elif caption == 'House':

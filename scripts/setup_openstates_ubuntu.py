@@ -4,15 +4,11 @@ This script sets up a virtualenv with openstates on ubunt.
 usage: python setup_openstates_ubuntu.py myvirtualenv [whenIputmycode]
 
 If you don't specify a second argument, the code goes in the virtualenv.
-
-Todo: add download of mongo.
-Todo: add build of MySQLdb
 '''
-
-import re
+import sys
 import os
 from os import chdir as cd
-from os.path import join, split, abspath
+from os.path import join, abspath
 import subprocess
 import logging
 
@@ -29,7 +25,7 @@ logger.addHandler(ch)
 
 packages = {
 
-    # The packages are required for use of lxml and git. 
+    # The packages are required for use of lxml and git.
     'core': '''
         libxml2-dev
         python-dev
@@ -75,30 +71,22 @@ def package_install(package, update=False):
 
 def package_ensure(package):
     """Tests if the given package is installed, and installes it in
-    case it's not already there."""
-    status = run("dpkg-query -W -f='${Status}' %s ; true" % package, check=True)
+    case it's not already there. Loosely stolen from cuisine."""
+    cmd = "dpkg-query -W -f='${Status}' %s ; true"
+    status = run(cmd % package, check=True)
     if status.find("not-installed") != -1 or status.find("installed") == -1:
         package_install(package)
         return False
     else:
         return True
 
-# ---------------------------------------------------------------------------
-# Installation
-
-def install_packages(component):
-
-    for package in aptitutde_packages[component]:
-        package_ensure(package)
-
 
 def create_virtualenv(ENV):
-    '''
-    Create the virtualenv.
-    '''
+    'Create the virtualenv.'
 
     run_each(
-        'wget -nc http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.7.tar.gz#md5=dcc105e5a3907a9dcaa978f813a4f526',
+        ('wget -nc http://pypi.python.org/packages/source/v/virtualenv'
+         '/virtualenv-1.7.tar.gz#md5=dcc105e5a3907a9dcaa978f813a4f526'),
         'tar -zxvf virtualenv-1.7.tar.gz ',
         'python virtualenv-1.7/virtualenv.py %s' % ENV,
         )
@@ -122,7 +110,6 @@ def gitclone(repo, setup_arg='install'):
         pass
     else:
         run('%s install -r %s' % (pip, requirements))
-        
 
     # Setup.
     cd(folder)
@@ -130,7 +117,6 @@ def gitclone(repo, setup_arg='install'):
 
 
 def setup_openstates():
-
 
     for package in packages['core']:
         package_ensure(package)
@@ -148,8 +134,6 @@ def setup_openstates():
 
 
 if __name__ == "__main__":
-    import pdb, sys
-    
 
     try:
         ENV, CODE = map(abspath, sys.argv[1:3])
@@ -167,5 +151,3 @@ if __name__ == "__main__":
     python = join(ENV, 'bin', 'python')
 
     setup_openstates()
-
-

@@ -19,6 +19,7 @@ import lxml.html
 
 class CTBillScraper(BillScraper):
     state = 'ct'
+    latest_only = True
 
     _committee_names = {}
     _introducers = defaultdict(set)
@@ -83,6 +84,10 @@ class CTBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
             bill.add_source(url)
+
+            if not bill['sponsors']:
+                intro_com = page.xpath('//td[contains(string(), "Introduced by:")]')[1].text_content().replace('Introduced by:', '').strip()
+                bill.add_sponsor('introducer', intro_com)
 
             for link in page.xpath("//a[contains(@href, '/FN/')]"):
                 bill.add_document(link.text.strip(), link.attrib['href'])
@@ -150,7 +155,7 @@ class CTBillScraper(BillScraper):
                     name = row.xpath("string(td[%d])" % (
                         i + name_offset)).strip()
 
-                    if not name:
+                    if not name or name == 'VACANT':
                         continue
 
                     if "Y" in row.xpath("string(td[%d])" %

@@ -36,6 +36,10 @@ class OKLegislatorScraper(LegislatorScraper):
             leg_doc.make_links_absolute(leg_url)
             photo_url = leg_doc.xpath('//a[contains(@href, "HiRes")]/@href')[0]
 
+            if name.startswith('House District'):
+                self.warning("skipping %s %s" % (name, leg_url))
+                continue
+
             leg = Legislator(term, 'lower', district, name, party=party,
                              photo_url=photo_url, url=leg_url)
             leg.add_source(url)

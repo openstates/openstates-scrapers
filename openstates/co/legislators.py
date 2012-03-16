@@ -68,7 +68,8 @@ class COLegislatorScraper(LegislatorScraper):
             ctty_apptmts = page.xpath('//ul/li/b/a')
             for ctty in ctty_apptmts:
                 cttyid = clean_input(ctty.text)
-                if cttyid != None and cttyid not in CTTY_BLACKLIST:
+                if cttyid != None and cttyid.strip() != "" and \
+                  cttyid not in CTTY_BLACKLIST:
                     ret.append(cttyid)
             image = hp_url[:-3] + "jpg"
         return {

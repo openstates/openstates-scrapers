@@ -16,7 +16,7 @@ committee_actions = {
     ("AMEND C&P", "AM C&P ON RECON",
      "AM C&P ON REREF", "PFCA W/FL",
      "PFCA")                         : "committee:passed", # "committee:amended"
-    ("DP", "DP ON RECON", 
+    ("DP", "DP ON RECON",
      "DP ON REREFER", "DP W/MIN RPT",
      "DP/PFC", "DPA/PFC W/FL",
      "DP/PFCA")                      : "committee:passed:favorable",
@@ -41,14 +41,14 @@ generic_actions= {
     ("PASSED",)                     : "bill:passed",
     #there are several different fail motions so if the action contains 'FAILED'
     ("FAILED",)                     : "bill:failed",
-    
+
     ("VETO OVERRIDE: PASSED",)      : "bill_veto_override:passed",
     ("VETO OVERRIDE: FAILED",)      : "bill_veto_override:failed",
-    
+
     ("TRANSMITTED TO: GOVERNOR")    : "governor:recieved",
     ("SIGNED",)                     : "governor:signed",
     ("VETOED",)                     : "governor:vetoed",
-    
+
     ("AMENDMENT: INTRODUCED",)      : "amendment:introduced",
     ("AMENDMENT: PASSED",)          : "amendment:passed",
     ("AMENDMENT", "FAILED")         : "amendment:failed",
@@ -56,7 +56,7 @@ generic_actions= {
 #    ("AMENDMENT", "WITHDRAWN")       : "amendement:withdrawn",
     ("REREF GOVOP", "REREF JUD",
      "REREF WM", "DISC/S/C",
-     "REC REREF TO COM", 
+     "REC REREF TO COM",
      "RECOMMIT TO COM")             : "committee:referred",
     # THIRD READ AND FINAL READ
     ("THIRD READ:",)                : "bill:reading:3",
@@ -77,25 +77,25 @@ def get_action_type(abbrv, group=None):
         actions = committee_actions
     else:
         actions = generic_actions
-        
+
     for key in actions:
         if abbrv in key:
             return actions[key]
     return 'other'
-    
+
 ###########################################################
 # get_action
 ###########################################################
 def get_verbose_action(abbr):
     """
-    get_action('PFCA W/FL') --> 
+    get_action('PFCA W/FL') -->
     'proper for consideration amended with recommendation for a floor amendment'
     """
     try:
         return common_abbrv[abbr]
     except KeyError:
         return abbr
-        
+
 ###########################################################
 # annottated abbreviations
 ###########################################################
@@ -105,7 +105,7 @@ common_abbrv = {
     'AM C&P ON RECON': 'amended constitutional and in proper form on reconsideration',
     'AM C&P ON REREF': 'amended constitutional and in proper form on rereferral',
     'AMEND C&P': 'amended constitutional and in proper form',
-    
+
     'C&P': 'constitutional and in proper form',
     # amended
     'C&P AS AM BY AP': 'constitutional and in proper form as amended by the committee on App',
@@ -153,7 +153,7 @@ common_abbrv = {
     'DPA/PFCA': 'do pass amended and proper for consideration amended',
     'DPA/PFCA W/FL': 'do pass amended and proper for consideration with recommendation for a floor amendment',
     # strike everything is like amended in the nature of a substitue
-    'DPA/SE': 'do pass amended/strike-everything', 
+    'DPA/SE': 'do pass amended/strike-everything',
     'DPA/SE CORRECTED': 'do pass amended/strike everything corrected',
     'DPA/SE ON RECON': 'do pass amended/strike everything on reconsideration',
     'DPA/SE ON REREF': 'do pass amended/strike everything on rereferral',
@@ -165,30 +165,30 @@ common_abbrv = {
     'FIRST': 'First Reading',
     # amendment amended??? or just another amendment? #
     'FURTHER AMENDED': 'further amended',
-    
+
     'HELD': 'held',
     'HELD 1 WK': 'held one week',
     'HELD INDEF': 'held indefinitely',
     'HELD ON RECON': 'held on reconsideration',
-    
+
     'None': 'No Action',
-    
+
     'NOT CONCUR': 'rec not concur',
-    # not read? 
+    # not read?
     'NOT HEARD': 'not heard',
-    
+
     'NOT IN ORDER': 'not in order',
-    
+
     'PASSED': 'Passed',
     # rules committee action #
     'PFC': 'proper for consideration',
-    
+
     'PFC W/FL': 'proper for consideration with recommendation for a floor amendment',
     'PFCA': 'proper for consideration amended',
     'PFCA W/FL': 'proper for consideration amended with recommendation for a floor amendment',
-    
+
     'POSTPONE INDEFI': 'postponed indefinitely',
-    # vote actions 
+    # vote actions
     'REC REREF TO COM': 'recommend rereferral to committee',
     'RECOMMIT TO COM': 'recommit to committee',
     # not sure when this would take place? I would like to see it in action
@@ -197,16 +197,16 @@ common_abbrv = {
     'REREF GOVOP': 'rereferred to GovOp',
     'REREF JUD': 'rereferred to Judiciary',
     'REREF WM': 'rereferred to Ways & Means',
-    
+
     'RET FOR CON': 'returned for consideration',
-    
+
     'RET ON CAL': 'retained on the Calendar',
     'RETAINED': 'retained',
-    
+
     'RULE 8J PROPER': 'proper legislation and deemed not derogatory or insulting',
-    
+
     'S/C': 'subcommittee',
     'S/C REPORTED': 'subcommittee reported',
-    
+
     'W/D': 'withdrawn',
 }

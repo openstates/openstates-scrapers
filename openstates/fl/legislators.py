@@ -29,7 +29,7 @@ class FLLegislatorScraper(LegislatorScraper):
                 name = re.sub(r'\s+', ' ', name)
                 leg_url = link.get('href')
 
-                if name == 'Vacant':
+                if 'Vacant' in name:
                     continue
 
                 # Special case - name_tools gets confused
@@ -67,6 +67,9 @@ class FLLegislatorScraper(LegislatorScraper):
             for div in page.xpath('//div[@id="rep_icondocks2"]'):
                 link = div.xpath('.//div[@class="membername"]/a')[0]
                 name = link.text_content().strip()
+
+                if 'Vacant' in name:
+                    continue
 
                 party = div.xpath('.//div[@class="partyname"]/text()')[0].strip()
                 if party == 'Democrat':

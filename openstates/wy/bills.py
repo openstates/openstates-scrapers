@@ -65,6 +65,9 @@ class WYBillScraper(BillScraper):
             # versions
             for a in (tr.xpath('td[6]//a') + tr.xpath('td[9]//a') +
                       tr.xpath('td[10]//a')):
+                # skip references to other bills
+                if a.text.startswith('See'):
+                    continue
                 bill.add_version(a.text, a.get('href'))
 
             # documents

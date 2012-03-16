@@ -110,6 +110,7 @@ class RIBillScraper(BillScraper):
         ret = {}
         subjects = get_postable_subjects()
         for subject in subjects:
+
             default_headers = get_default_headers( SEARCH_URL )
 
             default_headers['ctl00$rilinContent$cbCategory'] = \
@@ -132,7 +133,6 @@ class RIBillScraper(BillScraper):
         return bill_subjects
 
     def process_actions( self, actions, bill ):
-        print actions
         for action in actions:
             actor = "joint"
 
@@ -221,12 +221,19 @@ class RIBillScraper(BillScraper):
 
                 title = bill['title'][len("ENTITLED, "):]
                 billid = bill['bill_id']
+                try:
+                    subs   = subjects[bill['bill_id']]
+                except KeyError:
+                    subs   = []
+
                 for b in BILL_NAME_TRANSLATIONS:
                     if billid[:len(b)] == b:
                         billid = BILL_NAME_TRANSLATIONS[b] + \
-                            billid[len(b)+1:]
+                            billid[len(b)+1:].split()[0]
                 b = Bill(session, chamber, billid, title,
-                    type=self.get_type_by_name(bill['bill_id']))
+                    type=self.get_type_by_name(bill['bill_id']),
+                    subjects=subs
+                )
 
                 self.process_actions( bill['actions'], b )
                 sponsors = bill['sponsors'][len("BY"):].strip()

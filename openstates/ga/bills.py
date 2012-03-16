@@ -37,6 +37,7 @@ class GABillScraper(BillScraper):
         'HRAR': 'committee:referred',
         'HRECL': 'bill:failed',
         'HRECM': 'bill:withdrawn',
+        'HRECP': 'bill:passed', # passed a reconsidered bill
         'HRECO': 'other',
         'HSG': 'governor:received',
         'HSR': 'bill:reading:2',
@@ -148,7 +149,11 @@ class GABillScraper(BillScraper):
                 elif code[0] == 'H':
                     actor = 'lower'
 
-                atype = self._action_codes[code]
+                try:
+                    atype = self._action_codes[code]
+                except KeyError:
+                    self.warning("unknown action code %s on %s" % (code,
+                                 action.text))
 
                 bill.add_action(actor, action.text, date, atype)
 
