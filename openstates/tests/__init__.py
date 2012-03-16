@@ -2,12 +2,11 @@
 
 """Provides some helper methods for running tests on scrapers."""
 
-
-import pickle
 import os.path
+import pickle
 
 import scrapelib
-from billy.scrape.bills import BillScraper
+from billy.scrape import Scraper
 
 
 # Public methods and data.
@@ -29,20 +28,20 @@ def set_testdata_dir(testdata_dir):
 		_testdata = {}
 
 def setup():
-	global _old_bill_scraper_url_open
-	global _old_bill_scraper_save_object
+	global _old_scraper_url_open
+	global _old_scraper_save_object
 	# Intercept HTTP traffic and serve from cache, or create cache based on fetched results.
-	_old_bill_scraper_url_open = BillScraper.urlopen
-	BillScraper.urlopen = _fake_url_open
+	_old_scraper_url_open = Scraper.urlopen
+	Scraper.urlopen = _fake_url_open
 	# Intercept requests to save objects to disk, so that we can inspect them.
-	_old_bill_scraper_save_object = BillScraper.save_object
-	BillScraper.save_object = _fake_save_object
+	_old_scraper_save_object = Scraper.save_object
+	Scraper.save_object = _fake_save_object
 
 def teardown():
 	if _update_testdata:
 	  _write_testdata()
-	BillScraper.urlopen = _old_bill_scraper_url_open
-	BillScraper.save_object = _old_bill_scraper_save_object
+	Scraper.urlopen = _old_scraper_url_open
+	Scraper.save_object = _old_scraper_save_object
 
 # Internal stuff.
 
@@ -72,4 +71,7 @@ def _fake_url_open(self, url, method='GET', params=""):
 
 
 def _fake_save_object(self, obj):
-	saved_data[obj['bill_id']] = obj
+	if 'bill_id' in obj:
+		saved_data[obj['bill_id']] = obj
+	else:
+		print "Trying to save unknown data: %s" % obj
