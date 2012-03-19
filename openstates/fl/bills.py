@@ -52,8 +52,19 @@ class FLBillScraper(BillScraper):
 
             bill.add_sponsor('introducer', sponsor)
 
-            hist_table = page.xpath(
-                "//div[@id = 'tabBodyBillHistory']/table")[0]
+            try:
+                hist_table = page.xpath(
+                    "//div[@id = 'tabBodyBillHistory']/table")[0]
+            except IndexError:
+                self.warning('no tabBodyBillHistory in %s, attempting to '
+                             'refetch once' % url)
+                html = self.urlopen(url)
+                page = lxml.html.fromstring(html)
+                page.make_links_absolute(url)
+
+                hist_table = page.xpath(
+                    "//div[@id = 'tabBodyBillHistory']/table")[0]
+
             for tr in hist_table.xpath("tbody/tr"):
                 date = tr.xpath("string(td[1])")
                 date = datetime.datetime.strptime(
