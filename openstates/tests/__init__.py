@@ -2,12 +2,20 @@
 
 """Provides some helper methods for running tests on scrapers."""
 
+import logging
 import os.path
 import pickle
 
 import scrapelib
 from billy.scrape import Scraper
 
+# Set up the billy logger.
+logger = logging.getLogger('billy')
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 # Public methods and data.
 saved_data = {}
@@ -57,13 +65,16 @@ def _write_testdata():
 	with open(_testdatafile, 'w') as outf:
 		pickle.dump(_testdata, outf)
 
-def _fake_url_open(self, url, method='GET', params=""):
+def _fake_url_open(self, url, method='GET', params="", retry_on_404=False):
+	url = str(url)
+	method = str(method)
+	params = str(params)
 	global _update_testdata
 	# If we have no test data, we just return an empty string.
 	if _testdata is None:
 		return ""
 	if (url, method, params) not in _testdata:
-		txt = _scraper.urlopen(url, method, params)
+		txt = _scraper.urlopen(url, method, params, retry_on_404=retry_on_404)
 		print "\nFetching", url, params
 		_testdata[(url, method, params)] = str(txt)
 		_update_testdata = True
