@@ -1,5 +1,3 @@
-# Copyright (c) 2012 Google, Inc. All rights reserved.
-
 # Run all the tests with the data in the testdata directory.
 
 import os

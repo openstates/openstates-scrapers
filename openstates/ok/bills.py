@@ -1,6 +1,3 @@
-# Copyright 2012 Google, Inc. All rights reserved.
-# Copyright 2012 Sunlight Foundation. All rights reserved.
-
 import re
 import urllib
 import datetime

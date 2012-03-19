@@ -1,5 +1,3 @@
-# Copyright (c) 2012 Google, Inc. All rights reserved.
-
 """Provides some helper methods for running tests on scrapers."""
 
 import os.path

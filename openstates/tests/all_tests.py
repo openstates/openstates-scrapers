@@ -1,5 +1,3 @@
-# Copyright (c) 2012 Google, Inc. All rights reserved.
-
 """Run all of the tests in the files in this directory.
 
 Be sure to update this file as more test files are added."""

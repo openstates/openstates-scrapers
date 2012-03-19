@@ -1,6 +1,3 @@
-# Copyright 2012 Sunlight Foundation.  All Rights Reserved.
-# Copyright 2012 Google, Inc.  All Rights Reserved.
-
 import os
 import re
 import urllib2
