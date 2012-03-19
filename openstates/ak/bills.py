@@ -97,7 +97,8 @@ class AKBillScraper(BillScraper):
         if title:
             title = title[0].tail.strip()
         else:
-            title = 'Not Available'
+            self.warning("skipping bill %s, no information" % url)
+            return
 
         bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(url)
