@@ -179,7 +179,7 @@ class IDBillScraper(BillScraper):
             html = lxml.html.fromstring(bill_page)
             html.make_links_absolute('http://legislature.idaho.gov/legislation/%s/' % session)
             bill_tables = html.xpath('./body/table/tr/td[2]')[0].xpath('.//table')
-            title = " - ".join([ x.strip() for x in bill_tables[1].text_content().split('-') if x.isupper() ])
+            title = bill_tables[1].text_content().strip()
             bill_type = get_bill_type(bill_id)
             bill = Bill(session, chamber, bill_id, title, type=bill_type)
             bill.add_source(url)
