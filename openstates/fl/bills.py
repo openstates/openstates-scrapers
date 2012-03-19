@@ -192,8 +192,6 @@ class FLBillScraper(BillScraper):
                 match = re.match(r'(Y|N|EX|\*)\s+(.+)$', col)
 
                 if match:
-                    print match.group(2), match.group(1)
-
                     if match.group(2) == "PAIR":
                         break_outter = True
                         break
@@ -204,9 +202,7 @@ class FLBillScraper(BillScraper):
                     else:
                         vote.other(match.group(2))
                 else:
-                    print "OTHER"
                     vote.other(col.strip())
-        print vote
 
         vote.validate()
         bill.add_vote(vote)
