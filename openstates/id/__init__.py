@@ -62,7 +62,7 @@ metadata = dict(
         #},
         {'name': '2011-2012',
             'sessions': [
-                '2011',
+                '2011', '2012',
             ],
             'start_year': 2011, 'end_year': 2012
         },
@@ -149,6 +149,10 @@ metadata = dict(
             'start_date': datetime.date(2011, 1, 10),
             'end_date': datetime.date(2011, 4, 7),
             '_scraped_name': '2011 Session Information',
+            },
+        '2012':
+            {'type': 'primary',
+            'display_name': '61st Legislature, 2nd Regular Session',
             },
     },
     feature_flags=[],

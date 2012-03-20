@@ -22,18 +22,14 @@ class NYBillScraper(BillScraper):
         index = 0
 
         while errors < 10:
-
             index += 1
 
-            try:                
-
+            try:
                 url = ("http://open.nysenate.gov/legislation/search/"
                        "?search=otype:bill&searchType=&format=xml"
                        "&pageIdx=%d" % index)
-
                 with self.urlopen(url) as page:
                     page = lxml.etree.fromstring(page)
-                    
                     if not page.getchildren():
                         # If the result response is empty, we've hit the end of
                         # the data. Quit.
@@ -167,7 +163,9 @@ class NYBillScraper(BillScraper):
                         no_count = int(re.search(
                             r'\((\d+)\):', text).group(1))
                     elif (text.startswith('Excused') or
-                          text.startswith('Abstains')):
+                          text.startswith('Abstains') or
+                          text.startswith('Absent')
+                         ):
                         vtype = 'other'
                         other_count += int(re.search(
                             r'\((\d+)\):', text).group(1))

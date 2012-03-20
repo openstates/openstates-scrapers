@@ -1,6 +1,3 @@
-# Copyright 2012 Sunlight Foundation.  All Rights Reserved.
-# Copyright 2012 Google, Inc.  All Rights Reserved.
-
 import os
 import re
 import urllib2
@@ -48,34 +45,21 @@ class TXBillScraper(BillScraper):
         # Under billhistory, each group dir has a name like HBnnnnn_HBnnnnn,
         # HCRnnnnn_HCRnnnnn, HJRnnnnn_HJRnnnnn, HRnnnnn_HRnnnnn.
         history_group_url = urljoin(history_dir_url, group_dir) + '/'
-
         # For each group_dir under billhistory, there is a corresponding dir in
         # billtext/html containing the bill versions (texts).  These dirs have
         # similar names, except the prefix is "HC", "HJ", "SC", "SJ" for
         # concurrent/joint resolutions instead of "HCR", "HJR", "SCR", "SJR".
-        text_group_url = history_group_url.replace(
-            '/billhistory/', '/billtext/html/')
-        text_group_url = re.sub('([HS][CJ])R', '\\1', text_group_url)
-
-        # {bill_num: [bill_version_url, bill_version_url, ...]}
-        version_urls = {}
-
-        # Get the list of all the bill versions in this group, and collect
-        # the filenames together by bill number.
-        with self.urlopen(text_group_url) as versions_list:
-            for version_file in parse_ftp_listing(versions_list):
-                url = urljoin(text_group_url, version_file)
-                bill_num = int(re.search(r'\d+', version_file).group(0))
-                version_urls.setdefault(bill_num, []).append(url)
 
         # Now get the history and version data for each bill.
         with self.urlopen(history_group_url) as histories_list:
             for history_file in parse_ftp_listing(histories_list):
                 url = urljoin(history_group_url, history_file)
                 bill_num = int(re.search(r'\d+', history_file).group(0))
-                self.scrape_bill(chamber, session, url, version_urls[bill_num])
+                self.scrape_bill(chamber, session, url, history_group_url,
+                                 bill_num)
 
-    def scrape_bill(self, chamber, session, history_url, version_urls):
+    def scrape_bill(self, chamber, session, history_url, history_group_url,
+                   billno):
         """Scrapes the information for a single bill."""
         with self.urlopen(history_url) as history_xml:
             if "Bill does not exist." in history_xml:
@@ -83,6 +67,25 @@ class TXBillScraper(BillScraper):
 
             bill = self.parse_bill_xml(chamber, session, history_xml)
             bill.add_source(history_url)
+
+            text_group_url = history_group_url.replace(
+                '/billhistory/', '/billtext/html/')
+            text_group_url = re.sub('([HS][CJ])R', '\\1', text_group_url)
+            version_urls = {}
+            # Get the list of all the bill versions in this group, and collect
+            # the filenames together by bill number.
+            with self.urlopen(text_group_url) as versions_list:
+                for version_file in parse_ftp_listing(versions_list):
+                    url = urljoin(text_group_url, version_file)
+                    bill_num = int(re.search(r'\d+', version_file).group(0))
+                    version_urls.setdefault(bill_num, []).append(url)
+            version_urls = version_urls[billno] #  Sorry :(
+            # We need to get the versions from inside here because some bills
+            # have XML saying just "no such bill", so we hit an ftp error
+            # because there are no bill versions where we expect them.
+            #
+            # It's a good idea to somehow cache this list, but we need to make
+            # sure it exists first. FIXME(nice-to-have)
 
             for version_url in version_urls:
                 bill.add_source(version_url)

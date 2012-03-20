@@ -1,14 +1,13 @@
 Core Developers: James Turk, Michael Stephens, Dan Schneiderman, Paul Tagliamonte, Thom Neale
 
-Additional Utilities Improvements: Mark Olson, Ian Bicking, Jeremy Dunck
+Additional Utilities Improvements: Mark Olson, Ian Bicking, Jeremy Dunck, Christopher Swenson
 
 Additional Contributions:
     AK: Mark Olson
     AL: Mark Olson, Soeren Roerden, Brian Browning
     AR: Ian Whalen
     AZ: Brandon Lewis, Dan Hixon, Marc Chung
-    CO: Gabriel J. Pérez
-    CS: Christopher Swenson
+    CO: Gabriel J. Pérez, Christopher Swenson
     CT: Rebecca Shapiro
     GA: Brantley Harris, Doug Morgan
     HI: Gabriel J. Pérez, Richard House
@@ -25,6 +24,7 @@ Additional Contributions:
     MO: Matt Brennan, Craig Dennis, Dane Summers, Benjamin Hitov, Shauna Gordon-McKeon
     MS: Justin Palmer
     MT: James Falcon, Tim Freund, Brian Browning
+    NC: Brian Dailey
     ND: Christopher Groskopf
     NH: Rebecca Shapiro
     NJ: Greg Osuri
@@ -36,9 +36,11 @@ Additional Contributions:
     PR: Gabriel J. Pérez, Anner J. Bonilla
     SC: Carson McDonald, Daniel Schep, Tami Crawford
     TN: Matt Grayson, Lucas Taylor, Robert Diamond
-    TX: Brian Browning, Ka-Ping Yee
+    TX: Brian Browning, Ka-Ping Yee, Christopher Swenson
     VA: Mark Olson
     WA: Gabriel J. Pérez
     WI: Mark Olson
     WV: Ben Wolfson
     WY: Matt Grayson
+
+Code contributed by Christopher Swenson and Ka-Ping Yee is also Copyright (c) 2012 Google, Inc. All rights reserved.

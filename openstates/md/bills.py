@@ -231,15 +231,20 @@ class MDBillScraper(BillScraper):
             chamber = 'lower'
 
         # date in the following format: Mar 23, 2009
-        date = doc.xpath('//td[@class="csF2A77DD1"]/text()')[2]
+        date = doc.xpath('//td[starts-with(text(), "Legislative")]')[0].text
         date = date.replace(u'\xa0', ' ')
         date = datetime.datetime.strptime(date[18:], '%b %d, %Y')
 
         # motion
-        motion = doc.xpath('//td[@class="cs54BDD041"]/text()')[-1]
+        motion = ''.join(x.text_content() for x in \
+                         doc.xpath('//td[@colspan="23"]'))
+        if motion == '':
+            motion = "No motion given"  # XXX: Double check this. See SJ 3.
+        motion = motion.replace(u'\xa0', ' ')
 
         # totals
-        totals = doc.xpath('//td[@class="cs7A884F1E"]/text()')[1:]
+        tot_class = doc.xpath('//td[contains(text(), "Yeas")]')[0].get('class')
+        totals = doc.xpath('//td[@class="%s"]/text()' % tot_class)[1:]
         yes_count = int(totals[0].split()[-1])
         no_count = int(totals[1].split()[-1])
         other_count = int(totals[2].split()[-1])

@@ -13,7 +13,7 @@ metadata = {
     'terms': [
         {'name': '2009-2011', 'sessions': ['2010', '2011', '2011specialI'],
          'start_year': 2010, 'end_year': 2011},
-        {'name': '2012-2013', 'sessions': ['2012'],
+        {'name': '2012-2013', 'sessions': ['2012', '2012specialI'],
          'start_year': 2012, 'end_year': 2013},
     ],
     'session_details': {
@@ -30,6 +30,9 @@ metadata = {
         '2012': {'start_date': datetime.date(2012, 1, 11), 'site_id': '121',
                  '_scraped_name': '2012 Session',
                 },
+        '2012specialI': {'start_date': datetime.date(2012, 3, 11),
+                         'site_id': '122',
+                         '_scraped_name': '2012 Special Session I', },
     },
     'feature_flags': ['subjects'],
     '_ignored_scraped_sessions': ['2009 Session',
