@@ -282,7 +282,14 @@ class WVBillScraper(BillScraper):
 
             for fn in filenames:
                 fn, ext = splitext(fn)
-                bill_id, _ = fn.split(' ', 1)
+                if ' ' in fn:
+                    bill_id, _ = fn.split(' ', 1)
+                else:
+                    # One bill during 2011 had no spaces
+                    # in the filename. Probably a fluke.
+                    digits = re.search(r'\d+', fn)
+                    bill_id = fn[:digits.end()]
+
                 version_filenames[bill_id.lower()].append((d, fn))
 
         self._version_filenames = version_filenames
