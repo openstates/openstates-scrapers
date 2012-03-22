@@ -47,11 +47,7 @@ class NHLegislatorScraper(LegislatorScraper):
                                  office_phone=office_phone, office_fax=fax,
                                  email=email)
 
-                if chamber == 'lower':
-                    # use seat as a _code if chamber is lower
-                    leg['_code'] = seat
-                else:
-                    # Senate URLs are guessable
+                if chamber == 'upper':
                     leg['url'] = 'http://www.gencourt.state.nh.us/Senate/members/webpages/district%02d.aspx' % int(district_num)
 
                 for com in (com1, com2, com3, com4, com5):

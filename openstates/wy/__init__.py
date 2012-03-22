@@ -20,7 +20,8 @@ metadata = dict(
                  '_scraped_name': '2011 General Session'
                 },
         '2012': {'type': 'special', 'display_name': '2012 Budget Session',
-                }
+                 '_scraped_name': '2012 Budget Session'
+                },
     },
     feature_flags=[],
     _ignored_scraped_sessions=['2010 Budget Session', '2009 General Session',
