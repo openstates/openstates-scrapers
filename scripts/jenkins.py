@@ -189,5 +189,5 @@ if __name__ == "__main__":
             _import(state, f)
 
         if args.imp:
-            c = 'billy-update %s' % state
+            c = 'billy-update %s --import --report' % state
             subprocess.call(c, shell=True)
