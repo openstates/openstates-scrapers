@@ -156,7 +156,7 @@ class CABillScraper(BillScraper):
             fsbill['title'] = title
             fsbill['short_title'] = short_title
             fsbill['type'] = type
-            fsbill['subjects'] = [subject]
+            fsbill['subjects'] = filter(None, [subject])
 
             # We don't want the current title in alternate_titles
             all_titles.remove(title)
