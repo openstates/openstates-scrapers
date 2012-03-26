@@ -62,7 +62,9 @@ class WABillScraper(BillScraper):
                 if bill_chamber != chamber:
                     continue
 
-                if re.match(r'^E?S(H|S)B', bill_id):
+                # substitute bills:
+                # optional number, optional E, optional number, S, (H|S)
+                if re.match(r'^\d?E?\d?S(H|S)B', bill_id):
                     # Merge committee substitutes with original bills.
                     # All the actions for the substitute should have been
                     # grabbed when we got the original, so just make
@@ -75,8 +77,17 @@ class WABillScraper(BillScraper):
                     self.save_bill(prev_bill)
                     continue
 
+                if 'E' in bill_id:
+                    e_bill_id = bill_id
+                    bill_id = bill_id.split('E')[1]
+                else:
+                    e_bill_id = None
+
                 bill = self.scrape_bill(chamber, session, bill_id)
-                bill['alternate_bill_ids'] = []
+                if e_bill_id:
+                    bill['alternate_bill_ids'] = [e_bill_id]
+                else:
+                    bill['alternate_bill_ids'] = []
                 bill['subjects'] = self._subjects[bill_id]
                 self.save_bill(bill)
 
