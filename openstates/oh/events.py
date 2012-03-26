@@ -13,6 +13,9 @@ class OHEventScraper(EventScraper):
     _tz = pytz.timezone('US/Central')
 
     def scrape(self, chamber, session):
+        if chamber == 'other':
+            return #XXX: Change to invocation?
+
         url = "http://www.legislature.state.oh.us/today.cfm"
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)

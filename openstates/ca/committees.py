@@ -21,12 +21,11 @@ class CACommitteeScraper(CommitteeScraper):
             'lower': 'http://assembly.ca.gov/committees'}
 
     def scrape(self, chamber, term):
-
         url = self.urls[chamber]
         html = self.urlopen(url).decode(self.encoding)
         doc = lxml.html.fromstring(html)
 
-        committee_types = {'upper': ['Standing', 'Select', 'Joint'],
+        committee_types = {'upper': ['Standing', 'Select', 'Sub', 'Joint'],
                            'lower': ['Standing', 'Select']}
 
         for type_ in committee_types[chamber]:
@@ -115,6 +114,12 @@ class CACommitteeScraper(CommitteeScraper):
         roles=[re.compile(r'(.+?)\s+\((.+?)\)'),
                re.compile(r'(.+?),\s+(.+)')]):
 
+        urls = {
+            'Sub Committee on Sustainable School Facilities': 'http://sedn.senate.ca.gov/substainableschoolfacilities',
+            'Education Policy Research': 'http://sedn.senate.ca.gov/policyresearch',
+            }
+
+        url = urls.get(committee['committee'], url)
         html = self.urlopen(url)
         html = html.decode(self.encoding)
         doc = lxml.html.fromstring(html)
@@ -122,13 +127,16 @@ class CACommitteeScraper(CommitteeScraper):
         if url == 'http://autism.senate.ca.gov':
             members = self.scrape_membernames_senate_autism(committee, url, chamber, term)
 
+        # if url == 'http://sedn.senate.ca.gov/subcommittees':
+        #     self.scrape_membernames_senate_sedn_subs(committee, url, chamber, term)
+
         else:
             members = doc.xpath('//h2[contains(., "Members")]/'
                                 'following-sibling::p[1]/descendant::a/text()')
         members = map(strip, members)
 
         if not members:
-            members = self.scrape_membernames_generic(committee, url, chamber, term)
+            members = self.scrape_membernames_generic(doc)
 
         if not members:
             self.warning('Didn\'t find any committe members at url: %s' % url)
@@ -159,10 +167,7 @@ class CACommitteeScraper(CommitteeScraper):
     # The same selections work on both upper chamber comm's and joint comm's.
     scrape_joint_members = scrape_upper_members
 
-    def scrape_membernames_generic(self, committee, url, chamber, term):
-        html = self.urlopen(url)
-        html = html.decode(self.encoding)
-        doc = lxml.html.fromstring(html)
+    def scrape_membernames_generic(self, doc):
         names = doc.xpath('//a/text()')
         names = filter(lambda n: 'Senator' in n, names)
         return names
@@ -171,7 +176,13 @@ class CACommitteeScraper(CommitteeScraper):
         '''The Senate Autism committee has its own wierd format.
         '''
         url = 'http://autism.senate.ca.gov/committeemembers1'
-        return self.scrape_membernames_generic(committee, url, chamber, term)
+        html = self.urlopen(url)
+        html = html.decode(self.encoding)
+        doc = lxml.html.fromstring(html)
+        return self.scrape_membernames_generic(doc)
+
+    def scrape_senate_sedn_subs(committee, url, chamber, term):
+         links = doc.xpath('//div[@class="content"]')[0].xpath('descendant::a')
 
     def scrape_membernames_subcommittees(committee, url, chamber, term):
         pass

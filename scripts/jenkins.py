@@ -178,7 +178,7 @@ if __name__ == "__main__":
             folders.add(f)
 
     if args.both:
-        folders &= set(['data', 'cache'])
+        folders |= set(['data', 'cache'])
 
     _states = args.states
     if 'all' in args.states:
@@ -189,5 +189,5 @@ if __name__ == "__main__":
             _import(state, f)
 
         if args.imp:
-            c = 'billy-update %s --import --report --alldata -vvv' % state
+            c = 'billy-update %s --import --report' % state
             subprocess.call(c, shell=True)
