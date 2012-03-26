@@ -61,17 +61,13 @@ class WABillScraper(BillScraper):
                     if bill_chamber != chamber:
                         continue
 
-                    # TODO: add these as a alternate_bill_ids
-
-                    # substitute bills
-                    # optional number, optional E, optional number, S, (H|S)
-                    if re.match(r'^\d?E?\d?S(H|S)B', bill_id):
-                        continue
-                    if 'E' in bill_id:
-                        bill_id = bill_id.split('E')[1]
+                    # normalize bill_id
+                    bill_id = re.findall('(?:S|H)(?:B|CR|JM|JR|R) \d+',
+                                         bill_id)[0]
 
                     bill_id_list.append(bill_id)
 
+        # de-dup bill_id
         for bill_id in list(set(bill_id_list)):
             bill = self.scrape_bill(chamber, session, bill_id)
             bill['subjects'] = self._subjects[bill_id]
