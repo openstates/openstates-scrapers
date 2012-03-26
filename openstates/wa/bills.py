@@ -18,10 +18,7 @@ class WABillScraper(BillScraper):
     _subjects = defaultdict(list)
 
     def build_subject_mapping(self, year):
-        if self._subjects:
-            return
-
-        url = 'http://apps.leg.wa.gov/billsbytopic/Results.aspx?year=2011'
+        url = 'http://apps.leg.wa.gov/billsbytopic/Results.aspx?year=%s' % year
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute('http://apps.leg.wa.gov/billsbytopic/')
@@ -35,63 +32,50 @@ class WABillScraper(BillScraper):
 
 
     def scrape(self, chamber, session):
-        self.build_subject_mapping(session[0:4])
+        bill_id_list = []
+        year = int(session[0:4])
 
-        url = "%s/GetLegislationByYear?year=%s" % (self._base_url,
-                                                   session[0:4])
+        # first go through API response and get bill list
+        for y in (year, year+1):
+            self.build_subject_mapping(y)
+            url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
 
-        prev_bill = None
-        with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page)
+            with self.urlopen(url) as page:
+                page = lxml.etree.fromstring(page)
 
-            for leg_info in xpath(page, "//wa:LegislationInfo"):
-                bill_id = xpath(leg_info, "string(wa:BillId)")
-                bill_num = int(bill_id.split()[1])
+                for leg_info in xpath(page, "//wa:LegislationInfo"):
+                    bill_id = xpath(leg_info, "string(wa:BillId)")
+                    bill_num = int(bill_id.split()[1])
 
-                # Skip gubernatorial appointments
-                if bill_num >= 9000:
-                    continue
+                    # Skip gubernatorial appointments
+                    if bill_num >= 9000:
+                        continue
 
-                # Senate bills are numbered starting at 5000,
-                # House at 1000
-                if bill_num > 5000:
-                    bill_chamber = 'upper'
-                else:
-                    bill_chamber = 'lower'
+                    # Senate bills are numbered starting at 5000,
+                    # House at 1000
+                    if bill_num > 5000:
+                        bill_chamber = 'upper'
+                    else:
+                        bill_chamber = 'lower'
 
-                if bill_chamber != chamber:
-                    continue
+                    if bill_chamber != chamber:
+                        continue
 
-                # substitute bills:
-                # optional number, optional E, optional number, S, (H|S)
-                if re.match(r'^\d?E?\d?S(H|S)B', bill_id):
-                    # Merge committee substitutes with original bills.
-                    # All the actions for the substitute should have been
-                    # grabbed when we got the original, so just make
-                    # note that there is an alternate ID. We may
-                    # want to add the committee as a sponsor at some
-                    # point too.
-                    self.log("Merging %s with %s" % (
-                        bill_id, prev_bill['bill_id']))
-                    prev_bill['alternate_bill_ids'].append(bill_id)
-                    self.save_bill(prev_bill)
-                    continue
+                    # TODO: add these as a alternate_bill_ids
 
-                if 'E' in bill_id:
-                    e_bill_id = bill_id
-                    bill_id = bill_id.split('E')[1]
-                else:
-                    e_bill_id = None
+                    # substitute bills
+                    # optional number, optional E, optional number, S, (H|S)
+                    if re.match(r'^\d?E?\d?S(H|S)B', bill_id):
+                        continue
+                    if 'E' in bill_id:
+                        bill_id = bill_id.split('E')[1]
 
-                bill = self.scrape_bill(chamber, session, bill_id)
-                if e_bill_id:
-                    bill['alternate_bill_ids'] = [e_bill_id]
-                else:
-                    bill['alternate_bill_ids'] = []
-                bill['subjects'] = self._subjects[bill_id]
-                self.save_bill(bill)
+                    bill_id_list.append(bill_id)
 
-                prev_bill = bill
+        for bill_id in list(set(bill_id_list)):
+            bill = self.scrape_bill(chamber, session, bill_id)
+            bill['subjects'] = self._subjects[bill_id]
+            self.save_bill(bill)
 
     def scrape_bill(self, chamber, session, bill_id):
         biennium = "%s-%s" % (session[0:4], session[7:9])
