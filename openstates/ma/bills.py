@@ -104,6 +104,18 @@ class MABillScraper(BillScraper):
                 petitioners = dict((a.get('href'), a.text) for a in
                                    doc.xpath('//div[@id="billSummary"]/p[1]/a'))
 
+                if len(sponsors) == 0:
+                    spons = doc.xpath('//p[@class="billReferral"]')[0].text_content()
+                    spons = spons.strip()
+                    spons = spons.split("\n")
+                    cspons = []
+                    for s in spons:
+                        if s and s.strip() != "":
+                            cspons.append(s)
+
+                    sponsors = dict((s, s) for s in cspons)
+
+
                 # remove sponsors from petitioners
                 for k in sponsors:
                     petitioners.pop(k, None)
