@@ -36,6 +36,7 @@ class WACommitteeScraper(CommitteeScraper):
                 comm = Committee(chamber, name, _code=comm_id,
                                  office_phone=phone)
                 self.scrape_members(comm, agency)
+                comm.add_source(url)
                 self.save_committee(comm)
 
     def scrape_members(self, comm, agency):
