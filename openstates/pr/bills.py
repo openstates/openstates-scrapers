@@ -99,7 +99,8 @@ class PRBillScraper(BillScraper):
                 if re.match(text_regex, action):
                    isVersion = True;
             if isVersion:
-                bill.add_version(action, action_url)
+                # versions are mentioned several times, lets use original name
+                bill.add_version(action, action_url, on_duplicate='use_old')
             else:
                 bill.add_document(action, action_url)
             for pattern, action_actor,atype in _classifiers:
