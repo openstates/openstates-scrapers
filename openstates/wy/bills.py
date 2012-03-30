@@ -101,8 +101,14 @@ class WYBillScraper(BillScraper):
                 '\r\n', ' ')
 
         sponsor_span = doc.xpath('//span[@class="sponsors"]')
+        sponsors = ''
         if sponsor_span:
             sponsors = sponsor_span[0].text_content().replace('\r\n', ' ')
+        else:
+            for p in doc.xpath('//p'):
+                if p.text_content().lower().startswith('sponsored by'):
+                    sponsors = p.text_content().replace('\r\n', ' ')
+        if sponsors:
             if 'Committee' in sponsors:
                 bill.add_sponsor('sponsor', sponsors)
             else:
