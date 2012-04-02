@@ -397,7 +397,27 @@ class DEBillScraper(BillScraper):
 
             for d in documents:
                 bill.add_document(**d)
-                
+
+        # --------------------------------------------------------------------
+        # Add any fiscal notes.
+        source = doc.xpath("//img[@alt='Fiscal Note']/../@href")
+
+        if source:
+
+            tmp = '/'.join([
+                'http://www.legis.delaware.gov',
+                'LIS/lis{session_num}.nsf/FiscalforLookup',
+                '{docnum}/$file/{filename}{format_}?open'])
+
+            documents = self.scrape_documents(
+                source=source[0],
+                docname="Fiscal Note",
+                filename="Fiscal",
+                tmp=tmp,
+                session_num=session_num)
+
+            for d in documents:
+                bill.add_document(**d)
 
         #---------------------------------------------------------------------
         # Extra fields
@@ -537,7 +557,7 @@ class DEBillScraper(BillScraper):
 
     
     def scrape_documents(self, source, docname, filename, tmp, session_num,
-                         re_docnum=re.compile(r'var docnum="(.+?)"'),
+                         re_docnum=re.compile(r'var F?docnum="(.+?)"'),
                          re_moniker=re.compile(r'var moniker="(.+?)"'),
                          **kwargs):
         '''
@@ -548,7 +568,7 @@ class DEBillScraper(BillScraper):
         try:
             _doc = self._url_2_lxml(source)
         except scrapelib.HTTPError:
-            # Grrr...there a dead link posted. Warn and skip.
+            # Grrr...there was a dead link posted. Warn and skip.
             msg = 'Related document download failed (dead link): %r' % source
             self.warning(msg)
             return
@@ -562,11 +582,13 @@ class DEBillScraper(BillScraper):
         
         # The full-text urls are generated using onlick javascript and
         # window-level vars named "moniker" and "docnum".
-        xpath = '//script[contains(., "var docnum")]'
+        if docname == "Fiscal Note":
+            xpath = '//script[contains(., "var Fdocnum")]'
+        else:
+            xpath = '//script[contains(., "var docnum")]'
         script_text = _doc.xpath(xpath)[0].text_content()
         docnum = re_docnum.search(script_text).group(1)
         moniker = re_moniker.search(script_text).group(1)
-
 
         # Mimetypes.
         formats = ['.html', '.pdf', '.docx', '.Docx']
@@ -577,7 +599,6 @@ class DEBillScraper(BillScraper):
             }
 
         for format_ in formats:
-
 
             el =_doc.xpath('//font[contains(., "%s%s")]' % (filename, format_))
 
