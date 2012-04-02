@@ -113,13 +113,23 @@ class GABillScraper(BillScraper):
 
             # use short_title as title and long as description
             title = bxml.xpath('Short_Title/text()')
-            description = bxml.xpath('Title/text()')[0]
+            description = bxml.xpath('Title/text()')
+
+            if description:
+                description = description[0]
+            else:
+                description = ''
 
             if title:
                 title = title[0]
             else:
                 title = description
                 description = ''
+
+            if not title and not description:
+                self.warning('no title or description for %s, skipping' %
+                             bill_id)
+                continue
 
             bill = Bill(session, chamber, bill_id, title, type=type,
                         description=description)
