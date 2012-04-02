@@ -398,7 +398,7 @@ class DEBillScraper(BillScraper):
                 id_=bill['bill_id'])
 
             for d in documents:
-                bill.add_document(**d)
+                bill.add_version(**d)
 
         # --------------------------------------------------------------------
         # Add any fiscal notes.
