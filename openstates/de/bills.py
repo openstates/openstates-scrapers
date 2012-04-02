@@ -136,9 +136,6 @@ class DEBillScraper(BillScraper):
         # Changes "Sen. Jones" into "Jones"
         re_title=re.compile(r'(Sen|Rep)s?[.;]\s?'),
 
-        # Tokenize multiple names in a single string.
-        tokenize=re.compile(r'(?:(?:[A-Z]\.){,5} )?[A-Z][^.]\S{,50}').findall,
-
         # Map to clean up sponsor name data.
         name_map={
             '{ NONE...}': '',
@@ -161,6 +158,11 @@ class DEBillScraper(BillScraper):
         are '{ NONE...}', or contain '&nbsp'. This helper removes
         that stuff and returns a list minus any non-name strings found. 
         '''
+
+        # "Briggs King" is a deplorable hack to work around DE's 
+        # not-easily-parseable sponsorship strings.
+        tokenizer = r'(?:(?:[A-Z]\.){,5} )?(?:Briggs King|[A-Z][^.]\S{,50})'
+        tokenize = partial(re.findall, tokenizer)
 
         for string in splitter.split(string):
 
