@@ -62,10 +62,13 @@ class WABillScraper(BillScraper):
                         continue
 
                     # normalize bill_id
-                    bill_id = re.findall('(?:S|H)(?:B|CR|JM|JR|R) \d+',
-                                         bill_id)[0]
+                    bill_id_norm = re.findall('(?:S|H)(?:B|CR|JM|JR|R) \d+',
+                                              bill_id)
+                    if not bill_id_norm:
+                        self.warning("illegal bill_id %s" % bill_id)
+                        continue
 
-                    bill_id_list.append(bill_id)
+                    bill_id_list.append(bill_id_norm[0])
 
         # de-dup bill_id
         for bill_id in list(set(bill_id_list)):

@@ -190,6 +190,11 @@ class NHBillScraper(BillScraper):
             if session_yr == session and bill_id.strip() in self.bills_by_id:
                 leg = self.legislators[employee]['name']
                 vote = vote.strip()
+                if not body+v_num in votes:
+                    self.warning("Skipping processing this vote:")
+                    self.warning("Bad ID: %s" % ( body+v_num ) )
+                    continue
+
                 #code = self.legislators[employee]['seat']
                 if vote == 'Yea':
                     votes[body+v_num].yes(leg)

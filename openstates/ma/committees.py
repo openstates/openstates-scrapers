@@ -28,7 +28,15 @@ class MACommitteeScraper(CommitteeScraper):
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
 
-            name = doc.xpath('//span[@class="committeeShortName"]/text()')[0]
+            name = doc.xpath('//span[@class="committeeShortName"]/text()')
+            if len(name) == 0:
+                self.warning("Had to skip this malformed page.")
+                return
+            # Because of http://www.malegislature.gov/Committees/Senate/S29 this
+            # XXX: hack had to be pushed in. Remove me ASAP. This just skips
+            #      malformed pages.
+
+            name = name[0]
             com = Committee(chamber, name)
             com.add_source(url)
 

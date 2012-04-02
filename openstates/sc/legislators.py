@@ -7,6 +7,9 @@ class SCLegislatorScraper(LegislatorScraper):
     state = 'sc'
 
     def scrape(self, chamber, term):
+        # CSS isn't there without this(?!)
+        self.user_agent = 'Mozilla/5.0'
+
         if chamber == 'lower':
             url = 'http://www.scstatehouse.gov/member.php?chamber=H'
         else:

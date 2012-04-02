@@ -97,14 +97,18 @@ class MSBillScraper(BillScraper):
 
                     #Versions 
                     curr_version = details_root.xpath('string(//current_other)').replace("../../../../", "")
-                    curr_version_url = "http://billstatus.ls.state.ms.us/" + curr_version
-                    bill.add_version("Current version", curr_version_url,
-                                     on_duplicate='use_old')
+                    if curr_version != "":
+                        curr_version_url = "http://billstatus.ls.state.ms.us/" \
+                                + curr_version
+                        bill.add_version("Current version", curr_version_url,
+                                         on_duplicate='use_old')
 
                     intro_version = details_root.xpath('string(//intro_other)').replace("../../../../", "")
-                    intro_version_url = "http://billstatus.ls.state.ms.us/" + intro_version
-                    bill.add_version("As Introduced", intro_version_url,
-                                     on_duplicate='use_old')
+                    if intro_version != "":
+                        intro_version_url = "http://billstatus.ls.state.ms.us/"\
+                                + intro_version
+                        bill.add_version("As Introduced", intro_version_url,
+                                         on_duplicate='use_old')
 
                     comm_version = details_root.xpath('string(//cmtesub_other)').replace("../../../../", "")
                     if comm_version.find("documents") != -1:
