@@ -45,6 +45,6 @@ def session_list():
     sessions = url_xpath('http://www.malegislature.gov/Bills/Search',
         "//select[@id='Input_GeneralCourtId']/option/text()")
     # Ok, this is actually a mess. Let's clean it up.
-    sessions.remove('--Select Value--')
+    # sessions.remove('--Select Value--')  # They removed this.
     sessions = [ re.sub("\(.*$", "", session).strip() for session in sessions ]
     return sessions
