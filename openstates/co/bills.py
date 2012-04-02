@@ -191,16 +191,19 @@ class COBillScraper(BillScraper):
                     wpd_link = tr[cols["wpd"]][0]
                     pdf_link = tr[cols["pdf"]][0]
 
+                    wpd_text = wpd_link.text_content().strip()
+                    pdf_text = wpd_link.text_content().strip()
+
                     wpd_link = wpd_link.attrib["href"]
                     pdf_link = pdf_link.attrib["href"]
 
                     format = None
 
-                    if pdf_link.strip() != "":
+                    if pdf_link.strip() != "" and pdf_text != "":
                         link = CO_URL_BASE + pdf_link
                         format = "application/pdf"
 
-                    elif wpd_link.strip() != "":
+                    elif wpd_link.strip() != "" and wpd_text != "":
                         link = CO_URL_BASE + wpd_link
                         format = "application/vnd.wordperfect"
 
