@@ -139,6 +139,9 @@ class IABillScraper(BillScraper):
                 continue
             elif "No history is recorded at this time." in date:
                 return
+            if date == "":
+                continue
+
             date = datetime.datetime.strptime(date, "%B %d, %Y").date()
 
             action = tr.xpath("string(td[2])").strip()

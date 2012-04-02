@@ -40,7 +40,7 @@ class IAEventScraper(EventScraper):
             location = link.xpath("string(../../td[3])")
 
             when = link.xpath("string(../../td[1])").strip()
-            if when == 'Cancelled':
+            if when == 'Cancelled' or "Upon" in when:
                 continue
 
             if 'AM' in when:
