@@ -174,12 +174,15 @@ class WYBillScraper(BillScraper):
                     if not nextline:
                         continue
 
-                    breakers = [ "Ayes:", "Nays:", "Excused:", "Absent:",
-                                 "Conflicts:" ]
+                    breakers = [ "Ayes:", "Nays:", "Nayes:", "Excused:",
+                                 "Absent:",  "Conflicts:" ]
 
                     for breaker in breakers:
                         if nextline.startswith(breaker):
                             voters_type = breaker[:-1]
+                            if voters_type == "Nayes":
+                                voters_type = "Nays"
+                                self.log("Fixed a case of 'Naye-itis'")
                             nextline = nextline[len(breaker)-1:]
 
                     if nextline.startswith(': '):
