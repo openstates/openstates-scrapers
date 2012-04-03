@@ -17,7 +17,8 @@ def split_names(voters):
 
 
 def clean_line(line):
-    return line.replace(u'\xa0', '').replace('\r\n', ' ').strip()
+    return line.replace(u'\xa0', '').replace('\r\n', ' '
+                                            ).replace(u'\u2011', "-").strip()
 
 def categorize_action(action):
     categorizers = (
