@@ -107,6 +107,7 @@ class NCVoteScraper(VoteScraper):
 
         for vote in votes.itervalues():
             vote.validate()
+            vote.add_source(vote_data_url)
             self.save_vote(vote)
 
         # remove file
