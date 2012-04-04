@@ -73,6 +73,8 @@ class FLBillScraper(BillScraper):
                 bill_type = 'resolution'
             elif re.findall('[SH]JR', bill_type_h1):
                 bill_type = 'joint resolution'
+            elif re.findall('[SH]CR', bill_type_h1):
+                bill_type = 'concurrent resolution'
             elif re.findall('[SH]M', bill_type_h1):
                 bill_type = 'memorial'
 
