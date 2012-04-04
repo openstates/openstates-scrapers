@@ -82,8 +82,7 @@ class NCVoteScraper(VoteScraper):
         # 4: vote (Y,N,E,X)
         # 5: pair ID (member)
         # 6: pair order
-        # If a vote is paired then it should not be counted as a yes or no vote.
-        # See https://github.com/sunlightlabs/openstates/issues/164
+        # If a vote is paired then it should be counted as an 'other'
         for line in member_vote_file.readlines():
             data = line.split(delimiter)
             if data[1] == chamber_code:
@@ -97,16 +96,26 @@ class NCVoteScraper(VoteScraper):
                 except KeyError:
                     self.debug('Vote %s not found.' % data[2])
                     continue
-                if data[4] == 'Y':
+
+                # -1 votes are Lt. Gov, not included in count, so we add them
+                if data[4] == 'Y' and not data[5]:
+                    if data[0] == '-1':
+                        vote['yes_count'] += 1
                     vote.yes(member_voting)
-                elif data[4] == 'N':
+                elif data[4] == 'N' and not data[5]:
+                    if data[0] == '-1':
+                        vote['no_count'] += 1
                     vote.no(member_voting)
                 else:
+                    # for some reason other_count is high for paired votes
+                    if data[5]:
+                        vote['other_count'] -= 1
                     # is either E: excused, X: no vote, or paired (doesn't count)
                     vote.other(member_voting)
 
         for vote in votes.itervalues():
             vote.validate()
+            vote.add_source(vote_data_url)
             self.save_vote(vote)
 
         # remove file
