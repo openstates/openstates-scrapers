@@ -73,4 +73,5 @@ class WAEventScraper(EventScraper):
 
                     event.add_participant('committee', name)
 
+                event.add_source(url)
                 self.save_event(event)

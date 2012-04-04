@@ -12,11 +12,13 @@ def split_names(voters):
     voters = voters.split(')',1)[-1]
     # split on comma space as long as it isn't followed by an initial (\w+\.)
     # or split on 'and '
-    return [x.strip() for x in re.split('(?:, (?!\w+\.))|(?:and )', voters)]
+    voters = [x.strip() for x in re.split('(?:, (?!\w+\.))|(?:and )', voters)]
+    return voters
 
 
 def clean_line(line):
-    return line.replace(u'\xa0', '').replace('\r\n', ' ').strip()
+    return line.replace(u'\xa0', '').replace('\r\n', ' '
+                                            ).replace(u'\u2011', "-").strip()
 
 def categorize_action(action):
     categorizers = (
@@ -121,10 +123,21 @@ class WYBillScraper(BillScraper):
                         bill.add_sponsor('sponsor', sponsor)
 
         action_re = re.compile('(\d{1,2}/\d{1,2}/\d{4})\s+(H |S )?(.+)')
-        vote_total_re = re.compile('(\d+) Nays (\d+) Excused (\d+) Absent (\d+) Conflicts (\d+)')
+        vote_total_re = re.compile('(Ayes )?(\d*) Nays (\d+) Excused (\d+) Absent (\d+) Conflicts (\d+)')
 
         actions = [x.text_content() for x in
                    doc.xpath('//*[@class="actions"]')]
+        actions = [x.text_content() for x in
+                   doc.xpath('//p')]
+        thing = []
+        pastHeader = False
+        for action in actions:
+            if not pastHeader and action_re.match(action):
+                pastHeader = True
+            if pastHeader:
+                thing.append(action)
+
+        actions = thing
 
         # initial actor is bill chamber
         actor = bill['chamber']
@@ -159,9 +172,19 @@ class WYBillScraper(BillScraper):
                 # \d+ Nays \d+ Excused ... - totals
                 while True:
                     nextline = clean_line(aiter.next())
-
                     if not nextline:
                         continue
+
+                    breakers = [ "Ayes:", "Nays:", "Nayes:", "Excused:",
+                                 "Absent:",  "Conflicts:" ]
+
+                    for breaker in breakers:
+                        if nextline.startswith(breaker):
+                            voters_type = breaker[:-1]
+                            if voters_type == "Nayes":
+                                voters_type = "Nays"
+                                self.log("Fixed a case of 'Naye-itis'")
+                            nextline = nextline[len(breaker)-1:]
 
                     if nextline.startswith(': '):
                         voters[voters_type] = nextline
@@ -169,7 +192,7 @@ class WYBillScraper(BillScraper):
                                       'Conflicts'):
                         voters_type = nextline
                     elif vote_total_re.match(nextline):
-                        ayes, nays, exc, abs, con = \
+                        _, ayes, nays, exc, abs, con = \
                                 vote_total_re.match(nextline).groups()
                         passed = (('Passed' in action or
                                    'Do Pass' in action or

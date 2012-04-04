@@ -63,9 +63,22 @@ class LALegislatorScraper(LegislatorScraper):
             else:
                 party = "Other"
 
-            leg = Legislator(term, 'lower', district, name, party=party,
-                             url=url)
+            kwargs = { "party": party,
+                       "url": url }
+
+            photo = page.xpath("//img[@rel='lightbox']")
+            if len(photo) > 0:
+                photo = photo[0]
+                photo_url = "http://house.louisiana.gov/H_Reps/%s" % (
+                    photo.attrib['src']
+                )
+                kwargs['photo'] = photo_url
+            else:
+                self.warning("No photo found :(")
+
+            leg = Legislator(term, 'lower', district, name, **kwargs)
             leg.add_source(url)
+
             self.save_legislator(leg)
 
     def scrape_senator(self, name, term, url):
