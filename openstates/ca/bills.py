@@ -92,13 +92,11 @@ class CABillScraper(BillScraper):
                                     bill.measure_num)
 
             # Construct a fake source url
-            source_url = ("http://www.leginfo.ca.gov/cgi-bin/postquery?"
-                          "bill_number=%s&sess=%s" %
-                          (source_num, source_session))
+            source_url = ('http://leginfo.legislature.ca.gov/faces/'
+                          'billNavClient.xhtml?bill_id=%s') % bill.bill_id
 
             fsbill.add_source(source_url)
-
-            scraped_versions = self.scrape_site_versions(source_url)
+            fsbill.add_version(bill_id, source_url, 'text/html')
 
             title = ''
             short_title = ''
@@ -129,25 +127,6 @@ class CABillScraper(BillScraper):
 
                 if version.subject:
                     subject = clean_title(version.subject)
-
-                date = version.bill_version_action_date.date()
-
-                url = ''
-                try:
-                    scraped_version = scraped_versions[i]
-                    if scraped_version[0] == date:
-                        url = scraped_version[1]
-                        i += 1
-                except IndexError:
-                    pass
-
-                fsbill.add_version(
-                    version.bill_version_id, url,
-                    date=date,
-                    title=title,
-                    short_title=short_title,
-                    subject=[subject],
-                    type=type)
 
             if not title:
                 self.warning("Couldn't find title for %s, skipping" % bill_id)
@@ -304,20 +283,3 @@ class CABillScraper(BillScraper):
 
             self.save_bill(fsbill)
 
-    def scrape_site_versions(self, source_url):
-        with self.urlopen(source_url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(source_url)
-
-            versions = []
-
-            for link in page.xpath("//a[contains(., 'HTML')]"):
-                date = link.xpath("string(../../td[2])").strip(" -")
-                date = datetime.datetime.strptime(
-                    date, '%m/%d/%Y').date()
-
-                versions.append((date, link.attrib['href']))
-
-            versions.reverse()
-
-            return versions
