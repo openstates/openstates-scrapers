@@ -69,6 +69,8 @@ class FLBillScraper(BillScraper):
             bill_type_h1 = page.xpath('//h1/text()')[1]
             if re.findall('[SH]B', bill_type_h1):
                 bill_type = 'bill'
+            if re.findall('[SH]PB', bill_type_h1):
+                bill_type = 'proposed bill'
             elif re.findall('[SH]R', bill_type_h1):
                 bill_type = 'resolution'
             elif re.findall('[SH]JR', bill_type_h1):
