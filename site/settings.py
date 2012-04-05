@@ -44,8 +44,9 @@ ROOT_URLCONF = 'urls'
 INSTALLED_APPS = (
     'django.contrib.humanize',
     'django.contrib.staticfiles',
-    'billy.site.api',
-    'billy.site.browse',
+    'billy.web.api',
+    'billy.web.admin',
+    'billy.web.public',
     'locksmith.mongoauth',
     'markup_tags',
 )

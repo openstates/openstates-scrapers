@@ -5,8 +5,8 @@ from django.contrib import admin
 
 urlpatterns = patterns('',
     (r'^api/locksmith/', include('locksmith.mongoauth.urls')),
-    (r'^api/', include('billy.site.api.urls')),
-    (r'^browse/', include('billy.site.browse.urls')),
+    (r'^api/', include('billy.web.api.urls')),
+    (r'^admin/', include('billy.web.admin.urls')),
 
     # site-specific views
     (r'^downloads/$', 'views.downloads'),
