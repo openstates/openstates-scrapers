@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import os
+from collections import defaultdict
 import datetime
 import lxml.html
 from urllib import urlencode
@@ -150,7 +151,7 @@ class ILBillScraper(BillScraper):
         doc = self.url_to_doc(url)
         for bill_url in doc.xpath('//li/a/@href'):
             yield bill_url
-    
+
     def scrape(self, chamber, session):
         for doc_type in DOC_TYPES:
             for bill_url in self.get_bill_urls(chamber, session, doc_type):
@@ -173,7 +174,7 @@ class ILBillScraper(BillScraper):
         # sponsors
         sponsor_list = build_sponsor_list(doc.xpath('//a[@class="content"]'))
         # don't add just yet; we can make them better using action data
-        
+
         # actions
         action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
         for date, actor, action in group(action_tds, 3):
@@ -229,16 +230,16 @@ class ILBillScraper(BillScraper):
 
     def scrape_votes(self, session, bill, votes_url):
         doc = self.url_to_doc(votes_url)
-        
+
         for link in doc.xpath('//a[contains(@href, "votehistory")]'):
-            
+
             pieces = link.text.split(' - ')
             date = pieces[-1]
             if len(pieces) == 3:
                 motion = pieces[1]
             else:
                 motion = 'Third Reading'
-                
+
             chamber = link.xpath('../following-sibling::td/text()')[0]
             if chamber == 'HOUSE':
                 chamber = 'lower'
@@ -246,13 +247,13 @@ class ILBillScraper(BillScraper):
                 chamber = 'upper'
             else:
                 self.warning('unknown chamber %s' % chamber)
-                
+
             date = datetime.datetime.strptime(date, "%A, %B %d, %Y")
-            
+
             vote = self.scrape_pdf_for_votes(session, chamber, date, motion.strip(), link.get('href'))
-            
+
             bill.add_vote(vote)
-        
+
         bill.add_source(votes_url)
 
     def fetch_pdf_lines(self, href):
@@ -275,14 +276,14 @@ class ILBillScraper(BillScraper):
             'FAILED': False,
             'LOST': False,
         }
-        
+
         pdflines = self.fetch_pdf_lines(href)
 
         yes_count = no_count = present_count = other_count = 0
         yes_votes = []
         no_votes = []
         present_votes = []
-        other_vote_detail = {}
+        other_vote_detail = defaultdict(list)
         passed = None
         counts_found = False
         vote_lines = []
@@ -311,8 +312,10 @@ class ILBillScraper(BillScraper):
             elif vcode == 'N':
                 no_votes.append(name)
             else:
-                other_vote_detail[name] = vcode
-                if vcode == 'P': present_votes.append(name)
+                other_vote_detail[vcode].append(name)
+                other_count += 1
+                if vcode == 'P':
+                    present_votes.append(name)
         # fake the counts
         if yes_count == 0 and no_count == 0 and present_count == 0:
             yes_count = len(yes_votes)
@@ -327,20 +330,21 @@ class ILBillScraper(BillScraper):
             if present_count != len(present_votes):
                 self.warning("Mismatched present count [expect: %i] [have: %i]" % (present_count,len(present_votes)))
                 warned = True
-            
-        other_count = len(other_vote_detail) # not necessarily the same as 'present'
+
         if passed is None:
             if chamber == 'lower': # senate doesn't have these lines
                 self.warning("No pass/fail word found; fall back to comparing yes and no vote.")
                 warned = True
             passed = yes_count > no_count
-        vote = Vote(chamber, date, motion, passed, yes_count, no_count, other_count, other_vote_detail=other_vote_detail)
+        vote = Vote(chamber, date, motion, passed, yes_count, no_count,
+                    other_count, other_vote_detail=other_vote_detail)
         for name in yes_votes:
             vote.yes(name)
         for name in no_votes:
             vote.no(name)
-        for name in other_vote_detail:
-            vote.other(name)
+        for other_type, names in other_vote_detail.iteritems():
+            for name in names:
+                vote.other(name)
         vote.add_source(href)
 
         if warned:
@@ -389,21 +393,21 @@ def _is_potential_column(line,i):
         if line[i:i+len(test_val)] == test_val:
             return True
     return False
-    
+
 def find_columns(vote_lines):
     potential_columns = []
-    
+
     for line in vote_lines:
         pcols = set()
         for i,x in enumerate(line):
             if _is_potential_column(line,i):
                 pcols.add(i)
         potential_columns.append(pcols)
-    
+
     starter = potential_columns[0]
     for pc in potential_columns[1:-1]:
         starter.intersection_update(pc)
-    last_row_cols = potential_columns[-1]    
+    last_row_cols = potential_columns[-1]
     if not last_row_cols.issubset(starter):
         raise Exception("Last row columns [%s] don't align with candidate final columns [%s]" % (last_row_cols,starter))
     # we should now only have values that appeared in every line

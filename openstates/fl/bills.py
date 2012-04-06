@@ -65,6 +65,23 @@ class FLBillScraper(BillScraper):
                 hist_table = page.xpath(
                     "//div[@id = 'tabBodyBillHistory']/table")[0]
 
+            # now try and get second h1
+            bill_type_h1 = page.xpath('//h1/text()')[1]
+            if re.findall('[SH]B', bill_type_h1):
+                bill_type = 'bill'
+            if re.findall('[SH]PB', bill_type_h1):
+                bill_type = 'proposed bill'
+            elif re.findall('[SH]R', bill_type_h1):
+                bill_type = 'resolution'
+            elif re.findall('[SH]JR', bill_type_h1):
+                bill_type = 'joint resolution'
+            elif re.findall('[SH]CR', bill_type_h1):
+                bill_type = 'concurrent resolution'
+            elif re.findall('[SH]M', bill_type_h1):
+                bill_type = 'memorial'
+
+            bill['type'] = [bill_type]
+
             for tr in hist_table.xpath("tbody/tr"):
                 date = tr.xpath("string(td[1])")
                 date = datetime.datetime.strptime(

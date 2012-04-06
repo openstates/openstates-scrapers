@@ -91,6 +91,9 @@ class IABillScraper(BillScraper):
         page.make_links_absolute(hist_url)
 
         title = page.xpath("string(//table[2]/tr[4])").strip()
+        if title == '':
+            self.warning("URL: %s gives us an *EMPTY* bill. Aborting." % url)
+            return
 
         if 'HR' in bill_id or 'SR' in bill_id:
             bill_type = ['resolution']
