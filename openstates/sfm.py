@@ -1,44 +1,3 @@
-import re
-import time
-import lxml.html
-
-from billy.scrape.utils import convert_pdf
-
-from superfastmatch import Client
-
-def az_handler(filedata):
-    html = lxml.html.fromstring(filedata)
-    text = html.xpath('//div[@class="Section2"]')[0].text_content()
-    return collapse_spaces(text)
-
-def ca_handler(filedata, metadata):
-    if file.endswith('.pdf'):
-        # NOTE: this strips the summary, it'd be useful for search (but not SFM)
-        lines = convert_pdf(file, 'text').splitlines()
-        return text_after_line_numbers(lines)
-    elif file.endswith('.html'):
-        doc = lxml.html.fromstring(open(file).read())
-        text = doc.xpath('//pre')[0].text_content()
-        return collapse_spaces(text)
-
-def ny_handler(filedata, metadata):
-    if filedata:
-        doc = lxml.html.fromstring(filedata)
-        text = doc.xpath('//pre')[0].text_content()
-        # if there's a header above a _________, ditch it
-        text = text.rsplit('__________', 1)[-1]
-        # strip numbers from lines
-        text = re.sub('\n\s*\d+\s*', ' ', text)
-        text = collapse_spaces(text)
-        return text
-    else:
-        return ''
-
-def md_handler(filedata, metadata):
-    lines = convert_pdf(file, 'text').splitlines()
-    return text_after_line_numbers(lines)
-
-
 def fl_handler(filedata, metadata):
 
     # check for beginning of tag, MS throws in some xmlns stuff
@@ -105,29 +64,6 @@ def wa_handler(filedata, metadata):
     return text
 
 
-def ma_handler(filedata, metadata):
-    doc = lxml.html.fromstring(filedata)
-    return ' '.join([x.text_content()
-                     for x in doc.xpath('//td[@class="longTextContent"]//p')])
-
-
-
 def wv_handler(filedata, metadata):
     doc = lxml.html.fromstring(filedata)
     return doc.xpath('//div[@id="blocktext"]')[0].text_content()
-
-
-def push_to_sfm(doc, newdata):
-    server = 'http://ec2-23-20-68-251.compute-1.amazonaws.com/'
-    sfm_client = Client(server)
-
-    metadata = doc['metadata']
-    state = metadata['state']
-    extractor = handlers[state]
-    text = extractor(newdata)
-
-    _id = _to_numeric_id(doc['_id'])
-
-    sfm_client.add(1, _id, text, defer=True,
-                   title='%(state)s %(session)s %(bill_id)s %(name)s' % metadata,
-                   **metadata)

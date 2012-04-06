@@ -84,3 +84,10 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://mlis.state.md.us/other/PriorSession/index.htm',
                      '(//table)[2]//th/text()')[1:]
+
+
+from billy.fulltext import pdfdata_to_text, clean_text, text_after_line_numbers
+
+def extract_text(oyster_doc, data):
+    text = pdfdata_to_text(data)
+    return clean_text(text_after_line_numbers(text))

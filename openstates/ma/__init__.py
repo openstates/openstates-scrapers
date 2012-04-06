@@ -48,3 +48,13 @@ def session_list():
     # sessions.remove('--Select Value--')  # They removed this.
     sessions = [ re.sub("\(.*$", "", session).strip() for session in sessions ]
     return sessions
+
+
+import lxml.html
+from billy.fulltext import clean_text, text_after_line_numbers
+
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = ' '.join([x.text_content()
+                     for x in doc.xpath('//td[@class="longTextContent"]//p')])
+    return clean_text(text)
