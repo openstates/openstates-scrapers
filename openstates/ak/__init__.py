@@ -35,3 +35,12 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.legis.state.ak.us/basis/start.asp',
                      '(//ul)[last()]/li/a/nobr/text()')
+
+import lxml.html
+from billy.fulltext import clean_text, text_after_line_numbers
+
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = doc.xpath('//pre')[0].text_content()
+    text = text_after_line_numbers(text)
+    return clean_text(text)
