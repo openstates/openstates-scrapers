@@ -275,10 +275,16 @@ class CABillScraper(BillScraper):
                     else:
                         fsvote.other(record.legislator_name)
 
-                # The abstain count field in CA's database includes
-                # vacancies, which we aren't interested in.
-                fsvote['other_count'] = len(fsvote['other_votes'])
+                for s in ('yes', 'no', 'other'):
+                    # Kill dupe votes.
+                    key = s + '_votes'
+                    fsvote[key] = list(set(fsvote[key]))
 
+                # In a small percentage of bills, the integer vote counts
+                # are inaccurate, so let's ignore them.
+                for k in ('yes', 'no', 'other'):
+                    fsvote[k + '_count'] = len(fsvote[k + '_votes'])
+                
                 fsbill.add_vote(fsvote)
 
             self.save_bill(fsbill)
