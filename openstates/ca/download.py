@@ -18,19 +18,15 @@ The workflow is:
    been updated, if any.
  - For each such file, unzip it in the DOWNLOADS folder.
  - For each such unzipped folder, call the import function.
- - If the folder is a sesion folder (i.e., 2011.zip, etc.), delete all 
+ - If the folder is a sesion folder (i.e., 2011.zip, etc.), delete all
    records pertaining to that session before importing the new data.
 '''
-import pdb
 import sys
 import os
 import re
 import glob
-import time
 import os.path
 import zipfile
-import datetime
-import tempfile
 import subprocess
 import logging
 from os.path import join, split
@@ -38,11 +34,10 @@ from functools import partial
 from zipfile import ZipFile
 from collections import namedtuple
 
-import MySQLdb, _mysql_exceptions
+import MySQLdb
+import _mysql_exceptions
 
-import scrapelib
-from billy import db, settings
-
+from billy import settings
 
 
 MYSQL_USER = getattr(settings, 'MYSQL_USER', '')
@@ -57,14 +52,12 @@ DOWNLOADS = join(DATA, 'ca', 'downloads')
 DBADMIN = join(DATA, 'ca', 'dbadmin')
 
 
-
 def setup():
     try:
         os.makedirs(DOWNLOADS)
     except OSError:
         pass
     zipfile.ZipFile(join(DOWNLOADS, 'pubinfo_load.zip')).extractall(DBADMIN)
-    
 
 # ----------------------------------------------------------------------------
 # Logging config
@@ -73,15 +66,14 @@ logger = logging.getLogger('mysql-update')
 logger.setLevel(logging.INFO)
 
 ch = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(message)s', 
+formatter = logging.Formatter('%(asctime)s - %(message)s',
                               datefmt='%H:%M:%S')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-
-
 # ---------------------------------------------------------------------------
 # Miscellaneous db admin commands.
+
 
 def db_drop():
     '''Drop the database.'''
@@ -94,13 +86,11 @@ def db_drop():
         # The database doesn't exist.
         logger.info('...no such database. Bailing.')
         return
-                                            
+
     connection.autocommit(True)
     cursor = connection.cursor()
 
-
     cursor.execute('DROP DATABASE IF EXISTS capublic;')
-
 
     connection.close()
     logger.info('...done.')
@@ -111,12 +101,12 @@ def db_create():
 
     logger.info('Creating capublic...')
     os.chdir(DBADMIN)
-    
+
     with open('capublic.sql') as f:
         # Note: apparelty MySQLdb can't execute compound SQL statements,
         # so we have to split them up.
         sql_statements = f.read().split(';')
-    
+
     connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD)
     connection.autocommit(True)
     cursor = connection.cursor()
@@ -134,45 +124,43 @@ def db_create():
     logger.info('...done.')
 
 
-
 def db_startover():
     db_drop()
     db_create()
 
-    
+
 # ---------------------------------------------------------------------------
 # Functions for updating the data.
 def download():
     '''
     Update the wget mirror of ftp://www.leginfo.ca.gov/pub/bill/
 
-    Uses wget -m with default behavior and will automatically skip over 
-    any files that haven't been updated on the server since the file's 
+    Uses wget -m with default behavior and will automatically skip over
+    any files that haven't been updated on the server since the file's
     current timestamp.
     '''
     logger.info('Updating files from ftp://www.leginfo.ca.gov/pub/bill/ ...')
-
 
     # For short: wget -m -l1 -nd -A.zip ftp://www.leginfo.ca.gov/pub/bill/
     command = ["wget",
                '--mirror',
                '--level=1',
                '--no-directories',
-               '--accept=.zip', 
-               '--directory-prefix=' + DOWNLOADS, 
+               '--accept=.zip',
+               '--directory-prefix=' + DOWNLOADS,
                'ftp://www.leginfo.ca.gov/pub/bill/']
 
     # wget the ftp directory, and display wget output and also log to file.
     output = subprocess.check_output(command, stderr=subprocess.STDOUT)
     updated_files = re.findall(r"([^/]+?\.zip)' saved \[\d+\]", output)
-    
+
     if updated_files:
         msg = '...Done. Found %d updated files: %r'
         msg = msg % (len(updated_files), updated_files)
     else:
         msg = '...Done. Found no updated files.'
     logger.info(msg)
-                
+
     return updated_files
 
 
@@ -189,10 +177,10 @@ def extract(zipfile_names, strip=partial(re.compile(r'\.zip$').sub, '')):
 
         msg = 'Extracting %d files to %s...' % (len(zp.namelist()), folder)
         logger.info(msg)
-        
+
         zp.extractall(folder)
         folder_names.append(folder)
-        
+
     logger.info('done extracting zipfiles.')
     return folder_names
 
@@ -200,16 +188,16 @@ def extract(zipfile_names, strip=partial(re.compile(r'\.zip$').sub, '')):
 def load_bill_versions(folder, connection):
     '''
     Given a data folder, read its BILL_VERSION_TBL.dat file in python,
-    construct individual REPLACE statements and execute them one at 
+    construct individual REPLACE statements and execute them one at
     a time. This method is slower that letting mysql do the import,
     but doesn't fail mysteriously.
     '''
     DatRow = namedtuple('DatRow', [
-                      'bill_version_id', 'bill_id', 'version_num', 
-                      'bill_version_action_date', 'bill_version_action', 
-                      'request_num', 'subject', 'vote_required', 
-                      'appropriation', 'fiscal_committee', 'local_program', 
-                      'substantive_changes', 'urgency', 'taxlevy', 
+                      'bill_version_id', 'bill_id', 'version_num',
+                      'bill_version_action_date', 'bill_version_action',
+                      'request_num', 'subject', 'vote_required',
+                      'appropriation', 'fiscal_committee', 'local_program',
+                      'substantive_changes', 'urgency', 'taxlevy',
                       'bill_xml', 'active_flg', 'trans_uid', 'trans_update'])
 
     def dat_row_2_tuple(row):
@@ -249,18 +237,19 @@ def load_bill_versions(folder, connection):
             TRANS_UPDATE)
 
         VALUES (%s)
-        ''' 
+        '''
     sql = sql % ', '.join(['%s'] * 18)
-    
+
     cursor = connection.cursor()
     with open(join(folder, 'BILL_VERSION_TBL.dat')) as f:
         for row in f:
-            row = map(dat_row_2_tuple)   
+            row = dat_row_2_tuple(row)
             with open(join(folder, row.bill_xml)) as f:
                 row = row._replace(bill_xml=f.read())
                 cursor.execute(sql, tuple(row))
-    
+
     cursor.close()
+
 
 def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
     '''
@@ -270,20 +259,18 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
     the corresponding .sql file after swapping out windows paths for
     `folder`.
 
-    This function doesn't bother to delete the imported data files 
-    afterwards; they'll be overwritten within a week, and leaving them 
+    This function doesn't bother to delete the imported data files
+    afterwards; they'll be overwritten within a week, and leaving them
     around makes testing easier (they're huge).
     '''
     logger.info('Loading data from %s...' % folder)
-    
+
     folder = join(DOWNLOADS, folder)
     os.chdir(folder)
-
 
     connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
                                  db='capublic')
     connection.autocommit(True)
-
 
     # For each .dat folder, run its corresponding .sql file.
     filenames = glob.glob(join(folder, '*.dat'))
@@ -303,6 +290,7 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
         _, sql_filename = split(sql_filename)
         logger.info('...' + sql_filename)
         if sql_filename == 'bill_version_tbl.sql':
+            logger.info('...inserting xml files (slow)')
             load_bill_versions(folder, connection)
         else:
             cursor = connection.cursor()
@@ -311,7 +299,6 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
 
     connection.close()
     logging.info('...Done loading from %s' % folder)
-
 
 
 def delete_session(session_year):
@@ -332,7 +319,7 @@ def delete_session(session_year):
             'committee_hearing_tbl',
             'daily_file_tbl'
             ],
-        
+
         'bill_version_id': [
             'bill_version_authors_tbl',
             'bill_version_tbl'
@@ -344,14 +331,13 @@ def delete_session(session_year):
             ]
         }
 
-
     logger.info('Deleting all data for session year %s...' % session_year)
 
     connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
                                  db='capublic')
-    connection.autocommit(True)                        
+    connection.autocommit(True)
     cursor = connection.cursor()
-        
+
     for token, names in tables.items():
         for table_name in names:
             sql = ("DELETE FROM capublic.{table_name} "
@@ -360,20 +346,18 @@ def delete_session(session_year):
             logger.debug('executing sql: "%s"' % sql)
             cursor.execute(sql)
 
-
     cursor.close()
     connection.close()
     logger.info('...done deleting session data.')
 
 
-
 def update(zipfile_names=None, zipfile_name=None, unzip=True):
     '''
-    If a file named `pubinfo_(?P<session_year>\d{4}).zip` has been 
-    updated, delete all records in the database session_year indicated 
+    If a file named `pubinfo_(?P<session_year>\d{4}).zip` has been
+    updated, delete all records in the database session_year indicated
     in the file's name, then load the data from the zip file.
 
-    Otherwise, load each the data from each updated `{weekday}.zip` 
+    Otherwise, load each the data from each updated `{weekday}.zip`
     file in weekday order.
 
     Optionally, pass the names of one or more zipfiles as fabric kwargs
@@ -382,9 +366,9 @@ def update(zipfile_names=None, zipfile_name=None, unzip=True):
     fab -fdownload.py update:zipfile_name=zipfile1.zip
     '''
     logger.info('Updating capublic...')
-    days='Mon Tue Wed Thu Fri Sat Sun'.split()
+    days = 'Mon Tue Wed Thu Fri Sat Sun'.split()
 
-    # Make sure the sql scripts are unzipped in DBADMIN. 
+    # Make sure the sql scripts are unzipped in DBADMIN.
     setup()
 
     if zipfile_names is None:
@@ -401,13 +385,12 @@ def update(zipfile_names=None, zipfile_name=None, unzip=True):
         folder_names = extract(zipfile_names)
     else:
         folder_names = [x.replace('.zip', '') + '/' for x in zipfile_names]
-        
-        
 
     # ------------------------------------------------------------------------
     # Update any session updates in order.
-    
-    # Get a list of session folder names, usually only one, like ['pubinfo_2011']
+
+    # Get a list of session folder names, usually only one,
+    # like ['pubinfo_2011']
     session_folders = filter(re.compile(r'\d{4}').search, folder_names)
 
     for folder in session_folders:
@@ -419,15 +402,14 @@ def update(zipfile_names=None, zipfile_name=None, unzip=True):
         # Load the new data.
         load(folder)
 
-
     # ------------------------------------------------------------------------
     # Apply any daily updates in order.
 
     for s in session_folders:
         folder_names.remove(s)
 
-    def sorter(foldername, re_day=re.compile(r'Mon|Tue|Wed|Thu|Fri|Sat', re.I)):
-        day = re_day.search(foldername).group()
+    def sorter(foldername, re_day=r'Mon|Tue|Wed|Thu|Fri|Sat'):
+        day = re.search(re_day, foldername, re.I).group()
         return days.index(day)
 
     # Get a list of daily folder names, like ['pubinfo_Mon', 'pubinf_Tue']
@@ -435,7 +417,6 @@ def update(zipfile_names=None, zipfile_name=None, unzip=True):
 
     for folder in daily_folders:
         load(folder)
-
 
 
 def bootstrap(unzipped=True, zipped=True):
