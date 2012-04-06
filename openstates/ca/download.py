@@ -36,6 +36,7 @@ import logging
 from os.path import join, split
 from functools import partial
 from zipfile import ZipFile
+from collections import namedtuple
 
 import MySQLdb, _mysql_exceptions
 
@@ -54,6 +55,7 @@ PROJECT = settings.PROJECT_DIR
 DATA = settings.DATA_DIR
 DOWNLOADS = join(DATA, 'ca', 'downloads')
 DBADMIN = join(DATA, 'ca', 'dbadmin')
+
 
 
 def setup():
@@ -195,6 +197,70 @@ def extract(zipfile_names, strip=partial(re.compile(r'\.zip$').sub, '')):
     return folder_names
 
 
+def load_bill_versions(folder, connection):
+    '''
+    Given a data folder, read its BILL_VERSION_TBL.dat file in python,
+    construct individual REPLACE statements and execute them one at 
+    a time. This method is slower that letting mysql do the import,
+    but doesn't fail mysteriously.
+    '''
+    DatRow = namedtuple('DatRow', [
+                      'bill_version_id', 'bill_id', 'version_num', 
+                      'bill_version_action_date', 'bill_version_action', 
+                      'request_num', 'subject', 'vote_required', 
+                      'appropriation', 'fiscal_committee', 'local_program', 
+                      'substantive_changes', 'urgency', 'taxlevy', 
+                      'bill_xml', 'active_flg', 'trans_uid', 'trans_update'])
+
+    def dat_row_2_tuple(row):
+        '''Convert a row in the bill_version_tbl.dat file into a
+        namedtuple.
+        '''
+        cells = row.split('\t')
+        res = []
+        for cell in cells:
+            if cell.startswith('`') and cell.endswith('`'):
+                res.append(cell[1:-1])
+            elif cell == 'NULL':
+                res.append(None)
+            else:
+                res.append(cell)
+        return DatRow(*res)
+
+    sql = '''
+        REPLACE INTO capublic.bill_version_tbl (
+            BILL_VERSION_ID,
+            BILL_ID,
+            VERSION_NUM,
+            BILL_VERSION_ACTION_DATE,
+            BILL_VERSION_ACTION,
+            REQUEST_NUM,
+            SUBJECT,
+            VOTE_REQUIRED,
+            APPROPRIATION,
+            FISCAL_COMMITTEE,
+            LOCAL_PROGRAM,
+            SUBSTANTIVE_CHANGES,
+            URGENCY,
+            TAXLEVY,
+            BILL_XML,
+            ACTIVE_FLG,
+            TRANS_UID,
+            TRANS_UPDATE)
+
+        VALUES (%s)
+        ''' 
+    sql = sql % ', '.join(['%s'] * 18)
+    
+    cursor = connection.cursor()
+    with open(join(folder, 'BILL_VERSION_TBL.dat')) as f:
+        for row in f:
+            row = map(dat_row_2_tuple)   
+            with open(join(folder, row.bill_xml)) as f:
+                row = row._replace(bill_xml=f.read())
+                cursor.execute(sql, tuple(row))
+    
+    cursor.close()
 
 def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
     '''
@@ -236,9 +302,12 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
 
         _, sql_filename = split(sql_filename)
         logger.info('...' + sql_filename)
-        cursor = connection.cursor()
-        cursor.execute(script)
-        cursor.close()
+        if sql_filename == 'bill_version_tbl.sql':
+            load_bill_versions(folder, connection)
+        else:
+            cursor = connection.cursor()
+            cursor.execute(script)
+            cursor.close()
 
     connection.close()
     logging.info('...Done loading from %s' % folder)
