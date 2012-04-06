@@ -25,3 +25,15 @@ def session_list():
     return url_xpath('http://open.nysenate.gov/legislation/advanced/',
                      '//select[@name="session"]/option/text()')
 
+import re
+import lxml.html
+from billy.fulltext import clean_text, text_after_line_numbers
+
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = doc.xpath('//pre')[0].text_content()
+    # if there's a header above a _________, ditch it
+    text = text.rsplit('__________', 1)[-1]
+    # strip numbers from lines (not all lines have numbers though)
+    text = re.sub('\n\s*\d+\s*', ' ', text)
+    return clean_text(text)
