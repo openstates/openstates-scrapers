@@ -39,12 +39,8 @@ class NYCommitteeScraper(CommitteeScraper):
     state = "ny"
     latest_only = True
 
-    def scrape(self, chamber, term, only_names=None):
-        if chamber == "upper":
-            return self.scrape_upper(only_names)
-        elif chamber == "lower":
-            return self.scrape_lower(only_names)
-        return None
+    def scrape(self, chamber, term):
+        getattr(self, 'scrape_' + chamber)()
 
     def scrape_lower(self, only_names=None):
         committees = []
@@ -59,10 +55,6 @@ class NYCommitteeScraper(CommitteeScraper):
                 continue
 
             url = link.attrib['href']
-
-            if (not only_names) or (only_names and name not in only_names):
-                self.log("skipping committee %s" % name)
-                continue
 
             committees.append(name)
 
@@ -85,7 +77,7 @@ class NYCommitteeScraper(CommitteeScraper):
 
         self.save_committee(comm)
 
-    def scrape_upper(self, only_names=None):
+    def scrape_upper(self):
         committees = []
         url = "http://www.nysenate.gov/committees"
         page = self.urlopen(url)
@@ -98,10 +90,6 @@ class NYCommitteeScraper(CommitteeScraper):
             if name == 'New York State Conference of Black Senators':
                 # stop scraping once we reach the caucuses
                 break
-
-            if (not only_names) or (only_names and name not in only_names):
-                self.log("skipping committee %s" % name)
-                continue
 
             committees.append(name)
             self.scrape_upper_committee(name, link.attrib['href'])
