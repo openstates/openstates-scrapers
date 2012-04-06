@@ -1,4 +1,5 @@
 User-agent: *
-Disallow: /browse/
+Disallow: /admin/
 Disallow: /jenkins/
+Disallow: /oyster/
 Disallow: /api/v1/
