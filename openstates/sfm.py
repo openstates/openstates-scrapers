@@ -6,20 +6,6 @@ from billy.scrape.utils import convert_pdf
 
 from superfastmatch import Client
 
-def collapse_spaces(text):
-    return re.sub('\s+', ' ', text)
-
-def text_after_line_numbers(lines):
-    text = ''
-    for line in lines:
-        # real bill text starts with an optional space, line number
-        # more spaces, then real text
-        match = re.match('\s*\d+\s+(.*)', line)
-        if match:
-            text += match.groups()[0] + ' '
-    # text winds up being all real bill text joined w/ spaces
-    return text.decode('utf-8', 'ignore')
-
 def az_handler(filedata):
     html = lxml.html.fromstring(filedata)
     text = html.xpath('//div[@class="Section2"]')[0].text_content()
@@ -129,16 +115,6 @@ def ma_handler(filedata, metadata):
 def wv_handler(filedata, metadata):
     doc = lxml.html.fromstring(filedata)
     return doc.xpath('//div[@id="blocktext"]')[0].text_content()
-
-
-handlers = {
-    'az': az_handler,
-}
-
-def _to_numeric_id(id):
-    state,num = id.split('D')
-    states = ('AK', 'AL', 'AR', 'AZ')
-    return str(states.index(state) + 1) + num
 
 
 def push_to_sfm(doc, newdata):
