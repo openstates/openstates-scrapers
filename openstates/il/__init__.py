@@ -1,3 +1,6 @@
+from billy.fulltext import text_after_line_numbers, clean_text
+import lxml.html
+
 metadata = {
     'abbreviation': 'il',
     'name': 'Illinois',
@@ -99,3 +102,9 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://ilga.gov/PreviousGA.asp',
                      '//option/text()')
+
+
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(doc)
+    text = ' '.join(x.text_content() for x in doc.xpath('//td[@class="xsl"]'))
+    return clean_text(text)
