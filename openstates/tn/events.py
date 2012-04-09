@@ -46,7 +46,7 @@ class TNEventScraper(EventScraper):
             billinf = tds[0].attrib['id']  # TN uses bill_ids as the id
             event.add_related_bill(billinf)
         event.add_source(url)
-        event.add_document(url, "Agenda")
+        event.add_document(url, "Agenda", type="agenda")
         return event
 
     def _add_agenda_list(self, url, event):
