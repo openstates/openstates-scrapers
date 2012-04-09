@@ -3,23 +3,24 @@
 California has Joint Committees.
 '''
 import re
-import pdb
 from operator import methodcaller
-import pprint
 
 import lxml.html
 
 import scrapelib
-from billy.scrape.committees import CommitteeScraper, Committee 
+from billy.scrape.committees import CommitteeScraper, Committee
+
 
 strip = methodcaller('strip')
+
 
 def clean(s):
     '''You filthy string, you.'''
     return s.strip(u'\xa0 \n\t').replace(u'\xa0', ' ')
 
+
 class CACommitteeScraper(CommitteeScraper):
-    
+
     state = 'ca'
     encoding = 'utf-8'
 
@@ -47,7 +48,6 @@ class CACommitteeScraper(CommitteeScraper):
             urls = div.xpath('descendant::span[@class="field-content"]/a/@href')
 
             for c, _url in zip(committees, urls):
-                
                 if c.endswith('Committee'):
                     if type_ not in c:
                         c = '%s %s' % (type_, c)
@@ -56,16 +56,17 @@ class CACommitteeScraper(CommitteeScraper):
                 else:
                     if type_ not in c:
                         c = '%s %s' % (type_, c)
-                    
+
                 c = Committee(_chamber, c)
                 c.add_source(_url)
                 c.add_source(url)
-                for member, role, kw in self.scrape_membernames(c, _url, chamber, term):
+                for member, role, kw in self.scrape_membernames(c, _url,
+                        chamber, term):
                     c.add_member(member, role, **kw)
 
                 _found = False
                 if len(c['members']) == 0:
-                    for member, role, kw in self.scrape_membernames(c, 
+                    for member, role, kw in self.scrape_membernames(c,
                             _url + '/membersstaff', chamber, term):
                         _found = True
                         c.add_member(member, role, **kw)
@@ -75,7 +76,8 @@ class CACommitteeScraper(CommitteeScraper):
 
                 if len(c['members']) == 0:
                     cname = c['committee']
-                    raise ValueError('%r must have at least one member.' % cname)
+                    msg = '%r must have at least one member.'
+                    raise ValueError(msg % cname)
 
                 self.save_committee(c)
 
@@ -92,12 +94,13 @@ class CACommitteeScraper(CommitteeScraper):
                 c.add_source(_url)
                 c.add_source(url)
 
-                for member, role, kw in self.scrape_membernames(c, _url, chamber, term):
+                for member, role, kw in self.scrape_membernames(c, _url,
+                        chamber, term):
                     c.add_member(member, role, **kw)
 
                 _found = False
                 if len(c['members']) == 0:
-                    for member, role, kw in self.scrape_membernames(c, 
+                    for member, role, kw in self.scrape_membernames(c,
                             _url + '/membersstaff', chamber, term):
                         _found = True
                         c.add_member(member, role, **kw)
@@ -107,25 +110,23 @@ class CACommitteeScraper(CommitteeScraper):
 
                 if len(c['members']) == 0:
                     cname = c['committee']
-                    raise ValueError('%r must have at least one member.' % cname)
+                    msg = '%r must have at least one member.'
+                    raise ValueError(msg % cname)
 
                 self.save_committee(c)
 
-
     def scrape_membernames(self, committee, url, chamber, term):
-        '''Scrape the member names from this page. 
+        '''Scrape the member names from this page.
         '''
-        href_rgxs = (r'(sd|a)\d+$',
-                     r'dist\d+[.]',
-                     r'cssrc[.]us/web/\d+')
-        
+
         # Special-case senate subcomittees.
         if url == 'http://sbud.senate.ca.gov/subcommittees1':
             return self.scrape_members_senate_subcommittees(
                 committee, url, chamber, term)
 
-        # Many of the urls don't actually display members. Swap them for ones that do.
-        corrected_urls = (('http://autism.senate.ca.gov', 
+        # Many of the urls don't actually display members. Swap them for ones
+        # that do.
+        corrected_urls = (('http://autism.senate.ca.gov',
                  'http://autism.senate.ca.gov/committeemembers1'),
 
                 ('Sub Committee on Sustainable School Facilities',
@@ -138,7 +139,7 @@ class CACommitteeScraper(CommitteeScraper):
                  'http://sedn.senate.ca.gov/policyresearch'),
 
                 ('Education Policy Research',
-                 'http://sedn.senate.ca.gov/policyresearch'))        
+                 'http://sedn.senate.ca.gov/policyresearch'))
 
         corrected_urls = dict(corrected_urls)
 
@@ -165,7 +166,8 @@ class CACommitteeScraper(CommitteeScraper):
         names = Membernames.scrub(names)
         return names
 
-    def scrape_members_senate_subcommittees(self, committee, url, chamber, term, cache={}):
+    def scrape_members_senate_subcommittees(self, committee, url, chamber,
+                                            term, cache={}):
 
         if cache:
             names = cache[committee['subcommittee']]
@@ -219,12 +221,12 @@ class Membernames(object):
 
     @staticmethod
     def scrub(names):
-        '''Separate names from roles and chambers, etc. 
+        '''Separate names from roles and chambers, etc.
         '''
         role_rgxs = [r'(.+?)\s+\((.+?)\)',
                      r'(.+?),\s+(?![JS]r.)(.+)',
-                     ur'(.+?)\s*[-–]\s+(.+)',]
-        
+                     ur'(.+?)\s*[-–]\s+(.+)']
+
         res = []
         for name in names:
             name = clean(name)
