@@ -134,9 +134,13 @@ class VABillScraper(BillScraper):
                 link = va.get('href')
                 date = datetime.datetime.strptime(date, '%m/%d/%y')
 
-                # VA duplicates reprinted bills, lets keep the original name
-                bill.add_version(desc, BASE_URL+link, date=date,
-                                 on_duplicate='use_old')
+                # budget bills in VA are searchable but no full text available
+                if '+men+' in link:
+                    self.warning('not adding budget version, bill text not available')
+                else:
+                    # VA duplicates reprinted bills, lets keep the original name
+                    bill.add_version(desc, BASE_URL+link, date=date,
+                                     on_duplicate='use_old')
 
             # actions
             for ali in doc.xpath('//h4[text()="HISTORY"]/following-sibling::ul[1]/li'):
