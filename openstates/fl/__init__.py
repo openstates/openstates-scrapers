@@ -1,3 +1,6 @@
+from billy.fulltext import text_after_line_numbers, clean_text
+import lxml.html
+
 metadata = dict(
     name='Florida',
     abbreviation='fl',
@@ -30,3 +33,8 @@ metadata = dict(
 def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://flsenate.gov', '//option/text()')
+
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = doc.xpath('//pre')[0].text_content().encode('ascii', 'ignore')
+    return clean_text(text_after_line_numbers(text))
