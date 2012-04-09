@@ -86,3 +86,13 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.ncleg.net',
                      '//select[@name="sessionToSearch"]/option/text()')
+
+
+import lxml.html
+from billy.fulltext import clean_text, text_after_line_numbers
+
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = ' '.join([x.text_content() for x in
+                     doc.xpath('//p[starts-with(@class, "a")]')])
+    return clean_text(text)

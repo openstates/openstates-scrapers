@@ -528,3 +528,12 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.azleg.gov/xml/sessions.asp?sort=SessionID',
                      '//session/@session_full_name')
+
+
+import lxml.html
+from billy.fulltext import clean_text, text_after_line_numbers
+
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = doc.xpath('//div[@class="Section2"]')[0].text_content()
+    return clean_text(text)

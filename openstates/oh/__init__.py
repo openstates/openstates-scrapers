@@ -34,3 +34,12 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.legislature.state.oh.us/search.cfm',
                      '//form[@action="bill_search.cfm"]//input[@type="radio" and @name="SESSION"]/@value')
+
+
+import lxml.html
+from billy.fulltext import clean_text, text_after_line_numbers
+
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = ' '.join(x.text_content() for x in doc.xpath('//td[@align="LEFT"]'))
+    return clean_text(text)
