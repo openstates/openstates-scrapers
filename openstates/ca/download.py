@@ -368,9 +368,6 @@ def update(zipfile_names=None, zipfile_name=None, unzip=True):
     logger.info('Updating capublic...')
     days = 'Mon Tue Wed Thu Fri Sat Sun'.split()
 
-    # Make sure the sql scripts are unzipped in DBADMIN.
-    setup()
-
     if zipfile_names is None:
         if zipfile_name is not None:
             zipfile_names = [zipfile_name]
@@ -404,6 +401,9 @@ def update(zipfile_names=None, zipfile_name=None, unzip=True):
 
     # ------------------------------------------------------------------------
     # Apply any daily updates in order.
+
+    # Make sure the sql scripts are unzipped in DBADMIN.
+    setup()
 
     for s in session_folders:
         folder_names.remove(s)
