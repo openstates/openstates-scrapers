@@ -44,7 +44,7 @@ class TNEventScraper(EventScraper):
         for tr in trs:
             tds = tr.xpath("./*")
             billinf = tds[0].attrib['id']  # TN uses bill_ids as the id
-            event.add_related_bill(billinf)
+            event.add_related_bill(billinf, type="consideration")
         event.add_source(url)
         event.add_document(url, "Agenda", type="agenda")
         return event
