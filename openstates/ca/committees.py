@@ -88,8 +88,8 @@ class CACommitteeScraper(CommitteeScraper):
             names = subcom.xpath('descendant::a/text()')
             names = map(strip, names)
             urls = subcom.xpath('descendant::a/@href')
+            committee = 'Standing Committee on ' + committee
             for n, _url in zip(names, urls):
-
                 c = Committee(chamber, committee, subcommittee=n)
                 c.add_source(_url)
                 c.add_source(url)
@@ -246,7 +246,6 @@ class Membernames(object):
             name = re.sub(r'^(Senator|Assemblymember)', '', name)
             name = name.strip()
 
-            print '  ', name, role, kw
             if name:
                 res.append((name, role, kw))
 
