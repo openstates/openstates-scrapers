@@ -1,4 +1,5 @@
 import datetime
+from billy.fulltext import pdfdata_to_text, clean_text, text_after_line_numbers
 
 metadata =  {
     'name': 'Alabama',
@@ -113,8 +114,14 @@ metadata =  {
         'Organizational Session 2011']
 }
 
+
 def session_list():
     from billy.scrape.utils import url_xpath
     sessions = url_xpath('http://alisondb.legislature.state.al.us/acas/ACTIONSessionResultsMac.asp',
         '//option/text()' )
     return [s.strip() for s in sessions]
+
+
+def extract_text(oyster_doc, data):
+    text = pdfdata_to_text(data)
+    return clean_text(text_after_line_numbers(text))
