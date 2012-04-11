@@ -1,3 +1,5 @@
+import lxml.html
+from billy.fulltext import extracts_text
 
 metadata = dict(
     name='Minnesota',
@@ -83,3 +85,11 @@ def session_list():
     return url_xpath('https://www.revisor.mn.gov/revisor/pages/search_status/'
                      'status_search.php?body=House',
                      '//select[@name="session"]/option/text()')
+
+@extracts_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    xtend = doc.xpath('//div[@class="xtend"]')[0].text_content()
+    for v in doc.xpath('.//var/text()'):
+        xtend = xtend.replace(v, '')
+    return xtend

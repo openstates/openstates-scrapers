@@ -1,4 +1,5 @@
 import datetime
+from billy.fulltext import pdfdata_to_text, clean_text, text_after_line_numbers
 
 # most info taken from http://www.kslib.info/constitution/art2.html
 # also ballotpedia.org
@@ -34,3 +35,7 @@ def session_list():
                      '//a[contains(text(), "Senate Bills")]/@href')[0]
     slug = url.split('/')[2]
     return [slug]
+
+
+def extract_text(oyster_doc, data):
+    return clean_text(text_after_line_numbers(pdfdata_to_text(data)))
