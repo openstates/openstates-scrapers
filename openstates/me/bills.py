@@ -54,6 +54,16 @@ class MEBillScraper(BillScraper):
                 bill_id = link.text
                 title = link.xpath("string(../../following-sibling::dd[1])")
 
+                # A temporary hack to add one particular title that's missing
+                # on the directory page.
+                if len(title) == 0:
+                    if session == '125' and bill_id == 'SP0681':
+                        msg = 'Adding hard-coded title for bill_id %r'
+                        self.warning(msg % bill_id)
+                        title = ('An Act To Simplify the Certificate of Need '
+                                 'Process and Lessen the Regulatory Burden on '
+                                 'Providers')
+
                 if (title.lower().startswith('joint order') or
                     title.lower().startswith('joint resolution')):
                     bill_type = 'joint resolution'
