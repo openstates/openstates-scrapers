@@ -1,3 +1,6 @@
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
+
 metadata = dict(
     name='Pennsylvania',
     abbreviation='pa',
@@ -74,12 +77,9 @@ def session_list():
     return url_xpath('http://www.legis.state.pa.us/cfdocs/legis/home/'
                      'session.cfm', '//select[@id="BTI_sess"]/option/text()')
 
-
-import lxml.html
-from billy.fulltext import clean_text, text_after_line_numbers
-
+@oyster_text
 def extract_text(oyster_doc, data):
     if oyster_doc['metadata']['mimetype'] == 'text/html':
         doc = lxml.html.fromstring(data)
         text = ' '.join(x.text_content() for x in doc.xpath('//tr/td[2]'))
-        return clean_text(text)
+        return text

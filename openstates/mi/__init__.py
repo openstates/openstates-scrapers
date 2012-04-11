@@ -1,3 +1,6 @@
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
+
 metadata = {
     'name': 'Michigan',
     'abbreviation': 'mi',
@@ -32,10 +35,8 @@ def session_list():
                      'page=LegBasicSearch', '//option/text()')
 
 
-import lxml.html
-from billy.fulltext import clean_text, text_after_line_numbers
-
+@oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
     text = doc.xpath('//body')[0].text_content()
-    return clean_text(text)
+    return text

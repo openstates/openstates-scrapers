@@ -1,5 +1,5 @@
 import datetime
-from billy.fulltext import pdfdata_to_text, clean_text, text_after_line_numbers
+from billy.fulltext import pdfdata_to_text, oyster_text, text_after_line_numbers
 
 # most info taken from http://www.kslib.info/constitution/art2.html
 # also ballotpedia.org
@@ -37,5 +37,6 @@ def session_list():
     return [slug]
 
 
+@oyster_text
 def extract_text(oyster_doc, data):
-    return clean_text(text_after_line_numbers(pdfdata_to_text(data)))
+    return text_after_line_numbers(pdfdata_to_text(data))

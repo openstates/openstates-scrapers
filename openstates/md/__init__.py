@@ -1,4 +1,5 @@
 import datetime
+from billy.fulltext import pdfdata_to_text, oyster_text, text_after_line_numbers
 
 metadata = dict(
     name='Maryland',
@@ -86,8 +87,7 @@ def session_list():
                      '(//table)[2]//th/text()')[1:]
 
 
-from billy.fulltext import pdfdata_to_text, clean_text, text_after_line_numbers
-
+@oyster_text
 def extract_text(oyster_doc, data):
     text = pdfdata_to_text(data)
-    return clean_text(text_after_line_numbers(text))
+    return text_after_line_numbers(text)
