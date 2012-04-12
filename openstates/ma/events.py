@@ -9,8 +9,8 @@ import lxml.html
 
 urls = "http://www.malegislature.gov/Events/%s"
 pages = {
-    "lower" : [ urls % "SenateSessions" ],
-    "upper" : [ urls % "HouseSessions" ],
+    "upper" : [ urls % "SenateSessions" ],
+    "lower" : [ urls % "HouseSessions" ],
     "other" : [ urls % "JointSessions",
                 urls % "Hearings", urls % "SpecialEvents" ]
 }
