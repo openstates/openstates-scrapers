@@ -62,5 +62,5 @@ def extract_text(oyster_doc, data):
 
 document_class = {'AWS_PREFIX': 'documents/nj/',
                   'update_mins': None,
-                  'onchanged': [extract_text],
+                  'onchanged': [],
                  }
