@@ -1,7 +1,7 @@
 import datetime
 import lxml.html
+from billy.scrape.utils import url_xpath
 from billy.fulltext import oyster_text, text_after_line_numbers
-
 
 metadata = dict(
     name='New Jersey',
@@ -50,13 +50,17 @@ metadata = dict(
 )
 
 def session_list():
-    from billy.scrape.utils import url_xpath
     return url_xpath('http://www.njleg.state.nj.us/',
                      '//select[@name="DBNAME"]/option/text()')
-
 
 @oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
     text = doc.xpath('//div[@class="Section3"]')[0].text_content()
     return text
+
+
+document_class = {'AWS_PREFIX': 'documents/nj/',
+                  'update_mins': None,
+                  'onchanged': [extract_text],
+                 }
