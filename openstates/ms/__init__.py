@@ -89,3 +89,9 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://billstatus.ls.state.ms.us/sessions.htm',
                      '//a/text()')
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ms/',
+    update_mins = 30*24*60,
+    onchanged = []
+)

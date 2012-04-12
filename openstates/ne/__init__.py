@@ -54,3 +54,9 @@ def extract_text(oyster_doc, data):
     text = ' '.join(line for line in lines[i:]
                     if not line_num_re.match(line))
     return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ne/',
+    update_mins = None,
+    onchanged = []
+)

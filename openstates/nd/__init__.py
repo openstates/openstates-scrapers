@@ -50,3 +50,9 @@ def session_list():
         if adoc.xpath('//a[contains(@href, "leginfo")]'):
             sessions.append(a.text)
     return sessions
+
+document_class = dict(
+    AWS_PREFIX = 'documents/nd/',
+    update_mins = None,
+    onchanged = []
+)

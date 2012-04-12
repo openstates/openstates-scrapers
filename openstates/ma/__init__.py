@@ -58,3 +58,9 @@ def extract_text(oyster_doc, data):
     text = ' '.join([x.text_content()
                      for x in doc.xpath('//td[@class="longTextContent"]//p')])
     return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ma/',
+    update_mins = 7*24*60,
+    onchanged = []
+)

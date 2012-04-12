@@ -29,3 +29,9 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath( 'http://status.rilin.state.ri.us/bill_history.aspx?mode=previous',
                      "//select[@name='ctl00$rilinContent$cbYear']/option/text()" )
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ri/',
+    update_mins = 24*7*60,
+    onchanged = []
+)

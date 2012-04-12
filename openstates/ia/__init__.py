@@ -43,3 +43,9 @@ def session_list():
         for session in sessions
     ]
     return sessions
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ia/',
+    update_mins = None,
+    onchanged = []
+)

@@ -74,3 +74,9 @@ def session_list():
     sessions = url_xpath( 'http://le.utah.gov/',
         "//select[@name='Sess']/option/text()" )
     return [ session.strip() for session in sessions ]
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ut/',
+    update_mins = None,
+    onchanged = []
+)

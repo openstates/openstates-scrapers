@@ -39,3 +39,8 @@ def session_list():
     return url_xpath('http://leg.mt.gov/css/bills/Default.asp',
         "//td[@id='cont']/ul/li/a/text()")
 
+document_class = dict(
+    AWS_PREFIX = 'documents/mt/',
+    update_mins = None,
+    onchanged = []
+)

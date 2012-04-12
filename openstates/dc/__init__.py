@@ -44,3 +44,9 @@ def extract_text(oyster_doc, data):
     no_big_indent = re.compile('^\s{0,10}\S')
     text = '\n'.join(line for line in lines if no_big_indent.match(line))
     return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/dc/',
+    update_mins = None,
+    onchanged = []
+)

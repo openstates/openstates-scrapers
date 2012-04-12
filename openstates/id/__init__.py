@@ -174,3 +174,9 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://legislature.idaho.gov/priorsessions.htm',
                      '//td[@width="95%"]/ul/li/a/text()')[:-1]
+
+document_class = dict(
+    AWS_PREFIX = 'documents/id/',
+    update_mins = 7*24*60,
+    onchanged = []
+)

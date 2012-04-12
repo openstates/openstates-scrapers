@@ -101,3 +101,9 @@ def session_list():
     import re
     return [re.sub('\s+', ' ', x.text_content()) for x in
             url_xpath('http://www.legis.state.la.us/session.htm', '//strong')][:-1]
+
+document_class = dict(
+    AWS_PREFIX = 'documents/la/',
+    update_mins = 7*24*60,
+    onchanged = []
+)

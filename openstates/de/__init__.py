@@ -32,3 +32,9 @@ def session_list():
     sessions = [ session.strip() for session in sessions ]
     sessions.remove("Session")
     return sessions
+
+document_class = dict(
+    AWS_PREFIX = 'documents/de/',
+    update_mins = 7*24*60,
+    onchanged = []
+)

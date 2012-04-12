@@ -31,5 +31,8 @@ def session_list():
                      '//a[contains(@href, "Bill%20Status")]/text()')
     return [zip.replace(' Bill Status Tables.zip', '') for zip in zips]
 
-
-
+document_class = dict(
+    AWS_PREFIX = 'documents/nh/',
+    update_mins = 7*24*60,
+    onchanged = []
+)

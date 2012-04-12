@@ -46,3 +46,9 @@ def session_list():
     from billy.scrape.utils import url_xpath
     # cool URL bro
     return url_xpath('http://www.in.gov/legislative/2414.htm', '//h3/text()')
+
+document_class = dict(
+    AWS_PREFIX = 'documents/in/',
+    update_mins = None,
+    onchanged = []
+)

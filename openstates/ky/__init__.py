@@ -37,3 +37,9 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.lrc.ky.gov/legislation.htm',
                      '//a[contains(@href, "record.htm")]/img/@alt')
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ky/',
+    update_mins = 7*24*60,
+    onchanged = []
+)

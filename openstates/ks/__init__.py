@@ -40,3 +40,9 @@ def session_list():
 @oyster_text
 def extract_text(oyster_doc, data):
     return text_after_line_numbers(pdfdata_to_text(data))
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ks/',
+    update_mins = None,
+    onchanged = [extract_text]
+)

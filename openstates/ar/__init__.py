@@ -72,3 +72,9 @@ def session_list():
         'http://www.arkleg.state.ar.us/assembly/2011/2011R/Pages/Previous%20Legislatures.aspx',
         '//div[@id="ctl00_ctl15_g_95338513_84cb_48ec_85d1_4e6a889e8035_panel"]//a')
     return [s.text_content() for s in sessions if s.text_content()]
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ar/',
+    update_mins = 7*24*60,
+    onchanged = []
+)

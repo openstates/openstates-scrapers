@@ -1,5 +1,5 @@
 import lxml.html
-from billy.fulltext import extracts_text
+from billy.fulltext import oyster_text
 
 metadata = dict(
     name='Minnesota',
@@ -86,10 +86,16 @@ def session_list():
                      'status_search.php?body=House',
                      '//select[@name="session"]/option/text()')
 
-@extracts_text
+@oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
     xtend = doc.xpath('//div[@class="xtend"]')[0].text_content()
     for v in doc.xpath('.//var/text()'):
         xtend = xtend.replace(v, '')
     return xtend
+
+document_class = dict(
+    AWS_PREFIX = 'documents/mn/',
+    update_mins = 7*24*60,
+    onchanged = [extract_text]
+)

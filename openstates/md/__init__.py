@@ -91,3 +91,9 @@ def session_list():
 def extract_text(oyster_doc, data):
     text = pdfdata_to_text(data)
     return text_after_line_numbers(text)
+
+document_class = dict(
+    AWS_PREFIX = 'documents/md/',
+    update_mins = None,
+    onchanged = [extract_text]
+)

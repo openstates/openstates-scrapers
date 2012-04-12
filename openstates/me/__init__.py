@@ -33,3 +33,9 @@ def session_list():
     sessions.remove('jb-Test')
     sessions.remove('2001-2002')
     return sessions
+
+document_class = dict(
+    AWS_PREFIX = 'documents/me/',
+    update_mins = 7*24*60,
+    onchanged = []
+)
