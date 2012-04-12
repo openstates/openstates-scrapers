@@ -1,11 +1,15 @@
 import pdb
 import re
-from os.path import join, dirname, abspath
+import os
 import cookielib
 import operator
-from operator import methodcaller
 import itertools
+import contextlib
+import logging
+from os.path import join, dirname, abspath
 from functools import partial
+from collections import namedtuple, defaultdict
+from operator import itemgetter, methodcaller
 
 import nltk
 import requests
@@ -13,21 +17,18 @@ import feedparser
 
 from billy.models import db
 from billy.utils import metadata
+from billy.conf import settings
 
-import pdb
-from collections import namedtuple, defaultdict
-from operator import itemgetter
-from operator import methodcaller 
 
-def trie_add(trie, terms, terminus=0):
+def trie_add(trie, seq_value_2_tuples, terminus=0):
     '''Given a trie (or rather, a dict), add the match terms into the
     trie.
     '''
-    for s in terms:
-        
+    for seq, value in seq_value_2_tuples:
+
         this = trie
-        s_len = len(s) - 1
-        for i, c in enumerate(s):
+        w_len = len(seq) - 1
+        for i, c in enumerate(seq):
             
             if c in ', ':
                 continue
@@ -38,19 +39,44 @@ def trie_add(trie, terms, terminus=0):
                 this[c] = {}
                 this = this[c]
 
-            if i == s_len:
-                this[terminus] = None
+            if i == w_len:
+                this[terminus] = value
                 
     return trie
 
 
-def trie_scan(trie, s, 
-         preprocessors=[methodcaller('lower')],
-         _match=namedtuple('Match', 'text start end data'),
+class PseudoMatch(object):
+    '''A fake match object that provides the same basic interface
+    as _sre.SRE_Match.'''
+
+    def __init__(self, group, start, end):
+        self._group = group
+        self._start = start
+        self._end = end
+
+    def group(self):
+        return self._group
+
+    def start(self):
+        return self._start
+
+    def end(self):
+        return self._end
+
+    def _tuple(self):
+        return (self._group, self._start, self._end)
+
+    def __repr__(self):
+        return 'PseudoMatch(group=%r, start=%r, end=%r)' % self._tuple()
+
+
+def trie_scan(trie, s,
+         _match=PseudoMatch,
          second=itemgetter(1)):
     '''
     Finds all matches for `s` in trie.
     '''
+
     res = []
     match = []
 
@@ -69,9 +95,9 @@ def trie_scan(trie, s,
             match.append((i, c))
             in_match = True
             if 0 in this:
-                res.append(_match(text=''.join(map(second, match)),
-                                  start=match[0][0], end=match[-1][0],
-                                  data=this[0]))
+                _matchobj = _match(group=''.join(map(second, match)),
+                                   start=match[0][0], end=match[-1][0])
+                res.append([_matchobj] + this[0])
 
         else:
             in_match = False
@@ -86,141 +112,37 @@ def trie_scan(trie, s,
 
     # Remove any matches that are enclosed in bigger matches.
     prev = None
-    for match in reversed(res):
-
+    for tpl in reversed(res):
+        match, _, _ = tpl
         start, end = match.start, match.end
 
         if prev:
-            a = prev.start <= match.start
-            b = match.end <= prev.end
-            c = match.text in prev.text
+            a = prev._start <= match._start
+            b = match._end <= prev._end
+            c = match._group in prev._group
             if a and b and c:
-                res.remove(match)
+                res.remove(tpl)
 
         prev = match
         
     return res
 
-# ----------------------------------------------------------------------------
-# Fetch the feeds.
-
-feeds = '''
-    http://www.sfgate.com/rss/feeds/news_politics.xml
-    http://feeds.feedburner.com/CaliforniaPolitics
-    http://blogs.kqed.org/capitalnotes/feed/
-    http://www.sfgate.com/rss/feeds/blogs/sfgate/nov05election/index_rss2.xml
-    http://www.capitolbasement.com/rss.php?_c=10h5g5p944kp5pw
-    http://www.laobserved.com/index.xml
-    http://www.californiascapitol.com/blog/feed/rss/
-    http://www.ocregister.com/sections/rss/
-    http://www.newwestnotes.com/feed/
-    http://www.ibabuzz.com/politics/feed/
-    http://www.ocregister.com/common/rss/rss.php?catID=18805
-    http://www.camajorityreport.com/index.php?theme=rss
-    http://feeds.feedburner.com/CaliticsFeed
-    http://www.camajorityreport.com/index.php?theme=rss
-    http://feeds.feedburner.com/EnvironmentalUpdates
-    http://www.flashreport.org/blog/?feed=rss
-    http://www.ocblog.net/feed/
-    http://capoliticalnews.com/feed/
-    http://rosereport.org/index.php?option=com_easyblog&view=categories&format=feed&type=rss&id=57&Itemid=198
-    http://kimalex.blogspot.com/feeds/posts/default
-    http://californiacitynews.typepad.com/californiacitynewsorg/atom.xml
-    http://feeds.feedburner.com/blogspot/uqpFc
-    http://inbox.berkeley.edu/feed/
-    http://electionlawblog.org/?feed=rss2
-    http://www.cawrecycles.org/taxonomy/term/10/0/feed
-    http://www.sacbee.com/politics/index.rss
-    http://www.sacbee.com/state/index.rss
-    http://www.sacbee.com/gov2010/index.rss
-    http://www.sacbee.com/static/weblogs/capitolalertlatest/atom.xml
-    http://www.sacbee.com/stateworker/index.rss
-    http://www.sacbee.com/static/weblogs/the_state_worker/atom.xml
-    http://www.sacbee.com/static/weblogs/weed-wars/atom.xml
-    http://www.sacbee.com/sierrawarming/index.rss
-    http://www.sacbee.com/walters/index.rss
-    '''.split()
-
-PATH = dirname(abspath(__file__))
-
-request_defaults = {
-    'proxies': {"http": "localhost:8001"},
-    #'cookies': cookielib.LWPCookieJar(join(PATH, 'cookies.lwp')),
-    'headers': {
-        'Accept': ('text/html,application/xhtml+xml,application/'
-                   'xml;q=0.9,*/*;q=0.8'),
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'en-us,en;q=0.5',
-        'Connection': 'keep-alive',
-        'User-Agent': ('Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:10.0.2) '
-                       'Gecko/20100101 Firefox/10.0.2')
-        },
-    }
-
-session = requests.Session(**request_defaults)
-from requests import async
-
-rs = [async.get(url, **request_defaults) for url in feeds]
-responses = async.map(rs, size=4)
-
-# _feeds = []
-# for resp in responses:
-#     text = resp.text
-#     feed = feedparser.parse(text)
-#     _feeds.append((url, feed))
+@contextlib.contextmanager
+def cd(dir_):
+    '''Temporarily change dirs to minimize os.path.join biolerplate.'''
+    cwd = os.getcwd()
+    os.chdir(dir_)
+    yield
+    os.chdir(cwd)
 
 
-# # ---------------------------------------------------------------------------
-# # Build the trie.
-# meta = metadata('ca')
+def cat_product(s_list1, s_list2):
+    '''Given two lists of strings, take the cartesian product
+    of the lists and concat each resulting 2-tuple.'''
+    prod = itertools.product(s_list1, s_list2)
+    return map(partial(apply, operator.add), prod)
 
-# # legislature_name upper_chamber_name lower_chamber_name
-# term_keys = [
-#     'Assemblymember', 'Assembly Member', 'Assemblyman',
-#     'Assemblywoman', 'Assembly person'
-#     ]
 
-# #terms = map(meta.get, term_keys)
-
-# legs = list(db.legislators.find({'state': 'ca'}))
-# coms = list(db.committees.find({'state': 'ca'}))
-
-# hits = defaultdict(set)
-
-# lowercase = methodcaller('lower')
-# terms = set()
-
-# term_to_id = {}
-
-# # Matches include:
-# # - Assembly Member Tony Strickland
-# # - Assembly Member Strickland
-# # - Assemblymember Strickland
-# # - Assemblyman Strickland
-# # - Assemblywoman Strickland
-# # - Assemblyperson Strickland
-# _terms = set()
-# for leg in legs:
-#     legid = leg['_id']
-#     last = leg['last_name']
-#     full = leg['full_name']
-#     for t in term_keys:
-#         _add_terms = [t + ' ' + last,
-#                       t + ' ' + full,
-#                       full]
-#         for t in _add_terms:
-#             _terms.add(t)
-#             term_to_id[t] = ('legislator', legid)
-
-# # for com in coms:
-# #     _terms.add(com['committee'])
-# #     if com['subcommittee']:
-# #         _terms.add(com['subcommittee'])
-
-# re_bills = '(?:%s) ?\d[\w-]*' % '|'.join(['AB', 'ACR', 'AJR', 'SB', 'SCR', 'SJR'])
-# re_committees = '(?:Assembly|Senate).{,200}?Committee'
-
-# trie = trie_add({}, _terms)
 
 # for url, f in _feeds:
 #     res = []
@@ -260,6 +182,13 @@ responses = async.map(rs, size=4)
 # for link, kw in hits.items():
 #     print link, kw
 
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+PATH = dirname(abspath(__file__))
+DATA = settings.BILLY_DATA_DIR
+
 
 class Meta(type):
     classes = [] 
@@ -268,59 +197,164 @@ class Meta(type):
         meta.classes.append(cls)
         return cls
 
+
 class Base(object):
     __metaclass__ = Meta
 
-    def related_bill(self, m):
+    def extract_bill(self, m, collection=db.bills):
         '''Given a match object m, return the _id of the related bill. 
         '''
+
+    def extract_committee(self, m, collection=db.committees):
         pass
 
-    def related_committee(self, m):
+    def extract_legislator(self, m, collection=db.legislators):
         pass
 
-    def related_legislator(self, m):
-        pass
-
-    def _compile(self):
+    def _build_trie(self):
         '''Interpoolate values from this state's mongo records
         into the trie_terms strings. Create a new list of formatted
         strings to use in building the trie.
         '''
-        compiled_terms = [] 
+        trie = {}
         trie_terms = self.trie_terms
         abbr = self.__class__.__name__.lower()
+
         for collection_name in trie_terms:
+            trie_data = []
             collection = getattr(db, collection_name)
             cursor = collection.find({'state': abbr})
+            self.logger.info('compiling %d %r trie term values' % (
+                cursor.count(), collection_name))
+
             for record in cursor:
                 k = collection_name.rstrip('s')
                 vals = {k: record}
+
                 for term in trie_terms[collection_name]:
-                    compiled_terms.append(term.format(**vals))
-        self.trie = trie_add({}, compiled_terms)
-        self.compiled_terms = compiled_terms
-        return compiled_terms
+
+                    if isinstance(term, basestring):
+                        trie_add_args = (term.format(**vals), 
+                                         [collection_name, record['_id']])
+                        trie_data.append(trie_add_args)
+
+                    elif isinstance(term, tuple):
+                        k, func = term
+                        trie_add_args = (func(record[k]), 
+                                         [collection_name, record['_id']])
+                        trie_data.append(trie_add_args)
+
+            self.logger.info('adding %d %s terms to the trie' % \
+                (len(trie_data), collection_name))
+
+            trie = trie_add(trie, trie_data)
+
+        if hasattr(self, 'committee_variations'):
+
+            committee_variations = self.committee_variations
+            trie_data = []
+            records = db.committees.find({'state': 'ny'}, 
+                                         {'committee': 1, 'subcommittee': 1,
+                                          'chamber': 1})
+            self.logger.info('Computing name variations for %d records' % \
+                                                            records.count())
+            for c in records:
+                for variation in committee_variations(c):
+                    trie_add_args = (variation, ['committees', c['_id']])
+                    trie_data.append(trie_add_args)
+
+        self.logger.info('adding %d %s terms to the trie' % \
+            (len(trie_data), collection_name))
+        trie = trie_add(trie, trie_data)
+        self.trie = trie 
 
 
-    def _process_feed(self, resp):
+    def _scan_feed(self, feed):
 
+        try:
+            self.logger.info('- scanning %s' % feed['feed']['links'][0]['href'])
+        except KeyError:
+            self.logger.info('- scanning feed with no link provided, grrr...')
+        relevant = self.relevant
         matches = []
-        feed = feedparser.parse(resp.text)
         for e in feed['entries']:
+
+            # Search the trie.
             link = e['link']
             summary = nltk.clean_html(e['summary'])
-            matches += trie_scan(self.trie, summary)
-        return matches
-        
+            matches = trie_scan(self.trie, summary)
+            if matches:
+                relevant[link] += matches
 
-def cat_product(s_list1, s_list2):
-    '''Given two lists of strings, take the cartesian product
-    of the lists and concat east resulting 2-tuple.'''
-    prod = itertools.product(s_list1, s_list2)
-    return map(partial(apply, operator.add), prod)
+            # Search the regexes.
+            for collection_name, rgxs in self.rgxs.items():
+                for r in rgxs:
+                    for matchobj in re.finditer(r, summary):
+                        relevant[link].append([matchobj, collection_name])
+
+        return matches
+
+
+    def _scan_all_feeds(self):
+        
+        abbr = self.__class__.__name__.lower()
+        STATE_DATA = join(DATA, abbr, 'feeds')
+        STATE_DATA_RAW = join(STATE_DATA, 'raw')
+        feeds = []
+        matches = []
+        with cd(STATE_DATA_RAW):
+            for fn in os.listdir('.'):
+                with open(fn) as f:
+                    feed = feedparser.parse(f.read())
+                    matches = self._scan_feed(feed)
+
+        return matches
+
+    def _extract_entities(self):
+
+        funcs = {}
+        for collection_name, method in (('bills', 'extract_bill'),
+                                        ('legislators', 'extract_legislator'),
+                                        ('committees', 'extract_committees')):
+
+            try:
+                funcs[collection_name] = getattr(self, method)
+            except AttributeError:
+                pass
+
+        for link, matchdata in self.relevant.items():
+            processed = []
+            for m in matchdata:
+                if len(m) == 2:
+                    match, collection_name = m
+                    extractor = funcs.get(collection_name)
+                    if extractor:
+                        _id = extractor(match)
+                        processed.append(m + [_id])
+                else:
+                    processed.append(m)
+
+            self.relevant[link] = processed
+
+    def build(self):
+        self._scan_all_feeds()
+        self._extract_entities()
+
 
 class CA(Base):
+
+    def __init__(self):
+
+        self.relevant = defaultdict(list)
+        self.abbr = self.__class__.__name__.lower()
+
+        logger = logging.getLogger(self.abbr)
+        logger.setLevel(logging.DEBUG)
+        ch = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+        self.logger = logger
 
     trie_terms = {
         'legislators': cat_product(
@@ -342,7 +376,13 @@ class CA(Base):
              u'Assembly person'], 
 
             [u' {legislator[last_name]}',
-             u' {legislator[full_name]}'])}
+             u' {legislator[full_name]}']),
+
+        'bills': [ 
+            ('bill_id', lambda s: s.upper().replace('.', ''))
+            ]
+
+        }
 
     rgxs = {
         'bills': [
@@ -356,12 +396,77 @@ class CA(Base):
 
     }
 
+
+    def extract_bill(self, m, collection=db.bills, cache={}):
+        '''Given a match object m, return the _id of the related bill. 
+        '''
+        def squish(bill_id):
+            bill_id = ''.join(bill_id.split())
+            bill_id = bill_id.upper().replace('.', '')
+            return bill_id
+
+        bill_id = squish(m.group())
+
+        try:
+            ids = cache['ids']
+        except KeyError:
+            # Get a list of (bill_id, _id) tuples like ('SJC23', 'CAB000123')
+            ids = collection.find({'state': self.abbr}, {'bill_id': 1})
+            ids = dict((squish(r['bill_id']), r['_id']) for r in ids)
+
+            # Cache it in the method.
+            cache['ids'] = ids
+
+        if bill_id in ids:
+            return ids[bill_id]
+
+
+    def extract_committee(self, m, collection=db.committees):
+        return None
+
+
+    def committee_variations(self, committee):
+        '''Compute likely variations for a committee
+
+        Standing Committee on Rules
+         - Rules Committee
+         - Committee on Rules
+         - Senate Rules
+         - Senate Rules Committee
+         - Rules (useless)
+        '''
+        
+        name = committee['committee']
+        ch = committee['chamber']
+        if ch != 'joint':
+            chamber_name = metadata('ny')[ch + '_chamber_name']
+        else:
+            chamber_name = 'Joint'
+
+        # Arts
+        raw = re.sub(r'(Standing|Joint|Select) Committee on ', '', name)
+        raw = re.sub(r'\s+Committee$', '', raw)
+
+        # Committee on Arts
+        committee_on = 'Committee on ' + raw
+
+        # Arts Committee
+        short = raw + ' Committee'
+        
+        if not short.startswith(chamber_name):
+            cow = chamber_name + ' ' + short
+        else:
+            cow = short
+
+        return set([name, committee_on, raw, short, cow])
+
+
 '''
 To-do:
-Make trie-scan return a pseudo-match object that has same
+DONE - Make trie-scan return a pseudo-match object that has same
 interface as re.matchobjects. 
 
-Handle A.B. 200 variations for bills.
+DONE - Handle A.B. 200 variations for bills.
 
 Tune committee regexes.
 
@@ -369,10 +474,66 @@ Investigate other jargon and buzz phrase usage i.e.:
  - speaker of the house
  - committee chair
 '''
+
+def committee_variations(committee):
+    '''Compute likely variations for a committee
+
+    Standing Committee on Rules
+     - Rules Committee
+     - Committee on Rules
+     - Senate Rules
+     - Senate Rules Committee
+     - Rules (useless)
+    '''
+    
+    name = committee['committee']
+    ch = committee['chamber']
+    if ch != 'joint':
+        chamber_name = metadata('ny')[ch + '_chamber_name']
+    else:
+        chamber_name = 'Joint'
+
+    # Arts
+    raw = re.sub(r'(Standing|Joint|Select) Committee on ', '', name)
+    raw = re.sub(r'\s+Committee$', '', raw)
+
+    # Committee on Arts
+    committee_on = 'Committee on ' + raw
+
+    # Arts Committee
+    short = raw + ' Committee'
+    
+    if not short.startswith(chamber_name):
+        cow = chamber_name + ' ' + short
+    else:
+        cow = short
+
+    return set([name, committee_on, short, cow])
+
+
 if __name__ == '__main__':
     ca = CA()
-    ca._compile()
+    ca._build_trie()
     ma = []
-    for r in responses:
-        ma += ca._process_feed(r)
+    ca.build()
+    x = ca.relevant.values()
+    bad = []
+    for y in itertools.chain.from_iterable(x):
+        if y[-1] is None:
+            print y
+            bad.append(y)
+    comm = [y for y in itertools.chain.from_iterable(x) if y[1] == 'committees']
+    for y in itertools.chain.from_iterable(x):
+        if y[1] == 'committees':
+            print y
+    import pdb;pdb.set_trace()
+    # comms = list(db.committees.find({'state': 'ny'}, 
+    #                                 {'committee': 1, 'subcommittee': 1,
+    #                                  'chamber': 1}))
+    
+    # for x in comms:
+    #     print x
+    #     print comm(x)
+    #     raw_input(':')
+
     import pdb;pdb.set_trace()
