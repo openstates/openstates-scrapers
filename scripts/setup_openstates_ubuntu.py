@@ -31,17 +31,8 @@ packages = {
         python-dev
         libxslt1-dev
         git'''.split(),
-
-    # These are the dependencies for MySQLdb.
-    'mysql': '''
-        libctemplate0
-        libzip
-        python-sqlite2
-        mysql-client
-        python-crypto
-        python-paramiko'''.split(),
+        
     }
-
 
 # ---------------------------------------------------------------------------
 # Utility functions
@@ -133,6 +124,12 @@ def setup_openstates():
     gitclone('git://github.com/sunlightlabs/billy.git', 'develop')
 
 
+def setup_mysql():
+    package_ensure('mysql-server')
+    run("sudo apt-get build-dep python-mysqldb")
+    run("pip install MySQL-python")
+        
+
 if __name__ == "__main__":
 
     try:
@@ -151,3 +148,5 @@ if __name__ == "__main__":
     python = join(ENV, 'bin', 'python')
 
     setup_openstates()
+
+
