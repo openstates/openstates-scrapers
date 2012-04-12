@@ -1,4 +1,6 @@
 import datetime
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
 
 metadata = dict(
     name='Arizona',
@@ -26,7 +28,7 @@ metadata = dict(
         #    ],
         #    'start_year': 1995, 'end_year': 1996
         #},
-       # 
+       #
         #{'name': '43',
         #    'sessions': [
         #    '43rd-1st-special',
@@ -41,7 +43,7 @@ metadata = dict(
         #    ],
         #    'start_year': 1997, 'end_year': 1998
         #},
-       # 
+       #
         #{'name': '44',
         #    'sessions': [
         #    '44th-1st-special',
@@ -57,7 +59,7 @@ metadata = dict(
         #    ],
         #    'start_year': 1999, 'end_year': 2000
         #},
-       # 
+       #
         #{'name': '45',
         #    'sessions': [
         #    '45th-1st-regular',
@@ -72,7 +74,7 @@ metadata = dict(
         #    ],
         #    'start_year': 2001, 'end_year': 2002
         #},
-       # 
+       #
         #{'name': '46',
         #    'sessions': [
         #    '46th-1st-special',
@@ -83,7 +85,7 @@ metadata = dict(
         #    ],
         #    'start_year': 2003, 'end_year': 2004
         #},
-       # 
+       #
         #{'name': '47',
         #    'sessions': [
         #    '47th-1st-regular',
@@ -93,7 +95,7 @@ metadata = dict(
         #    ],
         #    'start_year': 2005, 'end_year': 2006
         #},
-       # 
+       #
         #{'name': '48',
         #    'sessions': [
         #    '48th-1st-regular',
@@ -103,7 +105,7 @@ metadata = dict(
         #    ],
         #    'start_year': 2007, 'end_year': 2008
         #},
-       # 
+       #
         {'name': '49',
             'sessions': [
             '49th-1st-special',
@@ -279,7 +281,7 @@ metadata = dict(
             #    {'type': 'special', 'session_id': 72,
             #    'display_name': '45th Legislature, 2nd Special Session',
             #    'start_date': datetime.date(2001, 11, 13),
-            #    'end_date': datetime.date(2001, 12, 19)},  
+            #    'end_date': datetime.date(2001, 12, 19)},
             #'45th-3rd-special':
             #    {'type': 'special', 'session_id': 73,
             #    'display_name': '45th Legislature, 3rd Special Session',
@@ -472,7 +474,7 @@ metadata = dict(
                 {'type': 'primary', 'session_id': 107,
                 'display_name': '50th Legislature, 2nd Regular Session',
                 '_scraped_name': 'Fiftieth Legislature - Second Regular Session',
-                #'start_date': , 'end_date': 
+                #'start_date': , 'end_date':
                 },
         },
         _ignored_scraped_sessions=[
@@ -530,10 +532,8 @@ def session_list():
                      '//session/@session_full_name')
 
 
-import lxml.html
-from billy.fulltext import clean_text, text_after_line_numbers
-
+@oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
     text = doc.xpath('//div[@class="Section2"]')[0].text_content()
-    return clean_text(text)
+    return text

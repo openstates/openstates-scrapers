@@ -1,4 +1,6 @@
 import datetime
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
 
 metadata = {
     'name': 'Virginia',
@@ -60,11 +62,9 @@ def session_list():
     return [s.strip() for s in sessions if 'Session' in s]
 
 
-import lxml.html
-from billy.fulltext import clean_text, text_after_line_numbers
-
+@oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
     text = ' '.join(x.text_content()
                     for x in doc.xpath('//div[@id="mainC"]/p'))
-    return clean_text(text)
+    return text

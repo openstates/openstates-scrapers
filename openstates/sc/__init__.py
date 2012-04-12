@@ -1,6 +1,6 @@
 import lxml.html
 import datetime
-from billy.fulltext import clean_text
+from billy.fulltext import oyster_text
 
 metadata = dict(
     name='South Carolina',
@@ -40,9 +40,9 @@ def session_list():
     return url_xpath( 'http://www.scstatehouse.gov/billsearch.php',
         "//select[@id='session']/option/text()" )
 
+@oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
     # trim first and last part
     text = ' '.join(p.text_content() for p in doc.xpath('//p')[1:-1])
-    return clean_text(text)
-
+    return text

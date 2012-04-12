@@ -161,7 +161,12 @@ class WIBillScraper(BillScraper):
                   'Engrossed Resolution' in a.text or
                   'Text as Enrolled' in a.text
                  ):
-                bill.add_version(a.text, a.get('href'))
+                bill.add_version(a.text, a.get('href'), mimetype="text/html")
+
+                pdf = a.xpath('following-sibling::span/a/@href')
+                bill.add_version(a.text, pdf.get('href'),
+                                 mimetype="application/pdf")
+
             elif a.text in ('Amendments', 'Fiscal Estimates',
                             'Record of Committee Proceedings'):
                 extra_doc_url = a.get('href')

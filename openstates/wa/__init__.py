@@ -1,3 +1,6 @@
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
+
 metadata = dict(
     name='Washington',
     abbreviation='wa',
@@ -31,11 +34,8 @@ def session_list():
     return url_xpath('http://apps.leg.wa.gov/billinfo/',
      '//td[starts-with(@id, "ctl00_ContentPlaceHolder1_TabControl1")]/text()')
 
-
-import lxml.html
-from billy.fulltext import clean_text, text_after_line_numbers
-
+@oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
     text = ' '.join(x.text_content() for x in doc.xpath('//body/p'))
-    return clean_text(text)
+    return text

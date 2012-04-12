@@ -72,7 +72,11 @@ class UTBillScraper(BillScraper):
             '//a[contains(@href, "bills/") and text() = "HTML"]'):
 
             name = link.getprevious().tail.strip()
-            bill.add_version(name, link.attrib['href'])
+            bill.add_version(name, link.attrib['href'], mimetype="text/html")
+            next = link.getnext()
+            if next.text == "PDF":
+                bill.add_version(name, next.attrib['href'],
+                                 mimetype="application/pdf")
 
         for link in page.xpath(
             "//a[contains(@href, 'fnotes') and text() = 'HTML']"):

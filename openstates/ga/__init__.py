@@ -1,4 +1,4 @@
-from billy.fulltext import text_after_line_numbers, clean_text
+from billy.fulltext import text_after_line_numbers, oyster_text
 import lxml.html
 
 metadata = {
@@ -49,6 +49,7 @@ def session_list():
     return sessions
 
 
+@oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
     lines = doc.xpath('//span/text()')
@@ -59,5 +60,4 @@ def extract_text(oyster_doc, data):
             text = '\n'.join(lines[lines.index(header)+1:])
             break
 
-    return clean_text(text)
-
+    return text

@@ -1,4 +1,4 @@
-from billy.fulltext import text_after_line_numbers, clean_text
+from billy.fulltext import text_after_line_numbers, oyster_text
 import lxml.html
 
 metadata = {
@@ -32,7 +32,7 @@ metadata = {
                  'params': { 'GA': '97', 'SessionId': '84' },
                  'speaker': 'Madigan',
                  'president': 'Cullerton',
-                 
+
         },
         '96th': {'display_name': '96th Regular Session',
                  '_scraped_name': '96   (2009-2010)',
@@ -45,7 +45,7 @@ metadata = {
                          'params': { 'GA': '96', 'SessionId': '82', 'SpecSess': '1' },
                          'speaker': 'Madigan',
                          'president': 'Cullerton',
-        
+
         },
         '95th': {'display_name': '95th Regular Session',
                  '_scraped_name': '95   (2007-2008)',
@@ -58,7 +58,7 @@ metadata = {
                          'params': { 'GA': '95', 'SessionId': '52', 'SpecSess': '1' },
                          'speaker': 'Madigan',
                          'president': 'Jones, E.',
-        
+
         },
         '94th': {'display_name': '94th Regular Session',
                  '_scraped_name': '94   (2005-2006)',
@@ -103,8 +103,8 @@ def session_list():
     return url_xpath('http://ilga.gov/PreviousGA.asp',
                      '//option/text()')
 
-
+@oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(doc)
     text = ' '.join(x.text_content() for x in doc.xpath('//td[@class="xsl"]'))
-    return clean_text(text)
+    return text

@@ -1,6 +1,6 @@
 import re
 import datetime
-from billy.fulltext import pdfdata_to_text, clean_text
+from billy.fulltext import pdfdata_to_text, oyster_text
 
 metadata = dict(
     name='Nebraska',
@@ -43,6 +43,7 @@ def session_list():
     return url_xpath('http://nebraskalegislature.gov/bills/',
                      "//select[@name='Legislature']/option/text()")[:-1]
 
+@oyster_text
 def extract_text(oyster_doc, data):
     text = pdfdata_to_text(data)
     lines = text.splitlines()
@@ -50,6 +51,6 @@ def extract_text(oyster_doc, data):
     for i, line in enumerate(lines):
         if 'LEGISLATIVE RESOLUTION' in line:
             break
-    text = ' '.join(line for line in lines[i:] 
+    text = ' '.join(line for line in lines[i:]
                     if not line_num_re.match(line))
-    return clean_text(text)
+    return text
