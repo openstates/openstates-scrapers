@@ -100,6 +100,9 @@ class MAEventScraper(EventScraper):
         else:
             self.last_location = metainf['location']
 
+        if "Session" in metainf['event'].text_content().strip():
+            return  # Nada.
+
         loc_url = metainf['location'].xpath(".//a")
         loc_url = loc_url[0].attrib['href']
         event = Event(session, when,
