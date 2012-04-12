@@ -46,3 +46,9 @@ def extract_text(oyster_doc, data):
     # trim first and last part
     text = ' '.join(p.text_content() for p in doc.xpath('//p')[1:-1])
     return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/sc/',
+    update_mins = None,
+    onchanged = []
+)

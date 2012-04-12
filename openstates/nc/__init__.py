@@ -96,3 +96,9 @@ def extract_text(oyster_doc, data):
     text = ' '.join([x.text_content() for x in
                      doc.xpath('//p[starts-with(@class, "a")]')])
     return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/nc/',
+    update_mins = None,
+    onchanged = [extract_text]
+)

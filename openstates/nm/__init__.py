@@ -50,3 +50,9 @@ def session_list():
     return url_xpath( 'http://www.nmlegis.gov/lcs/BillFinderNumber.aspx',
         "//select[@name='ctl00$mainCopy$SessionList']/option/text()" )
 
+
+document_class = dict(
+    AWS_PREFIX = 'documents/nm/',
+    update_mins = None,
+    onchanged = []
+)

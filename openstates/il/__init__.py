@@ -108,3 +108,9 @@ def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(doc)
     text = ' '.join(x.text_content() for x in doc.xpath('//td[@class="xsl"]'))
     return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/il/',
+    update_mins = None,
+    onchanged = []
+)

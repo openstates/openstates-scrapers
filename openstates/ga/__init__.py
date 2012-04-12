@@ -61,3 +61,9 @@ def extract_text(oyster_doc, data):
             break
 
     return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ga/',
+    update_mins = None,
+    onchanged = []
+)

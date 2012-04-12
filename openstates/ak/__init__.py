@@ -45,3 +45,9 @@ def extract_text(oyster_doc, data):
     text = doc.xpath('//pre')[0].text_content()
     text = text_after_line_numbers(text)
     return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ak/',
+    update_mins = None,
+    onchanged = []
+)

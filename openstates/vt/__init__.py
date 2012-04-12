@@ -39,3 +39,9 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath( 'http://www.leg.state.vt.us/ResearchMain.cfm',
         "//div[@id='ddsidebarmenu01']/ul/li/a/text()")
+
+document_class = dict(
+    AWS_PREFIX = 'documents/vt/',
+    update_mins = None,
+    onchanged = []
+)

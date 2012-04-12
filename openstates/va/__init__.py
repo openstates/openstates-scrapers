@@ -68,3 +68,9 @@ def extract_text(oyster_doc, data):
     text = ' '.join(x.text_content()
                     for x in doc.xpath('//div[@id="mainC"]/p'))
     return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/va/',
+    update_mins = None,
+    onchanged = []
+)

@@ -16,7 +16,7 @@ metadata = dict(
         {'name': '106', 'sessions' : ['106'],
             'start_year': 2009, 'end_year': 2010},
         {'name': '107', 'sessions': ['107'],
-            'start_year': 2010, 'end_year': 2011} 
+            'start_year': 2010, 'end_year': 2011}
     ],
     session_details={
         '107': {
@@ -44,3 +44,9 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath( 'http://www.capitol.tn.gov/legislation/archives.html',
         "//div[@class='col1']/ul/li[@class='show']/text()")
+
+document_class = dict(
+    AWS_PREFIX = 'documents/tn/',
+    update_mins = 24*7*60,
+    onchanged = []
+)

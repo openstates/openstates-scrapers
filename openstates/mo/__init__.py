@@ -48,3 +48,8 @@ def session_list():
     return url_xpath('http://www.senate.mo.gov/pastsessions.htm',
         "//div[@id='list']/li/a/text()")
 
+document_class = dict(
+    AWS_PREFIX = 'documents/mo/',
+    update_mins = None,
+    onchanged = []
+)

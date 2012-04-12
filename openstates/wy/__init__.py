@@ -36,3 +36,9 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath( 'http://legisweb.state.wy.us/LSOWeb/SessionArchives.aspx',
         "//div[@id='divLegContent']/a/p/text()" )
+
+document_class = dict(
+    AWS_PREFIX = 'documents/wy/',
+    update_mins = None,
+    onchanged = []
+)

@@ -44,3 +44,9 @@ def session_list():
         )
     sessions.remove("Archives Main")
     return sessions
+
+document_class = dict(
+    AWS_PREFIX = 'documents/hi/',
+    update_mins = None,
+    onchanged = []
+)

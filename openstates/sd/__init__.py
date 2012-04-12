@@ -57,3 +57,9 @@ def session_list():
     html = urllib.urlopen('http://legis.state.sd.us/PastSessions.aspx').read()
     doc = lxml.html.fromstring(html)
     return doc.xpath('//span[@class="link"]/text()')
+
+document_class = dict(
+    AWS_PREFIX = 'documents/sd/',
+    update_mins = None,
+    onchanged = []
+)

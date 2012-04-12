@@ -34,3 +34,9 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm',
                      '//select[@name="year"]/option/text()')
+
+document_class = dict(
+    AWS_PREFIX = 'documents/wv/',
+    update_mins = None,
+    onchanged = []
+)

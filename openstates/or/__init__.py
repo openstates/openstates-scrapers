@@ -48,3 +48,9 @@ def session_list():
     return [x.strip() for x in
             url_xpath('http://www.leg.state.or.us/bills_laws/billsinfo.htm',
                      '//a[contains(@href, "measures")]/text()')]
+
+document_class = dict(
+    AWS_PREFIX = 'documents/or/',
+    update_mins = None,
+    onchanged = []
+)

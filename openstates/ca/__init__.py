@@ -99,3 +99,9 @@ def session_list():
         for session in sessions
     ]
     return sessions
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ca/',
+    update_mins = 7*24*60,
+    onchanged = []
+)

@@ -42,3 +42,9 @@ def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
     text = doc.xpath('//pre')[0].text_content().encode('ascii', 'ignore')
     return text_after_line_numbers(text)
+
+document_class = dict(
+    AWS_PREFIX = 'documents/fl/',
+    update_mins = None,
+    onchanged = []
+)

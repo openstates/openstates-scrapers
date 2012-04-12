@@ -28,3 +28,9 @@ def session_list():
     # this URL should work even for future sessions
     return url_xpath('http://www.oslpr.org/legislatura/tl2009/buscar_2009.asp',
                      '//select[@name="URL"]/option/text()')
+
+document_class = dict(
+    AWS_PREFIX = 'documents/pr/',
+    update_mins = None,
+    onchanged = []
+)

@@ -38,3 +38,9 @@ def extract_text(oyster_doc, data):
     # strip numbers from lines (not all lines have numbers though)
     text = re.sub('\n\s*\d+\s*', ' ', text)
     return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ny/',
+    update_mins = 7*24*60,
+    onchanged = []
+)

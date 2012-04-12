@@ -94,3 +94,9 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath( 'http://www.legis.state.tx.us/',
         "//select[@name='cboLegSess']/option/text()")
+
+document_class = dict(
+    AWS_PREFIX = 'documents/tx/',
+    update_mins = None,
+    onchanged = []
+)

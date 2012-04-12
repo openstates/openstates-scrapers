@@ -77,3 +77,9 @@ def session_list():
     return [x.text_content() for x in
             url_xpath('http://www.leg.state.nv.us/Session/',
                       '//*[@class="MainHeading"]')]
+
+document_class = dict(
+    AWS_PREFIX = 'documents/nv/',
+    update_mins = 7*24*60,
+    onchanged = []
+)

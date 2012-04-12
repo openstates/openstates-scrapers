@@ -92,9 +92,15 @@ metadata = {
         u'Jan 1995 Special Session', u'Sept 1995 Special Session']
 
 }
- 
+
 def session_list():
     from billy.scrape.utils import url_xpath
     sessions = url_xpath( 'http://legis.wisconsin.gov/',
         "//select[@name='session']/option/text()" )
     return [session.strip() for session in sessions]
+
+document_class = dict(
+    AWS_PREFIX = 'documents/wi/',
+    update_mins = 24*7*60,
+    onchanged = []
+)

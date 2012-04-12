@@ -70,3 +70,9 @@ def session_list():
             sessions.append( session )
 
     return sessions
+
+document_class = dict(
+    AWS_PREFIX = 'documents/co/',
+    update_mins = None,
+    onchanged = []
+)
