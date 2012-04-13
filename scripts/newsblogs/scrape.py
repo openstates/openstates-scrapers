@@ -141,47 +141,6 @@ def cat_product(s_list1, s_list2):
     of the lists and concat each resulting 2-tuple.'''
     prod = itertools.product(s_list1, s_list2)
     return map(partial(apply, operator.add), prod)
-
-
-
-# for url, f in _feeds:
-#     res = []
-#     for e in f['entries']:
-#         text = nltk.clean_html(e['summary'])
-#         link = e['link']
-
-#         # Legislators.
-#         matches = trie_scan(trie, text)
-#         if matches:
-#             hits[link] |= set(matches)
-
-#         # Bills.
-#         matches = set(re.findall(re_bills, text))
-#         if matches:
-#             hits[link] |= set(matches)
-
-#             for m in matches:
-#                 x = db.bills.find_one({'state': 'ca', 'bill_id': m}, {'_id': 1})
-#                 if x:
-#                     term_to_id[m] = ('bill', x['_id'])
-
-#         # Committees.
-#         matches = re.findall(re_committees, text)
-#         if matches:
-#             hits[link] |= set(matches)
-
-#             for m in matches:
-#                 #x = db.committees.find_one({'state': 'ca', 'bill_id': m}, {'_id': 1})
-#                 #if x:
-#                 term_to_id[m] = ('', 'foo')
-
-# import pprint
-# pprint.pprint(hits)
-# pdb.set_trace()
-
-# for link, kw in hits.items():
-#     print link, kw
-
 # ---------------------------------------------------------------------------
 
 
@@ -201,20 +160,20 @@ class Meta(type):
 class Base(object):
     __metaclass__ = Meta
 
-    def extract_bill(self, m, collection=db.bills):
+    def extract_bill(self, m):
         '''Given a match object m, return the _id of the related bill. 
         '''
 
-    def extract_committee(self, m, collection=db.committees):
+    def extract_committee(self, m):
         pass
 
-    def extract_legislator(self, m, collection=db.legislators):
+    def extract_legislator(self, m):
         pass
 
     def _build_trie(self):
-        '''Interpoolate values from this state's mongo records
+        '''Interpolate values from this state's mongo records
         into the trie_terms strings. Create a new list of formatted
-        strings to use in building the trie.
+        strings to use in building the trie, then build.
         '''
         trie = {}
         trie_terms = self.trie_terms
@@ -253,7 +212,7 @@ class Base(object):
 
             committee_variations = self.committee_variations
             trie_data = []
-            records = db.committees.find({'state': 'ny'}, 
+            records = db.committees.find({'state': abbr}, 
                                          {'committee': 1, 'subcommittee': 1,
                                           'chamber': 1})
             self.logger.info('Computing name variations for %d records' % \
@@ -263,8 +222,9 @@ class Base(object):
                     trie_add_args = (variation, ['committees', c['_id']])
                     trie_data.append(trie_add_args)
 
-        self.logger.info('adding %d %s terms to the trie' % \
-            (len(trie_data), collection_name))
+        self.logger.info('adding %d \'committees\' terms to the trie' % \
+                                                            len(trie_data))
+
         trie = trie_add(trie, trie_data)
         self.trie = trie 
 
@@ -289,7 +249,8 @@ class Base(object):
             # Search the regexes.
             for collection_name, rgxs in self.rgxs.items():
                 for r in rgxs:
-                    for matchobj in re.finditer(r, summary):
+                    for m in re.finditer(r, summary):
+                        matchobj = PseudoMatch(m.group(), m.start(), m.end())
                         relevant[link].append([matchobj, collection_name])
 
         return matches
@@ -297,18 +258,16 @@ class Base(object):
 
     def _scan_all_feeds(self):
         
-        abbr = self.__class__.__name__.lower()
+        abbr = self.abbr
         STATE_DATA = join(DATA, abbr, 'feeds')
         STATE_DATA_RAW = join(STATE_DATA, 'raw')
         feeds = []
-        matches = []
         with cd(STATE_DATA_RAW):
             for fn in os.listdir('.'):
                 with open(fn) as f:
                     feed = feedparser.parse(f.read())
-                    matches = self._scan_feed(feed)
+                    self._scan_feed(feed)
 
-        return matches
 
     def _extract_entities(self):
 
@@ -439,7 +398,7 @@ class CA(Base):
         name = committee['committee']
         ch = committee['chamber']
         if ch != 'joint':
-            chamber_name = metadata('ny')[ch + '_chamber_name']
+            chamber_name = metadata('ca')[ch + '_chamber_name']
         else:
             chamber_name = 'Joint'
 
@@ -458,7 +417,9 @@ class CA(Base):
         else:
             cow = short
 
-        return set([name, committee_on, raw, short, cow])
+        # Exclude phrases less than two words in length.
+        return set(filter(lambda s: ' ' in s,
+                   [name, committee_on, raw, short, cow]))
 
 
 '''
@@ -468,47 +429,13 @@ interface as re.matchobjects.
 
 DONE - Handle A.B. 200 variations for bills.
 
-Tune committee regexes.
+DONE-ish... Tune committee regexes.
 
 Investigate other jargon and buzz phrase usage i.e.:
  - speaker of the house
  - committee chair
 '''
 
-def committee_variations(committee):
-    '''Compute likely variations for a committee
-
-    Standing Committee on Rules
-     - Rules Committee
-     - Committee on Rules
-     - Senate Rules
-     - Senate Rules Committee
-     - Rules (useless)
-    '''
-    
-    name = committee['committee']
-    ch = committee['chamber']
-    if ch != 'joint':
-        chamber_name = metadata('ny')[ch + '_chamber_name']
-    else:
-        chamber_name = 'Joint'
-
-    # Arts
-    raw = re.sub(r'(Standing|Joint|Select) Committee on ', '', name)
-    raw = re.sub(r'\s+Committee$', '', raw)
-
-    # Committee on Arts
-    committee_on = 'Committee on ' + raw
-
-    # Arts Committee
-    short = raw + ' Committee'
-    
-    if not short.startswith(chamber_name):
-        cow = chamber_name + ' ' + short
-    else:
-        cow = short
-
-    return set([name, committee_on, short, cow])
 
 
 if __name__ == '__main__':
@@ -526,14 +453,4 @@ if __name__ == '__main__':
     for y in itertools.chain.from_iterable(x):
         if y[1] == 'committees':
             print y
-    import pdb;pdb.set_trace()
-    # comms = list(db.committees.find({'state': 'ny'}, 
-    #                                 {'committee': 1, 'subcommittee': 1,
-    #                                  'chamber': 1}))
-    
-    # for x in comms:
-    #     print x
-    #     print comm(x)
-    #     raw_input(':')
-
     import pdb;pdb.set_trace()
