@@ -163,7 +163,7 @@ class WIBillScraper(BillScraper):
                  ):
                 bill.add_version(a.text, a.get('href'), mimetype="text/html")
 
-                pdf = a.xpath('following-sibling::span/a/@href')
+                pdf = a.xpath('following-sibling::span/a/@href')[0]
                 bill.add_version(a.text, pdf.get('href'),
                                  mimetype="application/pdf")
 
