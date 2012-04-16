@@ -59,6 +59,8 @@ def extract_text(oyster_doc, data):
         if header in lines:
             text = '\n'.join(lines[lines.index(header)+1:])
             break
+    else:
+        text = ' '.join(lines)
 
     return text
 
