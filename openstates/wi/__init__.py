@@ -102,5 +102,6 @@ def session_list():
 document_class = dict(
     AWS_PREFIX = 'documents/wi/',
     update_mins = 24*7*60,
+    extract_text = extract_text,
     onchanged = []
 )
