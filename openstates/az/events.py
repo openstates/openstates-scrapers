@@ -23,6 +23,8 @@ class AZEventScraper(EventScraper):
         return self.metadata['session_details'][session]['session_id']
 
     def scrape(self, chamber, session):
+        if chamber == "other":
+            return
         """
         given a chamber and session returns the events
         """
