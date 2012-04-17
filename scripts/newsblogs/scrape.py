@@ -6,6 +6,9 @@ import operator
 import itertools
 import contextlib
 import logging
+import datetime
+import time
+import hashlib
 from os.path import join, dirname, abspath
 from functools import partial
 from collections import namedtuple, defaultdict
@@ -145,20 +148,53 @@ def cat_product(s_list1, s_list2):
 
 
 # ---------------------------------------------------------------------------
+def new_feed_id(entry, cache={}):
+    '''Generate an entry id using the hash value of the title and link.
+    Pad the number to 
+    '''
+    s = entry['title'] + entry['link']
+    _id = entry['state'].upper() + 'F' + str(abs(hash(s))).zfill(21)
+    return _id
+
 PATH = dirname(abspath(__file__))
 DATA = settings.BILLY_DATA_DIR
 
 
 class Meta(type):
-    classes = [] 
+
+    _classes = set()
+
     def __new__(meta, name, bases, attrs):
         cls = type.__new__(meta, name, bases, attrs)
-        meta.classes.append(cls)
+        meta._classes.add(cls)
         return cls
+
+    @classmethod
+    def classes(cls):
+        return cls._classes - set([Base])
 
 
 class Base(object):
     __metaclass__ = Meta
+
+    def __init__(self):
+
+        self.abbr = self.__class__.__name__.lower()
+
+        logger = logging.getLogger(self.abbr)
+        logger.setLevel(logging.DEBUG)
+        ch = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+        self.logger = logger
+
+    @property
+    def trie(self):
+        try:
+            return self._trie
+        except AttributeError:
+            return self._build_trie()
 
     def extract_bill(self, m):
         '''Given a match object m, return the _id of the related bill. 
@@ -226,7 +262,8 @@ class Base(object):
                                                             len(trie_data))
 
         trie = trie_add(trie, trie_data)
-        self.trie = trie 
+        self._trie = trie
+        return trie 
 
 
     def _scan_feed(self, feed):
@@ -235,41 +272,89 @@ class Base(object):
             self.logger.info('- scanning %s' % feed['feed']['links'][0]['href'])
         except KeyError:
             self.logger.info('- scanning feed with no link provided, grrr...')
-        relevant = self.relevant
-        matches = []
-        for e in feed['entries']:
+        
+        for entry in feed['entries']:
 
             # Search the trie.
-            link = e['link']
-            summary = nltk.clean_html(e['summary'])
-            matches = trie_scan(self.trie, summary)
-            if matches:
-                relevant[link] += matches
+            matches = []
+            link = entry['link']
+            try:
+                summary = nltk.clean_html(entry['summary'])
+            except KeyError:
+                # This entry has no summary. Skip.
+                continue
+            matches += trie_scan(self.trie, summary)
 
             # Search the regexes.
             for collection_name, rgxs in self.rgxs.items():
                 for r in rgxs:
                     for m in re.finditer(r, summary):
                         matchobj = PseudoMatch(m.group(), m.start(), m.end())
-                        relevant[link].append([matchobj, collection_name])
+                        matches.append([matchobj, collection_name])
 
-        return matches
+            yield entry, matches
+
+    def _process_feed(self, feed):
+        abbr = self.abbr
+        feed_entries = db.feed_entries
+        third = itemgetter(2)
+
+        # Find matching entities in the feed.
+        for entry, matches in self._scan_feed(feed):                    
+            matches = self._extract_entities(matches)
+
+            ids = map(third, matches)
+            strings = [m.group() for m, _, _ in matches]
+            assert len(ids) == len(strings)
+
+            # Add references and save in mongo.
+            
+            entry['state'] = abbr # list probably wiser
+            entry['entity_ids'] = ids or None
+            entry['entity_strings'] = strings or None
+            entry['save_time'] = datetime.datetime.utcnow()
+            entry['_id'] = new_feed_id(entry)
+            entry['_type'] = 'feedentry'
+
+            entry['summary'] = nltk.clean_html(entry['summary'])
+            try:
+                entry['summary_detail']['value'] = nltk.clean_html(
+                    entry['summary_detail']['value'])
+            except KeyError:
+                pass
+
+            # Patch the entry object to get rid of struct_time.
+            for k, v in entry.items():
+                if isinstance(v, time.struct_time):
+                    t = time.mktime(entry[k])
+                    dt = datetime.datetime.fromtimestamp(t)
+                    entry[k] = dt
+            
+            try:
+                feed_entries.save(entry)
+            except:
+                import pdb;pdb.set_trace()
+            msg = 'Found %d related entities in %r'
+            self.logger.info(msg % (len(ids), entry['title']))
 
 
-    def _scan_all_feeds(self):
-        
+    def process_all_feeds(self):
+        '''Note to self...possible problems with entries getting 
+        overwritten?
+        '''
         abbr = self.abbr
         STATE_DATA = join(DATA, abbr, 'feeds')
         STATE_DATA_RAW = join(STATE_DATA, 'raw')
-        feeds = []
+        _process_feed = self._process_feed
+
         with cd(STATE_DATA_RAW):
             for fn in os.listdir('.'):
                 with open(fn) as f:
                     feed = feedparser.parse(f.read())
-                    self._scan_feed(feed)
+                    _process_feed(feed)
 
 
-    def _extract_entities(self):
+    def _extract_entities(self, matches):
 
         funcs = {}
         for collection_name, method in (('bills', 'extract_bill'),
@@ -280,40 +365,22 @@ class Base(object):
                 funcs[collection_name] = getattr(self, method)
             except AttributeError:
                 pass
+    
+        processed = []
+        for m in matches:
+            if len(m) == 2:
+                match, collection_name = m
+                extractor = funcs.get(collection_name)
+                if extractor:
+                    _id = extractor(match)
+                    processed.append(m + [_id])
+            else:
+                processed.append(m)
 
-        for link, matchdata in self.relevant.items():
-            processed = []
-            for m in matchdata:
-                if len(m) == 2:
-                    match, collection_name = m
-                    extractor = funcs.get(collection_name)
-                    if extractor:
-                        _id = extractor(match)
-                        processed.append(m + [_id])
-                else:
-                    processed.append(m)
-
-            self.relevant[link] = processed
-
-    def build(self):
-        self._scan_all_feeds()
-        self._extract_entities()
+        return processed
 
 
 class CA(Base):
-
-    def __init__(self):
-
-        self.relevant = defaultdict(list)
-        self.abbr = self.__class__.__name__.lower()
-
-        logger = logging.getLogger(self.abbr)
-        logger.setLevel(logging.DEBUG)
-        ch = logging.StreamHandler()
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
-        ch.setFormatter(formatter)
-        logger.addHandler(ch)
-        self.logger = logger
 
     trie_terms = {
         'legislators': cat_product(
@@ -332,10 +399,17 @@ class CA(Base):
              u'Assembly member', 
              u'Assemblyman',
              u'Assemblywoman', 
-             u'Assembly person'], 
+             u'Assembly person',
+             u'Chairman',
+             u'Chairwoman',
+             u'Chairperson',], 
 
             [u' {legislator[last_name]}',
-             u' {legislator[full_name]}']),
+             u' {legislator[full_name]}'])
+
+            + [u'{legislator[full_name]}']
+
+         ,
 
         'bills': [ 
             ('bill_id', lambda s: s.upper().replace('.', ''))
@@ -380,8 +454,114 @@ class CA(Base):
             return ids[bill_id]
 
 
-    def extract_committee(self, m, collection=db.committees):
-        return None
+    def committee_variations(self, committee):
+        '''Compute likely variations for a committee
+
+        Standing Committee on Rules
+         - Rules Committee
+         - Committee on Rules
+         - Senate Rules
+         - Senate Rules Committee
+         - Rules (useless)
+        '''
+        
+        name = committee['committee']
+        ch = committee['chamber']
+        if ch != 'joint':
+            chamber_name = metadata('ca')[ch + '_chamber_name']
+        else:
+            chamber_name = 'Joint'
+
+        # Arts
+        raw = re.sub(r'(Standing|Joint|Select) Committee on ', '', name)
+        raw = re.sub(r'\s+Committee$', '', raw)
+
+        # Committee on Arts
+        committee_on_1 = 'Committee on ' + raw
+
+        # Arts Committee
+        short = raw + ' Committee'
+        
+        # Assembly Arts Committee
+        if not short.startswith(chamber_name):
+            cow = chamber_name + ' ' + short
+        else:
+            cow = short
+
+        # Assembly Committee on Arts
+        committee_on_2 = ch + ' ' + committee_on_1
+
+        # Exclude phrases less than two words in length.
+        return set(filter(lambda s: ' ' in s,
+                   [name, committee_on_1, committee_on_2, raw, short, cow]))
+
+
+class IL(Base):
+
+    trie_terms = {
+        'legislators': cat_product(
+
+            [u'Senator', 
+             u'Senate member',
+             u'Senate Member',
+             u'Assemblymember', 
+             u'Assembly Member',
+             u'Assembly member',
+             u'Assemblyman',
+             u'Assemblywoman', 
+             u'Assembly person',
+             u'Assemblymember', 
+             u'Assembly Member',
+             u'Assembly member', 
+             u'Assemblyman',
+             u'Assemblywoman', 
+             u'Assembly person',
+             u'Representative'], 
+
+            [u' {legislator[last_name]}',
+             u' {legislator[full_name]}']),
+
+        'bills': [ 
+            ('bill_id', lambda s: s.upper().replace('.', ''))
+            ]
+
+        }
+
+    rgxs = {
+        'bills': [
+            '(?:%s) ?\d[\w-]*' % '|'.join([
+                'B', 'R', 'JR', 'JRCA',])
+            ],
+
+        'committees': [
+            '(?:House of Representatives|House|Senate).{,200}?Committee',
+            ]
+
+    }
+
+
+    def extract_bill(self, m, collection=db.bills, cache={}):
+        '''Given a match object m, return the _id of the related bill. 
+        '''
+        def squish(bill_id):
+            bill_id = ''.join(bill_id.split())
+            bill_id = bill_id.upper().replace('.', '')
+            return bill_id
+
+        bill_id = squish(m.group())
+
+        try:
+            ids = cache['ids']
+        except KeyError:
+            # Get a list of (bill_id, _id) tuples like ('SJC23', 'CAB000123')
+            ids = collection.find({'state': self.abbr}, {'bill_id': 1})
+            ids = dict((squish(r['bill_id']), r['_id']) for r in ids)
+
+            # Cache it in the method.
+            cache['ids'] = ids
+
+        if bill_id in ids:
+            return ids[bill_id]
 
 
     def committee_variations(self, committee):
@@ -422,6 +602,114 @@ class CA(Base):
                    [name, committee_on, raw, short, cow]))
 
 
+class TX(Base):
+
+    trie_terms = {
+        'legislators': cat_product(
+
+            [u'Senator', 
+             u'Senate member',
+             u'Senate Member',
+             u'Assemblymember', 
+             u'Assembly Member',
+             u'Assembly member',
+             u'Assemblyman',
+             u'Assemblywoman', 
+             u'Assembly person',
+             u'Assemblymember', 
+             u'Assembly Member',
+             u'Assembly member', 
+             u'Assemblyman',
+             u'Assemblywoman', 
+             u'Assembly person',
+             u'Representative'], 
+
+            [u' {legislator[last_name]}',
+             u' {legislator[full_name]}']),
+
+        'bills': [ 
+            ('bill_id', lambda s: s.upper().replace('.', ''))
+            ]
+
+        }
+
+    rgxs = {
+        'bills': [
+            '(?:%s) ?\d[\w-]*' % '|'.join([
+                "SB", "HB", "HC", "HJ", "SC", "SJ",])
+            ],
+
+        'committees': [
+            '(?:House of Representatives|House|Senate).{,200}?Committee',
+            ]
+
+    }
+
+
+    def extract_bill(self, m, collection=db.bills, cache={}):
+        '''Given a match object m, return the _id of the related bill. 
+        '''
+        def squish(bill_id):
+            bill_id = ''.join(bill_id.split())
+            bill_id = bill_id.upper().replace('.', '')
+            return bill_id
+
+        bill_id = squish(m.group())
+
+        try:
+            ids = cache['ids']
+        except KeyError:
+            # Get a list of (bill_id, _id) tuples like ('SJC23', 'CAB000123')
+            ids = collection.find({'state': self.abbr}, {'bill_id': 1})
+            ids = dict((squish(r['bill_id']), r['_id']) for r in ids)
+
+            # Cache it in the method.
+            cache['ids'] = ids
+
+        if bill_id in ids:
+            return ids[bill_id]
+
+
+    def committee_variations(self, committee):
+        '''Compute likely variations for a committee
+
+        Standing Committee on Rules
+         - Rules Committee
+         - Committee on Rules
+         - Senate Rules
+         - Senate Rules Committee
+         - Rules (useless)
+        '''
+        
+        name = committee['committee']
+        ch = committee['chamber']
+        if ch != 'joint':
+            chamber_name = metadata('ca')[ch + '_chamber_name']
+        else:
+            chamber_name = 'Joint'
+
+        # Arts
+        raw = re.sub(r'(Standing|Joint|Select) Committee on ', '', name)
+        raw = re.sub(r'\s+Committee$', '', raw)
+
+        # Committee on Arts
+        committee_on = 'Committee on ' + raw
+
+        # Arts Committee
+        short = raw + ' Committee'
+        
+        if not short.startswith(chamber_name):
+            cow = chamber_name + ' ' + short
+        else:
+            cow = short
+
+        # Exclude phrases less than two words in length.
+        return set(filter(lambda s: ' ' in s,
+                   [name, committee_on, raw, short, cow]))
+
+
+
+
 '''
 To-do:
 DONE - Make trie-scan return a pseudo-match object that has same
@@ -431,6 +719,9 @@ DONE - Handle A.B. 200 variations for bills.
 
 DONE-ish... Tune committee regexes.
 
+- Add chambers the entry is relevant to so we can query by state
+and chamber in addition to entity.
+
 Investigate other jargon and buzz phrase usage i.e.:
  - speaker of the house
  - committee chair
@@ -439,18 +730,32 @@ Investigate other jargon and buzz phrase usage i.e.:
 
 
 if __name__ == '__main__':
-    ca = CA()
-    ca._build_trie()
-    ma = []
-    ca.build()
-    x = ca.relevant.values()
-    bad = []
-    for y in itertools.chain.from_iterable(x):
-        if y[-1] is None:
-            print y
-            bad.append(y)
-    comm = [y for y in itertools.chain.from_iterable(x) if y[1] == 'committees']
-    for y in itertools.chain.from_iterable(x):
-        if y[1] == 'committees':
-            print y
-    import pdb;pdb.set_trace()
+    
+    # appr = db.committees.find_one(u'CAC000084')
+    # ca = CA()
+    # s = '''e speakers at Wednesday mornings Assembly hearing on health care district. Assembly Committee on Accountability and Administrative Review Chairman Roger Dickinson, D-S'''
+    # cow = trie_scan(ca.trie, s)
+    # print cow
+    # import pdb;pdb.set_trace()
+
+
+    db.feed_entries.remove()
+    for cls in Meta.classes():# & set([CA]):
+        inst = cls()
+        inst.process_all_feeds()
+
+    # ca = CA()
+    # ca._build_trie()
+    # ma = []
+    # ca.build()
+    # x = ca.relevant.values()
+    # bad = []
+    # for y in itertools.chain.from_iterable(x):
+    #     if y[-1] is None:
+    #         print y
+    #         bad.append(y)
+    # comm = [y for y in itertools.chain.from_iterable(x) if y[1] == 'committees']
+    # for y in itertools.chain.from_iterable(x):
+    #     if y[1] == 'committees':
+    #         print y
+    # import pdb;pdb.set_trace()
