@@ -13,7 +13,7 @@ metadata = dict(
         start_year=2011,
         end_year=2011,
         sessions=[
-            '2011 Regular Session', '2011SS', '2012RS',
+            '2011 Regular Session', '2011SS', '2012RS', '2012SS'
             ])
     ],
     session_details={
@@ -27,7 +27,10 @@ metadata = dict(
         '2012RS': {'type': 'primary',
                    'display_name': '2012 Regular Session',
                    '_scraped_name': '2012 Regular Session',
-                  }
+                  },
+        '2012SS': {'type': 'special',
+                   'display_name': '2012 Extraordinary Session',
+                   '_scraped_name': '2012 Extraordinary Session'},
     },
     feature_flags=['subjects', 'events'],
     _ignored_scraped_sessions=[],
