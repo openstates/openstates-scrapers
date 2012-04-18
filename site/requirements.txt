@@ -1,2 +1,4 @@
-sphinx
+django-locksmith
+django-storages
 markdown
+docutils
