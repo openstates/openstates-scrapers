@@ -66,15 +66,24 @@ class NDLegislatorScraper(LegislatorScraper):
         if chamber == 'lower':
             photo_url = leg_page.xpath('//img[contains(@src, "representatives")]')[0].get('src')
         else:
-            photo_url = leg_page.xpath('//img[contains(@src, "senators")]')[0].get('src')
-
+            photo_url = leg_page.xpath('//img[contains(@src, "senators")]')
+            if len(photo_url) > 0:
+                photo_url = photo_url[0].get('src')
 
         if party == 'Democrat':
             party = 'Democratic'
+        kwargs = {
+            "full_address": full_address,
+            "phone": phone,
+            "email": email,
+            "url": member_url
+        }
+
+        if photo_url:
+            kwargs['photo_url'] = photo_url
+
         leg = Legislator(term, chamber, district, full_name, first_name,
-                         last_name, middle_name, party,
-                         full_address=full_address, phone=phone, email=email,
-                         url=member_url, photo_url=photo_url)
+                         last_name, middle_name, party, **kwargs)
         leg.add_source(member_url)
         leg.add_source(main_url)
         self.save_legislator(leg)

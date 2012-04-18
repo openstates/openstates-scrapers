@@ -105,12 +105,13 @@ def session_list():
 
 @oyster_text
 def extract_text(oyster_doc, data):
-    doc = lxml.html.fromstring(doc)
+    doc = lxml.html.fromstring(data)
     text = ' '.join(x.text_content() for x in doc.xpath('//td[@class="xsl"]'))
     return text
 
 document_class = dict(
     AWS_PREFIX = 'documents/il/',
     update_mins = None,
+    extract_text = extract_text,
     onchanged = []
 )

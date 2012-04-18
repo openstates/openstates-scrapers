@@ -163,9 +163,8 @@ class WIBillScraper(BillScraper):
                  ):
                 bill.add_version(a.text, a.get('href'), mimetype="text/html")
 
-                pdf = a.xpath('following-sibling::span/a/@href')
-                bill.add_version(a.text, pdf.get('href'),
-                                 mimetype="application/pdf")
+                pdf = a.xpath('following-sibling::span/a/@href')[0]
+                bill.add_version(a.text, pdf, mimetype="application/pdf")
 
             elif a.text in ('Amendments', 'Fiscal Estimates',
                             'Record of Committee Proceedings'):

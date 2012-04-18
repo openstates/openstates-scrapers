@@ -62,5 +62,6 @@ def extract_text(oyster_doc, data):
 document_class = dict(
     AWS_PREFIX = 'documents/ma/',
     update_mins = 7*24*60,
+    extract_text = extract_text,
     onchanged = []
 )

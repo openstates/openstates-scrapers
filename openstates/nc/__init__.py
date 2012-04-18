@@ -100,5 +100,6 @@ def extract_text(oyster_doc, data):
 document_class = dict(
     AWS_PREFIX = 'documents/nc/',
     update_mins = None,
-    onchanged = []
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.cloudsearch.CloudSearchPush']
 )

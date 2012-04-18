@@ -23,6 +23,8 @@ class AZEventScraper(EventScraper):
         return self.metadata['session_details'][session]['session_id']
 
     def scrape(self, chamber, session):
+        if chamber == "other":
+            return
         """
         given a chamber and session returns the events
         """
@@ -87,11 +89,23 @@ class AZEventScraper(EventScraper):
                 title = "Committee Meeting:\n%s %s %s\n" % (
                                                   self._chamber_long[chamber],
                                                   committee, room)
-                (description, member_list,
-                 meeting_type, other) = self.parse_agenda(chamber, link)
+                agenda_info = self.parse_agenda(chamber, link)
+
+                description = agenda_info['description']
+                member_list = agenda_info['member_list']
+                meeting_type = agenda_info['meeting_type']
+                agenda_items = agenda_info['agenda_items']
+                related_bills= agenda_info['related_bills']
+                other = agenda_info['other']
+
                 event = Event(session, when, 'committee:meeting', title,
-                              location=room, link=link, details=description)
+                              location=room, link=link, details=description) #,
+                              #agenda=agenda_items)
                 event.add_participant('committee', committee)
+
+                for bill in related_bills:
+                    event.add_related_bill(bill, type="consideration")
+
                 event['participants'].extend(member_list)
                 event.add_source(url)
                 event.add_source(link)
@@ -154,7 +168,27 @@ class AZEventScraper(EventScraper):
 
                 bill_list = ",\n".join(bill_list)
                 description = description + bill_list
-            return (description, member_list, meeting_type, other)
+
+            bills_for_consideration = []
+
+            related_bills = root.xpath("//table[@class='MsoNormalTable']//tr")
+            for tr in related_bills:
+                bill_id = tr.xpath("./td")[1].text_content().strip()
+                if bill_id == "" or bill_id.lower() == "bills":
+                    continue
+                if bill_id[0] != "H" and bill_id[0] != "S":
+                    continue
+
+                bills_for_consideration.append(bill_id)
+
+            return {
+                "description" : description,
+                "member_list" : member_list,
+                "meeting_type": meeting_type,
+                "agenda_items": agenda_items,
+                "related_bills": bills_for_consideration,
+                "other" : other
+            }
 
     def scrape_interim_events(self, chamber, session):
         """

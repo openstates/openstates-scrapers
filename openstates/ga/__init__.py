@@ -59,11 +59,14 @@ def extract_text(oyster_doc, data):
         if header in lines:
             text = '\n'.join(lines[lines.index(header)+1:])
             break
+    else:
+        text = ' '.join(lines)
 
     return text
 
 document_class = dict(
     AWS_PREFIX = 'documents/ga/',
     update_mins = None,
+    extract_text = extract_text,
     onchanged = []
 )
