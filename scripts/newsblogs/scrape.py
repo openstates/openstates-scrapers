@@ -33,7 +33,7 @@ def trie_add(trie, seq_value_2_tuples, terminus=0):
         w_len = len(seq) - 1
         for i, c in enumerate(seq):
             
-            if c in ', ':
+            if c in ",. '&[]":
                 continue
         
             try:
@@ -489,7 +489,12 @@ class CA(Base):
             cow = short
 
         # Assembly Committee on Arts
-        committee_on_2 = ch + ' ' + committee_on_1
+        committee_on_2 = chamber_name + ' ' + committee_on_1
+
+        phrases = [name, committee_on_1, committee_on_2, raw, short, cow]
+
+        # Handle ampersand usage like "Senate Public Employment & Retirement Committee"
+        phrases += [p.replace(' and ', ' & ') for p in phrases]
 
         # Exclude phrases less than two words in length.
         return set(filter(lambda s: ' ' in s,
@@ -516,7 +521,9 @@ class IL(Base):
              u'Assemblyman',
              u'Assemblywoman', 
              u'Assembly person',
-             u'Representative'], 
+             u'Representative',
+             u'Rep.',
+             u'Sen.'], 
 
             [u' {legislator[last_name]}',
              u' {legislator[full_name]}']),
@@ -622,10 +629,17 @@ class TX(Base):
              u'Assemblyman',
              u'Assemblywoman', 
              u'Assembly person',
-             u'Representative'], 
+             u'Representative',
+             u'Rep.', u'Sen.'], 
 
             [u' {legislator[last_name]}',
-             u' {legislator[full_name]}']),
+             u' {legislator[full_name]}']) + [
+
+            u'{legislator[full_name]}'],
+
+
+
+
 
         'bills': [ 
             ('bill_id', lambda s: s.upper().replace('.', ''))
@@ -693,7 +707,8 @@ class TX(Base):
         raw = re.sub(r'\s+Committee$', '', raw)
 
         # Committee on Arts
-        committee_on = 'Committee on ' + raw
+        committee_on1 = 'Committee on ' + raw
+        committee_on2 = ch + ' ' + committee_on1
 
         # Arts Committee
         short = raw + ' Committee'
@@ -705,7 +720,7 @@ class TX(Base):
 
         # Exclude phrases less than two words in length.
         return set(filter(lambda s: ' ' in s,
-                   [name, committee_on, raw, short, cow]))
+                   [name, committee_on2, committee_on2, raw, short, cow]))
 
 
 
@@ -733,14 +748,27 @@ if __name__ == '__main__':
     
     # appr = db.committees.find_one(u'CAC000084')
     # ca = CA()
+    # vv = ca.committee_variations(appr)
     # s = '''e speakers at Wednesday mornings Assembly hearing on health care district. Assembly Committee on Accountability and Administrative Review Chairman Roger Dickinson, D-S'''
-    # cow = trie_scan(ca.trie, s)
-    # print cow
+    # # cow = trie_scan(ca.trie, s)
+    # # # print cow
+    # tx = TX()
+    # print trie_scan(tx.trie, 'Rep. Vicki Truitt')
     # import pdb;pdb.set_trace()
+#     s = '''
+# Rep. Jim Keffer, R-Eastland, chairman of the Energy Resources Committee, and Rep. Vicki Truitt, R-Keller, chairwoman of the Pensions Committee, filed the complaint against Empower Texans, also known as Texans for Fiscal Responsibility. The complaint says that the group's president, Michael Quinn Sullivan, did not register as a lobbyist and that the nonprofit organization did not file a required campaign finance activity disclosure.
 
+# Such complaints by GOP lawmakers against an organization that routinely supports conservative policies in the Legislature are highly unusual and demonstrate a schism between veteran politicians and new activists aligned more closely with Tea Party groups.
 
+# '''
+#     xx = trie_scan(TX().trie, s)
+#     import pdb;pdb.set_trace()
+
+    import sys
     db.feed_entries.remove()
-    for cls in Meta.classes():# & set([CA]):
+    for cls in Meta.classes():
+        if sys.argv[1:] and (cls.__name__.lower() not in sys.argv):
+            continue
         inst = cls()
         inst.process_all_feeds()
 
