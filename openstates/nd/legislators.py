@@ -62,7 +62,6 @@ class NDLegislatorScraper(LegislatorScraper):
         phone = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[3]/td[2]')[0].text
         email = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[4]/td[2]/a')[0].text
 
-        print chamber
         if chamber == 'lower':
             photo_url = leg_page.xpath('//img[contains(@src, "representatives")]')[0].get('src')
         else:
