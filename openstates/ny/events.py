@@ -52,7 +52,6 @@ class NYEventScraper(EventScraper):
                 event_url = comp['URL']
 
                 location = self.get_upper_location(event_url)
-                print location
 
                 event = Event(session, start, 'committee:meeting',
                               text, location, end)
