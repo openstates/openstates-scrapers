@@ -13,9 +13,6 @@ class KYEventScraper(EventScraper):
     _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
-        if session != '2011 Regular Session':
-            raise NoDataForPeriod(session)
-
         url = "http://www.lrc.ky.gov/legislative_calendar/index.aspx"
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)

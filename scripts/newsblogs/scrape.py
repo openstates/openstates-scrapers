@@ -23,31 +23,6 @@ from billy.utils import metadata
 from billy.conf import settings
 
 
-def trie_add(trie, seq_value_2_tuples, terminus=0):
-    '''Given a trie (or rather, a dict), add the match terms into the
-    trie.
-    '''
-    for seq, value in seq_value_2_tuples:
-
-        this = trie
-        w_len = len(seq) - 1
-        for i, c in enumerate(seq):
-            
-            if c in ",. '&[]":
-                continue
-        
-            try:
-                this = this[c]
-            except KeyError:
-                this[c] = {}
-                this = this[c]
-
-            if i == w_len:
-                this[terminus] = value
-                
-    return trie
-
-
 class PseudoMatch(object):
     '''A fake match object that provides the same basic interface
     as _sre.SRE_Match.'''
@@ -71,13 +46,38 @@ class PseudoMatch(object):
 
     def __repr__(self):
         return 'PseudoMatch(group=%r, start=%r, end=%r)' % self._tuple()
+        
+
+def trie_add(trie, seq_value_2tuples, terminus=0):
+    '''Given a trie (or rather, a dict), add the match terms into the
+    trie.
+    '''
+    for seq, value in seq_value_2tuples:
+
+        this = trie
+        w_len = len(seq) - 1
+        for i, c in enumerate(seq):
+            
+            if c in ",. '&[]":
+                continue
+        
+            try:
+                this = this[c]
+            except KeyError:
+                this[c] = {}
+                this = this[c]
+
+            if i == w_len:
+                this[terminus] = value
+                
+    return trie
 
 
 def trie_scan(trie, s,
          _match=PseudoMatch,
          second=itemgetter(1)):
     '''
-    Finds all matches for `s` in trie.
+    Finds all matches for `s` in `trie`.
     '''
 
     res = []
@@ -130,6 +130,7 @@ def trie_scan(trie, s,
         
     return res
 
+
 @contextlib.contextmanager
 def cd(dir_):
     '''Temporarily change dirs to minimize os.path.join biolerplate.'''
@@ -139,7 +140,7 @@ def cd(dir_):
     os.chdir(cwd)
 
 
-def cat_product(s_list1, s_list2):
+def cartcat(s_list1, s_list2):
     '''Given two lists of strings, take the cartesian product
     of the lists and concat each resulting 2-tuple.'''
     prod = itertools.product(s_list1, s_list2)
@@ -383,7 +384,7 @@ class Base(object):
 class CA(Base):
 
     trie_terms = {
-        'legislators': cat_product(
+        'legislators': cartcat(
 
             [u'Senator', 
              u'Senate member',
@@ -504,7 +505,7 @@ class CA(Base):
 class IL(Base):
 
     trie_terms = {
-        'legislators': cat_product(
+        'legislators': cartcat(
 
             [u'Senator', 
              u'Senate member',
@@ -612,7 +613,7 @@ class IL(Base):
 class TX(Base):
 
     trie_terms = {
-        'legislators': cat_product(
+        'legislators': cartcat(
 
             [u'Senator', 
              u'Senate member',
