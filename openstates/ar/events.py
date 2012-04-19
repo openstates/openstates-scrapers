@@ -43,8 +43,6 @@ class AREventScraper(EventScraper):
     state = 'ar'
 
     def scrape(self, chamber, session):
-        if session != '2011':
-            raise NoDataForPeriod(session)
         if chamber == 'other':
             return
 
