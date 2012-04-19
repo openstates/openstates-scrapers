@@ -8,6 +8,7 @@ import lxml.html
 import datetime
 import itertools
 import subprocess
+import shutil
 import os
 import re
 
