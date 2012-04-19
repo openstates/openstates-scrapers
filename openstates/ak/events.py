@@ -100,7 +100,6 @@ class AKEventScraper(EventScraper):
                     "../../td/font/a[contains(@href, 'get_documents')]")
                 if links:
                     agenda_link = links[0]
-                    print agenda_link
                     event['link'] = agenda_link.attrib['href']
 
                 event = Event(session, when, 'committee:meeting',

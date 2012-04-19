@@ -1,3 +1,4 @@
+import os
 import re
 import zipfile
 import datetime
@@ -49,6 +50,7 @@ class NHBillScraper(BillScraper):
 
         fname, resp = self.urlretrieve(zip_url)
         self.zf = zipfile.ZipFile(open(fname))
+        os.remove(fname)
 
         # bill basics
         self.bills = {}         # LSR->Bill

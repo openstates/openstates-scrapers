@@ -212,7 +212,3 @@ class WYBillScraper(BillScraper):
                         # done collecting this vote
                         bill.add_vote(vote)
                         break
-                    else:
-                        print 'skipping in vote loop', nextline
-            else:
-                print 'skipping', line

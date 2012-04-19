@@ -101,7 +101,7 @@ class AZEventScraper(EventScraper):
                 event = Event(session, when, 'committee:meeting', title,
                               location=room, link=link, details=description) #,
                               #agenda=agenda_items)
-                event.add_participant('committee', committee)
+                event.add_participant('committee', committee, chamber=chamber)
 
                 for bill in related_bills:
                     event.add_related_bill(bill, type="consideration")
@@ -142,7 +142,9 @@ class AZEventScraper(EventScraper):
                 if found:
                     for name, role in found:
                         if name == 'SENATORS' or name == 'Members': continue
-                        person = {"type": role or "member", "participant": name}
+                        person = {"type": role or "member",
+                                  "participant": name,
+                                  "chamber": chamber}
                         member_list.append(person)
                 members = members.getnext()
             description = ""
