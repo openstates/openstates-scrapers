@@ -52,7 +52,7 @@ class MSBillScraper(BillScraper):
         url = 'http://billstatus.ls.state.ms.us/%s/pdf/all_measures/allmsrs.xml' % session
 
         with self.urlopen(url) as bill_dir_page:
-            root = lxml.etree.fromstring(bill_dir_page, lxml.etree.HTMLParser())
+            root = lxml.etree.fromstring(bill_dir_page)
             for mr in root.xpath('//lastaction/msrgroup'):
                 bill_id = mr.xpath('string(measure)').replace(" ", "")
                 if bill_id[0] == "S":
