@@ -1,5 +1,5 @@
 import re
-import csv
+import unicodecsv
 import datetime
 from operator import itemgetter
 from collections import defaultdict
@@ -44,8 +44,8 @@ class CTBillScraper(BillScraper):
 
     def scrape_bill_info(self, chamber, session):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/bill_info.csv"
-        page = self.urlopen(info_url).bytes
-        page = csv.DictReader(StringIO.StringIO(page))
+        page = self.urlopen(info_url)
+        page = unicodecsv.DictReader(StringIO.StringIO(page))
 
         abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
@@ -187,7 +187,7 @@ class CTBillScraper(BillScraper):
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"
         page = self.urlopen(history_url)
-        page = csv.DictReader(StringIO.StringIO(page))
+        page = unicodecsv.DictReader(StringIO.StringIO(page))
 
         action_rows = defaultdict(list)
 
@@ -279,8 +279,7 @@ class CTBillScraper(BillScraper):
     def scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
         page = self.urlopen(comm_url)
-        print page.encoding
-        page = csv.DictReader(StringIO.StringIO(page))
+        page = unicodecsv.DictReader(StringIO.StringIO(page))
 
         for row in page:
             comm_code = row['comm_code'].strip()
