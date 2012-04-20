@@ -20,7 +20,7 @@ from lxml.etree import ElementTree
 from . import actions
 
 def url2lxml(url):
-    html = urlopen(url).decode('latin-1')
+    html = urlopen(url)
     return lxml.html.fromstring(html)
 
 
@@ -275,7 +275,7 @@ class MTBillScraper(BillScraper):
 
         url = 'http://data.opi.mt.gov/bills/%d/' % year
 
-        html = self.urlopen(url).decode('latin-1')
+        html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
 
         for url in doc.xpath('//a[contains(@href, "/bills/")]/@href')[1:]:
@@ -389,7 +389,7 @@ class MTBillScraper(BillScraper):
                 return
         
         keymap = {'Y': 'yes', 'N': 'no'}
-        html = self.urlopen(url).decode('latin-1')
+        html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
 
         # Yes, no, excused, absent.

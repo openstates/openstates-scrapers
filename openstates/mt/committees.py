@@ -52,10 +52,9 @@ def scrape_committees(year, chamber):
     instead.
     '''
     url = committee_urls[chamber][year]
-    html = scrapelib.urlopen(url).decode('latin-1')
+    html = scrapelib.urlopen(url)
 
     name_dict = defaultdict(set)
-    html = html.decode('latin-1')
     doc = lxml.html.fromstring(html)
     tds = doc.xpath('//td[@valign="top"]')[3:]
 
