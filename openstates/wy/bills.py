@@ -94,7 +94,6 @@ class WYBillScraper(BillScraper):
             self.warning('no digest for %s' % bill['bill_id'])
             return
 
-        html = html.decode('utf-8', 'ignore')
         doc = lxml.html.fromstring(html)
 
         ext_title = doc.xpath('//span[@class="billtitle"]')
