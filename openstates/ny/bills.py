@@ -29,7 +29,7 @@ class NYBillScraper(BillScraper):
                        "?search=otype:bill&searchType=&format=xml"
                        "&pageIdx=%d" % index)
                 with self.urlopen(url) as page:
-                    page = lxml.etree.fromstring(page)
+                    page = lxml.etree.fromstring(page.bytes)
                     if not page.getchildren():
                         # If the result response is empty, we've hit the end of
                         # the data. Quit.
