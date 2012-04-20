@@ -85,7 +85,7 @@ class MELegislatorScraper(LegislatorScraper):
         }
 
         fn, result = self.urlretrieve(url)
-        wb = xlrd.open_workbook('me_senate.xls')
+        wb = xlrd.open_workbook(fn)
         sh = wb.sheet_by_index(0)
 
         for rownum in xrange(1, sh.nrows):
