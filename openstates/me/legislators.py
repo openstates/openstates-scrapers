@@ -84,10 +84,7 @@ class MELegislatorScraper(LegislatorScraper):
             'email': 14,
         }
 
-        with self.urlopen(url) as senator_xls:
-            with open('me_senate.xls', 'w') as f:
-                f.write(senator_xls)
-
+        fn, result = self.urlretrieve(url)
         wb = xlrd.open_workbook('me_senate.xls')
         sh = wb.sheet_by_index(0)
 
