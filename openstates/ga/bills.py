@@ -93,7 +93,7 @@ class GABillScraper(BillScraper):
 
         summary_url = ('http://www1.legis.ga.gov/legis/%s/list/BillSummary.xml'
                        % session)
-        xml = self.urlopen(summary_url)
+        xml = self.urlopen(summary_url).bytes
         doc = lxml.etree.fromstring(xml)
 
         for bxml in  doc.xpath('//Bill'):
