@@ -29,15 +29,21 @@ class NMLegislatorScraper(LegislatorScraper):
             doc.make_links_absolute(url)
 
             # most properties are easy to pull
-            properties = {'first_name': 'FNAME', 'last_name': 'LNAME',
-                          'party': 'PARTY', 'district': 'DISTRICT',
-                          'county': 'COUNTY', 'start_year': 'STARTYEAR',
-                          'occupation': 'OCCUPATION',
-                          'capitol_phone': 'OFF_PHONE', 'office_phone': 'WKPH'}
+            properties = {
+                'first_name': 'FNAME', 
+                'last_name': 'LNAME',
+                'party': 'PARTY', 
+                'district': 'DISTRICT',
+                'county': 'COUNTY', 
+                'start_year': 'STARTYEAR',
+                'occupation': 'OCCUPATION',
+                'office_phone': 'WKPH'
+                }
+
             for key, value in properties.iteritems():
-                id = 'ctl00_mainCopy_LegisInfo_%sLabel' % value
+                id_ = 'ctl00_mainCopy_LegisInfo_%sLabel' % value
                 try:
-                    val = doc.get_element_by_id(id).text
+                    val = doc.get_element_by_id(id_).text
                 except KeyError:
                     self.warning('bad legislator page %s missing %s' %
                                  (url, id))
@@ -78,6 +84,12 @@ class NMLegislatorScraper(LegislatorScraper):
                 else:
                     role = role.lower()
                 leg.add_role('committee member', term, committee=committee,
-                             position=role, chamber=chamber)
+                              position=role, chamber=chamber)
+
+            # Already have the photo url.
+            try:
+                del leg['image_url']
+            except KeyError:
+                pass
 
             self.save_legislator(leg)

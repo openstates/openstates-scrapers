@@ -5,6 +5,7 @@ from .utils import year_from_session
 
 from collections import defaultdict
 import datetime as dt
+import os
 import re
 import lxml.html
 import scrapelib
@@ -277,6 +278,7 @@ class ORBillScraper(BillScraper):
             self.warning("could not fetch subject index %s" % url)
             return
         lines = convert_pdf(pdf, 'text-nolayout').splitlines()
+        os.remove(pdf)
 
         last_line = ''
 

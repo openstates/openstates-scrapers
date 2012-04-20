@@ -14,20 +14,20 @@ class PREventScraper(EventScraper):
     state = 'pr'
 
     _tz = pytz.timezone('US/Alaska')
-    
+
     def scrape(self, chamber, session):
         if chamber == 'lower':
             return
-        
+
         self.upper_url = 'http://www.senadopr.us/Lists/Calendario%20Legislativo/DispForm_original.aspx?ID='#29 is the start number for the counter <_<
-        self.lower_url = 'http://www.camaraderepresentantes.org/cr_calendario.asp?d=3/28/2007'# % 
+        self.lower_url = 'http://www.camaraderepresentantes.org/cr_calendario.asp?d=3/28/2007'# %
         counter = itertools.count(29)
         for event_id in counter:
             try:
                 self.scrape_events(chamber, session,event_id)
             except ScrapeError:
                 break
-            
+
         #year, year2 = None, None
         #for term in self.metadata['terms']:
             #if term['sessions'][0] == session:
@@ -41,32 +41,39 @@ class PREventScraper(EventScraper):
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
             rows = doc.xpath("//div[@id='WebPartWPQ2']")
-            #some ids are empty 
+            #some ids are empty
             if len( rows):
                 table_data = rows[0].find('table')[1]
-                
+
                 for link in table_data.iterchildren('td'):
                     td = link.xpath('//td[@class="ms-formbody"]')
-                    
+
                     description =  td[18].text
                     when =  td[19].text
                     where = td[25].text
                     type = td[27].text
                     meeting_lead =  td[28].text
-                    
+
                     when = datetime.datetime.strptime(when, "%m/%d/%Y  %H:%M %p")
                     when = self._tz.localize(when)
                     event_type = 'committee:meeting';
-                    event = Event(session, when, event_type, description, location=where)
-                    
+                    kwargs = { "location" : "State House" }
+                    if where is not None and where != "":
+                        kwargs['location'] = where
+                    event = Event(session, when, event_type, description, **kwargs)
+
                     if td[20].text is None:
                         participants = meeting_lead
                     else:
                         participants = td[20].text.split(';')
                     if participants:
                         for participant in participants:
-                            event.add_participant('committee',participant.strip().replace('HON.','',1));
-                    
+                            name = participant.strip().replace('HON.','',1)
+                            if name != "":
+                                event.add_participant('committee',
+                                                      name,
+                                                      chamber=chamber)
+
                     event.add_source(url)
                     self.save_event(event)
             else :

@@ -1,6 +1,5 @@
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns, include
 from django.conf import settings
-from django.contrib import admin
 
 
 urlpatterns = patterns('',
@@ -9,7 +8,7 @@ urlpatterns = patterns('',
     (r'^admin/', include('billy.web.admin.urls')),
 
     # site-specific views
-    (r'^downloads/$', 'views.downloads'),
+    (r'^downloads/$', 'openstates_site.views.downloads'),
 
     # flat pages
     (r'^$', 'django.views.generic.simple.direct_to_template',

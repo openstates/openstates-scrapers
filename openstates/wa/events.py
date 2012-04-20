@@ -71,7 +71,7 @@ class WAEventScraper(EventScraper):
                                              namespaces=self._ns)
                     name = "%s %s Committee" % (agency, name)
 
-                    event.add_participant('committee', name)
+                    event.add_participant('committee', name, chamber=agency)
 
                 event.add_source(url)
                 self.save_event(event)
