@@ -41,7 +41,7 @@ class WABillScraper(BillScraper):
             url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
 
             with self.urlopen(url) as page:
-                page = lxml.etree.fromstring(page)
+                page = lxml.etree.fromstring(page.bytes)
 
                 for leg_info in xpath(page, "//wa:LegislationInfo"):
                     bill_id = xpath(leg_info, "string(wa:BillId)")

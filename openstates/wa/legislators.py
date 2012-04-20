@@ -17,12 +17,12 @@ class WALegislatorScraper(LegislatorScraper):
 
         # these pages are useful for checking if a leg is still in office
         if chamber == 'upper':
-            cur_members = self.urlopen('http://www.leg.wa.gov/senate/senators/Pages/default.aspx')
+            cur_members = self.urlopen('http://www.leg.wa.gov/senate/senators/Pages/default.aspx').bytes
         else:
-            cur_members = self.urlopen('http://www.leg.wa.gov/house/representatives/Pages/default.aspx')
+            cur_members = self.urlopen('http://www.leg.wa.gov/house/representatives/Pages/default.aspx').bytes
 
         with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page)
+            page = lxml.etree.fromstring(page.bytes)
 
             for member in xpath(page, "//wa:Member"):
                 mchamber = xpath(member, "string(wa:Agency)")
