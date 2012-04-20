@@ -96,7 +96,7 @@ class TXBillScraper(BillScraper):
             self.save_bill(bill)
 
     def parse_bill_xml(self, chamber, session, txt):
-        root = lxml.etree.fromstring(txt)
+        root = lxml.etree.fromstring(txt.bytes)
         bill_id = ' '.join(root.attrib['bill'].split(' ')[1:])
         bill_title = root.findtext("caption")
 
