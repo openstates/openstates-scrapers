@@ -4,10 +4,7 @@ import datetime
 from operator import itemgetter
 from collections import defaultdict
 
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
+import StringIO
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
