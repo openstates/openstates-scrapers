@@ -84,7 +84,7 @@ class WABillScraper(BillScraper):
                "=%s" % (self._base_url, biennium, bill_num))
 
         with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page)
+            page = lxml.etree.fromstring(page.bytes)
             page = xpath(page, "//wa:Legislation")[0]
 
             title = xpath(page, "string(wa:LongDescription)")
@@ -127,7 +127,7 @@ class WABillScraper(BillScraper):
             self._base_url, biennium, bill_id)
 
         with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page)
+            page = lxml.etree.fromstring(page.bytes)
 
             for sponsor in xpath(page, "//wa:Sponsor/wa:Name"):
                 bill.add_sponsor('sponsor', sponsor.text)
@@ -148,7 +148,7 @@ class WABillScraper(BillScraper):
                                                         begin_date,
                                                         end_date))
         with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page)
+            page = lxml.etree.fromstring(page.bytes)
 
             for status in xpath(page, "//wa:LegislativeStatus"):
                 action = xpath(status, "string(wa:HistoryLine)").strip()
@@ -196,7 +196,7 @@ class WABillScraper(BillScraper):
                "GetRollCalls?billNumber=%s&biennium=%s" % (
                    bill_num, biennium))
         with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page)
+            page = lxml.etree.fromstring(page.bytes)
 
             for rc in xpath(page, "//wa:RollCall"):
                 motion = xpath(rc, "string(wa:Motion)")
