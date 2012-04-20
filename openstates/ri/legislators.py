@@ -29,9 +29,7 @@ class RILegislatorScraper(LegislatorScraper):
             url = ('http://www.rilin.state.ri.us/Documents/Representatives.xls')
             rep_type = 'Representative '
 
-        with self.urlopen(url) as senator_xls:
-            with open('ri_senate.xls', 'w') as f:
-                f.write(senator_xls)
+        self.urlretrieve(url, 'ri_senate.xls')
 
         wb = xlrd.open_workbook('ri_senate.xls')
         sh = wb.sheet_by_index(0)
