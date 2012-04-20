@@ -381,13 +381,13 @@ class MTBillScraper(BillScraper):
                 return
 
             try:
-                v = PDFCommitteeVote(url, resp)
+                v = PDFCommitteeVote(url, resp.bytes)
                 return v.asvote()
             except PDFCommitteeVoteParseError as e:
                 # Warn and skip.
                 self.warning("Could't parse committee vote at %r" % url)
                 return
-        
+
         keymap = {'Y': 'yes', 'N': 'no'}
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
