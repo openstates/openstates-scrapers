@@ -122,7 +122,7 @@ class WYBillScraper(BillScraper):
                         bill.add_sponsor('sponsor', sponsor)
 
         action_re = re.compile('(\d{1,2}/\d{1,2}/\d{4})\s+(H |S )?(.+)')
-        vote_total_re = re.compile('(Ayes )?(\d*) Nays (\d+) Excused (\d+) Absent (\d+) Conflicts (\d+)')
+        vote_total_re = re.compile('(Ayes )?(\d*)(\s*)Nays(\s*)(\d+)(\s*)Excused(\s*)(\d+)(\s*)Absent(\s*)(\d+)(\s*)Conflicts(\s*)(\d+)')
 
         actions = [x.text_content() for x in
                    doc.xpath('//*[@class="actions"]')]
@@ -191,14 +191,20 @@ class WYBillScraper(BillScraper):
                                       'Conflicts'):
                         voters_type = nextline
                     elif vote_total_re.match(nextline):
-                        _, ayes, nays, exc, abs, con = \
-                                vote_total_re.match(nextline).groups()
+                        #_, ayes, _, nays, _, exc, _, abs, _, con, _ = \
+                        tupple = vote_total_re.match(nextline).groups()
+                        ayes = tupple[1]
+                        nays = tupple[4]
+                        exc = tupple[7]
+                        abs = tupple[10]
+                        con = tupple[13]
+
                         passed = (('Passed' in action or
                                    'Do Pass' in action or
                                    'Did Concur' in action) and
                                   'Failed' not in action)
                         vote = Vote(actor, date, action, passed, int(ayes),
-                                    int(nays), int(exc)+int(abs)+int(con))
+                                    int(nays), int(exc) + int(abs) + int(con))
 
                         for vtype, voters in voters.iteritems():
                             for voter in split_names(voters):
