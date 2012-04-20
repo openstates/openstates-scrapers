@@ -41,7 +41,7 @@ class LAEventScraper(EventScraper):
             page.make_links_absolute(url)
 
             for link in page.xpath("//a[contains(@href, 'agenda.asp')]"):
-                self.scrape_meeting(self, session, chamber, link.attrib['href'])
+                self.scrape_meeting(session, chamber, link.attrib['href'])
 
     def scrape_meeting(self, session, chamber, url):
         with self.urlopen(url) as page:
@@ -71,6 +71,7 @@ class LAEventScraper(EventScraper):
 
                 event = Event(session, when, 'committee:meeting',
                               description, location=location)
+                event.add_source(url)
                 event.add_participant('committee', committee)
                 event['link'] = guid
 
