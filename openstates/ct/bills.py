@@ -62,7 +62,7 @@ class CTBillScraper(BillScraper):
                 bill_type = 'bill'
 
             bill = Bill(session, chamber, bill_id,
-                        row['bill_title'].decode('latin-1'),
+                        row['bill_title'],
                         type=bill_type)
             bill.add_source(info_url)
 
@@ -208,7 +208,7 @@ class CTBillScraper(BillScraper):
                 date = datetime.datetime.strptime(
                     date, "%Y-%m-%d %H:%M:%S").date()
 
-                action = row['act_desc'].decode('latin-1').strip()
+                action = row['act_desc'].strip()
                 act_type = []
 
                 match = re.search('COMM(ITTEE|\.) ON$', action)
@@ -220,9 +220,9 @@ class CTBillScraper(BillScraper):
                     act_type.append('committee:referred')
                 elif row['qual1']:
                     if bill['session'] in row['qual1']:
-                        action += ' (%s' % row['qual1'].decode('latin-1')
+                        action += ' (%s' % row['qual1']
                         if row['qual2']:
-                            action += ' %s)' % row['qual2'].decode('latin-1')
+                            action += ' %s)' % row['qual2']
                     else:
                         action += ' %s' % row['qual1']
 
