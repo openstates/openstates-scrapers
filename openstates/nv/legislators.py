@@ -6,8 +6,7 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .utils import clean_committee_name
 
-import lxml.etree
-import urllib
+import lxml.html
 
 class NVLegislatorScraper(LegislatorScraper):
     state = 'nv'
@@ -28,7 +27,7 @@ class NVLegislatorScraper(LegislatorScraper):
 
         with self.urlopen(leg_url) as page:
             page = page.replace("&nbsp;", " ")
-            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+            root = lxml.html.fromstring(page)
 
             #Going through the districts
             for row_index in range(2, num_districts+1):

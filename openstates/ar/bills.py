@@ -41,7 +41,7 @@ class ARBillScraper(BillScraper):
 
     def scrape_bill(self, chamber, session):
         url = "ftp://www.arkleg.state.ar.us/dfadooas/LegislativeMeasures.txt"
-        page = self.urlopen(url).decode('latin-1')
+        page = self.urlopen(url)
         page = unicode_csv_reader(StringIO.StringIO(page), delimiter='|')
 
         for row in page:

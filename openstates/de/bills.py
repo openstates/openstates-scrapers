@@ -102,8 +102,6 @@ class DEBillScraper(BillScraper):
     
     state = 'de'
 
-    encoding = 'iso-8859-1'
-
     legislation_types = {
         'House Bill': 'bill',
         'House Concurrent Resolution': 'concurrent resolution',
@@ -122,7 +120,7 @@ class DEBillScraper(BillScraper):
         and parse with lxml.
         '''
         html = self.urlopen(url)
-        doc = lxml.html.fromstring(html.decode(self.encoding))
+        doc = lxml.html.fromstring(html)
         urldata = urlparse(url)
         doc.make_links_absolute(base_url(urldata))
         return doc

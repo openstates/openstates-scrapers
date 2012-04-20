@@ -61,7 +61,7 @@ class FLLegislatorScraper(LegislatorScraper):
                "representatives.aspx")
 
         with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page.decode('utf8'))
+            page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
             for div in page.xpath('//div[@id="rep_icondocks2"]'):

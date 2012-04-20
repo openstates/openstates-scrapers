@@ -18,7 +18,7 @@ class GALegislatorScraper(LegislatorScraper):
     def lxml_context(self, url, method="GET", body=None):
         body = None
         try:
-            body = unicode(self.urlopen(url, method=method, body=body), 'latin-1')
+            body = self.urlopen(url, method=method, body=body)
         except scrapelib.HTTPError:
             yield None
         if body:

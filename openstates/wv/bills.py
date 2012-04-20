@@ -267,7 +267,7 @@ class WVBillScraper(BillScraper):
         ftp_url = 'ftp://www.legis.state.wv.us/publicdocs/%s/RS/%s/'
         ftp_url = ftp_url % (session, chamber_name)
 
-        html = self.urlopen(ftp_url).decode('iso-8859-1')
+        html = self.urlopen(ftp_url)
         dirs = [' '.join(x.split()[3:]) for x in html.splitlines()]
 
         split = re.compile(r'\s+').split
@@ -276,7 +276,7 @@ class WVBillScraper(BillScraper):
         version_filenames = collections.defaultdict(list)
         for d in dirs:
             url = ('%s%s/' % (ftp_url, d)).replace(' ', '%20')
-            html = self.urlopen(url).decode('iso-8859-1')
+            html = self.urlopen(url)
             filenames = [split(x, 3)[-1] for x in html.splitlines()]
             filenames = filter(matchwpd, filenames)
 

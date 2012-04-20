@@ -36,8 +36,6 @@ class CALegislatorScraper(LegislatorScraper):
 
     state = 'ca'
 
-    encoding = 'utf-8'
-
     urls = {'upper': 'http://senate.ca.gov/senators',
             'lower': 'http://assembly.ca.gov/assemblymembers',}
 
@@ -45,7 +43,7 @@ class CALegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, term):
 
         url = self.urls[chamber]
-        html = self.urlopen(url).decode(self.encoding)
+        html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         rows = doc.xpath('//table/tbody/tr')
 

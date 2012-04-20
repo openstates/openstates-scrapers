@@ -21,9 +21,6 @@ class CTEventScraper(EventScraper):
         super(CTEventScraper, self).__init__(*args, **kwargs)
 
     def scrape(self, chamber, session):
-        if session != '2011':
-            raise NoDataForPeriod(session)
-
         if chamber != 'other':
             # All CT committees are joint
             return

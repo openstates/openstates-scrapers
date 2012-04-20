@@ -46,7 +46,6 @@ class AKLegislatorScraper(LegislatorScraper):
             # Alaska fails at unicode, some of the pages have broken
             # characters. They're not in data we care about so just
             # replace them.
-            page = page.decode('utf8', 'replace')
             page = lxml.html.fromstring(page)
 
             name = re.sub(r'\s+', ' ', name)

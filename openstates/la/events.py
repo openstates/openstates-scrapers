@@ -28,9 +28,6 @@ class LAEventScraper(EventScraper):
     state = 'la'
 
     def scrape(self, chamber, session):
-        if session != '2010':
-            raise NoDataForPeriod(session)
-
         if chamber == 'lower':
             self.scrape_house_weekly_schedule(session)
 
