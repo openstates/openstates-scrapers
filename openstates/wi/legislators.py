@@ -48,7 +48,6 @@ class WILegislatorScraper(LegislatorScraper):
     def add_committees(self, legislator, rep_url, term, chamber):
         url = rep_url + '&display=committee'
         with self.urlopen(url) as body:
-            body = unicode(body, 'latin-1')
             doc = lxml.html.fromstring(body)
 
             img = doc.xpath('//img[@id="ctl00_C_picHere"]/@src')
