@@ -3,6 +3,8 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
 import re
+import unicodedata
+import scrapelib
 
 class PRLegislatorScraper(LegislatorScraper):
     state = 'pr'
@@ -47,8 +49,26 @@ class PRLegislatorScraper(LegislatorScraper):
                     else:
                         district = str(counter)
 
-                    leg = Legislator(term, 'upper', district, name,
-                                     party=party, phone=phone, email=email)
+                    #Code to guess the picture
+                    namefixed = unicode(name.replace(".",". "))  #Those middle names abbreviations are sometimes weird.
+                    namefixed = unicodedata.normalize('NFKD', namefixed).encode('ascii', 'ignore') #Remove the accents
+                    nameparts = namefixed.split()
+                    if nameparts[1].endswith('.'):
+                        lastname = nameparts[2]
+                    else:
+                        lastname = nameparts[1]
+
+                    # Construct the photo url
+                    picture_filename = 'http://www.senadopr.us/Fotos%20Senadores/sen_' + (nameparts[0][0] + lastname).lower() + '.jpg'
+
+                    try:
+                        with self.urlopen(picture_filename) as picture_data:  # Checking to see if the file is there
+                            leg = Legislator(term, 'upper', district, name,
+                                             party=party, phone=phone, email=email, photo_url=picture_filename)
+
+                    except scrapelib.HTTPError:         # If not, leave out the photo_url
+                        leg = Legislator(term, 'upper', district, name,
+                                         party=party, phone=phone, email=email)
 
                     leg.add_source(url)
                     self.save_legislator(leg)
@@ -69,6 +89,7 @@ class PRLegislatorScraper(LegislatorScraper):
                 # skip last td in each table
                 for td in table.xpath('.//td')[:-1]:
                     photo_url = td.xpath('.//img/@src')[0]
+                    
                     # for these we can split names and get district
                     if not at_large:
                         name, district = td.xpath('.//b/text()')
