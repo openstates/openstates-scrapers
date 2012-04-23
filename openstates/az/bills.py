@@ -218,6 +218,10 @@ class AZBillScraper(BillScraper):
                         action = row[0].text_content().strip()
                         if action.endswith(':'):
                             action = action[:-1]
+                        if len(row) != 3:
+                            self.warning('skipping row: %s' %
+                                         row.text_content())
+                            continue
                         result = row[2].text_content().strip()
                         # majority caucus Y|N
                         action = action + " recommends to concur: " + result
