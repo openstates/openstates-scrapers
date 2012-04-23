@@ -1,4 +1,5 @@
 import re
+import chardet
 import unicodecsv
 import datetime
 from operator import itemgetter
@@ -42,7 +43,9 @@ class CTBillScraper(BillScraper):
     def scrape_bill_info(self, chamber, session):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/bill_info.csv"
         page = self.urlopen(info_url)
-        page = unicodecsv.DictReader(StringIO.StringIO(page))
+        char_encoding = chardet.detect(page.bytes)['encoding']
+        page = unicodecsv.DictReader(StringIO.StringIO(page.bytes),
+                                     encoding=char_encoding)
 
         abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
