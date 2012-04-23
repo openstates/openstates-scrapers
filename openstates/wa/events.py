@@ -26,7 +26,7 @@ class WAEventScraper(EventScraper):
         expected_agency = {'upper': 'Senate', 'lower': 'House'}[chamber]
 
         with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page)
+            page = lxml.etree.fromstring(page.bytes)
 
             for meeting in page.xpath(
                 "//wa:CommitteeMeeting", namespaces=self._ns):
