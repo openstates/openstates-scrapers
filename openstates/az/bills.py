@@ -11,6 +11,10 @@ from lxml import html
 BASE_URL = 'http://www.azleg.gov/'
 
 class AZBillScraper(BillScraper):
+    def accept_response(self, response):
+        normal = super(AZBillScraper, self).accept_response(response)
+        return normal or response.status_code == 500
+
     """
     Arizona Bill Scraper.
     """
