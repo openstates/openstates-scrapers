@@ -48,7 +48,7 @@ class AZCommitteeScraper(CommitteeScraper):
         url = base_url + 'xml/committees.asp?session=%s' % session_id
 
         with self.urlopen(url) as page:
-            root = etree.fromstring(page, etree.XMLParser(recover=True))
+            root = etree.fromstring(page.bytes, etree.XMLParser(recover=True))
 
             body = '//body[@Body="%s"]/committee' % {'upper': 'S',
                                                      'lower': 'H'}[chamber]
@@ -104,7 +104,7 @@ class AZCommitteeScraper(CommitteeScraper):
         url = base_url + 'xml/committees.asp?session=%s&type=%s' % (session_id,
                                                                  committee_type)
         with self.urlopen(url) as page:
-            root = etree.fromstring(page, etree.XMLParser(recover=True))
+            root = etree.fromstring(page.bytes, etree.XMLParser(recover=True))
 
             body = '//body[@Body="%s"]/committee' % {'upper': 'S',
                                                      'lower': 'H'}[chamber]

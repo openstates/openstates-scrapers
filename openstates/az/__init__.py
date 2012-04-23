@@ -527,9 +527,11 @@ metadata = dict(
 
 
 def session_list():
+    import scrapelib
     from billy.scrape.utils import url_xpath
-    return url_xpath('http://www.azleg.gov/xml/sessions.asp?sort=SessionID',
-                     '//session/@session_full_name')
+    data = scrapelib.urlopen('http://www.azleg.gov/xml/sessions.asp?sort=SessionID')
+    doc = lxml.html.fromstring(data.bytes)
+    return doc.xpath('//session/@session_full_name')
 
 
 @oyster_text
