@@ -102,10 +102,10 @@ class COLegislatorScraper(LegislatorScraper):
 
             if len(urls) > 0:
                 home_page = urls[0]
-                ret['homepage'] = home_page.attrib['href']
+                ret['homepage'] = home_page.attrib['href'].strip()
                 # home_page.attrib['href']
                 homepage = self.parse_homepage(
-                    home_page.attrib['href'] )
+                    home_page.attrib['href'].strip() )
 
                 ret['ctty'] = homepage['ctty']
                 ret['photo_url'] = homepage['photo']
