@@ -53,9 +53,30 @@ class DEEventScraper(EventScraper):
         event.add_participant("host", metainf['Committee'],
                               chamber=chambers[metainf['Chamber']])
         event.add_source(url)
+
+        agenda = page.xpath("//td[@width='96%']//font[@face='Arial']")
+        agenda = [ a.text_content().strip() for a in agenda ]
+        if "" in agenda:
+            agenda.remove("")
+        for item in agenda:
+            string = item.split()
+            string = string[:2]
+            fChar = string[0][0]
+            watch = [ "H", "S" ]
+            if fChar in watch:
+                try:
+                    bNo = int(string[1])
+                except ValueError:
+                    continue
+                except IndexError:
+                    continue
+                bill_id = "%s %s" % ( string[0], string[1] )
+                event.add_related_bill(bill_id, descr=item)
+
         self.save_event(event)
 
     def scrape(self, chamber, session):
+        self.log(chamber)
         urls = chamber_urls[chamber]
         for url in urls:
             page = self.lxmlize(url)
