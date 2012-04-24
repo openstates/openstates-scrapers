@@ -1,3 +1,6 @@
+from billy.fulltext import oyster_text
+import lxml.html
+
 metadata = dict(
     name='Hawaii',
     abbreviation='hi',
@@ -45,8 +48,17 @@ def session_list():
     sessions.remove("Archives Main")
     return sessions
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    if oyster_doc['metadata']['mimetype'] == 'text/html':
+        content = doc.xpath('//div[@class="Section2"]')[0].text_content()
+        content += doc.xpath('//div[@class="Section3"]')[0].text_content()
+        return content
+
 document_class = dict(
     AWS_PREFIX = 'documents/hi/',
     update_mins = None,
+    extract_text = extract_text,
     onchanged = []
 )
