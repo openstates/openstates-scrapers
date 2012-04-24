@@ -312,7 +312,11 @@ class AZBillScraper(BillScraper):
                         if row[action].text_content().strip() == 'Vote Detail':
                             vote_url = row.pop(action).xpath('string(a/@href)')
                             vote_date = utils.get_date(row.pop('DATE'))
-                            passed = row.pop('RESULT').text_content().strip()
+                            try:
+                                passed = row.pop('RESULT').text_content().strip()
+                            except KeyError:
+                                passed = row.pop('2/3 VOTE').text_content().strip()
+
                             # leaves vote counts, ammended, emergency, two-thirds
                             # and possibly rfe left in k_rows. get the vote counts
                             # from scrape votes and pass ammended and emergency
