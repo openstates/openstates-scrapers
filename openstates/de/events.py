@@ -7,7 +7,7 @@ import lxml.html
 
 chamber_urls = {
     "other" : [],
-    "lower" : [],
+    "lower" : [ "http://legis.delaware.gov/LIS/lis146.nsf/House+Meeting+Notice/?openview&count=2000" ],
     "upper" : [ "http://legis.delaware.gov/LIS/lis146.nsf/Senate+Meeting+Notice/?openview&count=2000" ]
 }
 chambers = {
