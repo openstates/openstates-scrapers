@@ -5,6 +5,7 @@ from .utils import year_from_session
 
 from collections import defaultdict
 import datetime as dt
+import os
 import re
 import lxml.html
 import scrapelib
@@ -183,7 +184,7 @@ class ORBillScraper(BillScraper):
                                                a['date'], type=action_type)
 
     def _parse_action_line(self, line):
-        combined_id, prefix, number, house, date, time, note = line.split("\xe4")
+        combined_id, prefix, number, house, date, time, note = line.split(u"\xe4")
         (month, day, year)     = date.split("/")
         (hour, minute, second) = time.split(":")
         actor = "upper" if house == "S" else "lower"
@@ -197,7 +198,7 @@ class ORBillScraper(BillScraper):
         return action
 
     def parse_bill(self, session, chamber, line):
-        (type, combined_id, number, title, relating_to) = line.split("\xe4")
+        (type, combined_id, number, title, relating_to) = line.split(u"\xe4")
         if ((type[0] == 'H' and chamber == 'lower') or
             (type[0] == 'S' and chamber == 'upper')):
 
@@ -207,7 +208,7 @@ class ORBillScraper(BillScraper):
             bill_type = self.bill_types[type[1:]]
 
             # may encounter an ellipsis in the source data
-            title = title.replace('\x85', '...')
+            title = title.replace(u'\x85', '...')
 
             self.all_bills[bill_id] =  Bill(session, chamber, bill_id, title,
                                             type=bill_type)
@@ -277,6 +278,7 @@ class ORBillScraper(BillScraper):
             self.warning("could not fetch subject index %s" % url)
             return
         lines = convert_pdf(pdf, 'text-nolayout').splitlines()
+        os.remove(pdf)
 
         last_line = ''
 

@@ -1,4 +1,3 @@
-from scrapelib import Response
 import datetime as dt
 import lxml.html
 import xlrd

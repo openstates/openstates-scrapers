@@ -1,4 +1,6 @@
 import datetime
+from billy.fulltext import oyster_text
+import lxml.html
 
 metadata = dict(
     name='Indiana',
@@ -47,8 +49,15 @@ def session_list():
     # cool URL bro
     return url_xpath('http://www.in.gov/legislative/2414.htm', '//h3/text()')
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    return ' '.join(x.text_content()
+                    for x in doc.xpath('//div[@align="full"]'))
+
 document_class = dict(
     AWS_PREFIX = 'documents/in/',
     update_mins = None,
+    extract_text = extract_text,
     onchanged = []
 )

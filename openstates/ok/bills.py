@@ -152,7 +152,7 @@ class OKBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_votes(self, bill, url):
-        page = lxml.html.fromstring(self.urlopen(url).replace('\xa0', ' '))
+        page = lxml.html.fromstring(self.urlopen(url).replace(u'\xa0', ' '))
 
         re_ns = "http://exslt.org/regular-expressions"
         path = "//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"

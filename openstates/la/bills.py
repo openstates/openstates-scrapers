@@ -246,46 +246,45 @@ class LABillScraper(BillScraper):
         vote['type'] = type
         vote.add_source(url)
 
-        with self.urlopen(url) as text:
-            (fd, temp_path) = tempfile.mkstemp()
-            with os.fdopen(fd, 'wb') as w:
-                w.write(text)
-            html = pdf_to_lxml(temp_path)
-            os.remove(temp_path)
+        (fd, temp_path) = tempfile.mkstemp()
+        self.urlretrieve(url, temp_path)
 
-            vote_type = None
-            total_re = re.compile('^Total--(\d+)$')
-            body = html.xpath('string(/html/body)')
+        html = pdf_to_lxml(temp_path)
+        os.remove(temp_path)
 
-            date_match = re.search('Date: (\d{1,2}/\d{1,2}/\d{4})', body)
-            try:
-                date = date_match.group(1)
-            except AttributeError:
-                self.warning("BAD VOTE: date error")
-                return
+        vote_type = None
+        total_re = re.compile('^Total--(\d+)$')
+        body = html.xpath('string(/html/body)')
 
-            vote['date'] = datetime.datetime.strptime(date, '%m/%d/%Y')
+        date_match = re.search('Date: (\d{1,2}/\d{1,2}/\d{4})', body)
+        try:
+            date = date_match.group(1)
+        except AttributeError:
+            self.warning("BAD VOTE: date error")
+            return
 
-            for line in body.replace(u'\xa0', '\n').split('\n'):
-                line = line.replace('&nbsp;', '').strip()
-                if not line:
-                    continue
+        vote['date'] = datetime.datetime.strptime(date, '%m/%d/%Y')
 
-                if line in ('YEAS', 'NAYS', 'ABSENT'):
-                    vote_type = {'YEAS': 'yes', 'NAYS': 'no',
-                                 'ABSENT': 'other'}[line]
-                elif line in ('Total', '--'):
-                    vote_type = None
-                elif vote_type:
-                    match = total_re.match(line)
-                    if match:
-                        vote['%s_count' % vote_type] = int(match.group(1))
-                    elif vote_type == 'yes':
-                        vote.yes(line)
-                    elif vote_type == 'no':
-                        vote.no(line)
-                    elif vote_type == 'other':
-                        vote.other(line)
+        for line in body.replace(u'\xa0', '\n').split('\n'):
+            line = line.replace('&nbsp;', '').strip()
+            if not line:
+                continue
+
+            if line in ('YEAS', 'NAYS', 'ABSENT'):
+                vote_type = {'YEAS': 'yes', 'NAYS': 'no',
+                             'ABSENT': 'other'}[line]
+            elif line in ('Total', '--'):
+                vote_type = None
+            elif vote_type:
+                match = total_re.match(line)
+                if match:
+                    vote['%s_count' % vote_type] = int(match.group(1))
+                elif vote_type == 'yes':
+                    vote.yes(line)
+                elif vote_type == 'no':
+                    vote.no(line)
+                elif vote_type == 'other':
+                    vote.other(line)
 
         # tally counts
         vote['yes_count'] = len(vote['yes_votes'])

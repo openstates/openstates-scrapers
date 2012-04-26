@@ -12,7 +12,7 @@ from .committees import scrape_committees
 
 def url_xpath(url):
     html = scrapelib.urlopen(url)
-    html = html.decode('latin-1')
+    html = html
     doc = lxml.html.fromstring(html)
     return doc
 

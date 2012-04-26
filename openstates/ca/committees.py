@@ -22,14 +22,13 @@ def clean(s):
 class CACommitteeScraper(CommitteeScraper):
 
     state = 'ca'
-    encoding = 'utf-8'
 
     urls = {'upper': 'http://senate.ca.gov/committees',
             'lower': 'http://assembly.ca.gov/committees'}
 
     def scrape(self, chamber, term):
         url = self.urls[chamber]
-        html = self.urlopen(url).decode(self.encoding)
+        html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
 
         committee_types = {'upper': ['Standing', 'Select', 'Joint'],
@@ -158,7 +157,6 @@ class CACommitteeScraper(CommitteeScraper):
             self.warning('Bogus committee page link: %r' % url)
             return []
 
-        html = html.decode(self.encoding)
         doc = lxml.html.fromstring(html)
 
         links = doc.xpath('//a')
@@ -174,7 +172,6 @@ class CACommitteeScraper(CommitteeScraper):
             return Membernames.scrub(names)
 
         html = self.urlopen(url)
-        html = html.decode(self.encoding)
         doc = lxml.html.fromstring(html)
 
         # Commence horrific regex-based hackery to get subcommittee members.

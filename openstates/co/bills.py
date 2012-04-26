@@ -260,11 +260,15 @@ class COBillScraper(BillScraper):
             actions = nodes[3].text_content()
 
             for action in actions.split('\n'):
+                if action.strip() == "":
+                    continue
 
                 date_string = action[:action.find(" ")]
+                self.log(date_string)
                 if ":" in date_string:
                     date_string = action[:action.find(":")]
-
+                self.log(action)
+                self.log(date_string)
                 date_time   = dt.datetime.strptime( date_string, "%m/%d/%Y" )
                 action = action[action.find(" ") + 1:]
 

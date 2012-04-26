@@ -12,9 +12,18 @@ class OHEventScraper(EventScraper):
 
     _tz = pytz.timezone('US/Central')
 
+    def house_meetings(self):
+        url = "http://www.legislature.state.oh.us/house_committee_schedule.cfm"
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+        #print page.xpath("//table[@class='MsoNormalTable']")
+
     def scrape(self, chamber, session):
         if chamber == 'other':
             return #XXX: Change to invocation?
+
+        if chamber == 'lower':
+            self.house_meetings()
 
         url = "http://www.legislature.state.oh.us/today.cfm"
         with self.urlopen(url) as page:

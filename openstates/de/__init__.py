@@ -1,4 +1,6 @@
 import datetime
+import lxml.html
+from billy.fulltext import oyster_text
 
 metadata = dict(
     name='Delaware',
@@ -33,8 +35,16 @@ def session_list():
     sessions.remove("Session")
     return sessions
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    if oyster_doc['metadata']['mimetype'] == 'text/html':
+        doc = lxml.html.fromstring(data)
+        return ' '.join(x.text_content()
+                        for x in doc.xpath('//p[@class="MsoNormal"]'))
+
 document_class = dict(
     AWS_PREFIX = 'documents/de/',
     update_mins = 7*24*60,
+    extract_text = extract_text,
     onchanged = []
 )

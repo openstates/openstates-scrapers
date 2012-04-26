@@ -58,7 +58,8 @@ class MOLegislatorScraper(LegislatorScraper):
                     leg.add_source(url)
                     homepage = url
                     page = lxml.html.fromstring(details_page)
-                    photo_url = page.xpath('//html/body/div[2]/div/img/@src')[0]
+                    photo_url = page.xpath('//div[2]/div/img')
+                    photo_url = photo_url[0].attrib['src']
                     committees = page.xpath('//html/body/div[2]//span[@class="style3"]/a')
                     for c in committees:
                         if c.attrib.get('href').find('info/comm/') == -1:

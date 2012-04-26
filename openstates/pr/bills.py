@@ -8,6 +8,7 @@ import lxml.html
 import datetime
 import itertools
 import subprocess
+import shutil
 import os
 import re
 
@@ -198,6 +199,11 @@ class PRBillScraper(BillScraper):
                               shell=True, cwd='/tmp/')
         text = open(html_name).read()
         os.remove(html_name)
+        try:
+            # try and remove files too
+            shutil.rmtree(html_name + '_files')
+        except OSError:
+            pass
         os.remove(vote_doc)
 
         yes_votes = []

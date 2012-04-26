@@ -20,7 +20,7 @@ class WACommitteeScraper(CommitteeScraper):
 
         url = "%s/GetActiveCommittees?biennium=%s" % (self._base_url, biennium)
         with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page)
+            page = lxml.etree.fromstring(page.bytes)
 
             for comm in xpath(page, "//wa:Committee"):
                 agency = xpath(comm, "string(wa:Agency)")
@@ -56,7 +56,7 @@ class WACommitteeScraper(CommitteeScraper):
 
         body = template % (agency, comm['committee'].replace('&', '&amp;'))
         with self.urlopen(self._base_url, method='POST', body=body) as page:
-            page = lxml.etree.fromstring(page)
+            page = lxml.etree.fromstring(page.bytes)
 
             for member in xpath(page, "//wa:Member"):
                 name = xpath(member, "string(wa:Name)")

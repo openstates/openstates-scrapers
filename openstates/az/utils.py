@@ -1,4 +1,3 @@
-from lxml import etree
 import re, datetime
 doc_for_bills_url = 'http://www.azleg.gov/DocumentsForBill.asp?Bill_Number=%s&Session_ID=%s'
 base_url = 'http://www.azleg.gov/'

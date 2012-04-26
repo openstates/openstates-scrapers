@@ -43,14 +43,12 @@ class AREventScraper(EventScraper):
     state = 'ar'
 
     def scrape(self, chamber, session):
-        if session != '2011':
-            raise NoDataForPeriod(session)
         if chamber == 'other':
             return
 
         url = "ftp://www.arkleg.state.ar.us/dfadooas/ScheduledMeetings.txt"
         page = self.urlopen(url)
-        page = csv.reader(StringIO.StringIO(page), delimiter='|')
+        page = csv.reader(StringIO.StringIO(page.bytes), delimiter='|')
 
         for row in page:
             desc = row[7].strip()

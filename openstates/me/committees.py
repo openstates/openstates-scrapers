@@ -6,7 +6,7 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 from .utils import clean_committee_name
 
-import lxml.etree, lxml.html
+import lxml.html
 import xlrd
 
 
@@ -28,7 +28,7 @@ class MECommitteeScraper(CommitteeScraper):
        url = 'http://www.maine.gov/legis/house/hsecoms.htm'
 
        with self.urlopen(url) as page:
-            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+            root = lxml.html.fromstring(page)
 
             count = 0
 

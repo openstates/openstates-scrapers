@@ -52,7 +52,7 @@ class MSBillScraper(BillScraper):
         url = 'http://billstatus.ls.state.ms.us/%s/pdf/all_measures/allmsrs.xml' % session
 
         with self.urlopen(url) as bill_dir_page:
-            root = lxml.etree.fromstring(bill_dir_page, lxml.etree.HTMLParser())
+            root = lxml.etree.fromstring(bill_dir_page.bytes)
             for mr in root.xpath('//lastaction/msrgroup'):
                 bill_id = mr.xpath('string(measure)').replace(" ", "")
                 if bill_id[0] == "S":
@@ -72,8 +72,7 @@ class MSBillScraper(BillScraper):
                 main_doc_url = 'http://billstatus.ls.state.ms.us/%s' % main_doc
                 bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf/%s' % (session, link)
                 with self.urlopen(bill_details_url) as details_page:
-                    details_page = details_page.decode('latin1').encode('utf8', 'ignore')
-                    details_root = lxml.etree.fromstring(details_page, lxml.etree.HTMLParser())
+                    details_root = lxml.etree.fromstring(details_page.bytes)
                     title = details_root.xpath('string(//shorttitle)')
                     longtitle = details_root.xpath('string(//longtitle)')
 

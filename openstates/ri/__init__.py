@@ -1,4 +1,6 @@
 import datetime
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
 
 metadata = dict(
     _partial_vote_bill_id=True,
@@ -30,8 +32,13 @@ def session_list():
     return url_xpath( 'http://status.rilin.state.ri.us/bill_history.aspx?mode=previous',
                      "//select[@name='ctl00$rilinContent$cbYear']/option/text()" )
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    return text_after_line_numbers(pdfdata_to_text(data))
+
 document_class = dict(
     AWS_PREFIX = 'documents/ri/',
     update_mins = 24*7*60,
+    extract_text = extract_text,
     onchanged = []
 )

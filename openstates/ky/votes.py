@@ -93,8 +93,3 @@ class KYVoteScraper(VoteScraper):
 
     def scrape(self, chamber, session):
         pass
-
-
-if __name__ == '__main__':
-    import sys
-    print parse_votes(sys.argv[1])

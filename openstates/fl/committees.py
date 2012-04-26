@@ -83,7 +83,7 @@ class FLCommitteeScraper(CommitteeScraper):
             page = lxml.html.fromstring(page)
             comm.add_source(url)
 
-            for link in page.xpath("//a[contains(@href, 'MemberId')]"):
+            for link in page.xpath("//ul/a[contains(@href, 'MemberId')]"):
                 name = re.sub(r' \([A-Z]\)$', '', link.text).strip()
                 name = re.sub(r'\s+', ' ', name)
 
