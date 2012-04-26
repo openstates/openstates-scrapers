@@ -1,0 +1,122 @@
+{% extends base_template %}
+{% load sitebase %}
+{% load url from future %}
+
+{% block title %}{{metadata.name}}{% endblock %}
+
+
+{% block content %}
+    <div class="fullWidth">
+        <div id="{{state_image_id}}" class="stateTitle">
+            <h2 class="withTip">{{metadata.legislature_name}}</h2> 
+            <p>Michigan is the 21st state. Did you know that the name Michigan is the French form of the Ojibwa word mishigamaa, meaning "large water" or "large lake".</p>
+        </div>
+    </div>   
+    
+    <div class="page-header"><h2>Sessions</h2></div>
+        <ul>
+        {% for session_id, session_name in sessions  %}
+          <li><a href="/{{abbr}}/{{session_id}}/">{{ session_name }}</a></li>
+        {% endfor %}
+        </ul>
+
+    <div class="fullWidth module clear">
+        <h3 class="moduleTitle">Legislators</h3>
+        <div class="sixCol colLt withDash">
+            <div class="stateMap withBorder colLt threeCol">
+                
+            </div>    
+            <div class="threeCol centeredText colRt">
+                <h4 class="titleNumber withTip">{{ upper.legislators.count }}<span>{{ metadata.upper_chamber_title }}s</span></h4>
+                <ul class="tip inlineList">
+                {% for party, count in upper.legislators.party_counts.items %}
+                    <li><a href="{% url 'legislators_chamber' metadata.abbr 'lower' %}">{{ count }} {{party}}</a>{% if not forloop.last %},{% endif %}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="sixCol colRt">
+            <div class="stateMap withBorder colLt threeCol">
+                
+            </div>    
+            <div class="threeCol centeredText colRt">
+                <h4 class="titleNumber withTip">{{ lower.legislators.count }}<span>{{ metadata.lower_chamber_title }}s</span></h4>
+                <ul class="tip inlineList">
+                {% for party, count in lower.legislators.party_counts.items %}
+                    <li><a href="{% url 'legislators_chamber' metadata.abbr 'lower' %}">{{ count }} {{party}}</a>{% if not forloop.last %},{% endif %}</li>
+                {% endfor %}
+                </ul>    
+            </div>
+        </div>   
+        <div class="clear"></div> 
+    </div>
+    <div class="fullWidth module clear"> 
+        <h3 class="moduleTitle">Committees</h3>
+        <ul class="inlineThirds centeredText">
+            <li class="one titleNumber withTip">{{ upper.committees.count }}<span>{{ metadata.upper_chamber_name }} Committees</span></li>
+            <li class="two titleNumber withTip">{{ lower.committees.count }}<span>{{ metadata.lower_chamber_name }} Committees</span></li>
+            <li class="three titleNumber withTip">{{ upper.committees.joint_count }}<span>Joint Committees</span></li>
+        </ul>    
+        <div class="clear"></div>
+    </div>
+     <div class="fullWidth module"> 
+            <h3 class="moduleTitle">Bills</h3>
+            <div class="sixCol colLt">
+                <h4>{{ metadata.upper_chamber_name }}<span class="tip sideNote">({{upper.bills_count}})</span></h4>
+                <div class="medModule">
+                    <h5>Recently Passed</h5>
+                    <ul>
+                    {{passed_upper}}
+                    {% for bill in recent_actions.passed_upper %}
+                        <li>
+                            <time datetime="" class="published" pubdate>{{ bill.actions_manager.latest_passed_upper.date|date:"F d, Y" }}</time>
+                            <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{ bill.bill_id }}</a><span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
+                            <p class="clear">{{ bill.title|truncatewords:50}}</p>
+                        </li>
+                    {% endfor %}                    
+                    </ul>    
+                    <a class="viewMore" href="#">View More Passed Bills</a>
+                </div>
+                <h5>Recently Introduced</h5>
+                <ul>
+                {% for bill in recent_actions.introduced_upper %}
+                    <li>
+                        <time datetime="" class="published" pubdate>{{ bill.actions_manager.latest_introduced_upper.date|date:"F d, Y"}}</time>
+                        <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id }}</a> <span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
+                        <p class="clear">{{ bill.title|truncatewords:50}}</p>
+                    </li>   
+                {% endfor %}
+                </ul>
+                <a class="viewMore" href="#">View More Introduced Bills</a>
+            </div>
+            <div class="sixCol colRt">
+                <h4>{{ metadata.lower_chamber_name }}<span class="tip sideNote">({{lower.bills_count}})</span></h4>
+                <div class="medModule">
+                    <h5>Recently Passed</h5>
+                    <ul>
+                    {% for bill in recent_actions.passed_lower %}
+                        <li>
+                            <time datetime="" class="published" pubdate>{{ bill.actions_manager.latest_passed_lower.date|date:"F d, Y"}}</time>
+                            <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id }}</a> <span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
+                            <p class="clear">{{ bill.title|truncatewords:50}}</p>
+                        </li>   
+                    {% endfor %}
+                    </ul>    
+                    <a class="viewMore" href="#">View More Passed Bills</a>
+                </div>
+                <h5>Recently Introduced</h5>
+                <ul>
+                {% for bill in recent_actions.introduced_lower %}
+                    <li>
+                        <time datetime="" class="published" pubdate>{{ bill.actions_manager.latest_introduced_lower.date|date:"F d, Y"}}</time>
+                        <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id }}</a> <span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
+                        <p class="clear">{{ bill.title|truncatewords:50}}</p>                    </li>   
+                {% endfor %}
+                </ul>
+                <a class="viewMore" href="#">View More Introduced Bills</a>
+            </div>
+            <div class="clear"></div>
+        </div>
+    </div>       
+
+{% endblock %}

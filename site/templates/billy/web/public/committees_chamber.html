@@ -1,0 +1,14 @@
+{% extends base_template %}
+{% load sitebase %}
+
+
+{% block title %}{{state.name}} {{ chamber_name }} Legislators{% endblock %}
+
+{% block sidebar %}{% states_sidebar abbr %}{% endblock %}
+
+{% block content %}
+<h1>{{ state.name }} {{ chamber_name }}</h1>
+<h2>Committees</h2>
+{% include "billy/www/committees_table.html" %}
+
+{% endblock %}

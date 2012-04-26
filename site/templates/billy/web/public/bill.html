@@ -1,0 +1,48 @@
+{% extends base_template %}
+{% load url from future %}
+{% load sitebase %}
+
+
+{% block title %}{{bill.bill_id }}{% endblock %}
+
+{% block sidebar %}{% states_sidebar abbr %}{% endblock %}
+
+{% block content %}
+<h1>{{ state.name }} {{ chamber_name }}</h1>
+<h2>{{ bill.bill_id }}</h2>
+<p>{{bill.title}}</p>
+
+<table width="15em">
+<tr><td><b>Session:</b></td><td>{{bill.session_details.display_name}}</td></tr>
+<tr><td><b>Chamber:</b></td><td>{{bill.chamber_name}}</td></tr>
+<tr><td><b>Sponsors:</b></td>
+  <td>
+    <ul>{% for sponsor in bill.sponsors %}
+      <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{sponsor.name}}</a>
+          {{ sponsor.type }} </li>
+    {% endfor %}</ul></td>
+</tr>
+
+</table>
+
+
+{% if bill.votes %}
+  <h3>Votes</h3>
+  <ul>
+  {% for vote in bill.votes %}
+    <li>
+    <a href="{% url 'vote' abbr bill.id forloop.counter0 %}">{{vote.motion}}</a> - {{vote.date|date:"M j Y"}}
+    <table>
+      <tr><td><b>Yes votes:</b></td><td>{{vote.yes_count}}</td></tr>
+      <tr><td><b>No votes:</b></td><td>{{vote.no_count}}</td></tr>
+      <tr><td><b>Other votes:</b></td><td>{{vote.other_count}}</td></tr>
+    </table>
+    </li>
+  {% endfor %}
+  </ul>
+{% endif %}
+
+
+{% endblock %}
+
+

@@ -1,0 +1,259 @@
+{% extends base_template %}
+{% load url from future %}
+{% load sitebase %}
+
+
+{% block title %}{{legislator.full_name }}{% endblock %}
+
+{% block sidebar %}{% states_sidebar abbr %}{% endblock %}
+
+{% block content %}
+        <div class="fullWidth mainModule">
+            <div class="smModule">
+                <span class="tip sources">For more information on this legislator check out: <a href="#">influenceexplorer.com</a>, <a href="#">Project Vote Smart</a></span>
+                <div class="sevenCol colLt">
+                    <img class="firstHalfModule" src="{{legislator.photo_url}}"/>
+                    <div class="eights">
+                        <h2 class="withTip">{{legislator.full_name}}</h2>
+                        <dl class="inlineList ">
+                            <dt class="hidden">Party</dt>
+                            <dd class="tip tipSm">{{legislator.party}}</dd>
+                        
+                            <dt class="tip tipSm">District</dt>
+                            <dd class="tip tipSm">{{legislator.district}}</dd>
+                        
+                            <dt class="clear">Sessions Served:</dt>
+                            <dd><a class="withBorderLine" href="#">82nd</a><a href="#">82nd</a></dd>
+                        </dl>    
+                    </div>
+                </div>  
+                <div class="fiveCol colRt">
+                    <div id="districtMap" class="withBorder">
+
+                    </div>
+                </div>  
+                <div class="clear"></div>
+            </div>
+            <div class="sixCol clear colLt withDash">
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce lacus nibh, rhoncus eu pulvinar sed, lobortis sit amet tellus. Nullam id mollis velit. Nullam sed fringilla nisl. Quisque nec eros leo, eget tempus sem. Nulla ut augue et lectus auctor molestie nec nec lacus. In purus ipsum, vestibulum consectetur consequat ut, sollicitudin in nisl. In hac habitasse platea dictumst. Suspendisse potenti.</p>
+            </div>    
+            <div class="sixCol colRt">
+                <ul>
+                    <li class="fourths firstModule">
+                        <h4 class="h5 withTip">Capitol Address:</h4>
+                        <address class="vcard">
+                            <span class="adr">
+                                <span class="street-address">709 Hart Senate Office Building</span>
+                                <span class="locality">Washington</span>,
+                                <span class="region" title="District of Columbia">DC</span>
+                                <span class="postal-code">20036</span>
+                            </span>
+                            <div class="tel">
+                                <span class="type smTitle">Phone:</span> 202-224-6665
+                            </div>
+                            <div class="tel">
+                                <span class="type smTitle">Fax:</span> 202-224-6665
+                            </div>
+                        </address>
+                    </li>
+                    <li class="fourths">
+                        <h4 class="h5 withTip">District Address:</h4>
+                        <address class="vcard">
+                            <span class="adr">
+                                <span class="street-address">709 Hart Senate Office Building</span>
+                                <span class="locality">Washington</span>,
+                                <span class="region" title="District of Columbia">DC</span>
+                                <span class="postal-code">20036</span>
+                            </span>
+                            <div class="tel">
+                                <span class="type smTitle">Phone:</span> 202-224-6665
+                            </div>
+                            <div class="tel">
+                                <span class="type smTitle">Fax:</span> 202-224-6665
+                            </div>
+                        </address>
+                    </li>
+                    <li>
+                        <div>
+                            <span class="email smTitle">Email: </span><a href="mailto:info@commerce.net">info@commerce.net</a>
+                         </div>
+                    </li>    
+                </ul>
+            </div>
+            <div class="clear"></div>
+        </div>   
+        <div class="fullWidth module clear"> 
+            <h3 class="moduleTitle">Media</h3>
+            <div class="sevenCol colLt">
+                <h4>News and Blog Coverage</h4>
+                <article class="smModule">
+                    <header>
+                        <h1 class="withTip h4"><a href="#">Name of News Article</a></h1>
+                        <div class="entryMetaData">
+                            <time datetime="" class="published withBorderLine" pubdate>Sept 12, 2011</time>
+                            <address class="author">by <a rel="author" class="colorRollover" href="#">Name of News Source</a></address>
+                        </div>
+                    </header>    
+                    <div class="postContent">
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce lacus nibh, rhoncus eu pulvinar sed, lobortis sit amet tellus. Nullam id mollis velit. Nullam sed fringilla nisl. Nullam id mollis velit. Nullam sed fringilla nisl agewareion...</p>
+                    </div>   
+                </article>   
+                <article class="smModule">
+                    <header>
+                        <h1 class="withTip h4"><a href="#">Name of News Article</a></h1>
+                        <div class="entryMetaData">
+                            <time datetime="" class="published withBorderLine" pubdate>Sept 12, 2011</time>
+                            <address class="author">by <a rel="author" class="colorRollover" href="#">Name of News Source</a></address>
+                        </div>
+                    </header>    
+                    <div class="postContent">
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce lacus nibh, rhoncus eu pulvinar sed, lobortis sit amet tellus. Nullam id mollis velit. Nullam sed fringilla nisl. Nullam id mollis velit. Nullam sed fringilla nisl agewareion...</p>
+                    </div>   
+                </article> 
+                <a class="viewMore" href="#">View More News</a>
+            </div>
+            <div class="fiveCol colRt">
+                <h4>Twitter Mentions</h4>
+                <ul>
+                    <li class="smModule">
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce lacus nibh, rhoncus eu pulvinar sed, lobortis sit amet tellus. Nullam id.</p>
+                        <div class="entryMetaData">
+                            <address class="author withBorderLine">by <a rel="author" class="colorRollover" href="#">bill_allison</a></address>
+                            <time datetime="" class="published" pubdate>Sept 12, 2011</time>
+                        </div>
+                        <div class="clear"></div>
+                    </li>    
+                    <li class="smModule">
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce lacus nibh, rhoncus eu pulvinar sed, lobortis sit amet tellus. Nullam id.</p>
+                        <div class="entryMetaData">
+                            <address class="author withBorderLine">by <a rel="author" class="colorRollover" href="#">bill_allison</a></address>
+                            <time datetime="" class="published" pubdate>Sept 12, 2011</time>
+                        </div>
+                        <div class="clear"></div>
+                    </li>
+                </ul>    
+                <a class="viewMore" href="#">View More Tweets</a>
+            </div>   
+            <div class="clear"></div> 
+        </div>
+        <div class="fullWidth module clear"> 
+            <h3 class="moduleTitle">Committees</h3>
+            <ul class="inlineThirds">
+                {% for role in legislator.roles %}
+                {% if "committee" in role %}
+                <li class="one">{{ role.type|title }} <a href="{% url "committee" abbr role.committee_id %}">{{ role.committee }}{% if role.subcommittee %}{{ role.subcommittee }}{% endif %}</a></li>
+                {% endif %}
+                {% endfor %}
+            </ul>    
+            <div class="clear"></div>
+        </div>
+        <div class="fullWidth module"> 
+            <h3 class="moduleTitle">Bills</h3>
+            <div class="eightCol colLt">
+                <h4>Sponsored Bills</h4>
+                <ul>
+                {% for bill in sponsored_bills %}
+                    <li>
+                        <time datetime="" class="published" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
+                        <span class="inlineTitle h4 withTip"><a href="#">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}{{ primary.name}}{% endfor %}</span></span>
+                        <p class="clear">{{bill.title}}</p>
+                    </li>   
+                {% endfor %}
+                </ul>    
+                <a class="viewMore" href="#">View More Bills</a>
+            </div>
+            <div class="fourCol colRt">
+                <h4 class="withTip">Votes</h4>
+                {% if not has_votes %}No votes to display :( 
+                {% else %}
+                <table class="noPaddingTable voteChart">
+                    <col width="200" />
+                    <col width="80" />
+                    <thead>
+                        <tr id="titles">
+                            <th class="invisible">Bill</th>
+                            <th class="twoColFlow right">Legislator Vote</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vote_index, vote_value, vote in legislator_votes %}
+                        <tr>
+                            <td>
+                                <time class="timeHeader" datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
+                                <a href="{% url 'vote' abbr vote.bill.id vote_index %}">{{vote.bill.bill_id}}</a>
+                                <ul class="barChart">
+                                    <li class="yes">
+                                        <span class="tagValue" style="width:80%;">{{vote.yes_ratio}}%</span>
+                                        <span class="tagNumber">{{vote.yes_count}} Yes</span> 
+                                    </li> 
+                                    <li class="no clear">
+                                        <span class="tagValue" style="width:20%;">{{vote.no_ratio}}%</span>
+                                        <span class="tagNumber">{{vote.no_count}} No</span> >
+                                    </li>   
+                                </ul> 
+                            </td>
+                            <td class="right"><b>{{vote_value|title}}</b></td>
+                        </tr> 
+                        {% endfor %}
+                    </tbody>    
+                </table>    
+                <a class="viewMore" href="#">View More Votes</a>
+                {% endif %}
+            </div>
+            <div class="clear"></div>
+        </div>
+    </div>       
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h1>{{ state.name }} {{ chamber_name }}</h1>
+<h2>{{ legislator.full_name }}</h2>
+{{ legislator.party }}, District {{ legislator.district }}
+
+<h3>Media</h3>
+Media stuff here.
+
+<h3>Committees</h3>
+<ul>
+{% for committee in legislator.committees %}
+  <li><a href="{% url 'committee' abbr committee.id %}">{{committee.committee}}</a></li>
+{% endfor %}
+</ul>
+
+<h3>Bills</h3>
+<ul>
+{% for bill in sponsored_bills %}
+  <li>
+    {{ bill.most_recent_action.date|date:"M j, Y"}}<br>
+    <a href="{% url 'bill' abbr bill.id %}">{{bill.id}}</a><br>
+    {{ bill.title }}
+  </li>
+{% endfor %}
+</ul>
+
+<h3>Votes</h3>
+<ul>
+{% for vote in legislator.votes %}
+  <li>
+
+  </li>
+{% endfor %}
+</ul>
+
+
+
+
+

@@ -1,0 +1,149 @@
+{% extends base_template %}
+{% load url from future %}
+{% load sitebase %}
+
+
+{% block title %}Vote on {{ vote.bill.bill_id }}{% endblock %}
+
+{% block content %}
+        <div class="fullWidth mainModule">
+            <div class="eightCol colLt">
+                <div class="smModule">
+                    <h2>{{state.name}} {{bill.type}} {{bill.bill_id}}</h2>
+                    <p>{{bill.title}}</p>
+                </div>
+                <div>
+                    <h3>{{ vote.motion }}</h3>
+                    <time datetime="" class="published" pubdate>{{ vote.date|date:"M j, Y"}}</time>
+                
+                    <h4>Vote Breakdown</h4>
+                    <table>
+                        <thead>
+                            <tr><th>Vote</th><th>Total</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Yes</td><td>{{ vote.yes_count }}</td><td>{{ vote.yes_ratio }}</td></tr>
+                            <tr><td>No</td><td>{{ vote.no_count }}</td><td>{{ vote.no_ratio }}</td></tr>
+                            <tr><td>Other</td><td>{{ vote.other_count }}</td><td>{{ vote.other_ratio }}</td></tr>
+                        </tobdy>
+                    <table>
+                </div>
+            </div>
+            <div class="fourCol colRt">
+                <div id="billState" class="passed">Passed</div>
+                <div id="voteMap" class="withBorder clear">
+                    
+                </div>  
+            </div>  
+            <div class="clear"></div>
+        </div>
+        <div class="module fullWidth clear">
+            <h3>Full Roll Call</h3>
+            <ul class="inlineThirds">
+                <li class="one">
+                    <h4 class="h5">Yes Votes</h4>
+                    <table class="normalTable">
+                        <thead>
+                            <tr id="titles">
+                                <th>Name</th>
+                                <th>District</th>
+                                <th>Party</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="odd">
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>
+                            <tr>
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>
+                            <tr class="odd">
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>
+                            <tr>
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>
+                            <tr class="odd">
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>    
+                        </tbody>    
+                    </table>
+                </li> 
+                <li class="two">
+                    <h4 class="h5">No Votes</h4>
+                    <table>
+                        <thead>
+                            <tr id="titles">
+                                <th>Name</th>
+                                <th>District</th>
+                                <th>Party</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="odd">
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>
+                            <tr>
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>
+                            <tr class="odd">
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>
+                            <tr>
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>
+                            <tr class="odd">
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>    
+                        </tbody>    
+                    </table>
+                </li>   
+                <li>
+                    <h4 class="h5">Other</h4>
+                    <table>
+                        <thead>
+                            <tr id="titles">
+                                <th>Name</th>
+                                <th>District</th>
+                                <th>Party</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="odd">
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>
+                            <tr>
+                                <td><a href="#">Legislator Name</a></td>
+                                <td>13</td>
+                                <td>D</td>
+                            </tr>
+                        </tbody>    
+                    </table>
+                </li>
+            </ul> 
+            <div class="clear"></div>   
+        </div>    
+    </div> 
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends base_template %}
+{% load sitebase %}
+
+{% block title %}{{state.name}} {{ chamber_name }} Legislators{% endblock %}
+
+{% block content %}
+        <div class="fullWidth">
+            <h2>{{ state.name }} {{ chamber_name }} Legislators</h2>
+            <div class="nineCol colLt">
+                <div class="horizontalFilter noSpace">
+                    <form class="actionItem" action="" method="">
+                        <ul class="floatedList">
+                            <li><label><input class="radio" type="radio" name="word" />House</label></li> 
+                            <li><label><input class="radio" type="radio" name="word" />Senate</label></li> 
+                        </ul>
+                        <div class="clear"></div>
+                    </form>
+                </div>
+{% include 'billy/web/public/legislator_table.html' %}
+            </div>
+            <div class="threeCol colRt">
+                <div class="infoBox">
+                    <span class="specialHeader infoHeader">Don't know who your legislator is?</span> 
+                    <span class="specialHeader">Find them now!</span>
+                    <form action="/search/" method="get" id="legSearch">
+                        <input type="text" name="q" id="id_q" placeholder="enter zip or address">
+                        <button type="submit">
+                             <span>Go</span>
+                        </button>
+                    </form>
+                </div>    
+            </div>
+        <div class="clear"></div>
+    </div>                   
+{% endblock %}
