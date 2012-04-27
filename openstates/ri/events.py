@@ -24,6 +24,7 @@ replace = {
     "Senate Joint Resolution No." : "SJR",
     "Senate Resolution No." : "SR",
     "Senate Bill No." : "SB",
+    u"\xa0" : " ",
 }
 
 class RIEventScraper(EventScraper):
@@ -68,7 +69,7 @@ class RIEventScraper(EventScraper):
             root = [ x.text_content() for x in root ]
             bill_id = "".join(root)
 
-            if "FOR HEARING" in bill_id:
+            if "SCHEDULED FOR" in bill_id:
                 continue
 
             descr = bill.getparent().getparent().getparent().getnext().getnext(
