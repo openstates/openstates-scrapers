@@ -65,6 +65,8 @@ class RIEventScraper(EventScraper):
         bills = page.xpath("//b/a")
         for bill in bills:
             bill_ft = bill.attrib['href']
+            event.add_document(bill.text_content(), bill_ft, type="full-text",
+                               mimetype="application/pdf")
             root = bill.xpath('../../*')
             root = [ x.text_content() for x in root ]
             bill_id = "".join(root)
