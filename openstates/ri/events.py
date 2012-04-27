@@ -81,6 +81,19 @@ class RIEventScraper(EventScraper):
             event.add_related_bill(bill_id,
                                    description=descr,
                                    type='consideration')
+        committee = page.xpath("//span[@id='lblSession']")[0].text_content()
+        chambers = {
+            "house" : "lower",
+            "joint" : "joint",
+            "senate" : "upper"
+        }
+        chamber = "other"
+        for key in chambers:
+            if key in committee.lower():
+                chamber = chambers[key]
+
+        event.add_participant("host", committee, chamber=chamber)
+
         self.save_event(event)
 
     def scrape_agenda_dir(self, url, session):
