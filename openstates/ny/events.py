@@ -36,7 +36,7 @@ class NYEventScraper(EventScraper):
                "%2526initiative%3DAll")
 
         with self.urlopen(url) as page:
-            cal = icalendar.Calendar.from_string(page)
+            cal = icalendar.Calendar.from_ical(page)
 
             for comp in cal.walk():
                 if comp.name != 'VEVENT':
