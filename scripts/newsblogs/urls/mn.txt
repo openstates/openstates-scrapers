@@ -9,3 +9,5 @@ http://www.minnpost.com/department/30846/rss.xml
 http://www.minnpost.com/taxonomy/term/2305/all/feed
 http://capitolchat.areavoices.com/feed/
 http://www.tcdailyplanet.net/taxonomy/term/21/feed
+http://www.jsonline.com/rss/?c=y&path=%2Fnews%2Fstatepolitics
+http://www.jsonline.com/rss/?id=30025284&c=y&path=%2Fblogs%2Fnews
