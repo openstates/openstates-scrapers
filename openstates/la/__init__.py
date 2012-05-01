@@ -1,4 +1,6 @@
 import datetime
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
 
 metadata = {
     "lower_chamber_title": "Representative",
@@ -102,8 +104,13 @@ def session_list():
     return [re.sub('\s+', ' ', x.text_content()) for x in
             url_xpath('http://www.legis.state.la.us/session.htm', '//strong')][:-1]
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    return text_after_line_numbers(pdfdata_to_text(data))
+
 document_class = dict(
     AWS_PREFIX = 'documents/la/',
     update_mins = 7*24*60,
+    extract_text = extract_text,
     onchanged = []
 )
