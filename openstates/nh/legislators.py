@@ -17,6 +17,9 @@ class NHLegislatorScraper(LegislatorScraper):
 
         with self.urlopen(url) as data:
             for line in data.splitlines():
+                if line.strip() == "":
+                    continue
+
                 (body, fullname, last, first, middle, county, district_num,
                  seat, party, street, street2, city, astate, zipcode,
                  home_phone, office_phone, fax, email, com1, com2, com3,
