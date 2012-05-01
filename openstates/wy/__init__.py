@@ -1,4 +1,6 @@
+import re
 import datetime
+from billy.fulltext import pdfdata_to_text, oyster_text
 
 metadata = dict(
     name='Wyoming',
@@ -34,11 +36,19 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath( 'http://legisweb.state.wy.us/LSOWeb/SessionArchives.aspx',
+    return url_xpath('http://legisweb.state.wy.us/LSOWeb/SessionArchives.aspx',
         "//div[@id='divLegContent']/a/p/text()" )
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    return ' '.join(line for line in pdfdata_to_text(data).splitlines()
+                    if re.findall('[a-z]', line))
+
 
 document_class = dict(
     AWS_PREFIX = 'documents/wy/',
     update_mins = None,
+    extract_text = extract_text,
     onchanged = []
 )
