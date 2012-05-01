@@ -1,5 +1,6 @@
 import datetime
-from billy.fulltext import pdfdata_to_text, oyster_text, text_after_line_numbers
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
 
 # most info taken from http://www.kslib.info/constitution/art2.html
 # also ballotpedia.org

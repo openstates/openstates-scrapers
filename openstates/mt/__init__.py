@@ -1,3 +1,6 @@
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
+
 metadata = {
     'name': 'Montana',
     'abbreviation': 'mt',
@@ -38,6 +41,10 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://leg.mt.gov/css/bills/Default.asp',
         "//td[@id='cont']/ul/li/a/text()")
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    return text_after_line_numbers(pdfdata_to_text(data))
 
 document_class = dict(
     AWS_PREFIX = 'documents/mt/',
