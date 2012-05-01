@@ -63,7 +63,6 @@ class COBillScraper(BillScraper):
                 if not inVoteSection:
                     # there are some very header-esque fields if we
                     # grab accross the row
-                    self.log(to_parse)
                     metainf = [a.strip() for a in to_parse.split(":", 1)]
                     ret['meta'][metainf[0]] = metainf[1]
                 else:
@@ -87,7 +86,6 @@ class COBillScraper(BillScraper):
                             item = item.strip()
                             keys = item.split(" ", 1)
                             final_score[keys[0]] = keys[1]
-                        self.log(final_score)
 
                         # XXX: Verify we can't do this with recursive splits
                         # it now looks like:
@@ -103,7 +101,6 @@ class COBillScraper(BillScraper):
                         ret['result'] = final_score
                     else:
                         # We've got a vote.
-                        # self.log("FOO: " + str([x.text_content() for x in line]))
                         person = line[1].text_content() # <div><font>
                         vote   = line[2].text_content()
                         if person.strip() != "":
@@ -188,26 +185,27 @@ class COBillScraper(BillScraper):
                     name = tr[cols["type"]].text_content()
                     if name[-1:] == ":":
                         name = name[:-1]
+
                     wpd_link = tr[cols["wpd"]][0]
-                    pdf_link = tr[cols["pdf"]][0]
-
                     wpd_text = wpd_link.text_content().strip()
-                    pdf_text = wpd_link.text_content().strip()
-
                     wpd_link = wpd_link.attrib["href"]
-                    pdf_link = pdf_link.attrib["href"]
 
-                    format = None
+                    pdf_link = tr[cols["pdf"]][0]
+                    pdf_text = pdf_link.text_content().strip()
+                    pdf_link = pdf_link.attrib["href"]
 
                     if pdf_link.strip() != "" and pdf_text != "":
                         link = CO_URL_BASE + pdf_link
                         format = "application/pdf"
+                        versions.append({
+                            "name"     : name,
+                            "mimetype" : format,
+                            "link"     : link
+                        })
 
-                    elif wpd_link.strip() != "" and wpd_text != "":
+                    if wpd_link.strip() != "" and wpd_text != "":
                         link = CO_URL_BASE + wpd_link
                         format = "application/vnd.wordperfect"
-
-                    if format != None:
                         versions.append({
                             "name"     : name,
                             "mimetype" : format,
@@ -264,11 +262,8 @@ class COBillScraper(BillScraper):
                     continue
 
                 date_string = action[:action.find(" ")]
-                self.log(date_string)
                 if ":" in date_string:
                     date_string = action[:action.find(":")]
-                self.log(action)
-                self.log(date_string)
                 date_time   = dt.datetime.strptime( date_string, "%m/%d/%Y" )
                 action = action[action.find(" ") + 1:]
 
@@ -493,8 +488,6 @@ class COBillScraper(BillScraper):
             else:
                 actor = 'upper'
 
-            self.log( " - fallback handler for %s" % action['orig'] )
-
             bill.add_action( actor, action['orig'],
                 action['date'],
                 brief_action_name=action['action'],
@@ -637,7 +630,6 @@ class COBillScraper(BillScraper):
                     local_other = 0
                     for voter in filed_votes:
                         l_vote = filed_votes[voter].lower().strip()
-                        # self.log("BAZ: " + (l_vote))
                         if l_vote != "yes" and l_vote != "no":
                             local_other = local_other + 1
 
