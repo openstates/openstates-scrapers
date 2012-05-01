@@ -1,3 +1,5 @@
+from billy.fulltext import oyster_text, worddata_to_text
+
 metadata = dict(
     name='Oklahoma',
     abbreviation='ok',
@@ -50,6 +52,10 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://webserver1.lsb.state.ok.us/WebApplication2/WebForm1.aspx',
         "//select[@name='cbxSession']/option/text()")
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    return worddata_to_text(data)
 
 document_class = dict(
     AWS_PREFIX = 'documents/ok/',
