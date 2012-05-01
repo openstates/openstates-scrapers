@@ -1,4 +1,6 @@
+import lxml.html
 import datetime
+from billy.fulltext import oyster_text
 
 metadata = dict(
     name='Texas',
@@ -95,8 +97,16 @@ def session_list():
     return url_xpath( 'http://www.legis.state.tx.us/',
         "//select[@name='cboLegSess']/option/text()")
 
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    return doc.xpath('//html')[0].text_content()
+
+
 document_class = dict(
     AWS_PREFIX = 'documents/tx/',
     update_mins = None,
+    extract_text = extract_text,
     onchanged = []
 )
