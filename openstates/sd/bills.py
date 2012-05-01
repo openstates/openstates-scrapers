@@ -11,13 +11,6 @@ import lxml.html
 class SDBillScraper(BillScraper):
     state = 'sd'
 
-    def _make_headers(self, url):
-        # South Dakota's gzipped responses seem to be broken
-        headers = super(SDBillScraper, self)._make_headers(url)
-        headers['Accept-Encoding'] = ''
-
-        return headers
-
     def scrape(self, chamber, session):
         url = 'http://legis.state.sd.us/sessions/%s/BillList.aspx' % (
             session)

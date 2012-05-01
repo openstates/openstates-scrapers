@@ -7,13 +7,6 @@ import lxml.html
 class SDLegislatorScraper(LegislatorScraper):
     state = 'sd'
 
-    def _make_headers(self, url):
-        # South Dakota's gzipped responses seem to be broken
-        headers = super(SDLegislatorScraper, self)._make_headers(url)
-        headers['Accept-Encoding'] = ''
-
-        return headers
-
     def scrape(self, chamber, term):
         start_year = None
         for term_ in self.metadata['terms']:
