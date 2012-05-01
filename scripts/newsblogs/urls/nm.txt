@@ -1,0 +1,11 @@
+http://feeds.stateline.org/StatelineorgRss-NewMexico
+http://roundhouseroundup.blogspot.com/feeds/posts/default
+http://feeds.feedburner.com/democracyfornewmexico/cyKf
+http://www.nmpolitics.net/index/category/haussamen-columns/feed/
+http://www.nmpolitics.net/index/category/bundy-columns/feed/
+http://newmexico.watchdog.org/feed/
+http://www.capitolreportnewmexico.com/?feed=rss2
+http://www.chorizoreport.com/?feed=rss2
+http://kunmgov.org/blog/feed/rss/
+http://greenchilechatter.blogspot.com/feeds/posts/default
+http://feeds.lcsun-news.com/mngi/rss/CustomRssServlet/557/200417.xml

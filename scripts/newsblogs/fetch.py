@@ -15,7 +15,7 @@ PATH = dirname(abspath(__file__))
 DATA = settings.BILLY_DATA_DIR
 
 request_defaults = {
-    'proxies': {"http": "localhost:8001"},
+    #'proxies': {"http": "localhost:8001"},
     #'cookies': cookielib.LWPCookieJar(join(PATH, 'cookies.lwp')),
     'headers': {
         'Accept': ('text/html,application/xhtml+xml,application/'

@@ -9,7 +9,7 @@
         <div class="fullWidth mainModule">
             <div class="eightCol colLt">
                 <div class="smModule">
-                    <h2>{{state.name}} {{bill.type}} {{bill.bill_id}}</h2>
+                    <h2>{{state.name}} Bill {{bill.bill_id}}</h2>
                     <p>{{bill.title}}</p>
                 </div>
                 <div>
@@ -19,7 +19,7 @@
                     <h4>Vote Breakdown</h4>
                     <table>
                         <thead>
-                            <tr><th>Vote</th><th>Total</th></tr>
+                            <tr><th>Vote</th><th>Total</th><th>Ratio</th></tr>
                         </thead>
                         <tbody>
                             <tr><td>Yes</td><td>{{ vote.yes_count }}</td><td>{{ vote.yes_ratio }}</td></tr>
@@ -31,10 +31,8 @@
             </div>
             <div class="fourCol colRt">
                 <div id="billState" class="passed">Passed</div>
-                <div id="voteMap" class="withBorder clear">
-                    
-                </div>  
-            </div>  
+                <div id="voteMap" class="withBorder clear"></div>  
+            </div>
             <div class="clear"></div>
         </div>
         <div class="module fullWidth clear">
@@ -51,32 +49,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="odd">
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
+                            {% for legislator in vote.yes_vote_legislators %}
+                            <tr class="{% cycle 'even' 'odd' %}">
+                                <td><a href="{% url "legislator" abbr legislator.id %}">{{ legislator.full_name }}</a></td>
+                                <td>{{ legislator.district }}</td>
+                                <td>{{ legislator.party }}</td>
                             </tr>
-                            <tr>
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
-                            </tr>
-                            <tr class="odd">
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
-                            </tr>
-                            <tr>
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
-                            </tr>
-                            <tr class="odd">
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
-                            </tr>    
-                        </tbody>    
+                            {% endfor %}
+                        </tbody>
                     </table>
                 </li> 
                 <li class="two">
@@ -90,35 +70,17 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="odd">
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
+                            {% for legislator in vote.no_vote_legislators %}
+                            <tr class="{% cycle 'even' 'odd' %}">
+                                <td><a href="{% url "legislator" abbr legislator.id %}">{{ legislator.full_name }}</a></td>
+                                <td>{{ legislator.district }}</td>
+                                <td>{{ legislator.party }}</td>
                             </tr>
-                            <tr>
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
-                            </tr>
-                            <tr class="odd">
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
-                            </tr>
-                            <tr>
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
-                            </tr>
-                            <tr class="odd">
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
-                            </tr>    
-                        </tbody>    
+                            {% endfor %}
+                        </tbody>                    
                     </table>
                 </li>   
-                <li>
+                <li class="three">
                     <h4 class="h5">Other</h4>
                     <table>
                         <thead>
@@ -129,17 +91,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="odd">
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
+                            {% for legislator in vote.OTHER_vote_legislators %}
+                            <tr class="{% cycle 'even' 'odd' %}">
+                                <td><a href="{% url "legislator" abbr legislator.id %}">{{ legislator.full_name }}</a></td>
+                                <td>{{ legislator.district }}</td>
+                                <td>{{ legislator.party }}</td>
                             </tr>
-                            <tr>
-                                <td><a href="#">Legislator Name</a></td>
-                                <td>13</td>
-                                <td>D</td>
-                            </tr>
-                        </tbody>    
+                            {% endfor %}
+                        </tbody>                    
                     </table>
                 </li>
             </ul> 

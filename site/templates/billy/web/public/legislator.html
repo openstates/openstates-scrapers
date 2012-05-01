@@ -139,9 +139,10 @@
         <div class="fullWidth module clear"> 
             <h3 class="moduleTitle">Committees</h3>
             <ul class="inlineThirds">
-                {% for role in legislator.roles %}
-                {% if "committee" in role %}
-                <li class="one">{{ role.type|title }} <a href="{% url "committee" abbr role.committee_id %}">{{ role.committee }}{% if role.subcommittee %}{{ role.subcommittee }}{% endif %}</a></li>
+                {% for role in legislator.roles_manager %}
+                {% if 'committee' in role %}
+                <li class="one">{{ role.type|title }}
+                    {% if 'committee_id' in role %}<a href="{% url 'committee' abbr role.committee_id %}">{{ role.committee_name }}</a>{% else %}{{ role.committee_name }}{% endif %}</li>
                 {% endif %}
                 {% endfor %}
             </ul>    
@@ -155,7 +156,7 @@
                 {% for bill in sponsored_bills %}
                     <li>
                         <time datetime="" class="published" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
-                        <span class="inlineTitle h4 withTip"><a href="#">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}{{ primary.name}}{% endfor %}</span></span>
+                        <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}{{ primary.name}}{% endfor %}</span></span>
                         <p class="clear">{{bill.title}}</p>
                     </li>   
                 {% endfor %}
@@ -183,12 +184,12 @@
                                 <a href="{% url 'vote' abbr vote.bill.id vote_index %}">{{vote.bill.bill_id}}</a>
                                 <ul class="barChart">
                                     <li class="yes">
-                                        <span class="tagValue" style="width:80%;">{{vote.yes_ratio}}%</span>
+                                        <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
                                         <span class="tagNumber">{{vote.yes_count}} Yes</span> 
                                     </li> 
                                     <li class="no clear">
-                                        <span class="tagValue" style="width:20%;">{{vote.no_ratio}}%</span>
-                                        <span class="tagNumber">{{vote.no_count}} No</span> >
+                                        <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
+                                        <span class="tagNumber">{{vote.no_count}} No</span>
                                     </li>   
                                 </ul> 
                             </td>

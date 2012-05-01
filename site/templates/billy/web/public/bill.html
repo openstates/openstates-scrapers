@@ -5,9 +5,127 @@
 
 {% block title %}{{bill.bill_id }}{% endblock %}
 
-{% block sidebar %}{% states_sidebar abbr %}{% endblock %}
-
 {% block content %}
+        <div class="fullWidth mainModule">
+            <ol id="billAction">
+                <li class="active">
+                    <span class="textReplace" id="stage1">Introduced</span>
+                    <span class="tip">Sept 12, 2011</span>
+                </li>    
+                <li>
+                    <span class="textReplace" id="stage2">Passes Senate</span>
+                    <span></span>
+                </li>  
+                <li>
+                    <span class="textReplace" id="stage3">Passes House</span>
+                </li>  
+                <li>
+                    <span class="textReplace" id="stage4">Governor Signs</span>
+                </li>  
+                <li>
+                    <span class="textReplace" id="stage5">Bill Becomes Law</span>
+                </li>  
+            </ol>      
+            <h2 class="withTimeline">{{ abbr|upper }} Bill: {{ bill.bill_id }}</h2>
+             <p class="smModule">{{ bill.title }}</p>
+             
+             <dl class="inlineList">
+                <dt class="contentBottom oneCol">Session:</dt>
+                <dd class="contentBottom customWidth">{{ bill.session }}</dd>
+                
+                <dt class="contentBottom oneCol">Chamber:</dt>
+                <dd class="contentBottom">{{ bill.chamber }}</dd>
+                
+                <dt class="clear contentBottom">Sponsors ({{ bill.sponsors|length }}):</dt>
+                <dd>
+                    <ul class="inlineThirds_module moduleNoBorder">
+                    {% for sponsor in bill.sponsors_manager.first_five %}
+                        <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{ sponsor.name }}</a> ({{ sponsor.legislator.party }}) {{ sponsor.legislator.district }} <span class="tip sideNote">{{ sponsor.type }}</span></li>
+                    {% endfor %}
+                    {% if remainder %}
+                    <li><a class="viewMore" href="#">View {{ bill.sponsors_manager.first_five_remainder }} others</a></li>
+                    {% endif %}
+                    </ul> 
+                    
+                </dd>    
+             </dl>
+             <div class="clear"></div>
+        </div>
+        <div class="eightCol colLt">
+            <h3>Recent Actions</h3>
+            <table class="normalTable">
+                <thead>
+                    <tr id="titles">
+                        <th>Date</th>
+                        <th>Chamber</th>
+                        <th></th>
+                        <th>Labels</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for action in bill.actions_manager %}
+                    <tr class="odd">
+                        <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
+                        <td>{{ action.chamber_name }}</td>
+                        <td>{{ action.action }}</td>
+                        <td>{% for label_text in action.type %}<span class="label">{{label}}</span>{% endfor %}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>    
+            </table>
+        </div>
+        <div class="fourCol colRt">
+            <h3>Votes</h3>
+            <ul class="largerList voteChart">
+                <li>
+                    <time class="timeHeader" datetime="" class="published" pubdate>Sept 12, 2011</time>
+                    <a href="#">HR 1234</a>
+                    <ul class="barChart">
+                        <li class="yes">
+                            <span class="tagValue" style="width:80%;">80%</span>
+                            <span class="tagNumber">30 Yes</span> 
+                        </li> 
+                        <li class="no clear">
+                            <span class="tagValue" style="width:20%;">20%</span>
+                            <span class="tagNumber">30 No</span> >
+                        </li>   
+                    </ul>
+                </li>
+                <li>
+                    <time class="timeHeader" datetime="" class="published" pubdate>Sept 12, 2011</time>
+                    <a href="#">HR 1234</a>
+                    <ul class="barChart">
+                        <li class="yes">
+                            <span class="tagValue" style="width:60%;">60%</span>
+                            <span class="tagNumber">30 Yes</span> 
+                        </li> 
+                        <li class="no clear">
+                            <span class="tagValue" style="width:80%;">80%</span>
+                            <span class="tagNumber">30 No</span> 
+                        </li>   
+                    </ul>
+                </li>
+                <li>
+                    <time class="timeHeader" datetime="" class="published" pubdate>Sept 12, 2011</time>
+                    <a href="#">HR 1234</a>
+                    <ul class="barChart">
+                        <li class="yes">
+                            <span class="tagValue" style="width:80%;">80%</span>
+                            <span class="tagNumber">30 Yes</span> 
+                        </li> 
+                        <li class="no clear">
+                            <span class="tagValue" style="width:50%;">50%</span>
+                            <span class="tagNumber">30 No</span> 
+                        </li>   
+                    </ul>
+                </li>
+            </ul>    
+        </div>
+        <div class="clear"></div>
+{% endblock %}
+
+
+
 <h1>{{ state.name }} {{ chamber_name }}</h1>
 <h2>{{ bill.bill_id }}</h2>
 <p>{{bill.title}}</p>
@@ -43,6 +161,5 @@
 {% endif %}
 
 
-{% endblock %}
 
 
