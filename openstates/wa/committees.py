@@ -9,11 +9,6 @@ class WACommitteeScraper(CommitteeScraper):
 
     _base_url = 'http://wslwebservices.leg.wa.gov/CommitteeService.asmx'
 
-    def _make_headers(self, url):
-        headers = super(WACommitteeScraper, self)._make_headers(url)
-        if url == self._base_url:
-            headers['Content-Type'] = 'application/soap+xml; charset=utf-8'
-        return headers
 
     def scrape(self, chamber, term):
         biennium = "%s-%s" % (term[0:4], term[7:9])
@@ -55,9 +50,10 @@ class WACommitteeScraper(CommitteeScraper):
         """.strip()
 
         body = template % (agency, comm['committee'].replace('&', '&amp;'))
-        with self.urlopen(self._base_url, method='POST', body=body) as page:
-            page = lxml.etree.fromstring(page.bytes)
+        headers = {'Content-Type': 'application/soap+xml; charset=utf-8'}
+        page = self.post(self._base_url, data=body, headers=headers)
+        page = lxml.etree.fromstring(page.content)
 
-            for member in xpath(page, "//wa:Member"):
-                name = xpath(member, "string(wa:Name)")
-                comm.add_member(name)
+        for member in xpath(page, "//wa:Member"):
+            name = xpath(member, "string(wa:Name)")
+            comm.add_member(name)

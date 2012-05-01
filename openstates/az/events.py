@@ -103,8 +103,14 @@ class AZEventScraper(EventScraper):
                               #agenda=agenda_items)
                 event.add_participant('committee', committee, chamber=chamber)
 
-                for bill in related_bills:
-                    event.add_related_bill(bill, type="consideration")
+                for i in range(0, len(related_bills)):
+                    bill = related_bills[i]
+                    desc = description[i]
+                    event.add_related_bill(
+                        bill,
+                        description=desc,
+                        type="consideration"
+                    )
 
                 event['participants'].extend(member_list)
                 event.add_source(url)

@@ -71,7 +71,11 @@ class DEEventScraper(EventScraper):
                 except IndexError:
                     continue
                 bill_id = "%s %s" % ( string[0], string[1] )
-                event.add_related_bill(bill_id, descr=item)
+                event.add_related_bill(
+                    bill_id,
+                    description=item,
+                    type="consideration"
+                )
 
         self.save_event(event)
 

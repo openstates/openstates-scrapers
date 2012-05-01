@@ -322,6 +322,6 @@ class MDBillScraper(BillScraper):
                 try:
                     self.scrape_bill(chamber, session, bill_type, i)
                 except HTTPError as he:
-                    if he.response.code != 404:
+                    if he.response.status_code != 404:
                         raise he
                     break

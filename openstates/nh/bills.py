@@ -156,6 +156,9 @@ class NHBillScraper(BillScraper):
         last_line = []
 
         for line in self.zf.open('tblrollcallsummary.txt'):
+            if line.strip() == "":
+                continue
+
             line = line.split('|')
             if len(line) < 14:
                 if len(last_line + line[1:]) == 14:
