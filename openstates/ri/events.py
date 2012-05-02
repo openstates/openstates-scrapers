@@ -15,6 +15,7 @@ column_order = {
 
 all_day = [  # ugh, hack
     "Rise of the House",
+    "Rise of the Senate"
 ]
 replace = {
     "House Joint Resolution No." : "HJR",
