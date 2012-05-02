@@ -185,7 +185,7 @@ class MOBillScraper(BillScraper):
             for version_tag in version_tags:
                 description = version_tag.text_content()
                 pdf_url = version_tag.attrib['href']
-                bill.add_version(description, pdf_url)
+                bill.add_version(description, pdf_url,  on_duplicate='use_new')
 
     def get_action(self, actor, action):
         # Alright. This covers both chambers and everyting else.
