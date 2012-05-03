@@ -5,7 +5,7 @@ http://www.adn.com/politics/index.xml
 http://community.adn.com/adn/blog/24417/feed
 http://newsminer.com/rss/rss_feeds/politics_news?content_type=article&tags=politics_news&page_name=rss_feeds&instance=politics_news
 http://newsminer.com/rss/rss_feeds/Opinion?content_type=article&tags=editorials&page_name=rss_feeds&instance=Opinion
-http://johncoghill.blogspot.com/feeds/posts/default
+#http://johncoghill.blogspot.com/feeds/posts/default
 http://www.thecordovatimes.com/rss
 http://www.alaskadispatch.com/rss-feeds/feed/politics
 http://www.alaskadispatch.com/rss-feeds/section/blogs
