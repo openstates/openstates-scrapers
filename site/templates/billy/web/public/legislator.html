@@ -86,30 +86,7 @@
             <h3 class="moduleTitle">Media</h3>
             <div class="sevenCol colLt">
                 <h4>News and Blog Coverage</h4>
-                <article class="smModule">
-                    <header>
-                        <h1 class="withTip h4"><a href="#">Name of News Article</a></h1>
-                        <div class="entryMetaData">
-                            <time datetime="" class="published withBorderLine" pubdate>Sept 12, 2011</time>
-                            <address class="author">by <a rel="author" class="colorRollover" href="#">Name of News Source</a></address>
-                        </div>
-                    </header>    
-                    <div class="postContent">
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce lacus nibh, rhoncus eu pulvinar sed, lobortis sit amet tellus. Nullam id mollis velit. Nullam sed fringilla nisl. Nullam id mollis velit. Nullam sed fringilla nisl agewareion...</p>
-                    </div>   
-                </article>   
-                <article class="smModule">
-                    <header>
-                        <h1 class="withTip h4"><a href="#">Name of News Article</a></h1>
-                        <div class="entryMetaData">
-                            <time datetime="" class="published withBorderLine" pubdate>Sept 12, 2011</time>
-                            <address class="author">by <a rel="author" class="colorRollover" href="#">Name of News Source</a></address>
-                        </div>
-                    </header>    
-                    <div class="postContent">
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce lacus nibh, rhoncus eu pulvinar sed, lobortis sit amet tellus. Nullam id mollis velit. Nullam sed fringilla nisl. Nullam id mollis velit. Nullam sed fringilla nisl agewareion...</p>
-                    </div>   
-                </article> 
+                {% for entry in legislator.feed_entries %}{% include feed_entry_template %}{% endfor %}
                 <a class="viewMore" href="#">View More News</a>
             </div>
             <div class="fiveCol colRt">

@@ -1,0 +1,18 @@
+                <article class="smModule">
+                    <header>
+                        <h1 class="withTip h4"><a href="{{entry.link}}">{{ entry.title }}</a></h1>
+                        <div class="entryMetaData">
+                            <time datetime="" class="published withBorderLine" pubdate>{{entry.published_parsed|date:"F d, Y"}}</time>
+                            {% if entry.author %}<address class="author">{{entry.author}}{% endif %}
+                            <a rel="author" class="colorRollover" href="{{entry.source}}">{{entry.host}}</a></address>
+                        </div>
+                    </header>    
+                    <div class="postContent">
+                        <p>{{entry.summary|safe|truncatewords:50}}</p>
+                    </div>
+                    <div class="postTags">
+                    {% for entity, id, url in entry.entity_data %}
+                        <span><a class="label" href="{{url}}">{{entity}}</a></span>
+                    {% endfor %}
+                    </div>
+                </article>
