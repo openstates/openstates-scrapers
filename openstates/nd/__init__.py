@@ -1,4 +1,6 @@
 import datetime
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
 
 metadata = dict(
     name = 'North Dakota',
@@ -51,8 +53,13 @@ def session_list():
             sessions.append(a.text)
     return sessions
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    return text_after_line_numbers(pdfdata_to_text(data))
+
 document_class = dict(
     AWS_PREFIX = 'documents/nd/',
     update_mins = None,
+    extract_text = extract_text,
     onchanged = []
 )

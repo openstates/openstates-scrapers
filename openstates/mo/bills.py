@@ -185,7 +185,7 @@ class MOBillScraper(BillScraper):
             for version_tag in version_tags:
                 description = version_tag.text_content()
                 pdf_url = version_tag.attrib['href']
-                bill.add_version(description, pdf_url)
+                bill.add_version(description, pdf_url,  on_duplicate='use_new')
 
     def get_action(self, actor, action):
         # Alright. This covers both chambers and everyting else.
@@ -398,7 +398,7 @@ class MOBillScraper(BillScraper):
                 version = clean_text(version_tag.text_content())
                 text_url = '%s%s' % (self.senate_base_url,version_tag[0].attrib['href'])
                 pdf_url = '%s%s' % (self.senate_base_url,version_tag[1].attrib['href'])
-                bill.add_version(version, text_url, pdf_url=pdf_url)
+                bill.add_version(version, text_url, pdf_url=pdf_url, on_duplicate='use_new')
         self.save_bill(bill)
 
     def parse_cosponsors_from_bill(self, bill, url):

@@ -1,6 +1,6 @@
 import datetime
 import lxml.html
-from billy.fulltext import oyster_text, text_after_line_numbers
+from billy.fulltext import oyster_text
 
 metadata = dict(
     name='Arizona',

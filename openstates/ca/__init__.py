@@ -1,4 +1,6 @@
 import datetime
+import lxml.html
+from billy.fulltext import oyster_text
 
 metadata = dict(
     name='California',
@@ -100,8 +102,14 @@ def session_list():
     ]
     return sessions
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    return doc.xpath('//div[@id="bill"]')[0].text_content()
+
 document_class = dict(
     AWS_PREFIX = 'documents/ca/',
     update_mins = 7*24*60,
+    extract_text = extract_text,
     onchanged = []
 )
