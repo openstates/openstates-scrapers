@@ -175,7 +175,10 @@ class HIBillScraper(BillScraper):
     def parse_vote(self, action):
         pattern = r"were as follows: (?P<n_yes>\d+) Aye\(?s\)?:\s+(?P<yes>.*?);\s+Aye\(?s\)? with reservations:\s+(?P<yes_resv>.*?);\s+(?P<n_no>\d*) No\(?es\)?:\s+(?P<no>.*?);\s+and (?P<n_excused>\d*) Excused: (?P<excused>.*)"
         if 'as follows' in action:
-            result = re.search(pattern, action).groupdict()
+            result = re.search(pattern, action)
+            if result is None:
+                return None
+            result = result.groupdict()
             motion = action.split('.')[0] + '.'
             return result, motion
         return None
