@@ -26,10 +26,14 @@ class CACommitteeScraper(CommitteeScraper):
     urls = {'upper': 'http://senate.ca.gov/committees',
             'lower': 'http://assembly.ca.gov/committees'}
 
+    base_urls = {'upper': 'http://senate.ca.gov/',
+                 'lower': 'http://assembly.ca.gov/'}
+
     def scrape(self, chamber, term):
         url = self.urls[chamber]
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(self.base_urls[chamber])
 
         committee_types = {'upper': ['Standing', 'Select', 'Joint'],
                            'lower': ['Standing', 'Select']}

@@ -1,5 +1,6 @@
 import pdb
 import re
+import json
 import os
 import cookielib
 import operator
@@ -132,12 +133,13 @@ def trie_scan(trie, s,
 
 
 @contextlib.contextmanager
-def cd(dir_):
-    '''Temporarily change dirs to minimize os.path.join biolerplate.'''
-    cwd = os.getcwd()
-    os.chdir(dir_)
-    yield
-    os.chdir(cwd)
+def cd(path):
+    old_dir = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(old_dir)
 
 
 def cartcat(s_list1, s_list2):
@@ -151,10 +153,12 @@ def cartcat(s_list1, s_list2):
 # ---------------------------------------------------------------------------
 def new_feed_id(entry, cache={}):
     '''Generate an entry id using the hash value of the title and link.
-    Pad the number to 
+    Pad the number to 21 digits.
     '''
     s = entry['title'] + entry['link']
-    _id = entry['state'].upper() + 'F' + str(abs(hash(s))).zfill(21)
+    hashval = hash(s)
+    sign = ('A' if 0 < hashval else 'B')
+    _id = entry['state'].upper() + 'F' + (str(hashval) + sign).zfill(21)
     return _id
 
 PATH = dirname(abspath(__file__))
@@ -175,14 +179,52 @@ class Meta(type):
         return cls._classes - set([Base])
 
 
-class Base(object):
+class Extractor(object):
     __metaclass__ = Meta
 
-    def __init__(self):
+    trie_terms = {
+        'legislators': cartcat(
 
-        self.abbr = self.__class__.__name__.lower()
+            [u'Senator', 
+             u'Senate member',
+             u'Senate Member',
+             u'Assemblymember', 
+             u'Assembly Member',
+             u'Assembly member',
+             u'Assemblyman',
+             u'Assemblywoman', 
+             u'Assembly person',
+             u'Assemblymember', 
+             u'Assembly Member',
+             u'Assembly member', 
+             u'Assemblyman',
+             u'Assemblywoman', 
+             u'Assembly person',
+             u'Representative',
+             u'Rep.',
+             u'Sen.',
+             u'Council member',
+             u'Councilman',
+             u'Councilwoman',
+             u'Councilperson',], 
 
-        logger = logging.getLogger(self.abbr)
+            [u' {legislator[last_name]}',
+             u' {legislator[full_name]}'])
+
+            + [u' {legislator[first_name]} {legislator[last_name]}'],
+
+        'bills': [ 
+            ('bill_id', lambda s: s.upper().replace('.', ''))
+            ]
+
+        }
+
+
+    def __init__(self, abbr):
+        self.entrycount = 0
+        self.abbr = abbr
+
+        logger = logging.getLogger(abbr)
         logger.setLevel(logging.DEBUG)
         ch = logging.StreamHandler()
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
@@ -190,31 +232,101 @@ class Base(object):
         logger.addHandler(ch)
         self.logger = logger
 
+
+    @property
+    def metadata(self):
+        return metadata(self.abbr)
+
+
+    def extract_bill(self, m, collection=db.bills, cache={}):
+        '''Given a match object m, return the _id of the related bill. 
+        '''
+        def squish(bill_id):
+            bill_id = ''.join(bill_id.split())
+            bill_id = bill_id.upper().replace('.', '')
+            return bill_id
+
+        bill_id = squish(m.group())
+
+        try:
+            ids = cache['ids']
+        except KeyError:
+            # Get a list of (bill_id, _id) tuples like ('SJC23', 'CAB000123')
+            ids = collection.find({'state': self.abbr}, {'bill_id': 1})
+            ids = dict((squish(r['bill_id']), r['_id']) for r in ids)
+
+            # Cache it in the method.
+            cache['ids'] = ids
+
+        if bill_id in ids:
+            return ids[bill_id]
+
+
+    def committee_variations(self, committee):
+        '''Compute likely variations for a committee
+ 
+        Standing Committee on Rules
+         - Rules Committee
+         - Committee on Rules
+         - Senate Rules
+         - Senate Rules Committee
+         - Rules (useless)
+        '''
+        name = committee['committee']
+        ch = committee['chamber']
+        if ch != 'joint':
+            chamber_name = self.metadata[ch + '_chamber_name']
+        else:
+            chamber_name = 'Joint'
+
+        # Arts
+        raw = re.sub(r'(Standing|Joint|Select) Committee on ', '', name)
+        raw = re.sub(r'\s+Committee$', '', raw)
+
+        # Committee on Arts
+        committee_on_1 = 'Committee on ' + raw
+
+        # Arts Committee
+        short1 = raw + ' Committee'
+        
+        # Assembly Arts Committee
+        if not short1.startswith(chamber_name):
+            short2 = chamber_name + ' ' + short1
+        else:
+            short2 = short1
+
+        # Assembly Committee on Arts
+        committee_on_2 = chamber_name + ' ' + committee_on_1
+
+        phrases = [name, committee_on_1, committee_on_2, short1, short2]
+
+        # "select Committee weirdness"
+        phrases += ['Select ' + committee_on_1]
+
+        # Adjust for ampersand usage like "Senate Public Employment & 
+        # Retirement Committee"
+        phrases += [p.replace(' and ', ' & ') for p in phrases]
+
+        # Exclude phrases less than two words in length.
+        return set(filter(lambda s: ' ' in s, phrases))
+
+
     @property
     def trie(self):
         try:
             return self._trie
         except AttributeError:
-            return self._build_trie()
+            return self.build_trie()
 
-    def extract_bill(self, m):
-        '''Given a match object m, return the _id of the related bill. 
-        '''
 
-    def extract_committee(self, m):
-        pass
-
-    def extract_legislator(self, m):
-        pass
-
-    def _build_trie(self):
+    def build_trie(self):
         '''Interpolate values from this state's mongo records
         into the trie_terms strings. Create a new list of formatted
         strings to use in building the trie, then build.
         '''
         trie = {}
         trie_terms = self.trie_terms
-        abbr = self.__class__.__name__.lower()
+        abbr = self.abbr
 
         for collection_name in trie_terms:
             trie_data = []
@@ -267,14 +379,10 @@ class Base(object):
         return trie 
 
 
-    def _scan_feed(self, feed):
+    def scan_feed(self, entries):
 
-        try:
-            self.logger.info('- scanning %s' % feed['feed']['links'][0]['href'])
-        except KeyError:
-            self.logger.info('- scanning feed with no link provided, grrr...')
-        
-        for entry in feed['entries']:
+        for entry in entries:
+            self.entrycount += 1
 
             # Search the trie.
             matches = []
@@ -286,23 +394,16 @@ class Base(object):
                 continue
             matches += trie_scan(self.trie, summary)
 
-            # Search the regexes.
-            for collection_name, rgxs in self.rgxs.items():
-                for r in rgxs:
-                    for m in re.finditer(r, summary):
-                        matchobj = PseudoMatch(m.group(), m.start(), m.end())
-                        matches.append([matchobj, collection_name])
-
             yield entry, matches
 
-    def _process_feed(self, feed):
+    def process_feed(self, entries):
         abbr = self.abbr
         feed_entries = db.feed_entries
         third = itemgetter(2)
 
         # Find matching entities in the feed.
-        for entry, matches in self._scan_feed(feed):                    
-            matches = self._extract_entities(matches)
+        for entry, matches in self.scan_feed(entries):                    
+            matches = self.extract_entities(matches)
 
             ids = map(third, matches)
             strings = [m.group() for m, _, _ in matches]
@@ -323,18 +424,8 @@ class Base(object):
                     entry['summary_detail']['value'])
             except KeyError:
                 pass
-
-            # Patch the entry object to get rid of struct_time.
-            for k, v in entry.items():
-                if isinstance(v, time.struct_time):
-                    t = time.mktime(entry[k])
-                    dt = datetime.datetime.fromtimestamp(t)
-                    entry[k] = dt
             
-            try:
-                feed_entries.save(entry)
-            except:
-                import pdb;pdb.set_trace()
+            feed_entries.save(entry)
             msg = 'Found %d related entities in %r'
             self.logger.info(msg % (len(ids), entry['title']))
 
@@ -346,16 +437,16 @@ class Base(object):
         abbr = self.abbr
         STATE_DATA = join(DATA, abbr, 'feeds')
         STATE_DATA_RAW = join(STATE_DATA, 'raw')
-        _process_feed = self._process_feed
+        _process_feed = self.process_feed
 
         with cd(STATE_DATA_RAW):
             for fn in os.listdir('.'):
                 with open(fn) as f:
-                    feed = feedparser.parse(f.read())
-                    _process_feed(feed)
+                    entries = json.load(f)
+                    _process_feed(entries)
 
 
-    def _extract_entities(self, matches):
+    def extract_entities(self, matches):
 
         funcs = {}
         for collection_name, method in (('bills', 'extract_bill'),
@@ -381,350 +472,6 @@ class Base(object):
         return processed
 
 
-class CA(Base):
-
-    trie_terms = {
-        'legislators': cartcat(
-
-            [u'Senator', 
-             u'Senate member',
-             u'Senate Member',
-             u'Assemblymember', 
-             u'Assembly Member',
-             u'Assembly member',
-             u'Assemblyman',
-             u'Assemblywoman', 
-             u'Assembly person',
-             u'Assemblymember', 
-             u'Assembly Member',
-             u'Assembly member', 
-             u'Assemblyman',
-             u'Assemblywoman', 
-             u'Assembly person',
-             u'Chairman',
-             u'Chairwoman',
-             u'Chairperson',], 
-
-            [u' {legislator[last_name]}',
-             u' {legislator[full_name]}'])
-
-            + [u'{legislator[full_name]}']
-
-         ,
-
-        'bills': [ 
-            ('bill_id', lambda s: s.upper().replace('.', ''))
-            ]
-
-        }
-
-    rgxs = {
-        'bills': [
-            '(?:%s) ?\d[\w-]*' % '|'.join([
-                'AB', 'ACR', 'AJR', 'SB', 'SCR', 'SJR'])
-            ],
-
-        'committees': [
-            '(?:Assembly|Senate).{,200}?Committee',
-            ]
-
-    }
-
-
-    def extract_bill(self, m, collection=db.bills, cache={}):
-        '''Given a match object m, return the _id of the related bill. 
-        '''
-        def squish(bill_id):
-            bill_id = ''.join(bill_id.split())
-            bill_id = bill_id.upper().replace('.', '')
-            return bill_id
-
-        bill_id = squish(m.group())
-
-        try:
-            ids = cache['ids']
-        except KeyError:
-            # Get a list of (bill_id, _id) tuples like ('SJC23', 'CAB000123')
-            ids = collection.find({'state': self.abbr}, {'bill_id': 1})
-            ids = dict((squish(r['bill_id']), r['_id']) for r in ids)
-
-            # Cache it in the method.
-            cache['ids'] = ids
-
-        if bill_id in ids:
-            return ids[bill_id]
-
-
-    def committee_variations(self, committee):
-        '''Compute likely variations for a committee
-
-        Standing Committee on Rules
-         - Rules Committee
-         - Committee on Rules
-         - Senate Rules
-         - Senate Rules Committee
-         - Rules (useless)
-        '''
-        
-        name = committee['committee']
-        ch = committee['chamber']
-        if ch != 'joint':
-            chamber_name = metadata('ca')[ch + '_chamber_name']
-        else:
-            chamber_name = 'Joint'
-
-        # Arts
-        raw = re.sub(r'(Standing|Joint|Select) Committee on ', '', name)
-        raw = re.sub(r'\s+Committee$', '', raw)
-
-        # Committee on Arts
-        committee_on_1 = 'Committee on ' + raw
-
-        # Arts Committee
-        short = raw + ' Committee'
-        
-        # Assembly Arts Committee
-        if not short.startswith(chamber_name):
-            cow = chamber_name + ' ' + short
-        else:
-            cow = short
-
-        # Assembly Committee on Arts
-        committee_on_2 = chamber_name + ' ' + committee_on_1
-
-        phrases = [name, committee_on_1, committee_on_2, raw, short, cow]
-
-        # Handle ampersand usage like "Senate Public Employment & Retirement Committee"
-        phrases += [p.replace(' and ', ' & ') for p in phrases]
-
-        # Exclude phrases less than two words in length.
-        return set(filter(lambda s: ' ' in s,
-                   [name, committee_on_1, committee_on_2, raw, short, cow]))
-
-
-class IL(Base):
-
-    trie_terms = {
-        'legislators': cartcat(
-
-            [u'Senator', 
-             u'Senate member',
-             u'Senate Member',
-             u'Assemblymember', 
-             u'Assembly Member',
-             u'Assembly member',
-             u'Assemblyman',
-             u'Assemblywoman', 
-             u'Assembly person',
-             u'Assemblymember', 
-             u'Assembly Member',
-             u'Assembly member', 
-             u'Assemblyman',
-             u'Assemblywoman', 
-             u'Assembly person',
-             u'Representative',
-             u'Rep.',
-             u'Sen.'], 
-
-            [u' {legislator[last_name]}',
-             u' {legislator[full_name]}']),
-
-        'bills': [ 
-            ('bill_id', lambda s: s.upper().replace('.', ''))
-            ]
-
-        }
-
-    rgxs = {
-        'bills': [
-            '(?:%s) ?\d[\w-]*' % '|'.join([
-                'B', 'R', 'JR', 'JRCA',])
-            ],
-
-        'committees': [
-            '(?:House of Representatives|House|Senate).{,200}?Committee',
-            ]
-
-    }
-
-
-    def extract_bill(self, m, collection=db.bills, cache={}):
-        '''Given a match object m, return the _id of the related bill. 
-        '''
-        def squish(bill_id):
-            bill_id = ''.join(bill_id.split())
-            bill_id = bill_id.upper().replace('.', '')
-            return bill_id
-
-        bill_id = squish(m.group())
-
-        try:
-            ids = cache['ids']
-        except KeyError:
-            # Get a list of (bill_id, _id) tuples like ('SJC23', 'CAB000123')
-            ids = collection.find({'state': self.abbr}, {'bill_id': 1})
-            ids = dict((squish(r['bill_id']), r['_id']) for r in ids)
-
-            # Cache it in the method.
-            cache['ids'] = ids
-
-        if bill_id in ids:
-            return ids[bill_id]
-
-
-    def committee_variations(self, committee):
-        '''Compute likely variations for a committee
-
-        Standing Committee on Rules
-         - Rules Committee
-         - Committee on Rules
-         - Senate Rules
-         - Senate Rules Committee
-         - Rules (useless)
-        '''
-        
-        name = committee['committee']
-        ch = committee['chamber']
-        if ch != 'joint':
-            chamber_name = metadata('ca')[ch + '_chamber_name']
-        else:
-            chamber_name = 'Joint'
-
-        # Arts
-        raw = re.sub(r'(Standing|Joint|Select) Committee on ', '', name)
-        raw = re.sub(r'\s+Committee$', '', raw)
-
-        # Committee on Arts
-        committee_on = 'Committee on ' + raw
-
-        # Arts Committee
-        short = raw + ' Committee'
-        
-        if not short.startswith(chamber_name):
-            cow = chamber_name + ' ' + short
-        else:
-            cow = short
-
-        # Exclude phrases less than two words in length.
-        return set(filter(lambda s: ' ' in s,
-                   [name, committee_on, raw, short, cow]))
-
-
-class TX(Base):
-
-    trie_terms = {
-        'legislators': cartcat(
-
-            [u'Senator', 
-             u'Senate member',
-             u'Senate Member',
-             u'Assemblymember', 
-             u'Assembly Member',
-             u'Assembly member',
-             u'Assemblyman',
-             u'Assemblywoman', 
-             u'Assembly person',
-             u'Assemblymember', 
-             u'Assembly Member',
-             u'Assembly member', 
-             u'Assemblyman',
-             u'Assemblywoman', 
-             u'Assembly person',
-             u'Representative',
-             u'Rep.', u'Sen.'], 
-
-            [u' {legislator[last_name]}',
-             u' {legislator[full_name]}']) + [
-
-            u'{legislator[full_name]}'],
-
-
-
-
-
-        'bills': [ 
-            ('bill_id', lambda s: s.upper().replace('.', ''))
-            ]
-
-        }
-
-    rgxs = {
-        'bills': [
-            '(?:%s) ?\d[\w-]*' % '|'.join([
-                "SB", "HB", "HC", "HJ", "SC", "SJ",])
-            ],
-
-        'committees': [
-            '(?:House of Representatives|House|Senate).{,200}?Committee',
-            ]
-
-    }
-
-
-    def extract_bill(self, m, collection=db.bills, cache={}):
-        '''Given a match object m, return the _id of the related bill. 
-        '''
-        def squish(bill_id):
-            bill_id = ''.join(bill_id.split())
-            bill_id = bill_id.upper().replace('.', '')
-            return bill_id
-
-        bill_id = squish(m.group())
-
-        try:
-            ids = cache['ids']
-        except KeyError:
-            # Get a list of (bill_id, _id) tuples like ('SJC23', 'CAB000123')
-            ids = collection.find({'state': self.abbr}, {'bill_id': 1})
-            ids = dict((squish(r['bill_id']), r['_id']) for r in ids)
-
-            # Cache it in the method.
-            cache['ids'] = ids
-
-        if bill_id in ids:
-            return ids[bill_id]
-
-
-    def committee_variations(self, committee):
-        '''Compute likely variations for a committee
-
-        Standing Committee on Rules
-         - Rules Committee
-         - Committee on Rules
-         - Senate Rules
-         - Senate Rules Committee
-         - Rules (useless)
-        '''
-        
-        name = committee['committee']
-        ch = committee['chamber']
-        if ch != 'joint':
-            chamber_name = metadata('ca')[ch + '_chamber_name']
-        else:
-            chamber_name = 'Joint'
-
-        # Arts
-        raw = re.sub(r'(Standing|Joint|Select) Committee on ', '', name)
-        raw = re.sub(r'\s+Committee$', '', raw)
-
-        # Committee on Arts
-        committee_on1 = 'Committee on ' + raw
-        committee_on2 = ch + ' ' + committee_on1
-
-        # Arts Committee
-        short = raw + ' Committee'
-        
-        if not short.startswith(chamber_name):
-            cow = chamber_name + ' ' + short
-        else:
-            cow = short
-
-        # Exclude phrases less than two words in length.
-        return set(filter(lambda s: ' ' in s,
-                   [name, committee_on2, committee_on2, raw, short, cow]))
-
-
-
 
 '''
 To-do:
@@ -741,50 +488,28 @@ and chamber in addition to entity.
 Investigate other jargon and buzz phrase usage i.e.:
  - speaker of the house
  - committee chair
+
 '''
 
-
-
 if __name__ == '__main__':
-    
-    # appr = db.committees.find_one(u'CAC000084')
-    # ca = CA()
-    # vv = ca.committee_variations(appr)
-    # s = '''e speakers at Wednesday mornings Assembly hearing on health care district. Assembly Committee on Accountability and Administrative Review Chairman Roger Dickinson, D-S'''
-    # # cow = trie_scan(ca.trie, s)
-    # # # print cow
-    # tx = TX()
-    # print trie_scan(tx.trie, 'Rep. Vicki Truitt')
-    # import pdb;pdb.set_trace()
-#     s = '''
-# Rep. Jim Keffer, R-Eastland, chairman of the Energy Resources Committee, and Rep. Vicki Truitt, R-Keller, chairwoman of the Pensions Committee, filed the complaint against Empower Texans, also known as Texans for Fiscal Responsibility. The complaint says that the group's president, Michael Quinn Sullivan, did not register as a lobbyist and that the nonprofit organization did not file a required campaign finance activity disclosure.
-
-# Such complaints by GOP lawmakers against an organization that routinely supports conservative policies in the Legislature are highly unusual and demonstrate a schism between veteran politicians and new activists aligned more closely with Tea Party groups.
-
-# '''
-#     xx = trie_scan(TX().trie, s)
-#     import pdb;pdb.set_trace()
 
     import sys
-    db.feed_entries.remove()
-    for cls in Meta.classes():
-        if sys.argv[1:] and (cls.__name__.lower() not in sys.argv):
-            continue
-        inst = cls()
-        inst.process_all_feeds()
+    from os.path import dirname, abspath, join
 
-    # ca = CA()
-    # ca._build_trie()
-    # ma = []
-    # ca.build()
-    # x = ca.relevant.values()
-    # bad = []
-    # for y in itertools.chain.from_iterable(x):
-    #     if y[-1] is None:
-    #         print y
-    #         bad.append(y)
-    # comm = [y for y in itertools.chain.from_iterable(x) if y[1] == 'committees']
-    # for y in itertools.chain.from_iterable(x):
-    #     if y[1] == 'committees':
-    #         print y
-    # import pdb;pdb.set_trace()
+    PATH = dirname(abspath(__file__))
+
+    db.feed_entries.remove()
+
+    if sys.argv[1:]:
+        states = sys.argv[1:]
+    else:
+        filenames = os.listdir(join(PATH, 'urls'))
+        filenames = [s.replace('.txt', '') for s in filenames]
+        states = filter(lambda s: '~' not in s, filenames)
+    
+    stats = {}
+    for abbr in states:
+        ex = Extractor(abbr)
+        ex.process_all_feeds()
+        stats[ex.abbr] = ex.entrycount
+    import pdb;pdb.set_trace()
