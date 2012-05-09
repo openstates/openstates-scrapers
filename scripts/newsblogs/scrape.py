@@ -2,26 +2,44 @@ import pdb
 import re
 import json
 import os
-import cookielib
 import operator
+import functools
 import itertools
 import contextlib
 import logging
 import datetime
-import time
-import hashlib
 from os.path import join, dirname, abspath
-from functools import partial
-from collections import namedtuple, defaultdict
-from operator import itemgetter, methodcaller
+from operator import itemgetter
 
+from functools import partial
 import nltk
-import requests
-import feedparser
 
 from billy.models import db
 from billy.utils import metadata
 from billy.conf import settings
+
+
+
+class _CachedAttr(object):
+    '''Computes attr value and caches it in the instance.'''
+
+    def __init__(self, method, name=None):
+        self.method = method
+        self.name = name or method.__name__
+
+    def __get__(self, inst, cls):
+        if inst is None:
+            return self
+        result = self.method(inst)
+        setattr(inst, self.name, result)
+        return result
+
+
+class Trie(dict):
+
+    @_CachedAttr
+    def finditer(self):
+        return functools.partial(re.finditer, '|'.join(self))
 
 
 class PseudoMatch(object):
@@ -58,10 +76,10 @@ def trie_add(trie, seq_value_2tuples, terminus=0):
         this = trie
         w_len = len(seq) - 1
         for i, c in enumerate(seq):
-            
+
             if c in ",. '&[]":
                 continue
-        
+
             try:
                 this = this[c]
             except KeyError:
@@ -70,7 +88,7 @@ def trie_add(trie, seq_value_2tuples, terminus=0):
 
             if i == w_len:
                 this[terminus] = value
-                
+
     return trie
 
 
@@ -89,11 +107,11 @@ def trie_scan(trie, s,
 
     for i, c in enumerate(s):
 
-        if c in ",. '&[]":   
+        if c in ",. '&[]":
             if in_match:
                 match.append((i, c))
             continue
-            
+
         if c in this:
             this = this[c]
             match.append((i, c))
@@ -130,6 +148,45 @@ def trie_scan(trie, s,
         prev = match
         
     return res
+
+
+def trie_scan(trie, string, _match=PseudoMatch,
+              second=itemgetter(1)):
+
+    this = trie
+    match = []
+
+    for matchobj in trie.finditer(string):
+
+        pos = matchobj.start()
+        this = trie
+        match = []
+
+        while True:
+
+            try:
+                char = string[pos]
+            except IndexError:
+                break
+
+            if char in ",. '&[]":
+                match.append((pos, char))
+                pos += 1
+                continue
+
+            try:
+                this = this[char]
+            except KeyError:
+                break
+            else:
+                match.append((pos, char))
+                if 0 in this:
+                    pseudo_match = _match(group=''.join(map(second, match)),
+                                          start=matchobj.start(), end=pos)
+                    yield [pseudo_match] + this[0]
+                    break
+                else:
+                    pos += 1
 
 
 @contextlib.contextmanager
@@ -324,7 +381,7 @@ class Extractor(object):
         into the trie_terms strings. Create a new list of formatted
         strings to use in building the trie, then build.
         '''
-        trie = {}
+        trie = Trie()
         trie_terms = self.trie_terms
         abbr = self.abbr
 
@@ -457,9 +514,10 @@ class Extractor(object):
                 funcs[collection_name] = getattr(self, method)
             except AttributeError:
                 pass
-    
+
         processed = []
         for m in matches:
+
             if len(m) == 2:
                 match, collection_name = m
                 extractor = funcs.get(collection_name)
@@ -512,4 +570,4 @@ if __name__ == '__main__':
         ex = Extractor(abbr)
         ex.process_all_feeds()
         stats[ex.abbr] = ex.entrycount
-    import pdb;pdb.set_trace()
+    #import pdb;pdb.set_trace()
