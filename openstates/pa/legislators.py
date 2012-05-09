@@ -22,8 +22,9 @@ class PALegislatorScraper(LegislatorScraper):
             page.make_links_absolute(leg_list_url)
 
             for link in page.xpath("//a[contains(@href, '_bio.cfm')]"):
-                full_name = link.text[0:-4]
-                district = re.search("District (\d+)", link.tail).group(1)
+                full_name = link.text
+                district = link.getparent().getnext().tail.strip()
+                district = re.search("District (\d+)", district).group(1)
 
                 party = link.text[-2]
                 if party == 'R':
