@@ -57,6 +57,10 @@ class RIEventScraper(EventScraper):
         else:
             fmt += " %I:%M %p"
             datetime = "%s %s" % ( date, time )
+        if "CANCELLED" in datetime:
+            # XXX: Do something more advanced.
+            return
+
         datetime = dt.datetime.strptime(datetime, fmt)
 
         event = Event(session, datetime, 'committee:meeting',

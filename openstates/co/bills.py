@@ -264,6 +264,11 @@ class COBillScraper(BillScraper):
                 date_string = action[:action.find(" ")]
                 if ":" in date_string:
                     date_string = action[:action.find(":")]
+                if "No" == date_string:  # XXX Remove me
+                # as soon as sanity is on:
+                # http://www.leg.state.co.us/clics/clics2012a/csl.nsf/billsummary/C150552896590FA587257961006E7C0B?opendocument
+                    continue
+
                 date_time   = dt.datetime.strptime( date_string, "%m/%d/%Y" )
                 action = action[action.find(" ") + 1:]
 

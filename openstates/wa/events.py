@@ -1,10 +1,16 @@
-import datetime
+from datetime import timedelta
+import datetime as dt
+
+import lxml.etree
+import pytz
+import re
 
 from billy.scrape.events import EventScraper, Event
 
-import pytz
-import lxml.etree
-
+event_page = "http://www.leg.wa.gov/legislature/pages/showagendas.aspx?chamber=%s&start=%s&end=%s"
+# 1st arg: [joint|house|senate]
+# 2ed arg: start date (5/1/2012)
+# 3ed arg: end date (5/31/2012)
 
 class WAEventScraper(EventScraper):
     state = 'wa'
@@ -12,66 +18,111 @@ class WAEventScraper(EventScraper):
     _tz = pytz.timezone('US/Pacific')
     _ns = {'wa': "http://WSLWebServices.leg.wa.gov/"}
 
-    def scrape(self, chamber, session):
-        if chamber == 'other':
-            return
-
-        start_date = "%s-01-10T00:00:00" % session[0:4]
-        end_date = "%d-01-10T00:00:00" % (int(session[5:10]) + 1)
-
-        url = ("http://wslwebservices.leg.wa.gov/CommitteeMeetingService"
-               ".asmx/GetCommitteeMeetings?beginDate=%s"
-               "&endDate=%s" % (start_date, end_date))
-
-        expected_agency = {'upper': 'Senate', 'lower': 'House'}[chamber]
-
+    def lxmlize(self, url):
         with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page.bytes)
+            page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+        return page
 
-            for meeting in page.xpath(
-                "//wa:CommitteeMeeting", namespaces=self._ns):
+    def scrape_agenda(self, ol):
+        if len(ol) == 0:
+            return []
+        assert len(ol) == 1
+        ret = []
+        # ok. game on.
+        ol = ol[0]
+        lis = ol.xpath(".//li")
+        regex = r'(S|H)J?(R|B|M) \d{4}'
+        for li in lis:
+            agenda_item = li.text_content()
+            bill = re.search(regex, agenda_item)
+            if bill is not None:
+                start, end = bill.regs[0]
+                ret.append({
+                    "bill" : agenda_item[start:end],
+                    "descr" : agenda_item
+                })
+        return ret
 
-                cancelled = meeting.xpath(
-                    "string(wa:Cancelled)", namespaces=self._ns).strip()
-                if cancelled.lower() == "true":
+    def scrape(self, chamber, session):
+
+        cha = {
+            "upper" : "senate",
+            "lower" : "house",
+            "other" : "joint"
+        }[chamber]
+
+        print_format = "%m/%d/%Y"
+
+        now = dt.datetime.now()
+        start = now.strftime(print_format)
+        then = now + timedelta(weeks=4)
+        end = then.strftime(print_format)
+        url = event_page % (
+            cha,
+            start,
+            end
+        )
+
+        page = self.lxmlize(url)
+
+        def _split_tr(trs):
+            ret = []
+            cur = []
+            for tr in trs:
+                if len(tr.xpath(".//hr")) > 0:
+                    ret.append(cur)
+                    cur = []
                     continue
+                cur.append(tr)
+            if cur != []:
+                ret.append(cur)
+            return ret
 
-                agency = meeting.xpath(
-                    "string(wa:Agency)",
-                    namespaces=self._ns).strip()
+        tables = page.xpath("//table[@class='AgendaCommittee']")
+        for table in tables:
+            # grab agenda, etc
+            trs = table.xpath(".//tr")
+            events = _split_tr(trs)
+            for event in events:
+                assert len(event) == 2
+                header = event[0]
+                body = event[1]
+                whowhen = header.xpath(".//h2")[0].text_content()
+                blocks = [ x.strip() for x in whowhen.split("-") ]
+                who = blocks[0]
+                when = blocks[1].replace(u'\xa0', ' ')
+                if "TBA" in when:
+                    continue  # XXX: Fixme
 
-                if agency != expected_agency:
-                    continue
+                descr = body.xpath(".//*")
+                flush = False
+                where = body.xpath(".//br")[1].tail
+                if where is not None:
+                    where = where.strip()
+                else:
+                    where = "unknown"
 
-                dt = meeting.xpath("string(wa:Date)", namespaces=self._ns)
-                dt = datetime.datetime.strptime(dt, "%Y-%m-%dT%H:%M:%S")
+                when = dt.datetime.strptime(when, "%m/%d/%y  %I:%M %p")
 
-                room = meeting.xpath("string(wa:Room)", namespaces=self._ns)
-                building = meeting.xpath(
-                    "string(wa:Building)", namespaces=self._ns)
-                location = "%s, %s" % (room, building)
+                meeting_title = "Scheduled Meeting"  # XXX: Fixme
 
-                comm = meeting.xpath(
-                    "string(wa:Committees/wa:Committee[1]/wa:Name)",
-                    namespaces=self._ns)
-
-                desc = "Committee Meeting\n%s" % comm
-
-                guid = meeting.xpath(
-                    "string(wa:AgendaId)", namespaces=self._ns)
-
-                event = Event(session, dt, 'committee:meeting',
-                              desc, location=location, _guid=guid)
-
-                for comm_part in meeting.xpath(
-                    "wa:Committees/wa:Committee", namespaces=self._ns):
-                    name = comm_part.xpath("string(wa:Name)",
-                                           namespaces=self._ns)
-                    agency = comm_part.xpath("string(wa:Agency)",
-                                             namespaces=self._ns)
-                    name = "%s %s Committee" % (agency, name)
-
-                    event.add_participant('committee', name, chamber=agency)
-
+                agenda = self.scrape_agenda(body.xpath(".//ol"))
+                event = Event(session, when, 'committee:meeting',
+                              meeting_title, location=where)
+                event.add_participant(
+                    "host",
+                    who,
+                    chamber=chamber
+                )
                 event.add_source(url)
+
+                for item in agenda:
+                    bill = item['bill']
+                    descr = item['descr']
+                    event.add_related_bill(
+                        bill,
+                        description=descr,
+                        type="consideration"
+                    )
                 self.save_event(event)
