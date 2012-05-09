@@ -146,7 +146,7 @@ def trie_scan(trie, s,
                 res.remove(tpl)
 
         prev = match
-        
+
     return res
 
 
@@ -155,6 +155,7 @@ def trie_scan(trie, string, _match=PseudoMatch,
 
     this = trie
     match = []
+    spans = []
 
     for matchobj in trie.finditer(string):
 
@@ -181,8 +182,21 @@ def trie_scan(trie, string, _match=PseudoMatch,
             else:
                 match.append((pos, char))
                 if 0 in this:
+                    start = matchobj.start()
+                    end = pos
                     pseudo_match = _match(group=''.join(map(second, match)),
-                                          start=matchobj.start(), end=pos)
+                                          start=start, end=end)
+
+                    # Don't yeild a match if this match is contained in a
+                    # larger match.
+                    _break = False
+                    for _start, _end in spans:
+                        if (_start <= start) and (end <= _end):
+                            _break = True
+                    if _break:
+                        break
+
+                    spans.append((start, end))
                     yield [pseudo_match] + this[0]
                     break
                 else:
