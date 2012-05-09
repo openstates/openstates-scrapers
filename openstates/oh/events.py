@@ -10,7 +10,7 @@ import lxml.html
 class OHEventScraper(EventScraper):
     state = 'oh'
 
-    _tz = pytz.timezone('US/Central')
+    _tz = pytz.timezone('US/Eastern')
 
     def house_meetings(self):
         url = "http://www.legislature.state.oh.us/house_committee_schedule.cfm"
