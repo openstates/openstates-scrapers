@@ -45,9 +45,8 @@ class OHEventScraper(EventScraper):
 
             blocks = [ x.strip() for x in block.split("\n") ]
 
-            hour = re.sub("\(.*\)", "", blocks[2])
-
-            bills = blocks[4]
+            hour = re.sub("\(.*\)", "", blocks[1])
+            bills = blocks[2]
 
             if "after" in hour or "after" in bills:
                 return None, None, []
