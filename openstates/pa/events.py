@@ -22,10 +22,10 @@ class PAEventScraper(EventScraper):
             page = lxml.html.fromstring(page)
 
             for date_td in page.xpath("//td[@valign='middle']"):
-                date = date_td.text.strip()
+                date = date_td.text_content().strip()
 
                 datetime.datetime.strptime(
-                    date_td.text.strip(), "%A, %B %d, %Y").date()
+                    date, "%A, %B %d, %Y").date()
 
                 next_tr = date_td.getparent().getnext()
                 while next_tr is not None:
