@@ -73,6 +73,8 @@ class LAEventScraper(EventScraper):
                               description, location=location)
                 event.add_source(url)
                 event.add_participant('host', committee, chamber='lower')
+                event.add_document("Agenda", guid, type='agenda',
+                                   mimetype="application/pdf")
                 event['link'] = guid
 
                 self.save_event(event)
