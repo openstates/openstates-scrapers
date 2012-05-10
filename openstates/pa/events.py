@@ -65,7 +65,6 @@ class PAEventScraper(EventScraper):
                             "session": qs['syear'][0],
                             "descr": desc
                         })
-                    print bills
 
                     location = next_tr.xpath("string(td[3])").strip()
                     location = re.sub(r'\s+', ' ', location)
