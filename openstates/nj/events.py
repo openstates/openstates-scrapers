@@ -1,6 +1,7 @@
 import datetime as dt
-import pytz
 from dbfpy import dbf
+import pytz
+import re
 
 from billy.scrape.events import EventScraper, Event
 
@@ -17,7 +18,15 @@ class NJEventScraper(EventScraper):
         for record in records:
             if record['STATUS'] != "Scheduled":
                 continue
-            print record
+            description = record['COMMENTS']
+            related_bills = []
+
+            for bill in re.findall("(A|S)(-)?(\d{4})", description):
+                related_bills.append({
+                    "bill_id" : "%s %s" % ( bill[0], bill[2] ),
+                    "descr": description
+                })
+
             date_time = "%s %s" % (
                 record['DATE'],
                 record['TIME']
@@ -30,6 +39,10 @@ class NJEventScraper(EventScraper):
                 record['COMMENTS'] or "Meeting Notice",
                 location=record['LOCATION'] or "Statehouse",
             )
+            for bill in related_bills:
+                event.add_related_bill(bill['bill_id'],
+                                      description=bill['descr'],
+                                      type='consideration')
             event.add_participant("host", record['COMMHOUSE'])
             event.add_source(agenda_dbf)
             self.save_event(event)
