@@ -43,7 +43,7 @@ class PACommitteeScraper(CommitteeScraper):
 
                         if match:
                             subcommittee_name = match.group(1)
-                            role = rest.split('-')[1].strip().lower()
+                            role = rest.rsplit('-', 1)[-1].strip().lower()
                         else:
                             role = rest.replace(', ', '').strip().lower()
 
@@ -62,7 +62,6 @@ class PACommitteeScraper(CommitteeScraper):
 
                         committees[(chamber, committee_name,
                                     subcommittee_name)] = committee
-
                     committee.add_member(name, role)
 
             for committee in committees.values():
