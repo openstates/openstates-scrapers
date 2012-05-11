@@ -1,5 +1,7 @@
 from billy.fulltext import oyster_text, worddata_to_text
 
+settings = dict(SCRAPELIB_TIMEOUT=120)
+
 metadata = dict(
     name='Oklahoma',
     abbreviation='ok',
