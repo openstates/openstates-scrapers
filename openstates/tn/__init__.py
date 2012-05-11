@@ -30,7 +30,7 @@ metadata = dict(
             'type' : 'primary',
             'display_name' : '106th Regular Session',},
     },
-    feature_flags=[],
+    feature_flags=[ 'events' ],
     _ignored_scraped_sessions = [
         '106th General Assembly',
         '105th General Assembly', '104th General Assembly',
