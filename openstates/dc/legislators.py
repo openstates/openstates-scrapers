@@ -13,7 +13,7 @@ def get_field(doc, key):
 class DCLegislatorScraper(LegislatorScraper):
     state = 'dc'
 
-    def scrape(self, chamber, term):
+    def scrape(self, term, **kwargs):
         council_url = 'http://www.dccouncil.washington.dc.us/council'
         data = self.urlopen(council_url)
         doc = lxml.html.fromstring(data)
@@ -21,10 +21,6 @@ class DCLegislatorScraper(LegislatorScraper):
         # page should have 13 unique council URLs
         urls = set(doc.xpath('//a[contains(@href, "/council/")]/@href'))
         assert len(urls) <= 13, "should have 13 unique councilmember URLs"
-
-        # do nothing if they're trying to get a lower chamber
-        if chamber == 'lower':
-            return
 
         for url in urls:
 
