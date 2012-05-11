@@ -161,7 +161,7 @@ class DCBillScraper(BillScraper):
                     vote.other(member)
         bill.add_vote(vote)
 
-    def scrape(self, session, **kwargs):
+    def scrape(self, session, chambers):
         url = 'http://dcclims1.dccouncil.us/lims/print/list.aspx?FullPage=True&Period=' + session
 
         with self.urlopen(url) as html:

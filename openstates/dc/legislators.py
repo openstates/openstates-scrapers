@@ -13,7 +13,7 @@ def get_field(doc, key):
 class DCLegislatorScraper(LegislatorScraper):
     state = 'dc'
 
-    def scrape(self, term, **kwargs):
+    def scrape(self, term, chambers):
         council_url = 'http://www.dccouncil.washington.dc.us/council'
         data = self.urlopen(council_url)
         doc = lxml.html.fromstring(data)

@@ -6,7 +6,7 @@ import re
 class DCCommitteeScraper(CommitteeScraper):
     state = 'dc'
 
-    def scrape(self, term, **kwargs):
+    def scrape(self, term, chambers):
         com_url = 'http://www.dccouncil.washington.dc.us/committees'
         data = self.urlopen(com_url)
         doc = lxml.html.fromstring(data)
