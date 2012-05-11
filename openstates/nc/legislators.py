@@ -8,7 +8,11 @@ party_map = {'Dem': 'Democratic',
 class NCLegislatorScraper(LegislatorScraper):
     state = 'nc'
 
-    def scrape(self, chamber, term):
+    def scrape(self, term, chambers):
+        for chamber in chambers:
+            self.scrape_chamber(chamber, term)
+
+    def scrape_chamber(self, chamber, term):
         url = "http://www.ncga.state.nc.us/gascripts/members/"\
             "memberList.pl?sChamber="
 
