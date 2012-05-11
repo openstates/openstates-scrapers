@@ -3,6 +3,9 @@ import lxml.html
 from billy.scrape.utils import url_xpath
 from billy.fulltext import oyster_text, text_after_line_numbers
 
+# don't retry- if a file isn't on FTP just let it go
+settings = dict(SCRAPELIB_RETRY_ATTEMPTS=0)
+
 metadata = dict(
     name='New Jersey',
     abbreviation='nj',
