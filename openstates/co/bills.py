@@ -376,6 +376,8 @@ class COBillScraper(BillScraper):
             testStr = "Senate Second Reading Special Order"
             if aText[:len(testStr)] == testStr:
                 # get the status of the reading next
+                if len(action['args']) <= 0:
+                    return False
                 bill_passfail = action['args'][0]
                 normalized_brief = "Senate Second Reading %s" % (bill_passfail)
                 bill.add_action( actor, action['orig'],

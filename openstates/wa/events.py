@@ -24,24 +24,24 @@ class WAEventScraper(EventScraper):
         page.make_links_absolute(url)
         return page
 
-    def scrape_agenda(self, ol):
-        if len(ol) == 0:
+    def scrape_agenda(self, ols):
+        if len(ols) == 0:
             return []
-        assert len(ol) == 1
         ret = []
         # ok. game on.
-        ol = ol[0]
-        lis = ol.xpath(".//li")
-        regex = r'(S|H)J?(R|B|M) \d{4}'
-        for li in lis:
-            agenda_item = li.text_content()
-            bill = re.search(regex, agenda_item)
-            if bill is not None:
-                start, end = bill.regs[0]
-                ret.append({
-                    "bill" : agenda_item[start:end],
-                    "descr" : agenda_item
-                })
+        for ol in ols:
+            ol = ol[0]
+            lis = ol.xpath(".//li")
+            regex = r'(S|H)J?(R|B|M) \d{4}'
+            for li in lis:
+                agenda_item = li.text_content()
+                bill = re.search(regex, agenda_item)
+                if bill is not None:
+                    start, end = bill.regs[0]
+                    ret.append({
+                        "bill" : agenda_item[start:end],
+                        "descr" : agenda_item
+                    })
         return ret
 
     def scrape(self, chamber, session):
