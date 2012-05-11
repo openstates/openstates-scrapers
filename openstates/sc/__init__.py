@@ -2,6 +2,8 @@ import lxml.html
 import datetime
 from billy.fulltext import oyster_text
 
+settings = dict(SCRAPELIB_TIMEOUT=300)
+
 metadata = dict(
     name='South Carolina',
     abbreviation='sc',

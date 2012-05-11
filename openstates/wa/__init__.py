@@ -1,6 +1,8 @@
 import lxml.html
 from billy.fulltext import oyster_text, text_after_line_numbers
 
+settings = dict(SCRAPELIB_TIMEOUT=300)
+
 metadata = dict(
     name='Washington',
     abbreviation='wa',
