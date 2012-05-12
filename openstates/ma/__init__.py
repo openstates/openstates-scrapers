@@ -2,6 +2,11 @@ import datetime
 import lxml.html
 from billy.fulltext import oyster_text, text_after_line_numbers
 
+settings = dict(
+    SCRAPELIB_TIMEOUT=600,
+    SCRAPELIB_RPM=30
+)
+
 metadata = {
     'lower_chamber_title': 'Representative',
     'lower_chamber_name': 'House of Representatives',
@@ -38,7 +43,7 @@ metadata = {
     },
     'legislature_name': 'Massachusetts General Court',
     'lower_chamber_term': 2,
-    'feature_flags': [],
+    'feature_flags': [ 'events' ],
 }
 
 def session_list():

@@ -3,6 +3,9 @@ import lxml.html
 from billy.scrape.utils import url_xpath
 from billy.fulltext import oyster_text, text_after_line_numbers
 
+# don't retry- if a file isn't on FTP just let it go
+settings = dict(SCRAPELIB_RETRY_ATTEMPTS=0)
+
 metadata = dict(
     name='New Jersey',
     abbreviation='nj',
@@ -43,7 +46,7 @@ metadata = dict(
                              '_scraped_name': '2012-2013',
                              },
                     },
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'events'],
     _ignored_scraped_sessions = ['2006-2007', '2004-2005', '2002-2003',
                                  '2000-2001', '1998-1999', '1996-1997'],
 

@@ -43,6 +43,16 @@ class NJEventScraper(EventScraper):
                 event.add_related_bill(bill['bill_id'],
                                       description=bill['descr'],
                                       type='consideration')
-            event.add_participant("host", record['COMMHOUSE'])
+            try:
+                chamber = {
+                    "a" : "lower",
+                    "s" : "upper",
+                    "j" : "joint"
+                }[record['COMMHOUSE'][0].lower()]
+            except KeyError:
+                chamber = "joint"
+
+            event.add_participant("host", record['COMMHOUSE'],
+                                  chamber=chamber)
             event.add_source(agenda_dbf)
             self.save_event(event)

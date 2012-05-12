@@ -1,6 +1,8 @@
 import lxml.html
 from billy.fulltext import oyster_text, text_after_line_numbers
 
+settings = dict(SCRAPELIB_RPM=30)
+
 metadata = dict(
     name='Pennsylvania',
     abbreviation='pa',
@@ -37,7 +39,7 @@ metadata = dict(
                       '_scraped_name': '2011-2012 Regular Session',
                      },
         },
-    feature_flags=['events'],
+    feature_flags=['events', 'events'],
     _ignored_scraped_sessions=[
         '1969-1970 Regular Session',
         '1971-1972 Regular Session',

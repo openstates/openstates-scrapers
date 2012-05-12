@@ -2,6 +2,8 @@ import datetime
 from billy.fulltext import (pdfdata_to_text, oyster_text,
                             text_after_line_numbers)
 
+settings = dict(SCRAPELIB_TIMEOUT=300)
+
 # most info taken from http://www.kslib.info/constitution/art2.html
 # also ballotpedia.org
 metadata = dict(

@@ -1,6 +1,8 @@
 from billy.fulltext import oyster_text
 import lxml.html
 
+settings = dict(SCRAPELIB_TIMEOUT=300)
+
 metadata = dict(
     name='Hawaii',
     abbreviation='hi',

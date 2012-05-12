@@ -2,6 +2,8 @@ import datetime
 import lxml.html
 from billy.fulltext import oyster_text, text_after_line_numbers
 
+settings = dict(SCRAPELIB_RPM=40)
+
 metadata = {
     'name': 'Virginia',
     'abbreviation': 'va',
