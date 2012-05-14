@@ -25,11 +25,10 @@ class NEBillScraper(BillScraper):
                 bill_link = bill_page.response.url
 
                 #scrapes info from bill page
-                self.bill_info(bill_link, session, 'upper', main_url, bill_page)
+                self.bill_info(bill_link, session, main_url, bill_page)
 
     #Scrapes info from the bill page
     def bill_info(self, bill_link, session, main_url, bill_page):
-
 
         bill_page = lxml.html.fromstring(bill_page)
 
