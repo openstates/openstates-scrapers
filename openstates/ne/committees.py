@@ -5,13 +5,9 @@ import lxml.html
 
 class NECommitteeScraper(CommitteeScraper):
     state = 'ne'
+    latest_only = True
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-
-        if chamber == 'lower':
-            raise Exception('Nebraska is unicameral. Call again with upper')
-
+    def scrape(self, term, chambers):
         self.standing_comm()
         self.select_special_comm()
 

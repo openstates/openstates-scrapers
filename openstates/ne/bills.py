@@ -7,7 +7,7 @@ import urllib
 class NEBillScraper(BillScraper):
     state = 'ne'
 
-    def scrape(self, chamber, session):
+    def scrape(self, session, chambers):
 
         year = self.metadata['session_details'][session]['start_date'].year
         main_url = 'http://nebraskalegislature.gov/bills/search_by_date.php?SessionDay=%s' % year
@@ -17,7 +17,7 @@ class NEBillScraper(BillScraper):
 
             for docs in page.xpath('//div[@class="cal_content_full"]/table[@id="bill_results"]/tr/td[1]/a'):
                 bill_abbr = docs.text
-                
+
                 #POST request for search form
                 post_dict = {'DocumentNumber': bill_abbr, 'Legislature': session}
                 headers = urllib.urlencode(post_dict)
@@ -25,11 +25,11 @@ class NEBillScraper(BillScraper):
                 bill_link = bill_page.response.url
 
                 #scrapes info from bill page
-                self.bill_info(bill_link, session, chamber, main_url, bill_page)
+                self.bill_info(bill_link, session, 'upper', main_url, bill_page)
 
     #Scrapes info from the bill page
-    def bill_info(self, bill_link, session, chamber, main_url, bill_page):
-           
+    def bill_info(self, bill_link, session, main_url, bill_page):
+
 
         bill_page = lxml.html.fromstring(bill_page)
 
@@ -45,14 +45,14 @@ class NEBillScraper(BillScraper):
         title = title[0:-1]
 
         #bill_type
-        bill_type = 'resolution' if 'LR' in bill_id else 'bill'            
+        bill_type = 'resolution' if 'LR' in bill_id else 'bill'
 
-        bill = Bill(session, chamber, bill_id, title, type = bill_type)
-                    
+        bill = Bill(session, 'upper', bill_id, title, type = bill_type)
+
         #sources
         bill.add_source(main_url)
         bill.add_source(bill_link)
-                    
+
         #Sponsor
         introduced_by = bill_page.xpath('//div[@id="content_text"]/div[2]/table/tr[2]/td[1]/a[1]')[0].text
         bill.add_sponsor('primary', introduced_by)
@@ -70,8 +70,8 @@ class NEBillScraper(BillScraper):
                     no_count = int(vote_info[1])
                     abstention_count = int(vote_info[2])
                     passed = True if ( yes_count > no_count) else False
-                    
-                    vote = Vote(chamber, date, action, passed, yes_count, no_count, abstention_count)
+
+                    vote = Vote('upper', date, action, passed, yes_count, no_count, abstention_count)
                     vote.add_source(bill_link)
                     bill.add_vote(vote)
 
@@ -80,11 +80,11 @@ class NEBillScraper(BillScraper):
                 elif 'Speaker' in action:
                     actor = 'Speaker'
                 else:
-                    actor = chamber
+                    actor = 'upper'
 
                 action_type = self.action_types(action)
                 bill.add_action(actor, action, date, action_type)
-                    
+
         #versions
         for versions in bill_page.xpath('//div[@id="content_text"]/div[2]/table/tr[2]/td[2]/a'):
             version_url = versions.attrib['href']
@@ -92,7 +92,7 @@ class NEBillScraper(BillScraper):
             version_name = versions.text
             bill.add_version(version_name, version_url)
 
-                        
+
         #documents
         #additional_info
         for additional_info in bill_page.xpath('//div[@id="content_text"]/div[2]/table/tr[2]/td/a'):
@@ -120,7 +120,7 @@ class NEBillScraper(BillScraper):
 
     #Setting action types
     def action_types(self, action):
-        
+
         if 'Date of introduction' in action:
             action_type = 'bill:introduced'
         elif 'Referred to' in action:
