@@ -106,7 +106,7 @@ class MTBillScraper(BillScraper):
 
         bill = None
         bill_page = ElementTree(lxml.html.fromstring(self.urlopen(bill_url)))
-        
+
         for anchor in bill_page.findall('//a'):
             if (anchor.text_content().startswith('status of') or
                 anchor.text_content().startswith('Detailed Information (status)')):
@@ -247,10 +247,12 @@ class MTBillScraper(BillScraper):
 
         bill['subjects'] = subjects
 
+        self.add_fiscal_notes(status_page, bill)
+
         return bill
 
     def add_actions(self, bill, status_page):
-        
+
         for action in reversed(status_page.xpath('//div/form[3]/table[1]/tr')[1:]):
             try:
                 actor = actor_map[action.xpath("td[1]")[0].text_content().split(" ")[0]]
@@ -261,9 +263,6 @@ class MTBillScraper(BillScraper):
 
             action_name = action_name.replace("&nbsp", "")
             action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y')
-            action_votes_yes = action.xpath("td[3]")[0].text_content().replace("&nbsp", "")
-            action_votes_no = action.xpath("td[4]")[0].text_content().replace("&nbsp", "")
-            action_committee = action.xpath("td[5]")[0].text.replace("&nbsp", "")
             action_type = actions.categorize(action_name)
 
             bill.add_action(actor, action_name, action_date, action_type)
@@ -294,7 +293,7 @@ class MTBillScraper(BillScraper):
 
         count = itertools.count(1)
         xcount = itertools.chain([1], itertools.count(1))
-        type_, id_ = bill['bill_id'].split()        
+        type_, id_ = bill['bill_id'].split()
         version_urls = copy.copy(self.versions_dict[(type_, id_)])
         mimetype = 'application/pdf'
         version_strings = [
@@ -307,7 +306,7 @@ class MTBillScraper(BillScraper):
             return
 
         for i, a in enumerate(bill['actions']):
-            
+
             text = a['action']
             actions = bill['actions']
             if text in version_strings:
@@ -317,11 +316,13 @@ class MTBillScraper(BillScraper):
                 if 'Clerical Corrections' in text:
                     name += ' (clerical corrections made)'
                 try:
-                    url = version_urls.pop(str(count.next()))    
+                    url = version_urls.pop(str(count.next()))
                 except KeyError:
                     msg = "No url found for version: %r" % name
                     self.warning(msg)
                 else:
+                    if 'Introduced Bill' in text:
+                        name = 'Introduced'
                     bill.add_version(name, url, mimetype)
                     continue
 
@@ -358,17 +359,17 @@ class MTBillScraper(BillScraper):
                     vote_url = vote_url[0]
 
                     chamber = actor_map[chamber]
-                    vote = dict(chamber=chamber, date=date, 
-                                action=action, 
+                    vote = dict(chamber=chamber, date=date,
+                                action=action,
                                 sources=[{'url': vote_url}])
 
-                    # Update the vote object with voters..    
+                    # Update the vote object with voters..
                     vote = self._parse_votes(vote_url, vote)
                     if vote:
                         bill.add_vote(vote)
-                    
+
     def _parse_votes(self, url, vote):
-        '''Given a vote url and a vote object, extract the voters and 
+        '''Given a vote url and a vote object, extract the voters and
         the vote counts from the vote page and update the vote object.
         '''
         if url.lower().endswith('.pdf'):
@@ -378,6 +379,7 @@ class MTBillScraper(BillScraper):
             except HTTPError:
                 # This vote document wasn't found.
                 msg = 'No document found at url %r' % url
+                self.logger.warning(msg)
                 return
 
             try:
@@ -397,7 +399,7 @@ class MTBillScraper(BillScraper):
             vals = doc.xpath('//table')[1].xpath('tr/td/text()')
         except IndexError:
             # Most likely was a bogus link lacking vote data.
-            return 
+            return
 
         y, n, e, a = map(int, vals)
         vote.update(yes_count=y, no_count=n, other_count=e + a)
@@ -427,10 +429,9 @@ class MTBillScraper(BillScraper):
         # Existing code to deterimine value of `passed`
         yes_votes = vote['yes_votes']
         no_votes = vote['no_votes']
-        other_votes = vote['other_votes']
         passed = None
 
-        # some actions take a super majority, so we aren't just 
+        # some actions take a super majority, so we aren't just
         # comparing the yeas and nays here.
         for i in vote_passage_indicators:
             if action.count(i):
@@ -462,11 +463,21 @@ class MTBillScraper(BillScraper):
 
         return vote
 
+    def add_fiscal_notes(self, doc, bill):
+
+        for link in doc.xpath('//a[contains(text(), "Fiscal Note")]'):
+            bill.add_document(name=link.text_content().strip(),
+                              url=link.attrib['href'],
+                              mimetype='application/pdf')
+
+
 class PDFCommitteeVoteParseError(Exception):
     pass
 
+
 class PDFCommitteeVote404Error(PDFCommitteeVoteParseError):
     pass
+
 
 class PDFCommitteeVote(object):
 
@@ -508,7 +519,7 @@ class PDFCommitteeVote(object):
 
         months = '''january february march april may june july
             august september october november december'''.split()
-            
+
         text = iter(self.text.splitlines())
 
         line = text.next().strip()
@@ -523,7 +534,7 @@ class PDFCommitteeVote(object):
 
             if break_outer:
                 break
-                
+
             try:
                 line = text.next().strip()
             except StopIteration:
@@ -543,7 +554,7 @@ class PDFCommitteeVote(object):
             line = text.next()
             if 'VOTE TABULATION' in line:
                 break
-            
+
         line = text.next()
         _, motion = line.split(' - ')
         motion = motion.strip()
@@ -613,9 +624,3 @@ class PDFCommitteeVote(object):
             v[key] = getattr(self, key)()
         v.add_source(self.url)
         return v
-
-
-
-
-
-

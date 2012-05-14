@@ -61,6 +61,13 @@ class RIEventScraper(EventScraper):
             # XXX: Do something more advanced.
             return
 
+        transtable = {
+            "P.M." : "PM",
+            "A.M." : "AM"
+        }
+        for trans in transtable:
+            datetime = datetime.replace(trans, transtable[trans])
+
         datetime = dt.datetime.strptime(datetime, fmt)
 
         event = Event(session, datetime, 'committee:meeting',
