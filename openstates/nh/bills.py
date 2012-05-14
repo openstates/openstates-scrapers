@@ -129,7 +129,7 @@ class NHBillScraper(BillScraper):
                 continue
 
             (session_yr, lsr, _, timestamp, bill_id, body,
-             action) = line.split('|')
+             action, _) = line.split('|')
 
             if session_yr == session and lsr in self.bills:
                 actor = 'lower' if body == 'H' else 'upper'
