@@ -7,17 +7,20 @@
 
 {% block content %}
         <div class="fullWidth mainModule">
+
             <div class="eightCol colLt">
+
                 <div class="smModule">
                     <h2>{{state.name}} Bill {{bill.bill_id}}</h2>
                     <p>{{bill.title}}</p>
                 </div>
+
                 <div>
                     <h3>{{ vote.motion }}</h3>
                     <time datetime="" class="published" pubdate>{{ vote.date|date:"M j, Y"}}</time>
                 
                     <h4>Vote Breakdown</h4>
-                    <table>
+                    <!--<table>
                         <thead>
                             <tr><th>Vote</th><th>Total</th><th>Ratio</th></tr>
                         </thead>
@@ -26,20 +29,27 @@
                             <tr><td>No</td><td>{{ vote.no_count }}</td><td>{{ vote.no_ratio }}</td></tr>
                             <tr><td>Other</td><td>{{ vote.other_count }}</td><td>{{ vote.other_ratio }}</td></tr>
                         </tobdy>
-                    <table>
+                    <table>-->
+                    <p>The table will go here, but putting a table here royally breaks the positioning for some reason.</p>
                 </div>
+
             </div>
+
             <div class="fourCol colRt">
-                <div id="billState" class="passed">Passed</div>
+                <div id="billState" class="passed">{{vote.passed|yesno:"Passed,Failed,Unknown"}}</div>
                 <div id="voteMap" class="withBorder clear"></div>  
-            </div>
+            </div>  
+
             <div class="clear"></div>
+
         </div>
+
         <div class="module fullWidth clear">
             <h3>Full Roll Call</h3>
             <ul class="inlineThirds">
                 <li class="one">
                     <h4 class="h5">Yes Votes</h4>
+                    {% if vote.yes_count %}
                     <table class="normalTable">
                         <thead>
                             <tr id="titles">
@@ -50,17 +60,26 @@
                         </thead>
                         <tbody>
                             {% for legislator in vote.yes_vote_legislators %}
+                            {% if legislator %}
                             <tr class="{% cycle 'even' 'odd' %}">
-                                <td><a href="{% url 'legislator' abbr legislator.id %}">{{ legislator.full_name }}</a></td>
+                                {% if legislator.id %}
+                                <td><a href="{% url 'legislator' abbr legislator.id %}">{{ legislator.display_name }}</a></td>
+                                {% else %}
+                                <td>{{ legislator.display_name }}</td>
+                                {% endif %}
                                 <td>{{ legislator.district }}</td>
                                 <td>{{ legislator.party }}</td>
                             </tr>
-                            {% endfor %}
+                            {% endif %}{% endfor %}
                         </tbody>
                     </table>
+                    {% else %}
+                    None.
+                    {% endif %}
                 </li> 
                 <li class="two">
                     <h4 class="h5">No Votes</h4>
+                    {% if vote.no_count %}
                     <table>
                         <thead>
                             <tr id="titles">
@@ -70,18 +89,26 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for legislator in vote.no_vote_legislators %}
+                            {% for legislator in vote.no_vote_legislators %}{% if legislator %}
                             <tr class="{% cycle 'even' 'odd' %}">
-                                <td><a href="{% url 'legislator' abbr legislator.id %}">{{ legislator.full_name }}</a></td>
+                                {% if legislator.id %}
+                                <td><a href="{% url 'legislator' abbr legislator.id %}">{{ legislator.display_name }}</a></td>
+                                {% else %}
+                                <td>{{ legislator.display_name }}</td>
+                                {% endif %}
                                 <td>{{ legislator.district }}</td>
                                 <td>{{ legislator.party }}</td>
                             </tr>
-                            {% endfor %}
+                            {% endif %}{% endfor %}
                         </tbody>                    
                     </table>
+                    {% else %}
+                    None.
+                    {% endif %}
                 </li>   
                 <li class="three">
                     <h4 class="h5">Other</h4>
+                    {% if vote.other_count %}
                     <table>
                         <thead>
                             <tr id="titles">
@@ -91,15 +118,22 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for legislator in vote.other_vote_legislators %}
+                            {% for legislator in vote.other_vote_legislators %}{% if legislator %}
                             <tr class="{% cycle 'even' 'odd' %}">
-                                <td><a href="{% url 'legislator' abbr legislator.id %}">{{ legislator.full_name }}</a></td>
+                                {% if legislator.id %}
+                                <td><a href="{% url 'legislator' abbr legislator.id %}">{{ legislator.display_name }}</a></td>
+                                {% else %}
+                                <td>{{ legislator.display_name }}</td>
+                                {% endif %}
                                 <td>{{ legislator.district }}</td>
                                 <td>{{ legislator.party }}</td>
                             </tr>
-                            {% endfor %}
+                            {% endif %}{% endfor %}
                         </tbody>                    
                     </table>
+                    {% else %}
+                    None.
+                    {% endif %}
                 </li>
             </ul> 
             <div class="clear"></div>   

@@ -20,25 +20,29 @@ metadata = dict(
             'end_year': 2012,
             'sessions': ['2012']},
           ],
-    feature_flags=[ 'subjects', 'events' ],
+    feature_flags=['subjects', 'events'],
     session_details={'2012': {'start_date': datetime.date(2012, 1, 4),
-                              'type': 'primary'},
+                              'type': 'primary',
+                              'display_name': '2012 Regular Session'},
                     },
-    _ignored_scraped_sessions = ['2012', '2011', '2010', '2009', '2008', '2007']
+    _ignored_scraped_sessions=['2012', '2011', '2010', '2009', '2008',
+                                 '2007']
 )
+
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath( 'http://status.rilin.state.ri.us/bill_history.aspx?mode=previous',
-                     "//select[@name='ctl00$rilinContent$cbYear']/option/text()" )
+    return url_xpath('http://status.rilin.state.ri.us/bill_history.aspx?mode=previous',
+                     "//select[@name='ctl00$rilinContent$cbYear']/option/text()")
+
 
 @oyster_text
 def extract_text(oyster_doc, data):
     return text_after_line_numbers(pdfdata_to_text(data))
 
 document_class = dict(
-    AWS_PREFIX = 'documents/ri/',
-    update_mins = 24*7*60,
-    extract_text = extract_text,
-    onchanged = []
+    AWS_PREFIX='documents/ri/',
+    update_mins=24 * 7 * 60,
+    extract_text=extract_text,
+    onchanged=[]
 )
