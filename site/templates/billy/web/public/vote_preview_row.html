@@ -1,0 +1,17 @@
+                        <tr>
+                            <td>
+                                <time class="timeHeader" datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
+                                <a href="{% url vote abbr vote.bill.id vote.index %}">{{vote.bill.bill_id}}</a>
+                                <ul class="barChart">
+                                    <li class="yes">
+                                        <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
+                                        <span class="tagNumber">{{vote.yes_count}} Yes</span> 
+                                    </li> 
+                                    <li class="no clear">
+                                        <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
+                                        <span class="tagNumber">{{vote.no_count}} No</span>
+                                    </li>   
+                                </ul> 
+                            </td>
+                            <td class="right"><b>{{vote_value|title}}</b></td>
+                        </tr> 
