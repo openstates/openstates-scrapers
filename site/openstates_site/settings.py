@@ -33,14 +33,13 @@ TIME_FORMAT = 'H:i:s'
 DATETIME_FORMAT = 'Y-m-d H:i:s'
 
 STATIC_ROOT = 'collected_static'
-STATIC_URL = 'http://static.openstates.org/assets/v1/'
+STATIC_URL = '/media/'
 STATICFILES_DIRS = (
     os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'media')),
 )
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -50,7 +49,6 @@ SECRET_KEY = 'boh2w74##xm+*25ybdk6dmyj2$c)v%nl!sp7zlg$fp+e!q47#('
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
 )
 
 MIDDLEWARE_CLASSES = (
