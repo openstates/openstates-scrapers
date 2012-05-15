@@ -20,8 +20,9 @@ metadata = dict(
          'start_year': 2010, 'end_year': 2012},
         ],
     session_details={
-        '119': {'start_date': datetime.date(2010,11,17), 'type': 'primary',
+        '119': {'start_date': datetime.date(2010, 11, 17), 'type': 'primary',
                 '_scraped_name': '119 - (2011-2012)',
+                'display_name': '2011-2012 Regular Session'
                },
     },
     feature_flags=[],
