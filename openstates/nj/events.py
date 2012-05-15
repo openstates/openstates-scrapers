@@ -2,18 +2,52 @@ import datetime as dt
 from dbfpy import dbf
 import pytz
 import re
+from .utils import DBFMixin
 
 from billy.scrape.events import EventScraper, Event
 
 agenda_dbf = "ftp://www.njleg.state.nj.us/ag/2012data/AGENDAS.DBF"
 
-class NJEventScraper(EventScraper):
+class NJEventScraper(EventScraper, DBFMixin):
     state = 'nj'
     _tz = pytz.timezone('US/Eastern')
 
+    def initialize_committees(self, year_abr):
+        chamber = {'A':'Assembly', 'S': 'Senate', '':''}
+
+        com_url, com_db = self.get_dbf(year_abr, 'COMMITT')
+
+        self._committees = {}
+        # There are some IDs that are missing. I'm going to add them
+        # before we load the DBF, in case they include them, we'll just
+        # override with their data.
+        #
+        # This data is from:
+        # http://www.njleg.state.nj.us/media/archive_audio2.asp?KEY=<KEY>C&SESSION=2012
+        overlay = {
+            'A': 'Assembly on the Whole',
+            'S': 'Senate on the Whole',
+            'J': 'Joint Legislature on the Whole',
+            'ABUB': 'Assembly Budget Committee',
+            'JBOC': 'Joint Budget Oversight',
+            'JPS': 'Joint Committee on the Public Schools',
+            'LRC': 'New Jersey Law Revision Commission',
+            'PHBC': 'Pension and Health Benefits Review Commission',
+            'SBAB': 'Senate Budget and Appropriations Committee',
+            'SUTC': 'Sales and Use Tax Review Commission'
+        }
+        self._committees = overlay
+
+        for com in com_db:
+            # map XYZ -> "Assembly/Senate _________ Committee"
+            self._committees[com['CODE']] = ' '.join((chamber[com['HOUSE']],
+                                                      com['DESCRIPTIO'],
+                                                      'Committee'))
+
     def scrape(self, chamber, session):
-        name, resp = self.urlretrieve(agenda_dbf)
-        db = dbf.Dbf(name)
+        year_abr = ((int(session) - 209) * 2) + 2000
+        self.initialize_committees(year_abr)
+        url, db = self.get_dbf(year_abr, "AGENDAS")
         records = [ x.asDict() for x in db ]
         for record in records:
             if record['STATUS'] != "Scheduled":
@@ -51,6 +85,8 @@ class NJEventScraper(EventScraper):
                 }[record['COMMHOUSE'][0].lower()]
             except KeyError:
                 chamber = "joint"
+
+            print self._committees[record['COMMHOUSE']]
 
             event.add_participant("host", record['COMMHOUSE'],
                                   chamber=chamber)
