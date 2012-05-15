@@ -10,7 +10,7 @@ MONGO_HOST = os.environ.get('OPENSTATES_MONGO_HOST', 'localhost')
 MONGO_PORT = os.environ.get('OPENSTATES_MONGO_PORT', 27017)
 MONGO_DATABASE = os.environ.get('OPENSTATES_MONGO_DATABASE', 'fiftystates')
 
-ENABLE_OYSTER = True
+ENABLE_OYSTER = False
 
 try:
     from billy_local import *
