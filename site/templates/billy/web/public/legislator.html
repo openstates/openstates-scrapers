@@ -5,8 +5,6 @@
 
 {% block title %}{{legislator.full_name }}{% endblock %}
 
-{% block sidebar %}{% states_sidebar abbr %}{% endblock %}
-
 {% block content %}
         <div class="fullWidth mainModule">
             <div class="smModule">
@@ -35,7 +33,7 @@
                 <div class="clear"></div>
             </div>
             <div class="sixCol clear colLt withDash">
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce lacus nibh, rhoncus eu pulvinar sed, lobortis sit amet tellus. Nullam id mollis velit. Nullam sed fringilla nisl. Quisque nec eros leo, eget tempus sem. Nulla ut augue et lectus auctor molestie nec nec lacus. In purus ipsum, vestibulum consectetur consequat ut, sollicitudin in nisl. In hac habitasse platea dictumst. Suspendisse potenti.</p>
+                <p>{{legislator.bio_blurb}}</p>
             </div>    
             <div class="sixCol colRt">
                 <ul>
@@ -86,8 +84,8 @@
             <h3 class="moduleTitle">Media</h3>
             <div class="sevenCol colLt">
                 <h4>News and Blog Coverage</h4>
-                {% for entry in legislator.feed_entries %}{% include feed_entry_template %}{% endfor %}
-                <a class="viewMore" href="#">View More News</a>
+                {% for obj in legislator.feed_entries %}{% include feed_entry_template %}{% endfor %}
+                <a class="viewMore" href="{% url 'feeds_list' abbr 'legislators' legislator.id %}">View More News</a>
             </div>
             <div class="fiveCol colRt">
                 <h4>Twitter Mentions</h4>
@@ -155,83 +153,14 @@
                     </thead>
                     <tbody>
                         {% for vote_index, vote_value, vote in legislator_votes %}
-                        <tr>
-                            <td>
-                                <time class="timeHeader" datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
-                                <a href="{% url 'vote' abbr vote.bill.id vote_index %}">{{vote.bill.bill_id}}</a>
-                                <ul class="barChart">
-                                    <li class="yes">
-                                        <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                        <span class="tagNumber">{{vote.yes_count}} Yes</span> 
-                                    </li> 
-                                    <li class="no clear">
-                                        <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                                        <span class="tagNumber">{{vote.no_count}} No</span>
-                                    </li>   
-                                </ul> 
-                            </td>
-                            <td class="right"><b>{{vote_value|title}}</b></td>
-                        </tr> 
+                            {% include vote_preview_row_template %}
                         {% endfor %}
                     </tbody>    
                 </table>    
-                <a class="viewMore" href="#">View More Votes</a>
+                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">View More Votes</a>
                 {% endif %}
             </div>
             <div class="clear"></div>
         </div>
     </div>       
 {% endblock %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h1>{{ state.name }} {{ chamber_name }}</h1>
-<h2>{{ legislator.full_name }}</h2>
-{{ legislator.party }}, District {{ legislator.district }}
-
-<h3>Media</h3>
-Media stuff here.
-
-<h3>Committees</h3>
-<ul>
-{% for committee in legislator.committees %}
-  <li><a href="{% url 'committee' abbr committee.id %}">{{committee.committee}}</a></li>
-{% endfor %}
-</ul>
-
-<h3>Bills</h3>
-<ul>
-{% for bill in sponsored_bills %}
-  <li>
-    {{ bill.most_recent_action.date|date:"M j, Y"}}<br>
-    <a href="{% url 'bill' abbr bill.id %}">{{bill.id}}</a><br>
-    {{ bill.title }}
-  </li>
-{% endfor %}
-</ul>
-
-<h3>Votes</h3>
-<ul>
-{% for vote in legislator.votes %}
-  <li>
-
-  </li>
-{% endfor %}
-</ul>
-
-
-
-
-

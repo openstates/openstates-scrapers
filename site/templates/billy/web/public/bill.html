@@ -77,89 +77,11 @@
         <div class="fourCol colRt">
             <h3>Votes</h3>
             <ul class="largerList voteChart">
-                <li>
-                    <time class="timeHeader" datetime="" class="published" pubdate>Sept 12, 2011</time>
-                    <a href="#">HR 1234</a>
-                    <ul class="barChart">
-                        <li class="yes">
-                            <span class="tagValue" style="width:80%;">80%</span>
-                            <span class="tagNumber">30 Yes</span> 
-                        </li> 
-                        <li class="no clear">
-                            <span class="tagValue" style="width:20%;">20%</span>
-                            <span class="tagNumber">30 No</span> >
-                        </li>   
-                    </ul>
-                </li>
-                <li>
-                    <time class="timeHeader" datetime="" class="published" pubdate>Sept 12, 2011</time>
-                    <a href="#">HR 1234</a>
-                    <ul class="barChart">
-                        <li class="yes">
-                            <span class="tagValue" style="width:60%;">60%</span>
-                            <span class="tagNumber">30 Yes</span> 
-                        </li> 
-                        <li class="no clear">
-                            <span class="tagValue" style="width:80%;">80%</span>
-                            <span class="tagNumber">30 No</span> 
-                        </li>   
-                    </ul>
-                </li>
-                <li>
-                    <time class="timeHeader" datetime="" class="published" pubdate>Sept 12, 2011</time>
-                    <a href="#">HR 1234</a>
-                    <ul class="barChart">
-                        <li class="yes">
-                            <span class="tagValue" style="width:80%;">80%</span>
-                            <span class="tagNumber">30 Yes</span> 
-                        </li> 
-                        <li class="no clear">
-                            <span class="tagValue" style="width:50%;">50%</span>
-                            <span class="tagNumber">30 No</span> 
-                        </li>   
-                    </ul>
-                </li>
+                {% for vote in bill.votes_manager %}
+                    {% include vote_preview_row_template %}
+                {% endfor %}
             </ul>    
         </div>
         <div class="clear"></div>
 {% endblock %}
-
-
-
-<h1>{{ state.name }} {{ chamber_name }}</h1>
-<h2>{{ bill.bill_id }}</h2>
-<p>{{bill.title}}</p>
-
-<table width="15em">
-<tr><td><b>Session:</b></td><td>{{bill.session_details.display_name}}</td></tr>
-<tr><td><b>Chamber:</b></td><td>{{bill.chamber_name}}</td></tr>
-<tr><td><b>Sponsors:</b></td>
-  <td>
-    <ul>{% for sponsor in bill.sponsors %}
-      <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{sponsor.name}}</a>
-          {{ sponsor.type }} </li>
-    {% endfor %}</ul></td>
-</tr>
-
-</table>
-
-
-{% if bill.votes %}
-  <h3>Votes</h3>
-  <ul>
-  {% for vote in bill.votes %}
-    <li>
-    <a href="{% url 'vote' abbr bill.id forloop.counter0 %}">{{vote.motion}}</a> - {{vote.date|date:"M j Y"}}
-    <table>
-      <tr><td><b>Yes votes:</b></td><td>{{vote.yes_count}}</td></tr>
-      <tr><td><b>No votes:</b></td><td>{{vote.no_count}}</td></tr>
-      <tr><td><b>Other votes:</b></td><td>{{vote.other_count}}</td></tr>
-    </table>
-    </li>
-  {% endfor %}
-  </ul>
-{% endif %}
-
-
-
 

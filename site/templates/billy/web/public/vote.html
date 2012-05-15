@@ -51,7 +51,7 @@
                         <tbody>
                             {% for legislator in vote.yes_vote_legislators %}
                             <tr class="{% cycle 'even' 'odd' %}">
-                                <td><a href="{% url "legislator" abbr legislator.id %}">{{ legislator.full_name }}</a></td>
+                                <td><a href="{% url 'legislator' abbr legislator.id %}">{{ legislator.full_name }}</a></td>
                                 <td>{{ legislator.district }}</td>
                                 <td>{{ legislator.party }}</td>
                             </tr>
@@ -72,7 +72,7 @@
                         <tbody>
                             {% for legislator in vote.no_vote_legislators %}
                             <tr class="{% cycle 'even' 'odd' %}">
-                                <td><a href="{% url "legislator" abbr legislator.id %}">{{ legislator.full_name }}</a></td>
+                                <td><a href="{% url 'legislator' abbr legislator.id %}">{{ legislator.full_name }}</a></td>
                                 <td>{{ legislator.district }}</td>
                                 <td>{{ legislator.party }}</td>
                             </tr>
@@ -91,9 +91,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for legislator in vote.OTHER_vote_legislators %}
+                            {% for legislator in vote.other_vote_legislators %}
                             <tr class="{% cycle 'even' 'odd' %}">
-                                <td><a href="{% url "legislator" abbr legislator.id %}">{{ legislator.full_name }}</a></td>
+                                <td><a href="{% url 'legislator' abbr legislator.id %}">{{ legislator.full_name }}</a></td>
                                 <td>{{ legislator.district }}</td>
                                 <td>{{ legislator.party }}</td>
                             </tr>
@@ -105,4 +105,5 @@
             <div class="clear"></div>   
         </div>    
     </div> 
+
 {% endblock %}
