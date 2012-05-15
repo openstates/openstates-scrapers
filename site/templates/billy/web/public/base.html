@@ -15,7 +15,7 @@
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 </head>
-<body class="home">
+<body {% block bodyclass %}{% endblock %}>
     <header id="mainHeader">
         <form action="/search/" method="get" id="searchform">
             <input class="transparent" type="search" name="q" id="id_q" placeholder="search the site">
