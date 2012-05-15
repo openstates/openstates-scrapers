@@ -53,8 +53,9 @@ def session_list():
 @oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
-    print oyster_doc['url']
-    if oyster_doc['metadata']['mimetype'] == 'text/html':
+    is_html = (oyster_doc['metadata']['mimetype'] == 'text/html' or
+               oyster_doc['url'].endswith('.HTM'))
+    if is_html:
         content = doc.xpath('//div[@class="Section2"]')[0].text_content()
         content += doc.xpath('//div[@class="Section3"]')[0].text_content()
         return content
