@@ -6,7 +6,7 @@ urlpatterns = patterns('',
     (r'^api/locksmith/', include('locksmith.mongoauth.urls')),
     (r'^api/', include('billy.web.api.urls')),
     (r'^admin/', include('billy.web.admin.urls')),
-    (r'^public/', include('billy.web.public.urls')),    
+    (r'^', include('billy.web.public.urls')),
 
     # site-specific views
     (r'^downloads/$', 'openstates_site.views.downloads'),
