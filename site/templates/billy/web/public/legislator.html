@@ -8,7 +8,7 @@
 {% block content %}
         <div class="fullWidth mainModule">
             <div class="smModule">
-                <span class="tip sources">For more information on this legislator check out: <a href="#">influenceexplorer.com</a>, <a href="#">Project Vote Smart</a></span>
+                <span class="tip sources">For more information on this legislator check out: <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">influenceexplorer.com</a>, <a href="http://www.votesmart.org/bio.php?can_id={{legislator.votesmart_id}}">Project Vote Smart</a></span>
                 <div class="sevenCol colLt">
                     <img class="firstHalfModule" src="{{legislator.photo_url}}"/>
                     <div class="eights">
@@ -21,7 +21,13 @@
                             <dd class="tip tipSm">{{legislator.district}}</dd>
                         
                             <dt class="clear">Sessions Served:</dt>
-                            <dd><a class="withBorderLine" href="#">82nd</a><a href="#">82nd</a></dd>
+                            
+                            <dd>
+                            {% for session in legislator.sessions_served %}
+                            <a {% if not forloop.first %}class="withBorderLine" {% endif %}href="#">{{session}}</a>
+                            {% endfor %}
+                            </dd>
+                            
                         </dl>    
                     </div>
                 </div>  

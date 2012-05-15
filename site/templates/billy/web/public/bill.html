@@ -31,7 +31,7 @@
              
              <dl class="inlineList">
                 <dt class="contentBottom oneCol">Session:</dt>
-                <dd class="contentBottom customWidth">{{ bill.session }}</dd>
+                <dd class="contentBottom customWidth">{{ bill.session_details.display_name }}</dd>
                 
                 <dt class="contentBottom oneCol">Chamber:</dt>
                 <dd class="contentBottom">{{ bill.chamber }}</dd>
@@ -76,11 +76,15 @@
         </div>
         <div class="fourCol colRt">
             <h3>Votes</h3>
+            {% if bill.votes_manager.has_votes %}
             <ul class="largerList voteChart">
                 {% for vote in bill.votes_manager %}
                     {% include vote_preview_row_template %}
                 {% endfor %}
             </ul>    
+            {% else %}
+            This bill hasn't been voted on yet.
+            {% endif %}
         </div>
         <div class="clear"></div>
 {% endblock %}
