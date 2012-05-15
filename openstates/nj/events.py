@@ -86,9 +86,11 @@ class NJEventScraper(EventScraper, DBFMixin):
             except KeyError:
                 chamber = "joint"
 
-            print self._committees[record['COMMHOUSE']]
+            hr_name = self._committees[record['COMMHOUSE']]
 
-            event.add_participant("host", record['COMMHOUSE'],
+            event.add_participant("host",
+                                  hr_name,
+                                  committee_code=record['COMMHOUSE'],
                                   chamber=chamber)
             event.add_source(agenda_dbf)
             self.save_event(event)
