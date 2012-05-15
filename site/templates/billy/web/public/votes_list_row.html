@@ -1,0 +1,9 @@
+{% with vote=obj%}
+<td><a href="{% url bill vote.bill.metadata.abbreviation vote.bill.id %}"</a>{{vote.bill.bill_id}}</a></td>
+<td><a href="{% url vote abbr vote.bill.id vote.index %}">{{vote.date|date:"M j, Y"}}</a></td>
+<td>{{vote.passed|yesno:"passed,failed,unknown"}}</td>
+<td>{{vote.yes_count}}</td>
+<td>{{vote.no_count}}</td>
+<td>{{vote.other_count}}</td>
+<td>{{vote.motion}}</td>
+{% endwith %}
