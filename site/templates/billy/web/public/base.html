@@ -1,16 +1,17 @@
 {% load cache %}
 {% load sitebase %}
+{% load static from staticfiles %}
 <!doctype html>
 
 <html lang="en" class="no-js">
 <head>
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}/main.css" />
-    
-    <script type="text/javascript" src="{{STATIC_URL}}/js/jquery-1.5.1.min.js"></script>
-    <script type="text/javascript" src="{{STATIC_URL}}/js/jquery-placehold.min.js"></script>
-    <script type="text/javascript" src="{{STATIC_URL}}/js/sf.js"></script>
-    
+
+    <script type="text/javascript" src="{% static "js/jquery-1.5.1.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/jquery-placehold.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/sf.js" %}"></script>
+
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->

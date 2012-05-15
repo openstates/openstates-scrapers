@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static from staticfiles %}
 {% block body %}
     <div class="wrapper">
         <div class="header-shadow"></div>
@@ -8,7 +9,7 @@
                 <h1 id="logo">
                     <a href="/">OpenStates</a>
                 </h1>
-                <img class="arrow" src="{{STATIC_URL}}images/header_arrow.png" alt="Header Arrow" />
+                <img class="arrow" src="{% static "origsite/images/header_arrow.png" %}" alt="Header Arrow" />
                 <p class="intro">
                 We're gathering legislative data directly from the states and making it available in a common format through a <a href="/api/">RESTful API</a> and <a href="/downloads/">regular bulk downloads.</a>  Join our <a href="http://groups.google.com/group/fifty-state-project">Google Group</a> to get involved.  Now you can also get <a href="http://itunes.apple.com/app/open-states/id500672932?mt=8">Open States on your iPhone or iPad.</a>
                 </p>
@@ -51,7 +52,7 @@
                 </div>
                 <div class="clear">
                 </div>
-                <img src="{{STATIC_URL}}images/openstatesmap.png?50" id="map" alt="Open States Map" />
+                <img src="{% static "origsite/images/openstatesmap.png" %}?50" id="map" alt="Open States Map" />
             </div>
             <div class="main-right">
                 <div class="use">
@@ -63,16 +64,16 @@
                     </p>
                         <ul>
                             <li>
-                                <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /> <a href="/api/">Open States API</a>
+                            <img src="{% static "origsite/images/use_bullet.png" %}" alt="Use Bullet" /> <a href="/api/">Open States API</a>
                             </li>
                             <li>
-                                <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /> <a href="/downloads/">Bulk Downloads</a>
+                                <img src="{% static "origsite/images/use_bullet.png" %}" alt="Use Bullet" /> <a href="/downloads/">Bulk Downloads</a>
                             </li>
                             <li>
-                                    <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /> <a href="http://python-sunlight.readthedocs.org/">Python Client Library</a>
+                                <img src="{% static "origsite/images/use_bullet.png" %}" alt="Use Bullet" /> <a href="http://python-sunlight.readthedocs.org/">Python Client Library</a>
                             </li>
                             <li>
-                                <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /> <a href="https://github.com/sunlightlabs/openstates/issues">Issue Tracker</a>
+                                <img src="{% static "origsite/images/use_bullet.png" %}" alt="Use Bullet" /> <a href="https://github.com/sunlightlabs/openstates/issues">Issue Tracker</a>
                             </li>
                         </ul>
                 </div>
@@ -85,13 +86,13 @@
                     </p>
                         <ul>
                             <li>
-                                <img src="{{STATIC_URL}}images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="/contributing/">Contributor's Guide</a>
+                            <img src="{% static "origsite/images/contribute_bullet.png" %}" alt="Contribute Bullet" /> <a href="/contributing/">Contributor's Guide</a>
                             </li>
                             <li>
-                                <img src="{{STATIC_URL}}images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="http://github.com/sunlightlabs/openstates/">Code on GitHub</a>
+                            <img src="{% static "origsite/images/contribute_bullet.png" %}" alt="Contribute Bullet" /> <a href="http://github.com/sunlightlabs/openstates/">Code on GitHub</a>
                             </li>
                             <li>
-                                <img src="{{STATIC_URL}}images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="http://readthedocs.org/docs/billy/en/latest/scrapers.html">Writing Scrapers</a>
+                            <img src="{% static "origsite/images/contribute_bullet.png" %}" alt="Contribute Bullet" /> <a href="http://readthedocs.org/docs/billy/en/latest/scrapers.html">Writing Scrapers</a>
                             </li>
                         </ul>
                 </div>
@@ -101,7 +102,7 @@
         </div>
         <div id="join">
             <div id="join-borders">
-                <img id="sf-product" src="{{STATIC_URL}}images/sf_product_badge.png" alt="Sf Product Badge" />
+                <img id="sf-product" src="{% static "origsite/images/sf_product_badge.png" %}" alt="Sf Product Badge" />
                 <div class="join-left">
                         <h3>
                             Like this Project and Want to Discover Others Like It?
