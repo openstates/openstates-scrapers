@@ -8,9 +8,6 @@ urlpatterns = patterns('',
     (r'^admin/', include('billy.web.admin.urls')),
     (r'^', include('billy.web.public.urls')),
 
-    # site-specific views
-    (r'^downloads/$', 'openstates_site.views.downloads'),
-
     # flat pages
     (r'^$', 'django.views.generic.simple.direct_to_template',
      {'template':'index.html'}),
@@ -47,5 +44,5 @@ urlpatterns = patterns('',
 if settings.DEBUG:
     urlpatterns += patterns('',
         (r'^media/(?P<path>.*)$', 'django.views.static.serve',
-         {'document_root': settings.MEDIA_ROOT,
+         {'document_root': settings.STATIC_ROOT,
           'show_indexes': True}))
