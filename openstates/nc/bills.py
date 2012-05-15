@@ -164,14 +164,17 @@ class NCBillScraper(BillScraper):
 
             self.save_bill(bill)
 
-    def scrape(self, chamber, session):
+    def scrape(self, session, chambers):
+        if self.is_latest_session(session):
+            self.build_subject_map()
+        for chamber in chambers:
+            self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
         url = 'http://www.ncga.state.nc.us/gascripts/SimpleBillInquiry/'\
             'displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (
             session, chamber)
-
-        if self.is_latest_session(session):
-            self.build_subject_map()
 
         with self.urlopen(url) as data:
             doc = lxml.html.fromstring(data)

@@ -4,14 +4,10 @@ import scrapelib
 
 class NELegislatorScraper(LegislatorScraper):
     state = 'ne'
+    latest_only = True
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-
+    def scrape(self, term, chambers):
         base_url = 'http://news.legislature.ne.gov/dist'
-
-        if chamber == 'lower':
-            raise Exception('Nebraska is unicameral. Call again with upper')
 
         #there are 49 districts
         for district in range(1, 50):
@@ -31,7 +27,7 @@ class NELegislatorScraper(LegislatorScraper):
 
                 #Nebraska is offically nonpartisan
                 party = 'Nonpartisan'
-                leg = Legislator(term, chamber, str(district), full_name,
+                leg = Legislator(term, 'upper', str(district), full_name,
                                  party=party, email=email, phone=phone,
                                  url=rep_url)
                 leg.add_source(rep_url)

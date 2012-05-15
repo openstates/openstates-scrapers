@@ -22,14 +22,15 @@ class NCCommitteeScraper(CommitteeScraper):
                     committee.add_member(members.text_content(), mtype.text)
 
 
-    def scrape(self, chamber, term):
+    def scrape(self, term, chambers):
         base_url = 'http://www.ncga.state.nc.us/gascripts/Committees/Committees.asp?bPrintable=true&sAction=ViewCommitteeType&sActionDetails='
 
-        chambers = {'upper': ['Senate%20Standing', 'Senate%20Select'],
-                    'lower': ['House%20Standing', 'House%20Select']}
+        chamber_slugs = {'upper': ['Senate%20Standing', 'Senate%20Select'],
+                         'lower': ['House%20Standing', 'House%20Select']}
 
-        for ctype in chambers[chamber]:
-            with self.urlopen(base_url + ctype) as data:
+        for chamber in chambers:
+            for ctype in chamber_slugs[chamber]:
+                data = self.urlopen(base_url + ctype)
                 doc = lxml.html.fromstring(data)
                 doc.make_links_absolute(base_url+ctype)
                 for comm in doc.xpath('//ul/li/a'):
