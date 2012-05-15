@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static from staticfiles %}
 {% block body %}
     <div class="wrapper">
         <div class="header-shadow"></div>
@@ -9,7 +10,7 @@
                 OpenStates
                     </a>
                 </h1>
-                <img class="arrow" src="{{STATIC_URL}}images/header_arrow.png" alt="Header Arrow" />
+                <img class="arrow" src="{% static "origsite/images/header_arrow.png" %}" alt="Header Arrow" />
 
             </div>
             <div class="header-ribbon header-ribbon-all">
@@ -40,16 +41,16 @@
 
                         <ul>
                             <li>
-                                <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /><a href="/api/">Open States API</a>
+                            <img src="{% static "origsite/images/use_bullet.png" %}" alt="Use Bullet" /><a href="/api/">Open States API</a>
                             </li>
                             <li>
-                                <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /><a href="/downloads/">Bulk Downloads</a>
+                            <img src="{% static "origsite/images/use_bullet.png" %}" alt="Use Bullet" /><a href="/downloads/">Bulk Downloads</a>
                             </li>
                             <li>
-                                <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /> <a href="http://python-sunlight.readthedocs.org/">Python Client Library</a>
+                            <img src="{% static "origsite/images/use_bullet.png" %}" alt="Use Bullet" /> <a href="http://python-sunlight.readthedocs.org/">Python Client Library</a>
                             </li>
                             <li>
-                            <img src="{{STATIC_URL}}images/use_bullet.png" alt="Use Bullet" /><a href="http://github.com/sunlightlabs/openstates/issues">Issue Tracker</a>
+                            <img src="{% static "origsite/images/use_bullet.png" %}" alt="Use Bullet" /><a href="http://github.com/sunlightlabs/openstates/issues">Issue Tracker</a>
                             </li>
                         </ul>
                 </div>
@@ -60,18 +61,18 @@
 
                         <ul>
                             <li>
-                            <img src="{{STATIC_URL}}images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="/contributing/">Contributor's Guide</a>
+                            <img src="{% static "origsite/images/contribute_bullet.png" %}" alt="Contribute Bullet" /> <a href="/contributing/">Contributor's Guide</a>
                             </li>
                             <li>
-                                <img src="{{STATIC_URL}}images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="http://github.com/sunlightlabs/openstates/">Code on GitHub</a>
+                            <img src="{% static "origsite/images/contribute_bullet.png" %}" alt="Contribute Bullet" /> <a href="http://github.com/sunlightlabs/openstates/">Code on GitHub</a>
                             </li>
                             <li>
-                                <img src="{{STATIC_URL}}images/contribute_bullet.png" alt="Contribute Bullet" /> <a href="http://readthedocs.org/docs/billy/en/latest/scrapers.html">Writing Scrapers</a>
+                            <img src="{% static "origsite/images/contribute_bullet.png" %}"  alt="Contribute Bullet" /> <a href="http://readthedocs.org/docs/billy/en/latest/scrapers.html">Writing Scrapers</a>
                             </li>
                         </ul>
                 </div>
                 <div class="join-side">
-                    <img id="sf-product" src="{{STATIC_URL}}images/sf_product_badge.png" alt="Sf Product Badge" />
+                    <img id="sf-product" src="{% static "origsite/images/sf_product_badge.png" %}" alt="Sf Product Badge" />
 
                     <h3>
                         Like this Project and Want to Discover Others Like It?
