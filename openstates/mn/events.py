@@ -23,4 +23,20 @@ class MNEventScraper(EventScraper):
         page = self.lxmlize(url)
         meetings = page.xpath("//div[@class='Comm_item']")
         for meeting in meetings:
-            print meeting
+            metas = meeting.xpath(".//b")
+            ctty = meeting.xpath(".//a")[0]
+            ctty_name = ctty.text_content()
+            info = metas[1:]
+            datetime = metas[0]
+            metainf = {}
+            for meta in info:
+                header = meta.text_content().strip()
+                val = meta.tail
+                metainf[header] = val or ""
+            datetime = datetime.text_content()
+            # Tuesday, June 05, 2012 9:00 AM
+            datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
+            event = Event(chamber, datetime, 'committee:meeting',
+                          ctty_name, location=metainf['Room:'])
+            event.add_source(url)
+            self.save_event(event)
