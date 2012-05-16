@@ -39,4 +39,16 @@ class MNEventScraper(EventScraper):
             event = Event(chamber, datetime, 'committee:meeting',
                           ctty_name, location=metainf['Room:'])
             event.add_source(url)
+
+            chamber = "other"
+            chambers = {
+                "house": "lower",
+                "joint": "joint",
+                "senate": "upper",
+            }
+            for c in chambers:
+                if c in ctty_name.lower():
+                    chamber = chambers[c]
+
+            event.add_participant('host', ctty_name, chamber=chamber)
             self.save_event(event)
