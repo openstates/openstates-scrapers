@@ -1,0 +1,10 @@
+<form action="/chamber_select/{{chamber_select_collection}}" method="get" class="actionItem">
+    <ul class="floatedList">
+      {% for chamber in chamber_select_form.chamber %}
+      <li>{{chamber}}</li>
+      {% endfor %}
+      {{chamber_select_form.abbr}}
+      <input type="submit"/>
+    </ul>
+    <div class="clear"></div>
+</form>

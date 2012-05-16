@@ -5,16 +5,11 @@
 
 {% block content %}
         <div class="fullWidth">
-            <h2>{{ state.name }} {{ chamber_name }} Legislators</h2>
+            {{form.as_p}}
+            <h2>{{ metadata.name }} {{ chamber_name }} Legislators</h2>
             <div class="nineCol colLt">
                 <div class="horizontalFilter noSpace">
-                    <form class="actionItem" action="" method="">
-                        <ul class="floatedList">
-                            <li><label><input class="radio" type="radio" name="word" />House</label></li> 
-                            <li><label><input class="radio" type="radio" name="word" />Senate</label></li> 
-                        </ul>
-                        <div class="clear"></div>
-                    </form>
+                    {% include chamber_select_template %}
                 </div>
 {% include 'billy/web/public/legislator_table.html' %}
             </div>
