@@ -131,5 +131,5 @@ document_class = dict(
     AWS_PREFIX = 'documents/al/',
     update_mins = None,
     extract_text = extract_text,
-    onchanged = []
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
 )
