@@ -93,4 +93,17 @@ class MDEventScraper(EventScraper):
             event = Event(session, when, 'committee:meeting',
                           info['Subject'], location=where)
             event.add_source(url)
+
+            flags = {
+                "joint": "joint",
+                "house": "lower",
+                "senate": "upper"
+            }
+            chamber = "other"
+            for flag in flags:
+                if flag in ctty_name.lower():
+                    chamber = flags[flag]
+
+            event.add_participant("host", ctty_name, chamber=chamber)
+
             self.save_event(event)
