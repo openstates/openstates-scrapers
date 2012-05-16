@@ -58,7 +58,7 @@ metadata = dict(
             '_scraped_name': '87th Legislature, 2011 1st Special Session',
         },
     },
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'events'],
     _ignored_scraped_sessions=['85th Legislature, 2007-2008',
                                '85th Legislature, 2007 1st Special Session',
                                '84th Legislature, 2005-2006',

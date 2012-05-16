@@ -32,13 +32,11 @@
                 <li id="facebook"><a href="#">Facebook</a></li>
             </ul>    
         </div>    
-        <form action="/search/" method="get" id="mainFilter" class="clear">
-            <ul class="noSpace">
-              {% states_selection %}
-            </ul>
-            <div class="clear"></div>
-        </form>
 
+        {% states_selection %}
+
+        {# Some pages are state-agnostic and will need to omit this block (like the homepage). #}
+        {% block collection_nav %}
         <nav>
             <ul>
                 <li {% if statenav_active == "legislators" %}class="active"{% endif %}><a href="{% url legislators abbr %}">Legislators</a></li>
@@ -46,7 +44,8 @@
                 <li {% if statenav_active == "committees" %}class="active"{% endif %}><a href="{% url committees abbr %}">Committees</a></li>
             </ul> 
             <div class="clear"></div>
-        </nav>  
+        </nav>
+        {% endblock %}
     </header>
 
     <div id="container">

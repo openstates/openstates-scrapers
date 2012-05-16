@@ -1,0 +1,32 @@
+{% extends base_template %}
+{% load url from future %}
+
+{% load humanize %}
+{% load sitebase %}
+
+
+{% block title %}Pick a State{% endblock %}
+
+{% block collection_nav %}
+{% endblock %}
+
+{% block content %}
+
+<h2>You didn't pick a state...</h2>
+<h5>Let's make this a tad easier for you, shall we? Please pick one:</h5>
+<div class="module fullWidth clear">
+    <ul class="inlineThirds">
+    {% for column in columns %}
+        <li class="{{forloop.counter|apnumber}}">
+        <ul>
+        {% for state in column %}
+          <li><a href={% url 'state' state.id %}>{{ state.name }}</a></li>
+        {% endfor %}
+        </ul>
+    {% endfor %}
+    </ul>
+<div class="clear"></div>   
+</div> 
+
+{% endblock %}
+

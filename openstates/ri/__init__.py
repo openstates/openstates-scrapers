@@ -26,7 +26,7 @@ metadata = dict(
                               'display_name': '2012 Regular Session'},
                     },
     _ignored_scraped_sessions=['2012', '2011', '2010', '2009', '2008',
-                                 '2007']
+                               '2007']
 )
 
 
