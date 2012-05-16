@@ -1,4 +1,6 @@
 import datetime
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
 
 metadata = {
     'abbreviation': 'wi',
