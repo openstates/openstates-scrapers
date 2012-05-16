@@ -107,7 +107,7 @@ def session_list():
 @oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
-    divs_to_try = ['//div[@id="bill"]', '//div[@id="bill"]',]
+    divs_to_try = ['//div[@id="bill"]', '//div[@id="bill_all"]',]
     for xpath in divs_to_try:
         div = doc.xpath(xpath)
         if div:
