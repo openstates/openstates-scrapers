@@ -99,8 +99,16 @@ def session_list():
         "//select[@name='ctl00$PlaceHolderLeftNavBar$ctl01$ctl00$ddlPropSess']/option/text()" )
     return [session.strip() for session in sessions]
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    is_pdf = (oyster_doc['metadata']['mimetype'] == 'application/pdf' or
+              oyster_doc['url'].endswith('.pdf'))
+    if is_pdf:
+        return text_after_line_numbers(pdfdata_to_text(data))
+
 document_class = dict(
     AWS_PREFIX = 'documents/wi/',
     update_mins = 24*7*60,
+    extract_text = extract_text,
     onchanged = []
 )
