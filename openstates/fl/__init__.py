@@ -42,7 +42,7 @@ def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
     pre = doc.xpath('//pre')
     if pre:
-        text = pre[0].text_content()
+        text = pre[0].text_content().decode('ascii', 'replace')
         return text_after_line_numbers(text)
     else:
         return '\n'.join(x.text_content() for x in doc.xpath('//tr/td[2]'))
