@@ -1,0 +1,96 @@
+import datetime as dt
+
+from billy.scrape.events import Event, EventScraper
+
+import re
+import pytz
+import lxml.html
+
+def last_space(string):
+    # this is a big hack.
+    for x in range(0, len(string)):
+        if string[x] != " ":
+            return x
+    return None
+
+class MDEventScraper(EventScraper):
+    state = 'md'
+    _tz = pytz.timezone('US/Eastern')
+    def lxmlize(self, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+        return page
+
+    def scrape(self, chamber, session):
+        if chamber != 'other':
+            return None  # We're going to do it all on one shot.
+
+        url = "http://mlis.state.md.us/%sRS/hearsch/alladd.htm" % ( session )
+        page = self.lxmlize(url)
+        events = page.xpath("//pre")
+        for event in events:
+            ctty_name = [
+                x.strip() for x in
+                event.getparent().getprevious().text_content().split("-", 1)
+            ]
+            ctty_name = ctty_name[0]
+            event_text = event.text_content()
+            if "This meeting has been cancelled." in event_text:
+                continue
+            # OK. In order to process this text-only notice, we have to resort
+            # to some major hackage. Just roll with it.
+            lines = event_text.split("\n")
+            # In order to get the key stuff, we need to figure out where the
+            # address "block" starts.
+            address_block = last_space(lines[4])
+            assert address_block is not None
+            # OK. Given the offset, we can "split" the time off the date block.
+            time_room = lines[3]
+            time = time_room[:address_block].strip()
+
+            if "TBD" in time:
+                continue  # Nothing's set yet.
+            time = "%s %s" % (
+                lines[1],
+                time
+            )
+            time = re.sub("\s+", " ", time).strip()
+            trans = {
+                "P.M." : "PM",
+                "A.M." : "AM"
+            }
+            for transition in trans:
+                time = time.replace(transition, trans[transition])
+
+            when = dt.datetime.strptime(time, "%A %B %d, %Y %I:%M %p")
+
+            room = time_room[address_block:].strip()
+            place_block = lines[4:]
+            where = room + "\n"
+            done = False
+            offset = 4
+            for place in place_block:
+                if place.strip() == "":
+                    done = True
+                if done:
+                    continue
+                offset += 1
+                where += place.strip() + "\n"
+            where = where.strip()
+            # Now that the date's processed, we can move on.
+            moreinfo = lines[offset + 1:]
+            info = {}
+            key = "unattached_header"
+            for inf in moreinfo:
+                if ":" in inf:
+                    key, value = inf.split(":", 1)
+                    key = key.strip()
+                    info[key] = value.strip()
+                else:
+                    info[key] += " " + inf.strip()
+            # Alright. We should have enough now.
+            event = Event(session, when, 'committee:meeting',
+                          info['Subject'], location=where)
+            event.add_source(url)
+            self.save_event(event)
