@@ -90,8 +90,10 @@ class MDEventScraper(EventScraper):
                 else:
                     info[key] += " " + inf.strip()
             # Alright. We should have enough now.
+            subject = info['Subject']
+
             event = Event(session, when, 'committee:meeting',
-                          info['Subject'], location=where)
+                          subject, location=where)
             event.add_source(url)
 
             flags = {
@@ -103,6 +105,29 @@ class MDEventScraper(EventScraper):
             for flag in flags:
                 if flag in ctty_name.lower():
                     chamber = flags[flag]
+
+            # Let's try and hack out some bill names.
+            trans = {
+                "SENATE": "S",
+                "HOUSE": "H",
+                "JOINT": "J",
+                "BILL": "B",
+                "RESOLUTION": "R",
+            }
+            _t_subject = subject.upper()
+            for t in trans:
+                regex = "%s(\s+)?" % t
+                _t_subject = re.sub(regex, trans[t], _t_subject)
+            print _t_subject
+            bills = re.findall("(S|H)(J)?(B|R|M)\s*(\d{4})", _t_subject)
+            for bill in bills:
+                name = bill[:3]
+                bid = bill[3]
+                bill_id = "%s %s" % ( ''.join(name), bid )
+                event.add_related_bill(bill_id,
+                                       description=subject,
+                                       type='consideration')
+
 
             event.add_participant("host", ctty_name, chamber=chamber)
 
