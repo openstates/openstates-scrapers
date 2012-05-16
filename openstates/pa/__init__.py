@@ -81,7 +81,7 @@ def session_list():
 
 @oyster_text
 def extract_text(oyster_doc, data):
-    if oyster_doc['metadata']['mimetype'] == 'text/html':
+    if oyster_doc['metadata']['mimetype'] in (None, 'text/html'):
         doc = lxml.html.fromstring(data)
         text = ' '.join(x.text_content() for x in doc.xpath('//tr/td[2]'))
         return text
