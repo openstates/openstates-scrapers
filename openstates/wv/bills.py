@@ -3,8 +3,8 @@ import os
 import re
 import datetime
 import collections
-from urlparse import urlunparse, urlparse, parse_qsl
-from urllib import urlencode, quote, unquote_plus
+from urlparse import urlparse, parse_qsl
+from urllib import quote, unquote_plus
 
 import lxml.html
 
@@ -79,6 +79,7 @@ class WVBillScraper(BillScraper):
 
     def scrape_bill(self, session, chamber, bill_id, title, url,
                     strip_sponsors=re.compile(r'\s*\(.{,50}\)\s*').sub):
+
         html = self.urlopen(url)
 
         page = lxml.html.fromstring(html)
@@ -171,7 +172,6 @@ class WVBillScraper(BillScraper):
             bill.add_action(actor, action, date, type=atype)
 
         self.save_bill(bill)
-
 
     def scrape_vote(self, bill, url):
         try:
@@ -279,7 +279,6 @@ class WVBillScraper(BillScraper):
             html = self.urlopen(url)
             filenames = [split(x, 3)[-1] for x in html.splitlines()]
             filenames = filter(matchwpd, filenames)
-
             for fn in filenames:
                 fn, ext = splitext(fn)
                 if ' ' in fn:
@@ -301,12 +300,12 @@ class WVBillScraper(BillScraper):
         '''
         for link in page.xpath("//a[starts-with(@title, 'HTML -')]"):
             # split name out of HTML - Introduced Version - SB 1
-            name = link.get('title').split(' - ')[1]
+            name = link.getprevious().tail.strip(' -\r\n')
             yield {'name': name, 'url': link.get('href'),
                    'mimetype': 'text/html'}
 
         for link in page.xpath("//a[contains(@title, 'WordPerfect')]"):
-            name = get_name(link.get('title')).group(1)
+            name = link.getprevious().getprevious().tail.strip('\r\n -')
             yield {'name': name, 'url': link.get('href'),
                    'mimetype': 'application/wordperfect'}
 
