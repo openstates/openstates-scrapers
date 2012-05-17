@@ -73,6 +73,17 @@ class COLegislatorScraper(LegislatorScraper):
                 obj['email'] = email
             except IndexError:
                 pass
+            infoblock = page.xpath("//center")
+            info = infoblock[0].text_content()
+            number = re.findall("(\d{3})(-|\))?(\d{3})-(\d{4})", info)
+            if len(number) > 0:
+                number = number[0]
+                number = "%s %s %s" % (
+                    number[0],
+                    number[2],
+                    number[3]
+                )
+                obj['number'] = number
             ctty_apptmts = page.xpath('//ul/li/b/a')
             for ctty in ctty_apptmts:
                 cttyid = clean_input(ctty.text)
@@ -84,7 +95,6 @@ class COLegislatorScraper(LegislatorScraper):
             "ctty"  : ret,
             "photo" : image
         })
-        self.log(obj)
         return obj
 
     def process_person( self, p_url ):
@@ -121,6 +131,8 @@ class COLegislatorScraper(LegislatorScraper):
                 ret['photo_url'] = homepage['photo']
                 if "email" in homepage:
                     ret['email'] = homepage['email']
+                if "number" in homepage:
+                    ret['number'] = homepage['number']
 
             ret['party'] = self.normalize_party(party_id)
             ret['name']  = person_name
@@ -144,6 +156,8 @@ class COLegislatorScraper(LegislatorScraper):
                 url=metainf['homepage'])
             if "email" in metainf:
                 p['email'] = metainf['email']
+            if "number" in metainf:
+                p['phone'] = metainf['number']
 
             p.add_source( p_url )
 
