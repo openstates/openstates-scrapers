@@ -1,0 +1,9 @@
+        <div class="clear"></div>
+        <div id="sources">
+            <h2>Sources</h2>
+            <ul>
+            {% for source in sources %}
+            <li>{{ source.url|urlize }}</a></li>
+            {% endfor %}
+            </ul>
+        </div>
