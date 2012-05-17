@@ -40,8 +40,12 @@ def session_list():
 @oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
-    text = doc.xpath('//pre')[0].text_content().encode('ascii', 'ignore')
-    return text_after_line_numbers(text)
+    pre = doc.xpath('//pre')
+    if pre:
+        text = pre[0].text_content().encode('ascii', 'replace')
+        return text_after_line_numbers(text)
+    else:
+        return '\n'.join(x.text_content() for x in doc.xpath('//tr/td[2]'))
 
 document_class = dict(
     AWS_PREFIX = 'documents/fl/',

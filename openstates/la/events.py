@@ -56,7 +56,11 @@ class LAEventScraper(EventScraper):
             page.make_links_absolute(url)
 
             for link in page.xpath("//img[@alt = 'See Agenda in pdf']/.."):
-                guid = link.attrib['href']
+                try:
+                    guid = link.attrib['href']
+                except KeyError:
+                    continue  # Sometimes we have a dead link. This is only on
+                    # dead entries.
 
                 committee = link.xpath("string(../../../td[1])").strip()
 

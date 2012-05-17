@@ -107,7 +107,11 @@ def session_list():
 @oyster_text
 def extract_text(oyster_doc, data):
     doc = lxml.html.fromstring(data)
-    return doc.xpath('//div[@id="bill"]')[0].text_content()
+    divs_to_try = ['//div[@id="bill"]', '//div[@id="bill_all"]',]
+    for xpath in divs_to_try:
+        div = doc.xpath(xpath)
+        if div:
+            return div[0].text_content()
 
 document_class = dict(
     AWS_PREFIX = 'documents/ca/',

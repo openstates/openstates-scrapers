@@ -41,6 +41,9 @@ class MIEventScraper(EventScraper):
             metainf['Date']['txt'],
             metainf['Time']['txt']
         )
+        if "Cancelled" in datetime:
+            return
+
         datetime = dt.datetime.strptime(datetime, "%A, %m/%d/%Y %I:%M %p")
         where = metainf['Location']['txt']
         title = metainf['Committee']['txt']  # XXX: Find a better title

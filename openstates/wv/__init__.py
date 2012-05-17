@@ -1,3 +1,6 @@
+from billy.fulltext import oyster_text
+import lxml.html
+
 metadata = {
     'abbreviation': 'wv',
     'name': 'West Virginia',
@@ -35,8 +38,17 @@ def session_list():
     return url_xpath('http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm',
                      '//select[@name="year"]/option/text()')
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    if (oyster_doc['metadata']['mimetype'] == 'text/html' or 
+        'bills_text.cfm' in oyster_doc['url']):
+        doc = lxml.html.fromstring(data)
+        return '\n'.join(p.text_content() for p in
+                         doc.xpath('//div[@id="bhistcontent"]/p'))
+
 document_class = dict(
     AWS_PREFIX = 'documents/wv/',
     update_mins = None,
+    extract_text = extract_text,
     onchanged = []
 )
