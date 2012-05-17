@@ -1,6 +1,6 @@
 {% extends base_template %}
 {% load url from future %}
-{% load sitebase %}
+{% load customtags %}
 
 
 {% block title %}Vote on {{ vote.bill.bill_id }}{% endblock %}
@@ -11,7 +11,7 @@
             <div class="eightCol colLt">
 
                 <div class="smModule">
-                    <h2>{{state.name}} Bill {{bill.bill_id}}</h2>
+                    <h2>{{state.name}} {{bill.type_string|title}} <a href={% url "bill" abbr bill.id %}>{{bill.bill_id}}</a></h2>
                     <p>{{bill.title}}</p>
                 </div>
 
@@ -30,7 +30,7 @@
                             <tr><td>Other</td><td>{{ vote.other_count }}</td><td>{{ vote.other_ratio }}</td></tr>
                         </tobdy>
                     <table>-->
-                    <p>The table will go here, but putting a table here royally breaks the positioning for some reason.</p>
+                    <p>The table will go here, but putting a table here currently breaks the positioning for some reason.</p>
                 </div>
 
             </div>
@@ -136,6 +136,11 @@
                     {% endif %}
                 </li>
             </ul> 
+            {% if vote.sources %}
+                {% sources vote %}
+            {% else %}
+                {% sources vote.bill %}
+            {% endif %}
             <div class="clear"></div>   
         </div>    
     </div> 
