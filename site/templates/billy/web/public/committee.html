@@ -1,11 +1,9 @@
 {% extends base_template %}
 {% load url from future %}
-{% load sitebase %}
+{% load customtags %}
 
 
 {% block title %}{{committee.committee }}{% endblock %}
-
-{% block sidebar %}{% states_sidebar abbr %}{% endblock %}
 
 {% block content %}
 <h1>{{ state.name }} {{ chamber_name }}</h1>
@@ -14,16 +12,16 @@
 
 <table>
   <tr>
-    <th><a href="?key=last_name&order={{ sort_order }}">Name</th>
+    <th>Name</th>
     <!--<th>Photo</th>-->
-    <th><a href="?key=title&order={{ sort_order }}">District</th>
-    <th><a href="?key=district&order={{ sort_order }}">District</th>
-    <th><a href="?key=party&order={{ sort_order }}">Party</th>
+    <th>Role</th>
+    <th>District</th>
+    <th>Party</th>
   </tr>
-  {% for obj in committee.members_objects %}
+  {% for obj, legislator in committee.members_objects %}
   <tr>
-  	{% if obj.leg_id %}
-      <td><a href={% url 'legislator' abbr obj.leg_id %}>{{ obj.name }}</a></td>
+  	{% if legislator %}
+      <td><a href={% url 'legislator' abbr legislator.id %}>{{ legislator.display_name }}</a></td>
     {% else %}
       <td>{{ obj.name }}</td>
     {% endif %}  
@@ -31,11 +29,9 @@
     <td>{{ obj.role }}</td>
     
 
-    {% if obj.leg_id %}
-        {% with legislator=obj.legislator_object %}
+    {% if legislator %}
           <td>{{ legislator.district }}</td>
           <td>{{ legislator.party }}</td>
-        {% endwith %}
     {% else %}
         <td>Not available</td>
         <td>Not available</td>
@@ -44,6 +40,7 @@
   {% endfor %}
 </table>	
 
+{% sources committee %}
 
 {% endblock %}
 

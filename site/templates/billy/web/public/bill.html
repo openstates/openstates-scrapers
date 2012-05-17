@@ -1,6 +1,6 @@
 {% extends base_template %}
 {% load url from future %}
-{% load sitebase %}
+{% load customtags %}
 
 
 {% block title %}{{bill.bill_id }}{% endblock %}
@@ -26,21 +26,34 @@
                     <span class="textReplace" id="stage5">Bill Becomes Law</span>
                 </li>  
             </ol>      
-            <h2 class="withTimeline">{{ abbr|upper }} Bill: {{ bill.bill_id }}</h2>
+            <h2 class="withTimeline">{{ metadata.name }} {{bill.type_string|title}} {{ bill.bill_id }}</h2>
+             <a href="/admin/object_json/bills/{{bill.id}}/">json</a>
              <p class="smModule">{{ bill.title }}</p>
-             
              <dl class="inlineList">
+                {% if bill.subjects %}
+                <dt class="contentBottom oneCol">Subjects:</dt>
+                <dd class="contentBottom customWidth">
+                    {% for subject in bill.subjects %}
+                        <a href="{% url 'bills_by_subject' abbr subject %}">{{subject}}</a>
+                    {% endfor %}
+                </dd>
+                {% endif %}
                 <dt class="contentBottom oneCol">Session:</dt>
                 <dd class="contentBottom customWidth">{{ bill.session_details.display_name }}</dd>
                 
                 <dt class="contentBottom oneCol">Chamber:</dt>
                 <dd class="contentBottom">{{ bill.chamber }}</dd>
-                
+
                 <dt class="clear contentBottom">Sponsors ({{ bill.sponsors|length }}):</dt>
                 <dd>
                     <ul class="inlineThirds_module moduleNoBorder">
                     {% for sponsor in bill.sponsors_manager.first_five %}
-                        <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{ sponsor.name }}</a> ({{ sponsor.legislator.party }}) {{ sponsor.legislator.district }} <span class="tip sideNote">{{ sponsor.type }}</span></li>
+                        {% if sponsor.leg_id %}
+                            <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{ sponsor.name }}</a> ({{ sponsor.legislator.party }}) {{ sponsor.legislator.district }}
+                        {% else %}
+                            {# Object had no leg_id. Might be a committee. #}
+                            {{ sponsor.name }}
+                        {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
                     {% endfor %}
                     {% if remainder %}
                     <li><a class="viewMore" href="#">View {{ bill.sponsors_manager.first_five_remainder }} others</a></li>
@@ -51,6 +64,16 @@
              </dl>
              <div class="clear"></div>
         </div>
+        {% if bill.versions %}
+        <div class="fullWidth mainModule">
+            <h3>Versions</h3>
+            {% for version in bill.versions %}
+                {{ version.name }}
+                {% if "+mimetype" in version %}[{{ version|plusfield:"mimetype"}}]{% endif %}
+                {{version.url|urlize}}
+            {% endfor %}
+        </div>
+        {% endif %}
         <div class="eightCol colLt">
             <h3>Recent Actions</h3>
             <table class="normalTable">
@@ -86,6 +109,7 @@
             This bill hasn't been voted on yet.
             {% endif %}
         </div>
+        {% sources bill %}
         <div class="clear"></div>
 {% endblock %}
 

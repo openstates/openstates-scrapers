@@ -1,6 +1,6 @@
 {% extends base_template %}
 {% load url from future %}
-{% load sitebase %}
+{% load customtags %}
 
 
 {% block title %}{{legislator.full_name }}{% endblock %}
@@ -166,6 +166,7 @@
                 <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">View More Votes</a>
                 {% endif %}
             </div>
+            {% sources legislator %}
             <div class="clear"></div>
         </div>
     </div>       
