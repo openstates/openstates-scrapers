@@ -40,7 +40,8 @@ def session_list():
 
 @oyster_text
 def extract_text(oyster_doc, data):
-    if oyster_doc['metadata']['mimetype'] == 'text/html':
+    if (oyster_doc['metadata']['mimetype'] == 'text/html' or 
+        'bills_text.cfm' in oyster_doc['url']):
         doc = lxml.html.fromstring(data)
         return '\n'.join(p.text_content() for p in
                          doc.xpath('//div[@id="bhistcontent"]/p'))
