@@ -51,4 +51,6 @@ class MNEventScraper(EventScraper):
                     chamber = chambers[c]
 
             event.add_participant('host', ctty_name, chamber=chamber)
+            # add chair?
+
             self.save_event(event)
