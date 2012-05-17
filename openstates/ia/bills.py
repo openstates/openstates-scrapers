@@ -111,8 +111,13 @@ class IABillScraper(BillScraper):
         vpieces = sidebar.xpath('//a[contains(string(.), "HTML")]/@href')
         if vpieces:
             version_base, version_type, version_end = vpieces[0].rsplit('/', 2)
-            for option in sidebar.xpath("//select[@name='BVer']/option"):
-                version_name = option.text.strip()
+            versions = [o.strip() for o in
+                        sidebar.xpath("//select[@name='BVer']/option/text()")]
+            # if there are no options, put version_type in one
+            if not versions:
+                options = [version_type]
+
+            for version_name in versions:
                 version_url = '/'.join((version_base, version_name,
                                         version_end))
                 bill.add_version(version_name, version_url)
