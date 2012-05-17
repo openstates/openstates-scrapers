@@ -107,17 +107,12 @@ class IABillScraper(BillScraper):
         bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(hist_url)
 
+        # get pieces of version_link
+        version_base, version_type, version_end = sidebar.xpath('//a[contains(string(.), "HTML")]/@href')[0].rsplit('/', 2)
         for option in sidebar.xpath("//select[@name='BVer']/option"):
             version_name = option.text.strip()
-            if option.get('selected'):
-                version_url = re.sub(r'frm=2', 'frm=1', url)
-            else:
-                version_url = option.attrib['value']
+            version_url = '/'.join((version_base, version_name, version_end))
             bill.add_version(version_name, version_url)
-
-        if not bill['versions']:
-            version_url = re.sub(r'frm=2', 'frm=3', url)
-            bill.add_version('Introduced', version_url)
 
         sponsors = page.xpath("string(//table[2]/tr[3])").strip()
         sponsor_re = r'[\w-]+(?:, [A-Z]\.)?(?:,|(?: and)|\.$)'
