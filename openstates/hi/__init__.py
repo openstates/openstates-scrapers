@@ -52,7 +52,7 @@ def session_list():
 
 @oyster_text
 def extract_text(oyster_doc, data):
-    if oyster_doc['metadata']['mimetype'] == 'text/pdf':
+    if oyster_doc['metadata']['mimetype'] == 'application/pdf':
         return text_after_line_numbers(pdfdata_to_text(data))
 
 document_class = dict(
