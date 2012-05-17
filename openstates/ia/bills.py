@@ -115,7 +115,7 @@ class IABillScraper(BillScraper):
                         sidebar.xpath("//select[@name='BVer']/option/text()")]
             # if there are no options, put version_type in one
             if not versions:
-                options = [version_type]
+                versions = [version_type]
 
             for version_name in versions:
                 version_url = '/'.join((version_base, version_name,
