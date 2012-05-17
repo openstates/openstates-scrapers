@@ -1,5 +1,4 @@
-{% load cache %}
-{% load sitebase %}
+{% load customtags %}
 {% load static from staticfiles %}
 <!doctype html>
 
@@ -33,7 +32,7 @@
             </ul>    
         </div>    
 
-        {% states_selection %}
+        {% state_select_form %}
 
         {# Some pages are state-agnostic and will need to omit this block (like the homepage). #}
         {% block collection_nav %}
