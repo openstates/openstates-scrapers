@@ -1,21 +1,27 @@
 {% load url from future %}
 <table>
   <tr>
-    <th><a href="?key=committee&order={{ sort_order }}">Name</th>
+    <th><a href="?key=committee&order={{ sort_order }}&chamber={{chamber}}">Name</th>
     <th>Members</th>
+    {% if show_chamber_column %}
+    <th><a href="?key=chamber&order={{ sort_order }}&chamber={{chamber}}">Chamber</th>
+    {% endif %}
   </tr>
   {% for committee in committees %}
-  <tr>
+  <tr class="{% cycle odd,even %}">
     <td><a href={% url 'committee' abbr committee.id %}>{{ committee.display_name }}</td>
     <td>
       {% if not committee.members %}
         [data not yet available]
       {% else %}
-        {% for legislator in committee.members_objects|dictsort:"name" %}
+        {% for legislator in committee.members|dictsort:"name" %}
           <a href="{% url 'legislator' abbr legislator.leg_id %}">{{ legislator.name }}</a>{% if not forloop.last %}; {% endif %}
         {% endfor %}
       {% endif %}
     </td>
+    {% if show_chamber_column %}
+    <td>{{ committee.chamber_name }}</td>
+    {% endif %}
   </tr>
   {% endfor %}
 </table>	
