@@ -62,9 +62,17 @@ class COLegislatorScraper(LegislatorScraper):
     def parse_homepage( self, hp_url ):
         image_base = "http://www.state.co.us/gov_dir/leg_dir/senate/members/"
         ret = []
+        obj = {}
         image = ""
         with self.urlopen(hp_url) as html:
             page = lxml.html.fromstring(html)
+            try:
+                email = page.xpath("//a[contains(@href, 'mailto')]")[0]
+                email = email.attrib['href']
+                email = email.split(":", 1)[1]
+                obj['email'] = email
+            except IndexError:
+                pass
             ctty_apptmts = page.xpath('//ul/li/b/a')
             for ctty in ctty_apptmts:
                 cttyid = clean_input(ctty.text)
@@ -72,10 +80,12 @@ class COLegislatorScraper(LegislatorScraper):
                   cttyid not in CTTY_BLACKLIST:
                     ret.append(cttyid)
             image = hp_url[:-3] + "jpg"
-        return {
+        obj.update({
             "ctty"  : ret,
             "photo" : image
-        }
+        })
+        self.log(obj)
+        return obj
 
     def process_person( self, p_url ):
         ret = { "homepage" : p_url }
@@ -109,6 +119,8 @@ class COLegislatorScraper(LegislatorScraper):
 
                 ret['ctty'] = homepage['ctty']
                 ret['photo_url'] = homepage['photo']
+                if "email" in homepage:
+                    ret['email'] = homepage['email']
 
             ret['party'] = self.normalize_party(party_id)
             ret['name']  = person_name
@@ -130,6 +142,9 @@ class COLegislatorScraper(LegislatorScraper):
                 occupation=metainf['occupation'],
                 photo_url=metainf['photo_url'],
                 url=metainf['homepage'])
+            if "email" in metainf:
+                p['email'] = metainf['email']
+
             p.add_source( p_url )
 
             if 'ctty' in metainf:
