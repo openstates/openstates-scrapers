@@ -25,7 +25,10 @@ class TXEventScraper(EventScraper):
 
     def scrape_event_page(self, session, chamber, url):
         page = self.lxmlize(url)
-        print page
+        info = page.xpath("//p")
+        for p in info:
+            content = re.sub("\s+", " ", p.text_content())
+            print content
 
     def scrape_page(self, session, chamber, url):
         try:
@@ -37,6 +40,7 @@ class TXEventScraper(EventScraper):
             pass  # lxml.etree.XMLSyntaxError: line 248: htmlParseEntityRef: expecting ';'
             # XXX: Please fix this, future hacker. I think this might be a problem
             # with lxml -- due diligence on this is needed.
+            #                                              -- PRT
 
     def scrape_committee_upcoming(self, session, chamber):
         chid = {'upper': 'S',
