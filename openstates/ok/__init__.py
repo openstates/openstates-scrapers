@@ -57,7 +57,6 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    import pdb;pdb.set_trace()
     return url_xpath('http://webserver1.lsb.state.ok.us/WebApplication2/WebForm1.aspx',
         "//select[@name='cbxSession']/option/text()")
 
