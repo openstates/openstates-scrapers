@@ -16,7 +16,7 @@ metadata = dict(
         {'name': '2011-2012',
          'start_year': 2011,
          'end_year': 2012,
-         'sessions': ['2011-2012']}
+         'sessions': ['2011-2012', '2012_ss']}
         ],
     session_details={
         # On the Oklahoma website they list 2011/2012 as separate sessions, but
@@ -28,6 +28,11 @@ metadata = dict(
              'session_id': '1200',
              '_scraped_name': '2012 Regular Session'
             },
+        '2012_ss':
+            {'display_name': '2012 Special Session',
+             '_scraped_name': '2012 Special Session'
+            },
+
     },
     feature_flags=['subjects'],
     _ignored_scraped_sessions=[
@@ -52,6 +57,7 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
+    import pdb;pdb.set_trace()
     return url_xpath('http://webserver1.lsb.state.ok.us/WebApplication2/WebForm1.aspx',
         "//select[@name='cbxSession']/option/text()")
 
