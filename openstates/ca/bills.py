@@ -74,7 +74,6 @@ class CABillScraper(BillScraper):
             session_year=session).filter_by(
             measure_type=type_abbr)
 
-
         for bill in bills:
             bill_session = session
             if bill.session_num != '0':
@@ -84,12 +83,12 @@ class CABillScraper(BillScraper):
 
             fsbill = Bill(bill_session, chamber, bill_id, '')
 
-            # Construct session for web query, going from '20092010' to '0910'
-            source_session = session[2:4] + session[6:8]
+            # # Construct session for web query, going from '20092010' to '0910'
+            # source_session = session[2:4] + session[6:8]
 
-            # Turn 'AB 10' into 'ab_10'
-            source_num = "%s_%s" % (bill.measure_type.lower(),
-                                    bill.measure_num)
+            # # Turn 'AB 10' into 'ab_10'
+            # source_num = "%s_%s" % (bill.measure_type.lower(),
+            #                         bill.measure_num)
 
             # Construct a fake source url
             source_url = ('http://leginfo.legislature.ca.gov/faces/'
@@ -103,7 +102,6 @@ class CABillScraper(BillScraper):
             type = ['bill']
             subject = ''
             all_titles = set()
-            i = 0
             for version in bill.versions:
                 if not version.bill_xml:
                     continue
@@ -183,7 +181,13 @@ class CABillScraper(BillScraper):
                 if 'To Com' in act_str or 'referred to' in act_str.lower():
                     type.append('committee:referred')
 
-                if 'Read third time.  Passed.' in act_str:
+                if 'Read third time.  Passed' in act_str:
+                    type.append('bill:passed')
+
+                if 'Read third time, passed' in act_str:
+                    type.append('bill:passed')
+
+                if re.search(r'Read third time.+?Passed and', act_str):
                     type.append('bill:passed')
 
                 if 'Approved by Governor' in act_str:
