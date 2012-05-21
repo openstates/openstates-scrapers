@@ -12,8 +12,8 @@ urls = {
     "lower": "http://www.ilga.gov/house/schedules/weeklyhearings.asp"
 }
 
-class MNEventScraper(EventScraper):
-    state = 'mn'
+class ILEventScraper(EventScraper):
+    state = 'il'
     _tz = pytz.timezone('US/Eastern')
     def lxmlize(self, url):
         with self.urlopen(url) as page:
