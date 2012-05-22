@@ -44,6 +44,11 @@ class MIEventScraper(EventScraper):
         if "Cancelled" in datetime:
             return
 
+        flag = "or after committees are given leave"
+
+        if flag in datetime:
+            datetime = datetime[:datetime.find(flag)].strip()
+
         datetime = dt.datetime.strptime(datetime, "%A, %m/%d/%Y %I:%M %p")
         where = metainf['Location']['txt']
         title = metainf['Committee']['txt']  # XXX: Find a better title
