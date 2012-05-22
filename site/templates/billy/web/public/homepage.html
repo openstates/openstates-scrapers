@@ -12,7 +12,9 @@
     <div id="container">
         <div class="eightCol">
             <p class="callOut">Discover politics in your state. Find everything from legislator to bills that might be arising.</p>
-            <p class="tip">Open States is working furiously to get information on every state. For the time being the states available are <a href="">California</a>, <a href="">Louisana</a>, <a href="">Texas</a>, <a href="">Wisconsin</a>, <a href="">Maryland</a> and <a href="">Minnesota</a></p>
+            <p class="tip">Open States is working furiously to get information on every state. For the time being the states available are 
+            {% for metadata in active_states%}{% if forloop.first %}{% else %},{% endif %}<a href="{% url 'state' metadata.abbreviation %}"> {{metadata.name}}</a>{% endfor %}
+            </p>
             
             <h5 id="notifyTitle" class="tipSm">Be Notified when we have your state available</h5>
             <form action="/search/" method="get" id="notify">
