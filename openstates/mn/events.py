@@ -33,10 +33,28 @@ class MNEventScraper(EventScraper):
                 header = meta.text_content().strip()
                 val = meta.tail
                 metainf[header] = val or ""
-            datetime = datetime.text_content()
+            datetime = datetime.text_content().strip()
             # Tuesday, June 05, 2012 9:00 AM
-            datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
-            event = Event(chamber, datetime, 'committee:meeting',
+            if "Canceled" in datetime:
+                continue
+
+            formats = [
+               "%A, %B %d, %Y %I:%M %p",
+               "%A, %B %d, %Y"
+            ]
+            date_time = None
+
+            for fmt in formats:
+                try:
+                    date_time = dt.datetime.strptime(
+                        datetime, fmt)
+                except ValueError:
+                    pass
+
+            if date_time is None:
+                continue
+
+            event = Event(chamber, date_time, 'committee:meeting',
                           ctty_name, location=metainf['Room:'])
             event.add_source(url)
 
