@@ -66,12 +66,17 @@
         </div>
         {% if bill.versions %}
         <div class="fullWidth mainModule">
-            <h3>Versions</h3>
+            <h3>Versions</h3><ul>
             {% for version in bill.versions %}
-                {{ version.name }}
+                <li>{{ version.name }}
                 {% if "+mimetype" in version %}[{{ version|plusfield:"mimetype"}}]{% endif %}
-                {{version.url|urlize}}
-            {% endfor %}
+                {{version.url|urlize}}</li>
+            {% endfor %}</ul>
+            {% for document in bill.document %}<ul>
+                <li>{{ document.name }}
+                {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
+                {{document.url|urlize}}</li>
+            {% endfor %}</ul>
         </div>
         {% endif %}
         <div class="eightCol colLt">
