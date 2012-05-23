@@ -59,11 +59,22 @@ class WIEventScraper(EventScraper):
         place = date_times[1]
 
         committee = metainf['committee']['txt']
+        chamber = metainf['chamber']['txt']
+
+        try:
+            chamber = {
+                "Senate": "upper",
+                "Assembly": "lower",
+                "Joint": "joint"
+            }[chamber]
+        except KeyError:
+            chamber = 'other'
 
         # Wednesday, May 23, 2012 10:00 AM
         datetime = dt.datetime.strptime(time, "%A, %B %d, %Y %I:%M %p")
         event = Event(session, datetime, 'committee:meeting',
                       committee, location=place)
+        event.add_participant('host', committee, chamber=chamber)
         event.add_source(url)
         self.save_event(event)
 
