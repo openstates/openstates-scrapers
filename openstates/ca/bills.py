@@ -1,24 +1,21 @@
 import re
 import os
-import datetime
-import pdb
+
+import pytz
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
 
 from billy.conf import settings
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from .models import CABill
 
-from sqlalchemy.orm import sessionmaker, relation, backref
-from sqlalchemy import create_engine
-
-import pytz
-import lxml.html
-
 
 def clean_title(s):
     # replace smart quote characters
     s = re.sub(ur'[\u2018\u2019]', "'", s)
     s = re.sub(ur'[\u201C\u201D]', '"', s)
+    s = re.sub(u'\u00e2\u20ac\u2122', u"'", s)
     return s
 
 
