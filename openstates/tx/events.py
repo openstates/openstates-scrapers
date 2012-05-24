@@ -23,43 +23,77 @@ class TXEventScraper(EventScraper):
 
         self.scrape_committee_upcoming(session, chamber)
 
-    def scrape_event_page(self, session, chamber, url):
+    def scrape_event_page(self, session, chamber, url, datetime):
         page = self.lxmlize(url)
         info = page.xpath("//p")
         metainf = {}
+        plaintext = ""
         for p in info:
             content = re.sub("\s+", " ", p.text_content())
+            plaintext += content + "\n"
             if ":" in content:
                 key, val = content.split(":", 1)
                 metainf[key.strip()] = val.strip()
         ctty = metainf['COMMITTEE']
-        tad = metainf['TIME & DATE']
         where = metainf['PLACE']
 
-        tad_fmt = "%I:%M %p, %A, %B %d, %Y"
-
-        if "upon" in tad.lower():
-            tad = re.sub(r"(AM|PM) (.* )?(upon|Upon) .* (Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)",
-                         r"\1, \4", tad)
-
-        if "posting" in tad:
-            tad = re.sub(" \(.*\)", ",", tad)
-
-        # Time expressed as 9:00 AM, Thursday, May 17, 2012
-        datetime = dt.datetime.strptime(tad, tad_fmt)
-        print datetime
+        event = Event(session,
+                      datetime,
+                      'committee:meeting',
+                      ctty,
+                      chamber=chamber,
+                      location=where)
+        event.add_source(url)
+        event.add_participant('host', ctty, chamber=chamber)
+        self.save_event(event)
 
     def scrape_page(self, session, chamber, url):
         try:
             page = self.lxmlize(url)
             events = page.xpath("//a[contains(@href, 'schedules/html')]")
             for event in events:
-                self.scrape_event_page(session, chamber, event.attrib['href'])
+                peers = event.getparent().getparent().xpath("./*")
+                date = peers[0].text_content()
+                time = peers[1].text_content()
+                tad = "%s %s" % ( date, time )
+                tad = re.sub(r"(PM|AM).*", r"\1", tad)
+                tad_fmt = "%m/%d/%Y %I:%M %p"
+                if "AM" not in tad and "PM" not in tad:
+                    tad_fmt = "%m/%d/%Y"
+                    tad = date
+
+                # Time expressed as 9:00 AM, Thursday, May 17, 2012
+                datetime = dt.datetime.strptime(tad, tad_fmt)
+                self.scrape_event_page(session, chamber, event.attrib['href'],
+                                      datetime)
         except lxml.etree.XMLSyntaxError:
             pass  # lxml.etree.XMLSyntaxError: line 248: htmlParseEntityRef: expecting ';'
             # XXX: Please fix this, future hacker. I think this might be a problem
             # with lxml -- due diligence on this is needed.
             #                                              -- PRT
+
+    def scrape_upcoming_page(self, session, chamber, url):
+        page = self.lxmlize(url)
+        date = None
+        thyme = None
+
+        for row in page.xpath(".//tr"):
+            title = row.xpath(".//div[@class='sectionTitle']")
+            if len(title) > 0:
+                date = title[0].text_content()
+                #print "Found date ", date
+            time = row.xpath(".//td/strong")
+            if len(time) > 0:
+                thyme = time[0].text_content()
+                #print "Found time ", thyme
+
+            events = row.xpath(".//a[contains(@href, 'schedules/html')]")
+            for event in events:
+                datetime = "%s %s" % ( date, thyme )
+                datetime = datetime.strip()
+                datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
+                self.scrape_event_page(session, chamber, event.attrib['href'],
+                                      datetime)
 
     def scrape_committee_upcoming(self, session, chamber):
         chid = {'upper': 'S',
@@ -71,5 +105,10 @@ class TXEventScraper(EventScraper):
 
         page = self.lxmlize(url)
         refs = page.xpath("//div[@id='content']//a")
-        for ref in refs:
-            self.scrape_page(session, chamber, ref.attrib['href'])
+        #for ref in refs:
+        #    self.scrape_page(session, chamber, ref.attrib['href'])
+
+
+        url = "http://www.capitol.state.tx.us/Committees/MeetingsUpcoming.aspx" + \
+                "?Chamber=" + chid
+        self.scrape_upcoming_page(session, chamber, url)
