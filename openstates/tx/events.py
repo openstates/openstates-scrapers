@@ -1,5 +1,5 @@
 import re
-import datetime
+import datetime as dt
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
@@ -26,9 +26,28 @@ class TXEventScraper(EventScraper):
     def scrape_event_page(self, session, chamber, url):
         page = self.lxmlize(url)
         info = page.xpath("//p")
+        metainf = {}
         for p in info:
             content = re.sub("\s+", " ", p.text_content())
-            print content
+            if ":" in content:
+                key, val = content.split(":", 1)
+                metainf[key.strip()] = val.strip()
+        ctty = metainf['COMMITTEE']
+        tad = metainf['TIME & DATE']
+        where = metainf['PLACE']
+
+        tad_fmt = "%I:%M %p, %A, %B %d, %Y"
+
+        if "upon" in tad.lower():
+            tad = re.sub(r"(AM|PM) (.* )?(upon|Upon) .* (Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)",
+                         r"\1, \4", tad)
+
+        if "posting" in tad:
+            tad = re.sub(" \(.*\)", ",", tad)
+
+        # Time expressed as 9:00 AM, Thursday, May 17, 2012
+        datetime = dt.datetime.strptime(tad, tad_fmt)
+        print datetime
 
     def scrape_page(self, session, chamber, url):
         try:
