@@ -111,7 +111,20 @@ LOGGING = {
 
 
 # billy/web/public
+ACTIVE_STATES = [u'co', u'de', u'ny', u'in', u'tn',                  u'me', u'wv', u'mt', u'va', u'ak',
+                 u'al', u'ar', u'ct', u'az', u'ca',
+                 u'dc', u'fl', u'ga', u'hi', u'ia',
+                 u'id', u'il', u'ks', u'ky', u'la',
+                 u'ma', u'md', u'mi', u'mn', u'mo',
+                 u'ms', u'nc', u'nd', u'ne', u'nh',
+                 u'nj', u'nm', u'nv', u'oh', u'or',
+                 u'pr', u'ri', u'sc', u'sd', u'tx',
+                 u'ut', u'vt', u'wa', u'wi', u'wy',
+                 u'ok', u'pa']
 ACTIVE_STATES = 'ca il la md mn tx wi'.split()
+
+GEOCODER_USER = 'twneale'
+GEOCODER_PASSWD = 'ojsVxbh7'
 
 try:
     from .local_settings import *
