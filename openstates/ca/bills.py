@@ -35,7 +35,6 @@ class CABillScraper(BillScraper):
             pw = os.environ.get('MYSQL_PASSWORD',
                                 getattr(settings, 'MYSQL_PASSWORD', ''))
 
-
         if (user is not None) and (pw is not None):
             conn_str = 'mysql://%s:%s@' % (user, pw)
         else:
@@ -285,8 +284,7 @@ class CABillScraper(BillScraper):
                 # are inaccurate, so let's ignore them.
                 for k in ('yes', 'no', 'other'):
                     fsvote[k + '_count'] = len(fsvote[k + '_votes'])
-                
+
                 fsbill.add_vote(fsvote)
 
             self.save_bill(fsbill)
-
