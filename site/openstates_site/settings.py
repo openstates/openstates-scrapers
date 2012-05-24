@@ -54,6 +54,7 @@ TEMPLATE_LOADERS = (
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'locksmith.mongoauth.middleware.APIKeyMiddleware',
+    'billy.web.public.middleware.LimitStatesMiddleware',
     #'django.contrib.sessions.middleware.SessionMiddleware',
     #'django.middleware.csrf.CsrfViewMiddleware',
     #'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -108,8 +109,11 @@ LOGGING = {
     }
 }
 
+
+# billy/web/public
+ACTIVE_STATES = 'ca il la md mn tx wi'.split()
+
 try:
     from .local_settings import *
 except ImportError:
     pass
-

@@ -250,6 +250,7 @@ class LABillScraper(BillScraper):
         self.urlretrieve(url, temp_path)
 
         html = pdf_to_lxml(temp_path)
+        os.close(fd)
         os.remove(temp_path)
 
         vote_type = None

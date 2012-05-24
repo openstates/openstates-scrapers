@@ -52,13 +52,6 @@ DOWNLOADS = join(DATA, 'ca', 'downloads')
 DBADMIN = join(DATA, 'ca', 'dbadmin')
 
 
-def setup():
-    try:
-        os.makedirs(DOWNLOADS)
-    except OSError:
-        pass
-    zipfile.ZipFile(join(DOWNLOADS, 'pubinfo_load.zip')).extractall(DBADMIN)
-
 # ----------------------------------------------------------------------------
 # Logging config
 #logger = logging.getLogger('billy')
@@ -73,6 +66,21 @@ logger.addHandler(ch)
 
 # ---------------------------------------------------------------------------
 # Miscellaneous db admin commands.
+
+
+def setup():
+    '''Download and copy the .sql scripts into DBADMIN.
+    '''
+    try:
+        os.makedirs(DOWNLOADS)
+    except OSError:
+        pass
+    command = ['wget', '--mirror', '--no-directories',
+               '--directory-prefix=' + DOWNLOADS,
+              'ftp://www.leginfo.ca.gov/pub/bill/pubinfo_load.zip']
+
+    subprocess.check_call(command, stderr=subprocess.STDOUT)
+    zipfile.ZipFile(join(DOWNLOADS, 'pubinfo_load.zip')).extractall(DBADMIN)
 
 
 def db_drop():
@@ -100,6 +108,10 @@ def db_create():
     '''Create the database'''
 
     logger.info('Creating capublic...')
+
+    # Make sure the sql scripts are unzipped in DBADMIN.
+    setup()
+
     os.chdir(DBADMIN)
 
     with open('capublic.sql') as f:
@@ -263,6 +275,7 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
     afterwards; they'll be overwritten within a week, and leaving them
     around makes testing easier (they're huge).
     '''
+
     logger.info('Loading data from %s...' % folder)
 
     folder = join(DOWNLOADS, folder)
@@ -368,6 +381,9 @@ def update(zipfile_names=None, zipfile_name=None, unzip=True):
     logger.info('Updating capublic...')
     days = 'Mon Tue Wed Thu Fri Sat Sun'.split()
 
+    # Make sure the sql scripts are unzipped in DBADMIN.
+    setup()
+
     if zipfile_names is None:
         if zipfile_name is not None:
             zipfile_names = [zipfile_name]
@@ -390,7 +406,7 @@ def update(zipfile_names=None, zipfile_name=None, unzip=True):
     # like ['pubinfo_2011']
     session_folders = filter(re.compile(r'\d{4}').search, folder_names)
 
-    for folder in session_folders:
+    for folder in set(session_folders):
 
         # Delete all records relating to this session year.
         session_year = re.search('\d{4}', folder).group()
@@ -401,9 +417,6 @@ def update(zipfile_names=None, zipfile_name=None, unzip=True):
 
     # ------------------------------------------------------------------------
     # Apply any daily updates in order.
-
-    # Make sure the sql scripts are unzipped in DBADMIN.
-    setup()
 
     for s in session_folders:
         folder_names.remove(s)

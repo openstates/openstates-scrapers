@@ -1,2 +1,29 @@
 {% load humanize %}
-{{legislator.full_name}} represents {{legislator.chamber_name|lower}} district {{legislator.district}} in the {{legislator.metadata.name}} State {{legislator.chamber_name}}, is a member of {{legislator.committees.count}} committees, and is the primary sponsor of {{legislator.primary_sponsored_bills.count }} bills and a secondary sponsor of
+{{legislator.display_name}} represents {{legislator.chamber_name|title}} District {{legislator.district}} in the {{legislator.metadata.name}} State {{legislator.chamber_name|title}}, is a member of {{legislator.committees.count|apnumber}} committees, 
+
+{% with count=legislator.primary_sponsored_bills.count %}
+  and
+  {% if count %}
+
+    is the primary sponsor of {{count|apnumber}}
+    {% with count=legislator.secondary_sponsored_bills.count %}
+      {% if count %}
+        bills, and is the secondary sponsor of {{count|apnumber}} bills
+      {% else %}
+        bills.
+      {% endif %}
+    {% endwith %}
+
+  {% else %}
+
+    {% with count=legislator.secondary_sponsored_bills.count %}
+      {% if count %}
+        is a secondary sponsor of {{count|apnumber}} bills.
+      {% else %}
+        has not sponsored any bills in the current session.
+      {% endif %}
+    {% endwith %}
+    
+  {% endif %}
+{% endwith %} 
+
