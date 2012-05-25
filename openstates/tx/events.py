@@ -37,6 +37,10 @@ class TXEventScraper(EventScraper):
         ctty = metainf['COMMITTEE']
         where = metainf['PLACE']
 
+        plaintext = re.sub("\s+", " ", plaintext).strip()
+        regexp = r"(S|J|H)(B|M|R) (\d+)"
+        bills = re.findall(regexp, plaintext)
+
         event = Event(session,
                       datetime,
                       'committee:meeting',
@@ -45,6 +49,14 @@ class TXEventScraper(EventScraper):
                       location=where)
         event.add_source(url)
         event.add_participant('host', ctty, chamber=chamber)
+
+        for bill in bills:
+            chamber, type, number = bill
+            bill_id = "%s%s %s" % ( chamber, type, number )
+            event.add_related_bill(bill_id,
+                                   type='consideration',
+                                   description='Bill up for discussion')
+
         self.save_event(event)
 
     def scrape_page(self, session, chamber, url):
@@ -105,8 +117,8 @@ class TXEventScraper(EventScraper):
 
         page = self.lxmlize(url)
         refs = page.xpath("//div[@id='content']//a")
-        #for ref in refs:
-        #    self.scrape_page(session, chamber, ref.attrib['href'])
+        for ref in refs:
+            self.scrape_page(session, chamber, ref.attrib['href'])
 
 
         url = "http://www.capitol.state.tx.us/Committees/MeetingsUpcoming.aspx" + \
