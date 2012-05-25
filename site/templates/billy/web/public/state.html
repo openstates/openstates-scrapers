@@ -17,7 +17,9 @@
     <div class="page-header"><h2>Sessions</h2></div>
         <ul>
         {% for session_id, session_name in sessions  %}
-          <li><a href="/{{abbr}}/{{session_id}}/">{{ session_name }}</a></li>
+          {# At this stage, it's unclear what sessions would link to...so removed the links. #}
+          <!--<li><a href="/{{abbr}}/{{session_id}}/">{{ session_name }}</a></li>-->
+          <li>{{ session_name }}</li>
         {% endfor %}
         </ul>
 
