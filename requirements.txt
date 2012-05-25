@@ -1,13 +1,11 @@
-billy>=0.9.6
+billy
 
-lxml>=2.2
-feedparser>=4.1
-pytz>=2010l
+# scraping
 xlrd
+lxml>=2.2
+pytz>=2010l
+feedparser>=4.1
 http://downloads.sourceforge.net/project/dbfpy/dbfpy/2.2.5/dbfpy-2.2.5.tar.gz
-
 # California
-#SQLAlchemy>=0.5.3
-#MySQL-python
-
-mox>=0.5.3
+SQLAlchemy>=0.5.3
+MySQL-python
