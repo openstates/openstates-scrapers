@@ -10,6 +10,7 @@
     <script type="text/javascript" src="{% static "js/jquery-1.5.1.min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/jquery-placehold.min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/sf.js" %}"></script>
+    <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js"></script>
 
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -27,9 +28,9 @@
         <div id="shareBtns">
             <ul>
                 <li id="youTube"><a href="#">You Tube</a></li>
-                <li id="twitter"><a href="#">Twitter</a></li>
-                <li id="facebook"><a href="#">Facebook</a></li>
-            </ul>    
+                <li id="twitter"><a class="addthis_button_twitter at300b" title="Tweet This" href="#"><span class="at16nc at300bs at15nc at15t_twitter at16t_twitter"><span class="at_a11y">Share on twitter</span></span></a></li>
+                <li id="facebook"><a class="addthis_button_facebook at300b" title="Send to Facebook" href="#"><span class="at16nc at300bs at15nc at15t_facebook at16t_facebook"><span class="at_a11y">Share on facebook</span></span></a></li>
+            </ul>
         </div>    
 
         {% state_select_form %}

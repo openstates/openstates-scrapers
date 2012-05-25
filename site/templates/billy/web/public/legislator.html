@@ -24,7 +24,8 @@
                             
                             <dd>
                             {% for session in legislator.sessions_served %}
-                            <a {% if not forloop.first %}class="withBorderLine" {% endif %}href="#">{{session}}</a>
+                            {#<a {% if not forloop.first %}class="withBorderLine" {% endif %}href="#">{{session}}</a>#}
+                            {{session}}
                             {% endfor %}
                             </dd>
                             
@@ -142,7 +143,7 @@
                     </li>   
                 {% endfor %}
                 </ul>    
-                <a class="viewMore" href="#">View More Bills</a>
+                <a class="viewMore" href="{% url 'sponsored_bills' abbr 'legislators' legislator.id %}">View More Bills</a>
             </div>
             <div class="fourCol colRt">
                 <h4 class="withTip">Votes</h4>
