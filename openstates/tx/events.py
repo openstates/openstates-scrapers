@@ -46,7 +46,8 @@ class TXEventScraper(EventScraper):
                       'committee:meeting',
                       ctty,
                       chamber=chamber,
-                      location=where)
+                      location=where,
+                      agenda=plaintext)
         event.add_source(url)
         event.add_participant('host', ctty, chamber=chamber)
 
