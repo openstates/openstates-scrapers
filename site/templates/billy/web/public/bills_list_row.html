@@ -1,0 +1,9 @@
+{% with bill=obj%}
+                            <td>
+                                <a href="{% url bill abbr bill.id %}">{{bill.bill_id}}</a>
+                                <p>{{bill.title}}</p>
+                            </td>
+                            <td>{{bill.date_introduced|date:"M j, Y"}}</td>
+                            <td>{{bill.most_recent_action.date|date:"M j, Y"}}</td>
+                            <td>2</td>
+{% endwith %}

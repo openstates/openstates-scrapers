@@ -23,7 +23,7 @@
                 <dt class="contentBottom oneCol">Subjects:</dt>
                 <dd class="contentBottom customWidth">
                     {% for subject in bill.subjects %}
-                        <a href="{% url 'bills_by_subject' abbr subject %}">{{subject}}</a>
+                        <a href="{% url 'bills_by_subject' abbr subject %}">{{subject}}</a> |
                     {% endfor %}
                 </dd>
                 {% endif %}

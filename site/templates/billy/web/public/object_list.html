@@ -3,9 +3,10 @@
 {% load sitebase %}
 
 
-{% block title %}{% endblock %}
+{% block title %}{% include description_template %}{% endblock %}
 
 {% block content %}
+        <h2>{% include description_template %}</h2>
         <div class="fullWidth">
             <div id="pagination-links">
                 Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>
