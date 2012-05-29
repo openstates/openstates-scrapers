@@ -1,5 +1,5 @@
 {% extends base_template %}
-{% load sitebase %}
+{% load customtags %}
 {% load url from future %}
 
 {% block title %}{{metadata.name}}{% endblock %}
@@ -78,7 +78,7 @@
                         </li>
                     {% endfor %}                    
                     </ul>    
-                    <a class="viewMore" href="#">View More Passed Bills</a>
+                    <a class="viewMore" href="{% url 'bills_passed_upper' abbr %}">View More Passed Bills</a>
                 </div>
                 <h5>Recently Introduced</h5>
                 <ul>
@@ -90,7 +90,7 @@
                     </li>   
                 {% endfor %}
                 </ul>
-                <a class="viewMore" href="#">View More Introduced Bills</a>
+                <a class="viewMore" href="{% url 'bills_introduced_upper' abbr %}">View More Introduced Bills</a>
             </div>
             <div class="sixCol colRt">
                 <h4>{{ metadata.lower_chamber_name }}<span class="tip sideNote">({{lower.bills_count}})</span></h4>
@@ -105,7 +105,7 @@
                         </li>   
                     {% endfor %}
                     </ul>    
-                    <a class="viewMore" href="#">View More Passed Bills</a>
+                    <a class="viewMore" href="{% url 'bills_passed_lower' abbr %}">View More Passed Bills</a>
                 </div>
                 <h5>Recently Introduced</h5>
                 <ul>
@@ -116,7 +116,7 @@
                         <p class="clear">{{ bill.title|truncatewords:50}}</p>                    </li>   
                 {% endfor %}
                 </ul>
-                <a class="viewMore" href="#">View More Introduced Bills</a>
+                <a class="viewMore" href="{% url 'bills_introduced_lower' abbr %}">View More Introduced Bills</a>
             </div>
             <div class="clear"></div>
         </div>

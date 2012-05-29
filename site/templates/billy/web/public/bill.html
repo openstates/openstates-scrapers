@@ -1,5 +1,6 @@
 {% extends base_template %}
 {% load url from future %}
+{% load humanize %}
 {% load customtags %}
 
 
@@ -23,7 +24,7 @@
                 <dt class="contentBottom oneCol">Subjects:</dt>
                 <dd class="contentBottom customWidth">
                     {% for subject in bill.subjects %}
-                        <a href="{% url 'bills_by_subject' abbr subject %}">{{subject}}</a> |
+                        <a href="{% url 'bills_by_subject' abbr subject %}">{{subject}}</a>{% if not forloop.last %} | {% endif %}
                     {% endfor %}
                 </dd>
                 {% endif %}
@@ -31,21 +32,43 @@
                 <dd class="contentBottom customWidth">{{ bill.session_details.display_name }}</dd>
                 
                 <dt class="contentBottom oneCol">Chamber:</dt>
-                <dd class="contentBottom">{{ bill.chamber }}</dd>
+                <dd class="contentBottom">{{ bill.chamber_name }}</dd>
 
                 <dt class="clear contentBottom">Sponsors ({{ bill.sponsors|length }}):</dt>
                 <dd>
                     <ul class="inlineThirds_module moduleNoBorder">
-                    {% for sponsor in bill.sponsors_manager.first_five %}
-                        {% if sponsor.leg_id %}
-                            <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{ sponsor.name }}</a> ({{ sponsor.legislator.party }}) {{ sponsor.legislator.district }}
-                        {% else %}
-                            {# Object had no leg_id. Might be a committee. #}
-                            {{ sponsor.name }}
-                        {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
-                    {% endfor %}
-                    {% if remainder %}
-                    <li><a class="viewMore" href="#">View {{ bill.sponsors_manager.first_five_remainder }} others</a></li>
+
+                    {% if show_all_sponsors %}
+                        {% for sponsor in bill.sponsors_manager %}
+                            {% if sponsor.leg_id %}
+                                <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{ sponsor.name }}</a>
+                                {% with legislator=sponsor.legislator %}
+                                    {% if legislator.active %}
+                                        ({{ legislator.party }}){{ legislator.district }}
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                {# Sponsor had no leg_id or was inactive. Might be a committee. #}
+                                {{ sponsor.name }}
+                            {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
+                        {% endfor %}
+                    {% else %}
+                        {% for sponsor in bill.sponsors_manager.first_five %}
+                            {% if sponsor.leg_id %}
+                                <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{ sponsor.name }}</a>
+                                {% with legislator=sponsor.legislator %}
+                                    {% if legislator.active %}
+                                        ({{ legislator.party }}){{ legislator.district }}
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                {# Sponsor had no leg_id or was inactive. Might be a committee. #}
+                                {{ sponsor.name }}
+                            {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
+                        {% endfor %}
+                        {% if bill.sponsors_manager.first_five_remainder %}
+                        <li><a class="viewMore" href="?show_all_sponsors=True">View {{ bill.sponsors_manager.first_five_remainder|apnumber }} others</a></li>
+                        {% endif %}
                     {% endif %}
                     </ul> 
                     
