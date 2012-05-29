@@ -32,8 +32,13 @@ class KYEventScraper(EventScraper):
                 when = self._tz.localize(when)
 
                 desc = div.xpath("string(span[2])").strip()
+                agenda = div.xpath("string(span[3])").strip()
+                # XXX: Process `agenda' for related bills.
                 event = Event(session, when, 'committee:meeting',
                               desc, location=location)
                 event.add_source(url)
+
+                # desc is actually the ctty name.
+                event.add_participant('host', desc, chamber=chamber)
 
                 self.save_event(event)
