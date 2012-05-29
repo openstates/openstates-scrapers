@@ -26,7 +26,7 @@ class PALegislatorScraper(LegislatorScraper):
                 district = link.getparent().getnext().tail.strip()
                 district = re.search("District (\d+)", district).group(1)
 
-                party = link.text[-2]
+                party = link.getparent().tail.strip()[-2]
                 if party == 'R':
                     party = 'Republican'
                 elif party == 'D':
@@ -38,3 +38,4 @@ class PALegislatorScraper(LegislatorScraper):
                                         full_name, party=party, url=url)
                 legislator.add_source(leg_list_url)
                 self.save_legislator(legislator)
+
