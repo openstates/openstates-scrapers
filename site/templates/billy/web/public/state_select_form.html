@@ -1,6 +1,7 @@
 <form action="/state_selection/" method="get" id="mainFilter" class="clear">
     <ul class="noSpace">
-      {{ form.as_table }}
+      <label for="id_label"> {{ form.abbr.label }}: </label>
+      {{ form.abbr }}
       <input type="submit"/>
     </ul>
     <div class="clear"></div>

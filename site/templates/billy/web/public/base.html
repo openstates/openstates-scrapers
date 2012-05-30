@@ -27,13 +27,12 @@
         <h1 class="clear"><a class="textReplace" href="/">Open States</a></h1>
         <div id="shareBtns">
             <ul>
-                <li id="youTube"><a href="#">You Tube</a></li>
                 <li id="twitter"><a class="addthis_button_twitter at300b" title="Tweet This" href="#"><span class="at16nc at300bs at15nc at15t_twitter at16t_twitter"><span class="at_a11y">Share on twitter</span></span></a></li>
                 <li id="facebook"><a class="addthis_button_facebook at300b" title="Send to Facebook" href="#"><span class="at16nc at300bs at15nc at15t_facebook at16t_facebook"><span class="at_a11y">Share on facebook</span></span></a></li>
             </ul>
-        </div>    
+        </div>
 
-        {% state_select_form %}
+        {% state_select_form abbr %}
 
         {# Some pages are state-agnostic and will need to omit this block (like the homepage). #}
         {% block collection_nav %}
