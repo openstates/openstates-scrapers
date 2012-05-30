@@ -44,6 +44,15 @@ class MIEventScraper(EventScraper):
         if "Cancelled" in datetime:
             return
 
+        translate = {
+            "noon": "PM"
+        }
+
+        for t in translate:
+            if t in datetime:
+                datetime = datetime.replace(t, translate[t])
+
+
         flag = "or after committees are given leave"
 
         if flag in datetime:
