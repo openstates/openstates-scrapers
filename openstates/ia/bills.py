@@ -136,6 +136,7 @@ class IABillScraper(BillScraper):
             # a few sponsors get mangled by our regex
             sponsor = {
                 'Means': 'Ways & Means',
+                'Iowa': 'Economic Growth/Rebuild Iowa',
                 'Safety': 'Public Safety',
                 'Resources': 'Human Resources',
                 'Affairs': 'Veterans Affairs',
