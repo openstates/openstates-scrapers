@@ -4,8 +4,9 @@
       <li>{{chamber}}</li>
       {% endfor %}
       {{chamber_select_form.abbr}}
-      <input hidden=true type="text" name="key" value="committee"/>
-      <input hidden=true type="text" name="order" value="1"/>
+      {% for field in chamber_select_form.hidden_fields %}
+        {{field}}
+      {% endfor %}
       <input type="submit"/>
     </ul>
     <div class="clear"></div>

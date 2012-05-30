@@ -3,11 +3,11 @@
                     <thead>
                         <tr id="title">
                             <th class="invisible">Picture</th>
-                            <th><a href="?key=last_name&order={{ sort_order }}">Name</th>
-                            <th><a href="?key=district&order={{ sort_order }}">District</th>
-                            <th><a href="?key=party&order={{ sort_order }}">Party</th>
+                            <th><a href="?chamber={{chamber}}&abbr={{abbr}}&key=last_name&order={{ sort_order }}">Name</th>
+                            <th><a href="?chamber={{chamber}}&abbr={{abbr}}&key=district&order={{ sort_order }}">District</th>
+                            <th><a href="?chamber={{chamber}}&abbr={{abbr}}&key=party&order={{ sort_order }}">Party</th>
                             {% if show_chamber_column %}
-                            <th><a href="?key=chamber&order={{ sort_order }}">Chamber</th>
+                            <th><a href="?chamber={{chamber}}&abbr={{abbr}}&key=chamber&order={{ sort_order }}">Chamber</th>
                             {% endif %}
                         </tr>
                     </thead>
