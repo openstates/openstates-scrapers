@@ -42,6 +42,8 @@ class IAEventScraper(EventScraper):
             when = link.xpath("string(../../td[1])").strip()
             if when == 'Cancelled' or "Upon" in when:
                 continue
+            if "To Be Determined" in when:
+                continue
 
             if 'AM' in when:
                 when = when.split('AM')[0] + " AM"
