@@ -310,6 +310,12 @@ legend { font-size: 115%; font-weight: bold; padding-bottom: 15px; display: bloc
 fieldset li { margin-bottom: 5px; }
 table .right { text-align: right;}
 
+/* flatpages */
+div.flatpage ul { list-style: circle; margin: 0 0 20px 1.8em; }
+div.flatpage li { line-height: 1.6; display: list-item; margin-bottom: 0;}
+div.flatpage dl dd { margin-left: 1.8em; }
+div.flatpage img { border: 0px; }
+div.flatpage tt { background-color: #ebece4; }
 
 /* new additions  */
 

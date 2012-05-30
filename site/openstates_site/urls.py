@@ -8,19 +8,21 @@ urlpatterns = patterns('',
     (r'^admin/', include('billy.web.admin.urls')),
     (r'^', include('billy.web.public.urls')),
 
-    # flat pages
+
     (r'^$', 'django.views.generic.simple.direct_to_template',
     {'template':'index.html'}),
+
+    # flat pages
     (r'^contributing/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'contributing.html'}),
+     {'template':'flat/contributing.html'}),
     (r'^thanks/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'thankyou.html'}),
+     {'template':'flat/thanks.html'}),
     (r'^categorization/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'categorization.html'}),
+     {'template':'flat/categorization.html'}),
     (r'^status/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'status.html'}),
+     {'template':'flat/status.html'}),
     (r'^csv_downloads/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'csv_downloads.html'}),
+     {'template':'flat/csv_downloads.html'}),
 
     # api docs
     (r'^api/$', 'django.views.generic.simple.direct_to_template',

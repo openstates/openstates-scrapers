@@ -1,0 +1,10 @@
+{% extends "billy/web/public/base.html" %}
+{% block bodyclass %}flat{% endblock %}
+{% block collection_nav %}{% endblock %}
+{% block content %}
+<div id="container" class="flatpage">
+    <div class="eightCol">
+        {% block flatpage %}{% endblock %}
+    </div>
+</div>
+{% endblock %}
