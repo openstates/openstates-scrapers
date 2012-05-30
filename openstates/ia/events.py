@@ -55,4 +55,5 @@ class IAEventScraper(EventScraper):
             event = Event(session, when, 'committee:meeting',
                           desc, location)
             event.add_source(url)
+            event.add_participant('host', comm, chamber=chamber)
             self.save_event(event)
