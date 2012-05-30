@@ -21,13 +21,14 @@
                             <dd class="tip tipSm">{{legislator.district}}</dd>
                         
                             <dt class="clear">Sessions Served:</dt>
-                            
-                            <dd>
-                            {% for session in legislator.sessions_served %}
-                            {#<a {% if not forloop.first %}class="withBorderLine" {% endif %}href="#">{{session}}</a>#}
-                            {{session}}
-                            {% endfor %}
-                            </dd>
+                            <dt>
+                                <dd>
+                                {% for session in legislator.sessions_served %}
+                                {#<a {% if not forloop.first %}class="withBorderLine" {% endif %}href="#">{{session}}</a>#}
+                                   <br/>{{session}}
+                                {% endfor %}
+                                </dd>
+                            </dt>
                             
                         </dl>    
                     </div>
@@ -91,13 +92,20 @@
             <h3 class="moduleTitle">Media</h3>
             <div class="sevenCol colLt">
                 <h4>News and Blog Coverage</h4>
+            {% with feed_entries=legislator.feed_entries %}
+              {% if not feed_entries.count %}
+                <ul><li class="smModule">No news or blog items found yet.</li></ul>
+              {% else %}
                 {% for obj in legislator.feed_entries %}{% include feed_entry_template %}{% endfor %}
                 <a class="viewMore" href="{% url 'feeds_list' abbr 'legislators' legislator.id %}">View More News</a>
+            {% endif %} 
+            {% endwith %}
             </div>
             <div class="fiveCol colRt">
                 <h4>Twitter Mentions</h4>
                 <ul>
-                    <li class="smModule">
+                    <li class="smModule">No tweets found for this legislator yet.</li></ul>
+                <!--    <li class="smModule">
                         <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce lacus nibh, rhoncus eu pulvinar sed, lobortis sit amet tellus. Nullam id.</p>
                         <div class="entryMetaData">
                             <address class="author withBorderLine">by <a rel="author" class="colorRollover" href="#">bill_allison</a></address>
@@ -114,8 +122,9 @@
                         <div class="clear"></div>
                     </li>
                 </ul>    
-                <a class="viewMore" href="#">View More Tweets</a>
-            </div>   
+                <a class="viewMore" href="#">View More Tweets</a>-->
+            </div>  
+
             <div class="clear"></div> 
         </div>
         <div class="fullWidth module clear"> 
@@ -135,19 +144,26 @@
             <div class="eightCol colLt">
                 <h4>Sponsored Bills</h4>
                 <ul>
+                {% if sponsored_bills %}
                 {% for bill in sponsored_bills %}
                     <li>
                         <time datetime="" class="published" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
-                        <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}{{ primary.name}}{% endfor %}</span></span>
+                        <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}
+                            {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span></span>
                         <p class="clear">{{bill.title}}</p>
                     </li>   
                 {% endfor %}
-                </ul>    
+                </ul>
                 <a class="viewMore" href="{% url 'sponsored_bills' abbr 'legislators' legislator.id %}">View More Bills</a>
+                {% else %}
+                    <li>No sponsored bills to display.</li>
+                </ul>
+                {% endif %}
+                
             </div>
             <div class="fourCol colRt">
                 <h4 class="withTip">Votes</h4>
-                {% if not has_votes %}No votes to display :( 
+                {% if not has_votes %}No votes to display.
                 {% else %}
                 <table class="noPaddingTable voteChart">
                     <col width="200" />

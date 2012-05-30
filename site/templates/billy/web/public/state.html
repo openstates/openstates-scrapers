@@ -33,7 +33,7 @@
                 <h4 class="titleNumber withTip">{{ upper.legislators.count }}<span>{{ metadata.upper_chamber_title }}s</span></h4>
                 <ul class="tip inlineList">
                 {% for party, count in upper.legislators.party_counts.items %}
-                    <li><a href="{% url 'legislators_chamber' metadata.abbr 'lower' %}">{{ count }} {{party}}</a>{% if not forloop.last %},{% endif %}</li>
+                    <li><a href="{% url 'legislators' metadata.abbr %}?chamber=upper">{{ count }} {{party}}</a>{% if not forloop.last %},{% endif %}</li>
                 {% endfor %}
                 </ul>
             </div>
@@ -46,7 +46,7 @@
                 <h4 class="titleNumber withTip">{{ lower.legislators.count }}<span>{{ metadata.lower_chamber_title }}s</span></h4>
                 <ul class="tip inlineList">
                 {% for party, count in lower.legislators.party_counts.items %}
-                    <li><a href="{% url 'legislators_chamber' metadata.abbr 'lower' %}">{{ count }} {{party}}</a>{% if not forloop.last %},{% endif %}</li>
+                    <li><a href="{% url 'legislators' metadata.abbr %}?chamber=lower">{{ count }} {{party}}</a>{% if not forloop.last %},{% endif %}</li>
                 {% endfor %}
                 </ul>    
             </div>
@@ -69,26 +69,37 @@
                 <div class="medModule">
                     <h5>Recently Passed</h5>
                     <ul>
-                    {{passed_upper}}
-                    {% for bill in recent_actions.passed_upper %}
-                        <li>
-                            <time datetime="" class="published" pubdate>{{ bill.actions_manager.latest_passed_upper.date|date:"F d, Y" }}</time>
-                            <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{ bill.bill_id }}</a><span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
-                            <p class="clear">{{ bill.title|truncatewords:50}}</p>
-                        </li>
-                    {% endfor %}                    
-                    </ul>    
-                    <a class="viewMore" href="{% url 'bills_passed_upper' abbr %}">View More Passed Bills</a>
+                    {% with passed_upper=recent_actions.passed_upper %}
+                    {% if passed_upper %}
+                        {% for bill in passed_upper %}
+                            <li>
+                                <time datetime="" class="published" pubdate>{{ bill.actions_manager.latest_passed_upper.date|date:"F d, Y" }}</time>
+                                <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{ bill.bill_id }}</a><span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
+                                <p class="clear">{{ bill.title|truncatewords:50}}</p>
+                            </li>
+                        {% endfor %}                    
+                        </ul>    
+                        <a class="viewMore" href="{% url 'bills_passed_upper' abbr %}">View More Passed Bills</a>
+                    {% else %}
+                      No passed bills to display.
+                    {% endif %}
+                    {% endwith %}
                 </div>
                 <h5>Recently Introduced</h5>
                 <ul>
-                {% for bill in recent_actions.introduced_upper %}
-                    <li>
-                        <time datetime="" class="published" pubdate>{{ bill.actions_manager.latest_introduced_upper.date|date:"F d, Y"}}</time>
-                        <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id }}</a> <span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
-                        <p class="clear">{{ bill.title|truncatewords:50}}</p>
-                    </li>   
-                {% endfor %}
+                {% with introduced_upper=recent_actions.introduced_upper %}
+                {% if introduced_upper %}
+                    {% for bill in introduced_upper %}
+                        <li>
+                            <time datetime="" class="published" pubdate>{{ bill.actions_manager.latest_introduced_upper.date|date:"F d, Y"}}</time>
+                            <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id }}</a> <span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
+                            <p class="clear">{{ bill.title|truncatewords:50}}</p>
+                        </li>   
+                    {% endfor %}
+                {% else %}
+                    No passed bills to display.
+                {% endif %}
+                {% endwith %}   
                 </ul>
                 <a class="viewMore" href="{% url 'bills_introduced_upper' abbr %}">View More Introduced Bills</a>
             </div>
@@ -97,7 +108,9 @@
                 <div class="medModule">
                     <h5>Recently Passed</h5>
                     <ul>
-                    {% for bill in recent_actions.passed_lower %}
+                    {% with passed_lower=recent_actions.passed_lower %}
+                    {% if passed_lower %}
+                        {% for bill in passed_lower %}
                         <li>
                             <time datetime="" class="published" pubdate>{{ bill.actions_manager.latest_passed_lower.date|date:"F d, Y"}}</time>
                             <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id }}</a> <span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
@@ -106,17 +119,27 @@
                     {% endfor %}
                     </ul>    
                     <a class="viewMore" href="{% url 'bills_passed_lower' abbr %}">View More Passed Bills</a>
+                    {% else %}
+                      No passed bills to display.
+                    {% endif %}
+                    {% endwith %}
                 </div>
                 <h5>Recently Introduced</h5>
                 <ul>
-                {% for bill in recent_actions.introduced_lower %}
+                {% with introduced_lower=recent_actions.introduced_lower %}
+                {% if introduced_lower %}
+                    {% for bill in introduced_lower %}
                     <li>
                         <time datetime="" class="published" pubdate>{{ bill.actions_manager.latest_introduced_lower.date|date:"F d, Y"}}</time>
                         <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id }}</a> <span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
                         <p class="clear">{{ bill.title|truncatewords:50}}</p>                    </li>   
-                {% endfor %}
+                    {% endfor %}
                 </ul>
                 <a class="viewMore" href="{% url 'bills_introduced_lower' abbr %}">View More Introduced Bills</a>
+                {% else %}
+                    No passed bills to display.
+                {% endif %}
+                {% endwith %}   
             </div>
             <div class="clear"></div>
         </div>

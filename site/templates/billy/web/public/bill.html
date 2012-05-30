@@ -18,7 +18,7 @@
             </ol> 
             <h2 class="withTimeline">{{ metadata.name }} {{bill.type_string|title}} {{ bill.bill_id }}</h2>
              <a href="/admin/object_json/bills/{{bill.id}}/">json</a>
-             <p class="smModule">{{ bill.title }}</p>
+             <p class="smModule">{{ bill.title|capfirst }}</p>
              <dl class="inlineList">
                 {% if bill.subjects %}
                 <dt class="contentBottom oneCol">Subjects:</dt>
@@ -49,7 +49,7 @@
                                 {% endwith %}
                             {% else %}
                                 {# Sponsor had no leg_id or was inactive. Might be a committee. #}
-                                {{ sponsor.name }}
+                                <li>{{ sponsor.name }}
                             {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
                         {% endfor %}
                     {% else %}
@@ -63,7 +63,7 @@
                                 {% endwith %}
                             {% else %}
                                 {# Sponsor had no leg_id or was inactive. Might be a committee. #}
-                                {{ sponsor.name }}
+                                <li>{{ sponsor.name }}
                             {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
                         {% endfor %}
                         {% if bill.sponsors_manager.first_five_remainder %}
@@ -106,7 +106,7 @@
                 {% for action in bill.actions_manager %}
                     <tr class="odd">
                         <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
-                        <td>{{ action.chamber_name }}</td>
+                        <td>{{ action.actor_name }}</td>
                         <td>{{ action.action }}</td>
                         <td>{% for label_text in action.type %}<span class="label">{{label}}</span>{% endfor %}</td>
                     </tr>
