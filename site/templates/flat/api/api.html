@@ -1,4 +1,4 @@
-{% extends "flatpage.html" %}
+{% extends "flat/flatpage.html" %}
 {% load markup_tags %}
 
 {% block title %}Open State Project API{% endblock %}
@@ -6,26 +6,26 @@
 {% block breadcrumb %}
 {% endblock %}
 
-{% block content %}
+{% block flatpage %}
 
 <h2> Open State Project API </h2>
 {% rest %}
 
 The Open State Project provides a RESTful API for accessing state legislative information.
 
-    * API calls are URLs in the form ``http://openstates.org/api/v1/METHOD/?apikey=``
-    * Responses will (unless otherwise specified) be `JSON <http://json.org/>`_.
-    * If an error occurs the response will be a plain text error message with an appropriate HTTP error codes are sent on errors (404 if object is not found, 401 if authentication fails, etc.).
-    * The required API key can be obtained via http://services.sunlightlabs.com/
-    * For details on the current availability and status of state data visit the `Open States status page <http://openstates.org/status/>`_.
+* API calls are URLs in the form ``http://openstates.org/api/v1/METHOD/?apikey=``
+* Responses will (unless otherwise specified) be `JSON <http://json.org/>`_.
+* If an error occurs the response will be a plain text error message with an appropriate HTTP error codes are sent on errors (404 if object is not found, 401 if authentication fails, etc.).
+* The required API key can be obtained via http://services.sunlightlabs.com/
+* For details on the current availability and status of state data visit the `Open States status page <http://openstates.org/status/>`_.
 
 All changes to the API will be announced on the `Open State Project Google Group <http://groups.google.com/group/fifty-state-project/>`_ and documented in the `api changelog </api/changelog/>`_.
 
 Client Libraries
 ================
 
-    * We make an official `python-sunlight <http://python-sunlight.readthedocs.org>`_ library available that supports our API.
-    * There's also a `govkit ruby gem <https://github.com/opengovernment/govkit>`_ that interfaces with the Open States API as well as many others.
+* We make an official `python-sunlight <http://python-sunlight.readthedocs.org>`_ library available that supports our API.
+* There's also a `govkit ruby gem <https://github.com/opengovernment/govkit>`_ that interfaces with the Open States API as well as many others.
 
 Methods
 =======
@@ -33,31 +33,11 @@ Methods
 There are five top level object types Metadata, Bills, Legislators, Committees, and Events.
 
 With the exception of metadata, all have a generic search method and a direct lookup method.
+{% endrest %}
 
-  * `State Metadata </api/metadata/>`_
-  * `Bill Methods </api/bills/>`_
+{% include "flat/api/api_methods.html" %}
 
-    * `Bill Search </api/bills/#bill-search>`_
-    * `Bill Lookup </api/bills/#bill-lookup>`_
-  * `Legislator Methods </api/legislators/>`_
-
-    * `Legislator Search </api/legislators/#legislator-search>`_
-    * `Legislator Lookup </api/legislators/#legislator-lookup>`_
-    * `Legislator Geo Search </api/legislators/#geo-lookup>`_
-  * `Committee Methods </api/committees/>`_
-
-    * `Committee Search </api/committees/#committee-search>`_
-    * `Committee Lookup </api/committees/#committee-lookup>`_
-  * `Event Methods </api/events/>`_
-
-    * `Event Search </api/events/#event-search>`_
-    * `Event Lookup </api/events/#event-lookup>`_
-  * `District Methods </api/districts/>`_
-
-    * `District Search </api/districts/#district-search>`_
-    * `District Boundary Lookup </api/districts/#district-boundary-lookup>`_
-
-
+{% rest %}
 Requesting A Custom Fieldset
 ============================
 
@@ -89,4 +69,9 @@ If you are using the API to get data for multiple states it is best to restrict 
 
 {% endrest %}
 
+{% endblock %}
+
+{% block flatpage_right %}
+<h3 class="apibar">API Methods</h3>
+{% include "flat/api/api_methods.html" %}
 {% endblock %}

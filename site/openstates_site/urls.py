@@ -26,19 +26,19 @@ urlpatterns = patterns('',
 
     # api docs
     (r'^api/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'api.html'}),
+     {'template':'flat/api/api.html'}),
     (r'^api/metadata/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'api_metadata.html'}),
+     {'template':'flat/api/metadata.html'}),
     (r'^api/bills/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'api_bills.html'}),
+     {'template':'flat/api/bills.html'}),
     (r'^api/committees/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'api_committees.html'}),
+     {'template':'flat/api/committees.html'}),
     (r'^api/legislators/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'api_legislators.html'}),
+     {'template':'flat/api/legislators.html'}),
     (r'^api/events/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'api_events.html'}),
+     {'template':'flat/api/events.html'}),
     (r'^api/districts/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'api_districts.html'}),
+     {'template':'flat/api/districts.html'}),
 )
 
 if settings.DEBUG:

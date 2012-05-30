@@ -1,19 +1,9 @@
-{% extends "flatpage.html" %}
+{% extends "flat/api/api.html" %}
 {% load markup_tags %}
 
 {% block title %}Open State Project API: Metadata{% endblock %}
 
-{% block breadcrumb %}
-<li class="home">
-    <a href="/api/">API</a>
-</li>
-<li class="live">
-<a href="">Metadata</a>
-</li>
-{% endblock %}
-
-
-{% block content %}
+{% block flatpage %}
 
 <h2> Metadata API </h2>
 
@@ -98,11 +88,6 @@ http://openstates.org/api/v1/metadata/{STATE-ABBREV}/?apikey={YOUR_API_KEY}
 
 The metadata API serves basic details about a state such as what it calls its legislature and what terms and sessions
 data is available for.
-
-URL format
-----------
-
-http://openstates.org/api/v1/metadata/{STATE-ABBREV}/?apikey={YOUR_API_KEY}
 
 
 Example

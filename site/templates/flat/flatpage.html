@@ -3,8 +3,12 @@
 {% block collection_nav %}{% endblock %}
 {% block content %}
 <div id="container" class="flatpage">
-    <div class="eightCol">
+    <div class="eightCol colLt">
         {% block flatpage %}{% endblock %}
     </div>
+    <div class="threeCol colRt">
+        {% block flatpage_right %}{% endblock %}
+    </div>
+    <div class="clear"></div>
 </div>
 {% endblock %}
