@@ -1,10 +1,8 @@
 {% extends base_template %}
-{% load sitebase %}
+{% load customtags %}
 
 
 {% block title %}{{state.name}} {{ chamber_name }} Legislators{% endblock %}
-
-{% block sidebar %}{% states_sidebar abbr %}{% endblock %}
 
 {% block content %}
         <div class="fullWidth">
