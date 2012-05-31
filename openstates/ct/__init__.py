@@ -28,7 +28,7 @@ metadata = dict(
             '_scraped_name': '2012',
         }
     },
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'events'],
     _ignored_scraped_sessions=['2005', '2006', '2007', '2008', '2009', '2010',
                                ]
 )
