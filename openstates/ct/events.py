@@ -35,36 +35,42 @@ class CTEventScraper(EventScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            cal_table = page.xpath(
-                "//table[contains(@summary, 'Calendar')]")[0]
+        cal_table = page.xpath(
+            "//table[contains(@summary, 'Calendar')]")[0]
 
-            date_str = None
-            for row in cal_table.xpath("tr[2]//tr"):
-                col1 = row.xpath("string(td[1])").strip()
-                col2 = row.xpath("string(td[2])").strip()
+        date_str = None
+        for row in cal_table.xpath("tr[2]//tr"):
+            col1 = row.xpath("string(td[1])").strip()
+            col2 = row.xpath("string(td[2])").strip()
 
-                if not col1:
-                    if col2 == "No Meetings Scheduled":
-                        return
-                    # If col1 is empty then this is a date header
-                    date_str = col2
-                else:
-                    # Otherwise, this is a committee event row
-                    when = date_str + " " + col1
-                    when = datetime.datetime.strptime(
-                        when, "%A, %B %d, %Y %I:%M %p")
-                    when = self._tz.localize(when)
+            if not col1:
+                if col2 == "No Meetings Scheduled":
+                    return
+                # If col1 is empty then this is a date header
+                date_str = col2
+            else:
+                # Otherwise, this is a committee event row
+                ical_feed = row.xpath(".//a[contains(@href, 'newcal')]")[0]
+                when = date_str + " " + col1
+                when = datetime.datetime.strptime(
+                    when, "%A, %B %d, %Y %I:%M %p")
+                when = self._tz.localize(when)
 
-                    location = row.xpath("string(td[3])").strip()
-                    guid = row.xpath("td/a")[0].attrib['href']
+                location = row.xpath("string(td[3])").strip()
+                guid = row.xpath("td/a")[0].attrib['href']
 
-                    event = Event(session, when, 'committee meeting',
-                                  col2, location, _guid=guid)
-                    event.add_source(url)
-                    event.add_participant('committee', name,
-                                          chamber='joint')
+                event = Event(session,
+                              when,
+                              'committee meeting',
+                              col2,
+                              location,
+                              _guid=guid,
+                              _ical_feed=ical_feed.attrib['href'])
+                event.add_source(url)
+                event.add_participant('committee', name,
+                                      chamber='joint')
 
-                    self.save_event(event)
+                self.save_event(event)
 
     def get_comm_codes(self):
         url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
