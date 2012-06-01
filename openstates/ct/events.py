@@ -1,4 +1,4 @@
-import csv
+import unicodecsv as csv
 import datetime
 try:
     import cStringIO as StringIO
