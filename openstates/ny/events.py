@@ -65,11 +65,14 @@ class NYEventScraper(EventScraper):
             time = re.sub("-.*", "", time)
             time = time.strip()
 
-            date = "%s %s" % (
+            year = dt.datetime.now().year
+
+            date = "%s %s %s" % (
                 date,
+                year,
                 time
             )
-            datetime = dt.datetime.strptime(date, "%B %m %I:%M %p")
+            datetime = dt.datetime.strptime(date, "%B %m %Y %I:%M %p")
             event = Event(session, datetime, 'committee:meeting',
                           metainf['Public Hearing:'],
                           location=metainf['Place:'],
