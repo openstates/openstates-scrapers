@@ -1,88 +1,100 @@
 import re
-import datetime
+import datetime as dt
 
 from billy.scrape.events import EventScraper, Event
 
 import pytz
+import lxml.etree
 import lxml.html
 
+url = 'http://utahlegislature.granicus.com/ViewPublisherRSS.php?view_id=2&mode=agendas'
 
 class UTEventScraper(EventScraper):
     state = 'ut'
-
     _tz = pytz.timezone('US/Mountain')
-
-    def scrape(self, chamber, session):
-        pass
-        #for month in xrange(1, 13):
-        #    self.scrape_month(chamber, session, int(session), month,)
-
-    def scrape_month(self, chamber, session, year, month):
-        url = ("http://le.utah.gov/asp/interim/"
-               "Cal.asp?year=%d&month=%d" % (year, month))
+    def lxmlize(self, url):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page.make_links_absolute(url)
+        return page
 
-            day = 1
-            for td in page.xpath("//td[@bgcolor='#FFFFCC']"):
-                for font in td.xpath(
-                    "//font[contains(text(), 'Floor Time')]"):
+    def scrape_page(self, url, session, chamber):
+        try:
+            page = self.lxmlize(url)
+        except lxml.etree.XMLSyntaxError:
+            self.warning("Ugh. Invalid HTML")
+            return  # Ugh, invalid HTML.
+        agendas = page.xpath("//td[@class='numberspace']")
 
-                    match = re.search(
-                        "(\d+:\d+ [AP]M)-(\d+:\d+ [AP]M) (House|Senate) "
-                        "Chamber", font.text)
+        spans = page.xpath("//center/span")
+        ctty = None
+        date = None
+        time = None
+        if len(spans) >= 4:
+            ctty = spans[0].text_content().strip()
+            date = spans[2].text_content().strip()
+            time = spans[3].text_content().strip()
 
-                    if not match:
-                        continue
+        bills = [
+# XXX: Add bills in this format.
+#            { 'name': 'SB 101',
+#              'desc': 'Example description' }
+        ]
+        for agenda in agendas:
+            number = agenda.text_content()
+            string = agenda.getnext().text_content().strip()
+            # XXX: check for related bills & add them.
 
-                    chamber_name = match.group(3)
-                    ev_chamber = {'Senate': 'upper',
-                               'House': 'lower'}[chamber_name]
-                    if ev_chamber != chamber:
-                        continue
+        if ctty is None or date is None or time is None:
+            return
 
-                    start = datetime.datetime.strptime(
-                        "%d %d %d %s" % (month, day, year, match.group(1)),
-                        "%m %d %Y %I:%M %p")
-                    end = datetime.datetime.strptime(
-                        "%d %d %d %s" % (month, day, year, match.group(2)),
-                        "%m %d %Y %I:%M %p")
+        datetime = "%s %s" % (
+            date.strip(),
+            time.strip()
+        )
+        datetime = re.sub("AGENDA", "", datetime).strip()
+        datetime = [ x.strip() for x in datetime.split("\r\n") ]
 
-                    event = Event(session, start, 'floor_time',
-                                  '%s Floor Time' % chamber_name,
-                                  '%s Chamber' % chamber_name,
-                                  end=end)
-                    event.add_source(url)
-                    self.save_event(event)
+        if "" in datetime:
+            datetime.remove("")
 
-                for link in td.xpath("//a[contains(@href, 'Commit.asp')]"):
-                    comm = link.xpath("string()").strip()
+        if len(datetime) == 1:
+            datetime.append("state house")
 
-                    if chamber == 'upper' and not comm.startswith('Senate'):
-                        continue
-                    elif chamber == 'lower' and not comm.startswith('House'):
-                        continue
+        where = datetime[1]
+        translate = {
+            "a.m.": "AM",
+            "p.m.": "PM"
+        }
+        for t in translate:
+            datetime[0] = datetime[0].replace(t, translate[t])
+        datetime = dt.datetime.strptime(datetime[0], "%A, %B %d, %Y %I:%M %p")
 
-                    preceding_link = link.xpath("preceding-sibling::a[1]")[0]
-                    if (preceding_link.getnext().xpath("string()") ==
-                        ' CANCELED'):
+        chamber = 'other'
+        cLow = ctty.lower()
+        if "seante" in cLow:
+            chamber = 'upper'
+        elif "house" in cLow:
+            chamber = 'lower'
+        elif "joint" in cLow:
+            chamber = 'joint'
 
-                        continue
+        event = Event(session, datetime, 'committee:meeting',
+                      ctty, location=where)
+        event.add_source(url)
+        event.add_participant('host', ctty, chamber=chamber)
+        for bill in bills:
+            event.add_related_bill(bill['name'],
+                                   description=bill['desc'],
+                                   type='consideration')
+        self.save_event(event)
 
-                    time_loc = preceding_link.xpath("string()")
-                    time, location = re.match(
-                        r"(\d+:\d+ [AP]M)(.*)$", time_loc).groups()
+    def scrape(self, chamber, session):
+        if chamber != 'other':
+            return
 
-                    when = datetime.datetime.strptime(
-                        "%d %d 2011 %s" % (month, day, time),
-                        "%m %d %Y %I:%M %p")
+        with self.urlopen(url) as page:
+            page = lxml.etree.fromstring(page)
 
-                    event = Event(session, when, 'committee:meeting',
-                                  'Committee Meeting\n%s' % comm,
-                                  location=location,
-                                  _guid=link.attrib['href'])
-                    event.add_source(url)
-                    self.save_event(event)
-
-                day += 1
+        for p in page.xpath("//link"):
+            self.scrape_page(p.text, session, chamber)

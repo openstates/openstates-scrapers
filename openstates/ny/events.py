@@ -1,107 +1,89 @@
 import re
-import datetime
+import datetime as dt
 
 from billy.scrape.events import EventScraper, Event
 
 import pytz
-import icalendar
 import lxml.html
 
-_tz = pytz.timezone('US/Eastern')
-
-
-def _parse_date(date):
-    try:
-        when = datetime.datetime.strptime(
-            date, "%b %d %Y %I:%M %p")
-    except ValueError:
-        when = datetime.datetime.strptime(
-            date, "%B %d %Y %I:%M %p")
-
-    return _tz.localize(when)
-
+url = "http://assembly.state.ny.us/leg/?sh=hear"
 
 class NYEventScraper(EventScraper):
+    _tz = pytz.timezone('US/Eastern')
     state = 'ny'
 
+    def lxmlize(self, url):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+        return page
+
+    def parse_page(self, url, session):
+        page = self.lxmlize(url)
+        tables = page.xpath("//table[@class='pubhrgtbl']")
+        date = None
+        ctty = None
+        chamber = 'other'
+        for table in tables:
+            metainf = {}
+            rows = table.xpath(".//tr")
+            for row in rows:
+                tds = row.xpath("./*")
+                if len(tds) < 2:
+                    continue
+                key, value = tds
+                if key.tag == 'th':
+                    date = key.text_content()
+                    date = re.sub("\s+", " ", date)
+                    date = re.sub(".*POSTPONED NEW DATE", "", date).strip()
+                    ctty = value.xpath(".//strong")[0]
+                    ctty = ctty.text_content()
+
+                    chamber = 'other'
+                    if "senate" in ctty.lower():
+                        chamber = 'upper'
+                    if "house" in ctty.lower():
+                        chamber = 'lower'
+                    if "joint" in ctty.lower():
+                        chamber = 'joint'
+                elif key.tag == 'td':
+                    key = key.text_content().strip()
+                    value = value.text_content().strip()
+                    value = value.replace(u'\x96', '-')
+                    value = re.sub("\s+", " ", value)
+                    metainf[key] = value
+
+
+            time = metainf['Time:']
+            repl = {
+                "A.M." : "AM",
+                "P.M." : "PM"
+            }
+            for r in repl:
+                time = time.replace(r, repl[r])
+
+            time = re.sub("-.*", "", time)
+            time = time.strip()
+
+            year = dt.datetime.now().year
+
+            date = "%s %s %s" % (
+                date,
+                year,
+                time
+            )
+            datetime = dt.datetime.strptime(date, "%B %m %Y %I:%M %p")
+            event = Event(session, datetime, 'committee:meeting',
+                          metainf['Public Hearing:'],
+                          location=metainf['Place:'],
+                          contact=metainf['Contact:'],
+                          media_contact=metainf['Media Contact:'])
+            event.add_source(url)
+            event.add_participant('host',
+                                  ctty,
+                                  chamber=chamber)
+            self.save_event(event)
+
     def scrape(self, chamber, session):
-        if chamber == 'upper':
-            self.scrape_upper_events(session)
-        elif chamber == 'lower':
-            self.scrape_lower_events(session)
-
-    def scrape_upper_events(self, session):
-        url = ("http://www.nysenate.gov/calendar/ical/"
-               "senator%3DAll%2526type%3D3%2526committee%3DAll"
-               "%2526initiative%3DAll")
-
-        with self.urlopen(url) as page:
-            cal = icalendar.Calendar.from_ical(page)
-
-            for comp in cal.walk():
-                if comp.name != 'VEVENT':
-                    continue
-
-                text = str(comp['SUMMARY'])
-                if 'Committee Meeting' not in text:
-                    continue
-
-                start = _tz.localize(comp['DTSTART'].dt)
-                end = _tz.localize(comp['DTEND'].dt)
-                uid = str(comp['UID'])
-                event_url = comp['URL']
-
-                location = self.get_upper_location(event_url)
-
-                event = Event(session, start, 'committee:meeting',
-                              text, location, end)
-                event.add_source(url)
-                event.add_source(event_url)
-
-                self.save_event(event)
-
-    def get_upper_location(self, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-
-            return page.xpath("string(//div[@class = 'adr'])").strip()
-
-    def scrape_lower_events(self, session):
-        url = "http://assembly.state.ny.us/leg/?sh=hear"
-
-        year = datetime.date.today().year
-
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-
-            for td in page.xpath("//td[@bgcolor='#99CCCC']"):
-                desc = td.xpath("string(following-sibling::td/strong)")
-                if 'Senate Standing Committee' in desc:
-                    # We should pick these up from the upper scraper
-                    continue
-
-                notes = td.xpath(
-                    "string(../following-sibling::tr[1]/td[2])")
-                notes = re.sub(r'\*\*Click here to view hearing notice\*\*',
-                               '', notes).strip()
-
-                location = td.xpath(
-                    "string(../following-sibling::tr[2]/td[2])")
-
-                date = ' '.join(td.text.split()[0:2]).strip()
-
-                time = td.xpath("../following-sibling::tr[3]/td[2]")[0]
-                split_time = time.text.split('-')
-
-                when = "%s %d %s" % (date, year, split_time[0].strip())
-                when = _parse_date(when.replace('.', ''))
-
-                end = None
-                if len(split_time) > 1:
-                    end = "%s %d %s" % (date, year, split_time[1].strip())
-                    end = _parse_date(end.replace('.', ''))
-
-                event = Event(session, when, 'committee:meeting',
-                              desc, location, end=end, notes=notes)
-                event.add_source(url)
-                self.save_event(event)
+        if chamber == 'other':
+            self.parse_page(url, session)
