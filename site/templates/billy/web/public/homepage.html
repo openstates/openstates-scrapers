@@ -28,12 +28,11 @@
                 <h5 id="notifyTitle" class="tipSm">Be notified when we launch the new site.</h5>
             {% endif %}
 
-            <form action="/search/" method="get" id="notify">
-                <input type="text" name="q" placeholder="your email address">
-                <input type="text" name="q" placeholder="your zip code">
-                <button type="submit">
-                     <span>Submit</span>
-                </button>
+            <form action="" method="post" id="notify">
+                <input type="hidden" name="source" value="openstates">
+                <input type="text" name="email" placeholder="your email address">
+                <input type="text" name="zip" placeholder="your zip code">
+                <button type="submit"> <span>Submit</span> </button>
             </form>
 
             <h5 id="dataTitle" class="tipSm" >Just want data?</h5>
