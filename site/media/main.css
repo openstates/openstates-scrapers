@@ -391,6 +391,8 @@ div.flatpage table#download_list { width: auto; }
 footer #submit button { background: url(images/btn_submitFooter.png) top left no-repeat; width: 85px; height: 30px;}
 footer #submit button:hover { background: url(images/btn_submitFooter.png) bottom left no-repeat; }
 footer input { float: left; margin-right: 10px;}
+/* make footer links grey w/ underline */
+footer a, a:active, a:visited { color: #8d8781; text-decoration: underline; }
 
 #recources { background: url(images/bg_resources.png) top left no-repeat; height: 121px; width: 633px; margin-left: -35px; margin-top: -5px; margin-bottom: 30px;}
 #recources h4 { background: url(images/bg_resourcesTitle.png) top left no-repeat; margin-top: -15px; width: 190px; height: 32px; position: absolute; padding: 13px 0 0 50px; margin-left: 10px;}
