@@ -1,5 +1,7 @@
-import unicodecsv as csv
+import unicodecsv
 import datetime
+import chardet
+
 try:
     import cStringIO as StringIO
 except ImportError:
@@ -74,9 +76,10 @@ class CTEventScraper(EventScraper):
 
     def get_comm_codes(self):
         url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
-        with self.urlopen(url) as page:
-            page = csv.DictReader(StringIO.StringIO(page))
-
-            return [(row['comm_code'].strip(),
-                     row['comm_name'].strip())
-                    for row in page]
+        page = self.urlopen(url)
+        char_encoding = chardet.detect(page.bytes)['encoding']
+        page = unicodecsv.DictReader(StringIO.StringIO(page.bytes),
+                                     encoding=char_encoding)
+        return [(row['comm_code'].strip(),
+                 row['comm_name'].strip())
+                for row in page]
