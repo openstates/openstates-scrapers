@@ -1,9 +1,8 @@
 import re
-import csv
-import urllib2
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
+from .utils import open_csv
 
 
 class CTLegislatorScraper(LegislatorScraper):
@@ -21,8 +20,8 @@ class CTLegislatorScraper(LegislatorScraper):
         office_code = {'upper': 'S', 'lower': 'H'}[chamber]
 
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
-        page = urllib2.urlopen(leg_url)
-        page = csv.DictReader(page)
+        data = self.urlopen(leg_url)
+        page = open_csv(data)
 
         for row in page:
             if office_code != row['office code']:
@@ -69,8 +68,8 @@ class CTLegislatorScraper(LegislatorScraper):
 
     def _scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
-        page = urllib2.urlopen(comm_url)
-        page = csv.DictReader(page)
+        page = self.urlopen(comm_url)
+        page = open_csv(page)
 
         for row in page:
             comm_code = row['comm_code'].strip()

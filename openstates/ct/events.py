@@ -2,17 +2,13 @@ import unicodecsv
 import datetime
 import chardet
 
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
-
 from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
 
 import pytz
 import lxml.html
 
+from .utils import open_csv
 
 class CTEventScraper(EventScraper):
     state = 'ct'
@@ -77,9 +73,7 @@ class CTEventScraper(EventScraper):
     def get_comm_codes(self):
         url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
         page = self.urlopen(url)
-        char_encoding = chardet.detect(page.bytes)['encoding']
-        page = unicodecsv.DictReader(StringIO.StringIO(page.bytes),
-                                     encoding=char_encoding)
+        page = open_csv(page)
         return [(row['comm_code'].strip(),
                  row['comm_name'].strip())
                 for row in page]
