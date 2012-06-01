@@ -11,23 +11,40 @@
 {% block content %}
     <div id="container">
         <div class="eightCol">
-            <p class="callOut">Discover politics in your state. Find everything from legislator to bills that might be arising.</p>
-            <p class="tip">Open States is working furiously to get information on every state. For the time being the states available are 
-            {% for metadata in active_states%}{% if forloop.first %}{% else %},{% endif %}<a href="{% url 'state' metadata.abbreviation %}"> {{metadata.name}}</a>{% endfor %}
-            </p>
-            
-            <h5 id="notifyTitle" class="tipSm">Be Notified when we have your state available</h5>
+            <p class="callOut">Discover politics in your state. Find your legislators, see how they've voted, and browse upcoming legislation and events.</p>
+
+            {# delete _not_yet to make this work #}
+            {% if active_states_not_yet %}
+                <p>While Open States is in beta this site is only available for 
+                {% for metadata in active_states %}
+                <a href="{% url 'state' metadata.abbreviation %}"> {{metadata.name}}</a>{% if forloop.revcounter > 2 %},{% elif forloop.revcounter == 2 %} and{% endif %}{% endfor %}.
+                <br />You can also get <a href="http://itunes.apple.com/app/open-states/id500672932?mt=8">Open States on your iPhone or iPad</a>.
+                </p>
+
+                <h5 id="notifyTitle" class="tipSm">Be notified when we launch the remaining states</h5>
+            {% else %}
+                <p>A brand new OpenStates.org is coming soon, sign up to be notified when it is available.
+
+                <h5 id="notifyTitle" class="tipSm">Be notified when we launch the new site.</h5>
+            {% endif %}
+
             <form action="/search/" method="get" id="notify">
                 <input type="text" name="q" placeholder="your email address">
                 <input type="text" name="q" placeholder="your zip code">
                 <button type="submit">
                      <span>Submit</span>
                 </button>
-            </form>  
+            </form>
+
+            <h5 id="dataTitle" class="tipSm" >Just want data?</h5>
+            <p>We gather legislative data from all 50 states, Washington DC, and Puerto Rico and make it available in a common format via our <a href="/api/">API</a> and <a href="/downloads/">bulk downloads</a>.
+            You can also check out our <a href="/contributing/">contributor's guide</a> and join our <a href="http://groups.google.com/group/fifty-state-project">Google Group</a> to get involved.
+            </p>
+
         </div>
         <div class="fiveCol">
-            
-        </div>    
+
+        </div>
         <div class="clear"></div>
-    </div>       
+    </div>
 {% endblock %}
