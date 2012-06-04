@@ -258,6 +258,7 @@ def new_feed_id(entry, cache={}):
 
 PATH = dirname(abspath(__file__))
 DATA = settings.BILLY_DATA_DIR
+print 'BILLY_DATA_DIR', BILLY_DATA_DIR
 
 
 class Extractor(object):
@@ -459,7 +460,7 @@ class Extractor(object):
             # Search the trie.
             matches = []
             try:
-                summary = nltk.clean_html(entry['summary'])
+                summary = clean_html(entry['summary'])
             except KeyError:
                 # This entry has no summary. Skip.
                 continue
@@ -488,9 +489,9 @@ class Extractor(object):
             entry['_id'] = new_feed_id(entry)
             entry['_type'] = 'feedentry'
 
-            entry['summary'] = nltk.clean_html(entry['summary'])
+            entry['summary'] = clean_html(entry['summary'])
             try:
-                entry['summary_detail']['value'] = nltk.clean_html(
+                entry['summary_detail']['value'] = clean_html(
                     entry['summary_detail']['value'])
             except KeyError:
                 pass
@@ -571,7 +572,6 @@ if __name__ == '__main__':
         filenames = os.listdir(join(PATH, 'urls'))
         filenames = [s.replace('.txt', '') for s in filenames]
         states = filter(lambda s: '~' not in s, filenames)
-        print states
 
     stats = {}
     for abbr in states:
