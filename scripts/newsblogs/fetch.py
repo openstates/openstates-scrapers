@@ -25,7 +25,7 @@ formatter = logging.Formatter('%(asctime)s - %(message)s',
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-logger.info(billy_settings)
+logger.info(dir(billy_settings)
 
 request_defaults = {
     #'proxies': {"http": "localhost:8001"},
