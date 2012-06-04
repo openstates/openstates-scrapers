@@ -5,7 +5,7 @@
 <html lang="en" class="no-js">
 <head>
     <title>{% block title %}{% endblock %}</title>
-    <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}/main.css" />
+    <link rel="stylesheet" type="text/css" href="{% static "main.css" %}" />
 
     <script type="text/javascript" src="{% static "js/jquery-1.5.1.min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/jquery-placehold.min.js" %}"></script>
@@ -16,14 +16,14 @@
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 </head>
-<body {% block bodyclass %}{% endblock %}>
+<body class="{% block bodyclass %}{% endblock %}">
     <header id="mainHeader">
         <form action="/search/" method="get" id="searchform">
             <input class="transparent" type="search" name="q" id="id_q" placeholder="search the site">
             <button type="submit">
                  <span>Search</span>
             </button>
-        </form>  
+        </form>
         <h1 class="clear"><a class="textReplace" href="/">Open States</a></h1>
         <div id="shareBtns">
             <ul>
@@ -32,10 +32,9 @@
             </ul>
         </div>
 
-        {% state_select_form abbr %}
-
         {# Some pages are state-agnostic and will need to omit this block (like the homepage). #}
         {% block collection_nav %}
+        {% state_select_form abbr %}
         <nav>
             <ul>
                 <li {% if statenav_active == "legislators" %}class="active"{% endif %}><a href="{% url legislators abbr %}">Legislators</a></li>
@@ -45,6 +44,7 @@
             <div class="clear"></div>
         </nav>
         {% endblock %}
+
     </header>
 
     <div id="container">
@@ -55,8 +55,8 @@
         <footer> 
             <div id="footerLt">
                 <a class="textReplace" id="sunlight" href="http://www.sunlightfoundation.com">Sunlight Foundation</a>
-                <p>Our privacy policy details how personally identifiable information that is collected on our web sites is handled. Read our terms of service.</p>
-                <p>This work by Sunlight Foundation, unless otherwise noted, is licensed under a Creative Commons Attribution 3.0 United States License.</p>
+                <p>Our <a href="http://sunlightfoundation.com/legal/privacy/">privacy policy</a> details how personally identifiable information that is collected on our web sites is handled. Read our <a href="http://sunlightfoundation.com/legal/terms/">terms of service</a>.</p>
+                <p>This work by <a href="http://sunlightfoundation.com">Sunlight Foundation</a>, unless <a href="/colophon/">otherwise noted</a>, is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/us/">Creative Commons Attribution 3.0 United States License</a>.</p>
             </div>     
             <div id="footerRt">
                 <div id="recources">

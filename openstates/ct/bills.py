@@ -1,16 +1,12 @@
 import re
-import chardet
-import unicodecsv
 import datetime
 from operator import itemgetter
 from collections import defaultdict
 
-import StringIO
-
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from .utils import parse_directory_listing
+from .utils import parse_directory_listing, open_csv
 
 import lxml.html
 
@@ -42,10 +38,8 @@ class CTBillScraper(BillScraper):
 
     def scrape_bill_info(self, chamber, session):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/bill_info.csv"
-        page = self.urlopen(info_url)
-        char_encoding = chardet.detect(page.bytes)['encoding']
-        page = unicodecsv.DictReader(StringIO.StringIO(page.bytes),
-                                     encoding=char_encoding)
+        data = self.urlopen(info_url)
+        page = open_csv(data)
 
         abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
@@ -187,7 +181,7 @@ class CTBillScraper(BillScraper):
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"
         page = self.urlopen(history_url)
-        page = unicodecsv.DictReader(StringIO.StringIO(page))
+        page = open_csv(page)
 
         action_rows = defaultdict(list)
 
@@ -279,7 +273,7 @@ class CTBillScraper(BillScraper):
     def scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
         page = self.urlopen(comm_url)
-        page = unicodecsv.DictReader(StringIO.StringIO(page))
+        page = open_csv(page)
 
         for row in page:
             comm_code = row['comm_code'].strip()

@@ -104,7 +104,7 @@ class AKBillScraper(BillScraper):
         bill.add_source(url)
 
         # Get sponsors
-        spons_str = doc.xpath('//b[text()="SPONSOR(s):"]')[0].tail.strip()
+        spons_str = doc.xpath('//b[contains(text(), "SPONSOR")]')[0].tail.strip()
         sponsors_match = re.match(
             '(SENATOR|REPRESENTATIVE)\([Ss]\) ([^,]+(,[^,]+){0,})',
             spons_str)

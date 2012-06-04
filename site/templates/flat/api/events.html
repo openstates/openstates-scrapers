@@ -1,18 +1,9 @@
-{% extends "flatpage.html" %}
+{% extends "flat/api/api.html" %}
 {% load markup_tags %}
 
 {% block title %}Open State Project API: Event Methods{% endblock %}
 
-{% block breadcrumb %}
-<li class="home">
-    <a href="/api/">API</a>
-</li>
-<li class="live">
-<a href="">Events</a>
-</li>
-{% endblock %}
-
-{% block content %}
+{% block flatpage %}
 
 <h2>Event API</h2>
 
@@ -32,22 +23,22 @@ Event Fields
 
 All event methods return Event objects consisting of at least the following fields:
 
-  * ``id``: An Open State Project event id, e.g. ``TXE00004925``
-  * ``description``: A description of the event, e.g. 'Appropriations Committee Meeting'
-  * ``when``: The date/time of the event, in UTC
-  * ``end``: The end date/time of the event, in UTC, if available
-  * ``location``: Where the event occurred, e.g. 'Capitol Room 6C
-  * ``type``: The type of event, e.g. 'committee:meeting', 'bill:action'
-  * ``state``: The state in which the event ocurred
-  * ``session``: The legislative session during which the event ocurred
-  * ``participants``: A list of people/groups that participated in the event, containing at least the following fields:
+* ``id``: An Open State Project event id, e.g. ``TXE00004925``
+* ``description``: A description of the event, e.g. 'Appropriations Committee Meeting'
+* ``when``: The date/time of the event, in UTC
+* ``end``: The end date/time of the event, in UTC, if available
+* ``location``: Where the event occurred, e.g. 'Capitol Room 6C
+* ``type``: The type of event, e.g. 'committee:meeting', 'bill:action'
+* ``state``: The state in which the event ocurred
+* ``session``: The legislative session during which the event ocurred
+* ``participants``: A list of people/groups that participated in the event, containing at least the following fields:
 
-    * ``type``: the type of participant, e.g. ``legislator`` or ``committee``
-    * ``participant`` the name of the participant
-  * ``sources``
-    List of sources that this data was collected from.
+  * ``type``: the type of participant, e.g. ``legislator`` or ``committee``
+  * ``participant`` the name of the participant
+* ``sources``
+  List of sources that this data was collected from.
 
-      * ``url``: URL of the source
+  * ``url``: URL of the source
 
 
 Event Search
