@@ -80,7 +80,11 @@ $(document).ready(function() {
 {% if located %}
 {# Results here #}
 {% for leg in legislators %}
-    <div class = 'leg-result' >{{ leg.first_name }}</div>
+<div class = 'leg-result' >
+    <a href = '/{{leg.state}}/legislator/{{leg.leg_id}}' >
+        {{ leg.first_name }}
+    </a>
+</div>
 {% endfor %}
 {% endif %}
             <div id = 'communicate' ></div>
