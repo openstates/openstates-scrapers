@@ -40,9 +40,9 @@ GMaps.geolocate({
             "</p>");
     },
     error: function(error) {
-        $("#communicate").append("<p class = 'find_your_legislator_errorbox' >" +
+        /* $("#communicate").append("<p class = 'find_your_legislator_errorbox' >" +
             "We were not able to guess your location. Please enter in your details."+
-            "</p>");
+            "</p>"); */
     }
 });
   </script>
@@ -55,6 +55,14 @@ GMaps.geolocate({
         <div class="eightCol">
             <p class="callOut">Find your legislator!</p>
             <div id = 'communicate' ></div>
+            <div id = 'find_your_legislator_search' >
+                <form id = 'find_your_leg'>
+                    <input type = 'text' name = 'leg_search' id = 'leg_search'
+                        size = '50'
+                        placeholder = '525 Washington Street,  Wellesley, MA' ></input>
+                    <input type = 'submit' value = 'Submit' ></input>
+                </form>
+            </div>
         </div>
         <div class="fiveCol">
         </div>
