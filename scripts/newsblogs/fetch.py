@@ -1,24 +1,32 @@
-import sys
 import os
 from os.path import dirname, abspath, join
-import itertools
 import json
 import shutil
-import urllib
 import time
 import datetime
+import logging
 
 import feedparser
-import requests
 
-import billy_settings
+import scrapelib
 from billy.scrape import JSONDateEncoder
 
+
 PATH = dirname(abspath(__file__))
-DATA = billy_settings.DATA_DIR
+DATA = 'data'
+
+logger = logging.getLogger('mysql-update')
+logger.setLevel(logging.INFO)
+
+ch = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(message)s',
+                              datefmt='%H:%M:%S')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
 
 request_defaults = {
-    'proxies': {"http": "localhost:8001"},
+    #'proxies': {"http": "localhost:8001"},
     'timeout': 5.0,
     'headers': {
         'Accept': ('text/html,application/xhtml+xml,application/'
@@ -33,14 +41,14 @@ request_defaults = {
 
 if __name__ == '__main__':
 
-    session = requests.session(**request_defaults)
+    session = scrapelib.Scraper(**request_defaults)
 
     def fetch(url):
-        print url
+        logger.info('trying %r' % url)
         try:
             return session.get(url, **request_defaults)
         except Exception as e:
-            print e
+            logger.exception(e)
 
     filenames = os.listdir(join(PATH, 'urls'))
     filenames = filter(lambda s: '~' not in s, filenames)
@@ -48,9 +56,9 @@ if __name__ == '__main__':
         abbr = urls_filename.lower().replace('.txt', '')
         with open(join(PATH, 'urls', urls_filename)) as urls:
             urls = urls.read().splitlines()
-            urls = filter(lambda url: url.startswith('#'), urls)
-            responses = filter(None, [fetch(url) for url in urls])
-            #responses = requests.async.map(rs, size=4)
+            ignored = lambda url: not url.strip().startswith('#')
+            urls = filter(ignored, urls)
+            responses = filter(None, urls)
 
         STATE_DATA = join(DATA, abbr, 'feeds')
         STATE_DATA_RAW = join(STATE_DATA, 'raw')
@@ -66,9 +74,12 @@ if __name__ == '__main__':
             except OSError:
                 pass
 
-        for resp in responses:
+        for url in urls:
 
-            feed = feedparser.parse(resp.text)
+            resp = fetch(url)
+            if not resp:
+                continue
+            feed = feedparser.parse(resp)
             for entry in feed['entries']:
                 # inbox_url = ('https://inbox.influenceexplorer.com/'
                 #              'contextualize?apikey=%s&text="%s"')
