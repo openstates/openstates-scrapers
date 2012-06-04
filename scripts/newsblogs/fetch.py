@@ -79,7 +79,7 @@ if __name__ == '__main__':
             resp = fetch(url)
             if not resp:
                 continue
-            feed = feedparser.parse(resp)
+            feed = feedparser.parse(resp.text)
             for entry in feed['entries']:
                 # inbox_url = ('https://inbox.influenceexplorer.com/'
                 #              'contextualize?apikey=%s&text="%s"')
