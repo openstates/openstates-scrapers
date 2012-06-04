@@ -43,9 +43,13 @@ Saint Paul, Minnesota 55155'''
                     email = tds[4]
 
                 leg = Legislator(term, 'lower', district, name,
-                                 party=party, office_address=addr,
-                                 office_phone=phone, email=email,
-                                 url=leg_url)
+                                 party=party, email=email, url=leg_url)
+
+                addr = ('{0} State Office Building\n'
+                        '100 Rev. Dr. Martin Luther King Jr. Blvd.\n'
+                        'St. Paul, MN 55155').format(addr)
+                leg.add_office('capitol', 'Capitol Office', address=addr,
+                               phone=phone)
 
                 # add photo_url
                 with self.urlopen(leg_url) as leg_html:
@@ -78,8 +82,18 @@ Saint Paul, Minnesota 55155'''
 
                     leg = Legislator(term, 'upper', district, name,
                                      party=self._parties[party],
-                                     office_address=addr, office_phone=phone,
                                      url=leg_url)
+
+                    if 'State Office' in addr:
+                        addr = ('100 Rev. Dr. Martin Luther King Jr. Blvd.\n'
+                                'Room {0}\n'
+                                'St. Paul, MN 55155-1206').format(addr)
+                    elif 'Capitol' in addr:
+                        addr = ('75 Rev. Dr. Martin Luther King Jr. Blvd.\n'
+                                'Room {0}\n'
+                                'St. Paul, MN 55155-1606').format(addr)
+                    leg.add_office('capitol', 'Capitol Office', address=addr,
+                                   phone=phone)
 
                     if '@' in email:
                         leg['email'] = email
