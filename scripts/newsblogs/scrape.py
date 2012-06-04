@@ -258,7 +258,7 @@ def new_feed_id(entry, cache={}):
 
 PATH = dirname(abspath(__file__))
 DATA = settings.BILLY_DATA_DIR
-print 'BILLY_DATA_DIR', BILLY_DATA_DIR
+print 'BILLY_DATA_DIR', settings.BILLY_DATA_DIR
 
 
 class Extractor(object):
