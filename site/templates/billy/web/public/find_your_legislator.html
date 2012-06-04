@@ -7,6 +7,45 @@
 {% block bodyclass %}home{% endblock %}
 
 {% block headblock %}
+<style>
+.find_your_legislator_errorbox {
+    color:                 #2e2020;
+    padding:               10px;
+    background-color:      #d99898;
+    border:                1px solid #825b5b;
+    -moz-border-radius:    5px;
+    -webkit-border-radius: 5px;
+}
+.find_your_legislator_infobox {
+    padding:               10px;
+    background-color:      #b1e7fc;
+    border:                1px solid #769aa8;
+    -moz-border-radius:    5px;
+    -webkit-border-radius: 5px;
+}
+.find_your_legislator_infobox  a {
+    color:                 #3b4d54;
+    text-decoration:       underline;
+}
+</style>
+  <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+  <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
+  <script type="text/javascript">
+GMaps.geolocate({
+    success: function(position) {
+        console.log(position.coords.latitude, position.coords.longitude);
+        $("#communicate").append("<p class = 'find_your_legislator_infobox' >" +
+            "We've been able to guess where you currently are. Click " +
+            "<a href = '' >here</a> to look up your legislator." +
+            "</p>");
+    },
+    error: function(error) {
+        $("#communicate").append("<p class = 'find_your_legislator_errorbox' >" +
+            "We were not able to guess your location. Please enter in your details."+
+            "</p>");
+    }
+});
+  </script>
 {% endblock %}
 
 {% block collection_nav %}{% endblock %}
@@ -15,7 +54,7 @@
     <div id="container">
         <div class="eightCol">
             <p class="callOut">Find your legislator!</p>
-
+            <div id = 'communicate' ></div>
         </div>
         <div class="fiveCol">
         </div>
