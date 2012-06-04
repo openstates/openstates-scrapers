@@ -1,4 +1,3 @@
-import pdb
 import re
 import json
 import os
@@ -13,7 +12,6 @@ from operator import itemgetter
 
 import pymongo
 from functools import partial
-import nltk
 
 from billy.models import db
 from billy.utils import metadata
@@ -72,7 +70,7 @@ class PseudoMatch(object):
 
     def __repr__(self):
         return 'PseudoMatch(group=%r, start=%r, end=%r)' % self._tuple()
-        
+
 
 def trie_add(trie, seq_value_2tuples, terminus=0):
     '''Given a trie (or rather, a dict), add the match terms into the
@@ -225,6 +223,25 @@ def cartcat(s_list1, s_list2):
     of the lists and concat each resulting 2-tuple.'''
     prod = itertools.product(s_list1, s_list2)
     return map(partial(apply, operator.add), prod)
+
+
+def clean_html(html):
+    """
+    Remove HTML markup from the given string. Borrowed from nltk.
+    """
+    # First we remove inline JavaScript/CSS:
+    cleaned = re.sub(r"(?is)<(script|style).*?>.*?(</\1>)", "", html.strip())
+    # Then we remove html comments. This has to be done before removing regular
+    # tags since comments can contain '>' characters.
+    cleaned = re.sub(r"(?s)<!--(.*?)-->[\n]?", "", cleaned)
+    # Next we can remove the remaining tags:
+    cleaned = re.sub(r"(?s)<.*?>", " ", cleaned)
+    # Finally, we deal with whitespace
+    cleaned = re.sub(r"&nbsp;", " ", cleaned)
+    cleaned = re.sub(r"  ", " ", cleaned)
+    cleaned = re.sub(r"  ", " ", cleaned)
+    return cleaned.strip()
+
 # ---------------------------------------------------------------------------
 
 
