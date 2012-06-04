@@ -9,7 +9,6 @@ import logging
 import feedparser
 
 import scrapelib
-import billy_settings
 from billy.scrape import JSONDateEncoder
 
 
@@ -78,7 +77,7 @@ if __name__ == '__main__':
         for url in urls:
 
             resp = fetch(url)
-            feed = feedparser.parse(resp.text)
+            feed = feedparser.parse(resp)
             for entry in feed['entries']:
                 # inbox_url = ('https://inbox.influenceexplorer.com/'
                 #              'contextualize?apikey=%s&text="%s"')
