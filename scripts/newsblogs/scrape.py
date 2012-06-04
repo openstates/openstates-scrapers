@@ -571,6 +571,7 @@ if __name__ == '__main__':
         filenames = os.listdir(join(PATH, 'urls'))
         filenames = [s.replace('.txt', '') for s in filenames]
         states = filter(lambda s: '~' not in s, filenames)
+        print states
 
     stats = {}
     for abbr in states:
