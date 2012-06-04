@@ -77,6 +77,12 @@ $(document).ready(function() {
     <div id="container">
         <div class="eightCol">
             <p class="callOut">Find your legislator!</p>
+{% if located %}
+{# Results here #}
+{% for leg in legislators %}
+    <div class = 'leg-result' >{{ leg.first_name }}</div>
+{% endfor %}
+{% endif %}
             <div id = 'communicate' ></div>
             <div id = 'find_your_legislator_search' >
                 <form id = 'find_your_leg'>
