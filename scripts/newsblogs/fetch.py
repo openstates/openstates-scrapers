@@ -14,7 +14,7 @@ from billy.scrape import JSONDateEncoder
 
 
 PATH = dirname(abspath(__file__))
-DATA = billy_settings.DATA_DIR
+#DATA = billy_settings.DATA_DIR
 
 logger = logging.getLogger('mysql-update')
 logger.setLevel(logging.INFO)
@@ -24,6 +24,8 @@ formatter = logging.Formatter('%(asctime)s - %(message)s',
                               datefmt='%H:%M:%S')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
+logger.info(billy_settings)
 
 request_defaults = {
     #'proxies': {"http": "localhost:8001"},
