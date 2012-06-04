@@ -77,6 +77,8 @@ if __name__ == '__main__':
         for url in urls:
 
             resp = fetch(url)
+            if not resp:
+                continue
             feed = feedparser.parse(resp)
             for entry in feed['entries']:
                 # inbox_url = ('https://inbox.influenceexplorer.com/'
