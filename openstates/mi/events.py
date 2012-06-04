@@ -45,7 +45,8 @@ class MIEventScraper(EventScraper):
             return
 
         translate = {
-            "noon": "PM"
+            "noon": "PM",
+            "a.m.": "AM"
         }
 
         for t in translate:
