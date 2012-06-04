@@ -11,6 +11,7 @@ import datetime
 from os.path import join, dirname, abspath
 from operator import itemgetter
 
+import pymongo
 from functools import partial
 import nltk
 
@@ -18,6 +19,12 @@ from billy.models import db
 from billy.utils import metadata
 from billy.conf import settings
 
+
+host = settings.MONGO_HOST
+port = settings.MONGO_PORT
+
+conn = pymongo.Connection(host, port)
+feed_db = conn.newsblogs
 
 
 class _CachedAttr(object):
@@ -236,40 +243,25 @@ PATH = dirname(abspath(__file__))
 DATA = settings.BILLY_DATA_DIR
 
 
-class Meta(type):
-
-    _classes = set()
-
-    def __new__(meta, name, bases, attrs):
-        cls = type.__new__(meta, name, bases, attrs)
-        meta._classes.add(cls)
-        return cls
-
-    @classmethod
-    def classes(cls):
-        return cls._classes - set([Base])
-
-
 class Extractor(object):
-    __metaclass__ = Meta
 
     trie_terms = {
         'legislators': cartcat(
 
-            [u'Senator', 
+            [u'Senator',
              u'Senate member',
              u'Senate Member',
-             u'Assemblymember', 
+             u'Assemblymember',
              u'Assembly Member',
              u'Assembly member',
              u'Assemblyman',
-             u'Assemblywoman', 
+             u'Assemblywoman',
              u'Assembly person',
-             u'Assemblymember', 
+             u'Assemblymember',
              u'Assembly Member',
-             u'Assembly member', 
+             u'Assembly member',
              u'Assemblyman',
-             u'Assemblywoman', 
+             u'Assemblywoman',
              u'Assembly person',
              u'Representative',
              u'Rep.',
@@ -277,19 +269,18 @@ class Extractor(object):
              u'Council member',
              u'Councilman',
              u'Councilwoman',
-             u'Councilperson',], 
+             u'Councilperson'],
 
             [u' {legislator[last_name]}',
              u' {legislator[full_name]}'])
 
             + [u' {legislator[first_name]} {legislator[last_name]}'],
 
-        'bills': [ 
+        'bills': [
             ('bill_id', lambda s: s.upper().replace('.', ''))
             ]
 
         }
-
 
     def __init__(self, abbr):
         self.entrycount = 0
@@ -303,14 +294,12 @@ class Extractor(object):
         logger.addHandler(ch)
         self.logger = logger
 
-
     @property
     def metadata(self):
         return metadata(self.abbr)
 
-
     def extract_bill(self, m, collection=db.bills, cache={}):
-        '''Given a match object m, return the _id of the related bill. 
+        '''Given a match object m, return the _id of the related bill.
         '''
         def squish(bill_id):
             bill_id = ''.join(bill_id.split())
@@ -332,10 +321,8 @@ class Extractor(object):
         if bill_id in ids:
             return ids[bill_id]
 
-
     def committee_variations(self, committee):
         '''Compute likely variations for a committee
- 
         Standing Committee on Rules
          - Rules Committee
          - Committee on Rules
@@ -359,7 +346,7 @@ class Extractor(object):
 
         # Arts Committee
         short1 = raw + ' Committee'
-        
+
         # Assembly Arts Committee
         if not short1.startswith(chamber_name):
             short2 = chamber_name + ' ' + short1
@@ -374,13 +361,12 @@ class Extractor(object):
         # "select Committee weirdness"
         phrases += ['Select ' + committee_on_1]
 
-        # Adjust for ampersand usage like "Senate Public Employment & 
+        # Adjust for ampersand usage like "Senate Public Employment &
         # Retirement Committee"
         phrases += [p.replace(' and ', ' & ') for p in phrases]
 
         # Exclude phrases less than two words in length.
         return set(filter(lambda s: ' ' in s, phrases))
-
 
     @property
     def trie(self):
@@ -388,7 +374,6 @@ class Extractor(object):
             return self._trie
         except AttributeError:
             return self.build_trie()
-
 
     def build_trie(self):
         '''Interpolate values from this state's mongo records
@@ -413,13 +398,13 @@ class Extractor(object):
                 for term in trie_terms[collection_name]:
 
                     if isinstance(term, basestring):
-                        trie_add_args = (term.format(**vals), 
+                        trie_add_args = (term.format(**vals),
                                          [collection_name, record['_id']])
                         trie_data.append(trie_add_args)
 
                     elif isinstance(term, tuple):
                         k, func = term
-                        trie_add_args = (func(record[k]), 
+                        trie_add_args = (func(record[k]),
                                          [collection_name, record['_id']])
                         trie_data.append(trie_add_args)
 
@@ -432,7 +417,7 @@ class Extractor(object):
 
             committee_variations = self.committee_variations
             trie_data = []
-            records = db.committees.find({'state': abbr}, 
+            records = db.committees.find({'state': abbr},
                                          {'committee': 1, 'subcommittee': 1,
                                           'chamber': 1})
             self.logger.info('Computing name variations for %d records' % \
@@ -447,8 +432,7 @@ class Extractor(object):
 
         trie = trie_add(trie, trie_data)
         self._trie = trie
-        return trie 
-
+        return trie
 
     def scan_feed(self, entries):
 
@@ -457,7 +441,6 @@ class Extractor(object):
 
             # Search the trie.
             matches = []
-            link = entry['link']
             try:
                 summary = nltk.clean_html(entry['summary'])
             except KeyError:
@@ -469,11 +452,11 @@ class Extractor(object):
 
     def process_feed(self, entries):
         abbr = self.abbr
-        feed_entries = db.feed_entries
+        feed_entries = feed_db.entries
         third = itemgetter(2)
 
         # Find matching entities in the feed.
-        for entry, matches in self.scan_feed(entries):                    
+        for entry, matches in self.scan_feed(entries):
             matches = self.extract_entities(matches)
 
             ids = map(third, matches)
@@ -481,8 +464,7 @@ class Extractor(object):
             assert len(ids) == len(strings)
 
             # Add references and save in mongo.
-            
-            entry['state'] = abbr # list probably wiser
+            entry['state'] = abbr  # list probably wiser
             entry['entity_ids'] = ids or None
             entry['entity_strings'] = strings or None
             entry['save_time'] = datetime.datetime.utcnow()
@@ -495,14 +477,13 @@ class Extractor(object):
                     entry['summary_detail']['value'])
             except KeyError:
                 pass
-            
+
             feed_entries.save(entry)
             msg = 'Found %d related entities in %r'
             self.logger.info(msg % (len(ids), entry['title']))
 
-
     def process_all_feeds(self):
-        '''Note to self...possible problems with entries getting 
+        '''Note to self...possible problems with entries getting
         overwritten?
         '''
         abbr = self.abbr
@@ -515,7 +496,6 @@ class Extractor(object):
                 with open(fn) as f:
                     entries = json.load(f)
                     _process_feed(entries)
-
 
     def extract_entities(self, matches):
 
@@ -543,8 +523,6 @@ class Extractor(object):
 
         return processed
 
-
-
 '''
 To-do:
 DONE - Make trie-scan return a pseudo-match object that has same
@@ -570,18 +548,28 @@ if __name__ == '__main__':
 
     PATH = dirname(abspath(__file__))
 
-    db.feed_entries.remove()
-
     if sys.argv[1:]:
         states = sys.argv[1:]
     else:
         filenames = os.listdir(join(PATH, 'urls'))
         filenames = [s.replace('.txt', '') for s in filenames]
         states = filter(lambda s: '~' not in s, filenames)
-    
+
     stats = {}
     for abbr in states:
         ex = Extractor(abbr)
         ex.process_all_feeds()
         stats[ex.abbr] = ex.entrycount
+
+    logger = logging.getLogger('mysql-update')
+    logger.setLevel(logging.INFO)
+
+    ch = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(message)s',
+                                  datefmt='%H:%M:%S')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+    for abbr, count in stats.items():
+        logger.info('%s - scanned %d feed entries' % (abbr, count))
     #import pdb;pdb.set_trace()
