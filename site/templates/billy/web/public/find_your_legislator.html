@@ -47,12 +47,6 @@
     <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
     <script type="text/javascript">
 $(document).ready(function() {
-    var map;
-    map = new GMaps({
-        div: '#map',
-        lat: {{ lat }},
-        lng: {{ lon }}
-    });
     $('#find_your_leg').submit(function(e){
         e.preventDefault();
         GMaps.geocode({
@@ -114,6 +108,16 @@ $(document).ready(function() {
 {% if located %}
 
 <div id = 'map' ></div>
+<script>
+    $(document).ready(function() {
+        var map;
+        map = new GMaps({
+            div: '#map',
+            lat: {{ lat }},
+            lng: {{ lon }}
+        });
+    });
+</script>
 
 {% if legislators|length > 0 %}
             <table class = 'leg_find_results'>
