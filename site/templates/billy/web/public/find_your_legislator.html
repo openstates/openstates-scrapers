@@ -92,6 +92,7 @@ $(document).ready(function() {
 {% block collection_nav %}{% endblock %}
 
 {% block content %}
+    <input type = 'hidden' value = '{{request}}' id = '_request' />
     <div id="container">
         <div class="nineCol colLt">
             <p class="callOut">Find your legislator!</p>
@@ -146,6 +147,16 @@ $(document).ready(function() {
 <p>Sorry, we were not able to find any US State Legislators for your
 location. Did you provide an address in the United States?</p>
 {% endif %}
+{% else %}
+<script>
+    $(document).ready(function() {
+        var addr = $('#_request').val().trim();
+        if ( addr != "" ) {
+            $('#leg_search').html(addr);
+            $('#find_your_leg').submit();
+        }
+    });
+</script>
 {% endif %}
         </div>
         <div class="clear"></div>
