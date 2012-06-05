@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 
 from billy.scrape.events import Event, EventScraper
 
@@ -45,14 +46,16 @@ class MIEventScraper(EventScraper):
             return
 
         translate = {
-            "noon": "PM",
-            "a.m.": "AM"
+            "noon": " PM",
+            "a.m.": " AM",
+            "am": " AM"  # This is due to a nasty line they had.
         }
 
         for t in translate:
             if t in datetime:
                 datetime = datetime.replace(t, translate[t])
 
+        datetime = re.sub("\s+", " ", datetime)
 
         flag = "or after committees are given leave"
 
