@@ -54,6 +54,20 @@ $(document).ready(function() {
         lng: -97,
         zoom: 3
     });
+    function do_geo_locate(lat, lon) {
+        var url = '/find_your_legislator/?lat=' +
+               lat +
+               '&lon=' +
+               lon;
+        /* Before we dispatch our request, we've already
+           geo-located. Let's center first. */
+        map.setZoom(12);
+        map.setCenter(
+            lat,
+            lon
+        );
+        $("#results_table").load(url);
+    }
     $('#find_your_leg').submit(function(e){
         e.preventDefault();
         GMaps.geocode({
@@ -62,19 +76,8 @@ $(document).ready(function() {
                 if(status=='OK'){
                     var  latlng = results[0].geometry.location,
                             lat = latlng.lat(),
-                            lon = latlng.lng(),
-                            url = '/find_your_legislator/?lat=' +
-                                   lat +
-                                   '&lon=' +
-                                   lon;
-                    /* Before we dispatch our request, we've already
-                       geo-located. Let's center first. */
-                    map.setZoom(12);
-                    map.setCenter(
-                        lat,
-                        lon
-                    );
-                    $("#results_table").load(url);
+                            lon = latlng.lng();
+                    do_geo_locate(lat, lon);
                 }
             }
         });
@@ -84,12 +87,14 @@ $(document).ready(function() {
             {# XXX: This really needs to be patched up #}
             $("#communicate").append("<p class = 'find_your_legislator_infobox' >" +
                 "We've been able to guess where you currently are. Click " +
-                "<a href = '/find_your_legislator/?lat=" +
-                position.coords.latitude +
-                "&lon=" +
-                position.coords.longitude +
-                "' >here</a> to look up your legislator." +
+                "<a id = 'do_geo_locate' href = '#' >" +
+                "here</a> to look up your legislator." +
                 "</p>");
+            $("#do_geo_locate").click(function() {
+                do_geo_locate(position.coords.latitude,
+                    position.coords.longitude);
+                return false;
+            });
         },
         error: function(error) {
             /* $("#communicate").append("<p class = 'find_your_legislator_errorbox' >" +
