@@ -20,7 +20,7 @@
                     <time datetime="" class="published" pubdate>{{ vote.date|date:"M j, Y"}}</time>
                 
                     <h4>Vote Breakdown</h4>
-                    <table>
+                    <!--<table>
                         <thead>
                             <tr><th>Vote</th><th>Total</th><th>Ratio</th></tr>
                         </thead>
@@ -29,8 +29,12 @@
                             <tr><td>No</td><td>{{ vote.no_count }}</td><td>{{ vote.no_ratio }}</td></tr>
                             <tr><td>Other</td><td>{{ vote.other_count }}</td><td>{{ vote.other_ratio }}</td></tr>
                         </tobdy>
-                    <table>
-                    <!--<p>The table will go here, but putting a table here currently breaks the positioning for some reason.</p>-->
+                    <table>-->
+                    <ul>
+                        <li>Yes: {{ vote.yes_count }} ({{ vote.yes_ratio }}%)</li>
+                        <li>No: {{ vote.no_count }} ({{ vote.no_ratio }}%)</li>
+                        <li>Other: {{ vote.other_count }} ({{ vote.other_ratio }}%)</li>
+                    </ul>
                 </div>
 
             </div>
