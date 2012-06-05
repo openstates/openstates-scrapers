@@ -11,14 +11,8 @@ import scrapelib
 class NJCommitteeScraper(CommitteeScraper, DBFMixin):
     state = 'nj'
 
-    def scrape(self, chamber, term):
-        year = term[0:4]
-        if chamber == 'upper':
-            self.scrape_committees(year)
-        elif chamber == 'lower':
-            self.scrape_committees(year)
-
-    def scrape_committees(self, year_abr):
+    def scrape(self, term, chambers):
+        year_abr = term[0:4]
 
         members_url, members_db = self.get_dbf(year_abr, 'COMEMB')
         comm_info_url, info_db = self.get_dbf(year_abr, 'COMMITT')

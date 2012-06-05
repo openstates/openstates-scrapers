@@ -144,16 +144,9 @@ class NJBillScraper(BillScraper, DBFMixin):
 
         return (act_str, 'other')
 
-    def scrape(self, chamber, session):
-
-        session = int(session)
-        if session < 209:
-            raise NoDataForPeriod(session)
-        else:
-            year_abr = ((session - 209) * 2) + 2000
-
+    def scrape(self, session, chambers):
+        year_abr = ((int(session) - 209) * 2) + 2000
         self.initialize_committees(year_abr)
-
         self.scrape_bill_pages(session, year_abr)
 
     def scrape_bill_pages(self, session, year_abr):
