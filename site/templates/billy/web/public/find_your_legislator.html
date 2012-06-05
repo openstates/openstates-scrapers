@@ -7,7 +7,8 @@
 {% block bodyclass %}home{% endblock %}
 
 {% block headblock %}
-<style>
+    <style>
+
 .find_your_legislator_errorbox {
     color:                 #2e2020;
     padding:               10px;
@@ -16,6 +17,7 @@
     -moz-border-radius:    5px;
     -webkit-border-radius: 5px;
 }
+
 .find_your_legislator_infobox {
     padding:               10px;
     background-color:      #b1e7fc;
@@ -23,52 +25,54 @@
     -moz-border-radius:    5px;
     -webkit-border-radius: 5px;
 }
+
 .find_your_legislator_infobox  a {
     color:                 #3b4d54;
     text-decoration:       underline;
 }
-</style>
-  <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
-  <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
-  <script type="text/javascript">
+
+    </style>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+    <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
+    <script type="text/javascript">
 $(document).ready(function() {
     $('#find_your_leg').submit(function(e){
         e.preventDefault();
         GMaps.geocode({
-          address: $('#leg_search').val().trim(),
-          callback: function(results, status){
-            if(status=='OK'){
-              var latlng = results[0].geometry.location,
-                  lat = latlng.lat(),
-                  lon = latlng.lng();
-              window.location = '/find_your_legislator/?lat=' +
-                    lat +
-                    '&lon=' +
-                    lon;
+            address: $('#leg_search').val().trim(),
+            callback: function(results, status){
+                if(status=='OK'){
+                    var latlng = results[0].geometry.location,
+                           lat = latlng.lat(),
+                           lon = latlng.lng();
+                    window.location = '/find_your_legislator/?lat=' +
+                        lat +
+                        '&lon=' +
+                        lon;
+                }
             }
-          }
         });
     });
     GMaps.geolocate({
         success: function(position) {
             {# XXX: This really needs to be patched up #}
             $("#communicate").append("<p class = 'find_your_legislator_infobox' >" +
-                "We've been able to guess where you currently are. Click " +
-                "<a href = '/find_your_legislator/?lat=" +
-                position.coords.latitude +
-                "&lon=" +
-                position.coords.longitude +
-                "' >here</a> to look up your legislator." +
-                "</p>");
+            "We've been able to guess where you currently are. Click " +
+            "<a href = '/find_your_legislator/?lat=" +
+            position.coords.latitude +
+            "&lon=" +
+            position.coords.longitude +
+            "' >here</a> to look up your legislator." +
+            "</p>");
         },
         error: function(error) {
             /* $("#communicate").append("<p class = 'find_your_legislator_errorbox' >" +
-                "We were not able to guess your location. Please enter in your details."+
-                "</p>"); */
+            "We were not able to guess your location. Please enter in your details."+
+            "</p>"); */
         }
-        });
+    });
 });
-  </script>
+    </script>
 {% endblock %}
 
 {% block collection_nav %}{% endblock %}
@@ -82,7 +86,7 @@ $(document).ready(function() {
 {% for leg in legislators %}
 <div class = 'leg-result' >
     <a href = '/{{leg.state}}/legislator/{{leg.leg_id}}' >
-        {{ leg.first_name }}
+        {{ leg.first_name }} {{ leg.last_name }}
     </a>
 </div>
 {% endfor %}
