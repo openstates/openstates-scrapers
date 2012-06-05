@@ -79,17 +79,32 @@ $(document).ready(function() {
 
 {% block content %}
     <div id="container">
-        <div class="eightCol">
+        <div class="nineCol colLt">
             <p class="callOut">Find your legislator!</p>
 {% if located %}
 {# Results here #}
+                <table>
+                    <thead>
+                        <tr id="title">
+                            <th class="invisible">Picture</th>
+                            <th><a href="?chamber=upper&abbr=ca&key=last_name&order=-1">Name</a></th>
+                            <th><a href="?chamber=upper&abbr=ca&key=district&order=-1">District</a></th>
+                            <th><a href="?chamber=upper&abbr=ca&key=party&order=-1">Party</a></th>
+                            <th><a href="?chamber=upper&abbr=ca&key=chamber&order=-1">Chamber</a></th>
+                        </tr>
+                    </thead>
+                    <tbody>
 {% for leg in legislators %}
-<div class = 'leg-result' >
-    <a href = '/{{leg.state}}/legislator/{{leg.leg_id}}' >
-        {{ leg.first_name }} {{ leg.last_name }}
-    </a>
-</div>
+                        <tr class="odd">
+                            <td><img src="http://static.openstates.org/photos/small/{{leg.leg_id}}.jpg"/></td>
+                            <td><a href="/{{leg.state}}/legislator/{{leg.leg_id}}/">Christine Kehoe</a></td>
+                            <td>{{leg.district}}</td>
+                            <td>{{leg.party}}</td>
+                            <td>{{leg.chamber}}</td>{# XXX: FIXME #}
+                        </tr>
 {% endfor %}
+                    </tbody>
+                </table>
 {% endif %}
             <div id = 'communicate' ></div>
             <div id = 'find_your_legislator_search' >
@@ -100,8 +115,6 @@ $(document).ready(function() {
                     <input type = 'submit' value = 'Submit' ></input>
                 </form>
             </div>
-        </div>
-        <div class="fiveCol">
         </div>
         <div class="clear"></div>
     </div>
