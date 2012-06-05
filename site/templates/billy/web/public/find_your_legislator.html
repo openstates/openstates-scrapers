@@ -47,21 +47,34 @@
     <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
     <script type="text/javascript">
 $(document).ready(function() {
+    var map;
+    map = new GMaps({
+        div: '#map',
+        lat: 38,
+        lng: -97,
+        zoom: 3
+    });
     $('#find_your_leg').submit(function(e){
         e.preventDefault();
         GMaps.geocode({
             address: $('#leg_search').val().trim(),
             callback: function(results, status){
                 if(status=='OK'){
-                    var latlng = results[0].geometry.location,
-                           lat = latlng.lat(),
-                           lon = latlng.lng();
-                    window.location = '/find_your_legislator/?lat=' +
-                        lat +
-                        '&lon=' +
-                        lon +
-                        '&q=' +
-                        $('#leg_search').val().trim();
+                    var  latlng = results[0].geometry.location,
+                            lat = latlng.lat(),
+                            lon = latlng.lng(),
+                            url = '/find_your_legislator/?lat=' +
+                                   lat +
+                                   '&lon=' +
+                                   lon;
+                    /* Before we dispatch our request, we've already
+                       geo-located. Let's center first. */
+                    map.setZoom(12);
+                    map.setCenter(
+                        lat,
+                        lon
+                    );
+                    $("#results_table").load(url);
                 }
             }
         });
@@ -69,7 +82,6 @@ $(document).ready(function() {
     GMaps.geolocate({
         success: function(position) {
             {# XXX: This really needs to be patched up #}
-            console.log(position);
             $("#communicate").append("<p class = 'find_your_legislator_infobox' >" +
                 "We've been able to guess where you currently are. Click " +
                 "<a href = '/find_your_legislator/?lat=" +
@@ -106,58 +118,8 @@ $(document).ready(function() {
                     <input type = 'submit' value = 'Submit' ></input>
                 </form>
             </div>
-{% if located %}
-
-<div id = 'map' ></div>
-<script>
-    $(document).ready(function() {
-        var map;
-        map = new GMaps({
-            div: '#map',
-            lat: {{ lat }},
-            lng: {{ lon }}
-        });
-    });
-</script>
-
-{% if legislators|length > 0 %}
-            <table class = 'leg_find_results'>
-                <thead>
-                    <tr id="title">
-                        <th class="invisible">Picture</th>
-                        <th><a href="?chamber=upper&abbr=ca&key=last_name&order=-1">Name</a></th>
-                        <th><a href="?chamber=upper&abbr=ca&key=district&order=-1">District</a></th>
-                        <th><a href="?chamber=upper&abbr=ca&key=party&order=-1">Party</a></th>
-                        <th><a href="?chamber=upper&abbr=ca&key=chamber&order=-1">Chamber</a></th>
-                    </tr>
-                </thead>
-                <tbody>
-{% for leg in legislators %}
-                    <tr class="odd">
-                        <td><img src="http://static.openstates.org/photos/small/{{leg.leg_id}}.jpg"/></td>
-                        <td><a href="/{{leg.state}}/legislator/{{leg.leg_id}}/">{{leg.first_name}} {{leg.last_name}}</a></td>
-                        <td>{{leg.district}}</td>
-                        <td>{{leg.party}}</td>
-                        <td>{{leg.chamber}}</td>{# XXX: FIXME #}
-                    </tr>
-{% endfor %}
-                </tbody>
-            </table>
-{% else %}
-<p>Sorry, we were not able to find any US State Legislators for your
-location. Did you provide an address in the United States?</p>
-{% endif %}
-{% else %}
-<script>
-    $(document).ready(function() {
-        var addr = $('#_request').val().trim();
-        if ( addr != "" ) {
-            $('#leg_search').html(addr);
-            $('#find_your_leg').submit();
-        }
-    });
-</script>
-{% endif %}
+            <div id = 'map' ></div>
+            <div id = 'results_table' ></div>
         </div>
         <div class="clear"></div>
     </div>
