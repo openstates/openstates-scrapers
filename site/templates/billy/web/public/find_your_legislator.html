@@ -57,13 +57,13 @@ $(document).ready(function() {
         success: function(position) {
             {# XXX: This really needs to be patched up #}
             $("#communicate").append("<p class = 'find_your_legislator_infobox' >" +
-            "We've been able to guess where you currently are. Click " +
-            "<a href = '/find_your_legislator/?lat=" +
-            position.coords.latitude +
-            "&lon=" +
-            position.coords.longitude +
-            "' >here</a> to look up your legislator." +
-            "</p>");
+                "We've been able to guess where you currently are. Click " +
+                "<a href = '/find_your_legislator/?lat=" +
+                position.coords.latitude +
+                "&lon=" +
+                position.coords.longitude +
+                "' >here</a> to look up your legislator." +
+                "</p>");
         },
         error: function(error) {
             /* $("#communicate").append("<p class = 'find_your_legislator_errorbox' >" +
