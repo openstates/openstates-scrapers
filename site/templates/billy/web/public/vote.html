@@ -28,12 +28,23 @@
                             <tr><td>Yes</td><td>{{ vote.yes_count }}</td><td>{{ vote.yes_ratio }}</td></tr>
                             <tr><td>No</td><td>{{ vote.no_count }}</td><td>{{ vote.no_ratio }}</td></tr>
                             <tr><td>Other</td><td>{{ vote.other_count }}</td><td>{{ vote.other_ratio }}</td></tr>
-                        </tobdy>
+                        </tbody>
                     <table>-->
                     <ul>
-                        <li>Yes: {{ vote.yes_count }} ({{ vote.yes_ratio }}%)</li>
-                        <li>No: {{ vote.no_count }} ({{ vote.no_ratio }}%)</li>
-                        <li>Other: {{ vote.other_count }} ({{ vote.other_ratio }}%)</li>
+                        <ul class="barChart">
+                            <li class="yes">
+                                <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
+                                <span class="tagNumber">{{vote.yes_count}} Yes</span> 
+                            </li> 
+                            <li class="no">
+                                <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
+                                <span class="tagNumber">{{vote.no_count}} No</span>
+                            </li>   
+                            <li class="no clear">
+                                <span class="tagValue" style="width:{{vote.other_ratio}}%;"></span>
+                                <span class="tagNumber">{{vote.other_count}} Other</span>
+                            </li>   
+                        </ul> 
                     </ul>
                 </div>
 
