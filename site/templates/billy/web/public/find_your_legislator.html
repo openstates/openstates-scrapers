@@ -96,7 +96,7 @@ $(document).ready(function() {
                 </form>
             </div>
 {% if located %}
-{# Results here #}
+{% if legislators|length > 0 %}
             <table class = 'leg_find_results'>
                 <thead>
                     <tr id="title">
@@ -119,6 +119,10 @@ $(document).ready(function() {
 {% endfor %}
                 </tbody>
             </table>
+{% else %}
+<p>Sorry, we were not able to find any US State Legislators for your
+location. Did you provide an address in the United States?</p>
+{% endif %}
 {% endif %}
         </div>
         <div class="clear"></div>
