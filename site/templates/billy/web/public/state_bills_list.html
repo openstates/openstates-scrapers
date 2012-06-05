@@ -1,0 +1,68 @@
+{% extends base_template %}
+{% load url from future %}
+{% load customtags %}
+
+
+{% block title %}{% striptags %}{% include description_template %}{% endblock %}{% endblock %}
+
+{% block content %}
+        <h2>{% include description_template %}</h2>
+            <div class="twoCol colLtSm filterCol">
+                <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
+                <form action="/{{abbr}}/filter_bills" id="sidebarSearch">
+                    <input type="submit"/>
+                    {{ form.as_p }}
+                </form>
+            </div>    
+            <div class="tenCol colRt">
+                <div id="pagination-links">
+                    Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>
+                    {% if object_list.has_next or object_list.has_previous %}
+                    {% for text, page_number, clickable in object_list.pagination_data %}
+                        {% if clickable %}
+                        <a href="{{url}}?page={{page_number}}">{{text}}</a>
+                        {% else %}
+                        {{text}}
+                        {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </div>
+
+                {% if use_table %}
+                <table class="withFilter">
+                    <thead>
+                        <tr id="titles">
+                            {% for header in column_headers %}
+                                <th>{{header}}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                {% endif %}
+
+                    {% for obj in object_list %}
+                        <tr class="{% cycle 'even' 'odd' %}">
+                            {% include rowtemplate_name %}
+                        </tr>
+                    {% endfor %}
+
+                {% if use_table %}
+                    </tbody>
+                </table>
+                {% endif %}
+                
+                <div id="pagination-links">
+                    Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>
+                    {% if object_list.has_next %}
+                    {% for text, page_number, clickable in object_list.pagination_data %}
+                        {% if clickable %}
+                        <a href="{{url}}?page={{page_number}}">{{text}}</a>
+                        {% else %}
+                        {{text}}
+                        {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="clear"></div>{% endblock %}
+
