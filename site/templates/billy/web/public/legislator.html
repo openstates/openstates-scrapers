@@ -1,25 +1,36 @@
 {% extends base_template %}
 {% load url from future %}
+{% load staticfiles %}
 {% load customtags %}
 
 
 {% block title %}{{legislator.full_name }}{% endblock %}
+
+{% block headblock %}
+<script>
+    $(document).ready(function() {
+        $('img.legImg').error(function() {
+            $(this).attr("src", "{% static "images/placeholder.png" %}");
+        });
+    });
+</script>
+{% endblock %}
 
 {% block content %}
         <div class="fullWidth mainModule">
             <div class="smModule">
                 <span class="tip sources">For more information on this legislator check out: <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">influenceexplorer.com</a>, <a href="http://www.votesmart.org/bio.php?can_id={{legislator.votesmart_id}}">Project Vote Smart</a></span>
                 <div class="sevenCol colLt">
-                    <img class="firstHalfModule" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg"/>
+                    <img class="firstHalfModule legImg" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" width="150" height="200" />
                     <div class="eights">
                         <h2 class="withTip">{{legislator.full_name}}</h2>
                         <dl class="inlineList ">
                             <dt class="hidden">Party</dt>
                             <dd class="tip tipSm">{{legislator.party}}</dd>
-                        
+
                             <dt class="tip tipSm">District</dt>
                             <dd class="tip tipSm">{{legislator.district}}</dd>
-                        
+
                             <dt class="clear">Sessions Served:</dt>
                             <dt>
                                 <dd>
@@ -29,66 +40,64 @@
                                 {% endfor %}
                                 </dd>
                             </dt>
-                            
-                        </dl>    
+
+                        </dl>
                     </div>
-                </div>  
+                </div>
                 <div class="fiveCol colRt">
                     <div id="districtMap" class="withBorder">
 
                     </div>
-                </div>  
+                </div>
                 <div class="clear"></div>
             </div>
             <div class="sixCol clear colLt withDash">
                 <p>{{legislator.bio_blurb}}</p>
-            </div>    
+            </div>
             <div class="sixCol colRt">
                 <ul>
+                    {% for office in legislator.offices %}
+                    <li class="fourths {% if forloop.first %} firstModule {% endif %}">
+                        <h4 class="h5 withTip">{{office.name}}:</h4>
+                        <address class="vcard">
+                            <span class="adr">
+                                <span class="street-address">{{office.address|linebreaks}}</span>
+                            </span>
+                            {% if office.phone %}
+                            <div class="tel">
+                                <span class="type smTitle">Phone:</span> {{office.phone}}
+                            </div>
+                            {% endif %}
+                            {% if office.fax %}
+                            <div class="fax">
+                                <span class="type smTitle">Fax:</span> {{office.fax}}
+                            </div>
+                            {% endif %}
+                            {% if office.email %}
+                            <div class="email">
+                                <span class="type smTitle">Email:</span> {{office.email}}
+                            </div>
+                            {% endif %}
+                        </address>
+                    </li>
+                    {% empty %}
                     <li class="fourths firstModule">
-                        <h4 class="h5 withTip">Capitol Address:</h4>
-                        <address class="vcard">
-                            <span class="adr">
-                                <span class="street-address">709 Hart Senate Office Building</span>
-                                <span class="locality">Washington</span>,
-                                <span class="region" title="District of Columbia">DC</span>
-                                <span class="postal-code">20036</span>
-                            </span>
-                            <div class="tel">
-                                <span class="type smTitle">Phone:</span> 202-224-6665
-                            </div>
-                            <div class="tel">
-                                <span class="type smTitle">Fax:</span> 202-224-6665
-                            </div>
-                        </address>
+                        <h4 class="h5">Contact Information Not Available</h4>
                     </li>
-                    <li class="fourths">
-                        <h4 class="h5 withTip">District Address:</h4>
-                        <address class="vcard">
-                            <span class="adr">
-                                <span class="street-address">709 Hart Senate Office Building</span>
-                                <span class="locality">Washington</span>,
-                                <span class="region" title="District of Columbia">DC</span>
-                                <span class="postal-code">20036</span>
-                            </span>
-                            <div class="tel">
-                                <span class="type smTitle">Phone:</span> 202-224-6665
-                            </div>
-                            <div class="tel">
-                                <span class="type smTitle">Fax:</span> 202-224-6665
-                            </div>
-                        </address>
-                    </li>
+                    {% endfor %}
+                    {% if legislator.email %}
                     <li>
                         <div>
-                            <span class="email smTitle">Email: </span><a href="mailto:info@commerce.net">info@commerce.net</a>
+                            <span class="email smTitle">Email: </span>
+                            <a href="mailto:{{legislator.email}}">{{legislator.email}}</a>
                          </div>
-                    </li>    
+                     </li>
+                    {% endif %}
                 </ul>
             </div>
             <div class="clear"></div>
-        </div>   
-        <div class="fullWidth module clear"> 
+        </div>
+        <div class="fullWidth module clear">
             <h3 class="moduleTitle">Media</h3>
             <div class="sevenCol colLt">
                 <h4>News and Blog Coverage</h4>
@@ -98,36 +107,12 @@
               {% else %}
                 {% for obj in legislator.feed_entries %}{% include feed_entry_template %}{% endfor %}
                 <a class="viewMore" href="{% url 'feeds_list' abbr 'legislators' legislator.id %}">View More News</a>
-            {% endif %} 
+            {% endif %}
             {% endwith %}
             </div>
-            <div class="fiveCol colRt">
-                <h4>Twitter Mentions</h4>
-                <ul>
-                    <li class="smModule">No tweets found for this legislator yet.</li></ul>
-                <!--    <li class="smModule">
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce lacus nibh, rhoncus eu pulvinar sed, lobortis sit amet tellus. Nullam id.</p>
-                        <div class="entryMetaData">
-                            <address class="author withBorderLine">by <a rel="author" class="colorRollover" href="#">bill_allison</a></address>
-                            <time datetime="" class="published" pubdate>Sept 12, 2011</time>
-                        </div>
-                        <div class="clear"></div>
-                    </li>    
-                    <li class="smModule">
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce lacus nibh, rhoncus eu pulvinar sed, lobortis sit amet tellus. Nullam id.</p>
-                        <div class="entryMetaData">
-                            <address class="author withBorderLine">by <a rel="author" class="colorRollover" href="#">bill_allison</a></address>
-                            <time datetime="" class="published" pubdate>Sept 12, 2011</time>
-                        </div>
-                        <div class="clear"></div>
-                    </li>
-                </ul>    
-                <a class="viewMore" href="#">View More Tweets</a>-->
-            </div>  
-
-            <div class="clear"></div> 
+            <div class="clear"></div>
         </div>
-        <div class="fullWidth module clear"> 
+        <div class="fullWidth module clear">
             <h3 class="moduleTitle">Committees</h3>
             <ul class="inlineThirds">
                 {% for role in legislator.roles_manager %}
@@ -136,10 +121,10 @@
                     {% if 'committee_id' in role %}<a href="{% url 'committee' abbr role.committee_id %}">{{ role.committee_name }}</a>{% else %}{{ role.committee_name }}{% endif %}</li>
                 {% endif %}
                 {% endfor %}
-            </ul>    
+            </ul>
             <div class="clear"></div>
         </div>
-        <div class="fullWidth module"> 
+        <div class="fullWidth module">
             <h3 class="moduleTitle">Bills</h3>
             <div class="eightCol colLt">
                 <h4>Sponsored Bills</h4>
@@ -151,7 +136,7 @@
                         <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}
                             {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span></span>
                         <p class="clear">{{bill.title}}</p>
-                    </li>   
+                    </li>
                 {% endfor %}
                 </ul>
                 <a class="viewMore" href="{% url 'sponsored_bills' abbr 'legislators' legislator.id %}">View More Bills</a>
@@ -159,7 +144,7 @@
                     <li>No sponsored bills to display.</li>
                 </ul>
                 {% endif %}
-                
+
             </div>
             <div class="fourCol colRt">
                 <h4 class="withTip">Votes</h4>
@@ -178,13 +163,13 @@
                         {% for vote_index, vote_value, vote in legislator_votes %}
                             {% include vote_preview_row_template %}
                         {% endfor %}
-                    </tbody>    
-                </table>    
+                    </tbody>
+                </table>
                 <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">View More Votes</a>
                 {% endif %}
             </div>
             {% sources legislator %}
             <div class="clear"></div>
         </div>
-    </div>       
+    </div>
 {% endblock %}
