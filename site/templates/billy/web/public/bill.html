@@ -67,7 +67,9 @@
                             {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
                         {% endfor %}
                         {% if bill.sponsors_manager.first_five_remainder %}
-                        <li><a class="viewMore" href="?show_all_sponsors=True">View {{ bill.sponsors_manager.first_five_remainder|apnumber }} others</a></li>
+                        {% with remainder=bill.sponsors_manager.first_five_remainder %}
+                        <li><a class="viewMore" href="?show_all_sponsors=True">View {{ remainder|apnumber }} other{{ remainder|pluralize}}</a></li>
+                        {% endwith %}
                         {% endif %}
                     {% endif %}
                     </ul> 

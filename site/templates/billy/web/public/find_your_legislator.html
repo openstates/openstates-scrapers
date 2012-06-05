@@ -36,6 +36,12 @@
     margin-bottom:         10px;
 }
 
+#map{
+    height:300px;
+    background:#6699cc;
+}
+
+
     </style>
     <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
     <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
@@ -53,7 +59,9 @@ $(document).ready(function() {
                     window.location = '/find_your_legislator/?lat=' +
                         lat +
                         '&lon=' +
-                        lon;
+                        lon +
+                        '&q=' +
+                        $('#leg_search').val().trim();
                 }
             }
         });
@@ -61,6 +69,7 @@ $(document).ready(function() {
     GMaps.geolocate({
         success: function(position) {
             {# XXX: This really needs to be patched up #}
+            console.log(position);
             $("#communicate").append("<p class = 'find_your_legislator_infobox' >" +
                 "We've been able to guess where you currently are. Click " +
                 "<a href = '/find_your_legislator/?lat=" +
@@ -91,11 +100,25 @@ $(document).ready(function() {
                 <form id = 'find_your_leg'>
                     <input type = 'text' name = 'leg_search' id = 'leg_search'
                         size = '50'
-                        placeholder = '525 Washington Street,  Wellesley, MA' ></input>
+                        placeholder = '{{ address }}'
+                        value = '{{ request }}' ></input>
                     <input type = 'submit' value = 'Submit' ></input>
                 </form>
             </div>
 {% if located %}
+
+<div id = 'map' ></div>
+<script>
+    $(document).ready(function() {
+        var map;
+        map = new GMaps({
+            div: '#map',
+            lat: {{ lat }},
+            lng: {{ lon }}
+        });
+    });
+</script>
+
 {% if legislators|length > 0 %}
             <table class = 'leg_find_results'>
                 <thead>
