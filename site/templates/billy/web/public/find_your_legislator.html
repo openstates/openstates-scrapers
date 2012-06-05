@@ -7,7 +7,8 @@
 {% block bodyclass %}home{% endblock %}
 
 {% block headblock %}
-<style>
+    <style>
+
 .find_your_legislator_errorbox {
     color:                 #2e2020;
     padding:               10px;
@@ -16,6 +17,7 @@
     -moz-border-radius:    5px;
     -webkit-border-radius: 5px;
 }
+
 .find_your_legislator_infobox {
     padding:               10px;
     background-color:      #b1e7fc;
@@ -23,30 +25,37 @@
     -moz-border-radius:    5px;
     -webkit-border-radius: 5px;
 }
+
 .find_your_legislator_infobox  a {
     color:                 #3b4d54;
     text-decoration:       underline;
 }
-</style>
-  <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
-  <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
-  <script type="text/javascript">
+
+.leg_find_results {
+    margin-top:            10px;
+    margin-bottom:         10px;
+}
+
+    </style>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+    <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
+    <script type="text/javascript">
 $(document).ready(function() {
     $('#find_your_leg').submit(function(e){
         e.preventDefault();
         GMaps.geocode({
-          address: $('#leg_search').val().trim(),
-          callback: function(results, status){
-            if(status=='OK'){
-              var latlng = results[0].geometry.location,
-                  lat = latlng.lat(),
-                  lon = latlng.lng();
-              window.location = '/find_your_legislator/?lat=' +
-                    lat +
-                    '&lon=' +
-                    lon;
+            address: $('#leg_search').val().trim(),
+            callback: function(results, status){
+                if(status=='OK'){
+                    var latlng = results[0].geometry.location,
+                           lat = latlng.lat(),
+                           lon = latlng.lng();
+                    window.location = '/find_your_legislator/?lat=' +
+                        lat +
+                        '&lon=' +
+                        lon;
+                }
             }
-          }
         });
     });
     GMaps.geolocate({
@@ -63,30 +72,20 @@ $(document).ready(function() {
         },
         error: function(error) {
             /* $("#communicate").append("<p class = 'find_your_legislator_errorbox' >" +
-                "We were not able to guess your location. Please enter in your details."+
-                "</p>"); */
+            "We were not able to guess your location. Please enter in your details."+
+            "</p>"); */
         }
-        });
+    });
 });
-  </script>
+    </script>
 {% endblock %}
 
 {% block collection_nav %}{% endblock %}
 
 {% block content %}
     <div id="container">
-        <div class="eightCol">
+        <div class="nineCol colLt">
             <p class="callOut">Find your legislator!</p>
-{% if located %}
-{# Results here #}
-{% for leg in legislators %}
-<div class = 'leg-result' >
-    <a href = '/{{leg.state}}/legislator/{{leg.leg_id}}' >
-        {{ leg.first_name }}
-    </a>
-</div>
-{% endfor %}
-{% endif %}
             <div id = 'communicate' ></div>
             <div id = 'find_your_legislator_search' >
                 <form id = 'find_your_leg'>
@@ -96,8 +95,35 @@ $(document).ready(function() {
                     <input type = 'submit' value = 'Submit' ></input>
                 </form>
             </div>
-        </div>
-        <div class="fiveCol">
+{% if located %}
+{% if legislators|length > 0 %}
+            <table class = 'leg_find_results'>
+                <thead>
+                    <tr id="title">
+                        <th class="invisible">Picture</th>
+                        <th><a href="?chamber=upper&abbr=ca&key=last_name&order=-1">Name</a></th>
+                        <th><a href="?chamber=upper&abbr=ca&key=district&order=-1">District</a></th>
+                        <th><a href="?chamber=upper&abbr=ca&key=party&order=-1">Party</a></th>
+                        <th><a href="?chamber=upper&abbr=ca&key=chamber&order=-1">Chamber</a></th>
+                    </tr>
+                </thead>
+                <tbody>
+{% for leg in legislators %}
+                    <tr class="odd">
+                        <td><img src="http://static.openstates.org/photos/small/{{leg.leg_id}}.jpg"/></td>
+                        <td><a href="/{{leg.state}}/legislator/{{leg.leg_id}}/">{{leg.first_name}} {{leg.last_name}}</a></td>
+                        <td>{{leg.district}}</td>
+                        <td>{{leg.party}}</td>
+                        <td>{{leg.chamber}}</td>{# XXX: FIXME #}
+                    </tr>
+{% endfor %}
+                </tbody>
+            </table>
+{% else %}
+<p>Sorry, we were not able to find any US State Legislators for your
+location. Did you provide an address in the United States?</p>
+{% endif %}
+{% endif %}
         </div>
         <div class="clear"></div>
     </div>

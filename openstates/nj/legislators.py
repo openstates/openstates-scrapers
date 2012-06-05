@@ -12,16 +12,15 @@ from dbfpy import dbf
 class NJLegislatorScraper(LegislatorScraper, DBFMixin):
     state = 'nj'
 
-    def scrape(self, chamber, term):
-        year = term[0:4]
-        if chamber == 'upper':
-            self.scrape_legislators(year, term)
-        elif chamber == 'lower':
-            self.scrape_legislators(year, term)
-
-    def scrape_legislators(self, year_abr, term_name):
+    def scrape(self, term, chambers):
+        year_abr = term[0:4]
 
         file_url, db = self.get_dbf(year_abr, 'ROSTER')
+        bio_url, bio_db = self.get_dbf(year_abr, 'LEGBIO')
+
+        photos = {}
+        for rec in bio_db:
+            photos[rec['roster_key']] = rec['urlpicture']
 
         for rec in db:
             first_name = rec["firstname"]
@@ -58,13 +57,17 @@ class NJLegislatorScraper(LegislatorScraper, DBFMixin):
                 email = rec["email"]
             else:
                 email = ''
+            photo_url = photos[rec['roster_key']]
+            address = '{0}\n{1}, {2} {3}'.format(rec['address'], rec['city'],
+                                                 rec['state'], rec['zipcode'])
 
-            leg = Legislator(term_name, chamber, str(district), full_name,
+            leg = Legislator(term, chamber, str(district), full_name,
                              first_name, last_name, middle_name, party,
                              suffixes=suffix, title=title,
                              legal_position=legal_position,
-                             leg_status=leg_status, address=address, city=city,
-                             state=state, zipcode=zipcode, phone=phone,
-                             email=email)
+                             leg_status=leg_status, email=email,
+                             photo_url=photo_url)
             leg.add_source(file_url)
+            leg.add_office('district', 'District Office', address=address,
+                           phone=rec['phone'])
             self.save_legislator(leg)
