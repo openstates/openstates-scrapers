@@ -4,6 +4,8 @@
                                 <p>{{bill.title|truncatewords:100}}</p>
                             </td>
                             <td>{{bill.date_introduced|date:"M j, Y"}}</td>
-                            <td>{{bill.most_recent_action.date|date:"M j, Y"}}</td>
-                            <td>2</td>
+                            {% with action=bill.most_recent_action %}
+                            <td>{{action.date|date:"M j, Y"}} <span class="tip">{{action.action}}</span></td>
+                            {% endwith %}
+                            <td>{{bill.votes_manager|length}}</td>
 {% endwith %}
