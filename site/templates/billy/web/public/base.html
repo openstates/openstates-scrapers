@@ -11,19 +11,23 @@
     <script type="text/javascript" src="{% static "js/jquery-placehold.min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/sf.js" %}"></script>
     <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js"></script>
-{% block headblock %}{% endblock %}
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+
+    {% block headblock %}{% endblock %}
+
 </head>
 <body class="{% block bodyclass %}{% endblock %}">
     <header id="mainHeader">
+        <!--
         <form action="/search/" method="get" id="searchform">
             <input class="transparent" type="search" name="q" id="id_q" placeholder="search the site">
             <button type="submit">
                  <span>Search</span>
             </button>
         </form>
+        -->
         <h1 class="clear"><a class="textReplace" href="/">Open States</a></h1>
         <div id="shareBtns">
             <ul>
