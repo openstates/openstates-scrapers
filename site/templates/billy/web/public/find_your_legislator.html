@@ -61,7 +61,7 @@ $(document).ready(function() {
                lon;
 
         /* This is a big operation. Kicking it off, since it's async */
-        $.getJSON(url + "&boundry=y", function(data) {
+        $.getJSON(url + "&boundary=y", function(data) {
             for ( var i in data ) {
                 var bdry = data[i],
                     polygon;
