@@ -37,17 +37,35 @@
 }
 
 #map{
-    height:300px;
-    background:#6699cc;
+    height:               300px;
+    background:           #6699cc;
 }
 
+.find-your-shim {
+    margin:               20px;
+}
 
     </style>
     <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
     <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
     <script type="text/javascript">
 $(document).ready(function() {
-    var map;
+    var map,
+        overlays   = [],
+        chambers = {
+            "lower": {
+                "stroke": "#484a02",
+                "fill": "#eff508"
+            },
+            "upper": {
+                "stroke": "#1b261a",
+                "fill": "#94d28c"
+            },
+            "joint": {
+                "stroke": "#072026",
+                "fill": "#24aed1"
+            }
+        };
     map = new GMaps({
         div: '#map',
         lat: 38,
@@ -62,25 +80,31 @@ $(document).ready(function() {
 
         /* This is a big operation. Kicking it off, since it's async */
         $.getJSON(url + "&boundary=y", function(data) {
+            for ( var i in overlays ) {
+                map.removeOverlay(overlays[i]);
+            }
+            overlays = [];
             for ( var i in data ) {
                 var bdry = data[i],
                     polygon;
                 for ( var n in bdry.shape ) {
                     for ( var j in bdry.shape[n] ) {
                         var bak_shape = bdry.shape[n][j],
-                                shape = []
+                            shape = [],
+                            lay = chambers[bdry['chamber']];
                         for ( var node in bak_shape ) {
                             node = bak_shape[node];
                             shape.push([node[1], node[0]]);
                         }
                         polygon = map.drawPolygon({
                             paths:         shape,
-                            strokeColor:   '#BBD8E9',
+                            strokeColor:   lay['stroke'],
                             strokeOpacity: 1,
                             strokeWeight:  3,
-                            fillColor:     '#BBD8E9',
-                            fillOpacity:   0.6
+                            fillColor:     lay['fill'],
+                            fillOpacity:   0.3
                             });
+                        overlays.push(polygon);
                     }
                 }
             }
@@ -157,20 +181,31 @@ $(document).ready(function() {
 {% block content %}
     <input type = 'hidden' value = '{{request}}' id = '_request' />
     <div id="container">
-        <div class="nineCol colLt">
-            <p class="callOut">Find your legislator!</p>
-            <div id = 'communicate' ></div>
-            <div id = 'find_your_legislator_search' >
-                <form id = 'find_your_leg'>
-                    <input type = 'text' name = 'leg_search' id = 'leg_search'
-                        size = '50'
-                        placeholder = '{{ address }}'
-                        value = '{{ request }}' ></input>
-                    <input type = 'submit' value = 'Submit' ></input>
-                </form>
+        <div class="tenCol colLt">
+            <div class = 'find-your-shim' >
+                <p class="callOut">Find your legislator!</p>
             </div>
-            <div id = 'map' ></div>
-            <div id = 'results_table' ></div>
+            <div class = 'find-your-shim' >
+                <div id = 'communicate' ></div>
+            </div>
+            <div class = 'find-your-shim' >
+                <div id = 'find_your_legislator_search' >
+                    <form id = 'find_your_leg'>
+                        <input type = 'text' name = 'leg_search'
+                            id = 'leg_search'
+                            size = '50'
+                            placeholder = '{{ address }}'
+                            value = '{{ request }}' ></input>
+                        <input type = 'submit' value = 'Submit' ></input>
+                    </form>
+                </div>
+            </div>
+            <div class = 'find-your-shim' >
+                <div id = 'map' ></div>
+            </div>
+            <div class = 'find-your-shim' >
+                <div id = 'results_table' ></div>
+            </div>
         </div>
         <div class="clear"></div>
     </div>
