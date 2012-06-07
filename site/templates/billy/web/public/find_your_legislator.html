@@ -66,6 +66,20 @@ $(document).ready(function() {
             lat,
             lon
         );
+        /* XXX: This is to remove all the other markers. Perhaps one day we
+                can find a way to mark all searched locations w/ results. */
+        map.removeMarkers();
+        map.addMarker({
+            lat: lat,
+            lng: lon,
+            click: function() {
+                /* If the user clicks, let's recenter kindly. */
+                map.setCenter(
+                    lat,
+                    lon
+                );
+            }
+        });
         $("#results_table").html("<center>Loading....</center>")
         $("#results_table").load(url);
     }
