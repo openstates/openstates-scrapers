@@ -1,3 +1,4 @@
+{% if legislators|length > 0 %}
 <table>
     <thead>
         <tr id="title">
@@ -20,3 +21,9 @@
         {% endfor %}
     </tbody>
 </table>
+{% else %}
+<div class = 'find_your_legislator_errorbox' >
+    <b>Oh no!</b> We can't locate any U.S. Legislators for that location. Double
+    check you gave a location in the United States.
+</div>
+{% endif %}
