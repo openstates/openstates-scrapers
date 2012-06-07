@@ -66,6 +66,7 @@ $(document).ready(function() {
             lat,
             lon
         );
+        $("#results_table").html("<center>Loading....</center>")
         $("#results_table").load(url);
     }
     $('#find_your_leg').submit(function(e){
