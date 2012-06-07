@@ -52,16 +52,20 @@
 $(document).ready(function() {
     var map,
         overlays   = [],
-        map_colors = [
-            {
-                "stroke": "#526318",
-                "fill":   "#98ba2c"
+        chambers = {
+            "lower": {
+                "stroke": "#484a02",
+                "fill": "#eff508"
             },
-            {
-                "stroke": "#d5b4ed",
-                "fill":   "#897498"
+            "upper": {
+                "stroke": "#1b261a",
+                "fill": "#94d28c"
+            },
+            "joint": {
+                "stroke": "#072026",
+                "fill": "#24aed1"
             }
-        ];
+        };
     map = new GMaps({
         div: '#map',
         lat: 38,
@@ -80,7 +84,6 @@ $(document).ready(function() {
                 map.removeOverlay(overlays[i]);
             }
             overlays = [];
-            var layer = 0;
             for ( var i in data ) {
                 var bdry = data[i],
                     polygon;
@@ -88,7 +91,7 @@ $(document).ready(function() {
                     for ( var j in bdry.shape[n] ) {
                         var bak_shape = bdry.shape[n][j],
                             shape = [],
-                            lay = map_colors[layer % map_colors.length];
+                            lay = chambers[bdry['chamber']];
                         for ( var node in bak_shape ) {
                             node = bak_shape[node];
                             shape.push([node[1], node[0]]);
@@ -104,7 +107,6 @@ $(document).ready(function() {
                         overlays.push(polygon);
                     }
                 }
-                layer++;
             }
         });
 
