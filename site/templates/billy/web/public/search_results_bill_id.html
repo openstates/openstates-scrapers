@@ -1,24 +1,22 @@
 {% extends base_template %}
 {% load url from future %}
-{% load static from staticfiles %}
 {% load customtags %}
 
 
-{% block title %}{% include description_template %}{% endblock %}
+{% block title %}Search results{% endblock %}
 
 {% block headblock %}
-<script type="text/javascript" src="{% static 'datatables/js/jquery.dataTables.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/jquery.hotkeys.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/underscore.js' %}"></script>
+<script type="text/javascript" src="/media/datatables/js/jquery.dataTables.js"></script>
+<script type="text/javascript" src="/media/js/jquery.hotkeys.js"></script>
+<script type="text/javascript" src="/media/js/underscore.js"></script>
 <script type="text/javascript">
 $(document).ready(function() {
     $('#main-table').dataTable({
 
         // Disable features related to dynamic pagination.
         //bLengthChange: false,
-        bInfo: false,
-        bPaginate: false,
-        bFilter: false,
+        "bInfo": false,
+        "bPaginate": false,
         //"bSort": false,
 
         // Whenever the table redraws, run this function.
@@ -29,6 +27,11 @@ $(document).ready(function() {
         });
     
     var filterbox = $('#main-table_filter input');
+    var label = filterbox.parent();
+    filterbox.remove();
+    label.text('');
+    label.append(filterbox);
+
 
     // Make table rows clickable.
     var trs = $("#main-table tbody tr");
@@ -44,23 +47,17 @@ $(document).ready(function() {
         var eq = window.eq;
         
         if(eq == undefined) {
-            eq = 0;    
-            }
+            eq = 0;
+        } else if(eq == -2) {
+            eq = trs_count;
+        } else if (eq == trs_count) {
+            eq = 0;
+        } else {
+            $("#main-table tbody tr").eq(eq).removeClass('selected');
+        }
 
-        if(0 < direction){
-            if (eq != trs_count - 1) {
-                $("#main-table tbody tr").eq(eq).removeClass('selected');
-                $("#main-table tbody tr").eq(eq + direction).addClass('selected');
-                window.eq = eq + direction;
-                }
-            }
-        else {
-            if (eq != 0) {
-                $("#main-table tbody tr").eq(eq).removeClass('selected');
-                $("#main-table tbody tr").eq(eq + direction).addClass('selected');
-                window.eq = eq + direction;
-                }
-            }
+        $("#main-table tbody tr").eq(eq + direction).addClass('selected');
+        window.eq = eq + direction;
         };
 
     // If javascript is enabled, change cursor to pointer over table rows
@@ -85,7 +82,6 @@ $(document).ready(function() {
         });
     filterbox.bind("keydown", "down", _.bind(selectrow, {}, 1));
     filterbox.bind("keydown", "up", _.bind(selectrow, {}, -1));
-    //filterbox.focus();
     });
     
 </script>
@@ -97,13 +93,13 @@ $(document).ready(function() {
         float: right;
     }
     .selected {
-        background-color: #FFFFD6;
+        background-color: #FFFF99;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-        <h2>{% include description_template %}</h2>
+        <h2>Bills with bill id "{{bill_id}}"</h2>
         <div class="fullWidth">
             <div id="pagination-links">
                 Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>

@@ -106,7 +106,7 @@
                 </thead>
                 <tbody>
                 {% for action in bill.actions_manager %}
-                    <tr class="odd">
+                    <tr class={% cycle "even" "odd" %}>
                         <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
                         <td>{{ action.actor_name }}</td>
                         <td>{{ action.action }}</td>
