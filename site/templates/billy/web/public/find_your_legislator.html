@@ -47,7 +47,8 @@
     <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
     <script type="text/javascript">
 $(document).ready(function() {
-    var map;
+    var map,
+        overlays = [];
     map = new GMaps({
         div: '#map',
         lat: 38,
@@ -62,6 +63,10 @@ $(document).ready(function() {
 
         /* This is a big operation. Kicking it off, since it's async */
         $.getJSON(url + "&boundary=y", function(data) {
+            for ( var i in overlays ) {
+                map.removeOverlay(overlays[i]);
+            }
+            overlays = [];
             for ( var i in data ) {
                 var bdry = data[i],
                     polygon;
@@ -81,6 +86,7 @@ $(document).ready(function() {
                             fillColor:     '#BBD8E9',
                             fillOpacity:   0.6
                             });
+                        overlays.push(polygon);
                     }
                 }
             }
