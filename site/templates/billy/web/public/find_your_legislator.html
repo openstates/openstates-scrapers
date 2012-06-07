@@ -59,6 +59,33 @@ $(document).ready(function() {
                lat +
                '&lon=' +
                lon;
+
+        /* This is a big operation. Kicking it off, since it's async */
+        $.getJSON(url + "&boundry=y", function(data) {
+            for ( var i in data ) {
+                var bdry = data[i],
+                    polygon;
+                for ( var n in bdry.shape ) {
+                    for ( var j in bdry.shape[n] ) {
+                        var bak_shape = bdry.shape[n][j],
+                                shape = []
+                        for ( var node in bak_shape ) {
+                            node = bak_shape[node];
+                            shape.push([node[1], node[0]]);
+                        }
+                        polygon = map.drawPolygon({
+                            paths:         shape,
+                            strokeColor:   '#BBD8E9',
+                            strokeOpacity: 1,
+                            strokeWeight:  3,
+                            fillColor:     '#BBD8E9',
+                            fillOpacity:   0.6
+                            });
+                    }
+                }
+            }
+        });
+
         /* Before we dispatch our request, we've already
            geo-located. Let's center first. */
         map.setZoom(12);
@@ -80,6 +107,7 @@ $(document).ready(function() {
                 );
             }
         });
+
         $("#results_table").html("<center>Loading....</center>")
         $("#results_table").load(url);
     }
@@ -88,7 +116,7 @@ $(document).ready(function() {
         GMaps.geocode({
             address: $('#leg_search').val().trim(),
             callback: function(results, status){
-                if(status=='OK'){
+                if ( status == 'OK' ){
                     var  latlng = results[0].geometry.location,
                             lat = latlng.lat(),
                             lon = latlng.lng();
