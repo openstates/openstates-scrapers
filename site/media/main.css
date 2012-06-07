@@ -202,6 +202,22 @@ nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; 
 #youTube a:hover { background: url(images/social_sprites.png) left -86px no-repeat;}
 
 
+/* social links for thank you page - copied from old design */
+div.flatpage .social-links li { float:left; height:16px; margin-bottom:15px;
+    padding-left:25px; list-style-type: none; display: block;
+    padding-right: 35px ;
+}
+.social-facebook { background: url("images/social_sprites.png") left -188px no-repeat; }
+.social-facebook:hover { background-position: left -52px; }
+.social-twitter { background: url("images/social_sprites.png") left -103px no-repeat; }
+.social-twitter:hover { background-position:left -1px; }
+.social-flickr { background: url("images/social_sprites.png") left -171px no-repeat; }
+.social-flickr:hover { background-position:left -35px; }
+.social-youtube { background: url("images/social_sprites.png") left -137px no-repeat; }
+.social-youtube:hover { background-position:left -86px; }
+.content .join-social>ul > li { list-style-type:none; }
+.content .join-social>ul { margin-left: 0; }
+
 /*  lists  */
 dt { font-weight: bold;}
 .contentBottom { margin-bottom: 10px;}
