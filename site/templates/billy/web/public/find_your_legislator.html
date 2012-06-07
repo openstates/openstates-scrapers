@@ -51,7 +51,17 @@
     <script type="text/javascript">
 $(document).ready(function() {
     var map,
-        overlays = [];
+        overlays   = [],
+        map_colors = [
+            {
+                "stroke": "#526318",
+                "fill":   "#98ba2c"
+            },
+            {
+                "stroke": "#d5b4ed",
+                "fill":   "#897498"
+            }
+        ];
     map = new GMaps({
         div: '#map',
         lat: 38,
@@ -70,28 +80,31 @@ $(document).ready(function() {
                 map.removeOverlay(overlays[i]);
             }
             overlays = [];
+            var layer = 0;
             for ( var i in data ) {
                 var bdry = data[i],
                     polygon;
                 for ( var n in bdry.shape ) {
                     for ( var j in bdry.shape[n] ) {
                         var bak_shape = bdry.shape[n][j],
-                                shape = []
+                            shape = [],
+                            lay = map_colors[layer % map_colors.length];
                         for ( var node in bak_shape ) {
                             node = bak_shape[node];
                             shape.push([node[1], node[0]]);
                         }
                         polygon = map.drawPolygon({
                             paths:         shape,
-                            strokeColor:   '#BBD8E9',
+                            strokeColor:   lay['stroke'],
                             strokeOpacity: 1,
                             strokeWeight:  3,
-                            fillColor:     '#BBD8E9',
-                            fillOpacity:   0.6
+                            fillColor:     lay['fill'],
+                            fillOpacity:   0.3
                             });
                         overlays.push(polygon);
                     }
                 }
+                layer++;
             }
         });
 
