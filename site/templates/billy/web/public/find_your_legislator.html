@@ -51,6 +51,7 @@
     <script type="text/javascript">
 $(document).ready(function() {
     var map,
+        needs_update = true;
         overlays   = [],
         chambers = { /* These colors will be used to fill and outline the
                         gmap for the districts. */
@@ -111,6 +112,31 @@ $(document).ready(function() {
                     }
                 }
             }
+            map.removeMarkers();
+            map.addMarker({
+                lat: lat,
+                lng: lon,
+                draggable: true,
+                fences: overlays,
+                outside: function(marker, fence) {
+                    var latlon = marker.position,
+                           lat = latlon.lat(),
+                           lon = latlon.lng();
+
+                    if ( ! needs_update ) {
+                        needs_update = true;
+                        do_geo_locate(lat, lon);
+                    }
+                },
+                click: function() {
+                    /* If the user clicks, let's recenter kindly. */
+                    map.setCenter(
+                        lat,
+                        lon
+                    );
+                }
+            });
+            needs_update = false;
         });
 
         /* Before we dispatch our request, we've already
@@ -122,18 +148,6 @@ $(document).ready(function() {
         );
         /* XXX: This is to remove all the other markers. Perhaps one day we
                 can find a way to mark all searched locations w/ results. */
-        map.removeMarkers();
-        map.addMarker({
-            lat: lat,
-            lng: lon,
-            click: function() {
-                /* If the user clicks, let's recenter kindly. */
-                map.setCenter(
-                    lat,
-                    lon
-                );
-            }
-        });
 
         $("#results_table").html("<center>Loading....</center>")
         $("#results_table").load(url, function() {
