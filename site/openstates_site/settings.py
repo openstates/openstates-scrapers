@@ -124,6 +124,7 @@ ACTIVE_STATES = [u'co', u'de', u'ny', u'in', u'tn',
                  u'ok', u'pa']
 ACTIVE_STATES = 'ca il la md mn tx wi'.split()
 
+ENABLE_ELASTICSEARCH = True
 
 try:
     from .local_settings import *
