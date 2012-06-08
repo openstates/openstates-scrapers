@@ -8,27 +8,9 @@
 {% block title %}Search results{% endblock %}
 
 {% block headblock %}
-<script type="text/javascript" src="{% static 'datatables/js/jquery.dataTables.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/jquery.hotkeys.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/underscore.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/jquery.highlight-3.js' %}"></script>
 <script type="text/javascript">
 $(document).ready(function() {
-    $('#main-table').dataTable({
 
-        // Disable features related to dynamic pagination.
-        //bLengthChange: false,
-        "bInfo": false,
-        "bPaginate": false,
-        "bFilter": false,
-
-        // Whenever the table redraws, run this function.
-        fnDrawCallback: function(){
-            window.eq = -1;
-            $('td').removeClass('selected');
-            }
-        });
-    
     // Make table rows clickable.
     var trs = $("#main-table tbody tr");
     var trs_count = trs.length;
@@ -46,24 +28,10 @@ $(document).ready(function() {
         function(){
             $(this).removeClass('selected');
         });
-
-    // Highlight search terms.
-    $("table").highlight('{{search_text}}');
-
-    $('#id_q').focus();
     });
     
 </script>
 <style>
-
-    .highlight { background-color: yellow }
-
-    #main-table_filter {
-        position: relative;
-    }
-    #main-table_filter * {
-        float: right;
-    }
     .selected {
         background-color: #FFFFD6;
     }
@@ -71,7 +39,7 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-        <h2>{{bills_list.count|apnumber|capfirst}} {% if scope_name %}{{scope_name}} bills{% endif %} titles contain "<b>{{search_text}}</b>"</h2>
+        <h2>{{bills_list.count|apnumber|capfirst}} {% if scope_name %}{{scope_name}} bills{% endif %} contain "<b>{{search_text}}</b>"</h2>
         <div class="fullWidth">
             {% if not bills_list.count %}
                 No bill titles contained "{{search_text}}."

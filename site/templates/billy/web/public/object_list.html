@@ -7,29 +7,9 @@
 {% block title %}{% include description_template %}{% endblock %}
 
 {% block headblock %}
-<script type="text/javascript" src="{% static 'datatables/js/jquery.dataTables.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/jquery.hotkeys.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/underscore.js' %}"></script>
 <script type="text/javascript">
 $(document).ready(function() {
-    $('#main-table').dataTable({
-
-        // Disable features related to dynamic pagination.
-        //bLengthChange: false,
-        bInfo: false,
-        bPaginate: false,
-        bFilter: false,
-        //"bSort": false,
-
-        // Whenever the table redraws, run this function.
-        fnDrawCallback: function(){
-            window.eq = -1;
-            $('td').removeClass('selected');
-            }
-        });
     
-    var filterbox = $('#main-table_filter input');
-
     // Make table rows clickable.
     var trs = $("#main-table tbody tr");
     var trs_count = trs.length;
@@ -37,31 +17,6 @@ $(document).ready(function() {
         window.location=$(this).find("a").attr("href");
         return false;
         });
-
-    // Make the table rows navigable with arrow keys.
-    var selectrow = function(direction){
-        
-        var eq = window.eq;
-        
-        if(eq == undefined) {
-            eq = 0;    
-            }
-
-        if(0 < direction){
-            if (eq != trs_count - 1) {
-                $("#main-table tbody tr").eq(eq).removeClass('selected');
-                $("#main-table tbody tr").eq(eq + direction).addClass('selected');
-                window.eq = eq + direction;
-                }
-            }
-        else {
-            if (eq != 0) {
-                $("#main-table tbody tr").eq(eq).removeClass('selected');
-                $("#main-table tbody tr").eq(eq + direction).addClass('selected');
-                window.eq = eq + direction;
-                }
-            }
-        };
 
     // If javascript is enabled, change cursor to pointer over table rows
     // and add selected class on hover.
@@ -72,30 +27,10 @@ $(document).ready(function() {
         function(){
             $(this).removeClass('selected');
         });
-
-    // Trigger a search if user presses enter.
-    filterbox.bind("keydown", "return", function(){
-        var selected = $(".selected");
-        if(selected.length == 0) {
-            window.location = '#/search/' + filterbox.val();
-            }
-        else {
-           selected.click();
-           }
-        });
-    filterbox.bind("keydown", "down", _.bind(selectrow, {}, 1));
-    filterbox.bind("keydown", "up", _.bind(selectrow, {}, -1));
-    //filterbox.focus();
     });
     
 </script>
 <style>
-    #main-table_filter {
-        position: relative;
-    }
-    #main-table_filter * {
-        float: right;
-    }
     .selected {
         background-color: #FFFFD6;
     }
