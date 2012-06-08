@@ -52,7 +52,8 @@
 $(document).ready(function() {
     var map,
         overlays   = [],
-        chambers = {
+        chambers = { /* These colors will be used to fill and outline the
+                        gmap for the districts. */
             "lower": {
                 "stroke": "#484a02",
                 "fill": "#eff508"
@@ -73,6 +74,9 @@ $(document).ready(function() {
         zoom: 3
     });
     function do_geo_locate(lat, lon) {
+        /* This is invoked when we want to re-draw the map. We get here either
+           from the "submit" button, or clicking on the href with an overloaded
+           click event. */
         var url = '/find_your_legislator/?lat=' +
                lat +
                '&lon=' +
@@ -134,6 +138,9 @@ $(document).ready(function() {
         $("#results_table").html("<center>Loading....</center>")
         $("#results_table").load(url, function() {
             for ( var i in chambers ) {
+                /* Colorize the results on the district table - it helps
+                   make who is which district more clear. We need a solution
+                   for more then one legislator for a chamber */
                 var chamber = chambers[i];
                 $(".chamber-" + i).css("background-color", chamber.fill);
             }
@@ -145,6 +152,7 @@ $(document).ready(function() {
             address: $('#leg_search').val().trim(),
             callback: function(results, status){
                 if ( status == 'OK' ){
+                    /* We've got a lat/lon, let's call the render */
                     var  latlng = results[0].geometry.location,
                             lat = latlng.lat(),
                             lon = latlng.lng();
@@ -155,7 +163,6 @@ $(document).ready(function() {
     });
     GMaps.geolocate({
         success: function(position) {
-            {# XXX: This really needs to be patched up #}
             $("#communicate").append("<p class = 'find_your_legislator_infobox' >" +
                 "We've been able to guess where you currently are. Click " +
                 "<a id = 'do_geo_locate' href = '#' >" +
@@ -174,6 +181,7 @@ $(document).ready(function() {
         }
     });
     if ( $("#_request").val().trim() != "" ) {
+        /* Auto-submit if we've got something in there (?q= param) */
         $('#find_your_leg').submit();
     }
 });
