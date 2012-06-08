@@ -77,7 +77,6 @@ $(document).ready(function() {
                lat +
                '&lon=' +
                lon;
-
         /* This is a big operation. Kicking it off, since it's async */
         $.getJSON(url + "&boundary=y", function(data) {
             for ( var i in overlays ) {
@@ -133,7 +132,12 @@ $(document).ready(function() {
         });
 
         $("#results_table").html("<center>Loading....</center>")
-        $("#results_table").load(url);
+        $("#results_table").load(url, function() {
+            for ( var i in chambers ) {
+                var chamber = chambers[i];
+                $(".chamber-" + i).css("background-color", chamber.fill);
+            }
+        });
     }
     $('#find_your_leg').submit(function(e){
         e.preventDefault();
