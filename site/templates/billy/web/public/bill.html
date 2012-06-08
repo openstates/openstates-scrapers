@@ -135,7 +135,8 @@
             <td>{{ event.description }}</td>
             <td>
                 {% for committee in event.committees %}
-                <a href = '/{{ committee.state }}/committee/{{ committee.id}}/' >{{committee.display_name}}</a>
+                <a href = '/{{ committee.state }}/committee/{{ committee.id}}/'
+                    >{{committee.display_name}}</a>
                 {% endfor %}
             </td>
         </tr>
