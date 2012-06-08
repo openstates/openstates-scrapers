@@ -113,8 +113,35 @@
                         <td>{% for label_text in action.type %}<span class="label">{{label}}</span>{% endfor %}</td>
                     </tr>
                 {% endfor %}
-                </tbody>    
+                </tbody>
             </table>
+        </div>
+        <div class="eightCol colLt">
+            <h3>Events</h3>
+<table class="normalTable">
+    <thead>
+        <tr id="titles">
+            <th>Date</th>
+            <th>Where</th>
+            <th>Description</th>
+            <th>Committees</th>
+        </tr>
+    </thead>
+    <tbody>
+{% for event in bill.events %}
+        <tr class = 'odd' >
+            <td class="tip withTipSm">{{ event.when|date:"M j, Y"}}</td>
+            <td>{{ event.location }}</td>
+            <td>{{ event.description }}</td>
+            <td>
+                {% for committee in event.committees %}
+                <a href = '/{{ committee.state }}/committee/{{ committee.id}}/' >{{committee.display_name}}</a>
+                {% endfor %}
+            </td>
+        </tr>
+{% endfor %}
+    </tbody>
+</table>
         </div>
         <div class="fourCol colRt">
             <h3>Votes</h3>
@@ -123,7 +150,7 @@
                 {% for vote in bill.votes_manager %}
                     {% include vote_preview_row_template %}
                 {% endfor %}
-            </ul>    
+            </ul>
             {% else %}
             This bill hasn't been voted on yet.
             {% endif %}
