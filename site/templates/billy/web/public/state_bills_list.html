@@ -1,0 +1,139 @@
+{% extends base_template %}
+{% load url from future %}
+{% load static from staticfiles %}
+{% load customtags %}
+
+{% block title %}{% include description_template %}{% endblock %}
+
+{%  block headblock %}
+ <link rel="stylesheet" type="text/css" href="{% static 'select2-2.0/select2.css' %}"/>
+<script type="text/javascript" src="{% static 'select2-2.0/select2.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'media/js/jquery.highlight-3.js' %}"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+
+    $('#id_type').select2({placeholder: 'Pick one'});
+    $('#id_subjects').select2({placeholder: 'Pick a subject'});
+    $('#id_actions__type').select2({placeholder: 'Pick an action type'});
+    $('#id_sponsor__leg_id').select2({placeholder: 'Pick a sponsor'});
+
+    var reset = $('<input id="clear" type="submit" value="Reset">');
+    reset.click(function(event){
+
+        // Don't actually submit the page.
+        event.preventDefault();
+
+        // Clear all the select2 widgets.
+        $('[class^="select2"]').select2('val', '');
+
+        // Clear the search box.
+        $('#id_search_text').val('');
+
+        // Clear the checkboxes.
+        $('[id^="id_chamber"]').attr('checked', '')
+        });
+
+    $("#submit").after(reset);
+
+
+    // If javascript is enabled.....
+    // Make table rows clickable.
+    var trs = $("tbody tr");
+    var trs_count = trs.length;
+    trs.click(function(){
+        window.location=$(this).find("a").attr("href");
+        return false;
+        });
+
+    // Change cursor to pointer over table rows
+    // and add selected class on hover.
+    trs.css('cursor', 'pointer');
+    trs.hover(function(){
+            $(this).addClass('selected');
+        },
+        function(){
+            $(this).removeClass('selected');
+        });
+
+    // Highlight search terms.
+    if ("{{search_text}}" != "") {
+        $("table").highlight('{{search_text}}');
+        }
+    });
+
+</script>
+<style>
+
+    .highlight { background-color: yellow }
+
+    .selected {
+        background-color: #FFFFD6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+        <h2>{% include description_template %}</h2>
+            <div class="twoCol colLtSm filterCol">
+                <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
+                <form action="/{{abbr}}/filter_bills" id="sidebarSearch">
+                    <input id="submit" type="submit"/>
+                    {{ form.as_p }}
+                </form>
+            </div>    
+            <div class="tenCol colRt">
+                {% if not object_list.count %}
+                    No bills matched those criteria. Frowny face.
+                {% else %}
+                <div id="pagination-links">
+                    Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>
+                    {% if object_list.has_next or object_list.has_previous %}
+                    {% for text, page_number, clickable in object_list.pagination_data %}
+                        {% if clickable %}
+                        <a href="{{request.path}}&page={{page_number}}">{{text}}</a>
+                        {% else %}
+                        {{text}}
+                        {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </div>
+
+                {% if use_table %}
+                <table class="withFilter">
+                    <thead>
+                        <tr id="titles">
+                            {% for header in column_headers %}
+                                <th>{{header}}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                {% endif %}
+
+                    {% for obj in object_list %}
+                        <tr class="{% cycle 'even' 'odd' %}">
+                            {% include rowtemplate_name %}
+                        </tr>
+                    {% endfor %}
+
+                {% if use_table %}
+                    </tbody>
+                </table>
+                {% endif %}
+                
+                <div id="pagination-links">
+                    Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>
+                    {% if object_list.has_next %}
+                    {% for text, page_number, clickable in object_list.pagination_data %}
+                        {% if clickable %}
+                        <a href="{{url}}?page={{page_number}}">{{text}}</a>
+                        {% else %}
+                        {{text}}
+                        {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="clear"></div>{% endblock %}
+

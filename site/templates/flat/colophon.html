@@ -1,0 +1,53 @@
+{% extends "flat/flatpage.html" %}
+{% load markup_tags %}
+
+{% block title %}Open States: Colophon{% endblock %}
+
+{% block flatpage %}
+<h2> Colophon </h2>
+{% rest %}
+
+Open States is a project that would simply not be possible without the support
+of a community much larger than the team.  A special thanks to all of our
+`contributors <https://github.com/sunlightlabs/openstates/graphs/contributors>`_
+and the authors and maintainers of all of the libraries that we depend upon.
+
+Code
+====
+
+All told, backend & scrapers together comprise approximately 40k lines of `Python <http://python.org/>`_, all of it open source.
+
+The primary projects behind Open States:
+
+`billy <https://github.com/sunlightlabs/billy/>`_
+    powering the backend of Open States from scraping to this very site
+`openstates <https://github.com/sunlightlabs/openstates/>`_
+    source for all of our scrapers and openstates.org templates
+`validictory <https://github.com/sunlightlabs/validictory/>`_
+    helping us keep our data in check
+`scrapelib <https://github.com/sunlightlabs/scrapelib/>`_
+    easy, powerful, error-resistant HTTP library built on `requests <https://github.com/kennethreitz/requests/>`_
+
+Third Party Libraries
+=====================
+
+We'd like to make special mention of a few projects that have made our life that much easier.
+This is far from a comprehensive list of the more than 40 projects that we rely upon throughout the project.
+
+`Django <https://www.djangoproject.com/>`_
+    powering this website and API
+`lxml <http://lxml.de>`_
+    the workhorse of our scraping backend
+`MongoDB <http://mongodb.org>`_
+    for all of our data storage
+
+Other Licenses
+==============
+
+* Base HTML template based on the fantastic HTML5 Boilerplate by Paul Irish and Divya Manian.
+* Social media icons by `Paul Robert Lloyd <http://paulrobertlloyd.com/>`_. 
+  Licenced under a `Attribution-Share Alike 2.0 UK: England & Wales Licence <http://creativecommons.org/licenses/by-sa/2.0/uk/>`_.
+
+
+{% endrest %}
+{% endblock %}

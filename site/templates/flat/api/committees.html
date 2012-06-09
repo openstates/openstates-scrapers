@@ -1,7 +1,7 @@
 {% extends "flat/api/api.html" %}
 {% load markup_tags %}
 
-{% block title %}Open State Project API: Committee Methods{% endblock %}
+{% block title %}Open States API: Committee Methods{% endblock %}
 
 {% block flatpage %}
 
@@ -24,7 +24,7 @@ Committee Fields
 Committee methods return objects with the following fields:
 
 ``id``
-    Open State Project Committee ID.
+    Open States Committee ID.
 ``chamber``
     Associated chamber (``upper``, ``lower``, or ``joint``).
 ``state``
@@ -45,7 +45,7 @@ Committee methods return objects with the following fields:
         Role of this member on the committee (usually 'member' but may indicate
         charimanship or other special status)
     ``leg_id``
-        Legislator's Open State Project ID
+        Legislator's Open States ID
 ``sources``
     List of sources that this data was collected from.
 
@@ -62,7 +62,7 @@ Committee methods return objects with the following fields:
 Committee Lookup
 ================
 
-Get all information about a committee given its Open State Project ID.
+Get all information about a committee given its Open States ID.
 
 URL Format
 ^^^^^^^^^^

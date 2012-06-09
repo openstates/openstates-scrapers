@@ -1,6 +1,5 @@
 import re
 import datetime as dt
-import urllib2
 import scrapelib
 
 from collections import defaultdict

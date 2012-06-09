@@ -14,3 +14,5 @@ http://politiscoop.com/component/ninjarsssyndicator/?feed_id=1&format=raw
 http://fairlyconservative.com/feed/
 http://badgerblogger.com/?feed=rss2
 http://govfreak.wordpress.com/feed/
+http://www.greenbaypressgazette.com/apps/pbcs.dll/section?Category=GPG0&template=rsscat
+http://www.aflcio.org/rss/feed/Blog

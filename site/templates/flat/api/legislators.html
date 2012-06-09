@@ -1,7 +1,7 @@
 {% extends "flat/api/api.html" %}
 {% load markup_tags %}
 
-{% block title %}Open State Project API: Legislator Methods{% endblock %}
+{% block title %}Open States API: Legislator Methods{% endblock %}
 
 {% block flatpage %}
 
@@ -26,7 +26,7 @@ Legislator Fields
 All legislator methods return Legislator objects consisting of the following fields:
 
 * ``leg_id``: A permanent, unique identifier for this legislator
-  within the Open State Project system.
+  within the Open States system.
 * ``full_name``
 * ``first_name``
 * ``last_name``
@@ -101,7 +101,7 @@ http://openstates.org/api/v1/legislators/?state=ca&party=democratic&first_name=B
 Legislator Lookup
 =================
 
-Lookup all available data for a legislator given their Open State Project ``leg_id``.
+Lookup all available data for a legislator given their Open States ``leg_id``.
 
 URL Format
 ----------

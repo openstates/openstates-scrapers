@@ -1,0 +1,126 @@
+{% extends base_template %}
+{% load humanize %}
+{% load url from future %}
+{% load static from staticfiles %}
+{% load customtags %}
+
+
+{% block title %}Search results{% endblock %}
+
+{% block headblock %}
+<script type="text/javascript">
+$(document).ready(function() {
+
+    // Make table rows clickable.
+    var trs = $("#main-table tbody tr");
+    var trs_count = trs.length;
+    trs.click(function(){
+        window.location=$(this).find("a").attr("href");
+        return false;
+        });
+
+    // If javascript is enabled, change cursor to pointer over table rows
+    // and add selected class on hover.
+    trs.css('cursor', 'pointer');
+    trs.hover(function(){
+            $(this).addClass('selected');
+        },
+        function(){
+            $(this).removeClass('selected');
+        });
+    });
+    
+</script>
+<style>
+    .selected {
+        background-color: #FFFFD6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+        <h2>{{bills_list.count|apnumber|capfirst}} {% if scope_name %}{{scope_name}} bills{% endif %} contain "<b>{{search_text}}</b>"</h2>
+        <div class="fullWidth">
+            {% if not bills_list.count %}
+                No bill titles contained "{{search_text}}."
+        </div>
+            {% else %}
+            <table id="main-table" class="withFilter">
+                <thead>
+                    <tr id="titles">
+                        <th>State</th>
+                        <th>Title</th>
+                        <th>Session</th>
+                        <th>Introduced</th>
+                        <th>Recent Action</th>
+                        <th>Votes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for obj in bills_list %}
+                    <tr class="{% cycle 'even' 'odd' %}">
+                        <td>{{obj.metadata.abbr|upper}}</td>
+                        <td>
+                            <a href="{{ obj.get_absolute_url }}">{{obj.bill_id}}</a>
+                            <p>{{obj.title|truncatewords:25}}</p>
+                        </td>
+                        <td>{{obj.session}}</td>
+                        <td>{{obj.date_introduced|date:"M j, Y"}}</td>
+                        {% with action=bill.most_recent_action %}
+                            <td>{{action.date|date:"M j, Y"}} <span class="tip">{{action.action}}</span></td>
+                        {% endwith %}
+                        <td>{{obj.votes_manager|length}}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>   
+            </table>
+        </div>
+        {% if more_bills_available %}
+            <a class="viewMore" href="/{{abbr|default:"us"}}/filter_bills/?search_text={{search_text}}">Show more search results.</a>
+        {% endif %}
+        <div class="clear"></div>
+        {% endif %}
+
+        <div class="fullWidth">
+            <h2>{{legislators_list.count|apnumber|capfirst}} {% if scope_name %}{{scope_name}} legislator{% endif %} names contain "<b>{{search_text}}</b>"</h2>
+            {% if not legislators_list.count %}
+                No legislator names contained "{{search_text}}."
+        </div>
+            {% else %}
+            <table id="main-table" class="withFilter">
+                <thead>
+                    <tr id="titles">
+                        <th></th>
+                        <th>State</th>
+                        <th>Name</th>
+                        <th>District</th>
+                        <th>Party</th>
+                        <th>Chamber</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for obj in legislators_list %}
+                    <tr class="{% cycle 'even' 'odd' %}">
+                        <td><img src="http://static.openstates.org/photos/small/{{ obj.leg_id }}.jpg"/></td>
+                        <td>{{obj.metadata.abbr|upper}}</td>
+                        <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
+                        <td>{{ obj.district }}</td>
+                        <td>{{ obj.party }}</td>
+                        {% if show_chamber_column and 'chamber' in obj %}
+                            <td>{{ obj.chamber_name }}</td>
+                        {% else %}
+                            <td>inactive</td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody> 
+            </table>
+        </div>
+        {% if more_legislators_available %}
+            <a class="viewMore" href="/{{abbr|default:"us"}}/legislators/">Show more search results.</a>
+        {% endif %}
+        <div class="clear"></div>
+        {% endif %}
+
+        {% endblock %}
+

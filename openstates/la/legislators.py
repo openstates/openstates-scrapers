@@ -6,14 +6,28 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 import scrapelib
 import lxml.html
 
+def _get_b_tail(page, text):
+    resp = []
+    try:
+        elem = page.xpath("//b[contains(text(), '%s')]" % text)[0]
+        while True:
+            if elem and elem.tag == 'font':
+                resp.append(elem.text_content())
+            if elem.tail:
+                resp.append(elem.tail.strip())
+            elem = elem.getnext()
+            if elem is None or elem.tag == 'b':
+                break
+        return '\n'.join(resp)
+    except IndexError:
+        return None
+
 
 class LALegislatorScraper(LegislatorScraper):
     state = 'la'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        if term != self.metadata['terms'][-1]['name']:
-            raise NoDataForPeriod(term)
-
         list_url = "http://www.legis.state.la.us/bios.htm"
         with self.urlopen(list_url) as text:
             page = lxml.html.fromstring(text)
@@ -72,37 +86,59 @@ class LALegislatorScraper(LegislatorScraper):
                 photo_url = "http://house.louisiana.gov/H_Reps/%s" % (
                     photo.attrib['src']
                 )
-                kwargs['photo'] = photo_url
+                kwargs['photo_url'] = photo_url
             else:
                 self.warning("No photo found :(")
 
-            leg = Legislator(term, 'lower', district, name, **kwargs)
+            district_office = _get_b_tail(page, 'DISTRICT OFFICE')
+            email = page.xpath('//a[starts-with(@href, "mailto")]/@href')[0]
+            # split off extra parts of mailto: link
+            email = email.split(':')[1].split('?')[0]
+
+            leg = Legislator(term, 'lower', district, name, email=email,
+                             **kwargs)
+            leg.add_office('district', 'District Office',
+                           address=district_office)
             leg.add_source(url)
 
             self.save_legislator(leg)
 
     def scrape_senator(self, name, term, url):
-        with self.urlopen(url) as text:
-            page = lxml.html.fromstring(text)
+        text = self.urlopen(url)
+        page = lxml.html.fromstring(text)
+        page.make_links_absolute(url)
 
-            district = page.xpath(
-                "string(//*[starts-with(text(), 'Senator ')])")
+        district = page.xpath(
+            "string(//*[starts-with(text(), 'Senator ')])")
 
-            district = re.search(r'District (\d+)', district).group(1)
+        district = re.search(r'District (\d+)', district).group(1)
 
-            try:
-                party = page.xpath(
-                    "//b[contains(text(), 'Party')]")[0].getnext().tail
-                party = party.strip()
-            except IndexError:
-                party = 'N/A'
+        party = _get_b_tail(page, 'Party')
 
-            if party == 'No Party (Independent)':
-                party = 'Independent'
-            elif party == 'Democrat':
-                party = 'Democratic'
+        if party == 'No Party (Independent)':
+            party = 'Independent'
+        elif party == 'Democrat':
+            party = 'Democratic'
 
-            leg = Legislator(term, 'upper', district, name, party=party,
-                             url=url)
-            leg.add_source(url)
-            self.save_legislator(leg)
+        email = _get_b_tail(page, 'E-mail')
+        photo_url = page.xpath('//img[starts-with(@src, "%s")]/@src' % url)
+        if photo_url:
+            photo_url = photo_url[0]
+        else:
+            photo_url = None
+        capitol = _get_b_tail(page, 'Capitol Office').splitlines()
+        capitol_address = '\n'.join(capitol[0:2])
+        capitol_phone = capitol[2]
+        district_address = _get_b_tail(page, 'District Office')
+        district_phone = _get_b_tail(page, 'Phone')
+        district_fax = _get_b_tail(page, 'Fax')
+
+
+        leg = Legislator(term, 'upper', district, name, party=party,
+                         url=url, email=email, photo_url=photo_url)
+        leg.add_office('capitol', 'Capitol Office', address=capitol_address,
+                       phone=capitol_phone)
+        leg.add_office('district', 'District Office', address=district_address,
+                       phone=district_phone, fax=district_fax)
+        leg.add_source(url)
+        self.save_legislator(leg)

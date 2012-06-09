@@ -18,32 +18,56 @@ class WILegislatorScraper(LegislatorScraper):
         else:
             url = "http://legis.wi.gov/w3asp/contact/legislatorslist.aspx?house=assembly"
 
-        with self.urlopen(url) as body:
-            page = lxml.html.fromstring(body)
+        body = self.urlopen(url)
+        page = lxml.html.fromstring(body)
+        page.make_links_absolute(url)
 
-            for row in page.cssselect("#ctl00_C_dgLegData tr"):
-                if len(row.cssselect("td a")) > 0:
-                    rep_url = list(row)[0].cssselect("a[href]")[0].get("href")
-                    rep_url = 'http://legis.wi.gov/w3asp/contact/' + rep_url
+        for row in page.cssselect("#ctl00_C_dgLegData tr"):
+            if len(row.cssselect("td a")) > 0:
+                rep_url = list(row)[0].cssselect("a[href]")[0].get("href")
+                rep_doc = lxml.html.fromstring(self.urlopen(rep_url))
 
-                    legpart = re.findall(r'([\w\-\,\s\.]+)\s+\(([\w])\)', list(row)[0].text_content())
-                    if legpart:
-                        full_name, party = legpart[0]
+                legpart = re.findall(r'([\w\-\,\s\.]+)\s+\(([\w])\)', list(row)[0].text_content())
+                if legpart:
+                    full_name, party = legpart[0]
 
-                        # skip if the legislator is vacant
-                        if full_name == 'Vacant':
-                            continue
+                    # skip if the legislator is vacant
+                    if full_name == 'Vacant':
+                        continue
 
-                        party = PARTY_DICT[party]
+                    party = PARTY_DICT[party]
 
-                        district = str(int(list(row)[2].text_content()))
+                    district = str(int(list(row)[2].text_content()))
 
-                        leg = Legislator(term, chamber, district, full_name,
-                                         party=party, url=rep_url)
-                        leg.add_source(rep_url)
+                    # email
+                    email = rep_doc.xpath('//a[starts-with(@href, "mailto")]/text()')[0]
 
-                        leg = self.add_committees(leg, rep_url, term, chamber)
-                        self.save_legislator(leg)
+                    leg = Legislator(term, chamber, district, full_name,
+                                     party=party, url=rep_url, email=email)
+                    leg.add_source(rep_url)
+
+                    # office ####
+
+                    # address is tail of all elements in MadiOffice label
+                    address = '\n'.join([x.tail.strip() for x in
+                       rep_doc.xpath('//span[@id="ctl00_C_lblMadiOffice"]/*')])
+                    # phone number is first line after Telephone h3
+                    phone = rep_doc.xpath('//h3[text()="Telephone"]')[0].tail.strip()
+                    if phone.endswith('Or'):
+                        phone = phone.rsplit(None, 1)[0]
+                    # fax is line after Fax h3
+                    fax = rep_doc.xpath('//h3[text()="Fax"]')
+                    if fax:
+                        fax = fax[0].tail.strip()
+                    else:
+                        fax = None
+                    leg.add_office('capitol', 'Madison Office',
+                                   address=address, phone=phone, fax=fax)
+
+
+                    # save legislator
+                    leg = self.add_committees(leg, rep_url, term, chamber)
+                    self.save_legislator(leg)
 
     def add_committees(self, legislator, rep_url, term, chamber):
         url = rep_url + '&display=committee'

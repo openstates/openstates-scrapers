@@ -202,6 +202,22 @@ nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; 
 #youTube a:hover { background: url(images/social_sprites.png) left -86px no-repeat;}
 
 
+/* social links for thank you page - copied from old design */
+div.flatpage .social-links li { float:left; height:16px; margin-bottom:15px;
+    padding-left:25px; list-style-type: none; display: block;
+    padding-right: 35px ;
+}
+.social-facebook { background: url("images/social_sprites.png") left -188px no-repeat; }
+.social-facebook:hover { background-position: left -52px; }
+.social-twitter { background: url("images/social_sprites.png") left -103px no-repeat; }
+.social-twitter:hover { background-position:left -1px; }
+.social-flickr { background: url("images/social_sprites.png") left -171px no-repeat; }
+.social-flickr:hover { background-position:left -35px; }
+.social-youtube { background: url("images/social_sprites.png") left -137px no-repeat; }
+.social-youtube:hover { background-position:left -86px; }
+.content .join-social>ul > li { list-style-type:none; }
+.content .join-social>ul { margin-left: 0; }
+
 /*  lists  */
 dt { font-weight: bold;}
 .contentBottom { margin-bottom: 10px;}
@@ -254,6 +270,7 @@ img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
 
 .callOut { font-size: 240%; line-height: 42px; margin-bottom: 20px;  }
 #notifyTitle { margin-top: 50px; }
+#dataTitle { margin-top: 90px; }
 #notify input { font-size: 102%; margin-right: 10px; float: left}
 
 #notify button { background: url(images/btn_submit.png) top left no-repeat; width: 85px; height: 33px; float: left;}
@@ -390,6 +407,8 @@ div.flatpage table#download_list { width: auto; }
 footer #submit button { background: url(images/btn_submitFooter.png) top left no-repeat; width: 85px; height: 30px;}
 footer #submit button:hover { background: url(images/btn_submitFooter.png) bottom left no-repeat; }
 footer input { float: left; margin-right: 10px;}
+/* make footer links grey w/ underline */
+footer a, footer a:active, footer a:visited { color: #8d8781; text-decoration: underline; }
 
 #recources { background: url(images/bg_resources.png) top left no-repeat; height: 121px; width: 633px; margin-left: -35px; margin-top: -5px; margin-bottom: 30px;}
 #recources h4 { background: url(images/bg_resourcesTitle.png) top left no-repeat; margin-top: -15px; width: 190px; height: 32px; position: absolute; padding: 13px 0 0 50px; margin-left: 10px;}

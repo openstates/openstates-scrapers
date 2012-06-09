@@ -1,0 +1,29 @@
+{% if legislators|length > 0 %}
+<table>
+    <thead>
+        <tr id="title">
+            <th class="invisible">Picture</th>
+            <th>Name</th>
+            <th>District</th>
+            <th>Party</th>
+            <th>Chamber</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for leg in legislators %}
+        <tr class="{% cycle odd,even %}">
+            <td><img src="http://static.openstates.org/photos/small/{{leg.leg_id}}.jpg"/></td>
+            <td><a href="/{{ leg.state }}/legislator/{{ leg.leg_id }}/">{{ leg.first_name }} {{ leg.last_name }}</a></td>
+            <td>{{ leg.district }}</td>
+            <td>{{ leg.party }}</td>
+            <td class = 'chamber-{{leg.chamber}}' >{{ leg.chamber }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class = 'find_your_legislator_errorbox' >
+    <b>Oh no!</b> We can't locate any U.S. Legislators for that location. Double
+    check you gave a location in the United States.
+</div>
+{% endif %}

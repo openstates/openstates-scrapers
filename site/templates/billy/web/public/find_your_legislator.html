@@ -1,0 +1,238 @@
+{% extends base_template %}
+{% load customtags %}
+{% load url from future %}
+
+{% block title %}Find your Legislator!{% endblock %}
+
+{% block bodyclass %}home{% endblock %}
+
+{% block headblock %}
+    <style>
+
+.find_your_legislator_errorbox {
+    color:                 #2e2020;
+    padding:               10px;
+    background-color:      #d99898;
+    border:                1px solid #825b5b;
+    -moz-border-radius:    5px;
+    -webkit-border-radius: 5px;
+}
+
+.find_your_legislator_infobox {
+    padding:               10px;
+    background-color:      #b1e7fc;
+    border:                1px solid #769aa8;
+    -moz-border-radius:    5px;
+    -webkit-border-radius: 5px;
+}
+
+.find_your_legislator_infobox  a {
+    color:                 #3b4d54;
+    text-decoration:       underline;
+}
+
+.leg_find_results {
+    margin-top:            10px;
+    margin-bottom:         10px;
+}
+
+#map{
+    height:               300px;
+    background:           #6699cc;
+}
+
+.find-your-shim {
+    margin:               20px;
+}
+
+    </style>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+    <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
+    <script type="text/javascript">
+$(document).ready(function() {
+    var map,
+        needs_update = true;
+        overlays   = [],
+        chambers = { /* These colors will be used to fill and outline the
+                        gmap for the districts. */
+            "lower": {
+                "stroke": "#484a02",
+                "fill": "#eff508"
+            },
+            "upper": {
+                "stroke": "#1b261a",
+                "fill": "#94d28c"
+            },
+            "joint": {
+                "stroke": "#072026",
+                "fill": "#24aed1"
+            }
+        };
+    map = new GMaps({
+        div: '#map',
+        lat: 38,
+        lng: -97,
+        zoom: 3
+    });
+    function do_geo_locate(lat, lon) {
+        /* This is invoked when we want to re-draw the map. We get here either
+           from the "submit" button, or clicking on the href with an overloaded
+           click event. */
+        var url = '/find_your_legislator/?lat=' +
+               lat +
+               '&lon=' +
+               lon;
+        /* This is a big operation. Kicking it off, since it's async */
+        $.getJSON(url + "&boundary=y", function(data) {
+            for ( var i in overlays ) {
+                map.removeOverlay(overlays[i]);
+            }
+            overlays = [];
+            for ( var i in data ) {
+                var bdry = data[i],
+                    polygon;
+                for ( var n in bdry.shape ) {
+                    for ( var j in bdry.shape[n] ) {
+                        var bak_shape = bdry.shape[n][j],
+                            shape = [],
+                            lay = chambers[bdry['chamber']];
+                        for ( var node in bak_shape ) {
+                            node = bak_shape[node];
+                            shape.push([node[1], node[0]]);
+                        }
+                        polygon = map.drawPolygon({
+                            paths:         shape,
+                            strokeColor:   lay['stroke'],
+                            strokeOpacity: 1,
+                            strokeWeight:  3,
+                            fillColor:     lay['fill'],
+                            fillOpacity:   0.3
+                            });
+                        overlays.push(polygon);
+                    }
+                }
+            }
+            map.removeMarkers();
+            map.addMarker({
+                lat: lat,
+                lng: lon,
+                draggable: true,
+                fences: overlays,
+                outside: function(marker, fence) {
+                    var latlon = marker.position,
+                           lat = latlon.lat(),
+                           lon = latlon.lng();
+
+                    if ( ! needs_update ) {
+                        needs_update = true;
+                        do_geo_locate(lat, lon);
+                    }
+                },
+                click: function() {
+                    /* If the user clicks, let's recenter kindly. */
+                    map.setCenter(
+                        lat,
+                        lon
+                    );
+                }
+            });
+            needs_update = false;
+        });
+
+        /* Before we dispatch our request, we've already
+           geo-located. Let's center first. */
+        map.setZoom(12);
+        map.setCenter(
+            lat,
+            lon
+        );
+        /* XXX: This is to remove all the other markers. Perhaps one day we
+                can find a way to mark all searched locations w/ results. */
+
+        $("#results_table").html("<center>Loading....</center>")
+        $("#results_table").load(url, function() {
+            for ( var i in chambers ) {
+                /* Colorize the results on the district table - it helps
+                   make who is which district more clear. We need a solution
+                   for more then one legislator for a chamber */
+                var chamber = chambers[i];
+                $(".chamber-" + i).css("background-color", chamber.fill);
+            }
+        });
+    }
+    $('#find_your_leg').submit(function(e){
+        e.preventDefault();
+        GMaps.geocode({
+            address: $('#leg_search').val().trim(),
+            callback: function(results, status){
+                if ( status == 'OK' ){
+                    /* We've got a lat/lon, let's call the render */
+                    var  latlng = results[0].geometry.location,
+                            lat = latlng.lat(),
+                            lon = latlng.lng();
+                    do_geo_locate(lat, lon);
+                }
+            }
+        });
+    });
+    GMaps.geolocate({
+        success: function(position) {
+            $("#communicate").append("<p class = 'find_your_legislator_infobox' >" +
+                "We've been able to guess where you currently are. Click " +
+                "<a id = 'do_geo_locate' href = '#' >" +
+                "here</a> to look up your legislator." +
+                "</p>");
+            $("#do_geo_locate").click(function() {
+                do_geo_locate(position.coords.latitude,
+                    position.coords.longitude);
+                return false;
+            });
+        },
+        error: function(error) {
+            /* $("#communicate").append("<p class = 'find_your_legislator_errorbox' >" +
+            "We were not able to guess your location. Please enter in your details."+
+            "</p>"); */
+        }
+    });
+    if ( $("#_request").val().trim() != "" ) {
+        /* Auto-submit if we've got something in there (?q= param) */
+        $('#find_your_leg').submit();
+    }
+});
+    </script>
+{% endblock %}
+
+{% block collection_nav %}{% endblock %}
+
+{% block content %}
+    <input type = 'hidden' value = '{{request}}' id = '_request' />
+    <div id="container">
+        <div class="tenCol colLt">
+            <div class = 'find-your-shim' >
+                <p class="callOut">Find your legislator!</p>
+            </div>
+            <div class = 'find-your-shim' >
+                <div id = 'communicate' ></div>
+            </div>
+            <div class = 'find-your-shim' >
+                <div id = 'find_your_legislator_search' >
+                    <form id = 'find_your_leg'>
+                        <input type = 'text' name = 'leg_search'
+                            id = 'leg_search'
+                            size = '50'
+                            placeholder = '{{ address }}'
+                            value = '{{ request }}' ></input>
+                        <input type = 'submit' value = 'Submit' ></input>
+                    </form>
+                </div>
+            </div>
+            <div class = 'find-your-shim' >
+                <div id = 'map' ></div>
+            </div>
+            <div class = 'find-your-shim' >
+                <div id = 'results_table' ></div>
+            </div>
+        </div>
+        <div class="clear"></div>
+    </div>
+{% endblock %}

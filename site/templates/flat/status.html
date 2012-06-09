@@ -1,6 +1,7 @@
 {% extends "flat/flatpage.html" %}
+{% load staticfiles %}
 
-{% block title %} Open State Project Status {% endblock %}
+{% block title %} Open States Status {% endblock %}
 
 {% block flatpage %}
 <h2>Project Status</h2>
@@ -20,13 +21,13 @@ for any <a href="#state-specific">state specific issues</a>.</p>
 
 <p>If you encounter issues using data from any state please let us know via the
 <a href="https://github.com/sunlightlabs/openstates/issues">
-Open State Project Issue Tracker</a> or mention it on
+Open States Issue Tracker</a> or mention it on
 <a href="http://groups.google.com/group/fifty-state-project">the Open States
 google group</a>.</p>
 
 <h3> State Status </h3>
 
-<img src="http://static.openstates.org/assets/v1/images/openstatesmap.png?feb24" id="map" alt="OpenstatesMap" />
+<img src="{% static "images/openstatesmap.png" %}" id="map" alt="OpenstatesMap" />
 
 <h4> Ready States </h4>
 <p> Ready states (green on the above map) are states that are regarded as the highest quality, they have been stable for a long time and have gone through an additional QA procedure.

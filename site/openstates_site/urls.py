@@ -8,11 +8,9 @@ urlpatterns = patterns('',
     (r'^admin/', include('billy.web.admin.urls')),
     (r'^', include('billy.web.public.urls')),
 
-
-    (r'^$', 'django.views.generic.simple.direct_to_template',
-    {'template':'index.html'}),
-
     # flat pages
+    (r'^colophon/$', 'django.views.generic.simple.direct_to_template',
+     {'template':'flat/colophon.html'}),
     (r'^contributing/$', 'django.views.generic.simple.direct_to_template',
      {'template':'flat/contributing.html'}),
     (r'^thanks/$', 'django.views.generic.simple.direct_to_template',
