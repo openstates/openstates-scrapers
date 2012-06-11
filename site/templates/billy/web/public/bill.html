@@ -130,7 +130,8 @@
     <tbody>
 {% for event in bill.events %}
         <tr class = 'odd' >
-            <td class="tip withTipSm">{{ event.when|date:"M j, Y"}}</td>
+            <td class="tip withTipSm"><a href = '/{{ event.state }}/event/{{ event.id }}'
+                    >{{ event.when|date:"M j, Y"}}</a></td>
             <td>{{ event.location }}</td>
             <td>{{ event.description }}</td>
             <td>
