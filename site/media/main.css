@@ -398,6 +398,10 @@ div.flatpage table#download_list { width: auto; }
 #stateimg-wi { background: url(images/state/wisconsin.jpg) left center no-repeat; }
 #stateimg-wy { background: url(images/state/wyoming.jpg) left center no-repeat; }
 
+/* mapbox */
+.stateMap .mapbox { background: transparent; }
+.mapbox img { border: 0px; }
+
 
 /* footer */
 

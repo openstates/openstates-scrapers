@@ -19,10 +19,10 @@
         doc.bind("keydown", "alt+c", function(){window.location = '/{{abbr}}/committees'});
         doc.bind("keydown", "esc", function(){$('#id_q').focus()});
     </script>
-{% block headblock %}{% endblock %}
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    {% block headblock %}{% endblock %}
 </head>
 <body class="{% block bodyclass %}{% endblock %}">
     <header id="mainHeader">
