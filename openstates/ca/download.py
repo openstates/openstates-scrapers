@@ -406,7 +406,15 @@ def update(zipfile_names=None, zipfile_name=None, unzip=True):
     # like ['pubinfo_2011']
     session_folders = filter(re.compile(r'\d{4}').search, folder_names)
 
-    for folder in set(session_folders):
+    # Only import the most recent session. Tweak below to import all
+    # sessions.
+    if session_folders:
+        db_startover()
+
+        fn = lambda folder: int(re.search('\d{4}', folder).group())
+        folder = sorted(session_folders, key=fn).pop()
+
+    #for folder in set(session_folders):
 
         # Delete all records relating to this session year.
         session_year = re.search('\d{4}', folder).group()
