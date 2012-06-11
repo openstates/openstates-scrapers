@@ -6,9 +6,13 @@
 
 {% block content %}
 <div class="fullWidth">
+    <h3>Past & Future events</h3>
+    <ul>
 {% for event in events %}
-    {{ event }}
+    <li><a href = '/{{abbr}}/event/{{event.id}}'
+        >{{ event.description }} @ {{ event.when|date:"M j, Y"}}</a></li>
 {% endfor %}
+    </ul>
 </div>
 <div class="clear"></div>
 {% endblock %}
