@@ -34,8 +34,13 @@
     <div class="eightCol colLt">
         <h3>Bills</h3>
         <ul>
-{% for bill in event.bills %}
-<li><a href = '/{{abbr}}/bill/{{bill.id}}' >{{bill.bill_id}} {{bill.title}}</a></li>
+{% for bill in event.related_bills %}
+{% if "_scraped_bill_id" in bill %}
+    <li><a href = '/{{abbr}}/bill/{{bill.bill_id}}'
+        >{{bill|underscore_field:"scraped_bill_id"}} -- {{bill.description}}</a></li>
+{% else %}
+    <li>{{bill.bill_id}} -- {{bill.description}}</li>
+{% endif %}
 {% endfor %}
         </ul>
     </div>
