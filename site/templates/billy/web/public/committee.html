@@ -24,10 +24,9 @@
       <td><a href={% url 'legislator' abbr legislator.id %}>{{ legislator.display_name }}</a></td>
     {% else %}
       <td>{{ obj.name }}</td>
-    {% endif %}  
+    {% endif %}
     <!--<td><img src={{ obj.photo_url }}/></td>-->
     <td>{{ obj.role }}</td>
-    
 
     {% if legislator %}
           <td>{{ legislator.district }}</td>
@@ -38,7 +37,15 @@
     {% endif %}
   </tr>
   {% endfor %}
-</table>	
+</table>
+
+<h3>Related Events</h3>
+<ul>
+{% for event in committee.events %}
+<ul><a href = '/{{abbr}}/event/{{event.id}}'
+        >{{event.description}} on {{ event.when|date:"M j, Y"}}</a><ul>
+{% endfor %}
+</ul>
 
 {% sources committee %}
 
