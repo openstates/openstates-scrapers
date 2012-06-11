@@ -44,7 +44,7 @@
                                 <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{ sponsor.name }}</a>
                                 {% with legislator=sponsor.legislator %}
                                     {% if legislator.active %}
-                                        ({{ legislator.party }}){{ legislator.district }}
+                                        ({{ legislator.party }}) {{ legislator.district }}
                                     {% endif %}
                                 {% endwith %}
                             {% else %}
@@ -58,7 +58,7 @@
                                 <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{ sponsor.name }}</a>
                                 {% with legislator=sponsor.legislator %}
                                     {% if legislator.active %}
-                                        ({{ legislator.party }}){{ legislator.district }}
+                                        ({{ legislator.party }}) {{ legislator.district }}
                                     {% endif %}
                                 {% endwith %}
                             {% else %}

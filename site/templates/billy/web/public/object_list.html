@@ -39,6 +39,7 @@ $(document).ready(function() {
 
 {% block content %}
         <h2>{% include description_template %}</h2>
+        <span style="float: right;"><a href='{{request.path}}rss/'><img src='{% static "images/feed-icon-14x14.png" %}'></img></a></span>
         <div class="fullWidth">
             <div id="pagination-links">
                 Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>
