@@ -117,9 +117,12 @@ class NHBillScraper(BillScraper):
 
             if session_yr == session and lsr in self.bills:
                 sp_type = 'primary' if primary == '1' else 'cosponsor'
-                self.bills[lsr].add_sponsor(sp_type,
-                                    self.legislators[employee]['name'],
-                                    _code=self.legislators[employee]['seat'])
+                try:
+                    self.bills[lsr].add_sponsor(sp_type,
+                                        self.legislators[employee]['name'],
+                                        _code=self.legislators[employee]['seat'])
+                except KeyError:
+                    self.warning("Error, can't find person %s" % employee)
 
 
         # actions
@@ -202,7 +205,12 @@ class NHBillScraper(BillScraper):
             # going to punt this back.
 
             if session_yr == session and bill_id.strip() in self.bills_by_id:
-                leg = self.legislators[employee]['name']
+                try:
+                    leg = self.legislators[employee]['name']
+                except KeyError:
+                    self.warning("Error, can't find person %s" % employee)
+                    continue
+
                 vote = vote.strip()
                 if not body+v_num in votes:
                     self.warning("Skipping processing this vote:")
