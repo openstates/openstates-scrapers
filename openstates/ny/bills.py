@@ -186,7 +186,7 @@ class NYBillScraper(BillScraper):
                         no_count = int(re.search(
                             r'\((\d+)\):', text).group(1))
                     elif (text.startswith('Excused') or
-                          text.startswith('Abstains') or
+                          text.startswith('Abstain') or
                           text.startswith('Absent')
                          ):
                         vtype = 'other'
