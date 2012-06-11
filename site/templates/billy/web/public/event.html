@@ -3,8 +3,42 @@
 {% load humanize %}
 {% load customtags %}
 
-{% block title %}{{event.id }}{% endblock %}
+{% block title %}{{event.description}}{% endblock %}
 
 {% block content %}
+<div class="fullWidth mainModule">
+    <div class="eightCol colLt">
+        <h3>{{event.description}}</h3>
+        {{event.when|date:"M j, Y"}} @ {{ event.location }}
+    </div>
+    <div class="eightCol colLt">
+        <h3>Participants</h3>
+        <table>
+            <tr>
+                <th>Who</th>
+                <th>Role</th>
+            </tr>
+{% for participant in event.participants %}
+            <tr>
+                {% if participant.committee_id %}
+                <td><a href = '/{{abbr}}/committee/{{participant.committee_id}}'
+                        >{{participant.participant}}</a></td>
+                {% else %}
+                    <td>{{participant.participant}}</td>
+                {% endif %}
+                <td>{{participant.type}}</td>
+            </tr>
+{% endfor %}
+        </table>
+    </div>
+    <div class="eightCol colLt">
+        <h3>Bills</h3>
+        <ul>
+{% for bill in event.bills %}
+<li><a href = '/{{abbr}}/bill/{{bill.id}}' >{{bill.bill_id}} {{bill.title}}</a></li>
+{% endfor %}
+        </ul>
+    </div>
+</div>
+<div class="clear"></div>
 {% endblock %}
-
