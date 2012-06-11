@@ -1,0 +1,14 @@
+{% extends base_template %}
+{% load customtags %}
+
+
+{% block title %}{{state.name}} events{% endblock %}
+
+{% block content %}
+<div class="fullWidth">
+{% for event in events %}
+    {{ event }}
+{% endfor %}
+</div>
+<div class="clear"></div>
+{% endblock %}
