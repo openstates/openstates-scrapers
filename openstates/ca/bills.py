@@ -5,6 +5,7 @@ import pytz
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
+from billy.models import db
 from billy.conf import settings
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -44,6 +45,78 @@ class CABillScraper(BillScraper):
         self.engine = create_engine(conn_str)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
+
+    def committee_code_to_id(self, code, cache={}):
+        try:
+            return cache[code]
+        except KeyError:
+            obj = db.committees.find_one({'+action_code': code})
+            if obj:
+                cache[code] = obj['_id']
+                return obj['_id']
+
+    def committee_code_regex(self, cache={}):
+        try:
+            return cache['regex']
+        except KeyError:
+            return '|'.join(db.committees.distinct('+action_code'))
+
+    def committee_slug_regex(self, cache={}):
+        try:
+            return cache['regex']
+        except KeyError:
+            pass
+
+        def slugify(s):
+            '''You filthy string, you.'''
+            return re.sub(r'[ ,.]', '', s)
+
+        slugs = map(slugify, [
+            u'A. & A.R.',
+            u'AGRI.',
+            u'APPR.',
+            u'B. & F.',
+            u'B. & F.I.',
+            u'B. & F.R.',
+            u'BUDGET.',
+            u'E. & C.A.',
+            u'E. & R.',
+            u'E. U. & C.',
+            u'E., U. & C',
+            u'E.Q.',
+            u'E.S. & T.M',
+            u'ED.',
+            u'G.O.',
+            u'GOV. & F.',
+            u'Gov. & F.',
+            u'H. & C.D.',
+            u'HEALTH.',
+            u'HIGHER ED.',
+            u'HUM. S.',
+            u'HUMAN S.',
+            u'INS.',
+            u'JUD.',
+            u'L. & E.',
+            u'L. & I.R.',
+            u'L. GOV.',
+            u'N.R. & W.',
+            u'NAT. RES.',
+            u'P.E. & R.',
+            u'PUB. S.',
+            u'REV. & TAX',
+            u'RLS.',
+            u'T. & H.',
+            u'TRANS.',
+            u'U. & C.',
+            u'V.A.',
+            u'W., P. & W'
+            ])
+
+        junk = '[ .,]*?'
+        slugs = (junk.join(list(slug)) for slug in slugs)
+        regex = '|'.join(sorted(slugs, key=len, reverse=True))
+        cache['regex'] = regex
+        return regex
 
     def scrape(self, chamber, session):
         self.validate_session(session)
@@ -141,6 +214,8 @@ class CABillScraper(BillScraper):
                     fsbill.add_sponsor(author.contribution, author.name)
 
             introduced = False
+            committee_code_regex = self.committee_code_regex()
+            committee_slug_regex = self.committee_slug_regex()
 
             for action in bill.actions:
                 if not action.action:
@@ -204,8 +279,24 @@ class CABillScraper(BillScraper):
                 if not type:
                     type = ['other']
 
+                # Add in the committee ID of the related committee, if any.
+                kwargs = {}
+                code = re.search(committee_code_regex, actor, re.I)
+                if code:
+                    code = code.group()
+                    committee_id = self.committee_code_to_id(code)
+                    if committee_id:
+                        kwargs['actor_id'] = committee_id
+                        kwargs['actor_collection'] = 'committees'
+                        actor_text = re.search(committee_slug_regex, action.action)
+                        if actor_text:
+                            actor_text = actor_text.group()
+                            kwargs['actor_text'] = actor_text
+                        else:
+                            kwargs['actor_text'] = 'committee'
+
                 fsbill.add_action(actor, act_str, action.action_date.date(),
-                                  type=type)
+                                  type=type, **kwargs)
 
             for vote in bill.votes:
                 if vote.vote_result == '(PASS)':
