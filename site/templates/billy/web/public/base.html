@@ -11,14 +11,56 @@
     <script type="text/javascript" src="{% static "js/jquery-placehold.min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/sf.js" %}"></script>
     <script type="text/javascript" src="{% static 'js/jquery.hotkeys.js' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'select2-2.0/select2.css' %}"/>
+    <script type="text/javascript" src="{% static 'select2-2.0/select2.min.js' %}"></script>
     <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js"></script>
     <script type="text/javascript">
+     $(document).ready(function() {
+
+        function format(state) {
+            //var state = $(state);
+            console.log(state);
+            return "<img class='flag' src='{% static 'images/flags/' %}" + state.id + ".png'/>" + state.text;
+                }
+
+        $("#id_abbr").select2({
+            formatResult: format,
+            formatSelection: format
+            });
+
+        $('#mainFilter .select2-container').css('width', '200px')
+
         var doc = $(document);
         doc.bind("keydown", "alt+b", function(){window.location = '/{{abbr}}/bills'});
         doc.bind("keydown", "alt+l", function(){window.location = '/{{abbr}}/legislators'});
         doc.bind("keydown", "alt+c", function(){window.location = '/{{abbr}}/committees'});
         doc.bind("keydown", "esc", function(){$('#id_q').focus()});
+
+        });
     </script>
+    <style>
+    /* Style the flag drop-down menu.*/
+    img.flag {
+        height: 10px;
+        width: 15px;
+        padding-right: 10px;
+        padding-left: 0px;
+        padding-top: 0px;
+        padding-bottom: 0px;
+        border: 0;
+        clear: right;
+    }
+
+    /* Hack to get the selected state's flag to move down from
+    the top. */
+    span > img.flag {
+        padding-top: 8px;
+    }
+
+    #mainFilter .select2-container {
+        width: 200px;
+    }
+    </style>
 {% block headblock %}{% endblock %}
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
