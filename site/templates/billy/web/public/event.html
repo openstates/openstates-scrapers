@@ -3,12 +3,12 @@
 {% load humanize %}
 {% load customtags %}
 
-{% block title %}{{event.description}}{% endblock %}
+{% block title %}{{event.description|trunc}}{% endblock %}
 
 {% block content %}
 <div class="fullWidth mainModule">
     <div class="eightCol colLt">
-        <h3>{{event.description}}</h3>
+        <h3>{{event.description|trunc}}</h3>
         {{event.when|date:"M j, Y"}} @ {{ event.location }}
     </div>
     <div class="eightCol colLt">
@@ -37,9 +37,9 @@
 {% for bill in event.related_bills %}
 {% if "_scraped_bill_id" in bill %}
     <li><a href = '/{{abbr}}/bill/{{bill.bill_id}}'
-        >{{bill|underscore_field:"scraped_bill_id"}} -- {{bill.description}}</a></li>
+        >{{bill|underscore_field:"scraped_bill_id"}} -- {{bill.description|trunc}}</a></li>
 {% else %}
-    <li>{{bill.bill_id}} -- {{bill.description}}</li>
+    <li>{{bill.bill_id}} -- {{bill.description|trunc}}</li>
 {% endif %}
 {% endfor %}
         </ul>
