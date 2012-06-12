@@ -7,13 +7,60 @@
 {% block title %}{{legislator.full_name }}{% endblock %}
 
 {% block headblock %}
-<script>
-    $(document).ready(function() {
-        $('img.legImg').error(function() {
-            $(this).attr("src", "{% static "images/placeholder.png" %}");
-        });
+    <style>
+
+#map{
+    height:               300px;
+    background:           #6699cc;
+}
+
+.find-your-shim {
+    margin:               20px;
+}
+
+    </style>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+    <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
+    <script type="text/javascript">
+$(document).ready(function() {
+    var map;
+    $('img.legImg').error(function() {
+        $(this).attr("src", "{% static "images/placeholder.png" %}");
     });
-</script>
+    map = new GMaps({
+        div: '#map',
+        lat: 38,
+        lng: -97,
+        zoom: 3
+    });
+    $.getJSON('/get_district/{{district_id}}', function(payload) {
+        var data = payload.shape;
+        map.setZoom(11);
+        map.setCenter(
+            payload.region.center_lat,
+            payload.region.center_lon
+        );
+        for ( var n in data ) {
+            for ( var j in data[n] ) {
+                var bak_shape = data[n][j],
+                    shape = [];
+                for ( var node in bak_shape ) {
+                    node = bak_shape[node];
+                    shape.push([node[1], node[0]]);
+                }
+                polygon = map.drawPolygon({
+                    paths:         shape,
+                    strokeColor:   "#c7a7eb",
+                    strokeOpacity: 1,
+                    strokeWeight:  3,
+                    fillColor:     "#7f6a96",
+                    fillOpacity:   0.3
+                });
+            }
+        }
+    });
+});
+    </script>
 {% endblock %}
 
 {% block content %}
@@ -96,6 +143,7 @@
                 </ul>
             </div>
             <div class="clear"></div>
+            <div id = 'map' ></div>
         </div>
         <div class="fullWidth module clear">
             <h3 class="moduleTitle">Media</h3>
