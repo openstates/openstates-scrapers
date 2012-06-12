@@ -126,6 +126,13 @@ ACTIVE_STATES = 'ca il la md mn tx wi'.split()
 
 ENABLE_ELASTICSEARCH = True
 
+# Display API urls on pages.
+NERD_MODE = True
+
+# Display links to admin pages where relevant.
+ADMIN_MODE = True
+
+
 try:
     from .local_settings import *
 except ImportError:

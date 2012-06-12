@@ -19,16 +19,16 @@
 
         function format(state) {
             //var state = $(state);
-            console.log(state);
             return "<img class='flag' src='{% static 'images/flags/' %}" + state.id + ".png'/>" + state.text;
                 }
 
-        $("#id_abbr").select2({
+        var state_select_dropdown = $("#id_abbr");
+        state_select_dropdown.select2({
             formatResult: format,
             formatSelection: format
             });
 
-        $('#mainFilter .select2-container').css('width', '200px')
+        $('#mainFilter .select2-container').css('width', '200px');
 
         var doc = $(document);
         doc.bind("keydown", "alt+b", function(){window.location = '/{{abbr}}/bills'});
@@ -59,6 +59,11 @@
 
     #mainFilter .select2-container {
         width: 200px;
+    }
+
+    #mainFilter li {
+        float: None;
+        margin-right: 0px;
     }
     </style>
 {% block headblock %}{% endblock %}
