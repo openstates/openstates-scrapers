@@ -38,7 +38,8 @@
             <div class="sixCol {% if forloop.first %} colLt withDash {% else %} colRt {% endif %}">
                 <div class="stateMap withBorder colLt threeCol">
                 <!-- map js -->
-                <div class="mapbox" id="mapbox-{{abbr}}{{x}}{{chamber.type}}" style="width: 189px; height: 120px"></div>
+                <div class="mapbox" id="mapbox-{{abbr}}{{chamber.type}}" style="width: 189px; height: 120px"></div>
+                <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
                 </div>
                 <div class="threeCol centeredText colRt">
                     <a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">
@@ -52,19 +53,26 @@
                 </div>
             </div>
 
-        <script type="text/javascript">
-            var url = 'http://a.tiles.mapbox.com/v3/jamesturk.mdsenate.jsonp';
-            var map = new L.Map('mapbox-{{abbr}}{{chamber.type}}',
-                                {zoomControl:false, attributionControl:false});
-            map.setView(new L.LatLng(38.9, -77.035), 6);
-            wax.tilejson(url, function(tilejson) {
-                map.addLayer(new wax.leaf.connector(tilejson));
-                wax.leaf.interaction().map(map).tilejson(tilejson).on(
-                    wax.tooltip().animate(true).parent(map._container).events());
-            });
-
-        </script>
         {% endfor %}
+        <script type="text/javascript">
+            doMap = function(abbr, chamber) {
+                var container = $('#mbtooltip-' + abbr + chamber)[0];
+                var url = 'http://a.tiles.mapbox.com/v3/jamesturk.mdsenate.jsonp';
+                var map = new L.Map('mapbox-' + abbr + chamber,
+                        {zoomControl:false, attributionControl:false});
+                map.setView(new L.LatLng(38.9, -77.035), 6);
+                wax.tilejson(url, function(tilejson) {
+                    map.addLayer(new wax.leaf.connector(tilejson));
+                    var events = wax.tooltip().animate(true).parent(container).events();
+                    var newevents = {};
+                    newevents.on = function(arg) { container.innerHTML = "District " + arg.data.SLDUST; }
+                    newevents.off = function(arg) { container.innerHTML = ""; }
+                    wax.leaf.interaction().map(map).tilejson(tilejson).on(newevents);
+                });
+            }
+            doMap('md', 'upper');
+            doMap('md', 'lower');
+        </script>
         <div class="clear"></div>
     </div>
     <div class="fullWidth module clear">
