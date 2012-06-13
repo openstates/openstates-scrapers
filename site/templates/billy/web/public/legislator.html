@@ -55,6 +55,18 @@ $(document).ready(function() {
                 lng: position.coords.longitude,
                 content: "<div class = 'overlay' >You are here</div>"
             }); */
+map.addControl({
+    position: 'top_right',
+    text: 'Where am I?',
+    style: {
+        color:  '#000000;',
+        margin: '5px',
+        padding: '1px 6px',
+        border: 'solid 1px #717B87',
+        background: '#fff'
+    },
+    events: {
+        click: function(){
             map.addMarker({
                 title: 'Current Position',
                 lat: position.coords.latitude,
@@ -63,11 +75,18 @@ $(document).ready(function() {
                     content: "<p>You are here</p>"
                 }
             });
+            map.setCenter(
+                position.coords.latitude,
+                position.coords.longitude
+            );
+        }
+    }
+});
         }
     });
     $.getJSON('/get_district/{{district_id}}', function(payload) {
         var data = payload.shape;
-        map.setZoom(11);
+        map.setZoom(8);
         map.setCenter(
             payload.region.center_lat,
             payload.region.center_lon
