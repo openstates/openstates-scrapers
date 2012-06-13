@@ -1,4 +1,5 @@
 import os
+import sys
 from os.path import dirname, abspath, join
 import json
 import shutil
@@ -54,6 +55,8 @@ if __name__ == '__main__':
     filenames = filter(lambda s: '~' not in s, filenames)
     for urls_filename in filenames:
         abbr = urls_filename.lower().replace('.txt', '')
+        if abbr not in sys.argv[1:]:
+            continue
         with open(join(PATH, 'urls', urls_filename)) as urls:
             urls = urls.read().splitlines()
             ignored = lambda url: not url.strip().startswith('#')
