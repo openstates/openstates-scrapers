@@ -224,7 +224,9 @@ $(document).ready(function() {
         <div class="fullWidth module clear">
             <h3 class="moduleTitle">Media</h3>
             <div class="sevenCol colLt">
-                <h4>News and Blog Coverage</h4>
+
+            <a style='float: right;' href="{% url 'feeds_list' abbr 'legislators' legislator.id %}rss/">rss</a>
+            <h4>News and Blog Coverage</h4>
             {% with feed_entries=legislator.feed_entries %}
               {% if not feed_entries.count %}
                 <ul><li class="smModule">No news or blog items found yet.</li></ul>
