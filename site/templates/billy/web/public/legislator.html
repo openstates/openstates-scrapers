@@ -68,6 +68,11 @@ map.addControl({
     },
     events: {
         click: function(){
+            map.setCenter(
+                position.coords.latitude,
+                position.coords.longitude
+            );
+
             if ( has_located )
                 return;
 
@@ -79,10 +84,6 @@ map.addControl({
                     content: "<p>You are here</p>"
                 }
             });
-            map.setCenter(
-                position.coords.latitude,
-                position.coords.longitude
-            );
             has_located = true;
         }
     }
