@@ -87,8 +87,18 @@
                 // add events
                 var container = $('#mbtooltip-{{metadata.abbr}}')[0];
                 var events = {};
-                events.on = function(arg) { container.innerHTML = arg.data.NAMELSAD; }
-                events.off = function(arg) { container.innerHTML = ""; }
+                events.on = function(arg) { 
+                    var selLayer = $('input[name="leaflet-base-layers"]:checked').parent().text().trimLeft();
+                    if (selLayer === layerName) {
+                        container.innerHTML = arg.data.NAMELSAD;
+                    }
+                }
+                events.off = function(arg) {
+                    var selLayer = $('input[name="leaflet-base-layers"]:checked').parent().text().trimLeft();
+                    if (selLayer === layerName) {
+                        container.innerHTML = "";
+                    }
+                }
                 wax.leaf.interaction().map(map).tilejson(tilejson).on(events);
             }
 
