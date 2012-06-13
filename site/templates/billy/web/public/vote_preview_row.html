@@ -1,7 +1,7 @@
                         <tr>
                             <td>
                                 <time class="timeHeader" datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
-                                <a href="{% url vote abbr vote.bill.id vote.index %}">{{vote.motion|truncatewords:30}}</a>
+                                <a href="{{ vote.get_absolute_url }}">{{vote.motion|truncatewords:30}}</a>
                                 <ul class="barChart">
                                     <li class="yes">
                                         <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>

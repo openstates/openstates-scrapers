@@ -257,7 +257,7 @@ $(document).ready(function() {
                 {% for bill in sponsored_bills %}
                     <li>
                         <time datetime="" class="published" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
-                        <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}
+                        <span class="inlineTitle h4 withTip"><a href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}
                             {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span></span>
                         <p class="clear">{{bill.title}}</p>
                     </li>

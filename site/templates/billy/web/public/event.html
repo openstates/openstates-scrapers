@@ -21,7 +21,7 @@
 {% for participant in event.participants %}
             <tr>
                 {% if participant.committee_id %}
-                <td><a href = '/{{abbr}}/committee/{{participant.committee_id}}'
+                <td><a href = '/{{abbr}}/committees/{{participant.committee_id}}'
                         >{{participant.participant}}</a></td>
                 {% else %}
                     <td>{{participant.participant}}</td>
