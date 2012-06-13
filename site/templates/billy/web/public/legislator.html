@@ -55,14 +55,14 @@ $(document).ready(function() {
                 lng: position.coords.longitude,
                 content: "<div class = 'overlay' >You are here</div>"
             }); */
-map.addMarker({
-    title: 'Current Position',
-    lat: position.coords.latitude,
-    lng: position.coords.longitude,
-    infoWindow: {
-        content: "<p>You are here</p>"
-    }
-});
+            map.addMarker({
+                title: 'Current Position',
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                infoWindow: {
+                    content: "<p>You are here</p>"
+                }
+            });
         }
     });
     $.getJSON('/get_district/{{district_id}}', function(payload) {

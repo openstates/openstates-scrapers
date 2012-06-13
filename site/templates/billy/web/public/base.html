@@ -97,6 +97,9 @@
                 <li {% if statenav_active == "legislators" %}class="active"{% endif %}><a href="{% url legislators abbr %}">Legislators</a></li>
                 <li {% if statenav_active == "bills" %}class="active"{% endif %}><a href="{% url bills abbr %}">Bills</a></li>
                 <li {% if statenav_active == "committees" %}class="active"{% endif %}><a href="{% url committees abbr %}">Committees</a></li>
+{% if "events" in metadata.feature_flags %}
+                <li {% if statenav_active == "events" %}class="active"{% endif %}><a href="{% url events abbr %}">Events</a></li>
+{% endif %}
             </ul> 
             <div class="clear"></div>
         </nav>
