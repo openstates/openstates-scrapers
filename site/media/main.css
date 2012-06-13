@@ -399,8 +399,8 @@ div.flatpage table#download_list { width: auto; }
 #stateimg-wy { background: url(images/state/wyoming.jpg) left center no-repeat; }
 
 /* mapbox */
-.stateMap .mapbox { background: transparent; }
-.mapbox img { border: 0px; }
+.mapbox.leaflet-container  { background: transparent; }
+.mapbox img { padding: 0px; border: 0px; }
 
 
 /* footer */
