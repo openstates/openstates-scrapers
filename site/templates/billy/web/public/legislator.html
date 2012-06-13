@@ -18,6 +18,21 @@
     margin:               20px;
 }
 
+img {
+    border:               0px solid #000000;
+}
+
+.overlay{
+    background-color:     #679ee8;
+    border:               2px solid #406391;
+    text-size:            2em;
+    color:                #FFFFFF;
+    padding:              5px;
+    -moz-border-radius:   5px;
+    -webkit-border-radius:5px;
+    opacity:              0.9;
+}
+
     </style>
     <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
     <script type="text/javascript" src="https://raw.github.com/HPNeo/gmaps/master/gmaps.js"></script>
@@ -32,6 +47,23 @@ $(document).ready(function() {
         lat: 38,
         lng: -97,
         zoom: 3
+    });
+    GMaps.geolocate({
+        success: function(position) {
+            /* map.drawOverlay({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                content: "<div class = 'overlay' >You are here</div>"
+            }); */
+map.addMarker({
+    title: 'Current Position',
+    lat: position.coords.latitude,
+    lng: position.coords.longitude,
+    infoWindow: {
+        content: "<p>You are here</p>"
+    }
+});
+        }
     });
     $.getJSON('/get_district/{{district_id}}', function(payload) {
         var data = payload.shape;
