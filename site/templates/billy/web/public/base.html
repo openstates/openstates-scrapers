@@ -4,7 +4,7 @@
 
 <html lang="en" class="no-js">
 <head>
-    <title>{% block title %}{% endblock %}</title>
+    <title>{% striptags %}{% block title %}{% endblock %}{% end_striptags %}</title>
     <link rel="stylesheet" type="text/css" href="{% static "main.css" %}" />
 
     <script type="text/javascript" src="{% static "js/jquery-1.5.1.min.js" %}"></script>
