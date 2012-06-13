@@ -57,21 +57,24 @@
         <script type="text/javascript">
             doMap = function(abbr, chamber) {
                 var container = $('#mbtooltip-' + abbr + chamber)[0];
-                var url = 'http://a.tiles.mapbox.com/v3/jamesturk.mdsenate.jsonp';
+                var url = 'http://a.tiles.mapbox.com/v3/sunlight.' + abbr + chamber + '.jsonp';
                 var map = new L.Map('mapbox-' + abbr + chamber,
-                        {zoomControl:false, attributionControl:false});
-                map.setView(new L.LatLng(38.9, -77.035), 6);
+                        {zoomControl:true, attributionControl:false});
                 wax.tilejson(url, function(tilejson) {
                     map.addLayer(new wax.leaf.connector(tilejson));
+                    map.fitBounds(new L.LatLngBounds(
+                        new L.LatLng(tilejson.bounds[1], tilejson.bounds[0]),
+                        new L.LatLng(tilejson.bounds[3], tilejson.bounds[2])));
+                    console.log(tilejson.bounds);
                     var events = wax.tooltip().animate(true).parent(container).events();
                     var newevents = {};
-                    newevents.on = function(arg) { container.innerHTML = "District " + arg.data.SLDUST; }
+                    newevents.on = function(arg) { container.innerHTML = arg.data.NAMELSAD; }
                     newevents.off = function(arg) { container.innerHTML = ""; }
                     wax.leaf.interaction().map(map).tilejson(tilejson).on(newevents);
                 });
             }
-            doMap('md', 'upper');
-            doMap('md', 'lower');
+            doMap('{{metadata.abbr}}', 'upper');
+            doMap('{{metadata.abbr}}', 'lower');
         </script>
         <div class="clear"></div>
     </div>
