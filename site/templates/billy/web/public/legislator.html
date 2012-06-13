@@ -251,6 +251,7 @@ $(document).ready(function() {
         <div class="fullWidth module">
             <h3 class="moduleTitle">Bills</h3>
             <div class="eightCol colLt">
+                <span style="float: right;"><a href="{% url 'sponsored_bills' abbr 'legislators' legislator.id %}rss/">rss</a></span>
                 <h4>Sponsored Bills</h4>
                 <ul>
                 {% if sponsored_bills %}
@@ -271,6 +272,7 @@ $(document).ready(function() {
 
             </div>
             <div class="fourCol colRt">
+                <a style='float: right;' href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
                 <h4 class="withTip">Votes</h4>
                 {% if not has_votes %}No votes to display.
                 {% else %}
