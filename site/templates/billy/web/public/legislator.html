@@ -38,7 +38,8 @@ img {
     <script type="text/javascript" src="{% static "js/gmaps.js" %}"></script>
     <script type="text/javascript">
 $(document).ready(function() {
-    var map;
+    var map,
+        has_located = false;
     $('img.legImg').error(function() {
         $(this).attr("src", "{% static "images/placeholder.png" %}");
     });
@@ -67,6 +68,9 @@ map.addControl({
     },
     events: {
         click: function(){
+            if ( has_located )
+                return;
+
             map.addMarker({
                 title: 'Current Position',
                 lat: position.coords.latitude,
@@ -79,6 +83,7 @@ map.addControl({
                 position.coords.latitude,
                 position.coords.longitude
             );
+            has_located = true;
         }
     }
 });
