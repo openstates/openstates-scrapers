@@ -86,7 +86,7 @@ map.addControl({
     });
     $.getJSON('/get_district/{{district_id}}', function(payload) {
         var data = payload.shape;
-        map.setZoom(8);
+        map.setZoom(10);
         map.setCenter(
             payload.region.center_lat,
             payload.region.center_lon
