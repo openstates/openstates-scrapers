@@ -17,7 +17,7 @@ menu, nav, section, summary, time, mark, audio, video {
 article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; }
 ul, ol { list-style: none; }
 blockquote, q { 
-	background:url('../images/quotes.png') 12px top no-repeat ;
+	background:url('images/quotes.png') 12px top no-repeat ;
 	quotes: '»' '«' ;
 	margin-left:30px;
     padding-left:35px;
@@ -27,7 +27,7 @@ blockquote, q {
 	}
 	
 .pull_left, .pull_right { 
-	background:url('../images/quotes_lg.png') 12px 12px no-repeat ;
+	background:url('images/quotes_lg.png') 12px 12px no-repeat ;
 	margin: 25px 65px 25px 30px;
 	padding: 15px 0 15px 35px;
 	color: #494442;
