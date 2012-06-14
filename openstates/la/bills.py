@@ -92,13 +92,19 @@ class LABillScraper(BillScraper):
                     "//a[text() = 'Text - All Versions']")[0]
                 versions_url = versions_link.attrib['href']
                 self.scrape_versions(bill, versions_url)
+                for doc in [ "Notes", "Digest", "Amendments", "Misc" ]:
+                    doc_link = page.xpath(
+                        "//a[text() = '%s']" % doc )[0]
+                    doc_url = doc_link.attrib['href']
+                    self.scrape_documents(bill, doc_url)
             except IndexError:
                 # Only current version
                 try:
                     version_link = page.xpath(
                         "//a[text() = 'Text - Current']")[0]
                     version_url = version_link.attrib['href']
-                    bill.add_version("%s Current" % bill_id, version_url)
+                    bill.add_version("%s Current" % bill_id, version_url,
+                                     on_duplicate="use_old")
                 except IndexError:
                     # Some bills don't have any versions :(
                     pass
@@ -202,6 +208,19 @@ class LABillScraper(BillScraper):
 
                 bill.add_sponsor(type, author)
 
+    def scrape_documents(self, bill, url):
+        with self.urlopen(url) as text:
+            page = lxml.html.fromstring(text)
+            page.make_links_absolute(url)
+            bill.add_source(url)
+
+            for a in reversed(page.xpath(
+                    "//a[contains(@href, 'streamdocument.asp')]")):
+                version_url = a.attrib['href']
+                version = a.text.strip()
+
+                bill.add_document(version, version_url)
+
     def scrape_versions(self, bill, url):
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
@@ -213,7 +232,7 @@ class LABillScraper(BillScraper):
                 version_url = a.attrib['href']
                 version = a.text.strip()
 
-                bill.add_version(version, version_url)
+                bill.add_version(version, version_url, on_duplicate='use_old')
 
     def scrape_votes(self, bill, url):
         with self.urlopen(url) as text:
