@@ -188,8 +188,11 @@ class LABillScraper(BillScraper):
                     "type": atype
                 }
                 if "committee:referred" in atype:
-                    kwargs['committee'] = re.findall("referred to the (.*)",
+                    ctty = re.findall("referred to the (.*)",
                                                    action)[0]
+                    if ctty[-1:] == ".":
+                        ctty = ctty[:-1]
+                    kwargs['committee'] = ctty
 
                 bill.add_action(chamber, action, date, **kwargs)
 
