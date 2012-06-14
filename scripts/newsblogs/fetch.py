@@ -6,6 +6,7 @@ import shutil
 import time
 import datetime
 import logging
+import socket
 
 import feedparser
 
@@ -50,7 +51,7 @@ if __name__ == '__main__':
     def fetch(url):
         logger.info('trying %r' % url)
         try:
-            return session.get(url)
+            return session.get(url).text
         except Exception as e:
             logger.exception(e)
 
@@ -85,7 +86,9 @@ if __name__ == '__main__':
             resp = fetch(url)
             if not resp:
                 continue
-            feed = feedparser.parse(resp.text)
+
+
+            feed = feedparser.parse(resp)
             for entry in feed['entries']:
                 # inbox_url = ('https://inbox.influenceexplorer.com/'
                 #              'contextualize?apikey=%s&text="%s"')
