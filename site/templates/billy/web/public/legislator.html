@@ -225,14 +225,14 @@ $(document).ready(function() {
             <h3 class="moduleTitle">Media</h3>
             <div class="sevenCol colLt">
 
-            <a style='float: right;' href="{% url 'feeds_list' abbr 'legislators' legislator.id %}rss/">rss</a>
+            <a style='float: right;' href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.display_name|slugify %}">rss</a>
             <h4>News and Blog Coverage</h4>
             {% with feed_entries=legislator.feed_entries %}
               {% if not feed_entries.count %}
                 <ul><li class="smModule">No news or blog items found yet.</li></ul>
               {% else %}
                 {% for obj in legislator.feed_entries %}{% include feed_entry_template %}{% endfor %}
-                <a class="viewMore" href="{% url 'feeds_list' abbr 'legislators' legislator.id %}">View More News</a>
+                <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.display_name|slugify %}">View More News</a>
             {% endif %}
             {% endwith %}
             </div>
