@@ -3,10 +3,40 @@
 
 {% block title %}{{metadata.name}} {{ chamber_name }} Legislators{% endblock %}
 
+{% block headblock %}
+<script type="text/javascript">
+$(document).ready(function() {
+    
+    // Make table rows clickable.
+    var trs = $("#main-table tbody tr");
+    var trs_count = trs.length;
+    trs.click(function(){
+        window.location=$(this).find("a").attr("href");
+        return false;
+        });
+
+    // If javascript is enabled, change cursor to pointer over table rows
+    // and add selected class on hover.
+    trs.css('cursor', 'pointer');
+    trs.hover(function(){
+            $(this).addClass('selected');
+        },
+        function(){
+            $(this).removeClass('selected');
+        });
+    });
+</script>
+<style>
+    .selected {
+        background-color: #FFFFD6;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
         <div class="fullWidth">
             {{form.as_p}}
-            <h2>{{ metadata.name }} {{ chamber_name }} Legislators</h2>
+            <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} Legislators</h2>
             <div class="nineCol colLt">
                 <div class="horizontalFilter noSpace">
                     {% include chamber_select_template %}
