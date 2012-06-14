@@ -184,7 +184,14 @@ class LABillScraper(BillScraper):
                     conf['upper'] = names
                     bill['conference_committee'] = conf
 
-                bill.add_action(chamber, action, date, type=atype)
+                kwargs = {
+                    "type": atype
+                }
+                if "committee:referred" in atype:
+                    kwargs['committee'] = re.findall("referred to the (.*)",
+                                                   action)[0]
+
+                bill.add_action(chamber, action, date, **kwargs)
 
     def scrape_authors(self, bill, url):
         with self.urlopen(url) as text:
