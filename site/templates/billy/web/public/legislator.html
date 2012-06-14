@@ -253,7 +253,7 @@ $(document).ready(function() {
         <div class="fullWidth module">
             <h3 class="moduleTitle">Bills</h3>
             <div class="eightCol colLt">
-                <span style="float: right;"><a href="{% url 'sponsored_bills' abbr 'legislators' legislator.id %}rss/">rss</a></span>
+                <span style="float: right;"><a href="{% url 'legislator_sponsored_bills_rss' abbr legislator.id legislator.slug %}">rss</a></span>
                 <h4>Sponsored Bills</h4>
                 <ul>
                 {% if sponsored_bills %}
@@ -266,7 +266,7 @@ $(document).ready(function() {
                     </li>
                 {% endfor %}
                 </ul>
-                <a class="viewMore" href="{% url 'sponsored_bills' abbr 'legislators' legislator.id %}">View More Bills</a>
+                <a class="viewMore" href={% url 'legislator_sponsored_bills' abbr legislator.id legislator.slug %}>View More Bills</a>
                 {% else %}
                     <li>No sponsored bills to display.</li>
                 </ul>

@@ -41,7 +41,7 @@
                     {% if show_all_sponsors %}
                         {% for sponsor in bill.sponsors_manager %}
                             {% if sponsor.leg_id %}
-                                <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{ sponsor.name }}</a>
+                                <li><a href="{% url 'legislator' abbr sponsor.leg_id sponsor.name|slugify %}">{{ sponsor.name }}</a>
                                 {% with legislator=sponsor.legislator %}
                                     {% if legislator.active %}
                                         ({{ legislator.party }}) {{ legislator.district }}
@@ -55,7 +55,7 @@
                     {% else %}
                         {% for sponsor in bill.sponsors_manager.first_five %}
                             {% if sponsor.leg_id %}
-                                <li><a href="{% url 'legislator' abbr sponsor.leg_id %}">{{ sponsor.name }}</a>
+                                <li><a href="{% url 'legislator' abbr sponsor.leg_id sponsor.name|slugify %}">{{ sponsor.name }}</a>
                                 {% with legislator=sponsor.legislator %}
                                     {% if legislator.active %}
                                         ({{ legislator.party }}) {{ legislator.district }}
@@ -86,13 +86,19 @@
                 {% if "+mimetype" in version %}[{{ version|plusfield:"mimetype"}}]{% endif %}
                 {{version.url|urlize}}</li>
             {% endfor %}</ul>
-            {% for document in bill.document %}<ul>
+        </div>
+        {% endif %}
+        {% if bill.documents %}
+        <div class="fullWidth mainModule">
+            <h3>Documents</h3>
+            {% for document in bill.documents %}<ul>
                 <li>{{ document.name }}
                 {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
                 {{document.url|urlize}}</li>
             {% endfor %}</ul>
         </div>
         {% endif %}
+
         <div class="eightCol colLt">
             <h3>Recent Actions</h3>
             <table class="normalTable">
@@ -110,40 +116,11 @@
                         <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
                         <td>{{ action.actor_name }}</td>
                         <td>{{ action.action_display|safe }}</td>
-                        <td>{% for label_text in action.type %}<span class="label">{{label}}</span>{% endfor %}</td>
+                        <td>{% for label_text in action.type %}<span class="label">{{label_text}}</span>{% endfor %}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
-        </div>
-        <div class="eightCol colLt">
-            <h3>Events</h3>
-<table class="normalTable">
-    <thead>
-        <tr id="titles">
-            <th>Date</th>
-            <th>Where</th>
-            <th>Description</th>
-            <th>Committees</th>
-        </tr>
-    </thead>
-    <tbody>
-{% for event in bill.events %}
-        <tr class = 'odd' >
-            <td class="tip withTipSm"><a href = '/{{ event.state }}/event/{{ event.id }}'
-                    >{{ event.when|date:"M j, Y"}}</a></td>
-            <td>{{ event.location }}</td>
-            <td>{{ event.description }}</td>
-            <td>
-                {% for committee in event.committees %}
-                <a href = '/{{ committee.state }}/committee/{{ committee.id}}/'
-                    >{{committee.display_name}}</a>
-                {% endfor %}
-            </td>
-        </tr>
-{% endfor %}
-    </tbody>
-</table>
         </div>
         <div class="fourCol colRt">
             <h3>Votes</h3>
@@ -157,6 +134,39 @@
             This bill hasn't been voted on yet.
             {% endif %}
         </div>
+{% with events=bill.events %}
+{% if events.count %}
+        <div class="eightCol colLt">
+            <h3>Events</h3>
+            <table class="normalTable">
+                <thead>
+                    <tr id="titles">
+                        <th>Date</th>
+                        <th>Where</th>
+                        <th>Description</th>
+                        <th>Committees</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in bill.events %}
+                    <tr class = 'odd' >
+                        <td class="tip withTipSm"><a href = '/{{ event.state }}/event/{{ event.id }}'
+                                >{{ event.when|date:"M j, Y"}}</a></td>
+                        <td>{{ event.location }}</td>
+                        <td>{{ event.description }}</td>
+                        <td>
+                            {% for committee in event.committees %}
+                            <a href = '/{{ committee.state }}/committee/{{ committee.id}}/'
+                                >{{committee.display_name}}</a>
+                            {% endfor %}
+                        </td>
+                    </tr>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+                </tbody>
+            </table>
         {% sources bill %}
         <div class="clear"></div>
+        </div>
 {% endblock %}

@@ -31,19 +31,34 @@
 {% endfor %}
         </table>
     </div>
+
+{% with bills=event.related_bills %}
+    {% if bills.count %}
     <div class="eightCol colLt">
         <h3>Bills</h3>
         <ul>
-{% for bill in event.related_bills %}
-{% if "_scraped_bill_id" in bill %}
-    <li><a href = '/{{abbr}}/bill/{{bill.bill_id}}'
-        >{{bill|underscore_field:"scraped_bill_id"}} -- {{bill.description|trunc}}</a></li>
-{% else %}
-    <li>{{bill.bill_id}} -- {{bill.description|trunc}}</li>
-{% endif %}
-{% endfor %}
+    {% for bill in bills %}
+        {% if "_scraped_bill_id" in bill %}
+            <li><a href = '/{{abbr}}/bill/{{bill.bill_id}}'>{{bill|underscore_field:"scraped_bill_id"}} -- {{bill.description|trunc}}</a></li>
+        {% else %}
+            <li>{{bill.bill_id}} -- {{bill.description|trunc}}</li>
+        {% endif %}
+    {% endfor %}
+    {% endif %}
+{% endwith %}
         </ul>
     </div>
+    {% if event.documents %}
+    <div class="fullWidth mainModule">
+        <h3>Documents</h3>
+        {% for document in event.documents %}<ul>
+            <li>{{ document.name }}
+            {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
+            {{document.url|urlize}}</li>
+        {% endfor %}</ul>
+    </div>
+    {% endif %}
+
 </div>
 <div class="clear"></div>
 {% endblock %}
