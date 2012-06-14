@@ -109,7 +109,7 @@
                     <tr class={% cycle "even" "odd" %}>
                         <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
                         <td>{{ action.actor_name }}</td>
-                        <td>{{ action.action }}</td>
+                        <td>{{ action.action_display|safe }}</td>
                         <td>{% for label_text in action.type %}<span class="label">{{label}}</span>{% endfor %}</td>
                     </tr>
                 {% endfor %}

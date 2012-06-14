@@ -18,7 +18,7 @@
     <div class="fullWidth">
         <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
             <h2 class="withTip">{{metadata.legislature_name}}</h2>
-            <p>Michigan is the 21st state. Did you know that the name Michigan is the French form of the Ojibwa word mishigamaa, meaning "large water" or "large lake".</p>
+            <p>{{funfact}}</p>
         </div>
     </div>
 
@@ -111,12 +111,12 @@
         <h3 class="moduleTitle">Committees</h3>
         <ul class="inlineThirds centeredText">
             {% for chamber in chambers %}
-                <a href="{% url 'committees_chamber' abbr=abbr chamber=chamber.type %}">
+                <a href="{% url 'committees' abbr %}">
                 <li class="{% cycle 'one' 'two' %} titleNumber withTip">
                 {{ chamber.committees.count }}<span>{{ chamber.name }} Committees</span></li>
                 </a>
             {% endfor %}
-            <a href="{% url 'committees_chamber' abbr=abbr chamber='joint' %}">
+            <a href="{% url 'committees' abbr %}">
                 <li class="three titleNumber withTip">{{ chambers.0.committees.joint_count }}<span>Joint Committees</span></li>
             </a>
         </ul>

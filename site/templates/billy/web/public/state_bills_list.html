@@ -55,10 +55,6 @@ $(document).ready(function(){
             $(this).removeClass('selected');
         });
 
-    // Highlight search terms.
-    if ("{{search_text}}" != "") {
-        $("table").highlight('{{search_text}}');
-        }
     });
 
 </script>
@@ -90,7 +86,7 @@ $(document).ready(function(){
                     {% if object_list.has_next or object_list.has_previous %}
                     {% for text, page_number, clickable in object_list.pagination_data %}
                         {% if clickable %}
-                        <a href="{{request.path}}&page={{page_number}}">{{text}}</a>
+                        <a href="{{full_url}}&page={{page_number}}">{{text}}</a>
                         {% else %}
                         {{text}}
                         {% endif %}

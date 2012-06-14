@@ -21,7 +21,7 @@
   {% for obj, legislator in committee.members_objects %}
   <tr>
   	{% if legislator %}
-      <td><a href={% url 'legislator' abbr legislator.id %}>{{ legislator.display_name }}</a></td>
+      <td><a href="{{ legislator.get_absolute_url }}">{{ legislator.display_name }}</a></td>
     {% else %}
       <td>{{ obj.name }}</td>
     {% endif %}
@@ -42,7 +42,7 @@
 <h3>Related Events</h3>
 <ul>
 {% for event in committee.events %}
-<ul><a href = '/{{abbr}}/event/{{event.id}}'
+<ul><a href = "{{ event.get_absolute_url }}"
         >{{event.description}} on {{ event.when|date:"M j, Y"}}</a><ul>
 {% endfor %}
 </ul>

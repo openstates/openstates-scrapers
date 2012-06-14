@@ -1,10 +1,12 @@
 import os
+import sys
 from os.path import dirname, abspath, join
 import json
 import shutil
 import time
 import datetime
 import logging
+import socket
 
 import feedparser
 
@@ -37,7 +39,10 @@ request_defaults = {
         'User-Agent': ('Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:10.0.2) '
                        'Gecko/20100101 Firefox/10.0.2')
         },
+    'follow_robots': False,
     }
+
+
 
 if __name__ == '__main__':
 
@@ -46,7 +51,7 @@ if __name__ == '__main__':
     def fetch(url):
         logger.info('trying %r' % url)
         try:
-            return session.get(url, **request_defaults)
+            return session.get(url).text
         except Exception as e:
             logger.exception(e)
 
@@ -54,6 +59,8 @@ if __name__ == '__main__':
     filenames = filter(lambda s: '~' not in s, filenames)
     for urls_filename in filenames:
         abbr = urls_filename.lower().replace('.txt', '')
+        if sys.argv[1:] and (abbr not in sys.argv[1:]):
+            continue
         with open(join(PATH, 'urls', urls_filename)) as urls:
             urls = urls.read().splitlines()
             ignored = lambda url: not url.strip().startswith('#')
@@ -79,7 +86,9 @@ if __name__ == '__main__':
             resp = fetch(url)
             if not resp:
                 continue
-            feed = feedparser.parse(resp.text)
+
+
+            feed = feedparser.parse(resp)
             for entry in feed['entries']:
                 # inbox_url = ('https://inbox.influenceexplorer.com/'
                 #              'contextualize?apikey=%s&text="%s"')

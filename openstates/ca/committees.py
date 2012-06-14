@@ -13,6 +13,79 @@ from billy.scrape.committees import CommitteeScraper, Committee
 
 strip = methodcaller('strip')
 
+# Committee codes used in action chamber text.
+upper_committee_codes = [
+    ('CZ09', 'Standing Committee on Floor Analyses'),
+    ('CS73', 'Standing Committee on Governance and Finance'),
+    ('CS71', 'Standing Committee on Energy, Utilities and Communications'),
+    ('CS44', 'Standing Committee on Education'),
+    ('CS61', 'Standing Committee on Appropriations'),
+    ('CS51', 'Standing Committee on Labor and Industrial Relations'),
+    ('CS45', 'Standing Committee on Elections and Constitutional Amendments'),
+    ('CS64', 'Standing Committee on Environmental Quality'),
+    ('CS55', 'Standing Committee on Natural Resources And Water'),
+    ('CS56', 'Standing Committee on Public Employment and Retirement'),
+    ('CS48', 'Standing Committee on Governmental Organization'),
+    ('CS70', 'Standing Committee on Insurance'),
+    ('CS72', 'Standing Committee on Public Safety'),
+    ('CS53', 'Standing Committee on Judiciary'),
+    ('CS60', 'Standing Committee on Health'),
+    ('CS59', 'Standing Committee on Transportation and Housing'),
+    ('CS42',
+    'Standing Committee on Business, Professions and Economic Development'),
+    ('CS40', 'Standing Committee on Agriculture'),
+    ('CS69', 'Standing Committee on Banking and Financial Institutions'),
+    ('CS66', 'Standing Committee on Veterans Affairs'),
+    ('CS62', 'Standing Committee on Budget and Fiscal Review'),
+    ('CS74', 'Standing Committee on Human Services'),
+    ('CS58', 'Standing Committee on Rules')
+    ]
+
+lower_committee_codes = [
+    ('CX20', 'standing committee on rules'),
+    ('CZ01', 'assembly floor analysis'),
+    ('CX19', 'standing committee on revenue and taxation'),
+    ('CX16', 'standing committee on natural resources'),
+    ('CX25', 'standing committee on appropriations'),
+    ('CX28', 'standing committee on insurance'),
+    ('CX23', 'standing committee on utilities and commerce'),
+    ('CX03', 'standing committee on education'),
+    ('CX18', 'standing committee on public safety'),
+    ('CX04', 'standing committee on elections and redistricting'),
+    ('CX13', 'standing committee on judiciary'),
+    ('CX09', 'standing committee on higher education'),
+    ('CX08', 'standing committee on health'),
+    ('CX11', 'standing committee on human services'),
+    ('CX37',
+    'standing committee on arts, entertainment, sports, tourism, and internet media'),
+    ('CX22', 'standing committee on transportation'),
+    ('CX33',
+    'standing committee on business, professions and consumer protection'),
+    ('CX24', 'standing committee on water, parks and wildlife'),
+    ('CX15', 'standing committee on local government'),
+    ('CX31', 'standing committee on aging and long term care'),
+    ('CX14', 'standing committee on labor and employment'),
+    ('CX07', 'standing committee on governmental organization'),
+    ('CX17',
+    'standing committee on public employees, retirement and social security'),
+    ('CX38', 'standing committee on veterans affairs'),
+    ('CX10', 'standing committee on housing and community development'),
+    ('CX05', 'standing committee on environmental safety and toxic materials'),
+    ('CX01', 'standing committee on agriculture'),
+    ('CX27', 'standing committee on banking and finance'),
+    ('CX34', 'standing committee on jobs, economic development and the economy'),
+    ('CX02', 'standing committee on accountability and administrative review'),
+    ('CX29', 'standing committee on budget')
+    ]
+
+
+codes = {
+    'upper': dict((name.lower(), code)
+                  for (code, name) in upper_committee_codes),
+    'lower': dict((name.lower(), code)
+                  for (code, name) in lower_committee_codes)
+}
+
 
 def clean(s):
     '''You filthy string, you.'''
@@ -81,6 +154,9 @@ class CACommitteeScraper(CommitteeScraper):
                     cname = c['committee']
                     msg = '%r must have at least one member.'
                     raise ValueError(msg % cname)
+
+                code = codes[chamber].get(c['committee'].lower())
+                c['action_code'] = code
 
                 self.save_committee(c)
 

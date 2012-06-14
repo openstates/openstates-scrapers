@@ -15,7 +15,7 @@
                         {% for obj in legislators %}
                         <tr class="{% cycle odd,even %}">
                             <td><img src="http://static.openstates.org/photos/small/{{ obj.leg_id }}.jpg"/></td>
-                            <td><a href="{% url 'legislator' abbr obj.leg_id %}">{{ obj.full_name }}</a></td>
+                            <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
                             <td>{{ obj.district }}</td>
                             <td>{{ obj.party }}</td>
                             {% if show_chamber_column %}
