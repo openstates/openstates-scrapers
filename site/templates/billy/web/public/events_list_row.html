@@ -1,0 +1,6 @@
+{% with event=obj%}
+                            <td>
+                                <a href="{{ event.get_absolute_url }}">{{event.when|date:"M j, Y"}}</a>
+                            </td>
+                            <td>{{event.description|truncatewords:25}}</td>
+{% endwith %}
