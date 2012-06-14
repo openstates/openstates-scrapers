@@ -65,6 +65,7 @@
             <div class="sixCol colLt">
                 <h4>{{ metadata.upper_chamber_name }}<span class="tip sideNote">({{chambers.0.bills_count}})</span></h4>
                 <div class="medModule">
+                    <span style="float: right"><a href="{% url 'bills_passed_upper_rss' abbr %}">rss</a></span>
                     <h5>Recently Passed</h5>
                     <ul>
                     {% with passed_upper=recent_actions.passed_upper %}
@@ -83,6 +84,7 @@
                     {% endif %}
                     {% endwith %}
                 </div>
+                <span style="float: right"><a href="{% url 'bills_introduced_upper_rss' abbr %}">rss</a></span>
                 <h5>Recently Introduced</h5>
                 <ul>
                 {% with introduced_upper=recent_actions.introduced_upper %}
@@ -104,6 +106,7 @@
             <div class="sixCol colRt">
                 <h4>{{ metadata.lower_chamber_name }}<span class="tip sideNote">({{chambers.1.bills_count}})</span></h4>
                 <div class="medModule">
+                    <span style="float: right"><a href="{% url 'bills_passed_lower_rss' abbr %}">rss</a></span>
                     <h5>Recently Passed</h5>
                     <ul>
                     {% with passed_lower=recent_actions.passed_lower %}
@@ -122,6 +125,7 @@
                     {% endif %}
                     {% endwith %}
                 </div>
+                <span style="float: right"><a href="{% url 'bills_introduced_lower_rss' abbr %}">rss</a></span>
                 <h5>Recently Introduced</h5>
                 <ul>
                 {% with introduced_lower=recent_actions.introduced_lower %}
