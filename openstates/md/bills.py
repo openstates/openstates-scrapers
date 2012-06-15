@@ -44,10 +44,14 @@ def _classify_action(action):
     if not action:
         return None
 
+    ctty = None
+
     for regex, type in classifiers.iteritems():
         if re.match(regex, action):
-            return type
-    return None
+            if 'committee:referred' in type:
+                ctty = re.sub(regex, "", action).strip()
+            return ( type, ctty )
+    return ( None, ctty )
 
 def _clean_sponsor(name):
     if name.startswith('Delegate') or name.startswith('Senator'):
@@ -109,10 +113,16 @@ class MDBillScraper(BillScraper):
                             act = act.strip()
                             if not act:
                                 continue
-                            atype = _classify_action(act)
+                            atype, committee = _classify_action(act)
+                            kwargs = {
+                                "type": atype
+                            }
+                            if committee is not None:
+                                kwargs['committee'] = committee
+
                             if atype:
                                 bill.add_action(chamber, act, action_date,
-                                                type=atype)
+                                                **kwargs)
                             else:
                                 self.log('unknown action: %s' % act)
 
