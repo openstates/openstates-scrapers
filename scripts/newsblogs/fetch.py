@@ -43,7 +43,6 @@ request_defaults = {
     }
 
 
-
 if __name__ == '__main__':
 
     session = scrapelib.Scraper(**request_defaults)
@@ -51,7 +50,7 @@ if __name__ == '__main__':
     def fetch(url):
         logger.info('trying %r' % url)
         try:
-            return session.get(url).text
+            return session.get(url)
         except Exception as e:
             logger.exception(e)
 
@@ -87,8 +86,13 @@ if __name__ == '__main__':
             if not resp:
                 continue
 
+            try:
+                text = resp.text
+            except socket.timeout as e:
+                logger.exception(e)
+                continue
 
-            feed = feedparser.parse(resp)
+            feed = feedparser.parse(text)
             for entry in feed['entries']:
                 # inbox_url = ('https://inbox.influenceexplorer.com/'
                 #              'contextualize?apikey=%s&text="%s"')
