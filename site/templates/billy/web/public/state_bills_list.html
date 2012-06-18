@@ -72,7 +72,7 @@ $(document).ready(function(){
         <h2>{% include description_template %}</h2>
             <div class="twoCol colLtSm filterCol">
                 <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
-                <form action="{% url 'filter_bills' abbr %}" id="sidebarSearch">
+                <form action="{% url 'bills' abbr %}" id="sidebarSearch">
                     <input id="submit" type="submit"/>
                     {{ form.as_p }}
                 </form>
