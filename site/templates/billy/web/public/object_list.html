@@ -41,7 +41,7 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-        <span style="float: right;"><a href='{{request.path}}rss/'><img class='rss-link' src='{% static "images/feed-icon-14x14.png" %}'></img></a></span>
+        <span class="textReplace rssIcon"><a href='{{request.path}}rss/'><img class='rss-link' src='{% static "images/feed-icon-14x14.png" %}'></img></a></span>
         <h2>{% include description_template %}</h2>
         <div class="fullWidth">
             <div id="pagination-links">

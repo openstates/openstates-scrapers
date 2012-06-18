@@ -19,7 +19,7 @@
 
         function format(state) {
             //var state = $(state);
-            return "<img class='flag' src='{% static 'images/flags/' %}" + state.id + ".png'/>" + state.text;
+            return state.text;
                 }
 
         var state_select_dropdown = $("#id_abbr");

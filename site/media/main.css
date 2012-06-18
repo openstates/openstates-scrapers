@@ -173,12 +173,12 @@ a.colorRollover:hover { color: #be9c16; }
 header#mainHeader { background: url(images/bg_header.jpg) top left no-repeat; min-height: 226px;}
 .home header#mainHeader { margin-bottom: 40px;}
 
-#mainHeader h1 { width: 414px; height: 46px; padding-top: 35px; margin-bottom: 37px; float: left;}
+#mainHeader h1 { width: 414px; height: 46px; padding-top: 35px; margin-bottom: 34px; float: left;}
 #mainHeader h1 a { background: url(images/logo.png) top left no-repeat; width: 414px; height: 46px; }
 
-#mainFilter { margin-bottom: 15px;}
+#mainFilter { margin-bottom: 10px;}
 #mainFilter li { float: left; margin-right: 30px;}
-#mainFilter label { font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique;  margin-right: 10px; font-size: 115%; padding-top: 2px; display: block; float: left;}
+#mainFilter label { font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique;  margin-right: 10px; font-size: 115%; padding-top: 5px; display: block; float: left;}
 
 nav li { float: left; margin-right: 45px; min-width: 59px; text-align: center; padding-bottom: 21px;}
 nav li:hover { background: url(images/bg_nav.png) center 24px no-repeat; padding-bottom: 21px; }
@@ -189,7 +189,7 @@ nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; 
 #searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: right;}
 #searchform input { float: left; margin-right: 15px; font-size: 101%; width: 190px;}
 
-#shareBtns { float: right; clear: right; margin-top: 85px;}
+#shareBtns { float: right; clear: right; margin-top: 85px; height: 16px;}
 #shareBtns li { width: 16px; height: 16px; float: right; margin-left: 10px;}
 #shareBtns li a { width: 16px; height: 16px; }
 #facebook a { background: url(images/social_sprites.png) left -188px no-repeat;}
@@ -200,6 +200,9 @@ nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; 
 #twitter a:hover { background: url(images/social_sprites.png) left -1px no-repeat;}
 #youTube a { background: url(images/social_sprites.png) left -137px no-repeat;}
 #youTube a:hover { background: url(images/social_sprites.png) left -86px no-repeat;}
+
+.rssIcon { float: right; background: url(images/social_sprites.png) left -222px no-repeat; width: 16px; height: 16px; margin-top: 17px;}
+.rssIcon:hover { background: url(images/social_sprites.png) left -205px no-repeat; }
 
 
 /* social links for thank you page - copied from old design */
@@ -227,7 +230,7 @@ ul .one { clear: both;}
 ul .one, ul .two { margin-right: 35px; }
 .inlineThirds li { float: left; width: 280px;}
 .inlineThirds_module li { float: left; width: 275px; }
-.floatedList li { float: left; margin-right: 10px;}
+.floatedList li { float: left; margin-right: 20px;}
 .inlineList li { display: inline-block; margin-right: 10px;}
 
 ul li { margin-bottom: 20px; }
@@ -238,6 +241,7 @@ ul li { margin-bottom: 20px; }
 .eights { width: 350px; float: left;}
 .firstModule { margin-right: 40px;}
 .firstHalfModule { margin-right: 20px; float: left;}
+img.firstHalfModule  { width: 100px;}
 
 .module header { margin-bottom: 15px; }
 .withBorderLine { float: left; margin-right: 10px; padding-right: 10px; border-right: 1px solid #cecac1; }
@@ -252,8 +256,8 @@ address { font-style: normal; }
 
 #container input { border: 2px solid #e8eadd;}
 input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #cfd2bd; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; padding: 8px 5px 5px;}
-img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
-#districtMap { float: right;}
+#container img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
+#container #map { float: right; width: 200px; height: 135px;}
 #billState { float: right; padding: 5px 25px 3px; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; border: 1px solid #e6e6da; text-transform: uppercase; font-size: 120%; margin-bottom: 25px;}
 #voteMap { float: right;}
 
@@ -265,7 +269,7 @@ img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
 
 .voteChart a { margin-bottom: 5px; display: block;}
 
-.horizontalFilter { padding: 12px 10px 10px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; margin-bottom: 25px;}
+.horizontalFilter { padding: 12px 10px 10px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; margin-bottom: 40px;}
 .infoBox { background: #f5f4e8 url(images/bg_colHeader.jpg) top left repeat-x; padding: 35px 10px; border: 1px solid #eceadd;}
 
 .callOut { font-size: 240%; line-height: 42px; margin-bottom: 20px;  }
@@ -275,6 +279,9 @@ img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
 
 #notify button { background: url(images/btn_submit.png) top left no-repeat; width: 85px; height: 33px; float: left;}
 #notify button:hover { background: url(images/btn_submit.png) bottom left no-repeat; }
+
+.smSubmit { background: url(images/btn_submitSm.png) top left no-repeat; width: 85px; height: 20px; }
+.smSubmit:hover { background: url(images/btn_submitSm.png) bottom left no-repeat; }
 
 .timeHeader { font-size: 115%; margin-bottom: 10px;}
 
@@ -321,11 +328,15 @@ table img { width: 50px; padding: 2px; margin-top: -5px;}
 .noPaddingTable td { padding: 15px 10px 15px 0;}
 .noPaddingTable th { text-align: left; padding: 0 0 5px;}
 
+.sort { background: url(images/sortArrows.png) left 4px no-repeat; cursor: pointer;  }
+
 fieldset { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px dashed #e2e2dd; }
 legend { font-size: 115%; font-weight: bold; padding-bottom: 15px; display: block; }
 .checkbox, .radio { margin-right: 10px; margin-bottom: 3px;}
 fieldset li { margin-bottom: 5px; }
 table .right { text-align: right;}
+
+input[type="radio"] { float: left; margin-right: 5px; margin-top: 3px;}
 
 /* flatpages */
 div.flatpage ul { list-style: circle; margin: 0 0 20px 1.8em; }

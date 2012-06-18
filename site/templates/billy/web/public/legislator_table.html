@@ -1,27 +1,28 @@
 {% load url from future %}
-                <table id="main-table">
-                    <thead>
-                        <tr id="title">
-                            <th class="invisible">Picture</th>
-                            <th><a href="?chamber={{chamber}}&abbr={{abbr}}&key=last_name&order={{ sort_order }}">Name</a></th>
-                            <th><a href="?chamber={{chamber}}&abbr={{abbr}}&key=district&order={{ sort_order }}">District</a></th>
-                            <th><a href="?chamber={{chamber}}&abbr={{abbr}}&key=party&order={{ sort_order }}">Party</a></th>
-                            {% if show_chamber_column %}
-                            <th><a href="?chamber={{chamber}}&abbr={{abbr}}&key=chamber&order={{ sort_order }}">Chamber</a></th>
-                            {% endif %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for obj in legislators %}
-                        <tr class="{% cycle odd,even %}">
-                            <td><img src="http://static.openstates.org/photos/small/{{ obj.leg_id }}.jpg"/></td>
-                            <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
-                            <td>{{ obj.district }}</td>
-                            <td>{{ obj.party }}</td>
-                            {% if show_chamber_column %}
-                            <td>{{ obj.chamber_name }}</td>
-                            {% endif %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <h3>Senate Legislators</h3>
+    <table id="main-table">
+        <thead>
+            <tr id="title">
+                <th class="invisible">Picture</th>
+                <th class="sort"><a href="?chamber={{chamber}}&abbr={{abbr}}&key=last_name&order={{ sort_order }}"></a>Name</th>
+                <th class="sort"><a href="?chamber={{chamber}}&abbr={{abbr}}&key=district&order={{ sort_order }}"></a>District</th>
+                <th class="sort"><a href="?chamber={{chamber}}&abbr={{abbr}}&key=party&order={{ sort_order }}"></a>Party</th>
+                {% if show_chamber_column %}
+                <th class="sort"><a href="?chamber={{chamber}}&abbr={{abbr}}&key=chamber&order={{ sort_order }}"></a>Chamber</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in legislators %}
+            <tr class="{% cycle odd,even %}">
+                <td><img src="http://static.openstates.org/photos/small/{{ obj.leg_id }}.jpg"/></td>
+                <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
+                <td>{{ obj.district }}</td>
+                <td>{{ obj.party }}</td>
+                {% if show_chamber_column %}
+                <td>{{ obj.chamber_name }}</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
