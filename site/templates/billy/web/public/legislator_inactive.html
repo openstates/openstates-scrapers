@@ -106,7 +106,7 @@
                     </li>   
                 {% endfor %}
                 </ul>
-                <a class="viewMore" href="{% url 'sponsored_bills' abbr 'legislators' legislator.id %}">View More Bills</a>
+                <a class="viewMore" href="{{ legislator.get_sponsored_bills_url }}">View More Bills</a>
                 {% else %}
                     <li>No sponsored bills to display.</li>
                 </ul>
