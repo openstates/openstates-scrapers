@@ -14,15 +14,6 @@
         </div>
     </div>
 
-    <div class="page-header"><h2>Sessions</h2></div>
-        <ul>
-        {% for session_id, session_name in sessions  %}
-          {# At this stage, it's unclear what sessions would link to...so removed the links. #}
-          <!--<li><a href="/{{abbr}}/{{session_id}}/">{{ session_name }}</a></li>-->
-          <li style="padding-left: 2em;">{{ session_name }}</li>
-        {% endfor %}
-        </ul>
-
     <div class="fullWidth module clear">
         <h3 class="moduleTitle">Legislators</h3>
 
@@ -45,6 +36,7 @@
         {% endfor %}
         <div class="clear"></div>
     </div>
+
     <div class="fullWidth module clear">
         <h3 class="moduleTitle">Committees</h3>
         <ul class="inlineThirds centeredText">
@@ -60,10 +52,11 @@
         </ul>
         <div class="clear"></div>
     </div>
+
      <div class="fullWidth module">
             <h3 class="moduleTitle">Bills</h3>
             <div class="sixCol colLt">
-                <h4>{{ metadata.upper_chamber_name }}<span class="tip sideNote">({{chambers.0.bills_count}})</span></h4>
+                <h4>{{ metadata.upper_chamber_name }}</h4>
                 <div class="medModule">
                     <span style="float: right"><a href="{% url 'bills_passed_upper_rss' abbr %}">rss</a></span>
                     <h5>Recently Passed</h5>
@@ -104,7 +97,7 @@
                 <a class="viewMore" href="{% url 'bills_introduced_upper' abbr %}">View More Introduced Bills</a>
             </div>
             <div class="sixCol colRt">
-                <h4>{{ metadata.lower_chamber_name }}<span class="tip sideNote">({{chambers.1.bills_count}})</span></h4>
+                <h4>{{ metadata.lower_chamber_name }}</h4>
                 <div class="medModule">
                     <span style="float: right"><a href="{% url 'bills_passed_lower_rss' abbr %}">rss</a></span>
                     <h5>Recently Passed</h5>
@@ -143,6 +136,13 @@
                 {% endif %}
                 {% endwith %}
             </div>
+            <div class="clear"></div>
+        </div>
+        <div class="fullWidth module">
+            <h3 class="moduleTitle">Sessions</h3>
+            {% for session in sessions %}
+            <li><a href="{% url 'bills' abbr %}?session={{session.id}}">{{session.name}}</a> - {{session.bill_count}} bills</li>
+            {% endfor %}
             <div class="clear"></div>
         </div>
     </div>
