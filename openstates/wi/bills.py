@@ -203,7 +203,14 @@ class WIBillScraper(BillScraper):
                     atype = type
                     break
 
-            bill.add_action(actor, action, date, atype)
+            kwargs = {}
+
+            if "committee:referred" in atype:
+                kwargs['committee'] = re.sub(
+                    'R(ead (first time )?and r)?eferred to committee',
+                    '', action)
+
+            bill.add_action(actor, action, date, atype, **kwargs)
 
             # if this is a vote, add a Vote to the bill
             if 'Ayes' in action:

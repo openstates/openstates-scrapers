@@ -1,4 +1,4 @@
-{% extends base_template %}
+{% extends "billy/web/public/base.html" %}
 {% load url from future %}
 {% load static from staticfiles %}
 {% load customtags %}
@@ -59,12 +59,8 @@ $(document).ready(function(){
 
 </script>
 <style>
-
     .highlight { background-color: yellow }
-
-    .selected {
-        background-color: #FFFFD6;
-    }
+    .selected { background-color: #FFFFD6; }
 </style>
 {% endblock %}
 
@@ -72,11 +68,11 @@ $(document).ready(function(){
         <h2>{% include description_template %}</h2>
             <div class="twoCol colLtSm filterCol">
                 <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
-                <form action="{% url 'filter_bills' abbr %}" id="sidebarSearch">
+                <form action="{% url 'bills' abbr %}" id="sidebarSearch">
                     <input id="submit" type="submit"/>
                     {{ form.as_p }}
                 </form>
-            </div>    
+            </div>
             <div class="tenCol colRt">
                 {% if not object_list.count %}
                     No bills matched those criteria. Frowny face.
