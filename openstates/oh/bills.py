@@ -114,7 +114,7 @@ class OHBillScraper(BillScraper):
             pdf_links = doc.xpath('//a[text()="(.pdf format)"]')
             if html_links:
                 link = html_links[0].get('href')
-                bill.add_version(name, base_url + link)
+                bill.add_version(name, base_url + link, on_duplicate='use_old')
             elif pdf_links:
                 link = pdf_links[0].get('href')
                 bill.add_version(name, base_url + link)
