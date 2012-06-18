@@ -183,6 +183,16 @@ class TXBillScraper(BillScraper):
             else:
                 atype = 'other'
 
+            if 'committee:referred' in atype:
+                repls = [
+                    'Referred to',
+                    "Recommended to be sent to "
+                ]
+                ctty = desc
+                for r in repls:
+                    ctty = ctty.replace(r, "").strip()
+                extra['committee'] = ctty
+
             bill.add_action(actor, action.findtext('description'),
                             act_date, type=atype, **extra)
 
