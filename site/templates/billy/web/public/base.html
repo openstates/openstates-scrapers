@@ -94,6 +94,7 @@
         {% if abbr %}
         <nav>
             <ul>
+                <li {% if statenav_active == "home" %}class="active"{% endif %}><a href="{% url state abbr %}">Home</a></li>
                 <li {% if statenav_active == "legislators" %}class="active"{% endif %}><a href="{% url legislators abbr %}">Legislators</a></li>
                 <li {% if statenav_active == "bills" %}class="active"{% endif %}><a href="{% url bills abbr %}">Bills</a></li>
                 <li {% if statenav_active == "committees" %}class="active"{% endif %}><a href="{% url committees abbr %}">Committees</a></li>
