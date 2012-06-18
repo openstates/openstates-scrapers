@@ -71,7 +71,7 @@
                         </li>
                     {% endfor %}
                     </ul>
-                    <a class="viewMore" href="{% url 'bills_passed_upper' abbr %}">View More Passed Bills</a>
+                    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_upper">View More Passed Bills</a>
                 {% else %}
                   No passed bills to display.
                 {% endif %}
@@ -112,7 +112,7 @@
                     </li>
                 {% endfor %}
                 </ul>
-                <a class="viewMore" href="{% url 'bills_passed_lower' abbr %}">View More Passed Bills</a>
+                <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_lower">View More Passed Bills</a>
                 {% else %}
                   No passed bills to display.
                 {% endif %}
