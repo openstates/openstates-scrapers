@@ -18,15 +18,18 @@
      $(document).ready(function() {
 
         function format(state) {
-            //var state = $(state);
             return "<img class='flag' src='{% static 'images/flags/' %}" + state.id + ".png'/>" + state.text;
-                }
+        }
 
         var state_select_dropdown = $("#id_abbr");
         state_select_dropdown.select2({
             formatResult: format,
             formatSelection: format
-            });
+        });
+
+        // make form submit on change
+        state_select_dropdown.change(function() { this.form.submit(); });
+        $('#state_select_submit').hide();
 
         $('#mainFilter .select2-container').css('width', '200px');
 
@@ -101,7 +104,7 @@
 {% if "events" in metadata.feature_flags %}
                 <li {% if statenav_active == "events" %}class="active"{% endif %}><a href="{% url events abbr %}">Events</a></li>
 {% endif %}
-            </ul> 
+            </ul>
             <div class="clear"></div>
         </nav>
         {% endif %}
@@ -112,14 +115,14 @@
     <div id="container">
 {% block content %}
 {% endblock content %}
-    </div>       
+    </div>
     <div id="footerWrapper">
-        <footer> 
+        <footer>
             <div id="footerLt">
                 <a class="textReplace" id="sunlight" href="http://www.sunlightfoundation.com">Sunlight Foundation</a>
                 <p>Our <a href="http://sunlightfoundation.com/legal/privacy/">privacy policy</a> details how personally identifiable information that is collected on our websites is handled. Read our <a href="http://sunlightfoundation.com/legal/terms/">terms of service</a>.</p>
                 <p>This work by <a href="http://sunlightfoundation.com">Sunlight Foundation</a>, unless <a href="/colophon/">otherwise noted</a>, is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/us/">Creative Commons Attribution 3.0 United States License</a>.</p>
-            </div>     
+            </div>
             <div id="footerRt">
                 <div id="recources">
                     <h4 class="h5">Resources</h4>
@@ -131,18 +134,18 @@
                                 <li><a href="/downloads">Bulk Downloads</a></li>
                                 <li><a href="http://python-sunlight.readthedocs.org/">Python Client Library</a></li>
                                 <li><a href="https://github.com/sunlightlabs/openstates/issues">Issue Tracker</a></li>
-                            </ul>    
-                        </dd>    
+                            </ul>
+                        </dd>
                         <dt class="clear">Contribute:</dt>
                         <dd>
                             <ul>
                                 <li><a href="/contributing/">Contributor's Guide</a></li>
                                 <li><a href="http://github.com/sunlightlabs/openstates/">Code on GitHub</a></li>
-                                <li><a href="http://readthedocs.org/docs/billy/en/latest/scrapers.html">Writing Scrapers</a></li>                            
-                            </ul>    
+                                <li><a href="http://readthedocs.org/docs/billy/en/latest/scrapers.html">Writing Scrapers</a></li>
+                            </ul>
                         </dd>
-                    </dl>    
-                </div>    
+                    </dl>
+                </div>
                 <h4 class="withTip h5">Like This Project and Want to Discover Others Like It?</h4>
                 <span class="tip">Join the Sunlight Foundation's open government community to learn more</span>
                 <form action="/{{abbr|default:"all"}}/search/" method="get" id="submit">
@@ -152,9 +155,9 @@
                          <span>SignUp</span>
                     </button>
                 </form>
-            </div> 
-        </footer>   
-    </div> 
+            </div>
+        </footer>
+    </div>
 
     <script type="text/javascript">
       var _gaq = _gaq || [];
@@ -169,4 +172,4 @@
     </script>
 
 
-</body>    
+</body>
