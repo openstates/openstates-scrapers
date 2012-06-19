@@ -155,14 +155,12 @@ $(document).ready(function() {
                             <dd class="tip tipSm">{{legislator.district}}</dd>
 
                             <dt class="clear">Sessions Served:</dt>
-                            <dt>
-                                <dd>
-                                {% for session in legislator.sessions_served %}
-                                {#<a {% if not forloop.first %}class="withBorderLine" {% endif %}href="#">{{session}}</a>#}
-                                   <br/>{{session}}
-                                {% endfor %}
-                                </dd>
-                            </dt>
+                            <dd>
+                            {% for session in legislator.sessions_served %}
+                            {#<a {% if not forloop.first %}class="withBorderLine" {% endif %}href="#">{{session}}</a>#}
+                               {{session}}
+                            {% endfor %}
+                            </dd>
 
                         </dl>
                     </div>
@@ -222,7 +220,7 @@ $(document).ready(function() {
             <h3 class="moduleTitle">Media</h3>
             <div class="sevenCol colLt">
 
-            <aclass="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.display_name|slugify %}">rss</a>
+            <a class="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.display_name|slugify %}">rss</a>
             <h4>News and Blog Coverage</h4>
             {% with feed_entries=legislator.feed_entries %}
               {% if not feed_entries.count %}
@@ -250,7 +248,7 @@ $(document).ready(function() {
         <div class="fullWidth module">
             <h3 class="moduleTitle">Bills</h3>
             <div class="eightCol colLt">
-                <span class="textReplace rssIcon"><a href="{% url 'legislator_sponsored_bills_rss' abbr legislator.id legislator.slug %}">rss</a></span>
+                <a class="textReplace rssIcon" href="{% url 'legislator_sponsored_bills_rss' abbr legislator.id legislator.slug %}">rss</a>
                 <h4>Sponsored Bills</h4>
                 <ul>
                 {% if sponsored_bills %}
@@ -293,8 +291,10 @@ $(document).ready(function() {
                 <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">View More Votes</a>
                 {% endif %}
             </div>
-            {% sources legislator %}
             <div class="clear"></div>
         </div>
+        <div class="fullWidth module">
+            {% sources legislator %}
+        </div>    
     </div>
 {% endblock %}

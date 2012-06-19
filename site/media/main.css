@@ -201,7 +201,7 @@ nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; 
 #youTube a { background: url(images/social_sprites.png) left -137px no-repeat;}
 #youTube a:hover { background: url(images/social_sprites.png) left -86px no-repeat;}
 
-.rssIcon { float: right; background: url(images/social_sprites.png) left -222px no-repeat; width: 16px; height: 16px; margin-top: 17px;}
+.rssIcon { float: right; background: url(images/social_sprites.png) left -222px no-repeat; width: 16px; height: 16px; }
 .rssIcon:hover { background: url(images/social_sprites.png) left -205px no-repeat; }
 
 
@@ -224,7 +224,8 @@ div.flatpage .social-links li { float:left; height:16px; margin-bottom:15px;
 /*  lists  */
 dt { font-weight: bold;}
 .contentBottom { margin-bottom: 10px;}
-.inlineList dt, .inlineList dd { float: left; margin-right: 15px;}
+.inlineList dt, .inlineList dd { float: left; margin-right: 15px; line-height: 18px;}
+.inlineList dd {}
 
 ul .one { clear: both;}
 ul .one, ul .two { margin-right: 35px; }
@@ -267,7 +268,7 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 .yes .tagValue { background-color: #e8e0dc;}
 .no .tagValue { background-color: #d1cac8;}
 
-.voteChart a { margin-bottom: 5px; display: block;}
+.voteChart a { margin-bottom: 5px; display: block; text-transform: lowercase;}
 
 .horizontalFilter { padding: 12px 10px 10px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; margin-bottom: 40px;}
 .infoBox { background: #f5f4e8 url(images/bg_colHeader.jpg) top left repeat-x; padding: 35px 10px; border: 1px solid #eceadd;}
@@ -346,7 +347,6 @@ div.flatpage dl dt { display: block; clear: both; }
 div.flatpage dl dd { margin-left: 1.8em; }
 div.flatpage img { border: 0px; }
 div.flatpage tt { background-color: #ebece4; }
-div.flatpage h2,h3,h4 { margin-bottom: 15px; margin-top: 10px; }
 /* div.flatpage h3 { border-top: 2px solid #aaaaaa; padding-top: 5px; margin-top: 15px; } */
 div.flatpage h3.apibar { margin-top: 60px; border-top: 0px; }
 div.flatpage div.note { border: 1px double #aaaaaa; padding: 0px 1em; margin: 10px 0px; }
