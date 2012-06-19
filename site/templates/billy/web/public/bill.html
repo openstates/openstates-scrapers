@@ -8,6 +8,8 @@
 
 {% block content %}
         <div class="fullWidth mainModule">
+            <span class="tip sources">You can get alerts about {{bill.type_string|title}} {{ bill.bill_id }} with <a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">Scout</a>.
+            </span>
             <ol id="billAction">
                 {% for stage, text, date in bill.progress_data %}
                 <li {% if date %}class="active"{% endif %}>
@@ -120,7 +122,6 @@
                         {% else %}
                             <td>{{ action.action_display|safe }}</td>
                         {% endif %}
-                        <td>{% for label_text in action.type %}<span class="label">{{label_text}}</span>{% endfor %}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
