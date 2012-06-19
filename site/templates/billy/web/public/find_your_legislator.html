@@ -5,7 +5,7 @@
 
 {% block title %}Find your Legislator!{% endblock %}
 
-{% block bodyclass %}home{% endblock %}
+{% block bodyclass %}{% endblock %}
 
 {% block headblock %}
     <style>
@@ -35,15 +35,6 @@
 .leg_find_results {
     margin-top:            10px;
     margin-bottom:         10px;
-}
-
-#map{
-    height:               300px;
-    background:           #6699cc;
-}
-
-.find-your-shim {
-    margin:               20px;
 }
 
     </style>
@@ -208,31 +199,27 @@ $(document).ready(function() {
 {% block content %}
     <input type = 'hidden' value = '{{request}}' id = '_request' />
     <div id="container">
-        <div class="tenCol colLt">
-            <div class = 'find-your-shim' >
-                <p class="callOut">Find your legislator!</p>
-            </div>
-            <div class = 'find-your-shim' >
-                <div id = 'communicate' ></div>
-            </div>
-            <div class = 'find-your-shim' >
-                <div id = 'find_your_legislator_search' >
-                    <form id = 'find_your_leg'>
-                        <input type = 'text' name = 'leg_search'
-                            id = 'leg_search'
-                            size = '50'
-                            placeholder = '{{ address }}'
-                            value = '{{ request }}' ></input>
-                        <input type = 'submit' value = 'Submit' ></input>
-                    </form>
-                </div>
-            </div>
-            <div class = 'find-your-shim' >
-                <div id = 'map' ></div>
-            </div>
-            <div class = 'find-your-shim' >
-                <div id = 'results_table' ></div>
-            </div>
+        <h2>Find your legislator!</h2>
+        <div id ='communicate'></div>
+        <div class="medModule" id="notify">
+            <form id = 'find_your_leg'>
+                <input type = 'text' name = 'leg_search'
+                    id = 'leg_search'
+                    placeholder = '{{ address }}'
+                    value = '{{ request }}' ></input>
+                <button type = 'submit' value = 'Submit'>
+                    <span>Submit</span>
+                </button>    
+            </form>
+            <div class="clear"></div>
+        </div>
+        
+        <div class="fourCol colLt withDash legMap">
+            <div id='map'></div>
+        </div>
+        <div class="eightCol colRt">
+            <div  id='results_table'>
+            </div>    
         </div>
         <div class="clear"></div>
     </div>
