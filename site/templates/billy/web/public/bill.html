@@ -128,7 +128,7 @@
         </div>
         <div class="fourCol colRt">
             <h3>Votes</h3>
-            {% if bill.votes_manager.has_votes %}
+            {% if bill.votes_manager.count %}
             <ul class="largerList voteChart">
                 {% for vote in bill.votes_manager %}
                     {% include vote_preview_row_template %}
