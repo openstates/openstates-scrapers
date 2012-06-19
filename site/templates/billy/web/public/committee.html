@@ -37,46 +37,50 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-<h1>{{ state.name }} {{ chamber_name }}</h1>
 <h2>{{ committee.committee }}</h2>
-
-
-<table id="main-table">
-  <tr>
-    <th>Name</th>
-    <!--<th>Photo</th>-->
-    <th>Role</th>
-    <th>District</th>
-    <th>Party</th>
-  </tr>
-  {% for obj, legislator in committee.members_objects %}
-  <tr class="{% cycle 'even' 'odd' %}">
-  	{% if legislator %}
-      <td><a href="{{ legislator.get_absolute_url }}">{{ legislator.display_name }}</a></td>
-    {% else %}
-      <td>{{ obj.name }}</td>
-    {% endif %}
-    <!--<td><img src={{ obj.photo_url }}/></td>-->
-    <td>{{ obj.role }}</td>
-
-    {% if legislator %}
-          <td>{{ legislator.district }}</td>
-          <td>{{ legislator.party }}</td>
-    {% else %}
-        <td>Not available</td>
-        <td>Not available</td>
-    {% endif %}
-  </tr>
-  {% endfor %}
-</table>
-
-<h3>Related Events</h3>
-<ul>
-{% for event in committee.events %}
-<ul><a href = "{{ event.get_absolute_url }}"
-        >{{event.description}} on {{ event.when|date:"M j, Y"}}</a><ul>
-{% endfor %}
-</ul>
+<div class="fullWidth module">
+    <h3 class="moduleTitle">Members</h3>
+    <table id="main-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <!--<th>Photo</th>-->
+                <th>Role</th>
+                <th>District</th>
+                <th>Party</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj, legislator in committee.members_objects %}
+                <tr class="{% cycle 'even' 'odd' %}">
+                    {% if legislator %}
+                        <td><a href="{{ legislator.get_absolute_url }}">{{ legislator.display_name }}</a></td>
+                        {% else %}
+                        <td>{{ obj.name }}</td>
+                    {% endif %}
+                    <!--<td><img src={{ obj.photo_url }}/></td>-->
+                    <td>{{ obj.role }}</td>
+                    {% if legislator %}
+                          <td>{{ legislator.district }}</td>
+                          <td>{{ legislator.party }}</td>
+                    {% else %}
+                        <td>Not available</td>
+                        <td>Not available</td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="fullWidth module">
+    <h3 class="moduleTitle" >Related Events</h3>
+    <ul>
+        {% for event in committee.events %}
+        <li><a href = "{{ event.get_absolute_url }}"
+                >{{event.description}} on {{ event.when|date:"M j, Y"}}</a><li>
+        {% endfor %}
+    </ul>
+</div>
 
 {% sources committee %}
 
