@@ -65,6 +65,8 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
+        <span class="tip sources">Recieve alerts about "{{request.GET.search_text}}" with <a href="https://scout.sunlightfoundation.com/search/all/{{request.GET.search_text|urlencode}}">Scout</a>.
+        </span>
         <h2>{% include description_template %}</h2>
             <div class="twoCol colLtSm filterCol">
                 <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
