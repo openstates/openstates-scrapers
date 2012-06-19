@@ -1,10 +1,18 @@
 {% extends "billy/web/public/base.html" %}
 {% load customtags %}
+{% load staticfiles %}
 {% load url from future %}
 
 {% block title %}{{metadata.name}}{% endblock %}
 
 {% block bodyclass %}{% endblock %}
+
+{% block headblock %}
+<link rel="stylesheet" href="{% static "maps/leaflet.css" %}" />
+<!--[if lte IE 8]><link rel="stylesheet" href="{% static "maps/leaflet.ie.css" %}" /><![endif]-->
+<script src="{% static "maps/leaflet.js" %}"></script>
+<script src="{% static "maps/wax.leaf.min.js" %}"></script>
+{% endblock %}
 
 {% block content %}
     <div class="fullWidth">
@@ -15,12 +23,26 @@
     </div>
 
     <div class="fullWidth module clear">
+        <h3 class="moduleTitle">Districts</h3>
+        <div class="sixCol colLt">
+            <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
+            <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
+            <div class="clear"></div>
+        </div>
+        <div class="sixCol colRt" id="results_table">
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <div class="fullWidth module clear">
         <h3 class="moduleTitle">Legislators</h3>
 
         {% for chamber in chambers %}
             <div class="sixCol {% if forloop.first %} colLt withDash {% else %} colRt {% endif %}">
                 <div class="stateMap withBorder colLt threeCol">
-
+                <!-- map js -->
+                <div class="mapbox" id="mapbox-{{abbr}}{{chamber.type}}" style="width: 189px; height: 120px"></div>
+                <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
                 </div>
                 <div class="threeCol centeredText colRt">
                     <a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">
@@ -33,6 +55,7 @@
                     </ul>
                 </div>
             </div>
+
         {% endfor %}
         <div class="clear"></div>
     </div>
@@ -148,5 +171,66 @@
             <div class="clear"></div>
         </div>
     </div>
+
+<!-- mapbox interaction script -->
+<script type="text/javascript">
+    var lower_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}lower.jsonp';
+    var upper_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}upper.jsonp';
+    var map = new L.Map('mapbox-{{metadata.abbr}}',
+            {attributionControl:true, minZoom: 5, maxZoom: 12 });
+    var layersControl = new L.Control.Layers();
+    var marker;
+    map.attributionControl.setPrefix('');
+    map.addControl(layersControl);
+
+    var wax_cb = function(tilejson) {
+        // add to map
+        var layer = new wax.leaf.connector(tilejson);
+        map.addLayer(layer);
+        map.setView(new L.LatLng(tilejson.center[1], tilejson.center[0]), tilejson.center[2]);
+
+        // add to control
+        var layerName;
+        if (tilejson.grids[0].indexOf('lower') != -1) {
+            layerName = 'lower';
+        } else {
+            layerName = 'upper';
+        }
+        layersControl.addBaseLayer(layer, layerName);
+
+        // add events
+        var container = $('#mbtooltip-{{metadata.abbr}}')[0];
+        var events = {};
+        events.on = function(arg) { 
+            var selLayer = $('input[name="leaflet-base-layers"]:checked').parent().text().trimLeft();
+            if (selLayer === layerName) {
+                container.innerHTML = arg.data.NAMELSAD;
+            }
+        }
+        events.off = function(arg) {
+            var selLayer = $('input[name="leaflet-base-layers"]:checked').parent().text().trimLeft();
+            if (selLayer === layerName) {
+                container.innerHTML = "";
+            }
+        }
+        // /find_your_legislator/?lat=42.35843&lon=-71.059773
+        wax.leaf.interaction().map(map).tilejson(tilejson).on(events);
+    }
+    wax.tilejson(upper_url, wax_cb);
+    wax.tilejson(lower_url, wax_cb);
+    map.on('click', function(e) {
+        console.log(e.latlng);
+        var url = '/find_your_legislator/?lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
+        $("#results_table").load(url, function() {});
+
+        // create or move marker
+        if (!marker) {
+            marker = new L.Marker(e.latlng);
+            map.addLayer(marker);
+        } else {
+            marker.setLatLng(e.latlng);
+        }
+    });
+</script>
 
 {% endblock %}
