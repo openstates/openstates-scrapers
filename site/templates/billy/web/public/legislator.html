@@ -212,7 +212,9 @@ $(document).ready(function() {
                 </ul>
             </div>
             <div class="sixCol colRt">
-                <p>{{legislator.bio_blurb}}</p>
+                <p>
+                    {% include "billy/web/public/bio_blurb.html" %}
+                </p>
             </div>
             <div class="clear"></div>
         </div>
