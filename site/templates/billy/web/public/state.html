@@ -23,40 +23,31 @@
     </div>
 
     <div class="fullWidth module clear">
-        <h3 class="moduleTitle">Districts</h3>
-        <div class="sixCol colLt">
-            <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
-            <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
-            <div class="clear"></div>
-        </div>
-        <div class="sixCol colRt" id="results_table">
-        </div>
-        <div class="clear"></div>
-    </div>
-
-    <div class="fullWidth module clear">
-        <h3 class="moduleTitle">Legislators</h3>
-
-        {% for chamber in chambers %}
-            <div class="sixCol {% if forloop.first %} colLt withDash {% else %} colRt {% endif %}">
-                <div class="threeCol centeredText colRt">
+        <h3 class="moduleTitle">Legislators/Districts</h3>
+        <div class="twoCol colLt withDash centeredText" id="totalLeg">
+            <ul>
+                {% for chamber in chambers %}
+                 <li class="medModule">
                     <a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">
                         <h4 class="titleNumber withTip">{{ chamber.legislators.count }}<span>{{ chamber.title }}s</span></h4>
                     </a>
-                </div>
-                <div class="threeCol centeredText colRt">
-                    <ul class="tip inlineList">
-                    {% for party, count in chamber.legislators.party_counts.items %}
-                    <li><a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">{{ count }} {{party}}</a></li>
-                    {% endfor %}
+                    <ul class="tip noSpace">
+                        {% for party, count in chamber.legislators.party_counts.items %}
+                            <li><a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">{{ count }} {{party}}</a></li>
+                        {% endfor %}
                     </ul>
-                </div>
-            </div>
-
-        {% endfor %}
+                 </li>
+                {% endfor %}
+            </ul>
+        </div>    
+        <div class="fourCol colLt">
+            <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
+            <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
+        </div>
+        <div class="fiveCol colRt" id="results_table">
+        </div>
         <div class="clear"></div>
     </div>
-
     <div class="fullWidth module clear">
         <h3 class="moduleTitle">Committees</h3>
         <ul class="inlineThirds centeredText">
