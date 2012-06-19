@@ -271,7 +271,7 @@ $(document).ready(function() {
             <div class="fourCol colRt">
                 <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
                 <h4 class="withTip">Votes</h4>
-                {% if not has_votes %}No votes to display.
+                {% if not legislator_votes %}No votes to display.
                 {% else %}
                 <table class="noPaddingTable voteChart">
                     <col width="200" />
