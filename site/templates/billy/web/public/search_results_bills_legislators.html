@@ -29,7 +29,7 @@ $(document).ready(function() {
             $(this).removeClass('selected');
         });
     });
-    
+
 </script>
 <style>
     .selected {
@@ -39,11 +39,11 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-        <h2>{{bills_list.count|apnumber|capfirst}} {% if scope_name %}{{scope_name}} bills{% endif %} contain "<b>{{search_text}}</b>"</h2>
+        <h2>{{bills_list.count|apnumber|capfirst}} {{scope_name|default:''}} bills contain <em>"{{search_text}}"</em></h2>
         <div class="fullWidth">
             {% if not bills_list.count %}
-                No bill titles contained "{{search_text}}."
-        </div>
+                No bills matching "{{search_text}}"
+                </div>
             {% else %}
             <table id="main-table" class="withFilter">
                 <thead>
@@ -82,7 +82,7 @@ $(document).ready(function() {
         {% endif %}
 
         <div class="fullWidth">
-            <h2>{{legislators_list.count|apnumber|capfirst}} {% if scope_name %}{{scope_name}} legislator{% endif %} names contain "<b>{{search_text}}</b>"</h2>
+            <h2>{{legislators_list.count|apnumber|capfirst}} {{scope_name|default:''}} legislator names contain <em>"{{search_text}}"</em></h2>
             {% if not legislators_list.count %}
                 No legislator names contained "{{search_text}}."
         </div>
