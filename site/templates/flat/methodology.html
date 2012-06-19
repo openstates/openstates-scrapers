@@ -1,0 +1,51 @@
+{% extends "flat/flatpage.html" %}
+{% load markup_tags %}
+
+{% block title %}Open States: Methodology{% endblock %}
+
+{% block flatpage %}
+<h2> Methodology </h2>
+
+<p>
+Open States relies primarily on
+<a href="http://en.wikipedia.org/wiki/Data_scraping">scraping</a> to collect
+the data that we provide on this site.</p>
+Scraping involves writing custom code to capture the information from each
+state and as a result is known to be
+error prone.  For example, if a state changes how they provide sponsor information
+it'll require a manual fix on our end and in the interim our data may be incomplete.
+</p>
+
+<h4> Why Scrape? </h4>
+<p>
+Despite the known limitations, scraping is typically our best option
+as most states do not make their data available in ways that are readily
+repurposed to build sites such as this one.  Additionally, many states have
+older, often somewhat unreliable systems, and although we make our best
+effort to cope with the nuances of these systems there is always a chance
+that we make a mistake.
+</p>
+
+<h4> Reporting Issues </h4>
+<p>
+If you notice something missing, please don't hesitate to
+<a href="mailto:openstates@sunlightfoundation.com"> report it</a> and we'll
+do our best to respond in a timely fashion.  If you're so inclined you can also
+<a href="https://github.com/sunlightlabs/openstates/issues">
+report your issue on GitHub</a>.
+</p>
+
+<h4> Other Changes </h4>
+<p>
+Aside from errors that may be introduced in the scrape process, we do not make
+any modifications to the data that we scrape.  We augment the data in several
+places such as linking legislators to their votes and adding categories to
+actions and bills.  If you notice something incorrect you should also check the
+source document (linked at the bottom of every page) and see if the error also
+occurs on your state's website.  If the error exists on the source page there
+is little we can do until it is fixed.  We recommend contacting them to see if
+the issue can be fixed on their end.
+</p>
+
+
+{% endblock %}
