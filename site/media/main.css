@@ -411,7 +411,7 @@ div.flatpage table#download_list { width: auto; }
 
 /* mapbox */
 .mapbox.leaflet-container  { background: transparent; }
-.mapbox img { padding: 0px; border: 0px; }
+#container .mapbox img { padding: 0px; border: 0px; }
 
 
 /* footer */
