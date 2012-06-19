@@ -5,11 +5,42 @@
 
 {% block title %}{{committee.committee }}{% endblock %}
 
+{% block headblock %}
+<script type="text/javascript">
+$(document).ready(function() {
+    
+    // Make table rows clickable.
+    var trs = $("#main-table tbody tr");
+    var trs_count = trs.length;
+    trs.click(function(){
+        window.location=$(this).find("a").attr("href");
+        return false;
+        });
+
+    // If javascript is enabled, change cursor to pointer over table rows
+    // and add selected class on hover.
+    trs.css('cursor', 'pointer');
+    trs.hover(function(){
+            $(this).addClass('selected');
+        },
+        function(){
+            $(this).removeClass('selected');
+        });
+    });
+    
+</script>
+<style>
+    .selected {
+        background-color: #FFFFD6;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <h2>{{ committee.committee }}</h2>
 <div class="fullWidth module">
     <h3 class="moduleTitle">Members</h3>
-    <table>
+    <table id="main-table">
         <thead>
             <tr>
                 <th>Name</th>
@@ -21,7 +52,7 @@
         </thead>
         <tbody>
             {% for obj, legislator in committee.members_objects %}
-                <tr class="{% cycle odd,even %}">
+                <tr class="{% cycle 'even' 'odd' %}">
                     {% if legislator %}
                         <td><a href="{{ legislator.get_absolute_url }}">{{ legislator.display_name }}</a></td>
                         {% else %}
@@ -30,8 +61,8 @@
                     <!--<td><img src={{ obj.photo_url }}/></td>-->
                     <td>{{ obj.role }}</td>
                     {% if legislator %}
-                        <td>{{ legislator.district }}</td>
-                        <td>{{ legislator.party }}</td>
+                          <td>{{ legislator.district }}</td>
+                          <td>{{ legislator.party }}</td>
                     {% else %}
                         <td>Not available</td>
                         <td>Not available</td>
