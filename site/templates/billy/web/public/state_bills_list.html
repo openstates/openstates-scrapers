@@ -82,7 +82,7 @@ $(document).ready(function(){
                     {% if object_list.has_next or object_list.has_previous %}
                     {% for text, page_number, clickable in object_list.pagination_data %}
                         {% if clickable %}
-                        <a href="{{full_url}}&page={{page_number}}">{{text}}</a>
+                        <a href="{{request.GET.path}}?{% if get_params %}{{ get_params }}&{% else %}{% endif %}page={{page_number}}">{{text}}</a>
                         {% else %}
                         {{text}}
                         {% endif %}

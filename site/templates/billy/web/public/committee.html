@@ -5,12 +5,43 @@
 
 {% block title %}{{committee.committee }}{% endblock %}
 
+{% block headblock %}
+<script type="text/javascript">
+$(document).ready(function() {
+    
+    // Make table rows clickable.
+    var trs = $("#main-table tbody tr");
+    var trs_count = trs.length;
+    trs.click(function(){
+        window.location=$(this).find("a").attr("href");
+        return false;
+        });
+
+    // If javascript is enabled, change cursor to pointer over table rows
+    // and add selected class on hover.
+    trs.css('cursor', 'pointer');
+    trs.hover(function(){
+            $(this).addClass('selected');
+        },
+        function(){
+            $(this).removeClass('selected');
+        });
+    });
+    
+</script>
+<style>
+    .selected {
+        background-color: #FFFFD6;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <h1>{{ state.name }} {{ chamber_name }}</h1>
 <h2>{{ committee.committee }}</h2>
 
 
-<table>
+<table id="main-table">
   <tr>
     <th>Name</th>
     <!--<th>Photo</th>-->
@@ -19,7 +50,7 @@
     <th>Party</th>
   </tr>
   {% for obj, legislator in committee.members_objects %}
-  <tr>
+  <tr class="{% cycle 'even' 'odd' %}">
   	{% if legislator %}
       <td><a href="{{ legislator.get_absolute_url }}">{{ legislator.display_name }}</a></td>
     {% else %}
