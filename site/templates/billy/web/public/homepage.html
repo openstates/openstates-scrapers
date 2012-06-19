@@ -13,13 +13,18 @@
         <div class="eightCol">
             <p class="callOut">Discover politics in your state. Find your legislators, see how they've voted and browse upcoming legislation and events.</p>
 
-            <p>While Open States is in beta this site is only available for 
-            {% for metadata in active_states %}
-            <a href="{% url 'state' metadata.abbreviation %}"> {{metadata.name}}</a>{% if forloop.revcounter > 2 %},{% elif forloop.revcounter == 2 %} and{% endif %}{% endfor %}.
+            {% if active_states %}
+                <p>While Open States is in beta this site is only available for 
+                {% for metadata in active_states %}
+                <a href="{% url 'state' metadata.abbreviation %}"> {{metadata.name}}</a>{% if forloop.revcounter > 2 %},{% elif forloop.revcounter == 2 %} and{% endif %}{% endfor %}.
+            {% else %}
+            <p>A brand new OpenStates.org is coming soon. Sign up to be notified when it is available.</p>
+            {% endif %}
+
             <p>In the meantime, you can get <a href="http://itunes.apple.com/app/open-states/id500672932?mt=8">Open States for the iPhone and iPad</a> to keep up-to-date on what's happening in your state legislature, from bills being considered and how to contact lawmakers, campaign finance and voting records, plus local news.
             </p>
 
-            <h5 id="notifyTitle" class="tipSm">Be notified when we launch the remaining states</h5>
+            <h5 id="notifyTitle" class="tipSm">Be notified when we launch the new site.</h5>
 
             <form action="http://organizing.sunlightfoundation.com/page/s/open-states" method="post" id="notify">
                 <input type="text" name="email" placeholder="your email address">
