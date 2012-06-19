@@ -65,6 +65,8 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
+        <span class="tip sources">Recieve alerts about "{{request.GET.search_text}}" with <a href="https://scout.sunlightfoundation.com/search/all/{{request.GET.search_text|urlencode}}">Scout</a>.
+        </span>
         <h2>{% include description_template %}</h2>
             <div class="twoCol colLtSm filterCol">
                 <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
@@ -82,7 +84,7 @@ $(document).ready(function(){
                     {% if object_list.has_next or object_list.has_previous %}
                     {% for text, page_number, clickable in object_list.pagination_data %}
                         {% if clickable %}
-                        <a href="{{full_url}}&page={{page_number}}">{{text}}</a>
+                        <a href="{{request.GET.path}}?{% if get_params %}{{ get_params }}&{% else %}{% endif %}page={{page_number}}">{{text}}</a>
                         {% else %}
                         {{text}}
                         {% endif %}

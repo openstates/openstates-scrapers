@@ -113,7 +113,7 @@ body { background: #fafaf6 url(images/bg.jpg) top center repeat-x; }
 .home #container { background: url(images/bg_map.jpg) right top no-repeat; margin-top: -60px; padding-top: 60px; min-height: 450px;}
 
 button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; border-bottom: none; }
-.module { padding-left: 30px; padding-bottom: 60px; background: url(images/bg_moduleborder.jpg) center bottom no-repeat;}
+.module { padding-left: 30px; padding-bottom: 80px; background: url(images/bg_moduleborder.jpg) center bottom no-repeat;}
 .moduleNoBorder { padding-left: 30px; padding-bottom: 60px; }
 .smModule { margin-bottom: 20px;}
 .medModule { margin-bottom: 30px; padding-bottom: 30px; border-bottom: 1px dashed #e2e2dd;}
@@ -261,6 +261,7 @@ address { font-style: normal; }
 input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #cfd2bd; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; padding: 8px 5px 5px;}
 #container img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
 #container #map { float: right; width: 200px; height: 135px;}
+#container .legMap #map { height: 300px; width: 280px;}
 #billState { float: right; padding: 5px 25px 3px; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; border: 1px solid #e6e6da; text-transform: uppercase; font-size: 120%; margin-bottom: 25px;}
 #voteMap { float: right;}
 
@@ -339,6 +340,11 @@ fieldset li { margin-bottom: 5px; }
 table .right { text-align: right;}
 
 input[type="radio"] { float: left; margin-right: 5px; margin-top: 3px;}
+
+.pagination-links .pagesNum { float: right; }
+.pagination-links span { float: left;}
+.pagination-links { border-bottom: 1px dashed #E2E2DD; }
+.pagBottom { border-top: 1px dashed #E2E2DD; border-bottom: none; padding-top: 10px; margin-top: 20px;}
 
 /* flatpages */
 div.flatpage ul { list-style: circle; margin: 0 0 20px 1.8em; }
