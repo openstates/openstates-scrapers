@@ -45,7 +45,7 @@ $(document).ready(function() {
         <h2>{% include description_template %}</h2>
         <div class="fullWidth">
             <div id="pagination-links">
-                Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>
+                <span class="tip">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
                 {% if object_list.has_next or object_list.has_previous %}
                 {% for text, page_number, clickable in object_list.pagination_data %}
                     {% if clickable %}
