@@ -39,15 +39,12 @@
 
         {% for chamber in chambers %}
             <div class="sixCol {% if forloop.first %} colLt withDash {% else %} colRt {% endif %}">
-                <div class="stateMap withBorder colLt threeCol">
-                <!-- map js -->
-                <div class="mapbox" id="mapbox-{{abbr}}{{chamber.type}}" style="width: 189px; height: 120px"></div>
-                <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
-                </div>
                 <div class="threeCol centeredText colRt">
                     <a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">
                         <h4 class="titleNumber withTip">{{ chamber.legislators.count }}<span>{{ chamber.title }}s</span></h4>
                     </a>
+                </div>
+                <div class="threeCol centeredText colRt">
                     <ul class="tip inlineList">
                     {% for party, count in chamber.legislators.party_counts.items %}
                     <li><a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">{{ count }} {{party}}</a></li>
