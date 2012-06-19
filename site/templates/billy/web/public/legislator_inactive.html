@@ -21,17 +21,15 @@
                             <dd class="tip tipSm">{{legislator.district}}</dd>
                         
                             <dt class="clear">Sessions Served:</dt>
-                            <dt>
-                                <dd>
-                                {% for term, names in legislator.old_roles_manager.sessions_served.items %}
-                                    <ul>
-                                        {% for name in names %}
-                                        <li>{{name}}</li>
-                                        {% endfor %}
-                                    </ul>
-                                {% endfor %}
-                                </dd>
-                            </dt>
+                            <dd>
+                            {% for term, names in legislator.old_roles_manager.sessions_served.items %}
+                                <ul>
+                                    {% for name in names %}
+                                    <li>{{name}}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endfor %}
+                            </dd>
                             
                         </dl>    
                     </div>

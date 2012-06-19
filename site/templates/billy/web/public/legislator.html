@@ -141,10 +141,10 @@ $(document).ready(function() {
 
 {% block content %}
         <div class="fullWidth mainModule">
-            <div class="smModule">
+            <div class="medModule">
                 <span class="tip sources">For more information on this legislator check out: <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">influenceexplorer.com</a>, <a href="http://www.votesmart.org/bio.php?can_id={{legislator.votesmart_id}}">Project Vote Smart</a></span>
                 <div class="sevenCol colLt">
-                    <img class="firstHalfModule legImg" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" width="150" height="200" />
+                    <img class="firstHalfModule legImg" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
                     <div class="eights">
                         <h2 class="withTip">{{legislator.full_name}}</h2>
                         <dl class="inlineList ">
@@ -155,29 +155,22 @@ $(document).ready(function() {
                             <dd class="tip tipSm">{{legislator.district}}</dd>
 
                             <dt class="clear">Sessions Served:</dt>
-                            <dt>
-                                <dd>
-                                {% for session in legislator.sessions_served %}
-                                {#<a {% if not forloop.first %}class="withBorderLine" {% endif %}href="#">{{session}}</a>#}
-                                   <br/>{{session}}
-                                {% endfor %}
-                                </dd>
-                            </dt>
+                            <dd>
+                            {% for session in legislator.sessions_served %}
+                            {#<a {% if not forloop.first %}class="withBorderLine" {% endif %}href="#">{{session}}</a>#}
+                               {{session}}
+                            {% endfor %}
+                            </dd>
 
                         </dl>
                     </div>
                 </div>
                 <div class="fiveCol colRt">
-                    <div id="districtMap" class="withBorder">
-
-                    </div>
+                    <div id="map" class="withBorder"></div>
                 </div>
                 <div class="clear"></div>
             </div>
-            <div class="sixCol clear colLt withDash">
-                <p>{{legislator.bio_blurb}}</p>
-            </div>
-            <div class="sixCol colRt">
+            <div class="sixCol colLt withDash clear">
                 <ul>
                     {% for office in legislator.offices %}
                     <li class="fourths {% if forloop.first %} firstModule {% endif %}">
@@ -218,14 +211,16 @@ $(document).ready(function() {
                     {% endif %}
                 </ul>
             </div>
+            <div class="sixCol colRt">
+                <p>{{legislator.bio_blurb}}</p>
+            </div>
             <div class="clear"></div>
-            <div id = 'map' ></div>
         </div>
         <div class="fullWidth module clear">
             <h3 class="moduleTitle">Media</h3>
             <div class="sevenCol colLt">
 
-            <a style='float: right;' href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.display_name|slugify %}">rss</a>
+            <a class="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.display_name|slugify %}">rss</a>
             <h4>News and Blog Coverage</h4>
             {% with feed_entries=legislator.feed_entries %}
               {% if not feed_entries.count %}
@@ -243,7 +238,7 @@ $(document).ready(function() {
             <ul class="inlineThirds">
                 {% for role in legislator.roles_manager %}
                 {% if 'committee' in role %}
-                <li class="one">{{ role.type|title }}
+                <li class={% cycle "one" "two" "three" %}>{{ role.type|title }}
                     {% if 'committee_id' in role %}<a href="{% url 'committee' abbr role.committee_id %}">{{ role.committee_name }}</a>{% else %}{{ role.committee_name }}{% endif %}</li>
                 {% endif %}
                 {% endfor %}
@@ -253,7 +248,7 @@ $(document).ready(function() {
         <div class="fullWidth module">
             <h3 class="moduleTitle">Bills</h3>
             <div class="eightCol colLt">
-                <span style="float: right;"><a href="{% url 'legislator_sponsored_bills_rss' abbr legislator.id legislator.slug %}">rss</a></span>
+                <a class="textReplace rssIcon" href="{% url 'legislator_sponsored_bills_rss' abbr legislator.id legislator.slug %}">rss</a>
                 <h4>Sponsored Bills</h4>
                 <ul>
                 {% if sponsored_bills %}
@@ -274,7 +269,7 @@ $(document).ready(function() {
 
             </div>
             <div class="fourCol colRt">
-                <a style='float: right;' href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
+                <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
                 <h4 class="withTip">Votes</h4>
                 {% if not has_votes %}No votes to display.
                 {% else %}
@@ -296,8 +291,10 @@ $(document).ready(function() {
                 <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">View More Votes</a>
                 {% endif %}
             </div>
-            {% sources legislator %}
             <div class="clear"></div>
         </div>
+        <div class="fullWidth module">
+            {% sources legislator %}
+        </div>    
     </div>
 {% endblock %}

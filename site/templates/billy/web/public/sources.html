@@ -1,9 +1,8 @@
-        <div class="clear"></div>
-        <div id="sources">
-            <h2>Sources</h2>
-            <ul>
-            {% for source in sources %}
-            <li>{{ source.url|urlize }}</a></li>
-            {% endfor %}
-            </ul>
-        </div>
+<div id="sources">
+    <h3 class="withTip">Sources</h3>
+    <ul>
+        {% for source in sources %}
+            <li class="tip">{{ source.url|urlize }}</a></li>
+        {% endfor %}
+    </ul>
+</div>
