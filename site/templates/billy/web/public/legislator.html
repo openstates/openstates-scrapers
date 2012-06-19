@@ -141,7 +141,7 @@ $(document).ready(function() {
 
 {% block content %}
         <div class="fullWidth mainModule">
-            <div class="smModule">
+            <div class="medModule">
                 <span class="tip sources">For more information on this legislator check out: <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">influenceexplorer.com</a>, <a href="http://www.votesmart.org/bio.php?can_id={{legislator.votesmart_id}}">Project Vote Smart</a></span>
                 <div class="sevenCol colLt">
                     <img class="firstHalfModule legImg" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
@@ -170,10 +170,7 @@ $(document).ready(function() {
                 </div>
                 <div class="clear"></div>
             </div>
-            <div class="sixCol clear colLt withDash">
-                <p>{{legislator.bio_blurb}}</p>
-            </div>
-            <div class="sixCol colRt">
+            <div class="sixCol colLt withDash clear">
                 <ul>
                     {% for office in legislator.offices %}
                     <li class="fourths {% if forloop.first %} firstModule {% endif %}">
@@ -213,6 +210,9 @@ $(document).ready(function() {
                      </li>
                     {% endif %}
                 </ul>
+            </div>
+            <div class="sixCol colRt">
+                <p>{{legislator.bio_blurb}}</p>
             </div>
             <div class="clear"></div>
         </div>
