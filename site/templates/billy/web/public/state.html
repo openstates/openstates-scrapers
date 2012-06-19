@@ -86,7 +86,7 @@
                     {% for bill in chamber.passed_bills %}
                         <li>
                             <time class="published">
-                            {% if chamber == 'upper' %}
+                            {% if chamber.type == 'upper' %}
                                 {{ bill.action_dates.passed_upper.date|date:"F d, Y" }}
                             {% else %}
                                 {{ bill.action_dates.passed_lower.date|date:"F d, Y" }}
@@ -97,7 +97,7 @@
                         </li>
                     {% endfor %}
                     </ul>
-                    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber}}">View More Passed Bills</a>
+                    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber.type}}">View More Passed Bills</a>
                 {% else %}
                     No passed bills to display.
                 {% endif %}
@@ -117,7 +117,7 @@
                 No passed bills to display.
             {% endif %}
             </ul>
-            <a class="viewMore" href="{% url 'bills' abbr %}?chamber={{chamber}}">View More Bills</a>
+            <a class="viewMore" href="{% url 'bills' abbr %}?chamber={{chamber.type}}">View More Bills</a>
         </div>
         {% endfor %}
 
