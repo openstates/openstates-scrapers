@@ -79,22 +79,22 @@
              <div class="clear"></div>
         </div>
         {% if bill.versions %}
-        <div class="fullWidth mainModule">
+        <div class="sixCol colLt">
             <h3>Versions</h3><ul>
             {% for version in bill.versions %}
-                <li>{{ version.name }}
+                <li><a href="{{version.url}}">{{ version.name }}</a>
                 {% if "+mimetype" in version %}[{{ version|plusfield:"mimetype"}}]{% endif %}
-                {{version.url|urlize}}</li>
+                </li>
             {% endfor %}</ul>
         </div>
         {% endif %}
         {% if bill.documents %}
-        <div class="fullWidth mainModule">
+        <div class="sixCol colRt">
             <h3>Documents</h3>
             {% for document in bill.documents %}<ul>
-                <li>{{ document.name }}
+                <li><a href="document.url">{{ document.name }}</a>
                 {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
-                {{document.url|urlize}}</li>
+                </li>
             {% endfor %}</ul>
         </div>
         {% endif %}
