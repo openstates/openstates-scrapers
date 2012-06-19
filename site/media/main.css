@@ -412,6 +412,9 @@ div.flatpage table#download_list { width: auto; }
 #stateimg-wy { background: url(images/state/wyoming.jpg) left center no-repeat; }
 
 #dataBox { background: url(images/bg_data.jpg) top left no-repeat; padding-left: 110px; min-height: 140px; width: 325px;}
+/* mapbox */
+.mapbox.leaflet-container  { background: transparent; }
+#container .mapbox img { padding: 0px; border: 0px; }
 
 
 /* footer */
