@@ -64,8 +64,13 @@ $(document).ready(function(){
 </style>
 {% endblock %}
 
+{% block collection_nav %}{% endblock %}
+
 {% block content %}
-        <span class="tip sources">Recieve alerts about "{{request.GET.search_text}}" with <a href="https://scout.sunlightfoundation.com/search/all/{{request.GET.search_text|urlencode}}">Scout</a>.
+        <span class="tip sources">
+        {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/all/{{request.GET.search_text|urlencode}}">Recieve alerts about "{{request.GET.search_text}}" with Scout</a>
+        {% else %}You can use <a href="https://scout.sunlightfoundation.com/">Scout</a> to recieve alerts for searches on this page.
+        {% endif %}.
         </span>
         <h2>{% include description_template %}</h2>
             <div class="twoCol colLtSm filterCol">
