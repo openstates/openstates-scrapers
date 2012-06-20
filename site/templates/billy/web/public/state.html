@@ -1,6 +1,7 @@
 {% extends "billy/web/public/base.html" %}
 {% load customtags %}
 {% load staticfiles %}
+{% load funfacts %}
 {% load url from future %}
 
 {% block title %}{{metadata.name}}{% endblock %}
@@ -18,45 +19,36 @@
     <div class="fullWidth">
         <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
             <h2 class="withTip">{{metadata.legislature_name}}</h2>
-            <p>{{funfact|safe}}</p>
+            <p>{% funfact metadata.abbr %}</p>
         </div>
     </div>
 
     <div class="fullWidth module clear">
-        <h3 class="moduleTitle">Districts</h3>
-        <div class="sixCol colLt">
-            <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
-            <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
-            <div class="clear"></div>
-        </div>
-        <div class="sixCol colRt" id="results_table">
-        </div>
-        <div class="clear"></div>
-    </div>
-
-    <div class="fullWidth module clear">
-        <h3 class="moduleTitle">Legislators</h3>
-
-        {% for chamber in chambers %}
-            <div class="sixCol {% if forloop.first %} colLt withDash {% else %} colRt {% endif %}">
-                <div class="threeCol centeredText colRt">
+        <h3 class="moduleTitle">Legislators/Districts</h3>
+        <div class="twoCol colLt withDash centeredText" id="totalLeg">
+            <ul>
+                {% for chamber in chambers %}
+                 <li class="medModule">
                     <a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">
                         <h4 class="titleNumber withTip">{{ chamber.legislators.count }}<span>{{ chamber.title }}s</span></h4>
                     </a>
-                </div>
-                <div class="threeCol centeredText colRt">
-                    <ul class="tip inlineList">
-                    {% for party, count in chamber.legislators.party_counts.items %}
-                    <li><a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">{{ count }} {{party}}</a></li>
-                    {% endfor %}
+                    <ul class="tip noSpace">
+                        {% for party, count in chamber.legislators.party_counts.items %}
+                            <li><a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">{{ count }} {{party}}</a></li>
+                        {% endfor %}
                     </ul>
-                </div>
-            </div>
-
-        {% endfor %}
+                 </li>
+                {% endfor %}
+            </ul>
+        </div>    
+        <div class="fourCol colLt">
+            <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
+            <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
+        </div>
+        <div class="fiveCol colRt" id="results_table">
+        </div>
         <div class="clear"></div>
     </div>
-
     <div class="fullWidth module clear">
         <h3 class="moduleTitle">Committees</h3>
         <ul class="inlineThirds centeredText">
@@ -86,7 +78,7 @@
                     {% for bill in chamber.passed_bills %}
                         <li>
                             <time class="published">
-                            {% if chamber == 'upper' %}
+                            {% if chamber.type == 'upper' %}
                                 {{ bill.action_dates.passed_upper.date|date:"F d, Y" }}
                             {% else %}
                                 {{ bill.action_dates.passed_lower.date|date:"F d, Y" }}
@@ -97,7 +89,7 @@
                         </li>
                     {% endfor %}
                     </ul>
-                    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber}}">View More Passed Bills</a>
+                    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber.type}}">View More Passed Bills</a>
                 {% else %}
                     No passed bills to display.
                 {% endif %}
@@ -117,7 +109,7 @@
                 No passed bills to display.
             {% endif %}
             </ul>
-            <a class="viewMore" href="{% url 'bills' abbr %}?chamber={{chamber}}">View More Bills</a>
+            <a class="viewMore" href="{% url 'bills' abbr %}?chamber={{chamber.type}}">View More Bills</a>
         </div>
         {% endfor %}
 
@@ -128,7 +120,9 @@
         <div class="fullWidth module">
             <h3 class="moduleTitle">Sessions</h3>
             {% for session in sessions %}
-            <li><a href="{% url 'bills' abbr %}?session={{session.id}}">{{session.name}}</a> - {{session.bill_count}} bills</li>
+            {% if session.bill_count %}
+                <li><a href="{% url 'bills' abbr %}?session={{session.id}}">{{session.name}}</a> - {{session.bill_count}} bills</li>
+            {% endif %}
             {% endfor %}
             <div class="clear"></div>
         </div>

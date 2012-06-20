@@ -318,6 +318,8 @@ h2.withTimeline { margin-top: 30px;}
 .titleNumber { font-size: 600%; line-height: 50px; font-weight: bold; text-transform: uppercase;}
 .titleNumber span { display: block; font-size: 20%; padding-top: 5px; font-weight: normal; }
 
+#totalLeg .titleNumber { font-size: 450%; line-height: 40px;}
+
 .centeredText { text-align: center; }
 
 /*  tables  */

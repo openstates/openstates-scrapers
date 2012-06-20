@@ -54,12 +54,6 @@
         clear: right;
     }
 
-    /* Hack to get the selected state's flag to move down from
-    the top. */
-    span > img.flag {
-        padding-top: 8px;
-    }
-
     #mainFilter .select2-container {
         width: 200px;
     }
@@ -95,8 +89,8 @@
         </div>
 
         {# Some pages are state-agnostic and will need to omit this block (like the homepage). #}
-        {% block collection_nav %}
         {% state_select_form abbr %}
+        {% block collection_nav %}
         {% if abbr %}
         <nav>
             <ul>

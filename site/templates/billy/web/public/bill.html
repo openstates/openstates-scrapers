@@ -8,7 +8,7 @@
 
 {% block content %}
         <div class="fullWidth mainModule">
-            <span class="tip sources">Recieve alerts about {{bill.type_string|title}} {{ bill.bill_id }} with <a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">Scout</a>.
+            <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">Recieve alerts about {{bill.type_string|title}} {{ bill.bill_id }} from Scout</a>.
             </span>
             <ol id="billAction">
                 {% for stage, text, date in bill.progress_data %}
@@ -40,39 +40,27 @@
                 <dd>
                     <ul class="inlineThirds_module moduleNoBorder">
 
+                    {% for sponsor in sponsors %}
+                        {% if sponsor.leg_id %}
+                            <li><a href="{% url 'legislator' abbr sponsor.leg_id sponsor.name|slugify %}">{{ sponsor.name }}</a>
+                            {% with legislator=sponsor.legislator %}
+                                {% if legislator.active %}
+                                    ({{ legislator.party }}) {{ legislator.district }}
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            {# Sponsor had no leg_id or was inactive. Might be a committee. #}
+                            <li>{{ sponsor.name }}
+                        {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
+                    {% endfor %}
+                    
                     {% if show_all_sponsors %}
-                        {% for sponsor in bill.sponsors_manager %}
-                            {% if sponsor.leg_id %}
-                                <li><a href="{% url 'legislator' abbr sponsor.leg_id sponsor.name|slugify %}">{{ sponsor.name }}</a>
-                                {% with legislator=sponsor.legislator %}
-                                    {% if legislator.active %}
-                                        ({{ legislator.party }}) {{ legislator.district }}
-                                    {% endif %}
-                                {% endwith %}
-                            {% else %}
-                                {# Sponsor had no leg_id or was inactive. Might be a committee. #}
-                                <li>{{ sponsor.name }}
-                            {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
-                        {% endfor %}
-                    {% else %}
-                        {% for sponsor in bill.sponsors_manager.first_five %}
-                            {% if sponsor.leg_id %}
-                                <li><a href="{% url 'legislator' abbr sponsor.leg_id sponsor.name|slugify %}">{{ sponsor.name }}</a>
-                                {% with legislator=sponsor.legislator %}
-                                    {% if legislator.active %}
-                                        ({{ legislator.party }}) {{ legislator.district }}
-                                    {% endif %}
-                                {% endwith %}
-                            {% else %}
-                                {# Sponsor had no leg_id or was inactive. Might be a committee. #}
-                                <li>{{ sponsor.name }}
-                            {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
-                        {% endfor %}
-                        {% if bill.sponsors_manager.first_five_remainder %}
+                    {% else %}    
                         {% with remainder=bill.sponsors_manager.first_five_remainder %}
+                        {% if remainder %}
                         <li><a class="viewMore" href="?show_all_sponsors=True">View {{ remainder|apnumber }} other{{ remainder|pluralize}}</a></li>
-                        {% endwith %}
                         {% endif %}
+                        {% endwith %}
                     {% endif %}
                     </ul> 
                     

@@ -53,30 +53,21 @@ $(document).ready(function() {
                         <th>Session</th>
                         <th>Introduced</th>
                         <th>Recent Action</th>
-                        <th>Votes</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for obj in bills_list %}
                     <tr class="{% cycle 'even' 'odd' %}">
-                        <td>{{obj.metadata.abbr|upper}}</td>
-                        <td>
-                            <a href="{{ obj.get_absolute_url }}">{{obj.bill_id}}</a>
-                            <p>{{obj.title|truncatewords:25}}</p>
-                        </td>
-                        <td>{{obj.session}}</td>
-                        <td>{{obj.date_introduced|date:"M j, Y"}}</td>
-                        {% with action=bill.most_recent_action %}
-                            <td>{{action.date|date:"M j, Y"}} <span class="tip">{{action.action}}</span></td>
-                        {% endwith %}
-                        <td>{{obj.votes_manager|length}}</td>
+                        {% include rowtemplate_name %}
                     </tr>
                 {% endfor %}
                 </tbody>   
             </table>
         </div>
         {% if more_bills_available %}
-            <a class="viewMore" href="/{{abbr|default:"us"}}/filter_bills/?search_text={{search_text}}">Show more search results.</a>
+            {% with scope=metadata.abbreviation|default:'all' %}
+            <a class="viewMore" href="{% url 'bills' scope %}?{{ request.GET.urlencode }}">Show more search results.</a>
+            {% endwith %}
         {% endif %}
         <div class="clear"></div>
         {% endif %}
@@ -117,7 +108,7 @@ $(document).ready(function() {
             </table>
         </div>
         {% if more_legislators_available %}
-            <a class="viewMore" href="/{{abbr|default:"us"}}/legislators/">Show more search results.</a>
+            <a class="viewMore" href="/{{abbr|default:"all"}}/legislators/">Show more search results.</a>
         {% endif %}
         <div class="clear"></div>
         {% endif %}
