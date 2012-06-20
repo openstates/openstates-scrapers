@@ -142,7 +142,8 @@ button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; bo
 .colLtSm { margin-right: 20px; padding-right: 0;}
 
 .filterCol { background-color: #f5f4e8; padding: 20px 15px 40px; border-top: 1px solid #e1e1d9; border-right: 1px solid #ECEADD; border-left: 1px solid #ECEADD; border-bottom: 1px solid #ECEADD;}
-
+.filterCol select { width: 120px;}
+.filterCol input { width: 108px;}
 
 /* header titles */
 
@@ -168,6 +169,8 @@ a.colorRollover:hover { color: #be9c16; }
 .withTipSm  { margin-bottom: 0;}
 .sideNote { display: inline; font-size: 75%; vertical-align: bottom; }
 .inlineTip { display: inline;}
+a.tip:link, a.tip:active, a.tip:visited { color: #b4b1ab; border-bottom: 1px dotted #d6ac04;}
+a.tip:hover { color: #d6ac04; }
 
 
 /* header */
@@ -227,7 +230,6 @@ div.flatpage .social-links li { float:left; height:16px; margin-bottom:15px;
 dt { font-weight: bold;}
 .contentBottom { margin-bottom: 10px;}
 .inlineList dt, .inlineList dd { float: left; margin-right: 15px; line-height: 18px;}
-.inlineList dd {}
 
 ul .one { clear: both;}
 ul .one, ul .two { margin-right: 35px; }

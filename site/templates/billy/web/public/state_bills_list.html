@@ -67,7 +67,7 @@ $(document).ready(function(){
 {% block collection_nav %}{% endblock %}
 
 {% block content %}
-        <span class="tip sources">
+        <span class="tip sources withTipSm">
         {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/all/{{request.GET.search_text|urlencode}}">Recieve alerts about "{{request.GET.search_text}}" with Scout</a>
         {% else %}You can use <a href="https://scout.sunlightfoundation.com/">Scout</a> to recieve alerts for searches on this page.
         {% endif %}.
@@ -76,25 +76,32 @@ $(document).ready(function(){
             <div class="twoCol colLtSm filterCol">
                 <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
-                    <input id="submit" type="submit"/>
-                    {{ form.as_p }}
+                    <ul>
+                        <li>  
+                            <input id="submit" type="submit"/>
+                        </li>
+                        {{ form.as_p }}
+                    </ul>
                 </form>
             </div>
             <div class="tenCol colRt">
                 {% if not object_list.count %}
                     No bills matched those criteria. Frowny face.
                 {% else %}
-                <div id="pagination-links">
-                    Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>
-                    {% if object_list.has_next or object_list.has_previous %}
-                    {% for text, page_number, clickable in object_list.pagination_data %}
-                        {% if clickable %}
-                        <a href="{{request.GET.path}}?{% if get_params %}{{ get_params }}&{% else %}{% endif %}page={{page_number}}">{{text}}</a>
-                        {% else %}
-                        {{text}}
+                <div class="pagination-links">
+                    <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
+                    <div class="pagesNum">
+                        {% if object_list.has_next or object_list.has_previous %}
+                        {% for text, page_number, clickable in object_list.pagination_data %}
+                            {% if clickable %}
+                            <a href="{{request.GET.path}}?{% if get_params %}{{ get_params }}&{% else %}{% endif %}page={{page_number}}">{{text}}</a>
+                            {% else %}
+                            {{text}}
+                            {% endif %}
+                        {% endfor %}
                         {% endif %}
-                    {% endfor %}
-                    {% endif %}
+                    </div>
+                    <div class="clear"></div>
                 </div>
 
                 {% if use_table %}
@@ -120,17 +127,20 @@ $(document).ready(function(){
                 </table>
                 {% endif %}
                 
-                <div id="pagination-links">
-                    Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>
-                    {% if object_list.has_next %}
-                    {% for text, page_number, clickable in object_list.pagination_data %}
-                        {% if clickable %}
-                        <a href="{{url}}?page={{page_number}}">{{text}}</a>
-                        {% else %}
-                        {{text}}
+                <div class="pagination-links pagBottom">
+                    <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
+                    <div class="pagesNum">
+                        {% if object_list.has_next %}
+                        {% for text, page_number, clickable in object_list.pagination_data %}
+                            {% if clickable %}
+                            <a href="{{url}}?page={{page_number}}">{{text}}</a>
+                            {% else %}
+                            {{text}}
+                            {% endif %}
+                        {% endfor %}
                         {% endif %}
-                    {% endfor %}
-                    {% endif %}
+                    </div>
+                    <div class="clear"></div>
                 </div>
                 {% endif %}
             </div>

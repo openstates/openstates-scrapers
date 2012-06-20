@@ -41,11 +41,15 @@
                 {% endfor %}
             </ul>
         </div>    
-        <div class="fourCol colLt">
+        <div class="threeCol colLt">
             <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
             <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
         </div>
-        <div class="fiveCol colRt" id="results_table">
+        <div class="sixCol colRt">
+            <p class="tip centeredText">Click on a district to view corresponding legislators</p>
+            <div id="results_table">
+                
+            </div>
         </div>
         <div class="clear"></div>
     </div>

@@ -39,17 +39,20 @@ $(document).ready(function() {
 {% block content %}
         <h2>Bills with bill id "{{bill_id}}"</h2>
         <div class="fullWidth">
-            <div id="pagination-links">
-                Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>
-                {% if object_list.has_next or object_list.has_previous %}
-                {% for text, page_number, clickable in object_list.pagination_data %}
-                    {% if clickable %}
-                    <a href="{{url}}?page={{page_number}}">{{text}}</a>
-                    {% else %}
-                    {{text}}
+            <div class="pagination-links">
+                <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
+                <div class="pagesNum">
+                    {% if object_list.has_next or object_list.has_previous %}
+                    {% for text, page_number, clickable in object_list.pagination_data %}
+                        {% if clickable %}
+                        <a href="{{url}}?page={{page_number}}">{{text}}</a>
+                        {% else %}
+                        {{text}}
+                        {% endif %}
+                    {% endfor %}
                     {% endif %}
-                {% endfor %}
-                {% endif %}
+                </div>
+                <div class="clear"></div>
             </div>
 
             {% if use_table %}
@@ -75,17 +78,20 @@ $(document).ready(function() {
             </table>
             {% endif %}
             
-            <div id="pagination-links">
-                Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</br>
-                {% if object_list.has_next %}
-                {% for text, page_number, clickable in object_list.pagination_data %}
-                    {% if clickable %}
-                    <a href="{{url}}?page={{page_number}}">{{text}}</a>
-                    {% else %}
-                    {{text}}
+            <div class="pagination-links pagBottom">
+                <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
+                <div class="pagesNum">
+                    {% if object_list.has_next %}
+                    {% for text, page_number, clickable in object_list.pagination_data %}
+                        {% if clickable %}
+                        <a href="{{url}}?page={{page_number}}">{{text}}</a>
+                        {% else %}
+                        {{text}}
+                        {% endif %}
+                    {% endfor %}
                     {% endif %}
-                {% endfor %}
-                {% endif %}
+                </div>
+                <div class="clear"></div>
             </div>
         </div>
         <div class="clear"></div>{% endblock %}

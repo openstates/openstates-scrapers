@@ -8,7 +8,7 @@
 
 {% block content %}
         <div class="fullWidth mainModule">
-            <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">Recieve alerts about {{bill.type_string|title}} {{ bill.bill_id }} from Scout</a>.
+            <span class="tip sources withTipSm"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">Recieve alerts about {{bill.type_string|title}} {{ bill.bill_id }} from Scout</a>.
             </span>
             <ol id="billAction">
                 {% for stage, text, date in bill.progress_data %}
