@@ -120,7 +120,9 @@
         <div class="fullWidth module">
             <h3 class="moduleTitle">Sessions</h3>
             {% for session in sessions %}
-            <li><a href="{% url 'bills' abbr %}?session={{session.id}}">{{session.name}}</a> - {{session.bill_count}} bills</li>
+            {% if session.bill_count %}
+                <li><a href="{% url 'bills' abbr %}?session={{session.id}}">{{session.name}}</a> - {{session.bill_count}} bills</li>
+            {% endif %}
             {% endfor %}
             <div class="clear"></div>
         </div>
