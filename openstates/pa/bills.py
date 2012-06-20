@@ -139,13 +139,17 @@ class PABillScraper(BillScraper):
             action = match.group(1)
 
             type = []
+            kwargs = {}
+            committee = None
 
             if action.lower().startswith('introduced'):
                 type.append('bill:introduced')
             elif action.startswith('Referred to'):
                 type.append('committee:referred')
+                committee = re.sub('Referred to ', '', action)
             elif action.startswith('Re-referred'):
                 type.append('committee:referred')
+                committee = re.sub('Re-Referred to ', '', action)
             elif action.startswith('Amended on'):
                 type.append('amendment:passed')
             elif action.startswith('Approved by the Governor'):
@@ -171,8 +175,12 @@ class PABillScraper(BillScraper):
             if not type:
                 type = ['other']
 
+            if not committee is None:
+                kwargs['committee'] = committee
+
             date = parse_action_date(match.group(2))
-            bill.add_action(chamber, action, date, type=type)
+            bill.add_action(chamber, action, date, type=type,
+                            **kwargs)
 
     def parse_votes(self, bill, url):
         bill.add_source(url)
