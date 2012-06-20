@@ -8,7 +8,7 @@
 
 {% block content %}
         <div class="fullWidth mainModule">
-            <span class="tip sources withTipSm"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">Recieve alerts about {{bill.type_string|title}} {{ bill.bill_id }} from Scout</a>.
+            <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">Recieve alerts about {{bill.type_string|title}} {{ bill.bill_id }} from Scout</a>.
             </span>
             <ol id="billAction">
                 {% for stage, text, date in bill.progress_data %}
@@ -72,19 +72,25 @@
              </dl>
              <div class="clear"></div>
         </div>
-        <div class="medModule">
-            {% if bill.versions %}
-                <h3>Versions</h3><ul>
+        {% if bill.versions %}
+            <div class="module">
+                <h3 class="moduleTitle">Versions</h3>
+                <ul class="inlineThirds">
                 {% for version in bill.versions %}
-                    <li><a href="{{version.url}}">{{ version.name }}</a>
-                    {% if "+mimetype" in version %}[{{ version|plusfield:"mimetype"}}]{% endif %}
+                    <li class={% cycle "one" "two" "three" %}>
+                        <a href="{{version.url}}">{{ version.name }}</a>
+                        {% if "+mimetype" in version %}[{{ version|plusfield:"mimetype"}}]{% endif %}
                     </li>
-                {% endfor %}</ul>
-            {% endif %}
-        </div>
-        <div class="medModule">
+                {% endfor %}
+                </ul>
+                <div class="clear"></div>
+            </div>
+        {% endif %}
+
+        <div class="module">
+            <h3 class="moduleTitle">Recent</h3>
             <div class="eightCol colLt">
-                <h3>Recent Actions</h3>
+                <h4>Recent Actions</h4>
                 <table class="normalTable">
                     <thead>
                         <tr id="titles">
@@ -110,11 +116,13 @@
                 </table>
             </div>
             <div class="fourCol colRt">
-                <h3>Votes</h3>
+                <h4>Votes</h4>
                 {% if bill.votes_manager.count %}
                 <ul class="largerList voteChart">
                     {% for vote in bill.votes_manager %}
+                        <li>
                         {% include vote_preview_row_template %}
+                        </li>
                     {% endfor %}
                 </ul>
                 {% else %}
@@ -123,54 +131,56 @@
             </div>
             <div class="clear"></div>
         </div>
+        {% if bill.documents %}
+            <div class="module">
+                <h3 class="moduleTitle">Documents</h3>
+                {% for document in bill.documents %}
+                    <ul class="inlineThirds">
+                        <li><a href="document.url">{{ document.name }}</a>
+                        {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
+                        </li>
+                    </ul>
+                {% endfor %}
+                <div class="clear"></div>
+            </div>
+        {% endif %}
         
         {% with events=bill.events %}
-        {% if events.count %}
-        <div class="eightCol colLt">
-            <h3>Events</h3>
-            <table class="normalTable">
-                <thead>
-                    <tr id="titles">
-                        <th>Date</th>
-                        <th>Where</th>
-                        <th>Description</th>
-                        <th>Committees</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for event in bill.events %}
-                    <tr class = 'odd' >
-                        <td class="tip withTipSm"><a href = '/{{ event.state }}/event/{{ event.id }}'
-                                >{{ event.when|date:"M j, Y"}}</a></td>
-                        <td>{{ event.location }}</td>
-                        <td>{{ event.description }}</td>
-                        <td>
-                            {% for committee in event.committees %}
-                            <a href = '/{{ committee.state }}/committee/{{ committee.id}}/'
-                                >{{committee.display_name}}</a>
-                            {% endfor %}
-                        </td>
-                    </tr>
-            {% endfor %}
-            {% endif %}
-            {% endwith %}
-                </tbody>
-            </table>
-        {% sources bill %}
-        <div class="clear"></div>
+            {% if events.count %}
+            <div class="eightCol colLt">
+                <h3>Events</h3>
+                <table class="normalTable">
+                    <thead>
+                        <tr id="titles">
+                            <th>Date</th>
+                            <th>Where</th>
+                            <th>Description</th>
+                            <th>Committees</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in bill.events %}
+                        <tr class = 'odd' >
+                            <td class="tip withTipSm"><a href = '/{{ event.state }}/event/{{ event.id }}'
+                                    >{{ event.when|date:"M j, Y"}}</a></td>
+                            <td>{{ event.location }}</td>
+                            <td>{{ event.description }}</td>
+                            <td>
+                                {% for committee in event.committees %}
+                                <a href = '/{{ committee.state }}/committee/{{ committee.id}}/'
+                                    >{{committee.display_name}}</a>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                        {% endwith %}
+                    </tbody>
+                </table>
+                {% sources bill %}
+                <div class="clear"></div>
+            </div>
+        {% endblock %}
+        <div class="module">
+            {% sources bill %}
         </div>
-{% endblock %}
-
-<div class="module">
-    {% if bill.documents %}
-        <div class="sixCol colRt">
-            <h3>Documents</h3>
-            {% for document in bill.documents %}<ul>
-                <li><a href="document.url">{{ document.name }}</a>
-                {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
-                </li>
-            {% endfor %}</ul>
-        </div>
-    {% endif %}
-    {% sources bill %}
-</div>    

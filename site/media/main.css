@@ -188,7 +188,7 @@ header#mainHeader { background: url(images/bg_header.jpg) top left no-repeat; mi
 nav li { float: left; margin-right: 45px; min-width: 59px; text-align: center; padding-bottom: 21px;}
 nav li:hover { background: url(images/bg_nav.png) center 24px no-repeat; padding-bottom: 21px; }
 nav li.active { background: url(images/bg_navActive.png) center 24px no-repeat;  }
-nav li.active a:link { color: #635F5C; }
+nav li.active a:link, nav li.active a:visited, nav li.active a:active  { color: #635F5C; }
 nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; padding: 13px 20px 0; font-family: Georgia, 'Times New Roman', Times, serif; }
 
 #searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: right;}
