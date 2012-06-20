@@ -67,10 +67,11 @@ $(document).ready(function(){
 {% block collection_nav %}{% endblock %}
 
 {% block content %}
+  
         <span class="tip sources withTipSm">
-        {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/all/{{request.GET.search_text|urlencode}}">Recieve alerts about "{{request.GET.search_text}}" with Scout</a>
-        {% else %}You can use <a href="https://scout.sunlightfoundation.com/">Scout</a> to recieve alerts for searches on this page.
-        {% endif %}.
+        {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/all/{{request.GET.search_text|urlencode}}">Receive alerts about "{{request.GET.search_text}}"</a> with Scout.
+        {% else %} <a href="https://scout.sunlightfoundation.com/">Receive bill alerts</a> with Scout.
+        {% endif %}
         </span>
         <h2>{% include description_template %}</h2>
             <div class="twoCol colLtSm filterCol">

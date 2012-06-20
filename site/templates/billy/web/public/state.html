@@ -119,17 +119,27 @@
 
         <div class="clear"></div>
     </div>
-
-
-        <div class="fullWidth module">
-            <h3 class="moduleTitle">Sessions</h3>
-            {% for session in sessions %}
-            {% if session.bill_count %}
-                <li><a href="{% url 'bills' abbr %}?session={{session.id}}">{{session.name}}</a> - {{session.bill_count}} bills</li>
-            {% endif %}
-            {% endfor %}
-            <div class="clear"></div>
-        </div>
+    <div class="fullWidth module">
+        <h3 class="moduleTitle">Sessions</h3>
+        
+        <table>
+            <thead>
+                <tr >
+                    <th>Session</th>
+                    <th>Bills</th>
+                </tr>
+            </thead>    
+            <tbody>
+                {% for session in sessions %}
+                {% if session.bill_count %}
+                    <tr class="{% cycle 'odd' 'even' %}">
+                       <td>{{session.name}}</td>
+                       <td><a href="{% url 'bills' abbr %}?session={{session.id}}">{{session.bill_count}} bills</a></td>
+                   </tr>
+                {% endif %}
+                {% endfor %}
+        </table>
+        
     </div>
 
 <!-- mapbox interaction script -->

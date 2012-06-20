@@ -210,6 +210,11 @@ nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; 
 .rssIcon:hover { background: url(images/social_sprites.png) left -205px no-repeat; }
 
 
+.breadcrumb { font-size: 85%; margin-top: -5px; margin-left: 5px;  font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique;}
+.breadcrumb li { margin-bottom: 10px;}
+.breadcrumb a:link, .breadcrumb a:active, .breadcrumb a:visited { color: #B4B1AB; border-bottom: 1px dotted #d2cdc4; }
+.breadcrumb a:hover { color: #d6ac04; }
+
 /* social links for thank you page - copied from old design */
 div.flatpage .social-links li { float:left; height:16px; margin-bottom:15px;
     padding-left:25px; list-style-type: none; display: block;
