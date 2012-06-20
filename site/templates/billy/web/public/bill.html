@@ -17,7 +17,7 @@
                     {% if date %}<span class="tip">{{date|date:"M j, Y"}}</span>{% endif %}
                 </li>
                 {% endfor %}
-            </ol> 
+            </ol>
             <h2 class="withTimeline">{{ metadata.name }} {{bill.type_string|title}} {{ bill.bill_id }}</h2>
              <a href="/admin/object_json/bills/{{bill.id}}/">json</a>
              <p class="smModule">{{ bill.title|capfirst }}</p>
@@ -32,7 +32,7 @@
                 {% endif %}
                 <dt class="contentBottom oneCol">Session:</dt>
                 <dd class="contentBottom customWidth">{{ bill.session_details.display_name }}</dd>
-                
+
                 <dt class="contentBottom oneCol">Chamber:</dt>
                 <dd class="contentBottom">{{ bill.chamber_name }}</dd>
 
@@ -49,22 +49,26 @@
                                 {% endif %}
                             {% endwith %}
                         {% else %}
-                            {# Sponsor had no leg_id or was inactive. Might be a committee. #}
-                            <li>{{ sponsor.name }}
+                            {% if sponsor.committee_id %}
+                                <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
+                            {% else %}
+                                {# Sponsor had no leg_id or was inactive. Might be a committee. #}
+                                <li>{{ sponsor.name }}
+                            {% endif %}
                         {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
                     {% endfor %}
-                    
+
                     {% if show_all_sponsors %}
-                    {% else %}    
+                    {% else %}
                         {% with remainder=bill.sponsors_manager.first_five_remainder %}
                         {% if remainder %}
                         <li><a class="viewMore" href="?show_all_sponsors=True">View {{ remainder|apnumber }} other{{ remainder|pluralize}}</a></li>
                         {% endif %}
                         {% endwith %}
                     {% endif %}
-                    </ul> 
-                    
-                </dd>    
+                    </ul>
+
+                </dd>
              </dl>
              <div class="clear"></div>
         </div>
