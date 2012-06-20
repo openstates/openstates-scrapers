@@ -18,10 +18,10 @@
                 </li>
                 {% endfor %}
             </ol>
-            <h2 class="withTimeline">{{ metadata.name }} {{bill.type_string|title}} {{ bill.bill_id }}</h2>
-             <a href="/admin/object_json/bills/{{bill.id}}/">json</a>
-             <p class="smModule">{{ bill.title|capfirst }}</p>
-             <dl class="inlineList">
+            <h2 class="withTimeline withTip">{{ metadata.name }} {{bill.type_string|title}} {{ bill.bill_id }}</h2>
+            <a class="hidden" href="/admin/object_json/bills/{{bill.id}}/">json</a>
+            <p class="tip">{{ bill.title|capfirst }}</p>
+            <dl class="inlineList">
                 {% if bill.subjects %}
                 <dt class="contentBottom oneCol">Subjects:</dt>
                 <dd class="contentBottom customWidth">
@@ -72,67 +72,60 @@
              </dl>
              <div class="clear"></div>
         </div>
-        {% if bill.versions %}
-        <div class="sixCol colLt">
-            <h3>Versions</h3><ul>
-            {% for version in bill.versions %}
-                <li><a href="{{version.url}}">{{ version.name }}</a>
-                {% if "+mimetype" in version %}[{{ version|plusfield:"mimetype"}}]{% endif %}
-                </li>
-            {% endfor %}</ul>
-        </div>
-        {% endif %}
-        {% if bill.documents %}
-        <div class="sixCol colRt">
-            <h3>Documents</h3>
-            {% for document in bill.documents %}<ul>
-                <li><a href="document.url">{{ document.name }}</a>
-                {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
-                </li>
-            {% endfor %}</ul>
-        </div>
-        {% endif %}
-
-        <div class="eightCol colLt">
-            <h3>Recent Actions</h3>
-            <table class="normalTable">
-                <thead>
-                    <tr id="titles">
-                        <th>Date</th>
-                        <th>Chamber</th>
-                        <th></th>
-                        <th>Labels</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for action in bill.actions_manager %}
-                    <tr class={% cycle "even" "odd" %}>
-                        <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
-                        <td>{{ action.actor_name }}</td>
-                        {% if "committee" in action %}
-                            <td><a href = '/{{abbr}}/committees/{{action.committee}}' >{{ action.action_display|safe }}</a></td>
-                        {% else %}
-                            <td>{{ action.action_display|safe }}</td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <div class="fourCol colRt">
-            <h3>Votes</h3>
-            {% if bill.votes_manager.count %}
-            <ul class="largerList voteChart">
-                {% for vote in bill.votes_manager %}
-                    {% include vote_preview_row_template %}
-                {% endfor %}
-            </ul>
-            {% else %}
-            No vote data is availble yet.
+        <div class="medModule">
+            {% if bill.versions %}
+                <h3>Versions</h3><ul>
+                {% for version in bill.versions %}
+                    <li><a href="{{version.url}}">{{ version.name }}</a>
+                    {% if "+mimetype" in version %}[{{ version|plusfield:"mimetype"}}]{% endif %}
+                    </li>
+                {% endfor %}</ul>
             {% endif %}
         </div>
-{% with events=bill.events %}
-{% if events.count %}
+        <div class="medModule">
+            <div class="eightCol colLt">
+                <h3>Recent Actions</h3>
+                <table class="normalTable">
+                    <thead>
+                        <tr id="titles">
+                            <th>Date</th>
+                            <th>Chamber</th>
+                            <th></th>
+                            <th>Labels</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for action in bill.actions_manager %}
+                        <tr class={% cycle "even" "odd" %}>
+                            <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
+                            <td>{{ action.actor_name }}</td>
+                            {% if "committee" in action %}
+                                <td><a href = '/{{abbr}}/committees/{{action.committee}}' >{{ action.action_display|safe }}</a></td>
+                            {% else %}
+                                <td>{{ action.action_display|safe }}</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="fourCol colRt">
+                <h3>Votes</h3>
+                {% if bill.votes_manager.count %}
+                <ul class="largerList voteChart">
+                    {% for vote in bill.votes_manager %}
+                        {% include vote_preview_row_template %}
+                    {% endfor %}
+                </ul>
+                {% else %}
+                No vote data is availble yet.
+                {% endif %}
+            </div>
+            <div class="clear"></div>
+        </div>
+        
+        {% with events=bill.events %}
+        {% if events.count %}
         <div class="eightCol colLt">
             <h3>Events</h3>
             <table class="normalTable">
@@ -167,3 +160,17 @@
         <div class="clear"></div>
         </div>
 {% endblock %}
+
+<div class="module">
+    {% if bill.documents %}
+        <div class="sixCol colRt">
+            <h3>Documents</h3>
+            {% for document in bill.documents %}<ul>
+                <li><a href="document.url">{{ document.name }}</a>
+                {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
+                </li>
+            {% endfor %}</ul>
+        </div>
+    {% endif %}
+    {% sources bill %}
+</div>    

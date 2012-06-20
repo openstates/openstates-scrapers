@@ -7,59 +7,48 @@
 
 {% block content %}
         <div class="fullWidth mainModule">
-
-            <div class="eightCol colLt clear">
-
-                <div class="smModule">
-                    <h2>{{metadata.name}} {{bill.type_string|title}} <a href={% url "bill" abbr bill.id %}>{{bill.bill_id}}</a></h2>
-                    <p>{{bill.title}}</p>
-                </div>
-
-                <div>
-                    <h3>{{ vote.motion }}</h3>
-                    <time datetime="" class="published" pubdate>{{ vote.date|date:"M j, Y"}}</time>
-                
-                    <h4>Vote Breakdown</h4>
-                    <!--<table>
-                        <thead>
-                            <tr><th>Vote</th><th>Total</th><th>Ratio</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>Yes</td><td>{{ vote.yes_count }}</td><td>{{ vote.yes_ratio }}</td></tr>
-                            <tr><td>No</td><td>{{ vote.no_count }}</td><td>{{ vote.no_ratio }}</td></tr>
-                            <tr><td>Other</td><td>{{ vote.other_count }}</td><td>{{ vote.other_ratio }}</td></tr>
-                        </tbody>
-                    <table>-->
-                    <ul>
-                        <ul class="barChart">
-                            <li class="yes">
-                                <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.yes_count}} Yes</span> 
-                            </li> 
-                            <li class="no">
-                                <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.no_count}} No</span>
-                            </li>   
-                            <li class="no clear">
-                                <span class="tagValue" style="width:{{vote.other_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.other_count}} Other</span>
-                            </li>   
-                        </ul> 
-                    </ul>
-                </div>
-
+            <div id="billState" class="passed">{{vote.passed|yesno:"Passed,Failed,Unknown"}}</div>
+            <div class="smModule">
+                <h2>{{metadata.name}} {{bill.type_string|title}} <a href={% url "bill" abbr bill.id %}>{{bill.bill_id}}</a></h2>
+                <p class="tip">{{bill.title}}</p>
             </div>
-
+            <div class="eightCol colLt clear">
+                <h3 class="h4">{{ vote.motion }}</h3>
+                <time datetime="" class="published" pubdate>{{ vote.date|date:"M j, Y"}}</time>
+            
+                <h4>Vote Breakdown</h4>
+                <!--<table>
+                    <thead>
+                        <tr><th>Vote</th><th>Total</th><th>Ratio</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Yes</td><td>{{ vote.yes_count }}</td><td>{{ vote.yes_ratio }}</td></tr>
+                        <tr><td>No</td><td>{{ vote.no_count }}</td><td>{{ vote.no_ratio }}</td></tr>
+                        <tr><td>Other</td><td>{{ vote.other_count }}</td><td>{{ vote.other_ratio }}</td></tr>
+                    </tbody>
+                <table>-->
+                <ul class="barChart">
+                    <li class="yes">
+                        <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
+                        <span class="tagNumber">{{vote.yes_count}} Yes</span> 
+                    </li> 
+                    <li class="no">
+                        <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
+                        <span class="tagNumber">{{vote.no_count}} No</span>
+                    </li>   
+                    <li class="no clear">
+                        <span class="tagValue" style="width:{{vote.other_ratio}}%;"></span>
+                        <span class="tagNumber">{{vote.other_count}} Other</span>
+                    </li>   
+                </ul> 
+            </div>
             <div class="fourCol colRt">
-                <div id="billState" class="passed">{{vote.passed|yesno:"Passed,Failed,Unknown"}}</div>
                 <div id="voteMap" class="withBorder clear"></div>  
             </div>  
-
             <div class="clear"></div>
-
         </div>
 
-        <div class="module fullWidth clear">
+        <div class="medModule clear">
             <h3>Full Roll Call</h3>
             <ul class="inlineThirds">
                 <li class="one">
@@ -151,13 +140,15 @@
                     {% endif %}
                 </li>
             </ul> 
+            <div class="clear"></div>   
+        </div>
+        <div class="medModule">
             {% if vote.sources %}
                 {% sources vote %}
             {% else %}
                 {% sources vote.bill %}
             {% endif %}
-            <div class="clear"></div>   
-        </div>
+        </div>    
     </div>
 </div>    
     

@@ -6,13 +6,20 @@
 {% block title %}{{event.description|trunc}}{% endblock %}
 
 {% block content %}
-<div class="fullWidth mainModule">
-    <div class="eightCol colLt">
-        <h3>{{event.description|trunc}}</h3>
-        {{event.when|date:"M j, Y"}} @ {{ event.location }}
+<div class="fullWidth">
+    <div class="medModule">
+        <h2>{{event.description|trunc}}</h2>
+        <dl class="inlineList">
+            <dt>When:</dt>
+            <dd>{{event.when|date:"M j, Y"}}</dd>
+        
+            <dt>Where:</dt>
+            <dd>{{ event.location }}</dd>
+        </dl>
+        <div class="clear"></div>
     </div>
-    <div class="eightCol colLt">
-        <h3>Participants</h3>
+    <div class="fullWidth module">
+        <h3 class="moduleTitle">Participants</h3>
         <table>
             <tr>
                 <th>Who</th>
