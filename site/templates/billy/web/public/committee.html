@@ -3,7 +3,11 @@
 {% load customtags %}
 
 
-{% block title %}{{committee.committee }}{% endblock %}
+{% block title %}
+  {{committee.display_name}} -
+  {{metadata.legislature_name}} -
+  Open States
+{% endblock %}
 
 {% block headblock %}
 <script type="text/javascript">

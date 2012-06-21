@@ -2,7 +2,11 @@
 {% load customtags %}
 
 
-{% block title %}{{state.name}} {{ chamber_name }} Legislators{% endblock %}
+{% block title %}
+  Committees -
+  {{metadata.legislature_name}} -
+  Open States
+{% endblock %}
 
 {% block content %}
         <div class="fullWidth">

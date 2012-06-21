@@ -4,7 +4,12 @@
 {% load customtags %}
 
 
-{% block title %}{{bill.bill_id }}{% endblock %}
+{% block title %}
+  {{bill.bill_id }} - 
+  {{bill.session_details.display_name}} -
+  {{metadata.legislature_name}} -
+  Open States
+{% endblock %}
 
 {% block content %}
         <ul class="breadcrumb floatedList clearfix">

@@ -3,7 +3,13 @@
 {% load customtags %}
 
 
-{% block title %}Vote on {{ vote.bill.bill_id }}{% endblock %}
+{% block title %}
+  {{vote.date|date:"M d, Y"}} vote -
+  {{vote.bill.bill_id }} - 
+  {{vote.bill.session_details.display_name}} -
+  {{metadata.legislature_name}} -
+  Open States
+{% endblock %}
 
 {% block content %}
         <div class="fullWidth mainModule">
