@@ -37,7 +37,7 @@ $(document).ready(function() {
     .rss-link {
         border-style: none;
     }
-        
+
     .label {
         font-size: 10.998px;
         font-weight: bold;
@@ -55,6 +55,61 @@ $(document).ready(function() {
     .label a {
         color: white;
     }
+
+    .pagesNum {
+      height: 36px;
+      margin: 18px 0;
+    }
+
+    .pagesNum ul {
+      display: inline-block;
+      *display: inline;
+      margin-bottom: 0;
+      margin-left: 0;
+      -webkit-border-radius: 3px;
+         -moz-border-radius: 3px;
+              border-radius: 3px;
+      *zoom: 1;
+      -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+         -moz-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+              box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .pagesNum li {
+      display: inline;
+    }
+
+    .pagesNum a {
+      float: left;
+      padding: 0 14px;
+      line-height: 34px;
+      text-decoration: none;
+      border: 1px solid #ddd;
+      border-left-width: 0;
+    }
+
+    .pagesNum a:hover,
+    .pagesNum .active a {
+      background-color: #FFFFD6;
+    }
+
+    .pagesNum .active a {
+      color: #999999;
+      cursor: default;
+    }
+
+    .pagesNum li:first-child a {
+      border-left-width: 1px;
+      -webkit-border-radius: 3px 0 0 3px;
+         -moz-border-radius: 3px 0 0 3px;
+              border-radius: 3px 0 0 3px;
+    }
+
+    .pagesNum li:last-child a {
+      -webkit-border-radius: 0 3px 3px 0;
+         -moz-border-radius: 0 3px 3px 0;
+              border-radius: 0 3px 3px 0;
+    }
 </style>
 {% endblock %}
 
@@ -66,13 +121,13 @@ $(document).ready(function() {
                 <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
                 <div class="pagesNum">
                     {% if object_list.has_next or object_list.has_previous %}
+                    <ul>
                     {% for text, page_number, clickable in object_list.pagination_data %}
-                        {% if clickable %}
-                        <a href="{{url}}?page={{page_number}}">{{text}}</a>
-                        {% else %}
-                        {{text}}
-                        {% endif %}
+                        <li>
+                        <a {% if not clickable %}class="selected"{% endif %} href="{{url}}?page={{page_number}}">{{text}}</a>
+                        </li>
                     {% endfor %}
+                    </ul>
                     {% endif %}
                 </div>
                 <div class="clear"></div>
@@ -101,17 +156,17 @@ $(document).ready(function() {
             </table>
             {% endif %}
             
-            <div class="pagination-links pagBottom">
+             <div class="pagination-links">
                 <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
                 <div class="pagesNum">
-                    {% if object_list.has_next %}
+                    {% if object_list.has_next or object_list.has_previous %}
+                    <ul>
                     {% for text, page_number, clickable in object_list.pagination_data %}
-                        {% if clickable %}
-                        <a href="{{url}}?page={{page_number}}">{{text}}</a>
-                        {% else %}
-                        {{text}}
-                        {% endif %}
+                        <li>
+                        <a {% if not clickable %}class="selected"{% endif %} href="{{url}}?page={{page_number}}">{{text}}</a>
+                        </li>
                     {% endfor %}
+                    </ul>
                     {% endif %}
                 </div>
                 <div class="clear"></div>
