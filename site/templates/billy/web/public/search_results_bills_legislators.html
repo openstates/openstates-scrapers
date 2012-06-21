@@ -83,8 +83,9 @@ $(document).ready(function() {
 
         {% if not found_by_id %}
         <div class="fullWidth">
-            <h2>{{legislators_list.count|apnumber|capfirst}} {{scope_name|default:''}} legislator names contain <em>"{{search_text}}"</em></h2>
-            {% if legislators_list.count %}
+            {% with count=legislators_list.count %}
+            <h2>{{count|apnumber|capfirst}} {{scope_name|default:''}} legislator name{{count|pluralize}} contained <em>"{{search_text}}"</em></h2>
+            {% if count %}
             <table id="main-table" class="withFilter">
                 <thead>
                     <tr id="titles">
@@ -119,6 +120,7 @@ $(document).ready(function() {
         {% endif %}
         <div class="clear"></div>
         {% endif %}
+        {% endwith %}
         {% endif %}
 
         {% endblock %}
