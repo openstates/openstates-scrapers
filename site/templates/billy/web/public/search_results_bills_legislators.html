@@ -39,9 +39,13 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-        <h2>{{bills_list.count|apnumber|capfirst}} {{scope_name|default:''}} bills contain <em>"{{search_text}}"</em></h2>
+        <h2>{{bill_results|length|apnumber|capfirst}} bills {{scope_name|default:''}} 
+            {% if found_by_id %}found with ids like
+            {% else %}contain
+            {% endif %} <em>"{{search_text}}"</em>
+        </h2>
         <div class="fullWidth">
-            {% if not bills_list.count %}
+            {% if not bill_results|length %}
                 No bills matching "{{search_text}}"
                 </div>
             {% else %}
@@ -56,7 +60,7 @@ $(document).ready(function() {
                     </tr>
                 </thead>
                 <tbody>
-                {% for obj in bills_list %}
+                {% for obj in bill_results %}
                     <tr class="{% cycle 'even' 'odd' %}">
                         {% include rowtemplate_name %}
                     </tr>
@@ -72,12 +76,10 @@ $(document).ready(function() {
         <div class="clear"></div>
         {% endif %}
 
+        {% if not found_by_id %}
         <div class="fullWidth">
             <h2>{{legislators_list.count|apnumber|capfirst}} {{scope_name|default:''}} legislator names contain <em>"{{search_text}}"</em></h2>
-            {% if not legislators_list.count %}
-                No legislator names contained "{{search_text}}."
-        </div>
-            {% else %}
+            {% if legislators_list.count %}
             <table id="main-table" class="withFilter">
                 <thead>
                     <tr id="titles">
@@ -111,6 +113,7 @@ $(document).ready(function() {
             <a class="viewMore" href="/{{abbr|default:"all"}}/legislators/">Show more search results.</a>
         {% endif %}
         <div class="clear"></div>
+        {% endif %}
         {% endif %}
 
         {% endblock %}
