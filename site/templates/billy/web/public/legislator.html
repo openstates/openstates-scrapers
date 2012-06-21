@@ -286,7 +286,23 @@ $(document).ready(function() {
                     </thead>
                     <tbody>
                         {% for vote_index, vote_value, vote in legislator_votes %}
-                            {% include vote_preview_row_template %}
+                        <tr>
+                            <td>
+                                <time class="timeHeader" datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
+                                <a href="{{ vote.get_absolute_url }}">{{vote.bill.bill_id}} - {{vote.motion|truncatewords:30}}</a>
+                                <ul class="barChart">
+                                    <li class="yes">
+                                        <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
+                                        <span class="tagNumber">{{vote.yes_count}} Yes</span> 
+                                    </li> 
+                                    <li class="no clear">
+                                        <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
+                                        <span class="tagNumber">{{vote.no_count}} No</span>
+                                    </li>   
+                                </ul> 
+                            </td>
+                            <td class="right"><b>{{vote_value|title}}</b></td>
+                        </tr>                         
                         {% endfor %}
                     </tbody>
                 </table>
