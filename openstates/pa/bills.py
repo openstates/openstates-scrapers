@@ -105,7 +105,7 @@ class PABillScraper(BillScraper):
                 first = False
             else:
                 sponsor_type = 'cosponsor'
-            
+
             if sponsor.find(' and ') != -1:
                 dual_sponsors = sponsor.split(' and ')
                 bill.add_sponsor(sponsor_type, dual_sponsors[0].strip().title())
