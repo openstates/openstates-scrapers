@@ -78,10 +78,10 @@ $(document).ready(function(){
                 <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
                     <ul>
-                        <li>  
+                        <li>
                             <input id="submit" type="submit"/>
                         </li>
-                        {{ form.as_p }}
+                        {{ form.as_ul }}
                     </ul>
                 </form>
             </div>
