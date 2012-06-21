@@ -12,10 +12,11 @@
 <script type="text/javascript">
 $(document).ready(function(){
 
-    $('#id_type').select2({placeholder: 'Pick one'});
+    $('#id_type').select2({placeholder: 'Pick a type'});
     $('#id_subjects').select2({placeholder: 'Pick a subject'});
     $('#id_actions__type').select2({placeholder: 'Pick an action type'});
     $('#id_sponsor__leg_id').select2({placeholder: 'Pick a sponsor'});
+    $('#id_status').select2({placeholder: 'Pick a status'});
 
     var reset = $('<input id="clear" type="submit" value="Reset">');
     reset.click(function(event){
@@ -23,8 +24,10 @@ $(document).ready(function(){
         // Don't actually submit the page.
         event.preventDefault();
 
-        // Clear all the select2 widgets.
-        $('[class^="select2"]').select2('val', '');
+        // Clear the select widgets.
+        $("#id_subjects").select2("val", [])
+        $("#id_status").select2("val", '')
+        $("#id_type").select2("val", '')
 
         // Clear the search box.
         $('#id_search_text').val('');

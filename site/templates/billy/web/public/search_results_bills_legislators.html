@@ -5,7 +5,12 @@
 {% load customtags %}
 
 
-{% block title %}Search results{% endblock %}
+{% block title %}
+  Search Results - 
+  Bill and Legislators -
+  {{metadata.legislature_name}} -
+  Open States
+{% endblock %}
 
 {% block headblock %}
 <script type="text/javascript">
@@ -39,13 +44,13 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-        <h2>{{bill_results|length|apnumber|capfirst}} bills {{scope_name|default:''}} 
+        <h2>{{bill_results.count|apnumber|capfirst}} bills {{scope_name|default:''}} 
             {% if found_by_id %}found with ids like
             {% else %}contain
             {% endif %} <em>"{{search_text}}"</em>
         </h2>
         <div class="fullWidth">
-            {% if not bill_results|length %}
+            {% if not bill_results.count %}
                 No bills matching "{{search_text}}"
                 </div>
             {% else %}

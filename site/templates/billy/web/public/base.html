@@ -71,7 +71,7 @@
     <header id="mainHeader">
         {% if abbr or active_states %}
         <form action="/{{abbr|default:"all"}}/search/" method="get" id="searchform">
-            <input class="transparent" type="search" name="q" id="id_q" placeholder="search the site">
+            <input class="transparent" type="search" name="search_text" id="id_q" placeholder="search the site">
             <button type="submit">
                  <span>Search</span>
             </button>
@@ -90,7 +90,7 @@
         {# Some pages are state-agnostic and will need to omit this block (like the homepage). #}
         {% state_select_form abbr %}
         {% block collection_nav %}
-        {% if abbr %}
+        {% if abbr and abbr != 'all' %}
         <nav>
             <ul>
                 <li {% if statenav_active == "home" %}class="active"{% endif %}><a href="{% url state abbr %}">Home</a></li>
