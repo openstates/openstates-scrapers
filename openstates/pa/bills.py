@@ -105,7 +105,7 @@ class PABillScraper(BillScraper):
                 first = False
             else:
                 sponsor_type = 'cosponsor'
-            
+
             if sponsor.find(' and ') != -1:
                 dual_sponsors = sponsor.split(' and ')
                 bill.add_sponsor(sponsor_type, dual_sponsors[0].strip().title())
@@ -144,12 +144,12 @@ class PABillScraper(BillScraper):
 
             if action.lower().startswith('introduced'):
                 type.append('bill:introduced')
-            elif action.startswith('Referred to'):
+            elif re.findall("Referred to (.+)", action) != []:
                 type.append('committee:referred')
-                committee = re.sub('Referred to ', '', action)
-            elif action.startswith('Re-referred'):
+                committee = re.findall("Referred to (.+)", action)[0]  #XXX: Fix?
+            elif re.findall("Re-referred to (.+)", action) != []:
                 type.append('committee:referred')
-                committee = re.sub('Re-Referred to ', '', action)
+                committee = re.findall("Re-referred to (.+)", action)[0]  #XXX: Fix?
             elif action.startswith('Amended on'):
                 type.append('amendment:passed')
             elif action.startswith('Approved by the Governor'):
