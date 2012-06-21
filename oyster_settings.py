@@ -47,8 +47,7 @@ DOCUMENT_CLASSES = {}
 
 for state in states:
     try:
-        DOCUMENT_CLASSES[state+':billtext'] = __import__('openstates.'+ state, fromlist=['document_
-class']).document_class
+        DOCUMENT_CLASSES[state+':billtext'] = __import__('openstates.'+ state, fromlist=['document_class']).document_class
     except ImportError:
         pass
 
