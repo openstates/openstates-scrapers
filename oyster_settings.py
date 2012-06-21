@@ -17,12 +17,12 @@ RETRY_ATTEMPTS = 3
 RETRY_WAIT_MINUTES = 60
 
 DEFAULT_STORAGE_ENGINE = 's3'
-AWS_KEY = getattr(settings, 'AWS_KEY')
-AWS_SECRET = getattr(settings, 'AWS_SECRET')
-AWS_BUCKET = getattr(settings, 'AWS_BUCKET')
+AWS_KEY = getattr(settings, 'AWS_KEY', None)
+AWS_SECRET = getattr(settings, 'AWS_SECRET', None)
+AWS_BUCKET = getattr(settings, 'AWS_BUCKET', None)
 AWS_PREFIX = 'documents/'
 
-ELASTICSEARCH_HOST = getattr(settings, 'ELASTICSEARCH_HOST')
+ELASTICSEARCH_HOST = getattr(settings, 'ELASTICSEARCH_HOST', None)
 ELASTICSEARCH_INDEX = 'bills'
 ELASTICSEARCH_DOC_TYPE = 'version'
 
