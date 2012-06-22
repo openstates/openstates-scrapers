@@ -30,6 +30,8 @@ metadata = dict(
                     '_scraped_name': '2011 3rd Special Session'},
         '2012': { 'display_name': '2012 General Session',
                   '_scraped_name': '2012 General Session', },
+        '2012S4': { 'display_name': '2012, 4th Special Session',
+                    '_scraped_name': '2012 4th Special Session'},
     },
     feature_flags=['events', 'subjects'],
     _ignored_scraped_sessions=[
