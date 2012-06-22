@@ -44,9 +44,11 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-        <h2>{{bill_results.count|apnumber|capfirst}} bills {{scope_name|default:''}} 
+        <h2>{{bill_results.count|apnumber|capfirst}} 
+            <a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a>
+            bills {{scope_name|default:''}} 
             {% if found_by_id %}found with ids like
-            {% else %}contain
+            {% else %}contained
             {% endif %} <em>"{{search_text}}"</em>
         </h2>
         <div class="fullWidth">
