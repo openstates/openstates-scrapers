@@ -11,6 +11,11 @@
   Open States
 {% endblock %}
 
+{% block headblock %}
+    <link rel="canonical" href="{{bill.get_absolute_url}}">
+{% endblock %}
+
+
 {% block content %}
         <ul class="breadcrumb floatedList clearfix">
             <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
@@ -56,7 +61,7 @@
 
                     {% for sponsor in sponsors %}
                         {% if sponsor.leg_id %}
-                            <li><a href="{% url 'legislator' abbr sponsor.leg_id sponsor.name|slugify %}">{{ sponsor.name }}</a>
+                            <li><a href="{% url 'legislator' abbr sponsor.leg_id '' %}">{{ sponsor.name }}</a>
                             {% with legislator=sponsor.legislator %}
                                 {% if legislator.active %}
                                     ({{ legislator.party }}) {{ legislator.district }}

@@ -18,7 +18,7 @@
         {% for legislator in committee.members|dictsort:"name" %}
           {% if legislator.leg_id %}
             <li>
-                <a class="tip withTip" href="{% url 'legislator' abbr legislator.leg_id legislator.name|slugify %}">{{ legislator.name }},</a>{% if not forloop.last %} {% endif %}
+                <a class="tip withTip" href="{% url 'legislator' abbr legislator.leg_id '' %}">{{ legislator.name }},</a>{% if not forloop.last %} {% endif %}
             </li>
           {% else %}
           <li>

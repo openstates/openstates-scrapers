@@ -11,6 +11,10 @@
   Open States
 {% endblock %}
 
+{% block headblock %}
+    <link rel="canonical" href="{{vote.get_absolute_url}}">
+{% endblock %}
+
 {% block content %}
         <div class="fullWidth mainModule">
             <div id="billState" class="passed">{{vote.passed|yesno:"Passed,Failed,Unknown"}}</div>

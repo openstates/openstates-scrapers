@@ -10,6 +10,7 @@
 {% endblock %}
 
 {% block headblock %}
+    <link rel="canonical" href="{{legislator.get_absolute_url}}">
     <style>
 
 #map{
@@ -36,11 +37,16 @@ img {
     opacity:              0.9;
 }
 
+/*
+The .label styles are taken from
+twitter/bootstrap [https://github.com/twitter/bootstrap/]
+licensed under the Apache 2 license.
+*/
 .label {
     font-size: 10.998px;
     font-weight: bold;
     line-height: 14px;
-    color: #ffffff;
+    color: black;
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
     white-space: nowrap;
     vertical-align: baseline;
@@ -243,14 +249,14 @@ $(document).ready(function() {
             <h3 class="moduleTitle">Media</h3>
             <div class="sevenCol colLt">
 
-            <a class="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.display_name|slugify %}">rss</a>
+            <a class="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id %}">rss</a>
             <h4>News and Blog Coverage</h4>
             {% with feed_entries=legislator.feed_entries %}
               {% if not feed_entries.count %}
                 <ul><li class="smModule">No news or blog items found yet.</li></ul>
               {% else %}
-                {% for obj in legislator.feed_entries %}{% include feed_entry_template %}{% endfor %}
-                <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.display_name|slugify %}">View More News</a>
+                {% for obj in feed_entries %}{% include feed_entry_template %}{% endfor %}
+                <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id %}">View More News</a>
             {% endif %}
             {% endwith %}
             </div>
