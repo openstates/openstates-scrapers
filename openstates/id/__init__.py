@@ -156,6 +156,7 @@ metadata = dict(
         '2012':
             {'type': 'primary',
             'display_name': '61st Legislature, 2nd Regular Session',
+            '_scraped_name': '2012 Session Information',
             },
     },
     feature_flags=[],
