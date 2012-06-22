@@ -14,7 +14,7 @@ metadata = dict(
     upper_chamber_term=4,
     terms=[
         dict(name='2011-2012', sessions=['2011', '2011S1', '2011S2', '2011S3',
-                                         '2012'],
+                                         '2012', '2012S4'],
              start_year=2011, end_year=2012),
         ],
     session_details={
@@ -30,6 +30,8 @@ metadata = dict(
                     '_scraped_name': '2011 3rd Special Session'},
         '2012': { 'display_name': '2012 General Session',
                   '_scraped_name': '2012 General Session', },
+        '2012S4': { 'display_name': '2012, 4th Special Session',
+                    '_scraped_name': '2012 4th Special Session'},
     },
     feature_flags=['events', 'subjects'],
     _ignored_scraped_sessions=[
