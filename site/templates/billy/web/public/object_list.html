@@ -4,7 +4,7 @@
 {% load customtags %}
 
 
-{% block title %}{% include description_template %}{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block headblock %}
 <script type="text/javascript">
@@ -115,7 +115,7 @@ $(document).ready(function() {
 
 {% block content %}
         <a class="textReplace rssIcon" href='{{request.path}}rss/'>RSS</a>
-        <h2>{% include description_template %}</h2>
+        <h2>{{ description }}</h2>
         <div class="fullWidth">
             <div class="pagination-links">
                 <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>

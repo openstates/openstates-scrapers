@@ -13,12 +13,12 @@
 
 {% block content %}
         <ul class="breadcrumb floatedList clearfix">
-            <li><a href="#">Wisconsin</a></li>
+            <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
             <li>
-                » <a href="#">Bill Name</a>
+                » <a href="{% url 'bills' abbr %}">Bills</a>
             </li>
             <li>
-                » Bill Specifics
+                » {{bill.bill_id}}
             </li>
         </ul>
         <div class="fullWidth mainModule">
@@ -74,7 +74,7 @@
 
                     {% if show_all_sponsors %}
                     {% else %}
-                        {% with remainder=bill.sponsors_manager.first_five_remainder %}
+                        {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
                         {% if remainder %}
                         <li><a class="viewMore" href="?show_all_sponsors=True">View {{ remainder|apnumber }} other{{ remainder|pluralize}}</a></li>
                         {% endif %}
@@ -88,12 +88,12 @@
         </div>
         {% if bill.versions %}
             <div class="module">
-                <h3 class="moduleTitle">Versions</h3>
+                <h3 class="moduleTitle">Bill Text</h3>
                 <ul class="inlineThirds">
                 {% for version in bill.versions %}
                     <li class={% cycle "one" "two" "three" %}>
                         <a href="{{version.url}}">{{ version.name }}</a>
-                        {% if "+mimetype" in version %}[{{ version|plusfield:"mimetype"}}]{% endif %}
+                        {% if version.mimetype %}[{{ version.mimetype}}]{% endif %}
                     </li>
                 {% endfor %}
                 </ul>
@@ -111,7 +111,6 @@
                             <th>Date</th>
                             <th>Chamber</th>
                             <th></th>
-                            <th>Labels</th>
                         </tr>
                     </thead>
                     <tbody>

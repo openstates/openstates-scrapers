@@ -3,7 +3,9 @@
 {% load static from staticfiles %}
 {% load customtags %}
 
-{% block title %}{% include description_template %}{% endblock %}
+{% block title %}
+    {{title}}
+{% endblock %}
 
 {%  block headblock %}
  <link rel="stylesheet" type="text/css" href="{% static 'select2-2.0/select2.css' %}"/>
@@ -131,7 +133,7 @@ $(document).ready(function(){
         {% else %} <a href="https://scout.sunlightfoundation.com/">Receive bill alerts</a> with Scout.
         {% endif %}
         </span>
-        <h2>{% include description_template %}</h2>
+        <h2>{{ description }}</h2>
             <div class="twoCol colLtSm filterCol">
                 <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
