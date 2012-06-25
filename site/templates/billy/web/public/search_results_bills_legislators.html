@@ -118,7 +118,7 @@ $(document).ready(function() {
             </table>
         </div>
         {% if more_legislators_available %}
-            <a class="viewMore" href="/{{abbr|default:"all"}}/legislators/">Show more search results.</a>
+            <a class="viewMore" href="{% url 'show_more_legislators' abbr %}?{{request.GET.urlencode}}">Show more search results.</a>
         {% endif %}
         <div class="clear"></div>
         {% endif %}
