@@ -5,10 +5,7 @@
 
 
 {% block title %}
-  {{bill.bill_id }} - 
-  {{bill.session_details.display_name}} -
-  {{metadata.legislature_name}} -
-  Open States
+  {{bill.bill_id }} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
 {% endblock %}
 
 {% block headblock %}
