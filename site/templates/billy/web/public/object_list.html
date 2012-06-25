@@ -130,7 +130,7 @@ $(document).ready(function() {
                     <ul>
                     {% for text, page_number, clickable in object_list.pagination_data %}
                         <li>
-                        <a {% if not clickable %}class="selected"{% endif %} href="{{url}}?page={{page_number}}">{{text}}</a>
+                        <a {% if not clickable %}class="selected"{% endif %} href="{{request.GET.path}}?{% if get_params %}{{ get_params }}&{% else %}{% endif %}page={{page_number}}">{{text}}</a>
                         </li>
                     {% endfor %}
                     </ul>
@@ -169,7 +169,7 @@ $(document).ready(function() {
                     <ul>
                     {% for text, page_number, clickable in object_list.pagination_data %}
                         <li>
-                        <a {% if not clickable %}class="selected"{% endif %} href="{{url}}?page={{page_number}}">{{text}}</a>
+                        <a {% if not clickable %}class="selected"{% endif %} href="{{request.GET.path}}?{% if get_params %}{{ get_params }}&{% else %}{% endif %}page={{page_number}}">{{text}}</a>
                         </li>
                     {% endfor %}
                     </ul>
