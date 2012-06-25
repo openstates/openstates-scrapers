@@ -9,3 +9,5 @@ http://www.coloradopols.com/diaries.do?feed=rss
 http://feeds.feedburner.com/bendegrow
 http://www.coloradosenatenews.com/?q=rss.xml
 http://taxpayers.wordpress.com/feed/
+http://blogs.denverpost.com/thespot/feed/rss/
+http://feeds.denverpost.com/dp-headlines
