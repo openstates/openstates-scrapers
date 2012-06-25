@@ -27,6 +27,8 @@ replace = {
     "Senate Resolution No." : "SR",
     "Senate Bill No." : "SB",
     u"\xa0" : " ",
+    "SUB A" : "",
+    "SUB A as amended": ""
 }
 
 class RIEventScraper(EventScraper):
