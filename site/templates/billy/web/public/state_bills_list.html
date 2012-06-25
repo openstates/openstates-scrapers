@@ -10,7 +10,6 @@
 {%  block headblock %}
  <link rel="stylesheet" type="text/css" href="{% static 'select2-2.0/select2.css' %}"/>
 <script type="text/javascript" src="{% static 'select2-2.0/select2.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'media/js/jquery.highlight-3.js' %}"></script>
 <script type="text/javascript">
 $(document).ready(function(){
 
@@ -28,9 +27,10 @@ $(document).ready(function(){
         event.preventDefault();
 
         // Clear the select widgets.
-        $("#id_subjects").select2("val", [])
-        $("#id_status").select2("val", '')
-        $("#id_type").select2("val", '')
+        $("#id_subjects").select2("val", []);
+        $("#id_status").select2("val", '');
+        $("#id_type").select2("val", '');
+        $('#id_sponsor__leg_id').select2("val", '');
 
         // Clear the search box.
         $('#id_search_text').val('');
