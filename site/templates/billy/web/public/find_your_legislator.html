@@ -3,13 +3,12 @@
 {% load url from future %}
 {% load static from staticfiles %}
 
-{% block title %}Find your Legislator!{% endblock %}
+{% block title %}Find Your State Legislator - Open States{% endblock %}
 
 {% block bodyclass %}{% endblock %}
 
 {% block headblock %}
-    <style>
-
+<style>
 .find_your_legislator_errorbox {
     color:                 #2e2020;
     padding:               10px;
@@ -37,7 +36,7 @@
     margin-bottom:         10px;
 }
 
-    </style>
+</style>
     <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
     <script type="text/javascript" src="{% static "js/gmaps.js" %}"></script>
     <script type="text/javascript">
