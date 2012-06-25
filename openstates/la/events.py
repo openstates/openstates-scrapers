@@ -67,9 +67,11 @@ class LAEventScraper(EventScraper):
                 when_and_where = link.xpath("string(../../../td[2])").strip()
 
                 location = when_and_where.split(',')[-1]
+
+                if when_and_where.strip() == "":
+                    continue
+
                 when = parse_datetime(when_and_where, session)
-
-
 
                 description = 'Committee Meeting: %s' % committee
 

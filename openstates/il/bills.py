@@ -118,8 +118,11 @@ VOTE_VALUES = ['NV','Y','N','E','A','P','-']
 def _categorize_action(action):
     for pattern, atype in _action_classifiers:
         if pattern.findall(action):
-            return atype
-    return 'other'
+            kwargs = { "type": atype }
+            if "committee:referred" in atype:
+                kwargs['committee'] = pattern.sub("", action).strip()
+            return kwargs
+    return { "type": 'other' }
 
 LEGISLATION_URL = ('http://ilga.gov/legislation/grplist.asp')
 
@@ -188,7 +191,7 @@ class ILBillScraper(BillScraper):
 
             action = action.text_content()
             bill.add_action(actor, action, date,
-                            type=_categorize_action(action))
+                            **_categorize_action(action))
             if action.lower().find('sponsor') != -1:
                 self.refine_sponsor_list(actor, action, sponsor_list, bill_id)
 
