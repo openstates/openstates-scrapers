@@ -46,8 +46,7 @@ MYSQL_USER = os.environ.get('MYSQL_USER', MYSQL_USER)
 MYSQL_PASSWORD = getattr(settings, 'MYSQL_PASSWORD', '')
 MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', MYSQL_PASSWORD)
 
-PROJECT = settings.PROJECT_DIR
-DATA = settings.DATA_DIR
+DATA = settings.BILLY_DATA_DIR
 DOWNLOADS = join(DATA, 'ca', 'downloads')
 DBADMIN = join(DATA, 'ca', 'dbadmin')
 
