@@ -1,6 +1,7 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
 {% load staticfiles %}
+{% load humanize %}
 {% load customtags %}
 
 {% block title %}
@@ -50,7 +51,7 @@ licensed under the Apache 2 license.
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
     white-space: nowrap;
     vertical-align: baseline;
-    background-color: #D1CAC8;
+    background-color: #999999;
     padding: 1px 4px 2px;
     -webkit-border-radius: 3px;
      -moz-border-radius: 3px;
@@ -251,14 +252,12 @@ $(document).ready(function() {
 
             <a class="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.slug %}">rss</a>
             <h4>News and Blog Coverage</h4>
-            {% with feed_entries=legislator.feed_entries %}
-              {% if not feed_entries.count %}
+            {% if not feed_entries.count %}
                 <ul><li class="smModule">No news or blog items found yet.</li></ul>
               {% else %}
                 {% for obj in feed_entries %}{% include feed_entry_template %}{% endfor %}
-                <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.slug %}">View More News</a>
+                <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.slug %}">View {{feed_entries_count|apnumber|capfirst}} More News Items</a>
             {% endif %}
-            {% endwith %}
             </div>
             <div class="clear"></div>
         </div>
