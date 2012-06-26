@@ -58,17 +58,15 @@
 
                     {% for sponsor in sponsors %}
                         {% if sponsor.leg_id %}
-                            <li><a href="{% url 'legislator' abbr sponsor.leg_id '' %}">{{ sponsor.name }}</a>
-                            {% with legislator=sponsor.legislator %}
-                                {% if legislator.active %}
-                                    ({{ legislator.party }}) {{ legislator.district }}
-                                {% endif %}
-                            {% endwith %}
+                            <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                            {% if sponsor.active %}
+                                ({{ sponsor.party }}) {{ sponsor.district }}
+                            {% endif %}
                         {% else %}
                             {% if sponsor.committee_id %}
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
                             {% else %}
-                                {# Sponsor had no leg_id or was inactive. Might be a committee. #}
+                                {# Sponsor had no leg_id or was inactive. #}
                                 <li>{{ sponsor.name }}
                             {% endif %}
                         {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
