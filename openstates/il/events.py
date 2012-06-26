@@ -43,11 +43,11 @@ class ILEventScraper(EventScraper):
         datetime = re.sub("\s+", " ", datetime)
         repl = {
             "AM": " AM",
-            "PM": " PM"
+            "PM": " PM" # Space shim.
         }
         for r in repl:
             datetime = datetime.replace(r, repl[r])
-        datetime = dt.datetime.strptime(datetime, "%B %d, %Y %I:%M %p")
+        datetime = dt.datetime.strptime(datetime, "%b %d, %Y %I:%M %p")
 
         event = Event(session, datetime, 'committee:meeting',
                       description, location=where)
