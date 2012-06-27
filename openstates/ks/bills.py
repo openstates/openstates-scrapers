@@ -83,7 +83,7 @@ class KSBillScraper(BillScraper):
                 try:
                     self.scrape_html(bill)
                 except scrapelib.HTTPError as e:
-                    self.warning('unable to fetch HTML for bill {0}}'.format(
+                    self.warning('unable to fetch HTML for bill {0}'.format(
                         bill['bill_id']))
                 self.save_bill(bill)
 
