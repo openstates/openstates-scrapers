@@ -281,7 +281,7 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
     os.chdir(folder)
 
     connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
-                                 db='capublic', load_infile=1)
+                                 db='capublic', local_infile=1)
     connection.autocommit(True)
 
     # For each .dat folder, run its corresponding .sql file.
