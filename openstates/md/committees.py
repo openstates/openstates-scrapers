@@ -32,8 +32,11 @@ class MDCommitteeScraper(CommitteeScraper):
                 if h.text:
                     committee_name = h.text
                     break
-            if 'DEFUNCT' in committee_name:
+
+            # non committees
+            if 'DEFUNCT' in committee_name or 'ORGANIZATION' in committee_name:
                 continue
+
             cur_com = Committee(chamber, committee_name)
             cur_com.add_source(com_url)
             for l in cdoc.cssselect('a[href]'):
