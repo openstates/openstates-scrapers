@@ -34,6 +34,12 @@ $(document).ready(function() {
     });
     
 </script>
+<script>
+$(document).ready(function(){
+    var doc = $(document);
+    doc.bind("keydown", "alt+j", function(){window.location = '{{committee.get_admin_json_url}}'});
+    });
+</script>
 <style>
     .selected {
         background-color: #FFFFD6;
