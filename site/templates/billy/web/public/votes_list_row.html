@@ -3,8 +3,20 @@
 <td></a>{{vote.bill.bill_id}}</a></td>
 <td><a href="{{ vote.get_absolute_url }}">{{vote.date|date:"M j, Y"}}</a></td>
 <td>{{vote.passed|yesno:"passed,failed,unknown"}}</td>
-<td>{{vote.yes_count}}</td>
-<td>{{vote.no_count}}</td>
-<td>{{vote.other_count}}</td>
-<td>{{vote.motion}}</td>
+<td>
+    {% if vote.legislator_vote_value == 'yes' %}<b><i>{{vote.yes_count}}</i></b>
+    {% else %}{{vote.yes_count}}
+    {% endif %}
+</td>
+<td>
+    {% if vote.legislator_vote_value == 'no' %}<b><i>{{vote.no_count}}</i></b>
+    {% else %}{{vote.no_count}}
+    {% endif %}
+</td>
+<td>
+    {% if vote.legislator_vote_value == 'other' %}<b><i>{{vote.other_count}}</i></b>
+    {% else %}{{vote.other_count}}
+    {% endif %}
+</td>
+<td><b></b>{{vote.motion}}</td>
 {% endwith %}
