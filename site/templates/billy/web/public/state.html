@@ -76,7 +76,7 @@
         <div class="sixCol {% if forloop.first %} colLt {% else %} colRt {% endif %}">
             <h4>{{ chamber.name }}</h4>
             <div class="medModule">
-                <span style="float: right"><a href="{% url 'bills_passed_upper_rss' abbr %}">rss</a></span>
+                <span style="float: right"><a class="rssIcon" href="{% url 'bills_passed_upper_rss' abbr %}"></a></span>
                 <h5>Recently Passed</h5>
                 <ul>
                 {% if chamber.passed_bills %}
@@ -99,7 +99,7 @@
                     No passed bills to display.
                 {% endif %}
             </div>
-            <span style="float: right"><a href="{% url 'bills_introduced_upper_rss' abbr %}">rss</a></span>
+            <span style="float: right"><a class="rssIcon" href="{% url 'bills_introduced_upper_rss' abbr %}"></a></span>
             <h5>Recently Introduced</h5>
             <ul>
             {% if chamber.latest_bills %}
