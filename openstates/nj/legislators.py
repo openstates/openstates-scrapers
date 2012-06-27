@@ -59,7 +59,7 @@ class NJLegislatorScraper(LegislatorScraper, DBFMixin):
                 email = ''
             photo_url = photos[rec['roster_key']]
             url = ('http://www.njleg.state.nj.us/members/bio.asp?Leg=' +
-                   rec['roster_key'])
+                   str(int(rec['roster_key'])))
             address = '{0}\n{1}, {2} {3}'.format(rec['address'], rec['city'],
                                                  rec['state'], rec['zipcode'])
 
