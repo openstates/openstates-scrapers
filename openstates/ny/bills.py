@@ -63,6 +63,9 @@ class NYBillScraper(BillScraper):
                         if title == '(no title)':
                             continue
 
+                        if "sponsor" not in result.attrib:
+                            continue
+
                         primary_sponsor = result.attrib['sponsor']
                         primary_sponsor = re.sub(
                             r'\s+\(MS\)\s*$', '', primary_sponsor).strip()
