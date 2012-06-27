@@ -155,57 +155,57 @@ def trie_scan(trie, s,
     return res
 
 
-def trie_scan(trie, string, _match=PseudoMatch,
-              second=itemgetter(1)):
+# def trie_scan(trie, string, _match=PseudoMatch,
+#               second=itemgetter(1)):
 
-    this = trie
-    match = []
-    spans = []
+#     this = trie
+#     match = []
+#     spans = []
 
-    for matchobj in trie.finditer(string):
+#     for matchobj in trie.finditer(string):
 
-        pos = matchobj.start()
-        this = trie
-        match = []
+#         pos = matchobj.start()
+#         this = trie
+#         match = []
 
-        while True:
+#         while True:
 
-            try:
-                char = string[pos]
-            except IndexError:
-                break
+#             try:
+#                 char = string[pos]
+#             except IndexError:
+#                 break
 
-            if char in ",. '&[]":
-                match.append((pos, char))
-                pos += 1
-                continue
+#             if char in ",. '&[]":
+#                 match.append((pos, char))
+#                 pos += 1
+#                 continue
 
-            try:
-                this = this[char]
-            except KeyError:
-                break
-            else:
-                match.append((pos, char))
-                if 0 in this:
-                    start = matchobj.start()
-                    end = pos
-                    pseudo_match = _match(group=''.join(map(second, match)),
-                                          start=start, end=end)
+#             try:
+#                 this = this[char]
+#             except KeyError:
+#                 break
+#             else:
+#                 match.append((pos, char))
+#                 if 0 in this:
+#                     start = matchobj.start()
+#                     end = pos
+#                     pseudo_match = _match(group=''.join(map(second, match)),
+#                                           start=start, end=end)
 
-                    # Don't yeild a match if this match is contained in a
-                    # larger match.
-                    _break = False
-                    for _start, _end in spans:
-                        if (_start <= start) and (end <= _end):
-                            _break = True
-                    if _break:
-                        break
+#                     # Don't yeild a match if this match is contained in a
+#                     # larger match.
+#                     _break = False
+#                     for _start, _end in spans:
+#                         if (_start <= start) and (end <= _end):
+#                             _break = True
+#                     if _break:
+#                         break
 
-                    spans.append((start, end))
-                    yield [pseudo_match] + this[0]
-                    break
-                else:
-                    pos += 1
+#                     spans.append((start, end))
+#                     yield [pseudo_match] + this[0]
+#                     break
+#                 else:
+#                     pos += 1
 
 
 @contextlib.contextmanager
