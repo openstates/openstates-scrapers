@@ -129,17 +129,16 @@ class MDBillScraper(BillScraper):
 
 
     def parse_bill_documents(self, doc, bill):
-        for elem in doc.cssselect('b'):
-            if elem.text:
-                doc_type = elem.text.strip().strip(":")
-                if doc_type.startswith('Bill Text'):
-                    for sib in elem.itersiblings():
-                        if sib.tag == 'a':
-                            bill.add_version(sib.text.strip(','), BASE_URL + sib.get('href'))
-                elif doc_type.startswith('Fiscal and Policy Note'):
-                    for sib in elem.itersiblings():
-                        if sib.tag == 'a' and sib.text == 'Available':
-                            bill.add_document(doc_type, BASE_URL + sib.get('href'))
+        bill_text_b = doc.xpath('//b[contains(text(), "Bill Text")]')[0]
+        for sib in bill_text_b.itersiblings():
+            if sib.tag == 'a':
+                bill.add_version(sib.text.strip(','), BASE_URL + sib.get('href'))
+
+        note_b = doc.xpath('//b[contains(text(), "Fiscal and Policy")]')[0]
+        for sib in note_b.itersiblings():
+            if sib.tag == 'a' and sib.text == 'Available':
+                bill.add_document('Fiscal and Policy Note',
+                                  BASE_URL + sib.get('href'))
 
     def parse_bill_votes(self, doc, bill):
         params = {
