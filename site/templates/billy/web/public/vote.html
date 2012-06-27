@@ -13,13 +13,19 @@
 
 {% block headblock %}
     <link rel="canonical" href="{{vote.get_absolute_url}}">
+    <script>
+    $(document).ready(function(){
+        var doc = $(document);
+        doc.bind("keydown", "alt+j", function(){window.location = '{{vote.get_admin_json_url}}'});
+        });
+    </script>
 {% endblock %}
 
 {% block content %}
         <div class="fullWidth mainModule">
             <div id="billState" class="passed">{{vote.passed|yesno:"Passed,Failed,Unknown"}}</div>
             <div class="medModule">
-                <h2 class="withTip">{{metadata.name}} {{bill.type_string|title}} <a href={% url "bill" abbr bill.id %}>{{bill.bill_id}}</a></h2>
+                <h2 class="withTip">{{metadata.name}} {{bill.type_string|title}} <a href="{{bill.get_absolute_url}}">{{bill.bill_id}}</a></h2>
                 <p class="tip tipSm">{{bill.title}}</p>
             </div>
             <div class="eightCol colLt clear">
