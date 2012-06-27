@@ -5,6 +5,7 @@ import json
 import subprocess
 
 import lxml.html
+import scrapelib
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -15,12 +16,10 @@ import ksapi
 
 class KSBillScraper(BillScraper):
     state = 'ks'
+    latest_only = True
 
     def scrape(self, chamber, session):
-        self.validate_term(session, latest_only=True)
-        self.scrape_current(chamber, session)
 
-    def scrape_current(self, chamber, session):
         chamber_name = 'Senate' if chamber == 'upper' else 'House'
         chamber_letter = chamber_name[0]
         # perhaps we should save this data so we can make one request for both?
@@ -81,7 +80,11 @@ class KSBillScraper(BillScraper):
                         atype = ksapi.action_codes[event['action_code']]
                     bill.add_action(actor, action, date, type=atype)
 
-                self.scrape_html(bill)
+                try:
+                    self.scrape_html(bill)
+                except scrapelib.HTTPError as e:
+                    self.warning('unable to fetch HTML for bill {0}}'.format(
+                        bill['bill_id']))
                 self.save_bill(bill)
 
     def scrape_html(self, bill):
