@@ -262,7 +262,9 @@ $(document).ready(function() {
                 <ul><li class="smModule">No news or blog items found yet.</li></ul>
               {% else %}
                 {% for obj in feed_entries %}{% include feed_entry_template %}{% endfor %}
-                <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.slug %}">View {{feed_entries_count|apnumber|capfirst}} More News Items</a>
+                {% if feed_entries_count %}
+                    <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.slug %}">View {{feed_entries_count|apnumber|capfirst}} More News Items</a>
+                {% endif %}
             {% endif %}
             </div>
             <div class="clear"></div>
@@ -317,7 +319,7 @@ $(document).ready(function() {
                         </tr>
                     </thead>
                     <tbody>
-                        {% for vote_index, vote_value, vote in legislator_votes %}
+                        {% for vote_value, vote in legislator_votes %}
                         <tr>
                             <td>
                                 <time class="timeHeader" datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
