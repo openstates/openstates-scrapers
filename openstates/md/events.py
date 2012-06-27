@@ -26,7 +26,10 @@ class MDEventScraper(EventScraper):
         if chamber != 'other':
             return None  # We're going to do it all on one shot.
 
-        url = "http://mlis.state.md.us/%sRS/hearsch/alladd.htm" % ( session )
+        if session[-2:] == "s1":
+            return None  # Special sessions 404
+
+        url = "http://mlis.state.md.us/%s/hearsch/alladd.htm" % ( session )
         page = self.lxmlize(url)
         events = page.xpath("//pre")
         for event in events:
