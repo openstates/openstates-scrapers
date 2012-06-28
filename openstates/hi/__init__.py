@@ -31,7 +31,24 @@ metadata = dict(
         },
         # name next session 2013-2014 instead of following pattern
     },
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'capitol_maps'],
+    capitol_maps=[
+        {"name": "Chamber Floor",
+         "url": 'http://static.openstates.org/capmaps/hi/floorchamber.pdf'
+        },
+        {"name": "Floor 2",
+         "url": 'http://static.openstates.org/capmaps/hi/floor2.pdf'
+        },
+        {"name": "Floor 3",
+         "url": 'http://static.openstates.org/capmaps/hi/floor3.pdf'
+        },
+        {"name": "Floor 4",
+         "url": 'http://static.openstates.org/capmaps/hi/floor4.pdf'
+        },
+        {"name": "Floor 5",
+         "url": 'http://static.openstates.org/capmaps/hi/floor5.pdf'
+        },
+    ],
     _ignored_scraped_sessions = [
         # ignore odd years after they're over..
         '2011',
