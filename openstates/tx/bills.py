@@ -51,6 +51,7 @@ class TXBillScraper(BillScraper):
             versions_url = '/'.join(versions_url.split('/')[0:-1])
 
             bill_prefix = bill['bill_id'].split()[0]
+            bill_prefix = bill_prefix.replace('JR', 'J').replace('CR', 'C')
             bill_num = int(bill['bill_id'].split()[1])
             long_bill_id = "%s%05d" % (bill_prefix, bill_num)
 

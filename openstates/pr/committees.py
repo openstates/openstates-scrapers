@@ -11,7 +11,7 @@ import re
 def clean_spaces(s):
     """ remove \xa0, collapse spaces, strip ends """
     if s is not None:
-    	return re.sub('\s+', ' ', s.replace(u'\xa0', ' ')).strip()
+        return re.sub('\s+', ' ', s.replace(u'\xa0', ' ')).strip()
 
 class PRCommitteeScraper(CommitteeScraper):
     state = 'pr'
@@ -25,45 +25,49 @@ class PRCommitteeScraper(CommitteeScraper):
             self.scrape_lower()
             
     def scrape_upper(self):
-	self.scrape_upper_committee('http://senadopr.us/SiteCollectionDocuments/Comisiones_Permanentes(2009-2012).pdf')
-#	joint_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Conjuntas(2009-2012).pdf';
-#	self.scrape_joint_committee(joint_comm);
+        self.scrape_upper_committee('http://senadopr.us/SiteCollectionDocuments/Comisiones_Permanentes(2009-2012).pdf')
+#       joint_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Conjuntas(2009-2012).pdf';
+#       self.scrape_joint_committee(joint_comm);
     def scrape_joint_committee(self,url):
-	filename, resp = self.urlretrieve(url)
-	root = lxml.etree.fromstring(convert_pdf(filename,'xml'))
-	for link in root.xpath('/pdf2xml/page'):
-	    comm = None
-	    print lxml.etree.tostring(root)
-	    return
+        filename, resp = self.urlretrieve(url)
+        root = lxml.etree.fromstring(convert_pdf(filename,'xml'))
+        for link in root.xpath('/pdf2xml/page'):
+            comm = None
+            print lxml.etree.tostring(root)
+            return
     def scrape_upper_committee(self,url):
-	filename, resp = self.urlretrieve(url)
+        filename, resp = self.urlretrieve(url)
         root = lxml.etree.fromstring( convert_pdf(filename,'xml'))
-	for link in root.xpath('/pdf2xml/page'):
-	    comm = None
-	    for line in link.findall('text'):
-		text = line.findtext('b')
-       		if text is not None and text.startswith('Comisi'):
-		    comm = Committee('upper',text);
-	    	    comm.add_source(url)
-		else:
-		    if line.text and line.text.startswith('Hon.'):
-			line_text = line.text.replace(u'–','-')
-			name_split = line_text.split(u'-',1)
-			title = 'member'
-			if len(name_split) >= 2:
-	   		    if name_split[1] == 'Presidenta' or name_split[1] == 'Presidente':
-			        title = 'chairman'
-			    elif name_split[1] == 'Vicepresidente' or name_split[1] == 'Vicepresidenta':
-			        title = 'vicechairman'
-			    elif name_split[1] == 'Secretaria' or name_split[1] == 'Secretario':
-			        title = 'secretary'
-			if(name_split[0] != 'VACANTE'):
-			    comm.add_member(name_split[0].replace('Hon.',''),title)
+        for link in root.xpath('/pdf2xml/page'):
+            comm = None
+            for line in link.findall('text'):
+                text = line.findtext('b')
+                if text is not None and text.startswith('Comisi'):
+                    comm = Committee('upper',text);
+                    comm.add_source(url)
+                else:
+                    if line.text and line.text.startswith('Hon.'):
+                        line_text = line.text.replace(u'–','-')
+                        name_split = line_text.split(u'-',1)
+                        title = 'member'
+#           print name_split
+                        if len(name_split) >= 2:
+                            name_split[1] = name_split[1].strip()
+                            if name_split[1] == 'Presidenta' or name_split[1] == 'Presidente':
+                                title = 'chairman'
+                            elif name_split[1] == 'Vicepresidente' or name_split[1] == 'Vicepresidenta':
+                                title = 'vicechairman'
+                            elif name_split[1] == 'Secretaria' or name_split[1] == 'Secretario':
+                                title = 'secretary'
+#           if title != 'member':
+#               print name_split[0]
+                        if name_split[0] != 'VACANTE':
+                            comm.add_member(name_split[0].replace('Hon.',''),title)
             self.save_committee(comm)
-			
-	
-	os.remove(filename);
-		
+                        
+        
+        os.remove(filename);
+                
                     
     def scrape_lower(self):
         url = 'http://www.camaraderepresentantes.org/comisiones.asp'
@@ -104,7 +108,7 @@ class PRCommitteeScraper(CommitteeScraper):
 
             for img in reps.xpath('.//img'):
                 member_name = clean_spaces(img.tail)
-		if member_name is not None:
+                if member_name is not None:
                     com.add_member(member_name)
                     member += 1
             if member > 0:
