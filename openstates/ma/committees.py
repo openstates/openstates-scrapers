@@ -6,11 +6,15 @@ import lxml.html
 class MACommitteeScraper(CommitteeScraper):
     state = 'ma'
 
-    def scrape(self, chamber, term):
-        if chamber == 'upper':
-            page_types = ['Senate', 'Joint']
-        elif chamber == 'lower':
-            page_types = ['House']
+    def scrape(self, term, chambers):
+        page_types = []
+        if 'upper' in chambers:
+            page_types += ['Senate', 'Joint']
+        if 'lower' in chambers:
+            page_types += ['House']
+        chamber_mapping = {'Senate': 'upper',
+                           'House': 'lower',
+                           'Joint': 'joint'}
 
         foundComms = []
 
@@ -22,6 +26,7 @@ class MACommitteeScraper(CommitteeScraper):
                 doc.make_links_absolute('http://www.malegislature.gov')
 
                 for com_url in doc.xpath('//ul[@class="committeeList"]/li/a/@href'):
+                    chamber = chamber_mapping[page_type]
                     self.scrape_committee(chamber, com_url)
 
     def scrape_committee(self, chamber, url):
