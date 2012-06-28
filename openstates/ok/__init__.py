@@ -16,7 +16,7 @@ metadata = dict(
         {'name': '2011-2012',
          'start_year': 2011,
          'end_year': 2012,
-         'sessions': ['2011-2012', '2012SS1']}
+         'sessions': ['2011-2012', '2012SS1', '2012-2013']},
         ],
     session_details={
         # On the Oklahoma website they list 2011/2012 as separate sessions, but
@@ -33,8 +33,12 @@ metadata = dict(
              'session_id': '121X',
              '_scraped_name': '2012 Special Session'
             },
-
-    },
+        '2012-2013':
+            {'display_name': '2012-2013 Regular Session',
+             'session_id': '1300',
+             '_scraped_name': '2013 Regular Session',
+            },
+        },
     feature_flags=['subjects'],
     _ignored_scraped_sessions=[
         '2011 Regular Session', '2010 Regular Session',
@@ -53,21 +57,23 @@ metadata = dict(
         '1994 Second Special Session',
         '1994 First Special Session',
         '1994 Regular Session', '1993 Regular Session']
+    )
 
-)
 
 def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://webserver1.lsb.state.ok.us/WebApplication2/WebForm1.aspx',
         "//select[@name='cbxSession']/option/text()")
 
+
 @oyster_text
 def extract_text(oyster_doc, data):
     return worddata_to_text(data)
 
+
 document_class = dict(
-    AWS_PREFIX = 'documents/ok/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)
+    AWS_PREFIX='documents/ok/',
+    update_mins=None,
+    extract_text=extract_text,
+    onchanged=['oyster.ext.elasticsearch.ElasticSearchPush']
+    )
