@@ -59,7 +59,8 @@
                 </li>
                 {% endfor %}
             </ol>
-            <h2 class="withTimeline withTip">{{ metadata.name }} {{bill.type_string|title}} {{ bill.bill_id }}</h2>
+            <h1 class="withTimeline withTip">{{ bill.bill_id }}</h1>
+            <h5>{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</h5>
             <a class="hidden" href="/admin/object_json/bills/{{bill.id}}/">json</a>
             <p class="tip">{{ bill.title|capfirst }}</p>
             <dl class="inlineList">
