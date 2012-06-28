@@ -11,7 +11,7 @@
 {% block headblock %}
     <link rel="canonical" href="{{bill.get_absolute_url}}">
     <style>
-    .label {
+    .label-bill-subject {
         font-size: 10.998px;
         font-weight: bold;
         line-height: 14px;
@@ -25,9 +25,27 @@
          -moz-border-radius: 3px;
               border-radius: 3px;
     }
-    .label a {
+    .label-bill-subject a {
         color: white;
     }
+    .label-bill-type {
+        font-size: 10.998px;
+        font-weight: bold;
+        line-height: 14px;
+        color: black;
+        text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+        white-space: nowrap;
+        vertical-align: baseline;
+        background-color: #D6AC04;
+        padding: 1px 4px 2px;
+        -webkit-border-radius: 3px;
+         -moz-border-radius: 3px;
+              border-radius: 3px;
+    }
+    .label-bill-type a {
+        color: white;
+    }
+
     </style>
     <script>
     $(document).ready(function(){
@@ -49,7 +67,7 @@
             </li>
         </ul>
         <div class="fullWidth mainModule">
-            <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">Recieve alerts about {{bill.type_string|title}} {{ bill.bill_id }}</a> with Scout.
+            <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">Recieve alerts about {{ bill.bill_id }}</a> with Scout.
             </span>
             <ol id="billAction">
                 {% for stage, text, date in bill.progress_data %}
@@ -59,24 +77,22 @@
                 </li>
                 {% endfor %}
             </ol>
-            <h1 class="withTimeline withTip">{{ bill.bill_id }}</h1>
-            <h5>{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</h5>
-            <a class="hidden" href="/admin/object_json/bills/{{bill.id}}/">json</a>
-            <p class="tip">{{ bill.title|capfirst }}</p>
-            <dl class="inlineList">
+            <h5 style="margin-bottom: 0px;">{{ bill.session_details.display_name }}</h5>
+            <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
+            <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
+            <p>{{ bill.title|capfirst }}</p>
+            <p>
                 {% if bill.subjects %}
-                <dt class="contentBottom oneCol">Subjects:</dt>
-                <dd class="contentBottom customWidth">
-                    {% for subject in bill.subjects %}
-                        <span class="label"><a href="{% url 'bills_by_subject' abbr subject %}">{{subject}}</a></span>
+                        {% for subject in bill.subjects %}
+                            <span class="label-bill-subject"><a href="{% url 'bills_by_subject' abbr subject %}">{{subject}}</a></span>
+                        {% endfor %}
+                    {% endif %}
+                    {% for type in bill.type|slice:"1:" %}
+                        <span class="label-bill-type"><a href="{% url 'bills_by_type' abbr type %}">{{type|title}}</a></span>
                     {% endfor %}
-                </dd>
-                {% endif %}
-                <dt class="contentBottom oneCol">Session:</dt>
-                <dd class="contentBottom customWidth">{{ bill.session_details.display_name }}</dd>
-
-                <dt class="contentBottom oneCol">Chamber:</dt>
-                <dd class="contentBottom">{{ bill.chamber_name }}</dd>
+            </p>
+            <dl class="inlineList">
+                
 
                 <dt class="clear contentBottom">Sponsors ({{ bill.sponsors|length }}):</dt>
                 <dd>
@@ -134,7 +150,7 @@
                 <table class="normalTable">
                     <thead>
                         <tr id="titles">
-                            <th>Date</th>
+                            <th style="min-width: 6em;">Date</th>
                             <th>Chamber</th>
                             <th></th>
                         </tr>
