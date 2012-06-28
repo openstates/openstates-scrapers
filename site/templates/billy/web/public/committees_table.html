@@ -15,14 +15,14 @@
         [data not yet available]
       {% else %}
         <ul class="inlineList noSpace">
-        {% for legislator in committee.members|dictsort:"name" %}
-          {% if legislator.leg_id %}
+        {% for member, legislator_object in committee.members_objects %}
+          {% if member.leg_id %}
             <li>
-                <a class="tip withTip" href="{% url 'legislator' abbr legislator.leg_id '' %}">{{ legislator.name }},</a>{% if not forloop.last %} {% endif %}
+                <a class="tip withTip" href="{{legislator_object.get_absolute_url}}">{{legislator_object.display_name}}{% if not forloop.last %}, {% else %}{% endif %}</a>
             </li>
           {% else %}
           <li>
-            <span class="tip withTip">{{ legislator.name }}</span>
+            <span class="tip withTip">{{ member.name }}</span>
           </li>
           {% endif %}
         {% endfor %}
