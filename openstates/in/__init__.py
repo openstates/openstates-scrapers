@@ -24,7 +24,21 @@ metadata = dict(
         '2012': {'display_name': '2012 Regular Session',
                  '_scraped_name': '2012 Regular Session',},
         },
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'capitol_maps'],
+    capitol_maps=[
+        {"name": "Floor 1",
+         "url": 'http://static.openstates.org/capmaps/in/floor1.gif'
+        },
+        {"name": "Floor 2",
+         "url": 'http://static.openstates.org/capmaps/in/floor2.gif'
+        },
+        {"name": "Floor 3",
+         "url": 'http://static.openstates.org/capmaps/in/floor3.gif'
+        },
+        {"name": "Floor 4",
+         "url": 'http://static.openstates.org/capmaps/in/floor4.gif'
+        },
+    ],
     _ignored_scraped_sessions=[
         '2010 Regular Session',
         '2009 Special Session',
