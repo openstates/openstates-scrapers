@@ -27,7 +27,21 @@ metadata = dict(
                       '_scraped_name': '2011-12',
                      },
     },
-    feature_flags = ['events', 'subjects'],
+    feature_flags = ['events', 'subjects', 'capitol_maps'],
+    capitol_maps=[
+        {"name": "Floor 1",
+         "url": 'http://static.openstates.org/capmaps/wa/f1.gif'
+        },
+        {"name": "Floor 2",
+         "url": 'http://static.openstates.org/capmaps/wa/f2.gif'
+        },
+        {"name": "Floor 3",
+         "url": 'http://static.openstates.org/capmaps/wa/f3.gif'
+        },
+        {"name": "Floor 4",
+         "url": 'http://static.openstates.org/capmaps/wa/f4.gif'
+        },
+    ],
     _ignored_scraped_sessions=['2007-08'],
 )
 
