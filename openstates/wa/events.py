@@ -89,7 +89,7 @@ class WAEventScraper(EventScraper):
                 header = event[0]
                 body = event[1]
                 whowhen = header.xpath(".//h2")[0].text_content()
-                blocks = [ x.strip() for x in whowhen.split("-") ]
+                blocks = [ x.strip() for x in whowhen.rsplit("-", 1) ]
                 who = blocks[0]
                 when = blocks[1].replace(u'\xa0', ' ')
                 if "TBA" in when:
