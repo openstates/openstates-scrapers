@@ -255,6 +255,9 @@ class CABillScraper(BillScraper):
                 if 'Read third time.  Passed' in act_str:
                     type.append('bill:passed')
 
+                if 'Read third time. Passed' in act_str:
+                    type.append('bill:passed')
+
                 if 'Read third time, passed' in act_str:
                     type.append('bill:passed')
 
