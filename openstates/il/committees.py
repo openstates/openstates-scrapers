@@ -7,6 +7,8 @@ class ILCommitteeScraper(CommitteeScraper):
 
     def scrape_members(self, com, url):
         data = self.urlopen(url)
+        if 'No members added' in data:
+            return
         doc = lxml.html.fromstring(data)
 
         for row in doc.xpath('//table[@cellpadding="3"]/tr')[1:]:
@@ -16,7 +18,6 @@ class ILCommitteeScraper(CommitteeScraper):
             role = tds[0].text_content().replace(':','').strip().lower()
 
             name = tds[1].text_content().strip()
-
             com.add_member(name, role)
 
 
@@ -30,10 +31,9 @@ class ILCommitteeScraper(CommitteeScraper):
 
         top_level_com = None
 
-        for row in doc.xpath('//table[@cellpadding="3"]/tr')[1:]:
-            a = row.xpath('td/a')[0]
+        for a in doc.xpath('//a[contains(@href, "members.asp")]'):
             name = a.text.strip()
-            code = row.xpath('td[2]/text()')[0].strip()
+            code = a.getparent().getnext().text_content().strip()
             if 'Sub' in name:
                 com = Committee(chamber, top_level_com, name, code=code)
             else:
