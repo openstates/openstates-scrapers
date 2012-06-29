@@ -77,7 +77,7 @@
                 </li>
                 {% endfor %}
             </ol>
-            <h5 style="margin-bottom: 0px;">{{ bill.session_details.display_name }}</h5>
+            <!-- <h5 style="margin-bottom: 0px;">{{ bill.session_details.display_name }}</h5> -->
             <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
             <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
             <p>{{ bill.title|capfirst }}</p>
@@ -92,8 +92,8 @@
                     {% endfor %}
             </p>
             <dl class="inlineList">
-                
-
+                <dt class="clear contentBottom">Session:</dt>
+                <dd>{{ bill.session_details.display_name }}</dd>
                 <dt class="clear contentBottom">Sponsors ({{ bill.sponsors|length }}):</dt>
                 <dd>
                     <ul class="inlineThirds_module moduleNoBorder">
