@@ -61,13 +61,6 @@ class MALegislatorScraper(LegislatorScraper):
             root = lxml.html.fromstring(page)
             root.make_links_absolute(member_url)
 
-        oops_div = root.xpath("//h2")[0].text_content().strip()
-        if oops_div == "Oops!":
-            self.warning("Skipping %s" % member_url)
-            # Please see bug #315. When you remove this code, remove that
-            # bug.
-            return
-
         photo_url = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@src')[0]
         photo_url = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@src')[0]
         full_name = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@alt')[0]
