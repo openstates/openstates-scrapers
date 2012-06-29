@@ -10,12 +10,12 @@ def fix_whitespace(s):
 
 class MNCommitteeScraper(CommitteeScraper):
     state = 'mn'
+    latest_only = True
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-        if chamber == 'upper':
+    def scrape(self, term, chambers):
+        if 'upper' in chambers:
             self.scrape_senate_committees(term)
-        else:
+        if 'lower' in chambers:
             self.scrape_house_committees(term)
 
     def scrape_senate_committees(self, term):
@@ -24,13 +24,13 @@ class MNCommitteeScraper(CommitteeScraper):
                 biennium = t['biennium']
                 break
 
-        SENATE_BASE_URL = 'http://www.senate.leg.state.mn.us'
-        url = SENATE_BASE_URL + '/committees/committee_list.php?ls=%s' % biennium
+        url = 'http://www.senate.leg.state.mn.us/committees/committee_list.php?ls=%s' % biennium
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            for link in doc.xpath('//a[text()="Members"]/@href'):
-                self.scrape_senate_committee(term, SENATE_BASE_URL + link)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        for link in doc.xpath('//b/a/@href'):
+            self.scrape_senate_committee(term, link)
 
     def scrape_senate_committee(self, term, link):
         with self.urlopen(link) as html:

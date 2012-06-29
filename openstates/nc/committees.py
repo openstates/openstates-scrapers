@@ -35,6 +35,9 @@ class NCCommitteeScraper(CommitteeScraper):
                 doc.make_links_absolute(base_url+ctype)
                 for comm in doc.xpath('//ul/li/a'):
                     name = comm.text
+                    # skip committee of whole Senate
+                    if 'Whole Senate' in name:
+                        continue
                     url = comm.get('href')
                     committee = Committee(chamber, name)
                     self.scrape_committee(committee, url)
