@@ -16,7 +16,7 @@
             <td><a href="{{ leg.get_absolute_url }}">{{ leg.first_name }} {{ leg.last_name }}</a></td>
             <td>{{ leg.district }}</td>
             <td>{{ leg.party }}</td>
-            <td class = 'chamber-{{leg.chamber}}' >{{ leg.chamber }}</td>
+            <td class = 'chamber-{{leg.chamber}}' >{{ leg.chamber_name }}</td>
         </tr>
         {% endfor %}
     </tbody>
