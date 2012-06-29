@@ -42,7 +42,8 @@ class ILCommitteeScraper(CommitteeScraper):
 
             com_url = a.get('href')
             self.scrape_members(com, com_url)
+            com.add_source(com_url)
             if not com['members']:
                 self.log('skipping empty committee on {0}'.format(com_url))
-            com.add_source(com_url)
-            self.save_committee(com)
+            else:
+                self.save_committee(com)
