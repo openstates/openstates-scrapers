@@ -23,7 +23,6 @@ class DCLegislatorScraper(LegislatorScraper):
         assert len(urls) <= 13, "should have 13 unique councilmember URLs"
 
         for url in urls:
-
             data = self.urlopen(url)
             doc = lxml.html.fromstring(data)
             doc.make_links_absolute(url)
@@ -54,8 +53,13 @@ class DCLegislatorScraper(LegislatorScraper):
             phone = get_field(doc, "Tel:")
             phone, fax = phone.split(' | Fax: ')
 
+            email = doc.xpath('//a[starts-with(text(), "Send an email")]/@href')[0].split(':')[1]
+
             legislator = Legislator(term, 'upper', district, name,
-                                    party=party, office_address=office_address,
-                                    phone=phone, fax=fax, url=url,)
+                                    party=party, url=url, email=email,
+                                    photo_url=photo_url)
+            legislator.add_office('capitol', 'Council Office',
+                                  address=office_address, phone=phone,
+                                  fax=fax)
             legislator.add_source(url)
             self.save_legislator(legislator)
