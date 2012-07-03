@@ -104,6 +104,8 @@ class TXEventScraper(EventScraper):
             for event in events:
                 datetime = "%s %s" % ( date, thyme )
                 datetime = datetime.strip()
+                if "Upon Adjournment" in datetime:
+                    continue
                 datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
                 self.scrape_event_page(session, chamber, event.attrib['href'],
                                       datetime)
