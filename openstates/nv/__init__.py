@@ -28,7 +28,7 @@ metadata = dict(
          'sessions': ['2010Special26', '75'],
         },
         {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
-         'sessions': ['76']
+         'sessions': ['76', '2011 Session']
         }
     ],
     session_details={
@@ -42,6 +42,12 @@ metadata = dict(
                '_scraped_name': '2009 Session',
                'slug': '75th2009',
               },
+        '2011 Session': {
+            "type": "primary",
+            "display_name": '2011 Regular Session',
+            "_scraped_name": '2011 Session',
+            "slug": "2011"
+        },
         '76': {'type': 'primary',
                'display_name': '2011 Regular Session',
                '_scraped_name': '76th Session (2011)',
