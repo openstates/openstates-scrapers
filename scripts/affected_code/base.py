@@ -1,7 +1,7 @@
 from pygments.token import *
 import logbook
 
-LEVEL = logbook.ERROR
+LEVEL = 0
 logger = logbook.Logger('parse', level=LEVEL)
 
 

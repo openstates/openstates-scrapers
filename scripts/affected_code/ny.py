@@ -19,7 +19,8 @@ ActName = Token.ActName
 CompilationName = Token.CompilationName
 Junk = Token.Junk
 
-subds = ['paragraph', 'division', 'chapter', 'section', 'clause']
+subds = ['paragraph', 'division', 'chapter', 'section', 'clause',
+         'article']
 subds += ['sub' + s for s in subds]
 subds = r'(%s)s?' % '|'.join(sorted(subds, key=len, reverse=True))
 
@@ -39,9 +40,12 @@ class Lexer(RegexLexer):
             (r'amended to read as follows:', AmendedAsFollows),
             (r'amended by adding', AmendedByAdding, 'path'),
             (r'renumbered', Renumbered),
+            (r'(?i)the ([A-Za-z .&]+ (:?law|rules|code of the city of New York))',
+             bygroups(CompilationName)),
 
             # Junk.
             (r'as (added|amended|renumbered) [^,]+', Junk, 'junk'),
+            (r'amending [^,]+', Junk, 'junk'),
             (r'(added|amended|renumbered) [^,]+', Junk, 'junk'),
             (r'%s .{,200}? as (?:added|amended) by[^,]+?, ' % subds, Token.Junk),
             ],
@@ -52,6 +56,7 @@ class Lexer(RegexLexer):
              bygroups(CompilationName), '#pop'),
             (r'(?i)(?: of (?:a )?)?(%s) ' % subds,
                 bygroups(NodeType)),
+            (r'to read as follows', Junk, '#pop'),
             (r'[^ ,]+', NodeID),
             (r', ', NodeAndOrComma),
             (r' and ', NodeAndOrComma),
@@ -76,6 +81,9 @@ class ParserState(dict):
     def finalize(self):
         return dict(self)
 
+    def section_set_id(self, text=None, *args, **kwargs):
+        self['section'] = text
+
     def path_new(self, text=None, *args, **kwargs):
         path = []
         self['paths'].append(path)
@@ -85,7 +93,7 @@ class ParserState(dict):
     @property
     def path_current(self, text=None, *args, **kwargs):
         if self._current_path is None:
-            return self._new_path()
+            return self.path_new()
         else:
             return self._current_path
 
@@ -136,10 +144,10 @@ class ParserState(dict):
     def path_set_act_name(self, text=None, *args, **kwargs):
         self['act_name'] = text.strip(', ')
 
-    def amendment_adding(self, text=None, *args, **kwargs):
+    def amended_by_adding(self, text=None, *args, **kwargs):
         paths = []
         path = []
-        node = self.node_new()
+        node = {}
         path.append(node)
         paths.append(path)
         self._current_node = node
@@ -168,12 +176,14 @@ class Parser(base.Parser):
 
     rules = {
         'root': [
+            (SectionID, 'section_set_id'),
             (NodeType, 'path_new node_new node_set_type', 'path'),
             (AmendedAsFollows, 'amended_as_follows'),
-            (AmendedByAdding, '', 'amended_by_adding'),
+            (AmendedByAdding, 'amended_by_adding', 'path'),
             (Renumbered, 'renumbered', 'path'),
             (ActName, 'path_set_act_name'),
             (Junk, ''),
+            (CompilationName, 'path_set_compilation_name'),
             ],
 
         'path': [
@@ -182,9 +192,6 @@ class Parser(base.Parser):
             (NodeID, 'node_set_id'),
             (NodeType, 'node_set_type'),
             (NodeAndOrComma, 'path_clone'),
-            ],
-
-        'amended_by_adding': [
-            (AmendedByAdding, 'amendment_adding', 'path'),
+            (Junk, '', '#pop')
             ],
         }

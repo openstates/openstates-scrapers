@@ -1,7 +1,7 @@
 import unittest
 
-from utils import parse
 from ny import Lexer, Parser, ParserState
+from utils import parse
 
 
 class TestRelatedCitation(unittest.TestCase):
@@ -249,6 +249,34 @@ samples = [
                 [{'type': 'section', 'id': '631'}],
                 ],
             'impact': 'amended',
+        }
+    ),
+
+
+    (('Paragraphs (d) and (f) of section 1513-a of the not-for-profit '
+      'corporation law, as added by chapter 478 of the laws of 2003, are '
+      'amended and four new paragraphs (i), (j), (k) and (l) are added to '
+      'read as follows:'),
+        {
+            'id': 'not-for-profit corporation law',
+            'type': 'statute',
+            'paths': [
+                [{'type': 'section', 'id': '1513-a'},
+                 {'type': 'paragraph', 'id': '(d)'}],
+                [{'type': 'section', 'id': '1513-a'},
+                 {'type': 'paragraph', 'id': '(f)'}],
+                ],
+            'impact': 'amended',
+            'details': [
+                [{'type': 'section', 'id': '1513-a'},
+                 {'type': 'paragraph', 'id': '(i)'}],
+                [{'type': 'section', 'id': '1513-a'},
+                 {'type': 'paragraph', 'id': '(j)'}],
+                [{'type': 'section', 'id': '1513-a'},
+                 {'type': 'paragraph', 'id': '(k)'}],
+                [{'type': 'section', 'id': '1513-a'},
+                 {'type': 'paragraph', 'id': '(l)'}],
+                ],
         }
     ),
 
