@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-'''
-California has Joint Committees.
-'''
 import re
+import collections
 from operator import methodcaller
 
 import lxml.html
@@ -280,12 +278,14 @@ class Membernames(object):
     def extract(links):
         '''Given an lxml.xpath result, extract a list of member names.
         '''
-        href_rgxs = (r'(sd|a)\d+$',
+        href_rgxs = (r'(sd|a)\d+\.(senate|assembly)\.ca\.gov/$',
+                     r'(senate|assembly)\.ca\.gov/(sd|a)\d+$',
+                     r'(sd|a)\d+$',
                      r'dist\d+[.]',
                      r'cssrc[.]us/web/\d+',
                      r'/Wagner')
 
-        res = []
+        res = collections.defaultdict(list)
         for a in links:
             try:
                 href = a.attrib['href']
@@ -293,8 +293,9 @@ class Membernames(object):
                 continue
             for rgx in href_rgxs:
                 if re.search(rgx, href, re.M):
-                    res.append(a.text_content())
-        return res
+                    res[href].append(a.text_content().strip())
+        vals = [' '.join(set(lst)) for lst in res.values()]
+        return [re.sub('\s+', ' ', s) for s in vals]
 
     @staticmethod
     def scrub(names):
@@ -324,6 +325,8 @@ class Membernames(object):
             name = name.strip()
 
             if name:
+                if 'Sanator' in  name:
+                    name = name.replace('Sanator', 'Senator')
                 res.append((name, role, kw))
 
         return res
