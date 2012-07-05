@@ -327,6 +327,7 @@ class Membernames(object):
             if name:
                 if 'Sanator' in  name:
                     name = name.replace('Sanator', 'Senator')
+                name.strip(',')
                 res.append((name, role, kw))
 
         return res
