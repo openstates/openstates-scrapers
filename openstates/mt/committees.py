@@ -28,6 +28,10 @@ committee_urls = {
 
     'upper': {
         2011: 'http://leg.mt.gov/css/Senate/senate%20committees-2011.asp',
+        },
+
+    'joint': {
+        2011: 'http://leg.mt.gov/css/Sessions/62nd/joint%20subcommittees.asp',
         }
     }
 
@@ -51,19 +55,35 @@ def scrape_committees(year, chamber):
     csv file, scrape the committee page and use the names listed there
     instead.
     '''
-    url = committee_urls[chamber][year]
-    html = scrapelib.urlopen(url)
+    # url = committee_urls[chamber][year]
+    # html = scrapelib.urlopen(url)
 
-    name_dict = defaultdict(set)
-    doc = lxml.html.fromstring(html)
-    tds = doc.xpath('//td[@valign="top"]')[3:]
+    # name_dict = defaultdict(set)
+    # doc = lxml.html.fromstring(html)
+    # tds = doc.xpath('//td[@valign="top"]')[3:]
 
-    cache = []
-    for td in tds:
-        for name_dict, c in _committees_td(td, chamber, url, name_dict):
-            if c not in cache:
-                cache.append(c)
-                yield name_dict, c
+    # cache = []
+    # for td in tds:
+    #     for name_dict, c in _committees_td(td, chamber, url, name_dict):
+    #         if c not in cache:
+    #             cache.append(c)
+    #             yield name_dict, c
+
+    # Get the joint approps subcommittees during the upper scrape.
+    if chamber == 'upper':
+        url = committee_urls['joint'][year]
+        html = scrapelib.urlopen(url)
+
+        name_dict = defaultdict(set)
+        doc = lxml.html.fromstring(html)
+        tds = doc.xpath('//td[@valign="top"]')[3:]
+
+        cache = []
+        for td in tds:
+            for name_dict, c in _committees_td(td, 'joint', url, name_dict):
+                if c not in cache:
+                    cache.append(c)
+                    yield name_dict, c
 
 
 def _committees_td(el, chamber, url, name_dict):
@@ -82,6 +102,11 @@ def _committees_td(el, chamber, url, name_dict):
         not_edge = lambda s: s != edge
         is_edge = lambda s: s == edge
         predicate = not_edge
+
+    if chamber == 'joint':
+        not_edge = lambda s: not s.strip().startswith('Education')
+        is_edge = lambda s: s == edge
+        predicate = lambda s: ('Secretary:' not in s)
 
     itertext = el.itertext()
 
@@ -150,9 +175,15 @@ def _committee_data(lines, chamber, url, name_dict):
             title, name, city = m.groups()
             if title:
                 title = title.lower()
+            name = re.sub(r'(Sen\.|Rep\.)\s+', '', name)
             name_dict[city.lower()].add(name)
             c.add_member(name, role=(title or 'member'))
 
     c.add_source(url)
 
     return name_dict, c
+
+
+def scrape_joint_subcommittees():
+    '''Joint Appropriations Subcommittees.
+    '''
