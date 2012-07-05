@@ -72,6 +72,9 @@ class MIEventScraper(EventScraper):
         event.add_source(url)
         event.add_source(mi_events)
 
+        event.add_participant('chair', metainf['Chair']['txt'],
+                              chamber=chamber)
+
         event.add_participant('host', metainf['Committee']['txt'],
                               chamber=chamber)
 
