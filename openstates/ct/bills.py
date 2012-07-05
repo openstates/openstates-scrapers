@@ -15,38 +15,40 @@ class CTBillScraper(BillScraper):
     state = 'ct'
     latest_only = True
 
-    _committee_names = {}
-    _introducers = defaultdict(set)
-    _subjects = defaultdict(list)
+    def scrape(self, session, chambers):
+        self.bills = {}
+        self._committee_names = {}
+        self._introducers = defaultdict(set)
+        self._subjects = defaultdict(list)
 
-    def __init__(self, *args, **kwargs):
-        super(CTBillScraper, self).__init__(*args, **kwargs)
-        self.raise_errors = False
         self.scrape_committee_names()
         self.scrape_subjects()
         self.scrape_introducers('upper')
         self.scrape_introducers('lower')
-
-    def scrape(self, chamber, session):
-        self.bills = {}
-        self.scrape_bill_info(chamber, session)
+        self.scrape_bill_info(session, chambers)
+        for chamber in chambers:
+            self.scrape_versions(chamber, session)
         self.scrape_bill_history()
-        self.scrape_versions(chamber, session)
 
         for bill in self.bills.itervalues():
             self.save_bill(bill)
 
-    def scrape_bill_info(self, chamber, session):
+    def scrape_bill_info(self, session, chambers):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/bill_info.csv"
         data = self.urlopen(info_url)
         page = open_csv(data)
 
-        abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
+        chamber_map = {'H': 'lower', 'S': 'upper'}
 
         for row in page:
             bill_id = row['bill_num']
-            if not bill_id[0] == abbrev:
+            chamber = chamber_map[bill_id[0]]
+
+            if not chamber in chambers:
                 continue
+
+            # assert that the bill data is from this session, CT is tricky
+            assert row['sess_year'] == session:
 
             if re.match(r'^(S|H)J', bill_id):
                 bill_type = 'joint resolution'
