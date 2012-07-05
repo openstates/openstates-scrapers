@@ -66,11 +66,13 @@ class NJEventScraper(EventScraper, DBFMixin):
                 record['TIME']
             )
             date_time = dt.datetime.strptime(date_time, "%m/%d/%Y %I:%M %p")
+            hr_name = self._committees[record['COMMHOUSE']]
+
             event = Event(
                 session,
                 date_time,
                 'committee:meeting',
-                record['COMMENTS'] or "Meeting Notice",
+                "Meeting of the %s" % ( hr_name ),
                 location=record['LOCATION'] or "Statehouse",
             )
             for bill in related_bills:
@@ -85,8 +87,6 @@ class NJEventScraper(EventScraper, DBFMixin):
                 }[record['COMMHOUSE'][0].lower()]
             except KeyError:
                 chamber = "joint"
-
-            hr_name = self._committees[record['COMMHOUSE']]
 
             event.add_participant("host",
                                   hr_name,
