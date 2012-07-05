@@ -1,7 +1,7 @@
 {% extends "billy/web/public/base.html" %}
 {% load customtags %}
 
-{% block title %}{{metadata.name}} {{ chamber_name }} Legislators{% endblock %}
+{% block title %}{{metadata.name}} {{ chamber_title }} - Open States{% endblock %}
 
 {% block headblock %}
 <script type="text/javascript">
@@ -36,7 +36,7 @@ $(document).ready(function() {
 {% block content %}
         <div class="fullWidth">
             {{form.as_p}}
-            <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} Legislators</h2>
+            <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} {{chamber_title}}</h2>
             <div class="nineCol colLt">
                 <div class="horizontalFilter noSpace">
                     {% include chamber_select_template %}
