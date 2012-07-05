@@ -27,6 +27,7 @@ class NYBillScraper(BillScraper):
                 url = ("http://open.nysenate.gov/legislation/search/"
                        "?search=otype:bill&searchType=&format=xml"
                        "&pageIdx=%d" % index)
+
                 with self.urlopen(url) as page:
                     page = lxml.etree.fromstring(page.bytes)
                     if not page.getchildren():
@@ -87,7 +88,9 @@ class NYBillScraper(BillScraper):
                                     type=bill_type)
 
                         bill.add_source(url)
-                        bill.add_sponsor('primary', primary_sponsor)
+
+                        # Adding sponsors below.
+                        #bill.add_sponsor('primary', primary_sponsor)
 
                         bill_url = ("http://open.nysenate.gov/legislation/"
                                     "bill/%s" % result.attrib['id'])
@@ -110,6 +113,36 @@ class NYBillScraper(BillScraper):
             page = page.replace('\x00', '')
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
+
+            # Scrape sponsors.
+            sponsor_type = 'primary'
+            xpath = '//b[starts-with(text(), "Sponsor:")]'
+            siblings = page.xpath(xpath)[0].itersiblings()
+            while True:
+                sib = next(siblings)
+                try:
+                    is_sponsor = '/legislation/sponsor' in sib.attrib['href']
+                except KeyError:
+                    is_sponsor = False
+
+                # Modify the sponsor type.
+                is_cosponsor_heading = sib.text_content().strip()\
+                    .startswith('Co-sponsor(s):')
+                is_multisponsor_heading = sib.text_content().strip()\
+                    .startswith('Multi-sponsor(s):')
+                if not is_sponsor or is_cosponsor_heading:
+                    if is_cosponsor_heading:
+                        sponsor_type = 'cosponsor'
+                        continue
+                    elif is_multisponsor_heading:
+                        sponsor_type = 'multisponsor'
+                        continue
+                    else:
+                        break
+
+                # Add the sponsor.
+                name = sib.text_content().replace('(MS)', '').strip()
+                bill.add_sponsor(sponsor_type, name)
 
             actions = []
             for li in page.xpath("//div[@id = 'content']/ul[1]/li"):
