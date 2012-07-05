@@ -169,10 +169,10 @@ class MNBillScraper(BillScraper):
             sponsors = doc.xpath('//table[@summary="Show Authors"]/descendant::a/text()')
             if sponsors:
                 primary_sponsor = sponsors[0].strip()
-                bill.add_sponsor('primary', primary_sponsor)
+                bill.add_sponsor('primary', primary_sponsor, chamber=chamber)
                 cosponsors = sponsors[1:]
                 for leg in cosponsors:
-                    bill.add_sponsor('cosponsor', leg.strip())
+                    bill.add_sponsor('cosponsor', leg.strip(), chamber=chamber)
 
             # Add Actions performed on the bill.
             bill_actions = self.extract_bill_actions(doc, chamber)
