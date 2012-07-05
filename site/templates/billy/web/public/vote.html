@@ -24,25 +24,18 @@
 {% block content %}
         <div class="fullWidth mainModule">
             <div id="billState" class="passed">{{vote.passed|yesno:"Passed,Failed,Unknown"}}</div>
-            <div class="medModule">
-                <h2 class="withTip">{{metadata.name}} {{bill.type_string|title}} <a href="{{bill.get_absolute_url}}">{{bill.bill_id}}</a></h2>
-                <p class="tip tipSm">{{bill.title}}</p>
+            <div><!--  class="medModule"> -->
+                <h1 class="withTimeline withTip" style="padding-top: 30px;">
+                    Vote on <a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
+                    ({{ vote.date|date:"M j, Y"}})
+                </h1>
+                <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
             </div>
             <div class="eightCol colLt clear">
                 <h3 class="h4">{{ vote.motion }}</h3>
-                <time datetime="" class="published" pubdate>{{ vote.date|date:"M j, Y"}}</time>
+                <!-- <time datetime="" class="published" pubdate>{{ vote.date|date:"M j, Y"}}</time>
             
-                <h4>Vote Breakdown</h4>
-                <!--<table>
-                    <thead>
-                        <tr><th>Vote</th><th>Total</th><th>Ratio</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>Yes</td><td>{{ vote.yes_count }}</td><td>{{ vote.yes_ratio }}</td></tr>
-                        <tr><td>No</td><td>{{ vote.no_count }}</td><td>{{ vote.no_ratio }}</td></tr>
-                        <tr><td>Other</td><td>{{ vote.other_count }}</td><td>{{ vote.other_ratio }}</td></tr>
-                    </tbody>
-                <table>-->
+                <h4>Vote Breakdown</h4> -->
                 <ul class="barChart">
                     <li class="yes">
                         <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>

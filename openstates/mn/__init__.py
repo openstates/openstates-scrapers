@@ -26,6 +26,13 @@ metadata = dict(
          'end_year': 2012,
          'biennium': '87',
         },
+        {
+            'name': '2013-2014',
+            'sessions': ['2013-2014'],
+            'start_year': 2013,
+            'end_year': 2014,
+            'biennium': 88
+        }
     ],
     session_details={
         '2009-2010': {
@@ -57,6 +64,13 @@ metadata = dict(
             'display_name': '2011, 1st Special Session',
             '_scraped_name': '87th Legislature, 2011 1st Special Session',
         },
+        '2013-2014': {
+            'site_id': '0882013',
+            'type': "primary",
+            'display_name': '88th Legislature, 2013-2014',
+            '_scraped_name': '88th Legislature, 2013-2014'
+        }
+
     },
     feature_flags=['subjects', 'events'],
     _ignored_scraped_sessions=['85th Legislature, 2007-2008',

@@ -27,12 +27,14 @@ class WILegislatorScraper(LegislatorScraper):
                 rep_url = list(row)[0].cssselect("a[href]")[0].get("href")
                 rep_doc = lxml.html.fromstring(self.urlopen(rep_url))
 
+                rep_doc_large_name = rep_doc.xpath("//h1")[0].text_content()
+
                 legpart = re.findall(r'([\w\-\,\s\.]+)\s+\(([\w])\)', list(row)[0].text_content())
                 if legpart:
                     full_name, party = legpart[0]
 
                     # skip if the legislator is vacant
-                    if full_name == 'Vacant':
+                    if full_name == 'Vacant' or rep_doc_large_name == "Vacant":
                         continue
 
                     party = PARTY_DICT[party]
