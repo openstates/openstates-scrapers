@@ -55,19 +55,19 @@ def scrape_committees(year, chamber):
     csv file, scrape the committee page and use the names listed there
     instead.
     '''
-    # url = committee_urls[chamber][year]
-    # html = scrapelib.urlopen(url)
+    url = committee_urls[chamber][year]
+    html = scrapelib.urlopen(url)
 
-    # name_dict = defaultdict(set)
-    # doc = lxml.html.fromstring(html)
-    # tds = doc.xpath('//td[@valign="top"]')[3:]
+    name_dict = defaultdict(set)
+    doc = lxml.html.fromstring(html)
+    tds = doc.xpath('//td[@valign="top"]')[3:]
 
-    # cache = []
-    # for td in tds:
-    #     for name_dict, c in _committees_td(td, chamber, url, name_dict):
-    #         if c not in cache:
-    #             cache.append(c)
-    #             yield name_dict, c
+    cache = []
+    for td in tds:
+        for name_dict, c in _committees_td(td, chamber, url, name_dict):
+            if c not in cache:
+                cache.append(c)
+                yield name_dict, c
 
     # Get the joint approps subcommittees during the upper scrape.
     if chamber == 'upper':
@@ -83,6 +83,10 @@ def scrape_committees(year, chamber):
             for name_dict, c in _committees_td(td, 'joint', url, name_dict):
                 if c not in cache:
                     cache.append(c)
+
+                    # These are subcommittees, so a quick switcheroo of the names:
+                    c['subcommittee'] = c['committee']
+                    c['committee'] = 'Appropriations'
                     yield name_dict, c
 
 
@@ -170,20 +174,23 @@ def _committee_data(lines, chamber, url, name_dict):
     c = Committee(**kw)
 
     for name in reversed(lines):
+        kwargs = {}
         m = re.search(name_pattern, name)
         if m:
             title, name, city = m.groups()
             if title:
                 title = title.lower()
-            name = re.sub(r'(Sen\.|Rep\.)\s+', '', name)
+            house = re.search(r'(Sen\.|Rep\.)\s+', name)
+            if house:
+                house = house.group()
+                if 'Sen.' in house:
+                    kwargs['chamber'] = 'upper'
+                elif 'Rep.' in house:
+                    kwargs['chamber'] = 'lower'
+                name = name.replace(house, '').strip()
             name_dict[city.lower()].add(name)
-            c.add_member(name, role=(title or 'member'))
+            c.add_member(name, role=(title or 'member'), **kwargs)
 
     c.add_source(url)
 
     return name_dict, c
-
-
-def scrape_joint_subcommittees():
-    '''Joint Appropriations Subcommittees.
-    '''
