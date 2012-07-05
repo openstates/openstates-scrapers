@@ -135,7 +135,6 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
-  
         <span class="tip sources withTipSm">
         {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/all/{{request.GET.search_text|urlencode}}">Receive alerts about "{{request.GET.search_text}}"</a> with Scout.
         {% else %} <a href="https://scout.sunlightfoundation.com/">Receive bill alerts</a> with Scout.
