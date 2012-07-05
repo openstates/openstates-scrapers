@@ -84,11 +84,11 @@
             <p>
                 {% if bill.subjects %}
                         {% for subject in bill.subjects %}
-                            <span class="label-bill-subject"><a href="{% url 'bills_by_subject' abbr subject %}">{{subject}}</a></span>
+                    <span class="label-bill-subject"><a href="{% url 'bills' abbr %}?subjects={{subject}}">{{subject}}</a></span>
                         {% endfor %}
                     {% endif %}
                     {% for type in bill.type|slice:"1:" %}
-                        <span class="label-bill-type"><a href="{% url 'bills_by_type' abbr type %}">{{type|title}}</a></span>
+                    <span class="label-bill-type"><a href="{% url 'bills' abbr %}?type={{type}}">{{type|title}}</a></span>
                     {% endfor %}
             </p>
             <dl class="inlineList">
