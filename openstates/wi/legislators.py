@@ -42,7 +42,11 @@ class WILegislatorScraper(LegislatorScraper):
                     district = str(int(list(row)[2].text_content()))
 
                     # email
-                    email = rep_doc.xpath('//a[starts-with(@href, "mailto")]/text()')[0]
+                    email = rep_doc.xpath('//a[starts-with(@href, "mailto")]/text()')
+                    if email:
+                        email = email[0]
+                    else:
+                        email = ''
 
                     leg = Legislator(term, chamber, district, full_name,
                                      party=party, url=rep_url, email=email)

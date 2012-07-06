@@ -48,7 +48,7 @@ class CTBillScraper(BillScraper):
                 continue
 
             # assert that the bill data is from this session, CT is tricky
-            assert row['sess_year'] == session:
+            assert row['sess_year'] == session
 
             if re.match(r'^(S|H)J', bill_id):
                 bill_type = 'joint resolution'
