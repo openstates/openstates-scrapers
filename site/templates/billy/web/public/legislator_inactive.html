@@ -81,7 +81,7 @@
                 <ul><li class="smModule">No news or blog items found yet.</li></ul>
               {% else %}
                 {% for obj in legislator.feed_entries %}{% include feed_entry_template %}{% endfor %}
-                <a class="viewMore" href="{% url 'feeds_list' abbr 'legislators' legislator.id %}">View More News</a>
+                <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.slug %}">View More News</a>
             {% endif %} 
             {% endwith %}
             </div>

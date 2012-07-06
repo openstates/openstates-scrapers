@@ -4,6 +4,7 @@
 {% load humanize %}
 {% load customtags %}
 
+
 {% block title %}
   {{legislator.full_name }} - 
   {{metadata.legislature_name}} -
@@ -190,10 +191,19 @@ $(document).ready(function() {
 
                             <dt class="clear">Sessions Served:</dt>
                             <dd>
-                            {% for session in legislator.sessions_served %}
-                            {#<a {% if not forloop.first %}class="withBorderLine" {% endif %}href="#">{{session}}</a>#}
-                               {{session}}
-                            {% endfor %}
+                            {% if legislator.active%}
+                                {% for session in legislator.sessions_served %}
+                                   {{session}}
+                                {% endfor %}
+                            {% else %}
+                                {% for term, names in legislator.old_roles_manager.sessions_served.items %}
+                                <ul>
+                                    {% for name in names %}
+                                    <li>{{name}}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endfor %}
+                            {% endif %}
                             </dd>
 
                         </dl>
@@ -245,13 +255,45 @@ $(document).ready(function() {
                     {% endif %}
                 </ul>
             </div>
+            {% if legislator.active %}
             <div class="sixCol colRt">
                 <p>
                     {% include "billy/web/public/bio_blurb.html" %}
                 </p>
             </div>
+            {% endif %}
             <div class="clear"></div>
+
+        <div class="fullWidth module clear">
+            <div class="sevenCol colLt">
+                <h3 class="moduleTitle">Former Roles</h3>
+                <table>
+                {% for role in legislator.old_roles_manager %}
+                  <thead>
+                    <tr>
+                        <th>Term</th>
+                        <th>Type</th>
+                        <th>District</th>
+                        <th>Party</th>
+                        <th>Start</th>
+                        <th>End</th>
+                    </tr>
+                  </thead>
+                  <tr>
+                    <td>{{role.term}}</td>
+                    <td>{{role.type|title}}</td>
+                    <td>{{role.district}}</td>
+                    <td>{{role.party}}</td>
+                    <td>{% if role.start_data %}{{role.start_date|date:"j, m Y"}}{% else %}{% endif %}</td>
+                    <td>{% if role.end_data %}{{role.end_date|date:"j, m Y"}}{% else %}{% endif %}</td>
+                  </tr>
+                {% endfor %}
+                </table>
+                </div>
+                <div class="clear"></div> 
+            </div>
         </div>
+
         <div class="fullWidth module clear">
             <h3 class="moduleTitle">Media</h3>
             <div class="sevenCol colLt">
@@ -287,15 +329,15 @@ $(document).ready(function() {
                 <a class="textReplace rssIcon" href="{% url 'legislator_sponsored_bills_rss' abbr legislator.id legislator.slug %}">rss</a>
                 <h4>Sponsored Bills</h4>
                 <ul>
-                {% if sponsored_bills %}
-                {% for bill in sponsored_bills %}
-                    <li>
-                        <time datetime="" class="published" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
-                        <span class="inlineTitle h4 withTip"><a href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}
-                            {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span></span>
-                        <p class="clear">{{bill.title}}</p>
-                    </li>
-                {% endfor %}
+                {% if sponsored_bills.count %}
+                    {% for bill in sponsored_bills %}
+                        <li>
+                            <time datetime="" class="published" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
+                            <span class="inlineTitle h4 withTip"><a href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}
+                                {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span></span>
+                            <p class="clear">{{bill.title}}</p>
+                        </li>
+                    {% endfor %}
                 </ul>
                 <a class="viewMore" href={% url 'legislator_sponsored_bills' abbr legislator.id legislator.slug %}>View More Bills</a>
                 {% else %}
