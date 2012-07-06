@@ -56,7 +56,13 @@ class NJBillScraper(BillScraper, DBFMixin):
         'REF SBA': ('Referred to Senate Budget and Appropriations Committee', 'committee:referred'),
         'REP REF AAP': ('Reported and Referred to Assembly Appropriations Committee', 'committee:referred'),
         'REP/ACA REF AAP': ('Reported out of Assembly Committee with Amendments and Referred to Assembly Appropriations Committee', 'committee:referred'),
+        'REP/ACS REF AAP': ('Reported out of Senate Committee with Amendments and Referred to Assembly Appropriations Committee', 'committee:referred'),
+        'REP/ACA REF AJU': ('Reported out of Assembly Committee with Amendments and Referred to Assembly Judiciary Committee', 'committee:referred'),
+        'REP/ACA REF ACO': ('Reported out of Assembly Committee with Amendments and Referred to Assembly Consumer Affairs Committee', 'committee:referred'),
+        'REP REF AJU': ('Reported and Referred to Assembly Judiciary Committee', 'committee:referred'),
         'RSND/V': ('Rescind Vote', 'other'),
+        'RCON/V': ('Reconsidered Vote', 'other'),
+        'CONCUR SA': ('Concurred by Senate Amendments', 'other'),
         'SS 2RS': ('Senate Substitution', 'other'),
         'AS 2RA': ('Assembly Substitution', 'other'),
         'ER': ('Emergency Resolution', 'other'),
@@ -128,7 +134,7 @@ class NJBillScraper(BillScraper, DBFMixin):
                                                       com['DESCRIPTIO'],
                                                       'Committee'))
 
-    def categorize_action(self, act_str):
+    def categorize_action(self, act_str, bill_id):
         if act_str in self._actions:
             return self._actions[act_str]
 
@@ -140,7 +146,7 @@ class NJBillScraper(BillScraper, DBFMixin):
                 return (action + ' ' + com_name, acttype)
 
         # warn about missing action
-        self.warning('unknown action: %s' % act_str)
+        self.warning('unknown action: {0} on {1}'.format(act_str, bill_id))
 
         return (act_str, 'other')
 
@@ -332,7 +338,7 @@ class NJBillScraper(BillScraper, DBFMixin):
             date = rec["dateaction"]
             actor = actor_map[rec["house"]]
             comment = rec["comment"]
-            action, atype = self.categorize_action(action)
+            action, atype = self.categorize_action(action, bill_id)
             if comment:
                 action += (' ' + comment)
             bill.add_action(actor, action, date, type=atype)
