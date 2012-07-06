@@ -22,7 +22,7 @@
             </li>
           {% else %}
           <li>
-            <span class="tip withTip">{{ member.name }}</span>
+            <span class="tip withTip">{{ member.name }}{% if not forloop.last %}, {% else %}{% endif %}</span>
           </li>
           {% endif %}
         {% endfor %}
