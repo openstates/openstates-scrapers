@@ -23,7 +23,7 @@ class NJEventScraper(EventScraper, DBFMixin):
         # override with their data.
         #
         # This data is from:
-        # http://www.njleg.state.nj.us/media/archive_audio2.asp?KEY=<KEY>C&SESSION=2012
+        # http://www.njleg.state.nj.us/media/archive_audio2.asp?KEY=<KEY>&SESSION=2012
         overlay = {
             'A': 'Assembly on the Whole',
             'S': 'Senate on the Whole',
@@ -34,7 +34,8 @@ class NJEventScraper(EventScraper, DBFMixin):
             'LRC': 'New Jersey Law Revision Commission',
             'PHBC': 'Pension and Health Benefits Review Commission',
             'SBAB': 'Senate Budget and Appropriations Committee',
-            'SUTC': 'Sales and Use Tax Review Commission'
+            'SUTC': 'Sales and Use Tax Review Commission',
+            'SPLS': 'Special Session'
         }
         self._committees = overlay
 
