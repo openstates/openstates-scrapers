@@ -132,6 +132,7 @@ class State(object):
         # Cache of data already added.
         added = set()
         for namestring in state.unmatched:
+            skip = False
             ids, name, namestring = self.get_name_id(namestring)
             if not ids:
                 msg = 'No matches found for %r'
@@ -142,6 +143,13 @@ class State(object):
             if 1 < len(ids):
                 msg = 'There were two possible ids for %r'
                 logger.warning(msg % namestring)
+                legs = db.legislators.find({'_id': {'$in': list(ids)}})
+                for leg in legs:
+                    logger.warning('  -- %r %r' % (leg['_scraped_name'], leg['_id']))
+                skip = True
+
+            if skip:
+                continue
 
             for _id in ids:
                 legislator = db.legislators.find_one(_id)
@@ -164,7 +172,6 @@ if __name__ == '__main__':
     import sys
     abbr = sys.argv[1]
     state = State(abbr)
-
     print state.csv_rows()
     
 
