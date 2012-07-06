@@ -1,4 +1,5 @@
 import re
+from itertools import chain
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
@@ -58,38 +59,61 @@ class FLCommitteeScraper(CommitteeScraper):
     def scrape_lower_committees(self):
         url = ("http://www.myfloridahouse.gov/Sections/Committees/"
                "committees.aspx")
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'CommitteeId')]"):
-                comm_name = link.text.strip()
+        for link in page.xpath("//a[contains(@href, 'CommitteeId')]"):
+            comm_name = link.text.strip()
 
-                if comm_name.startswith('Joint'):
-                    continue
+            if 'Committee' in comm_name:
+                parent = re.sub(r'Committee$', '', comm_name).strip()
+                sub = None
+            else:
+                sub = re.sub(r'Subcommittee$', '', comm_name).strip()
 
-                if comm_name.endswith('Committee'):
-                    parent = re.sub(r'Committee$', '', comm_name).strip()
-                    sub = None
-                else:
-                    sub = re.sub(r'Subcommittee$', '', comm_name).strip()
+            comm = Committee('lower', parent, sub)
+            self.scrape_lower_committee(comm, link.get('href'))
+            self.save_committee(comm)
 
-                comm = Committee('lower', parent, sub)
-                self.scrape_lower_committee(comm, link.attrib['href'])
-                self.save_committee(comm)
+        for link in page.xpath('//a[contains(@href, "committees/joint")]/@href'):
+            self.scrape_joint_committee(link)
+
+
+    def scrape_joint_committee(self, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+
+        name = doc.xpath('//h1/text()') or doc.xpath('//h2/text()')
+        name = name[0]
+
+        comm = Committee('joint', name)
+        comm.add_source(url)
+
+        members = chain(doc.xpath('//a[contains(@href, "MemberId")]'),
+                        doc.xpath('//a[contains(@href, "Senators")]'))
+
+        for a in members:
+            parent_content = a.getparent().text_content()
+            if ':' in parent_content:
+                title = parent_content.split(':')[0].strip()
+            else:
+                title = 'member'
+            comm.add_member(a.text.split(' (')[0].strip(), title)
+
+        self.save_committee(comm)
 
     def scrape_lower_committee(self, comm, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            comm.add_source(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        comm.add_source(url)
 
-            for link in page.xpath("//ul/a[contains(@href, 'MemberId')]"):
-                name = re.sub(r' \([A-Z]\)$', '', link.text).strip()
-                name = re.sub(r'\s+', ' ', name)
+        for link in page.xpath("//p[@class='committeelinks']/a[contains(@href, 'MemberId')]"):
+            # strip off spaces and everything in [R/D]
+            name = link.text.strip().split(' [')[0]
+            # membership type span follows link
+            mtype = link.getnext().text.strip()
+            if not mtype:
+                mtype = 'member'
 
-                mtype = link.xpath(
-                    "string(../following-sibling::td)").strip().lower()
-                if not mtype:
-                    mtype = 'member'
-
-                comm.add_member(name, mtype)
+            comm.add_member(name, mtype)
