@@ -367,8 +367,10 @@ $(document).ready(function() {
                         {% for vote_value, vote in legislator_votes %}
                         <tr>
                             <td>
-                                <time datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
-                                <a class="h5" href="{{ vote.get_absolute_url }}">{{vote.bill.bill_id|upper}} - {{vote.motion|truncatewords:30}}</a>
+
+                                <a href="{{ vote.get_absolute_url }}" style="font-size: 19px">{{vote.bill.bill_id|upper}}</a>
+                                <time class="timeHeader" datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
+                                <p>{{vote.motion|truncatewords:30}}</p>
                                 <ul class="barChart">
                                     <li class="yes">
                                         <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
