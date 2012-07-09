@@ -175,10 +175,10 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-        <div class="fullWidth mainModule">
+        <div class="fullWidth mainModule legislator">
             <div class="medModule">
-                <span class="tip sources withTipSm">For more information on this legislator check out: <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">influenceexplorer.com</a>, <a href="http://www.votesmart.org/bio.php?can_id={{legislator.votesmart_id}}">Project Vote Smart</a></span>
-                <div class="sevenCol colLt">
+                <span class="tip sources">For more information on this legislator check out: <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">influenceexplorer.com</a>, <a href="http://www.votesmart.org/bio.php?can_id={{legislator.votesmart_id}}">Project Vote Smart</a></span>
+                <div class="sixCol colLt">
                     <img class="firstHalfModule legImg" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
                     <div class="eights">
                         <h2 class="withTip">{{legislator.full_name}}</h2>
@@ -209,12 +209,19 @@ $(document).ready(function() {
                         </dl>
                     </div>
                 </div>
-                <div class="fiveCol colRt">
+                <div class="sixCol colRt mapBorder">
                     <div id="map" class="withBorder"></div>
                 </div>
                 <div class="clear"></div>
             </div>
+			{% if legislator.active %}
             <div class="sixCol colLt withDash clear">
+                <p>
+                    {% include "billy/web/public/bio_blurb.html" %}
+                </p>
+            </div>
+            {% endif %}
+            <div class="sixCol colRt">
                 <ul>
                     {% for office in legislator.offices %}
                     <li class="fourths {% if forloop.first %} firstModule {% endif %}">
@@ -255,13 +262,7 @@ $(document).ready(function() {
                     {% endif %}
                 </ul>
             </div>
-            {% if legislator.active %}
-            <div class="sixCol colRt">
-                <p>
-                    {% include "billy/web/public/bio_blurb.html" %}
-                </p>
-            </div>
-            {% endif %}
+
             <div class="clear"></div>
 
         {% if not legislator.active %}
