@@ -176,7 +176,7 @@
                 <ul class="largerList voteChart">
                     {% for vote in bill.votes_manager %}
                     <li>
-                        <time class="timeHeader" datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
+                        <time datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
                         <a href="{{ vote.get_absolute_url }}">{{vote.motion|truncatewords:30}}</a>
                         <ul class="barChart">
                             <li class="yes">
