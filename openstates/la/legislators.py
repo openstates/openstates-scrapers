@@ -51,18 +51,13 @@ class LALegislatorScraper(LegislatorScraper):
                         name, leg_url))
 
     def scrape_rep(self, name, term, url):
-        # special case names that confuses name_tools
-        if name == 'Franklin, A.B.':
-            name = 'Franklin, A. B.'
-        elif ', Jr., ' in name:
-            name = name.replace(', Jr., ', ' ')
-            name += ', Jr.'
-        elif ', III, ' in name:
-            name = name.replace(', III, ', ' ')
-            name += ', III'
 
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
+
+            xpath = '//table[@id="table41"]/tr/td/font'
+            name = page.xpath(xpath)[3].xpath('p')[0].text
+            name = name.replace('Representative', '').strip().strip(',')
 
             district = page.xpath(
                 "//a[contains(@href, 'district')]")[0].attrib['href']
@@ -77,8 +72,8 @@ class LALegislatorScraper(LegislatorScraper):
             else:
                 party = "Other"
 
-            kwargs = { "party": party,
-                       "url": url }
+            kwargs = {"party": party,
+                      "url": url}
 
             photo = page.xpath("//img[@rel='lightbox']")
             if len(photo) > 0:
@@ -107,6 +102,8 @@ class LALegislatorScraper(LegislatorScraper):
         text = self.urlopen(url)
         page = lxml.html.fromstring(text)
         page.make_links_absolute(url)
+
+        name = page.xpath('//title')[0].text_content().split('>')[-1].strip().strip(',')
 
         district = page.xpath(
             "string(//*[starts-with(text(), 'Senator ')])")
