@@ -18,11 +18,11 @@
         {% for member, legislator_object in committee.members_objects %}
           {% if member.leg_id %}
             <li>
-                <a class="tip withTip" href="{{legislator_object.get_absolute_url}}">{{legislator_object.display_name}}{% if not forloop.last %}, {% else %}{% endif %}</a>
+                <a class="tip withTip" href="{{legislator_object.get_absolute_url}}">{{legislator_object.display_name}}{% if not forloop.last %},{% else %}{% endif %}</a>
             </li>
           {% else %}
           <li>
-            <span class="tip withTip">{{ member.name }}{% if not forloop.last %}, {% else %}{% endif %}</span>
+            <span class="tip withTip">{{ member.name }}{% if not forloop.last %},{% else %}{% endif %}</span>
           </li>
           {% endif %}
         {% endfor %}
