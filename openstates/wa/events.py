@@ -95,6 +95,15 @@ class WAEventScraper(EventScraper):
                 if "TBA" in when:
                     continue  # XXX: Fixme
 
+                cancel = \
+                    body.xpath(".//span[@style='color:red;font-weight:bold']")
+
+                if len(cancel) > 0:
+                    cancel = True
+                else:
+                    cancel = False
+
+
                 descr = body.xpath(".//*")
                 flush = False
                 where = body.xpath(".//br")[1].tail
@@ -103,13 +112,20 @@ class WAEventScraper(EventScraper):
                 else:
                     where = "unknown"
 
+                kwargs = {
+                    "location": where
+                }
+
+                if cancel:
+                    kwargs['cancelled'] = cancel
+
                 when = dt.datetime.strptime(when, "%m/%d/%y  %I:%M %p")
 
                 meeting_title = "Scheduled Meeting"  # XXX: Fixme
 
                 agenda = self.scrape_agenda(body.xpath(".//ol"))
                 event = Event(session, when, 'committee:meeting',
-                              meeting_title, location=where)
+                              meeting_title, **kwargs)
                 event.add_participant(
                     "host",
                     who,
