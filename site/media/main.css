@@ -269,7 +269,7 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 #container img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
 #container #map { float: right; width: 100%; height: 135px; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box;}
 .mapBorder{padding: 5px; border: 1px solid #E0E0D7; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box;}
-#container .legMap #map { height: 300px; width: 280px;}
+#container .legMap #map { height: 300px; width: 100%;}
 #billState { float: right; padding: 5px 25px 3px; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; border: 1px solid #e6e6da; text-transform: uppercase; font-size: 120%; margin-bottom: 25px;}
 #voteMap { float: right;}
 
@@ -462,3 +462,21 @@ footer dl { padding: 50px 0 0 35px;}
 .legislator h2{
     margin-top: 20px;
 }
+
+#leg_search{
+    width: 332px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

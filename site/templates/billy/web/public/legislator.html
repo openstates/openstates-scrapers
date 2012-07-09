@@ -336,8 +336,8 @@ $(document).ready(function() {
                     {% for bill in sponsored_bills %}
                         <li>
                             <time datetime="" class="published" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
-                            <span class="inlineTitle h4 withTip"><a href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}
-                                {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span></span>
+                            <h6 class="inlineTitle withTip"><a href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}
+                                {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span></h6>
                             <p class="clear">{{bill.title}}</p>
                         </li>
                     {% endfor %}
@@ -367,8 +367,8 @@ $(document).ready(function() {
                         {% for vote_value, vote in legislator_votes %}
                         <tr>
                             <td>
-                                <time class="timeHeader" datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
-                                <a href="{{ vote.get_absolute_url }}">{{vote.bill.bill_id|upper}} - {{vote.motion|truncatewords:30}}</a>
+                                <time datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
+                                <a class="h5" href="{{ vote.get_absolute_url }}">{{vote.bill.bill_id|upper}} - {{vote.motion|truncatewords:30}}</a>
                                 <ul class="barChart">
                                     <li class="yes">
                                         <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
