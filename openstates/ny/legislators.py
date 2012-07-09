@@ -50,6 +50,11 @@ class NYLegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(page)
             legislator.add_source(url)
 
+            email = page.xpath('//span[@class="spamspan"]')[0].text_content()
+            email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
+            if email:
+                legislator['email'] = email
+
             dist_str = page.xpath("string(//div[@class = 'district'])")
             match = re.match(r'\(([A-Za-z,\s]+)\)', dist_str)
             if match:
@@ -97,7 +102,8 @@ class NYLegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, '/mem/')]"):
+            for link, email in zip(page.xpath("//a[contains(@href, '/mem/')]"),
+                                   page.xpath("//a[contains(@href, 'mailto')]")):
                 name = link.text.strip()
                 if name == 'Assembly Members':
                     continue
@@ -115,4 +121,7 @@ class NYLegislatorScraper(LegislatorScraper):
                                         url=leg_url)
                 legislator.add_source(url)
 
+                email = email.text_content().strip()
+                if email:
+                    legislator['email'] = email
                 self.save_legislator(legislator)
