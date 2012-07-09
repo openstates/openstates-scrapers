@@ -264,6 +264,7 @@ $(document).ready(function() {
             {% endif %}
             <div class="clear"></div>
 
+        {% if not legislator.active %}
         <div class="fullWidth module clear">
             <div class="sevenCol colLt">
                 <h3 class="moduleTitle">Former Roles</h3>
@@ -293,6 +294,7 @@ $(document).ready(function() {
                 <div class="clear"></div> 
             </div>
         </div>
+        {% endif %}
 
         <div class="fullWidth module clear">
             <h3 class="moduleTitle">Media</h3>
@@ -365,7 +367,7 @@ $(document).ready(function() {
                         <tr>
                             <td>
                                 <time class="timeHeader" datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
-                                <a href="{{ vote.get_absolute_url }}">{{vote.bill.bill_id}} - {{vote.motion|truncatewords:30}}</a>
+                                <a href="{{ vote.get_absolute_url }}">{{vote.bill.bill_id|upper}} - {{vote.motion|truncatewords:30}}</a>
                                 <ul class="barChart">
                                     <li class="yes">
                                         <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
