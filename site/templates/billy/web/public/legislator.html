@@ -335,9 +335,9 @@ $(document).ready(function() {
                 {% if sponsored_bills.count %}
                     {% for bill in sponsored_bills %}
                         <li>
-                            <time datetime="" class="published" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
-                            <h6 class="inlineTitle withTip"><a href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}
-                                {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span></h6>
+	                        <time datetime="" class="published" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
+                            <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}
+                                {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
                             <p class="clear">{{bill.title}}</p>
                         </li>
                     {% endfor %}
@@ -367,9 +367,8 @@ $(document).ready(function() {
                         {% for vote_value, vote in legislator_votes %}
                         <tr>
                             <td>
-
-                                <a href="{{ vote.get_absolute_url }}" style="font-size: 19px">{{vote.bill.bill_id|upper}}</a>
-                                <time class="timeHeader" datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
+                                <time datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
+                                <a href="{{ vote.get_absolute_url }}" class="h4 withTip">{{vote.bill.bill_id|upper}}</a>
                                 <p>{{vote.motion|truncatewords:30}}</p>
                                 <ul class="barChart">
                                     <li class="yes">
