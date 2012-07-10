@@ -79,11 +79,18 @@ class MIEventScraper(EventScraper):
                               chamber=chamber)
 
         agenda = metainf['Agenda']['obj']
+        agendas = agenda.text_content().split("\r")
+
         related_bills = agenda.xpath("//a[contains(@href, 'getObject')]")
         for bill in related_bills:
+            description = agenda
+            for a in agendas:
+                if bill.text_content() in a:
+                    description = a
+
             event.add_related_bill(
                 bill.text_content(),
-                description=agenda.text_content(),
+                description=description,
                 type='consideration'
             )
 
