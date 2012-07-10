@@ -18,10 +18,9 @@ excel_mapping = {
 
 class RILegislatorScraper(LegislatorScraper):
     state = 'ri'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-
         if chamber == 'upper':
             url = ('http://www.rilin.state.ri.us/Documents/Senators.xls')
             rep_type = 'Senator '
@@ -29,9 +28,9 @@ class RILegislatorScraper(LegislatorScraper):
             url = ('http://www.rilin.state.ri.us/Documents/Representatives.xls')
             rep_type = 'Representative '
 
-        self.urlretrieve(url, 'ri_senate.xls')
+        self.urlretrieve(url, 'ri_leg.xls')
 
-        wb = xlrd.open_workbook('ri_senate.xls')
+        wb = xlrd.open_workbook('ri_leg.xls')
         sh = wb.sheet_by_index(0)
 
         for rownum in xrange(1, sh.nrows):
@@ -49,9 +48,9 @@ class RILegislatorScraper(LegislatorScraper):
             leg = Legislator(term, chamber, district_name, full_name,
                              '', '', '',
                              translate[d['party']],
-                             office_address=d['address'],
                              town_represented=d['town_represented'],
                              email=d['email'])
+            leg.add_office('district', 'Address', address=address)
             leg.add_source(url)
             self.save_legislator(leg)
 
