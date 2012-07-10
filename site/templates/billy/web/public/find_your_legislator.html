@@ -10,26 +10,19 @@
 {% block headblock %}
 <style>
 .find_your_legislator_errorbox {
-    color:                 #2e2020;
-    padding:               10px;
-    background-color:      #d99898;
-    border:                1px solid #825b5b;
-    -moz-border-radius:    5px;
-    -webkit-border-radius: 5px;
+    padding:               10px 10px 10px 0;
+    border-top:            1px dashed #de703a;
+    border-bottom:         1px dashed #de703a;
+	margin-top: 20px;
 }
 
 .find_your_legislator_infobox {
-    padding:               10px;
-    background-color:      #b1e7fc;
-    border:                1px solid #769aa8;
-    -moz-border-radius:    5px;
-    -webkit-border-radius: 5px;
+	margin-top: 20px;
+}
+p.find_your_legislator_errorbox, p.find_your_legislator_infobox{
+	max-width: 100%;
 }
 
-.find_your_legislator_infobox  a {
-    color:                 #3b4d54;
-    text-decoration:       underline;
-}
 
 .leg_find_results {
     margin-top:            10px;
@@ -169,9 +162,9 @@ $(document).ready(function() {
     GMaps.geolocate({
         success: function(position) {
             $("#communicate").append("<p class = 'find_your_legislator_infobox' >" +
-                "We've been able to guess where you currently are. Click " +
+                "Or let us find your legislators based on your " +
                 "<a id = 'do_geo_locate' href = '#' >" +
-                "here</a> to look up your legislator." +
+                "current location</a>." +
                 "</p>");
             $("#do_geo_locate").click(function() {
                 do_geo_locate(position.coords.latitude,
@@ -199,7 +192,6 @@ $(document).ready(function() {
     <input type = 'hidden' value = '{{request}}' id = '_request' />
     <div id="container">
         <h2>Find your legislator!</h2>
-        <div id ='communicate'></div>
         <div class="medModule" id="notify">
             <form id = 'find_your_leg'>
                 <input type = 'text' name = 'leg_search'
@@ -211,6 +203,7 @@ $(document).ready(function() {
                 </button>
             </form>
             <div class="clear"></div>
+	        <div id ='communicate'></div>
         </div>
 
         <div class="sixCol colLt withDash legMap">
