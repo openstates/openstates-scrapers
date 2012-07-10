@@ -33,8 +33,8 @@ class ILLegislatorScraper(LegislatorScraper):
 
             leg_html = self.urlopen(leg_url)
             leg_doc = lxml.html.fromstring(leg_html)
+            leg_doc.make_links_absolute(leg_url)
             photo_url = leg_doc.xpath('//img[contains(@src, "/members/")]/@src')[0]
-
 
             leg = Legislator(term, chamber, district, name, party=party,
                              url=leg_url, photo_url=photo_url)
