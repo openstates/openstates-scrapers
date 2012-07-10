@@ -307,19 +307,20 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 
 #filterTitle { background: url(images/bg_filterTitle.png) top left no-repeat; margin-left: -30px; height: 36px; width: 156px;}
 .withFilter { margin-top: 30px; }
+#stage1, .active #stage1, #stage2, .active #stage2, #stage3, .active #stage3, #stage4, .active #stage4, #stage5, .active #stage5{
+    display: table-cell;
+    font-size: 80%;
+    vertical-align: middle;
+    line-height: 1.5;
+    text-align: left;
+}
+#stage1 { background: url(images/bg_bill1.png) top left no-repeat; width: 83px; height: 47px; color: #d3d0c9; padding-top: 4px; padding-left: 21px;}
+.active #stage1 { background: url(images/bg_bill1.png) bottom left no-repeat; color: #6f6b66;}
+#stage2, #stage3, #stage4, #stage5 { background: #eff0e7; border: 1px solid #dcddd2; width: 78px; height: 45px; color: #d3d0c9; padding: 4px 7px 0 7px;}
+.active #stage2, .active #stage3, .active #stage4, .active #stage5 { background: #f4f8e7; border: 1px solid #e9ecdd; color: #6f6b66;}
 
-#stage1 { background: url(images/bg_bill1.png) top left no-repeat; width: 104px; height: 51px;}
-.active #stage1 { background: url(images/bg_bill1.png) bottom left no-repeat; }
-#stage2 { background: url(images/bg_bill2.png) top left no-repeat; width: 76px; height: 51px;}
-.active #stage2 { background: url(images/bg_bill2.png) bottom left no-repeat; }
-#stage3 { background: url(images/bg_bill3.png) top left no-repeat; width: 71px; height: 51px;}
-.active #stage3 { background: url(images/bg_bill3.png) bottom left no-repeat; }
-#stage4 { background: url(images/bg_bill4.png) top left no-repeat; width: 76px; height: 51px;}
-.active #stage4 { background: url(images/bg_bill4.png) bottom left no-repeat; }
-#stage5 { background: url(images/bg_bill5.png) top left no-repeat; width: 109px; height: 51px;}
-.active #stage5 { background: url(images/bg_bill5.png) top left no-repeat; }
 
-#billAction { float: right; }
+#billAction { float: right; font-family: "josefin-1","josefin-2",sans-serif; font-style: normal; font-weight: 300; text-transform: uppercase;}
 #billAction li { float: left; margin-left: 3px; text-align: center;}
 #billAction .tip { font-size: 90%; margin-top: 2px;}
 .withTimeline { padding-top: 60px; max-width: 450px;}

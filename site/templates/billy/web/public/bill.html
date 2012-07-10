@@ -72,7 +72,7 @@
             <ol id="billAction">
                 {% for stage, text, date in bill.progress_data %}
                 <li {% if date %}class="active"{% endif %}>
-                    <span class="textReplace" id="{{stage}}">{{text}}</span>
+                    <span id="{{stage}}">{{text}}</span>
                     {% if date %}<span class="tip">{{date|date:"M j, Y"}}</span>{% endif %}
                 </li>
                 {% endfor %}
