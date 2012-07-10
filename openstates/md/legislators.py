@@ -98,6 +98,9 @@ class MDLegislatorScraper(LegislatorScraper):
                         if addr_pieces['capitol']:
                             leg.add_office('capitol', 'Capitol Office',
                                            **addr_pieces['capitol'])
+                            leg['email'] = (addr_pieces['capitol']['email'] or
+                                            addr_pieces['district']['email'] or
+                                            None)
                         if addr_pieces['district']:
                             leg.add_office('district', 'District Office',
                                            **addr_pieces['district'])
