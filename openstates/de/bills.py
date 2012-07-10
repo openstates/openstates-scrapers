@@ -317,7 +317,11 @@ class DEBillScraper(BillScraper):
 
         for a in reversed(actions):
             date, action = a.split(' - ', 1)
-            date = datetime.strptime(date, '%b %d, %Y')
+            try:
+                date = datetime.strptime(date, '%b %d, %Y')
+            except ValueError:
+                date = datetime.strptime(date, '%B %d, %Y')  # XXX: ugh.
+
             actor = actions_get_actor(action, bill['chamber'])
             type_ = actions_categorize(action)
             bill.add_action(actor, action, date, type_)
