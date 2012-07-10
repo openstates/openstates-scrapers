@@ -1,7 +1,7 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
-chamber_name = {'lower': 'House', 'upper': 'Senate'}
+chamber_map = {'House': 'lower', 'Senate': 'upper'}
 party_map = {'d': 'Democratic', 'r': 'Republican', 'i': 'Independent',
              # see wikipedia http://en.wikipedia.org/wiki/New_Hampshire_House_of_Representatives
              # Coulombe & Wall are listed as D+R
@@ -9,24 +9,25 @@ party_map = {'d': 'Democratic', 'r': 'Republican', 'i': 'Independent',
 
 class NHLegislatorScraper(LegislatorScraper):
     state = 'nh'
+    latest_only = True
 
-    def scrape(self, chamber, term):
+    def scrape(self, term, chambers):
         url = 'http://gencourt.state.nh.us/downloads/Members(Asterisk%20Delimited).txt'
-
-        self.validate_term(term, latest_only=True)
 
         with self.urlopen(url) as data:
             for line in data.splitlines():
                 if line.strip() == "":
                     continue
 
-                (body, fullname, last, first, middle, county, district_num,
+                (chamber, fullname, last, first, middle, county, district_num,
                  seat, party, street, street2, city, astate, zipcode,
                  home_phone, office_phone, fax, email, com1, com2, com3,
                  com4, com5, _, _) = line.split('*')
 
-                # skip legislators from other chamber
-                if body != chamber_name[chamber]:
+                chamber = chamber_map[chamber]
+
+                # skip legislators from a chamber we aren't scraping
+                if chamber not in chambers:
                     continue
 
                 if middle:
@@ -44,11 +45,11 @@ class NHLegislatorScraper(LegislatorScraper):
                     district = '%s %s' % (county, district)
 
                 leg = Legislator(term, chamber, district, full, first, last,
-                                 middle, party_map[party],
-                                 address=address,
-                                 home_phone=home_phone,
-                                 office_phone=office_phone, office_fax=fax,
-                                 email=email)
+                                 middle, party_map[party], email=email)
+                leg.add_office('district', 'Home Address',
+                               address=address, phone=home_phone or None)
+                leg.add_office('district', 'Office Address',
+                               phone=office_phone or None, fax=fax or None)
 
                 if chamber == 'upper':
                     leg['url'] = 'http://www.gencourt.state.nh.us/Senate/members/webpages/district%02d.aspx' % int(district_num)
