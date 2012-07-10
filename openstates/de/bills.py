@@ -450,7 +450,20 @@ class DEBillScraper(BillScraper):
                         r'(?:Yes|No|Not Voting|Absent):\s{,3}(\d{,3})', re.I)):
 
         namespaces = {"re": "http://exslt.org/regular-expressions"}
-        doc = lxml.html.fromstring(self.urlopen(url))
+        try:
+            doc = lxml.html.fromstring(self.urlopen(url))
+        except scrapelib.HTTPError as e:
+            known_fail_links = [
+                "http://legis.delaware.gov/LIS/lis146.nsf/7712cf7cc0e9227a852568470077336f/cdfd8149e79c2bb385257a24006e9f7a?OpenDocument"
+            ]
+            if "404" in str(e.response):
+                # XXX: Ugh, ok, so there's no way (that I could find quickly)
+                #      to get the _actual_ response (just "ok") from the object.
+                #      As a result, this. Forgive me.
+                #            -PRT
+                if url in known_fail_links:
+                    return
+            raise
 
         xpath = ("//font[re:match(., '^(Yes|No|Not Voting|Absent):', 'i')]"
                  "/ancestor::tr[1]")
