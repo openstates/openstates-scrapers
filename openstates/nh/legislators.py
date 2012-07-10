@@ -63,7 +63,6 @@ class NHLegislatorScraper(LegislatorScraper):
                     code = option_map.get('{0}, {1}'.format(last, first))
                     if code:
                         leg['url'] = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member=' + code
-                        print leg['url']
 
                 for com in (com1, com2, com3, com4, com5):
                     if com:
