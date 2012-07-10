@@ -27,8 +27,9 @@ class DCLegislatorScraper(LegislatorScraper):
             doc = lxml.html.fromstring(data)
             doc.make_links_absolute(url)
 
+            descriptor = doc.xpath('//p[@class="head-descriptor"]/text()')[0]
             name = doc.xpath('//h2/text()')[0]
-            if 'Chairman' in name:
+            if 'Chairman' in descriptor:
                 district = 'Chairman'
             else:
                 district = get_field(doc, 'Represents: ')
