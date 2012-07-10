@@ -237,8 +237,10 @@ dt { font-weight: bold;}
 .inlineList dt, .inlineList dd { float: left; margin-right: 15px; line-height: 18px;}
 
 ul .one { clear: both;}
-ul .one, ul .two { margin-right: 35px; }
-.inlineThirds li { float: left; width: 280px;}
+ul .one{ padding-right: 23px; }
+ul .two { padding-right: 12px; padding-left: 12px}
+ul .three { padding-left: 24px; }
+.inlineThirds li { float: left; width: 33%; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;}
 .inlineThirds_module li { float: left; width: 275px; }
 .floatedList li { float: left; margin-right: 20px;}
 .inlineList li { display: inline-block; margin-right: 10px;}
