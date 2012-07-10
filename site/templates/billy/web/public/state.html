@@ -41,7 +41,7 @@
                  </li>
                 {% endfor %}
             </ul>
-        </div>    
+        </div>
         <div class="fourCol colLtSm">
             <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
             <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
@@ -49,7 +49,7 @@
         <div class="sixCol colRt">
             <p class="tip centeredText">Click on a district to view corresponding legislators</p>
             <div id="results_table">
-                
+
             </div>
         </div>
         <div class="clear"></div>
@@ -122,14 +122,14 @@
     </div>
     <div class="fullWidth module">
         <h3 class="moduleTitle">Sessions</h3>
-        
+
         <table>
             <thead>
                 <tr >
                     <th>Session</th>
                     <th>Bills</th>
                 </tr>
-            </thead>    
+            </thead>
             <tbody>
                 {% for session in sessions %}
                 {% if session.bill_count %}
@@ -140,7 +140,7 @@
                 {% endif %}
                 {% endfor %}
         </table>
-        
+
     </div>
 
 <!-- mapbox interaction script -->
@@ -148,7 +148,7 @@
     var lower_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}lower.jsonp';
     var upper_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}upper.jsonp';
     var map = new L.Map('mapbox-{{metadata.abbr}}',
-            {attributionControl:true, minZoom: 5, maxZoom: 12 });
+            {attributionControl:true, minZoom: 4, maxZoom: 12 });
     var layersControl = new L.Control.Layers();
     var marker;
     map.attributionControl.setPrefix('');
@@ -172,7 +172,7 @@
         // add events
         var container = $('#mbtooltip-{{metadata.abbr}}')[0];
         var events = {};
-        events.on = function(arg) { 
+        events.on = function(arg) {
             var selLayer = $('input[name="leaflet-base-layers"]:checked').parent().text().trimLeft();
             if (selLayer === layerName) {
                 container.innerHTML = arg.data.NAMELSAD;
