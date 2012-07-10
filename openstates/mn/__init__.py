@@ -64,17 +64,16 @@ metadata = dict(
             'display_name': '2011, 1st Special Session',
             '_scraped_name': '87th Legislature, 2011 1st Special Session',
         },
-        #'2013-2014': {
-        #    'site_id': '0882013',
-        #    'type': "primary",
-        #    'display_name': '2013-2014 Regular Session',
-        #    '_scraped_name': '88th Legislature, 2013-2014'
+        '2013-2014': {
+            'site_id': '0882013',
+            'type': "primary",
+            'display_name': '2013-2014 Regular Session',
+            '_scraped_name': '88th Legislature, 2013-2014'
         }
 
     },
     feature_flags=['subjects', 'events'],
     _ignored_scraped_sessions=['85th Legislature, 2007-2008',
-                               '88th Legislature, 2013-2014', # delme
                                '85th Legislature, 2007 1st Special Session',
                                '84th Legislature, 2005-2006',
                                '84th Legislature, 2005 1st Special Session',
