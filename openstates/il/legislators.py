@@ -42,7 +42,7 @@ class ILLegislatorScraper(LegislatorScraper):
             leg.add_source(leg_url)
 
             # email
-            email = doc.xpath('//b[text()="Email: "]')
+            email = leg_doc.xpath('//b[text()="Email: "]')
             if email:
                 leg['email'] = email[0].tail
 
