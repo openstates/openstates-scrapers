@@ -316,8 +316,8 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 }
 #stage1 { background: url(images/bg_bill1.png) top left no-repeat; width: 83px; height: 47px; color: #d3d0c9; padding-top: 4px; padding-left: 21px;}
 .active #stage1 { background: url(images/bg_bill1.png) bottom left no-repeat; color: #6f6b66;}
-#stage2, #stage3, #stage4, #stage5 { background: #eff0e7; border: 1px solid #dcddd2; width: 78px; height: 45px; color: #d3d0c9; padding: 4px 7px 0 7px;}
-.active #stage2, .active #stage3, .active #stage4, .active #stage5 { background: #f4f8e7; border: 1px solid #e9ecdd; color: #6f6b66;}
+#stage2, #stage3, #stage4, #stage5 { background-color: #f4f8e7; border: 1px solid #dcddd2; width: 78px; height: 45px; color: #d3d0c9; padding: 4px 7px 0 7px;}
+.active #stage2, .active #stage3, .active #stage4, .active #stage5 { background-color: #eff0e7; border: 1px solid #e9ecdd; color: #6f6b66;}
 
 
 #billAction { float: right; font-family: "josefin-1","josefin-2",sans-serif; font-style: normal; font-weight: 300; text-transform: uppercase;}
