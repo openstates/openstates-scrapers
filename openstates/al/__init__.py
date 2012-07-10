@@ -1,4 +1,5 @@
 import datetime
+from billy.fulltext import pdfdata_to_text, oyster_text, text_after_line_numbers
 
 metadata =  {
     'name': 'Alabama',
@@ -22,7 +23,7 @@ metadata =  {
         # 'start_year': 2009,
         # 'end_year': 2010},
         {'name': '2011-2014',
-         'sessions': ['2011rs','2012rs'],
+         'sessions': ['2011rs','2012rs', 'First Special Session 2012', '2013rs'],
          'start_year': 2011,
          'end_year': 2014,
         }
@@ -83,6 +84,18 @@ metadata =  {
             'type': 'primary',
             '_scraped_name': 'Regular Session 2012',
         },
+        'First Special Session 2012': {
+            'display_name': 'First Special Session 2012',
+            'internal_id': '1060',
+            'type': 'special',
+            '_scraped_name': 'First Special Session 2012',
+        },
+        '2013rs': {
+            'display_name': '2013 Regular Session',
+            'internal_id': '1061',
+            'type': 'primary',
+            '_scraped_name': 'Regular Session 2013',
+        },
     },
     '_ignored_scraped_sessions': [
         'First Special Session 2010',
@@ -113,8 +126,22 @@ metadata =  {
         'Organizational Session 2011']
 }
 
+
 def session_list():
     from billy.scrape.utils import url_xpath
     sessions = url_xpath('http://alisondb.legislature.state.al.us/acas/ACTIONSessionResultsMac.asp',
         '//option/text()' )
     return [s.strip() for s in sessions]
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    text = pdfdata_to_text(data)
+    return text_after_line_numbers(text)
+
+document_class = dict(
+    AWS_PREFIX = 'documents/al/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

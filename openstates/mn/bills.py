@@ -108,12 +108,13 @@ class MNBillScraper(BillScraper):
                             self.warning('ACTION without date: %s' %
                                          action_text)
                             continue
-
                 # categorize actions
                 action_type = 'other'
                 for pattern, atype in self._categorizers:
                     if re.match(pattern, action_text):
                         action_type = atype
+                        if 'committee:referred' in action_type:
+                            bill_action['committee'] = description
                         break
 
                 if description:
@@ -168,18 +169,23 @@ class MNBillScraper(BillScraper):
             sponsors = doc.xpath('//table[@summary="Show Authors"]/descendant::a/text()')
             if sponsors:
                 primary_sponsor = sponsors[0].strip()
-                bill.add_sponsor('primary', primary_sponsor)
+                bill.add_sponsor('primary', primary_sponsor, chamber=chamber)
                 cosponsors = sponsors[1:]
                 for leg in cosponsors:
-                    bill.add_sponsor('cosponsor', leg.strip())
+                    bill.add_sponsor('cosponsor', leg.strip(), chamber=chamber)
 
             # Add Actions performed on the bill.
             bill_actions = self.extract_bill_actions(doc, chamber)
             for action in bill_actions:
+                kwargs = {}
+                if 'committee' in action:
+                    kwargs['committee'] = action['committee']
+
                 bill.add_action(action['action_chamber'],
                                 action['action_text'],
                                 action['action_date'],
-                                type=action['action_type'])
+                                type=action['action_type'],
+                                **kwargs)
 
         # Get all versions of the bill.
         # Versions of a bill are on a separate page, linked to from the column

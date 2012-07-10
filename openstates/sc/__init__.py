@@ -1,4 +1,8 @@
+import lxml.html
 import datetime
+from billy.fulltext import oyster_text
+
+settings = dict(SCRAPELIB_TIMEOUT=300)
 
 metadata = dict(
     name='South Carolina',
@@ -16,8 +20,9 @@ metadata = dict(
          'start_year': 2010, 'end_year': 2012},
         ],
     session_details={
-        '119': {'start_date': datetime.date(2010,11,17), 'type': 'primary',
+        '119': {'start_date': datetime.date(2010, 11, 17), 'type': 'primary',
                 '_scraped_name': '119 - (2011-2012)',
+                'display_name': '2011-2012 Regular Session'
                },
     },
     feature_flags=[],
@@ -33,7 +38,22 @@ metadata = dict(
 
 )
 
+
 def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath( 'http://www.scstatehouse.gov/billsearch.php',
         "//select[@id='session']/option/text()" )
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    # trim first and last part
+    text = ' '.join(p.text_content() for p in doc.xpath('//p')[1:-1])
+    return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/sc/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

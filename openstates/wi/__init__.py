@@ -1,4 +1,6 @@
 import datetime
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
 
 metadata = {
     'abbreviation': 'wi',
@@ -77,7 +79,7 @@ metadata = {
             '_scraped_name': 'Sept 2011 Special Session',
         },
     },
-    'feature_flags': ['subjects'],
+    'feature_flags': ['subjects', 'events'],
     '_ignored_scraped_sessions': [
         '2007 Regular Session', u'Apr 2008 Special Session',
         u'Mar 2008 Special Session', u'Dec 2007 Special Session',
@@ -92,9 +94,23 @@ metadata = {
         u'Jan 1995 Special Session', u'Sept 1995 Special Session']
 
 }
- 
+
 def session_list():
     from billy.scrape.utils import url_xpath
     sessions = url_xpath( 'http://legis.wisconsin.gov/',
-        "//select[@name='session']/option/text()" )
+        "//select[@name='ctl00$PlaceHolderLeftNavBar$ctl01$ctl00$ddlPropSess']/option/text()" )
     return [session.strip() for session in sessions]
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    is_pdf = (oyster_doc['metadata']['mimetype'] == 'application/pdf' or
+              oyster_doc['url'].endswith('.pdf'))
+    if is_pdf:
+        return text_after_line_numbers(pdfdata_to_text(data))
+
+document_class = dict(
+    AWS_PREFIX = 'documents/wi/',
+    update_mins = 24*7*60,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

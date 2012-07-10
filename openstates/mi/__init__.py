@@ -1,3 +1,8 @@
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
+
+settings = dict(SCRAPELIB_TIMEOUT=600)
+
 metadata = {
     'name': 'Michigan',
     'abbreviation': 'mi',
@@ -18,7 +23,7 @@ metadata = {
                       '_scraped_name': '2011-2012',
                      },
     },
-    'feature_flags': ['subjects'],
+    'feature_flags': ['subjects', 'events'],
     '_ignored_scraped_sessions': ['2009-2010', '2007-2008', '2005-2006',
                                   '2003-2004', '2001-2002', '1999-2000',
                                   '1997-1998', '1995-1996']
@@ -30,3 +35,17 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.legislature.mi.gov/mileg.aspx?'
                      'page=LegBasicSearch', '//option/text()')
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = doc.xpath('//body')[0].text_content()
+    return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/mi/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

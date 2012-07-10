@@ -68,7 +68,8 @@ class TNBillScraper(BillScraper):
     def scrape(self, chamber, term):
 
         if chamber == 'lower':
-            raise ValueError('TN can only be run with chamber=upper')
+            self.warning("skipping bills for lower")
+            return
 
         #types of bills
         abbrs = ['HB', 'HJR', 'HR', 'SB','SJR', 'SR']

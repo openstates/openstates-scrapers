@@ -1,4 +1,3 @@
 User-agent: *
-Disallow: /browse/
-Disallow: /jenkins/
+Disallow: /admin/
 Disallow: /api/v1/

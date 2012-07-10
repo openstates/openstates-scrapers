@@ -1,24 +1,22 @@
 import re
 import os
-import datetime
-import pdb
 
+import pytz
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+
+from billy import db
 from billy.conf import settings
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from .models import CABill
-
-from sqlalchemy.orm import sessionmaker, relation, backref
-from sqlalchemy import create_engine
-
-import pytz
-import lxml.html
 
 
 def clean_title(s):
     # replace smart quote characters
     s = re.sub(ur'[\u2018\u2019]', "'", s)
     s = re.sub(ur'[\u201C\u201D]', '"', s)
+    s = re.sub(u'\u00e2\u20ac\u2122', u"'", s)
     return s
 
 
@@ -38,7 +36,6 @@ class CABillScraper(BillScraper):
             pw = os.environ.get('MYSQL_PASSWORD',
                                 getattr(settings, 'MYSQL_PASSWORD', ''))
 
-
         if (user is not None) and (pw is not None):
             conn_str = 'mysql://%s:%s@' % (user, pw)
         else:
@@ -48,6 +45,78 @@ class CABillScraper(BillScraper):
         self.engine = create_engine(conn_str)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
+
+    def committee_code_to_id(self, code, cache={}):
+        try:
+            return cache[code]
+        except KeyError:
+            obj = db.committees.find_one({'+action_code': code})
+            if obj:
+                cache[code] = obj['_id']
+                return obj['_id']
+
+    def committee_code_regex(self, cache={}):
+        try:
+            return cache['regex']
+        except KeyError:
+            return '|'.join(db.committees.distinct('+action_code'))
+
+    def committee_slug_regex(self, cache={}):
+        try:
+            return cache['regex']
+        except KeyError:
+            pass
+
+        def slugify(s):
+            '''You filthy string, you.'''
+            return re.sub(r'[ ,.]', '', s)
+
+        slugs = map(slugify, [
+            u'A. & A.R.',
+            u'AGRI.',
+            u'APPR.',
+            u'B. & F.',
+            u'B. & F.I.',
+            u'B. & F.R.',
+            u'BUDGET.',
+            u'E. & C.A.',
+            u'E. & R.',
+            u'E. U. & C.',
+            u'E., U. & C',
+            u'E.Q.',
+            u'E.S. & T.M',
+            u'ED.',
+            u'G.O.',
+            u'GOV. & F.',
+            u'Gov. & F.',
+            u'H. & C.D.',
+            u'HEALTH.',
+            u'HIGHER ED.',
+            u'HUM. S.',
+            u'HUMAN S.',
+            u'INS.',
+            u'JUD.',
+            u'L. & E.',
+            u'L. & I.R.',
+            u'L. GOV.',
+            u'N.R. & W.',
+            u'NAT. RES.',
+            u'P.E. & R.',
+            u'PUB. S.',
+            u'REV. & TAX',
+            u'RLS.',
+            u'T. & H.',
+            u'TRANS.',
+            u'U. & C.',
+            u'V.A.',
+            u'W., P. & W'
+            ])
+
+        junk = '[ .,]*?'
+        slugs = (junk.join(list(slug)) for slug in slugs)
+        regex = '|'.join(sorted(slugs, key=len, reverse=True))
+        cache['regex'] = regex
+        return regex
 
     def scrape(self, chamber, session):
         self.validate_session(session)
@@ -74,7 +143,6 @@ class CABillScraper(BillScraper):
             session_year=session).filter_by(
             measure_type=type_abbr)
 
-
         for bill in bills:
             bill_session = session
             if bill.session_num != '0':
@@ -84,28 +152,25 @@ class CABillScraper(BillScraper):
 
             fsbill = Bill(bill_session, chamber, bill_id, '')
 
-            # Construct session for web query, going from '20092010' to '0910'
-            source_session = session[2:4] + session[6:8]
+            # # Construct session for web query, going from '20092010' to '0910'
+            # source_session = session[2:4] + session[6:8]
 
-            # Turn 'AB 10' into 'ab_10'
-            source_num = "%s_%s" % (bill.measure_type.lower(),
-                                    bill.measure_num)
+            # # Turn 'AB 10' into 'ab_10'
+            # source_num = "%s_%s" % (bill.measure_type.lower(),
+            #                         bill.measure_num)
 
             # Construct a fake source url
-            source_url = ("http://www.leginfo.ca.gov/cgi-bin/postquery?"
-                          "bill_number=%s&sess=%s" %
-                          (source_num, source_session))
+            source_url = ('http://leginfo.legislature.ca.gov/faces/'
+                          'billNavClient.xhtml?bill_id=%s') % bill.bill_id
 
             fsbill.add_source(source_url)
-
-            scraped_versions = self.scrape_site_versions(source_url)
+            fsbill.add_version(bill_id, source_url, 'text/html')
 
             title = ''
             short_title = ''
             type = ['bill']
             subject = ''
             all_titles = set()
-            i = 0
             for version in bill.versions:
                 if not version.bill_xml:
                     continue
@@ -130,25 +195,6 @@ class CABillScraper(BillScraper):
                 if version.subject:
                     subject = clean_title(version.subject)
 
-                date = version.bill_version_action_date.date()
-
-                url = ''
-                try:
-                    scraped_version = scraped_versions[i]
-                    if scraped_version[0] == date:
-                        url = scraped_version[1]
-                        i += 1
-                except IndexError:
-                    pass
-
-                fsbill.add_version(
-                    version.bill_version_id, url,
-                    date=date,
-                    title=title,
-                    short_title=short_title,
-                    subject=[subject],
-                    type=type)
-
             if not title:
                 self.warning("Couldn't find title for %s, skipping" % bill_id)
                 continue
@@ -156,7 +202,7 @@ class CABillScraper(BillScraper):
             fsbill['title'] = title
             fsbill['short_title'] = short_title
             fsbill['type'] = type
-            fsbill['subjects'] = [subject]
+            fsbill['subjects'] = filter(None, [subject])
 
             # We don't want the current title in alternate_titles
             all_titles.remove(title)
@@ -168,6 +214,8 @@ class CABillScraper(BillScraper):
                     fsbill.add_sponsor(author.contribution, author.name)
 
             introduced = False
+            committee_code_regex = self.committee_code_regex()
+            committee_slug_regex = self.committee_slug_regex()
 
             for action in bill.actions:
                 if not action.action:
@@ -204,7 +252,16 @@ class CABillScraper(BillScraper):
                 if 'To Com' in act_str or 'referred to' in act_str.lower():
                     type.append('committee:referred')
 
-                if 'Read third time.  Passed.' in act_str:
+                if 'Read third time.  Passed' in act_str:
+                    type.append('bill:passed')
+
+                if 'Read third time. Passed' in act_str:
+                    type.append('bill:passed')
+
+                if 'Read third time, passed' in act_str:
+                    type.append('bill:passed')
+
+                if re.search(r'Read third time.+?Passed and', act_str):
                     type.append('bill:passed')
 
                 if 'Approved by Governor' in act_str:
@@ -225,8 +282,24 @@ class CABillScraper(BillScraper):
                 if not type:
                     type = ['other']
 
+                # Add in the committee ID of the related committee, if any.
+                kwargs = {}
+                code = re.search(committee_code_regex, actor, re.I)
+                if code:
+                    code = code.group()
+                    committee_id = self.committee_code_to_id(code)
+                    if committee_id:
+                        kwargs['actor_id'] = committee_id
+                        kwargs['actor_collection'] = 'committees'
+                        actor_text = re.search(committee_slug_regex, action.action)
+                        if actor_text:
+                            actor_text = actor_text.group()
+                            kwargs['actor_text'] = actor_text
+                        else:
+                            kwargs['actor_text'] = 'committee'
+
                 fsbill.add_action(actor, act_str, action.action_date.date(),
-                                  type=type)
+                                  type=type, **kwargs)
 
             for vote in bill.votes:
                 if vote.vote_result == '(PASS)':
@@ -296,28 +369,16 @@ class CABillScraper(BillScraper):
                     else:
                         fsvote.other(record.legislator_name)
 
-                # The abstain count field in CA's database includes
-                # vacancies, which we aren't interested in.
-                fsvote['other_count'] = len(fsvote['other_votes'])
+                for s in ('yes', 'no', 'other'):
+                    # Kill dupe votes.
+                    key = s + '_votes'
+                    fsvote[key] = list(set(fsvote[key]))
+
+                # In a small percentage of bills, the integer vote counts
+                # are inaccurate, so let's ignore them.
+                for k in ('yes', 'no', 'other'):
+                    fsvote[k + '_count'] = len(fsvote[k + '_votes'])
 
                 fsbill.add_vote(fsvote)
 
             self.save_bill(fsbill)
-
-    def scrape_site_versions(self, source_url):
-        with self.urlopen(source_url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(source_url)
-
-            versions = []
-
-            for link in page.xpath("//a[contains(., 'HTML')]"):
-                date = link.xpath("string(../../td[2])").strip(" -")
-                date = datetime.datetime.strptime(
-                    date, '%m/%d/%Y').date()
-
-                versions.append((date, link.attrib['href']))
-
-            versions.reverse()
-
-            return versions

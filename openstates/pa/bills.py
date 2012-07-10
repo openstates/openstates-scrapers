@@ -7,6 +7,7 @@ from .utils import (bill_abbr, parse_action_date, bill_list_url, history_url,
                     info_url, vote_url)
 
 import lxml.html
+import urlparse
 
 
 class PABillScraper(BillScraper):
@@ -69,10 +70,21 @@ class PABillScraper(BillScraper):
 
     def parse_bill_versions(self, bill, page):
         for link in page.xpath(
-            '//div[@class="pn_table"]/descendant::a[@class="link2"]'):
+                '//div[@class="pn_table"]/descendant::tr/td[2]/a[@class="imgDim"]'):
+            href = link.attrib['href']
+            params = urlparse.parse_qs(href[href.find("?")+1:])
+            printers_number = params['pn'][0]
+            version_type = params['txtType'][0]
+            mime_type = 'text/html'
+            if version_type == 'PDF':
+                mime_type = 'application/pdf'
+            elif version_type == 'DOC':
+                mime_type = 'application/msword'
+            elif 'HTML':
+                mime_type = 'text/html'
 
-            bill.add_version("Printer's No. %s" % link.text.strip(),
-                             link.attrib['href'])
+            bill.add_version("Printer's No. %s" % printers_number,
+                             href, mime_type, on_duplicate='use_old')
 
     def parse_history(self, bill, url):
         bill.add_source(url)
@@ -93,7 +105,7 @@ class PABillScraper(BillScraper):
                 first = False
             else:
                 sponsor_type = 'cosponsor'
-            
+
             if sponsor.find(' and ') != -1:
                 dual_sponsors = sponsor.split(' and ')
                 bill.add_sponsor(sponsor_type, dual_sponsors[0].strip().title())
@@ -127,13 +139,17 @@ class PABillScraper(BillScraper):
             action = match.group(1)
 
             type = []
+            kwargs = {}
+            committee = None
 
             if action.lower().startswith('introduced'):
                 type.append('bill:introduced')
-            elif action.startswith('Referred to'):
+            elif re.findall("Referred to (.+)", action) != []:
                 type.append('committee:referred')
-            elif action.startswith('Re-referred'):
+                committee = re.findall("Referred to (.+)", action)[0]  #XXX: Fix?
+            elif re.findall("Re-referred to (.+)", action) != []:
                 type.append('committee:referred')
+                committee = re.findall("Re-referred to (.+)", action)[0]  #XXX: Fix?
             elif action.startswith('Amended on'):
                 type.append('amendment:passed')
             elif action.startswith('Approved by the Governor'):
@@ -159,8 +175,12 @@ class PABillScraper(BillScraper):
             if not type:
                 type = ['other']
 
+            if not committee is None:
+                kwargs['committee'] = committee
+
             date = parse_action_date(match.group(2))
-            bill.add_action(chamber, action, date, type=type)
+            bill.add_action(chamber, action, date, type=type,
+                            **kwargs)
 
     def parse_votes(self, bill, url):
         bill.add_source(url)
@@ -171,7 +191,6 @@ class PABillScraper(BillScraper):
             for td in page.xpath("//td[@class = 'vote']"):
                 caption = td.xpath("string(preceding-sibling::td)").strip()
 
-                location = ''
                 if caption == 'Senate':
                     chamber = 'upper'
                 elif caption == 'House':

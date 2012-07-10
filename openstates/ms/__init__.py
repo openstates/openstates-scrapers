@@ -1,3 +1,6 @@
+import lxml.html
+from billy.fulltext import oyster_text
+
 metadata = dict(
     name='Mississippi',
     abbreviation='ms',
@@ -89,3 +92,17 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://billstatus.ls.state.ms.us/sessions.htm',
                      '//a/text()')
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = ' '.join(p.text_content() for p in
+                    doc.xpath('//h2/following-sibling::p'))
+    return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ms/',
+    update_mins = 30*24*60,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

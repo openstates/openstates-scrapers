@@ -1,4 +1,6 @@
 import datetime
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
 
 metadata = {
     "lower_chamber_title": "Representative",
@@ -63,7 +65,7 @@ metadata = {
     },
     "legislature_name": "Louisiana Legislature",
     "lower_chamber_term": 4,
-    'feature_flags': ['subjects'],
+    'feature_flags': ['subjects', 'events'],
     '_ignored_scraped_sessions': [
         '2012 Organizational Session',
         '2008 Regular Legislative Session',
@@ -101,3 +103,14 @@ def session_list():
     import re
     return [re.sub('\s+', ' ', x.text_content()) for x in
             url_xpath('http://www.legis.state.la.us/session.htm', '//strong')][:-1]
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    return text_after_line_numbers(pdfdata_to_text(data))
+
+document_class = dict(
+    AWS_PREFIX = 'documents/la/',
+    update_mins = 7*24*60,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

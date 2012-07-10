@@ -1,25 +1,20 @@
 import re
 import pdb
-import httplib2
-import pprint
-from functools import partial
-from operator import methodcaller, itemgetter
+from operator import methodcaller
 
 import lxml.html
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 
-
-
 def parse_address(s, split=re.compile(r'[;,]\s{,3}').split):
     '''
     Extract address fields from text.
     '''
-    # If the address isn't formatted correctly, skip for now. 
+    # If the address isn't formatted correctly, skip for now.
     if ';' not in s:
         return []
-    
+
     fields = 'city zip phone'.split()
     vals = split(s)
     res = []
@@ -36,16 +31,13 @@ class CALegislatorScraper(LegislatorScraper):
 
     state = 'ca'
 
-    encoding = 'utf-8'
-
     urls = {'upper': 'http://senate.ca.gov/senators',
-            'lower': 'http://assembly.ca.gov/assemblymembers',}
-
+            'lower': 'http://assembly.ca.gov/assemblymembers'}
 
     def scrape(self, chamber, term):
 
         url = self.urls[chamber]
-        html = self.urlopen(url).decode(self.encoding)
+        html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         rows = doc.xpath('//table/tbody/tr')
 
@@ -55,7 +47,6 @@ class CALegislatorScraper(LegislatorScraper):
             legislator.add_source(url)
             #pprint.pprint(legislator)
             self.save_legislator(legislator)
-            
 
     def parse_legislator(self, tr, term, chamber,
 
@@ -76,17 +67,17 @@ class CALegislatorScraper(LegislatorScraper):
                 'address': parse_address,
                 }):
         '''
-        Given a tr element, get specific data from it. 
+        Given a tr element, get specific data from it.
         '''
         rubberstamp = lambda _: _
         tr_xpath = tr.xpath
         res = {}
         for k, v in xp.items():
-            
+
             f = funcs.get(k, rubberstamp)
             v = (titles[chamber],) + v
             v = map(f, map(strip, tr_xpath(xpath % v)))
-            
+
             if len(v) == 1:
                 res[k] = v[0]
             else:
@@ -107,9 +98,23 @@ class CALegislatorScraper(LegislatorScraper):
                 # No zip? Toss.
                 addresses.remove(x)
 
-        # Re-key te addresses
-        res['capitol_office'] = addresses[0]
-        res['district_offices'] = addresses[1:]
+        # Re-key the addresses
+        addresses[0].update(type='capitol', name='Capitol Office')
+        offices = [addresses[0]]
+        for office in addresses[1:]:
+            office.update(type='district', name='District Office')
+            offices.append(office)
+
+        for office in offices:
+            street = office['street']
+            street = '%s\n%s, %s %s' % (street, office['city'], 'CA',
+                                        office['zip'])
+            office['address'] = street
+            office['fax'] = None
+            office['email'] = None
+
+            del office['street'], office['city'], office['zip']
+        res['offices'] = offices
         del res['address']
 
         # Remove junk from assembly member names.
@@ -124,7 +129,5 @@ class CALegislatorScraper(LegislatorScraper):
 
         # Add a source for the url.
         leg = Legislator(term, chamber, **res)
+        leg.update(**res)
         return leg
-
-        
-

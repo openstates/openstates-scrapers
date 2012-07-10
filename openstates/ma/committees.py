@@ -6,11 +6,15 @@ import lxml.html
 class MACommitteeScraper(CommitteeScraper):
     state = 'ma'
 
-    def scrape(self, chamber, term):
-        if chamber == 'upper':
-            page_types = ['Senate', 'Joint']
-        elif chamber == 'lower':
-            page_types = ['House']
+    def scrape(self, term, chambers):
+        page_types = []
+        if 'upper' in chambers:
+            page_types += ['Senate', 'Joint']
+        if 'lower' in chambers:
+            page_types += ['House']
+        chamber_mapping = {'Senate': 'upper',
+                           'House': 'lower',
+                           'Joint': 'joint'}
 
         foundComms = []
 
@@ -22,13 +26,22 @@ class MACommitteeScraper(CommitteeScraper):
                 doc.make_links_absolute('http://www.malegislature.gov')
 
                 for com_url in doc.xpath('//ul[@class="committeeList"]/li/a/@href'):
+                    chamber = chamber_mapping[page_type]
                     self.scrape_committee(chamber, com_url)
 
     def scrape_committee(self, chamber, url):
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
 
-            name = doc.xpath('//span[@class="committeeShortName"]/text()')[0]
+            name = doc.xpath('//span[@class="committeeShortName"]/text()')
+            if len(name) == 0:
+                self.warning("Had to skip this malformed page.")
+                return
+            # Because of http://www.malegislature.gov/Committees/Senate/S29 this
+            # XXX: hack had to be pushed in. Remove me ASAP. This just skips
+            #      malformed pages.
+
+            name = name[0]
             com = Committee(chamber, name)
             com.add_source(url)
 

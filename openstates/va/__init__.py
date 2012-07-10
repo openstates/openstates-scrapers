@@ -1,4 +1,8 @@
 import datetime
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
+
+settings = dict(SCRAPELIB_RPM=40)
 
 metadata = {
     'name': 'Virginia',
@@ -13,7 +17,7 @@ metadata = {
     'terms': [
         {'name': '2009-2011', 'sessions': ['2010', '2011', '2011specialI'],
          'start_year': 2010, 'end_year': 2011},
-        {'name': '2012-2013', 'sessions': ['2012'],
+        {'name': '2012-2013', 'sessions': ['2012', '2012specialI'],
          'start_year': 2012, 'end_year': 2013},
     ],
     'session_details': {
@@ -30,6 +34,9 @@ metadata = {
         '2012': {'start_date': datetime.date(2012, 1, 11), 'site_id': '121',
                  '_scraped_name': '2012 Session',
                 },
+        '2012specialI': {'start_date': datetime.date(2012, 3, 11),
+                         'site_id': '122',
+                         '_scraped_name': '2012 Special Session I', },
     },
     'feature_flags': ['subjects'],
     '_ignored_scraped_sessions': ['2009 Session',
@@ -55,3 +62,18 @@ def session_list():
     sessions = url_xpath( 'http://lis.virginia.gov/',
         "//div[@id='sLink']//select/option/text()")
     return [s.strip() for s in sessions if 'Session' in s]
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = ' '.join(x.text_content()
+                    for x in doc.xpath('//div[@id="mainC"]/p'))
+    return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/va/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

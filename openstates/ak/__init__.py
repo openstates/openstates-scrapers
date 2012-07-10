@@ -1,3 +1,8 @@
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
+
+settings = dict(SCRAPELIB_TIMEOUT=600)
+
 metadata = dict(
     name='Alaska',
     abbreviation='ak',
@@ -35,3 +40,17 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.legis.state.ak.us/basis/start.asp',
                      '(//ul)[last()]/li/a/nobr/text()')
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = doc.xpath('//pre')[0].text_content()
+    text = text_after_line_numbers(text)
+    return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ak/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

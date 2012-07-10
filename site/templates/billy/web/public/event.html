@@ -1,0 +1,71 @@
+{% extends "billy/web/public/base.html" %}
+{% load url from future %}
+{% load humanize %}
+{% load customtags %}
+
+{% block title %}{{event.description|trunc}}{% endblock %}
+
+{% block content %}
+<div class="fullWidth">
+    <div class="medModule">
+        <h2>{{event.description|trunc}}</h2>
+        <dl class="inlineList">
+            <dt>When:</dt>
+            <dd>{{event.when|date:"M j, Y"}}</dd>
+        
+            <dt>Where:</dt>
+            <dd>{{ event.location }}</dd>
+        </dl>
+        <div class="clear"></div>
+    </div>
+    <div class="fullWidth module">
+        <h3 class="moduleTitle">Participants</h3>
+        <table>
+            <tr>
+                <th>Who</th>
+                <th>Role</th>
+            </tr>
+{% for participant in event.participants %}
+            <tr>
+                {% if participant.committee_id %}
+                <td><a href = '/{{abbr}}/committees/{{participant.committee_id}}'
+                        >{{participant.participant}}</a></td>
+                {% else %}
+                    <td>{{participant.participant}}</td>
+                {% endif %}
+                <td>{{participant.type}}</td>
+            </tr>
+{% endfor %}
+        </table>
+    </div>
+
+{% with bills=event.related_bills %}
+    {% if bills.count %}
+    <div class="eightCol colLt">
+        <h3>Bills</h3>
+        <ul>
+    {% for bill in bills %}
+        {% if "_scraped_bill_id" in bill %}
+            <li><a href = '/{{abbr}}/bill/{{bill.bill_id}}'>{{bill|underscore_field:"scraped_bill_id"}} -- {{bill.description|trunc}}</a></li>
+        {% else %}
+            <li>{{bill.bill_id}} -- {{bill.description|trunc}}</li>
+        {% endif %}
+    {% endfor %}
+    {% endif %}
+{% endwith %}
+        </ul>
+    </div>
+    {% if event.documents %}
+    <div class="fullWidth mainModule">
+        <h3>Documents</h3>
+        {% for document in event.documents %}<ul>
+            <li>{{ document.name }}
+            {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
+            {{document.url|urlize}}</li>
+        {% endfor %}</ul>
+    </div>
+    {% endif %}
+
+</div>
+<div class="clear"></div>
+{% endblock %}

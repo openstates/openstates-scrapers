@@ -1,4 +1,6 @@
 import datetime
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
 
 metadata = dict(
     name='Utah',
@@ -12,7 +14,7 @@ metadata = dict(
     upper_chamber_term=4,
     terms=[
         dict(name='2011-2012', sessions=['2011', '2011S1', '2011S2', '2011S3',
-                                         '2012'],
+                                         '2012', '2012S4'],
              start_year=2011, end_year=2012),
         ],
     session_details={
@@ -28,6 +30,8 @@ metadata = dict(
                     '_scraped_name': '2011 3rd Special Session'},
         '2012': { 'display_name': '2012 General Session',
                   '_scraped_name': '2012 General Session', },
+        '2012S4': { 'display_name': '2012, 4th Special Session',
+                    '_scraped_name': '2012 4th Special Session'},
     },
     feature_flags=['events', 'subjects'],
     _ignored_scraped_sessions=[
@@ -74,3 +78,15 @@ def session_list():
     sessions = url_xpath( 'http://le.utah.gov/',
         "//select[@name='Sess']/option/text()" )
     return [ session.strip() for session in sessions ]
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    if oyster_doc['metadata']['mimetype'] == 'application/pdf':
+        return text_after_line_numbers(pdfdata_to_text(data))
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ut/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

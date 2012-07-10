@@ -7,6 +7,7 @@ from .utils import clean_committee_name
 
 import lxml.html
 
+phone_re = re.compile('\(\d{3}\) \d{3}-\d{4}')
 
 class TXLegislatorScraper(LegislatorScraper):
     state = 'tx'
@@ -52,20 +53,6 @@ class TXLegislatorScraper(LegislatorScraper):
             district = td.xpath('string(//div[3])').strip()
             district = district.replace('District ', '')
 
-            addrs = {}
-            for atype, text in (('capital_address', 'Capitol address:'),
-                                ('district_address', 'District address:')):
-                aspan = root.xpath("//span[. = '%s']" % text)
-                addrs[atype] = None
-
-                if aspan:
-                    addrs[atype] = aspan[0].tail
-                    elem = aspan[0].getnext()
-                    while elem is not None and elem.tag == 'br':
-                        if elem.tail:
-                            addrs[atype] += "\n" + elem.tail
-                        elem = elem.getnext()
-
             party = td.xpath('string(//div[4])').strip()[0]
             if party == 'D':
                 party = 'Democratic'
@@ -74,14 +61,35 @@ class TXLegislatorScraper(LegislatorScraper):
 
             if type == 'Lt. Gov.':
                 leg = Person(full_name)
-                leg.add_role('Lt. Governor', term, party=party, **addrs)
+                leg.add_role('Lt. Governor', term, party=party)
             else:
                 leg = Legislator(term, chamber, district, full_name,
                                  party=party, photo_url=photo_url,
-                                 url=member_url, **addrs)
+                                 url=member_url)
 
             leg.add_source(urlescape(member_url))
 
+            # add addresses
+            for atype, text in (('capitol', 'Capitol address'),
+                                ('district', 'District address')):
+                aspan = root.xpath("//span[. = '%s:']" % text)
+                addr = ''
+                phone = None
+                if aspan:
+                    # cycle through brs
+                    addr = aspan[0].tail.strip()
+                    elem = aspan[0].getnext()
+                    while elem is not None and elem.tag == 'br':
+                        if elem.tail:
+                            if not phone_re.match(elem.tail):
+                                addr += "\n" + elem.tail
+                            else:
+                                phone = elem.tail
+                        elem = elem.getnext()
+                    # now add the addresses
+                    leg.add_office(atype, text, address=addr, phone=phone)
+
+            # add committees
             comm_div = root.xpath('//div[string() = "Committee Membership:"]'
                                   '/following-sibling::div'
                                   '[@class="rcwcontent"]')[0]

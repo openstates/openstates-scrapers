@@ -1,4 +1,5 @@
 import datetime
+from billy.fulltext import pdfdata_to_text, oyster_text, text_after_line_numbers
 
 metadata = dict(
     name='Maryland',
@@ -14,7 +15,8 @@ metadata = dict(
         {'name': '2007-2010', 'sessions': ['2007', '2007s1', '2008',
                                            '2009', '2010'],
          'start_year': 2007, 'end_year': 2010},
-        {'name': '2011-2014', 'sessions': ['2011', '2011s1', '2012'],
+        {'name': '2011-2014', 'sessions': ['2011', '2011s1', '2012',
+                                           '2012s1'],
          'start_year': 2011, 'end_year': 2014},
     ],
     session_details={
@@ -72,8 +74,13 @@ metadata = dict(
                  'type': 'primary',
                  '_scraped_name': '2012',
                 },
+        '2012s1': {'number': 431,
+                   'display_name': '2012, 1st Special Session',
+                   'type': 'special',
+                   '_scraped_name': '2012S1',
+                  },
     },
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'events'],
     _ignored_scraped_sessions=['1996', '1997', '1998', '1999', '2000', '2001',
                                '2002', '2003', '2004', '2004S1', '2005',
                                '2006', '2006S1']
@@ -84,3 +91,16 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://mlis.state.md.us/other/PriorSession/index.htm',
                      '(//table)[2]//th/text()')[1:]
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    text = pdfdata_to_text(data)
+    return text_after_line_numbers(text)
+
+document_class = dict(
+    AWS_PREFIX = 'documents/md/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

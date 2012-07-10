@@ -21,7 +21,7 @@ class GAVoteScraper(VoteScraper):
 
         for vxml in doc.xpath('//vote'):
             legislation = vxml.get('legislation')
-            motion = vxml.get('caption')
+            motion = vxml.get('caption') or 'unknown'
             timestamp = datetime.datetime.strptime(vxml.get('dateTime'),
                                                    '%Y-%m-%dT%H:%M:%S')
 

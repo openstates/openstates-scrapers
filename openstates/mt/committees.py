@@ -28,6 +28,10 @@ committee_urls = {
 
     'upper': {
         2011: 'http://leg.mt.gov/css/Senate/senate%20committees-2011.asp',
+        },
+
+    'joint': {
+        2011: 'http://leg.mt.gov/css/Sessions/62nd/joint%20subcommittees.asp',
         }
     }
 
@@ -52,10 +56,9 @@ def scrape_committees(year, chamber):
     instead.
     '''
     url = committee_urls[chamber][year]
-    html = scrapelib.urlopen(url).decode('latin-1')
+    html = scrapelib.urlopen(url)
 
     name_dict = defaultdict(set)
-    html = html.decode('latin-1')
     doc = lxml.html.fromstring(html)
     tds = doc.xpath('//td[@valign="top"]')[3:]
 
@@ -65,6 +68,26 @@ def scrape_committees(year, chamber):
             if c not in cache:
                 cache.append(c)
                 yield name_dict, c
+
+    # Get the joint approps subcommittees during the upper scrape.
+    if chamber == 'upper':
+        url = committee_urls['joint'][year]
+        html = scrapelib.urlopen(url)
+
+        name_dict = defaultdict(set)
+        doc = lxml.html.fromstring(html)
+        tds = doc.xpath('//td[@valign="top"]')[3:]
+
+        cache = []
+        for td in tds:
+            for name_dict, c in _committees_td(td, 'joint', url, name_dict):
+                if c not in cache:
+                    cache.append(c)
+
+                    # These are subcommittees, so a quick switcheroo of the names:
+                    c['subcommittee'] = c['committee']
+                    c['committee'] = 'Appropriations'
+                    yield name_dict, c
 
 
 def _committees_td(el, chamber, url, name_dict):
@@ -83,6 +106,11 @@ def _committees_td(el, chamber, url, name_dict):
         not_edge = lambda s: s != edge
         is_edge = lambda s: s == edge
         predicate = not_edge
+
+    if chamber == 'joint':
+        not_edge = lambda s: not s.strip().startswith('Education')
+        is_edge = lambda s: s == edge
+        predicate = lambda s: ('Secretary:' not in s)
 
     itertext = el.itertext()
 
@@ -146,13 +174,22 @@ def _committee_data(lines, chamber, url, name_dict):
     c = Committee(**kw)
 
     for name in reversed(lines):
+        kwargs = {}
         m = re.search(name_pattern, name)
         if m:
             title, name, city = m.groups()
             if title:
                 title = title.lower()
+            house = re.search(r'(Sen\.|Rep\.)\s+', name)
+            if house:
+                house = house.group()
+                if 'Sen.' in house:
+                    kwargs['chamber'] = 'upper'
+                elif 'Rep.' in house:
+                    kwargs['chamber'] = 'lower'
+                name = name.replace(house, '').strip()
             name_dict[city.lower()].add(name)
-            c.add_member(name, role=(title or 'member'))
+            c.add_member(name, role=(title or 'member'), **kwargs)
 
     c.add_source(url)
 

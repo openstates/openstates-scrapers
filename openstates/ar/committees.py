@@ -86,4 +86,7 @@ class ARCommitteeScraper(CommitteeScraper):
                 self.scrape_committee(chamber, name, sub_url,
                                       subcommittee=sub_name)
 
-            self.save_committee(comm)
+            if not comm['members']:
+                self.warning('not saving empty committee %s' % name)
+            else:
+                self.save_committee(comm)

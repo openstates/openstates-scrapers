@@ -17,6 +17,9 @@ class NHLegislatorScraper(LegislatorScraper):
 
         with self.urlopen(url) as data:
             for line in data.splitlines():
+                if line.strip() == "":
+                    continue
+
                 (body, fullname, last, first, middle, county, district_num,
                  seat, party, street, street2, city, astate, zipcode,
                  home_phone, office_phone, fax, email, com1, com2, com3,
@@ -47,11 +50,7 @@ class NHLegislatorScraper(LegislatorScraper):
                                  office_phone=office_phone, office_fax=fax,
                                  email=email)
 
-                if chamber == 'lower':
-                    # use seat as a _code if chamber is lower
-                    leg['_code'] = seat
-                else:
-                    # Senate URLs are guessable
+                if chamber == 'upper':
                     leg['url'] = 'http://www.gencourt.state.nh.us/Senate/members/webpages/district%02d.aspx' % int(district_num)
 
                 for com in (com1, com2, com3, com4, com5):

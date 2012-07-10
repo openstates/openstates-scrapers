@@ -1,3 +1,8 @@
+from billy.fulltext import (oyster_text, pdfdata_to_text,
+                            text_after_line_numbers)
+
+settings = dict(SCRAPELIB_TIMEOUT=300)
+
 metadata = dict(
     name='Hawaii',
     abbreviation='hi',
@@ -26,7 +31,24 @@ metadata = dict(
         },
         # name next session 2013-2014 instead of following pattern
     },
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'capitol_maps'],
+    capitol_maps=[
+        {"name": "Chamber Floor",
+         "url": 'http://static.openstates.org/capmaps/hi/floorchamber.pdf'
+        },
+        {"name": "Floor 2",
+         "url": 'http://static.openstates.org/capmaps/hi/floor2.pdf'
+        },
+        {"name": "Floor 3",
+         "url": 'http://static.openstates.org/capmaps/hi/floor3.pdf'
+        },
+        {"name": "Floor 4",
+         "url": 'http://static.openstates.org/capmaps/hi/floor4.pdf'
+        },
+        {"name": "Floor 5",
+         "url": 'http://static.openstates.org/capmaps/hi/floor5.pdf'
+        },
+    ],
     _ignored_scraped_sessions = [
         # ignore odd years after they're over..
         '2011',
@@ -44,3 +66,15 @@ def session_list():
         )
     sessions.remove("Archives Main")
     return sessions
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    if oyster_doc['metadata']['mimetype'] == 'application/pdf':
+        return text_after_line_numbers(pdfdata_to_text(data))
+
+document_class = dict(
+    AWS_PREFIX = 'documents/hi/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

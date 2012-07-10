@@ -11,6 +11,10 @@ from lxml import html
 BASE_URL = 'http://www.azleg.gov/'
 
 class AZBillScraper(BillScraper):
+    def accept_response(self, response):
+        normal = super(AZBillScraper, self).accept_response(response)
+        return normal or response.status_code == 500
+
     """
     Arizona Bill Scraper.
     """
@@ -214,6 +218,10 @@ class AZBillScraper(BillScraper):
                         action = row[0].text_content().strip()
                         if action.endswith(':'):
                             action = action[:-1]
+                        if len(row) != 3:
+                            self.warning('skipping row: %s' %
+                                         row.text_content())
+                            continue
                         result = row[2].text_content().strip()
                         # majority caucus Y|N
                         action = action + " recommends to concur: " + result
@@ -304,7 +312,11 @@ class AZBillScraper(BillScraper):
                         if row[action].text_content().strip() == 'Vote Detail':
                             vote_url = row.pop(action).xpath('string(a/@href)')
                             vote_date = utils.get_date(row.pop('DATE'))
-                            passed = row.pop('RESULT').text_content().strip()
+                            try:
+                                passed = row.pop('RESULT').text_content().strip()
+                            except KeyError:
+                                passed = row.pop('2/3 VOTE').text_content().strip()
+
                             # leaves vote counts, ammended, emergency, two-thirds
                             # and possibly rfe left in k_rows. get the vote counts
                             # from scrape votes and pass ammended and emergency

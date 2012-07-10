@@ -13,6 +13,7 @@ def clean_spaces(s):
     if s is not None:
         return re.sub('\s+', ' ', s.replace(u'\xa0', ' ')).strip()
 
+
 class PRCommitteeScraper(CommitteeScraper):
     state = 'pr'
 
@@ -47,7 +48,7 @@ class PRCommitteeScraper(CommitteeScraper):
                     comm.add_source(url)
                 else:
                     if line.text and line.text.startswith('Hon.'):
-                        line_text = line.text.replace(u'â€“','-')
+                        line_text = line.text.replace(u'–','-')
                         name_split = line_text.split(u'-',1)
                         title = 'member'
 #           print name_split
@@ -85,9 +86,7 @@ class PRCommitteeScraper(CommitteeScraper):
             doc = lxml.html.fromstring(html)
 
             contact, directiva, reps = doc.xpath('//div[@class="sbox"]/div[2]')
-
             # all members are tails of images (they use img tags for bullets)
-
             # first three members are in the directiva div
             chair = directiva.xpath('b[text()="Presidente:"]/following-sibling::img[1]')
             vchair = directiva.xpath('b[text()="Vice Presidente:"]/following-sibling::img[1]')

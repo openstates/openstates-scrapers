@@ -52,7 +52,7 @@ class MSBillScraper(BillScraper):
         url = 'http://billstatus.ls.state.ms.us/%s/pdf/all_measures/allmsrs.xml' % session
 
         with self.urlopen(url) as bill_dir_page:
-            root = lxml.etree.fromstring(bill_dir_page, lxml.etree.HTMLParser())
+            root = lxml.etree.fromstring(bill_dir_page.bytes)
             for mr in root.xpath('//lastaction/msrgroup'):
                 bill_id = mr.xpath('string(measure)').replace(" ", "")
                 if bill_id[0] == "S":
@@ -72,8 +72,7 @@ class MSBillScraper(BillScraper):
                 main_doc_url = 'http://billstatus.ls.state.ms.us/%s' % main_doc
                 bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf/%s' % (session, link)
                 with self.urlopen(bill_details_url) as details_page:
-                    details_page = details_page.decode('latin1').encode('utf8', 'ignore')
-                    details_root = lxml.etree.fromstring(details_page, lxml.etree.HTMLParser())
+                    details_root = lxml.etree.fromstring(details_page.bytes)
                     title = details_root.xpath('string(//shorttitle)')
                     longtitle = details_root.xpath('string(//longtitle)')
 
@@ -97,28 +96,37 @@ class MSBillScraper(BillScraper):
 
                     #Versions 
                     curr_version = details_root.xpath('string(//current_other)').replace("../../../../", "")
-                    curr_version_url = "http://billstatus.ls.state.ms.us/" + curr_version
-                    bill.add_version("Current version", curr_version_url)
+                    if curr_version != "":
+                        curr_version_url = "http://billstatus.ls.state.ms.us/" \
+                                + curr_version
+                        bill.add_version("Current version", curr_version_url,
+                                         on_duplicate='use_new')
 
                     intro_version = details_root.xpath('string(//intro_other)').replace("../../../../", "")
-                    intro_version_url = "http://billstatus.ls.state.ms.us/" + intro_version
-                    bill.add_version("As Introduced", intro_version_url)
+                    if intro_version != "":
+                        intro_version_url = "http://billstatus.ls.state.ms.us/"\
+                                + intro_version
+                        bill.add_version("As Introduced", intro_version_url,
+                                         on_duplicate='use_new')
 
                     comm_version = details_root.xpath('string(//cmtesub_other)').replace("../../../../", "")
                     if comm_version.find("documents") != -1:
                         comm_version_url = "http://billstatus.ls.state.ms.us/" + comm_version
-                        bill.add_version("Committee Substitute", comm_version_url)
+                        bill.add_version("Committee Substitute", comm_version_url,
+                                         on_duplicate='use_new')
 
                     passed_version = details_root.xpath('string(//passed_other)').replace("../../../../", "")
                     if passed_version.find("documents") != -1:
                         passed_version_url = "http://billstatus.ls.state.ms.us/" + passed_version
                         title = "As Passed the " + chamber
-                        bill.add_version(title, passed_version_url)
+                        bill.add_version(title, passed_version_url,
+                                         on_duplicate='use_new')
 
                     asg_version = details_root.xpath('string(//asg_other)').replace("../../../../", "")
                     if asg_version.find("documents") != -1:
                         asg_version_url = "http://billstatus.ls.state.ms.us/" + asg_version
-                        bill.add_version("Approved by the Governor", asg_version_url)
+                        bill.add_version("Approved by the Governor", asg_version_url,
+                                         on_duplicate='use_new')
 
                     # avoid duplicate votes
                     seen_votes = set()

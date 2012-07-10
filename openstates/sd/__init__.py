@@ -1,4 +1,11 @@
 import datetime
+import lxml.html
+from billy.fulltext import oyster_text
+
+settings = dict(
+    SCRAPELIB_RPM=8,
+    SCRAPELIB_RETRY_WAIT=30,
+)
 
 metadata = dict(
     name='South Dakota',
@@ -57,3 +64,16 @@ def session_list():
     html = urllib.urlopen('http://legis.state.sd.us/PastSessions.aspx').read()
     doc = lxml.html.fromstring(html)
     return doc.xpath('//span[@class="link"]/text()')
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    return ' '.join(div.text_content() for div in
+                    doc.xpath('//div[@align="full"]'))
+
+document_class = dict(
+    AWS_PREFIX = 'documents/sd/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

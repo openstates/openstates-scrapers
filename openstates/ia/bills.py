@@ -91,6 +91,9 @@ class IABillScraper(BillScraper):
         page.make_links_absolute(hist_url)
 
         title = page.xpath("string(//table[2]/tr[4])").strip()
+        if title == '':
+            self.warning("URL: %s gives us an *EMPTY* bill. Aborting." % url)
+            return
 
         if 'HR' in bill_id or 'SR' in bill_id:
             bill_type = ['resolution']
@@ -104,17 +107,26 @@ class IABillScraper(BillScraper):
         bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(hist_url)
 
-        for option in sidebar.xpath("//select[@name='BVer']/option"):
-            version_name = option.text.strip()
-            if option.get('selected'):
-                version_url = re.sub(r'frm=2', 'frm=1', url)
-            else:
-                version_url = option.attrib['value']
-            bill.add_version(version_name, version_url)
+        # get pieces of version_link
+        vpieces = sidebar.xpath('//a[contains(string(.), "HTML")]/@href')
+        if vpieces:
+            version_base, version_type, version_end = vpieces[0].rsplit('/', 2)
+            versions = [o.strip() for o in
+                        sidebar.xpath("//select[@name='BVer']/option/text()")]
+            # if there are no options, put version_type in one
+            if not versions:
+                versions = [version_type]
 
-        if not bill['versions']:
-            version_url = re.sub(r'frm=2', 'frm=3', url)
-            bill.add_version('Introduced', version_url)
+            for version_name in versions:
+                version_url = '/'.join((version_base, version_name,
+                                        version_end))
+                bill.add_version(version_name, version_url)
+        else:
+            bill.add_version('Introduced',
+                sidebar.xpath('//a[contains(string(.), "PDF")]/@href')[0],
+                             mimetype='application/pdf'
+                            )
+
 
         sponsors = page.xpath("string(//table[2]/tr[3])").strip()
         sponsor_re = r'[\w-]+(?:, [A-Z]\.)?(?:,|(?: and)|\.$)'
@@ -124,6 +136,7 @@ class IABillScraper(BillScraper):
             # a few sponsors get mangled by our regex
             sponsor = {
                 'Means': 'Ways & Means',
+                'Iowa': 'Economic Growth/Rebuild Iowa',
                 'Safety': 'Public Safety',
                 'Resources': 'Human Resources',
                 'Affairs': 'Veterans Affairs',
@@ -139,6 +152,9 @@ class IABillScraper(BillScraper):
                 continue
             elif "No history is recorded at this time." in date:
                 return
+            if date == "":
+                continue
+
             date = datetime.datetime.strptime(date, "%B %d, %Y").date()
 
             action = tr.xpath("string(td[2])").strip()

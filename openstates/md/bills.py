@@ -44,10 +44,14 @@ def _classify_action(action):
     if not action:
         return None
 
+    ctty = None
+
     for regex, type in classifiers.iteritems():
         if re.match(regex, action):
-            return type
-    return None
+            if 'committee:referred' in type:
+                ctty = re.sub(regex, "", action).strip()
+            return ( type, ctty )
+    return ( None, ctty )
 
 def _clean_sponsor(name):
     if name.startswith('Delegate') or name.startswith('Senator'):
@@ -88,7 +92,7 @@ class MDBillScraper(BillScraper):
             dts = h5.getnext().xpath('dl/dt')
             for dt in dts:
                 action_date = dt.text.strip()
-                if action_date != 'No Action':
+                if action_date and action_date != 'No Action':
                     year = int(bill['session'][:4])
                     action_date += ('/%s' % year)
                     action_date = datetime.datetime.strptime(action_date,
@@ -109,27 +113,32 @@ class MDBillScraper(BillScraper):
                             act = act.strip()
                             if not act:
                                 continue
-                            atype = _classify_action(act)
+                            atype, committee = _classify_action(act)
+                            kwargs = {
+                                "type": atype
+                            }
+                            if committee is not None:
+                                kwargs['committee'] = committee
+
                             if atype:
                                 bill.add_action(chamber, act, action_date,
-                                                type=atype)
+                                                **kwargs)
                             else:
                                 self.log('unknown action: %s' % act)
 
 
 
     def parse_bill_documents(self, doc, bill):
-        for elem in doc.cssselect('b'):
-            if elem.text:
-                doc_type = elem.text.strip().strip(":")
-                if doc_type.startswith('Bill Text'):
-                    for sib in elem.itersiblings():
-                        if sib.tag == 'a':
-                            bill.add_version(sib.text.strip(','), BASE_URL + sib.get('href'))
-                elif doc_type.startswith('Fiscal and Policy Note'):
-                    for sib in elem.itersiblings():
-                        if sib.tag == 'a' and sib.text == 'Available':
-                            bill.add_document(doc_type, BASE_URL + sib.get('href'))
+        bill_text_b = doc.xpath('//b[contains(text(), "Bill Text")]')[0]
+        for sib in bill_text_b.itersiblings():
+            if sib.tag == 'a':
+                bill.add_version(sib.text.strip(','), BASE_URL + sib.get('href'))
+
+        note_b = doc.xpath('//b[contains(text(), "Fiscal and Policy")]')[0]
+        for sib in note_b.itersiblings():
+            if sib.tag == 'a' and sib.text == 'Available':
+                bill.add_document('Fiscal and Policy Note',
+                                  BASE_URL + sib.get('href'))
 
     def parse_bill_votes(self, doc, bill):
         params = {
@@ -231,15 +240,20 @@ class MDBillScraper(BillScraper):
             chamber = 'lower'
 
         # date in the following format: Mar 23, 2009
-        date = doc.xpath('//td[@class="csF2A77DD1"]/text()')[2]
+        date = doc.xpath('//td[starts-with(text(), "Legislative")]')[0].text
         date = date.replace(u'\xa0', ' ')
         date = datetime.datetime.strptime(date[18:], '%b %d, %Y')
 
         # motion
-        motion = doc.xpath('//td[@class="cs54BDD041"]/text()')[-1]
+        motion = ''.join(x.text_content() for x in \
+                         doc.xpath('//td[@colspan="23"]'))
+        if motion == '':
+            motion = "No motion given"  # XXX: Double check this. See SJ 3.
+        motion = motion.replace(u'\xa0', ' ')
 
         # totals
-        totals = doc.xpath('//td[@class="cs7A884F1E"]/text()')[1:]
+        tot_class = doc.xpath('//td[contains(text(), "Yeas")]')[0].get('class')
+        totals = doc.xpath('//td[@class="%s"]/text()' % tot_class)[1:]
         yes_count = int(totals[0].split()[-1])
         no_count = int(totals[1].split()[-1])
         other_count = int(totals[2].split()[-1])
@@ -317,6 +331,6 @@ class MDBillScraper(BillScraper):
                 try:
                     self.scrape_bill(chamber, session, bill_type, i)
                 except HTTPError as he:
-                    if he.response.code != 404:
+                    if he.response.status_code != 404:
                         raise he
                     break

@@ -61,7 +61,7 @@ class AKBillScraper(BillScraper):
         'EFF': 'Education Fuding District Cost Factor Committee',
         'ETH': 'Select Committee on Legislative Ethics',
         'LEC': 'Legislative Council',
-}
+    }
 
     _comm_re = re.compile(r'^(%s)\s' % '|'.join(_comm_mapping.keys()))
     _current_comm = None
@@ -97,13 +97,14 @@ class AKBillScraper(BillScraper):
         if title:
             title = title[0].tail.strip()
         else:
-            title = 'Not Available'
+            self.warning("skipping bill %s, no information" % url)
+            return
 
         bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(url)
 
         # Get sponsors
-        spons_str = doc.xpath('//b[text()="SPONSOR(s):"]')[0].tail.strip()
+        spons_str = doc.xpath('//b[contains(text(), "SPONSOR")]')[0].tail.strip()
         sponsors_match = re.match(
             '(SENATOR|REPRESENTATIVE)\([Ss]\) ([^,]+(,[^,]+){0,})',
             spons_str)
@@ -181,9 +182,22 @@ class AKBillScraper(BillScraper):
             text_url = link.get('href')
             bill.add_version(name, text_url, mimetype="text/html")
 
+        # Get documents
+        doc_list_url = "http://www.legis.state.ak.us/"\
+                "basis/get_documents.asp?session=%s&bill=%s" % (
+                    session, bill_id )
+        doc_list = lxml.html.fromstring(self.urlopen(doc_list_url))
+        doc_list.make_links_absolute(doc_list_url)
+        bill.add_source(doc_list_url)
+        for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
+            h_name = href.text_content()
+            h_href = href.attrib['href']
+            bill.add_document(h_name, h_href)
+
+
         self.save_bill(bill)
 
-    def parse_vote(self, bill, action, act_chamber, act_date, url,  
+    def parse_vote(self, bill, action, act_chamber, act_date, url,
         re_vote_text=re.compile(r'The question being:\s*"(.*?\?)"', re.S),
         re_header=re.compile(r'\d{2}-\d{2}-\d{4}\s{10,}\w{,20} Journal\s{10,}\d{,6}\s{,4}')):
 
@@ -212,7 +226,7 @@ class AKBillScraper(BillScraper):
 
             vote = Vote(act_chamber, act_date, motion, yes > no, yes, no, other)
 
-            # In lengthy documents, the "header" can be repeated in the middle 
+            # In lengthy documents, the "header" can be repeated in the middle
             # of content. This regex gets rid of it.
             vote_lines = re_header.sub('', text)
             vote_lines = vote_lines.split('\r\n')

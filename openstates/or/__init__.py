@@ -1,3 +1,7 @@
+import re
+import lxml.html
+from billy.fulltext import oyster_text
+
 metadata = dict(
     name='Oregon',
     abbreviation='or',
@@ -21,7 +25,7 @@ metadata = dict(
         },
         '2012 Regular Session': {
             'display_name': '2012 Regular Session',
-            '_scraped_name': '2012 Regular Session (Starts February 1)',
+            '_scraped_name': '2012 Regular Session (February 1 - March 5)',
             'slug': '12reg',
         }
     },
@@ -48,3 +52,19 @@ def session_list():
     return [x.strip() for x in
             url_xpath('http://www.leg.state.or.us/bills_laws/billsinfo.htm',
                      '//a[contains(@href, "measures")]/text()')]
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    lines = doc.xpath('//pre/text()')[0].splitlines()
+    text = ' '.join(line for line in lines
+                    if not re.findall('Page \d+$', line))
+    return text
+
+
+document_class = dict(
+    AWS_PREFIX = 'documents/or/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

@@ -1,1 +1,19 @@
-404 not found
+{% extends "billy/web/public/base.html" %}
+
+{% block content %}
+<div class="textReplace module" id="errorTitle">
+    <h2>404 Error</h2>
+    <span>Looks Like you're on a bridge to nowhere</span>
+</div>
+
+{% comment %}
+<h3>Here Are Some Suggestions to Hopefully Lead You in the Right Direction</h3>
+<h4 class="h4">Recently Viewed</h4>
+<ul class="inlineThirds moduleNoBorder ">
+    <li><a href="#">HR 1234</a> <span class="tip inlineTip">bill</span></li>
+    <li><a href="#">Name of Lawmaker</a> (D) TX-3 <span class="tip inlineTip">lawmaker</span></li>
+    <li><a href="#">HR 1234</a> <span class="tip inlineTip">bill</span></li>
+</ul>
+{% endcomment %}
+
+{% endblock %}

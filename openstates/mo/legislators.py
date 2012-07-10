@@ -1,4 +1,5 @@
 import lxml.html
+import datetime as dt
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
@@ -14,11 +15,18 @@ class MOLegislatorScraper(LegislatorScraper):
     vacant_legislators = []
 
     def scrape(self, chamber, term):
-        session = term.split('-')[0]
-        if chamber == 'upper':
-            self.scrape_senators(chamber, session, term)
-        elif chamber == 'lower':
-            self.scrape_reps(chamber, session, term)
+        sessions = term.split('-')
+        for session in sessions:
+            if int(session) > int(dt.datetime.now().year):
+                self.log("Not running session %s, it's in the future." % (
+                    session
+                ))
+                continue
+
+            if chamber == 'upper':
+                self.scrape_senators(chamber, session, term)
+            elif chamber == 'lower':
+                self.scrape_reps(chamber, session, term)
 
     def scrape_senators(self, chamber, session, term):
         url = self.senator_url % (session[2:])
@@ -42,14 +50,16 @@ class MOLegislatorScraper(LegislatorScraper):
                 senator_key = "%s%s" % (party_and_district[0].lower(),party_and_district[1])
                 district = party_and_district[1]
                 phone = tds[3].xpath('div')[0].text_content().strip()
-                leg = Legislator(term, chamber, district, full_name, '', '', '', party)
-                leg.add_source(root_url)
                 url = self.senator_details_url % (session[2:],int(district))
+                leg = Legislator(term, chamber, district, full_name,
+                                 party=party, url=url)
+                leg.add_source(root_url)
                 with self.urlopen(url) as details_page:
                     leg.add_source(url)
                     homepage = url
                     page = lxml.html.fromstring(details_page)
-                    photo_url = page.xpath('//html/body/div[2]/div/img/@src')[0]
+                    photo_url = page.xpath('//div[2]/div/img')
+                    photo_url = photo_url[0].attrib['src']
                     committees = page.xpath('//html/body/div[2]//span[@class="style3"]/a')
                     for c in committees:
                         if c.attrib.get('href').find('info/comm/') == -1:
@@ -120,14 +130,14 @@ class MOLegislatorScraper(LegislatorScraper):
                                 first_name=first_name, last_name=last_name,
                                 party=party, phone=phone,
                                 office_address=address,
-                                _code=leg_code)
+                                _code=leg_code, url=url)
                     leg.add_source(url)
                     self.save_vacant_legislator(leg)
                 else:
                     leg = Legislator(term, chamber, district, full_name=full_name,
                               first_name=first_name, last_name=last_name,
                               party=party, phone=phone, office_address=address,
-                              _code=leg_code)
+                              _code=leg_code, url=url)
                     url = (self.rep_details_url % (session,district))
                     leg.add_source(url)
                     with self.urlopen(url) as details_page:

@@ -1,4 +1,6 @@
 import datetime
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
 
 metadata = dict(
     name='Arkansas',
@@ -72,3 +74,16 @@ def session_list():
         'http://www.arkleg.state.ar.us/assembly/2011/2011R/Pages/Previous%20Legislatures.aspx',
         '//div[@id="ctl00_ctl15_g_95338513_84cb_48ec_85d1_4e6a889e8035_panel"]//a')
     return [s.text_content() for s in sessions if s.text_content()]
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    return text_after_line_numbers(pdfdata_to_text(data))
+
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ar/',
+    update_mins = 7*24*60,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

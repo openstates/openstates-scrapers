@@ -22,10 +22,13 @@ _classifiers = (
 )
 
 def classify_action(action):
+    whom = None
     for pattern, type in _classifiers:
         if re.match(pattern, action):
-            return type
-    return 'other'
+            if "committee:referred" in type:
+                whom = re.sub("Referred to the committee on the ", "", action)
+            return (type, whom)
+    return ('other', whom)
 
 class MABillScraper(BillScraper):
     state = 'ma'
@@ -89,8 +92,11 @@ class MABillScraper(BillScraper):
                     if actor_txt:
                         actor = chamber_map[actor_txt]
                     action = act_row.xpath('./td[@headers="bAction"]/text()')[0].strip()
-                    atype = classify_action(action)
-                    bill.add_action(actor, action, date, type=atype)
+                    atype, whom = classify_action(action)
+                    kwargs = {}
+                    if not whom is None:
+                        kwargs['committee'] = whom
+                    bill.add_action(actor, action, date, type=atype, **kwargs)
 
                 # I tried to, as I was finding the sponsors, detect whether a
                 # sponsor was already known. One has to do this because an author
@@ -103,6 +109,18 @@ class MABillScraper(BillScraper):
                                 doc.xpath('//p[@class="billReferral"]/a'))
                 petitioners = dict((a.get('href'), a.text) for a in
                                    doc.xpath('//div[@id="billSummary"]/p[1]/a'))
+
+                if len(sponsors) == 0:
+                    spons = doc.xpath('//p[@class="billReferral"]')[0].text_content()
+                    spons = spons.strip()
+                    spons = spons.split("\n")
+                    cspons = []
+                    for s in spons:
+                        if s and s.strip() != "":
+                            cspons.append(s)
+
+                    sponsors = dict((s, s) for s in cspons)
+
 
                 # remove sponsors from petitioners
                 for k in sponsors:

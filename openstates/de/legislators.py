@@ -23,7 +23,7 @@ class DELegislatorScraper(LegislatorScraper):
             }[chamber]
 
 
-        doc = lxml.html.fromstring(self.urlopen(url).decode('iso-8859-1'))
+        doc = lxml.html.fromstring(self.urlopen(url))
         doc.make_links_absolute(url)
 
         # Sneak into the main table...

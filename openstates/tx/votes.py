@@ -7,7 +7,7 @@ import datetime
 from billy.scrape.votes import VoteScraper, Vote
 from .utils import parse_ftp_listing
 
-import lxml.etree
+import lxml.html
 
 
 def next_tag(el):
@@ -272,7 +272,7 @@ class TXVoteScraper(VoteScraper):
     def scrape_journal(self, url, chamber, session):
         year = metadata['session_details'][session]['start_date'].year
         with self.urlopen(url) as page:
-            root = lxml.etree.fromstring(page, lxml.etree.HTMLParser())
+            root = lxml.html.fromstring(page)
             clean_journal(root)
 
             if chamber == 'lower':

@@ -4,12 +4,12 @@ import datetime
 import collections
 
 from billy.utils import urlescape
-from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
 import lxml.html
 import scrapelib
+
 
 def action_type(action):
     atype = []
@@ -44,8 +44,7 @@ class OKBillScraper(BillScraper):
     bill_types = ['B', 'JR', 'CR', 'R']
     subject_map = collections.defaultdict(list)
 
-
-    def scrape(self, chamber, session):
+    def scrape(self, chamber, session, only_bills=None):
         # start by building subject map
         self.scrape_subjects(chamber, session)
 
@@ -74,13 +73,19 @@ class OKBillScraper(BillScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
+        bill_nums = []
         for link in page.xpath("//a[contains(@href, 'BillInfo')]"):
             bill_id = link.text.strip()
             bill_num = int(re.findall('\d+', bill_id)[0])
             if bill_num >= 9900:
                 self.log('skipping likely bad bill %s' % bill_id)
                 continue
+            if only_bills is not None and bill_id not in only_bills:
+                self.log('skipping bill we are not interested in %s' % bill_id)
+                continue
+            bill_nums.append(bill_num)
             self.scrape_bill(chamber, session, bill_id, link.attrib['href'])
+        return bill_nums
 
     def scrape_bill(self, chamber, session, bill_id, url):
         try:
@@ -146,7 +151,7 @@ class OKBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_votes(self, bill, url):
-        page = lxml.html.fromstring(self.urlopen(url).replace('\xa0', ' '))
+        page = lxml.html.fromstring(self.urlopen(url).replace(u'\xa0', ' '))
 
         re_ns = "http://exslt.org/regular-expressions"
         path = "//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
@@ -235,7 +240,7 @@ class OKBillScraper(BillScraper):
 
         # bill types
         letter = 'H' if chamber == 'lower' else 'S'
-        types = [letter+t for t in self.bill_types]
+        types = [letter + t for t in self.bill_types]
 
         session_id = self.metadata['session_details'][session]['session_id']
 
@@ -247,7 +252,7 @@ class OKBillScraper(BillScraper):
                       'cbxSessionID': session_id,
                       'lbxSubjects': subj, 'lbxTypes': types}
             for hidden in fdoc.xpath("//input[@type='hidden']"):
-                values[hidden.attrib['name']] =  hidden.attrib['value']
+                values[hidden.attrib['name']] = hidden.attrib['value']
             values = urllib.urlencode(values, doseq=True)
             page_data = self.urlopen(form_url, 'POST', values)
             page_doc = lxml.html.fromstring(page_data)

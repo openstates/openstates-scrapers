@@ -1,0 +1,99 @@
+{% extends "billy/web/public/base.html" %}
+{% load url from future %}
+{% load customtags %}
+
+
+{% block title %}
+  {{committee.display_name}} -
+  {{metadata.legislature_name}} -
+  Open States
+{% endblock %}
+
+{% block headblock %}
+<link rel="canonical" href="{{committee.get_absolute_url}}">
+<script type="text/javascript">
+$(document).ready(function() {
+    
+    // Make table rows clickable.
+    var trs = $("#main-table tbody tr");
+    var trs_count = trs.length;
+    trs.click(function(){
+        window.location=$(this).find("a").attr("href");
+        return false;
+        });
+
+    // If javascript is enabled, change cursor to pointer over table rows
+    // and add selected class on hover.
+    trs.css('cursor', 'pointer');
+    trs.hover(function(){
+            $(this).addClass('selected');
+        },
+        function(){
+            $(this).removeClass('selected');
+        });
+    });
+    
+</script>
+<script>
+$(document).ready(function(){
+    var doc = $(document);
+    doc.bind("keydown", "alt+j", function(){window.location = '{{committee.get_admin_json_url}}'});
+    });
+</script>
+<style>
+    .selected {
+        background-color: #FFFFD6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>{{ committee.display_name }} ({{committee.chamber_name}})</h2>
+<div class="fullWidth module">
+    <h3 class="moduleTitle">Members</h3>
+    <table id="main-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <!--<th>Photo</th>-->
+                <th>Role</th>
+                <th>District</th>
+                <th>Party</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj, legislator in committee.members_objects %}
+                <tr class="{% cycle 'even' 'odd' %}">
+                    {% if legislator %}
+                        <td><a href="{{ legislator.get_absolute_url }}">{{ legislator.display_name }}</a></td>
+                        {% else %}
+                        <td>{{ obj.name }}</td>
+                    {% endif %}
+                    <!--<td><img src={{ obj.photo_url }}/></td>-->
+                    <td>{{ obj.role }}</td>
+                    {% if legislator %}
+                          <td>{{ legislator.district }}</td>
+                          <td>{{ legislator.party }}</td>
+                    {% else %}
+                        <td>Not available</td>
+                        <td>Not available</td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="fullWidth module">
+    <h3 class="moduleTitle" >Related Events</h3>
+    <ul>
+        {% for event in committee.events %}
+        <li><a href = "{{ event.get_absolute_url }}"
+                >{{event.description}} on {{ event.when|date:"M j, Y"}}</a><li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% sources committee %}
+
+{% endblock %}
+

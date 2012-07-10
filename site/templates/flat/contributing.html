@@ -1,0 +1,114 @@
+{% extends "flat/flatpage.html" %}
+{% load markup_tags %}
+
+{% block title %}Contributing to Open States{% endblock %}
+
+{% block flatpage %}
+<h2> Contributing </h2>
+{% rest %}
+Open States relies on volunteers and contributions are extremely welcome. If you're interested in helping this guide will help you find a place to contribute and walk you through the process of getting your code into the project.  
+
+Community
+=========
+
+The primary tool that we use to communicate is the `Open States Google Group <http://groups.google.com/group/fifty-state-project>`_, if you aren't already a member your first step towards contributing is to join (and consider introducing yourself too).  We also track all project issues on our `GitHub issue tracker <https://github.com/sunlightlabs/openstates/issues>`_.
+
+If you're on IRC, we also tend to spend time in #openstates on freenode.  Feel free to stop by the channel if you have questions or want to get more involved.
+
+If you have an idea of how you'd like to contribute (or if you have any questions) you should email the group.  Announcing your intentions is important, it helps to avoid duplicated effort and sometimes someone might have a few tips for your particular effort.
+
+Getting Started
+===============
+
+Obtaining Source Code
+---------------------
+
+In order to contribute you'll need a `GitHub <http://github.com>`_ account.
+Once signed in to your account, visit the `openstates project page <http://github.com/sunlightlabs/openstates/>`_ and click the "Fork" button.
+
+You'll see github create a fork under your account, check your fork out with a command like::
+
+    git clone git@github.com:YOURUSERNAME/openstates.git
+
+Setting Up Your Environment
+---------------------------
+
+Once you have the code checked out you'll need to set up your environment.
+
+(It is strongly recommended that you use both `virtualenv <http://pypi.python.org/pypi/virtualenv>`_ and `pip <http://pypi.python.org/pypi/pip>`_ if you aren't using these tools you will need to adjust these steps to suit your environment.)
+
+To install all recommended libraries::
+
+    pip install -r requirements.txt
+
+Writing a Scraper
+=================
+
+All scrapers exist within a subdirectory of ``openstates/`` with the two letter postal abbreviation of your state (e.g. wy for wyoming).
+
+Scrapers that rely on parsing HTML use `lxml <http://lxml.de>`_ which
+offers robust support for several different methods of scraping.  For cases
+where lxml is not an option (such as scraping from text, CSV, or PDF files) other
+libraries may be used.
+
+All code specific to a stays within its directory, common files are:
+
+__init__.py
+    When starting a new state you should first create an ``__init__.py`` that contains `metadata <http://readthedocs.org/docs/billy/en/latest/metadata.html>`_.
+bills.py
+    `Scraping of bills <http://readthedocs.org/docs/billy/en/latest/scrapers.html#bills>`_, including sponsorship information, actions, and (optionally) votes. **Required**
+legislators.py
+    `Scraping of legislators <http://readthedocs.org/docs/billy/en/latest/scrapers.html#legislators>`_, optionally may scrape committees as well. **Required**
+committees.py
+    `Scraping of committees, <http://readthedocs.org/docs/billy/en/latest/scrapers.html#legislators>`_.  (*Only required if legislators.py does not add committees to legislators.*)
+votes.py
+    `Scraping of votes <http://readthedocs.org/docs/billy/en/latest/scrapers.html#votes>`_. (*Only required if bills.py does not scrape votes.*)
+
+When implementing these files be sure to refer to the `scraper documentation <http://readthedocs.org/docs/billy/en/latest/scrapers.html>`_ and completed states.
+
+Running Your Scraper
+====================
+
+There is an command named ``billy-scrape`` that is used to run scrapers and takes a number of command line options.
+
+Examples of Common Usage
+------------------------
+
+Getting all legislators for Vermont from the latest session::
+
+    billy-scrape vt --legislators -v
+
+Getting all committees and bills for Pennsylvania from the 204th session::
+
+    billy-scrape pa --committees --bills --session 204 -v
+
+Viewing the Data
+================
+
+By default data is scraped and stored in JSON files on the local file system (in the data/ directory relative to where you ran billy-scrape)
+
+If you wish to gain a more useful view on your scraped data you may wish to import the data into a local database.  Doing so requires you to install
+`MongoDB <http://mongodb.org>`_ on your system.
+
+If you have MongoDB installed you can run::
+
+    billy-update --import --report pa --alldata
+
+Which would import all scraped data from Pennsylvania.  The data is then available to be queried in your local MongoDB database or viewed with::
+
+    billy-util serve
+
+Which starts a web server (`Django <http://djangoproject.org>`_ required) at http://127.0.0.1:8000/browse/ that allows you to view the locally scraped data.
+
+Submitting Your Code
+====================
+
+When you have working code that you'd like us to review please email the `group <http://groups.google.com/group/fifty-state-project>`_.  One of the committers will review your code and integrate it into the repository.
+
+Open States is licensed under the `GPL 3 <http://gplv3.fsf.org/>`_ and by
+submitting your code for inclusion you agree to allow your code to be distributed under this license.
+
+As a rule if you can show us that you can make several useful commits to improve a state we'll be happy to take your contributions and give you commit access.
+
+{% endrest %}
+{% endblock %}

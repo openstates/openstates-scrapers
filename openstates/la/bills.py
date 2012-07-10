@@ -92,13 +92,19 @@ class LABillScraper(BillScraper):
                     "//a[text() = 'Text - All Versions']")[0]
                 versions_url = versions_link.attrib['href']
                 self.scrape_versions(bill, versions_url)
+                for doc in [ "Notes", "Digest", "Amendments", "Misc" ]:
+                    doc_link = page.xpath(
+                        "//a[text() = '%s']" % doc )[0]
+                    doc_url = doc_link.attrib['href']
+                    self.scrape_documents(bill, doc_url)
             except IndexError:
                 # Only current version
                 try:
                     version_link = page.xpath(
                         "//a[text() = 'Text - Current']")[0]
                     version_url = version_link.attrib['href']
-                    bill.add_version("%s Current" % bill_id, version_url)
+                    bill.add_version("%s Current" % bill_id, version_url,
+                                     on_duplicate="use_old")
                 except IndexError:
                     # Some bills don't have any versions :(
                     pass
@@ -178,7 +184,17 @@ class LABillScraper(BillScraper):
                     conf['upper'] = names
                     bill['conference_committee'] = conf
 
-                bill.add_action(chamber, action, date, type=atype)
+                kwargs = {
+                    "type": atype
+                }
+                if "committee:referred" in atype:
+                    ctty = re.findall("referred to the (.*)",
+                                                   action)[0]
+                    if ctty[-1:] == ".":
+                        ctty = ctty[:-1]
+                    kwargs['committee'] = ctty
+
+                bill.add_action(chamber, action, date, **kwargs)
 
     def scrape_authors(self, bill, url):
         with self.urlopen(url) as text:
@@ -202,6 +218,19 @@ class LABillScraper(BillScraper):
 
                 bill.add_sponsor(type, author)
 
+    def scrape_documents(self, bill, url):
+        with self.urlopen(url) as text:
+            page = lxml.html.fromstring(text)
+            page.make_links_absolute(url)
+            bill.add_source(url)
+
+            for a in reversed(page.xpath(
+                    "//a[contains(@href, 'streamdocument.asp')]")):
+                version_url = a.attrib['href']
+                version = a.text.strip()
+
+                bill.add_document(version, version_url)
+
     def scrape_versions(self, bill, url):
         with self.urlopen(url) as text:
             page = lxml.html.fromstring(text)
@@ -213,7 +242,7 @@ class LABillScraper(BillScraper):
                 version_url = a.attrib['href']
                 version = a.text.strip()
 
-                bill.add_version(version, version_url)
+                bill.add_version(version, version_url, on_duplicate='use_old')
 
     def scrape_votes(self, bill, url):
         with self.urlopen(url) as text:
@@ -246,46 +275,46 @@ class LABillScraper(BillScraper):
         vote['type'] = type
         vote.add_source(url)
 
-        with self.urlopen(url) as text:
-            (fd, temp_path) = tempfile.mkstemp()
-            with os.fdopen(fd, 'wb') as w:
-                w.write(text)
-            html = pdf_to_lxml(temp_path)
-            os.remove(temp_path)
+        (fd, temp_path) = tempfile.mkstemp()
+        self.urlretrieve(url, temp_path)
 
-            vote_type = None
-            total_re = re.compile('^Total--(\d+)$')
-            body = html.xpath('string(/html/body)')
+        html = pdf_to_lxml(temp_path)
+        os.close(fd)
+        os.remove(temp_path)
 
-            date_match = re.search('Date: (\d{1,2}/\d{1,2}/\d{4})', body)
-            try:
-                date = date_match.group(1)
-            except AttributeError:
-                self.warning("BAD VOTE: date error")
-                return
+        vote_type = None
+        total_re = re.compile('^Total--(\d+)$')
+        body = html.xpath('string(/html/body)')
 
-            vote['date'] = datetime.datetime.strptime(date, '%m/%d/%Y')
+        date_match = re.search('Date: (\d{1,2}/\d{1,2}/\d{4})', body)
+        try:
+            date = date_match.group(1)
+        except AttributeError:
+            self.warning("BAD VOTE: date error")
+            return
 
-            for line in body.replace(u'\xa0', '\n').split('\n'):
-                line = line.replace('&nbsp;', '').strip()
-                if not line:
-                    continue
+        vote['date'] = datetime.datetime.strptime(date, '%m/%d/%Y')
 
-                if line in ('YEAS', 'NAYS', 'ABSENT'):
-                    vote_type = {'YEAS': 'yes', 'NAYS': 'no',
-                                 'ABSENT': 'other'}[line]
-                elif line in ('Total', '--'):
-                    vote_type = None
-                elif vote_type:
-                    match = total_re.match(line)
-                    if match:
-                        vote['%s_count' % vote_type] = int(match.group(1))
-                    elif vote_type == 'yes':
-                        vote.yes(line)
-                    elif vote_type == 'no':
-                        vote.no(line)
-                    elif vote_type == 'other':
-                        vote.other(line)
+        for line in body.replace(u'\xa0', '\n').split('\n'):
+            line = line.replace('&nbsp;', '').strip()
+            if not line:
+                continue
+
+            if line in ('YEAS', 'NAYS', 'ABSENT'):
+                vote_type = {'YEAS': 'yes', 'NAYS': 'no',
+                             'ABSENT': 'other'}[line]
+            elif line in ('Total', '--'):
+                vote_type = None
+            elif vote_type:
+                match = total_re.match(line)
+                if match:
+                    vote['%s_count' % vote_type] = int(match.group(1))
+                elif vote_type == 'yes':
+                    vote.yes(line)
+                elif vote_type == 'no':
+                    vote.no(line)
+                elif vote_type == 'other':
+                    vote.other(line)
 
         # tally counts
         vote['yes_count'] = len(vote['yes_votes'])

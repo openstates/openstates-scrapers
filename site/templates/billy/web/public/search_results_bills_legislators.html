@@ -1,0 +1,129 @@
+{% extends "billy/web/public/base.html" %}
+{% load humanize %}
+{% load url from future %}
+{% load static from staticfiles %}
+{% load customtags %}
+
+
+{% block title %}
+  Search Results - 
+  Bill and Legislators -
+  {{metadata.legislature_name}} -
+  Open States
+{% endblock %}
+
+{% block headblock %}
+<script type="text/javascript">
+$(document).ready(function() {
+
+    // Make table rows clickable.
+    var trs = $("#main-table tbody tr");
+    var trs_count = trs.length;
+    trs.click(function(){
+        window.location=$(this).find("a").attr("href");
+        return false;
+        });
+
+    // If javascript is enabled, change cursor to pointer over table rows
+    // and add selected class on hover.
+    trs.css('cursor', 'pointer');
+    trs.hover(function(){
+            $(this).addClass('selected');
+        },
+        function(){
+            $(this).removeClass('selected');
+        });
+    });
+
+</script>
+<style>
+    .selected {
+        background-color: #FFFFD6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+        <h2>{{bill_results.count|apnumber|capfirst}} 
+            <a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a>
+            bills {{scope_name|default:''}} 
+            {% if found_by_id %}found with ids like
+            {% else %}contained
+            {% endif %} <em>"{{search_text}}"</em>
+        </h2>
+        <div class="fullWidth">
+            {% if not bill_results.count %}
+                No bills matching "{{search_text}}"
+                </div>
+            {% else %}
+            <table id="main-table" class="withFilter">
+                <thead>
+                    <tr id="titles">
+                        <th>State</th>
+                        <th>Title</th>
+                        <th>Session</th>
+                        <th>Introduced</th>
+                        <th>Latest Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for obj in bill_results %}
+                    <tr class="{% cycle 'even' 'odd' %}">
+                        {% include rowtemplate_name %}
+                    </tr>
+                {% endfor %}
+                </tbody>   
+            </table>
+        </div>
+        {% if more_bills_available %}
+            {% with scope=metadata.abbreviation|default:'all' %}
+            <a class="viewMore" href="{% url 'bills' scope %}?{{ request.GET.urlencode }}">Show more search results.</a>
+            {% endwith %}
+        {% endif %}
+        <div class="clear"></div>
+        {% endif %}
+
+        {% if not found_by_id %}
+        <div class="fullWidth">
+            {% with count=legislators_list.count %}
+            <h2>{{count|apnumber|capfirst}} {{scope_name|default:''}} legislator name{{count|pluralize}} contained <em>"{{search_text}}"</em></h2>
+            {% if count %}
+            <table id="main-table" class="withFilter">
+                <thead>
+                    <tr id="titles">
+                        <th></th>
+                        <th>State</th>
+                        <th>Name</th>
+                        <th>District</th>
+                        <th>Party</th>
+                        <th>Chamber</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for obj in legislators_list %}
+                    <tr class="{% cycle 'even' 'odd' %}">
+                        <td><img src="http://static.openstates.org/photos/small/{{ obj.leg_id }}.jpg"/></td>
+                        <td>{{obj.metadata.abbr|upper}}</td>
+                        <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
+                        <td>{{ obj.district }}</td>
+                        <td>{{ obj.party }}</td>
+                        {% if show_chamber_column and 'chamber' in obj %}
+                            <td>{{ obj.chamber_name }}</td>
+                        {% else %}
+                            <td>inactive</td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody> 
+            </table>
+        </div>
+        {% if more_legislators_available %}
+            <a class="viewMore" href="{% url 'show_more_legislators' abbr %}?{{request.GET.urlencode}}">Show more search results.</a>
+        {% endif %}
+        <div class="clear"></div>
+        {% endif %}
+        {% endwith %}
+        {% endif %}
+
+        {% endblock %}
+

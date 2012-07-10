@@ -1,4 +1,6 @@
 import datetime
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
 
 metadata = dict(
     name='Ohio',
@@ -25,7 +27,7 @@ metadata = dict(
                 '_scraped_name': '129',
                },
     },
-    feature_flags=[],
+    feature_flags=[ 'events' ],
     _ignored_scraped_sessions=['127', '126', '125', '124', '123', '122']
 
 )
@@ -33,4 +35,18 @@ metadata = dict(
 def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.legislature.state.oh.us/search.cfm',
-                     '//form[@action="bill_search.cfm"]//input[@type="RADIO" and @name="SESSION"]/@value')
+                     '//form[@action="bill_search.cfm"]//input[@type="radio" and @name="SESSION"]/@value')
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = ' '.join(x.text_content() for x in doc.xpath('//td[@align="LEFT"]'))
+    return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/oh/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

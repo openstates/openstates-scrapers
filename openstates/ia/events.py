@@ -40,7 +40,9 @@ class IAEventScraper(EventScraper):
             location = link.xpath("string(../../td[3])")
 
             when = link.xpath("string(../../td[1])").strip()
-            if when == 'Cancelled':
+            if when == 'Cancelled' or "Upon" in when:
+                continue
+            if "To Be Determined" in when:
                 continue
 
             if 'AM' in when:
@@ -53,4 +55,5 @@ class IAEventScraper(EventScraper):
             event = Event(session, when, 'committee:meeting',
                           desc, location)
             event.add_source(url)
+            event.add_participant('host', comm, chamber=chamber)
             self.save_event(event)

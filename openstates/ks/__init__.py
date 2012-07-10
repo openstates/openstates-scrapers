@@ -1,4 +1,8 @@
 import datetime
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
+
+settings = dict(SCRAPELIB_TIMEOUT=300)
 
 # most info taken from http://www.kslib.info/constitution/art2.html
 # also ballotpedia.org
@@ -34,3 +38,15 @@ def session_list():
                      '//a[contains(text(), "Senate Bills")]/@href')[0]
     slug = url.split('/')[2]
     return [slug]
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    return text_after_line_numbers(pdfdata_to_text(data))
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ks/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

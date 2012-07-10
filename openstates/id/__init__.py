@@ -1,4 +1,7 @@
 import datetime
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
+
 metadata = dict(
     name='Idaho',
     abbreviation='id',
@@ -62,7 +65,7 @@ metadata = dict(
         #},
         {'name': '2011-2012',
             'sessions': [
-                '2011',
+                '2011', '2012',
             ],
             'start_year': 2011, 'end_year': 2012
         },
@@ -150,6 +153,11 @@ metadata = dict(
             'end_date': datetime.date(2011, 4, 7),
             '_scraped_name': '2011 Session Information',
             },
+        '2012':
+            {'type': 'primary',
+            'display_name': '61st Legislature, 2nd Regular Session',
+            '_scraped_name': '2012 Session Information',
+            },
     },
     feature_flags=[],
     _ignored_scraped_sessions=['2010 Session Information',
@@ -170,3 +178,15 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://legislature.idaho.gov/priorsessions.htm',
                      '//td[@width="95%"]/ul/li/a/text()')[:-1]
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    return text_after_line_numbers(pdfdata_to_text(data))
+
+document_class = dict(
+    AWS_PREFIX = 'documents/id/',
+    update_mins = 7*24*60,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

@@ -1,4 +1,8 @@
+import re
 import datetime
+from billy.fulltext import oyster_text, pdfdata_to_text
+
+settings = dict(SCRAPELIB_TIMEOUT=600)
 
 #start date of each session is the first tuesday in January after new years
 
@@ -16,7 +20,7 @@ metadata = dict(
         {'name': '106', 'sessions' : ['106'],
             'start_year': 2009, 'end_year': 2010},
         {'name': '107', 'sessions': ['107'],
-            'start_year': 2010, 'end_year': 2011} 
+            'start_year': 2010, 'end_year': 2011}
     ],
     session_details={
         '107': {
@@ -28,7 +32,7 @@ metadata = dict(
             'type' : 'primary',
             'display_name' : '106th Regular Session',},
     },
-    feature_flags=[],
+    feature_flags=[ 'events' ],
     _ignored_scraped_sessions = [
         '106th General Assembly',
         '105th General Assembly', '104th General Assembly',
@@ -44,3 +48,15 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath( 'http://www.capitol.tn.gov/legislation/archives.html',
         "//div[@class='col1']/ul/li[@class='show']/text()")
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    return ' '.join(line for line in pdfdata_to_text(data).splitlines()
+                    if re.findall('[a-z]', line)).decode('utf8')
+
+document_class = dict(
+    AWS_PREFIX = 'documents/tn/',
+    update_mins = 24*7*60,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

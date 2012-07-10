@@ -44,4 +44,7 @@ class AKCommitteeScraper(CommitteeScraper):
 
                 comm.add_member(member, mtype)
 
-            self.save_committee(comm)
+            if not comm['members']:
+                self.warning('not saving %s, appears to be empty' % name)
+            else:
+                self.save_committee(comm)

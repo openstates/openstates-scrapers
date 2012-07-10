@@ -35,7 +35,7 @@ class DBFMixin(object):
             return url, self.dbfcache[url]
 
         dbf_file, resp = self.urlretrieve(url)
-        db = dbf.Dbf(dbf_file)
+        db = dbf.Dbf(dbf_file, ignoreErrors=True)
         self.dbfcache[url] = db
         os.remove(dbf_file)
         return url, db

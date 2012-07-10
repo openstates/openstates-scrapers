@@ -61,14 +61,14 @@ class FLLegislatorScraper(LegislatorScraper):
                "representatives.aspx")
 
         with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page.decode('utf8'))
+            page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
             for div in page.xpath('//div[@id="rep_icondocks2"]'):
                 link = div.xpath('.//div[@class="membername"]/a')[0]
                 name = link.text_content().strip()
 
-                if 'Vacant' in name:
+                if 'Vacant' in name or 'Resigned' in name:
                     continue
 
                 party = div.xpath('.//div[@class="partyname"]/text()')[0].strip()

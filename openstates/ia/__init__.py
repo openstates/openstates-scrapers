@@ -1,4 +1,8 @@
 import datetime
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
+
+settings = dict(SCRAPELIB_TIMEOUT=240)
 
 metadata = dict(
     name='Iowa',
@@ -26,7 +30,7 @@ metadata = dict(
                       'end_date': datetime.date(2013,1,13),
                      },
     },
-    feature_flags=[],
+    feature_flags=['events'],
     _ignored_scraped_sessions=['General Assembly: 83', 'General Assembly: 82',
                                'General Assembly: 81', 'General Assembly: 80']
 
@@ -43,3 +47,17 @@ def session_list():
         for session in sessions
     ]
     return sessions
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = doc.xpath('//pre')[0].text_content()
+    # strip two sets of line numbers
+    return text_after_line_numbers(text_after_line_numbers(text))
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ia/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

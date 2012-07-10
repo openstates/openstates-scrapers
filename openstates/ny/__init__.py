@@ -1,3 +1,9 @@
+import re
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
+
+settings = dict(SCRAPELIB_TIMEOUT=120)
+
 metadata = dict(
     name='New York',
     abbreviation='ny',
@@ -16,7 +22,7 @@ metadata = dict(
             '_scraped_name': '2011',
         }
     },
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'events'],
     _ignored_scraped_sessions=['2009']
 )
 
@@ -25,3 +31,19 @@ def session_list():
     return url_xpath('http://open.nysenate.gov/legislation/advanced/',
                      '//select[@name="session"]/option/text()')
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = doc.xpath('//pre')[0].text_content()
+    # if there's a header above a _________, ditch it
+    text = text.rsplit('__________', 1)[-1]
+    # strip numbers from lines (not all lines have numbers though)
+    text = re.sub('\n\s*\d+\s*', ' ', text)
+    return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ny/',
+    update_mins = 7*24*60,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

@@ -1,4 +1,6 @@
 import datetime
+import re
+from billy.fulltext import pdfdata_to_text, text_after_line_numbers, oyster_text
 
 metadata = dict(
     name='District of Columbia',
@@ -36,3 +38,16 @@ def session_list():
     return url_xpath('http://dcclims1.dccouncil.us/lims/list.aspx',
                      '//option/text()')
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    lines = pdfdata_to_text(data).splitlines()
+    no_big_indent = re.compile('^\s{0,10}\S')
+    text = '\n'.join(line for line in lines if no_big_indent.match(line))
+    return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/dc/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

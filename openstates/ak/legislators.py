@@ -43,10 +43,6 @@ class AKLegislatorScraper(LegislatorScraper):
 
     def scrape_legislator(self, chamber, term, name, url):
         with self.urlopen(url) as page:
-            # Alaska fails at unicode, some of the pages have broken
-            # characters. They're not in data we care about so just
-            # replace them.
-            page = page.decode('utf8', 'replace')
             page = lxml.html.fromstring(page)
 
             name = re.sub(r'\s+', ' ', name)

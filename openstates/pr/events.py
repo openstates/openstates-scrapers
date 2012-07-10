@@ -83,7 +83,10 @@ class PREventScraper(EventScraper):
                             when = datetime.datetime.strptime(when, "%m/%d/%Y  %H:%M %p")
                             when = self._tz.localize(when)
                             event_type = 'committee:meeting';
-                            event = Event(session, when, event_type, description, location=where)
+                    kwargs = { "location" : "State House" }
+                    if where is not None and where != "":
+                        kwargs['location'] = where
+                    event = Event(session, when, event_type, description, **kwargs)
                             
                             if td[20].text is None:
                                 participants = meeting_lead
@@ -91,14 +94,18 @@ class PREventScraper(EventScraper):
                                 participants = td[20].text.split(';')
                             if participants:
                                 for participant in participants:
-                                    event.add_participant('committee',participant.strip().replace('HON.','',1));
+                            name = participant.strip().replace('HON.','',1)
+                            if name != "":
+                                event.add_participant('committee',
+                                                      name,
+                                                      chamber=chamber)
                             
                             event.add_source(url)
                             self.save_event(event)
                     else :
                         #hack so we dont fail on the first id numbers where there are some gaps between the numbers that work and not.
-                        if event_id > 2000:
-                            raise ScrapeError("Parsing is done we are on future ids that are not used yet.")
+                if event_id > 1700:
+                    raise ScrapeError("Parsing is done we are on future ids that are not used yet.")
             except ScrapeError:
                 break
                 

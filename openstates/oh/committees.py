@@ -33,6 +33,7 @@ class OHCommitteeScraper(CommitteeScraper):
                 if not comm_name:
                     continue
 
+                chamber = 'lower'
                 if comm_id < 92:
                     chamber = "joint"
 

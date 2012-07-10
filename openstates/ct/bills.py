@@ -1,18 +1,12 @@
 import re
-import csv
 import datetime
 from operator import itemgetter
 from collections import defaultdict
 
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
-
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from .utils import parse_directory_listing
+from .utils import parse_directory_listing, open_csv
 
 import lxml.html
 
@@ -21,38 +15,40 @@ class CTBillScraper(BillScraper):
     state = 'ct'
     latest_only = True
 
-    _committee_names = {}
-    _introducers = defaultdict(set)
-    _subjects = defaultdict(list)
+    def scrape(self, session, chambers):
+        self.bills = {}
+        self._committee_names = {}
+        self._introducers = defaultdict(set)
+        self._subjects = defaultdict(list)
 
-    def __init__(self, *args, **kwargs):
-        super(CTBillScraper, self).__init__(*args, **kwargs)
-        self.raise_errors = False
         self.scrape_committee_names()
         self.scrape_subjects()
         self.scrape_introducers('upper')
         self.scrape_introducers('lower')
-
-    def scrape(self, chamber, session):
-        self.bills = {}
-        self.scrape_bill_info(chamber, session)
+        self.scrape_bill_info(session, chambers)
+        for chamber in chambers:
+            self.scrape_versions(chamber, session)
         self.scrape_bill_history()
-        self.scrape_versions(chamber, session)
 
         for bill in self.bills.itervalues():
             self.save_bill(bill)
 
-    def scrape_bill_info(self, chamber, session):
+    def scrape_bill_info(self, session, chambers):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/bill_info.csv"
-        page = self.urlopen(info_url)
-        page = csv.DictReader(StringIO.StringIO(page))
+        data = self.urlopen(info_url)
+        page = open_csv(data)
 
-        abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
+        chamber_map = {'H': 'lower', 'S': 'upper'}
 
         for row in page:
             bill_id = row['bill_num']
-            if not bill_id[0] == abbrev:
+            chamber = chamber_map[bill_id[0]]
+
+            if not chamber in chambers:
                 continue
+
+            # assert that the bill data is from this session, CT is tricky
+            assert row['sess_year'] == session
 
             if re.match(r'^(S|H)J', bill_id):
                 bill_type = 'joint resolution'
@@ -62,7 +58,7 @@ class CTBillScraper(BillScraper):
                 bill_type = 'bill'
 
             bill = Bill(session, chamber, bill_id,
-                        row['bill_title'].decode('latin-1'),
+                        row['bill_title'],
                         type=bill_type)
             bill.add_source(info_url)
 
@@ -84,6 +80,10 @@ class CTBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
             bill.add_source(url)
+
+            if not bill['sponsors']:
+                intro_com = page.xpath('//td[contains(string(), "Introduced by:")]')[1].text_content().replace('Introduced by:', '').strip()
+                bill.add_sponsor('introducer', intro_com)
 
             for link in page.xpath("//a[contains(@href, '/FN/')]"):
                 bill.add_document(link.text.strip(), link.attrib['href'])
@@ -183,7 +183,7 @@ class CTBillScraper(BillScraper):
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"
         page = self.urlopen(history_url)
-        page = csv.DictReader(StringIO.StringIO(page))
+        page = open_csv(page)
 
         action_rows = defaultdict(list)
 
@@ -204,7 +204,7 @@ class CTBillScraper(BillScraper):
                 date = datetime.datetime.strptime(
                     date, "%Y-%m-%d %H:%M:%S").date()
 
-                action = row['act_desc'].decode('latin-1').strip()
+                action = row['act_desc'].strip()
                 act_type = []
 
                 match = re.search('COMM(ITTEE|\.) ON$', action)
@@ -216,9 +216,9 @@ class CTBillScraper(BillScraper):
                     act_type.append('committee:referred')
                 elif row['qual1']:
                     if bill['session'] in row['qual1']:
-                        action += ' (%s' % row['qual1'].decode('latin-1')
+                        action += ' (%s' % row['qual1']
                         if row['qual2']:
-                            action += ' %s)' % row['qual2'].decode('latin-1')
+                            action += ' %s)' % row['qual2']
                     else:
                         action += ' %s' % row['qual1']
 
@@ -275,7 +275,7 @@ class CTBillScraper(BillScraper):
     def scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
         page = self.urlopen(comm_url)
-        page = csv.DictReader(StringIO.StringIO(page))
+        page = open_csv(page)
 
         for row in page:
             comm_code = row['comm_code'].strip()

@@ -12,21 +12,21 @@ from billy.scrape.votes import Vote
 CO_URL_BASE = "http://www.leg.state.co.us"
 #                     ^^^ Yes, this is actually required
 
-"""
-This scraper is a bit bigger then some of the others, but it's just
-a standard billy scraper. Methods are documented just because this
-does both bill and vote scraping, and can be a bit overwhelming.
-"""
 class COBillScraper(BillScraper):
+    """
+    This scraper is a bit bigger then some of the others, but it's just
+    a standard billy scraper. Methods are documented just because this
+    does both bill and vote scraping, and can be a bit overwhelming.
+    """
 
     state = 'co'
 
-    """
-    This returns a URL to the bill "folder" - a list of all the bills for that
-    session and chamber. If the URL looks funny, it's because CO has made
-    some interesting technical choices.
-    """
     def get_bill_folder( self, session, chamber ):
+        """
+        This returns a URL to the bill "folder" - a list of all the bills for that
+        session and chamber. If the URL looks funny, it's because CO has made
+        some interesting technical choices.
+        """
         chamber_id = "(bf-3)" if chamber == "House" else "(bf-2)"
         url = CO_URL_BASE + "/CLICS/CLICS" +  session \
             + "/csl.nsf/" + chamber_id + "?OpenView&Count=20000000"
@@ -38,12 +38,12 @@ class COBillScraper(BillScraper):
         #      ^^^^^^^^^^ font
 
 
-    """
-    This will parse a vote page, with a list of who voted which way on what
-    bill. This is invoked from `parse_votes', and invoking it directly may
-    or may not be very useful.
-    """
     def parse_all_votes( self, bill_vote_url ):
+        """
+        This will parse a vote page, with a list of who voted which way on what
+        bill. This is invoked from `parse_votes', and invoking it directly may
+        or may not be very useful.
+        """
         ret = { "meta" : {}, 'votes' : {} }
         ret['meta']['url'] = bill_vote_url
         with self.urlopen(bill_vote_url) as vote_html:
@@ -75,14 +75,25 @@ class COBillScraper(BillScraper):
                         #
                         to_parse = to_parse.replace("FINAL ACTION",
                             "FINAL_ACTION").replace(":", "")
-                        passage_actions = to_parse.split()
+                        if re.match("^FINAL.*", to_parse):
+                            to_parse = to_parse[len("FINAL"):]
+
+                        passage_actions = to_parse.split("  ")
+                        final_score = {}
+                        for item in passage_actions:
+                            if item == "":
+                                continue
+                            item = item.strip()
+                            keys = item.split(" ", 1)
+                            final_score[keys[0]] = keys[1]
+
                         # XXX: Verify we can't do this with recursive splits
                         # it now looks like:
                         # ['Final', 'YES:', '7', 'NO:', '6', 'EXC:', '0',
                         #   'ABS:', '0', 'FINAL_ACTION:', 'PASS']
-                        passage_actions = passage_actions[1:]
-                        il = iter(passage_actions)
-                        final_score = dict(zip(il,il))
+                        #passage_actions = passage_actions[1:]
+                        #il = iter(passage_actions)
+                        #final_score = dict(zip(il,il))
 
                         if not "FINAL_ACTION" in final_score:
                             final_score["FINAL_ACTION"] = False
@@ -97,14 +108,14 @@ class COBillScraper(BillScraper):
         return ret
 
 
-    """
-    This will parse all the votes on a given bill - basically, it looks on the
-    page of all votes, and invokes `parse_all_votes' for each href it finds
-
-    We do some minor sanity checking, so the caller will be able to ensure the
-    bill IDs match exactly before going ahead with saving the data to the DB
-    """
     def parse_votes( self, bill_vote_url ):
+        """
+        This will parse all the votes on a given bill - basically, it looks on the
+        page of all votes, and invokes `parse_all_votes' for each href it finds
+
+        We do some minor sanity checking, so the caller will be able to ensure the
+        bill IDs match exactly before going ahead with saving the data to the DB
+        """
         ret = {}
 
         with self.urlopen(bill_vote_url) as vote_html:
@@ -133,7 +144,7 @@ class COBillScraper(BillScraper):
                     try:
                         vote_url = line.xpath('a')[0].attrib['href']
                         vote_page = CO_URL_BASE + vote_url
-                        vote_dict = self.parse_all_votes( vote_page )  
+                        vote_dict = self.parse_all_votes( vote_page )
 
                         vote_dict['meta']['x-parent-date'] = date
                         vote_dict['meta']['x-parent-ctty'] = ctty
@@ -147,19 +158,19 @@ class COBillScraper(BillScraper):
         return ret
 
 
-    """
-    URL generator for getting the base vote pages. The links use all sorts of
-    JS bouncing, so this will just fetch the end page.
-    """
     def get_vote_url(self, billid, session):
+        """
+        URL generator for getting the base vote pages. The links use all sorts of
+        JS bouncing, so this will just fetch the end page.
+        """
         return CO_URL_BASE + \
             "/CLICS%5CCLICS" + session + \
             "%5Ccommsumm.nsf/IndSumm?OpenView&StartKey=" + billid + "&Count=4"
 
-    """
-    Parse a bill versions page for all the versions
-    """
     def parse_versions( self, bill_versions_url ):
+        """
+        Parse a bill versions page for all the versions
+        """
         with self.urlopen(bill_versions_url) as versions_html:
             bill_versions_page = lxml.html.fromstring(versions_html)
             trs = bill_versions_page.xpath('//form/table/tr')[3:]
@@ -174,23 +185,27 @@ class COBillScraper(BillScraper):
                     name = tr[cols["type"]].text_content()
                     if name[-1:] == ":":
                         name = name[:-1]
-                    wpd_link = tr[cols["wpd"]][0]
-                    pdf_link = tr[cols["pdf"]][0]
 
+                    wpd_link = tr[cols["wpd"]][0]
+                    wpd_text = wpd_link.text_content().strip()
                     wpd_link = wpd_link.attrib["href"]
+
+                    pdf_link = tr[cols["pdf"]][0]
+                    pdf_text = pdf_link.text_content().strip()
                     pdf_link = pdf_link.attrib["href"]
 
-                    format = None
-
-                    if pdf_link.strip() != "":
+                    if pdf_link.strip() != "" and pdf_text != "":
                         link = CO_URL_BASE + pdf_link
                         format = "application/pdf"
+                        versions.append({
+                            "name"     : name,
+                            "mimetype" : format,
+                            "link"     : link
+                        })
 
-                    elif wpd_link.strip() != "":
+                    if wpd_link.strip() != "" and wpd_text != "":
                         link = CO_URL_BASE + wpd_link
                         format = "application/vnd.wordperfect"
-
-                    if format != None:
                         versions.append({
                             "name"     : name,
                             "mimetype" : format,
@@ -200,11 +215,11 @@ class COBillScraper(BillScraper):
             return versions
 
 
-    """
-    Parse a bill history page for as much data as we can gleen, such as when
-    the bill was introduced (as well as a number of other things)
-    """
     def parse_history( self, bill_history_url ):
+        """
+        Parse a bill history page for as much data as we can gleen, such as when
+        the bill was introduced (as well as a number of other things)
+        """
         # their URL is actually a shim. let's get the target GET param
         url = urlparse(bill_history_url)
         get_info = url[4].split("&")
@@ -243,8 +258,17 @@ class COBillScraper(BillScraper):
             actions = nodes[3].text_content()
 
             for action in actions.split('\n'):
+                if action.strip() == "":
+                    continue
 
                 date_string = action[:action.find(" ")]
+                if ":" in date_string:
+                    date_string = action[:action.find(":")]
+                if "No" == date_string:  # XXX Remove me
+                # as soon as sanity is on:
+                # http://www.leg.state.co.us/clics/clics2012a/csl.nsf/billsummary/C150552896590FA587257961006E7C0B?opendocument
+                    continue
+
                 date_time   = dt.datetime.strptime( date_string, "%m/%d/%Y" )
                 action = action[action.find(" ") + 1:]
 
@@ -261,21 +285,21 @@ class COBillScraper(BillScraper):
 
             return ret
 
-    """
-    We were able to get a bunch of actions, so this method handles
-    mangling the human-readable descriptions in well tagged actions
-    that we put into the DB.
-    """
     def add_action_to_bill( self, bill, action ):
+        """
+        We were able to get a bunch of actions, so this method handles
+        mangling the human-readable descriptions in well tagged actions
+        that we put into the DB.
+        """
         # We have a few inner methods that handle each "type" of description.
         # This is mostly to keep things as clear as we can, and avoid huge and
         # unmaintainable chunks of code
 
-        """
-        Parse a string that contains "House". On failure to handle the string,
-        we will return false, and let the fallback handler resolve the string.
-        """
         def _parse_house_action():
+            """
+            Parse a string that contains "House". On failure to handle the string,
+            we will return false, and let the fallback handler resolve the string.
+            """
             actor = "lower"
             aText = action['action']
 
@@ -341,17 +365,19 @@ class COBillScraper(BillScraper):
                     return True
             return False
 
-        """
-        Parse a string that contains "Senate". On failure to handle the string,
-        we will return false, and let the fallback handler resolve the string.
-        """
         def _parse_senate_action():
+            """
+            Parse a string that contains "Senate". On failure to handle the string,
+            we will return false, and let the fallback handler resolve the string.
+            """
             actor = "upper"
             aText = action['action']
 
             testStr = "Senate Second Reading Special Order"
             if aText[:len(testStr)] == testStr:
                 # get the status of the reading next
+                if len(action['args']) <= 0:
+                    return False
                 bill_passfail = action['args'][0]
                 normalized_brief = "Senate Second Reading %s" % (bill_passfail)
                 bill.add_action( actor, action['orig'],
@@ -362,6 +388,13 @@ class COBillScraper(BillScraper):
             testStr = "Senate Third Reading Special Order"
             if aText[:len(testStr)] == testStr:
                 # get the status of the reading next
+                if len(action['args']) == 0:
+                    self.log("XXX: Skipping detailed digestion due to malformed"
+                            " action line")
+                    bill.add_action(actor, action['orig'],
+                                    action['date'])
+                    return True
+
                 bill_passfail = action['args'][0]
                 normalized_brief = "Senate Third Reading %s" % ( bill_passfail )
                 bill.add_action( actor, action['orig'],
@@ -413,11 +446,11 @@ class COBillScraper(BillScraper):
 
             return False
 
-        """
-        Parse a string that contains "Governor". On failure to handle the string,
-        we will return false, and let the fallback handler resolve the string.
-        """
         def _parse_governor_action():
+            """
+            Parse a string that contains "Governor". On failure to handle the string,
+            we will return false, and let the fallback handler resolve the string.
+            """
             actor = "governor"
             aText = action['action']
 
@@ -446,12 +479,12 @@ class COBillScraper(BillScraper):
                 return True
             return False
 
-        """
-        This is our fallback handler. If we haven't been able to process the
-        line under other conditions, we will try to mangle this into some sort
-        of useful snippit & include it.
-        """
         def _parse_action_fallback():
+            """
+            This is our fallback handler. If we haven't been able to process the
+            line under other conditions, we will try to mangle this into some sort
+            of useful snippit & include it.
+            """
             hasHouse  = "House"  in action['action']
             hasSenate = "Senate" in action['action']
 
@@ -461,8 +494,6 @@ class COBillScraper(BillScraper):
                 actor = 'lower'
             else:
                 actor = 'upper'
-
-            self.log( " - fallback handler for %s" % action['orig'] )
 
             bill.add_action( actor, action['orig'],
                 action['date'],
@@ -482,10 +513,10 @@ class COBillScraper(BillScraper):
                 return
         _parse_action_fallback()
 
-    """
-    Scrape the bill sheet (the page full of bills and other small bits of data)
-    """
     def scrape_bill_sheet( self, session, chamber ):
+        """
+        Scrape the bill sheet (the page full of bills and other small bits of data)
+        """
         sheet_url = self.get_bill_folder( session, chamber )
 
         bill_chamber = { "Senate" : "upper", "House" : "lower" }[chamber]
@@ -563,7 +594,8 @@ class COBillScraper(BillScraper):
                     self.add_action_to_bill( b, action )
 
                 for sponsor in sponsors:
-                    if sponsor != None and sponsor != "(NONE)":
+                    if sponsor != None and sponsor != "(NONE)" and \
+                       sponsor != "":
                         b.add_sponsor("primary", sponsor)
 
                 # Now that we have history, let's see if we can't grab some
@@ -604,7 +636,7 @@ class COBillScraper(BillScraper):
                     # OK, sometimes the Other count is wrong.
                     local_other = 0
                     for voter in filed_votes:
-                        l_vote = filed_votes[voter].lower()
+                        l_vote = filed_votes[voter].lower().strip()
                         if l_vote != "yes" and l_vote != "no":
                             local_other = local_other + 1
 
@@ -639,9 +671,9 @@ class COBillScraper(BillScraper):
                     b.add_vote( v )
                 self.save_bill(b)
 
-    """
-    Entry point when invoking this from billy (or really whatever else)
-    """
     def scrape(self, chamber, session):
+        """
+        Entry point when invoking this from billy (or really whatever else)
+        """
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
         self.scrape_bill_sheet( session, chamber )

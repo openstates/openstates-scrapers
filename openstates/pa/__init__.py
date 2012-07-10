@@ -1,3 +1,8 @@
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
+
+settings = dict(SCRAPELIB_RPM=30)
+
 metadata = dict(
     name='Pennsylvania',
     abbreviation='pa',
@@ -34,7 +39,7 @@ metadata = dict(
                       '_scraped_name': '2011-2012 Regular Session',
                      },
         },
-    feature_flags=['events'],
+    feature_flags=['events', 'events'],
     _ignored_scraped_sessions=[
         '1969-1970 Regular Session',
         '1971-1972 Regular Session',
@@ -73,3 +78,17 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.legis.state.pa.us/cfdocs/legis/home/'
                      'session.cfm', '//select[@id="BTI_sess"]/option/text()')
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    if oyster_doc['metadata']['mimetype'] in (None, 'text/html'):
+        doc = lxml.html.fromstring(data)
+        text = ' '.join(x.text_content() for x in doc.xpath('//tr/td[2]'))
+        return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/pa/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

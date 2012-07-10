@@ -80,9 +80,9 @@ class RICommitteeScraper(CommitteeScraper):
             for a in linklist:
                 link=a.attrib['href']
                 commName=a.text
-                print commName
+                self.log( commName )
                 if commName in COMM_BLACKLIST:
-                    print "XXX: Blacklisted"
+                    self.log( "XXX: Blacklisted" )
                     continue
                 url=base+link
                 self.log("url "+url)

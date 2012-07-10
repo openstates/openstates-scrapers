@@ -1,4 +1,6 @@
+import lxml.html
 import datetime
+from billy.fulltext import oyster_text
 
 metadata = dict(
     name='Texas',
@@ -45,37 +47,37 @@ metadata = dict(
     feature_flags=['events', 'subjects', 'capitol_maps'],
     capitol_maps=[
         {"name": "Capitol Complex",
-         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.CapitolComplex.pdf'
+     "url": 'http://static.openstates.org/capmaps/tx/Map.CapitolComplex.pdf'
         },
         {"name": "Floor 1",
-         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.Floor1.pdf'
+         "url": 'http://static.openstates.org/capmaps/tx/Map.Floor1.pdf'
         },
         {"name": "Floor 2",
-         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.Floor2.pdf'
+         "url": 'http://static.openstates.org/capmaps/tx/Map.Floor2.pdf'
         },
         {"name": "Floor 3",
-         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.Floor3.pdf'
+         "url": 'http://static.openstates.org/capmaps/tx/Map.Floor3.pdf'
         },
         {"name": "Floor 4",
-         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.Floor4.pdf'
+         "url": 'http://static.openstates.org/capmaps/tx/Map.Floor4.pdf'
         },
         {"name": "Floor E1",
-         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.FloorE1.pdf'
+         "url": 'http://static.openstates.org/capmaps/tx/Map.FloorE1.pdf'
         },
         {"name": "Floor E2",
-         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.FloorE2.pdf'
+         "url": 'http://static.openstates.org/capmaps/tx/Map.FloorE2.pdf'
         },
         {"name": "Floor G",
-         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.FloorG.pdf'
+         "url": 'http://static.openstates.org/capmaps/tx/Map.FloorG.pdf'
         },
         {"name": "Monument Guide",
-         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.MonumentGuide.pdf'
+         "url": 'http://static.openstates.org/capmaps/tx/Map.MonumentGuide.pdf'
         },
         {"name": "Sam Houston",
-         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.SamHoustonLoc.pdf'
+         "url": 'http://static.openstates.org/capmaps/tx/Map.SamHoustonLoc.pdf'
         },
         {"name": "Wheelchair Access",
-         "url": 'https://s3.amazonaws.com/assets.openstates.org/capmaps/tx/Map.WheelchairAccess.pdf'
+     "url": 'http://static.openstates.org/capmaps/tx/Map.WheelchairAccess.pdf'
         },
     ],
     _ignored_scraped_sessions=['80(R) - 2007', '79(3) - 2006', '79(2) - 2005',
@@ -94,3 +96,17 @@ def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath( 'http://www.legis.state.tx.us/',
         "//select[@name='cboLegSess']/option/text()")
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    return doc.xpath('//html')[0].text_content()
+
+
+document_class = dict(
+    AWS_PREFIX = 'documents/tx/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

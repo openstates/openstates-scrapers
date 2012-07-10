@@ -12,7 +12,7 @@ from .committees import scrape_committees
 
 def url_xpath(url):
     html = scrapelib.urlopen(url)
-    html = html.decode('latin-1')
+    html = html
     doc = lxml.html.fromstring(html)
     return doc
 
@@ -93,7 +93,7 @@ class MTLegislatorScraper(LegislatorScraper):
                 #     self.debug(msg % (_fullname, fullname,
                 #                       name_dict[city_lower]))
 
-            # Get any info the the legislator's detail_url.
+            # Get any info at the legislator's detail_url.
             detail_url = district_leg_urls[hd_or_sd][district]
             deets = self._scrape_details(detail_url)
 
@@ -106,6 +106,7 @@ class MTLegislatorScraper(LegislatorScraper):
             legislator.update(entry)
             legislator.add_source(detail_url)
             legislator.add_source(url)
+            legislator['url'] = detail_url
 
             self.save_legislator(legislator)
 

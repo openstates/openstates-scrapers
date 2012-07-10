@@ -14,3 +14,6 @@ MANIFEST
 *.class
 *.jar
 build
+testdata/html_data
+billy_local.py
+site/collected_static

@@ -1,4 +1,11 @@
 import datetime
+import lxml.html
+from billy.fulltext import oyster_text, text_after_line_numbers
+
+settings = dict(
+    SCRAPELIB_TIMEOUT=600,
+    SCRAPELIB_RPM=30
+)
 
 metadata = {
     'lower_chamber_title': 'Representative',
@@ -36,7 +43,7 @@ metadata = {
     },
     'legislature_name': 'Massachusetts General Court',
     'lower_chamber_term': 2,
-    'feature_flags': [],
+    'feature_flags': [ 'events' ],
 }
 
 def session_list():
@@ -45,6 +52,21 @@ def session_list():
     sessions = url_xpath('http://www.malegislature.gov/Bills/Search',
         "//select[@id='Input_GeneralCourtId']/option/text()")
     # Ok, this is actually a mess. Let's clean it up.
-    sessions.remove('--Select Value--')
+    # sessions.remove('--Select Value--')  # They removed this.
     sessions = [ re.sub("\(.*$", "", session).strip() for session in sessions ]
     return sessions
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    text = ' '.join([x.text_content()
+                     for x in doc.xpath('//td[@class="longTextContent"]//p')])
+    return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ma/',
+    update_mins = 7*24*60,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

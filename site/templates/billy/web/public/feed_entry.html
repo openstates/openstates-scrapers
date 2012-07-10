@@ -1,0 +1,18 @@
+                <article class="smModule">
+                    <header>
+                        <h5 class="withTip"><a href="{{obj.link}}">{{ obj.title }}</a></h1>
+                        <div class="objMetaData">
+                            <time datetime="" class="published withBorderLine" pubdate>{{obj.published|date:"F d, Y"}}</time>
+                            {% if obj.author %}<address class="author">{{obj.author|striptags}}{% endif %}
+                            <a rel="author" class="colorRollover" href="{{obj.source|safe}}">{{obj.host|striptags}}</a></address>
+                        </div>
+                    </header>    
+                    <div class="postContent">
+                        <p>{{obj.summary|safe}}</p>
+                    </div>
+                    <div class="postTags">
+                    {% for entity, id, url in obj.entity_data %}
+                        <span class="label" ><a href="{{url}}">{{entity}}</a></span>
+                    {% endfor %}
+                    </div>
+                </article>

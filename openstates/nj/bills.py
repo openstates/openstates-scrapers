@@ -4,7 +4,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
 import lxml.etree
-import urllib2
+import scrapelib
 import zipfile
 import csv
 import os
@@ -43,20 +43,25 @@ class NJBillScraper(BillScraper, DBFMixin):
         'PA PBH': ('Passed Assembly (Passed Both Houses)', 'bill:passed'),
         'PS PBH': ('Passed Senate (Passed Both Houses)', 'bill:passed'),
         'APP': ('Approved', 'governor:signed'),
+        'APP W/LIV': ('Approved with Line Item Veto', ['governor:signed', 'governor:vetoed:line-item']),
         'AV R/A': ('Absolute Veto, Received in the Assembly', 'governor:vetoed'),
         'AV R/S': ('Absolute Veto, Received in the Senate', 'governor:vetoed'),
         'CV R/A': ('Conditional Veto, Received in the Assembly', 'governor:vetoed'),
+        'CV R/A 1RAG': ('Conditional Veto, Received in the Assembly, 1st Reading/Governor Recommendation', 'governor:vetoed'),
         'CV R/S': ('Conditional Veto, Received in the Senate', 'governor:vetoed'),
+        'PV': ('Pocket Veto - Bill not acted on by Governor-end of Session', 'governor:vetoed'),
         '2RSG': ("2nd Reading on Concur with Governor's Recommendations", 'other'),
         'CV R/S 2RSG': ("Conditional Veto, Received, 2nd Reading on Concur with Governor's Recommendations", 'other'),
         '1RAG': ('First Reading/Governor Recommendations Only', 'other'),
         '2RAG': ("2nd Reading in the Assembly on Concur. w/Gov's Recommendations", 'other'),
         'R/S 2RSG': ("Received in the Senate, 2nd Reading - Concur. w/Gov's Recommendations", 'other'),
-        'R/A 2RAG': ("Received in the Senate, 2nd Reading - Concur. w/Gov's Recommendations", 'other'),
+        'R/A 2RAG': ("Received in the Assembly, 2nd Reading - Concur. w/Gov's Recommendations", 'other'),
+        'R/A': ("Received in the Assembly", 'other'),
         'REF SBA': ('Referred to Senate Budget and Appropriations Committee', 'committee:referred'),
-        'REP REF AAP': ('Reported and Referred to Assembly Appropriations Committee', 'committee:referred'),
-        'REP/ACA REF AAP': ('Reported out of Assembly Committee with Amendments and Referred to Assembly Appropriations Committee', 'committee:referred'),
         'RSND/V': ('Rescind Vote', 'other'),
+        'RCON/V': ('Reconsidered Vote', 'other'),
+        'CONCUR AA': ("Concurred by Assembly Amendments", 'other'),
+        'CONCUR SA': ('Concurred by Senate Amendments', 'other'),
         'SS 2RS': ('Senate Substitution', 'other'),
         'AS 2RA': ('Assembly Substitution', 'other'),
         'ER': ('Emergency Resolution', 'other'),
@@ -68,6 +73,8 @@ class NJBillScraper(BillScraper, DBFMixin):
         'COMB/W': ('Combined with', 'other'),
         'MOTION': ('Motion', 'other'),
         'PUBLIC HEARING': ('Public Hearing Held', 'other'),
+        'PH ON DESK SEN': ('Public Hearing Placed on Desk Senate Transcript Placed on Desk', 'other'),
+        'PH ON DESK ASM': ('Public Hearing Placed on Desk Assembly Transcript Placed on Desk', 'other'),
         'W': ('Withdrawn from Consideration', 'bill:withdrawn'),
     }
 
@@ -78,6 +85,9 @@ class NJBillScraper(BillScraper, DBFMixin):
         'R/A REF': ('Received in the Assembly, Referred to', 'committee:referred'),
         'TRANS': ('Transferred to', 'committee:referred'),
         'RCM': ('Recommitted to', 'committee:referred'),
+        'REP/ACA REF': ('Reported out of Assembly Committee with Amendments and Referred to', 'committee:referred'),
+        'REP/ACS REF': ('Reported out of Senate Committee with Amendments and Referred to', 'committee:referred'),
+        'REP REF': ('Reported and Referred to', 'committee:referred'),
     }
 
     _com_vote_motions = {
@@ -128,7 +138,7 @@ class NJBillScraper(BillScraper, DBFMixin):
                                                       com['DESCRIPTIO'],
                                                       'Committee'))
 
-    def categorize_action(self, act_str):
+    def categorize_action(self, act_str, bill_id):
         if act_str in self._actions:
             return self._actions[act_str]
 
@@ -140,20 +150,13 @@ class NJBillScraper(BillScraper, DBFMixin):
                 return (action + ' ' + com_name, acttype)
 
         # warn about missing action
-        self.warning('unknown action: %s' % act_str)
+        self.warning('unknown action: {0} on {1}'.format(act_str, bill_id))
 
         return (act_str, 'other')
 
-    def scrape(self, chamber, session):
-
-        session = int(session)
-        if session < 209:
-            raise NoDataForPeriod(session)
-        else:
-            year_abr = ((session - 209) * 2) + 2000
-
+    def scrape(self, session, chambers):
+        year_abr = ((int(session) - 209) * 2) + 2000
         self.initialize_committees(year_abr)
-
         self.scrape_bill_pages(session, year_abr)
 
     def scrape_bill_pages(self, session, year_abr):
@@ -210,7 +213,7 @@ class NJBillScraper(BillScraper, DBFMixin):
             bill_type = rec["billtype"]
             bill_number = int(rec["billnumber"])
             bill_id = bill_type + str(bill_number)
-            if bill_id not in bill:
+            if bill_id not in bill_dict:
                 self.warning('unknown bill %s in document database' % bill_id)
                 continue
             bill = bill_dict[bill_id]
@@ -251,7 +254,7 @@ class NJBillScraper(BillScraper, DBFMixin):
             s_vote_url = 'ftp://www.njleg.state.nj.us/votes/%s.zip' % filename
             try:
                 s_vote_zip, resp = self.urlretrieve(s_vote_url)
-            except urllib2.URLError:
+            except scrapelib.FTPError:
                 self.warning('could not find %s' % s_vote_url)
                 continue
             zipedfile = zipfile.ZipFile(s_vote_zip)
@@ -339,7 +342,7 @@ class NJBillScraper(BillScraper, DBFMixin):
             date = rec["dateaction"]
             actor = actor_map[rec["house"]]
             comment = rec["comment"]
-            action, atype = self.categorize_action(action)
+            action, atype = self.categorize_action(action, bill_id)
             if comment:
                 action += (' ' + comment)
             bill.add_action(actor, action, date, type=atype)

@@ -1,3 +1,6 @@
+from billy.fulltext import (pdfdata_to_text, oyster_text,
+                            text_after_line_numbers)
+
 metadata = dict(
     name='Nevada',
     abbreviation='nv',
@@ -25,7 +28,7 @@ metadata = dict(
          'sessions': ['2010Special26', '75'],
         },
         {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
-         'sessions': ['76']
+         'sessions': ['76', '2011 Session']
         }
     ],
     session_details={
@@ -39,13 +42,33 @@ metadata = dict(
                '_scraped_name': '2009 Session',
                'slug': '75th2009',
               },
+        '2011 Session': {
+            "type": "primary",
+            "display_name": '2011 Regular Session',
+            "_scraped_name": '2011 Session',
+            "slug": "2011"
+        },
         '76': {'type': 'primary',
                'display_name': '2011 Regular Session',
                '_scraped_name': '76th Session (2011)',
                'slug': '76th2011',
               },
     },
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'capitol_maps'],
+    capitol_maps=[
+        {"name": "Floor 1",
+         "url": 'http://static.openstates.org/capmaps/nv/Leg1.gif'
+        },
+        {"name": "Floor 2",
+         "url": 'http://static.openstates.org/capmaps/nv/Leg2.gif'
+        },
+        {"name": "Floor 3",
+         "url": 'http://static.openstates.org/capmaps/nv/Leg3.gif'
+        },
+        {"name": "Floor 4",
+         "url": 'http://static.openstates.org/capmaps/nv/Leg4.gif'
+        },
+    ],
     _ignored_scraped_sessions=['25th Special Session (2008)',
                                '24th Special Session (2008)',
                                '23rd Special Session (2007)',
@@ -77,3 +100,14 @@ def session_list():
     return [x.text_content() for x in
             url_xpath('http://www.leg.state.nv.us/Session/',
                       '//*[@class="MainHeading"]')]
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    return text_after_line_numbers(pdfdata_to_text(data))
+
+document_class = dict(
+    AWS_PREFIX = 'documents/nv/',
+    update_mins = 7*24*60,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

@@ -1,4 +1,5 @@
 import datetime
+from billy.fulltext import pdfdata_to_text, text_after_line_numbers, oyster_text
 
 metadata = dict(
     name='Missouri',
@@ -48,3 +49,14 @@ def session_list():
     return url_xpath('http://www.senate.mo.gov/pastsessions.htm',
         "//div[@id='list']/li/a/text()")
 
+@oyster_text
+def extract_text(oyster_doc, data):
+    text = pdfdata_to_text(data)
+    return text_after_line_numbers(text).encode('ascii', 'ignore')
+
+document_class = dict(
+    AWS_PREFIX = 'documents/mo/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

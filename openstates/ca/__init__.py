@@ -1,4 +1,8 @@
 import datetime
+import lxml.html
+from billy.fulltext import oyster_text
+
+settings = dict(SCRAPELIB_RPM=30)
 
 metadata = dict(
     name='California',
@@ -99,3 +103,19 @@ def session_list():
         for session in sessions
     ]
     return sessions
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    divs_to_try = ['//div[@id="bill"]', '//div[@id="bill_all"]',]
+    for xpath in divs_to_try:
+        div = doc.xpath(xpath)
+        if div:
+            return div[0].text_content()
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ca/',
+    update_mins = 7*24*60,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)

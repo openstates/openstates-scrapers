@@ -3,8 +3,8 @@ import os
 import re
 import datetime
 import collections
-from urlparse import urlunparse, urlparse, parse_qsl
-from urllib import urlencode, quote, unquote_plus
+from urlparse import urlparse, parse_qsl
+from urllib import quote, unquote_plus
 
 import lxml.html
 
@@ -79,6 +79,7 @@ class WVBillScraper(BillScraper):
 
     def scrape_bill(self, session, chamber, bill_id, title, url,
                     strip_sponsors=re.compile(r'\s*\(.{,50}\)\s*').sub):
+
         html = self.urlopen(url)
 
         page = lxml.html.fromstring(html)
@@ -129,12 +130,8 @@ class WVBillScraper(BillScraper):
 
             # Index of date info no longer varies on resolutions.
             date = tds[2].text_content().strip()
+            date = datetime.datetime.strptime(date, "%m/%d/%y").date()
 
-            try:
-                date = datetime.datetime.strptime(date, "%m/%d/%y").date()
-            except:
-                import pdb
-                pdb.set_trace()
             action = tds[1].text_content().strip()
 
             if (action == 'Communicated to Senate' or
@@ -174,11 +171,7 @@ class WVBillScraper(BillScraper):
 
             bill.add_action(actor, action, date, type=atype)
 
-        try:
-            self.save_bill(bill)
-        except:
-            import pdb
-            pdb.set_trace()
+        self.save_bill(bill)
 
     def scrape_vote(self, bill, url):
         try:
@@ -274,7 +267,7 @@ class WVBillScraper(BillScraper):
         ftp_url = 'ftp://www.legis.state.wv.us/publicdocs/%s/RS/%s/'
         ftp_url = ftp_url % (session, chamber_name)
 
-        html = self.urlopen(ftp_url).decode('iso-8859-1')
+        html = self.urlopen(ftp_url)
         dirs = [' '.join(x.split()[3:]) for x in html.splitlines()]
 
         split = re.compile(r'\s+').split
@@ -283,13 +276,19 @@ class WVBillScraper(BillScraper):
         version_filenames = collections.defaultdict(list)
         for d in dirs:
             url = ('%s%s/' % (ftp_url, d)).replace(' ', '%20')
-            html = self.urlopen(url).decode('iso-8859-1')
+            html = self.urlopen(url)
             filenames = [split(x, 3)[-1] for x in html.splitlines()]
             filenames = filter(matchwpd, filenames)
-
             for fn in filenames:
                 fn, ext = splitext(fn)
-                bill_id, _ = fn.split(' ', 1)
+                if ' ' in fn:
+                    bill_id, _ = fn.split(' ', 1)
+                else:
+                    # One bill during 2011 had no spaces
+                    # in the filename. Probably a fluke.
+                    digits = re.search(r'\d+', fn)
+                    bill_id = fn[:digits.end()]
+
                 version_filenames[bill_id.lower()].append((d, fn))
 
         self._version_filenames = version_filenames
@@ -301,12 +300,12 @@ class WVBillScraper(BillScraper):
         '''
         for link in page.xpath("//a[starts-with(@title, 'HTML -')]"):
             # split name out of HTML - Introduced Version - SB 1
-            name = link.get('title').split(' - ')[1]
+            name = link.getprevious().tail.strip(' -\r\n')
             yield {'name': name, 'url': link.get('href'),
                    'mimetype': 'text/html'}
 
         for link in page.xpath("//a[contains(@title, 'WordPerfect')]"):
-            name = get_name(link.get('title')).group(1)
+            name = link.getprevious().getprevious().tail.strip('\r\n -')
             yield {'name': name, 'url': link.get('href'),
                    'mimetype': 'application/wordperfect'}
 

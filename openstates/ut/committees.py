@@ -40,6 +40,7 @@ class UTCommitteeScraper(CommitteeScraper):
 
                     comm.add_member(name, type)
 
+                comm.add_source(url)
+                comm.add_source(comm_link.get('href'))
+
                 self.save_committee(comm)
-
-

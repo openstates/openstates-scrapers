@@ -211,7 +211,9 @@ class SCBillScraper(BillScraper):
         version_doc = lxml.html.fromstring(version_html)
         version_doc.make_links_absolute(version_url)
         for version in version_doc.xpath('//a[contains(@href, "/prever/")]'):
-            bill.add_version(version.text, version.get('href'))
+            # duplicate versions with same date, use first appearance
+            bill.add_version(version.text, version.get('href'),
+                             on_duplicate='use_old')
 
         # actions
         for row in bill_div.xpath('table/tr'):

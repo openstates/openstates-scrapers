@@ -6,11 +6,7 @@ import re
 class DCCommitteeScraper(CommitteeScraper):
     state = 'dc'
 
-    def scrape(self, chamber, term):
-        # do nothing if they're trying to get a lower chamber
-        if chamber == 'lower':
-            return
-
+    def scrape(self, term, chambers):
         com_url = 'http://www.dccouncil.washington.dc.us/committees'
         data = self.urlopen(com_url)
         doc = lxml.html.fromstring(data)

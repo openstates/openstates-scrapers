@@ -190,20 +190,27 @@ class NDBillScraper(BillScraper):
                             doc_name = bill_page.xpath(path + 'td[6]/a')[0].attrib['href']
                             doc_url = url[0: url.find('bill')].replace('///', '/') + doc_name[3:len(doc_name)]
 
-
-
                 #versions
+                bill_num = curr_bill['bill_id'].split()[1]
                 versions_url = assembly_url + '/bill-index/bi' + bill_num + '.html'
+                curr_bill.add_source(versions_url)
                 with self.urlopen(versions_url) as versions_page:
                     versions_page = lxml.html.fromstring(versions_page)
                     version_count = 2
-                    for versions in versions_page.xpath('//table[4]//tr/td/a'):
-                       version = versions.attrib['href'][2:len(versions.attrib['href'])]
-                       version = assembly_url + version
-                       version_name = versions.xpath('//table[4]//tr['+str(version_count)+']/td[4]')[0].text
-                       version_count += 2
-                       curr_bill.add_version(version_name, version)
-                curr_bill.add_source(versions_url)
+                    for versions in versions_page.xpath('//table[4]/tr'):
+                        tds = versions.xpath("./*")
+                        if len(tds) < 3:
+                            continue
+
+                        link = tds[2]
+                        link = link.xpath("./a")[0]
+                        link_name = link.text_content().strip()
+
+                        link = "%s/%s" % (
+                            assembly_url + '/bill-index',
+                            link.attrib['href']
+                        )
+                        curr_bill.add_version(link_name, link)
 
                 self.save_bill(curr_bill)
 

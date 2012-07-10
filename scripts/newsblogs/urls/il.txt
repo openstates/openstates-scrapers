@@ -1,0 +1,15 @@
+http://feeds.stateline.org/StatelineorgRss-Illinois
+http://illinois.statehousenewsonline.com/feed/
+http://www.illinois.gov/PressReleases/RSS/State_All.xml
+http://capitolfax.com/feed/
+http://www.suntimes.com/rss/index.html?path=/suntimes/news/politics
+http://www.suntimes.com/rss/index.html?path=/suntimes/news/marin
+http://www.suntimes.com/rss/index.html?path=/suntimes/news/miller
+http://blogs.dailyherald.com/blog/16/feed
+http://feeds.feedburner.com/ProgressIllinois
+http://www.nbcchicago.com/blogs/ward-room/?rss=y
+http://qctimes.com/search/?f=rss&c=news/state-and-regional/illinois&l=50&s=start_time&sd=desc
+http://www.jointomcross.com/rss.xml
+http://www.chicagotribune.com/news/politics/clout/rss2.0.xml
+http://www.ilsenategop.com/RSS/news.aspx
+http://feeds.feedburner.com/Archpundit

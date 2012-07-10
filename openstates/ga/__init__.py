@@ -1,3 +1,6 @@
+from billy.fulltext import text_after_line_numbers, oyster_text
+import lxml.html
+
 metadata = {
     'name': 'Georgia',
     'abbreviation': 'ga',
@@ -44,3 +47,26 @@ def session_list():
     #      well enough for now.
     sessions = [ session.strip() for session in sessions ]
     return sessions
+
+
+@oyster_text
+def extract_text(oyster_doc, data):
+    doc = lxml.html.fromstring(data)
+    lines = doc.xpath('//span/text()')
+    headers = ('A\r\nRESOLUTION', 'AN\r\nACT')
+    # take off everything before one of the headers
+    for header in headers:
+        if header in lines:
+            text = '\n'.join(lines[lines.index(header)+1:])
+            break
+    else:
+        text = ' '.join(lines)
+
+    return text
+
+document_class = dict(
+    AWS_PREFIX = 'documents/ga/',
+    update_mins = None,
+    extract_text = extract_text,
+    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+)
