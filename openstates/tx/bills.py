@@ -115,6 +115,14 @@ class TXBillScraper(BillScraper):
 
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
 
+        versions = root.xpath("//versions")
+        for version in versions:
+            versionz = version.xpath(".//version")
+            for v in versionz:
+                description = v.xpath(".//versionDescription")[0].text
+                html_url = v.xpath(".//WebHTMLURL")[0].text
+                bill.add_version(description, html_url, 'text/html')
+
         for action in root.findall('actions/action'):
             act_date = datetime.datetime.strptime(action.findtext('date'),
                                             "%m/%d/%Y").date()
