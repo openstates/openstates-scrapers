@@ -45,7 +45,7 @@ generic_actions= {
     ("VETO OVERRIDE: PASSED",)      : "bill_veto_override:passed",
     ("VETO OVERRIDE: FAILED",)      : "bill_veto_override:failed",
 
-    ("TRANSMITTED TO: GOVERNOR")    : "governor:recieved",
+    ("TRANSMITTED TO: GOVERNOR")    : "governor:received",
     ("SIGNED",)                     : "governor:signed",
     ("VETOED",)                     : "governor:vetoed",
 
