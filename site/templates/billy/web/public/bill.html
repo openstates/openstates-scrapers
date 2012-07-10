@@ -66,6 +66,7 @@
                 » {{bill.bill_id}}
             </li>
         </ul>
+
         <div class="fullWidth mainModule">
             <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">Receive alerts about {{ bill.bill_id }}</a> with Scout.
             </span>
@@ -113,7 +114,8 @@
                             {% endif %}
                         {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
                     {% endfor %}
-
+					<a class="missingInfo" title="Find out what info we're missing" href="/tx/bills/?status=passed_upper">?</a>
+					
                     {% if show_all_sponsors %}
                     {% else %}
                         {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
