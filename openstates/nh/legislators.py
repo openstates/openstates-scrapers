@@ -14,6 +14,12 @@ class NHLegislatorScraper(LegislatorScraper):
     def scrape(self, term, chambers):
         url = 'http://gencourt.state.nh.us/downloads/Members(Asterisk%20Delimited).txt'
 
+        option_map = {}
+        html = self.urlopen('http://www.gencourt.state.nh.us/house/members/memberlookup.aspx')
+        doc = lxml.html.fromstring(html)
+        for opt in doc.xpath('//option'):
+            option_map[opt.text] = opt.get('value')
+
         with self.urlopen(url) as data:
             for line in data.splitlines():
                 if line.strip() == "":
@@ -53,6 +59,11 @@ class NHLegislatorScraper(LegislatorScraper):
 
                 if chamber == 'upper':
                     leg['url'] = 'http://www.gencourt.state.nh.us/Senate/members/webpages/district%02d.aspx' % int(district_num)
+                elif chamber == 'lower':
+                    code = option_map.get('{0}, {1}'.format(last, first))
+                    if code:
+                        leg['url'] = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member=' + code
+                        print leg['url']
 
                 for com in (com1, com2, com3, com4, com5):
                     if com:
