@@ -262,6 +262,8 @@ img.firstHalfModule  { width: 100px;}
 .sources { text-align: right; display: block; }
 .mainModule { background: url(images/bg_mainBorder.png) bottom center no-repeat; padding-bottom: 80px; }
 a.viewMore { background: #fff url(images/bg_viewMore.png) 15px center no-repeat; display: inline-block; margin-top: 20px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; font-size: 115%; padding: 3px 15px 3px 32px; color: #a3a730; }
+a.missingInfo{ background-color: #fff; display: inline-block; border: 1px solid #e6e6da; -moz-border-radius: 10px; -webkit-border-radius: 10px; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; font-weight: bold; font-size: 100%; padding: 0px 6px; color: #a3a730; }
+
 address { font-style: normal; }
 .smTitle { font-weight: bold; }
 .adr { margin-bottom: 5px; display: block; }
