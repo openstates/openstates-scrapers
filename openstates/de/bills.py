@@ -471,17 +471,17 @@ class DEBillScraper(BillScraper):
 
         else:
             totals = re_digit.findall(totals)
-            
-        
+
+
         try:
             yes_count, no_count, abstentions, absent = map(int, totals)
-            
+
         except ValueError:
             # There were'nt any votes listed on this page. This is probably
             # a "voice vote" lacking actual vote tallies.
             yes_count, no_count, other_count = 0, 0, 0
-            
-        else:                
+
+        else:
             other_count = abstentions + absent
 
         # Create the vote object.
@@ -497,7 +497,7 @@ class DEBillScraper(BillScraper):
             vote_type = el.xpath('following-sibling::font[1]/text()')[0]
         except IndexError:
             vote_type = el.xpath('../following-sibling::font[1]/text()')[0]
-                                        
+
         vote['vote_type'] = vote_type
 
         # Get an iterator like: name1, vote1, name2, vote2, ...
@@ -516,9 +516,9 @@ class DEBillScraper(BillScraper):
             els = doc.xpath(xpath, namespaces=namespaces)[-1]
             els = els.xpath('descendant::td')
             data = [e.text_content().strip() for e in els]
-                
+
         data = iter(data)
-        
+
         # Add names and vote values.
         vote_map = {
             'Y': 'yes',
@@ -526,7 +526,7 @@ class DEBillScraper(BillScraper):
             }
 
         while True:
-            
+
             try:
                 name = data.next()
                 _vote = data.next()
@@ -537,16 +537,16 @@ class DEBillScraper(BillScraper):
                 # this rare case, values in the vote col are whitespace. Skip.
                 if not _vote.strip():
                     continue
-                
+
                 _vote = vote_map.get(_vote, 'other')
                 getattr(vote, _vote)(name)
-                
+
             except StopIteration:
                 break
 
         return vote
 
-    
+
     def scrape_documents(self, source, docname, filename, tmp, session_num,
                          re_docnum=re.compile(r'var F?docnum="(.+?)"'),
                          re_moniker=re.compile(r'var moniker="(.+?)"'),
@@ -569,8 +569,8 @@ class DEBillScraper(BillScraper):
             # be viewed for security reasons, but we can still link to
             # its status page.
             yield dict(name=docname, url=source)
-            return 
-        
+            return
+
         # The full-text urls are generated using onlick javascript and
         # window-level vars named "moniker" and "docnum".
         if docname == "Fiscal Note":
@@ -599,7 +599,7 @@ class DEBillScraper(BillScraper):
             format_ = format_.lower()
             _kwargs = kwargs.copy()
             _kwargs.update(**locals())
-            
+
             if format_.lower() == '.docx':
                 _kwargs['filename'] = docnum
             else:
@@ -608,10 +608,10 @@ class DEBillScraper(BillScraper):
             url = tmp.format(**_kwargs).replace(' ', '+')
 
             try:
-                self.urlopen(url)                    
+                self.urlopen(url)
             except scrapelib.HTTPError:
                 msg = 'Could\'t fetch %s version at url: "%s".'
-                self.warning(msg % (format_, url))                    
+                self.warning(msg % (format_, url))
             else:
                 yield dict(name=docname, url=url,
                            source=source, mimetype=mimetypes[format_])
