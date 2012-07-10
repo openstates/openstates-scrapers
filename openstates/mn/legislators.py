@@ -5,13 +5,12 @@ import lxml.html
 
 class MNLegislatorScraper(LegislatorScraper):
     state = 'mn'
+    latest_only = True
 
     _parties = {'DFL': 'Democratic-Farmer-Labor',
                 'R': 'Republican'}
 
     def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-
         if chamber == 'lower':
             self.scrape_house(term)
         else:
@@ -31,7 +30,7 @@ Saint Paul, Minnesota 55155'''
             for row in doc.xpath('//tr')[1:]:
                 tds = [td.text_content().strip() for td in row.xpath('td')]
                 if len(tds) == 5:
-                    district = tds[0]
+                    district = tds[0].lstrip('0')
                     name, party = tds[1].rsplit(' ', 1)
                     if party == '(R)':
                         party = 'Republican'
@@ -72,7 +71,7 @@ Saint Paul, Minnesota 55155'''
             for row in doc.xpath('//tr'):
                 tds = row.xpath('td')
                 if len(tds) == 5 and tds[1].text_content() in self._parties:
-                    district = tds[0].text_content()
+                    district = tds[0].text_content().lstrip('0')
                     party = tds[1].text_content()
                     name_a = tds[2].xpath('a')[0]
                     name = name_a.text.strip()
