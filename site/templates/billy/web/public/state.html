@@ -89,7 +89,7 @@
                                 {{ bill.action_dates.passed_lower.date|date:"F d, Y" }}
                             {% endif %}
                             </time>
-                            <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{ bill.bill_id }}</a><span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
+                            <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a><span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
                             <p class="clear">{{ bill.title|truncatewords:50}}</p>
                         </li>
                     {% endfor %}
@@ -106,7 +106,7 @@
                 {% for bill in chamber.latest_bills %}
                     <li>
                         <time class="published">{{ bill.action_dates.first|date:"F d, Y"}}</time>
-                        <span class="inlineTitle h4 withTip"><a href="{% url 'bill' abbr bill.id %}">{{bill.bill_id }}</a> <span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
+                        <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{bill.bill_id }}</a> <span class="tip sideNote">{{ bill.sponsors.first_primary.name }}</span></span>
                         <p class="clear">{{ bill.title|truncatewords:50}}</p>
                     </li>
                 {% endfor %}
