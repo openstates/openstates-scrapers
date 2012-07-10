@@ -6,7 +6,7 @@
 
 
 {% block title %}
-  {{legislator.full_name }} - 
+  {{legislator.full_name }} -
   {{metadata.legislature_name}} -
   Open States
 {% endblock %}
@@ -82,7 +82,7 @@ $(document).ready(function() {
         div: '#map',
         lat: 38,
         lng: -97,
-        zoom: 3
+        zoom: 5
     });
     GMaps.geolocate({
         success: function(position) {
@@ -127,7 +127,7 @@ $(document).ready(function() {
     });
     $.getJSON('/get_district/{{district_id}}', function(payload) {
         var data = payload.shape;
-        map.setZoom(10);
+        /* map.setZoom(10); */
         map.setCenter(
             payload.region.center_lat,
             payload.region.center_lon
