@@ -46,7 +46,7 @@ class NCLegislatorScraper(LegislatorScraper):
             if notice:
                 notice = notice[0].text_content()
                 # skip resigned legislators
-                if 'Resigned' in notice:
+                if 'Resigned' in notice or 'Deceased' in notice:
                     continue
             else:
                 notice = None
