@@ -50,7 +50,7 @@ class RILegislatorScraper(LegislatorScraper):
                              translate[d['party']],
                              town_represented=d['town_represented'],
                              email=d['email'])
-            leg.add_office('district', 'Address', address=address)
+            leg.add_office('district', 'Address', address=d['address'])
             leg.add_source(url)
             self.save_legislator(leg)
 
