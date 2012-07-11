@@ -174,3 +174,6 @@ http://arc.asm.ca.gov/rss/_default.aspx?m=431
 http://asmdc.org/members/a78/rss
 http://asmdc.org/members/a79/home-page/rss
 http://asmdc.org/members/a80/home-page/rss
+http://asmdc.org/component/k2/itemlist?format=feed&moduleID=129&lang=en
+http://asmdc.org/component/k2/itemlist?format=feed&moduleID=117&lang=en
+http://asmdc.org/component/k2/itemlist?format=feed&moduleID=130&lang=en
