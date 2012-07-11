@@ -147,7 +147,7 @@
 					{% if bill.documents %}
 			                <h4>Documents</h4>
 			                {% for document in bill.documents %}
-			                    <ul class="inlineThirds">
+			                    <ul>
 			                        <li><a href="document.url">{{ document.name }}</a>
 			                        {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
 			                        </li>
