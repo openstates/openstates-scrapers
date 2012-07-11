@@ -152,10 +152,11 @@ class DCBillScraper(BillScraper):
             # members are only text on page in a <u> tag
             for member_u in doc.xpath('//u'):
                 member = member_u.text
-                vote_text = member_u.xpath('../../i/text()')[0]
-                if 'Yes' in vote_text:
+                # normalize case
+                vote_text = member_u.xpath('../../i/text()')[0].upper()
+                if 'YES' in vote_text:
                     vote.yes(member)
-                elif 'No' in vote_text:
+                elif 'NO' in vote_text:
                     vote.no(member)
                 else:
                     vote.other(member)
