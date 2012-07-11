@@ -11,8 +11,8 @@
                         <p>{{obj.summary|safe}}</p>
                     </div>
                     <div class="postTags">
-                    {% for entity, id, url in obj.entity_data %}
-                        <span class="label" ><a href="{{url}}">{{entity}}</a></span>
+                    {% for entity, display_name, id, url in obj.entity_data %}
+                        <span class="label" ><a href="{{url}}">{{display_name}}</a></span>
                     {% endfor %}
                     </div>
                 </article>
