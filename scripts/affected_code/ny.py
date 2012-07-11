@@ -22,50 +22,85 @@ Junk = Token.Junk
 subds = ['paragraph', 'division', 'chapter', 'section', 'clause',
          'article']
 subds += ['sub' + s for s in subds]
-subds = r'(%s)s?' % '|'.join(sorted(subds, key=len, reverse=True))
+subds = r'(%s)' % '|'.join(sorted(subds, key=len, reverse=True))
 
 
 class Lexer(RegexLexer):
 
     tokens = {
         'root': [
+
+            # Match 'Section 1' and 'S 2' section headings.
             (r' +Section (1).\s+', bygroups(SectionID)),
             (r' {1,2}S {1,2}(\d+)\.', bygroups(SectionID)),
+
+            # Match singular path elements.
             (r'(?i)(?: of (?:a )?)?(%s) ' % subds,
                 bygroups(NodeType), 'path'),
+
+            # Match plural path elements.
+            (r'(?i)(%s)s ' % subds, bygroups(NodeType.Plural), 'path'),
+
+            # Match act name.
             (r', constituting the (.{,250}? act),', bygroups(ActName)),
+
+            # Amended as follows variants.
             (r' (is|are) amended to read as follows:', AmendedAsFollows),
-            (r' is amended by adding', AmendedByAdding, 'path'),
-            (r' is renumbered', Renumbered),
             (r'amended to read as follows:', AmendedAsFollows),
+
+            # Amended by adding variants.
+            (r' (is|are) amended and \w+ new', AmendedByAdding, 'path'),
+            (r' is amended by adding', AmendedByAdding, 'path'),
             (r'amended by adding', AmendedByAdding, 'path'),
+
+            # Renumbered variants.
+            (r' is renumbered', Renumbered),
             (r'renumbered', Renumbered),
+
+            # Compilation name.
             (r'(?i)the ([A-Za-z .&]+ (:?law|rules|code of the city of New York))',
              bygroups(CompilationName)),
 
+            (r', as (added|amended|renumbered) by', Token.AsAdded, 'path'),
             # Junk.
-            (r'as (added|amended|renumbered) [^,]+', Junk, 'junk'),
-            (r'amending [^,]+', Junk, 'junk'),
-            (r'(added|amended|renumbered) [^,]+', Junk, 'junk'),
-            (r'%s .{,200}? as (?:added|amended) by[^,]+?, ' % subds, Token.Junk),
+            # (r'amending [^,]+', Junk, 'junk'),
+            # (r'(added|amended|renumbered) [^,]+', Junk, 'junk'),
+            # (r'%s .{,200}? as (?:added|amended) by[^,]+?, ' % subds, Token.Junk),
             ],
 
         'path': [
+            (r',? as (added|amended|renumbered) by', Token.AsAdded),
+
+            (r' local law number (\w+) of the city of (.+?) for the year (\w+)',
+                bygroups(Token.LocalLaw.Number,
+                         Token.LocalLaw.Jxn,
+                         Token.LocalLaw.Year), '#pop'),
+
+            (r' local law number (\w+)',
+                bygroups(Token.LocalLaw.Number), '#pop'),
+
+            # "of the codes and ordinances of the city of Yonkers..."
+            (r' of the (.+?) of the city of (\w+)',
+                bygroups(Token.MunicipalLaw.Name, Token.MunicipalLaw.Jxn), '#pop'),
+
             (r' of the laws of (\d{4})', bygroups(SessionLawYear), '#pop'),
-            (r'(?i)of the ([A-Za-z .&]+ (:?law|rules|code of the city of New York))',
+            (r'(?i)of the ([A-Za-z \-.&]+ (:?law|rules|code of the city of New York))',
              bygroups(CompilationName), '#pop'),
             (r'(?i)(?: of (?:a )?)?(%s) ' % subds,
                 bygroups(NodeType)),
+            (r'are added', Token.Added, '#pop'),
             (r'to read as follows', Junk, '#pop'),
+            (r'of ', Token.Of, '#pop'),
             (r'[^ ,]+', NodeID),
+            (r',? and ', NodeAndOrComma),
             (r', ', NodeAndOrComma),
-            (r' and ', NodeAndOrComma),
             ],
 
         'junk': [
             (r'(?!(is|are) (amended|renumbered|repealed)).', Junk),
             (r'(is|are) amended to read as follows:', AmendedAsFollows, '#pop'),
-            (r'is amended by adding', AmendedByAdding, '#pop'),
+            (r' (is|are) amended and \w+ new', AmendedByAdding, 'path'),
+            (r' is amended by adding', AmendedByAdding, '#pop'),
             (r'is renumbered', Renumbered, '#pop'),
             ]
     }
@@ -178,6 +213,7 @@ class Parser(base.Parser):
         'root': [
             (SectionID, 'section_set_id'),
             (NodeType, 'path_new node_new node_set_type', 'path'),
+            (NodeType.Plural, 'path_new_parallel node_new node_set_type', 'path'),
             (AmendedAsFollows, 'amended_as_follows'),
             (AmendedByAdding, 'amended_by_adding', 'path'),
             (Renumbered, 'renumbered', 'path'),

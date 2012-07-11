@@ -51,8 +51,10 @@ class UnicodeWriter:
 
 class State(object):
 
-    def __init__(self, abbr):
+    def __init__(self, abbr, chamber, cutoff=0.6):
         self.abbr = abbr
+        self.chamber = chamber
+        self.cutoff = cutoff
         self.metadata = Metadata.get_object(abbr)
 
     @property
@@ -82,8 +84,8 @@ class State(object):
         name_to_ids = defaultdict(set)
 
         logger.debug('Getting all voter names...')
-        for bill in self.metadata.bills():
-            for vote in bill['votes']:
+        for bill in self.metadata.bills({'chamber': self.chamber}):
+            for vote in bill.votes_manager():
                 for type_ in ['yes_votes', 'no_votes', 'other_votes']:
                     for voter in vote[type_]:
                         if voter['leg_id'] is not None:
@@ -95,7 +97,7 @@ class State(object):
         logger.debug(msg % (len(unmatched), len(matched)))
 
         logger.debug('Getting all committee member names.')
-        for committee in self.metadata.committees():
+        for committee in self.metadata.committees({'chamber': self.chamber}):
             for member in committee['members']:
                 if member['leg_id'] is not None:
                             matched[member['leg_id']].add(member['name'])
@@ -105,7 +107,8 @@ class State(object):
         logger.debug(msg % (len(unmatched), len(matched)))
 
         logger.debug('Getting all legislator names')
-        for legislator in self.metadata.legislators():
+        for legislator in self.metadata.legislators(
+                        {'active': True, 'chamber': self.chamber}):
             _id = legislator['leg_id']
             name_to_ids[legislator['full_name'].lower()].add(_id)
             name_to_ids[legislator['last_name'].lower()].add(_id)
@@ -118,7 +121,8 @@ class State(object):
 
     def get_name_id(self, namestring):
         matches = difflib.get_close_matches(namestring.lower(),
-                                            self.name_to_ids)
+                                            self.name_to_ids,
+                                            cutoff=self.cutoff)
         if matches:
             name = matches[0]
             return self.name_to_ids[name], name, namestring
@@ -141,9 +145,9 @@ class State(object):
 
             # Potential prob if there are more than 1 id.
             if 1 < len(ids):
-                msg = 'There were two possible ids for %r'
-                logger.warning(msg % namestring)
-                legs = db.legislators.find({'_id': {'$in': list(ids)}})
+                msg = 'There were %d possible ids for %r'
+                logger.warning(msg % (len(ids), namestring))
+                legs = db.legislators.find({'active': True, '_id': {'$in': list(ids)}})
                 for leg in legs:
                     logger.warning('  -- %r %r' % (leg['_scraped_name'], leg['_id']))
                 skip = True
@@ -171,7 +175,12 @@ class State(object):
 if __name__ == '__main__':
     import sys
     abbr = sys.argv[1]
-    state = State(abbr)
+    chamber = sys.argv[2]
+    try:
+        cutoff = float(sys.argv[3])
+    except IndexError:
+        cutoff = 0.6
+    state = State(abbr, chamber)
     print state.csv_rows()
     
 

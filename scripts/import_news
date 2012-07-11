@@ -1,0 +1,4 @@
+rm -rf dump
+wget http://static.openstates.org.s3.amazonaws.com/mongo/latest-news-dump.tar.gz
+tar xvf latest-news-dump.tar.gz                                                
+mongorestore -drop dump/
