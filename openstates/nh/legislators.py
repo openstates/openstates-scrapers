@@ -7,9 +7,22 @@ party_map = {'d': 'Democratic', 'r': 'Republican', 'i': 'Independent',
              # Coulombe & Wall are listed as D+R
              'd+r': 'Democratic'}
 
+
 class NHLegislatorScraper(LegislatorScraper):
     state = 'nh'
     latest_only = True
+
+    def get_photo(self, url, chamber):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        if chamber == 'lower':
+            src = doc.xpath('//img[contains(@src, "images/memberpics")]/@src')
+        else:
+            src = doc.xpath('//img[contains(@src, "images/senators")]/@src')
+        if src and 'nophoto' not in src[0]:
+            return src[0]
+        return ''
 
     def scrape(self, term, chambers):
         url = 'http://gencourt.state.nh.us/downloads/Members(Asterisk%20Delimited).txt'
@@ -68,6 +81,9 @@ class NHLegislatorScraper(LegislatorScraper):
                     if com:
                         leg.add_role('committee member', term=term,
                                       chamber=chamber, committee=com)
+
+                if 'url' in leg:
+                    leg['photo_url'] = self.get_photo(leg['url'], chamber)
 
                 leg.add_source(url)
                 self.save_legislator(leg)
