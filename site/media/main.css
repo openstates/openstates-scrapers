@@ -495,7 +495,9 @@ footer .openTwit a, footer .openTwit a:active, footer .openTwit a:visited{
     font-style: italic;
 }
 
-
+.block {
+    display: block;
+}
 
 
 
