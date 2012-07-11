@@ -363,7 +363,7 @@ table .right { text-align: right;}
 input[type="radio"] { float: left; margin-right: 5px; margin-top: 3px;}
 
 .pagination-links .pagesNum { float: right; }
-.pagination-links span { float: left;}
+.pagination-links span { float: left; margin-top: 27px}
 .pagination-links { border-bottom: 1px dashed #E2E2DD; }
 .pagBottom { border-top: 1px dashed #E2E2DD; border-bottom: none; padding-top: 10px; margin-top: 20px;}
 
