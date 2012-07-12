@@ -195,6 +195,7 @@
                     <li>
                         <time datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
                         <a href="{{ vote.get_absolute_url }}">{{vote.motion|truncatewords:30}}</a>
+                        {% if vote.has_votes %}
                         <ul class="barChart">
                             <li class="yes">
                                 <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
@@ -205,7 +206,13 @@
                                 <span class="tagNumber">{{vote.no_count}} No</span>
                             </li>   
                         </ul> 
+                        {% else %}
+                            No vote counts available.
+                        {% endif %}
+                        {% if vote.has_voters %}
                         <span class="right"><b>{{vote_value|title}}</b></span>
+                            No vote roll call available.
+                        {% endif %}
                     </li>
                     {% endfor %}
                 </ul>
