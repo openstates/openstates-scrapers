@@ -70,7 +70,7 @@
     <header id="mainHeader">
         {% if abbr or active_states %}
         <form action="/{{abbr|default:"all"}}/search/" method="get" id="searchform">
-            <input class="transparent" type="search" name="search_text" id="id_q" placeholder="search the site">
+            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="search the site">
             <button type="submit">
                  <span>Search</span>
             </button>
