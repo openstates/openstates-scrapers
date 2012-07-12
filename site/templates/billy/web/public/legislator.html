@@ -176,6 +176,18 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
+        <ul class="breadcrumb floatedList clearfix">
+            <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
+            <li>
+                » <a href="{% url "legislators" abbr %}">Legislators</a>
+            </li>
+            <li>
+                » <a href="{% url "legislators" abbr %}?chamber={{legislator.chamber}}">{{legislator.chamber_name}}</a>
+            </li>
+            <li>
+                » {{legislator.display_name}}
+            </li>
+        </ul>
         <div class="fullWidth mainModule legislator">
             <div class="medModule">
                 <span class="tip sources">For more information on this legislator check out: <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">influenceexplorer.com</a>, <a href="http://www.votesmart.org/bio.php?can_id={{legislator.votesmart_id}}">Project Vote Smart</a></span>
