@@ -191,7 +191,7 @@ $(document).ready(function() {
 
                             <dt class="clear">Sessions Served:</dt>
                             <dd>
-                            {% if legislator.active%}
+                            {% if legislator.active %}
                                 {% for session in legislator.sessions_served %}
                                    {{session}}
                                 {% endfor %}

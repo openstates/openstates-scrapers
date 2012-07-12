@@ -51,25 +51,26 @@
                         <span class="tagNumber">{{vote.other_count}} Other</span>
                     </li>   
                 </ul>
-                {% elif vote.is_probably_a_voice_vote %}
-                    <p><strong>No vote counts were available for this motion.</strong> This vote appears to be a 
-                    <a href="http://en.wikipedia.org/wiki/Voice_vote">voice vote</a>, a type of vote for 
-                    which many states don't record vote counts.
                 {% else %}
-                    <p><strong>No vote counts were available for this motion.</strong> This can happen for a couple of reasons. Some legislatures don't record vote counts in the event of a "voice vote," which may 
-                    be the case here. This can also happen if a state provides insufficient data on its votes. 
-                </p>
-                {% endif %}
-                {% if vote.sources %}{% squish_whitespace %}
-                    You may be able to find out more by visiting the official source (
-                    {% for source in vote.sources %}
-                        {% if not forloop.first %} 
-                            {% if forloop.last %}and{% else %}, {% endif %}
-                        {% endif %}
-                        <a href="{{source.url}}">here</a>
-                    {% endfor %}
-                    ) on the {{ metadata.name }} {{bill.chamber_name}} website.
-                {% end_squish_whitespace %}
+                    {% if vote.is_probably_a_voice_vote %}
+                        <p><strong>No vote counts were available for this motion.</strong> This vote appears to be a 
+                        <a href="http://en.wikipedia.org/wiki/Voice_vote">voice vote</a>, a type of vote for 
+                        which many states don't record vote counts.</p>
+                    {% else %}
+                        <p><strong>No vote counts were available for this motion.</strong> This can happen for a couple of reasons. Some legislatures don't record vote counts in the event of a "voice vote," which may 
+                        be the case here. This can also happen if a state provides insufficient data on its votes.</p>
+                    {% endif %}
+                    {% if vote.sources %}{% squish_whitespace %}
+                        You may be able to find out more by visiting the official source (
+                        {% for source in vote.sources %}
+                            {% if not forloop.first %} 
+                                {% if forloop.last %}and{% else %}, {% endif %}
+                            {% endif %}
+                            <a href="{{source.url}}">here</a>
+                        {% endfor %}
+                        ) on the {{ metadata.name }} {{bill.chamber_name}} website.
+                    {% end_squish_whitespace %}
+                    {% endif %}
                 {% endif %}
             </div>
             <div class="fourCol colRt">
@@ -195,7 +196,8 @@
             {% end_squish_whitespace %}
             {% endif %}
         {% endif %}
-        <div class="medModule">
+
+        <div id="sources">
             {% if vote.sources %}
                 {% sources vote %}
             {% else %}
