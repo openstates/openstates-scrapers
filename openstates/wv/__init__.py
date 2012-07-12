@@ -5,7 +5,7 @@ metadata = {
     'abbreviation': 'wv',
     'name': 'West Virginia',
     'legislature_name': 'West Virginia Legislature',
-    'lower_chamber_name': 'House of Delegates',
+    'lower_chamber_name': 'House',
     'upper_chamber_name': 'Senate',
     'lower_chamber_title': 'Delegate',
     'upper_chamber_title': 'Senator',

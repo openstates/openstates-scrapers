@@ -25,7 +25,7 @@
     </div>
 
     <div class="fullWidth module clear">
-        <h3 class="moduleTitle">Legislators/Districts</h3>
+        <h3 class="moduleTitle">Legislators</h3>
         <div class="twoCol colLt withDash centeredText" id="totalLeg">
             <ul>
                 {% for chamber in chambers %}
@@ -147,9 +147,12 @@
 <script type="text/javascript">
     var lower_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}lower.jsonp';
     var upper_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}upper.jsonp';
+    var zooms = {
+        'wi': 5, 'ca': 5, 'il': 6, 'md': 6, 'mn': 5, 'la': 6, 'tx': 5
+    };
     var map = new L.Map('mapbox-{{metadata.abbr}}',
             {attributionControl:true, minZoom: 4, maxZoom: 12 });
-    var layersControl = new L.Control.Layers();
+var layersControl = new L.Control.Layers(null, null, {collapsed: false});
     var marker;
     map.attributionControl.setPrefix('');
     map.addControl(layersControl);
@@ -158,7 +161,11 @@
         // add to map
         var layer = new wax.leaf.connector(tilejson);
         map.addLayer(layer);
-        map.setView(new L.LatLng(tilejson.center[1], tilejson.center[0]), tilejson.center[2]);
+        var zoom = zooms['{{metadata.abbr}}'];
+        if(!zoom) { 
+            zoom = tilejson.center[2];
+        }
+        map.setView(new L.LatLng(tilejson.center[1], tilejson.center[0]), zoom);
 
         // add to control
         var layerName;
