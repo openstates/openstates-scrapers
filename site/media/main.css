@@ -119,6 +119,7 @@ button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; bo
 .medModule { margin-bottom: 30px; padding-bottom: 30px; border-bottom: 1px dashed #e2e2dd;}
 .medModuleSm { margin-bottom: 30px;}
 .home .module { padding-left: 0;}
+.ulTitle{ padding-left: 30px}
 
 .customWidth { width: 235px;}
 
@@ -153,6 +154,7 @@ h3, .h2 { margin-bottom: 30px; font-size: 190%; color: #504a45; line-height: 32p
 h4, .h3 { margin-bottom: 25px; font-size: 140%; line-height: 29px; text-transform: uppercase; font-weight: bold;}
 h5, .h4 { font-size: 135%; margin-bottom: 20px; line-height: 25px; display: block;}
 h6, .h5 { margin-bottom: 20px; font-size: 110%; line-height: 22px; font-weight: bold; display: block;}
+.h6{ font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; color: #B4B1AB;display: block; font-weight: normal; margin-bottom: 10px}
 h1 { font-family: Georgia, 'Times New Roman', Times, serif; font-size: 220%; line-height: 30px; font-weight: normal;}
 
 .moduleTitle { background: url(images/bg_moduleTitle.jpg) left 6px no-repeat; margin-left: -30px; padding-left: 30px;}
@@ -191,8 +193,8 @@ nav li.active { background: url(images/bg_navActive.png) center 24px no-repeat; 
 nav li.active a:link, nav li.active a:visited, nav li.active a:active  { color: #635F5C; }
 nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; padding: 13px 20px 0; font-family: Georgia, 'Times New Roman', Times, serif; }
 
-#searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: right;}
-#searchform input { float: left; margin-right: 15px; font-size: 101%; width: 190px;}
+#searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: left;}
+#searchform input { float: left; margin-right: 15px; font-size: 101%; width: 190px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
 
 #shareBtns { float: right; clear: right; margin-top: 85px; height: 16px;}
 #shareBtns li { width: 16px; height: 16px; float: right; margin-left: 10px;}
@@ -237,10 +239,15 @@ dt { font-weight: bold;}
 .inlineList dt, .inlineList dd { float: left; margin-right: 15px; line-height: 18px;}
 
 ul .one { clear: both;}
-ul .one, ul .two { margin-right: 35px; }
-.inlineThirds li { float: left; width: 280px;}
+ul .one{ padding-right: 23px; }
+ul .two { padding-right: 12px; padding-left: 12px}
+ul .three { padding-left: 24px; }
+.inlineThirds li { float: left; width: 33%; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;}
 .inlineThirds_module li { float: left; width: 275px; }
+.columnThirds { -moz-column-count: 3; -webkit-column-count: 3; column-count: 3; margin-bottom: 30px}
+.columnThirds ul{ margin-bottom: 20px}
 .floatedList li { float: left; margin-right: 20px;}
+.inlineList ul{margin-left: 30px;}
 .inlineList li { display: inline-block; margin-right: 10px;}
 
 ul li { margin-bottom: 20px; }
@@ -260,6 +267,8 @@ img.firstHalfModule  { width: 100px;}
 .sources { text-align: right; display: block; }
 .mainModule { background: url(images/bg_mainBorder.png) bottom center no-repeat; padding-bottom: 80px; }
 a.viewMore { background: #fff url(images/bg_viewMore.png) 15px center no-repeat; display: inline-block; margin-top: 20px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; font-size: 115%; padding: 3px 15px 3px 32px; color: #a3a730; }
+a.missingInfo{ background-color: #fff; display: inline-block; border: 1px solid #e6e6da; -moz-border-radius: 10px; -webkit-border-radius: 10px; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; font-weight: bold; font-size: 100%; padding: 0px 6px; color: #a3a730; }
+
 address { font-style: normal; }
 .smTitle { font-weight: bold; }
 .adr { margin-bottom: 5px; display: block; }
@@ -305,19 +314,20 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 
 #filterTitle { background: url(images/bg_filterTitle.png) top left no-repeat; margin-left: -30px; height: 36px; width: 156px;}
 .withFilter { margin-top: 30px; }
+#stage1, .active #stage1, #stage2, .active #stage2, #stage3, .active #stage3, #stage4, .active #stage4, #stage5, .active #stage5{
+    display: table-cell;
+    font-size: 80%;
+    vertical-align: middle;
+    line-height: 1.5;
+    text-align: left;
+}
+#stage1 { background: url(images/bg_bill1.png) top left no-repeat; width: 83px; height: 47px; color: #d3d0c9; padding-top: 4px; padding-left: 21px;}
+.active #stage1 { background: url(images/bg_bill1.png) bottom left no-repeat; color: #6f6b66;}
+#stage2, #stage3, #stage4, #stage5 { background-color: #f4f8e7; border: 1px solid #dcddd2; width: 78px; height: 45px; color: #d3d0c9; padding: 4px 7px 0 7px;}
+.active #stage2, .active #stage3, .active #stage4, .active #stage5 { background-color: #EBECE2; border: 1px solid #DADBD2; color: #6f6b66;}
 
-#stage1 { background: url(images/bg_bill1.png) top left no-repeat; width: 104px; height: 51px;}
-.active #stage1 { background: url(images/bg_bill1.png) bottom left no-repeat; }
-#stage2 { background: url(images/bg_bill2.png) top left no-repeat; width: 76px; height: 51px;}
-.active #stage2 { background: url(images/bg_bill2.png) bottom left no-repeat; }
-#stage3 { background: url(images/bg_bill3.png) top left no-repeat; width: 71px; height: 51px;}
-.active #stage3 { background: url(images/bg_bill3.png) bottom left no-repeat; }
-#stage4 { background: url(images/bg_bill4.png) top left no-repeat; width: 76px; height: 51px;}
-.active #stage4 { background: url(images/bg_bill4.png) bottom left no-repeat; }
-#stage5 { background: url(images/bg_bill5.png) top left no-repeat; width: 109px; height: 51px;}
-.active #stage5 { background: url(images/bg_bill5.png) top left no-repeat; }
 
-#billAction { float: right; }
+#billAction { float: right; font-family: "josefin-1","josefin-2",sans-serif; font-style: normal; font-weight: 300; text-transform: uppercase;}
 #billAction li { float: left; margin-left: 3px; text-align: center;}
 #billAction .tip { font-size: 90%; margin-top: 2px;}
 .withTimeline { padding-top: 60px; max-width: 450px;}
@@ -353,7 +363,7 @@ table .right { text-align: right;}
 input[type="radio"] { float: left; margin-right: 5px; margin-top: 3px;}
 
 .pagination-links .pagesNum { float: right; }
-.pagination-links span { float: left;}
+.pagination-links span { float: left; margin-top: 27px}
 .pagination-links { border-bottom: 1px dashed #E2E2DD; }
 .pagBottom { border-top: 1px dashed #E2E2DD; border-bottom: none; padding-top: 10px; margin-top: 20px;}
 
@@ -436,8 +446,8 @@ div.flatpage table#download_list { width: auto; }
 
 /* footer */
 
-#footerWrapper { background: url(images/bg_footer.jpg) bottom center repeat-x; height: 317px; padding-top: 120px;}
-#sunlight { background: url(images/bg_sunlightLogo.png) top left no-repeat; width: 193px; height: 57px; margin-bottom: 30px;}
+#footerWrapper { background: url(images/bg_footer.jpg) bottom center repeat-x; height: 370px; padding-top: 120px;}
+#sunlight { background: url(images/bg_sunlightLogo.png) top left no-repeat; width: 193px; height: 57px; margin-bottom: 50px;}
 
 footer #submit button { background: url(images/btn_submitFooter.png) top left no-repeat; width: 85px; height: 30px;}
 footer #submit button:hover { background: url(images/btn_submitFooter.png) bottom left no-repeat; }
@@ -445,10 +455,10 @@ footer input { float: left; margin-right: 10px;}
 /* make footer links grey w/ underline */
 footer a, footer a:active, footer a:visited { color: #8d8781; text-decoration: underline; }
 
-#recources { background: url(images/bg_resources.png) top left no-repeat; height: 121px; width: 633px; margin-left: -35px; margin-top: -5px; margin-bottom: 30px;}
+#recources { background: url(images/bg_resources.png) top left no-repeat; height: 166px; width: 633px; margin-left: -35px; margin-top: -5px; margin-bottom: 30px;}
 #recources h4 { background: url(images/bg_resourcesTitle.png) top left no-repeat; margin-top: -15px; width: 190px; height: 32px; position: absolute; padding: 13px 0 0 50px; margin-left: 10px;}
 
-#footerLt { width: 280px; margin-right: 30px; padding-right: 30px; float: left; background: url(images/bg_borderFooter.jpg) top right repeat-y; padding-top: 30px;}
+#footerLt { width: 280px; margin-right: 30px; padding-right: 30px; float: left; background: url(images/bg_borderFooter.jpg) top right repeat-y; padding-top: 50px; margin-bottom: 20px;}
 #footerLt p { font-size: 85%; line-height: 18px; color: #8d8781;}
 
 #footerRt { float: left;}
@@ -467,9 +477,32 @@ footer dl { padding: 50px 0 0 35px;}
     width: 332px;
 }
 
+.openTwit{
+}
+.openTwit{
+    background: url('images/twitterBird.png') left 5px no-repeat;
+    margin-left: 35px;
+    padding-left: 25px;
+    display: block;
+    float: left;
+}
+footer .openTwit a, footer .openTwit a:active, footer .openTwit a:visited{
+    color: #817C78;
+    border-bottom: 1px dotted #817C78;
+}
+.openTwit span{
+    font-size: 95%;
+    width: 420px;
+    float: left;
+    display: block;
+    margin-top: 3px;
+    color: #97948E;
+    font-style: italic;
+}
 
-
-
+.block {
+    display: block;
+}
 
 
 

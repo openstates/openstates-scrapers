@@ -36,6 +36,14 @@ class TXEventScraper(EventScraper):
                 metainf[key.strip()] = val.strip()
         ctty = metainf['COMMITTEE']
         where = metainf['PLACE']
+        if "CHAIR" in where:
+            where, chair = where.split("CHAIR:")
+            metainf['PLACE'] = where.strip()
+            metainf['CHAIR'] = chair.strip()
+
+        chair = None
+        if "CHAIR" in metainf:
+            chair = metainf['CHAIR']
 
         plaintext = re.sub("\s+", " ", plaintext).strip()
         regexp = r"(S|J|H)(B|M|R) (\d+)"
@@ -50,6 +58,8 @@ class TXEventScraper(EventScraper):
                       agenda=plaintext)
         event.add_source(url)
         event.add_participant('host', ctty, chamber=chamber)
+        if not chair is None:
+            event.add_participant('chair', chair, chamber=chamber)
 
         for bill in bills:
             chamber, type, number = bill

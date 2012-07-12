@@ -56,7 +56,8 @@ class WILegislatorScraper(LegislatorScraper):
 
                     # address is tail of all elements in MadiOffice label
                     address = '\n'.join([x.tail.strip() for x in
-                       rep_doc.xpath('//span[@id="ctl00_C_lblMadiOffice"]/*')])
+                         rep_doc.xpath('//span[@id="ctl00_C_lblMadiOffice"]/*')
+                                         if x.tail])
                     # phone number is first line after Telephone h3
                     phone = rep_doc.xpath('//h3[text()="Telephone"]')[0].tail.strip()
                     if phone.endswith('Or'):
@@ -64,7 +65,7 @@ class WILegislatorScraper(LegislatorScraper):
                     # fax is line after Fax h3
                     fax = rep_doc.xpath('//h3[text()="Fax"]')
                     if fax:
-                        fax = fax[0].tail.strip()
+                        fax = fax[0].tail.strip() or None
                     else:
                         fax = None
                     leg.add_office('capitol', 'Madison Office',

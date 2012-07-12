@@ -48,6 +48,19 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
+<ul class="breadcrumb floatedList clearfix">
+    <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
+    <li>
+        » <a href="{% url 'committees' abbr %}">Committees</a>
+    </li>
+    <li>
+        » <a href="{% url 'committees' abbr %}?chamber={{committee.chamber}}">{{committee.chamber_name}}</a>
+    </li>
+    <li>
+        » {{committee.display_name}}
+    </li>
+</ul>
+
 <h2>{{ committee.display_name }} ({{committee.chamber_name}})</h2>
 <div class="fullWidth module">
     <h3 class="moduleTitle">Members</h3>
@@ -85,14 +98,17 @@ $(document).ready(function(){
 </div>
 <div class="fullWidth module">
     <h3 class="moduleTitle" >Related Events</h3>
-    <ul>
-        {% for event in committee.events %}
-        <li><a href = "{{ event.get_absolute_url }}"
-                >{{event.description}} on {{ event.when|date:"M j, Y"}}</a><li>
-        {% endfor %}
-    </ul>
-</div>
-
+        {% if committee.events.count %}
+        <ul>
+            {% for event in committee.events %}
+            <li><a href = "{{ event.get_absolute_url }}"
+                    >{{event.description}} on {{ event.when|date:"M j, Y"}}</a><li>
+            {% endfor %}
+        </ul>
+        {% else %}
+            No events found.
+        {% endif %}
+    </div>
 {% sources committee %}
 
 {% endblock %}

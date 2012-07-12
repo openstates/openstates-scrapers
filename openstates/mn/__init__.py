@@ -5,7 +5,7 @@ metadata = dict(
     name='Minnesota',
     abbreviation='mn',
     legislature_name='Minnesota State Legislature',
-    lower_chamber_name='House of Representatives',
+    lower_chamber_name='House',
     upper_chamber_name='Senate',
     lower_chamber_title='Representative',
     upper_chamber_title='Senator',
@@ -67,7 +67,7 @@ metadata = dict(
         '2013-2014': {
             'site_id': '0882013',
             'type': "primary",
-            'display_name': '88th Legislature, 2013-2014',
+            'display_name': '2013-2014 Regular Session',
             '_scraped_name': '88th Legislature, 2013-2014'
         }
 

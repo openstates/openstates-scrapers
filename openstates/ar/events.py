@@ -70,7 +70,7 @@ class AREventScraper(EventScraper):
                               location=location)
                 event.add_source(url)
 
-                event.add_participant('committee', comm, chamber=chamber)
+                event.add_participant('host', comm, chamber=chamber)
 
                 time = row[3].strip()
                 if time in TIMECODES:

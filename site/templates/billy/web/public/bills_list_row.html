@@ -1,10 +1,10 @@
 {% with bill=obj%}
-                            <td>
-                                <a href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a>
-                                <p>{{bill.title|truncatewords:25}}</p>
-                            </td>
-                            <td>{{bill.date_introduced|date:"M j, Y"}}</td>
-                            {% with action=bill.most_recent_action %}
-                            <td>{{action.date|date:"M j, Y"}} <span class="tip">{{action.action}}</span></td>
-                            {% endwith %}
+        <td>
+            <a href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a>
+            <p>{{bill.title|truncatewords:25}}</p>
+        </td>
+        <td>{{bill.date_introduced|date:"M j, Y"}}</td>
+        {% with action=bill.most_recent_action %}
+        <td>{{action.date|date:"M j, Y"}} <span class="tip">{{action.action}}</span></td>
+        {% endwith %}
 {% endwith %}

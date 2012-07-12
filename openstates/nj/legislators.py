@@ -45,9 +45,12 @@ class NJLegislatorScraper(LegislatorScraper, DBFMixin):
             elif chamber == 'S':
                 chamber = "upper"
 
+            leg_status = rec["legstatus"]
+            # skip Deceased/Retired members
+            if leg_status != 'Active':
+                continue
             title = rec["title"]
             legal_position = rec["legpos"]
-            leg_status = rec["legstatus"]
             address = rec["address"]
             city = rec["city"]
             state = rec["state"]
@@ -62,13 +65,14 @@ class NJLegislatorScraper(LegislatorScraper, DBFMixin):
                    str(int(rec['roster_key'])))
             address = '{0}\n{1}, {2} {3}'.format(rec['address'], rec['city'],
                                                  rec['state'], rec['zipcode'])
+            gender = {'M': 'Male', 'F': 'Female'}[rec['sex']]
 
             leg = Legislator(term, chamber, str(district), full_name,
                              first_name, last_name, middle_name, party,
                              suffixes=suffix, title=title,
                              legal_position=legal_position,
-                             leg_status=leg_status, email=email,
-                             url=url, photo_url=photo_url)
+                             email=email, url=url, photo_url=photo_url,
+                             gender=gender)
             leg.add_source(file_url)
             leg.add_office('district', 'District Office', address=address,
                            phone=rec['phone'])

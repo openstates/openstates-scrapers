@@ -8,7 +8,7 @@ metadata = {
     'name': 'Virginia',
     'abbreviation': 'va',
     'legislature_name': 'Virginia General Assembly',
-    'lower_chamber_name': 'House of Delegates',
+    'lower_chamber_name': 'House',
     'upper_chamber_name': 'Senate',
     'lower_chamber_title': 'Delegate',
     'upper_chamber_title': 'Senator',
