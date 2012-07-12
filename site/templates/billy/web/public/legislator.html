@@ -76,7 +76,8 @@ $(document).ready(function() {
     var map,
         has_located = false;
     $('img.legImg').error(function() {
-        $(this).attr("src", "{% static "images/placeholder.png" %}");
+        $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
+            "title", "No Photo Available");
     });
     map = new GMaps({
         div: '#map',

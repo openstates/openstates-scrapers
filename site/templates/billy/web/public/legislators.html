@@ -1,4 +1,5 @@
 {% extends "billy/web/public/base.html" %}
+{% load staticfiles %}
 {% load customtags %}
 
 {% block title %}{{metadata.name}} {{ chamber_title }} - Open States{% endblock %}
@@ -6,7 +7,7 @@
 {% block headblock %}
 <script type="text/javascript">
 $(document).ready(function() {
-    
+
     // Make table rows clickable.
     var trs = $("#main-table tbody tr");
     var trs_count = trs.length;
@@ -24,7 +25,13 @@ $(document).ready(function() {
         function(){
             $(this).removeClass('selected');
         });
+
+    $('img.legImgSmall').error(function() {
+            $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
+                "title", "No Photo Available");
     });
+
+});
 </script>
 <style>
     .selected {
@@ -45,7 +52,7 @@ $(document).ready(function() {
             </div>
             <div class="threeCol colRt">
                 <div class="infoBox">
-                    <span class="specialHeader infoHeader">Don't know who your legislator is?</span> 
+                    <span class="specialHeader infoHeader">Don't know who your legislator is?</span>
                     <span class="specialHeader">Find them now!</span>
                     <form action="/find_your_legislator/" method="get" id="legSearch">
                         <input type="text" name="q" id="id_q" placeholder="enter address">
