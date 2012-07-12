@@ -239,14 +239,14 @@
                     </thead>
                     <tbody>
                         {% for event in bill.events %}
-                        <tr class = 'odd' >
-                            <td class="tip withTipSm"><a href = '/{{ event.state }}/event/{{ event.id }}'
+                        <tr class = 'odd'>
+                            <td class="tip withTipSm"><a href='{{ event.get_absolute_url }}'
                                     >{{ event.when|date:"M j, Y"}}</a></td>
                             <td>{{ event.location }}</td>
                             <td>{{ event.description }}</td>
                             <td>
                                 {% for committee in event.committees %}
-                                <a href = '/{{ committee.state }}/committee/{{ committee.id}}/'
+                                <a href='{{ committee.get_absolute_url }}'
                                     >{{committee.display_name}}</a>
                                 {% endfor %}
                             </td>
