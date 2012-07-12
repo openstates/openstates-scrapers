@@ -96,14 +96,15 @@
                 <dt class="clear contentBottom">Session:</dt>
                 <dd>{{ bill.session_details.display_name }}</dd>
                 <dt class="clear contentBottom">Sponsors ({{ bill.sponsors|length }}):</dt>
-                <dd>
-                    <ul class="inlineThirds_module moduleNoBorder">
+                <dd class="columnThirds">
+					<h6 class="h6 ulTitle">Primary Author</h6>
+                    <ul class="clearfix">
 
                     {% for sponsor in sponsors %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                             {% if sponsor.active %}
-                                ({{ sponsor.party }}) {{ sponsor.district }}
+                                <span class="tip sideNote">({{ sponsor.party }}) Dist. {{ sponsor.district }}</span>
                             {% endif %}
                         {% else %}
                             {% if sponsor.committee_id %}

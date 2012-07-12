@@ -1,8 +1,8 @@
 from billy.conf import settings
 
 # mongodb
-MONGO_HOST = settings.MONGO_HOST
-MONGO_PORT = settings.MONGO_PORT
+MONGO_HOST = getattr(settings, 'OYSTER_MONGO_HOST', settings.MONGO_HOST)
+MONGO_PORT = getattr(settings, 'OYSTER_MONGO_PORT', settings.MONGO_PORT)
 MONGO_DATABASE = 'oyster'
 MONGO_LOG_MAXSIZE = 100000000
 

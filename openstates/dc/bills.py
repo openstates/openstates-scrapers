@@ -141,8 +141,11 @@ class DCBillScraper(BillScraper):
                 '//span[@id="VoteCount1"]/b/text()')[0])
             no_count = extract_int(doc.xpath(
                 '//span[@id="VoteCount2"]/b/text()')[0])
-            # every now and then this actually drops below 0 (error in count)
-            other_count = max(13 - (yes_count+no_count), 0)
+
+            other_count = 0
+            for n in xrange(3, 9):
+                other_count += extract_int(doc.xpath(
+                    '//span[@id="VoteCount%s"]/b/text()' % n)[0])
 
             vote = Vote('upper', vote_date, vote_type, passed, yes_count,
                         no_count, other_count, voice_vote=voice)
@@ -152,10 +155,11 @@ class DCBillScraper(BillScraper):
             # members are only text on page in a <u> tag
             for member_u in doc.xpath('//u'):
                 member = member_u.text
-                vote_text = member_u.xpath('../../i/text()')[0]
-                if 'Yes' in vote_text:
+                # normalize case
+                vote_text = member_u.xpath('../../i/text()')[0].upper()
+                if 'YES' in vote_text:
                     vote.yes(member)
-                elif 'No' in vote_text:
+                elif 'NO' in vote_text:
                     vote.no(member)
                 else:
                     vote.other(member)

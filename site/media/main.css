@@ -119,6 +119,7 @@ button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; bo
 .medModule { margin-bottom: 30px; padding-bottom: 30px; border-bottom: 1px dashed #e2e2dd;}
 .medModuleSm { margin-bottom: 30px;}
 .home .module { padding-left: 0;}
+.ulTitle{ padding-left: 30px}
 
 .customWidth { width: 235px;}
 
@@ -153,6 +154,7 @@ h3, .h2 { margin-bottom: 30px; font-size: 190%; color: #504a45; line-height: 32p
 h4, .h3 { margin-bottom: 25px; font-size: 140%; line-height: 29px; text-transform: uppercase; font-weight: bold;}
 h5, .h4 { font-size: 135%; margin-bottom: 20px; line-height: 25px; display: block;}
 h6, .h5 { margin-bottom: 20px; font-size: 110%; line-height: 22px; font-weight: bold; display: block;}
+.h6{ font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; color: #B4B1AB;display: block; font-weight: normal; margin-bottom: 10px}
 h1 { font-family: Georgia, 'Times New Roman', Times, serif; font-size: 220%; line-height: 30px; font-weight: normal;}
 
 .moduleTitle { background: url(images/bg_moduleTitle.jpg) left 6px no-repeat; margin-left: -30px; padding-left: 30px;}
@@ -191,8 +193,8 @@ nav li.active { background: url(images/bg_navActive.png) center 24px no-repeat; 
 nav li.active a:link, nav li.active a:visited, nav li.active a:active  { color: #635F5C; }
 nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; padding: 13px 20px 0; font-family: Georgia, 'Times New Roman', Times, serif; }
 
-#searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: right;}
-#searchform input { float: left; margin-right: 15px; font-size: 101%; width: 190px;}
+#searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: left;}
+#searchform input { float: left; margin-right: 15px; font-size: 101%; width: 190px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
 
 #shareBtns { float: right; clear: right; margin-top: 85px; height: 16px;}
 #shareBtns li { width: 16px; height: 16px; float: right; margin-left: 10px;}
@@ -242,7 +244,10 @@ ul .two { padding-right: 12px; padding-left: 12px}
 ul .three { padding-left: 24px; }
 .inlineThirds li { float: left; width: 33%; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;}
 .inlineThirds_module li { float: left; width: 275px; }
+.columnThirds { -moz-column-count: 3; -webkit-column-count: 3; column-count: 3; margin-bottom: 30px}
+.columnThirds ul{ margin-bottom: 20px}
 .floatedList li { float: left; margin-right: 20px;}
+.inlineList ul{margin-left: 30px;}
 .inlineList li { display: inline-block; margin-right: 10px;}
 
 ul li { margin-bottom: 20px; }
@@ -358,7 +363,7 @@ table .right { text-align: right;}
 input[type="radio"] { float: left; margin-right: 5px; margin-top: 3px;}
 
 .pagination-links .pagesNum { float: right; }
-.pagination-links span { float: left;}
+.pagination-links span { float: left; margin-top: 27px}
 .pagination-links { border-bottom: 1px dashed #E2E2DD; }
 .pagBottom { border-top: 1px dashed #E2E2DD; border-bottom: none; padding-top: 10px; margin-top: 20px;}
 
