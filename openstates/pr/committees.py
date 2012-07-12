@@ -34,7 +34,7 @@ class PRCommitteeScraper(CommitteeScraper):
         root = lxml.etree.fromstring(convert_pdf(filename,'xml'))
         for link in root.xpath('/pdf2xml/page'):
             comm = None
-            print lxml.etree.tostring(root)
+            #print lxml.etree.tostring(root)
             return
     def scrape_upper_committee(self,url):
         filename, resp = self.urlretrieve(url)
