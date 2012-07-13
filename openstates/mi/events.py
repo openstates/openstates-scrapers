@@ -73,9 +73,11 @@ class MIEventScraper(EventScraper):
         event.add_source(mi_events)
 
         event.add_participant('chair', metainf['Chair']['txt'],
+                              'legislator',
                               chamber=chamber)
 
         event.add_participant('host', metainf['Committee']['txt'],
+                              'committee',
                               chamber=chamber)
 
         agenda = metainf['Agenda']['obj']
