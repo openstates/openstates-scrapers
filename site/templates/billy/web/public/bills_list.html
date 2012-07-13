@@ -140,7 +140,12 @@ $(document).ready(function(){
         {% else %} <a href="https://scout.sunlightfoundation.com/">Receive bill alerts</a> with Scout.
         {% endif %}
         </span>
-        <h2>{{ description }}</h2>
+        <h2 id="billSearchTitle">{{ description }}</h2>
+        {% if long_description %}
+        <ul id="billSearchLongDesc">
+            {% for item in long_description %} <li>{{item}}</li> {% endfor %}
+        </ul>
+        {% endif %}
             <div class="twoCol colLtSm filterCol">
                 <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
