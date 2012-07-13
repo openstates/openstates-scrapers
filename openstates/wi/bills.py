@@ -206,7 +206,7 @@ class WIBillScraper(BillScraper):
             kwargs = {}
 
             if "committee:referred" in atype:
-                kwargs['committee'] = re.sub(
+                kwargs['committees'] = re.sub(
                     'R(ead (first time )?and r)?eferred to committee',
                     '', action)
 
