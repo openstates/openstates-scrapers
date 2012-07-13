@@ -68,7 +68,7 @@ class NYCommitteeScraper(CommitteeScraper):
         comm = Committee('lower', name)
         comm.add_source(url)
 
-        for link in page.xpath("//a[contains(@href, 'mem?ad')]"):
+        for link in page.xpath("//div[@class='commlinks']//a[contains(@href, 'mem')]"):
             member = link.text.strip()
             member = re.sub(r'\s+', ' ', member)
 

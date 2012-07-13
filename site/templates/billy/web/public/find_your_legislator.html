@@ -141,7 +141,12 @@ $(document).ready(function() {
                    for more then one legislator for a chamber */
                 var chamber = chambers[i];
                 $(".chamber-" + i).css("background-color", chamber.fill);
-            }
+                }
+            // fix images after ajax load
+            $('img.legImgSmall').error(function() {
+                    $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
+                        "title", "No Photo Available");
+            });
         });
     }
     $('#find_your_leg').submit(function(e){
