@@ -103,7 +103,7 @@
                 <dd><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
                 <dt class="clear contentBottom">Sponsors ({{ bill.sponsors|length }}):</dt>
                 <dd class="columnThirds">
-					<h6 class="h6 ulTitle">
+                    <h6 class="h6 ulTitle">
                         {% with sponsor=bill.sponsors_manager.first_primary %}
                             {% if sponsor.leg_id %}
                                 <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
@@ -137,8 +137,6 @@
                             {% endif %}
                         {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
                     {% endfor %}
-					<a class="missingInfo" title="Find out what info we're missing" href="/tx/bills/?status=passed_upper">?</a>
-					
                     {% if show_all_sponsors %}
                     {% else %}
                         {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
@@ -149,36 +147,44 @@
                     {% endif %}
                     </ul>
 
+                {% if not bill.versions %}
+                <dt class="clear contentBottom">Notes:</dt>
+                <dd>This bill does not currently have text available.
+                <a class="missingInfo" title="Our Methodology" href="/methodology/">?</a>
+                </dd>
+                {% endif %}
                 </dd>
              </dl>
              <div class="clear"></div>
-        </div>
-        {% if bill.versions %}
+         </div>
+         {% if bill.versions or bill.documents %}
             <div class="module">
-	            <div class="eightCol colLt">
-	                <h3 class="moduleTitle">Bill Text</h3>
-	                <ul class="inlineThirds">
-	                {% for version in bill.versions %}
-	                    <li class={% cycle "one" "two" "three" %}>
-	                        <a href="{{version.url}}">{{ version.name }}</a>
-	                        {% if version.mimetype %}[{{ version.mimetype}}]{% endif %}
-	                    </li>
-	                {% endfor %}
-	                </ul>
-				</div>
-	            <div class="fourCol colRt">
-					{% if bill.documents %}
-			                <h4>Documents</h4>
-			                {% for document in bill.documents %}
-			                    <ul>
-			                        <li><a href="document.url">{{ document.name }}</a>
-			                        {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
-			                        </li>
-			                    </ul>
-			                {% endfor %}
-			                <div class="clear"></div>
-			        {% endif %}
-				</div>
+                <div class="eightCol colLt">
+                    {% if bill.versions %}
+                    <h3 class="moduleTitle">Bill Text</h3>
+                    <ul class="inlineThirds">
+                    {% for version in bill.versions %}
+                        <li class={% cycle "one" "two" "three" %}>
+                            <a href="{{version.url}}">{{ version.name }}</a>
+                            {% if version.mimetype %}[{{ version.mimetype}}]{% endif %}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                <div class="fourCol colRt">
+                    {% if bill.documents %}
+                            <h4>Documents</h4>
+                            {% for document in bill.documents %}
+                                <ul>
+                                    <li><a href="document.url">{{ document.name }}</a>
+                                    {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
+                                    </li>
+                                </ul>
+                            {% endfor %}
+                            <div class="clear"></div>
+                    {% endif %}
+                </div>
                 <div class="clear"></div>
             </div>
         {% endif %}
