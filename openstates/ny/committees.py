@@ -85,10 +85,15 @@ class NYCommitteeScraper(CommitteeScraper):
         page.make_links_absolute(url)
 
         for h2 in page.xpath("//h2"):
-            committee_types = ['Standing Committees','Temporary Committees']
+            committee_types = [
+                'Standing Committees',
+                'Temporary Committees',
+                'Task Forces & Other Entities'
+            ]
+
             if h2.text not in committee_types:
                 continue
-            
+
             for link in h2.getparent().xpath(".//a[contains(@href, '/committee/')]"):
                 name = link.text.strip()
 
