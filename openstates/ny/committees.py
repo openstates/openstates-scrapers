@@ -84,15 +84,17 @@ class NYCommitteeScraper(CommitteeScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for link in page.xpath("//a[contains(@href, '/committee/')]"):
-            name = link.text.strip()
+        for h2 in page.xpath("//h2"):
+            committee_types = ['Standing Committees','Temporary Committees']
+            if h2.text not in committee_types:
+                continue
+            
+            for link in h2.getparent().xpath(".//a[contains(@href, '/committee/')]"):
+                name = link.text.strip()
 
-            if name == 'New York State Conference of Black Senators':
-                # stop scraping once we reach the caucuses
-                break
+                committees.append(name)
+                self.scrape_upper_committee(name, link.attrib['href'])
 
-            committees.append(name)
-            self.scrape_upper_committee(name, link.attrib['href'])
         return committees
 
     def scrape_upper_committee(self, name, url):
