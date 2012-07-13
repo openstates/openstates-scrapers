@@ -12,7 +12,6 @@
         <dl class="inlineList">
             <dt>When:</dt>
             <dd>{{event.when|date:"M j, Y"}}</dd>
-        
             <dt>Where:</dt>
             <dd>{{ event.location }}</dd>
         </dl>
@@ -27,9 +26,15 @@
             </tr>
 {% for participant in event.participants %}
             <tr>
-                {% if participant.committee_id %}
-                <td><a href = '/{{abbr}}/committees/{{participant.committee_id}}'
-                        >{{participant.participant}}</a></td>
+                {% if participant.id %}
+                    {% if participant.participant_type == 'committee' %}
+                        <td><a href = '{% url 'committee' abbr participant.id %}'
+                                >{{participant.participant}}</a></td>
+                    {% endif %}
+                    {% if participant.participant_type == 'legislator' %}
+                        <td><a href = '{% url 'legislator_noslug' abbr participant.id %}'
+                                >{{participant.participant}}</a></td>
+                    {% endif %}
                 {% else %}
                     <td>{{participant.participant}}</td>
                 {% endif %}
