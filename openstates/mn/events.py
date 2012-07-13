@@ -72,7 +72,7 @@ class MNEventScraper(EventScraper):
                 if c in ctty_name.lower():
                     chamber = chambers[c]
 
-            event.add_participant('host', ctty_name, chamber=chamber)
+            event.add_participant('host', ctty_name, 'committee', chamber=chamber)
             # add chair?
 
             self.save_event(event)
