@@ -109,7 +109,7 @@ class RIEventScraper(EventScraper):
             if key in committee.lower():
                 chamber = chambers[key]
 
-        event.add_participant("host", committee, chamber=chamber)
+        event.add_participant("host", committee, 'committee', chamber=chamber)
 
         self.save_event(event)
 

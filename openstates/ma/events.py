@@ -113,7 +113,7 @@ class MAEventScraper(EventScraper):
                       location=metainf['location'].text_content().strip(),
                       location_url=loc_url)
         event.add_participant("host", metainf['event'].text_content().strip(),
-                              chamber=chamber)
+                              'committee', chamber=chamber)
         self.add_agenda(event, metainf['event'].xpath(".//a")[0].attrib['href'])
         return event
 

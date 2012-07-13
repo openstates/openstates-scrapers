@@ -78,7 +78,8 @@ class LAEventScraper(EventScraper):
                 event = Event(session, when, 'committee:meeting',
                               description, location=location)
                 event.add_source(url)
-                event.add_participant('host', committee, chamber='lower')
+                event.add_participant('host', committee, 'committee',
+                                      chamber='lower')
                 event.add_document("Agenda", guid, type='agenda',
                                    mimetype="application/pdf")
                 event['link'] = guid

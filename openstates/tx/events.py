@@ -57,9 +57,9 @@ class TXEventScraper(EventScraper):
                       location=where,
                       agenda=plaintext)
         event.add_source(url)
-        event.add_participant('host', ctty, chamber=chamber)
+        event.add_participant('host', ctty, 'committee', chamber=chamber)
         if not chair is None:
-            event.add_participant('chair', chair, chamber=chamber)
+            event.add_participant('chair', chair, 'legislator', chamber=chamber)
 
         for bill in bills:
             chamber, type, number = bill

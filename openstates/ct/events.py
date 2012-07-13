@@ -65,7 +65,7 @@ class CTEventScraper(EventScraper):
                               _guid=guid,
                               _ical_feed=ical_feed.attrib['href'])
                 event.add_source(url)
-                event.add_participant('committee', name,
+                event.add_participant('committee', name, 'committee',
                                       chamber='joint')
 
                 self.save_event(event)

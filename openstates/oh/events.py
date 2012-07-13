@@ -117,7 +117,7 @@ class OHEventScraper(EventScraper):
                             description=bill['description'],
                             type='consideration'
                         )
-                    event.add_participant("host", ctty, chamber=chamber)
+                    event.add_participant("host", ctty, 'committee', chamber=chamber)
                     self.save_event(event)
 
     def scrape(self, chamber, session):

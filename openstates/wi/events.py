@@ -74,7 +74,7 @@ class WIEventScraper(EventScraper):
         datetime = dt.datetime.strptime(time, "%A, %B %d, %Y %I:%M %p")
         event = Event(session, datetime, 'committee:meeting',
                       committee, location=place)
-        event.add_participant('host', committee, chamber=chamber)
+        event.add_participant('host', committee, 'committee', chamber=chamber)
         event.add_source(url)
         self.save_event(event)
 

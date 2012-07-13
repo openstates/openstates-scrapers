@@ -101,7 +101,8 @@ class AZEventScraper(EventScraper):
                 event = Event(session, when, 'committee:meeting', title,
                               location=room, link=link, details=description) #,
                               #agenda=agenda_items)
-                event.add_participant('committee', committee, chamber=chamber)
+                event.add_participant('committee', committee, 'committee',
+                                      chamber=chamber)
 
                 for i in range(0, len(related_bills)):
                     bill = related_bills[i]
