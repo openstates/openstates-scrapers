@@ -200,11 +200,19 @@
                         <tr class={% cycle "even" "odd" %}>
                             <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
                             <td>{{ action.actor_name }}</td>
-                            {% if "committee" in action %}
-                                <td><a href = '/{{abbr}}/committees/{{action.committee}}' >{{ action.action_display|safe }}</a></td>
-                            {% else %}
-                                <td>{{ action.action_display|safe }}</td>
-                            {% endif %}
+                            <td>{{ action.action_display|safe }}
+                                {% for entity in action.related_entities %}
+                                    {% if entity.id == None %}
+                                        <small>{{ entity.name }}</small>
+                                    {% else %}
+                                        {% if entity.type == 'legislator' %}
+                                            <small><a href = '{% url 'legislator_noslug' abbr entity.id %}' >{{ entity.name }}</a></small>
+                                        {% elif entity.type == 'committee' %}
+                                            <small><a href = '{% url 'committee' abbr entity.id %}' >{{ entity.name }}</a></small>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
                         </tr>
                     {% endfor %}
                     </tbody>
