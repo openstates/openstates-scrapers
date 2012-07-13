@@ -17,7 +17,7 @@ from billy.scrape import JSONDateEncoder
 PATH = dirname(abspath(__file__))
 DATA = 'data'
 
-logger = logging.getLogger('mysql-update')
+logger = logging.getLogger('newsblogs.fetch')
 logger.setLevel(logging.INFO)
 
 ch = logging.StreamHandler()

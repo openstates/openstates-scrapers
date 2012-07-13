@@ -1,5 +1,6 @@
-{% load customtags %}
 {% load static from staticfiles %}
+{% load customtags %}
+{% load twitter_tag %}
 <!doctype html>
 
 <html lang="en" class="no-js">
@@ -140,12 +141,12 @@
                             </ul>
                         </dd>
                     </dl>
-					<div class="openTwit clear">
-						<h6 class="inlineTitle">
-							<a href="https://twitter.com/openstates">@openstates:</a>
-						</h6>
-						<span>want to be notified when state bills (and more) that interest you are updated? check out http://scout.sunlightfoundation.com</span>
-					</div>
+                    <div class="openTwit clear">
+                        <h6 class="inlineTitle">
+                            <a href="https://twitter.com/openstates">@openstates:</a>
+                        </h6>
+                        <span>{% latest_tweet %}</span>
+                    </div>
                 </div>
                 <h4 class="withTip h5">Like This Project and Want to Discover Others Like It?</h4>
                 <span class="tip">Join the Sunlight Foundation's open government community to learn more</span>

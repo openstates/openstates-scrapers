@@ -87,6 +87,7 @@ INSTALLED_APPS = (
     'billy.web.public',
     'locksmith.mongoauth',
     'markup_tags',
+    'tweets',
     'funfacts',
 )
 
