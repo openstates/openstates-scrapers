@@ -443,6 +443,10 @@ div.flatpage table#download_list { width: auto; }
 .mapbox.leaflet-container  { background: transparent; }
 #container .mapbox img { padding: 0px; border: 0px; }
 
+h2#billSearchTitle { max-width: 100%; }
+ul#billSearchLongDesc { margin-bottom: 20px;  }
+ul#billSearchLongDesc li { margin: 0px 5em;  }
+
 
 /* footer */
 
@@ -503,13 +507,3 @@ footer .openTwit a, footer .openTwit a:active, footer .openTwit a:visited{
 .block {
     display: block;
 }
-
-
-
-
-
-
-
-
-
-

@@ -103,10 +103,26 @@
                 <dd><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
                 <dt class="clear contentBottom">Sponsors ({{ bill.sponsors|length }}):</dt>
                 <dd class="columnThirds">
-					<h6 class="h6 ulTitle">Primary Author</h6>
+					<h6 class="h6 ulTitle">
+                        {% with sponsor=bill.sponsors_manager.first_primary %}
+                            {% if sponsor.leg_id %}
+                                <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                                {% if sponsor.active %}
+                                    <span class="tip sideNote">({{ sponsor.party }}) Dist. {{ sponsor.district }}</span>
+                                {% endif %}
+                            {% else %}
+                                {% if sponsor.committee_id %}
+                                    <a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
+                                {% else %}
+                                    {# Sponsor had no leg_id or was inactive. #}
+                                    {{ sponsor.name }}
+                                {% endif %}
+                            {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>                        
+                        {% endwith %}
+                    </h6>
                     <ul class="clearfix">
 
-                    {% for sponsor in sponsors %}
+                    {% for sponsor in bill.sponsors_manager.excluding_first_primary %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                             {% if sponsor.active %}
