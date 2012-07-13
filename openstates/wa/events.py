@@ -129,6 +129,7 @@ class WAEventScraper(EventScraper):
                 event.add_participant(
                     "host",
                     who,
+                    'committee',
                     chamber=chamber
                 )
                 event.add_source(url)

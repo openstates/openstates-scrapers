@@ -102,7 +102,7 @@ class TNEventScraper(EventScraper):
                 when = dt.datetime.strptime(datetime_string, dtfmt)
                 event = Event(session, when, 'committee:meeting',
                               description, location=location)
-                event.add_participant("host", description, chamber=chamber)
+                event.add_participant("host", description, 'committee', chamber=chamber)
                 event.add_source(cal_weekly_events)
 
                 agenda = metainf['agenda'].xpath(".//a")

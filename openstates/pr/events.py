@@ -72,6 +72,7 @@ class PREventScraper(EventScraper):
                             if name != "":
                                 event.add_participant('committee',
                                                       name,
+                                                      'committee',
                                                       chamber=chamber)
 
                     event.add_source(url)

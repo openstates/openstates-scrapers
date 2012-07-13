@@ -82,7 +82,7 @@ class UTEventScraper(EventScraper):
         event = Event(session, datetime, 'committee:meeting',
                       ctty, location=where)
         event.add_source(url)
-        event.add_participant('host', ctty, chamber=chamber)
+        event.add_participant('host', ctty, 'committee', chamber=chamber)
         for bill in bills:
             event.add_related_bill(bill['name'],
                                    description=bill['desc'],
