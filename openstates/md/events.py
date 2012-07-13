@@ -132,6 +132,7 @@ class MDEventScraper(EventScraper):
                                        type='consideration')
 
 
-            event.add_participant("host", ctty_name, chamber=chamber)
+            event.add_participant("host", ctty_name, 'committee',
+                                  chamber=chamber)
 
             self.save_event(event)

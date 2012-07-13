@@ -64,6 +64,6 @@ class CAEventScraper(EventScraper):
 
             event = Event(session, date, 'committee:meeting', desc,
                           location=location)
-            event.add_participant('committee', location)
+            event.add_participant('committee', location, 'committee')
 
             self.save_event(event)
