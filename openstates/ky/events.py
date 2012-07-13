@@ -39,6 +39,7 @@ class KYEventScraper(EventScraper):
                 event.add_source(url)
 
                 # desc is actually the ctty name.
-                event.add_participant('host', desc, chamber=chamber)
+                event.add_participant('host', desc, 'committee',
+                                      chamber=chamber)
 
                 self.save_event(event)

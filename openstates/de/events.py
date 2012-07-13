@@ -50,7 +50,7 @@ class DEEventScraper(EventScraper):
                       chamber=chambers[metainf['Chamber']],
                       location=metainf['Room'],
                       chairman=metainf['Chairman'])
-        event.add_participant("host", metainf['Committee'],
+        event.add_participant("host", metainf['Committee'], 'committee',
                               chamber=chambers[metainf['Chamber']])
         event.add_source(url)
 

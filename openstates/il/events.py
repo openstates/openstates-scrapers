@@ -53,7 +53,7 @@ class ILEventScraper(EventScraper):
                       description, location=where)
         event.add_source(url)
 
-        event.add_participant('host', ctty_name, chamber=chamber)
+        event.add_participant('host', ctty_name, 'committee', chamber=chamber)
 
         bills = tables[1]
         for bill in bills.xpath(".//tr")[1:]:
