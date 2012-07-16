@@ -57,7 +57,7 @@ class NDLegislatorScraper(LegislatorScraper):
             last_name = full_name.split()[3]
             full_name = first_name + ' ' + middle_name + ' ' + last_name
         district = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[5]/td[2]')[0].text
-        party = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[6]/td[2]')[0].text
+        party = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[6]/td[2]')[0].text.strip()
         full_address = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[2]/td[2]')[0].text
         phone = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[3]/td[2]')[0].text
         email = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[4]/td[2]/a')[0].text
