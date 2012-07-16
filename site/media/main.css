@@ -507,3 +507,5 @@ footer .openTwit a, footer .openTwit a:active, footer .openTwit a:visited{
 .block {
     display: block;
 }
+
+.sponsor-type { display: inline; font-size: 75%; vertical-align: bottom; }
