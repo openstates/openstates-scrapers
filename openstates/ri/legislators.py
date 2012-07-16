@@ -43,7 +43,7 @@ class RILegislatorScraper(LegislatorScraper):
             translate = {
                 "Democrat"    : "Democratic",
                 "Republican"  : "Republican",
-                "Independent" : "other"
+                "Independent" : "Independent"
             }
             leg = Legislator(term, chamber, district_name, full_name,
                              '', '', '',
