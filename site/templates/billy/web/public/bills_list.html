@@ -13,12 +13,30 @@
 <script type="text/javascript">
 $(document).ready(function(){
 
-    $('#id_type').select2({placeholder: 'Pick a type'});
-    $('#id_session').select2({placeholder: 'Pick a session'});
-    $('#id_subjects').select2({placeholder: 'Pick a subject'});
-    $('#id_actions__type').select2({placeholder: 'Pick an action type'});
-    $('#id_sponsor__leg_id').select2({placeholder: 'Pick a sponsor'});
-    $('#id_status').select2({placeholder: 'Pick a status'});
+    $('#id_type').select2({
+        placeholder: 'Pick a type',
+        allowClear: true
+    });
+    $('#id_session').select2({
+        placeholder: 'Pick a session',
+        allowClear: true
+    });
+    $('#id_subjects').select2({
+        placeholder: 'Pick a subject',
+        allowClear: true
+    });
+    $('#id_actions__type').select2({
+        placeholder: 'Pick an action type',
+        allowClear: true
+    });
+    $('#id_sponsor__leg_id').select2({
+        placeholder: 'Pick a sponsor',
+        allowClear: true
+    });
+    $('#id_status').select2({
+        placeholder: 'Pick a status',
+        allowClear: true
+    });
 
     var reset = $('<input id="clear" type="submit" value="Reset">');
     reset.click(function(event){
@@ -27,6 +45,7 @@ $(document).ready(function(){
         event.preventDefault();
 
         // Clear the select widgets.
+        $('#id_session').select2("val", '');
         $("#id_subjects").select2("val", []);
         $("#id_status").select2("val", '');
         $("#id_type").select2("val", '');

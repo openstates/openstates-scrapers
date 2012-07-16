@@ -234,7 +234,7 @@
                         {% else %}
                             No vote counts available.
                         {% endif %}
-                        {% if vote.has_voters %}
+                        {% if not vote.has_voters %}
                         <span class="right"><b>{{vote_value|title}}</b></span>
                             No vote roll call available.
                         {% endif %}
