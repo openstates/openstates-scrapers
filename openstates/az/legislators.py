@@ -10,7 +10,7 @@ class AZLegislatorScraper(LegislatorScraper):
         'R': 'Republican',
         'D': 'Democratic',
         'L': 'Libertarian',
-        'I': 'Independant',
+        'I': 'Independent',
         'G': 'Green'
     }
 

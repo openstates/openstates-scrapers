@@ -9,15 +9,6 @@ base_url = 'http://www.azleg.gov/'
 
 class AZCommitteeScraper(CommitteeScraper):
     state = 'az'
-    parties = {
-        'R': 'Republican',
-        'D': 'Democrat',
-        'L': 'Libertarian',
-        'I': 'Independant',
-        'G': 'Green Party'
-    }
-    def get_party(self, abbr):
-        return self.parties[abbr]
 
     def get_session_for_term(self, term):
         # ideally this should be either first or second regular session
