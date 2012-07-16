@@ -217,7 +217,7 @@ def get_committee_name_regex():
     _committee_abbrs = map(slugify, _committee_abbrs)
     #_committee_abbrs = map(re.escape, _committee_abbrs)
     _committee_abbr_regex = ['%s' % '[ .,]*'.join(list(abbr)) for abbr in _committee_abbrs]
-    _committee_abbr_regex = re.compile('Com\.\s+on\s+(%s)' % '|'.join(_committee_abbr_regex))
+    _committee_abbr_regex = re.compile('Com\.\s+on\s+(%s)\.?' % '|'.join(_committee_abbr_regex))
     return _committee_abbr_regex
 
 
@@ -430,7 +430,7 @@ class CABillScraper(BillScraper):
                 if not type:
                     type = ['other']
 
-                # Add in the committee ID of the related committee, if any.
+                # Add in the committee strings of the related committees, if any.
                 kwargs = {}
                 matched_abbrs = committee_abbr_regex.findall(action.action)
                 if 'Com. on' in action.action and not matched_abbrs:
@@ -481,6 +481,12 @@ class CABillScraper(BillScraper):
                 for string in ['upper', 'lower', 'joint']:
                     if actor.startswith(string):
                         actor = string
+
+                # Add strings for related legislators, if any.
+                rgx = '(?:senator|assembly[mwp][^ .,:;]+)\s+[^ .,:;]+'
+                legislators = re.findall(rgx, action.action, re.I)
+                if legislators:
+                    kwargs['legislators'] = legislators
 
                 fsbill.add_action(actor, act_str, action.action_date.date(),
                                   type=type, **kwargs)
