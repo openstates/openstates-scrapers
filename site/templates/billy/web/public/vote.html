@@ -99,7 +99,7 @@
                             {% if legislator %}
                             <tr class="{% cycle 'even' 'odd' %}">
                                 {% if legislator.id %}
-                                <td><a href="{% url 'legislator' abbr legislator.id legislator.slug %}">{{ legislator.display_name }}</a></td>
+                                <td><a href="{% url 'legislator_noslug' abbr legislator.id %}">{{ legislator.display_name }}</a></td>
                                 {% else %}
                                 <td>{{ legislator.display_name }}</td>
                                 {% endif %}
