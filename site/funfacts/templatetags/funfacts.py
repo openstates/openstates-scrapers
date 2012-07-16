@@ -13,7 +13,7 @@ def funfact(abbr, data={}):
         with open(os.path.join(here, '..', abbr + '.txt')) as f:
             facts = f.read()
     except IOError:
-        return 'This state is not fun and therefore has no funfacts.'
+        return ''
     facts = filter(None, facts.splitlines())
     return random.choice(facts)
 
