@@ -278,37 +278,38 @@ $(document).ready(function() {
 
             <div class="clear"></div>
 
-        {% if not legislator.active %}
-        <div class="fullWidth module clear">
-            <div class="sevenCol colLt">
-                <h3 class="moduleTitle">Former Roles</h3>
-                <table>
-                {% for role in legislator.old_roles_manager %}
-                  <thead>
-                    <tr>
-                        <th>Term</th>
-                        <th>Type</th>
-                        <th>District</th>
-                        <th>Party</th>
-                        <th>Start</th>
-                        <th>End</th>
-                    </tr>
-                  </thead>
-                  <tr>
-                    <td>{{role.term}}</td>
-                    <td>{{role.type|title}}</td>
-                    <td>{{role.district}}</td>
-                    <td>{{role.party}}</td>
-                    <td>{% if role.start_data %}{{role.start_date|date:"j, m Y"}}{% else %}{% endif %}</td>
-                    <td>{% if role.end_data %}{{role.end_date|date:"j, m Y"}}{% else %}{% endif %}</td>
-                  </tr>
-                {% endfor %}
-                </table>
+            {% if not legislator.active %}
+            <div class="fullWidth module clear">
+                <div class="sevenCol colLt">
+                    <h3 class="moduleTitle">Former Roles</h3>
+                    <table>
+                    {% for role in legislator.old_roles_manager %}
+                      <thead>
+                        <tr>
+                            <th>Term</th>
+                            <th>Type</th>
+                            <th>District</th>
+                            <th>Party</th>
+                            <th>Start</th>
+                            <th>End</th>
+                        </tr>
+                      </thead>
+                      <tr>
+                        <td>{{role.term}}</td>
+                        <td>{{role.type|title}}</td>
+                        <td>{{role.district}}</td>
+                        <td>{{role.party}}</td>
+                        <td>{% if role.start_data %}{{role.start_date|date:"j, m Y"}}{% else %}{% endif %}</td>
+                        <td>{% if role.end_data %}{{role.end_date|date:"j, m Y"}}{% else %}{% endif %}</td>
+                      </tr>
+                    {% endfor %}
+                    </table>
+                    </div>
+                    <div class="clear"></div> 
                 </div>
-                <div class="clear"></div> 
             </div>
+            {% endif %}
         </div>
-        {% endif %}
 
         <div class="fullWidth module clear">
             <h3 class="moduleTitle">Media</h3>
@@ -347,9 +348,9 @@ $(document).ready(function() {
                 <ul>
                 {% if sponsored_bills.count %}
                     {% for bill in sponsored_bills %}
-                        <li>
-	                        <time datetime="" class="published" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
-                            <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="tip sideNote">{% for primary in bill.sponsors_manager.primary_list %}
+                        <li class="medModuleSm">
+	                        <time datetime="" class="published tipSm" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
+                            <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
                                 {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
                             <p class="clear">{{bill.title}}</p>
                         </li>
@@ -407,5 +408,4 @@ $(document).ready(function() {
         <div class="fullWidth module">
             {% sources legislator %}
         </div>    
-    </div>
 {% endblock %}

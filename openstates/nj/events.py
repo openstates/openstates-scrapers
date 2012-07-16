@@ -91,8 +91,8 @@ class NJEventScraper(EventScraper, DBFMixin):
 
             event.add_participant("host",
                                   hr_name,
-                                  committee_code=record['COMMHOUSE'],
                                   'committee',
+                                  committee_code=record['COMMHOUSE'],
                                   chamber=chamber)
             event.add_source(agenda_dbf)
             self.save_event(event)
