@@ -66,6 +66,8 @@ class MIEventScraper(EventScraper):
         where = metainf['Location']['txt']
         title = metainf['Committee']['txt']  # XXX: Find a better title
 
+        if chamber == 'other':
+            chamber = 'joint'
 
         event = Event(session, datetime, 'committee:meeting',
                       title, location=where)
