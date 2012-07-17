@@ -82,6 +82,14 @@ def setup():
     zipfile.ZipFile(join(DOWNLOADS, 'pubinfo_load.zip')).extractall(DBADMIN)
 
 
+def clean_text(s):
+    # replace smart quote characters
+    s = re.sub(ur'[\u2018\u2019]', "'", s)
+    s = re.sub(ur'[\u201C\u201D]', '"', s)
+    s = s.replace(u'\xe2\u20ac\u02dc', "'")
+    return s
+
+
 def db_drop():
     '''Drop the database.'''
     logger.info('dropping capublic...')
@@ -254,9 +262,14 @@ def load_bill_versions(folder, connection):
     cursor = connection.cursor()
     with open(join(folder, 'BILL_VERSION_TBL.dat')) as f:
         for row in f:
+            # The files are supposedly already in utf-8, but with
+            # copious bogus characters.
+            row = clean_text(row.decode('utf-8')).encode('utf-8')
             row = dat_row_2_tuple(row)
             with open(join(folder, row.bill_xml)) as f:
-                row = row._replace(bill_xml=f.read())
+                text = f.read().decode('utf-8')
+                text = clean_text(text).encode('utf-8')
+                row = row._replace(bill_xml=text)
                 cursor.execute(sql, tuple(row))
 
     cursor.close()
