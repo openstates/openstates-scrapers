@@ -35,6 +35,23 @@ class MAEventScraper(EventScraper):
             if description != "":
                 event['description'] = description
 
+        # Let's (hillariously) add "Chair"(s) to the event.
+        people = page.xpath("//a[contains(@href, 'People')]")
+        for person in people:
+            if "Facilitator" in person.text_content():
+                kruft, chair = person.text_content().split(":", 1)
+                kruft = kruft.strip()
+                chair = chair.strip()
+                chamber = 'other'
+                if "senate" in kruft:
+                    chamber = 'upper'
+                elif "house" in kruft:
+                    chamber = 'lower'
+
+                event.add_participant('chair', chair, 'legislator',
+                                      position_name=kruft,
+                                      chamber=chamber)
+
         trs = page.xpath("//tbody/tr")
         for tr in trs:
             # Alright. Let's snag some stuff.

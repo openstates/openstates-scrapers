@@ -13,17 +13,31 @@ class KYCommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term):
 
         if chamber == 'upper':
+            self.scrape('other', term)  # XXX: Frickn' thing won't
+            #                                  invoke magically.
             url = "http://www.lrc.ky.gov/org_adm/committe/standing_senate.htm"
         elif chamber == 'lower':
             url = "http://www.lrc.ky.gov/org_adm/committe/standing_house.htm"
         else:
-            return
+            url = "http://www.lrc.ky.gov/org_adm/committe/interim.htm"
+            chamber = 'joint'
 
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'standing/')]"):
+            links = []
+
+            cttypages = [
+                "//a[contains(@href, 'standing/')]",
+                "//a[contains(@href, 'interim')]"
+            ]
+
+            for exp in cttypages:
+                linkz = page.xpath(exp)
+                links = links + linkz
+
+            for link in links:
                 name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip()
                 comm = Committee(chamber, name)
                 comm_url = link.attrib['href'].replace(
