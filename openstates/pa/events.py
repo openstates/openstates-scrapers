@@ -50,6 +50,11 @@ class PAEventScraper(EventScraper):
                     desc_el = next_tr.xpath("td[2]")[0]
                     desc = re.sub(r'\s+', ' ', desc)
 
+                    ctty = None
+                    cttyraw = desc.split("COMMITTEE", 1)
+                    if len(cttyraw) > 1:
+                        ctty = cttyraw[0]
+
                     related_bills = desc_el.xpath(
                         ".//a[contains(@href, 'billinfo')]")
                     bills = []
@@ -72,6 +77,11 @@ class PAEventScraper(EventScraper):
                     event = Event(session, dt, 'committee:meeting',
                                   desc, location)
                     event.add_source(url)
+
+                    if not ctty is None:
+                        event.add_participant('host', ctty, 'committee',
+                                              chamber=chamber)
+
                     for bill in bills:
                         event.add_related_bill(
                             bill['bill_id'],
