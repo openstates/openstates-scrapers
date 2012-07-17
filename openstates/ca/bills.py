@@ -18,6 +18,7 @@ def clean_title(s):
     s = re.sub(ur'[\u2018\u2019]', "'", s)
     s = re.sub(ur'[\u201C\u201D]', '"', s)
     s = re.sub(u'\u00e2\u20ac\u2122', u"'", s)
+    s = re.sub(ur'\xe2\u20ac\u02dc', "'", s)
     return s
 
 
@@ -156,7 +157,7 @@ committee_data_lower = [
       'CX07', [u'G.O.']),
 
     ('Standing Committee on Public Employees, Retirement and Social Security',
-      'CX17', [r'P.E., R. & S.S.']),
+      'CX17', [u'P.E., R. & S.S.']),
 
     ('Standing Committee on Veterans Affairs',
       'CX38', [u'V.A.']),
@@ -324,7 +325,6 @@ class CABillScraper(BillScraper):
             for version in bill.versions:
                 if not version.bill_xml:
                     continue
-
                 title = clean_title(version.title)
                 if title:
                     all_titles.add(title)
@@ -377,10 +377,16 @@ class CABillScraper(BillScraper):
                     actor = {'Assembly': 'lower',
                              'Senate': 'upper'}[match.group(1)]
                 elif actor.startswith('Governor'):
-                    actor = 'executive'
+                    actor = 'other'
                 else:
-                    actor = re.sub('^Assembly', 'lower', actor)
-                    actor = re.sub('^Senate', 'upper', actor)
+                    def replacer(matchobj):
+                        if matchobj:
+                            return {'Assembly': 'lower',
+                                    'Senate': 'upper'}[matchobj.group()]
+                        else:
+                            return matchobj.group()
+
+                    actor = re.sub(r'^(Assembly|Senate)', replacer, actor)
 
                 type = []
 
@@ -436,7 +442,6 @@ class CABillScraper(BillScraper):
                 if 'Com. on' in action.action and not matched_abbrs:
                     msg = 'Failed to extract committee abbr from %r.'
                     raise ValueError(action.action)
-                code = re.search(r'C[SXZ]\d+', actor)
                 if matched_abbrs:
 
                     committees = []
@@ -454,33 +459,28 @@ class CABillScraper(BillScraper):
                     committees = filter(None, committees)
                     kwargs['committees'] = committees
 
-                    if code:
+                    code = re.search(r'C[SXZ]\d+', actor)
+                    if code is not None:
                         code = code.group()
                         kwargs['actor_info'] = {'committee_code': code}
-                        #code_committee = self.committee_code_to_name(code)
-                        # if code_committee:
-
-                            # XXX Commented this out because the committees codes from
-                            # the database seem to be grossly out-of-sync with the action text.
-                            # Here just assert that code squares with at least one of
-                            # the committees found.
-                            # if code_committee not in committees:
-                            #     msg = ('This action %r was associated with committee %r '
-                            #            'in the database, but only these committees were '
-                            #            'recognized in the text %r. The matched abbrs were %r.')
-                            #     args = (action.action, code_committee, committees, matched_abbrs)
-                            #     raise ValueError(msg % args)
 
                     assert len(committees) == len(matched_abbrs)
-                    kwargs['action_orig'] = act_str
-                    kwargs['matched_abbrs'] = matched_abbrs
                     for committee, abbr in zip(committees, matched_abbrs):
                         act_str = act_str.replace('Com. on ' + abbr, committee)
                         act_str = act_str.replace(abbr, committee)
 
+                changed = False
                 for string in ['upper', 'lower', 'joint']:
                     if actor.startswith(string):
                         actor = string
+                        changed = True
+                        break
+                if not changed:
+                    actor = 'other'
+                if actor != action.actor:
+                    actor_info = kwargs.get('actor_info', {})
+                    actor_info['details'] = action.actor
+                    kwargs['actor_info'] = actor_info
 
                 # Add strings for related legislators, if any.
                 rgx = '(?:senator|assembly[mwp][^ .,:;]+)\s+[^ .,:;]+'
