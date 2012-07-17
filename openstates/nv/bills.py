@@ -124,7 +124,7 @@ class NVBillScraper(BillScraper):
                         minutes_url = "http://www.leg.state.nv.us" + minutes
                         minutes_date_path = "string(//table[4]/tr[%s]/td[2])" % minutes_count
                         minutes_date = mr.xpath(minutes_date_path).split()
-                        minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Minutes"
+                        minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Agenda"
                         bill.add_document(minutes_date, minutes_url)
                         minutes_count = minutes_count + 1
 
