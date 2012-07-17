@@ -79,9 +79,6 @@ class CACommitteeScraper(CommitteeScraper):
                     msg = '%r must have at least one member.'
                     raise ValueError(msg % cname)
 
-                code = codes[chamber].get(c['committee'].lower())
-                c['action_code'] = code
-
                 self.save_committee(c)
 
         # Subcommittees
