@@ -234,6 +234,13 @@ $(document).ready(function() {
                 <p>
                     {% include "billy/web/public/bio_blurb.html" %}
                 </p>
+                <p>
+                    <ul>
+                        <li><a href="#committees">View committee membership</a></li>
+                        <li><a href="#bills">View sponsored bills</a></li>
+                        <li><a href="#votes">View recent votes</a></li>
+                    </ul>
+                </a>
             </div>
             {% endif %}
             <div class="sixCol colRt">
@@ -328,7 +335,8 @@ $(document).ready(function() {
             </div>
             <div class="clear"></div>
         </div>
-        <div class="fullWidth module clear">
+        <div class="fullWidth module clear"></a>
+            <a name="committees">
             <h3 class="moduleTitle">Committees</h3>
             <ul class="inlineThirds">
                 {% for role in legislator.roles_manager %}
@@ -341,6 +349,7 @@ $(document).ready(function() {
             <div class="clear"></div>
         </div>
         <div class="fullWidth module">
+            <a name="bills"></a>
             <h3 class="moduleTitle">Bills</h3>
             <div class="eightCol colLt">
                 <a class="textReplace rssIcon" href="{% url 'legislator_sponsored_bills_rss' abbr legislator.id legislator.slug %}">rss</a>
@@ -364,6 +373,7 @@ $(document).ready(function() {
 
             </div>
             <div class="fourCol colRt">
+                <a name="votes"></a>
                 <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
                 <h4 class="withTip">Votes</h4>
                 {% if not legislator_votes %}No votes to display.
