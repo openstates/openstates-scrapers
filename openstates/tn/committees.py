@@ -18,23 +18,22 @@ Urls are inconsistent
 
 """
 import re
-import datetime
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import Committee, CommitteeScraper
 import lxml.html
 
+
 def fix_whitespace(s):
     return re.sub(r'\s+', ' ', s)
+
 
 class TNCommitteeScraper(CommitteeScraper):
     state = 'tn'
     base_href = 'http://www.capitol.tn.gov'
     chambers = {
-        'lower' : 'house',
-        'upper' : 'senate'
+        'lower': 'house',
+        'upper': 'senate'
     }
-
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
@@ -54,7 +53,8 @@ class TNCommitteeScraper(CommitteeScraper):
             # Find individual committee urls
             page = lxml.html.fromstring(page)
 
-            links = [(a.text_content(), self.base_href + a.attrib['href']) for a in page.xpath(find_expr)]
+            links = [(a.text_content(), self.base_href + a.attrib['href'])
+                     for a in page.xpath(find_expr)]
 
             # title, url
             for committee_name, link in links:
@@ -72,7 +72,8 @@ class TNCommitteeScraper(CommitteeScraper):
             page = lxml.html.fromstring(page)
 
             for el in page.xpath(find_expr):
-                member = [item.strip() for item in el.text_content().split(',',1)]
+                chunks = el.text_content().split(',', 1)
+                member = [item.strip() for item in chunks]
                 if len(member) > 1:
                     member_name, role = member
                 else:
@@ -86,15 +87,20 @@ class TNCommitteeScraper(CommitteeScraper):
 
     #Scrapes all the House Committees
     def scrape_house_committees(self, url):
-        # Committees are listed in h3 w/ no attributes. Only indicator is a div w/ 2 classes
-        find_expr = "//*[contains(concat(' ', normalize-space(@class), ' '), ' committeelist ')]/h3/a"
+        # Committees are listed in h3 w/ no attributes.
+        # Only indicator is a div w/ 2 classes
+        find_expr = ("//*[contains(concat(' ', normalize-space(@class), ' '),"
+                     " ' committeelist ')]/h3/a")
 
         with self.urlopen(url) as page:
             # Find individual committee urls
             page = lxml.html.fromstring(page)
 
             # House links are relative
-            links = [(a.text_content(), self.base_href + '/house/committees/' + a.attrib['href']) for a in page.xpath(find_expr)]
+            links = [
+                (a.text_content(),
+                 self.base_href + '/house/committees/' + a.attrib['href'])
+                for a in page.xpath(find_expr)]
 
             for committee_name, link in links:
                 self.scrape_house_committee(committee_name, link)
@@ -104,14 +110,15 @@ class TNCommitteeScraper(CommitteeScraper):
         """Scrape individual committee page and add members"""
         find_expr = "//div[@class='col1']/ul[position()<3]/li"
 
-
         with self.urlopen(link) as page:
             # Find individual committee urls
             page = lxml.html.fromstring(page)
 
             #sub_committee
-            if (len(page.xpath("//div[@class='col2']/h3[3]/a"))>0):
-                sub_committee_url = self.base_href + '/house/committees/' + page.xpath("//div[@class='col2']/h3[3]/a")[0].attrib['href']
+            if (len(page.xpath("//div[@class='col2']/h3[3]/a")) > 0):
+                sub_committee_url = self.base_href + '/house/committees/'
+                xpath = "//div[@class='col2']/h3[3]/a"
+                sub_committee_url += page.xpath(xpath)[0].attrib['href']
                 sub_committee_name = "General Sub of " + committee_name
                 self.scrape_house_sub_committee(sub_committee_name, sub_committee_url)
             else:
@@ -120,7 +127,8 @@ class TNCommitteeScraper(CommitteeScraper):
             com = Committee('lower', committee_name, subcommittee=sub_committee_name)
 
             for el in page.xpath(find_expr):
-                member = [item.strip() for item in el.text_content().split(',',1)]
+                chunks = el.text_content().split(',', 1)
+                member = [item.strip() for item in chunks]
                 if len(member) > 1:
                     member_name, role = member
                 else:
@@ -141,7 +149,8 @@ class TNCommitteeScraper(CommitteeScraper):
             com = Committee('lower', sub_committee_name)
 
             for el in page.xpath(find_expr):
-                member = [item.strip() for item in el.text_content().split(',',1)]
+                chunks = el.text_content().split(',', 1)
+                member = [item.strip() for item in chunks]
                 if len(member) > 1:
                     member_name, role = member
                 else:
