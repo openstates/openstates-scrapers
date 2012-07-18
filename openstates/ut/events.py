@@ -35,15 +35,17 @@ class UTEventScraper(EventScraper):
             date = spans[2].text_content().strip()
             time = spans[3].text_content().strip()
 
-        bills = [
-# XXX: Add bills in this format.
-#            { 'name': 'SB 101',
-#              'desc': 'Example description' }
-        ]
+        bills = []
         for agenda in agendas:
             number = agenda.text_content()
             string = agenda.getnext().text_content().strip()
-            # XXX: check for related bills & add them.
+            re_bills = re.findall("(S|H)\.?(B|R|M)\. (\d+)", string)
+            for bill in re_bills:
+                bill_id = '%s%s %s' % bill
+                bills.append({
+                    'name': bill_id,
+                    'desc': string
+                })
 
         if ctty is None or date is None or time is None:
             return
