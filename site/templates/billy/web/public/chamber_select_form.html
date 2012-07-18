@@ -1,16 +1,9 @@
-<form action="/{{abbr}}/{{chamber_select_collection}}" method="get" class="actionItem">
-    <ul class="floatedList">
-        {% for chamber in chamber_select_form.chamber %}
-            <li>{{chamber}}</li>
+<form action="/{{abbr}}/{{chamber_select_collection}}/" method="get" class="actionItem">
+    <div class="buttonGroup">
+        {% for k,v in chamber_select_chambers.items %}
+            <button name="chamber" value="{{k}}">{{v}}</button>
         {% endfor %}
-        {% for field in chamber_select_form.hidden_fields %}
-            {{field}}
-        {% endfor %}
-        <li>
-            <button type="submit" class="smSubmit">
-                <span>Submit</span>
-            </button>
-        </li>
-    </ul>
+            <button name="chamber" value="">Both</button>
+    </div>
     <div class="clear"></div>
 </form>
