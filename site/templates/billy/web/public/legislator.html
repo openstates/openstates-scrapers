@@ -237,7 +237,7 @@ $(document).ready(function() {
             <div class="sixCol colRt">
                 <ul>
                     {% for office in legislator.offices %}
-                    <li class="fourths {% if forloop.first %} firstModule {% endif %}">
+                    <li class="fourths {% cycle "firstModule" "secondModule" %}">
                         <h4 class="h5 withTip">{{office.name}}:</h4>
                         <address class="vcard">
                             <span class="adr">
@@ -266,11 +266,9 @@ $(document).ready(function() {
                     </li>
                     {% endfor %}
                     {% if legislator.email %}
-                    <li>
-                        <div>
-                            <span class="email smTitle">Email: </span>
-                            <a href="mailto:{{legislator.email}}">{{legislator.email}}</a>
-                         </div>
+                    <li class="clear">
+                        <span class="email smTitle">Email: </span>
+                        <a href="mailto:{{legislator.email}}">{{legislator.email}}</a>
                      </li>
                     {% endif %}
                 </ul>

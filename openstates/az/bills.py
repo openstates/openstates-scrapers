@@ -44,12 +44,12 @@ class AZBillScraper(BillScraper):
             link_path = '//tr[contains(td/a/@href, "%s")]'
             link_path2 = '//tr[contains(td/font/a/@href, "%s")]'
             # versions
-            rows = root.xpath(path % 'd Version')
-            for row in rows:
-                tds = row.cssselect('td')
-                bill_version = tds[1].text_content().strip()
-                bill_html = tds[2].xpath('string(font/a/@href)')
-                bill.add_version(bill_version, bill_html)
+            for href in root.xpath("//a[contains(@href, 'pdf')]"):
+                you_are_el = href.attrib['href']
+                if "bills" in you_are_el.lower():
+                    bill.add_version(href.text_content(),
+                                     you_are_el,
+                                     on_duplicate='use_old')
 
             #fact sheets and summary
             rows = root.xpath(link_path2 % '/summary/')

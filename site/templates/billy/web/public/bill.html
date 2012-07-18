@@ -85,22 +85,28 @@
                 {% endfor %}
             </ol>
             <!-- <h5 style="margin-bottom: 0px;">{{ bill.session_details.display_name }}</h5> -->
-            <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
-            <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
-            <p>{{ bill.title|capfirst }}</p>
-            <p>
-                {% if bill.subjects %}
-                        {% for subject in bill.subjects %}
-                    <span class="label-bill-subject"><a href="{% url 'bills' abbr %}?subjects={{subject}}">{{subject}}</a></span>
-                        {% endfor %}
-                    {% endif %}
-                    {% for type in bill.type|slice:"1:" %}
-                    <span class="label-bill-type"><a href="{% url 'bills' abbr %}?type={{type}}">{{type|title}}</a></span>
-                    {% endfor %}
-            </p>
+            <div class="medModule">
+                <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
+                <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
+                <p>{{ bill.title|capfirst }}</p>
+            </div>
+
             <dl class="inlineList">
+                {% if bill.subjects %}
+                <dt class="clear contentBottom">Bill Subjects:</dt>
+                <dd>
+                        {% for subject in bill.subjects %}
+                        <span class="label-bill-subject"><a href="{% url 'bills' abbr %}?subjects={{subject}}">{{subject}}</a></span>
+                        {% endfor %}
+                        {% endif %}
+                        {% for type in bill.type|slice:"1:" %}
+                        <span class="label-bill-type"><a href="{% url 'bills' abbr %}?type={{type}}">{{type|title}}</a></span>
+                </dd>  
+                {% endfor %}      
+                    
                 <dt class="clear contentBottom">Session:</dt>
                 <dd><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
+                
                 <dt class="clear contentBottom">Sponsors ({{ bill.sponsors|length }}):</dt>
                 <dd class="columnThirds">
                     <!-- <h6 class="h6 ulTitle">
@@ -121,8 +127,8 @@
                         {% endwith %}
                     </h6>
                 -->
-                    <ul class="clearfix">
-                    {% for sponsor in bill.sponsors_manager %}
+                    <ul class="clearfix" id="sponsorList">
+                    {% for sponsor in bill.sponsors_manager.first_fifteen %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                             {% if sponsor.active %}

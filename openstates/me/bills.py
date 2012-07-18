@@ -1,10 +1,46 @@
 import datetime
-
-from .utils import chamber_name
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import VoteScraper, Vote
+import re
+from operator import methodcaller
+import htmlentitydefs
 
 import lxml.html
+
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+
+
+strip = methodcaller('strip')
+
+
+def unescape(text):
+    '''Removes HTML or XML character references and entities
+    from a text string.
+
+    @param text The HTML (or XML) source text.
+    @return The plain text, as a Unicode string, if necessary.
+
+    Source: http://effbot.org/zone/re-sub.htm#unescape-html'''
+
+    def fixup(m):
+        text = m.group(0)
+        if text[:2] == "&#":
+            # character reference
+            try:
+                if text[:3] == "&#x":
+                    return unichr(int(text[3:-1], 16))
+                else:
+                    return unichr(int(text[2:-1]))
+            except ValueError:
+                pass
+        else:
+            # named entity
+            try:
+                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+            except KeyError:
+                pass
+        return text  # leave as is
+    return re.sub("&#?\w+;", fixup, text)
+
 
 def classify_action(action):
     # TODO: this likely needs to be retuned after more happens
@@ -14,6 +50,7 @@ def classify_action(action):
         return 'bill:passed'
     else:
         return 'other'
+
 
 class MEBillScraper(BillScraper):
     state = 'me'
@@ -61,8 +98,8 @@ class MEBillScraper(BillScraper):
                         msg = 'Adding hard-coded title for bill_id %r'
                         self.warning(msg % bill_id)
                         title = ('An Act To Simplify the Certificate of Need '
-                                 'Process and Lessen the Regulatory Burden on '
-                                 'Providers')
+                                 'Process and Lessen the Regulatory Burden on'
+                                 ' Providers')
 
                 if (title.lower().startswith('joint order') or
                     title.lower().startswith('joint resolution')):
@@ -88,14 +125,46 @@ class MEBillScraper(BillScraper):
 
             bill.add_source(url)
 
-            sponsor = page.xpath("string(//td[text() = 'Sponsored by ']/b)")
-            if sponsor:
-                bill.add_sponsor('sponsor', sponsor)
+            # Add bill sponsors.
+            try:
+                xpath = '//a[contains(@href, "sponsors")]/@href'
+                sponsors_url = page.xpath(xpath)[0]
+            except IndexError:
+                msg = ('Page didn\'t contain sponsors url with expected '
+                       'format. Page url was %s' % url)
+                raise ValueError(msg)
+            sponsors_html = self.urlopen(sponsors_url, retry_on_404=True)
+            sponsors_page = lxml.html.fromstring(sponsors_html)
+            sponsors_page.make_links_absolute(sponsors_url)
+
+            tr_text = sponsors_page.xpath('//tr')
+            tr_text = [tr.text_content() for tr in tr_text]
+            rgx = (r'(?:^(\S+)e[rd](?: by)?)\s*:?\s*'
+                   r'(Speaker|President|Senator|Representative) '
+                   r'(.+?)(?:\s+of\s+.+)')
+            for text in tr_text:
+                match = re.search(rgx, text, re.I)
+                if match:
+                    type_, chamber_title, name = map(strip, match.groups())
+                    type_ = type_.lower()
+                    if chamber_title in ['President', 'Speaker']:
+                        chamber = bill['chamber']
+                    else:
+                        chamber = {'Senator': 'upper',
+                                   'Representative': 'lower'}
+                        chamber = chamber[chamber_title]
+                    bill.add_sponsor(type_.lower(), name, chamber=chamber)
+                elif 'the Majority' in text:
+                    # At least one bill was sponsored by 'the Majority'.
+                    bill.add_sponsor('sponsor', 'the Majority',
+                                     chamber=bill['chamber'])
+            bill.add_source(sponsors_url)
 
             docket_link = page.xpath("//a[contains(@href, 'dockets.asp')]")[0]
             self.scrape_actions(bill, docket_link.attrib['href'])
 
-            votes_link = page.xpath("//a[contains(@href, 'rollcalls.asp')]")[0]
+            xpath = "//a[contains(@href, 'rollcalls.asp')]"
+            votes_link = page.xpath(xpath)[0]
             self.scrape_votes(bill, votes_link.attrib['href'])
 
             spon_link = page.xpath("//a[contains(@href, 'subjects.asp')]")[0]
@@ -103,7 +172,8 @@ class MEBillScraper(BillScraper):
             bill.add_source(spon_url)
             with self.urlopen(spon_url, retry_on_404=True) as spon_html:
                 sdoc = lxml.html.fromstring(spon_html)
-                srow = sdoc.xpath('//table[@class="sectionbody"]/tr[2]/td/text()')[1:]
+                xpath = '//table[@class="sectionbody"]/tr[2]/td/text()'
+                srow = sdoc.xpath(xpath)[1:]
                 if srow:
                     bill['subjects'] = [s.strip() for s in srow if s.strip()]
 
@@ -125,7 +195,7 @@ class MEBillScraper(BillScraper):
             path = "//div/a[contains(@href, 'rollcall.asp')]"
             for link in page.xpath(path):
                 # skip blank motions, nothing we can do with these
-                # seen on http://www.mainelegislature.org/LawMakerWeb/rollcalls.asp?ID=280039835
+                # seen on /LawMakerWeb/rollcalls.asp?ID=280039835
                 if link.text:
                     motion = link.text.strip()
                     url = link.attrib['href']
@@ -201,7 +271,21 @@ class MEBillScraper(BillScraper):
                 elif chamber == 'House':
                     chamber = 'lower'
 
-                action = row.xpath("string(td[3])").strip()
+                # The action text contains html, and .text_content
+                # does't quite work here, hence these horrific hacks:
+                action = lxml.html.tostring(row.xpath('td')[2])
+
+                # Kill html.
+                action = re.sub(r'[<].+?[>]', ' ', action)
+
+                # Squash whitespace.
+                action = re.sub(r'\s+', ' ', action)
+
+                # Fix period spacing.
+                action = re.sub(r'\s+\.', '.', action)
+
+                action = unescape(action).strip()
+
                 if action == 'Unfinished Business' or not action:
                     continue
 
