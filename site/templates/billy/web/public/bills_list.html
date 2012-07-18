@@ -162,7 +162,7 @@ $(document).ready(function(){
         <h2 id="billSearchTitle">{{ description }}</h2>
         {% if long_description %}
         <ul id="billSearchLongDesc" class="clearfix">
-            {% for item in long_description %} <li class="tip">{{item}},</li> {% endfor %}
+            {% for item in long_description %} <li class="tip">{{item}}{% if not forloop.last %}, {% endif %}</li> {% endfor %}
         </ul>
         {% endif %}
             <div class="twoCol colLtSm filterCol clear">
