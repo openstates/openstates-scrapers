@@ -1,9 +1,11 @@
-<form action="/{{abbr}}/{{chamber_select_collection}}/" method="get" class="actionItem">
+<form action="/{{abbr}}/{{chamber_select_collection}}/" method="get" id="toggleBtns" class="actionItem medModuleSm">
     <div class="buttonGroup">
         {% for k,v in chamber_select_chambers.items %}
             <button name="chamber" value="{{k}}">{{v}}</button>
         {% endfor %}
-            <button name="chamber" value="">Both</button>
+            <button class="first active" name="chamber" value="">Both Chambers</button>
+            <button name="chamber" value="">House</button>
+            <button class="last" name="chamber" value="">Senate</button>
     </div>
     <div class="clear"></div>
 </form>

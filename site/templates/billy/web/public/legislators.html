@@ -44,10 +44,8 @@ $(document).ready(function() {
         <div class="fullWidth">
             <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} {{chamber_title}}</h2>
             <div class="nineCol colLt">
-                <div class="horizontalFilter noSpace">
-                    {% include chamber_select_template %}
-                </div>
-{% include 'billy/web/public/legislator_table.html' %}
+                {% include chamber_select_template %}
+                {% include 'billy/web/public/legislator_table.html' %}
             </div>
             <div class="threeCol colRt">
                 <div class="infoBox">

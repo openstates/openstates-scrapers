@@ -195,9 +195,9 @@ $(document).ready(function() {
                 <span class="tip sources">For more information on this legislator check out: <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">influenceexplorer.com</a>, <a href="http://www.votesmart.org/bio.php?can_id={{legislator.votesmart_id}}">Project Vote Smart</a></span>
                 <div class="sixCol colLt">
                     <img class="firstHalfModule legImg" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
-                    <div class="eights">
+                    <div class="eights clearfix">
                         <h2 class="withTip">{{legislator.full_name}}</h2>
-                        <dl class="inlineList ">
+                        <dl class="inlineList clearfix">
                             <dt class="hidden">Party</dt>
                             <dd class="tip tipSm">{{legislator.party}}</dd>
 
@@ -230,63 +230,62 @@ $(document).ready(function() {
                     </div>
                 </div>
                 <div class="clear"></div>
-            </div>
-			{% if legislator.active %}
-            <div class="sixCol colLt withDash clear">
-                <p>
-                    {% include "billy/web/public/bio_blurb.html" %}
-                </p>
-                <p>
-                    <ul>
+                <div class="eightCol clearfix">
+                    <ul class="inlineList tip noSpace" id="legLinks">
                         <li><a href="#committees">View committee membership</a></li>
                         <li><a href="#bills">View sponsored bills</a></li>
                         <li><a href="#votes">View recent votes</a></li>
                     </ul>
-                </a>
+                </div>    
             </div>
-            {% endif %}
-            <div class="sixCol colRt">
-                <ul>
-                    {% for office in legislator.offices %}
-                    <li class="fourths {% cycle "firstModule" "secondModule" %}">
-                        <h4 class="h5 withTip">{{office.name}}:</h4>
-                        <address class="vcard">
-                            <span class="adr">
-                                <span class="street-address">{{office.address|linebreaks}}</span>
-                            </span>
-                            {% if office.phone %}
-                            <div class="tel">
-                                <span class="type smTitle">Phone:</span> {{office.phone}}
-                            </div>
-                            {% endif %}
-                            {% if office.fax %}
-                            <div class="fax">
-                                <span class="type smTitle">Fax:</span> {{office.fax}}
-                            </div>
-                            {% endif %}
-                            {% if office.email %}
-                            <div class="email">
-                                <span class="type smTitle">Email:</span> {{office.email}}
-                            </div>
-                            {% endif %}
-                        </address>
-                    </li>
-                    {% empty %}
-                    <li class="fourths firstModule">
-                        <h4 class="h5">Contact Information Not Available</h4>
-                    </li>
-                    {% endfor %}
-                    {% if legislator.email %}
-                    <li class="clear">
-                        <span class="email smTitle">Email: </span>
-                        <a href="mailto:{{legislator.email}}">{{legislator.email}}</a>
-                     </li>
-                    {% endif %}
-                </ul>
-            </div>
-
-            <div class="clear"></div>
-        </div>
+    			{% if legislator.active %}
+                <div class="sixCol colLt withDash clear">
+                    <p>
+                        {% include "billy/web/public/bio_blurb.html" %}
+                    </p>
+                </div>
+                {% endif %}
+                <div class="sixCol colRt">
+                    <ul>
+                        {% for office in legislator.offices %}
+                        <li class="fourths {% cycle "firstModule" "secondModule" %}">
+                            <h4 class="h5 withTip">{{office.name}}:</h4>
+                            <address class="vcard">
+                                <span class="adr">
+                                    <span class="street-address">{{office.address|linebreaks}}</span>
+                                </span>
+                                {% if office.phone %}
+                                <div class="tel">
+                                    <span class="type smTitle">Phone:</span> {{office.phone}}
+                                </div>
+                                {% endif %}
+                                {% if office.fax %}
+                                <div class="fax">
+                                    <span class="type smTitle">Fax:</span> {{office.fax}}
+                                </div>
+                                {% endif %}
+                                {% if office.email %}
+                                <div class="email">
+                                    <span class="type smTitle">Email:</span> {{office.email}}
+                                </div>
+                                {% endif %}
+                            </address>
+                        </li>
+                        {% empty %}
+                        <li class="fourths firstModule">
+                            <h4 class="h5">Contact Information Not Available</h4>
+                        </li>
+                        {% endfor %}
+                        {% if legislator.email %}
+                        <li class="clear">
+                            <span class="email smTitle">Email: </span>
+                            <a href="mailto:{{legislator.email}}">{{legislator.email}}</a>
+                         </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="clear"></div>
+            </div> 
 
             {% if not legislator.active %}
             <div class="fullWidth module clear">
