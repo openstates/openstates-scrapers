@@ -9,6 +9,9 @@
   </tr>
   {% for committee in committees %}
   <tr class="{% cycle odd,even %}">
+    {% if show_chamber_column %}
+    <td>{{ committee.chamber_name }}</td>
+    {% endif %}
     <td><a href={{ committee.get_absolute_url }}>{{ committee.display_name }}</td>
     <td>
       {% if not committee.members %}
@@ -29,9 +32,6 @@
         </ul>
       {% endif %}
     </td>
-    {% if show_chamber_column %}
-    <td>{{ committee.chamber_name }}</td>
-    {% endif %}
   </tr>
   {% endfor %}
 </table>	
