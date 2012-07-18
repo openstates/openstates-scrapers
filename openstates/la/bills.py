@@ -166,6 +166,9 @@ class LABillScraper(BillScraper):
                 if 'finally passed' in action_lower:
                     atype.append('bill:passed')
 
+                if 'passed by a vote' in action_lower:
+                    atype.append('bill:passed')
+
                 match = re.match(r'House conferees appointed: (.*)', action)
                 if match:
                     names = match.group(1).split(', ')
