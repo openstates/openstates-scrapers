@@ -148,7 +148,21 @@ class OKBillScraper(BillScraper):
         for link in page.xpath(".//a[contains(@href, '_VOTES')]"):
             self.scrape_votes(bill, urlescape(link.attrib['href']))
 
-        self.save_bill(bill)
+        # # If the bill has no actions and no versions, it's a bogus bill on
+        # # their website, which appears to happen occasionally. Skip.
+        has_no_actions = not bill['actions']
+        has_no_versions = not bill['versions']
+        has_no_title = (bill['title'] == "Short Title Not Found.")
+        first_sponsor_is_bogus = bill['sponsors'][0]['name'] = "Author Not Found."
+        has_no_sponsors = (len(bill['sponsors']) == 1) and first_sponsor_is_bogus
+        if has_no_actions and has_no_versions:
+            if has_no_title or has_no_sponsors:
+                msg = '%r appears to be bogus. Skipping it.' % bill_id
+                self.logger.warning(msg)
+                return
+        else:
+            # Otherwise, save the bills.
+            self.save_bill(bill)
 
     def scrape_votes(self, bill, url):
         page = lxml.html.fromstring(self.urlopen(url).replace(u'\xa0', ' '))
