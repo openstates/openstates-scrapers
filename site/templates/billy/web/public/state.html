@@ -199,7 +199,13 @@ var layersControl = new L.Control.Layers(null, null, {collapsed: false});
     map.on('click', function(e) {
         console.log(e.latlng);
         var url = '/find_your_legislator/?lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
-        $("#results_table").load(url, function() {});
+        $("#results_table").load(url, function() {
+            // fix images after ajax load
+            $('img.legImgSmall').error(function() {
+                    $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
+                        "title", "No Photo Available");
+            });
+        });
 
         // create or move marker
         if (!marker) {
