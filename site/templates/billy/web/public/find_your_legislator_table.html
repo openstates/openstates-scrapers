@@ -21,8 +21,12 @@
         {% endfor %}
     </tbody>
 </table>
+{% elif state %}
+<div class='find_your_legislator_errorbox'>
+    <b>Sorry, no legislators found for this location.</b>
+</div>
 {% else %}
-<div class = 'find_your_legislator_errorbox' >
+<div class='find_your_legislator_errorbox'>
     <b>Oh no!</b> We can't locate any U.S. Legislators for that location. Double
     check you gave a location in the United States.
 </div>

@@ -206,8 +206,7 @@
         wax.tilejson(lower_url, wax_cb);
     }
     map.on('click', function(e) {
-        console.log(e.latlng);
-        var url = '/find_your_legislator/?lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
+        var url = '/find_your_legislator/?state={{metadata.abbr}}&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
         $("#results_table").load(url, function() {
             // fix images after ajax load
             $('img.legImgSmall').error(function() {
