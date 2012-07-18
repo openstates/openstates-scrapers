@@ -178,7 +178,7 @@ $(document).ready(function(){
             </div>
             <div class="tenCol colRt">
                 {% if not object_list.count %}
-                    No bills matched those criteria. Frowny face.
+                    No bills found matching those criteria. Try widening your criteria.
                 {% else %}
                 <div class="pagination-links">
                     <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
