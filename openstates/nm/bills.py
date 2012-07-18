@@ -416,7 +416,7 @@ class NMBillScraper(BillScraper):
                         bill.add_vote(vote)
 
                 # committee reports
-                elif re.match('\w{2,3}\d', suffix):
+                elif re.match('\w{2,3,4}\d', suffix):
                     committee_name = re.match('[A-Z]+', suffix).group()
                     bill.add_document('%s committee report' % committee_name,
                                       doc_path + fname)
