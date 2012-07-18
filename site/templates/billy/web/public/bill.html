@@ -128,7 +128,7 @@
                     </h6>
                 -->
                     <ul class="clearfix" id="sponsorList">
-                    {% for sponsor in bill.sponsors_manager %}
+                    {% for sponsor in bill.sponsors_manager.first_fifteen %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                             {% if sponsor.active %}
