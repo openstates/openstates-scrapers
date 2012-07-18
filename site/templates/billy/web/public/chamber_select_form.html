@@ -1,4 +1,4 @@
-{% if upper in chamber_select_chambers %}
+{% if 'upper' in chamber_select_chambers %}
 <form action="/{{abbr}}/{{chamber_select_collection}}/" method="get" id="toggleBtns" class="actionItem medModuleSm">
     <div class="buttonGroup">
         {% for k,v in chamber_select_chambers.items %}
