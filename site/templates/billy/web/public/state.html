@@ -149,14 +149,21 @@
     var upper_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}upper.jsonp';
     var zooms = {
         'wi': 5, 'ca': 5, 'il': 6, 'md': 6, 'mn': 5, 'la': 6, 'tx': 5,
-        'nh': 7, 'nc': 5
+        'nh': 7, 'nc': 5, 'nj': 7
     };
     var map = new L.Map('mapbox-{{metadata.abbr}}',
             {attributionControl:true, minZoom: 4, maxZoom: 12 });
-var layersControl = new L.Control.Layers(null, null, {collapsed: false});
+    var layersControl = new L.Control.Layers(null, null, {collapsed: false});
     var marker;
+
+    // check if state is in oneMapStates
+    var oneMap = ['nj', 'dc', 'ne'].indexOf('{{metadata.abbr}}') !== -1;
+
     map.attributionControl.setPrefix('');
-    map.addControl(layersControl);
+
+    if(!oneMap) {
+        map.addControl(layersControl);
+    }
 
     var wax_cb = function(tilejson) {
         // add to map
@@ -192,11 +199,12 @@ var layersControl = new L.Control.Layers(null, null, {collapsed: false});
                 container.innerHTML = "";
             }
         }
-        // /find_your_legislator/?lat=42.35843&lon=-71.059773
         wax.leaf.interaction().map(map).tilejson(tilejson).on(events);
     }
     wax.tilejson(upper_url, wax_cb);
-    wax.tilejson(lower_url, wax_cb);
+    if(!oneMap) {
+        wax.tilejson(lower_url, wax_cb);
+    }
     map.on('click', function(e) {
         console.log(e.latlng);
         var url = '/find_your_legislator/?lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
