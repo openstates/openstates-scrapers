@@ -161,11 +161,11 @@ $(document).ready(function(){
         </span>
         <h2 id="billSearchTitle">{{ description }}</h2>
         {% if long_description %}
-        <ul id="billSearchLongDesc">
-            {% for item in long_description %} <li>{{item}}</li> {% endfor %}
+        <ul id="billSearchLongDesc" class="clearfix">
+            {% for item in long_description %} <li class="tip">{{item}},</li> {% endfor %}
         </ul>
         {% endif %}
-            <div class="twoCol colLtSm filterCol">
+            <div class="twoCol colLtSm filterCol clear">
                 <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
                     <ul>

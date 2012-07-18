@@ -194,7 +194,7 @@ nav li.active a:link, nav li.active a:visited, nav li.active a:active  { color: 
 nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; padding: 13px 20px 0; font-family: Georgia, 'Times New Roman', Times, serif; }
 
 #searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: left;}
-#searchform input { float: left; margin-right: 15px; font-size: 101%; width: 190px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
+#searchform input { float: left; margin-right: 15px; font-size: 101%; width: 190px; margin-top: 2px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
 
 #shareBtns { float: right; clear: right; margin-top: 85px; height: 16px;}
 #shareBtns li { width: 16px; height: 16px; float: right; margin-left: 10px;}
@@ -235,7 +235,7 @@ div.flatpage .social-links li { float:left; height:16px; margin-bottom:15px;
 
 /*  lists  */
 dt { font-weight: bold;}
-.contentBottom { margin-bottom: 10px;}
+.contentBottom { margin-bottom: 15px;}
 .inlineList dt, .inlineList dd { float: left; margin-right: 15px; line-height: 18px;}
 
 ul .one { clear: both;}
@@ -276,8 +276,8 @@ address { font-style: normal; }
 #container input { border: 2px solid #e8eadd;}
 input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #cfd2bd; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; padding: 8px 5px 5px;}
 #container img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
-#container #map { float: right; width: 100%; height: 135px; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box;}
-.mapBorder{padding: 5px; border: 1px solid #E0E0D7; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box;}
+#container #map { float: right; width: 98%; height: 135px; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; }
+.mapBorder{padding: 5px; border: 1px solid #E0E0D7; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; height: 148px;}
 #container .legMap #map { height: 300px; width: 100%;}
 #billState { float: right; padding: 5px 25px 3px; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; border: 1px solid #e6e6da; text-transform: uppercase; font-size: 120%; margin-bottom: 25px;}
 #voteMap { float: right;}
@@ -323,7 +323,8 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 }
 #stage1 { background: url(images/bg_bill1.png) top left no-repeat; width: 83px; height: 47px; color: #d3d0c9; padding-top: 4px; padding-left: 21px;}
 .active #stage1 { background: url(images/bg_bill1.png) bottom left no-repeat; color: #6f6b66;}
-#stage2, #stage3, #stage4, #stage5 { background-color: #f4f8e7; border: 1px solid #dcddd2; width: 78px; height: 45px; color: #d3d0c9; padding: 4px 7px 0 7px;}
+#stage2, #stage3, #stage4, #stage5 { background-color: #f4f8e7; border: 1px solid #dcddd2; width: 78px; height: 45px; color: #d3d0c9; padding: 4px 7px 0 7px; max-height: 48px !important; }
+#stage2, #stage3 { width: 120px; max-height: 47px !important;}
 .active #stage2, .active #stage3, .active #stage4, .active #stage5 { background-color: #EBECE2; border: 1px solid #DADBD2; color: #6f6b66;}
 
 
@@ -333,12 +334,15 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 .withTimeline { padding-top: 60px; max-width: 450px;}
 h2.withTimeline { margin-top: 30px;}
 
-.titleNumber { font-size: 600%; line-height: 50px; font-weight: bold; text-transform: uppercase; line-height: 20px; }
-.titleNumber span { display: block; font-size: 20%; padding-top: 5px; font-weight: normal; }
+.titleNumber { font-size: 600%; line-height: 50px; font-weight: bold; text-transform: uppercase; line-height: 70px; }
+.titleNumber span { display: block; font-size: 20%; padding-top: 5px; font-weight: normal; line-height: 20px;}
 
-#totalLeg .titleNumber { font-size: 450%; line-height: 40px;}
+#totalLeg .titleNumber { font-size: 450%; line-height: 60px;}
 
 .centeredText { text-align: center; }
+
+#sponsorList li { margin-bottom: 20px; }
+#sponsorList a { font-size: 100%; display: block; }
 
 /*  tables  */
 
@@ -346,7 +350,7 @@ table { width: 100%;}
 .odd { background-color: #fff; }
 .normalTable td { padding: 15px;}
 td { padding: 15px 15px 5px;}
-.fullWidth>table td:first-child{ width: 15%;}
+
 th { text-align: left; padding: 0 15px 15px;}
 table img { width: 50px; padding: 2px; margin-top: -5px;}
 .noPaddingTable td { padding: 15px 10px 15px 0;}
@@ -444,8 +448,8 @@ div.flatpage table#download_list { width: auto; }
 #container .mapbox img { padding: 0px; border: 0px; }
 
 h2#billSearchTitle { max-width: 100%; }
-ul#billSearchLongDesc { margin-bottom: 20px;  }
-ul#billSearchLongDesc li { margin: 0px 5em;  }
+ul#billSearchLongDesc { margin-bottom: 30px; margin-top: -15px;  }
+ul#billSearchLongDesc li { margin-right: 20px; float: left;  }
 
 
 /* footer */

@@ -148,7 +148,8 @@
     var lower_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}lower.jsonp';
     var upper_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}upper.jsonp';
     var zooms = {
-        'wi': 5, 'ca': 5, 'il': 6, 'md': 6, 'mn': 5, 'la': 6, 'tx': 5
+        'wi': 5, 'ca': 5, 'il': 6, 'md': 6, 'mn': 5, 'la': 6, 'tx': 5,
+        'nh': 7, 'nc': 5
     };
     var map = new L.Map('mapbox-{{metadata.abbr}}',
             {attributionControl:true, minZoom: 4, maxZoom: 12 });
@@ -162,7 +163,7 @@ var layersControl = new L.Control.Layers(null, null, {collapsed: false});
         var layer = new wax.leaf.connector(tilejson);
         map.addLayer(layer);
         var zoom = zooms['{{metadata.abbr}}'];
-        if(!zoom) { 
+        if(!zoom) {
             zoom = tilejson.center[2];
         }
         map.setView(new L.LatLng(tilejson.center[1], tilejson.center[0]), zoom);
