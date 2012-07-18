@@ -54,13 +54,18 @@ class MNEventScraper(EventScraper):
             if date_time is None:
                 continue
 
-            event = Event(chamber,
+            event = Event(session,
                           date_time,
                           'committee:meeting',
                           ctty_name,
-                          location=metainf['Room:'] or "State House"
+                          location=metainf['Room:'] or "State House",
+                          chamber=chamber
                          )
             event.add_source(url)
+
+            if metainf['Chair:'] != "":
+                event.add_participant('chair', metainf['Chair:'], 'legislator',
+                                      chamber=chamber)
 
             chamber = "other"
             chambers = {
