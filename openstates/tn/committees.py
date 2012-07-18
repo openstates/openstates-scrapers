@@ -190,7 +190,7 @@ class TNCommitteeScraper(CommitteeScraper):
                     with self.urlopen(chamber_link) as chamber_page:
                         chamber_page = lxml.html.fromstring(chamber_page)
                         for mem in chamber_page.xpath("//div[@class='col1']/ul[position() <= 2]/li/a"):
-                            member = [item.strip() for item in mem.text_content().split(',',1)]
+                            member = [item.strip() for item in mem.text_content().split(',', 1)]
                             if len(member) > 1:
                                 member_name, role = member
                             else:
@@ -199,8 +199,12 @@ class TNCommitteeScraper(CommitteeScraper):
                                 com.add_member(member_name, role)
                         com.add_source(chamber_link)
             else:
+                # If the member sections all state "TBA", skip saving this committee.
+                li_text = page.xpath("//div[@class='col1']/ul[position() <= 3]/li/text()")
+                if set(li_text) == set(['TBA']):
+                    return
                 for el in page.xpath("//div[@class='col1']/ul[position() <= 3]/li/a"):
-                    member = [item.strip() for item in el.text_content().split(',',1)]
+                    member = [item.strip() for item in el.text_content().split(',', 1)]
                     if len(member) > 1:
                         member_name, role = member
                     else:
