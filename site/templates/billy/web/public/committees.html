@@ -44,7 +44,7 @@
 {% endblock %}
 
 {% block content %}
-        <div id='' class="fullWidth" data-pjax='#main'>
+        <div id='' class="fullWidth" data-pjax>
         <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} Committees</h2>
             {% include chamber_select_template %}
             {% include committees_table_template %}
