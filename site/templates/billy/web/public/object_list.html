@@ -7,116 +7,12 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block headblock %}
-<script type="text/javascript">
+<script>
 $(document).ready(function() {
-    
-    // Make table rows clickable.
-    var trs = $("#main-table tbody tr");
-    var trs_count = trs.length;
-    trs.click(function(){
-        window.location=$(this).find("a").attr("href");
-        return false;
-        });
-
-    // If javascript is enabled, change cursor to pointer over table rows
-    // and add selected class on hover.
-    trs.css('cursor', 'pointer');
-    trs.hover(function(){
-            $(this).addClass('selected');
-        },
-        function(){
-            $(this).removeClass('selected');
-        });
-    });
-    
+    // Make table rows clickable
+    clickable_rows("#main-table tbody tr");
+});
 </script>
-<style>
-    .selected {
-        background-color: #FFFFD6;
-    }
-    .rss-link {
-        border-style: none;
-    }
-
-    /*
-    The following .label and .pagesNum styles are taken from
-    twitter/bootstrap [https://github.com/twitter/bootstrap/]
-    licensed under the Apache 2 license.
-    */
-    .label {
-        font-size: 10.998px;
-        font-weight: bold;
-        line-height: 14px;
-        color: #ffffff;
-        text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
-        white-space: nowrap;
-        vertical-align: baseline;
-        background-color: #999999;
-        padding: 1px 4px 2px;
-        -webkit-border-radius: 3px;
-         -moz-border-radius: 3px;
-              border-radius: 3px;
-    }
-    .label a {
-        color: white;
-    }
-
-    .pagesNum {
-      height: 36px;
-      margin: 18px 0;
-    }
-
-    .pagesNum ul {
-      display: inline-block;
-      *display: inline;
-      margin-bottom: 0;
-      margin-left: 0;
-      -webkit-border-radius: 3px;
-         -moz-border-radius: 3px;
-              border-radius: 3px;
-      *zoom: 1;
-      -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-         -moz-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-              box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-
-    .pagesNum li {
-      display: inline;
-    }
-
-    .pagesNum a {
-      float: left;
-      padding: 0 14px;
-      line-height: 34px;
-      text-decoration: none;
-      border: 1px solid #ddd;
-      border-left-width: 0;
-    }
-
-    .pagesNum a:hover,
-    .pagesNum .active a {
-      background-color: #FFFFD6;
-    }
-
-    .pagesNum .active a {
-      color: #999999;
-      cursor: default;
-    }
-
-    .pagesNum li:first-child a {
-      border-left-width: 1px;
-      -webkit-border-radius: 3px 0 0 3px;
-         -moz-border-radius: 3px 0 0 3px;
-              border-radius: 3px 0 0 3px;
-    }
-
-    .pagesNum li:last-child a {
-      -webkit-border-radius: 0 3px 3px 0;
-         -moz-border-radius: 0 3px 3px 0;
-              border-radius: 0 3px 3px 0;
-    }
-    /* End twitter bootstrap stuff. */
-</style>
 {% endblock %}
 
 {% block content %}

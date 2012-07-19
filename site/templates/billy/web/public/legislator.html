@@ -13,65 +13,15 @@
 
 {% block headblock %}
     <link rel="canonical" href="{{legislator.get_absolute_url}}">
-    <style>
-
-#map{
-    height:               300px;
-    background:           #6699cc;
-}
-
-.find-your-shim {
-    margin:               20px;
-}
-
-img {
-    border:               0px solid #000000;
-}
-
-.overlay{
-    background-color:     #679ee8;
-    border:               2px solid #406391;
-    text-size:            2em;
-    color:                #FFFFFF;
-    padding:              5px;
-    -moz-border-radius:   5px;
-    -webkit-border-radius:5px;
-    opacity:              0.9;
-}
-
-/*
-The .label styles are taken from
-twitter/bootstrap [https://github.com/twitter/bootstrap/]
-licensed under the Apache 2 license.
-*/
-.label {
-    font-size: 10.998px;
-    font-weight: bold;
-    line-height: 14px;
-    color: black;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
-    white-space: nowrap;
-    vertical-align: baseline;
-    background-color: #999999;
-    padding: 1px 4px 2px;
-    -webkit-border-radius: 3px;
-     -moz-border-radius: 3px;
-          border-radius: 3px;
-}
-.label a {
-    color: white;
-}
-
-    </style>
     <script>
     $(document).ready(function(){
         var doc = $(document);
         doc.bind("keydown", "alt+j", function(){window.location = '{{legislator.get_admin_json_url}}'});
         });
     </script>
-    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
-    <script type="text/javascript" src="{% static "js/gmaps.js" %}"></script>
-    <script type="text/javascript">
+    <script src="http://maps.google.com/maps/api/js?sensor=true"></script>
+    <script src="{% static "js/gmaps.js" %}"></script>
+    <script>
 $(document).ready(function() {
     var map,
         has_located = false;
@@ -90,7 +40,7 @@ $(document).ready(function() {
             /* map.drawOverlay({
                 lat: position.coords.latitude,
                 lng: position.coords.longitude,
-                content: "<div class = 'overlay' >You are here</div>"
+                content: "<div class = 'map-overlay' >You are here</div>"
             }); */
             map.addControl({
                 position: 'top_right',

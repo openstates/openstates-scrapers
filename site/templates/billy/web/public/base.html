@@ -10,7 +10,7 @@
 
     <script src="{% static "js/jquery-1.5.1.min.js" %}"></script>
     <script src="{% static "js/jquery-placehold.min.js" %}"></script>
-    <script src="{% static "js/sf.js" %}"></script>
+    <script src="{% static "js/main.js" %}"></script>
     <script src="{% static 'js/jquery.hotkeys.js' %}"></script>
     <script src="{% static 'js/jquery.pjax.js' %}"></script>
     <link rel="stylesheet" type="text/css" href="{% static 'select2-2.0/select2.css' %}"/>
@@ -20,54 +20,33 @@
     <script>try{Typekit.load();}catch(e){}</script>
     <script>
      $(document).ready(function() {
-
-        function format(state) { return state.text; }
-
-        var state_select_dropdown = $("#id_abbr");
-        state_select_dropdown.select2({
-            placeholder: "Select a State",
-        });
-
-        // make form submit on change
-        state_select_dropdown.change(function() { this.form.submit(); });
-        $('#state_select_submit').hide();
-
-        $('#mainFilter .select2-container').css('width', '200px');
-
         var doc = $(document);
-        doc.bind("keydown", "alt+b", function(){window.location = '/{{abbr}}/bills'});
-        doc.bind("keydown", "alt+l", function(){window.location = '/{{abbr}}/legislators'});
-        doc.bind("keydown", "alt+c", function(){window.location = '/{{abbr}}/committees'});
+        doc.bind("keydown", "alt+b", function(){window.location = '/{{abbr}}/bills/'});
+        doc.bind("keydown", "alt+l", function(){window.location = '/{{abbr}}/legislators/'});
+        doc.bind("keydown", "alt+c", function(){window.location = '/{{abbr}}/committees/'});
         doc.bind("keydown", "esc", function(){$('#id_q').focus()});
-        });
+    });
     </script>
-    <style>
-    /* Style the flag drop-down menu.*/
-    img.flag {
-        height: 10px;
-        width: 15px;
-        padding-right: 10px;
-        padding-left: 0px;
-        padding-top: 0px;
-        padding-bottom: 0px;
-        border: 0;
-        clear: right;
-    }
-
-    #mainFilter .select2-container {
-        width: 200px;
-    }
-
-    #mainFilter li {
-        float: None;
-        margin-right: 0px;
-    }
-    </style>
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
     {% block headblock %}{% endblock %}
+
+    <script>
+      /* google analytics async */
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-1265484-77']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
 </head>
+
 <body class="{% block bodyclass %}{% endblock %}">
     <header id="mainHeader">
         {% if abbr or active_states %}
@@ -156,37 +135,4 @@
             </div>
         </footer>
     </div>
-
-    <script>
-      /* google analytics */
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-1265484-77']);
-      _gaq.push(['_trackPageview']);
-
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-    })();
-
-    /* gigya share buttons */
-    $(document).ready(function() {
-        var ua = new gigya.socialize.UserAction();
-        ua.setTitle($('title').text());
-        var params = {
-            containerID: 'shareBtns',
-            iconsOnly: true,
-            layout: 'horizontal',
-            noButtonBorders: true,
-            shareButtons: 'facebook,twitter',
-            shortURLs: 'never',
-            showCounts: 'none',
-            userAction: ua
-        };
-        gigya.socialize.showShareBarUI(params);
-    });
-    </script>
-
-
 </body>

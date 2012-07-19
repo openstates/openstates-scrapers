@@ -10,48 +10,11 @@
 
 {% block headblock %}
     <link rel="canonical" href="{{bill.get_absolute_url}}">
-    <style>
-    .label-bill-subject {
-        font-size: 10.998px;
-        font-weight: bold;
-        line-height: 14px;
-        color: #ffffff;
-        text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
-        white-space: nowrap;
-        vertical-align: baseline;
-        background-color: #999999;
-        padding: 1px 4px 2px;
-        -webkit-border-radius: 3px;
-         -moz-border-radius: 3px;
-              border-radius: 3px;
-    }
-    .label-bill-subject a {
-        color: white;
-    }
-    .label-bill-type {
-        font-size: 10.998px;
-        font-weight: bold;
-        line-height: 14px;
-        color: black;
-        text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
-        white-space: nowrap;
-        vertical-align: baseline;
-        background-color: #D6AC04;
-        padding: 1px 4px 2px;
-        -webkit-border-radius: 3px;
-         -moz-border-radius: 3px;
-              border-radius: 3px;
-    }
-    .label-bill-type a {
-        color: white;
-    }
-
-    </style>
     <script>
     $(document).ready(function(){
         var doc = $(document);
         doc.bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
-        });
+    });
     </script>
 {% endblock %}
 

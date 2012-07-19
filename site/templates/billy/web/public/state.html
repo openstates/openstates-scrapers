@@ -218,7 +218,7 @@
     </div>
 
 <!-- mapbox interaction script -->
-<script type="text/javascript">
+<script>
     var lower_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}lower.jsonp';
     var upper_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}upper.jsonp';
     var zooms = {
@@ -281,13 +281,7 @@
     }
     map.on('click', function(e) {
         var url = '/find_your_legislator/?state={{metadata.abbr}}&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
-        $("#results_table").load(url, function() {
-            // fix images after ajax load
-            $('img.legImgSmall').error(function() {
-                    $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
-                        "title", "No Photo Available");
-            });
-        });
+        $("#results_table").load(url, fix_images);
 
         // create or move marker
         if (!marker) {
