@@ -1,15 +1,50 @@
 {% extends "billy/web/public/base.html" %}
 {% load customtags %}
 
-
 {% block title %}
   Committees -
   {{metadata.legislature_name}} -
   Open States
 {% endblock %}
 
+{% block headblock %}
+    <script>
+
+    var pjax_setup = function(){
+
+        $('form#toggleBtns button').click(function(e){
+
+            // Prevent the normal form submission.
+            e.preventDefault();
+
+            // Derive the form url.
+            var form_url = $('form#toggleBtns').attr('action');
+            var value = $(this).attr('value');
+            form_url = form_url + '?chamber=' + encodeURIComponent(value);
+
+            // Use pjax to retrieve and insert the new content.
+            $.pjax({
+                  url: form_url,
+                  container: 'div[data-pjax]'
+                });
+            });
+        }
+
+    $(document).ready(function(){
+
+        // When the pjax operation is done, re-run pjax_setup to bind
+        // the listeners to the replaced button elements.
+        $(this).bind('pjax:complete', {}, pjax_setup);
+
+        // Run the initial setup.
+        pjax_setup();
+        });
+
+    </script>
+{% endblock %}
+
 {% block content %}
-        <div class="fullWidth">
+        <div id='' class="fullWidth" data-pjax='#main'>
         <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} Committees</h2>
             {% include chamber_select_template %}
             {% include committees_table_template %}
