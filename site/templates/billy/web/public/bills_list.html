@@ -56,30 +56,13 @@ $(document).ready(function(){
 
         // Clear the checkboxes.
         $('[id^="id_chamber"]').attr('checked', '')
-        });
+    });
 
     $("#submit").after(reset);
 
-    // If javascript is enabled.....
-    // Make table rows clickable.
-    var trs = $("tbody tr");
-    var trs_count = trs.length;
-    trs.click(function(){
-        window.location=$(this).find("a").attr("href");
-        return false;
-        });
-
-    // Change cursor to pointer over table rows
-    // and add selected class on hover.
-    trs.css('cursor', 'pointer');
-    trs.hover(function(){
-            $(this).addClass('selected');
-        },
-        function(){
-            $(this).removeClass('selected');
-        });
-
-    });
+    // make rows clickable
+    clickable_rows('tbody tr');
+});
 </script>
 {% endblock %}
 

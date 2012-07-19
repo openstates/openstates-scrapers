@@ -8,23 +8,8 @@
 <script>
 $(document).ready(function() {
 
-    // Make table rows clickable.
-    var trs = $("#main-table tbody tr");
-    var trs_count = trs.length;
-    trs.click(function(){
-        window.location=$(this).find("a").attr("href");
-        return false;
-        });
-
-    // If javascript is enabled, change cursor to pointer over table rows
-    // and add selected class on hover.
-    trs.css('cursor', 'pointer');
-    trs.hover(function(){
-            $(this).addClass('selected');
-        },
-        function(){
-            $(this).removeClass('selected');
-        });
+    // Make table rows clickable
+    clickable_rows("#main-table tbody tr");
 
     $('img.legImgSmall').error(function() {
             $(this).attr("src", "{% static "images/placeholder.png" %}").attr(

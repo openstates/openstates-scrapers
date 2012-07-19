@@ -24,3 +24,36 @@ $(document).ready( function() {
     };
     gigya.socialize.showShareBarUI(params);
 });
+
+var clickable_rows = function(selector) {
+    // Make table rows clickable.
+    var trs = $(selector);
+    var trs_count = trs.length;
+    trs.click(function(){
+        var location = $(this).find("a").attr("href");
+        if (location) {
+            window.location = location;
+            return false;
+        }
+    });
+
+    // If javascript is enabled, change cursor to pointer over table rows
+    // and add selected class on hover.
+    trs.css('cursor', 'pointer');
+    trs.hover(function(){
+            $(this).addClass('selected');
+        },
+        function(){
+            $(this).removeClass('selected');
+        }
+    );
+};
+
+var fix_images = function() {
+    // this URL will change
+    var placeholder = 'http://static.openstates.org/assets/v2/images/placeholder.png';
+    $('img.legImgSmall').error(function() {
+            $(this).attr("src", placeholder).attr(
+                "title", "No Photo Available");
+    });
+};
