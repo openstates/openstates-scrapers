@@ -16,6 +16,39 @@ $(document).ready(function() {
                 "title", "No Photo Available");
     });
 
+    var datatable_setup = function(){
+
+        // Kill the html in the table headers.
+        var table = $(this);
+        table.find('th').each(function(){
+            var th = $(this);
+            th.html(th.text());
+        });
+
+        // Convert the table to dataTable.
+        $('#main-table').dataTable({
+            bFilter: false,
+            bPaginate: false,
+            bInfo: false,
+            bDestroy: true
+        });
+    }
+
+    var doc = $(this);
+
+    // When the pjax operation is done, re-run pjax_setup to bind
+    // the listeners to the replaced button elements.
+    doc.bind('pjax:complete', {}, pjax_setup);
+
+    // Also fix the image placeholders.
+    doc.bind('pjax:complete', {}, fix_images);    
+
+    // Reinitialize the datatable too.
+    doc.bind('pjax:complete', {}, datatable_setup);
+
+    // Run the initial setup.
+    doc.trigger('pjax:complete');
+
 });
 </script>
 {% endblock %}

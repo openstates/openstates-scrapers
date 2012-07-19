@@ -1,3 +1,4 @@
+
 $(document).ready( function() {
     // add placeholders
     $("input, textarea").placehold();
@@ -57,3 +58,39 @@ var fix_images = function() {
                 "title", "No Photo Available");
     });
 };
+
+var pjax_setup = function(){
+
+    $('form#toggleBtns button').click(function(e){
+
+        // Prevent the normal form submission.
+        e.preventDefault();
+
+        // Derive the form url.
+        var form_url = $('form#toggleBtns').attr('action');
+        var value = $(this).attr('value');
+        form_url = form_url + '?chamber=' + encodeURIComponent(value);
+
+        // Use pjax to retrieve and insert the new content.
+        $.pjax({
+              url: form_url,
+              container: 'div[data-pjax]'
+        });
+
+        // Kill the html in the table headers.
+        var table = $(this);
+        table.find('th').each(function(){
+            var th = $(this);
+            th.html(th.text());
+        });
+
+        // Convert the table to dataTable.
+        $('#main-table').dataTable({
+            bFilter: false,
+            bPaginate: false,
+            bInfo: false,
+            bDestroy: true
+            });
+    });
+};
+

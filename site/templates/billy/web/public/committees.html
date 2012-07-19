@@ -9,27 +9,6 @@
 
 {% block headblock %}
     <script>
-
-    var pjax_setup = function(){
-
-        $('form#toggleBtns button').click(function(e){
-
-            // Prevent the normal form submission.
-            e.preventDefault();
-
-            // Derive the form url.
-            var form_url = $('form#toggleBtns').attr('action');
-            var value = $(this).attr('value');
-            form_url = form_url + '?chamber=' + encodeURIComponent(value);
-
-            // Use pjax to retrieve and insert the new content.
-            $.pjax({
-                  url: form_url,
-                  container: 'div[data-pjax]'
-                });
-            });
-        }
-
     $(document).ready(function(){
 
         // When the pjax operation is done, re-run pjax_setup to bind
@@ -38,6 +17,7 @@
 
         // Run the initial setup.
         pjax_setup();
+
         });
 
     </script>
