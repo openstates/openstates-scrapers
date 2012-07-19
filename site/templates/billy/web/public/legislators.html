@@ -7,15 +7,8 @@
 {% block headblock %}
 <script>
 $(document).ready(function() {
-
-    // Make table rows clickable
     clickable_rows("#main-table tbody tr");
-
-    $('img.legImgSmall').error(function() {
-            $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
-                "title", "No Photo Available");
-    });
-
+    fix_images();
 });
 </script>
 {% endblock %}

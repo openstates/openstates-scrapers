@@ -121,10 +121,7 @@ $(document).ready(function() {
                 $(".chamber-" + i).css("background-color", chamber.fill);
                 }
             // fix images after ajax load
-            $('img.legImgSmall').error(function() {
-                    $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
-                        "title", "No Photo Available");
-            });
+            fix_images();
         });
     }
     $('#find_your_leg').submit(function(e){
