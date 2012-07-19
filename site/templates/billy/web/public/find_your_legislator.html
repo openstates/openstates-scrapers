@@ -8,31 +8,9 @@
 {% block bodyclass %}{% endblock %}
 
 {% block headblock %}
-<style>
-.find_your_legislator_errorbox {
-    padding:               10px 10px 10px 0;
-    border-top:            1px dashed #de703a;
-    border-bottom:         1px dashed #de703a;
-	margin-top: 20px;
-}
-
-.find_your_legislator_infobox {
-	margin-top: 20px;
-}
-p.find_your_legislator_errorbox, p.find_your_legislator_infobox{
-	max-width: 100%;
-}
-
-
-.leg_find_results {
-    margin-top:            10px;
-    margin-bottom:         10px;
-}
-
-</style>
-    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
-    <script type="text/javascript" src="{% static "js/gmaps.js" %}"></script>
-    <script type="text/javascript">
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+<script type="text/javascript" src="{% static "js/gmaps.js" %}"></script>
+<script type="text/javascript">
 $(document).ready(function() {
     var map,
         needs_update = true;
@@ -208,7 +186,7 @@ $(document).ready(function() {
                 </button>
             </form>
             <div class="clear"></div>
-	        <div id ='communicate'></div>
+            <div id ='communicate'></div>
         </div>
 
         <div class="sixCol colLt withDash legMap">

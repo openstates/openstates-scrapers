@@ -13,7 +13,7 @@
 <link rel="canonical" href="{{committee.get_absolute_url}}">
 <script type="text/javascript">
 $(document).ready(function() {
-    
+
     // Make table rows clickable.
     var trs = $("#main-table tbody tr");
     var trs_count = trs.length;
@@ -31,20 +31,12 @@ $(document).ready(function() {
         function(){
             $(this).removeClass('selected');
         });
-    });
-    
-</script>
-<script>
-$(document).ready(function(){
+
     var doc = $(document);
     doc.bind("keydown", "alt+j", function(){window.location = '{{committee.get_admin_json_url}}'});
-    });
+});
+
 </script>
-<style>
-    .selected {
-        background-color: #FFFFD6;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
