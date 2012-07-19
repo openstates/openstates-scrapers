@@ -146,7 +146,7 @@
                             <h4>Documents</h4>
                             {% for document in bill.documents %}
                                 <ul>
-                                    <li><a href="document.url">{{ document.name }}</a>
+                                    <li><a href="{{document.url}}">{{ document.name }}</a>
                                     {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
                                     </li>
                                 </ul>

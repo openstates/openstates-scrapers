@@ -5,11 +5,13 @@ import zipfile
 import subprocess
 from datetime import datetime
 
+import lxml.html
+import scrapelib
+
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
 
-import lxml.html
 
 # {spaces}{vote indicator (Y/N/E/ )}{name}{lookahead:2 spaces, space-indicator}
 HOUSE_VOTE_RE = re.compile('([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])')
@@ -193,11 +195,11 @@ class NMBillScraper(BillScraper):
         self.scrape_documents(session, 'resolutions', chamber)
         self.scrape_documents(session, 'memorials', chamber)
         self.check_other_documents(session, chamber)
+        self.dedupe_docs()
 
         # ..and save it all
         for bill in self.bills.itervalues():
             self.save_bill(bill)
-
 
     def check_other_documents(self, session, chamber):
         """ check for documents that reside in their own directory """
@@ -228,7 +230,6 @@ class NMBillScraper(BillScraper):
         check_docs(firs_url, 'Fiscal Impact Report')
         check_docs(lesc_url, 'LESC Analysis')
         check_docs(final_url, 'Final Version')
-
 
     def scrape_actions(self, chamber_letter):
         """ append actions to bills """
@@ -353,7 +354,6 @@ class NMBillScraper(BillScraper):
 
             self.bills[bill_key].add_action(actor, action_name, action_date,
                                             type=action_type, day=action_day)
-
 
     def scrape_documents(self, session, doctype, chamber):
         """ most document types (+ Votes)are in this common directory go
@@ -543,3 +543,20 @@ class NMBillScraper(BillScraper):
                 else:   # excused/absent
                     vote.other(name)
         return vote
+
+    def dedupe_docs(self):
+        for bill_id, bill in self.bills.items():
+            documents = bill['documents']
+            if 1 < len(documents):
+                resp_set = set()
+                for doc in documents:
+                    try:
+                        resp = self.urlopen(doc['url'])
+                    except scrapelib.HTTPError:
+                        documents.remove(doc)
+                        continue
+                    if resp in resp_set:
+                        documents.remove(doc)
+                    else:
+                        resp_set.add(resp)
+
