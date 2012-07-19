@@ -11,6 +11,9 @@ def extract_int(text):
     return int(text.replace(u'\xc2', '').strip())
 
 def convert_date(text):
+    long_date = re.findall('\d{1,2}-\d{1,2}-\d{4}', text)
+    if long_date:
+        return datetime.datetime.strptime(short_date[0], '%m-%d-%Y')
     short_date = re.findall('\d{1,2}-\d{1,2}-\d{2}', text)
     if short_date:
         return datetime.datetime.strptime(short_date[0], '%m-%d-%y')
