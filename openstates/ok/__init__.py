@@ -17,10 +17,12 @@ metadata = dict(
          'start_year': 2011,
          'end_year': 2012,
          'sessions': ['2011-2012', '2012SS1']},
-        {'name': '2013-2014',
-         'start_year': 2013,
-         'end_year': 2014,
-         'sessions': ['2013']},
+
+         
+        # {'name': '2013-2014',
+        #  'start_year': 2013,
+        #  'end_year': 2014,
+        #  'sessions': ['2013']},
         ],
     session_details={
         # On the Oklahoma website they list 2011/2012 as separate sessions, but
@@ -37,11 +39,11 @@ metadata = dict(
              'session_id': '121X',
              '_scraped_name': '2012 Special Session'
             },
-        '2013':
-            {'display_name': '2013 Regular Session',
-             'session_id': '1300',
-             '_scraped_name': '2013 Regular Session',
-            },
+        # '2013':
+        #     {'display_name': '2013 Regular Session',
+        #      'session_id': '1300',
+        #      '_scraped_name': '2013 Regular Session',
+        #     },
         },
     feature_flags=['subjects'],
     _ignored_scraped_sessions=[

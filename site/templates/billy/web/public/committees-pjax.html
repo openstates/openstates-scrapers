@@ -1,0 +1,6 @@
+        <div class="fullWidth">
+        <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} Committees</h2>
+            {% include chamber_select_template %}
+            {% include committees_table_template %}
+        </div>
+        <div class="clear"></div>

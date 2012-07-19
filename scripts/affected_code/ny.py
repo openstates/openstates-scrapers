@@ -10,9 +10,10 @@ SectionID = Token.Section.ID
 NodeType = Token.Node.Type
 NodeID = Token.Node.ID
 NodeAndOrComma = Token.Node.AndOrComma
-AmendedAsFollows = Token.AmendedAsFollows
-AmendedByAdding = Token.AmendedByAdding
-Renumbered = Token.Renumbered
+DiffSpec = Token.DiffSpec
+AmendedAsFollows = DiffSpec.AmendedAsFollows
+AmendedByAdding = DiffSpec.AmendedByAdding
+Renumbered = DiffSpec.Renumbered
 SessionLawChapter = Token.SessionLawChapter
 SessionLawYear = Token.SessionLawYear
 ActName = Token.ActName
@@ -20,7 +21,7 @@ CompilationName = Token.CompilationName
 Junk = Token.Junk
 
 subds = ['paragraph', 'division', 'chapter', 'section', 'clause',
-         'article']
+         'article', 'part']
 subds += ['sub' + s for s in subds]
 subds = r'(%s)' % '|'.join(sorted(subds, key=len, reverse=True))
 
@@ -53,23 +54,26 @@ class Lexer(RegexLexer):
             (r' is amended by adding', AmendedByAdding, 'path'),
             (r'amended by adding', AmendedByAdding, 'path'),
 
-            # Renumbered variants.
-            (r' is renumbered', Renumbered),
-            (r'renumbered', Renumbered),
 
             # Compilation name.
             (r'(?i)the ([A-Za-z .&]+ (:?law|rules|code of the city of New York))',
              bygroups(CompilationName)),
 
-            (r', as (added|amended|renumbered) by', Token.AsAdded, 'path'),
+            (r'(added|amended|renumbered) by',
+            # (r',? (:?(:?as|and) )?(added|amended|renumbered) by',
+                Token.RevisionSpec, 'path'),
             # Junk.
             # (r'amending [^,]+', Junk, 'junk'),
             # (r'(added|amended|renumbered) [^,]+', Junk, 'junk'),
             # (r'%s .{,200}? as (?:added|amended) by[^,]+?, ' % subds, Token.Junk),
+            # Renumbered variants.
+            (r' is renumbered', Renumbered),
+            (r'renumbered', Renumbered),
+            (r'\band\b', Token.And)
             ],
 
         'path': [
-            (r',? as (added|amended|renumbered) by', Token.AsAdded),
+            (r',? (:?(:?as|and) )?(added|amended|renumbered) by', Token.RevisionSpec),
 
             (r' local law number (\w+) of the city of (.+?) for the year (\w+)',
                 bygroups(Token.LocalLaw.Number,
@@ -80,7 +84,7 @@ class Lexer(RegexLexer):
                 bygroups(Token.LocalLaw.Number), '#pop'),
 
             # "of the codes and ordinances of the city of Yonkers..."
-            (r' of the (.+?) of the city of (\w+)',
+            (r' of the (.+?) of the city of (.+?)(?:,|is)',
                 bygroups(Token.MunicipalLaw.Name, Token.MunicipalLaw.Jxn), '#pop'),
 
             (r' of the laws of (\d{4})', bygroups(SessionLawYear), '#pop'),
