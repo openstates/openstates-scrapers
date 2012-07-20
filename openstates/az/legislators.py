@@ -51,9 +51,8 @@ class AZLegislatorScraper(LegislatorScraper):
                 vacated = ''
                 name, district, party, email, room, phone, fax = row.xpath('td')
 
-                if 'class' in email.attrib:
-                    if email.attrib['class'] == 'vacantmember':
-                        continue  # Skip any vacant members.
+                if email.attrib.get('class') == 'vacantmember':
+                    continue  # Skip any vacant members.
 
                 link = name.xpath('string(a/@href)')
                 link = "http://www.azleg.gov" + link
