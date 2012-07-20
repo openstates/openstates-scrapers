@@ -127,8 +127,8 @@ ACTIVE_STATES = [u'co', u'de', u'ny', u'in', u'tn',
                  u'nj', u'nm', u'nv', u'oh', u'or',
                  u'pr', u'ri', u'sc', u'sd', u'tx',
                  u'ut', u'vt', u'wa', u'wi', u'wy',
-                 u'ok', u'pa']
-ACTIVE_STATES = 'ca il la md mn nh nj nc tx dc wi'.split()
+                 u'ok', u'pa'].sort()
+ACTIVE_STATES=sorted(['ca', 'il', 'la', 'md', 'mn', 'nh', 'nj', 'nc', 'tx', 'dc', 'wi', 'oh', 'id', 'hi', 'az'])
 
 ENABLE_ELASTICSEARCH = True
 

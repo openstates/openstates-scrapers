@@ -342,10 +342,11 @@ class IDBillScraper(BillScraper):
                      spans[2].tail.replace(u'\xa0--\xa0', '').split(',')
                      if name ]
         other_votes = []
-        if spans[3].text.startswith('Absent'):
-            other_votes = [ name for name in
-                            spans[3].tail.replace(u'\xa0--\xa0', '').split(',')
-                            if name ]
+        for span in spans[3:]:
+            if span.text.startswith(('Absent', 'Excused')):
+                other_votes += [name.strip() for name in
+                                span.tail.replace(u'\xa0--\xa0', '').split(',')
+                                if name]
         for key, val in {'adopted': True, 'passed': True, 'failed':False}.items():
             if key in passed.lower():
                 passed = val

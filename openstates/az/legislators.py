@@ -51,9 +51,8 @@ class AZLegislatorScraper(LegislatorScraper):
                 vacated = ''
                 name, district, party, email, room, phone, fax = row.xpath('td')
 
-                if 'class' in email.attrib:
-                    if email.attrib['class'] == 'vacantmember':
-                        continue  # Skip any vacant members.
+                if email.attrib.get('class') == 'vacantmember':
+                    continue  # Skip any vacant members.
 
                 link = name.xpath('string(a/@href)')
                 link = "http://www.azleg.gov" + link
@@ -67,7 +66,8 @@ class AZLegislatorScraper(LegislatorScraper):
                 party = party.text_content().strip()
                 email = email.text_content().strip()
 
-                if 'Vacated' in email:
+                if ('Vacated' in email or 'Resigned' in email or 
+                    'Removed' in email):
                     # comment out the following 'continue' for historical
                     # legislative sessions
                     # for the current session, if a legislator has left we will
@@ -82,7 +82,7 @@ class AZLegislatorScraper(LegislatorScraper):
                     address = "House of Representatives\n"
                 else:
                     address = "Senate\n"
-                address = address + "1700 West Washington\n" + room  \
+                address = address + "1700 West Washington\n Room " + room  \
                                   + "\nPhoenix, AZ 85007"
 
                 phone = phone.text_content().strip()
@@ -98,9 +98,10 @@ class AZLegislatorScraper(LegislatorScraper):
                     leg['roles'][0]['end_date'] = end_date
                 else:
                     leg = Legislator( term, chamber, district, full_name=name,
-                                      party=party, office_phone=phone,
-                                      office_fax=fax, office_address=address,
-                                      email=email, url=link)
+                                      party=party, email=email, url=link)
+
+                leg.add_office('capitol', 'Capitol Office', address=address,
+                               phone=phone, fax=fax)
 
                 if position:
                     leg.add_role( position, term, chamber=chamber,

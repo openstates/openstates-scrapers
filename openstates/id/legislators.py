@@ -75,10 +75,35 @@ class IDLegislatorScraper(LegislatorScraper):
                     role = pieces.pop(0)
                     district = pieces.pop(0)
 
+                looking_for = [
+                    "home",
+                    "fax"
+                ]
+
+                metainf = {
+                    "office": pieces[0]
+                }
+
+                for bit in pieces:
+                    for thing in looking_for:
+                        if thing in bit.lower():
+                            metainf[thing] = bit.split(" ", 1)[-1].strip()
+
                 leg = Legislator(term, chamber,
                                  district.replace('District', '').strip(),
                                  full_name,
                                  party=party)
+
+                kwargs = {}
+                if "office" in metainf:
+                    kwargs['address'] = metainf['office']
+                if "fax" in metainf:
+                    kwargs['fax'] = metainf['fax']
+
+                leg.add_office('district',
+                               'District Office',
+                                **kwargs)
+
                 leg.add_source(url)
                 leg['photo_url'] = img_url
                 leg['contact_form'] = contact_form
