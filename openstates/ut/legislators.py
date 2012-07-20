@@ -5,10 +5,9 @@ import lxml.html
 
 class UTLegislatorScraper(LegislatorScraper):
     state = 'ut'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-
         if chamber == 'lower':
             self.scrape_lower(term)
         else:
@@ -45,10 +44,20 @@ class UTLegislatorScraper(LegislatorScraper):
             leg_doc = lxml.html.fromstring(leg_html)
             leg_doc.make_links_absolute(leg_url)
             photo_url = leg_doc.xpath('//img[@alt="photo"]/@src')[0]
+            email = leg_doc.xpath('//a[starts-with(@href, "mailto")]')[0].text
+
+            address = leg_doc.xpath('//b[text()="Address:"]')[0].tail.strip()
+            cell = leg_doc.xpath('//b[text()="Cell Phone:"]')
+            if cell:
+                cell = cell[0].tail.strip()
+            else:
+                cell = None
 
             leg = Legislator(term, 'lower', district, name,
-                             party=party, photo_url=photo_url,
+                             party=party, photo_url=photo_url, email=email,
                              url=leg_url)
+            leg.add_office('district', 'Home', address=address, phone=cell)
+
             leg.add_source(url)
             leg.add_source(leg_url)
             self.save_legislator(leg)
@@ -83,8 +92,18 @@ class UTLegislatorScraper(LegislatorScraper):
             else:
                 email = ''
 
+            # office address
             # text is split by br in 4th td, join with a space
-            address = ' '.join(row.xpath('td[4]/font/text()'))
+            address = ' '.join(tds[3].xpath('font/text()'))
+            numbers = tds[4].xpath('text()')
+            phone = None
+            fax = None
+            for num in numbers:
+                if num.startswith(('Cell', 'Home', 'Work')) and not phone:
+                    phone = num.split(u'\xa0')[-1]
+                elif num.startswith('Fax'):
+                    fax = num.split(u'\xa0')[-1]
+            numbers = [num.split(u'\xa0') for num in numbers]
 
             # get photo
             try:
@@ -99,6 +118,8 @@ class UTLegislatorScraper(LegislatorScraper):
             leg = Legislator(term, 'upper', district, name,
                              party=party, email=email, address=address,
                              photo_url=photo_url, url=leg_url)
+            leg.add_office('district', 'Home', address=address, phone=phone,
+                           fax=fax)
             leg.add_source(url)
             leg.add_source(leg_url)
             self.save_legislator(leg)
