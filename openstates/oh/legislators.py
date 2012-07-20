@@ -25,6 +25,28 @@ class OHLegislatorScraper(LegislatorScraper):
             with self.urlopen(rep_url) as page:
                 page = lxml.html.fromstring(page)
 
+                ranges = []
+                cur = []
+                info = page.xpath('//td[@class="info"]/*')
+                for r in info:
+                    if r.tag == 'strong':
+                        ranges.append(cur)
+                        cur = []
+                    else:
+                        cur.append(r)
+                ranges.append(cur)
+
+                block = ranges[4][:-1]
+
+                address = ", ".join(
+                    [ x.tail.strip() for x in block ])
+
+                phone = page.xpath(
+                    "//strong[contains(text(), 'Phone')]")[0].tail
+
+                fax = page.xpath(
+                    "//strong[contains(text(), 'Fax')]")[0].tail
+
                 for el in page.xpath('//table[@class="page"]'):
                     rep_link = el.xpath('tr/td/title')[0]
                     full_name = rep_link.text
@@ -41,6 +63,12 @@ class OHLegislatorScraper(LegislatorScraper):
 
                     leg = Legislator(term, chamber, str(district),
                                      full_name, party=party, url=rep_url)
+                    leg.add_office('capitol',
+                                   'Capitol Office',
+                                    address=address,
+                                    phone=phone,
+                                    fax=fax)  # Yet, no email.
+
                     leg.add_source(rep_url)
 
                 self.save_legislator(leg)
