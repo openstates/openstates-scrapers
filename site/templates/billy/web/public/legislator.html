@@ -142,29 +142,32 @@ $(document).ready(function() {
                     <div class="eightsLg clearfix">
                         <h2 class="withTipSm">{{legislator.full_name}}</h2>
                         <dl class="inlineList clearfix">
-                            <dt class="hidden">Party</dt>
-                            <dd class="tip tipSm">{{legislator.party}}</dd>
-
-                            <dt class="tip tipSm">District</dt>
-                            <dd class="tip tipSm">{{legislator.district}}</dd>
-
+                            <dt class="hidden">Role</dt>
+                            <dd class="tip tipSm">
+                            {{legislator.party}} &mdash;
+                            {{legislator.title}} &mdash;
+                            {# if first character of district is numeric, add 'District' #}
+                            {% if legislator.district.0.isdigit %} District {% endif %}{{legislator.district}}
+                            </dd>
                             <dt class="clear">Sessions Served:</dt>
                             <dd>
                             {% if legislator.active %}
+                                <ul>
                                 {% for session in legislator.sessions_served %}
-                                   {{session}}
-                                {% endfor %}
+                                <li>{{session}}</li>
+                               {% endfor %}
+                                </ul>
                             {% else %}
                                 {% for term, names in legislator.old_roles_manager.sessions_served.items %}
                                 <ul>
                                     {% for name in names %}
-                                    <li>{{name}}</li>
+                                    <li class="clear">{{name}}</li>
                                     {% endfor %}
                                 </ul>
                                 {% endfor %}
                             {% endif %}
                             </dd>
-                            <dt>Campaign Finance:</dt>
+                            <dt class="clear">Campaign Finance:</dt>
                             <dd class="smModule"><a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">View at Influence Explorer</a></dd>
 
                         </dl>
