@@ -72,12 +72,20 @@ class OHLegislatorScraper(LegislatorScraper):
                 office_phone = el.xpath("b[text() = 'Phone']")[0].tail
                 office_phone = office_phone.strip(' :')
 
+                office = ", ".join([x.strip() for x in \
+                                    el.xpath("./text()")[2:-1]])
+
                 photo_url = el.xpath("a/img")[0].attrib['src']
                 email = el.xpath('.//span[@class="tan"]/text()')[1]
 
                 leg = Legislator(term, chamber, district, full_name,
-                                 party=party, photo_url=photo_url, url=sen_url,
-                                 office_phone=office_phone, email=email)
+                                 party=party, photo_url=photo_url, url=sen_url)
+
+                leg.add_office('capitol',
+                               'Capitol Office',
+                               address=office,
+                               phone=office_phone)
+
                 leg.add_source(url)
 
                 self.save_legislator(leg)
