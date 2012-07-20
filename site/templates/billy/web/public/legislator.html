@@ -137,11 +137,10 @@ $(document).ready(function() {
         </ul>
         <div class="fullWidth mainModule legislator">
             <div class="medModule">
-                <span class="tip sources">For more information on this legislator check out: <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">influenceexplorer.com</a>, <a href="http://www.votesmart.org/bio.php?can_id={{legislator.votesmart_id}}">Project Vote Smart</a></span>
-                <div class="sixCol colLt">
+                <div class="eightCol colLt">
                     <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
-                    <div class="eights clearfix">
-                        <h2 class="withTip">{{legislator.full_name}}</h2>
+                    <div class="eightsLg clearfix">
+                        <h2 class="withTipSm">{{legislator.full_name}}</h2>
                         <dl class="inlineList clearfix">
                             <dt class="hidden">Party</dt>
                             <dd class="tip tipSm">{{legislator.party}}</dd>
@@ -165,11 +164,13 @@ $(document).ready(function() {
                                 {% endfor %}
                             {% endif %}
                             </dd>
+                            <dt>Campaign Finance:</dt>
+                            <dd class="smModule"><a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">View at Influence Explorer</a></dd>
 
                         </dl>
                     </div>
                 </div>
-                <div class="sixCol colRt">
+                <div class="fourCol colRt">
                     <div class="mapBorder">
                         <div id="map" class="withBorder"></div>
                     </div>
