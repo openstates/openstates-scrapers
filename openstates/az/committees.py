@@ -74,6 +74,8 @@ class AZCommitteeScraper(CommitteeScraper):
                 except HTTPError:
                     pass
 
+                if not c['members']:
+                    continue
                 self.save_committee(c)
 
     def scrape_com_info(self, session, session_id, committee_id, committee):
