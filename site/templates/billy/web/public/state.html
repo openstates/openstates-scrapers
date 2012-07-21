@@ -223,7 +223,8 @@
     var upper_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}upper.jsonp';
     var zooms = {
         'wi': 5, 'ca': 5, 'il': 6, 'md': 6, 'mn': 5, 'la': 6, 'tx': 5,
-        'nh': 7, 'nc': 5, 'nj': 7, 'dc': 10
+        'nh': 7, 'nc': 5, 'nj': 7, 'dc': 10, 'id': 5, 'az': 6, 'oh': 6,
+        'hi': 6
     };
     var map = new L.Map('mapbox-{{metadata.abbr}}',
             {attributionControl:true, minZoom: 4, maxZoom: 12 });
@@ -231,7 +232,7 @@
     var marker;
 
     // check if state is in oneMapStates
-    var oneMap = ['nj', 'dc', 'ne'].indexOf('{{metadata.abbr}}') !== -1;
+    var oneMap = ['nj', 'dc', 'ne', 'az', 'id'].indexOf('{{metadata.abbr}}') !== -1;
 
     map.attributionControl.setPrefix('');
 
