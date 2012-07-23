@@ -8,11 +8,9 @@ import lxml.html
 
 class AKLegislatorScraper(LegislatorScraper):
     state = 'ak'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        if term != '27':
-            raise NoDataForPeriod(term)
-
         if chamber == 'upper':
             chamber_abbr = 'S'
             url = 'http://senate.legis.state.ak.us/'
@@ -41,6 +39,27 @@ class AKLegislatorScraper(LegislatorScraper):
                                        link.xpath('string()').strip(),
                                        link.attrib['href'])
 
+    def scrape_address(self, leg, doc, id):
+        text = doc.xpath('//div[@id="{0}"]'.format(id))[0].text_content()
+        address = ''
+        for line in text.splitlines():
+            if line == 'Session Contact':
+                addr_type = 'capitol'
+                addr_name = 'Session Office'
+            elif line == 'Interim Contact':
+                addr_type = 'district'
+                addr_name = 'Interim Office'
+            elif line.startswith('Phone:'):
+                phone = line.split(': ')[-1]
+            elif line.startswith('Fax:'):
+                fax = line.split(': ')[-1]
+            elif line:
+                address += (line + '\n')
+
+        leg.add_office(addr_type, addr_name, address=address.strip(),
+                       phone=phone, fax=fax)
+
+
     def scrape_legislator(self, chamber, term, name, url):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
@@ -60,6 +79,8 @@ class AKLegislatorScraper(LegislatorScraper):
 
             leg = Legislator(term, chamber, district, name, party=party,
                              email=email, url=url)
+            self.scrape_address(leg, page, 'bioleft')
+            self.scrape_address(leg, page, 'bioright')
             leg.add_source(url)
 
             self.save_legislator(leg)

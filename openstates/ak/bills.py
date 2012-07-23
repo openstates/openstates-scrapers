@@ -198,7 +198,7 @@ class AKBillScraper(BillScraper):
         self.save_bill(bill)
 
     def parse_vote(self, bill, action, act_chamber, act_date, url,
-        re_vote_text=re.compile(r'The question being:\s*"(.*?\?)"', re.S),
+        re_vote_text = re.compile(r'The question (?:being|to be reconsidered):\s*"(.*?\?)"', re.S),
         re_header=re.compile(r'\d{2}-\d{2}-\d{4}\s{10,}\w{,20} Journal\s{10,}\d{,6}\s{,4}')):
 
         html = self.urlopen(url)
@@ -214,7 +214,7 @@ class AKBillScraper(BillScraper):
 
             yes = no = other = 0
 
-            tally = re.findall('([YNEA])[A-Z]+:\s{,3}(\d{,3})', text)
+            tally = re.findall(r'\b([YNEA])[A-Z]+:\s{,3}(\d{,3})', text)
             for vtype, vcount in tally:
                 vcount = int(vcount) if vcount != '-' else 0
                 if vtype == 'Y':

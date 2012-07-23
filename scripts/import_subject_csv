@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+from billy.utils import db
+
+import unicodecsv
+import sys
+
+state = sys.argv[1]
+
+dist_csv = unicodecsv.reader(open("manual_data/subjects/%s.csv" % (state), 'r'))
+for row in dist_csv:
+    their_subject = row[0]
+    our_subject = row[1]
+    eyedee = "%s-%s" % (state, their_subject)
+    db.subjects.update({"_id": eyedee},
+                       {
+                           "_id": eyedee,
+                           "remote": their_subject,
+                           "normal": our_subject,
+                           "abbr": state
+                       },
+                       True,
+                       safe=True)
