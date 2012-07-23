@@ -10,7 +10,6 @@ import lxml.html
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 
-
 class DELegislatorScraper(LegislatorScraper):
     state = 'de'
 
@@ -21,7 +20,6 @@ class DELegislatorScraper(LegislatorScraper):
             'upper': 'http://legis.delaware.gov/legislature.nsf/sen?openview&nav=senate',
             'lower': 'http://legis.delaware.gov/legislature.nsf/Reps?openview&Count=75&nav=house&count=75',
             }[chamber]
-
 
         doc = lxml.html.fromstring(self.urlopen(url))
         doc.make_links_absolute(url)
@@ -43,7 +41,6 @@ class DELegislatorScraper(LegislatorScraper):
             leg.add_source(bio_url, page="legislator detail page")
             leg.add_source(url, page="legislator list page")
             self.save_legislator(leg)
-            
 
     def scrape_bio(self, term, chamber, district, name, url):
         # this opens the committee section without having to do another request
@@ -65,8 +62,8 @@ class DELegislatorScraper(LegislatorScraper):
             leg['photo_url'] = photo_url[0]
 
         roles = defaultdict(lambda: {})
-        
-        position = 'member'            
+
+        position = 'member'
         for text in doc.xpath('//td[@width="584"]/descendant::font/text()'):
             text = text.strip()
             if text == 'Committee Chair:':
@@ -85,6 +82,47 @@ class DELegislatorScraper(LegislatorScraper):
 
         for role in roles.values():
             leg.add_role(**role)
-            
+
+        offices = self.scrape_offices(doc)
+        leg['offices'] = offices
 
         return leg
+
+    def scrape_offices(self, doc):
+        office_names = ['Legislative Hall Office', 'Outside Office']
+        office_types = ['capitol', 'district']
+        xpath = '//u[contains(., "Office")]/ancestor::table/tr[2]/td'
+        data = zip(doc.xpath(xpath)[::2], office_names, office_types)
+        offices = []
+        for (td, name, type_) in data:
+            office = dict(name=name, type=type_, phone=None,
+                          fax=None, email=None, address=None)
+
+            chunks = td.text_content().strip().split('\n\n')
+            chunks = [s.strip() for s in chunks]
+            chunks = filter(None, chunks)
+            if len(chunks) == 1:
+                if ':' in chunks[0].splitlines()[0]:
+                    # It's just phone numbers with no actual address.
+                    numbers = chunks[0]
+                    office['address'] = None
+                else:
+                    office['address'] = chunks[0]
+            else:
+                if not chunks:
+                    # This office has no data.
+                    continue
+                address, numbers = chunks
+                office['address'] = address
+            for line in numbers.splitlines():
+                if not line.strip():
+                    continue
+                for key in ('phone', 'fax'):
+                    if key in line.lower():
+                        break
+                number = re.search('\(\d{3}\) \d{3}\-\d{4}', line)
+                if number:
+                    number = number.group()
+                    office[key] = number
+            offices.append(office)
+        return offices
