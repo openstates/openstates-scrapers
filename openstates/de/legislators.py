@@ -83,16 +83,30 @@ class DELegislatorScraper(LegislatorScraper):
         for role in roles.values():
             leg.add_role(**role)
 
-        offices = self.scrape_offices(doc)
-        leg['offices'] = offices
+        contact_info = self.scrape_contact_info(doc)
+        leg.update(contact_info)
 
         return leg
 
-    def scrape_offices(self, doc):
+    def scrape_contact_info(self, doc):
         office_names = ['Legislative Hall Office', 'Outside Office']
         office_types = ['capitol', 'district']
         xpath = '//u[contains(., "Office")]/ancestor::table/tr[2]/td'
         data = zip(doc.xpath(xpath)[::2], office_names, office_types)
+        info = {}
+
+        # Email
+        xpath = '//font[contains(., "E-mail Address")]/../font[2]'
+        email = doc.xpath(xpath)[0].text_content()
+
+        # If multiple email addresses listed, only take the official
+        # noone@state.de.us address.
+        if ';' in email:
+            emails = filter(lambda s: 'state.de.us' in s, email.split(';'))
+            if emails:
+                info['email'] = emails[0]
+
+        # Offices
         offices = []
         for (td, name, type_) in data:
             office = dict(name=name, type=type_, phone=None,
@@ -125,4 +139,5 @@ class DELegislatorScraper(LegislatorScraper):
                     number = number.group()
                     office[key] = number
             offices.append(office)
-        return offices
+
+        return dict(info, offices=offices)
