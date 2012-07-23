@@ -5,7 +5,7 @@
                         <div class="objMetaData">
                             <time datetime="" class="published withBorderLine" pubdate>{{obj.published|date:"F d, Y"}}</time>
                             {% if obj.author %}<address class="author">{{obj.author|striptags}}{% endif %}
-                            <a rel="author" class="colorRollover" href="{{obj.source|safe}}">{{obj.host|striptags}}</a></address>
+                            <a rel="author" class="colorRollover" href="http://{{obj.host|striptags}}">{{obj.host|striptags}}</a></address>
                         </div>
                     </header>    
                     <div class="postContent">
