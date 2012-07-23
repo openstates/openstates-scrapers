@@ -221,13 +221,22 @@
 <script>
     var lower_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}lower.jsonp';
     var upper_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}upper.jsonp';
-    var zooms = {
+    var defaultZooms = {
         'wi': 5, 'ca': 5, 'il': 6, 'md': 6, 'mn': 5, 'la': 6, 'tx': 5,
         'nh': 7, 'nc': 5, 'nj': 7, 'dc': 10, 'id': 5, 'az': 6, 'oh': 6,
-        'hi': 6
+        'hi': 6, 'ak': 3, 'de': 8, 'fl': 5, 'mt': 5
     };
+    var minMaxZooms = {
+        'ak': [3, 11],
+        'de': [8, 15],
+        'fl': [5, 13]
+    };
+    var mmzoom = minMaxZooms['{{metadata.abbr}}'];
+    if(!mmzoom) {
+        mmzoom = [4, 12];
+    }
     var map = new L.Map('mapbox-{{metadata.abbr}}',
-            {attributionControl:true, minZoom: 4, maxZoom: 12 });
+            {attributionControl:true, minZoom: mmzoom[0], maxZoom: mmzoom[1]});
     var layersControl = new L.Control.Layers(null, null, {collapsed: false});
     var marker;
 
@@ -244,7 +253,7 @@
         // add to map
         var layer = new wax.leaf.connector(tilejson);
         map.addLayer(layer);
-        var zoom = zooms['{{metadata.abbr}}'];
+        var zoom = defaultZooms['{{metadata.abbr}}'];
         if(!zoom) {
             zoom = tilejson.center[2];
         }
