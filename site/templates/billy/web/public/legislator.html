@@ -13,22 +13,17 @@
 
 {% block headblock %}
     <link rel="canonical" href="{{legislator.get_absolute_url}}">
-    <script>
-    $(document).ready(function(){
-        var doc = $(document);
-        doc.bind("keydown", "alt+j", function(){window.location = '{{legislator.get_admin_json_url}}'});
-        });
-    </script>
     <script src="http://maps.google.com/maps/api/js?sensor=true"></script>
     <script src="{% static "js/gmaps.js" %}"></script>
     <script>
 $(document).ready(function() {
-    var map,
-        has_located = false;
-    $('img.legImg').error(function() {
-        $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
-            "title", "No Photo Available");
-    });
+    var doc = $(document);
+    doc.bind("keydown", "alt+j", function(){window.location = '{{legislator.get_admin_json_url}}'});
+
+    fix_images();
+
+    /* map js */
+    var map, has_located = false;
     map = new GMaps({
         div: '#map',
         lat: 38,
@@ -144,7 +139,7 @@ $(document).ready(function() {
             <div class="medModule">
                 <span class="tip sources">For more information on this legislator check out: <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">influenceexplorer.com</a>, <a href="http://www.votesmart.org/bio.php?can_id={{legislator.votesmart_id}}">Project Vote Smart</a></span>
                 <div class="sixCol colLt">
-                    <img class="firstHalfModule legImg" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
+                    <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
                     <div class="eights clearfix">
                         <h2 class="withTip">{{legislator.full_name}}</h2>
                         <dl class="inlineList clearfix">

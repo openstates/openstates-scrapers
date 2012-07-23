@@ -76,21 +76,6 @@ var pjax_setup = function(){
               url: form_url,
               container: 'div[data-pjax]'
         });
-
-        // Kill the html in the table headers.
-        var table = $(this);
-        table.find('th').each(function(){
-            var th = $(this);
-            th.html(th.text());
-        });
-
-        // Convert the table to dataTable.
-        $('#main-table').dataTable({
-            bFilter: false,
-            bPaginate: false,
-            bInfo: false,
-            bDestroy: true
-            });
     });
 };
 
