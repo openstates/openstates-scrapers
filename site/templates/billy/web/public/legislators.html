@@ -32,6 +32,10 @@ $(document).ready(function() {
         });
     }
 
+    // Tell pjax not to jump to the top of the
+    // page after loading.
+    $.pjax.defaults.scrollTo = false;
+
     var doc = $(this);
 
     // When the pjax operation is done, re-run pjax_setup to bind
@@ -44,8 +48,8 @@ $(document).ready(function() {
     // Reinitialize the datatable too.
     doc.bind('pjax:complete', {}, datatable_setup);
 
-    // Run the initial setup.
-    doc.trigger('pjax:complete');
+    var initialize_page = 'pjax:complete'
+    doc.trigger(initialize_page);
 
 });
 </script>
