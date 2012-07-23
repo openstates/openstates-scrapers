@@ -38,7 +38,7 @@
                 {% else %}
                     <td>{{participant.participant}}</td>
                 {% endif %}
-                <td>{{participant.type}}</td>
+                <td>{{participant.type|title}}</td>
             </tr>
 {% endfor %}
         </table>

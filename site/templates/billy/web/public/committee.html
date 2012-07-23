@@ -56,7 +56,7 @@ $(document).ready(function() {
                         <td>{{ obj.name }}</td>
                     {% endif %}
                     <!--<td><img src={{ obj.photo_url }}/></td>-->
-                    <td>{{ obj.role }}</td>
+                    <td>{{ obj.role|title }}</td>
                     {% if legislator %}
                           <td>{{ legislator.district }}</td>
                           <td>{{ legislator.party }}</td>
