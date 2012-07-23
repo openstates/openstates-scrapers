@@ -68,14 +68,16 @@
         <h3 class="moduleTitle">Committees</h3>
         <ul class="inlineThirds centeredText">
             {% for chamber in chambers %}
-                <a href="{% url 'committees' abbr %}">
+                <a href="{% url 'committees' abbr %}?chamber={{chamber.type}}">
                 <li class="{% cycle 'one' 'two' %} titleNumber withTip">
                 {{ chamber.committees_count }}<span>{{ chamber.name }} Committees</span></li>
                 </a>
             {% endfor %}
-            <a href="{% url 'committees' abbr %}">
+            {% if  joint_committee_count %}
+            <a href="{% url 'committees' abbr %}?chamber=joint">
                 <li class="three titleNumber withTip">{{ joint_committee_count }}<span>Joint Committees</span></li>
             </a> 
+            {% endif %}
         </ul>
         <div class="clear"></div>
     </div>
