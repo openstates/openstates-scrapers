@@ -235,8 +235,8 @@ div.flatpage .social-links li { float:left; height:16px; margin-bottom:15px;
 
 /*  lists  */
 dt { font-weight: bold;}
-.contentBottom { margin-bottom: 15px;}
-.inlineList dt, .inlineList dd { float: left; margin-right: 15px; line-height: 18px;}
+.contentBottom { margin-bottom: 8px; margin-top: 8px;}
+.inlineList dt, .inlineList dd { float: left; margin-right: 15px; line-height: 18px; margin-top: 8px;}
 
 ul .one { clear: both;}
 ul .one{ padding-right: 23px; }
@@ -244,8 +244,9 @@ ul .two { padding-right: 12px; padding-left: 12px}
 ul .three { padding-left: 24px; }
 .inlineThirds li { float: left; width: 33%; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;}
 .inlineThirds_module li { float: left; width: 275px; }
-.columnThirds { -moz-column-count: 3; -webkit-column-count: 3; column-count: 3; margin-bottom: 30px}
-.columnThirds ul{ margin-bottom: 20px}
+
+.columnThirds ul { margin-bottom: 20px; }
+.columnThirds li { padding-right: 35px; }
 .floatedList li { float: left; margin-right: 20px;}
 .inlineList ul{margin-left: 30px;}
 .inlineList li { display: inline-block; margin-right: 10px;}
@@ -256,6 +257,7 @@ ul li { margin-bottom: 20px; }
 
 .fourths { width: 200px; float: left;}
 .eights { width: 300px; float: left;} /* Used to be 350px. Changed to accomodate more map on the Legislator detail page. Don't think it's affecting enything else? */
+.eightsLg { width: 465px; float: left; }
 .firstModule { margin-right: 40px;}
 .firstHalfModule { margin-right: 20px; float: left;}
 img.firstHalfModule  { width: 100px;}
@@ -278,8 +280,8 @@ address { font-style: normal; }
 #container input { border: 2px solid #e8eadd;}
 input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #cfd2bd; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; padding: 8px 5px 5px;}
 #container img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
-#container #map { float: right; width: 98%; height: 135px; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; }
-.mapBorder{padding: 5px; border: 1px solid #E0E0D7; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; height: 148px;}
+#container #map { float: right; width: 98%; height: 150px; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; }
+.mapBorder{padding: 5px; border: 1px solid #E0E0D7; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; height: 162px; margin-top: 20px; }
 #container .legMap #map { height: 300px; width: 100%;}
 #billState { float: right; padding: 5px 25px 3px; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; border: 1px solid #e6e6da; text-transform: uppercase; font-size: 120%; margin-bottom: 25px;}
 #voteMap { float: right;}
@@ -441,6 +443,7 @@ div.flatpage table#download_list { width: auto; }
 #stateimg-ca { background: url(images/state/california.jpg) left center no-repeat;}
 #stateimg-co { background: url(images/state/colorado.jpg) left center no-repeat;}
 #stateimg-ct { background: url(images/state/connecticut.jpg) left center no-repeat;}
+#stateimg-dc { background: url(images/state/dc.jpg) left center no-repeat;}
 #stateimg-de { background: url(images/state/delaware.jpg) left center no-repeat;}
 #stateimg-fl { background: url(images/state/florida.jpg) left center no-repeat;}
 #stateimg-ga { background: url(images/state/georgia.jpg) left center no-repeat;}
@@ -472,6 +475,7 @@ div.flatpage table#download_list { width: auto; }
 #stateimg-ok { background: url(images/state/oklahoma.jpg) left center no-repeat; }
 #stateimg-or { background: url(images/state/oregon.jpg) left center no-repeat; }
 #stateimg-pa { background: url(images/state/pennsylvania.jpg) left center no-repeat; }
+#stateimg-pr { background: url(images/state/puertoRico.jpg) left center no-repeat; }
 #stateimg-ri { background: url(images/state/rhodeIsland.jpg) left center no-repeat; }
 #stateimg-sc { background: url(images/state/southCarolina.jpg) left center no-repeat; }
 #stateimg-sd { background: url(images/state/southDakota.jpg) left center no-repeat; }
