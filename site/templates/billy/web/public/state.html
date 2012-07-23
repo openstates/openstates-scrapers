@@ -221,19 +221,31 @@
 <script>
     var lower_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}lower.jsonp';
     var upper_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{metadata.abbr}}upper.jsonp';
-    var defaultZooms = {
-        'wi': 5, 'ca': 5, 'il': 6, 'md': 6, 'mn': 5, 'la': 6, 'tx': 5,
-        'nh': 7, 'nc': 5, 'nj': 7, 'dc': 10, 'id': 5, 'az': 6, 'oh': 6,
-        'hi': 6, 'ak': 3, 'de': 8, 'fl': 5, 'mt': 5
-    };
     var minMaxZooms = {
+        'wi': [5, 12],
+        'ca': [5, 12],
+        'il': [6, 12],
+        'md': [6, 12],
+        'ut': [6, 12],
+        'hi': [6, 12],
+        'nh': [7, 12],
+        'nc': [5, 12],
+        'nj': [7, 12],
+        'dc': [10, 17],
+        'id': [5, 12],
+        'az': [6, 12],
+        'oh': [6, 12],
+        'mn': [5, 12],
+        'la': [6, 12],
+        'tx': [5, 12],
         'ak': [3, 11],
         'de': [8, 15],
-        'fl': [5, 13]
+        'fl': [5, 13],
+        'mt': [5, 12],
     };
     var mmzoom = minMaxZooms['{{metadata.abbr}}'];
     if(!mmzoom) {
-        mmzoom = [4, 12];
+        mmzoom = [5, 12];
     }
     var map = new L.Map('mapbox-{{metadata.abbr}}',
             {attributionControl:true, minZoom: mmzoom[0], maxZoom: mmzoom[1]});
@@ -253,11 +265,8 @@
         // add to map
         var layer = new wax.leaf.connector(tilejson);
         map.addLayer(layer);
-        var zoom = defaultZooms['{{metadata.abbr}}'];
-        if(!zoom) {
-            zoom = tilejson.center[2];
-        }
-        map.setView(new L.LatLng(tilejson.center[1], tilejson.center[0]), zoom);
+        map.setView(new L.LatLng(tilejson.center[1], tilejson.center[0]),
+                    mmzoom[0]);
 
         // add to control
         var layerName;
