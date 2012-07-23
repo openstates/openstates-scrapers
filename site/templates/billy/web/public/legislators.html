@@ -7,7 +7,10 @@
 {% block headblock %}
 <script>
 $(document).ready(function() {
-    clickable_rows("#main-table tbody tr");
+
+    var _clickable_rows = function(){
+        clickable_rows('#main-table tbody tr');
+        }
 
     $('img.legImgSmall').error(function() {
             $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
@@ -47,6 +50,9 @@ $(document).ready(function() {
 
     // Reinitialize the datatable too.
     doc.bind('pjax:complete', {}, datatable_setup);
+
+    // And re-run clackable_rows.
+    doc.bind('pjax:complete', {}, _clickable_rows);
 
     var initialize_page = 'pjax:complete'
     doc.trigger(initialize_page);
