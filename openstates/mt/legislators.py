@@ -1,6 +1,8 @@
+import re
 import csv
 import difflib
 import urlparse
+from itertools import dropwhile, takewhile
 
 import lxml.html
 
@@ -166,6 +168,11 @@ class MTLegislatorScraper(LegislatorScraper):
         '''
         doc = url_xpath(url)
 
+        details = {
+            'photo_url': doc.xpath('//table[@name][1]/'
+                                   'descendant::img/@src')[0],
+            }
+
         # Get base url.
         parts = urlparse.urlparse(url)
         parts._replace(path='')
@@ -173,7 +180,46 @@ class MTLegislatorScraper(LegislatorScraper):
 
         doc.make_links_absolute(baseurl)
 
-        return {
-            'photo_url': doc.xpath('//table[@name][1]/'
-                                   'descendant::img/@src')[0],
-            }
+        # Parse address.
+        elements = list(doc.xpath('//b[contains(., "Address")]/..')[0])
+        dropper = lambda element: element.tag != 'b'
+        elements = dropwhile(dropper, elements)
+        assert next(elements).text == 'Address'
+        taker = lambda element: element.tag == 'br'
+        elements = list(takewhile(taker, elements))
+        chunks = []
+        for br in elements:
+            chunks.extend(filter(None, [br.text, br.tail]))
+
+        # As far as I can tell, MT legislators don't have capital offices.
+        office = dict(name='District Office', type='district', phone=None,
+                      fax=None, email=None,
+                      address='\n'.join(chunks[:2]))
+        for line in chunks[2:]:
+            if not line.strip():
+                continue
+            for key in ('ph', 'fax'):
+                if key in line.lower():
+                    key = {'ph': 'phone'}.get(key)
+                    break
+            number = re.search('\(\d{3}\) \d{3}\-\d{4}', line)
+            if number:
+                number = number.group()
+                if key:
+                    office[key] = number
+
+        details['offices'] = [office]
+
+        try:
+            email = doc.xpath('//b[contains(., "Email")]/..')[0]
+        except IndexError:
+            pass
+        else:
+            if email:
+                html = lxml.html.tostring(email.getparent())
+                match = re.search('\w+@\w+\.[a-z]+', html)
+                if match:
+                    details['email'] = match.group()
+
+        return details
+
