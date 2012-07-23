@@ -223,9 +223,13 @@ $(document).ready(function() {
                             </address>
                         </li>
                         {% empty %}
+                        {% if not legislator.email %}
                         <li class="fourths firstModule">
-                            <h4 class="h5">Contact Information Not Available</h4>
+                            <h5 class="h5" style="width:300px;">Contact Information Not Available
+                                <a class="missingInfo" title="Our Methodology" href="/methodology/">?</a>
+                            </h5>
                         </li>
+                        {% endif %}
                         {% endfor %}
                         {% if legislator.email %}
                         <li class="clear">
