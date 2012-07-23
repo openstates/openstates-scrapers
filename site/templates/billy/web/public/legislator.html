@@ -167,8 +167,10 @@ $(document).ready(function() {
                                 {% endfor %}
                             {% endif %}
                             </dd>
+                            {% if legislator.transparencydata_id %}
                             <dt class="clear">Campaign Finance:</dt>
                             <dd class="smModule"><a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">View at Influence Explorer</a></dd>
+                            {% endif %}
 
                         </dl>
                     </div>
