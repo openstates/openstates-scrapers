@@ -424,7 +424,7 @@ div.flatpage dl dt { display: block; clear: both; }
 div.flatpage dl dd { margin-left: 1.8em; }
 div.flatpage img { border: 0px; }
 div.flatpage tt { background-color: #ebece4; }
-/* div.flatpage h3 { border-top: 2px solid #aaaaaa; padding-top: 5px; margin-top: 15px; } */
+div.flatpage h3 { padding-top: 5px; margin: 15px 0px 10px; }
 div.flatpage h3.apibar { margin-top: 60px; border-top: 0px; }
 div.flatpage div.note { border: 1px double #aaaaaa; padding: 0px 1em; margin: 10px 0px; }
 div.flatpage div.note p.admonition-title { font-weight: bold; font-size: 110%; }
