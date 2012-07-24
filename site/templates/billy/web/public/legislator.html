@@ -307,7 +307,7 @@ $(document).ready(function() {
             <a name="bills"></a>
             <h3 class="moduleTitle">Bills</h3>
             <div class="eightCol colLt">
-                <a class="textReplace rssIcon" href="{% url 'bills_atom' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
+                <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
                 <h4>Sponsored Bills</h4>
                 <ul>
                 {% if sponsored_bills.count %}
