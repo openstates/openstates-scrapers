@@ -103,8 +103,8 @@
                                 {% else %}
                                 <td>{{ legislator.display_name }}</td>
                                 {% endif %}
-                                <td>{{ legislator.district }}</td>
-                                <td>{{ legislator.party }}</td>
+                                <td>{{ legislator.vote_role.district }}</td>
+                                <td>{{ legislator.vote_role.party }}</td>
                             </tr>
                             {% endif %}{% endfor %}
                         </tbody>
@@ -132,8 +132,8 @@
                                 {% else %}
                                 <td>{{ legislator.display_name }}</td>
                                 {% endif %}
-                                <td>{{ legislator.district }}</td>
-                                <td>{{ legislator.party }}</td>
+                                <td>{{ legislator.vote_role.district }}</td>
+                                <td>{{ legislator.vote_role.party }}</td>
                             </tr>
                             {% endif %}{% endfor %}
                         </tbody>                    
@@ -161,8 +161,8 @@
                                 {% else %}
                                 <td>{{ legislator.display_name }}</td>
                                 {% endif %}
-                                <td>{{ legislator.district }}</td>
-                                <td>{{ legislator.party }}</td>
+                                <td>{{ legislator.vote_role.district }}</td>
+                                <td>{{ legislator.vote_role.party }}</td>
                             </tr>
                             {% endif %}{% endfor %}
                         </tbody>                    
