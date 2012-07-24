@@ -691,3 +691,9 @@ input[type="checkbox"] {
           border-radius: 0 3px 3px 0;
 }
 /* end bootstrap */
+
+/* The datatables filter box. */
+#main-table_filter {
+    float: right;
+    margin-bottom: 10px;
+}
