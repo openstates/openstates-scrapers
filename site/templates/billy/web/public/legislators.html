@@ -19,7 +19,7 @@ $(document).ready(function() {
 
     var datatable_setup = function(){
 
-        // Kill the html in the table headers.
+        //Kill the html in the table headers.
         var table = $(this);
         table.find('th').each(function(){
             var th = $(this);
@@ -28,10 +28,12 @@ $(document).ready(function() {
 
         // Convert the table to dataTable.
         $('#main-table').dataTable({
-            bFilter: false,
             bPaginate: false,
             bInfo: false,
-            bDestroy: true
+            bDestroy: true,
+            "oLanguage": {
+                "sSearch": "Filter: "
+            }
         });
     }
 
