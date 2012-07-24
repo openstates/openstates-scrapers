@@ -14,7 +14,7 @@
     {% if show_chamber_column %}
     <td>{{ committee.chamber_name }}</td>
     {% endif %}
-    <td><a href={{ committee.get_absolute_url }}>{{ committee.display_name }}</td>
+    <td><a href="{{ committee.get_absolute_url }}">{{ committee.display_name }}</a></td>
     <td>
       {% if not committee.members %}
         [data not yet available]
