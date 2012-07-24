@@ -35,7 +35,7 @@
                     </a>
                     <ul class="tip noSpace">
                         {% for party, count in chamber.legislators.party_counts.items %}
-                            <li><a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">{{ count }} {{party}}</a></li>
+                            <li>{{ count }} {{party}}</li>
                         {% endfor %}
                     </ul>
                  </li>
