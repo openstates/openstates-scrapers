@@ -320,7 +320,7 @@ $(document).ready(function() {
                         </li>
                     {% endfor %}
                 </ul>
-                <a class="viewMore" href={% url 'legislator_sponsored_bills' abbr legislator.id legislator.slug %}>View More Bills</a>
+                <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">View More Bills</a>
                 {% else %}
                     <li>No sponsored bills to display.</li>
                 </ul>
