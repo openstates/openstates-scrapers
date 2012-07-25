@@ -10,6 +10,13 @@ from lxml import html
 
 BASE_URL = 'http://www.azleg.gov/'
 
+# map to type and official_type (maybe we can figure out PB/PZ and add names
+SPONSOR_TYPES = {'P': ('primary', 'P'),
+                 'C': ('cosponsor', 'C'),
+                 'PB': ('primary', 'PB'),
+                 'PZ': ('primary', 'PZ'),
+                 'CZ': ('cosponsor', 'CZ')}
+
 class AZBillScraper(BillScraper):
     def accept_response(self, response):
         normal = super(AZBillScraper, self).accept_response(response)
@@ -133,7 +140,8 @@ class AZBillScraper(BillScraper):
                 name = sponsor.text.strip()
                 # sponsor.xpath('string(ancestor::td[1]/following-sibling::td[1]/text())').strip()
                 s_type = sponsor.getparent().getparent().getnext().text_content().strip()
-                bill.add_sponsor(s_type, name)
+                s_type, o_type = SPONSOR_TYPES[s_type]
+                bill.add_sponsor(s_type, name, o_type)
 
             #titles
             table = base_table.xpath(table_path % 'TITLE')
