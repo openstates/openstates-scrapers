@@ -140,14 +140,20 @@ $(document).ready(function() {
                 <div class="eightCol colLt">
                     <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
                     <div class="eightsLg clearfix">
-                        <h2 class="withTipSm">{{legislator.full_name}}</h2>
+                        <h2 class="withTipSm">
+                            {{legislator.full_name}}{% if not legislator.active %} (Inactive){% endif %}
+                        </h2>
                         <dl class="inlineList clearfix">
                             <dt class="hidden">Role</dt>
                             <dd class="tip tipSm">
-                            {{legislator.party}} &mdash;
-                            {{legislator.title}} &mdash;
-                            {# if first character of district is numeric, add 'District' #}
-                            {% if legislator.district.0.isdigit %} District {% endif %}{{legislator.district}}
+                            {% if legislator.active %}
+                                {{legislator.party}} &mdash;
+                                {{legislator.title}} &mdash;
+                                {# if first character of district is numeric, add 'District' #}
+                                {% if legislator.district.0.isdigit %} District {% endif %}{{legislator.district}}
+                            {% else %}
+                                {{legislator.full_name}} is <b>no longer elected</b> to the {{metadata.legislature_name }}.
+                            {% endif %}
                             </dd>
                             <dt class="clear">Sessions Served:</dt>
                             <dd>
