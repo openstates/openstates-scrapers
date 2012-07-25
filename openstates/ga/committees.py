@@ -4,19 +4,19 @@ import scrapelib
 
 class GACommitteeScraper(CommitteeScraper):
     state = 'ga'
+    latest_only = True
 
-    def scrape(self, chamber, term):
-        if chamber == 'upper':
-            url = 'http://www.senate.ga.gov/committees/en-US/SenateCommitteesList.aspx'
-            self.scrape_senate(url)
-        else:
-            year = int(term[0: term.index('-')])
-            session = "%s_%s" % (year, str(year + 1)[-2:])
-            url = 'http://www1.legis.ga.gov/legis/%s/house/commroster.htm' % session
+    def scrape(self, term, chambers):
+        self.joint_coms = {}
+        for chamber in chambers:
+            if chamber == 'upper':
+                url = 'http://www.senate.ga.gov/committees/en-US/SenateCommitteesList.aspx'
+            elif chamber == 'lower':
+                url = 'http://www.house.ga.gov/committees/en-US/CommitteeList.aspx'
 
-            self.scrape_house(url)
+            self.scrape_chamber(url, chamber)
 
-    def scrape_senate(self, url):
+    def scrape_chamber(self, url, orig_chamber):
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
@@ -27,11 +27,22 @@ class GACommitteeScraper(CommitteeScraper):
             com_html = self.urlopen(com_url)
             com_data = lxml.html.fromstring(com_html)
 
-            com = Committee('upper', com_name)
+            if 'Joint' in com_name:
+                chamber = 'joint'
+            else:
+                chamber = orig_chamber
 
-            for span in com_data.xpath('//span[@style="float:left; width:45%;"]'):
-                member = span.xpath('a/text()')[0]
-                role = span.xpath('following-sibling::span/text()')
+            if chamber == 'joint':
+                if com_name not in self.joint_coms:
+                    self.joint_coms[com_name] = Committee(chamber, com_name)
+                com = self.joint_coms.get(com_name)
+                self.joint_coms[com_name] = com
+            else:
+                com = Committee(chamber, com_name)
+
+            for a in com_data.xpath('//a[contains(@href, "Member=")]'):
+                member = a.text
+                role = a.xpath('../following-sibling::span/text()')
                 if role:
                     role = role[0].lower().replace(u'\xa0', ' ')
                     # skip former members
@@ -43,38 +54,3 @@ class GACommitteeScraper(CommitteeScraper):
 
             com.add_source(com_url)
             self.save_committee(com)
-
-
-    def scrape_house(self, url):
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-
-        for a in doc.xpath('//td/a'):
-            com_name = a.text.strip()
-            # blank entries in table
-            if not com_name:
-                continue
-            if 'Reapportionment' in com_name or 'Horse Racing' in com_name:
-                self.warning('skipping %s, known to be problematic' % com_name)
-                continue
-            com_url = a.get('href')
-            com_html = self.urlopen(com_url)
-            com_doc = lxml.html.fromstring(com_html)
-
-            com = Committee('lower', com_name)
-
-            for td in com_doc.xpath('//table[@id="commtable"]')[1].xpath('.//td'):
-                leg = td.xpath('.//a/text()')
-                if leg:
-                    leg = leg[0]
-                    pieces = td.text_content().split('\n')
-                    if len(pieces) == 2:
-                        role = pieces[1].lower()
-                    else:
-                        role = 'member'
-                    com.add_member(leg, role)
-
-            com.add_source(com_url)
-            self.save_committee(com)
-
