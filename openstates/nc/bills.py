@@ -119,7 +119,7 @@ class NCBillScraper(BillScraper):
                 if leg:
                     if leg[-1] == ';':
                         leg = leg[:-1]
-                    bill.add_sponsor('primary', leg)
+                    bill.add_sponsor('primary', leg, chamber=chamber)
 
             # cosponsors
             co_td = doc.xpath('//th[text()="Co:"]/following-sibling::td')
@@ -129,7 +129,7 @@ class NCBillScraper(BillScraper):
                 if leg and leg != 'N/A':
                     if leg[-1] == ';':
                         leg = leg[:-1]
-                    bill.add_sponsor('cosponsor', leg)
+                    bill.add_sponsor('cosponsor', leg, chamber=chamber)
 
             # actions
             action_tr_xpath = '//td[starts-with(text(),"History")]/../../tr'
