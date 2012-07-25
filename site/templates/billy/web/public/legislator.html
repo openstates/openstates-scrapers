@@ -140,14 +140,20 @@ $(document).ready(function() {
                 <div class="eightCol colLt">
                     <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
                     <div class="eightsLg clearfix">
-                        <h2 class="withTipSm">{{legislator.full_name}}</h2>
+                        <h2 class="withTipSm">
+                            {{legislator.full_name}}{% if not legislator.active %} (Inactive){% endif %}
+                        </h2>
                         <dl class="inlineList clearfix">
                             <dt class="hidden">Role</dt>
                             <dd class="tip tipSm">
-                            {{legislator.party}} &mdash;
-                            {{legislator.title}} &mdash;
-                            {# if first character of district is numeric, add 'District' #}
-                            {% if legislator.district.0.isdigit %} District {% endif %}{{legislator.district}}
+                            {% if legislator.active %}
+                                {{legislator.party}} &mdash;
+                                {{legislator.title}} &mdash;
+                                {# if first character of district is numeric, add 'District' #}
+                                {% if legislator.district.0.isdigit %} District {% endif %}{{legislator.district}}
+                            {% else %}
+                                {{legislator.full_name}} is <b>no longer elected</b> to the {{metadata.legislature_name }}.
+                            {% endif %}
                             </dd>
                             <dt class="clear">Sessions Served:</dt>
                             <dd>
@@ -158,11 +164,10 @@ $(document).ready(function() {
                                {% endfor %}
                                 </ul>
                             {% else %}
-                                {% for term, names in legislator.old_roles_manager.sessions_served.items %}
+                                {% for session in legislator.old_sessions_served %}
                                 <ul>
-                                    {% for name in names %}
-                                    <li class="clear">{{name}}</li>
-                                    {% endfor %}
+                                    <li class="clear">
+                                        {{session.display_name}}</li>
                                 </ul>
                                 {% endfor %}
                             {% endif %}
@@ -195,7 +200,6 @@ $(document).ready(function() {
                         {% include "billy/web/public/bio_blurb.html" %}
                     </p>
                 </div>
-                {% endif %}
                 <div class="sixCol colRt">
                     <ul>
                         {% for office in legislator.offices %}
@@ -240,6 +244,7 @@ $(document).ready(function() {
                     </ul>
                 </div>
                 <div class="clear"></div>
+                {% endif %}
             </div> 
 
             {% if not legislator.active %}
@@ -247,7 +252,6 @@ $(document).ready(function() {
                 <div class="sevenCol colLt">
                     <h3 class="moduleTitle">Former Roles</h3>
                     <table>
-                    {% for role in legislator.old_roles_manager %}
                       <thead>
                         <tr>
                             <th>Term</th>
@@ -258,6 +262,9 @@ $(document).ready(function() {
                             <th>End</th>
                         </tr>
                       </thead>
+                      <tbody>
+                    {% for term, roles in legislator.old_roles.items %}
+                      {% for role in roles %}
                       <tr>
                         <td>{{role.term}}</td>
                         <td>{{role.type|title}}</td>
@@ -266,13 +273,16 @@ $(document).ready(function() {
                         <td>{% if role.start_data %}{{role.start_date|date:"j, m Y"}}{% else %}{% endif %}</td>
                         <td>{% if role.end_data %}{{role.end_date|date:"j, m Y"}}{% else %}{% endif %}</td>
                       </tr>
+                      {% endfor %}
                     {% endfor %}
+                      <tbody>
                     </table>
                 </div>
                 <div class="clear"></div> 
             </div>
             {% endif %}
 
+        {% if legislator.active %}
         <div class="fullWidth module clear">
             <h3 class="moduleTitle">Media</h3>
             <div class="sevenCol colLt">
@@ -303,6 +313,7 @@ $(document).ready(function() {
             </ul>
             <div class="clear"></div>
         </div>
+        {% endif %}
         <div class="fullWidth module">
             <a name="bills"></a>
             <h3 class="moduleTitle">Bills</h3>
