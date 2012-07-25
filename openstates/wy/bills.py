@@ -111,7 +111,7 @@ class WYBillScraper(BillScraper):
                     sponsors = p.text_content().replace('\r\n', ' ')
         if sponsors:
             if 'Committee' in sponsors:
-                bill.add_sponsor('sponsor', sponsors)
+                bill.add_sponsor('primary', sponsors)
             else:
                 if bill['chamber'] == 'lower':
                     sp_lists = sponsors.split('and Senator(s)')
@@ -119,7 +119,7 @@ class WYBillScraper(BillScraper):
                     sp_lists = sponsors.split('and Representative(s)')
                 for spl in sp_lists:
                     for sponsor in split_names(spl):
-                        bill.add_sponsor('sponsor', sponsor)
+                        bill.add_sponsor('primary', sponsor)
 
         action_re = re.compile('(\d{1,2}/\d{1,2}/\d{4})\s+(H |S )?(.+)')
         vote_total_re = re.compile('(Ayes )?(\d*)(\s*)Nays(\s*)(\d+)(\s*)Excused(\s*)(\d+)(\s*)Absent(\s*)(\d+)(\s*)Conflicts(\s*)(\d+)')

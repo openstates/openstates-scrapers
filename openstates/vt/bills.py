@@ -159,7 +159,7 @@ class VTBillScraper(BillScraper):
             self.scrape_sponsors(bill, sponsor_url)
         else:
             for b in page.xpath("//td[text()='Sponsor(s):']/../td[2]/b"):
-                bill.add_sponsor("sponsor", b.text)
+                bill.add_sponsor("primary", b.text)
 
         for tr in page.xpath("""
         //b[text()='Detailed Status:']/

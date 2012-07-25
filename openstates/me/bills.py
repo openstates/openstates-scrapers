@@ -147,6 +147,9 @@ class MEBillScraper(BillScraper):
                 if match:
                     type_, chamber_title, name = map(strip, match.groups())
                     type_ = type_.lower()
+                    # introduc[er] gets clipped by regex, we change it anyway
+                    if type_ in ('sponsor', 'introduc'):
+                        type_ = 'primary'
                     if chamber_title in ['President', 'Speaker']:
                         chamber = bill['chamber']
                     else:
@@ -156,7 +159,7 @@ class MEBillScraper(BillScraper):
                     bill.add_sponsor(type_.lower(), name, chamber=chamber)
                 elif 'the Majority' in text:
                     # At least one bill was sponsored by 'the Majority'.
-                    bill.add_sponsor('sponsor', 'the Majority',
+                    bill.add_sponsor('primary', 'the Majority',
                                      chamber=bill['chamber'])
             bill.add_source(sponsors_url)
 

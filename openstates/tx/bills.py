@@ -206,16 +206,16 @@ class TXBillScraper(BillScraper):
 
         for author in root.findtext('authors').split(' | '):
             if author != "":
-                bill.add_sponsor('author', author)
+                bill.add_sponsor('primary', author, official_type='author')
         for coauthor in root.findtext('coauthors').split(' | '):
             if coauthor != "":
-                bill.add_sponsor('coauthor', coauthor)
+                bill.add_sponsor('cosponsor', coauthor, official_type='coauthor')
         for sponsor in root.findtext('sponsors').split(' | '):
             if sponsor != "":
-                bill.add_sponsor('sponsor', sponsor)
+                bill.add_sponsor('primary', sponsor, official_type='sponsor')
         for cosponsor in root.findtext('cosponsors').split(' | '):
             if cosponsor != "":
-                bill.add_sponsor('cosponsor', cosponsor)
+                bill.add_sponsor('cosponsor', cosponsor, official_type='cosponsor')
 
         bill['subjects'] = []
         for subject in root.iterfind('subjects/subject'):

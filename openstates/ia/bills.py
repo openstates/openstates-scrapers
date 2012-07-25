@@ -144,7 +144,7 @@ class IABillScraper(BillScraper):
                 'Government': 'State Government',
                 'Boef': 'De Boef'}.get(sponsor, sponsor)
 
-            bill.add_sponsor('sponsor', sponsor)
+            bill.add_sponsor('primary', sponsor)
 
         for tr in page.xpath("//table[3]/tr"):
             date = tr.xpath("string(td[1])").strip()

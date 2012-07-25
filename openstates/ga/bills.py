@@ -87,8 +87,7 @@ class GABillScraper(BillScraper):
 
     def scrape_xml(self, chamber, session):
         start_letter = 'S' if chamber == 'upper' else 'H'
-        sponsor_type_dict = {'3': 'senate cosponsor',
-                             '4': 'sponsor', '5': 'sponsor',}
+        sponsor_type_dict = {'3': 'cosponsor', '4': 'primary', '5': 'primary'}
         version_url = 'http://www1.legis.ga.gov/legis/%s/versions/' % session
 
         summary_url = ('http://www1.legis.ga.gov/legis/%s/list/BillSummary.xml'
