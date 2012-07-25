@@ -196,11 +196,13 @@ class ILBillScraper(BillScraper):
                 self.refine_sponsor_list(actor, action, sponsor_list, bill_id)
 
         # now add sponsors
-        for spontype,sponsor,chamber in sponsor_list:
+        for spontype,sponsor,chamber,official_type in sponsor_list:
             if chamber:
-                bill.add_sponsor(spontype, sponsor, chamber=chamber)
+                bill.add_sponsor(spontype, sponsor,
+                                 official_type=official_type, chamber=chamber)
             else:
-                bill.add_sponsor(spontype, sponsor)
+                bill.add_sponsor(spontype, sponsor,
+                                 official_type=official_type)
 
 
         # versions

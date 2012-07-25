@@ -211,10 +211,10 @@ class LABillScraper(BillScraper):
                 author = row.xpath('string()').strip()
 
                 if "(Primary Author)" in author:
-                    type = 'primary author'
+                    type = 'primary'
                     author = author.replace(" (Primary Author)", '')
                 else:
-                    type = 'author'
+                    type = 'cosponsor'
 
                 if not author:
                     continue

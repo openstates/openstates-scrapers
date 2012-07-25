@@ -50,7 +50,7 @@ class FLBillScraper(BillScraper):
             bill = Bill(session, chamber, bill_id, title)
             bill.add_source(url)
 
-            bill.add_sponsor('introducer', sponsor)
+            bill.add_sponsor('primary', sponsor)
 
             try:
                 hist_table = page.xpath(

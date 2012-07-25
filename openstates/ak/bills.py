@@ -130,7 +130,7 @@ class AKBillScraper(BillScraper):
                              " Committee (by request of the governor)")
 
             if spons_str:
-                bill.add_sponsor('committee', spons_str)
+                bill.add_sponsor('primary', spons_str)
 
         # Get actions from second myth table
         self._current_comm = None

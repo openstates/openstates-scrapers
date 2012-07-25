@@ -65,7 +65,8 @@ class CTBillScraper(BillScraper):
             self.scrape_bill_page(bill)
 
             for introducer in self._introducers[bill_id]:
-                bill.add_sponsor('introducer', introducer)
+                bill.add_sponsor('primary', introducer,
+                                 official_type='introducer')
 
             bill['subjects'] = self._subjects[bill_id]
 
