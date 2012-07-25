@@ -76,8 +76,8 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath('http://www.legis.state.pa.us/cfdocs/legis/home/'
-                     'session.cfm', '//select[@id="BTI_sess"]/option/text()')
+    return url_xpath('http://www.legis.state.pa.us/cfdocs/legis/home/bills/',
+                     '//select[@id="billSessions"]/option/text()')
 
 @oyster_text
 def extract_text(oyster_doc, data):
