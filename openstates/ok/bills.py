@@ -114,9 +114,9 @@ class OKBillScraper(BillScraper):
             name = link.xpath("string()").strip()
 
             if 'otherAuth' in link.attrib['id']:
-                bill.add_sponsor('coauthor', name)
+                bill.add_sponsor('cosponsor', name)
             else:
-                bill.add_sponsor('author', name)
+                bill.add_sponsor('primary', name)
 
         act_table = page.xpath("//table[contains(@id, 'Actions')]")[0]
         for tr in act_table.xpath("tr")[2:]:
