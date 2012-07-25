@@ -22,10 +22,10 @@ TITLE_REMOVING_PATTERN = re.compile(".*(Rep|Sen). (.+)$")
 
 SPONSOR_REFINE_PATTERN = re.compile(r'^Added (?P<spontype>.+) (?P<title>Rep|Sen)\. (?P<name>.+)')
 SPONSOR_TYPE_REFINEMENTS = {
-    'Chief Co-Sponsor': 'chief-cosponsor',
-    'as Chief Co-Sponsor': 'chief-cosponsor',
-    'Alternate Chief Co-Sponsor': 'chief-cosponsor',
-    'as Alternate Chief Co-Sponsor': 'chief-cosponsor',
+    'Chief Co-Sponsor': 'cosponsor',
+    'as Chief Co-Sponsor': 'cosponsor',
+    'Alternate Chief Co-Sponsor': 'cosponsor',
+    'as Alternate Chief Co-Sponsor': 'cosponsor',
     'as Co-Sponsor': 'cosponsor',
     'Alternate Co-Sponsor':  'cosponsor',
     'as Alternate Co-Sponsor':  'cosponsor',
@@ -370,7 +370,7 @@ class ILBillScraper(BillScraper):
                 spontype,sponsor, this_chamber = tup
                 if this_chamber == chamber and sponsor == match.groupdict()['name']:
                     try:
-                        sponsor_list[i] = (SPONSOR_TYPE_REFINEMENTS[match.groupdict()['spontype']], sponsor, this_chamber)
+                        sponsor_list[i] = (SPONSOR_TYPE_REFINEMENTS[match.groupdict()['spontype']], sponsor, this_chamber, match.groupdict()['spontype'])
                     except KeyError:
                         self.warning('[%s] Unknown sponsor refinement type [%s]' % (bill_id, match.groupdict()['spontype']))
                     return
@@ -417,7 +417,7 @@ def find_columns(vote_lines):
     return sorted(starter)
 
 def build_sponsor_list(sponsor_atags):
-    """return a list of (spontype,sponsor,chamber) tuples"""
+    """return a list of (spontype,sponsor,chamber,official_spontype) tuples"""
     sponsors = []
     house_chief = senate_chief = None
     spontype = 'cosponsor'
@@ -430,13 +430,16 @@ def build_sponsor_list(sponsor_atags):
         else:
             chamber = None
         if chamber == 'lower' and house_chief is None:
-            spontype = 'chief'
+            spontype = 'primary'
+            official_spontype = 'chief'
             house_chief = sponsor
         elif chamber == 'upper' and senate_chief is None:
-            spontype = 'chief'
+            spontype = 'primary'
+            official_spontype = 'chief'
             senate_chief = sponsor
         else:
             spontype = 'cosponsor'
-        sponsors.append((spontype, sponsor, chamber))
+            official_spontype = 'cosponsor' # until replaced
+        sponsors.append((spontype, sponsor, chamber, official_spontype))
     return sponsors
 
