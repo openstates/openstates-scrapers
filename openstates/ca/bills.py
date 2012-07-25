@@ -12,6 +12,9 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from .models import CABill
 
+SPONSOR_TYPES = {'LEAD_AUTHOR': 'primary',
+                 'COAUTHOR': 'cosponsor',
+                 'PRINCIPAL_COAUTHOR': 'primary'}
 
 def clean_title(s):
     # replace smart quote characters
@@ -361,7 +364,9 @@ class CABillScraper(BillScraper):
 
             for author in version.authors:
                 if author.house == chamber_name:
-                    fsbill.add_sponsor(author.contribution, author.name)
+                    fsbill.add_sponsor(SPONSOR_TYPES[author.contribution],
+                                       author.name,
+                                       official_type=author.contribution)
 
             introduced = False
 
