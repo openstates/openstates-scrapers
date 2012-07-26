@@ -369,7 +369,7 @@ class ILBillScraper(BillScraper):
             else:
                 chamber = 'upper'
             for i,tup in enumerate(sponsor_list):
-                spontype,sponsor, this_chamber = tup
+                spontype, sponsor, this_chamber, otype = tup
                 if this_chamber == chamber and sponsor == match.groupdict()['name']:
                     try:
                         sponsor_list[i] = (SPONSOR_TYPE_REFINEMENTS[match.groupdict()['spontype']], sponsor, this_chamber, match.groupdict()['spontype'])
