@@ -212,7 +212,10 @@ def trie_scan(trie, s,
 def cd(path):
     '''Creates the path if it doesn't exist'''
     old_dir = os.getcwd()
-    os.makedirs(path)
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
     os.chdir(path)
     try:
         yield
