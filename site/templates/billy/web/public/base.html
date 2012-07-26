@@ -6,6 +6,7 @@
 <html lang="en" class="no-js">
 <head>
     <title>{% striptags %}{% block title %}{% endblock %}{% end_striptags %}</title>
+    <script>var _sf_startpt=(new Date()).getTime()</script>
     <link rel="stylesheet" type="text/css" href="{% static "main.css" %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'select2-2.0/select2.css' %}"/>
 
@@ -44,13 +45,14 @@
 
         ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-  </script>
+    })();
 
-    <script type="text/javascript" charset="utf-8">
+
+      /* uservoice */
       var is_ssl = ("https:" == document.location.protocol);
       var asset_host = is_ssl ? "https://d3rdqalhjaisuu.cloudfront.net/" : "http://d3rdqalhjaisuu.cloudfront.net/";
       document.write(unescape("%3Cscript src='" + asset_host + "javascripts/feedback-v2.js' type='text/javascript'%3E%3C/script%3E"));
+
     </script>
 
     <script type="text/javascript" charset="utf-8">
@@ -153,4 +155,24 @@
             </div>
         </footer>
     </div>
+
+<script>
+  /* chartbeat */
+  var _sf_async_config = { uid: 980, domain: 'openstates.org' };
+  (function() {
+    function loadChartbeat() {
+      window._sf_endpt = (new Date()).getTime();
+      var e = document.createElement('script');
+      e.setAttribute('language', 'javascript');
+      e.setAttribute('type', 'text/javascript');
+      e.setAttribute('src',
+        (("https:" == document.location.protocol) ? "https://a248.e.akamai.net/chartbeat.download.akamai.com/102508/" : "http://static.chartbeat.com/") +
+        "js/chartbeat.js");
+      document.body.appendChild(e);
+    };
+    var oldonload = window.onload;
+    window.onload = (typeof window.onload != 'function') ?
+      loadChartbeat : function() { oldonload(); loadChartbeat(); };
+  })();
+</script>
 </body>
