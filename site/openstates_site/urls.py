@@ -19,8 +19,6 @@ urlpatterns = patterns('',
      {'template':'flat/thanks.html'}),
     (r'^categorization/$', 'django.views.generic.simple.direct_to_template',
      {'template':'flat/categorization.html'}),
-    (r'^status/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/status.html'}),
     (r'^csv_downloads/$', 'django.views.generic.simple.direct_to_template',
      {'template':'flat/csv_downloads.html'}),
 
