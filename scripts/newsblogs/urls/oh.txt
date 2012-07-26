@@ -10,3 +10,6 @@ http://www.policymattersohio.org/feed
 http://www.citybeat.com/cincinnati/rss-34-1-blogs.xml
 http://clevelandteapartypatriots.blogspot.com/feeds/posts/default
 http://feeds.feedburner.com/ohiopolitics
+http://ohiobudgetwatch.com/feed/
+http://www.progressohio.org/page/community/group_rss/ProgressOhio/html
+http://www.cincinnatibeacon.com/index.php?/contents/rss_source/

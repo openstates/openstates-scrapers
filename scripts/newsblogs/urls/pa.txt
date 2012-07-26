@@ -1,0 +1,5 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328044
+http://blogs.mcall.com/capitol_ideas/rss20.xml
+http://www.philly.com/philly/news/politics/state/index.rss
+http://blog.pennlive.com/politics_impact/atom.xml
+http://www.politicspa.com/feed/
