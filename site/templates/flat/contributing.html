@@ -6,16 +6,15 @@
 {% block flatpage %}
 <h2> Contributing </h2>
 {% rest %}
-Open States relies on volunteers and contributions are extremely welcome. If you're interested in helping this guide will help you find a place to contribute and walk you through the process of getting your code into the project.  
+Open States relies on volunteers and contributions are extremely welcome. If you're interested in helping, this guide will help you find a place to contribute and walk you through the process of getting your code into the project.  
 
 Community
 =========
 
-The primary tool that we use to communicate is the `Open States Google Group <http://groups.google.com/group/fifty-state-project>`_, if you aren't already a member your first step towards contributing is to join (and consider introducing yourself too).  We also track all project issues on our `GitHub issue tracker <https://github.com/sunlightlabs/openstates/issues>`_.
+The primary tool that we use to communicate is the `Open States Google Group <http://groups.google.com/group/fifty-state-project>`_. If you aren't already a member, your first step toward contributing is to join. (We encourage you to introduce youself, too.)  We also track all project issues on our `GitHub issue tracker <https://github.com/sunlightlabs/openstates/issues>`_.
 
 If you're on IRC, we also tend to spend time in #openstates on freenode.  Feel free to stop by the channel if you have questions or want to get more involved.
 
-If you have an idea of how you'd like to contribute (or if you have any questions) you should email the group.  Announcing your intentions is important, it helps to avoid duplicated effort and sometimes someone might have a few tips for your particular effort.
 
 Getting Started
 ===============
@@ -26,7 +25,7 @@ Obtaining Source Code
 In order to contribute you'll need a `GitHub <http://github.com>`_ account.
 Once signed in to your account, visit the `openstates project page <http://github.com/sunlightlabs/openstates/>`_ and click the "Fork" button.
 
-You'll see github create a fork under your account, check your fork out with a command like::
+You'll see GitHub create a fork under your account. Check your fork out with a command like::
 
     git clone git@github.com:YOURUSERNAME/openstates.git
 
@@ -35,7 +34,7 @@ Setting Up Your Environment
 
 Once you have the code checked out you'll need to set up your environment.
 
-(It is strongly recommended that you use both `virtualenv <http://pypi.python.org/pypi/virtualenv>`_ and `pip <http://pypi.python.org/pypi/pip>`_ if you aren't using these tools you will need to adjust these steps to suit your environment.)
+(It is strongly recommended that you use both `virtualenv <http://pypi.python.org/pypi/virtualenv>`_ and `pip <http://pypi.python.org/pypi/pip>`_. If you aren't using these tools you will need to adjust these steps to suit your environment.)
 
 To install all recommended libraries::
 
@@ -48,8 +47,8 @@ All scrapers exist within a subdirectory of ``openstates/`` with the two letter 
 
 Scrapers that rely on parsing HTML use `lxml <http://lxml.de>`_ which
 offers robust support for several different methods of scraping.  For cases
-where lxml is not an option (such as scraping from text, CSV, or PDF files) other
-libraries may be used.
+where lxml is not an option (such as scraping from text, CSV or PDF files),
+other libraries may be used.
 
 All code specific to a stays within its directory, common files are:
 
@@ -103,12 +102,12 @@ Which starts a web server (`Django <http://djangoproject.org>`_ required) at htt
 Submitting Your Code
 ====================
 
-When you have working code that you'd like us to review please email the `group <http://groups.google.com/group/fifty-state-project>`_.  One of the committers will review your code and integrate it into the repository.
+When you have working code that you'd like us to review, please email the `group <http://groups.google.com/group/fifty-state-project>`_.  One of the committers will review your code and integrate it into the repository.
 
-Open States is licensed under the `GPL 3 <http://gplv3.fsf.org/>`_ and by
-submitting your code for inclusion you agree to allow your code to be distributed under this license.
+Open States is licensed under the `GPL 3 <http://gplv3.fsf.org/>`_, and by
+submitting your code for inclusion, you agree to allow your code to be distributed under this license.
 
-As a rule if you can show us that you can make several useful commits to improve a state we'll be happy to take your contributions and give you commit access.
+As a rule, if you can show us that you can make several useful commits to improve a state, we'll be happy to take your contributions and give you commit access.
 
 {% endrest %}
 {% endblock %}
