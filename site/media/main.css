@@ -247,7 +247,7 @@ ul .three { padding-left: 24px; }
 .inlineThirds_module li { float: left; width: 275px; }
 
 .columnThirds ul { margin-bottom: 20px; }
-.columnThirds li { padding-right: 35px; }
+.columnThirds li { padding-right: 35px; width: 151px; }
 .floatedList li { float: left; margin-right: 20px;}
 .inlineList ul{margin-left: 30px;}
 .inlineList li { display: inline-block; margin-right: 10px;}
