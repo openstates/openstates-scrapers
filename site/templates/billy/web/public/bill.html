@@ -102,7 +102,7 @@
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
                             {% else %}
                                 {# Sponsor had no leg_id or was inactive. #}
-                                <li>{{ sponsor.name }}
+                                <li><span class="sponsorName">{{ sponsor.name }}</span>
                             {% endif %}
                         {% endif %} <span class="tip sponsor-type">{{ sponsor.type }}</span></li>
                     {% endfor %}
