@@ -1,0 +1,11 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328053
+http://www.thenewstribune.com/news/government/index.rss
+http://blog.seattlepi.com/seattlepolitics/feed/
+http://www.theolympian.com/politicsblog/index.rss
+http://seattletimes.nwsource.com/rss/politicsnorthwest.xml
+http://www.columbian.com/rss/headlines/politics/
+http://www.columbian.com/rss/weblog_entries/political-beat/
+http://capitolrecord.tvw.org/feed/
+http://www.spokesman.com/feeds/blogs/spincontrol/
+http://washingtonstatewire.com/feed/
+http://washingtonstatewire.com/capitolstuff/feed/

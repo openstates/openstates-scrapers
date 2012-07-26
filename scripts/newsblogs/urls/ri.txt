@@ -1,0 +1,6 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328045
+http://news.providencejournal.com/politics/index.xml
+http://wrnipoliticsblog.wordpress.com/feed/
+http://www.rifreedom.org/feed/
+http://pipes.yahoo.com/pipes/pipe.run?_id=59852a05c1ccb624f0aa54a48a198122&_render=rss
+http://feeds.feedburner.com/PHXnotfornothing

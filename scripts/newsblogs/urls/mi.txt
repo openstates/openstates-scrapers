@@ -1,1 +1,9 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328029
+http://www.detroitnews.com/apps/pbcs.dll/section?category=rss10&mime=xml
+http://blog.mlive.com/elections_impact/atom.xml
+http://www.lansingstatejournal.com/apps/pbcs.dll/section?Category=RSS02&mime=xml
+http://noise.typepad.com/election_countdown/atom.xml
+http://www.michiganliberal.com/tag/Michigan%20Senate?feed=rss
+http://www.michiganliberal.com/tag/Michigan%20House?feed=rss
+http://michiganradio.org/feeds/6301/rss.xml
 http://bridgemi.com/feed/

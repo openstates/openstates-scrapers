@@ -1,0 +1,10 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328028
+http://feeds.feedburner.com/bostonherald/
+http://www.bostonherald.com/blogs/news/daily_briefing/
+http://feeds.feedburner.com/bluemassgroup/front/
+http://www.wickedlocal.com/statewidepolitics/rss
+http://feeds.feedburner.com/PHXtalkingpolitics
+http://pretiminahan.blogspot.com/feeds/posts/default
+http://massachusetts.onpolitix.com/news/feeds/rss2/political-news
+http://scalingbeaconhill.blogspot.com/feeds/posts/default
+http://www.thecapitolviewlive.com/feeds/posts/default

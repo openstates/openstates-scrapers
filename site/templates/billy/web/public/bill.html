@@ -64,12 +64,12 @@
                         {% endif %}
                         {% for type in bill.type|slice:"1:" %}
                         <span class="label-bill-type"><a href="{% url 'bills' abbr %}?type={{type}}">{{type|title}}</a></span>
-                </dd>  
-                {% endfor %}      
-                    
+                </dd>
+                {% endfor %}
+
                 <dt class="clear contentBottom">Session:</dt>
                 <dd><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
-                
+
                 <dt class="clear contentBottom">Sponsors ({{ bill.sponsors|length }}):</dt>
                 <dd class="columnThirds">
                     <!-- <h6 class="h6 ulTitle">
@@ -86,7 +86,7 @@
                                     {# Sponsor had no leg_id or was inactive. #}
                                     {{ sponsor.name }}
                                 {% endif %}
-                            {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>                        
+                            {% endif %} <span class="tip sideNote">{{ sponsor.type }}</span></li>
                         {% endwith %}
                     </h6>
                 -->
@@ -193,13 +193,13 @@
                         <ul class="barChart">
                             <li class="yes">
                                 <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.yes_count}} Yes</span> 
-                            </li> 
+                                <span class="tagNumber">{{vote.yes_count}} Yes</span>
+                            </li>
                             <li class="no clear">
                                 <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
                                 <span class="tagNumber">{{vote.no_count}} No</span>
-                            </li>   
-                        </ul> 
+                            </li>
+                        </ul>
                         {% else %}
                             No vote counts available.
                         {% endif %}
@@ -216,7 +216,7 @@
             </div>
             <div class="clear"></div>
         </div>
-        
+
         {% with events=bill.events %}
             {% if events.count %}
             <div class="eightCol colLt">
