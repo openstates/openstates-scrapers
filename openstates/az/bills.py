@@ -141,7 +141,7 @@ class AZBillScraper(BillScraper):
                 # sponsor.xpath('string(ancestor::td[1]/following-sibling::td[1]/text())').strip()
                 s_type = sponsor.getparent().getparent().getnext().text_content().strip()
                 s_type, o_type = SPONSOR_TYPES[s_type]
-                bill.add_sponsor(s_type, name, o_type)
+                bill.add_sponsor(s_type, name, official_type=o_type)
 
             #titles
             table = base_table.xpath(table_path % 'TITLE')
