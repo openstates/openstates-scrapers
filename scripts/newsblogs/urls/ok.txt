@@ -5,3 +5,4 @@ http://okpolicy.org/blog/feed/
 http://www.capitolbeatok.com/RSSRetrieve.aspx?ID=6432&Type=RSS20
 http://oklahoma.watchdog.org/feed/
 http://okcapitolinvestments.wordpress.com/feed/
+http://www.okhouse.gov/feed/Default.aspx

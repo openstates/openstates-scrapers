@@ -13,3 +13,4 @@ http://www.indyweek.com/indyweek/Rss.xml?category=1279123
 http://www.talkingaboutpolitics.com/DesktopModules/DnnForge%20-%20NewsArticles/Rss.aspx?TabID=36&ModuleID=364&MaxCount=25
 http://www.charlotteobserver.com/politics/index.rss
 http://blog.wataugawatch.net/feeds/posts/default
+http://www.ncga.state.nc.us/gascripts/News/NewsRSS.pl

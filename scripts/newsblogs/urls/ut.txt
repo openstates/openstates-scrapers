@@ -4,3 +4,4 @@ http://www.sltrib.com/csp/cms/sites/sltrib/RSS/rss.csp?cat=BlogPolitics
 http://www.deseretnews.com/utah/index.rss
 http://www.utahsenatedemocrats.org/feed
 http://feeds.feedburner.com/senatesite/feedme
+http://le.utah.gov/rss/utleg.xml

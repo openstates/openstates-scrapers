@@ -10,4 +10,7 @@ http://dallasnews.com/news/politics/texas-legislature/headlines/?rss
 http://www.texastribune.org/feeds/main/
 http://blog.mysanantonio.com/politics/feed/
 http://www.star-telegram.com/legislature/index.atom
-
+http://www.txdemocrats.org/feed/
+http://www.house.state.tx.us/rss/rss.php
+http://www.txhousedems.com/feed/
+http://governor.state.tx.us/rss/

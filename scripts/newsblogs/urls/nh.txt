@@ -8,3 +8,6 @@ http://www.freestateblogs.net/rss.xml
 http://www.nhgop.org/feeds/rss/6
 http://www.nhdp.org/feed/
 http://solidgranite.blogspot.com/feeds/posts/default
+http://nhsenatedemocrats.org/feed/
+http://www.nhgop.org/feeds/rss/6
+http://nhhousedems.org/feed/

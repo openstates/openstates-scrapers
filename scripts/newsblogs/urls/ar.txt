@@ -14,3 +14,5 @@ http://www.progressivearkansas.com/taxonomy/term/1/0/feed
 http://www.teaguesenate.com/feeds/posts/default
 http://citywirelive.tcwmediallc.netdna-cdn.com/news_on_the_wire.xml
 http://arkledge.wordpress.com/feed/
+http://www.arkansashouse.org/news.rss
+http://www.arkansas.gov/senate/newsroom/files/weeklyreview.xml
