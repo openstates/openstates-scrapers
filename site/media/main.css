@@ -237,6 +237,7 @@ div.flatpage .social-links li { float:left; height:16px; margin-bottom:15px;
 dt { font-weight: bold;}
 .contentBottom { margin-bottom: 8px; margin-top: 8px;}
 .inlineList dt, .inlineList dd { float: left; margin-right: 15px; line-height: 18px; margin-top: 8px;}
+footer .inlineList dt, footer .inlineList dd { margin-top: 3px; }
 
 ul .one { clear: both;}
 ul .one{ padding-right: 23px; }
@@ -694,6 +695,10 @@ input[type="checkbox"] {
 
 /* The datatables filter box. */
 #main-table_filter {
-    float: right;
-    margin-bottom: 10px;
+    margin-bottom: 50px;
+    padding-top: 25px;
 }
+
+#main-table_filter label {  display: inline-block; font-family: Georgia, "Times New Roman", Times, serif; 
+font-style: oblique; }
+#main-table_filter input { margin-top: -5px; margin-left: 15px; }
