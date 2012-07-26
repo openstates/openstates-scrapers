@@ -283,23 +283,22 @@ $(document).ready(function() {
             {% endif %}
 
         {% if legislator.active %}
-        <div class="fullWidth module clear">
-            <h3 class="moduleTitle">Media</h3>
-            <div class="sevenCol colLt">
+            {% if feed_entries.count %}
+            <div class="fullWidth module clear">
+                <h3 class="moduleTitle">Media</h3>
+                <div class="sevenCol colLt">
 
-            <a class="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.slug %}">rss</a>
-            <h4>News and Blog Coverage</h4>
-            {% if not feed_entries.count %}
-                <ul><li class="smModule">No news or blog items found yet.</li></ul>
-              {% else %}
+                <a class="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.slug %}">rss</a>
+                <h4>News and Blog Coverage</h4>
                 {% for obj in feed_entries %}{% include feed_entry_template %}{% endfor %}
                 {% if feed_entries_count %}
                     <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.slug %}">View {{feed_entries_count|apnumber|capfirst}} More News Items</a>
                 {% endif %}
-            {% endif %}
-            </div>
+                </div>
             <div class="clear"></div>
-        </div>
+            </div>
+            {% endif %}
+
         <div class="fullWidth module clear"></a>
             <a name="committees">
             <h3 class="moduleTitle">Committees</h3>
