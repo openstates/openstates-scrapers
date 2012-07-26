@@ -117,7 +117,7 @@ class WVBillScraper(BillScraper):
         for name in sponsors:
             name = name.strip(', ')
             if name:
-                bill.add_sponsor('secondary', name)
+                bill.add_sponsor('cosponsor', name)
 
         for link in page.xpath("//a[contains(@href, 'votes/house')]"):
             self.scrape_vote(bill, link.attrib['href'])

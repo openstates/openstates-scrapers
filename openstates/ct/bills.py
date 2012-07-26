@@ -65,7 +65,8 @@ class CTBillScraper(BillScraper):
             self.scrape_bill_page(bill)
 
             for introducer in self._introducers[bill_id]:
-                bill.add_sponsor('introducer', introducer)
+                bill.add_sponsor('primary', introducer,
+                                 official_type='introducer')
 
             bill['subjects'] = self._subjects[bill_id]
 
@@ -83,7 +84,8 @@ class CTBillScraper(BillScraper):
 
             if not bill['sponsors']:
                 intro_com = page.xpath('//td[contains(string(), "Introduced by:")]')[1].text_content().replace('Introduced by:', '').strip()
-                bill.add_sponsor('introducer', intro_com)
+                bill.add_sponsor('primary', intro_com,
+                                 official_type='introducer')
 
             for link in page.xpath("//a[contains(@href, '/FN/')]"):
                 bill.add_document(link.text.strip(), link.attrib['href'])

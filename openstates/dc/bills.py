@@ -51,7 +51,9 @@ class DCBillScraper(BillScraper):
 
             requested_by = doc.get_element_by_id('RequestedBy').text
             if requested_by:
-                bill.add_sponsor('requestor', requested_by.strip())
+                stype = 'primary' if not introduced_by else 'cosponsor'
+                bill.add_sponsor(stype, requested_by.strip(),
+                                 official_type='requestor')
 
             cosponsored_by = doc.get_element_by_id('CoSponsoredBy').text
             if cosponsored_by:

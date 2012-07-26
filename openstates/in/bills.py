@@ -145,7 +145,7 @@ class INBillScraper(BillScraper):
                 else:
                     sponsors.append(name)
             for sponsor in sponsors:
-                bill.add_sponsor('author', sponsor)
+                bill.add_sponsor('primary', sponsor)
 
             act_table = page.xpath("//table")[1]
             read_yet = False

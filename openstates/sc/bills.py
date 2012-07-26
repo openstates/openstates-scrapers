@@ -203,7 +203,7 @@ class SCBillScraper(BillScraper):
 
         # sponsors
         for sponsor in doc.xpath('//a[contains(@href, "member.php")]/text()'):
-            bill.add_sponsor('sponsor', sponsor)
+            bill.add_sponsor('primary', sponsor)
 
         # find versions
         version_url = doc.xpath('//a[text()="View full text"]/@href')[0]

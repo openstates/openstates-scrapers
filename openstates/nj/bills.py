@@ -199,9 +199,9 @@ class NJBillScraper(BillScraper, DBFMixin):
             name = rec["sponsor"]
             sponsor_type = rec["type"]
             if sponsor_type == 'P':
-                sponsor_type = "Primary"
+                sponsor_type = "primary"
             else:
-                sponsor_type = "Co-sponsor"
+                sponsor_type = "cosponsor"
             bill.add_sponsor(sponsor_type, name)
 
 

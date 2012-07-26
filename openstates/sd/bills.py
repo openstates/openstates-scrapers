@@ -67,7 +67,7 @@ class SDBillScraper(BillScraper):
             sponsor_links = page.xpath(
                 "//td[contains(@id, 'tdSponsors')]/a")
             for link in sponsor_links:
-                bill.add_sponsor("sponsor", link.text)
+                bill.add_sponsor("primary", link.text)
 
             actor = chamber
             for row in page.xpath(

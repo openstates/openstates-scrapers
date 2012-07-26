@@ -268,7 +268,7 @@ class ORBillScraper(BillScraper):
                     inner_str = inner_str.replace('Senator','')
 
                     for name in inner_str.split(', '):
-                        self.all_bills[bill_id].add_sponsor('sponsor', name)
+                        self.all_bills[bill_id].add_sponsor('primary', name)
 
 
     def parse_subjects(self, url, chamber_letter):

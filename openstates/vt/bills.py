@@ -159,7 +159,7 @@ class VTBillScraper(BillScraper):
             self.scrape_sponsors(bill, sponsor_url)
         else:
             for b in page.xpath("//td[text()='Sponsor(s):']/../td[2]/b"):
-                bill.add_sponsor("sponsor", b.text)
+                bill.add_sponsor("primary", b.text)
 
         for tr in page.xpath("""
         //b[text()='Detailed Status:']/
@@ -216,7 +216,7 @@ class VTBillScraper(BillScraper):
         for td in page.xpath("//h3/following-sibling::"
                              "blockquote/table/tr/td"):
             name = td.xpath("string()").strip()
-            bill.add_sponsor("sponsor", name)
+            bill.add_sponsor("primary", name)
 
     def scrape_vote(self, bill, chamber, url):
         page = self.urlopen(url)

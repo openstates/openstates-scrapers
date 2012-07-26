@@ -261,7 +261,7 @@ class DEBillScraper(BillScraper):
         chamber = bill['chamber']
 
         sponsor_types = {
-            'Additional Sponsor(s):': 'other',
+            'Additional Sponsor(s):': 'cosponsor',
             'CoSponsors:': 'cosponsor',
             'Primary Sponsor:': 'primary'}
 
