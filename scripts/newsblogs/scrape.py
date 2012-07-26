@@ -210,7 +210,9 @@ def trie_scan(trie, s,
 
 @contextlib.contextmanager
 def cd(path):
+    '''Creates the path if it doesn't exist'''
     old_dir = os.getcwd()
+    os.makedirs(path)
     os.chdir(path)
     try:
         yield
