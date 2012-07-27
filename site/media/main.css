@@ -246,6 +246,9 @@ ul .three { padding-left: 24px; }
 .inlineThirds li { float: left; width: 33%; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;}
 .inlineThirds_module li { float: left; width: 275px; }
 
+.inlineHalves li { float: left; width: 50%; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;}
+.inlineHalves_module li { float: left; width: 275px; }
+
 .columnThirds ul { margin-bottom: 20px; }
 .columnThirds li { padding-right: 35px; width: 151px; }
 .floatedList li { float: left; margin-right: 20px;}
