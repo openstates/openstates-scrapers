@@ -143,8 +143,8 @@ class NYBillScraper(BillScraper):
                 # Add the sponsor.
                 name = sib.text_content().replace('(MS)', '').strip()
                 if sponsor_type in ('cosponsor', 'multisponsor'):
-                    stype = 'cosponsor'
-                bill.add_sponsor(stype, name,
+                    sponsor_type = 'cosponsor'
+                bill.add_sponsor(sponsor_type, name,
                                  official_type=sponsor_type)
 
             actions = []

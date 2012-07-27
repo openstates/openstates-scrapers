@@ -72,7 +72,11 @@ class NYEventScraper(EventScraper):
                 year,
                 time
             )
-            datetime = dt.datetime.strptime(date, "%B %m %Y %I:%M %p")
+            try:
+                datetime = dt.datetime.strptime(date, "%B %d %Y %I:%M %p")
+            except ValueError:
+                datetime = dt.datetime.strptime(date, "%b. %d %Y %I:%M %p")
+
             event = Event(session, datetime, 'committee:meeting',
                           metainf['Public Hearing:'],
                           location=metainf['Place:'],
