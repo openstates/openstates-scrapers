@@ -76,9 +76,7 @@
             {% if  joint_committee_count %}
             <a href="{% url 'committees' abbr %}?chamber=joint">
                 <li class="three titleNumber withTip">{{ joint_committee_count }}<span>Joint Committees</span></li>
-            </a>
-            {% else %}
-            <li class="three titleNumber withTip">0<span>Joint Committees</span></li>
+            </a> 
             {% endif %}
         </ul>
         <div class="clear"></div>
@@ -86,7 +84,7 @@
     {% endif %}
 
 
-
+    
     <div class="fullWidth module">
         <h3 class="moduleTitle">Bills</h3>
     {% if chambers|length == 2 %}
