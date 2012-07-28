@@ -26,8 +26,7 @@ class AKLegislatorScraper(LegislatorScraper):
 
             seen = set()
             for link in page.xpath("//a[contains(@href, '%s')]" % search):
-                name = link.text
-
+                name = link.text_content()
                 # Members of the leadership are linked twice three times:
                 # one image link and two text links. Don't double/triple
                 # scrape them
