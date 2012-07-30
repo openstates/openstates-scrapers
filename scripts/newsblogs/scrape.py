@@ -519,6 +519,10 @@ class Extractor(object):
             except KeyError:
                 pass
 
+            # Kill any keys that contain dots.
+            entry = dict((k, v) for (k, v) in entry.items() if '.' not in k)
+
+            # Save
             feed_entries.save(entry)
             msg = 'Found %d related entities in %r'
             self.logger.info(msg % (len(ids), entry['title']))
