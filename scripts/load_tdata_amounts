@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
 from billy.utils import db
+from billy.conf import settings
 from influenceexplorer import InfluenceExplorer
 
 from urllib2 import HTTPError
 import os.path
 import sys
 
-api_key = open(os.path.expanduser("~/.sunlight.key"), 'r').read().strip()
+api_key = settings.API_KEY
 ie = InfluenceExplorer(api_key)
 
 if len(sys.argv) < 2:
