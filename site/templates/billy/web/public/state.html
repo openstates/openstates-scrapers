@@ -66,7 +66,12 @@
     {% if chambers|length > 1 %}
     <div class="fullWidth module clear">
         <h3 class="moduleTitle">Committees</h3>
-        <ul class="inlineThirds centeredText">
+            {% if  joint_committee_count %}
+                <ul class="inlineThirds centeredText">
+            {% else %}
+                <ul class="inlineHalves centeredText">
+            {% endif %}
+
             {% for chamber in chambers %}
                 <a href="{% url 'committees' abbr %}?chamber={{chamber.type}}">
                 <li class="{% cycle 'one' 'two' %} titleNumber withTip">

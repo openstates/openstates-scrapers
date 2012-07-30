@@ -1,5 +1,5 @@
 {% if 'lower' in chamber_select_chambers %}
-<form action="/{{abbr}}/{{chamber_select_collection}}/" method="get" id="toggleBtns" class="actionItem medModuleSm">
+<form action="/{{abbr}}/{{chamber_select_collection}}/" method="get" id="toggleBtns" class="actionItem clearfix">
     <div class="buttonGroup">
         {% for k,v in chamber_select_chambers.items %}
         <button class="{% if forloop.first %}first {% endif %} {% if k == chamber %}active{% endif %}"
@@ -9,6 +9,5 @@
             Both Chambers
         </button>
     </div>
-    <div class="clear"></div>
 </form>
 {% endif %}

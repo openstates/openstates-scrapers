@@ -237,6 +237,7 @@ div.flatpage .social-links li { float:left; height:16px; margin-bottom:15px;
 dt { font-weight: bold;}
 .contentBottom { margin-bottom: 8px; margin-top: 8px;}
 .inlineList dt, .inlineList dd { float: left; margin-right: 15px; line-height: 18px; margin-top: 8px;}
+footer .inlineList dt, footer .inlineList dd { margin-top: 3px; }
 
 ul .one { clear: both;}
 ul .one{ padding-right: 23px; }
@@ -245,8 +246,11 @@ ul .three { padding-left: 24px; }
 .inlineThirds li { float: left; width: 33%; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;}
 .inlineThirds_module li { float: left; width: 275px; }
 
+.inlineHalves li { float: left; width: 50%; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;}
+.inlineHalves_module li { float: left; width: 275px; }
+
 .columnThirds ul { margin-bottom: 20px; }
-.columnThirds li { padding-right: 35px; }
+.columnThirds li { padding-right: 35px; width: 151px; }
 .floatedList li { float: left; margin-right: 20px;}
 .inlineList ul{margin-left: 30px;}
 .inlineList li { display: inline-block; margin-right: 10px;}
@@ -356,7 +360,7 @@ h2.withTimeline { margin-top: 30px;}
 .centeredText { text-align: center; }
 
 #sponsorList li { margin-bottom: 20px; }
-#sponsorList a { font-size: 100%; display: block; }
+#sponsorList a, .sponsorName { font-size: 100%; display: block; }
 
 #toggleBtns button { float: left; text-indent: 0; display: inline-block; padding: 8px 15px; color: #333; text-align: center; text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75); vertical-align: middle; font-size: 105%; background-color: #fff; border: 1px solid 
 #CCC;
@@ -520,7 +524,7 @@ footer a, footer a:active, footer a:visited { color: #8d8781; text-decoration: u
 
 footer dt { text-transform: uppercase; }
 dd li { float: left; margin-right: 20px; display: block; margin-bottom: 10px;}
-dd li a:link, dd li a:visited { font-size: 95%; border-bottom: 1px dotted #97948e; color: #97948e;}
+dd li a:link, dd li a:visited, .sponsorName { font-size: 95%; border-bottom: 1px dotted #97948e; color: #97948e;}
 footer dl { padding: 50px 0 0 35px;}
 
 
@@ -694,6 +698,10 @@ input[type="checkbox"] {
 
 /* The datatables filter box. */
 #main-table_filter {
-    float: right;
-    margin-bottom: 10px;
+    margin-bottom: 50px;
+    padding-top: 25px;
 }
+
+#main-table_filter label {  display: inline-block; font-family: Georgia, "Times New Roman", Times, serif; 
+font-style: oblique; }
+#main-table_filter input { margin-top: -5px; margin-left: 15px; }
