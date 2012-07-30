@@ -14,7 +14,12 @@ if len(sys.argv) < 2:
     print "Need a state to run against (abbr)"
     sys.exit(1)
 
+
 spec = { "state": sys.argv[1] }
+
+if sys.argv[1] == "all":
+    spec = {}
+
 people = db.legislators.find(spec)
 
 tid_len = 32
