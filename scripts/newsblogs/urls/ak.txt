@@ -46,3 +46,5 @@ http://www.housemajority.org/feeds.php?rss=rep21
 http://www.housemajority.org/feeds.php?rss=rep38
 
 http://www.housemajority.org/feeds.php?rss=rep39
+
+http://bertstedman.com/new/?feed=rss2
