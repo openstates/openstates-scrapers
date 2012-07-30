@@ -175,7 +175,12 @@ $(document).ready(function() {
                             </dd>
                             {% if legislator.transparencydata_id %}
                             <dt class="clear">Campaign Finance:</dt>
+                                {% if "_total_contributions" in legislator %}
+                                <dd class="smModule">{{legislator.full_name}} has raised ${{legislator|underscore_field:"total_contributions"|intcomma}}.
+                                <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">See more at Influence Explorer.</a></dd>
+                                {% else %}
                             <dd class="smModule"><a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">View at Influence Explorer</a></dd>
+                                {% endif %}
                             {% endif %}
                         </dl>
                     </div>
