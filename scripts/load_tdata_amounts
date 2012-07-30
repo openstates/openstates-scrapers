@@ -28,6 +28,7 @@ tid_len = 32
 for person in people:
     full_name = person['full_name'].encode("utf-8")
     if 'transparencydata_id' in person and \
+       not person['transparencydata_id'] is None and \
        person['transparencydata_id'].strip() != "":
 
         tid = person['transparencydata_id']
