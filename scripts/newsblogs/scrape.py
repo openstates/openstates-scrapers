@@ -251,11 +251,20 @@ def clean_html(html):
 
 
 # ---------------------------------------------------------------------------
+class BogusEntry(Exception):
+    '''Raised when an entry lacks a required attribute, like 'link'.'''
+
+
 def new_feed_id(entry, cache={}):
     '''Generate an entry id using the hash value of the title and link.
     Pad the number to 21 digits.
     '''
-    s = entry['title'] + entry['link']
+    try:
+        s = entry['title'] + entry['link']
+    except KeyError:
+        msg = 'Required key missing: %r'
+        raise BogusEntry(msg % entry)
+
     hashval = hash(s)
     sign = ('A' if 0 < hashval else 'B')
     _id = entry['state'].upper() + 'F' + (str(hashval) + sign).zfill(21)
@@ -491,7 +500,16 @@ class Extractor(object):
             entry['entity_ids'] = ids or None
             entry['entity_strings'] = strings or None
             entry['save_time'] = datetime.datetime.utcnow()
-            entry['_id'] = new_feed_id(entry)
+
+            try:
+                entry['_id'] = new_feed_id(entry)
+            except BogusEntry:
+                # This entry appears to be malformed somehow. Skip.
+                msg = 'Skipping malformed feed: %s'
+                msg = msg % repr(entry)[:100] + '...'
+                self.logger.info(msg)
+                continue
+
             entry['_type'] = 'feedentry'
 
             entry['summary'] = clean_html(entry['summary'])
