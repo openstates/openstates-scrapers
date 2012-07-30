@@ -136,7 +136,7 @@ $(document).ready(function() {
             </li>
         </ul>
         <div class="fullWidth mainModule legislator">
-            <div class="medModule">
+            <!-- <div class="medModule"> -->
                 <div class="eightCol colLt">
                     <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
                     <div class="eightsLg clearfix">
@@ -152,7 +152,7 @@ $(document).ready(function() {
                                 {# if first character of district is numeric, add 'District' #}
                                 {% if legislator.district.0.isdigit %} District {% endif %}{{legislator.district}}
                             {% else %}
-                                {{legislator.full_name}} is <b>no longer elected</b> to the {{metadata.legislature_name }}.
+                                {{legislator.full_name}} <b>no longer serves</b> in the {{metadata.legislature_name }}.
                             {% endif %}
                             </dd>
                             <dt class="clear">Sessions Served:</dt>
@@ -164,10 +164,11 @@ $(document).ready(function() {
                                {% endfor %}
                                 </ul>
                             {% else %}
-                                {% for session in legislator.old_sessions_served %}
+                                {% for display_name in legislator.old_sessions_served %}
                                 <ul>
                                     <li class="clear">
-                                        {{session.display_name}}</li>
+                                        {{display_name}}
+                                    </li>
                                 </ul>
                                 {% endfor %}
                             {% endif %}
@@ -176,7 +177,6 @@ $(document).ready(function() {
                             <dt class="clear">Campaign Finance:</dt>
                             <dd class="smModule"><a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">View at Influence Explorer</a></dd>
                             {% endif %}
-
                         </dl>
                     </div>
                 </div>
@@ -193,7 +193,7 @@ $(document).ready(function() {
                         <li><a href="#votes">View recent votes</a></li>
                     </ul>
                 </div>    
-            </div>
+            <!-- </div> -->
     			{% if legislator.active %}
                 <div class="sixCol colLt withDash clear">
                     <p>
@@ -245,38 +245,81 @@ $(document).ready(function() {
                 </div>
                 <div class="clear"></div>
                 {% endif %}
-            </div> 
+            </div>
 
             {% if not legislator.active %}
-            <div class="fullWidth module clear">
-                <div class="sevenCol colLt">
-                    <h3 class="moduleTitle">Former Roles</h3>
-                    <table>
-                      <thead>
-                        <tr>
-                            <th>Term</th>
-                            <th>Type</th>
-                            <th>District</th>
-                            <th>Party</th>
-                            <th>Start</th>
-                            <th>End</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                    {% for term, roles in legislator.old_roles.items %}
-                      {% for role in roles %}
-                      <tr>
-                        <td>{{role.term}}</td>
-                        <td>{{role.type|title}}</td>
-                        <td>{{role.district}}</td>
-                        <td>{{role.party}}</td>
-                        <td>{% if role.start_data %}{{role.start_date|date:"j, m Y"}}{% else %}{% endif %}</td>
-                        <td>{% if role.end_data %}{{role.end_date|date:"j, m Y"}}{% else %}{% endif %}</td>
-                      </tr>
-                      {% endfor %}
-                    {% endfor %}
-                      <tbody>
-                    </table>
+            <div class="fullWidth module">
+                <h3 class="moduleTitle">Former Roles</h3>
+                {% for term, chamber_roles in legislator.old_roles_manager %}
+                <div class="old-roles">
+                    <b>{{term}}</b>
+                    {% if chamber_roles.upper %}
+                    <div class="old-roles-indented">
+                        <b>{{legislator.metadata.upper_chamber_name}}</b>
+                        <ul class="old-roles-indented">
+                            {% for role in chamber_roles.upper.member %}
+                                <li>{% include 'billy/web/public/legislator_old_role_member.html' %}</li>
+                            {% endfor %}
+
+                            {% if chamber_roles.upper.committee_member %}
+                            <li>Committee Membership</li>
+                            <li>
+                                <ul class="inlineThirds">
+                                {% for role in chamber_roles.upper.committee_member %}
+                                    <li class="{% cycle 'one' 'two' 'three' %}">
+                                        {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <div class="clear"></div> 
+                    {% endif %}
+
+                    {% if chamber_roles.lower %}
+                    <div class='old-roles-indented'>
+                        <b>{{legislator.metadata.lower_chamber_name}}</b>
+                        <ul class='old-roles-indented'>
+                        {% for role in chamber_roles.lower.member %}
+                            <li>{% include 'billy/web/public/legislator_old_role_member.html' %}</li>
+                        {% endfor %}
+
+                        {% if chamber_roles.lower.committee_member %}
+                        <li>Committee Membership</li>
+                        <li>
+                            <ul class="inlineThirds">
+                            {% for role in chamber_roles.lower.committee_member %}
+                                <li class={% cycle "one" "two" "three" %}>
+                                {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        </li>
+                        {% endif %}
+                    </ul></div>
+                    <div class="clear"></div> 
+                    {% endif %}
+
+                    {% if chamber_roles.joint %}
+                    <div class='old-roles-indented'>
+                        <b>Joint</b>
+                        <ul class="old-roles-indented">
+                        <li>Committee Membership</li>
+                        <li>
+                            <ul class="inlineThirds">
+                            {% for role in chamber_roles.joint.committee_member %}
+                                <li class={% cycle "one" "two" "three" %}>
+                                {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
+                                </li>
+                            {% endfor %}
+                            <ul>
+                        </li>
+                    </ul></div>
+                    {% endif %}
+
+                {% endfor %}
                 </div>
                 <div class="clear"></div> 
             </div>

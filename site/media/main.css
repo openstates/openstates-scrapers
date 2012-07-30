@@ -705,3 +705,7 @@ input[type="checkbox"] {
 #main-table_filter label {  display: inline-block; font-family: Georgia, "Times New Roman", Times, serif; 
 font-style: oblique; }
 #main-table_filter input { margin-top: -5px; margin-left: 15px; }
+
+.old-roles-indented {
+    padding-left: 20px;
+}
