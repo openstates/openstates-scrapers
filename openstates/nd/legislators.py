@@ -1,7 +1,10 @@
 from billy.scrape.legislators import Legislator, LegislatorScraper
 from billy.scrape import NoDataForPeriod
 import lxml.html
+import logging
 import re
+
+logger = logging.getLogger('openstates')
 
 class NDLegislatorScraper(LegislatorScraper):
     state = 'nd'
@@ -42,9 +45,9 @@ class NDLegislatorScraper(LegislatorScraper):
                 with self.urlopen(member_url) as html:
                     leg_page = lxml.html.fromstring(html)
                     leg_page.make_links_absolute(member_url)
-                    self.scrape_legislators(term, chamber, leg_page, member_url, main_url)
+                    self.scrape_legislators(term, chamber, leg_page, member_url, main_url, member)
 
-    def scrape_legislators(self, term, chamber, leg_page, member_url, main_url):
+    def scrape_legislators(self, term, chamber, leg_page, member_url, main_url, member):
         full_name = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[1]/td/h2')[0].text
         if len(full_name.split()) == 3:
             first_name = full_name.split()[1]
@@ -61,6 +64,10 @@ class NDLegislatorScraper(LegislatorScraper):
         full_address = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[2]/td[2]')[0].text
         phone = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[3]/td[2]')[0].text
         email = leg_page.xpath('//div[@class="content"][1]/table[1]//tr[1]/td[2]/table//tr[4]/td[2]/a')[0].text
+
+        if member.tail:
+            logger.info("Skipping legislator because: %s" % (member.tail))
+            return
 
         if chamber == 'lower':
             photo_url = leg_page.xpath('//img[contains(@src, "representatives")]')[0].get('src')
