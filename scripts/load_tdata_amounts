@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+from billy.utils import db
+from influenceexplorer import InfluenceExplorer
+
+from urllib2 import HTTPError
+import os.path
+import sys
+
+api_key = open(os.path.expanduser("~/.sunlight.key"), 'r').read().strip()
+ie = InfluenceExplorer(api_key)
+
+if len(sys.argv) < 2:
+    print "Need a state to run against (abbr)"
+    sys.exit(1)
+
+spec = { "state": sys.argv[1] }
+people = db.legislators.find(spec)
+
+tid_len = 32
+
+for person in people:
+    if 'transparencydata_id' in person and \
+       person['transparencydata_id'].strip() != "":
+
+        tid = person['transparencydata_id']
+        print tid, person['full_name']
+        total = 0
+        try:
+            total = ie.entities.metadata(tid)['totals']['-1']['recipient_amount']
+            total = int(total)
+            person['_total_contributions'] = total
+
+            ret = db.legislators.update({"_id": person['_id']},
+                                  person,
+                                  False,  # Upsert
+                                  safe=True)
+        except HTTPError:
+            print "^" * 32, " XXX: <------ Invalid t-ID"
+    else:
+        print " " * 32, person['full_name']
