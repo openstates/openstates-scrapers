@@ -107,7 +107,8 @@ class OHLegislatorScraper(LegislatorScraper):
                 email = el.xpath('.//span[@class="tan"]/text()')[1]
 
                 leg = Legislator(term, chamber, district, full_name,
-                                 party=party, photo_url=photo_url, url=sen_url)
+                                 party=party, photo_url=photo_url, url=sen_url,
+                                 email="")
 
                 leg.add_office('capitol',
                                'Capitol Office',
