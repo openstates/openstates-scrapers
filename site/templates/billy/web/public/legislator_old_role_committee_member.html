@@ -1,0 +1,7 @@
+                                {% with committee_name=role.committee %}
+                                    {% if role.committee_object %}
+                                        <a href="{{ role.committee_object.get_absolute_url }}">{{committee_name}}{% if role.subcommittee %}({{role.subcommittee}}){% endif %}</a>
+                                    {% else %}
+                                        {{committee_name}}{% if role.subcommittee %}({{role.subcommittee}}){% endif %}
+                                    {% endif %}
+                                {% endwith %}
