@@ -89,6 +89,7 @@ INSTALLED_APPS = (
     'markup_tags',
     'tweets',
     'funfacts',
+    'gunicorn',
 )
 
 LOGGING = {
