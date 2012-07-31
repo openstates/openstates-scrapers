@@ -35,9 +35,17 @@ for person in people:
         print tid, full_name
         total = 0
         try:
-            total = ie.entities.metadata(tid)['totals']['-1']['recipient_amount']
+            total = ie.entities.metadata(tid)
+            years = total['totals'].keys()
+            years.remove("-1")
+            years = [int(x) for x in years]
+            years.sort()
+            start_year = years[0]
+
+            total = total['totals']['-1']['recipient_amount']
             total = int(total)
             person['_total_contributions'] = total
+            person['_contributions_start_year'] = start_year
 
             ret = db.legislators.update({"_id": person['_id']},
                                   person,
