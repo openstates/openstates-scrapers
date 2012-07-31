@@ -61,7 +61,7 @@ MIDDLEWARE_CLASSES = (
     'billy.web.public.middleware.LimitStatesMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     #'django.middleware.csrf.CsrfViewMiddleware',
-    #'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     #'django.contrib.messages.middleware.MessageMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -139,6 +139,7 @@ ACTIVE_STATES=sorted(['ca', 'il', 'la', 'md', 'mn',
 ENABLE_ELASTICSEARCH = True
 
 LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = '/login'
 
 # Display API urls on pages.
 NERD_MODE = True
