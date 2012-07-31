@@ -19,16 +19,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "openstates_site.settings")
 # This application object is used by any WSGI server configured to use this
 # file. This includes Django's development server, if the WSGI_APPLICATION
 # setting points here.
-import sys
-paths = [
-    '/home/thom/ve/openstates1.4/lib/python2.7/site-packages',
-    '/home/thom/ve/openstates1.4/openstates/site',
-    '/home/thom/ve/openstates1.4/openstates',
-    '/home/thom/ve/openstates1.4/billy',
-    ]
-
-sys.path = paths + sys.path
-
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
 
