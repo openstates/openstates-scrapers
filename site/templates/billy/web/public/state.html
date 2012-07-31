@@ -1,7 +1,7 @@
 {% extends "billy/web/public/base.html" %}
 {% load customtags %}
 {% load staticfiles %}
-{% load funfacts %}
+{# load funfacts #}
 {% load url from future %}
 
 {% block title %}{{metadata.legislature_name}} - Open States{% endblock %}
@@ -25,7 +25,7 @@
     </div>
 
     <div class="fullWidth module clear">
-        <h3 class="moduleTitle">Legislators</h3>
+        <h3 class="moduleTitle">{% trans "Legislators" %}</h3>
         <div class="twoCol colLt withDash centeredText" id="totalLeg">
             <ul>
                 {% for chamber in chambers %}
@@ -56,7 +56,7 @@
             <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
         </div>
         <div class="sixCol colRt">
-            <p class="tip centeredText">Click on a district to view corresponding legislators</p>
+            <p class="tip centeredText">{% trans "Click on a district to view corresponding legislators." %}</p>
             <div id="results_table"> </div>
         </div>
         <div class="clear"></div>
@@ -65,7 +65,7 @@
     {# hide committees module if unicameral #}
     {% if chambers|length > 1 %}
     <div class="fullWidth module clear">
-        <h3 class="moduleTitle">Committees</h3>
+        <h3 class="moduleTitle">{% trans "Committees" %}</h3>
             {% if  joint_committee_count %}
                 <ul class="inlineThirds centeredText">
             {% else %}
@@ -88,10 +88,8 @@
     </div>
     {% endif %}
 
-
-    
     <div class="fullWidth module">
-        <h3 class="moduleTitle">Bills</h3>
+        <h3 class="moduleTitle">{% trans "Bills" %}</h3>
     {% if chambers|length == 2 %}
     {# bicameral bill view, stacked passed/introduced - side by side chambers #}
         {% for chamber in chambers %}
@@ -99,7 +97,7 @@
             <h4>{{ chamber.name }}</h4>
             <div class="medModule">
                 <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_{{chamber.type}}&sort=passed_{{chamber.type}}""></a></span>
-                <h5>Recently Passed</h5>
+                <h5>{% trans "Recently Passed" %}</h5>
                 <ul>
                 {% if chamber.passed_bills %}
                     {% for bill in chamber.passed_bills %}
@@ -122,13 +120,15 @@
                         </li>
                     {% endfor %}
                     </ul>
-                    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber.type}}">View More Passed Bills</a>
+                    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber.type}}">
+                        {% trans "View More Passed Bills" %}
+                    </a>
                 {% else %}
-                    No passed bills to display.
+                    {% trans "No passed bills to display." %}
                 {% endif %}
             </div>
             <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?chamber={{chamber.type}}&sort=first"></a></span>
-            <h5>Recently Introduced</h5>
+            <h5>{% trans "Recently Introduced" %}</h5>
             <ul>
             {% if chamber.latest_bills %}
                 {% for bill in chamber.latest_bills %}
@@ -145,10 +145,12 @@
                     </li>
                 {% endfor %}
             {% else %}
-                No passed bills to display.
+                {% trans "No bills to display." %}
             {% endif %}
             </ul>
-            <a class="viewMore" href="{% url 'bills' abbr %}?chamber={{chamber.type}}">View More Bills</a>
+            <a class="viewMore" href="{% url 'bills' abbr %}?chamber={{chamber.type}}">
+                {% trans "View More Bills" %}
+            </a>
         </div>
         {% endfor %}
 
@@ -156,7 +158,7 @@
     {# unicameral bill module, side by side passed/introduced #}
         <div class="sixCol colLt">
             <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_upper&sort=passed_upper"></a></span>
-            <h5>Recently Passed</h5>
+            <h5>{% trans "Recently Passed" %}</h5>
             <ul>
             {% if chambers.0.passed_bills %}
                 {% for bill in chambers.0.passed_bills %}
@@ -175,14 +177,14 @@
                     </li>
                 {% endfor %}
             </ul>
-            <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_upper">View More Passed Bills</a>
+            <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_upper">{% trans "View More Passed Bills" %}</a>
             {% else %}
-                No passed bills to display.
+            {% trans "No passed bills to display." %}
             {% endif %}
         </div>
         <div class="sixCol colRt">
         <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?sort=first"></a></span>
-            <h5>Recently Introduced</h5>
+            <h5>{% trans "Recently Introduced" %}</h5>
             <ul>
             {% if chambers.0.latest_bills %}
                 {% for bill in chambers.0.latest_bills %}
@@ -199,25 +201,26 @@
                     </li>
                 {% endfor %}
             {% else %}
-                No passed bills to display.
+                {% trans "No bills to display." %}
             {% endif %}
             </ul>
-            <a class="viewMore" href="{% url 'bills' abbr %}">View More Bills</a>
+            <a class="viewMore" href="{% url 'bills' abbr %}">{% trans "View More Bills" %}</a>
         </div>
     {% endif %}   {# end unicameral bill module #}
+
         <div class="clear"></div>
     </div>
 
     <div class="fullWidth module">
-        <h3 class="moduleTitle">Sessions</h3>
+        <h3 class="moduleTitle">{% trans "Sessions" %}</h3>
         <table>
-            <thead> <tr> <th>Session</th> <th>Bills</th> </tr> </thead>
+            <thead> <tr> <th>{% trans "Session" %}</th> <th>{% trans "Bills" %}</th> </tr> </thead>
             <tbody>
                 {% for session in sessions %}
                 {% if session.bill_count %}
                     <tr class="{% cycle 'odd' 'even' %}">
                        <td>{{session.name}}</td>
-                       <td><a href="{% url 'bills' abbr %}?session={{session.id}}">{{session.bill_count}} bills</a></td>
+                       <td><a href="{% url 'bills' abbr %}?session={{session.id}}">{{session.bill_count}} {% trans "bills" %}</a></td>
                    </tr>
                 {% endif %}
                 {% endfor %}

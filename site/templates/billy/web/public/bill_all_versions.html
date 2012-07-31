@@ -5,7 +5,7 @@
 
 
 {% block title %}
-  {{bill.bill_id }} Versions - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
+{{bill.bill_id }} {% trans "Versions" %} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
 {% endblock %}
 
 {% block content %}
@@ -24,13 +24,13 @@
                 » <a href="{{bill.get_absolute_url}}">{{bill.bill_id}}</a>
             </li>
             <li>
-                » All Versions
+            » {% trans "All Versions" %}
             </li>
         </ul>
 
         <div class="fullWith mainModule">
             <h1 class="withTimeline withTip" style="padding-top: 30px;">
-                All Versions for
+                {% trans "All Versions for" %}
                 <a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
             </h1>
             <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
