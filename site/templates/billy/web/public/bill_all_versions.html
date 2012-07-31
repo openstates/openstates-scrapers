@@ -1,0 +1,52 @@
+{% extends "billy/web/public/base.html" %}
+{% load url from future %}
+{% load humanize %}
+{% load customtags %}
+
+
+{% block title %}
+  {{bill.bill_id }} Versions - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
+{% endblock %}
+
+{% block content %}
+        <ul class="breadcrumb floatedList clearfix">
+            <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
+            <li>
+                » <a href="{% url 'bills' abbr %}">Bills</a>
+            </li>
+            <li>
+                » <a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a>
+            </li>
+            <li>
+                » <a href="{% url 'bills' abbr %}?session={{bill.session}}&chamber={{bill.chamber}}">{{ bill.chamber_name }}</a>
+            </li>
+            <li>
+                » <a href="{{bill.get_absolute_url}}">{{bill.bill_id}}</a>
+            </li>
+            <li>
+                » All Versions
+            </li>
+        </ul>
+
+        <div class="fullWith mainModule">
+            <h1 class="withTimeline withTip" style="padding-top: 30px;">
+                All Versions for
+                <a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
+            </h1>
+            <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
+        </div>    
+        <div class="module">
+            <ul class="inlineThirds">
+            {% for version in bill.versions %}
+                <li class={% cycle "one" "two" "three" %}>
+                    <a href="{{version.url}}">{{ version.name }}</a>
+                    {% if version.mimetype %}[{{ version.mimetype}}]{% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+            <div class="clear"></div>
+        </div>
+        <div class="fullWidth">
+            {% sources bill %}
+        </div>
+{% endblock %}
