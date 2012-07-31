@@ -131,26 +131,37 @@
                 <div class="eightCol colLt">
                     {% if bill.versions %}
                     <h3 class="moduleTitle">Bill Text</h3>
-                    <ul class="inlineThirds">
-                    {% for version in bill.versions %}
-                        <li class={% cycle "one" "two" "three" %}>
-                            <a href="{{version.url}}">{{ version.name }}</a>
-                            {% if version.mimetype %}[{{ version.mimetype}}]{% endif %}
-                        </li>
-                    {% endfor %}
-                    </ul>
+                        <ul class="inlineThirds">
+                        {% for version in bill.versions_preview %}
+                            <li class={% cycle "one" "two" "three" %}>
+                                <a href="{{version.url}}">{{ version.name }}</a>
+                                {% if version.mimetype %}[{{ version.mimetype}}]{% endif %}
+                            </li>
+                        {% endfor %}
+
+                        {% with remainder=bill.versions_remainder %}
+                            {% if remainder %}
+                                <a class="viewMore" href="versions/">View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}}</a></li>
+                            {% endif %}
+                        {% endwith %}
+                        </ul>
                     {% endif %}
                 </div>
                 <div class="fourCol colRt">
                     {% if bill.documents %}
                             <h4>Documents</h4>
-                            {% for document in bill.documents %}
+                            {% for document in bill.documents_preview %}
                                 <ul>
                                     <li><a href="{{document.url}}">{{ document.name }}</a>
                                     {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
                                     </li>
                                 </ul>
                             {% endfor %}
+                            {% with remainder=bill.documents_remainder %}
+                                {% if remainder %}
+                                    <a class="viewMore" href="documents/">View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}}</a></li>
+                                {% endif %}
+                            {% endwith %}
                             <div class="clear"></div>
                     {% endif %}
                 </div>
@@ -253,6 +264,3 @@
                 <div class="clear"></div>
             </div>
         {% endblock %}
-        <div class="module">
-            {% sources bill %}
-        </div>
