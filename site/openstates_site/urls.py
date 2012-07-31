@@ -11,6 +11,8 @@ urlpatterns = patterns('',
     # flat pages
     (r'^colophon/$', 'django.views.generic.simple.direct_to_template',
      {'template':'flat/colophon.html'}),
+    (r'^about/$', 'django.views.generic.simple.direct_to_template',
+     {'template':'flat/about.html'}),
     (r'^methodology/$', 'django.views.generic.simple.direct_to_template',
      {'template':'flat/methodology.html'}),
     (r'^contributing/$', 'django.views.generic.simple.direct_to_template',
