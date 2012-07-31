@@ -352,7 +352,7 @@ $(document).ready(function() {
             <h3 class="moduleTitle">Committees</h3>
             <ul class="inlineThirds">
                 {% for role in legislator.roles_manager %}
-                {% if 'committee' in role %}
+                {% if role.type == 'committee member' %}
                 <li class={% cycle "one" "two" "three" %}>{{ role.type_display }}
                     {% if 'committee_id' in role %}<a href="{% url 'committee' abbr role.committee_id %}">{{ role.committee_name }}</a>{% else %}{{ role.committee_name }}{% endif %}</li>
                 {% endif %}
