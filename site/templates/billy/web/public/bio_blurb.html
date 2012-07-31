@@ -1,4 +1,5 @@
 {% load humanize %}
+{% load customtags %}
 {{legislator.display_name}} represents {{legislator.chamber_name|title}} District {{legislator.district}} in the {{legislator.metadata.name}} State {{legislator.chamber_name|title}}, is a member of {{legislator.committees.count|apnumber}} committees, 
 
 {% with count=legislator.primary_sponsored_bills.count %}
@@ -23,7 +24,17 @@
         has not sponsored any bills in the current session.
       {% endif %}
     {% endwith %}
-    
-  {% endif %}
-{% endwith %} 
 
+  {% endif %}
+  {% endwith %}
+
+
+<p>
+  {% if "_total_contributions" in legislator %}
+  {{legislator.title}} {{legislator.last_name}} has raised ${{legislator|underscore_field:"total_contributions"|intcomma}} since {{legislator|underscore_field:"contributions_start_year"}}.
+{% endif %}
+{% if legislator.transparencydata_id %}
+    For detailed campaign finance information visit 
+    <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">Influence Explorer</a>.
+{% endif %}
+</p>

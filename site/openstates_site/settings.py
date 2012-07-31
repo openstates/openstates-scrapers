@@ -59,7 +59,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'locksmith.mongoauth.middleware.APIKeyMiddleware',
     'billy.web.public.middleware.LimitStatesMiddleware',
-    #'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     #'django.middleware.csrf.CsrfViewMiddleware',
     #'django.contrib.auth.middleware.AuthenticationMiddleware',
     #'django.contrib.messages.middleware.MessageMiddleware',
@@ -80,8 +80,11 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
+    'django.contrib.auth',
     'django.contrib.humanize',
     'django.contrib.staticfiles',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
     'billy.web.api',
     'billy.web.admin',
     'billy.web.public',
@@ -89,7 +92,6 @@ INSTALLED_APPS = (
     'markup_tags',
     'tweets',
     'funfacts',
-    'gunicorn',
 )
 
 LOGGING = {
@@ -135,6 +137,8 @@ ACTIVE_STATES=sorted(['ca', 'il', 'la', 'md', 'mn',
                       'ut', 'de', 'fl', 'ak', 'mt'])
 
 ENABLE_ELASTICSEARCH = True
+
+LOGIN_REDIRECT_URL = '/'
 
 # Display API urls on pages.
 NERD_MODE = True
