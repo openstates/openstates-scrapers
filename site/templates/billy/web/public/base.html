@@ -1,6 +1,6 @@
 {% load static from staticfiles %}
 {% load customtags %}
-{% load twitter_tag %}
+{% load i18n %}
 <!doctype html>
 
 <html lang="en" class="no-js">
@@ -71,7 +71,7 @@
     <header id="mainHeader">
         {% if abbr or active_states %}
         <form action="/{{abbr|default:"all"}}/search/" method="get" id="searchform">
-            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="search the site">
+            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans "search the site" %}">
             <button type="submit">
                  <span>Search</span>
             </button>
@@ -135,21 +135,21 @@
                                 <li><a href="http://readthedocs.org/docs/billy/en/latest/scrapers.html">Writing Scrapers</a></li>
                             </ul>
                         </dd>
-                        
-                        <dt class="clear">Reach Out to Us:</dt>
+
+                        <dt class="clear">{% trans "Reach Out to Us:" %}</dt>
                         <dd>
                             <ul>
                                <li><a href="https://twitter.com/openstates">@openstates</a></li>
-                               <li><a href="/contact/">Contact Us</a></li>
+                               <li><a href="/contact/">{% trans "Contact Us" %}</a></li>
                             <ul>   
                         </dd> 
                     </dl>
                 </div>
-                <h4 class="withTip h5">Like This Project and Want to Discover Others Like It?</h4>
-                <span class="tip">Join the Sunlight Foundation's open government community to learn more</span>
+                <h4 class="withTip h5">{% trans "Like This Project and Want to Discover Others Like It?" %}</h4>
+                <span class="tip">{% trans "Join the Sunlight Foundation's open government community to learn more" %}</span>
                 <form action="http://organizing.sunlightfoundation.com/page/s/open-states" method="post" id="submit">
-                    <input type="text" name="email" placeholder="your email address">
-                    <input type="text" name="zip" placeholder="your zip code">
+                    <input type="text" name="email" placeholder="{% trans "your email address" %}">
+                    <input type="text" name="zip" placeholder="{% trans "your zip code" %}">
                     <button type="submit">
                          <span>SignUp</span>
                     </button>
