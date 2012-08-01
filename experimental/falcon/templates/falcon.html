@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Falcon</title>
+    <script
+        type="text/javascript"
+        src="{{ url_for('static', filename='d3.v2.js') }}"
+    ></script>
+    <link
+        type="text/css"
+        rel="stylesheet"
+        href="{{ url_for('static', filename='colorbrewer.css') }}"
+    />
+    <link
+        type="text/css"
+        rel="stylesheet"
+        href="{{url_for('static', filename='calendar.css') }}"
+    />
+  </head>
+  <body>
+    <div id="chart"></div>
+    <script
+        type="text/javascript"
+        src="{{ url_for('static', filename='falcon.js')}}"
+        ></script>
+    <script type = 'text/javascript' >
+d3.csv("/csv/{{state}}?{{args}}", function(csv) {
+  var data = d3.nest()
+    .key(function(d) { return d.Date; })
+    .rollup(function(d) { return d[0].Pct; })
+    .map(csv);
+
+  console.log(data);
+
+  rect.filter(function(d) { return d in data; })
+      .attr("class", function(d) {
+            return "day q" + color(data[d]) + "-9";
+      })
+    .select("title")
+      .text(function(d) { return d + ": " + data[d]; });
+});
+    </script>
+  </body>
+</html>

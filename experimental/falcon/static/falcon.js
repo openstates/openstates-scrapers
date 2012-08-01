@@ -48,22 +48,6 @@ svg.selectAll("path.month")
     .attr("class", "month")
     .attr("d", monthPath);
 
-d3.csv("actions.csv", function(csv) {
-  var data = d3.nest()
-    .key(function(d) { return d.Date; })
-    .rollup(function(d) { return d[0].Pct; })
-    .map(csv);
-
-  console.log(data);
-
-  rect.filter(function(d) { return d in data; })
-      .attr("class", function(d) {
-            return "day q" + color(data[d]) + "-9";
-      })
-    .select("title")
-      .text(function(d) { return d + ": " + data[d]; });
-});
-
 function monthPath(t0) {
   var t1 = new Date(t0.getFullYear(), t0.getMonth() + 1, 0),
       d0 = +day(t0), w0 = +week(t0),
