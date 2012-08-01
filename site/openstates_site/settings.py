@@ -54,6 +54,7 @@ TEMPLATE_LOADERS = (
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
     'django.contrib.auth.context_processors.auth',
+    'billy.web.public.context_processors.user',
 )
 
 MIDDLEWARE_CLASSES = (
