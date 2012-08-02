@@ -4,6 +4,7 @@ build:
 	if [ -d build ]; then rm -rvf build; fi
 	cp -r static build
 	if [ ! -d csv ]; then \
+		mkdir csv; \
 		./bin/geneate-csv ./resources/states.json; \
 	else \
 		echo "Skipping CSV generation"; \
