@@ -1,29 +1,9 @@
-import sys
-import codecs
-import urllib
-from billy.utils import db
+#!/usr/bin/env python
+
 from collections import defaultdict
-from flask import Flask, render_template, request, redirect
-
-
-app = Flask(__name__)
-cached_all_response = ""
-
-
-@app.route("/")
-def index():
-    return redirect("/view/il")
-
-
-@app.route("/view/<state>")
-def view(state=None):
-    htmlargs = urllib.urlencode(request.args)
-    argz = dict(request.args)
-    return render_template('falcon.html', **{
-        "state": state,
-        "args": htmlargs
-    })
-
+from billy.utils import db
+import json
+import sys
 
 def csv_response(spec, **kwargs):
     bills = db.bills.find(spec)
@@ -70,26 +50,22 @@ def csv_response(spec, **kwargs):
     return buf
 
 
-# print "Loading initial all response"
-# print " (srsly, hang on)"
-# print ""
-# cached_all_response = csv_response({})
-## Uncomment me if you're hitting `all' to show it off.
-# print "Loaded."
+objs = json.load(open(sys.argv[1], 'r'))
+for state in objs['states']:
+    for chamber in objs['chambers']:
+        spec = {
+            "state": state
+        }
+        if state == "all":
+            del(spec['state'])
 
+        if chamber is not None:
+            spec['chamber'] = chamber
+        else:
+            chamber = "combined"
 
-@app.route("/csv/<state>")
-def csv(state=None):
-    spec = {
-        "state": state
-    }
+        open("%s/%s-%s.csv" % (
+            objs['output'], state, chamber
+        ), 'w').write(csv_response(spec))
+        print "Wrote out %s (%s)" % (state, chamber)
 
-    args = dict(request.args)
-
-    if state == 'all' and args == {}:
-        return cached_all_response
-    return csv_response(spec, **args)
-
-if __name__ == "__main__":
-    app.debug = True
-    app.run()
