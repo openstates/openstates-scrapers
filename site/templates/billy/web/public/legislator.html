@@ -188,7 +188,7 @@ $(document).ready(function() {
                         <li><a href="#bills">View sponsored bills</a></li>
                         <li><a href="#votes">View recent votes</a></li>
                     </ul>
-                </div>    
+                </div>
             <!-- </div> -->
     			{% if legislator.active %}
                 <div class="sixCol colLt withDash clear">
@@ -242,7 +242,19 @@ $(document).ready(function() {
                 <div class="clear"></div>
                 {% endif %}
             </div>
+            {% if request.user|is_dev %}
+            <div class="fullWidth module">
+                <h3 class="moduleTitle">Developer ProTips</h3>
+<pre>from sunlight import openstates
 
+legislator = openstates.legislator_detail("{{legislator.leg_id}}")
+print "%s - District %s (%s)" % (
+    legislator['full_name'],
+    legislator['district'],
+    legislator['party']
+)</pre>
+            </div>
+            {% endif %}
             {% if not legislator.active %}
             <div class="fullWidth module">
                 <h3 class="moduleTitle">Former Roles</h3>
@@ -271,7 +283,7 @@ $(document).ready(function() {
                             {% endif %}
                         </ul>
                     </div>
-                    <div class="clear"></div> 
+                    <div class="clear"></div>
                     {% endif %}
 
                     {% if chamber_roles.lower %}
@@ -295,7 +307,7 @@ $(document).ready(function() {
                         </li>
                         {% endif %}
                     </ul></div>
-                    <div class="clear"></div> 
+                    <div class="clear"></div>
                     {% endif %}
 
                     {% if chamber_roles.joint %}
@@ -317,7 +329,7 @@ $(document).ready(function() {
 
                 {% endfor %}
                 </div>
-                <div class="clear"></div> 
+                <div class="clear"></div>
             </div>
             {% endif %}
 
@@ -401,16 +413,16 @@ $(document).ready(function() {
                                 <ul class="barChart">
                                     <li class="yes">
                                         <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                        <span class="tagNumber">{{vote.yes_count}} Yes</span> 
-                                    </li> 
+                                        <span class="tagNumber">{{vote.yes_count}} Yes</span>
+                                    </li>
                                     <li class="no clear">
                                         <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
                                         <span class="tagNumber">{{vote.no_count}} No</span>
-                                    </li>   
-                                </ul> 
+                                    </li>
+                                </ul>
                             </td>
                             <td class="right"><b>{{vote_value|title}}</b></td>
-                        </tr>                         
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -421,5 +433,5 @@ $(document).ready(function() {
         </div>
         <div class="fullWidth module">
             {% sources legislator %}
-        </div>    
+        </div>
 {% endblock %}
