@@ -125,7 +125,29 @@ class INBillScraper(BillScraper):
 
             bill['subjects'] = self.subjects[bill_id]
 
-            self.save_bill(bill)
+            if not bill['sponsors']:
+
+                # Indiana has so-called 'vehicle bills', which are empty
+                # placeholders that may later get injected with content
+                # concerning such innocuous topics as redistricting
+                # (2011 SB 0192) and marijuana studies (2011 SB 0192).
+                url = bill['sources'][0]['url']
+                page = self.urlopen(url)
+                if 'Vehicle Bill' in page:
+                    msg = 'Skipping is vehicle bill: {bill_id}.'
+                    self.logger.info(msg.format(**bill))
+
+                # And some bills are withdrawn before first reading, which
+                # case they don't really exist, and the main version link
+                # will 404.
+                withdrawn = 'Withdrawn prior to first reading'
+                if bill['actions'][-1]['action'] == withdrawn:
+                    msg = ('Skipping bill withdrawn before first '
+                           'reading: {bill_id}.')
+                    self.logger.info(msg.format(**bill))
+
+            else:
+                self.save_bill(bill)
 
     def scrape_actions(self, bill, url):
         with self.urlopen(url) as page:
