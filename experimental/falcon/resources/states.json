@@ -1,11 +1,12 @@
 {
     "chambers": [
+        null,
         "upper",
-        "lower",
-        null
+        "lower"
     ],
     "output": "csv",
     "states": [
+        "all",
         "co",
         "de",
         "ny",
@@ -57,7 +58,6 @@
         "wi",
         "wy",
         "ok",
-        "pa",
-        "all"
+        "pa"
     ]
 }
