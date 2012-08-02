@@ -134,7 +134,7 @@ class INBillScraper(BillScraper):
                 url = bill['sources'][0]['url']
                 page = self.urlopen(url)
                 if 'Vehicle Bill' in page:
-                    msg = 'Skipping is vehicle bill: {bill_id}.'
+                    msg = 'Skipping vehicle bill: {bill_id}.'
                     self.logger.info(msg.format(**bill))
 
                 # And some bills are withdrawn before first reading, which
