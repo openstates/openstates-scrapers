@@ -12,7 +12,7 @@ cached_all_response = ""
 
 @app.route("/")
 def index():
-    return redirect("/view/oh")
+    return redirect("/view/il")
 
 
 @app.route("/view/<state>")
@@ -70,11 +70,12 @@ def csv_response(spec, **kwargs):
     return buf
 
 
-print "Loading initial all response"
-print " (srsly, hang on)"
-print ""
+# print "Loading initial all response"
+# print " (srsly, hang on)"
+# print ""
 # cached_all_response = csv_response({})
-print "Loaded."
+## Uncomment me if you're hitting `all' to show it off.
+# print "Loaded."
 
 
 @app.route("/csv/<state>")
@@ -83,9 +84,11 @@ def csv(state=None):
         "state": state
     }
 
-    if state == 'all':
+    args = dict(request.args)
+
+    if state == 'all' and args == {}:
         return cached_all_response
-    return csv_response(spec, **dict(request.args))
+    return csv_response(spec, **args)
 
 if __name__ == "__main__":
     app.debug = True
