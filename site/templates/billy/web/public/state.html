@@ -62,6 +62,26 @@
         <div class="clear"></div>
     </div>
 
+    {% if request.user|is_dev %}
+    <div class="fullWidth module">
+        <h3 class="moduleTitle">Developer ProTips</h3>
+<pre>from sunlight import openstates
+
+meta = openstates.state_metadata('{{abbr}}')
+print "%s" % (meta['legislature_name'])
+for chamber in ['upper', 'lower']:
+    try:
+        title = meta['%s_chamber_title' % (chamber)]
+    except KeyError:
+        continue
+    legislators = openstates.legislators(state='{{abbr}}', chamber=chamber)
+    print " There are %s %ss" % (
+        len(legislators),
+        title
+    )</pre>
+    </div>
+    {% endif %}
+
     {# hide committees module if unicameral #}
     {% if chambers|length > 1 %}
     <div class="fullWidth module clear">
@@ -81,7 +101,7 @@
             {% if  joint_committee_count %}
             <a href="{% url 'committees' abbr %}?chamber=joint">
                 <li class="three titleNumber withTip">{{ joint_committee_count }}<span>Joint Committees</span></li>
-            </a> 
+            </a>
             {% endif %}
         </ul>
         <div class="clear"></div>
@@ -89,7 +109,7 @@
     {% endif %}
 
 
-    
+
     <div class="fullWidth module">
         <h3 class="moduleTitle">Bills</h3>
     {% if chambers|length == 2 %}
