@@ -1,0 +1,23 @@
+{% extends "billy/web/public/developer_base.html" %}
+{% load customtags %}
+
+{% block devlinks %}
+    <li><a href = '#dev-python' >Python</a></li>
+{% endblock %}
+
+{% block devpane %}
+<div id = 'dev-python' class = 'dev-pane' >
+<pre>from sunlight import openstates
+
+bill = openstates.bill("{{bill|underscore_field:"id"}}")
+print "%s" % bill['title']
+
+print "Sponsors:"
+for sponsor in bill['sponsors']:
+    print " - %s" % sponsor['name']
+
+print "Actions:"
+for action in bill['actions']:
+    print " - %s" % action['action']</pre>
+</div>
+{% endblock %}

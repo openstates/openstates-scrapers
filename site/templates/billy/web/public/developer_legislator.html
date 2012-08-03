@@ -1,0 +1,20 @@
+{% extends "billy/web/public/developer_base.html" %}
+{% load customtags %}
+
+{% block devlinks %}
+    <li><a href = '#dev-python' >Python</a></li>
+{% endblock %}
+
+{% block devpane %}
+<div id = 'dev-python' class = 'dev-pane' >
+<pre>from sunlight import openstates
+
+legislator = openstates.legislator_detail("{{legislator.leg_id}}")
+print "%s - District %s (%s)" % (
+    legislator['full_name'],
+    legislator['district'],
+    legislator['party']
+)</pre>
+</div>
+
+{% endblock %}

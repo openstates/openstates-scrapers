@@ -242,19 +242,9 @@ $(document).ready(function() {
                 <div class="clear"></div>
                 {% endif %}
             </div>
-            {% if request.user|is_dev %}
-            <div class="fullWidth module">
-                <h3 class="moduleTitle">Developer ProTips</h3>
-<pre>from sunlight import openstates
 
-legislator = openstates.legislator_detail("{{legislator.leg_id}}")
-print "%s - District %s (%s)" % (
-    legislator['full_name'],
-    legislator['district'],
-    legislator['party']
-)</pre>
-            </div>
-            {% endif %}
+{% include "billy/web/public/developer_legislator.html" %}
+
             {% if not legislator.active %}
             <div class="fullWidth module">
                 <h3 class="moduleTitle">Former Roles</h3>

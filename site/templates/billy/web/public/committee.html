@@ -69,24 +69,12 @@ $(document).ready(function() {
         </tbody>
     </table>
 </div>
+
+{% include "billy/web/public/developer_committee.html" %}
 {% if request.user|is_dev %}
 <div class="fullWidth module">
     <h3 class="moduleTitle">Developer ProTips</h3>
-<pre>from sunlight import openstates
 
-committee = openstates.committee_detail("{{committee|underscore_field:"id"}}")
-print "Members of the %s" % (committee['committee'])
-
-for member in committee['members']:
-    if 'leg_id' in member and member['leg_id'] is not None:
-        leg = openstates.legislator_detail(member['leg_id'])
-        print " - %s" % (
-            leg['full_name']
-        )
-    else:
-        print " - %s" % (
-            member['name']
-        )</pre>
 </div>
 {% endif %}
 <div class="fullWidth module">

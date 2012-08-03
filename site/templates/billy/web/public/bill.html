@@ -183,23 +183,7 @@
              <div class="clear"></div>
          </div>
 
-{% if request.user|is_dev %}
-<div class="fullWidth module">
-    <h3 class="moduleTitle">Developer ProTips</h3>
-<pre>from sunlight import openstates
-
-bill = openstates.bill("{{bill|underscore_field:"id"}}")
-print "%s" % bill['title']
-
-print "Sponsors:"
-for sponsor in bill['sponsors']:
-    print " - %s" % sponsor['name']
-
-print "Actions:"
-for action in bill['actions']:
-    print " - %s" % action['action']</pre>
-</div>
-{% endif %}
+{% include "billy/web/public/developer_bill.html" %}
 
          {% if bill.versions or bill.documents %}
             <div class="module">
