@@ -1,0 +1,1389 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"obje",
+				"object_type"
+			],
+			[
+				"ste",
+				"stem2id"
+			],
+			[
+				"la",
+				"latest_printing"
+			],
+			[
+				"Pr",
+				"ParseError"
+			],
+			[
+				"req",
+				"required_keys"
+			],
+			[
+				"Re",
+				"RevisionSpec"
+			],
+			[
+				"sho",
+				"show_other_actions"
+			],
+			[
+				"others",
+				"others_length"
+			],
+			[
+				"hid",
+				"hide_other_actions"
+			],
+			[
+				"ac",
+				"actions_showing"
+			],
+			[
+				"actions",
+				"actions_showing"
+			],
+			[
+				"urls",
+				"urls_local"
+			],
+			[
+				"url",
+				"urlpatterns"
+			],
+			[
+				"split",
+				"split_list"
+			],
+			[
+				"open",
+				"openstates_site"
+			],
+			[
+				"commi",
+				"committee_object"
+			],
+			[
+				"defa",
+				"defaultdict"
+			],
+			[
+				"role",
+				"roletype_dict"
+			],
+			[
+				"chamb",
+				"chamber_roles"
+			],
+			[
+				"ch",
+				"chamber_roles"
+			],
+			[
+				"cha",
+				"chamber_getter"
+			],
+			[
+				"C",
+				"CachedAttribute"
+			],
+			[
+				"B",
+				"BogusEntry"
+			],
+			[
+				"method",
+				"method_names"
+			],
+			[
+				"v",
+				"v"
+			],
+			[
+				"s_",
+				"s_chamber_name"
+			],
+			[
+				"number",
+				"number_type"
+			],
+			[
+				"off",
+				"office_types"
+			],
+			[
+				"da",
+				"datatable_setup"
+			],
+			[
+				"has",
+				"has_no_sponsors"
+			],
+			[
+				"fir",
+				"first_sponsor_is_bogus"
+			],
+			[
+				"sub",
+				"sub_committee_url"
+			],
+			[
+				"li",
+				"li_text"
+			],
+			[
+				"rel",
+				"related_entities"
+			],
+			[
+				"coll",
+				"collections_name"
+			],
+			[
+				"get",
+				"get_committee_data"
+			],
+			[
+				"committ",
+				"committee_data_both"
+			],
+			[
+				"committe",
+				"committee_data"
+			],
+			[
+				"committee",
+				"committee_data_lower"
+			],
+			[
+				"comm",
+				"committee_data_upper"
+			],
+			[
+				"match",
+				"matched_abbrs"
+			],
+			[
+				"com",
+				"committee_abbr_to_name"
+			],
+			[
+				"member",
+				"member"
+			],
+			[
+				"vo",
+				"vote_type"
+			],
+			[
+				"_co",
+				"_committee_abbr_regex"
+			],
+			[
+				"_ent",
+				"_entity_data"
+			],
+			[
+				"ent",
+				"entity_data"
+			],
+			[
+				"entity",
+				"entity_strings"
+			],
+			[
+				"enti",
+				"entity_strings"
+			],
+			[
+				"conta",
+				"contact_url"
+			],
+			[
+				"vote_",
+				"vote_strings"
+			],
+			[
+				"Section",
+				"SectionID"
+			],
+			[
+				"P",
+				"ParserState"
+			],
+			[
+				"par",
+				"parser_class"
+			],
+			[
+				"session",
+				"session_id"
+			],
+			[
+				"A",
+				"a"
+			],
+			[
+				"_leg",
+				"_legislator_objects"
+			],
+			[
+				"id",
+				"id_getter"
+			],
+			[
+				"re",
+				"related_name"
+			],
+			[
+				"_related",
+				"_related_cache"
+			],
+			[
+				"_re",
+				"_related_cache_dict"
+			],
+			[
+				"hyp",
+				"hyperlinked_spans"
+			],
+			[
+				"hp",
+				"hyperlinked_spans"
+			],
+			[
+				"leg",
+				"legislator"
+			],
+			[
+				"s",
+				"billy_settings"
+			],
+			[
+				"search",
+				"search_text"
+			],
+			[
+				"searc",
+				"search_text"
+			],
+			[
+				"bill",
+				"bill_results"
+			],
+			[
+				"sear",
+				"search_text"
+			],
+			[
+				"legis",
+				"legislator_results"
+			],
+			[
+				"template",
+				"template"
+			],
+			[
+				"sh",
+				"show_all_sponsors"
+			],
+			[
+				"state",
+				"statenav_active"
+			],
+			[
+				"Rela",
+				"RelatedDocument"
+			],
+			[
+				"related",
+				"related_name"
+			],
+			[
+				"Feed",
+				"GenericListFeed"
+			],
+			[
+				"get_",
+				"get_absolute_url"
+			],
+			[
+				"res",
+				"res"
+			],
+			[
+				"act",
+				"actor_text"
+			],
+			[
+				"actor",
+				"actor_text"
+			],
+			[
+				"actor_",
+				"actor_url"
+			],
+			[
+				"acto",
+				"actor_text"
+			],
+			[
+				"commit",
+				"committee_code_to_id"
+			],
+			[
+				"up",
+				"upper_committee_codes"
+			],
+			[
+				"Vote",
+				"VotesListFeed"
+			],
+			[
+				"BillsI",
+				"BillsIntroducedUpper"
+			],
+			[
+				"collection",
+				"collection_name"
+			],
+			[
+				"Bill",
+				"BillsFeed"
+			],
+			[
+				"Fe",
+				"FeedDoesNotExist"
+			],
+			[
+				"col",
+				"collection_name"
+			],
+			[
+				"Sponsored",
+				"SponsoredBillsFeed"
+			],
+			[
+				"_filter",
+				"_filter_initial_keys"
+			],
+			[
+				"spons",
+				"sponsor_id"
+			],
+			[
+				"spon",
+				"sponsor_id"
+			],
+			[
+				"sponsor",
+				"sponsor__leg_id"
+			],
+			[
+				"show_",
+				"show_per_page"
+			],
+			[
+				"show",
+				"show_per_page"
+			],
+			[
+				"_bi",
+				"_bill_sponsors"
+			],
+			[
+				"templ",
+				"templatename"
+			],
+			[
+				"tran",
+				"translate_dict"
+			],
+			[
+				"trs",
+				"trs_count"
+			],
+			[
+				"tr",
+				"tr"
+			],
+			[
+				"main_",
+				"main-table_filter"
+			],
+			[
+				"BILL",
+				"BILL_SPONSORS"
+			],
+			[
+				"BIL",
+				"BILL_TYPES"
+			],
+			[
+				"_bil",
+				"_bill_types"
+			],
+			[
+				"Filt",
+				"FilterBillsForm"
+			],
+			[
+				"Fi",
+				"FilteredSelectMultiple"
+			],
+			[
+				"upper",
+				"upper_chamber_name"
+			],
+			[
+				"OldR",
+				"OldRolesList"
+			],
+			[
+				"Attr",
+				"AttributeError"
+			],
+			[
+				"int",
+				"int_or_slice"
+			],
+			[
+				"is",
+				"isinstance"
+			],
+			[
+				"in",
+				"int_or_slice"
+			],
+			[
+				"OldRole",
+				"OldRole"
+			],
+			[
+				"insta",
+				"instance_key"
+			],
+			[
+				"legislator_",
+				"legislator_inactive"
+			],
+			[
+				"sort",
+				"sort_order"
+			],
+			[
+				"sor",
+				"sort_key"
+			],
+			[
+				"model",
+				"model_keys"
+			],
+			[
+				"query",
+				"query_attr"
+			],
+			[
+				"collec",
+				"summary_collection_index"
+			],
+			[
+				"conte",
+				"context_set"
+			],
+			[
+				"qu",
+				"query_specs"
+			],
+			[
+				"data",
+				"data"
+			],
+			[
+				"legi",
+				"legislator"
+			],
+			[
+				"na",
+				"name_to_ids"
+			],
+			[
+				"me",
+				"metadata"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "jsindex.py",
+			"settings":
+			{
+				"buffer_size": 4321,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Package Control Messages\n========================\n\nSublimeLinter:\n-------------\n\n  SublimeLinter 1.6.7 changelog\n  \n  NEW FEATURES\n  \n  - Puppet linting is now supported via `puppet parser validate`.\n  \n  - Added an option for more granular control of outline decorations. Set the\n    value of \"sublimelinter_mark_style\" to \"outline\", \"fill\", or \"none\" in\n    the user settings.\n  \n  \n  CHANGES/FIXES\n  \n  - Repaired the built-in CSS linter (CSSLint). This was broken with with the\n    last update.\n  \n  - Added missing documentation for \"save-only\" linting in the settings file.\n  \n  - Adjusted ambiguous/misleading documentation for the\n    \"sublimelinter_executable_map\" setting.\n  \n",
+			"settings":
+			{
+				"buffer_size": 686,
+				"line_ending": "Unix",
+				"name": "Package Control Messages",
+				"scratch": true
+			}
+		},
+		{
+			"file": "debug.py",
+			"settings":
+			{
+				"buffer_size": 2227,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "<!doctype html>\n\n<html lang=\"en\" class=\"no-js\">\n<head>\n    <title>Open States: discover politics in your state</title>\n    <script src='/js/jquery.js'></script>\n    <link rel=\"stylesheet\" type=\"text/css\" href=\"http://static.openstates.org/assets/v2.1/main.css\" />\n    <script>\n     $(document).ready(function() {\n    });\n    </script>\n    <!--[if lt IE 9]>\n    <script src=\"//html5shiv.googlecode.com/svn/trunk/html5.js\"></script>\n    <![endif]-->    \n</head>\n\n<body class=\"home\">\n</body>\n",
+			"file": "index.html",
+			"file_size": 489,
+			"file_write_time": 1344005423000000,
+			"settings":
+			{
+				"buffer_size": 489,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 392.0,
+		"selected_items":
+		[
+			[
+				"pack",
+				"Package Control: Install Package"
+			],
+			[
+				"git",
+				"Set Syntax: Git Blame"
+			],
+			[
+				"",
+				"Convert Case: Lower Case"
+			],
+			[
+				"pac",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 449.0
+	},
+	"console":
+	{
+		"height": 174.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/home/thom/www/testpage.html",
+		"/home/thom/code/jsindex/index.html",
+		"/home/thom/ve/openstates1.4/openstates/scripts/affected_code/base/parser.py",
+		"/home/thom/ve/openstates1.4/billy/billy/models/base.py",
+		"/home/thom/ve/openstates1.4/billy/billy/web/public/views/bills.py",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/bill.html",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/bill_all_documents.html",
+		"/home/thom/ve/openstates1.4/openstates/openstates/pa/bills.py",
+		"/home/thom/ve/openstates1.4/openstates/site/media/main.css",
+		"/home/thom/ve/openstates1.4/billy/billy/web/public/urls.py",
+		"/home/thom/ve/openstates1.4/billy/billy/web/public/urls_local.py",
+		"/home/thom/ve/openstates1.4/billy/billy/models/bills.py",
+		"/home/thom/.config/sublime-text-2/Packages/User/Default (Linux).sublime-keymap",
+		"/home/thom/ve/openstates1.4/openstates/scripts/affected_code/base/enumerations.py",
+		"/home/thom/ve/openstates1.4/billy/billy/web/public/views/urls_local.py",
+		"/home/thom/ve/openstates1.4/openstates/site/openstates_site/wsgi.py",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/legislator_old_role_member.html",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/scrape.py",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/legislator_old_role_committee_member.html",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/legislator.html",
+		"/home/thom/ve/openstates1.4/billy/billy/models/legislators.py",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ak.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/debug/scrape-all.py",
+		"/home/thom/ve/openstates1.4/openstates/scripts/affected_code/ny.py",
+		"/home/thom/ve/openstates1.4/openstates/openstates/de/legislators.py",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/bills_list.html",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/committees_table.html",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/committees.html",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/legislators.html",
+		"/home/thom/ve/openstates1.4/billy/billy/web/public/views/legislators.py",
+		"/home/thom/ve/openstates1.4/openstates/scripts/count_bill_key_lengths.py",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/id.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/dc.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/cd.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/de.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ca.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/mn.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/tx.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/nj.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/nh.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ut.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/wa.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/wv.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/il.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/pa.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ok.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ne.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ny.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/nc.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/mo.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/mi.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/fl.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ga.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/hi.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ct.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ar.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/wy.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/va.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/al.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/co.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/in.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ia.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/nv.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ma.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/me.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ky.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ks.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/mt.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/nm.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/nd.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/oh.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/ri.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/or.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/sc.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/sd.txt",
+		"/home/thom/ve/openstates1.4/openstates/scripts/newsblogs/urls/tn.txt",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/vote.html",
+		"/home/thom/ve/openstates1.4/openstates/openstates/az/__init__.py",
+		"/home/thom/ve/openstates1.4/openstates/site/media/js/main.js",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/feed_entry.html",
+		"/home/thom/ve/openstates1.4/openstates/openstates/mt/legislators.py",
+		"/home/thom/ve/openstates1.4/openstates/scripts/affected_code/base.py",
+		"/home/thom/ve/openstates1.4/openstates/scripts/affected_code/utils.py",
+		"/home/thom/ve/openstates1.4/openstates/scripts/affected_code/base/location.py",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/legislator_table.html",
+		"/home/thom/ve/openstates1.4/openstates/billy_local.py",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/legislators-pjax.html",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/base.html",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/committees-pjax.html",
+		"/home/thom/ve/openstates1.4/billy/billy/web/public/views/committees.py",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/state.html",
+		"/home/thom/ve/openstates1.4/openstates/billy_settings.py",
+		"/home/thom/ve/openstates1.4/openstates/openstates/nm/bills.py",
+		"/home/thom/ve/openstates1.4/billy/billy/models/feeds.py",
+		"/home/thom/ve/openstates1.4/openstates/openstates/ok/__init__.py",
+		"/home/thom/ve/openstates1.4/openstates/openstates/ok/bills.py",
+		"/home/thom/ve/openstates1.4/billy/billy/models/metadata.py",
+		"/home/thom/ve/openstates1.4/billy/billy/web/public/forms.py",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/chamber_select_form.html",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/bio_blurb.html",
+		"/home/thom/ve/openstates1.4/openstates/site/media/js/view-specific/bill.js",
+		"/home/thom/ve/openstates1.4/openstates/site/media/js/view-specific/legislators.js",
+		"/home/thom/ve/openstates1.4/openstates/openstates/ca/bills.py",
+		"/home/thom/ve/openstates1.4/openstates/openstates/me/bills.py",
+		"/home/thom/ve/openstates1.4/openstates/openstates/tn/committees.py",
+		"/home/thom/ve/openstates1.4/openstates/openstates/ca/download.py",
+		"/home/thom/ve/openstates1.4/openstates/openstates/ca/committees.py",
+		"/home/thom/ve/openstates1.4/billy/billy/models/committees.py",
+		"/home/thom/ve/openstates1.4/openstates/openstates/ca/models.py",
+		"/home/thom/ve/openstates1.4/billy/billy/models/utils.py",
+		"/home/thom/ve/openstates1.4/openstates/site/openstates_site/local_settings.py",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/committee.html",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/sources.html",
+		"/home/thom/ve/openstates1.4/billy/billy/web/public/templatetags/customtags.py",
+		"/home/thom/code/ca_codes/fetch_tasks.py",
+		"/home/thom/ve/openstates1.4/openstates/openstates/ny/legislators.py",
+		"/home/thom/Documents/comment on John's post.txt",
+		"/home/thom/ve/openstates1.4/billy/billy/web/admin/views.py",
+		"/home/thom/ve/openstates1.4/openstates/manual_data/leg_ids/ca.csv",
+		"/home/thom/ve/openstates1.4/openstates/openstates/ny/bills.py",
+		"/home/thom/ve/openstates1.4/openstates/scripts/affected_code/ny-debug.py",
+		"/home/thom/ve/openstates1.4/openstates/scripts/affected_code/ny-tests.py",
+		"/home/thom/ve/openstates1.4/openstates/openstates/la/legislators.py",
+		"/home/thom/ve/openstates1.4/billy/billy/web/public/middleware.py",
+		"/home/thom/ve/openstates1.4/openstates/site/templates/billy/web/public/legislator_inactive.html",
+		"/home/thom/ve/openstates1.4/openstates/scripts/match_leg_ids.py",
+		"/home/thom/ve/openstates1.4/openstates/manual_data/leg_ids/la.csv",
+		"/home/thom/ve/openstates1.4/openstates/openstates/mt/committees.py"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"[_id",
+			"object",
+			"object[",
+			"_id",
+			"bill",
+			"committee",
+			"template",
+			"committee_template",
+			"text_func_",
+			"    u",
+			"  [",
+			"[ { ",
+			"[ ",
+			"\n[",
+			"[ { ",
+			"scrape_actions",
+			"defaultdict",
+			"t.subds",
+			"subds",
+			"CompilationName",
+			"NodeID",
+			"AndOrComma",
+			"nodetype",
+			"t.",
+			"subds",
+			"nodetype",
+			"ParseError",
+			"MunicipalLaw",
+			"Token",
+			"actions_showing",
+			"action",
+			"module",
+			"versions",
+			"committee",
+			"leg",
+			"padding-left",
+			"inlinethird",
+			"#committees",
+			"upper",
+			"DictManager",
+			"object",
+			" {{",
+			"_wrapper",
+			"http://asmdc.org/members/a01/home-page/rss",
+			"http://www.senate.leg.state.mn.us/RSS/rss_creator.php?parm_mem_id=1177&type=RSS&cat=press&ls=",
+			"http",
+			"97\nhttp",
+			"\n",
+			"or.txt",
+			"ri.txt",
+			"ut.txt",
+			"keyname",
+			"Thingie",
+			"values",
+			"tally",
+			"In [",
+			"in",
+			"In",
+			"\n         ",
+			" <",
+			"bills_feed",
+			"yield",
+			"data",
+			"vote",
+			"_wrapper",
+			"scrape_off",
+			"text",
+			"re.",
+			"chunks",
+			"alert",
+			"cow",
+			"setup_leg_table",
+			"datatable_setup",
+			"document",
+			"sponsors_ma",
+			"sponsors.first",
+			"dedupe",
+			"_run_scraper",
+			"scrape",
+			"has_no_versions",
+			"label",
+			"label-bill-s",
+			"name",
+			"view",
+			"Pick a session",
+			"title",
+			"latin",
+			"lower",
+			"Assembly",
+			",\n",
+			"decode",
+			"display",
+			"load",
+			"load_bill_v	",
+			"version",
+			"title.decode",
+			"decode",
+			"sideNote",
+			"findall",
+			"reverse",
+			"bills",
+			"upper_committee_codes",
+			"Token",
+			"added",
+			"print",
+			"committee on b",
+			"committee on e",
+			"committee on j",
+			"raise",
+			"TRANS",
+			"enter",
+			"committee_abbr_to_name",
+			"committee_abbr_regex",
+			"_committee_abbr_regex",
+			"_committee_abbrs",
+			"_committee_abbr_regex",
+			"standing committee",
+			"committee_data_lower",
+			"committee_data_upper",
+			"regex",
+			"committee_Abb",
+			"matched",
+			"lower",
+			"committees",
+			"abbr_re",
+			"code",
+			"committee_name",
+			"commcode_committeeittee_name"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": true,
+		"replace_history":
+		[
+			"  [{",
+			"enumerations.regex",
+			"Code",
+			"NodeEnum",
+			"sponsors_manager.first",
+			"[('', '')]",
+			"legislators_list",
+			"bills_list",
+			"tgbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbhhhhhhhhhhbhbhbbhki",
+			"instance_key",
+			"obj",
+			"clickable=True",
+			"clickable",
+			"count",
+			"string",
+			"",
+			":",
+			"\",",
+			"\"",
+			"/bootstrap/",
+			"/bootstrap"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 3,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "jsindex.py",
+					"settings":
+					{
+						"buffer_size": 4321,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3522,
+								3522
+							]
+						],
+						"settings":
+						{
+							"annotations":
+							[
+								"TODO",
+								"README",
+								"FIXME"
+							],
+							"csslint_options":
+							{
+								"adjoining-classes": "warning",
+								"box-model": true,
+								"box-sizing": "warning",
+								"compatible-vendor-prefixes": "warning",
+								"display-property-grouping": true,
+								"duplicate-background-images": "warning",
+								"duplicate-properties": true,
+								"empty-rules": true,
+								"errors": true,
+								"fallback-colors": "warning",
+								"floats": "warning",
+								"font-faces": "warning",
+								"font-sizes": "warning",
+								"gradients": "warning",
+								"ids": "warning",
+								"import": "warning",
+								"important": "warning",
+								"known-properties": true,
+								"outline-none": "warning",
+								"overqualified-elements": "warning",
+								"qualified-headings": "warning",
+								"regex-selectors": "warning",
+								"rules-count": "warning",
+								"shorthand": "warning",
+								"star-property-hack": "warning",
+								"text-indent": "warning",
+								"underscore-property-hack": "warning",
+								"unique-headings": "warning",
+								"universal-selector": "warning",
+								"vendor-prefix": true,
+								"zero-units": "warning"
+							},
+							"gjslint_ignore":
+							[
+								110
+							],
+							"gjslint_options":
+							[
+							],
+							"javascript_linter": "jshint",
+							"jshint_options":
+							{
+								"browser": true,
+								"evil": true,
+								"indent": 1,
+								"regexdash": true,
+								"sub": true,
+								"trailing": true,
+								"wsh": true
+							},
+							"pep8": true,
+							"pep8_ignore":
+							[
+								"E501"
+							],
+							"perl_linter": "perlcritic",
+							"pyflakes_ignore":
+							[
+							],
+							"pyflakes_ignore_import_*": true,
+							"sublimelinter": true,
+							"sublimelinter_delay": 0,
+							"sublimelinter_disable":
+							[
+							],
+							"sublimelinter_executable_map":
+							{
+							},
+							"sublimelinter_fill_outlines": false,
+							"sublimelinter_gutter_marks": false,
+							"sublimelinter_mark_style": "outline",
+							"sublimelinter_notes": false,
+							"sublimelinter_objj_check_ascii": false,
+							"sublimelinter_popup_errors_on_save": false,
+							"sublimelinter_syntax_map":
+							{
+								"Python Django": "python",
+								"Ruby on Rails": "ruby"
+							},
+							"sublimelinter_wrap_find": true,
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2619.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"settings":
+					{
+						"buffer_size": 686,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								686,
+								686
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"word_wrap": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "debug.py",
+					"settings":
+					{
+						"buffer_size": 2227,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2142,
+								2142
+							]
+						],
+						"settings":
+						{
+							"annotations":
+							[
+								"TODO",
+								"README",
+								"FIXME"
+							],
+							"csslint_options":
+							{
+								"adjoining-classes": "warning",
+								"box-model": true,
+								"box-sizing": "warning",
+								"compatible-vendor-prefixes": "warning",
+								"display-property-grouping": true,
+								"duplicate-background-images": "warning",
+								"duplicate-properties": true,
+								"empty-rules": true,
+								"errors": true,
+								"fallback-colors": "warning",
+								"floats": "warning",
+								"font-faces": "warning",
+								"font-sizes": "warning",
+								"gradients": "warning",
+								"ids": "warning",
+								"import": "warning",
+								"important": "warning",
+								"known-properties": true,
+								"outline-none": "warning",
+								"overqualified-elements": "warning",
+								"qualified-headings": "warning",
+								"regex-selectors": "warning",
+								"rules-count": "warning",
+								"shorthand": "warning",
+								"star-property-hack": "warning",
+								"text-indent": "warning",
+								"underscore-property-hack": "warning",
+								"unique-headings": "warning",
+								"universal-selector": "warning",
+								"vendor-prefix": true,
+								"zero-units": "warning"
+							},
+							"gjslint_ignore":
+							[
+								110
+							],
+							"gjslint_options":
+							[
+							],
+							"javascript_linter": "jshint",
+							"jshint_options":
+							{
+								"browser": true,
+								"evil": true,
+								"indent": 1,
+								"regexdash": true,
+								"sub": true,
+								"trailing": true,
+								"wsh": true
+							},
+							"pep8": true,
+							"pep8_ignore":
+							[
+								"E501"
+							],
+							"perl_linter": "perlcritic",
+							"pyflakes_ignore":
+							[
+							],
+							"pyflakes_ignore_import_*": true,
+							"sublimelinter": true,
+							"sublimelinter_delay": 0,
+							"sublimelinter_disable":
+							[
+							],
+							"sublimelinter_executable_map":
+							{
+							},
+							"sublimelinter_fill_outlines": false,
+							"sublimelinter_gutter_marks": false,
+							"sublimelinter_mark_style": "outline",
+							"sublimelinter_notes": false,
+							"sublimelinter_objj_check_ascii": false,
+							"sublimelinter_popup_errors_on_save": false,
+							"sublimelinter_syntax_map":
+							{
+								"Python Django": "python",
+								"Ruby on Rails": "ruby"
+							},
+							"sublimelinter_wrap_find": true,
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1548.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "index.html",
+					"settings":
+					{
+						"buffer_size": 489,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								165,
+								165
+							]
+						],
+						"settings":
+						{
+							"annotations":
+							[
+								"TODO",
+								"README",
+								"FIXME"
+							],
+							"csslint_options":
+							{
+								"adjoining-classes": "warning",
+								"box-model": true,
+								"box-sizing": "warning",
+								"compatible-vendor-prefixes": "warning",
+								"display-property-grouping": true,
+								"duplicate-background-images": "warning",
+								"duplicate-properties": true,
+								"empty-rules": true,
+								"errors": true,
+								"fallback-colors": "warning",
+								"floats": "warning",
+								"font-faces": "warning",
+								"font-sizes": "warning",
+								"gradients": "warning",
+								"ids": "warning",
+								"import": "warning",
+								"important": "warning",
+								"known-properties": true,
+								"outline-none": "warning",
+								"overqualified-elements": "warning",
+								"qualified-headings": "warning",
+								"regex-selectors": "warning",
+								"rules-count": "warning",
+								"shorthand": "warning",
+								"star-property-hack": "warning",
+								"text-indent": "warning",
+								"underscore-property-hack": "warning",
+								"unique-headings": "warning",
+								"universal-selector": "warning",
+								"vendor-prefix": true,
+								"zero-units": "warning"
+							},
+							"gjslint_ignore":
+							[
+								110
+							],
+							"gjslint_options":
+							[
+							],
+							"javascript_linter": "jshint",
+							"jshint_options":
+							{
+								"browser": true,
+								"evil": true,
+								"indent": 1,
+								"regexdash": true,
+								"sub": true,
+								"trailing": true,
+								"wsh": true
+							},
+							"pep8": true,
+							"pep8_ignore":
+							[
+								"E501"
+							],
+							"perl_linter": "perlcritic",
+							"pyflakes_ignore":
+							[
+							],
+							"pyflakes_ignore_import_*": true,
+							"sublimelinter": true,
+							"sublimelinter_delay": 0,
+							"sublimelinter_disable":
+							[
+							],
+							"sublimelinter_executable_map":
+							{
+							},
+							"sublimelinter_fill_outlines": false,
+							"sublimelinter_gutter_marks": false,
+							"sublimelinter_mark_style": "outline",
+							"sublimelinter_notes": false,
+							"sublimelinter_objj_check_ascii": false,
+							"sublimelinter_popup_errors_on_save": false,
+							"sublimelinter_syntax_map":
+							{
+								"Python Django": "python",
+								"Ruby on Rails": "ruby"
+							},
+							"sublimelinter_wrap_find": true,
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 38.0
+	},
+	"input":
+	{
+		"height": 33.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 166.0
+	},
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"selected_items":
+		[
+			[
+				"cors",
+				"/home/thom/code/crosslaws.sublime-project"
+			],
+			[
+				"cros",
+				"/home/thom/code/crosslaws.sublime-project"
+			],
+			[
+				"cri",
+				"/home/thom/code/crosslaws.sublime-project"
+			],
+			[
+				"",
+				"/home/thom/code/py27.sublime-project"
+			],
+			[
+				"ange",
+				"/home/thom/ve/angelpolitics/ap.sublime-project"
+			],
+			[
+				"an",
+				"/home/thom/ve/angelpolitics/ap.sublime-project"
+			],
+			[
+				"fpl",
+				"/home/thom/code/fpl/fpl.sublime-project"
+			],
+			[
+				"ang",
+				"/home/thom/ve/angelpolitics/ap.sublime-project"
+			],
+			[
+				"ap",
+				"/home/thom/ve/angelpolitics/ap.sublime-project"
+			]
+		],
+		"width": 380.0
+	},
+	"show_minimap": false,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 279.0,
+	"status_bar_visible": true
+}
