@@ -30,10 +30,6 @@ class SDBillScraper(BillScraper):
 
                 title = link.xpath("string(../../td[2])").strip()
 
-                if not title:
-                    import pdb
-                    pdb.set_trace()
-
                 self.scrape_bill(chamber, session, bill_id, title,
                                  link.attrib['href'])
 
