@@ -86,23 +86,7 @@ for member in committee['members']:
     else:
         print " - %s" % (
             member['name']
-        )
-
-print "Upcoming events:"
-events = openstates.events(partiticpants='{{committee|underscore_field:"id"}}')
-
-for event in events:
-    print " - %s @ %s" % (
-        event['description'],
-        event['location']
-    )
-    for bill in event['related_bills']:
-        if "bill_id" in bill and bill['bill_id'] is not None:
-            bobj = openstates.bill(bill['bill_id'])
-            print "  + %s (%s)" % (
-                bobj['title'],
-                bobj['bill_id']
-            )</pre>
+        )</pre>
 </div>
 {% endif %}
 <div class="fullWidth module">
