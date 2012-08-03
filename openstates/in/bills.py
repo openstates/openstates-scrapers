@@ -125,6 +125,24 @@ class INBillScraper(BillScraper):
 
             bill['subjects'] = self.subjects[bill_id]
 
+            # Also retrieve the "latest printing" bill if it hasn't
+            # been found yet.
+            latest_printing = '//a[contains(@href, "bills")]/@href'
+            for url in set(page.xpath(latest_printing)):
+
+                # Set the mimetype.
+                if 'pdf' in url:
+                    mimetype = 'application/pdf'
+                else:
+                    mimetype = 'text/html'
+
+                try:
+                    bill.add_version('Latest printing', url,
+                                     mimetype=mimetype)
+                except ValueError:
+                    # The url was a duplicate.
+                    pass
+
             if not bill['sponsors']:
 
                 # Indiana has so-called 'vehicle bills', which are empty
@@ -136,18 +154,20 @@ class INBillScraper(BillScraper):
                 if 'Vehicle Bill' in page:
                     msg = 'Skipping vehicle bill: {bill_id}.'
                     self.logger.info(msg.format(**bill))
+                    return
 
                 # And some bills are withdrawn before first reading, which
                 # case they don't really exist, and the main version link
                 # will 404.
                 withdrawn = 'Withdrawn prior to first reading'
-                if bill['actions'][-1]['action'] == withdrawn:
-                    msg = ('Skipping bill withdrawn before first '
-                           'reading: {bill_id}.')
-                    self.logger.info(msg.format(**bill))
+                if bill['actions']:
+                    if bill['actions'][-1]['action'] == withdrawn:
+                        msg = ('Skipping bill withdrawn before first '
+                               'reading: {bill_id}.')
+                        self.logger.info(msg.format(**bill))
+                        return
 
-            else:
-                self.save_bill(bill)
+            self.save_bill(bill)
 
     def scrape_actions(self, bill, url):
         with self.urlopen(url) as page:
