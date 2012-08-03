@@ -718,3 +718,25 @@ pre {
     -moz-border-radius:    10px;
     border-radius:         10px;
 }
+
+#dev-tabs li {
+    display:          inline;
+    background-color: #F5F6EF;
+    border:           1px solid #E0DEDB;
+    padding:          5px;
+    padding-left:     20px;
+    padding-right:    20px;
+}
+
+#dev-tabs {
+    margin:          0;
+    padding:         0;
+    list-style-type: none;
+}
+
+.dev-pane {
+    margin-top:      10px;
+    background-color: #F5F6EF;
+    padding:          10px;
+    border:           1px solid #E0DEDB;
+}

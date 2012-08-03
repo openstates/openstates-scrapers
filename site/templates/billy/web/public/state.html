@@ -63,8 +63,42 @@
     </div>
 
     {% if request.user|is_dev %}
+<script type = 'text/javascript' >
+    $(document).ready(function() {
+        $("#dev-tabs").each(function() {
+            var tab = $(this),
+              links = tab.find('a'),
+             active,
+            content;
+
+            active = links.first().addClass('active');
+            content = $(active.attr('href'));
+
+            links.not(':first').each(function () {
+                $($(this).attr('href')).hide();
+            });
+
+            links.each(function () {
+                $(this).click(function(e) {
+                    active.removeClass('active');
+                    content.hide();
+                    active = $(this);
+                    content = $($(this).attr('href'));
+                    active.addClass('active');
+                    content.show();
+                    e.preventDefault();
+                });
+            });
+        });
+    });
+</script>
     <div class="fullWidth module">
         <h3 class="moduleTitle">Developer ProTips</h3>
+<ul id = 'dev-tabs' >
+    <li><a href = '#dev-api' >API</a></li>
+    <li><a href = '#dev-python' >Python</a></li>
+</ul>
+<div id = 'dev-python' class = 'dev-pane' >
 <pre>from sunlight import openstates
 
 meta = openstates.state_metadata('{{abbr}}')
@@ -79,7 +113,11 @@ for chamber in ['upper', 'lower']:
         len(legislators),
         title
     )</pre>
-    </div>
+</div>
+<div id = 'dev-api' class = 'dev-pane' >
+http://openstates.org/api/v1/metadata/?apikey=
+</div>
+</div>
     {% endif %}
 
     {# hide committees module if unicameral #}
