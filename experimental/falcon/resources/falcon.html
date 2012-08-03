@@ -32,7 +32,9 @@
             .rollup(function(d) { return d[0].Pct; })
             .map(csv);
 
-          console.log(data);
+          rect.attr("class", function(d) {
+            return "day"
+          });
 
           rect.filter(function(d) { return d in data; })
               .attr("class", function(d) {
