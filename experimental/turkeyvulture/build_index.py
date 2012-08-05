@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     cname = 'legislators'
     storekeys = ['full_name', '_type', 'chamber', 'district', 'party',
-                 'state', '_id']
+                 'state', '_id', 'photo_url']
     coll = getattr(db, cname)
     spec = {'state': 'ca', 'active': True}
     objects = coll.find(spec)
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     objects = db.bills.find(spec)
     print 'adding', objects.count(), 'bills', 'with spec %r' % spec
     renderer = lambda obj: templates['bills'].render(obj=obj)
-    index.add('b', objects, renderer, substrs=False, storekeys=storekeys)
+    index.add('b', objects, renderer, substrs=True, storekeys=storekeys)
 
     jd = index.jsondata()
     js = index.as_json(showsizes=True)

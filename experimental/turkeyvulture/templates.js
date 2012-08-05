@@ -479,19 +479,688 @@
 })();
 
 jsonjinja.addTemplates(
-{"results":(function(rt) {
+{"bill_1.html":(function(rt) {
   function root(rts) {
     var w = rts.writeFunc;
-    var l_committee_0 = rts.lookupVar("committee"), l_person_0 = rts.lookupVar("person"), l_bill_0 = rts.lookupVar("bill");
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["bill"], function(l_loop_0, l_bill_0) {
+      var l_loop_1 = rts.lookupVar("loop"), l_loop_2 = rts.lookupVar("loop"), l_loop_3 = rts.lookupVar("loop"), l_bill_0, l_loop_0;
+      w("\n        <li>\n        <i class='icon-file'></i>\n        <h3>\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_bill_0["state"]));
+      w("/bills/");
+      w(rts.info.finalize(l_bill_0["session"]));
+      w("/");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("'>\n            ");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("\n            </a>\n        </h3>\n        <p>");
+      w(rts.info.finalize(l_bill_0["title"]));
+      w("</p>\n        <p>\n        ");
+      rt.iterate(l_bill_0["type"], l_loop_0, ["subject"], function(l_loop_1, l_subject_0) {
+        var l_loop_1, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["subjects"], l_loop_0, ["subject"], function(l_loop_2, l_subject_0) {
+        var l_loop_2, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["scraped_subjects"], l_loop_0, ["subject"], function(l_loop_3, l_subject_0) {
+        var l_loop_3, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        </p>\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"bill_2.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["bill"], function(l_loop_0, l_bill_0) {
+      var l_loop_1 = rts.lookupVar("loop"), l_loop_2 = rts.lookupVar("loop"), l_loop_3 = rts.lookupVar("loop"), l_bill_0, l_loop_0;
+      w("\n        <li>\n        <i class='icon-file'></i>\n        <h3>\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_bill_0["state"]));
+      w("/bills/");
+      w(rts.info.finalize(l_bill_0["session"]));
+      w("/");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("'>\n            ");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("\n            </a>\n        </h3>\n        <p>");
+      w(rts.info.finalize(l_bill_0["title"]));
+      w("</p>\n        <p>\n        ");
+      rt.iterate(l_bill_0["type"], l_loop_0, ["subject"], function(l_loop_1, l_subject_0) {
+        var l_loop_1, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["subjects"], l_loop_0, ["subject"], function(l_loop_2, l_subject_0) {
+        var l_loop_2, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["scraped_subjects"], l_loop_0, ["subject"], function(l_loop_3, l_subject_0) {
+        var l_loop_3, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        </p>\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"bill_3.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["bill"], function(l_loop_0, l_bill_0) {
+      var l_loop_1 = rts.lookupVar("loop"), l_loop_2 = rts.lookupVar("loop"), l_loop_3 = rts.lookupVar("loop"), l_bill_0, l_loop_0;
+      w("\n        <li>\n        <i class='icon-file'></i>\n        <h3>\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_bill_0["state"]));
+      w("/bills/");
+      w(rts.info.finalize(l_bill_0["session"]));
+      w("/");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("'>\n            ");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("\n            </a>\n        </h3>\n        <p>");
+      w(rts.info.finalize(l_bill_0["title"]));
+      w("</p>\n        <p>\n        ");
+      rt.iterate(l_bill_0["type"], l_loop_0, ["subject"], function(l_loop_1, l_subject_0) {
+        var l_loop_1, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["subjects"], l_loop_0, ["subject"], function(l_loop_2, l_subject_0) {
+        var l_loop_2, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["scraped_subjects"], l_loop_0, ["subject"], function(l_loop_3, l_subject_0) {
+        var l_loop_3, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        </p>\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"bill_4.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["bill"], function(l_loop_0, l_bill_0) {
+      var l_loop_1 = rts.lookupVar("loop"), l_loop_2 = rts.lookupVar("loop"), l_loop_3 = rts.lookupVar("loop"), l_bill_0, l_loop_0;
+      w("\n        <li>\n        <i class='icon-file'></i>\n        <h3>\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_bill_0["state"]));
+      w("/bills/");
+      w(rts.info.finalize(l_bill_0["session"]));
+      w("/");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("'>\n            ");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("\n            </a>\n        </h3>\n        <p>");
+      w(rts.info.finalize(l_bill_0["title"]));
+      w("</p>\n        <p>\n        ");
+      rt.iterate(l_bill_0["type"], l_loop_0, ["subject"], function(l_loop_1, l_subject_0) {
+        var l_loop_1, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["subjects"], l_loop_0, ["subject"], function(l_loop_2, l_subject_0) {
+        var l_loop_2, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["scraped_subjects"], l_loop_0, ["subject"], function(l_loop_3, l_subject_0) {
+        var l_loop_3, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        </p>\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"bill_5.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["bill"], function(l_loop_0, l_bill_0) {
+      var l_loop_1 = rts.lookupVar("loop"), l_loop_2 = rts.lookupVar("loop"), l_loop_3 = rts.lookupVar("loop"), l_bill_0, l_loop_0;
+      w("\n        <li>\n        <i class='icon-file'></i>\n        <h3>\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_bill_0["state"]));
+      w("/bills/");
+      w(rts.info.finalize(l_bill_0["session"]));
+      w("/");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("'>\n            ");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("\n            </a>\n        </h3>\n        <p>");
+      w(rts.info.finalize(l_bill_0["title"]));
+      w("</p>\n        <p>\n        ");
+      rt.iterate(l_bill_0["type"], l_loop_0, ["subject"], function(l_loop_1, l_subject_0) {
+        var l_loop_1, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["subjects"], l_loop_0, ["subject"], function(l_loop_2, l_subject_0) {
+        var l_loop_2, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["scraped_subjects"], l_loop_0, ["subject"], function(l_loop_3, l_subject_0) {
+        var l_loop_3, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        </p>\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"bill_6-10.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["bill"], function(l_loop_0, l_bill_0) {
+      var l_loop_1 = rts.lookupVar("loop"), l_loop_2 = rts.lookupVar("loop"), l_loop_3 = rts.lookupVar("loop"), l_bill_0, l_loop_0;
+      w("\n        <li>\n        <i class='icon-file'></i>\n        <h3>\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_bill_0["state"]));
+      w("/bills/");
+      w(rts.info.finalize(l_bill_0["session"]));
+      w("/");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("'>\n            ");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("\n            </a>\n        </h3>\n        <p>");
+      w(rts.info.finalize(l_bill_0["title"]));
+      w("</p>\n        <p>\n        ");
+      rt.iterate(l_bill_0["type"], l_loop_0, ["subject"], function(l_loop_1, l_subject_0) {
+        var l_loop_1, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["subjects"], l_loop_0, ["subject"], function(l_loop_2, l_subject_0) {
+        var l_loop_2, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["scraped_subjects"], l_loop_0, ["subject"], function(l_loop_3, l_subject_0) {
+        var l_loop_3, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        </p>\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"bill_6.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["bill"], function(l_loop_0, l_bill_0) {
+      var l_loop_1 = rts.lookupVar("loop"), l_loop_2 = rts.lookupVar("loop"), l_loop_3 = rts.lookupVar("loop"), l_bill_0, l_loop_0;
+      w("\n        <li>\n        <i class='icon-file'></i>\n        <h3>\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_bill_0["state"]));
+      w("/bills/");
+      w(rts.info.finalize(l_bill_0["session"]));
+      w("/");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("'>\n            ");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("\n            </a>\n        </h3>\n        <p>");
+      w(rts.info.finalize(l_bill_0["title"]));
+      w("</p>\n        <p>\n        ");
+      rt.iterate(l_bill_0["type"], l_loop_0, ["subject"], function(l_loop_1, l_subject_0) {
+        var l_loop_1, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["subjects"], l_loop_0, ["subject"], function(l_loop_2, l_subject_0) {
+        var l_loop_2, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["scraped_subjects"], l_loop_0, ["subject"], function(l_loop_3, l_subject_0) {
+        var l_loop_3, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        </p>\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"bill_7.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["bill"], function(l_loop_0, l_bill_0) {
+      var l_loop_1 = rts.lookupVar("loop"), l_loop_2 = rts.lookupVar("loop"), l_loop_3 = rts.lookupVar("loop"), l_bill_0, l_loop_0;
+      w("\n        <li>\n        <i class='icon-file'></i>\n        <h3>\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_bill_0["state"]));
+      w("/bills/");
+      w(rts.info.finalize(l_bill_0["session"]));
+      w("/");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("'>\n            ");
+      w(rts.info.finalize(l_bill_0["bill_id"]));
+      w("\n            </a>\n        </h3>\n        <p>");
+      w(rts.info.finalize(l_bill_0["title"]));
+      w("</p>\n        <p>\n        ");
+      rt.iterate(l_bill_0["type"], l_loop_0, ["subject"], function(l_loop_1, l_subject_0) {
+        var l_loop_1, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["subjects"], l_loop_0, ["subject"], function(l_loop_2, l_subject_0) {
+        var l_loop_2, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        ");
+      rt.iterate(l_bill_0["scraped_subjects"], l_loop_0, ["subject"], function(l_loop_3, l_subject_0) {
+        var l_loop_3, l_subject_0;
+        w("\n            <span class='label'>");
+        w(rts.info.finalize(l_subject_0));
+        w("</span>\n        ");
+      }, null);
+      w("\n        </p>\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"bill_base.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"bills_5.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"committee_1.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["c"], function(l_loop_0, l_c_0) {
+      var l_c_0, l_loop_0;
+      w("\n        <i class='icon-lock'></i>\n        <li><h3>\n            [");
+      w(rts.info.finalize(l_c_0["chamber"]));
+      w("]\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_c_0["state"]));
+      w("/committees/");
+      w(rts.info.finalize(l_c_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_c_0["committee"]));
+      w("</a>\n        </h3></li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"committee_2.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["c"], function(l_loop_0, l_c_0) {
+      var l_c_0, l_loop_0;
+      w("\n        <i class='icon-lock'></i>\n        <li><h3>\n            [");
+      w(rts.info.finalize(l_c_0["chamber"]));
+      w("]\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_c_0["state"]));
+      w("/committees/");
+      w(rts.info.finalize(l_c_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_c_0["committee"]));
+      w("</a>\n        </h3></li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"committee_3.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["c"], function(l_loop_0, l_c_0) {
+      var l_c_0, l_loop_0;
+      w("\n        <i class='icon-lock'></i>\n        <li><h3>\n            [");
+      w(rts.info.finalize(l_c_0["chamber"]));
+      w("]\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_c_0["state"]));
+      w("/committees/");
+      w(rts.info.finalize(l_c_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_c_0["committee"]));
+      w("</a>\n        </h3></li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"committee_4.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["c"], function(l_loop_0, l_c_0) {
+      var l_c_0, l_loop_0;
+      w("\n        <i class='icon-lock'></i>\n        <li><h3>\n            [");
+      w(rts.info.finalize(l_c_0["chamber"]));
+      w("]\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_c_0["state"]));
+      w("/committees/");
+      w(rts.info.finalize(l_c_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_c_0["committee"]));
+      w("</a>\n        </h3></li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"committee_5.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["c"], function(l_loop_0, l_c_0) {
+      var l_c_0, l_loop_0;
+      w("\n        <i class='icon-lock'></i>\n        <li><h3>\n            [");
+      w(rts.info.finalize(l_c_0["chamber"]));
+      w("]\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_c_0["state"]));
+      w("/committees/");
+      w(rts.info.finalize(l_c_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_c_0["committee"]));
+      w("</a>\n        </h3></li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"committee_6-10.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["c"], function(l_loop_0, l_c_0) {
+      var l_c_0, l_loop_0;
+      w("\n        <i class='icon-lock'></i>\n        <li><h3>\n            [");
+      w(rts.info.finalize(l_c_0["chamber"]));
+      w("]\n            <a href='http://openstates.org/");
+      w(rts.info.finalize(l_c_0["state"]));
+      w("/committees/");
+      w(rts.info.finalize(l_c_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_c_0["committee"]));
+      w("</a>\n        </h3></li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"committee_base.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"layout_0.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    w("No results :(");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"layout_0_col.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"layout_1_col.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_col1_0 = rts.lookupVar("col1");
+    w("    <div class=\"row-fluid show-grid\">\n        <div class=\"span12\">\n            ");
+    w(rts.info.finalize(l_col1_0));
+    w("\n        </div>\n    </div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"layout_2_col.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_col1_0 = rts.lookupVar("col1"), l_col2_0 = rts.lookupVar("col2");
+    w("    <div class=\"row-fluid show-grid\">\n        <div class=\"span6\">\n            ");
+    w(rts.info.finalize(l_col1_0));
+    w("\n        </div>\n        <div class=\"span6\">\n            ");
+    w(rts.info.finalize(l_col2_0));
+    w("\n        </div>\n    </div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"layout_3_col.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_col1_0 = rts.lookupVar("col1"), l_col2_0 = rts.lookupVar("col2"), l_col3_0 = rts.lookupVar("col3");
+    w("        <div class=\"span4\">\n            ");
+    w(rts.info.finalize(l_col1_0));
+    w("\n        </div>\n        <div class=\"span4\">\n            ");
+    w(rts.info.finalize(l_col2_0));
+    w("\n        </div>\n        <div class=\"span4\">\n            ");
+    w(rts.info.finalize(l_col3_0));
+    w("\n        </div>\n    </div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"legislator_base.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_person_0 = rts.lookupVar("person");
     w("<div>\n");
     if (l_person_0["length"]) { 
-      var l_loop_0 = rts.lookupVar("loop");
+      var l_loop_0 = rts.lookupVar("loop"), l_person_count_0 = rts.lookupVar("person_count");
       w("\n<h2>Legislators (");
-      w(rts.info.finalize(l_person_0["length"]));
+      w(rts.info.finalize(l_person_count_0));
       w(")</h2>\n<ul>\n");
       rt.iterate(l_person_0, l_loop_0, ["leg"], function(l_loop_0, l_leg_0) {
         var l_loop_0, l_leg_0;
-        w("\n    <li>\n    <div class='content'>\n    <i class='icon-user'></i>\n    <h3>\n        <a href='http://openstates.org/");
+        w("\n    <li>\n    <div class='content'>\n    <i class='icon-user'></i>\n    <h3>\n        [");
+        w(rts.info.finalize(l_leg_0["chamber"]));
+        w("] <a href='http://openstates.org/");
         w(rts.info.finalize(l_leg_0["state"]));
         w("/legislators/");
         w(rts.info.finalize(l_leg_0["_id"]));
@@ -505,79 +1174,203 @@ jsonjinja.addTemplates(
       }, null);
       w("\n</ul>\n");
     } else {
-      var l_loop_0 = rts.lookupVar("loop");
+      var l_loop_0 = rts.lookupVar("loop"), l_person_count_0 = rts.lookupVar("person_count");
       w("\n <h2>No Legislators Found</h2>\n");
     }
-    w("\n\n");
-    w("\n\n\n");
-    if (l_committee_0) { 
-      var l_loop_0 = rts.lookupVar("loop");
-      w("\n<h2>Committees (");
-      w(rts.info.finalize(l_committee_0["length"]));
-      w(")</h2>\n<ul>\n");
-      rt.iterate(l_committee_0, l_loop_0, ["c"], function(l_loop_0, l_c_0) {
-        var l_c_0, l_loop_0;
-        w("\n    <div class='content'>\n    <i class='icon-lock'></i>\n    <li><h3>\n        [");
-        w(rts.info.finalize(l_c_0["chamber"]));
-        w("]\n        <a href='http://openstates.org/");
-        w(rts.info.finalize(l_c_0["state"]));
-        w("/committees/");
-        w(rts.info.finalize(l_c_0["_id"]));
-        w("/'>");
-        w(rts.info.finalize(l_c_0["committee"]));
-        w("</a>\n    </h3></li>\n    </div>\n");
-      }, null);
-      w("\n</ul>\n");
-    } else {
-      var l_loop_0 = rts.lookupVar("loop");
-      w("\n <h2>No Committees Found</h2>\n");
-    }
-    w("\n\n");
-    if (l_bill_0) { 
-      var l_loop_0 = rts.lookupVar("loop");
-      w("\n<h2>Bill (");
-      w(rts.info.finalize(l_bill_0["length"]));
-      w(")</h2>\n<ul>\n");
-      rt.iterate(l_bill_0, l_loop_0, ["b"], function(l_loop_0, l_b_0) {
-        var l_loop_1 = rts.lookupVar("loop"), l_loop_2 = rts.lookupVar("loop"), l_loop_3 = rts.lookupVar("loop"), l_b_0, l_loop_0;
-        w("\n    <li>\n        <div class='content'>\n        <i class='icon-file'></i>\n        <h3>\n            <a href='http://openstates.org/");
-        w(rts.info.finalize(l_b_0["state"]));
-        w("/bills/");
-        w(rts.info.finalize(l_b_0["session"]));
-        w("/");
-        w(rts.info.finalize(l_b_0["bill_id"]));
-        w("'>\n            ");
-        w(rts.info.finalize(l_b_0["bill_id"]));
-        w("\n            </a>\n        </h3>\n        <p>");
-        w(rts.info.finalize(l_b_0["title"]));
-        w("</p>\n        </div>\n        <p>\n        ");
-        rt.iterate(l_b_0["type"], l_loop_0, ["subject"], function(l_loop_1, l_subject_0) {
-          var l_loop_1, l_subject_0;
-          w("\n            <span class='label'>");
-          w(rts.info.finalize(l_subject_0));
-          w("</span>\n        ");
-        }, null);
-        w("\n        ");
-        rt.iterate(l_b_0["subjects"], l_loop_0, ["subject"], function(l_loop_2, l_subject_0) {
-          var l_loop_2, l_subject_0;
-          w("\n            <span class='label'>");
-          w(rts.info.finalize(l_subject_0));
-          w("</span>\n        ");
-        }, null);
-        w("\n        ");
-        rt.iterate(l_b_0["scraped_subjects"], l_loop_0, ["subject"], function(l_loop_3, l_subject_0) {
-          var l_loop_3, l_subject_0;
-          w("\n            <span class='label'>");
-          w(rts.info.finalize(l_subject_0));
-          w("</span>\n        ");
-        }, null);
-        w("\n        </p>\n    </li>\n");
-      }, null);
-      w("\n</ul>\n</div>\n");
-    } else {
-      var l_loop_0 = rts.lookupVar("loop");
-      w("\n <h2>No Bills Found</h2>\n");
-    }
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"person_1.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["leg"], function(l_loop_0, l_leg_0) {
+      var l_loop_0, l_leg_0;
+      w("\n        <li>\n        <i class='icon-user'></i>\n        <h3>\n            [");
+      w(rts.info.finalize(l_leg_0["chamber"]));
+      w("] <a href='http://openstates.org/");
+      w(rts.info.finalize(l_leg_0["state"]));
+      w("/legislators/");
+      w(rts.info.finalize(l_leg_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_leg_0["full_name"]));
+      w("</a>\n        </h3> (");
+      w(rts.info.finalize(l_leg_0["party"]));
+      w("--");
+      w(rts.info.finalize(l_leg_0["district"]));
+      w(")\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"person_2.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["leg"], function(l_loop_0, l_leg_0) {
+      var l_loop_0, l_leg_0;
+      w("\n        <li>\n        <i class='icon-user'></i>\n        <h3>\n            [");
+      w(rts.info.finalize(l_leg_0["chamber"]));
+      w("] <a href='http://openstates.org/");
+      w(rts.info.finalize(l_leg_0["state"]));
+      w("/legislators/");
+      w(rts.info.finalize(l_leg_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_leg_0["full_name"]));
+      w("</a>\n        </h3> (");
+      w(rts.info.finalize(l_leg_0["party"]));
+      w("--");
+      w(rts.info.finalize(l_leg_0["district"]));
+      w(")\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"person_3.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["leg"], function(l_loop_0, l_leg_0) {
+      var l_loop_0, l_leg_0;
+      w("\n        <li>\n        <img src=\"");
+      w(rts.info.finalize(l_leg_0["photo_url"]));
+      w("\">\n        <h3>\n            [");
+      w(rts.info.finalize(l_leg_0["chamber"]));
+      w("] <a href='http://openstates.org/");
+      w(rts.info.finalize(l_leg_0["state"]));
+      w("/legislators/");
+      w(rts.info.finalize(l_leg_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_leg_0["full_name"]));
+      w("</a>\n        </h3> (");
+      w(rts.info.finalize(l_leg_0["party"]));
+      w("--");
+      w(rts.info.finalize(l_leg_0["district"]));
+      w(")\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"person_4.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["leg"], function(l_loop_0, l_leg_0) {
+      var l_loop_0, l_leg_0;
+      w("\n        <li>\n        <i class='icon-user'></i>\n        <h3>\n            [");
+      w(rts.info.finalize(l_leg_0["chamber"]));
+      w("] <a href='http://openstates.org/");
+      w(rts.info.finalize(l_leg_0["state"]));
+      w("/legislators/");
+      w(rts.info.finalize(l_leg_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_leg_0["full_name"]));
+      w("</a>\n        </h3> (");
+      w(rts.info.finalize(l_leg_0["party"]));
+      w("--");
+      w(rts.info.finalize(l_leg_0["district"]));
+      w(")\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"person_5.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["leg"], function(l_loop_0, l_leg_0) {
+      var l_loop_0, l_leg_0;
+      w("\n        <li>\n        <i class='icon-user'></i>\n        <h3>\n            [");
+      w(rts.info.finalize(l_leg_0["chamber"]));
+      w("] <a href='http://openstates.org/");
+      w(rts.info.finalize(l_leg_0["state"]));
+      w("/legislators/");
+      w(rts.info.finalize(l_leg_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_leg_0["full_name"]));
+      w("</a>\n        </h3> (");
+      w(rts.info.finalize(l_leg_0["party"]));
+      w("--");
+      w(rts.info.finalize(l_leg_0["district"]));
+      w(")\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
+  }
+  function setup(rts) {
+    rt.registerBlockMapping(rts.info, blocks);
+  }
+  var blocks = {};
+  return rt.makeTemplate(root, setup, blocks);
+}),"person_6-10.html":(function(rt) {
+  function root(rts) {
+    var w = rts.writeFunc;
+    var l_loop_0 = rts.lookupVar("loop"), l_count_0 = rts.lookupVar("count"), l_objects_0 = rts.lookupVar("objects"), l_object_type_0 = rts.lookupVar("object_type");
+    w("<div class='content'>\n    <h2>");
+    w(rts.info.finalize(l_object_type_0));
+    w("s (");
+    w(rts.info.finalize(l_count_0));
+    w(")</h2>\n    <ul>\n    ");
+    rt.iterate(l_objects_0, l_loop_0, ["leg"], function(l_loop_0, l_leg_0) {
+      var l_loop_0, l_leg_0;
+      w("\n        <li>\n        <i class='icon-user'></i>\n        <h3>\n            [");
+      w(rts.info.finalize(l_leg_0["chamber"]));
+      w("] <a href='http://openstates.org/");
+      w(rts.info.finalize(l_leg_0["state"]));
+      w("/legislators/");
+      w(rts.info.finalize(l_leg_0["_id"]));
+      w("/'>");
+      w(rts.info.finalize(l_leg_0["full_name"]));
+      w("</a>\n        </h3> (");
+      w(rts.info.finalize(l_leg_0["party"]));
+      w("--");
+      w(rts.info.finalize(l_leg_0["district"]));
+      w(")\n        </li>\n    ");
+    }, null);
+    w("\n    </ul>\n</div>");
   }
   function setup(rts) {
     rt.registerBlockMapping(rts.info, blocks);

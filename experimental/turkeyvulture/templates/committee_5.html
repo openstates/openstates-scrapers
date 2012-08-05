@@ -1,0 +1,12 @@
+<div class='content'>
+    <h2>{{object_type}}s ({{count}})</h2>
+    <ul>
+    {% for c in objects %}
+        <i class='icon-lock'></i>
+        <li><h3>
+            [{{c.chamber}}]
+            <a href='http://openstates.org/{{c.state}}/committees/{{c._id}}/'>{{ c.committee }}</a>
+        </h3></li>
+    {% endfor %}
+    </ul>
+</div>

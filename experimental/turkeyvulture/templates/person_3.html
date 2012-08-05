@@ -1,0 +1,13 @@
+<div class='content'>
+    <h2>{{object_type}}s ({{count}})</h2>
+    <ul>
+    {% for leg in objects %}
+        <li>
+        <img src="{{leg.photo_url}}">
+        <h3>
+            [{{leg.chamber}}] <a href='http://openstates.org/{{leg.state}}/legislators/{{leg._id}}/'>{{ leg.full_name }}</a>
+        </h3> ({{leg.party}}--{{leg.district}})
+        </li>
+    {% endfor %}
+    </ul>
+</div>

@@ -1,5 +1,6 @@
 from __future__ import division
 
+
 def humanize_bytes(bytes, precision=1):
     """Return a humanized string representation of a number of bytes.
 
