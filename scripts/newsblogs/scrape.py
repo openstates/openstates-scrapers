@@ -522,6 +522,13 @@ class Extractor(object):
             # Kill any keys that contain dots.
             entry = dict((k, v) for (k, v) in entry.items() if '.' not in k)
 
+            # Skip any entries that are missing required keys:
+            required = set('summary source host link published_parsed'.split())
+            if required not in set(entry):
+                msg = 'Skipped story lacking required keys: %r'
+                self.logger.info(msg % (required - set(entry)))
+                return
+
             # Save
             feed_entries.save(entry)
             msg = 'Found %d related entities in %r'
