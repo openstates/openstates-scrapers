@@ -259,7 +259,7 @@
                     {% for vote in bill.votes_manager %}
                     <li>
                         <time datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
-                        <a href="{{ vote.get_absolute_url }}">{{vote.motion|truncatewords:30}}</a>
+                        <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
                         {% if vote.has_votes %}
                         <ul class="barChart">
                             <li class="yes">
