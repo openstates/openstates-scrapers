@@ -190,7 +190,12 @@ $(document).ready(function() {
                     </ul>
                 </div>
             <!-- </div> -->
-    			{% if legislator.active %}
+                {% comment %}
+                We also need to test whether 'chamber' is in legislator to cover
+                the David Dewhurst situation--a Lt. Governor who's listed as a voter on
+                bills and is 'active' but not associated with a chamber.
+                {% endcomment %}
+    			{% if legislator.active and 'chamber' in legislator %}
                 <div class="sixCol colLt withDash clear">
                     <p>
                         {% include "billy/web/public/bio_blurb.html" %}
