@@ -198,12 +198,14 @@
                             </li>
                         {% endfor %}
 
+                        </ul>
+                        <div class="clear">
                         {% with remainder=bill.versions_remainder %}
                             {% if remainder %}
                                 <a class="viewMore" href="versions/">View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}}</a></li>
                             {% endif %}
                         {% endwith %}
-                        </ul>
+                    </div>
                     {% endif %}
                 </div>
                 <div class="fourCol colRt">
