@@ -197,13 +197,11 @@
             {% endif %}
         {% endif %}
 
-        <div id="sources">
-            {% if vote.sources %}
-                {% sources vote %}
-            {% else %}
-                {% sources vote.bill %}
-            {% endif %}
-        </div>    
+        {% if vote.sources %}
+            {% sources vote %}
+        {% else %}
+            {% sources vote.bill %}
+        {% endif %}
     </div>
 </div>    
     
