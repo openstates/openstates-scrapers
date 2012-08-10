@@ -77,19 +77,19 @@ $(document).ready(function() {
 
 </div>
 {% endif %}
+
+{% if committee.events.count %}
 <div class="fullWidth module">
     <h3 class="moduleTitle" >Related Events</h3>
-        {% if committee.events.count %}
         <ul>
             {% for event in committee.events %}
             <li><a href = "{{ event.get_absolute_url }}"
                     >{{event.description}} on {{ event.when|date:"M j, Y"}}</a><li>
             {% endfor %}
         </ul>
-        {% else %}
-            No events found.
-        {% endif %}
-    </div>
+</div>
+{% endif %}
+
 {% sources committee %}
 
 {% endblock %}
