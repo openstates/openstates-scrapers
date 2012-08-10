@@ -54,6 +54,10 @@ def grok_committee(cid):
         total += 1
         if "leg_id" in member:
             leg = db.legislators.find_one({"_id": member['leg_id']})
+            if leg is None:
+                missing += 1
+                continue
+
             roles = leg['roles']
             if len(roles) <= 0:
                 missing += 1
@@ -76,8 +80,32 @@ def grok_committee(cid):
     dD = dPct - dP
     oD = oPct - oP
 
-    print "Ctty:", rPct, dPct, oPct
-    print "CoW: ", rP, dP, oP
-    print "Delt:", rD, dD, oD
+    pErr = missing / total
 
-grok_committee("AZC000016")
+    # print "Ctty:", rPct, dPct, oPct
+    # print "CoW: ", rP, dP, oP
+    # print "Delt:", rD, dD, oD
+
+    return (rD, dD, oD, pErr)
+
+ctties = db.committees.find({"state": "az"})
+
+raw = []
+
+for c in ctties:
+    rD, dD, oD, pE = grok_committee(c['_id'])
+    raw.append({
+        "err": pE,
+        "repub": rD,
+        "dem": dD,
+        "other": oD,
+        "cid": c['_id']
+    })
+
+demSkew = sorted(raw, key=lambda x: x['dem'])
+repSkew = sorted(raw, key=lambda x: x['repub'])
+othSkew = sorted(raw, key=lambda x: x['other'])
+allSkew = sorted(raw, key=lambda x: (abs(x['dem']) + abs(x['repub']) + abs(x['other'])))
+
+print [x['dem'] for x in demSkew]
+print allSkew
