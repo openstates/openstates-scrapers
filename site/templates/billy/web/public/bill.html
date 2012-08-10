@@ -163,10 +163,27 @@
                         {% endif %} <span class="tip sponsor-type">{{ sponsor.type }}</span></li>
                     {% endfor %}
                     {% if show_all_sponsors %}
+                        {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
+                        {% for sponsor in remainder %}
+                        {% if sponsor.leg_id %}
+                            <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                            {% if sponsor.active %}
+                                <span class="tip sponsor-type">({{ sponsor.party }}) Dist. {{ sponsor.district }}</span>
+                            {% endif %}
+                        {% else %}
+                            {% if sponsor.committee_id %}
+                                <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
+                            {% else %}
+                                {# Sponsor had no leg_id or was inactive. #}
+                                <li><span class="sponsorName">{{ sponsor.name }}</span>
+                            {% endif %}
+                        {% endif %} <span class="tip sponsor-type">{{ sponsor.type }}</span></li>
+                        {% endfor %}
+                        {% endwith %}
                     {% else %}
                         {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
-                        {% if remainder %}
-                        <li><a class="viewMore" href="?show_all_sponsors=True">View {{ remainder|apnumber }} other{{ remainder|pluralize}}</a></li>
+                        {% if remainder|length %}
+                        <li><a class="viewMore" href="?show_all_sponsors=True">View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}}</a></li>
                         {% endif %}
                         {% endwith %}
                     {% endif %}
