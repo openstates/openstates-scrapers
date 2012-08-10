@@ -2,6 +2,8 @@
 
 from billy import db
 
+state = "oh"
+
 
 def get_state_breakdown(abbr):
     legs = db.legislators.find({"state": abbr})
@@ -10,6 +12,10 @@ def get_state_breakdown(abbr):
         roles = leg['roles']
         if len(roles) <= 0:
             continue
+
+        if not "party" in roles[0]:
+            continue
+
         parta = roles[0]['party'].strip()
         if parta == "Republican":
             repub.append(leg)
@@ -62,6 +68,11 @@ def grok_committee(cid):
             if len(roles) <= 0:
                 missing += 1
                 continue
+
+            if not "party" in roles[0]:
+                missing += 1
+                continue
+
             parta = roles[0]['party'].strip()
             if parta == "Republican":
                 rCount += 1
@@ -71,6 +82,9 @@ def grok_committee(cid):
                 oCount += 1
         else:
             missing += 1
+
+    if total == 0:
+        return None
 
     rPct = rCount / total
     dPct = dCount / total
@@ -88,24 +102,34 @@ def grok_committee(cid):
 
     return (rD, dD, oD, pErr)
 
-ctties = db.committees.find({"state": "az"})
 
-raw = []
+def digest_state(state):
+    ctties = db.committees.find({"state": state})
 
-for c in ctties:
-    rD, dD, oD, pE = grok_committee(c['_id'])
-    raw.append({
-        "err": pE,
-        "repub": rD,
-        "dem": dD,
-        "other": oD,
-        "cid": c['_id']
-    })
+    raw = []
 
-demSkew = sorted(raw, key=lambda x: x['dem'])
-repSkew = sorted(raw, key=lambda x: x['repub'])
-othSkew = sorted(raw, key=lambda x: x['other'])
-allSkew = sorted(raw, key=lambda x: (abs(x['dem']) + abs(x['repub']) + abs(x['other'])))
+    for c in ctties:
+        ctty_stuff = grok_committee(c['_id'])
+        if ctty_stuff is None:
+            continue
 
-print [x['dem'] for x in demSkew]
-print allSkew
+        rD, dD, oD, pE = ctty_stuff
+        raw.append({
+            "err": pE,
+            "repub": rD,
+            "dem": dD,
+            "other": oD,
+            "cid": c['_id']
+        })
+
+    demSkew = sorted(raw, key=lambda x: x['dem'])
+    repSkew = sorted(raw, key=lambda x: x['repub'])
+    othSkew = sorted(raw, key=lambda x: x['other'])
+    allSkew = sorted(raw, key=lambda x: (abs(x['dem']) + abs(x['repub']) + abs(x['other'])))
+
+    return (demSkew, repSkew, othSkew, allSkew)
+
+states = [x['_id'] for x in db.metadata.find()]
+
+for state in states:
+    print digest_state(state)
