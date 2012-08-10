@@ -309,37 +309,37 @@
 
         {% with events=bill.events %}
             {% if events.count %}
-            <div class="eightCol colLt">
-                <h3>Events</h3>
-                <table class="normalTable">
-                    <thead>
-                        <tr id="titles">
-                            <th>Date</th>
-                            <th>Where</th>
-                            <th>Description</th>
-                            <th>Committees</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for event in bill.events %}
-                        <tr class = 'odd'>
-                            <td class="tip withTipSm"><a href='{{ event.get_absolute_url }}'
-                                    >{{ event.when|date:"M j, Y"}}</a></td>
-                            <td>{{ event.location }}</td>
-                            <td>{{ event.description }}</td>
-                            <td>
-                                {% for committee in event.committees %}
-                                <a href='{{ committee.get_absolute_url }}'
-                                    >{{committee.display_name}}</a>
-                                {% endfor %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        {% endif %}
-                        {% endwith %}
-                    </tbody>
-                </table>
-                {% sources bill %}
-                <div class="clear"></div>
-            </div>
+        <div class="module eightCol colLt">
+            <h3 class="moduleTitle">Events</h3>
+            <table class="normalTable">
+                <thead>
+                    <tr id="titles">
+                        <th>Date</th>
+                        <th>Where</th>
+                        <th>Description</th>
+                        <th>Committees</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in bill.events %}
+                    <tr class = 'odd'>
+                        <td class="tip withTipSm"><a href='{{ event.get_absolute_url }}'
+                                >{{ event.when|date:"M j, Y"}}</a></td>
+                        <td>{{ event.location }}</td>
+                        <td>{{ event.description }}</td>
+                        <td>
+                            {% for committee in event.committees %}
+                            <a href='{{ committee.get_absolute_url }}'
+                                >{{committee.display_name}}</a>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                </tbody>
+            </table>
+            <div class="clear"></div>
+        </div>
+        {% sources bill %}
         {% endblock %}
