@@ -11,6 +11,10 @@
   Open States
 {% endblock %}
 
+{% block description %}
+Vote on {{metadata.legislature_name}} {{vote.bill.bill_id}} ({{vote.bill.session_details.display_name}}) that took place on {{vote.date|date:"M d, Y"}}.
+{% endblock %}
+
 {% block headblock %}
     <link rel="canonical" href="{{vote.get_absolute_url}}">
     <script>

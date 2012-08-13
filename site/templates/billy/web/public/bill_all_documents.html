@@ -8,6 +8,10 @@
   {{bill.bill_id }} Documents - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
 {% endblock %}
 
+{% block description %}
+All documents related to {{{metadata.display_name}}'s {bill.bill_id}} from {{bill.session_details.display_name}}.({{bill.title}})
+{% endblock %}
+
 {% block content %}
         <ul class="breadcrumb floatedList clearfix">
             <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>

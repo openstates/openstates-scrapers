@@ -8,6 +8,10 @@
   {{bill.bill_id }} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
 {% endblock %}
 
+{% block description %}
+{{metadata.display_name}} {{bill.chamber_name}} {{bill.type_string|title}} {{bill.bill_id}}: {{bill.title}}.
+{% endblock %}
+
 {% block headblock %}
     <link rel="canonical" href="{{bill.get_absolute_url}}">
     <script>

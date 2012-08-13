@@ -2,10 +2,10 @@
 {% load customtags %}
 {% load twitter_tag %}
 <!doctype html>
-
 <html lang="en" class="no-js">
 <head>
     <title>{% striptags %}{% block title %}{% endblock %}{% end_striptags %}</title>
+    <meta name="description" content="{% block description %}{% endblock %}">
     <script>var _sf_startpt=(new Date()).getTime()</script>
     <link rel="stylesheet" type="text/css" href="{% static "main.css" %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'select2-2.0/select2.css' %}"/>
@@ -136,7 +136,7 @@
                                 <li><a href="http://readthedocs.org/docs/billy/en/latest/scrapers.html">Writing Scrapers</a></li>
                             </ul>
                         </dd>
-                        
+
                         <dt class="clear">Reach Out to Us:</dt>
                         <dd>
                             <ul>

@@ -4,9 +4,13 @@
 
 
 {% block title %}
-  {{committee.display_name}} -
+ {{committee.display_name}} ({{committee.chamber_name}}) -
   {{metadata.legislature_name}} -
   Open States
+{% endblock %}
+
+{% block description %}
+{{metadata.legislature_name}} - {{committee.chamber_name}} {{committee.display_name}} Committee.
 {% endblock %}
 
 {% block headblock %}

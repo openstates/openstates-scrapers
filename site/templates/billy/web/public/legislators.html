@@ -4,6 +4,8 @@
 
 {% block title %}{{metadata.name}} {{ chamber_title }} - Open States{% endblock %}
 
+{% block description %}{{chamber_title}} currently serving in {{metadata.name}} {% endblock %}
+
 {% block headblock %}
 <script>
 $(document).ready(function() {
