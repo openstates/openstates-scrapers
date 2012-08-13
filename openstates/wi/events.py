@@ -58,7 +58,12 @@ class WIEventScraper(EventScraper):
         time = date_times[0]
         place = date_times[1]
 
+
         committee = metainf['committee']['txt']
+
+        if not "chamber" in metainf:
+            return
+
         chamber = metainf['chamber']['txt']
 
         try:
