@@ -12,7 +12,8 @@
 {% endblock %}
 
 {% block description %}
-{{legislator.title}} {{legislator.full_name}} represents {{metadata.name}} {{legislator.chamber_name}} {% if legislator.district.0.isdigit %}District {% endif %}{{legislator.district}}.
+{{legislator.title}} {{legislator.full_name}} represents {{metadata.name}}
+{% if legislator.active %} {{legislator.chamber_name}} {% if legislator.district.0.isdigit %}District {% endif %}{{legislator.district}}. {% endif %}
 {% endblock %}
 
 {% block headblock %}
