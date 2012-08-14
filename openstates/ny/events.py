@@ -57,10 +57,16 @@ class NYEventScraper(EventScraper):
             time = metainf['Time:']
             repl = {
                 "A.M." : "AM",
-                "P.M." : "PM"
+                "P.M." : "PM",
+            }
+            drepl = {
+                "Sept": "Sep"
             }
             for r in repl:
                 time = time.replace(r, repl[r])
+
+            for r in drepl:
+                date = date.replace(r, drepl[r])
 
             time = re.sub("-.*", "", time)
             time = time.strip()
@@ -72,6 +78,10 @@ class NYEventScraper(EventScraper):
                 year,
                 time
             )
+
+            if "tbd" in date.lower():
+                continue
+
             try:
                 datetime = dt.datetime.strptime(date, "%B %d %Y %I:%M %p")
             except ValueError:
