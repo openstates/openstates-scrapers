@@ -182,4 +182,27 @@ action_codes = {
     'cur_con_101': 'other', # concur. failed
     'cur_om_141': 'committee:referred',
     'misc_he_200': 'other', # hearing
+    
+    # new stuff
+    'mot_susp_209': 'other', 
+    'mot_susp_208': 'other', 
+    'kill_reso_100': 'other',
+    'intro_iopbc_681': 'other', 
+    'dead_conf_101': 'other', 
+    'intro_iopbc_251': 'other', 
+    'ccal_faccl_900': 'other', 
+
+    'dead_cal_202': 'other', 
+    'dead_cal_203': 'other', 
+    'dead_go_401': 'other', 
+    'dead_go_402': 'other', 
+    'dead_com_302': 'other', 
+    'dead_com_303': 'other', 
+    'dead_com_301': 'other', 
+    'dead_cal_201': 'other',
+    'kill_reso_200': 'other',
+    'misc_bs_100': 'other'
+    
+    #[u'bill:introduced', u'bill:passed', u'bill:failed', u'bill:withdrawn', u'bill:substituted', u'bill:filed', u'bill:veto_override:passed', u'bill:veto_override:failed', u'governor:received', u'governor:signed', u'governor:vetoed', u'governor:vetoed:line-item', u'amendment:introduced', u'amendment:passed', u'amendment:failed', u'amendment:tabled', u'amendment:amended', u'amendment:withdrawn', u'committee:referred', u'committee:failed', u'committee:passed', u'committee:passed:favorable', u'committee:passed:unfavorable', u'bill:reading:1', u'bill:reading:2', u'bill:reading:3', u'other'
+
     }
