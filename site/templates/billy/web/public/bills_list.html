@@ -4,7 +4,7 @@
 {% load customtags %}
 
 {% block title %}
-{{description}} {% if object_list.current_page != 1 %} - page {{object_list.current_page}}{% endif %}- Open States
+{{description}} {% if object_list.current_page != 1 %} - {% trans 'page' %} {{object_list.current_page}}{% endif %}- Open States
 {% endblock %}
 
 {% block description %}
@@ -72,9 +72,9 @@ $(document).ready(function(){
 
 {% block content %}
         <span class="tip sources withTipSm">
-        {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/state_bills/{{request.GET.search_text|urlencode}}?state_bills[state]={{abbr|upper}}">Receive alerts about "{{request.GET.search_text}}"</a> with Scout.
-            {% if abbr != 'all' %}<span class='tip'>Search for bills about "{{request.GET.search_text}}" across <a href="/all/search?search_text={{request.GET.search_text|urlencode}}">all states.</a></span>{% endif %}
-        {% else %} <a href="https://scout.sunlightfoundation.com/">Receive bill alerts</a> with Scout.
+            {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/state_bills/{{request.GET.search_text|urlencode}}?state_bills[state]={{abbr|upper}}">{% trans 'Receive alerts about' %} "{{request.GET.search_text}}"</a> {% trans 'with Scout.' %}
+            {% if abbr != 'all' %}<span class="tip">{% trans 'Search for bills about' %} "{{request.GET.search_text}}" {% trans 'across' %} <a href="/all/search?search_text={{request.GET.search_text|urlencode}}">{% trans 'all states." %}</a></span>{% endif %}
+            {% else %} <a href="https://scout.sunlightfoundation.com/">{% trans 'Receive bill alerts' %}</a>{% trans 'with Scout.'%}
         {% endif %}
         </span>
         <h2 id="billSearchTitle">{{ description }}</h2>
@@ -84,7 +84,7 @@ $(document).ready(function(){
         </ul>
         {% endif %}
             <div class="twoCol colLtSm filterCol clear">
-                <h3 id="filterTitle" class="textReplace">Filter Bills</h3>
+                <h3 id="filterTitle" class="textReplace">{% trans "Filter Bills" %}</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
                     <ul>
                         <li>
@@ -96,10 +96,10 @@ $(document).ready(function(){
             </div>
             <div class="tenCol colRt">
                 {% if not object_list.count %}
-                    No bills found matching those criteria. Try widening your criteria.
+                    {% trans "No bills found matching those criteria. Try widening your criteria." %}
                 {% else %}
                 <div class="pagination-links">
-                    <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
+                    <span class="tip tipSm">{% blocktrans %} Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}} {% endblocktrans %}</span>
                     <div class="pagesNum">
                         {% if object_list.has_next or object_list.has_previous %}
                         <ul>
@@ -138,7 +138,7 @@ $(document).ready(function(){
                 {% endif %}
                 
                  <div class="pagination-links">
-                    <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
+                     <span class="tip tipSm">{% blocktrans %}Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}} {% endblocktrans %}</span>
                     <div class="pagesNum">
                         {% if object_list.has_next or object_list.has_previous %}
                         <ul>

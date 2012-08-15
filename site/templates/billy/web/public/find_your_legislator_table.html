@@ -2,11 +2,11 @@
 <table>
     <thead>
         <tr id="title">
-            <th class="invisible">Picture</th>
-            <th>Name</th>
-            <th>District</th>
-            <th>Party</th>
-            <th>Chamber</th>
+            <th class="invisible">{% trans "Picture" %}</th>
+            <th>{% trans "Name" %}</th>
+            <th>{% trans "District" %}</th>
+            <th>{% trans "Party" %}</th>
+            <th>{% trans "Chamber" %}</th>
         </tr>
     </thead>
     <tbody>
@@ -16,18 +16,18 @@
             <td><a href="{{ leg.get_absolute_url }}">{{ leg.first_name }} {{ leg.last_name }}</a></td>
             <td>{{ leg.district }}</td>
             <td>{{ leg.party }}</td>
-            <td class = 'chamber-{{leg.chamber}}' >{{ leg.chamber_name }}</td>
+            <td class="chamber-{{leg.chamber}}" >{{ leg.chamber_name }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 {% elif state %}
-<div class='find_your_legislator_errorbox'>
-    <b>Sorry, no legislators found for this location.</b>
+<div class="find_your_legislator_errorbox">
+    <b>{% trans "Sorry, no legislators found for this location." %}</b>
 </div>
 {% else %}
-<div class='find_your_legislator_errorbox'>
-    <b>Oh no!</b> We can't locate any U.S. Legislators for that location. Double
-    check you gave a location in the United States.
+<div class="find_your_legislator_errorbox">
+    {% trans "<b>Oh no!</b> We can't locate any U.S. Legislators for that location. Double
+    check you gave a location in the United States." %}
 </div>
 {% endif %}

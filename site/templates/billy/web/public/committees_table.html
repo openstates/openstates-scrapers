@@ -3,10 +3,10 @@
   <thead>
     <tr>
       {% if show_chamber_column %}
-      <th class="sort"><a href="?key=chamber&order={{ sort_order }}&chamber={{chamber}}">Chamber</th>
+      <th class="sort"><a href="?key=chamber&order={{ sort_order }}&chamber={{chamber}}">{% trans "Chamber" %}</th>
       {% endif %}
-      <th class="sort"><a href="?key=committee&order={{ sort_order }}&chamber={{chamber}}">Name</th>
-      <th>Members</th>
+      <th class="sort"><a href="?key=committee&order={{ sort_order }}&chamber={{chamber}}">{% trans "Name" %}</th>
+      <th>{% trans "Members" %}</th>
     </tr>
   </thead>
   {% for committee in committees %}
@@ -17,7 +17,7 @@
     <td><a href="{{ committee.get_absolute_url }}">{{ committee.display_name }}</a></td>
     <td>
       {% if not committee.members %}
-        [data not yet available]
+          [{% trans "data not yet available" %}]
       {% else %}
         <ul class="inlineList noSpace">
         {% for member, legislator_object in committee.members_objects %}

@@ -6,7 +6,7 @@
             name="chamber" value="{{k}}">{{v}}</button>
         {% endfor %}
         <button class="last {% if chamber == 'both' %}active{% endif %}" name="chamber" value="">
-            Both Chambers
+            {% trans "Both Chambers" %}
         </button>
     </div>
 </form>

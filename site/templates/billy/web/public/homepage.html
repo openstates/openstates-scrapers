@@ -34,15 +34,15 @@
                 <form action="http://organizing.sunlightfoundation.com/page/s/open-states" method="post" id="notify">
                     <ul>
                         <li>
-                            <label class="hidden">Email</label>
-                            <input type="text" name="email" placeholder="{% trans "your email address" %}">
+                        <label class="hidden">{% trans "Email" %}</label>
+                            <input type="text" name="email" placeholder="{% trans 'your email address' %}">
                         </li>
                         <li>
-                            <label class="hidden">Zip Code</label>
-                            <input type="text" name="zip" placeholder="{% trans "your zip code" %}">
+                            <label class="hidden">{% trans "Zip Code" %}</label>
+                            <input type="text" name="zip" placeholder="{% trans 'your zip code' %}">
                         </li>
                         <li>
-                            <button type="submit"> <span>Submit</span> </button>
+                            <button type="submit"> <span>{% trans "Submit" noop %}</span> </button>
                         </li>
                     </ul>
                 </form>

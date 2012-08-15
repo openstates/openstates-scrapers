@@ -3,20 +3,19 @@
 {% load humanize %}
 {% load customtags %}
 
-
 {% block title %}
 {{bill.bill_id }} {% trans "Documents" %} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
 {% endblock %}
 
 {% block description %}
-All documents related to {{metadata.display_name}}'s {{bill.bill_id}} from {{bill.session_details.display_name}}.({{bill.title}})
+{% blocktrans %} All documents related to {{metadata.display_name}}'s {{bill.bill_id}} from {{bill.session_details.display_name}}.({{bill.title}}) {% endblocktrans %}
 {% endblock %}
 
 {% block content %}
         <ul class="breadcrumb floatedList clearfix">
             <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
             <li>
-                » <a href="{% url 'bills' abbr %}">Bills</a>
+                » <a href="{% url 'bills' abbr %}">{% trans "Bills" %}</a>
             </li>
             <li>
                 » <a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a>

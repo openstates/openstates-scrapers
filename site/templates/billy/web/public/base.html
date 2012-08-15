@@ -7,7 +7,7 @@
     <title>{% striptags %}{% block title %}{% endblock %}{% end_striptags %}</title>
     <meta name="description" content="{% block description %}{% endblock %}">
     <script>var _sf_startpt=(new Date()).getTime()</script>
-    <link rel="stylesheet" type="text/css" href="{% static "main.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'main.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'select2-2.0/select2.css' %}"/>
 
     <script src="{% static 'js/jquery-1.5.1.min.js' %}"></script>
@@ -63,10 +63,10 @@
 
 <body class="{% block bodyclass %}{% endblock %}">
     <header id="mainHeader">
-        <form action="/{{abbr|default:"all"}}/search/" method="get" id="searchform">
-            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans "search the site" %}">
+        <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchform">
+            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans 'search the site' %}">
             <button type="submit">
-                 <span>Search</span>
+                <span>{% trans "Search" %}</span>
             </button>
         </form>
         <h1 class="clear"><a class="textReplace" href="/">Open States</a></h1>
@@ -78,13 +78,13 @@
         {% if abbr and abbr != 'all' %}
         <nav>
             <ul>
-                <li {% if statenav_active == "home" %}class="active"{% endif %}><a href="{% url state abbr %}">Home</a></li>
-                <li {% if statenav_active == "legislators" %}class="active"{% endif %}><a href="{% url legislators abbr %}">Legislators</a></li>
-                <li {% if statenav_active == "bills" %}class="active"{% endif %}><a href="{% url bills abbr %}">Bills</a></li>
-                <li {% if statenav_active == "committees" %}class="active"{% endif %}><a href="{% url committees abbr %}">Committees</a></li>
-{% if "events" in metadata.feature_flags %}
-                <li {% if statenav_active == "events" %}class="active"{% endif %}><a href="{% url events abbr %}">Events</a></li>
-{% endif %}
+                <li {% if statenav_active == "home" %}class="active"{% endif %}><a href="{% url state abbr %}">{% trans "Home" %}</a></li>
+                <li {% if statenav_active == "legislators" %}class="active"{% endif %}><a href="{% url legislators abbr %}">{% trans "Legislators" %}</a></li>
+                <li {% if statenav_active == "bills" %}class="active"{% endif %}><a href="{% url bills abbr %}">{% trans "Bills" %}</a></li>
+                <li {% if statenav_active == "committees" %}class="active"{% endif %}><a href="{% url committees abbr %}">{% trans "Committees" %}</a></li>
+                {% if "events" in metadata.feature_flags %}
+                    <li {% if statenav_active == "events" %}class="active"{% endif %}><a href="{% url events abbr %}">{% trans "Events" %}</a></li>
+                {% endif %}
             </ul>
             <div class="clear"></div>
         </nav>
@@ -139,10 +139,10 @@
                 <h4 class="withTip h5">{% trans "Like This Project and Want to Discover Others Like It?" %}</h4>
                 <span class="tip">{% trans "Join the Sunlight Foundation's open government community to learn more" %}</span>
                 <form action="http://organizing.sunlightfoundation.com/page/s/open-states" method="post" id="submit">
-                    <input type="text" name="email" placeholder="{% trans "your email address" %}">
-                    <input type="text" name="zip" placeholder="{% trans "your zip code" %}">
+                    <input type="text" name="email" placeholder="{% trans 'your email address' %}">
+                    <input type="text" name="zip" placeholder="{% trans 'your zip code' %}">
                     <button type="submit">
-                         <span>SignUp</span>
+                        <span>{% trans "SignUp" %}</span>
                     </button>
                 </form>
             </div>

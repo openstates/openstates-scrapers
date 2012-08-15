@@ -3,20 +3,19 @@
 {% load humanize %}
 {% load customtags %}
 
-
 {% block title %}
 {{bill.bill_id }} {% trans "Versions" %} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
 {% endblock %}
 
 {% block description %}
-Full text of all versions of {{metadata.display_name}}'s {{bill.bill_id}} from {{bill.session_details.display_name}}. ({{bill.title}})
+{% blocktrans %} {{metadata.display_name}}'s {{bill.bill_id}} from {{bill.session_details.display_name}}. ({{bill.title}}) {% endblocktrans %}
 {% endblock %}
 
 {% block content %}
         <ul class="breadcrumb floatedList clearfix">
             <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
             <li>
-                » <a href="{% url 'bills' abbr %}">Bills</a>
+                » <a href="{% url 'bills' abbr %}">{% trans "Bills" %}</a>
             </li>
             <li>
                 » <a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a>
@@ -42,7 +41,7 @@ Full text of all versions of {{metadata.display_name}}'s {{bill.bill_id}} from {
         <div class="module">
             <ul class="inlineThirds">
             {% for version in bill.versions %}
-                <li class={% cycle "one" "two" "three" %}>
+                <li class="{% cycle 'one' 'two' 'three' %}">
                     <a href="{{version.url}}">{{ version.name }}</a>
                     {% if version.mimetype %}[{{ version.mimetype}}]{% endif %}
                 </li>

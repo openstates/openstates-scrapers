@@ -10,29 +10,29 @@
     <div class="medModule">
         <h2>{{event.description|trunc}}</h2>
         <dl class="inlineList">
-            <dt>When:</dt>
+            <dt>{% trans "When" %}:</dt>
             <dd>{{event.when|date:"M j, Y"}}</dd>
-            <dt>Where:</dt>
+            <dt>{% trans "Where" %}:</dt>
             <dd>{{ event.location }}</dd>
         </dl>
         <div class="clear"></div>
     </div>
     <div class="fullWidth module">
-        <h3 class="moduleTitle">Participants</h3>
+        <h3 class="moduleTitle">{% trans "Participants" %}</h3>
         <table class="fullTable">
             <tr>
-                <th>Who</th>
-                <th>Role</th>
+                <th>{% trans "Who" %}</th>
+                <th>{% trans "Role" %}</th>
             </tr>
 {% for participant in event.participants %}
             <tr>
                 {% if participant.id %}
                     {% if participant.participant_type == 'committee' %}
-                        <td><a href = '{% url 'committee' abbr participant.id %}'
+                        <td><a href="{% url 'committee' abbr participant.id %}"
                                 >{{participant.participant}}</a></td>
                     {% endif %}
                     {% if participant.participant_type == 'legislator' %}
-                        <td><a href = '{% url 'legislator_noslug' abbr participant.id %}'
+                        <td><a href="{% url 'legislator_noslug' abbr participant.id %}"
                                 >{{participant.participant}}</a></td>
                     {% endif %}
                 {% else %}
@@ -47,11 +47,11 @@
 {% with bills=event.related_bills %}
     {% if bills.count %}
     <div class="eightCol colLt">
-        <h3>Bills</h3>
+        <h3>{% trans "Bills" %}</h3>
         <ul>
     {% for bill in bills %}
         {% if "_scraped_bill_id" in bill %}
-            <li><a href = '/{{abbr}}/bill/{{bill.bill_id}}'>{{bill|underscore_field:"scraped_bill_id"}} -- {{bill.description|trunc}}</a></li>
+            <li><a href="/{{abbr}}/bill/{{bill.bill_id}}">{{bill|underscore_field:"scraped_bill_id"}} -- {{bill.description|trunc}}</a></li>
         {% else %}
             <li>{{bill.bill_id}} -- {{bill.description|trunc}}</li>
         {% endif %}
@@ -62,7 +62,7 @@
     </div>
     {% if event.documents %}
     <div class="fullWidth mainModule">
-        <h3>Documents</h3>
+        <h3>{% trans "Documents" %}</h3>
         {% for document in event.documents %}<ul>
             <li>{{ document.name }}
             {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}

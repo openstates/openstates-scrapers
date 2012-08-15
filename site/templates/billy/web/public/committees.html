@@ -3,13 +3,13 @@
 {% load customtags %}
 
 {% block title %}
-  Committees -
+ {% trans "Committees" %} -
   {{metadata.legislature_name}} -
   Open States
 {% endblock %}
 
 {% block description %}
-Information on all current {{metadata.name}} {{chamber_name}} committees.
+{% blocktrans %} Information on all current {{metadata.name}} {{chamber_name}} committees. {% endblocktrans %}
 {% endblock %}
 
 {% block headblock %}
