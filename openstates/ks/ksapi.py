@@ -201,8 +201,18 @@ action_codes = {
     'dead_com_301': 'other', 
     'dead_cal_201': 'other',
     'kill_reso_200': 'other',
-    'misc_bs_100': 'other'
-    
+    'cref_cref_318': 'other',
+    'misc_bs_100': 'other',
+    'cow_jcow_317': 'other', 
+    'cow_jcow_718': 'other', 
+    'cow_jcow_719': 'other', 
+    'intro_ires_255': 'other', 
+    'cref_cref_318': 'other', 
+    'ccr_rel_100': 'other', 
+    'cow_jcow_684': 'other', 
+    'cow_jcow_685': 'other', 
+    'cow_jcow_720': 'other'
+
     #[u'bill:introduced', u'bill:passed', u'bill:failed', u'bill:withdrawn', u'bill:substituted', u'bill:filed', u'bill:veto_override:passed', u'bill:veto_override:failed', u'governor:received', u'governor:signed', u'governor:vetoed', u'governor:vetoed:line-item', u'amendment:introduced', u'amendment:passed', u'amendment:failed', u'amendment:tabled', u'amendment:amended', u'amendment:withdrawn', u'committee:referred', u'committee:failed', u'committee:passed', u'committee:passed:favorable', u'committee:passed:unfavorable', u'bill:reading:1', u'bill:reading:2', u'bill:reading:3', u'other'
 
     }

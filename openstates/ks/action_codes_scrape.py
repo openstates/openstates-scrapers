@@ -37,8 +37,9 @@ def parse_action_codes(action_codes) :
 				passed_codes.append(number)
 			elif failed.match(match.group(2)):
 				failed_codes.append(number)
-			else:
-				print "No rule %s" % line
+# no counting, but we have a rule
+#			else:
+#				print "No rule %s" % line
 
 		else :
 			print "No match %s" % line
@@ -47,6 +48,7 @@ def report () :
 	print("voted = %s" % voted_codes)
 	print("passed = %s" % passed_codes)
 	print("failed = %s" % failed_codes)
+	print("new number=%s" % new_numbers)
 
 
 if __name__ == '__main__':
