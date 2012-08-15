@@ -56,7 +56,8 @@
             <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
         </div>
         <div class="sixCol colRt">
-            <p class="tip centeredText">Click on a district to view corresponding legislators</p>
+            <p class="tip centeredText">Click on a district to view corresponding legislators.
+                <br>You can also search by <a href="{% url 'find_your_legislator' %}">entring an address</a>.</p>
             <div id="results_table"> </div>
         </div>
         <div class="clear"></div>
@@ -114,7 +115,8 @@
                             {% endif %}
                             </time>
                             <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
-                                <span class="tip sideNote">
+                                <div class="clear"></div>
+                                <span class="tip sideNote clear">
                                     {% with sponsor=bill.sponsors_manager.first %}
                                         <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                                     {% endwith %}
@@ -137,6 +139,7 @@
                     <li>
                         <time class="published">{{ bill.action_dates.first|date:"F d, Y"}}</time>
                         <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{bill.bill_id }}</a>
+                            <div class="clear"></div>
                             <span class="tip sideNote">
                                 {% with sponsor=bill.sponsors_manager.first %}
                                     <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
@@ -167,6 +170,7 @@
                         {{ bill.action_dates.passed_upper.date|date:"F d, Y" }}
                         </time>
                         <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
+                            <div class="clear"></div>
                             <span class="tip sideNote">
                                 {% with sponsor=bill.sponsors_manager.first %}
                                     <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
@@ -191,6 +195,7 @@
                     <li>
                         <time class="published">{{ bill.action_dates.first|date:"F d, Y"}}</time>
                         <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{bill.bill_id }}</a>
+                            <div class="clear"></div>
                             <span class="tip sideNote">
                                 {% with sponsor=bill.sponsors_manager.first %}
                                     <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
