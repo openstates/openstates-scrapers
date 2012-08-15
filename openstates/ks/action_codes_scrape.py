@@ -5,6 +5,7 @@ import ksapi
 
 data = re.compile(r'^([a-z]+_[a-z]+_[0-9]{3}): (.*) *$')
 comment = re.compile(r'^#')
+empty = re.compile(r'^\s*$')
 variable = re.compile(r'\$([a-z_]+)\$')
 
 voted = re.compile(r'.*\$vote_tally\$.*')
@@ -14,6 +15,7 @@ failed = re.compile(r'.*(failed|not adopted|not passed).*\$vote_tally\$.*', re.I
 voted_codes = []
 passed_codes = []
 failed_codes = []
+unknown_codes = []
 numbers = []
 new_numbers = {}
 
@@ -21,6 +23,9 @@ def parse_action_codes(action_codes) :
 	with open(action_codes) as action_codes:
 		action_codes_str = action_codes.read()
 	for line in action_codes_str.split('\n'):
+		if empty.match(line):
+			continue
+
 		if comment.match(line):
 			continue
 		if data.match(line):
@@ -37,9 +42,8 @@ def parse_action_codes(action_codes) :
 				passed_codes.append(number)
 			elif failed.match(match.group(2)):
 				failed_codes.append(number)
-# no counting, but we have a rule
-#			else:
-#				print "No rule %s" % line
+			else:
+				unknown_codes.append(number)
 
 		else :
 			print "No match %s" % line
@@ -49,6 +53,7 @@ def report () :
 	print("passed = %s" % passed_codes)
 	print("failed = %s" % failed_codes)
 	print("new number=%s" % new_numbers)
+	print("unknown codes=%s" % unknown_codes)
 
 
 if __name__ == '__main__':
