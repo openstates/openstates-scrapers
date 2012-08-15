@@ -29,7 +29,7 @@ Vote on {{metadata.legislature_name}} {{vote.bill.bill_id}} ({{vote.bill.session
         <div class="fullWidth mainModule">
             <div id="billState" class="passed">{{vote.passed|yesno:"Passed,Failed,Unknown"}}</div>
             <div><!--  class="medModule"> -->
-                <h1 class="withTimeline withTip" style="padding-top: 30px;">
+                <h1 class="withTip" style="padding-top: 30px;">
                     {{ vote.chamber_name }} Vote on <a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
                     ({{ vote.date|date:"M j, Y"}})
                 </h1>
@@ -77,9 +77,6 @@ Vote on {{metadata.legislature_name}} {{vote.bill.bill_id}} ({{vote.bill.session
                     {% endif %}
                 {% endif %}
             </div>
-            <div class="fourCol colRt">
-                <div id="voteMap" class="withBorder clear"></div>  
-            </div>  
             <div class="clear"></div>
         </div>
 

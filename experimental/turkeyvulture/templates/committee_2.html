@@ -6,6 +6,11 @@
         <li><h3>
             [{{c.chamber}}]
             <a href='http://openstates.org/{{c.state}}/committees/{{c._id}}/'>{{ c.committee }}</a>
+            <div>
+                {% for member in c.members %}
+                    {{member.name}}
+                {% endfor %}
+            </div>
         </h3></li>
     {% endfor %}
     </ul>

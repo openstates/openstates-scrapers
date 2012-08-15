@@ -30,16 +30,16 @@ if __name__ == '__main__':
     objects = coll.find(spec)
     print 'adding', objects.count(), cname, 'with spec %r' % spec
     renderer = lambda obj: templates[cname].render(obj=obj)
-    index.add(cname[0], objects, renderer, substrs=True, storekeys=storekeys)
+    index.add(cname[0], objects, renderer, all_substrs=True, storekeys=storekeys)
 
     cname = 'committees'
-    storekeys = ['committee', 'chamber', '_type', 'state', '_id']
+    storekeys = ['committee', 'chamber', '_type', 'state', '_id', 'members']
     coll = getattr(db, cname)
     spec = {'state': 'ca'}
     objects = coll.find(spec)
     print 'adding', objects.count(), cname, 'with spec %r' % spec
     renderer = lambda obj: templates[cname].render(obj=obj)
-    index.add(cname[0], objects, renderer, substrs=True, storekeys=storekeys)
+    index.add(cname[0], objects, renderer, all_substrs=True, storekeys=storekeys)
 
     spec.update(session='20112012')
     storekeys = ['bill_id', 'title', '_type', 'subjects', 'type', 'scraped_subjects',

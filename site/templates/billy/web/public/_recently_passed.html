@@ -14,6 +14,7 @@
             {% endif %}
             </time>
             <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
+                <div class="clear"></div>
                 <span class="tip sideNote">
                     {% with sponsor=bill.sponsors_manager.first %} {% if sponsor %}
                         Sponsored By: <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
