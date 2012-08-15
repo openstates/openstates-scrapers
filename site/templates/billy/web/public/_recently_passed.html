@@ -1,0 +1,30 @@
+{% load url from future %}
+
+<span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_{{chamber.type}}&sort=passed_{{chamber.type}}""></a></span>
+<h5>Recently Passed</h5>
+{% if chamber.passed_bills %}
+    <ul>
+    {% for bill in chamber.passed_bills %}
+        <li>
+            <time class="published">
+            {% if chamber.type == 'upper' %}
+                {{ bill.action_dates.passed_upper.date|date:"F d, Y" }}
+            {% else %}
+                {{ bill.action_dates.passed_lower.date|date:"F d, Y" }}
+            {% endif %}
+            </time>
+            <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
+                <span class="tip sideNote">
+                    {% with sponsor=bill.sponsors_manager.first %} {% if sponsor %}
+                        Sponsored By: <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                    {% endif %} {% endwith %}
+                </span>
+            </span>
+            <p class="clear">{{ bill.title|truncatewords:50}}</p>
+        </li>
+    {% endfor %}
+    </ul>
+    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber.type}}">View More Passed Bills</a>
+{% else %}
+    No passed bills to display.
+{% endif %}
