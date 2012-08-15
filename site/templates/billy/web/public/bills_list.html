@@ -69,6 +69,7 @@ $(document).ready(function(){
 {% block content %}
         <span class="tip sources withTipSm">
         {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/state_bills/{{request.GET.search_text|urlencode}}?state_bills[state]={{abbr|upper}}">Receive alerts about "{{request.GET.search_text}}"</a> with Scout.
+            {% if abbr != 'all' %}<span class='tip'>Search for bills about "{{request.GET.search_text}}" across <a href="/all/search?search_text={{request.GET.search_text|urlencode}}">all states.</a></span>{% endif %}
         {% else %} <a href="https://scout.sunlightfoundation.com/">Receive bill alerts</a> with Scout.
         {% endif %}
         </span>
