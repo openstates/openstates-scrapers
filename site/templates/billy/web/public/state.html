@@ -1,10 +1,12 @@
 {% extends "billy/web/public/base.html" %}
 {% load customtags %}
 {% load staticfiles %}
+{% load i18n %}
 {# load funfacts #}
 {% load url from future %}
 
 {% block title %}{{metadata.legislature_name}} - Open States{% endblock %}
+{% block description %}{{metadata.legislature_name}}: Keep up to date with bills, legislators, votes, committees and events. {% endblock %}
 
 {% block bodyclass %}{% endblock %}
 
@@ -62,6 +64,8 @@
         <div class="clear"></div>
     </div>
 
+{% include "billy/web/public/developer_state.html" %}
+
     {# hide committees module if unicameral #}
     {% if chambers|length > 1 %}
     <div class="fullWidth module clear">
@@ -81,7 +85,7 @@
             {% if  joint_committee_count %}
             <a href="{% url 'committees' abbr %}?chamber=joint">
                 <li class="three titleNumber withTip">{{ joint_committee_count }}<span>Joint Committees</span></li>
-            </a> 
+            </a>
             {% endif %}
         </ul>
         <div class="clear"></div>
@@ -96,115 +100,19 @@
         <div class="sixCol {% if forloop.first %} colLt {% else %} colRt {% endif %}">
             <h4>{{ chamber.name }}</h4>
             <div class="medModule">
-                <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_{{chamber.type}}&sort=passed_{{chamber.type}}""></a></span>
-                <h5>{% trans "Recently Passed" %}</h5>
-                <ul>
-                {% if chamber.passed_bills %}
-                    {% for bill in chamber.passed_bills %}
-                        <li>
-                            <time class="published">
-                            {% if chamber.type == 'upper' %}
-                                {{ bill.action_dates.passed_upper.date|date:"F d, Y" }}
-                            {% else %}
-                                {{ bill.action_dates.passed_lower.date|date:"F d, Y" }}
-                            {% endif %}
-                            </time>
-                            <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
-                                <span class="tip sideNote">
-                                    {% with sponsor=bill.sponsors_manager.first %}
-                                        <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                    {% endwith %}
-                                </span>
-                            </span>
-                            <p class="clear">{{ bill.title|truncatewords:50}}</p>
-                        </li>
-                    {% endfor %}
-                    </ul>
-                    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber.type}}">
-                        {% trans "View More Passed Bills" %}
-                    </a>
-                {% else %}
-                    {% trans "No passed bills to display." %}
-                {% endif %}
+                {% include "billy/web/public/_recently_passed.html" %}
             </div>
-            <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?chamber={{chamber.type}}&sort=first"></a></span>
-            <h5>{% trans "Recently Introduced" %}</h5>
-            <ul>
-            {% if chamber.latest_bills %}
-                {% for bill in chamber.latest_bills %}
-                    <li>
-                        <time class="published">{{ bill.action_dates.first|date:"F d, Y"}}</time>
-                        <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{bill.bill_id }}</a>
-                            <span class="tip sideNote">
-                                {% with sponsor=bill.sponsors_manager.first %}
-                                    <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                {% endwith %}
-                            </span>
-                        </span>
-                        <p class="clear">{{ bill.title|truncatewords:50}}</p>
-                    </li>
-                {% endfor %}
-            {% else %}
-                {% trans "No bills to display." %}
-            {% endif %}
-            </ul>
-            <a class="viewMore" href="{% url 'bills' abbr %}?chamber={{chamber.type}}">
-                {% trans "View More Bills" %}
-            </a>
+            {% include "billy/web/public/_recently_introduced.html" %}
         </div>
         {% endfor %}
 
     {% elif chambers|length == 1 %}
     {# unicameral bill module, side by side passed/introduced #}
         <div class="sixCol colLt">
-            <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_upper&sort=passed_upper"></a></span>
-            <h5>{% trans "Recently Passed" %}</h5>
-            <ul>
-            {% if chambers.0.passed_bills %}
-                {% for bill in chambers.0.passed_bills %}
-                    <li>
-                        <time class="published">
-                        {{ bill.action_dates.passed_upper.date|date:"F d, Y" }}
-                        </time>
-                        <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
-                            <span class="tip sideNote">
-                                {% with sponsor=bill.sponsors_manager.first %}
-                                    <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                {% endwith %}
-                            </span>
-                        </span>
-                        <p class="clear">{{ bill.title|truncatewords:50}}</p>
-                    </li>
-                {% endfor %}
-            </ul>
-            <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_upper">{% trans "View More Passed Bills" %}</a>
-            {% else %}
-            {% trans "No passed bills to display." %}
-            {% endif %}
+            {% include "billy/web/public/_recently_passed.html" with chamber=chambers.0 %}
         </div>
         <div class="sixCol colRt">
-        <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?sort=first"></a></span>
-            <h5>{% trans "Recently Introduced" %}</h5>
-            <ul>
-            {% if chambers.0.latest_bills %}
-                {% for bill in chambers.0.latest_bills %}
-                    <li>
-                        <time class="published">{{ bill.action_dates.first|date:"F d, Y"}}</time>
-                        <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{bill.bill_id }}</a>
-                            <span class="tip sideNote">
-                                {% with sponsor=bill.sponsors_manager.first %}
-                                    <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                {% endwith %}
-                            </span>
-                        </span>
-                        <p class="clear">{{ bill.title|truncatewords:50}}</p>
-                    </li>
-                {% endfor %}
-            {% else %}
-                {% trans "No bills to display." %}
-            {% endif %}
-            </ul>
-            <a class="viewMore" href="{% url 'bills' abbr %}">{% trans "View More Bills" %}</a>
+            {% include "billy/web/public/_recently_introduced.html" with chamber=chambers.0 %}
         </div>
     {% endif %}   {# end unicameral bill module #}
 
@@ -212,7 +120,7 @@
     </div>
 
     <div class="fullWidth module">
-        <h3 class="moduleTitle">{% trans "Sessions" %}</h3>
+        <h3 class="moduleTitle">{% trans "Available Sessions" %}</h3>
         <table>
             <thead> <tr> <th>{% trans "Session" %}</th> <th>{% trans "Bills" %}</th> </tr> </thead>
             <tbody>

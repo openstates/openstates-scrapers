@@ -11,6 +11,10 @@
   Open States
 {% endblock %}
 
+{% block description %}
+Vote on {{metadata.legislature_name}} {{vote.bill.bill_id}} ({{vote.bill.session_details.display_name}}) that took place on {{vote.date|date:"M d, Y"}}.
+{% endblock %}
+
 {% block headblock %}
     <link rel="canonical" href="{{vote.get_absolute_url}}">
     <script>
@@ -25,7 +29,7 @@
         <div class="fullWidth mainModule">
             <div id="billState" class="passed">{{vote.passed|yesno:"Passed,Failed,Unknown"}}</div>
             <div><!--  class="medModule"> -->
-                <h1 class="withTimeline withTip" style="padding-top: 30px;">
+                <h1 class="withTip" style="padding-top: 30px;">
                     {{ vote.chamber_name }} Vote on <a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
                     ({{ vote.date|date:"M j, Y"}})
                 </h1>
@@ -73,9 +77,6 @@
                     {% endif %}
                 {% endif %}
             </div>
-            <div class="fourCol colRt">
-                <div id="voteMap" class="withBorder clear"></div>  
-            </div>  
             <div class="clear"></div>
         </div>
 
@@ -197,13 +198,11 @@
             {% endif %}
         {% endif %}
 
-        <div id="sources">
-            {% if vote.sources %}
-                {% sources vote %}
-            {% else %}
-                {% sources vote.bill %}
-            {% endif %}
-        </div>    
+        {% if vote.sources %}
+            {% sources vote %}
+        {% else %}
+            {% sources vote.bill %}
+        {% endif %}
     </div>
 </div>    
     

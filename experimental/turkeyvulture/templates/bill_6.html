@@ -1,0 +1,27 @@
+<div class='content'>
+    <h2>{{object_type}}s ({{count}})</h2>
+    <ul>
+    {% for bill in objects %}
+        <li>
+        <i class='icon-file'></i>
+        <h3>
+            <a href='http://openstates.org/{{bill.state}}/bills/{{bill.session}}/{{bill.bill_id}}'>
+            {{ bill.bill_id }}
+            </a>
+        </h3>
+        <p>{{ bill.title }}</p>
+        <p>
+        {% for subject in bill.type %}
+            <span class='label'>{{ subject }}</span>
+        {% endfor %}
+        {% for subject in bill.subjects %}
+            <span class='label'>{{ subject }}</span>
+        {% endfor %}
+        {% for subject in bill.scraped_subjects %}
+            <span class='label'>{{ subject }}</span>
+        {% endfor %}
+        </p>
+        </li>
+    {% endfor %}
+    </ul>
+</div>

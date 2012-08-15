@@ -1,0 +1,18 @@
+<div>
+{% if person.length %}
+<h2>Legislators ({{ person_count }})</h2>
+<ul>
+{% for leg in person %}
+    <li>
+    <div class='content'>
+    <i class='icon-user'></i>
+    <h3>
+        [{{leg.chamber}}] <a href='http://openstates.org/{{leg.state}}/legislators/{{leg._id}}/'>{{ leg.full_name }}</a>
+    </h3> ({{leg.party}}--{{leg.district}})
+    </div>
+    </li>
+{% endfor %}
+</ul>
+{% else %}
+ <h2>No Legislators Found</h2>
+{% endif %}

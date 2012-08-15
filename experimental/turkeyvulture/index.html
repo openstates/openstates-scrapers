@@ -1,0 +1,163 @@
+<!doctype html>
+
+<html lang="en" class="no-js">
+<head>
+    <title>Open States: discover politics in your state</title>
+    <script src='/js/jquery-1.7.2.js'></script>
+    <script src='/js/underscore.js'></script>
+    <script src='/js/highlight.js'></script>
+    <script src='/js/search.js'></script>    
+    <script src='/js/sprintf-0.7-beta1.js'></script>    
+    <script src='templates.js'></script>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <style>
+    .highlight { background-color: yellow }
+    ul {list-style-type: none}
+    li {border-bottom: 1px solid #EEE}
+    </style>
+    <script>
+     $(document).ready(function() {
+
+        var jsindex = {};
+        var stemmer = new PorterStemmer();
+        var body = $('body');
+
+        $.getJSON('index.json', function(data){
+            jsindex.index = data;
+            });
+
+        _.extend(jsindex, {
+            query: function(w){
+                //console.log('getting stem_id');
+                var word_id = this.index.stem2id[w];
+                w = stemmer.stemWord(w.toLowerCase())
+                var stem_id = this.index.stem2id[w];
+                //console.log('getting object ids');
+                var results = this.index.index[stem_id];
+                objects = this.index.objects;
+                //console.log('getting objects');
+                results = _.map(results, function(id){
+                    return objects[id];
+                    });
+                //console.log('regrouping');
+                results = _.groupBy(results, function(obj){return obj._type});
+                _.each(['bill', 'person', 'committee'], function(k){
+                    if (results[k] == undefined){
+                        results[k] = [];
+                        }
+                    });
+                return results;
+                },
+
+            update: function(w){
+
+                // Query the index.
+                console.log(vsprintf('Querying for "%s"', [w]));
+                var results = this.query(w);
+                console.log('results are...');
+                console.log(results);
+
+                var column_count = 0
+                var columns = {};
+                var template_names = {};
+
+                _.each(['person', 'committee', 'bill'], function(k){
+
+                    if (results[k].length != 0){
+
+                        column_count += 1;
+                        
+                        // Add thing_count to the context for each thing.
+                        var thing_count = results[k].length;
+                        results[k + '_count'] = thing_count;
+                        console.log('length of ' + k + ': ' + thing_count);
+
+                        // Limit results for each collection to 20.
+                        results[k] = results[k].slice(0, 20);
+
+                        // Choose which templates to use.
+                        if(thing_count < 5) {
+                            template_name = vsprintf('%s_%s.html', [k, thing_count]);
+                            }
+                        else {
+                            template_name = vsprintf('%s_6-10.html', [k]);
+                            }
+
+                        // Render the columns.
+                        console.log('template name: ' + template_name);
+                        var template = jsonjinja.getTemplate(template_name);
+                        console.log('template: ');
+                        console.log(template);
+                        console.log(vsprintf('k is: "%s"', [k]));
+                        var context = {
+                            objects: results[k],
+                            object_type: k,
+                            count: thing_count};
+                        console.log(context);
+                        var content = template.render(context);
+                        //console.log('content is:');
+                        //console.log(content);
+
+                        results[k] = {"__jsonjinja_wire__": "html-safe", "value": content};
+
+
+                        // End if results...
+                        } else {
+                            console.log('Deleting ' + k);
+                            delete results[k];
+                        }
+                    // End .each
+                    });
+
+
+                /* Render the layout. */
+
+                // Get the template.
+                var layout_name = vsprintf('layout_%d_col.html', [column_count]);
+                var columns = {};
+                var indices = [3, 2, 1];
+                _.each(['person', 'committee', 'bill'], function(k){
+                    if (results[k] != undefined){
+                        columns['col' + indices.pop()] = results[k];
+                        }
+                    });
+
+                console.log(layout_name);
+                console.log('rendered columns:');
+                console.log(columns);
+                var layout_template = jsonjinja.getTemplate(layout_name)
+                var content = layout_template.render(columns);
+
+                // Swap.
+                $('#results').html(content);
+
+                // Highlight.
+                $('.content').highlight(w);
+                }
+            });
+
+        window.jsindex = jsindex;
+
+        var search_input = $('#search')
+        search_input.bind('keyup', function(){
+            var text = $(this).val();
+            if (1 < text.length){
+                jsindex.update(text);
+                }
+            else {
+                $('#results').html("<p>Start typing to view data.</p>");
+                }
+            })
+        search_input.focus();
+    });
+    </script>
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->    
+</head>
+
+<body class="home">
+<input id="search" type='text'/>
+<div id="results">
+</div>
+</body>

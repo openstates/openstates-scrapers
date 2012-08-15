@@ -8,6 +8,10 @@
 {{bill.bill_id }} {% trans "Versions" %} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
 {% endblock %}
 
+{% block description %}
+Full text of all versions of {{metadata.display_name}}'s {{bill.bill_id}} from {{bill.session_details.display_name}}. ({{bill.title}})
+{% endblock %}
+
 {% block content %}
         <ul class="breadcrumb floatedList clearfix">
             <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>

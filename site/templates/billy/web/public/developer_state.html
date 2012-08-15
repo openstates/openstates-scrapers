@@ -1,0 +1,30 @@
+{% extends "billy/web/public/developer_base.html" %}
+{% load customtags %}
+
+{% block devlinks %}
+    <li><a href = '#dev-api' >API</a></li>
+    <li><a href = '#dev-python' >Python</a></li>
+{% endblock %}
+
+{% block devpane %}
+<div id = 'dev-python' class = 'dev-pane' >
+<pre>from sunlight import openstates
+
+meta = openstates.state_metadata('{{abbr}}')
+print "%s" % (meta['legislature_name'])
+for chamber in ['upper', 'lower']:
+    try:
+        title = meta['%s_chamber_title' % (chamber)]
+    except KeyError:
+        continue
+    legislators = openstates.legislators(state='{{abbr}}', chamber=chamber)
+    print " There are %s %ss" % (
+        len(legislators),
+        title
+    )</pre>
+</div>
+<div id = 'dev-api' class = 'dev-pane' >
+http://openstates.org/api/v1/metadata/?apikey=
+</div>
+
+{% endblock %}

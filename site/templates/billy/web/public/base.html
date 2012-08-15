@@ -2,35 +2,29 @@
 {% load customtags %}
 {% load i18n %}
 <!doctype html>
-
 <html lang="en" class="no-js">
 <head>
     <title>{% striptags %}{% block title %}{% endblock %}{% end_striptags %}</title>
+    <meta name="description" content="{% block description %}{% endblock %}">
     <script>var _sf_startpt=(new Date()).getTime()</script>
     <link rel="stylesheet" type="text/css" href="{% static "main.css" %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'select2-2.0/select2.css' %}"/>
 
     <script src="{% static 'js/jquery-1.5.1.min.js' %}"></script>
-    <script src="{% static 'js/jquery-placehold.min.js' %}"></script>
-    <script src="{% static 'js/main.js' %}"></script>
     <script src="{% static 'js/jquery.hotkeys.min.js' %}"></script>
-    <script src="{% static 'js/jquery.pjax.min.js' %}"></script>
-    <script src="{% static 'js/datatables.js' %}"></script>
     <script src="{% static 'select2-2.0/select2.min.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
     <script src="http://cdn.gigya.com/js/socialize.js?apiKey=3_BLRB_2LlQJZDUW1wb9_ZOps-sOnnzA_e6xxNSwJBBGoB-SavmPAKHkaVVZPE5Kx8"></script>
+    <script src="http://cdn.gigya.com/js/gigyaGAIntegration.js">
     <script src="http://use.typekit.com/xau7dem.js"></script>
     <script>try{Typekit.load();}catch(e){}</script>
-    <script>
-     $(document).ready(function() {
-        var doc = $(document);
-        doc.bind("keydown", "alt+b", function(){window.location = '/{{abbr}}/bills/'});
-        doc.bind("keydown", "alt+l", function(){window.location = '/{{abbr}}/legislators/'});
-        doc.bind("keydown", "alt+c", function(){window.location = '/{{abbr}}/committees/'});
-        doc.bind("keydown", "esc", function(){$('#id_q').focus()});
-    });
-    </script>
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <script src="{% static 'js/jquery-placehold.min.js' %}"></script>
+    <script>
+     // add placeholders
+     $("input, textarea").placehold();
+    </script>
     <![endif]-->
     {% block headblock %}{% endblock %}
 
@@ -48,14 +42,14 @@
     })();
 
 
-      /* uservoice */
+      /* uservoice async */
       var is_ssl = ("https:" == document.location.protocol);
       var asset_host = is_ssl ? "https://d3rdqalhjaisuu.cloudfront.net/" : "http://d3rdqalhjaisuu.cloudfront.net/";
       document.write(unescape("%3Cscript src='" + asset_host + "javascripts/feedback-v2.js' type='text/javascript'%3E%3C/script%3E"));
 
     </script>
 
-    <script type="text/javascript" charset="utf-8">
+    <script>
       var feedback_widget_options = {};
       feedback_widget_options.display = "overlay";
       feedback_widget_options.company = "sunlightfoundation";

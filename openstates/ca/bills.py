@@ -426,6 +426,9 @@ class CABillScraper(BillScraper):
                 if 'Approved by Governor' in act_str:
                     type.append('governor:signed')
 
+                if 'Approved by the Governor' in act_str:
+                    type.append('governor:signed')
+
                 if 'Item veto' in act_str:
                     type.append('governor:vetoed:line-item')
 

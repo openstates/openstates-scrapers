@@ -166,6 +166,10 @@ class PABillScraper(BillScraper):
                 type.append('bill:reading:2')
             elif action.startswith('Third consideration'):
                 type.append('bill:reading:3')
+            elif 'Signed in House' in action:
+                type.append('bill:passed')
+            elif 'Signed in Senate' in action:
+                type.append('bill:passed')
 
             if re.search('concurred in (House|Senate) amendments', action):
                 if re.search(', as amended by the (House|Senate)', action):

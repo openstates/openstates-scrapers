@@ -92,7 +92,7 @@ class GALegislatorScraper(LegislatorScraper):
                 district = district_tag.strip()
 
                 # Parse city
-                city = city_tag.strip()[2:]
+                city = city_tag.strip()
 
                 legislator = Legislator(term,
                                         chamber,

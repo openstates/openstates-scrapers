@@ -1,0 +1,42 @@
+{% load customtags %}
+
+{% if request.user|is_dev %}
+<script type = 'text/javascript' >
+    $(document).ready(function() {
+        $("#dev-tabs").each(function() {
+            var tab = $(this),
+              links = tab.find('a'),
+             active,
+            content;
+
+            active = links.first().addClass('active');
+            content = $(active.attr('href'));
+
+            links.not(':first').each(function () {
+                $($(this).attr('href')).hide();
+            });
+
+            links.each(function () {
+                $(this).click(function(e) {
+                    active.removeClass('active');
+                    content.hide();
+                    active = $(this);
+                    content = $($(this).attr('href'));
+                    active.addClass('active');
+                    content.show();
+                    e.preventDefault();
+                });
+            });
+        });
+    });
+</script>
+    <div class="fullWidth module">
+        <h3 class="moduleTitle">Developer ProTips</h3>
+<ul id = 'dev-tabs' >
+{% block devlinks %}
+{% endblock %}
+</ul>
+{% block devpane %}
+{% endblock %}
+    </div>
+{% endif %}

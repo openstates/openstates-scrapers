@@ -113,10 +113,21 @@ class TXEventScraper(EventScraper):
             events = row.xpath(".//a[contains(@href, 'schedules/html')]")
             for event in events:
                 datetime = "%s %s" % ( date, thyme )
-                datetime = datetime.strip()
                 if "Upon Adjournment" in datetime:
                     continue
-                datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
+
+                replace = {
+                    "see below": "",
+                    "See Below": ""
+                }
+                for rep in replace:
+                    datetime = datetime.replace(rep, replace[rep])
+                datetime = datetime.strip()
+
+                try:
+                    datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
+                except ValueError:
+                    datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y")
                 self.scrape_event_page(session, chamber, event.attrib['href'],
                                       datetime)
 

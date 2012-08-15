@@ -1,4 +1,5 @@
 {% extends "billy/web/public/base.html" %}
+{% load staticfiles %}
 {% load customtags %}
 
 {% block title %}
@@ -7,71 +8,72 @@
   Open States
 {% endblock %}
 
+{% block description %}
+Information on all current {{metadata.name}} {{chamber_name}} committees.
+{% endblock %}
+
 {% block headblock %}
-    <script>
-    $(document).ready(function(){
+<script src="{% static 'js/datatables.js' %}"></script>
+<script src="{% static 'js/jquery.pjax.min.js' %}"></script>
+<script>
+$(document).ready(function(){
 
-        var show_chamber_column = {{ show_chamber_column|yesno:'true,false' }};
+    var show_chamber_column = {{ show_chamber_column|yesno:'true,false' }};
 
-        var datatable_setup = function(){
+    var datatable_setup = function(){
 
-            // Kill the html in the table headers.
-            var table = $("#main-table");
-            table.find('th').each(function(){
-                var th = $(this);
-                th.html(th.text());
-            });
+        // Kill the html in the table headers.
+        var table = $("#main-table");
+        table.find('th').each(function(){
+            var th = $(this);
+            th.html(th.text());
+        });
 
-            // Convert the table to dataTable.
-            if (table.find('th').length == 2) {
-                // All 3 columns are displayed.
-                var aoColumns = [
-                        null,
-                        { "bSortable": false },
-                      ];
-            } else {
-                // The chamber column is hidden.
-                var aoColumns = [
-                        null,
-                        null,
-                        { "bSortable": false },
-                      ];                
-            }
-
-            table.dataTable({
-                bFilter: false,
-                bPaginate: false,
-                bInfo: false,
-                bDestroy: true,
-                aoColumns: aoColumns
-            });
+        // Convert the table to dataTable.
+        if (table.find('th').length == 2) {
+            // All 3 columns are displayed.
+            var aoColumns = [
+                    null,
+                    { "bSortable": false },
+                  ];
+        } else {
+            // The chamber column is hidden.
+            var aoColumns = [
+                    null,
+                    null,
+                    { "bSortable": false },
+                  ];                
         }
 
-        // Tell pjax not to jump to the top of the
-        // page after loading.
-        $.pjax.defaults.scrollTo = false;
+        table.dataTable({
+            bFilter: false,
+            bPaginate: false,
+            bInfo: false,
+            bDestroy: true,
+            aoColumns: aoColumns
+        });
+    }
 
-        var doc = $(this);
+    // Tell pjax not to jump to the top of the
+    // page after loading.
+    $.pjax.defaults.scrollTo = false;
 
-        // When the pjax operation is done, re-run pjax_setup to bind
-        // the listeners to the replaced button elements.
-        doc.bind('pjax:complete', {}, pjax_setup);
+    var doc = $(this);
 
-        // Reinitialize the datatable too.
-        doc.bind('pjax:complete', {}, datatable_setup);
+    // When the pjax operation is done, re-run pjax_setup to bind
+    // the listeners to the replaced button elements.
+    doc.bind('pjax:complete', {}, pjax_setup);
 
-        var initialize_page = 'pjax:complete'
-        doc.trigger(initialize_page);
+    // Reinitialize the datatable too.
+    doc.bind('pjax:complete', {}, datatable_setup);
 
-    });
-    </script>
+    var initialize_page = 'pjax:complete'
+    doc.trigger(initialize_page);
+
+});
+</script>
 {% endblock %}
 
 {% block content %}
-        <div id='' class="fullWidth" data-pjax>
-        <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} Committees</h2>
-            {% include chamber_select_template %}
-            {% include committees_table_template %}
-        </div>
-        <div class="clear"></div>
+    {% include "billy/web/public/committees-pjax.html" %}
 {% endblock %}

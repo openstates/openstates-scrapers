@@ -8,6 +8,10 @@
   {{bill.bill_id }} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
 {% endblock %}
 
+{% block description %}
+{{metadata.display_name}} {{bill.chamber_name}} {{bill.type_string|title}} {{bill.bill_id}}: {{bill.title}}.
+{% endblock %}
+
 {% block headblock %}
     <link rel="canonical" href="{{bill.get_absolute_url}}">
     <script>
@@ -163,10 +167,27 @@
                         {% endif %} <span class="tip sponsor-type">{{ sponsor.type }}</span></li>
                     {% endfor %}
                     {% if show_all_sponsors %}
+                        {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
+                        {% for sponsor in remainder %}
+                        {% if sponsor.leg_id %}
+                            <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                            {% if sponsor.active %}
+                                <span class="tip sponsor-type">({{ sponsor.party }}) Dist. {{ sponsor.district }}</span>
+                            {% endif %}
+                        {% else %}
+                            {% if sponsor.committee_id %}
+                                <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
+                            {% else %}
+                                {# Sponsor had no leg_id or was inactive. #}
+                                <li><span class="sponsorName">{{ sponsor.name }}</span>
+                            {% endif %}
+                        {% endif %} <span class="tip sponsor-type">{{ sponsor.type }}</span></li>
+                        {% endfor %}
+                        {% endwith %}
                     {% else %}
                         {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
-                        {% if remainder %}
-                        <li><a class="viewMore" href="?show_all_sponsors=True">View {{ remainder|apnumber }} other{{ remainder|pluralize}}</a></li>
+                        {% if remainder|length %}
+                        <li><a class="viewMore" href="?show_all_sponsors=True">View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}}</a></li>
                         {% endif %}
                         {% endwith %}
                     {% endif %}
@@ -182,6 +203,9 @@
              </dl>
              <div class="clear"></div>
          </div>
+
+{% include "billy/web/public/developer_bill.html" %}
+
          {% if bill.versions or bill.documents %}
             <div class="module">
                 <div class="eightCol colLt">
@@ -195,12 +219,14 @@
                             </li>
                         {% endfor %}
 
+                        </ul>
+                        <div class="clear">
                         {% with remainder=bill.versions_remainder %}
                             {% if remainder %}
                                 <a class="viewMore" href="versions/">View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}}</a></li>
                             {% endif %}
                         {% endwith %}
-                        </ul>
+                    </div>
                     {% endif %}
                 </div>
                 <div class="fourCol colRt">
@@ -256,7 +282,7 @@
                     {% for vote in bill.votes_manager %}
                     <li>
                         <time datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
-                        <a href="{{ vote.get_absolute_url }}">{{vote.motion|truncatewords:30}}</a>
+                        <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
                         {% if vote.has_votes %}
                         <ul class="barChart">
                             <li class="yes">
@@ -287,37 +313,37 @@
 
         {% with events=bill.events %}
             {% if events.count %}
-            <div class="eightCol colLt">
-                <h3>Events</h3>
-                <table class="normalTable">
-                    <thead>
-                        <tr id="titles">
-                            <th>Date</th>
-                            <th>Where</th>
-                            <th>Description</th>
-                            <th>Committees</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for event in bill.events %}
-                        <tr class = 'odd'>
-                            <td class="tip withTipSm"><a href='{{ event.get_absolute_url }}'
-                                    >{{ event.when|date:"M j, Y"}}</a></td>
-                            <td>{{ event.location }}</td>
-                            <td>{{ event.description }}</td>
-                            <td>
-                                {% for committee in event.committees %}
-                                <a href='{{ committee.get_absolute_url }}'
-                                    >{{committee.display_name}}</a>
-                                {% endfor %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        {% endif %}
-                        {% endwith %}
-                    </tbody>
-                </table>
-                {% sources bill %}
-                <div class="clear"></div>
-            </div>
+        <div class="module eightCol colLt">
+            <h3 class="moduleTitle">Events</h3>
+            <table class="normalTable">
+                <thead>
+                    <tr id="titles">
+                        <th>Date</th>
+                        <th>Where</th>
+                        <th>Description</th>
+                        <th>Committees</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in bill.events %}
+                    <tr class = 'odd'>
+                        <td class="tip withTipSm"><a href='{{ event.get_absolute_url }}'
+                                >{{ event.when|date:"M j, Y"}}</a></td>
+                        <td>{{ event.location }}</td>
+                        <td>{{ event.description }}</td>
+                        <td>
+                            {% for committee in event.committees %}
+                            <a href='{{ committee.get_absolute_url }}'
+                                >{{committee.display_name}}</a>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                </tbody>
+            </table>
+            <div class="clear"></div>
+        {% sources bill %}
+        </div>
         {% endblock %}

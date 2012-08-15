@@ -13,7 +13,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'openstates',
+        'NAME': os.path.join(os.path.dirname(__file__), 'openstates.sqlite3'),
     }
 }
 
@@ -53,6 +53,7 @@ TEMPLATE_LOADERS = (
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
+    'django.contrib.auth.context_processors.auth',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -60,9 +61,9 @@ MIDDLEWARE_CLASSES = (
     'locksmith.mongoauth.middleware.APIKeyMiddleware',
     'billy.web.public.middleware.LimitStatesMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
-    #'django.contrib.auth.middleware.AuthenticationMiddleware',
-    #'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
@@ -85,6 +86,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.admin',
     'billy.web.api',
     'billy.web.admin',
     'billy.web.public',
@@ -139,6 +141,7 @@ ACTIVE_STATES=sorted(['ca', 'il', 'la', 'md', 'mn',
 ENABLE_ELASTICSEARCH = True
 
 LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = '/login'
 
 # Display API urls on pages.
 NERD_MODE = True

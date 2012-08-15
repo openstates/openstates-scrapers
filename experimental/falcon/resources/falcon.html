@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Falcon</title>
+    <script
+        type="text/javascript"
+        src="d3.v2.js"
+    ></script>
+    <link
+        type="text/css"
+        rel="stylesheet"
+        href="colorbrewer.css"
+    />
+    <link
+        type="text/css"
+        rel="stylesheet"
+        href="calendar.css"
+    />
+  </head>
+  <body>
+  <script type = 'text/javascript' >
+      function update() {
+        var state,
+            chamber;
+
+        state = document.getElementById("state").value;
+        chamber = document.getElementById("chamber").value;
+
+        d3.csv("csv/" + state + "-" + chamber + ".csv", function(csv) {
+          var data = d3.nest()
+            .key(function(d) { return d.Date; })
+            .rollup(function(d) { return d[0].Pct; })
+            .map(csv);
+
+          rect.attr("class", "day");
+
+          rect.filter(function(d) { return d in data; })
+              .attr("class", function(d) {
+                    return "day q" + color(data[d]) + "-9";
+              })
+            .select("title")
+              .text(function(d) { return d + ": " + data[d]; });
+          });
+      }
+    </script>
+    <select id = 'state' >
+{% for state in states %}
+    <option value = '{{state}}' >{{ state }}</option>
+{% endfor %}
+    </select>
+    <select id = 'chamber' >
+{% for chamber in chambers %}
+    {% if chamber == None %}
+        <option value = 'combined' >combined</option>
+    {% else %}
+        <option value = '{{chamber}}' >{{ chamber }}</option>
+    {% endif %}
+{% endfor %}
+    </select>
+    <button value = 'Check it out!' onclick = 'update();' >Check it out!</button>
+    <div id="chart"></div>
+    <script
+        type="text/javascript"
+        src="falcon.js"
+        ></script>
+  </body>
+</html>

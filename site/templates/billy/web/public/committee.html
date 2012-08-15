@@ -4,9 +4,13 @@
 
 
 {% block title %}
-  {{committee.display_name}} -
+ {{committee.display_name}} ({{committee.chamber_name}}) -
   {{metadata.legislature_name}} -
   Open States
+{% endblock %}
+
+{% block description %}
+{{metadata.legislature_name}} - {{committee.chamber_name}} {{committee.display_name}} Committee.
 {% endblock %}
 
 {% block headblock %}
@@ -69,19 +73,27 @@ $(document).ready(function() {
         </tbody>
     </table>
 </div>
+
+{% include "billy/web/public/developer_committee.html" %}
+{% if request.user|is_dev %}
+<div class="fullWidth module">
+    <h3 class="moduleTitle">Developer ProTips</h3>
+
+</div>
+{% endif %}
+
+{% if committee.events.count %}
 <div class="fullWidth module">
     <h3 class="moduleTitle" >Related Events</h3>
-        {% if committee.events.count %}
         <ul>
             {% for event in committee.events %}
             <li><a href = "{{ event.get_absolute_url }}"
                     >{{event.description}} on {{ event.when|date:"M j, Y"}}</a><li>
             {% endfor %}
         </ul>
-        {% else %}
-            No events found.
-        {% endif %}
-    </div>
+</div>
+{% endif %}
+
 {% sources committee %}
 
 {% endblock %}
