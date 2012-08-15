@@ -80,7 +80,7 @@ $(document).ready(function() {
                 <tbody>
                 {% for obj in legislators_list %}
                     <tr class="{% cycle 'even' 'odd' %}">
-                        <td><img class="legImgSmall" src="http://static.openstates.org/photos/small/{{ obj.leg_id }}.jpg"/></td>
+                        <td><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></td>
                         <td>{{obj.metadata.abbr|upper}}</td>
                         <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
                         <td>{{ obj.district }}</td>

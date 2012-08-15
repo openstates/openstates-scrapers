@@ -23,7 +23,9 @@ metadata = dict(
         }
     },
     feature_flags=['subjects', 'events'],
-    _ignored_scraped_sessions=['2009']
+    _ignored_scraped_sessions=['2009'],
+
+    requests_per_minute=30,
 )
 
 def session_list():

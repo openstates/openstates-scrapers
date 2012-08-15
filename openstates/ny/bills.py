@@ -103,7 +103,9 @@ class NYBillScraper(BillScraper):
                         index += 1
 
             except scrapelib.HTTPError as e:
-                if e.response.code == 404:
+                code = e.response.status_code
+
+                if code == 404:
                     errors += 1
                 else:
                     raise

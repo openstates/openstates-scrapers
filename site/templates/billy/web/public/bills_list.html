@@ -4,7 +4,11 @@
 {% load customtags %}
 
 {% block title %}
-    {{title}}
+{{description}} {% if object_list.current_page != 1 %} - page {{object_list.current_page}}{% endif %}- Open States
+{% endblock %}
+
+{% block description %}
+{{description}} {{long_description|join:', '}}
 {% endblock %}
 
 {%  block headblock %}

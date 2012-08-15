@@ -1,7 +1,4 @@
-
 $(document).ready( function() {
-    // add placeholders
-    $("input, textarea").placehold();
 
     // make select2 work
     $("#id_abbr").select2({placeholder: "Select a State"}).change(
@@ -9,6 +6,13 @@ $(document).ready( function() {
     // made form submit on change, hide submit button
     $('#state_select_submit').hide();
     $('#mainFilter .select2-container').css('width', '200px');
+
+    // hot keys
+    var doc = $(document);
+    doc.bind("keydown", "alt+b", function(){window.location = '/{{abbr}}/bills/'});
+    doc.bind("keydown", "alt+l", function(){window.location = '/{{abbr}}/legislators/'});
+    doc.bind("keydown", "alt+c", function(){window.location = '/{{abbr}}/committees/'});
+    doc.bind("keydown", "esc", function(){$('#id_q').focus()});
 
     // add gigya
     var ua = new gigya.socialize.UserAction();

@@ -37,8 +37,41 @@ class IndexBuilder(object):
         self.new_id = itertools.count()
         self.objects = {}
 
+    def get_stem_id(self, stem):
+
+        # Get the stem's id (normalize stems)
+        try:
+            stem_id = self.stem2id[stem]
+        except KeyError:
+            stem_id = self.stem2id[stem] = self.new_id.next()
+
+        return stem_id
+
+    def _add_word(self, word, object_id, do_stem=True):
+
+        # Get the stem and tail.
+        if do_stem:
+            stem = self.stem_word(word)
+            tail = word.replace(stem, '', 1)
+        else:
+            stem = word
+
+        stem_id = self.get_stem_id(stem)
+
+        # Augment the index collection.
+        self.index[stem_id].add(object_id)
+
+        # Augment the tail collection.
+        if do_stem and tail:
+            self.tails[stem_id].add(tail)
+
+        # If stem diffs from word, add word as well.
+        if stem != word:
+            stem_id = self.get_stem_id(word)
+            self.index[stem_id].add(object_id)
+
     def add(self, object_type, objects, text_func=None, substrs=False,
-            storekeys=None):
+            all_substrs=False, storekeys=None):
 
         object_store = self.objects
         #more_text = self.more_text
@@ -57,50 +90,19 @@ class IndexBuilder(object):
 
             words = set(filter(self.f, re.findall(r'\w+', text.lower())))
             words = words - self.stopwords
-
-            stem_word = self.stem_word
-            stem2id = self.stem2id
-            new_id = self.new_id
-            tails = self.tails
+            add_word = self._add_word
 
             for w in words:
 
-                # Get the stem and tail.
-                stem = stem_word(w)
-                tail = w.replace(stem, '', 1)
+                add_word(w, id_)
 
-                # Get the stem's id (normalize stems)
-                try:
-                    stem_id = stem2id[stem]
-                except KeyError:
-                    stem_id = stem2id[stem] = new_id.next()
+                if all_substrs:
+                    for substring in substrings(w):
+                        add_word(substring, id_, do_stem=False)
 
-                # Augment the index collection.
-                self.index[stem_id].add(id_)
-
-                # Augment the tail collection.
-                if tail:
-                    tails[stem_id].add(tail)
-
-                if substrs:
-
-                    first = True
-                    while 1 < len(stem):
-                        stem = stem[:-1]
-
-                        # Get the stem's id (normalize stems)
-                        try:
-                            stem_id = stem2id[stem]
-                        except KeyError:
-                            stem_id = stem2id[stem] = new_id.next()
-
-                        # Augment the index collection.
-                        self.index[stem_id].add(id_)
-
-                        # Augment the tail collection.
-                        if first and tail:
-                            tails[stem_id].add(tail)
-                            first = False
+                elif substrs:
+                    for substring in substrings(w, from_beginning_only=True):
+                        add_word(substring, id_, do_stem=False)
 
     @property
     def id2stem(self):
@@ -161,3 +163,19 @@ class JSONDateEncoder(json.JSONEncoder):
             return time.mktime(obj.timetuple())
 
         return json.JSONEncoder.default(self, obj)
+
+
+def substrings(word, from_beginning_only=False):
+    '''A generator of all substrings in `word`
+    greater than 1 character in length.'''
+    w_len = len(word)
+    w_len_plus_1 = w_len + 1
+    i = 0
+    while i < w_len:
+        j = i + 2
+        while j < w_len_plus_1:
+            yield word[i:j]
+            j += 1
+        if from_beginning_only:
+            return
+        i += 1

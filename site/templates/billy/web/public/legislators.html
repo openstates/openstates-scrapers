@@ -4,7 +4,11 @@
 
 {% block title %}{{metadata.name}} {{ chamber_title }} - Open States{% endblock %}
 
+{% block description %}{{chamber_title}} currently serving in {{metadata.name}} {% endblock %}
+
 {% block headblock %}
+<script src="{% static 'js/datatables.js' %}"></script>
+<script src="{% static 'js/jquery.pjax.min.js' %}"></script>
 <script>
 $(document).ready(function() {
 

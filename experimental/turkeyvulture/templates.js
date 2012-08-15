@@ -943,7 +943,7 @@ jsonjinja.addTemplates(
     w(rts.info.finalize(l_count_0));
     w(")</h2>\n    <ul>\n    ");
     rt.iterate(l_objects_0, l_loop_0, ["c"], function(l_loop_0, l_c_0) {
-      var l_c_0, l_loop_0;
+      var l_loop_1 = rts.lookupVar("loop"), l_c_0, l_loop_0;
       w("\n        <i class='icon-lock'></i>\n        <li><h3>\n            [");
       w(rts.info.finalize(l_c_0["chamber"]));
       w("]\n            <a href='http://openstates.org/");
@@ -952,7 +952,14 @@ jsonjinja.addTemplates(
       w(rts.info.finalize(l_c_0["_id"]));
       w("/'>");
       w(rts.info.finalize(l_c_0["committee"]));
-      w("</a>\n        </h3></li>\n    ");
+      w("</a>\n            <div>\n                ");
+      rt.iterate(l_c_0["members"], l_loop_0, ["member"], function(l_loop_1, l_member_0) {
+        var l_member_0, l_loop_1;
+        w("\n                    ");
+        w(rts.info.finalize(l_member_0["name"]));
+        w("\n                ");
+      }, null);
+      w("\n            </div>\n        </h3></li>\n    ");
     }, null);
     w("\n    </ul>\n</div>");
   }
