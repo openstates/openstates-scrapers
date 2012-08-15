@@ -103,11 +103,7 @@ class NYBillScraper(BillScraper):
                         index += 1
 
             except scrapelib.HTTPError as e:
-                code = str(e.response).split("[", 1)[1].split("]", 1)[0]
-                code = int(code)
-                # This hack brought to you by the e.response object not
-                # having the frickn' code, even though it's in the repr.
-                # fix this 4 realsies soon.
+                code = e.response.status_code
 
                 if code == 404:
                     errors += 1
