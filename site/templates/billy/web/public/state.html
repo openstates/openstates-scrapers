@@ -57,8 +57,7 @@
             <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
         </div>
         <div class="sixCol colRt">
-            <p class="tip centeredText">Click on a district to view corresponding legislators.
-                <br>You can also search by <a href="{% url 'find_your_legislator' %}">entring an address</a>.</p>
+            <p class="tip centeredText">Click on a district to view corresponding legislators</p>
             <div id="results_table"> </div>
         </div>
         <div class="clear"></div>
@@ -102,60 +101,6 @@
         <div class="sixCol {% if forloop.first %} colLt {% else %} colRt {% endif %}">
             <h4>{{ chamber.name }}</h4>
             <div class="medModule">
-<<<<<<< HEAD
-                <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_{{chamber.type}}&sort=passed_{{chamber.type}}""></a></span>
-                <h5>Recently Passed</h5>
-                <ul>
-                {% if chamber.passed_bills %}
-                    {% for bill in chamber.passed_bills %}
-                        <li>
-                            <time class="published">
-                            {% if chamber.type == 'upper' %}
-                                {{ bill.action_dates.passed_upper.date|date:"F d, Y" }}
-                            {% else %}
-                                {{ bill.action_dates.passed_lower.date|date:"F d, Y" }}
-                            {% endif %}
-                            </time>
-                            <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
-                                <div class="clear"></div>
-                                <span class="tip sideNote clear">
-                                    {% with sponsor=bill.sponsors_manager.first %}
-                                        <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                    {% endwith %}
-                                </span>
-                            </span>
-                            <p class="clear">{{ bill.title|truncatewords:50}}</p>
-                        </li>
-                    {% endfor %}
-                    </ul>
-                    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber.type}}">View More Passed Bills</a>
-                {% else %}
-                    No passed bills to display.
-                {% endif %}
-            </div>
-            <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?chamber={{chamber.type}}&sort=first"></a></span>
-            <h5>Recently Introduced</h5>
-            <ul>
-            {% if chamber.latest_bills %}
-                {% for bill in chamber.latest_bills %}
-                    <li>
-                        <time class="published">{{ bill.action_dates.first|date:"F d, Y"}}</time>
-                        <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{bill.bill_id }}</a>
-                            <div class="clear"></div>
-                            <span class="tip sideNote">
-                                {% with sponsor=bill.sponsors_manager.first %}
-                                    <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                {% endwith %}
-                            </span>
-                        </span>
-                        <p class="clear">{{ bill.title|truncatewords:50}}</p>
-                    </li>
-                {% endfor %}
-            {% else %}
-                No passed bills to display.
-            {% endif %}
-            </ul>
-            <a class="viewMore" href="{% url 'bills' abbr %}?chamber={{chamber.type}}">View More Bills</a>
                 {% include "billy/web/public/_recently_passed.html" %}
             </div>
             {% include "billy/web/public/_recently_introduced.html" %}
@@ -165,56 +110,6 @@
     {% elif chambers|length == 1 %}
     {# unicameral bill module, side by side passed/introduced #}
         <div class="sixCol colLt">
-            <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_upper&sort=passed_upper"></a></span>
-            <h5>Recently Passed</h5>
-            <ul>
-            {% if chambers.0.passed_bills %}
-                {% for bill in chambers.0.passed_bills %}
-                    <li>
-                        <time class="published">
-                        {{ bill.action_dates.passed_upper.date|date:"F d, Y" }}
-                        </time>
-                        <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
-                            <div class="clear"></div>
-                            <span class="tip sideNote">
-                                {% with sponsor=bill.sponsors_manager.first %}
-                                    <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                {% endwith %}
-                            </span>
-                        </span>
-                        <p class="clear">{{ bill.title|truncatewords:50}}</p>
-                    </li>
-                {% endfor %}
-            </ul>
-            <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_upper">View More Passed Bills</a>
-            {% else %}
-                No passed bills to display.
-            {% endif %}
-        </div>
-        <div class="sixCol colRt">
-        <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?sort=first"></a></span>
-            <h5>Recently Introduced</h5>
-            <ul>
-            {% if chambers.0.latest_bills %}
-                {% for bill in chambers.0.latest_bills %}
-                    <li>
-                        <time class="published">{{ bill.action_dates.first|date:"F d, Y"}}</time>
-                        <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{bill.bill_id }}</a>
-                            <div class="clear"></div>
-                            <span class="tip sideNote">
-                                {% with sponsor=bill.sponsors_manager.first %}
-                                    <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                {% endwith %}
-                            </span>
-                        </span>
-                        <p class="clear">{{ bill.title|truncatewords:50}}</p>
-                    </li>
-                {% endfor %}
-            {% else %}
-                No passed bills to display.
-            {% endif %}
-            </ul>
-            <a class="viewMore" href="{% url 'bills' abbr %}">View More Bills</a>
             {% include "billy/web/public/_recently_passed.html" with chamber=chambers.0 %}
         </div>
         <div class="sixCol colRt">
