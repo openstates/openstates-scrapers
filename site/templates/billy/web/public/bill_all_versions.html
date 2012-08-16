@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block description %}
-{% blocktrans %} {{metadata.display_name}}'s {{bill.bill_id}} from {{bill.session_details.display_name}}. ({{bill.title}}) {% endblocktrans %}
+{% blocktrans with legislature=metadata.display_name bill_id=bill.bill_id session=bill.session_details.display_name title=bill.title%} Full text of {{legislature}}'s {{bill_id}} from {{session}}. ({{title}}) {% endblocktrans %}
 {% endblock %}
 
 {% block content %}

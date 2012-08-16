@@ -1,6 +1,6 @@
 {% load i18n %}
     {{role.type|title}} ({{role.party}}&mdash;{{role.district}})
     {% if role.start_date and role.end_date %}
-    {% blocktrans %} from {{role.start_date|date:"j, m Y"}} to {{role.end_date|date:"j, m Y"}}
+    {% blocktrans with start=role.start_date|date:"j, m Y" end=role.end_date|date:"j, m Y" %} from {{start}} to {{end}}
     {% endblocktrans %}
     {% endif %}

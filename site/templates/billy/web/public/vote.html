@@ -73,7 +73,7 @@
                             {% endif %}
                             <a href="{{source.url}}">{% trans "here" %}</a>
                         {% endfor %}
-                        ) {% blocktrans %} on the {{ metadata.name }} {{bill.chamber_name}} website. {% endblocktrans %}
+                        ) {% blocktrans with state=metadata.name chamber=bill.chamber_name %} on the {{ state }} {{chamber}} website. {% endblocktrans %}
                     {% end_squish_whitespace %}
                     {% endif %}
                 {% endif %}

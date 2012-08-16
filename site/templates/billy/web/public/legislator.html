@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block description %}
-{% blocktrans %} {{legislator.title}} {{legislator.full_name}} represents {{metadata.name}} {% endblocktrans %}
+{% blocktrans with title=legislator.title name=legislator.full_name state=metadata.name %} {{title}} {{name}} represents {{state}} {% endblocktrans %}
 {% if legislator.active and legislator.district %} {{legislator.chamber_name}} {% if legislator.district.0.isdigit %}{% trans "District" %} {% endif %}{{legislator.district}}. {% endif %}
 {% endblock %}
 

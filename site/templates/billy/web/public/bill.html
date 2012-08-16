@@ -130,7 +130,7 @@
                 <dt class="clear contentBottom">{% trans "Session:" %}</dt>
                 <dd><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
 
-                <dt class="clear contentBottom">{% "Sponsors" %} ({{ bill.sponsors|length }}):</dt>
+                <dt class="clear contentBottom">{% trans "Sponsors" %} ({{ bill.sponsors|length }}):</dt>
                 <dd class="columnThirds">
                     <!-- <h6 class="h6 ulTitle">
                         {% with sponsor=bill.sponsors_manager.first_primary %}
@@ -187,7 +187,7 @@
                     {% else %}
                         {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
                         {% if remainder|length %}
-                        <li><a class="viewMore" href="?show_all_sponsors=True">{% blocktrans %} "View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}} {% endblocktrans %}</a></li>
+                        <li><a class="viewMore" href="?show_all_sponsors=True">{% blocktrans with count=remainder|length|apnumber %} View {{ count}} other{% endblocktrans %}{{ remainder|length|pluralize}}</a></li>
                         {% endif %}
                         {% endwith %}
                     {% endif %}
@@ -223,7 +223,8 @@
                         <div class="clear">
                         {% with remainder=bill.versions_remainder %}
                             {% if remainder %}
-                            <a class="viewMore" href="versions/">{% blocktrans %} View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}} {% endblocktrans %}</a></li>
+                            <a class="viewMore" href="versions/">
+                                {% blocktrans with count=remainder|length|apnumber %} View {{ count }} other{% endblocktrans %}{{remainder|length|pluralize}} </a></li>
                             {% endif %}
                         {% endwith %}
                     </div>
@@ -241,7 +242,8 @@
                             {% endfor %}
                             {% with remainder=bill.documents_remainder %}
                                 {% if remainder %}
-                                <a class="viewMore" href="documents/">{% blocktrans %}View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}} {% endblocktrans %}</a></li>
+                                <a class="viewMore" href="documents/">
+                                    {% blocktrans with count=remainder|length|apnumber %}View {{ count }} other{% endblocktrans %}{{ remainder|length|pluralize}} </a></li>
                                 {% endif %}
                             {% endwith %}
                             <div class="clear"></div>

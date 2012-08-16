@@ -74,8 +74,8 @@ $(document).ready(function(){
 {% block content %}
         <span class="tip sources withTipSm">
             {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/state_bills/{{request.GET.search_text|urlencode}}?state_bills[state]={{abbr|upper}}">{% trans 'Receive alerts about' %} "{{request.GET.search_text}}"</a> {% trans 'with Scout.' %}
-            {% if abbr != 'all' %}<span class="tip">{% trans 'Search for bills about' %} "{{request.GET.search_text}}" {% trans 'across' %} <a href="/all/search?search_text={{request.GET.search_text|urlencode}}">{% trans 'all states." %}</a></span>{% endif %}
-            {% else %} <a href="https://scout.sunlightfoundation.com/">{% trans 'Receive bill alerts' %}</a>{% trans 'with Scout.'%}
+            {% if abbr != 'all' %}<span class="tip">{% trans 'Search for bills about' %} "{{request.GET.search_text}}" {% trans 'across' %} <a href="/all/search?search_text={{request.GET.search_text|urlencode}}">{% trans 'all states.' %}</a></span>{% endif %}
+            {% else %} <a href="https://scout.sunlightfoundation.com/">{% trans 'Receive bill alerts' %}</a> {% trans 'with Scout.'%}
         {% endif %}
         </span>
         <h2 id="billSearchTitle">{{ description }}</h2>
@@ -99,22 +99,7 @@ $(document).ready(function(){
                 {% if not object_list.count %}
                     {% trans "No bills found matching those criteria. Try widening your criteria." %}
                 {% else %}
-                <div class="pagination-links">
-                    <span class="tip tipSm">{% blocktrans %} Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}} {% endblocktrans %}</span>
-                    <div class="pagesNum">
-                        {% if object_list.has_next or object_list.has_previous %}
-                        <ul>
-                        {% for text, page_number, clickable in object_list.pagination_data %}
-                            <li>
-                            <a {% if not clickable %}class="selected"{% endif %} href="{{request.GET.path}}?{% if get_params %}{{ get_params }}&{% else %}{% endif %}page={{page_number}}">{{text}}</a>
-                            </li>
-                        {% endfor %}
-                        </ul>
-                        {% endif %}
-                    </div>
-                    <div class="clear"></div>
-                </div>
-
+                {% include "billy/web/public/_pagination.html" %}
                 {% if use_table %}
                 <table class="withFilter">
                     <thead>
@@ -137,23 +122,10 @@ $(document).ready(function(){
                     </tbody>
                 </table>
                 {% endif %}
-                
-                 <div class="pagination-links">
-                     <span class="tip tipSm">{% blocktrans %}Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}} {% endblocktrans %}</span>
-                    <div class="pagesNum">
-                        {% if object_list.has_next or object_list.has_previous %}
-                        <ul>
-                        {% for text, page_number, clickable in object_list.pagination_data %}
-                            <li>
-                            <a {% if not clickable %}class="selected"{% endif %} href="{{request.GET.path}}?{% if get_params %}{{ get_params }}&{% else %}{% endif %}page={{page_number}}">{{text}}</a>
-                            </li>
-                        {% endfor %}
-                        </ul>
-                        {% endif %}
-                    </div>
-                    <div class="clear"></div>
-                </div>
+
+                {% include "billy/web/public/_pagination.html" %}
                 {% endif %}
             </div>
-            <div class="clear"></div>{% endblock %}
+            <div class="clear"></div>
+{% endblock %}
 

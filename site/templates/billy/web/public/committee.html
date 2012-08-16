@@ -86,8 +86,11 @@ $(document).ready(function() {
     <h3 class="moduleTitle" >{% trans "Related Events" %}</h3>
         <ul>
             {% for event in committee.events %}
-            <li><a href="{{ event.get_absolute_url }}"
-                >{% blocktrans %}{{event.description}} on {{ event.when|date:"M j, Y"}} {% endblocktrans %}</a><li>
+            <li><a href="{{ event.get_absolute_url }}">
+                {% blocktrans with description=event.description date=event.when|date:"M j, Y" %}
+                {{description}} on {{ date }}
+                {% endblocktrans %}
+            </a><li>
             {% endfor %}
         </ul>
 </div>

@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block description %}
-{% blocktrans %} Information on all current {{metadata.name}} {{chamber_name}} committees. {% endblocktrans %}
+{% blocktrans with state=metadata.name chamber=chamber_name %} Information on all current {{state}} {{chamber}} committees. {% endblocktrans %}
 {% endblock %}
 
 {% block headblock %}
