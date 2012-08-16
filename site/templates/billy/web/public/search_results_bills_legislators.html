@@ -6,10 +6,8 @@
 
 
 {% block title %}
-  Search Results - 
-  Bill and Legislators -
-  {{metadata.legislature_name}} -
-  Open States
+ {% trans "Search Results for" %} {{search_text}} -
+  {{metadata.legislature_name}} - Open States
 {% endblock %}
 
 {% block headblock %}
@@ -24,24 +22,24 @@ $(document).ready(function() {
 {% block content %}
         <h2>{{bill_results.count|apnumber|capfirst}} 
             <a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a>
-            bills {{scope_name|default:''}} 
-            {% if found_by_id %}found with ids like
-            {% else %}contained
+            {% trans "bills" %} {{scope_name|default:''}} 
+            {% if found_by_id %} {% trans "found with ids like" %}
+            {% else %}{% trans "contained" %}
             {% endif %} <em>"{{search_text}}"</em>
         </h2>
         <div class="fullWidth">
             {% if not bill_results.count %}
-                No bills matching "{{search_text}}"
+                {% trans "No bills matching" %} "{{search_text}}"
                 </div>
             {% else %}
             <table id="main-table" class="withFilter">
                 <thead>
                     <tr id="titles">
-                        <th>State</th>
-                        <th>Title</th>
-                        <th>Session</th>
-                        <th>Introduced</th>
-                        <th>Latest Action</th>
+                        <th>{% trans "State" %}</th>
+                        <th>{% trans "Title" %}</th>
+                        <th>{% trans "Session" %}</th>
+                        <th>{% trans "Introduced" %}</th>
+                        <th>{% trans "Latest Action" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -55,7 +53,7 @@ $(document).ready(function() {
         </div>
         {% if more_bills_available %}
             {% with scope=metadata.abbreviation|default:'all' %}
-            <a class="viewMore" href="{% url 'bills' scope %}?{{ request.GET.urlencode }}">Show more search results.</a>
+            <a class="viewMore" href="{% url 'bills' scope %}?{{ request.GET.urlencode }}">{% trans "Show more search results." %}</a>
             {% endwith %}
         {% endif %}
         <div class="clear"></div>
@@ -64,17 +62,17 @@ $(document).ready(function() {
         {% if not found_by_id %}
         <div class="fullWidth">
             {% with count=legislators_list.count %}
-            <h2>{{count|apnumber|capfirst}} {{scope_name|default:''}} legislator name{{count|pluralize}} contained <em>"{{search_text}}"</em></h2>
+            <h2>{{count|apnumber|capfirst}} {{scope_name|default:''}} {% trans "legislator name" %}{{count|pluralize}} {% trans "contained" %} <em>"{{search_text}}"</em></h2>
             {% if count %}
             <table id="main-table" class="withFilter">
                 <thead>
                     <tr id="titles">
                         <th></th>
-                        <th>State</th>
-                        <th>Name</th>
-                        <th>District</th>
-                        <th>Party</th>
-                        <th>Chamber</th>
+                        <th>{% trans "State" %}</th>
+                        <th>{% trans "Name" %}</th>
+                        <th>{% trans "District" %}</th>
+                        <th>{% trans "Party" %}</th>
+                        <th>{% trans "Chamber" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -88,7 +86,7 @@ $(document).ready(function() {
                         {% if show_chamber_column and 'chamber' in obj %}
                             <td>{{ obj.chamber_name }}</td>
                         {% else %}
-                            <td>inactive</td>
+                            <td>{% trans "inactive" %}</td>
                         {% endif %}
                     </tr>
                 {% endfor %}
@@ -96,7 +94,7 @@ $(document).ready(function() {
             </table>
         </div>
         {% if more_legislators_available %}
-            <a class="viewMore" href="{% url 'show_more_legislators' abbr %}?{{request.GET.urlencode}}">Show more search results.</a>
+            <a class="viewMore" href="{% url 'show_more_legislators' abbr %}?{{request.GET.urlencode}}">{% trans "Show more search results." %}</a>
         {% endif %}
         <div class="clear"></div>
         {% endif %}

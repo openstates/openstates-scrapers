@@ -1,7 +1,7 @@
 {% load url from future %}
 
-<span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_{{chamber.type}}&sort=passed_{{chamber.type}}""></a></span>
-<h5>Recently Passed</h5>
+<span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_{{chamber.type}}&sort=passed_{{chamber.type}}"></a></span>
+<h5>{% trans "Recently Passed" %}</h5>
 {% if chamber.passed_bills %}
     <ul>
     {% for bill in chamber.passed_bills %}
@@ -17,7 +17,7 @@
                 <div class="clear"></div>
                 <span class="tip sideNote">
                     {% with sponsor=bill.sponsors_manager.first %} {% if sponsor %}
-                        Sponsored By: <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                        {% trans "Sponsored By:" %} <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                     {% endif %} {% endwith %}
                 </span>
             </span>
@@ -25,7 +25,7 @@
         </li>
     {% endfor %}
     </ul>
-    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber.type}}">View More Passed Bills</a>
+    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber.type}}">{% trans "View More Passed Bills" %}</a>
 {% else %}
-    No passed bills to display.
+    {% trans "No passed bills to display." %}
 {% endif %}

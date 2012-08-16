@@ -1,4 +1,5 @@
-                            {{role.type|title}} ({{role.party}}&mdash;{{role.district}})
-                            {% if role.start_date and role.end_date %}
-                                from {{role.start_date|date:"j, m Y"}} to {{role.end_date|date:"j, m Y"}}
-                            {% endif %}
+    {{role.type|title}} ({{role.party}}&mdash;{{role.district}})
+    {% if role.start_date and role.end_date %}
+    {% blocktrans %} from {{role.start_date|date:"j, m Y"}} to {{role.end_date|date:"j, m Y"}}
+    {% endblocktrans %}
+    {% endif %}

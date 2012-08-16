@@ -6,12 +6,12 @@
             </div>
             <div class="threeCol colRt">
                 <div class="infoBox">
-                    <span class="specialHeader infoHeader">Don't know who your legislator is?</span>
-                    <span class="specialHeader">Find them now!</span>
+                    <span class="specialHeader infoHeader">{% trans "Don't know who your legislator is?" %}</span>
+                    <span class="specialHeader">{% trans "Find them now!" %}</span>
                     <form action="/find_your_legislator/" method="get" id="legSearch">
-                        <input type="text" name="q" id="id_q" placeholder="enter address">
+                        <input type="text" name="q" id="id_q" placeholder="{% trans 'enter address' %}">
                         <button type="submit">
-                             <span>Go</span>
+                            <span>{% trans "Go" %}</span>
                         </button>
                     </form>
                 </div>

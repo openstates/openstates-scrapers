@@ -6,6 +6,5 @@
                         {% if show_chamber_column and 'chamber' in obj %}
                             <td>{{ obj.chamber_name }}</td>
                         {% else %}
-                            <td>inactive</td>
+                            <td>{% trans "inactive" %}</td>
                         {% endif %}
-        
