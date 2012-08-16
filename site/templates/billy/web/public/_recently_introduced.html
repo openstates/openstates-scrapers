@@ -1,4 +1,5 @@
 {% load url from future %}
+{% load i18n %}
 
 <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?chamber={{chamber.type}}&sort=first"></a></span>
 <h5>{% trans "Recently Introduced" %}</h5>

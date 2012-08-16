@@ -1,8 +1,8 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
 {% load humanize %}
+{% load i18n %}
 {% load customtags %}
-
 
 {% block title %}
   {{bill.bill_id }} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States

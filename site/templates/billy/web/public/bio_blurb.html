@@ -1,4 +1,5 @@
 {% load humanize %}
+{% load i18n %}
 {% load customtags %}
 {% blocktrans %}
 {{legislator.display_name}} represents {{legislator.chamber_name|title}} District {{legislator.district}} in the {{legislator.metadata.name}} State {{legislator.chamber_name|title}}, is a member of {{legislator.committees.count|apnumber}} committees, 

@@ -1,6 +1,7 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
 {% load humanize %}
+{% load i18n %}
 {% load customtags %}
 
 {% block title %}{{event.description|trunc}}{% endblock %}

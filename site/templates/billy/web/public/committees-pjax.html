@@ -1,3 +1,4 @@
+{% load i18n %}
         <div class="fullWidth" data-pjax>
             <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} {% trans "Committees" %}</h2>
             {% include chamber_select_template %}
