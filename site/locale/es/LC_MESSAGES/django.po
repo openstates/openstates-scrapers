@@ -1,0 +1,895 @@
+# Open States Translation File
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the openstates package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-08-16 18:46+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+
+#: templates/billy/web/public/_pagination.html:4
+#, python-format
+msgid " Showing %(start)s to %(end)s of %(count)s "
+msgstr ""
+
+#: templates/billy/web/public/_recently_introduced.html:5
+msgid "Recently Introduced"
+msgstr ""
+
+#: templates/billy/web/public/_recently_introduced.html:15
+msgid "Sponsored by: "
+msgstr ""
+
+#: templates/billy/web/public/_recently_introduced.html:24
+#: templates/billy/web/public/legislator.html:386
+msgid "View More Bills"
+msgstr ""
+
+#: templates/billy/web/public/_recently_introduced.html:27
+#: templates/billy/web/public/_recently_passed.html:31
+msgid "No passed bills to display."
+msgstr ""
+
+#: templates/billy/web/public/_recently_passed.html:5
+msgid "Recently Passed"
+msgstr ""
+
+#: templates/billy/web/public/_recently_passed.html:21
+msgid "Sponsored By:"
+msgstr ""
+
+#: templates/billy/web/public/_recently_passed.html:29
+msgid "View More Passed Bills"
+msgstr ""
+
+#: templates/billy/web/public/base.html:68
+msgid "search the site"
+msgstr ""
+
+#: templates/billy/web/public/base.html:70
+#: templates/billy/web/public/search_results_no_query.html:20
+msgid "Search"
+msgstr ""
+
+#: templates/billy/web/public/base.html:82
+msgid "Home"
+msgstr ""
+
+#: templates/billy/web/public/base.html:83
+#: templates/billy/web/public/legislator.html:133
+#: templates/billy/web/public/state.html:30
+msgid "Legislators"
+msgstr ""
+
+#: templates/billy/web/public/base.html:84
+#: templates/billy/web/public/bill.html:86
+#: templates/billy/web/public/bill_all_documents.html:19
+#: templates/billy/web/public/bill_all_versions.html:19
+#: templates/billy/web/public/event.html:51
+#: templates/billy/web/public/legislator.html:371
+#: templates/billy/web/public/state.html:96
+#: templates/billy/web/public/state.html:125
+msgid "Bills"
+msgstr ""
+
+#: templates/billy/web/public/base.html:85
+#: templates/billy/web/public/bill.html:326
+#: templates/billy/web/public/committee.html:32
+#: templates/billy/web/public/committees-pjax.html:3
+#: templates/billy/web/public/committees.html:7
+#: templates/billy/web/public/legislator.html:357
+#: templates/billy/web/public/state.html:50
+#: templates/billy/web/public/state.html:72
+#: templates/billy/web/public/state.html:82
+msgid "Committees"
+msgstr ""
+
+#: templates/billy/web/public/base.html:87
+#: templates/billy/web/public/bill.html:319
+msgid "Events"
+msgstr ""
+
+#: templates/billy/web/public/base.html:105
+msgid ""
+"Our <a href=\"http://sunlightfoundation.com/legal/privacy/\">privacy policy</"
+"a> details how personally identifiable information that is collected on our "
+"websites is handled. Read our <a href=\"http://sunlightfoundation.com/legal/"
+"terms/\">terms of service</a>"
+msgstr ""
+
+#: templates/billy/web/public/base.html:106
+msgid ""
+"This work by <a href=\"http://sunlightfoundation.com\">Sunlight Foundation</"
+"a>, unless <a href=\"/about/\">otherwise noted</a>, is licensed under a <a "
+"rel=\"license\" href=\"http://creativecommons.org/licenses/by/3.0/us/"
+"\">Creative Commons Attribution 3.0 United States License</a>."
+msgstr ""
+
+#: templates/billy/web/public/base.html:110
+msgid "Resources "
+msgstr ""
+
+#: templates/billy/web/public/base.html:112
+msgid "Use Our Data:"
+msgstr ""
+
+#: templates/billy/web/public/base.html:115
+msgid "API"
+msgstr ""
+
+#: templates/billy/web/public/base.html:116
+#: templates/billy/web/public/downloads.html:9
+msgid "Bulk Downloads"
+msgstr ""
+
+#: templates/billy/web/public/base.html:117
+msgid "Python Client Library"
+msgstr ""
+
+#: templates/billy/web/public/base.html:118
+msgid "Issue Tracker"
+msgstr ""
+
+#: templates/billy/web/public/base.html:121
+msgid "Contribute:"
+msgstr ""
+
+#: templates/billy/web/public/base.html:124
+msgid "Contributor's Guide"
+msgstr ""
+
+#: templates/billy/web/public/base.html:125
+msgid "Code on GitHub"
+msgstr ""
+
+#: templates/billy/web/public/base.html:126
+msgid "Writing Scrapers"
+msgstr ""
+
+#: templates/billy/web/public/base.html:130
+msgid "Reach Out to Us:"
+msgstr ""
+
+#: templates/billy/web/public/base.html:134
+msgid "Contact Us"
+msgstr ""
+
+#: templates/billy/web/public/base.html:135
+msgid "About Open States"
+msgstr ""
+
+#: templates/billy/web/public/base.html:140
+msgid "Like This Project and Want to Discover Others Like It?"
+msgstr ""
+
+#: templates/billy/web/public/base.html:141
+msgid "Join the Sunlight Foundation's open government community to learn more"
+msgstr ""
+
+#: templates/billy/web/public/base.html:143
+#: templates/billy/web/public/homepage.html:38
+msgid "your email address"
+msgstr ""
+
+#: templates/billy/web/public/base.html:144
+#: templates/billy/web/public/homepage.html:42
+msgid "your zip code"
+msgstr ""
+
+#: templates/billy/web/public/base.html:146
+msgid "SignUp"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:100
+#: templates/billy/web/public/bills_list.html:76
+msgid "Receive alerts about"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:100
+#: templates/billy/web/public/bills_list.html:76
+#: templates/billy/web/public/bills_list.html:78
+msgid "with Scout."
+msgstr ""
+
+#: templates/billy/web/public/bill.html:119
+msgid "Bill Subjects:"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:130
+msgid "Session:"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:133
+msgid "Sponsors"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:158
+#: templates/billy/web/public/bill.html:175
+msgid "Dist."
+msgstr ""
+
+#: templates/billy/web/public/bill.html:190
+#: templates/billy/web/public/bill.html:227
+#, python-format
+msgid " View %(count)s other"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:197
+msgid "Notes:"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:198
+msgid "This bill does not currently have text available."
+msgstr ""
+
+#: templates/billy/web/public/bill.html:199
+#: templates/billy/web/public/legislator.html:241
+msgid "Our Methodology"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:213
+msgid "Bill Text"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:235
+#: templates/billy/web/public/bill_all_documents.html:8
+#: templates/billy/web/public/event.html:66
+msgid "Documents"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:246
+#, python-format
+msgid "View %(count)s other"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:257
+msgid "Activity"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:259
+msgid "Actions"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:264
+#: templates/billy/web/public/bill.html:323
+msgid "Date"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:265
+#: templates/billy/web/public/committees_table.html:7
+#: templates/billy/web/public/find_your_legislator_table.html:10
+#: templates/billy/web/public/legislator_table.html:11
+#: templates/billy/web/public/search_results_bills_legislators.html:76
+msgid "Chamber"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:281
+#: templates/billy/web/public/legislator.html:396
+msgid "Votes"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:292
+#: templates/billy/web/public/legislator.html:418
+#: templates/billy/web/public/vote.html:48
+msgid "Yes"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:296
+#: templates/billy/web/public/legislator.html:422
+#: templates/billy/web/public/vote.html:52
+msgid "No"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:300
+msgid "No vote counts available."
+msgstr ""
+
+#: templates/billy/web/public/bill.html:304
+msgid "No vote roll call available."
+msgstr ""
+
+#: templates/billy/web/public/bill.html:310
+msgid "No vote data is available yet."
+msgstr ""
+
+#: templates/billy/web/public/bill.html:324
+#: templates/billy/web/public/event.html:16
+msgid "Where"
+msgstr ""
+
+#: templates/billy/web/public/bill.html:325
+msgid "Description"
+msgstr ""
+
+#: templates/billy/web/public/bill_all_documents.html:12
+#, python-format
+msgid ""
+" All documents related to %(legislature)s's %(bill_id)s from %(session)s. "
+"(%(title)s) "
+msgstr ""
+
+#: templates/billy/web/public/bill_all_documents.html:31
+msgid "All documents"
+msgstr ""
+
+#: templates/billy/web/public/bill_all_documents.html:37
+msgid "All Documents for"
+msgstr ""
+
+#: templates/billy/web/public/bill_all_versions.html:8
+msgid "Versions"
+msgstr ""
+
+#: templates/billy/web/public/bill_all_versions.html:12
+#, python-format
+msgid ""
+" Full text of %(legislature)s's %(bill_id)s from %(session)s. (%(title)s) "
+msgstr ""
+
+#: templates/billy/web/public/bill_all_versions.html:31
+msgid "All Versions"
+msgstr ""
+
+#: templates/billy/web/public/bill_all_versions.html:37
+msgid "All Versions for"
+msgstr ""
+
+#: templates/billy/web/public/bills_list.html:8
+msgid "page"
+msgstr ""
+
+#: templates/billy/web/public/bills_list.html:77
+msgid "Search for bills about"
+msgstr ""
+
+#: templates/billy/web/public/bills_list.html:77
+msgid "across"
+msgstr ""
+
+#: templates/billy/web/public/bills_list.html:77
+msgid "all states."
+msgstr ""
+
+#: templates/billy/web/public/bills_list.html:78
+msgid "Receive bill alerts"
+msgstr ""
+
+#: templates/billy/web/public/bills_list.html:88
+msgid "Filter Bills"
+msgstr ""
+
+#: templates/billy/web/public/bills_list.html:100
+msgid "No bills found matching those criteria. Try widening your criteria."
+msgstr ""
+
+#: templates/billy/web/public/bio_blurb.html:4
+#, python-format
+msgid ""
+"\n"
+"   %(name)s represents %(chamber)s District %(district)s in the %(state)s "
+"%(chamber_name)s, is a member of %(com_count)s committee,\n"
+msgid_plural ""
+"\n"
+"   %(name)s represents %(chamber)s District %(district)s in the %(state)s "
+"%(chamber_name)s, is a member of %(com_count)s committees,\n"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/billy/web/public/bio_blurb.html:10
+#: templates/billy/web/public/homepage.html:23
+#: templates/billy/web/public/vote.html:72
+msgid "and"
+msgstr ""
+
+#: templates/billy/web/public/bio_blurb.html:13
+msgid "is the primary sponsor of"
+msgstr ""
+
+#: templates/billy/web/public/bio_blurb.html:16
+msgid "bills, and is the secondary sponsor of"
+msgstr ""
+
+#: templates/billy/web/public/bio_blurb.html:16
+#: templates/billy/web/public/bio_blurb.html:18
+#: templates/billy/web/public/bio_blurb.html:26
+#: templates/billy/web/public/search_results_bills_legislators.html:26
+#: templates/billy/web/public/state.html:131
+msgid "bills"
+msgstr ""
+
+#: templates/billy/web/public/bio_blurb.html:26
+msgid "is a secondary sponsor of"
+msgstr ""
+
+#: templates/billy/web/public/bio_blurb.html:28
+msgid "has not sponsored any bills in the current session."
+msgstr ""
+
+#: templates/billy/web/public/bio_blurb.html:39
+#, python-format
+msgid " has raised $%(total)s since %(since)s. "
+msgstr ""
+
+#: templates/billy/web/public/bio_blurb.html:42
+msgid "For detailed campaign finance information visit "
+msgstr ""
+
+#: templates/billy/web/public/bio_blurb_inactive.html:3
+msgid "is inactive in the current legislative session."
+msgstr ""
+
+#: templates/billy/web/public/chamber_select_form.html:10
+msgid "Both Chambers"
+msgstr ""
+
+#: templates/billy/web/public/committee.html:14
+msgid "Committee"
+msgstr ""
+
+#: templates/billy/web/public/committee.html:44
+#: templates/billy/web/public/committees_table.html:10
+msgid "Members"
+msgstr ""
+
+#: templates/billy/web/public/committee.html:48
+#: templates/billy/web/public/committees_table.html:9
+#: templates/billy/web/public/find_your_legislator_table.html:7
+#: templates/billy/web/public/legislator_table.html:7
+#: templates/billy/web/public/search_results_bills_legislators.html:73
+msgid "Name"
+msgstr ""
+
+#: templates/billy/web/public/committee.html:49
+#: templates/billy/web/public/event.html:26
+#: templates/billy/web/public/legislator.html:153
+msgid "Role"
+msgstr ""
+
+#: templates/billy/web/public/committee.html:50
+#: templates/billy/web/public/find_your_legislator_table.html:8
+#: templates/billy/web/public/legislator.html:17
+#: templates/billy/web/public/legislator.html:159
+#: templates/billy/web/public/legislator_table.html:8
+#: templates/billy/web/public/search_results_bills_legislators.html:74
+msgid "District"
+msgstr ""
+
+#: templates/billy/web/public/committee.html:51
+#: templates/billy/web/public/find_your_legislator_table.html:9
+#: templates/billy/web/public/legislator_table.html:9
+#: templates/billy/web/public/search_results_bills_legislators.html:75
+msgid "Party"
+msgstr ""
+
+#: templates/billy/web/public/committee.html:68
+#: templates/billy/web/public/committee.html:69
+msgid "Not available"
+msgstr ""
+
+#: templates/billy/web/public/committee.html:80
+#: templates/billy/web/public/developer_base.html:35
+msgid "Developer ProTips"
+msgstr ""
+
+#: templates/billy/web/public/committee.html:86
+msgid "Related Events"
+msgstr ""
+
+#: templates/billy/web/public/committee.html:90
+#, python-format
+msgid ""
+"\n"
+"                %(description)s on %(date)s\n"
+"                "
+msgstr ""
+
+#: templates/billy/web/public/committees.html:13
+#, python-format
+msgid " Information on all current %(state)s %(chamber)s committees. "
+msgstr ""
+
+#: templates/billy/web/public/committees_table.html:21
+msgid "data not yet available"
+msgstr ""
+
+#: templates/billy/web/public/downloads.html:5
+msgid "Open States Bulk Downloads"
+msgstr ""
+
+#: templates/billy/web/public/downloads.html:6
+msgid ""
+"Download CSV and JSON information on state legislators, bills, votes, "
+"committees from Open States."
+msgstr ""
+
+#: templates/billy/web/public/event.html:14
+msgid "When"
+msgstr ""
+
+#: templates/billy/web/public/event.html:22
+msgid "Participants"
+msgstr ""
+
+#: templates/billy/web/public/event.html:25
+msgid "Who"
+msgstr ""
+
+#: templates/billy/web/public/events.html:5
+msgid "events"
+msgstr ""
+
+#: templates/billy/web/public/events.html:9
+msgid "Past & Future events"
+msgstr ""
+
+#: templates/billy/web/public/find_your_legislator.html:7
+msgid "Find Your State Legislator - Open States"
+msgstr ""
+
+#: templates/billy/web/public/find_your_legislator.html:8
+msgid "Find out who represents you in your state capital."
+msgstr ""
+
+#: templates/billy/web/public/find_your_legislator.html:176
+msgid "Find your legislator"
+msgstr ""
+
+#: templates/billy/web/public/find_your_legislator.html:180
+msgid "Your address..."
+msgstr ""
+
+#: templates/billy/web/public/find_your_legislator.html:182
+#: templates/billy/web/public/homepage.html:45
+msgid "Submit"
+msgstr ""
+
+#: templates/billy/web/public/find_your_legislator.html:183
+msgid "Submit "
+msgstr ""
+
+#: templates/billy/web/public/find_your_legislator_table.html:6
+#: templates/billy/web/public/legislator_table.html:6
+msgid "Picture"
+msgstr ""
+
+#: templates/billy/web/public/find_your_legislator_table.html:27
+msgid "Sorry, no legislators found for this location."
+msgstr ""
+
+#: templates/billy/web/public/homepage.html:6
+msgid "Open States: discover politics in your state"
+msgstr ""
+
+#: templates/billy/web/public/homepage.html:7
+msgid ""
+"Follow politics in your state legislature. Find your legislators, see how "
+"they've voted, and browse bills, committees and events."
+msgstr ""
+
+#: templates/billy/web/public/homepage.html:17
+msgid ""
+"Discover politics in your state. Find your legislators, see how they've "
+"voted and browse upcoming legislation and events."
+msgstr ""
+
+#: templates/billy/web/public/homepage.html:21
+msgid "While Open States is in beta this site is only available for"
+msgstr ""
+
+#: templates/billy/web/public/homepage.html:26
+msgid ""
+"In the meantime, you can get <a href=\"http://itunes.apple.com/app/open-"
+"states/id500672932?mt=8\">Open States for the iPhone and iPad</a> to keep up-"
+"to-date on your state legislature, from bills being considered and how to "
+"contact lawmakers, campaign finance and voting records, plus local news."
+msgstr ""
+
+#: templates/billy/web/public/homepage.html:33
+msgid "Be notified when we launch in the remaining states."
+msgstr ""
+
+#: templates/billy/web/public/homepage.html:37
+#: templates/billy/web/public/legislator.html:232
+#: templates/billy/web/public/legislator.html:248
+msgid "Email"
+msgstr ""
+
+#: templates/billy/web/public/homepage.html:41
+msgid "Zip Code"
+msgstr ""
+
+#: templates/billy/web/public/homepage.html:52
+msgid "Just want data?"
+msgstr ""
+
+#: templates/billy/web/public/homepage.html:53
+msgid ""
+"We gather legislative data from all 50 states, Washington D.C. and Puerto "
+"Rico, and then make it available in a common format via our <a href=\"/api/"
+"\">API</a> and <a href=\"/downloads/\">bulk downloads</a>."
+msgstr ""
+
+#: templates/billy/web/public/homepage.html:54
+msgid ""
+"You can also join our <a href=\"http://groups.google.com/group/fifty-state-"
+"project\">Google Group</a> to get involved."
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:16
+#, python-format
+msgid " %(title)s %(name)s represents %(state)s "
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:150
+msgid "Inactive"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:161
+msgid "<b>no longer serves</b> in the"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:164
+msgid "Available Sessions:"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:193
+msgid "View committee membership"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:194
+msgid "View sponsored bills"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:195
+msgid "View recent votes"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:222
+msgid "Phone"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:227
+msgid "Fax"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:240
+msgid "Contact Information Not Available"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:262
+msgid "Former Roles"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:275
+#: templates/billy/web/public/legislator.html:300
+#: templates/billy/web/public/legislator.html:319
+msgid "Committee Membership"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:317
+msgid "Joint"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:341
+msgid "Media"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:345
+msgid "News and Blog Coverage"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:348
+msgid "View"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:348
+msgid "More News Items"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:374
+msgid "Sponsored Bills"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:388
+msgid "No sponsored bills to display."
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:397
+msgid "No votes to display."
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:404
+msgid "Bill"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:405
+msgid "Legislator Vote"
+msgstr ""
+
+#: templates/billy/web/public/legislator.html:431
+msgid "View More Votes"
+msgstr ""
+
+#: templates/billy/web/public/legislator_old_role_member.html:4
+#, python-format
+msgid ""
+" from %(start)s to %(end)s\n"
+"    "
+msgstr ""
+
+#: templates/billy/web/public/legislators-pjax.html:10
+msgid "Don't know who your legislator is?"
+msgstr ""
+
+#: templates/billy/web/public/legislators-pjax.html:11
+msgid "Find them now!"
+msgstr ""
+
+#: templates/billy/web/public/legislators-pjax.html:13
+msgid "enter address"
+msgstr ""
+
+#: templates/billy/web/public/legislators-pjax.html:15
+msgid "Go"
+msgstr ""
+
+#: templates/billy/web/public/legislators.html:8
+msgid "currently serving in"
+msgstr ""
+
+#: templates/billy/web/public/legislators_list_row.html:10
+#: templates/billy/web/public/search_results_bills_legislators.html:90
+msgid "inactive"
+msgstr ""
+
+#: templates/billy/web/public/login.html:9
+msgid "Login"
+msgstr ""
+
+#: templates/billy/web/public/login.html:17
+msgid "Your username and password didn't match. Please try again."
+msgstr ""
+
+#: templates/billy/web/public/login.html:33
+msgid "login"
+msgstr ""
+
+#: templates/billy/web/public/search_results_bills_legislators.html:10
+msgid "Search Results for"
+msgstr ""
+
+#: templates/billy/web/public/search_results_bills_legislators.html:27
+msgid "found with ids like"
+msgstr ""
+
+#: templates/billy/web/public/search_results_bills_legislators.html:28
+#: templates/billy/web/public/search_results_bills_legislators.html:66
+msgid "contained"
+msgstr ""
+
+#: templates/billy/web/public/search_results_bills_legislators.html:33
+msgid "No bills matching"
+msgstr ""
+
+#: templates/billy/web/public/search_results_bills_legislators.html:39
+#: templates/billy/web/public/search_results_bills_legislators.html:72
+msgid "State"
+msgstr ""
+
+#: templates/billy/web/public/search_results_bills_legislators.html:40
+msgid "Title"
+msgstr ""
+
+#: templates/billy/web/public/search_results_bills_legislators.html:41
+#: templates/billy/web/public/state.html:125
+msgid "Session"
+msgstr ""
+
+#: templates/billy/web/public/search_results_bills_legislators.html:42
+msgid "Introduced"
+msgstr ""
+
+#: templates/billy/web/public/search_results_bills_legislators.html:43
+msgid "Latest Action"
+msgstr ""
+
+#: templates/billy/web/public/search_results_bills_legislators.html:57
+#: templates/billy/web/public/search_results_bills_legislators.html:98
+msgid "Show more search results."
+msgstr ""
+
+#: templates/billy/web/public/search_results_bills_legislators.html:66
+msgid "legislator name"
+msgstr ""
+
+#: templates/billy/web/public/search_results_no_query.html:15
+msgid "Search the site"
+msgstr ""
+
+#: templates/billy/web/public/sources.html:4
+msgid "Sources"
+msgstr ""
+
+#: templates/billy/web/public/state.html:9
+msgid "Keep up to date with bills, legislators, votes, committees and events."
+msgstr ""
+
+#: templates/billy/web/public/state.html:61
+msgid "Click on a district to view corresponding legislators."
+msgstr ""
+
+#: templates/billy/web/public/state.html:87
+msgid "Joint Committees"
+msgstr ""
+
+#: templates/billy/web/public/state.html:123
+msgid "Available Sessions"
+msgstr ""
+
+#: templates/billy/web/public/state_not_active_yet.html:8
+msgid "Tad eager, are we?"
+msgstr ""
+
+#: templates/billy/web/public/vote.html:8
+msgid "vote"
+msgstr ""
+
+#: templates/billy/web/public/vote.html:16
+#: templates/billy/web/public/vote.html:34
+msgid "Vote on"
+msgstr ""
+
+#: templates/billy/web/public/vote.html:16
+msgid "that took place on"
+msgstr ""
+
+#: templates/billy/web/public/vote.html:56
+#: templates/billy/web/public/vote.html:148
+msgid "Other"
+msgstr ""
+
+#: templates/billy/web/public/vote.html:69
+msgid "You may be able to find out more by visiting the official source"
+msgstr ""
+
+#: templates/billy/web/public/vote.html:74
+msgid "here"
+msgstr ""
+
+#: templates/billy/web/public/vote.html:76
+#, python-format
+msgid " on the %(state)s %(chamber)s website. "
+msgstr ""
+
+#: templates/billy/web/public/vote.html:86
+msgid "Full Roll Call"
+msgstr ""
+
+#: templates/billy/web/public/vote.html:89
+msgid "Yes Votes"
+msgstr ""
+
+#: templates/billy/web/public/vote.html:115
+#: templates/billy/web/public/vote.html:144
+#: templates/billy/web/public/vote.html:173
+msgid "None."
+msgstr ""
+
+#: templates/billy/web/public/vote.html:119
+msgid "No Votes"
+msgstr ""
+
+#: templates/billy/web/public/vote.html:181
+msgid "No vote roll calls were available for this motion."
+msgstr ""
