@@ -73,7 +73,8 @@
             {% if  joint_committee_count %}
                 <ul class="inlineThirds centeredText">
             {% else %}
-                <ul class="inlineHalves centeredText">
+                {# was Halves, but CSS was broken #}
+                <ul class="inlineThirds centeredText">
             {% endif %}
 
             {% for chamber in chambers %}
