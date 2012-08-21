@@ -3,6 +3,7 @@
         <thead>
             <tr id="title">
                 <th class="invisible">Picture</th>
+                <th class="sort"><a class="block" href="?chamber={{chamber}}&abbr={{abbr}}&key=last_name&order={{ sort_order }}">Last Name</a></th>
                 <th class="sort"><a class="block" href="?chamber={{chamber}}&abbr={{abbr}}&key=last_name&order={{ sort_order }}">Name</a></th>
                 <th class="sort"><a class="block" href="?chamber={{chamber}}&abbr={{abbr}}&key=district&order={{ sort_order }}">District</a></th>
                 <th class="sort"><a class="block" href="?chamber={{chamber}}&abbr={{abbr}}&key=party&order={{ sort_order }}">Party</a></th>
@@ -15,6 +16,7 @@
             {% for obj in legislators %}
             <tr class="{% cycle odd,even %}">
                 <td><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></td>
+                <td class="hidden">{{obj.last_name}}</td>
                 <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
                 <td>{{ obj.district }}</td>
                 <td>{{ obj.party }}</td>
