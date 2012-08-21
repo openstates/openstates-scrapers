@@ -24,21 +24,28 @@ $(document).ready(function() {
     var datatable_setup = function(){
 
         //Kill the html in the table headers.
-        var table = $(this);
+        var table = $('#main-table');
         table.find('th').each(function(){
             var th = $(this);
             th.html(th.text());
         });
 
         // Convert the table to dataTable.
-        $('#main-table').dataTable({
+        var datatable = table.dataTable({
             bPaginate: false,
             bInfo: false,
             bDestroy: true,
             "oLanguage": {
                 "sSearch": "Type in a name, district, party or chamber to filter table below: "
-            }
+            },
+            "aoColumnDefs": [
+                    {"iDataSort": 1, "aTargets": [2]},
+                    {"bVisible": false, "aTargets": [1]}
+                ]
         });
+
+        // Sort it.
+        datatable.fnSort([[2, 'asc']]);
     }
 
     // Tell pjax not to jump to the top of the
@@ -52,7 +59,7 @@ $(document).ready(function() {
     doc.bind('pjax:complete', {}, pjax_setup);
 
     // Also fix the image placeholders.
-    doc.bind('pjax:complete', {}, fix_images);    
+    doc.bind('pjax:complete', {}, fix_images);
 
     // Reinitialize the datatable too.
     doc.bind('pjax:complete', {}, datatable_setup);
