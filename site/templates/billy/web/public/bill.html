@@ -193,12 +193,23 @@
                     {% endif %}
                     </ul>
 
-                {% if not bill.versions %}
-                <dt class="clear contentBottom">{% trans "Notes:" %}</dt>
-                <dd>{% trans "This bill does not currently have text available." %}
+                {% if bill.quality_exceptions %}
+                <dt class="clear contentBottom">
                 <a class="missingInfo" title="{% trans 'Our Methodology' %}" href="/methodology/">?</a>
-                </dd>
+                {% trans "Notes:" %}
+                </dt>
+                <dd><ul>
+                {% for qe in bill.quality_exceptions %}
+                {% if qe.type == "bills:no_sponsors" %}
+                    <li>{% trans "The official source for this bill does not list any sponsors." %}</li>
+                {% elif qe.type == "bills:no_actions" %}
+                    <li>{% trans "The official source for this bill does not list any actions." %}</li>
+                {% elif qe.type == "bills:no_versions" %}
+                    <li>{% trans "The official source for this bill does not include any bill text." %}</li>
                 {% endif %}
+                {% endfor %}
+                {% endif %}
+                </ul></dd>
                 </dd>
              </dl>
              <div class="clear"></div>
