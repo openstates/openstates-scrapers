@@ -185,6 +185,9 @@ class NJBillScraper(BillScraper, DBFMixin):
 
             bill = Bill(str(session), chamber, bill_id, title,
                         type=self._bill_types[bill_type[1:]])
+            if rec['identicalb']:
+                bill.add_companion(rec['identicalb'].split()[0])
+            # TODO: last session info is in there too
             bill.add_source(main_bill_url)
             bill_dict[bill_id] = bill
 
