@@ -154,9 +154,7 @@
                     {% for sponsor in bill.sponsors_manager.first_fifteen %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                            {% if sponsor.active %}
-                                <span class="tip sponsor-type">({{ sponsor.party }}) Dist. {{ sponsor.district }}</span>
-                            {% endif %}
+                                <span class="tip sponsor-type">({{ sponsor.context_role.party }}) Dist. {{ sponsor.context_role.district }}</span>
                         {% else %}
                             {% if sponsor.committee_id %}
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
@@ -171,9 +169,7 @@
                         {% for sponsor in remainder %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                            {% if sponsor.active %}
-                                <span class="tip sponsor-type">({{ sponsor.party }}) Dist. {{ sponsor.district }}</span>
-                            {% endif %}
+                                <span class="tip sponsor-type">({{ sponsor.context_role.party }}) Dist. {{ sponsor.context_role.district }}</span>
                         {% else %}
                             {% if sponsor.committee_id %}
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
