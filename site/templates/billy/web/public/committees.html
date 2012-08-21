@@ -42,15 +42,17 @@ $(document).ready(function(){
                     null,
                     null,
                     { "bSortable": false },
-                  ];                
+                  ];
         }
 
         table.dataTable({
-            bFilter: false,
             bPaginate: false,
             bInfo: false,
             bDestroy: true,
-            aoColumns: aoColumns
+            aoColumns: aoColumns,
+            "oLanguage": {
+                "sSearch": "Type in a committee or sponsor name to filter the table below: "
+            }
         });
     }
 
