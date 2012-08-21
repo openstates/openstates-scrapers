@@ -269,10 +269,9 @@ class NYBillScraper(BillScraper):
             _, same_as_text = same_as_text.split('Same as:')
             same_as_numbers = re.findall(id_rgx, same_as_text)
 
-            bill['companion_bill_ids'] = []
             for same_as_number in same_as_numbers:
                 same_as_number_noyear, _ = same_as_number.rsplit('-')
-                bill['companion_bill_ids'].append(same_as_number_noyear)
+                bill.add_companion(same_as_number_noyear)
 
         else:
             version_text = text
