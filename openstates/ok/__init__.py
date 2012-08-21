@@ -1,4 +1,4 @@
-from billy.fulltext import oyster_text, worddata_to_text
+from billy.utils.fulltext import oyster_text, worddata_to_text
 
 settings = dict(SCRAPELIB_TIMEOUT=120)
 
