@@ -78,6 +78,16 @@
                     {% endif %}
                 {% endif %}
             </div>
+
+            <div class="clear"></div>
+            {% if vote.quality_exceptions %}
+            <span class="qualityException">
+                <a class="missingInfo" title="{% trans 'Our Methodology' %}" href="/methodology/">?</a>
+                <strong>{% trans "Note:" %}</strong>
+                {% trans "This vote is known to have a mismatch between the reported total and the actual number of voters recorded." %}
+            </span>
+            {% endif %}
+
             <div class="clear"></div>
         </div>
 
