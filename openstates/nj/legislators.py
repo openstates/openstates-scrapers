@@ -73,6 +73,7 @@ class NJLegislatorScraper(LegislatorScraper, DBFMixin):
                              legal_position=legal_position,
                              email=email, url=url, photo_url=photo_url,
                              gender=gender)
+            leg.add_source(url)
             leg.add_source(file_url)
             leg.add_office('district', 'District Office', address=address,
                            phone=rec['phone'])
