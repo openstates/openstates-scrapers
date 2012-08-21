@@ -1,14 +1,15 @@
 {% extends "billy/web/public/base.html" %}
+{% load i18n %}
 {% load customtags %}
 
-{% block title %}{{state.name}} events{% endblock %}
+{% block title %}{{state.name}} {% trans "events" %}{% endblock %}
 
 {% block content %}
 <div class="fullWidth">
-    <h3>Past & Future events</h3>
+    <h3>{% trans "Past & Future events" %}</h3>
     <ul>
 {% for event in events %}
-    <li><a href = "{{ event.get_absolute_url }}"
+    <li><a href="{{ event.get_absolute_url }}"
         >{{ event.description|trunc }} @ {{ event.when|date:"M j, Y"}}</a></li>
 {% endfor %}
     </ul>

@@ -1,5 +1,5 @@
 import lxml.html
-from billy.fulltext import oyster_text
+from billy.utils.fulltext import oyster_text
 
 settings = dict(SCRAPELIB_RPM = 20)
 

@@ -1,6 +1,6 @@
 import re
 import datetime
-from billy.fulltext import oyster_text, pdfdata_to_text
+from billy.utils.fulltext import oyster_text, pdfdata_to_text
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 

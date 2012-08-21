@@ -1,6 +1,6 @@
 import datetime
 import re
-from billy.fulltext import pdfdata_to_text, text_after_line_numbers, oyster_text
+from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers, oyster_text
 
 metadata = dict(
     name='District of Columbia',

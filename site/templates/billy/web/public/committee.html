@@ -1,5 +1,6 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
+{% load i18n %}
 {% load customtags %}
 
 
@@ -10,7 +11,7 @@
 {% endblock %}
 
 {% block description %}
-{{metadata.legislature_name}} - {{committee.chamber_name}} {{committee.display_name}} Committee.
+{{metadata.legislature_name}} - {{committee.chamber_name}} {{committee.display_name}} {% trans "Committee" %}.
 {% endblock %}
 
 {% block headblock %}
@@ -28,7 +29,7 @@ $(document).ready(function() {
 <ul class="breadcrumb floatedList clearfix">
     <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
     <li>
-        » <a href="{% url 'committees' abbr %}">Committees</a>
+    » <a href="{% url 'committees' abbr %}">{% trans "Committees" %}</a>
     </li>
     <li>
         » <a href="{% url 'committees' abbr %}?chamber={{committee.chamber}}">{{committee.chamber_name}}</a>
@@ -40,15 +41,14 @@ $(document).ready(function() {
 
 <h2>{{ committee.display_name }} ({{committee.chamber_name}})</h2>
 <div class="fullWidth module">
-    <h3 class="moduleTitle">Members</h3>
+    <h3 class="moduleTitle">{% trans "Members" %}</h3>
     <table id="main-table">
         <thead>
             <tr>
-                <th>Name</th>
-                <!--<th>Photo</th>-->
-                <th>Role</th>
-                <th>District</th>
-                <th>Party</th>
+                <th>{% trans "Name" %}</th>
+                <th>{% trans "Role" %}</th>
+                <th>{% trans "District" %}</th>
+                <th>{% trans "Party" %}</th>
             </tr>
         </thead>
         <tbody>
@@ -65,8 +65,8 @@ $(document).ready(function() {
                           <td>{{ legislator.district }}</td>
                           <td>{{ legislator.party }}</td>
                     {% else %}
-                        <td>Not available</td>
-                        <td>Not available</td>
+                    <td>{% trans "Not available" %}</td>
+                    <td>{% trans "Not available" %}</td>
                     {% endif %}
                 </tr>
             {% endfor %}
@@ -77,18 +77,20 @@ $(document).ready(function() {
 {% include "billy/web/public/developer_committee.html" %}
 {% if request.user|is_dev %}
 <div class="fullWidth module">
-    <h3 class="moduleTitle">Developer ProTips</h3>
-
+    <h3 class="moduleTitle">{% trans "Developer ProTips" noop %}</h3>
 </div>
 {% endif %}
 
 {% if committee.events.count %}
 <div class="fullWidth module">
-    <h3 class="moduleTitle" >Related Events</h3>
+    <h3 class="moduleTitle" >{% trans "Related Events" %}</h3>
         <ul>
             {% for event in committee.events %}
-            <li><a href = "{{ event.get_absolute_url }}"
-                    >{{event.description}} on {{ event.when|date:"M j, Y"}}</a><li>
+            <li><a href="{{ event.get_absolute_url }}">
+                {% blocktrans with description=event.description date=event.when|date:"M j, Y" %}
+                {{description}} on {{ date }}
+                {% endblocktrans %}
+            </a><li>
             {% endfor %}
         </ul>
 </div>

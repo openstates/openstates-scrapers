@@ -1,8 +1,8 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
 {% load humanize %}
+{% load i18n %}
 {% load customtags %}
-
 
 {% block title %}
   {{bill.bill_id }} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
@@ -83,7 +83,7 @@
         <ul class="breadcrumb floatedList clearfix">
             <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
             <li>
-                » <a href="{% url 'bills' abbr %}">Bills</a>
+                » <a href="{% url 'bills' abbr %}">{% trans "Bills" %}</a>
             </li>
             <li>
                 » <a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a>
@@ -97,7 +97,7 @@
         </ul>
 
         <div class="fullWidth mainModule">
-            <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">Receive alerts about {{ bill.bill_id }}</a> with Scout.
+            <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">{% trans "Receive alerts about" %} {{ bill.bill_id }}</a> {% trans "with Scout." %}
             </span>
             <ol id="billAction">
                 {% for stage, text, date in bill.progress_data %}
@@ -116,7 +116,7 @@
 
             <dl class="inlineList">
                 {% if bill.subjects %}
-                <dt class="clear contentBottom">Bill Subjects:</dt>
+                <dt class="clear contentBottom">{% trans "Bill Subjects:" %}</dt>
                 <dd>
                         {% for subject in bill.subjects %}
                         <span class="label-bill-subject"><a href="{% url 'bills' abbr %}?subjects={{subject}}">{{subject}}</a></span>
@@ -127,10 +127,10 @@
                 </dd>
                 {% endfor %}
 
-                <dt class="clear contentBottom">Session:</dt>
+                <dt class="clear contentBottom">{% trans "Session:" %}</dt>
                 <dd><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
 
-                <dt class="clear contentBottom">Sponsors ({{ bill.sponsors|length }}):</dt>
+                <dt class="clear contentBottom">{% trans "Sponsors" %} ({{ bill.sponsors|length }}):</dt>
                 <dd class="columnThirds">
                     <!-- <h6 class="h6 ulTitle">
                         {% with sponsor=bill.sponsors_manager.first_primary %}
@@ -154,7 +154,10 @@
                     {% for sponsor in bill.sponsors_manager.first_fifteen %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                <span class="tip sponsor-type">({{ sponsor.context_role.party }}) Dist. {{ sponsor.context_role.district }}</span>
+                                <span class="tip sponsor-type">({{ sponsor.context_role.party }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
+                            {% if sponsor.active %}
+                            <span class="tip sponsor-type">({{ sponsor.party }}) {% trans "Dist." %} {{ sponsor.district }}</span>
+                            {% endif %}
                         {% else %}
                             {% if sponsor.committee_id %}
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
@@ -169,7 +172,10 @@
                         {% for sponsor in remainder %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                <span class="tip sponsor-type">({{ sponsor.context_role.party }}) Dist. {{ sponsor.context_role.district }}</span>
+                                <span class="tip sponsor-type">({{ sponsor.context_role.party }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
+                            {% if sponsor.active %}
+                            <span class="tip sponsor-type">({{ sponsor.party }}) {% trans "Dist." %} {{ sponsor.district }}</span>
+                            {% endif %}
                         {% else %}
                             {% if sponsor.committee_id %}
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
@@ -183,17 +189,28 @@
                     {% else %}
                         {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
                         {% if remainder|length %}
-                        <li><a class="viewMore" href="?show_all_sponsors=True">View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}}</a></li>
+                        <li><a class="viewMore" href="?show_all_sponsors=True">{% blocktrans with count=remainder|length|apnumber %} View {{ count}} other{% endblocktrans %}{{ remainder|length|pluralize}}</a></li>
                         {% endif %}
                         {% endwith %}
                     {% endif %}
                     </ul>
 
-                {% if not bill.versions %}
-                <dt class="clear contentBottom">Notes:</dt>
-                <dd>This bill does not currently have text available.
-                <a class="missingInfo" title="Our Methodology" href="/methodology/">?</a>
-                </dd>
+                {% if bill.quality_exceptions %}
+                <dt class="clear contentBottom">
+                <a class="missingInfo" title="{% trans 'Our Methodology' %}" href="/methodology/">?</a>
+                {% trans "Notes:" %}
+                </dt>
+                <dd><ul>
+                {% for qe in bill.quality_exceptions %}
+                {% if qe.type == "bills:no_sponsors" %}
+                    <li>{% trans "The official source for this bill does not list any sponsors." %}</li>
+                {% elif qe.type == "bills:no_actions" %}
+                    <li>{% trans "The official source for this bill does not list any actions." %}</li>
+                {% elif qe.type == "bills:no_versions" %}
+                    <li>{% trans "The official source for this bill does not include any bill text." %}</li>
+                {% endif %}
+                {% endfor %}
+                </ul></dd>
                 {% endif %}
                 </dd>
              </dl>
@@ -206,10 +223,10 @@
             <div class="module">
                 <div class="eightCol colLt">
                     {% if bill.versions %}
-                    <h3 class="moduleTitle">Bill Text</h3>
+                    <h3 class="moduleTitle">{% trans "Bill Text" %}</h3>
                         <ul class="inlineThirds">
                         {% for version in bill.versions_preview %}
-                            <li class={% cycle "one" "two" "three" %}>
+                            <li class="{% cycle 'one' 'two' 'three' %}">
                                 <a href="{{version.url}}">{{ version.name }}</a>
                                 {% if version.mimetype %}[{{ version.mimetype}}]{% endif %}
                             </li>
@@ -219,7 +236,8 @@
                         <div class="clear">
                         {% with remainder=bill.versions_remainder %}
                             {% if remainder %}
-                                <a class="viewMore" href="versions/">View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}}</a></li>
+                            <a class="viewMore" href="versions/">
+                                {% blocktrans with count=remainder|length|apnumber %} View {{ count }} other{% endblocktrans %}{{remainder|length|pluralize}} </a></li>
                             {% endif %}
                         {% endwith %}
                     </div>
@@ -227,7 +245,7 @@
                 </div>
                 <div class="fourCol colRt">
                     {% if bill.documents %}
-                            <h4>Documents</h4>
+                        <h4>{% trans "Documents" %}</h4>
                             {% for document in bill.documents_preview %}
                                 <ul>
                                     <li><a href="{{document.url}}">{{ document.name }}</a>
@@ -237,7 +255,8 @@
                             {% endfor %}
                             {% with remainder=bill.documents_remainder %}
                                 {% if remainder %}
-                                    <a class="viewMore" href="documents/">View {{ remainder|length|apnumber }} other{{ remainder|length|pluralize}}</a></li>
+                                <a class="viewMore" href="documents/">
+                                    {% blocktrans with count=remainder|length|apnumber %}View {{ count }} other{% endblocktrans %}{{ remainder|length|pluralize}} </a></li>
                                 {% endif %}
                             {% endwith %}
                             <div class="clear"></div>
@@ -248,21 +267,21 @@
         {% endif %}
 
         <div class="module">
-            <h3 class="moduleTitle">Activity</h3>
+            <h3 class="moduleTitle">{% trans "Activity" %}</h3>
             <div class="eightCol colLt">
-                <h4>Actions</h4>
+                <h4>{% trans "Actions" %}</h4>
                 <p><a id="actions-showing" href="#"></a></p>
                 <table class="normalTable" id="actions-table">
                     <thead>
                         <tr id="titles">
-                            <th style="min-width: 6em;">Date</th>
-                            <th>Chamber</th>
+                            <th style="min-width: 6em;">{% trans "Date" %}</th>
+                            <th>{% trans "Chamber" %}</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                     {% for action in bill.actions_manager %}
-                        <tr class='action {% cycle "even" "odd" %}' {% if 'other' in action.type %}data-actiontype="other"{% endif %}>
+                        <tr class="action {% cycle 'even' 'odd' %}" {% if 'other' in action.type %}data-actiontype="other"{% endif %}>
                             <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
                             <td>{{ action.actor_name }}</td>
                             <td>{{ action.action_display|safe }}</td>
@@ -272,36 +291,36 @@
                 </table>
             </div>
             <div class="fourCol colRt">
-                <h4>Votes</h4>
+                <h4>{% trans "Votes" %}</h4>
                 {% if bill.votes_manager.count %}
                 <ul class="largerList voteChart">
                     {% for vote in bill.votes_manager %}
                     <li>
-                        <time datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
+                        <time class="published">{{vote.date|date:"M j, Y"}}</time>
                         <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
                         {% if vote.has_votes %}
                         <ul class="barChart">
                             <li class="yes">
                                 <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.yes_count}} Yes</span>
+                                <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
                             </li>
                             <li class="no clear">
                                 <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.no_count}} No</span>
+                                <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
                             </li>
                         </ul>
                         {% else %}
-                            No vote counts available.
+                            {% trans "No vote counts available." %}
                         {% endif %}
                         {% if not vote.has_voters %}
                         <span class="right"><b>{{vote_value|title}}</b></span>
-                            No vote roll call available.
+                            {% trans "No vote roll call available." %}
                         {% endif %}
                     </li>
                     {% endfor %}
                 </ul>
                 {% else %}
-                No vote data is available yet.
+                {% trans "No vote data is available yet." %}
                 {% endif %}
             </div>
             <div class="clear"></div>
@@ -310,27 +329,26 @@
         {% with events=bill.events %}
             {% if events.count %}
         <div class="module eightCol colLt">
-            <h3 class="moduleTitle">Events</h3>
+            <h3 class="moduleTitle">{% trans "Events" %}</h3>
             <table class="normalTable">
                 <thead>
                     <tr id="titles">
-                        <th>Date</th>
-                        <th>Where</th>
-                        <th>Description</th>
-                        <th>Committees</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Where" %}</th>
+                        <th>{% trans "Description" %}</th>
+                        <th>{% trans "Committees" %}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for event in bill.events %}
-                    <tr class = 'odd'>
-                        <td class="tip withTipSm"><a href='{{ event.get_absolute_url }}'
+                    <tr class="odd">
+                        <td class="tip withTipSm"><a href="{{ event.get_absolute_url }}"
                                 >{{ event.when|date:"M j, Y"}}</a></td>
                         <td>{{ event.location }}</td>
                         <td>{{ event.description }}</td>
                         <td>
                             {% for committee in event.committees %}
-                            <a href='{{ committee.get_absolute_url }}'
-                                >{{committee.display_name}}</a>
+                            <a href="{{ committee.get_absolute_url }}">{{committee.display_name}}</a>
                             {% endfor %}
                         </td>
                     </tr>

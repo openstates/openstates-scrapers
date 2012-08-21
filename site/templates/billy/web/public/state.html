@@ -1,18 +1,19 @@
 {% extends "billy/web/public/base.html" %}
 {% load customtags %}
 {% load staticfiles %}
-{% load funfacts %}
+{% load i18n %}
+{# load funfacts #}
 {% load url from future %}
 
 {% block title %}{{metadata.legislature_name}} - Open States{% endblock %}
-{% block description %}{{metadata.legislature_name}}: Keep up to date with bills, legislators, votes, committees and events. {% endblock %}
+{% block description %}{{metadata.legislature_name}}: {% trans "Keep up to date with bills, legislators, votes, committees and events." %} {% endblock %}
 
 {% block bodyclass %}{% endblock %}
 
 {% block headblock %}
 <link rel="canonical" href="{{metadata.get_absolute_url}}">
-<link rel="stylesheet" href="{% static "maps/leaflet.css" %}" />
-<!--[if lte IE 8]><link rel="stylesheet" href="{% static "maps/leaflet.ie.css" %}" /><![endif]-->
+<link rel="stylesheet" href="{% static 'maps/leaflet.css' %}" />
+<!--[if lte IE 8]><link rel="stylesheet" href="{% static 'maps/leaflet.ie.css' %}" /><![endif]-->
 <script src="{% static "maps/leaflet.js" %}"></script>
 <script src="{% static "maps/wax.leaf.min.js" %}"></script>
 {% endblock %}
@@ -26,7 +27,7 @@
     </div>
 
     <div class="fullWidth module clear">
-        <h3 class="moduleTitle">Legislators</h3>
+        <h3 class="moduleTitle">{% trans "Legislators" %}</h3>
         <div class="twoCol colLt withDash centeredText" id="totalLeg">
             <ul>
                 {% for chamber in chambers %}
@@ -46,7 +47,7 @@
                  {% if chambers|length == 1 %}
                  <li class="medModule">
                     <a href="{% url 'committees' metadata.abbr %}">
-                        <h4 class="titleNumber withTip">{{chambers.0.committees_count}}<span>Committees</span></h4>
+                        <h4 class="titleNumber withTip">{{chambers.0.committees_count}}<span>{% trans "Committees" %}</span></h4>
                     </a>
                 </li>
                 {% endif %}
@@ -57,7 +58,7 @@
             <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
         </div>
         <div class="sixCol colRt">
-            <p class="tip centeredText">Click on a district to view corresponding legislators</p>
+            <p class="tip centeredText">{% trans "Click on a district to view corresponding legislators." %}</p>
             <div id="results_table"> </div>
         </div>
         <div class="clear"></div>
@@ -68,22 +69,23 @@
     {# hide committees module if unicameral #}
     {% if chambers|length > 1 %}
     <div class="fullWidth module clear">
-        <h3 class="moduleTitle">Committees</h3>
+        <h3 class="moduleTitle">{% trans "Committees" %}</h3>
             {% if  joint_committee_count %}
                 <ul class="inlineThirds centeredText">
             {% else %}
+                {# was Halves, but CSS was broken #}
                 <ul class="inlineHalves centeredText">
             {% endif %}
 
             {% for chamber in chambers %}
                 <a href="{% url 'committees' abbr %}?chamber={{chamber.type}}">
                 <li class="{% cycle 'one' 'two' %} titleNumber withTip">
-                {{ chamber.committees_count }}<span>{{ chamber.name }} Committees</span></li>
+                {{ chamber.committees_count }}<span>{{ chamber.name }} {% trans "Committees" %}</span></li>
                 </a>
             {% endfor %}
             {% if  joint_committee_count %}
             <a href="{% url 'committees' abbr %}?chamber=joint">
-                <li class="three titleNumber withTip">{{ joint_committee_count }}<span>Joint Committees</span></li>
+                <li class="three titleNumber withTip">{{ joint_committee_count }}<span>{% trans "Joint Committees" %}</span></li>
             </a>
             {% endif %}
         </ul>
@@ -91,10 +93,8 @@
     </div>
     {% endif %}
 
-
     <div class="fullWidth module">
-    <h3 class="moduleTitle">Bills</h3>
-
+        <h3 class="moduleTitle">{% trans "Bills" %}</h3>
     {% if chambers|length == 2 %}
     {# bicameral bill view, stacked passed/introduced - side by side chambers #}
         {% for chamber in chambers %}
@@ -116,19 +116,20 @@
             {% include "billy/web/public/_recently_introduced.html" with chamber=chambers.0 %}
         </div>
     {% endif %}   {# end unicameral bill module #}
+
         <div class="clear"></div>
     </div>
 
     <div class="fullWidth module">
-        <h3 class="moduleTitle">Available Sessions</h3>
+        <h3 class="moduleTitle">{% trans "Available Sessions" %}</h3>
         <table>
-            <thead> <tr> <th>Session</th> <th>Bills</th> </tr> </thead>
+            <thead> <tr> <th>{% trans "Session" %}</th> <th>{% trans "Bills" %}</th> </tr> </thead>
             <tbody>
                 {% for session in sessions %}
                 {% if session.bill_count %}
                     <tr class="{% cycle 'odd' 'even' %}">
                        <td>{{session.name}}</td>
-                       <td><a href="{% url 'bills' abbr %}?session={{session.id}}">{{session.bill_count}} bills</a></td>
+                       <td><a href="{% url 'bills' abbr %}?session={{session.id}}">{{session.bill_count}} {% trans "bills" %}</a></td>
                    </tr>
                 {% endif %}
                 {% endfor %}

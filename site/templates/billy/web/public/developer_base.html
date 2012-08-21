@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load customtags %}
 
 {% if request.user|is_dev %}
@@ -31,8 +32,8 @@
     });
 </script>
     <div class="fullWidth module">
-        <h3 class="moduleTitle">Developer ProTips</h3>
-<ul id = 'dev-tabs' >
+        <h3 class="moduleTitle">{% trans "Developer ProTips" noop %}</h3>
+<ul id="dev-tabs">
 {% block devlinks %}
 {% endblock %}
 </ul>

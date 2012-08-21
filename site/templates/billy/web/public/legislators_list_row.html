@@ -1,3 +1,4 @@
+{% load i18n %}
                         <td><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></td>
                         <td>{{obj.metadata.abbr|upper}}</td>
                         <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
@@ -6,6 +7,5 @@
                         {% if show_chamber_column and 'chamber' in obj %}
                             <td>{{ obj.chamber_name }}</td>
                         {% else %}
-                            <td>inactive</td>
+                            <td>{% trans "inactive" %}</td>
                         {% endif %}
-        

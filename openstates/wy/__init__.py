@@ -1,6 +1,6 @@
 import re
 import datetime
-from billy.fulltext import pdfdata_to_text, oyster_text
+from billy.utils.fulltext import pdfdata_to_text, oyster_text
 
 metadata = dict(
     name='Wyoming',

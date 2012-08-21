@@ -1,9 +1,10 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
+{% load i18n %}
 {% load customtags %}
 
 
-{% block title %}Search OpenStates.org{% endblock %}
+{% block title %}Search - Open States{% endblock %}
 
 {% if abbr == 'all' %}
     {% block collection_nav %}{% endblock %}
@@ -11,12 +12,12 @@
 
 {% block content %}
     <div style="width: 50%; margin: 0px auto;">
-        <h1>Search the site</h1>
+        <h1>{% trans "Search the site" %}</h1>
         <div style="float: left;">
-        <form action="/{{abbr|default:"all"}}/search/" method="get" id="searchform">
-            <input class="transparent" type="search" name="search_text" id="id_q" placeholder="search the site">
+        <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchform">
+            <input class="transparent" type="search" name="search_text" id="id_q">
             <button type="submit">
-                 <span>Search</span>
+                <span>{% trans "Search" %}</span>
             </button>
         </form>
         </div>

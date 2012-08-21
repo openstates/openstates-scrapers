@@ -1,4 +1,4 @@
-from billy.fulltext import text_after_line_numbers, oyster_text
+from billy.utils.fulltext import text_after_line_numbers, oyster_text
 import lxml.html
 
 metadata = {

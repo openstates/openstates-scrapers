@@ -1,5 +1,5 @@
 import lxml.html
-from billy.fulltext import oyster_text
+from billy.utils.fulltext import oyster_text
 
 metadata = dict(
     name='Mississippi',

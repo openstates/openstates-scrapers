@@ -1,17 +1,21 @@
 {% load humanize %}
+{% load i18n %}
 {% load customtags %}
-{{legislator.display_name}} represents {{legislator.chamber_name|title}} District {{legislator.district}} in the {{legislator.metadata.name}} State {{legislator.chamber_name|title}}, is a member of {{legislator.committees.count|apnumber}} committees, 
-
+{% blocktrans with name=legislator.display_name chamber=legislator.chamber_name|title district=legislator.district state=legislator.metadata.name chamber_name=legislator.chamber_name|title com_count=legislator.committees.count|apnumber count counter=legislator.committees.count %}
+   {{name}} represents {{chamber}} District {{district}} in the {{state}} {{chamber_name}}, is a member of {{com_count}} committee,
+{% plural %}
+   {{name}} represents {{chamber}} District {{district}} in the {{state}} {{chamber_name}}, is a member of {{com_count}} committees,
+{% endblocktrans %}
 {% with count=legislator.primary_sponsored_bills.count %}
-  and
+{% trans "and" %}
   {% if count %}
 
-    is the primary sponsor of {{count|apnumber}}
+  {% trans "is the primary sponsor of" %} {{count|apnumber}}
     {% with count=legislator.secondary_sponsored_bills.count %}
       {% if count %}
-        bills, and is the secondary sponsor of {{count|apnumber}} bills
+      {% trans "bills, and is the secondary sponsor of" %} {{count|apnumber}} {% trans "bills" %}
       {% else %}
-        bills.
+      {% trans "bills" %}.
       {% endif %}
     {% endwith %}
 
@@ -19,9 +23,9 @@
 
     {% with count=legislator.secondary_sponsored_bills.count %}
       {% if count %}
-        is a secondary sponsor of {{count|apnumber}} bills.
+      {% trans "is a secondary sponsor of" %} {{count|apnumber}} {% trans "bills" %}.
       {% else %}
-        has not sponsored any bills in the current session.
+          {% trans "has not sponsored any bills in the current session." %}
       {% endif %}
     {% endwith %}
 
@@ -31,10 +35,11 @@
 
 <p>
   {% if "_total_contributions" in legislator %}
-  {{legislator.title}} {{legislator.last_name}} has raised ${{legislator|underscore_field:"total_contributions"|intcomma}} since {{legislator|underscore_field:"contributions_start_year"}}.
+  {{legislator.title}} {{legislator.last_name}}
+  {% blocktrans with total=legislator|underscore_field:"total_contributions"|intcomma since=legislator|underscore_field:"contributions_start_year" %} has raised ${{total}} since {{since}}. {% endblocktrans %}
 {% endif %}
 {% if legislator.transparencydata_id %}
-    For detailed campaign finance information visit 
+    {% trans "For detailed campaign finance information visit " %}
     <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">Influence Explorer</a>.
 {% endif %}
 </p>

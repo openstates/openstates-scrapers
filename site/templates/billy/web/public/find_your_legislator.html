@@ -1,10 +1,11 @@
 {% extends "billy/web/public/base.html" %}
 {% load customtags %}
 {% load url from future %}
+{% load i18n %}
 {% load static from staticfiles %}
 
-{% block title %}Find Your State Legislator - Open States{% endblock %}
-{% block description %}Find out who represents you in your state capitol.{% endblock %}
+{% block title %}{% trans "Find Your State Legislator - Open States" %}{% endblock %}
+{% block description %}{% trans "Find out who represents you in your state capital." %}{% endblock %}
 
 {% block bodyclass %}{% endblock %}
 
@@ -170,28 +171,27 @@ $(document).ready(function() {
 {% block collection_nav %}{% endblock %}
 
 {% block content %}
-    <input type = 'hidden' value = '{{request}}' id = '_request' />
+    <input type="hidden" value="{{request}}" id="_request" />
     <div id="container">
-        <h2>Find your legislator!</h2>
+        <h2>{% trans "Find your legislator" %}</h2>
         <div class="medModule" id="notify">
-            <form id = 'find_your_leg'>
-                <input type = 'text' name = 'leg_search'
-                    id = 'leg_search'
-                    placeholder = 'Your address...'
-                    value = '{{ request }}' ></input>
-                <button type = 'submit' value = 'Submit'>
-                    <span>Submit</span>
+            <form id="find_your_leg">
+                <input type="text" name="leg_search" id="leg_search"
+                    placeholder="{% trans 'Your address...' "%}
+                    value="{{ request }}"></input>
+                    <button type="submit" value="{% trans 'Submit' %}">
+                    <span>{% trans "Submit "%}</span>
                 </button>
             </form>
             <div class="clear"></div>
-            <div id ='communicate'></div>
+            <div id="communicate"></div>
         </div>
 
         <div class="sixCol colLt withDash legMap">
-            <div id='map'></div>
+            <div id="map"></div>
         </div>
         <div class="sixCol colRt">
-            <div  id='results_table'>
+            <div  id="results_table">
             </div>
         </div>
         <div class="clear"></div>

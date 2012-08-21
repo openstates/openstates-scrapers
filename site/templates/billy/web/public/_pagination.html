@@ -1,0 +1,17 @@
+{% load i18n %}
+
+<div class="pagination-links">
+    <span class="tip tipSm">{% blocktrans with start=object_list.range_start end=object_list.range_end count=object_list.count%} Showing {{start}} to {{end}} of {{count}} {% endblocktrans %}</span>
+    <div class="pagesNum">
+        {% if object_list.has_next or object_list.has_previous %}
+        <ul>
+        {% for text, page_number, clickable in object_list.pagination_data %}
+            <li>
+            <a {% if not clickable %}class="selected"{% endif %} href="{{request.GET.path}}?{% if get_params %}{{ get_params }}&{% else %}{% endif %}page={{page_number}}">{{text}}</a>
+            </li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    <div class="clear"></div>
+</div>

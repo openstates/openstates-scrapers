@@ -1,6 +1,7 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
 {% load staticfiles %}
+{% load i18n %}
 {% load humanize %}
 {% load customtags %}
 
@@ -12,8 +13,8 @@
 {% endblock %}
 
 {% block description %}
-{{legislator.title}} {{legislator.full_name}} represents {{metadata.name}}
-{% if legislator.active %} {{legislator.chamber_name}} {% if legislator.district.0.isdigit %}District {% endif %}{{legislator.district}}. {% endif %}
+{% blocktrans with title=legislator.title name=legislator.full_name state=metadata.name %} {{title}} {{name}} represents {{state}} {% endblocktrans %}
+{% if legislator.active and legislator.district %} {{legislator.chamber_name}} {% if legislator.district.0.isdigit %}{% trans "District" %} {% endif %}{{legislator.district}}. {% endif %}
 {% endblock %}
 
 {% block headblock %}
@@ -129,11 +130,11 @@ $(document).ready(function() {
         <ul class="breadcrumb floatedList clearfix">
             <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
             <li>
-                » <a href="{% url "legislators" abbr %}">Legislators</a>
+                » <a href="{% url 'legislators' abbr %}">{% trans "Legislators" %}</a>
             </li>
             {% if 'chamber' in legislator %}
             <li>
-                » <a href="{% url "legislators" abbr %}?chamber={{legislator.chamber}}">{{legislator.chamber_name}}</a>
+                » <a href="{% url 'legislators' abbr %}?chamber={{legislator.chamber}}">{{legislator.chamber_name}}</a>
             </li>
             {% endif %}
             <li>
@@ -146,21 +147,21 @@ $(document).ready(function() {
                     <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
                     <div class="eightsLg clearfix">
                         <h2 class="withTipSm">
-                            {{legislator.full_name}}{% if not legislator.active %} (Inactive){% endif %}
+                            {{legislator.full_name}}{% if not legislator.active %} ({% trans "Inactive" %}){% endif %}
                         </h2>
                         <dl class="inlineList clearfix">
-                            <dt class="hidden">Role</dt>
+                            <dt class="hidden">{% trans "Role" %}</dt>
                             <dd class="tip tipSm">
                             {% if legislator.active %}
                                 {{legislator.party}} &mdash;
                                 {{legislator.title}} &mdash;
                                 {# if first character of district is numeric, add 'District' #}
-                                {% if legislator.district.0.isdigit %} District {% endif %}{{legislator.district}}
+                                {% if legislator.district.0.isdigit %} {% trans "District" %} {% endif %}{{legislator.district}}
                             {% else %}
-                                {{legislator.full_name}} <b>no longer serves</b> in the {{metadata.legislature_name }}.
+                            {{legislator.full_name}} {% trans "<b>no longer serves</b> in the" %} {{metadata.legislature_name}}.
                             {% endif %}
                             </dd>
-                            <dt class="clear">Available Sessions:</dt>
+                            <dt class="clear">{% trans "Available Sessions:" %}</dt>
                             <dd>
                             {% if legislator.active %}
                                 <ul>
@@ -189,9 +190,9 @@ $(document).ready(function() {
                 <div class="clear"></div>
                 <div class="eightCol clearfix">
                     <ul class="inlineList tip noSpace" id="legLinks">
-                        <li><a href="#committees">View committee membership</a></li>
-                        <li><a href="#bills">View sponsored bills</a></li>
-                        <li><a href="#votes">View recent votes</a></li>
+                        <li><a href="#committees">{% trans "View committee membership" %}</a></li>
+                        <li><a href="#bills">{% trans "View sponsored bills" %}</a></li>
+                        <li><a href="#votes">{% trans "View recent votes" %}</a></li>
                     </ul>
                 </div>
             <!-- </div> -->
@@ -200,7 +201,7 @@ $(document).ready(function() {
                 the David Dewhurst situation--a Lt. Governor who's listed as a voter on
                 bills and is 'active' but not associated with a chamber.
                 {% endcomment %}
-    			{% if legislator.active and 'chamber' in legislator %}
+                {% if legislator.active and 'chamber' in legislator %}
                 <div class="sixCol colLt withDash clear">
                     <p>
                         {% include "billy/web/public/bio_blurb.html" %}
@@ -209,7 +210,7 @@ $(document).ready(function() {
                 <div class="sixCol colRt">
                     <ul>
                         {% for office in legislator.offices %}
-                        <li class="fourths {% cycle "firstModule" "secondModule" %}">
+                        <li class="fourths {% cycle 'firstModule' 'secondModule' %}">
                             <h4 class="h5 withTip">{{office.name}}:</h4>
                             <address class="vcard">
                                 <span class="adr">
@@ -217,17 +218,17 @@ $(document).ready(function() {
                                 </span>
                                 {% if office.phone %}
                                 <div class="tel">
-                                    <span class="type smTitle">Phone:</span> {{office.phone}}
+                                    <span class="type smTitle">{% trans "Phone" %}:</span> {{office.phone}}
                                 </div>
                                 {% endif %}
                                 {% if office.fax %}
                                 <div class="fax">
-                                    <span class="type smTitle">Fax:</span> {{office.fax}}
+                                    <span class="type smTitle">{% trans "Fax" %}:</span> {{office.fax}}
                                 </div>
                                 {% endif %}
                                 {% if office.email %}
                                 <div class="email">
-                                    <span class="type smTitle">Email:</span> {{office.email}}
+                                    <span class="type smTitle">{% trans "Email" %}:</span> {{office.email}}
                                 </div>
                                 {% endif %}
                             </address>
@@ -235,15 +236,15 @@ $(document).ready(function() {
                         {% empty %}
                         {% if not legislator.email %}
                         <li class="fourths firstModule">
-                            <h5 class="h5" style="width:300px;">Contact Information Not Available
-                                <a class="missingInfo" title="Our Methodology" href="/methodology/">?</a>
+                            <h5 class="h5" style="width:300px;">{% trans "Contact Information Not Available" %}
+                                <a class="missingInfo" title="{% trans 'Our Methodology' %}" href="/methodology/">?</a>
                             </h5>
                         </li>
                         {% endif %}
                         {% endfor %}
                         {% if legislator.email %}
                         <li class="clear">
-                            <span class="email smTitle">Email: </span>
+                            <span class="email smTitle">{% trans "Email" %}: </span>
                             <a href="mailto:{{legislator.email}}">{{legislator.email}}</a>
                          </li>
                         {% endif %}
@@ -257,7 +258,7 @@ $(document).ready(function() {
 
             {% if not legislator.active %}
             <div class="fullWidth module">
-                <h3 class="moduleTitle">Former Roles</h3>
+                <h3 class="moduleTitle">{% trans "Former Roles" %}</h3>
                 {% for term, chamber_roles in legislator.old_roles_manager %}
                 <div class="old-roles">
                     <b>{{term}}</b>
@@ -270,7 +271,7 @@ $(document).ready(function() {
                             {% endfor %}
 
                             {% if chamber_roles.upper.committee_member %}
-                            <li>Committee Membership</li>
+                            <li>{% trans "Committee Membership" %}</li>
                             <li>
                                 <ul class="inlineThirds">
                                 {% for role in chamber_roles.upper.committee_member %}
@@ -287,19 +288,19 @@ $(document).ready(function() {
                     {% endif %}
 
                     {% if chamber_roles.lower %}
-                    <div class='old-roles-indented'>
+                    <div class="old-roles-indented">
                         <b>{{legislator.metadata.lower_chamber_name}}</b>
-                        <ul class='old-roles-indented'>
+                        <ul class="old-roles-indented">
                         {% for role in chamber_roles.lower.member %}
                             <li>{% include 'billy/web/public/legislator_old_role_member.html' %}</li>
                         {% endfor %}
 
                         {% if chamber_roles.lower.committee_member %}
-                        <li>Committee Membership</li>
+                        <li>{% trans "Committee Membership" %}</li>
                         <li>
                             <ul class="inlineThirds">
                             {% for role in chamber_roles.lower.committee_member %}
-                                <li class={% cycle "one" "two" "three" %}>
+                                <li class="{% cycle 'one' 'two' 'three' %}">
                                 {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
                                 </li>
                             {% endfor %}
@@ -311,14 +312,14 @@ $(document).ready(function() {
                     {% endif %}
 
                     {% if chamber_roles.joint %}
-                    <div class='old-roles-indented'>
-                        <b>Joint</b>
+                    <div class="old-roles-indented">
+                        <b>{% trans "Joint" %}</b>
                         <ul class="old-roles-indented">
-                        <li>Committee Membership</li>
+                        <li>{% trans "Committee Membership" %}</li>
                         <li>
                             <ul class="inlineThirds">
                             {% for role in chamber_roles.joint.committee_member %}
-                                <li class={% cycle "one" "two" "three" %}>
+                                <li class="{% cycle 'one' 'two' 'three' %}">
                                 {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
                                 </li>
                             {% endfor %}
@@ -336,14 +337,14 @@ $(document).ready(function() {
         {% if legislator.active %}
             {% if feed_entries.count %}
             <div class="fullWidth module clear">
-                <h3 class="moduleTitle">Media</h3>
+                <h3 class="moduleTitle">{% trans "Media" %}</h3>
                 <div class="sevenCol colLt">
 
                 <a class="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.slug %}">rss</a>
-                <h4>News and Blog Coverage</h4>
+                <h4>{% trans "News and Blog Coverage" %}</h4>
                 {% for obj in feed_entries %}{% include feed_entry_template %}{% endfor %}
                 {% if feed_entries_count %}
-                    <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.slug %}">View {{feed_entries_count|apnumber|capfirst}} More News Items</a>
+                <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.slug %}">{% trans "View" %} {{feed_entries_count|apnumber|capfirst}} {% trans "More News Items" %}</a>
                 {% endif %}
                 </div>
             <div class="clear"></div>
@@ -352,11 +353,11 @@ $(document).ready(function() {
 
         <div class="fullWidth module clear"></a>
             <a name="committees">
-            <h3 class="moduleTitle">Committees</h3>
+            <h3 class="moduleTitle">{% trans "Committees" %}</h3>
             <ul class="inlineThirds">
                 {% for role in legislator.roles_manager %}
                 {% if role.type == 'committee member' %}
-                <li class={% cycle "one" "two" "three" %}>{{ role.type_display }}
+                <li class="{% cycle 'one' 'two' 'three' %}">{{ role.type_display }}
                     {% if 'committee_id' in role %}<a href="{% url 'committee' abbr role.committee_id %}">{{ role.committee_name }}</a>{% else %}{{ role.committee_name }}{% endif %}</li>
                 {% endif %}
                 {% endfor %}
@@ -366,24 +367,24 @@ $(document).ready(function() {
         {% endif %}
         <div class="fullWidth module">
             <a name="bills"></a>
-            <h3 class="moduleTitle">Bills</h3>
+            <h3 class="moduleTitle">{% trans "Bills" %}</h3>
             <div class="eightCol colLt">
                 <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
-                <h4>Sponsored Bills</h4>
+                <h4>{% trans "Sponsored Bills" %}</h4>
                 <ul>
                 {% if sponsored_bills.count %}
                     {% for bill in sponsored_bills %}
                         <li class="medModuleSm">
-	                        <time datetime="" class="published tipSm" pubdate>{{bill.most_recent_action.date|date:"F d, Y"}}</time>
+	                        <time class="published tipSm">{{bill.most_recent_action.date|date:"F d, Y"}}</time>
                             <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
                                 {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
                             <p class="clear">{{bill.title}}</p>
                         </li>
                     {% endfor %}
                 </ul>
-                <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">View More Bills</a>
+                <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">{% trans "View More Bills" %}</a>
                 {% else %}
-                    <li>No sponsored bills to display.</li>
+                    <li>{% trans "No sponsored bills to display." %}</li>
                 </ul>
                 {% endif %}
 
@@ -391,33 +392,33 @@ $(document).ready(function() {
             <div class="fourCol colRt">
                 <a name="votes"></a>
                 <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
-                <h4 class="withTip">Votes</h4>
-                {% if not legislator_votes %}No votes to display.
+                <h4 class="withTip">{% trans "Votes" %}</h4>
+                {% if not legislator_votes %}{% trans "No votes to display." %}
                 {% else %}
                 <table class="noPaddingTable voteChart">
                     <col width="200" />
                     <col width="80" />
                     <thead>
                         <tr id="titles">
-                            <th class="invisible">Bill</th>
-                            <th class="twoColFlow right">Legislator Vote</th>
+                            <th class="invisible">{% trans "Bill" %}</th>
+                            <th class="twoColFlow right">{% trans "Legislator Vote" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for vote_value, vote in legislator_votes %}
                         <tr>
                             <td>
-                                <time datetime="" class="published" pubdate>{{vote.date|date:"M j, Y"}}</time>
+                                <time class="published">{{vote.date|date:"M j, Y"}}</time>
                                 <a href="{{ vote.get_absolute_url }}" class="h4 withTip">{{vote.bill.bill_id|upper}}</a>
                                 <p>{{vote.motion|truncatewords:30}}</p>
                                 <ul class="barChart">
                                     <li class="yes">
                                         <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                        <span class="tagNumber">{{vote.yes_count}} Yes</span>
+                                        <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
                                     </li>
                                     <li class="no clear">
                                         <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                                        <span class="tagNumber">{{vote.no_count}} No</span>
+                                        <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
                                     </li>
                                 </ul>
                             </td>
@@ -426,7 +427,7 @@ $(document).ready(function() {
                         {% endfor %}
                     </tbody>
                 </table>
-                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">View More Votes</a>
+                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
                 {% endif %}
             </div>
             <div class="clear"></div>

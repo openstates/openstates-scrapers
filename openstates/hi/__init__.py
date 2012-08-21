@@ -1,4 +1,4 @@
-from billy.fulltext import (oyster_text, pdfdata_to_text,
+from billy.utils.fulltext import (oyster_text, pdfdata_to_text,
                             text_after_line_numbers)
 
 settings = dict(SCRAPELIB_TIMEOUT=300)

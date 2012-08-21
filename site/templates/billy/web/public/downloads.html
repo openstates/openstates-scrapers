@@ -1,11 +1,12 @@
 {% extends "flat/flatpage.html" %}
+{% load i18n %}
 {% load markup_tags %}
 
-{% block title %} Open States Bulk Downloads {% endblock %}
-{% block description %} Download CSV and JSON information on state legislators, bills, votes, committees from Open States. {% endblock %}
+{% block title %} {% trans "Open States Bulk Downloads" %} {% endblock %}
+{% block description %} {% trans "Download CSV and JSON information on state legislators, bills, votes, committees from Open States." %} {% endblock %}
 
 {% block flatpage %}
-<h2> Bulk Downloads </h2>
+<h2> {% trans "Bulk Downloads" %} </h2>
 
 {% rest %}
 Because it is often convenient to get all of a state's data for testing or offline use, we provide bulk downloads of our data.

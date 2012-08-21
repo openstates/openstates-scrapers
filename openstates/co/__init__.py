@@ -1,5 +1,5 @@
 import datetime
-from billy.fulltext import oyster_text, worddata_to_text
+from billy.utils.fulltext import oyster_text, worddata_to_text
 
 metadata = dict(
     name='Colorado',

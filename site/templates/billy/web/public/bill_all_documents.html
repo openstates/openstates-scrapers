@@ -1,22 +1,22 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
 {% load humanize %}
+{% load i18n %}
 {% load customtags %}
 
-
 {% block title %}
-  {{bill.bill_id }} Documents - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
+{{bill.bill_id }} {% trans "Documents" %} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
 {% endblock %}
 
 {% block description %}
-All documents related to {{metadata.display_name}}'s {{bill.bill_id}} from {{bill.session_details.display_name}}.({{bill.title}})
+{% blocktrans with legislature=metadata.display_name bill_id=bill.bill_id session=bill.session_details.display_name title=bill.title%} All documents related to {{legislature}}'s {{bill_id}} from {{session}}. ({{title}}) {% endblocktrans %}
 {% endblock %}
 
 {% block content %}
         <ul class="breadcrumb floatedList clearfix">
             <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
             <li>
-                » <a href="{% url 'bills' abbr %}">Bills</a>
+                » <a href="{% url 'bills' abbr %}">{% trans "Bills" %}</a>
             </li>
             <li>
                 » <a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a>
@@ -28,13 +28,13 @@ All documents related to {{metadata.display_name}}'s {{bill.bill_id}} from {{bil
                 » <a href="{{bill.get_absolute_url}}">{{bill.bill_id}}</a>
             </li>
             <li>
-                » All documents
+            » {% trans "All documents" %}
             </li>
         </ul>
 
         <div class="fullWidth mainModule">
             <h1 class="withTimeline withTip" style="padding-top: 30px;">
-                All Documents for
+                {% trans "All Documents for" %}
                 <a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
             </h1>
         </div>

@@ -1,3 +1,4 @@
+{% load i18n %}
 {% if 'lower' in chamber_select_chambers %}
 <form action="/{{abbr}}/{{chamber_select_collection}}/" method="get" id="toggleBtns" class="actionItem clearfix">
     <div class="buttonGroup">
@@ -6,7 +7,7 @@
             name="chamber" value="{{k}}">{{v}}</button>
         {% endfor %}
         <button class="last {% if chamber == 'both' %}active{% endif %}" name="chamber" value="">
-            Both Chambers
+            {% trans "Both Chambers" %}
         </button>
     </div>
 </form>

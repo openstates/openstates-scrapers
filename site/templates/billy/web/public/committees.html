@@ -1,15 +1,16 @@
 {% extends "billy/web/public/base.html" %}
 {% load staticfiles %}
+{% load i18n %}
 {% load customtags %}
 
 {% block title %}
-  Committees -
+ {% trans "Committees" %} -
   {{metadata.legislature_name}} -
   Open States
 {% endblock %}
 
 {% block description %}
-Information on all current {{metadata.name}} {{chamber_name}} committees.
+{% blocktrans with state=metadata.name chamber=chamber_name %} Information on all current {{state}} {{chamber}} committees. {% endblocktrans %}
 {% endblock %}
 
 {% block headblock %}
@@ -77,10 +78,5 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
-        <div id='' class="fullWidth" data-pjax>
-        <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} Committees</h2>
-            {% include chamber_select_template %}
-            {% include committees_table_template %}
-        </div>
-        <div class="clear"></div>
+    {% include "billy/web/public/committees-pjax.html" %}
 {% endblock %}

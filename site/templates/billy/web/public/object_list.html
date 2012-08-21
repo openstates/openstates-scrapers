@@ -1,5 +1,6 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
+{% load i18n %}
 {% load static from staticfiles %}
 {% load customtags %}
 
@@ -16,25 +17,10 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-        <a class="textReplace rssIcon" href='{{request.path}}rss/'>RSS</a>
+        <a class="textReplace rssIcon" href="{{request.path}}rss/">RSS</a>
         <h2>{{ description }}</h2>
         <div class="fullWidth">
-            <div class="pagination-links">
-                <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
-                <div class="pagesNum">
-                    {% if object_list.has_next or object_list.has_previous %}
-                    <ul>
-                    {% for text, page_number, clickable in object_list.pagination_data %}
-                        <li>
-                        <a {% if not clickable %}class="selected"{% endif %} href="{{request.GET.path}}?{% if get_params %}{{ get_params }}&{% else %}{% endif %}page={{page_number}}">{{text}}</a>
-                        </li>
-                    {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
-                <div class="clear"></div>
-            </div>
-
+            {% include "billy/web/public/_pagination.html" %}
             {% if use_table %}
             <table id="main-table" class="withFilter">
                 <thead>
@@ -54,25 +40,11 @@ $(document).ready(function() {
                 {% endfor %}
 
             {% if use_table %}
-                </tbody>   
+                </tbody>
             </table>
             {% endif %}
-            
-             <div class="pagination-links">
-                <span class="tip tipSm">Showing {{object_list.range_start}} to {{object_list.range_end}} of {{object_list.count}}</span>
-                <div class="pagesNum">
-                    {% if object_list.has_next or object_list.has_previous %}
-                    <ul>
-                    {% for text, page_number, clickable in object_list.pagination_data %}
-                        <li>
-                        <a {% if not clickable %}class="selected"{% endif %} href="{{request.GET.path}}?{% if get_params %}{{ get_params }}&{% else %}{% endif %}page={{page_number}}">{{text}}</a>
-                        </li>
-                    {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
-                <div class="clear"></div>
-            </div>
+
+            {% include "billy/web/public/_pagination.html" %}
         </div>
         <div class="clear"></div>{% endblock %}
 

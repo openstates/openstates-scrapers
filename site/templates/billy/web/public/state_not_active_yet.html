@@ -1,10 +1,11 @@
 {% extends "billy/web/public/base.html" %}
+{% load i18n %}
 
 {% block collection_nav %}
 {% endblock %}
 
 {% block content %}
-<h2>Tad eager, are we?</h2>
-<h5>{{metadata.name}} isn't currently available on OpenStates.org, but will in less than six months.
-    Sign up below to be alerted.</h5>
+<h2>{% trans "Tad eager, are we?" %}</h2>
+<h5>{{metadata.name}} {% trans "isn't currently available on OpenStates.org, but will in less than six months.
+    Sign up below to be alerted." %}</h5>
 {% endblock %}
