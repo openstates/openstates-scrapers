@@ -143,9 +143,9 @@ $(document).ready(function() {
         </ul>
         <div class="fullWidth mainModule legislator">
             <!-- <div class="medModule"> -->
-                <div class="eightCol colLt">
+                <div class="sixCol colLt">
                     <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
-                    <div class="eightsLg clearfix">
+                    <div class="eights clearfix">
                         <h2 class="withTipSm">
                             {{legislator.full_name}}{% if not legislator.active %} ({% trans "Inactive" %}){% endif %}
                         </h2>
@@ -182,7 +182,7 @@ $(document).ready(function() {
                         </dl>
                     </div>
                 </div>
-                <div class="fourCol colRt">
+                <div class="sixCol colRt">
                     <div class="mapBorder">
                         <div id="map" class="withBorder"></div>
                     </div>
@@ -340,20 +340,27 @@ $(document).ready(function() {
                 <h3 class="moduleTitle">{% trans "Media" %}</h3>
                 <a class="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.slug %}">rss</a>
                 <h4>{% trans "News and Blog Coverage" %}</h4>
+                {% if feed_entries_count == 2 %}
+                    {% for obj in feed_entries_left %}
+                        <div class="sixCol col{% cycle 'Lt' 'Rt' %}">
+                            {% include feed_entry_template %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="sixCol colLt">
+                    {% for obj in feed_entries_left %}
+                            {% include feed_entry_template %}
+                    {% endfor %}
+                    </div>
+                    <div class="sixCol colRt">
+                    {% for obj in feed_entries_right %}
+                            {% include feed_entry_template %}
+                    {% endfor %}
+                    </div>
+                {% endif %}
 
-                <div class="sixCol colLt">
-                {% for obj in feed_entries_left %}
-                        {% include feed_entry_template %}
-                {% endfor %}
-                </div>
-                <div class="sixCol colRt">
-                {% for obj in feed_entries_right %}
-                        {% include feed_entry_template %}
-                {% endfor %}
-                </div>
-
-                {% if feed_entries_count %}
-                <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.slug %}">{% trans "View" %} {{feed_entries_count|apnumber|capfirst}} {% trans "More News Items" %}</a>
+                {% if feed_entries_more_count %}
+                <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.slug %}">{% trans "View" %} {{feed_entries_more_count|apnumber|capfirst}} {% trans "More News Items" %}</a>
                 {% endif %}
             <div class="clear"></div>
             </div>
