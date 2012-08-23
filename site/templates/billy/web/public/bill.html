@@ -278,7 +278,15 @@
                         <tr class="action {% cycle 'even' 'odd' %}" {% if 'other' in action.type %}data-actiontype="other"{% endif %}>
                             <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
                             <td>{{ action.actor_name }}</td>
+                        {% if action.related_votes %}
+                        <td>{{ action.action_display|safe }}
+                            {% for vote in action.related_votes %}
+                                <a href = '/{{abbr}}/votes/{{vote}}' >Related Vote</a>
+                            {% endfor %}
+                        </td>
+                        {% else %}
                             <td>{{ action.action_display|safe }}</td>
+                        {% endif %}
                         </tr>
                     {% endfor %}
                     </tbody>
