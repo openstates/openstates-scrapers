@@ -81,7 +81,7 @@ class MABillScraper(BillScraper):
                 desc = doc.xpath('//p[@class="billShortDesc"]/text()')[0]
 
                 # create bill
-                bill = Bill(session, chamber, bill_id, title, description=desc)
+                bill = Bill(session, chamber, bill_id, title, summary=desc)
                 bill.add_source(bill_url)
 
                 # actions

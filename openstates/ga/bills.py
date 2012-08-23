@@ -110,28 +110,28 @@ class GABillScraper(BillScraper):
             else:
                 raise ValueError('unknown type: %s' % type)
 
-            # use short_title as title and long as description
+            # use short_title as title and long as summary
             title = bxml.xpath('Short_Title/text()')
-            description = bxml.xpath('Title/text()')
+            summary = bxml.xpath('Title/text()')
 
-            if description:
-                description = description[0]
+            if summary:
+                summary = summary[0]
             else:
-                description = ''
+                summary = ''
 
             if title:
                 title = title[0]
             else:
-                title = description
-                description = ''
+                title = summary
+                summary = ''
 
-            if not title and not description:
-                self.warning('no title or description for %s, skipping' %
+            if not title and not summary:
+                self.warning('no title or summary for %s, skipping' %
                              bill_id)
                 continue
 
             bill = Bill(session, chamber, bill_id, title, type=type,
-                        description=description)
+                        summary=summary)
             bill.add_source(summary_url)
 
             for sponsor in bxml.xpath('Sponsor'):

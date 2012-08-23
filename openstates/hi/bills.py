@@ -154,7 +154,7 @@ class HIBillScraper(BillScraper):
                 subs.remove("")
 
             b = Bill(session, chamber, bill_id, title=meta['Measure Title'],
-                     description=meta['Description'],
+                     summary=meta['Description'],
                      referral=meta['Current Referral'],
                      subjects=subs,
                      type=bill_type)

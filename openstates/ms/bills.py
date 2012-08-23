@@ -77,7 +77,7 @@ class MSBillScraper(BillScraper):
                     longtitle = details_root.xpath('string(//longtitle)')
 
                     bill = Bill(session, chamber, bill_id, title,
-                                type=bill_type, longtitle=longtitle)
+                                type=bill_type, summary=longtitle)
 
                     #sponsors
                     main_sponsor = details_root.xpath('string(//p_name)').split()
