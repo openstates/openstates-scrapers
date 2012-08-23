@@ -155,9 +155,6 @@
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                                 <span class="tip sponsor-type">({{ sponsor.context_role.party }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
-                            {% if sponsor.active %}
-                            <span class="tip sponsor-type">({{ sponsor.party }}) {% trans "Dist." %} {{ sponsor.district }}</span>
-                            {% endif %}
                         {% else %}
                             {% if sponsor.committee_id %}
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
@@ -173,9 +170,6 @@
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                                 <span class="tip sponsor-type">({{ sponsor.context_role.party }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
-                            {% if sponsor.active %}
-                            <span class="tip sponsor-type">({{ sponsor.party }}) {% trans "Dist." %} {{ sponsor.district }}</span>
-                            {% endif %}
                         {% else %}
                             {% if sponsor.committee_id %}
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
