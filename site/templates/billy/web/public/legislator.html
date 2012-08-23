@@ -335,18 +335,26 @@ $(document).ready(function() {
             {% endif %}
 
         {% if legislator.active %}
-            {% if feed_entries.count %}
+            {% if has_feed_entries %}
             <div class="fullWidth module clear">
                 <h3 class="moduleTitle">{% trans "Media" %}</h3>
-                <div class="sevenCol colLt">
-
                 <a class="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.slug %}">rss</a>
                 <h4>{% trans "News and Blog Coverage" %}</h4>
-                {% for obj in feed_entries %}{% include feed_entry_template %}{% endfor %}
+
+                <div class="sixCol colLt">
+                {% for obj in feed_entries_left %}
+                        {% include feed_entry_template %}
+                {% endfor %}
+                </div>
+                <div class="sixCol colRt">
+                {% for obj in feed_entries_right %}
+                        {% include feed_entry_template %}
+                {% endfor %}
+                </div>
+
                 {% if feed_entries_count %}
                 <a class="viewMore" href="{% url 'news_list' abbr 'legislators' legislator.id legislator.slug %}">{% trans "View" %} {{feed_entries_count|apnumber|capfirst}} {% trans "More News Items" %}</a>
                 {% endif %}
-                </div>
             <div class="clear"></div>
             </div>
             {% endif %}
