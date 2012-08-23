@@ -105,7 +105,8 @@ class WVBillScraper(BillScraper):
             value = tr.text_content().replace(heading, '').strip()
             values[heading] = value
 
-        bill['subject'] = values['SUMMARY:']
+        # summary was always same as title
+        #bill['summary'] = values['SUMMARY:']
 
         # Add primary sponsor.
         primary = strip_sponsors('', values['LEAD SPONSOR:'])

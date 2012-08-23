@@ -162,16 +162,16 @@ class ILBillScraper(BillScraper):
 
     def scrape_bill(self, chamber, session, doc_type, url):
         doc = self.url_to_doc(url)
-        # bill id, title, synopsis
+        # bill id, title, summary
         bill_num = re.findall('DocNum=(\d+)', url)[0]
         bill_type = DOC_TYPES[doc_type[1:]]
         bill_id = doc_type + bill_num
 
         title = doc.xpath('//span[text()="Short Description:"]/following-sibling::span[1]/text()')[0].strip()
-        synopsis = doc.xpath('//span[text()="Synopsis As Introduced"]/following-sibling::span[1]/text()')[0].strip()
+        summary = doc.xpath('//span[text()="Synopsis As Introduced"]/following-sibling::span[1]/text()')[0].strip()
 
         bill = Bill(session, chamber, bill_id, title, type=bill_type,
-                    synopsis=synopsis)
+                    summary=summary)
 
         bill.add_source(url)
         # sponsors

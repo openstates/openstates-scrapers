@@ -422,26 +422,19 @@ class DEBillScraper(BillScraper):
         tmp = '//font[contains(., "%s")]/../../../td[2]'
         first_sibling_text = lambda heading: _get_text(tmp % heading)
 
-        extra_fields = (
-
+        extra_fields = {
             # A long description of the legislation.
-            "Synopsis",
-
+            "summary": "Synopsis",
             # Codification details for enacted legislation.
-            "Volume Chapter",
-
+            "volume_chapter": "Volume Chapter",
             # Presumably the date of approval/veto.
-            "Date Governor Acted",
+            "date_governor_acted": "Date Governor Acted",
+            "fiscal_notes": "Fiscal Notes",
+        }
 
-            "Fiscal Notes",
-
-            )
-
-        for f in extra_fields:
-
+        for key, name in extra_fields.iteritems():
             try:
-                bill[slugify(f)] = first_sibling_text(f)
-
+                bill[key] = first_sibling_text(name)
             except IndexError:
                 # xpath lookup failed.
                 pass
