@@ -6,7 +6,7 @@
 
 {% block title %}
   {{vote.date|date:"M d, Y"}} {% trans "vote" %} -
-  {{vote.bill.bill_id }} - 
+  {{vote.bill.bill_id }} -
   {{vote.bill.session_details.display_name}} -
   {{metadata.legislature_name}} -
   Open States
@@ -34,41 +34,41 @@
                     {{ vote.chamber_name }} {% trans "Vote on" %} <a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
                     ({{ vote.date|date:"M j, Y"}})
                 </h1>
-                <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
+                <p class="tip">{{bill.title}}</p>
             </div>
             <div class="eightCol colLt clear">
                 <h3 class="h4">{{ vote.motion }}</h3>
                 <!-- <time datetime="" class="published" pubdate>{{ vote.date|date:"M j, Y"}}</time>
-            
+
                 <h4>Vote Breakdown</h4> -->
                 {% if vote.has_votes %}
                 <ul class="barChart">
                     <li class="yes">
                         <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                        <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span> 
-                    </li> 
+                        <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
+                    </li>
                     <li class="no">
                         <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
                         <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
-                    </li>   
+                    </li>
                     <li class="no clear">
                         <span class="tagValue" style="width:{{vote.other_ratio}}%;"></span>
                         <span class="tagNumber">{{vote.other_count}} {% trans "Other" %}</span>
-                    </li>   
+                    </li>
                 </ul>
                 {% else %}
                     {% if vote.is_probably_a_voice_vote %}
-                    <p>{% trans '<strong>No vote counts were available for this motion.</strong> This vote appears to be a 
-                        <a href="http://en.wikipedia.org/wiki/Voice_vote">voice vote</a>, a type of vote for 
+                    <p>{% trans '<strong>No vote counts were available for this motion.</strong> This vote appears to be a
+                        <a href="http://en.wikipedia.org/wiki/Voice_vote">voice vote</a>, a type of vote for
                         which many states don't record vote counts.</p>' %}
                     {% else %}
-                        {% trans '<p><strong>No vote counts were available for this motion.</strong> This can happen for a couple of reasons. Some legislatures don't record vote counts in the event of a "voice vote," which may 
+                        {% trans '<p><strong>No vote counts were available for this motion.</strong> This can happen for a couple of reasons. Some legislatures don't record vote counts in the event of a "voice vote," which may
                         be the case here. This can also happen if a state provides insufficient data on its votes.</p>' %}
                     {% endif %}
                     {% if vote.sources %}{% squish_whitespace %}
                         {% trans 'You may be able to find out more by visiting the official source' %} (
                         {% for source in vote.sources %}
-                            {% if not forloop.first %} 
+                            {% if not forloop.first %}
                                 {% if forloop.last %}{% trans "and" %}{% else %}, {% endif %}
                             {% endif %}
                             <a href="{{source.url}}">{% trans "here" %}</a>
@@ -124,7 +124,7 @@
                     {% else %}
                     {% trans "None." %}
                     {% endif %}
-                </li> 
+                </li>
                 <li class="two">
                     <h4 class="h5">{% trans "No Votes" %}</h4>
                     {% if vote.no_count %}
@@ -153,7 +153,7 @@
                     {% else %}
                     {% trans "None." %}
                     {% endif %}
-                </li>   
+                </li>
                 <li class="three">
                     <h4 class="h5">{% trans "Other" %}</h4>
                     {% if vote.other_count %}
@@ -177,29 +177,29 @@
                                 <td>{{ legislator.context_role.party }}</td>
                             </tr>
                             {% endif %}{% endfor %}
-                        </tbody>                    
+                        </tbody>
                     </table>
                     {% else %}
                     {% trans "None." %}
                     {% endif %}
                 </li>
-            </ul> 
-            <div class="clear"></div>   
+            </ul>
+            <div class="clear"></div>
         </div>
         {% else %}
             {% if vote.is_probably_a_voice_vote %}
-                <p><strong>{% trans "No vote roll calls were available for this motion." %}</strong> This vote appears to be a 
-                <a href="http://en.wikipedia.org/wiki/Voice_vote">voice vote</a>, a type of vote for 
+                <p><strong>{% trans "No vote roll calls were available for this motion." %}</strong> This vote appears to be a
+                <a href="http://en.wikipedia.org/wiki/Voice_vote">voice vote</a>, a type of vote for
                 which many states don't record vote counts.
             {% else %}
-                <p><strong>No vote roll calls were available for this motion.</strong> This can happen for a couple of reasons. Some legislatures don't record vote counts in the event of a "voice vote," which may 
-                be the case here. This can also happen if a state provides insufficient data on its votes. 
+                <p><strong>No vote roll calls were available for this motion.</strong> This can happen for a couple of reasons. Some legislatures don't record vote counts in the event of a "voice vote," which may
+                be the case here. This can also happen if a state provides insufficient data on its votes.
                 </p>
             {% endif %}
             {% if vote.sources %}{% squish_whitespace %}You may be able to find out more by visiting
                 the official source (
                 {% for source in vote.sources %}
-                    {% if not forloop.first %} 
+                    {% if not forloop.first %}
                         {% if forloop.last %}and{% else %}, {% endif %}
                     {% endif %}
                     <a href="{{source.url}}">here</a>
@@ -215,7 +215,7 @@
             {% sources vote.bill %}
         {% endif %}
     </div>
-</div>    
-    
+</div>
+
 
 {% endblock %}
