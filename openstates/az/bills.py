@@ -54,6 +54,8 @@ class AZBillScraper(BillScraper):
             for href in root.xpath("//a[contains(@href, 'pdf')]"):
                 you_are_el = href.attrib['href']
                 if "bills" in you_are_el.lower():
+                    name = list(href.getparent().getparent().getparent())
+                    name = name[1].text_content()
                     bill.add_version(href.text_content(),
                                      you_are_el,
                                      on_duplicate='use_old')
