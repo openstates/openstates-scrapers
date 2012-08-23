@@ -1,6 +1,7 @@
 {% with bill=obj%}
         <td>
             <a href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a>
+            <span class='inLineTip'>({{bill.session_details.display_name}})</span>
             <p>{{bill.title|truncatewords:25}}</p>
         </td>
         <td>{{bill.date_introduced|date:"M j, Y"}}</td>
