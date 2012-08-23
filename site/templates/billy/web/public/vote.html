@@ -101,9 +101,9 @@
                     <table class="normalTable">
                         <thead>
                             <tr id="titles">
-                                <th></th><!-- Name</th> -->
-                                <th></th><!-- District</th> -->
-                                <th></th><!-- Party</th> -->
+                                <th>Name</th>
+                                <th>District</th>
+                                <th>Party</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -122,7 +122,7 @@
                         </tbody>
                     </table>
                     {% else %}
-                    {% trans "None." %}
+                    {% trans 'There were no vote in favor of this motion.' %}
                     {% endif %}
                 </li>
                 <li class="two">
@@ -131,9 +131,9 @@
                     <table>
                         <thead>
                             <tr id="titles">
-                                <th></th><!-- Name</th> -->
-                                <th></th><!-- District</th> -->
-                                <th></th><!-- Party</th> -->
+                                <th>Name</th>
+                                <th>District</th>
+                                <th>Party</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -151,7 +151,7 @@
                         </tbody>
                     </table>
                     {% else %}
-                    {% trans "None." %}
+                    {% trans "There were no votes against this motion." %}
                     {% endif %}
                 </li>
                 <li class="three">
@@ -160,9 +160,9 @@
                     <table>
                         <thead>
                             <tr id="titles">
-                                <th></th><!-- Name</th> -->
-                                <th></th><!-- District</th> -->
-                                <th></th><!-- Party</th> -->
+                                <th>Name</th>
+                                <th>District</th>
+                                <th>Party</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -180,7 +180,7 @@
                         </tbody>
                     </table>
                     {% else %}
-                    {% trans "None." %}
+                    {% trans 'No "other" votes were recorded on this motion (abstain, absent, excused, etc.)' %}
                     {% endif %}
                 </li>
             </ul>
