@@ -70,6 +70,11 @@ class PRBillScraper(BillScraper):
         return name
 
     def scrape(self, chamber, session):
+        # check for abiword
+        if os.system('which abiword') != 0:
+            raise ScrapeError('abiword is required for PR scraping')
+
+
         year = session[0:4]
         self.base_url = 'http://www.oslpr.org/legislatura/tl%s/tl_medida_print2.asp' % year
         chamber_letter = {'lower':'C','upper':'S'}[chamber]

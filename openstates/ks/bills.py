@@ -19,6 +19,9 @@ class KSBillScraper(BillScraper):
     latest_only = True
 
     def scrape(self, chamber, session):
+        # check for abiword
+        if os.system('which abiword') != 0:
+            raise ScrapeError('abiword is required for KS scraping')
 
         chamber_name = 'Senate' if chamber == 'upper' else 'House'
         chamber_letter = chamber_name[0]
