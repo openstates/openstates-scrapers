@@ -43,11 +43,14 @@ def categorize_action(action):
         ('Offered', 'bill:introduced'),
         ('Adopted', 'bill:passed'),
     )
+    ctty = None
     for pattern, types in classifiers:
         if re.match(pattern, action):
-            return types
+            if "committee:referred" in types:
+                ctty = re.findall(r'\w+', re.sub(pattern, "", action))
+            return (types, ctty)
     # return other by default
-    return 'other'
+    return ('other', ctty)
 
 def split_specific_votes(voters):
     if voters.startswith('none'):
@@ -95,7 +98,9 @@ class HIBillScraper(BillScraper):
                 "$" : "Appropriation measure",
                 "ConAm" : "Constitutional Amendment"
             }[actor]
-            act_type = categorize_action(string)
+            act_type, committees = categorize_action(string)
+            # XXX: Translate short-code to full committee name for the
+            #      matcher.
             bill.add_action(actor, string, date, type=act_type)
 
             vote = self.parse_vote(string)
