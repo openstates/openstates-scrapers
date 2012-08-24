@@ -3,6 +3,7 @@ import json
 import os
 import operator
 import functools
+import collections
 import itertools
 import contextlib
 import logging
@@ -272,7 +273,6 @@ def new_feed_id(entry, cache={}):
 
 PATH = dirname(abspath(__file__))
 DATA = settings.BILLY_DATA_DIR
-print 'BILLY_DATA_DIR', settings.BILLY_DATA_DIR
 
 
 class Extractor(object):
@@ -317,6 +317,7 @@ class Extractor(object):
     def __init__(self, abbr):
         self.entrycount = 0
         self.abbr = abbr
+        self._assemble_ban_data()
 
         logger = logging.getLogger(abbr)
         logger.setLevel(logging.DEBUG)
@@ -522,6 +523,13 @@ class Extractor(object):
             # Kill any keys that contain dots.
             entry = dict((k, v) for (k, v) in entry.items() if '.' not in k)
 
+            entry_set = self._dictitems_to_set(entry)
+            for keyval_set in self._banned_keyvals:
+                if entry_set & keyval_set:
+                    msg = 'Skipped story containing banned key values: %r'
+                    self.logger.info(msg % keyval_set)
+                    return
+
             # Skip any entries that are missing required keys:
             required = set('summary source host link published_parsed'.split())
             if required not in set(entry):
@@ -575,10 +583,28 @@ class Extractor(object):
 
         return processed
 
+    def _assemble_ban_data(self):
+        '''Go through this state's file in newblogs/skip, parse each line
+        into a JSON object, and store them in the Extractor.
+        '''
+        here = dirname(abspath(__file__))
+        skipfile = join(here,  'skip', '%s.txt' % self.abbr)
+        banned_keyvals = []
+        with open(skipfile) as f:
+            for line in filter(None, f):
+                data = json.loads(line)
+                data = self._dictitems_to_set(data)
+                banned_keyvals.append(set(data))
+        self._banned_keyvals = banned_keyvals
+
+    def _dictitems_to_set(self, dict_):
+        return set((k, v) for (k, v) in dict_.items()
+                   if isinstance(v, collections.Hashable))
+
 '''
 To-do:
 DONE - Make trie-scan return a pseudo-match object that has same
-interface as re.matchobjects. 
+interface as re.matchobjects.
 
 DONE - Handle A.B. 200 variations for bills.
 
