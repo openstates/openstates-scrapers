@@ -74,9 +74,10 @@ class ORLegislatorScraper(LegislatorScraper):
         leg.add_office('capitol', 'Capitol Office',
                        address=extra_dict['capitol_address'],
                        phone=extra_dict['phone'])
-        leg.add_office('district', 'District Office',
-                       address=extra_dict['district_address'],
-                       phone=extra_dict['district_phone'])
+        if 'district_address' in extra_dict or 'district_phone' in extra_dict:
+            leg.add_office('district', 'District Office',
+                           address=extra_dict.get('district_address', None),
+                           phone=extra_dict.get('district_phone', None))
 
         # committees
         com_xpath = 'committee-membership/session[@session-name="%s"]/committee' % session
