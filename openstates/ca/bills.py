@@ -3,6 +3,7 @@ import os
 import operator
 import itertools
 
+from lxml import etree, html
 import pytz
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -277,13 +278,13 @@ class CABillScraper(BillScraper):
                       'CR': 'concurrent resolution',
                       'JR': 'joint resolution'}
 
-        for abbr, type in bill_types.items():
+        for abbr, type_ in bill_types.items():
             if chamber == 'upper':
                 abbr = "S" + abbr
             else:
                 abbr = "A" + abbr
 
-            self.scrape_bill_type(chamber, session, type, abbr)
+            self.scrape_bill_type(chamber, session, type_, abbr)
 
     def scrape_bill_type(self, chamber, session, bill_type, type_abbr,
             committee_abbr_regex=get_committee_name_regex()):
@@ -321,29 +322,56 @@ class CABillScraper(BillScraper):
             fsbill.add_version(bill_id, source_url, 'text/html')
 
             title = ''
-            short_title = ''
-            type = ['bill']
+            type_ = ['bill']
             subject = ''
             all_titles = set()
+
+            # Get digest test (aka "summary") from latest version.
+            if bill.versions:
+                version = bill.versions[-1]
+                nsmap = version.xml.nsmap
+                xpath = '//caml:DigestText/xhtml:p'
+                els = version.xml.xpath(xpath, namespaces=nsmap)
+                chunks = []
+                for el in els:
+                    t = etree_text_content(el)
+                    t = re.sub(r'\s+', ' ', t)
+                    t = re.sub(r'\)(\S)', lambda m: ') %s' % m.group(1), t)
+                    chunks.append(t)
+                summary = '\n\n'.join(chunks)
+
             for version in bill.versions:
                 if not version.bill_xml:
                     continue
-                title = clean_title(version.title)
+
+                # CA is inconsistent in that some bills have a short title
+                # that is longer, more descriptive than title.
+                if bill.measure_type in ('AB', 'SB'):
+                    impact_clause = clean_title(version.title)
+                    title = clean_title(version.short_title)
+                else:
+                    impact_clause = None
+                    if len(version.title) < len(version.short_title) and \
+                            not version.title.lower().startswith('an act'):
+                        title = clean_title(version.short_title)
+                    else:
+                        title = clean_title(version.title)
+
                 if title:
                     all_titles.add(title)
-                short_title = clean_title(version.short_title)
-                type = [bill_type]
+
+                type_ = [bill_type]
 
                 if version.appropriation == 'Yes':
-                    type.append('appropriation')
+                    type_.append('appropriation')
                 if version.fiscal_committee == 'Yes':
-                    type.append('fiscal committee')
+                    type_.append('fiscal committee')
                 if version.local_program == 'Yes':
-                    type.append('local program')
+                    type_.append('local program')
                 if version.urgency == 'Yes':
-                    type.append('urgency')
+                    type_.append('urgency')
                 if version.taxlevy == 'Yes':
-                    type.append('tax levy')
+                    type_.append('tax levy')
 
                 if version.subject:
                     subject = clean_title(version.subject)
@@ -353,9 +381,10 @@ class CABillScraper(BillScraper):
                 continue
 
             fsbill['title'] = title
-            fsbill['short_title'] = short_title
-            fsbill['type'] = type
+            fsbill['summary'] = summary
+            fsbill['type'] = type_
             fsbill['subjects'] = filter(None, [subject])
+            fsbill['impact_clause'] = impact_clause
 
             # We don't want the current title in alternate_titles
             all_titles.remove(title)
@@ -369,7 +398,6 @@ class CABillScraper(BillScraper):
                                        official_type=author.contribution)
 
             introduced = False
-
             for action in bill.actions:
                 if not action.action:
                     # NULL action text seems to be an error on CA's part,
@@ -393,56 +421,56 @@ class CABillScraper(BillScraper):
 
                     actor = re.sub(r'^(Assembly|Senate)', replacer, actor)
 
-                type = []
+                type_ = []
 
                 act_str = action.action
                 act_str = re.sub(r'\s+', ' ', act_str)
 
                 if act_str.startswith('Introduced'):
                     introduced = True
-                    type.append('bill:introduced')
+                    type_.append('bill:introduced')
 
                 if 'Read first time.' in act_str:
                     if not introduced:
-                        type.append('bill:introduced')
+                        type_.append('bill:introduced')
                         introduced = True
-                    type.append('bill:reading:1')
+                    type_.append('bill:reading:1')
 
                 if 'To Com' in act_str or 'referred to' in act_str.lower():
-                    type.append('committee:referred')
+                    type_.append('committee:referred')
 
                 if 'Read third time.  Passed' in act_str:
-                    type.append('bill:passed')
+                    type_.append('bill:passed')
 
                 if 'Read third time. Passed' in act_str:
-                    type.append('bill:passed')
+                    type_.append('bill:passed')
 
                 if 'Read third time, passed' in act_str:
-                    type.append('bill:passed')
+                    type_.append('bill:passed')
 
                 if re.search(r'Read third time.+?Passed and', act_str):
-                    type.append('bill:passed')
+                    type_.append('bill:passed')
 
                 if 'Approved by Governor' in act_str:
-                    type.append('governor:signed')
+                    type_.append('governor:signed')
 
                 if 'Approved by the Governor' in act_str:
-                    type.append('governor:signed')
+                    type_.append('governor:signed')
 
                 if 'Item veto' in act_str:
-                    type.append('governor:vetoed:line-item')
+                    type_.append('governor:vetoed:line-item')
 
                 if 'Vetoed by Governor' in act_str:
-                    type.append('governor:vetoed')
+                    type_.append('governor:vetoed')
 
                 if 'To Governor' in act_str:
-                    type.append('governor:received')
+                    type_.append('governor:received')
 
                 if 'Read second time' in act_str:
-                    type.append('bill:reading:2')
+                    type_.append('bill:reading:2')
 
-                if not type:
-                    type = ['other']
+                if not type_:
+                    type_ = ['other']
 
                 # Add in the committee strings of the related committees, if any.
                 kwargs = {}
@@ -497,7 +525,7 @@ class CABillScraper(BillScraper):
                     kwargs['legislators'] = legislators
 
                 fsbill.add_action(actor, act_str, action.action_date.date(),
-                                  type=type, **kwargs)
+                                  type_=type_, **kwargs)
 
             for vote in bill.votes:
                 if vote.vote_result == '(PASS)':
@@ -554,7 +582,7 @@ class CABillScraper(BillScraper):
                               int(vote.noes),
                               int(vote.abstain),
                               threshold=vote.threshold,
-                              type=vtype)
+                              type_=vtype)
 
                 if vote_location != 'Floor':
                     fsvote['committee'] = vote_location
@@ -580,3 +608,8 @@ class CABillScraper(BillScraper):
                 fsbill.add_vote(fsvote)
 
             self.save_bill(fsbill)
+
+
+def etree_text_content(el):
+    el = html.fromstring(etree.tostring(el))
+    return el.text_content()
