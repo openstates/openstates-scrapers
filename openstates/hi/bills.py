@@ -8,7 +8,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
 HI_URL_BASE = "http://capitol.hawaii.gov"
-
+SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
 
 def create_bill_report_url( chamber, year, bill_type ):
     cname = { "upper" : "s", "lower" : "h" }[chamber]
@@ -65,6 +65,32 @@ class HIBillScraper(BillScraper):
 
     state = 'hi'
 
+    def get_short_codes(self):
+        with self.urlopen(SHORT_CODES) as list_html:
+            list_page = lxml.html.fromstring(list_html)
+        rows = list_page.xpath(
+            "//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']/tr")
+        self.short_ids = {}
+
+        for row in rows:
+            tds = row.xpath("./td")
+            short = tds[0]
+            clong = tds[1]
+            chamber = clong.xpath("./span")[0].text_content()
+            clong = clong.xpath("./a")[0]
+            short_id = short.text_content().strip()
+            ctty_name = clong.text_content().strip()
+            chamber = "joint"
+            if "house" in chamber.lower():
+                chamber = 'lower'
+            elif "senate" in chamber.lower():
+                chamber = 'upper'
+
+            self.short_ids[short_id] = {
+                "chamber": chamber,
+                "name": ctty_name
+            }
+
     def parse_bill_metainf_table( self, metainf_table ):
         def _sponsor_interceptor(line):
             return [ guy.strip() for guy in line.split(",") ]
@@ -101,7 +127,19 @@ class HIBillScraper(BillScraper):
             act_type, committees = categorize_action(string)
             # XXX: Translate short-code to full committee name for the
             #      matcher.
-            bill.add_action(actor, string, date, type=act_type)
+
+            real_committees = []
+
+            if committees:
+                for committee in committees:
+                    try:
+                        committee = self.short_ids[committee]['name']
+                        real_committees.append(committee)
+                    except KeyError:
+                        pass
+
+            bill.add_action(actor, string, date,
+                            type=act_type, committees=real_committees)
 
             vote = self.parse_vote(string)
             if vote:
@@ -207,6 +245,7 @@ class HIBillScraper(BillScraper):
 
 
     def scrape(self, session, chamber):
+        self.get_short_codes()
         bill_types = ["bill", "cr", "r"]
         for typ in bill_types:
             self.scrape_type(session, chamber, typ)
