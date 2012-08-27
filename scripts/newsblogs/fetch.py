@@ -36,9 +36,9 @@ request_defaults = {
         'Accept-Encoding': 'gzip, deflate',
         'Accept-Language': 'en-us,en;q=0.5',
         'Connection': 'keep-alive',
-        'User-Agent': ('Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:10.0.2) '
-                       'Gecko/20100101 Firefox/10.0.2')
         },
+    'user_agent': ('Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:10.0.2) '
+                   'Gecko/20100101 Firefox/10.0.2'),
     'follow_robots': False,
     }
 
