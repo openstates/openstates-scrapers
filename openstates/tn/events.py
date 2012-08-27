@@ -77,8 +77,8 @@ class TNEventScraper(EventScraper):
             date = table.xpath("../.")[0].getprevious().text_content()
             trs = table.xpath("./tr")
             for tr in trs:
-                order = [ "time", "chamber", "type", "agenda", "location",
-                          "video"]
+                order = ["time", "chamber", "type", "agenda", "location",
+                         "video"]
 
                 tds = tr.xpath("./td")
                 metainf = {}
@@ -94,12 +94,16 @@ class TNEventScraper(EventScraper):
                     continue
 
                 time = metainf['time'].text_content()
-                datetime_string = "%s %s" % ( date, time )
+                datetime_string = "%s %s" % (date, time)
                 location = metainf['location'].text_content()
                 description = metainf['type'].text_content()
 
                 dtfmt = "%A, %B %d, %Y %I:%M %p"
-                when = dt.datetime.strptime(datetime_string, dtfmt)
+                if time == 'Cancelled':
+                    self.log("Skipping cancelled event.")
+                    continue
+                else:
+                    when = dt.datetime.strptime(datetime_string, dtfmt)
                 event = Event(session, when, 'committee:meeting',
                               description, location=location)
                 event.add_participant("host", description, 'committee', chamber=chamber)
