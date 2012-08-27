@@ -590,11 +590,14 @@ class Extractor(object):
         here = dirname(abspath(__file__))
         skipfile = join(here,  'skip', '%s.txt' % self.abbr)
         banned_keyvals = []
-        with open(skipfile) as f:
-            for line in filter(None, f):
-                data = json.loads(line)
-                data = self._dictitems_to_set(data)
-                banned_keyvals.append(set(data))
+        try:
+            with open(skipfile) as f:
+                for line in filter(None, f):
+                    data = json.loads(line)
+                    data = self._dictitems_to_set(data)
+                    banned_keyvals.append(set(data))
+        except IOError:
+            pass
         self._banned_keyvals = banned_keyvals
 
     def _dictitems_to_set(self, dict_):
