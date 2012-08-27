@@ -56,4 +56,23 @@ class VTLegislatorScraper(LegislatorScraper):
                                  party=party,
                                  email=email)
                 leg.add_source(url)
+
+                # 12-16: MailingAddress: 1,2,City,State,ZIP
+                mail = '%s\n%s\n%s, %s %s' % (tr.xpath('string(td[12])'),
+                                              tr.xpath('string(td[13])'),
+                                              tr.xpath('string(td[14])'),
+                                              tr.xpath('string(td[15])'),
+                                              tr.xpath('string(td[16])'))
+                leg.add_office('district', 'Mailing Address', address=mail)
+                # 17-21: HomeAddress: 1,2,City,State,ZIP, Email, Phone
+                home = '%s\n%s\n%s, %s %s' % (tr.xpath('string(td[17])'),
+                                              tr.xpath('string(td[18])'),
+                                              tr.xpath('string(td[19])'),
+                                              tr.xpath('string(td[20])'),
+                                              tr.xpath('string(td[21])'))
+                home_email = tr.xpath('string(td[22])') or None
+                home_phone = tr.xpath('string(td[23])') or None
+                leg.add_office('district', 'Home Address', address=home,
+                                email=home_email, phone=home_phone)
+
                 self.save_legislator(leg)
