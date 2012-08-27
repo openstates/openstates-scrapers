@@ -382,7 +382,7 @@ class CABillScraper(BillScraper):
 
             fsbill['title'] = title
             fsbill['summary'] = summary
-            fsbill['type_'] = type_
+            fsbill['type'] = type_
             fsbill['subjects'] = filter(None, [subject])
             fsbill['impact_clause'] = impact_clause
 
