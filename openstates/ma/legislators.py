@@ -86,4 +86,29 @@ class MALegislatorScraper(LegislatorScraper):
                          photo_url=photo_url, url=member_url, email=email)
         leg.add_source(member_url)
 
+        # offices
+        for dl in root.xpath('//dl[@class="address"]'):
+            office_name = phone = fax = email = None
+            address = []
+            for child in dl.getchildren():
+                text = child.text_content()
+                if child.tag == 'dt':
+                    office_name = text
+                else:
+                    if text.startswith('Phone:'):
+                        phone = text.strip('Phone: ') or None
+                    elif text.startswith('Fax:'):
+                        fax = text.strip('Fax: ') or None
+                    elif text.startswith('Email:'):
+                        email = text.strip('Email: ') or None
+                    else:
+                        address.append(text)
+            # all pieces collected
+            if 'District' in office_name:
+                otype = 'district'
+            else:
+                otype = 'capitol'
+            leg.add_office(otype, office_name, phone=phone, fax=fax,
+                           address='\n'.join(address), email=email)
+
         self.save_legislator(leg)
