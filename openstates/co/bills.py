@@ -541,7 +541,10 @@ class COBillScraper(BillScraper):
                     # Every other entry is null for some reason
                     continue
 
-                bill_id = bill_id[:bill_id.find(".")]
+                dot_loc = bill_id.find('.')
+                if dot_loc:
+                    # budget bills are missing the .pdf, don't truncate
+                    bill_id = bill_id[:dot_loc]
                 title_and_sponsor = bill[index["title_sponsor"]][0]
 
                 bill_title = title_and_sponsor.text
