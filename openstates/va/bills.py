@@ -6,7 +6,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 import lxml.html
 
-BASE_URL = 'http://leg6.state.va.us'
+BASE_URL = 'http://lis.virginia.gov'
 
 class VABillScraper(BillScraper):
     state = 'va'
@@ -67,6 +67,7 @@ class VABillScraper(BillScraper):
 
 
     def scrape(self, chamber, session):
+        self.user_agent = 'openstates +mozilla'
         # internal id for the session, store on self so all methods have access
         self.site_id = self.metadata['session_details'][session]['site_id']
 
@@ -75,7 +76,7 @@ class VABillScraper(BillScraper):
         # used for skipping bills from opposite chamber
         start_letter = 'H' if chamber == 'lower' else 'S'
 
-        url = 'http://leg6.state.va.us/cgi-bin/legp604.exe?%s+lst+ALL' % self.site_id
+        url = 'http://lis.virginia.gov/cgi-bin/legp604.exe?%s+lst+ALL' % self.site_id
 
         while url:
             with self.urlopen(url, retry_on_404=True) as html:
@@ -114,9 +115,6 @@ class VABillScraper(BillScraper):
 
 
     def scrape_bill_details(self, url, bill):
-        #url = "http://leg6.state.va.us/cgi-bin/legp604.exe?%s+sum+%s" % (
-        #    self.site_id, bill.replace(' ', '')
-        #)
         with self.urlopen(url, retry_on_404=True) as html:
             doc = lxml.html.fromstring(html)
 
@@ -159,6 +157,8 @@ class VABillScraper(BillScraper):
                     vote_url = ali.xpath('a/@href')
                     if vote_url:
                         self.parse_vote(vote, vote_url[0])
+                        vote.add_source(BASE_URL + vote_url[0])
+                    vote.validate()
                     bill.add_vote(vote)
 
 
@@ -175,7 +175,7 @@ class VABillScraper(BillScraper):
 
 
     def fetch_sponsors(self, bill):
-        url = "http://leg6.state.va.us/cgi-bin/legp604.exe?%s+mbr+%s" % (
+        url = "http://lis.virginia.gov/cgi-bin/legp604.exe?%s+mbr+%s" % (
             self.site_id, bill['bill_id'].replace(' ', ''))
 
         # order of chamber uls
@@ -210,7 +210,7 @@ class VABillScraper(BillScraper):
             if len(pieces) <= 2:
                 return []
             else:
-                return [x.strip() for x in pieces[1].split(', ')]
+                return [x.strip() for x in re.split('(?<!\.), ', pieces[1])]
         else:
             return []
 
