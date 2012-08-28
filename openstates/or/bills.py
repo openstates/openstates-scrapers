@@ -255,7 +255,8 @@ class ORBillScraper(BillScraper):
                 bill_id = re.sub('\s+', ' ', bill_id.strip())
 
                 # pull out everything within the By -- bookends
-                inner_str = re.search('By (.+) --', measure_str)
+                inner_str = (re.search('By (.+) --', measure_str) or
+                         re.search('\(at the request of (.+?)\)? --', measure_str))
                 if inner_str:
                     inner_str = inner_str.groups()[0]
 
