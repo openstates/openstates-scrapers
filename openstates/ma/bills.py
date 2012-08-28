@@ -131,8 +131,11 @@ class MABillScraper(BillScraper):
                 for petitioner in petitioners.values():
                     bill.add_sponsor('cosponsor', petitioner)
 
-                # sometimes version link is just missing
-                bill_text_url = doc.xpath('//a[contains(@href, "BillHtml")]/@href')
+                # sometimes html link is just missing
+                bill_text_url = (
+                    doc.xpath('//a[contains(@href, "BillHtml")]/@href') or
+                    doc.xpath('//a[contains(@href, "Bills/PDF")]/@href')
+                )
                 if bill_text_url:
                     bill.add_version('Current Text', bill_text_url[0])
 
