@@ -21,16 +21,21 @@ class NELegislatorScraper(LegislatorScraper):
                 page = lxml.html.fromstring(html)
 
                 full_name = page.xpath('//div[@class="content_header_right"]/a')[0].text.split(' ',1)[1].strip()
-                email = page.xpath('//div[@id="sidebar"]/ul[1]/li[7]/a')[0].text or ''
+                # This is hacky, are lis always the same?
+                address = page.xpath('//div[@id="sidebar"]/ul[1]/li[3]')[0].text.strip() + '\n'
+                address += page.xpath('//div[@id="sidebar"]/ul[1]/li[4]')[0].text.strip() + '\n'
+                address += page.xpath('//div[@id="sidebar"]/ul[1]/li[5]')[0].text.strip()
                 phone = page.xpath('//div[@id="sidebar"]/ul[1]/li[6]')[0].text.split()
                 phone = phone[1] + '-' + phone[2]
+                email = page.xpath('//div[@id="sidebar"]/ul[1]/li[7]/a')[0].text or ''
 
                 #Nebraska is offically nonpartisan
                 party = 'Nonpartisan'
                 leg = Legislator(term, 'upper', str(district), full_name,
-                                 party=party, email=email, phone=phone,
-                                 url=rep_url)
+                                 party=party, email=email, url=rep_url)
                 leg.add_source(rep_url)
+                leg.add_office('capitol', 'Capitol Office', address=address,
+                               phone=phone)
                 self.save_legislator(leg)
             except scrapelib.HTTPError:
                 self.warning('could not retrieve %s' % rep_url)

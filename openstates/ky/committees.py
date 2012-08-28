@@ -13,36 +13,37 @@ class KYCommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term):
 
         if chamber == 'upper':
-            self.scrape('other', term)  # XXX: Frickn' thing won't
-            #                                  invoke magically.
             url = "http://www.lrc.ky.gov/org_adm/committe/standing_senate.htm"
+            # also invoke joint scraper
+            self.scrape('joint', term)
         elif chamber == 'lower':
             url = "http://www.lrc.ky.gov/org_adm/committe/standing_house.htm"
         else:
             url = "http://www.lrc.ky.gov/org_adm/committe/interim.htm"
             chamber = 'joint'
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            links = []
+        links = []
 
-            cttypages = [
-                "//a[contains(@href, 'standing/')]",
-                "//a[contains(@href, 'interim')]"
-            ]
+        cttypages = [
+            "//a[contains(@href, 'standing/')]",
+            "//a[contains(@href, 'interim')]"
+        ]
 
-            for exp in cttypages:
-                linkz = page.xpath(exp)
-                links = links + linkz
+        for exp in cttypages:
+            linkz = page.xpath(exp)
+            links = links + linkz
 
-            for link in links:
-                name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip()
-                comm = Committee(chamber, name)
-                comm_url = link.attrib['href'].replace(
-                    'home.htm', 'members.htm')
-                self.scrape_members(comm, comm_url)
+        for link in links:
+            name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip()
+            comm = Committee(chamber, name)
+            comm_url = link.attrib['href'].replace(
+                'home.htm', 'members.htm')
+            self.scrape_members(comm, comm_url)
+            if comm['members']:
                 self.save_committee(comm)
 
     def scrape_members(self, comm, url):

@@ -30,14 +30,19 @@ class NMLegislatorScraper(LegislatorScraper):
 
             # most properties are easy to pull
             properties = {
-                'first_name': 'FNAME', 
+                'first_name': 'FNAME',
                 'last_name': 'LNAME',
-                'party': 'PARTY', 
+                'party': 'PARTY',
                 'district': 'DISTRICT',
-                'county': 'COUNTY', 
+                'county': 'COUNTY',
                 'start_year': 'STARTYEAR',
                 'occupation': 'OCCUPATION',
-                'office_phone': 'WKPH'
+                'addr_street': 'STREET',
+                'addr_city': 'CITY',
+                'addr_state': 'STATE',
+                'addr_zip': 'ZIP',
+                'office_phone': 'WKPH',
+                'home_phone': 'HMPH'
                 }
 
             for key, value in properties.iteritems():
@@ -50,6 +55,8 @@ class NMLegislatorScraper(LegislatorScraper):
                     return
                 if val:
                     properties[key] = val.strip()
+                else:
+                    properties[key] = None
 
             # image & email are a bit different
             properties['photo_url'] = doc.xpath('//img[@id="ctl00_mainCopy_LegisInfo_LegislatorPhoto"]/@src')[0]
@@ -71,8 +78,18 @@ class NMLegislatorScraper(LegislatorScraper):
             else:
                 raise Exception("unknown party encountered")
 
+            address = '%s\n%s, %s %s' % (properties.pop('addr_street'),
+                                         properties.pop('addr_city'),
+                                         properties.pop('addr_state'),
+                                         properties.pop('addr_zip'))
+            phone = (properties.pop('office_phone') or
+                     properties.pop('home_phone'))
+
             leg = Legislator(**properties)
             leg.add_source(url)
+
+            leg.add_office('district', 'District Address', address=address,
+                           phone=phone)
 
             # committees
             # skip first header row

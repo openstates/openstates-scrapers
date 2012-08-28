@@ -31,6 +31,13 @@ class TNLegislatorScraper(LegislatorScraper):
                 partyInit = row.xpath('td[2]')[0].text.split()[0]
                 party = parties[partyInit]
                 district = row.xpath('td[4]/a')[0].text.split()[1]
+                address = row.xpath('td[5]')[0].text_content()
+                # 301 6th Avenue North Suite
+                address = address.replace('LP',
+                                  'Legislative Plaza\nNashville, TN 37243')
+                address = address.replace('WMB',
+                                  'War Memorial Building\nNashville, TN 37243')
+                address = '301 6th Avenue North\nSuite ' + address
                 phone = row.xpath('td[6]')[0].text
                 #special case for Karen D. Camper
                 if phone == None:
@@ -56,9 +63,14 @@ class TNLegislatorScraper(LegislatorScraper):
                         full_name = name[8:len(name)]
 
                     leg = Legislator(term, chamber, district, full_name,
-                                     party=party, email=email, phone=phone,
-                                     url=member_url,
+                                     party=party, email=email, url=member_url,
                                      photo_url=member_photo_url)
                     leg.add_source(chamber_url)
                     leg.add_source(member_url)
+
+                    # TODO: add district address from this page
+
+                    leg.add_office('capitol', 'Nashville Address',
+                                   address=address, phone=phone, email=email)
+
                     self.save_legislator(leg)

@@ -117,10 +117,10 @@ class IDCommitteeScraper(CommitteeScraper):
                 elif name == 'Joint Millennium Fund Committee':
                     self.get_jmfc(name, url)
                 elif name == 'Economic Outlook and Revenue Assessment Committee':
-                    # no membership available
                     committee = Committee('joint', name)
                     committee.add_source(url)
-                    self.save_committee(committee)
+                    # no membership available
+                    #self.save_committee(committee)
                 else:
                     self.log('Unknown committee: %s %s' % (name, url))
 

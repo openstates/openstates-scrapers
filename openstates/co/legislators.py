@@ -157,7 +157,10 @@ class COLegislatorScraper(LegislatorScraper):
             if "email" in metainf:
                 p['email'] = metainf['email']
             if "number" in metainf:
-                p['phone'] = metainf['number']
+                p.add_office('capitol', 'Capitol Office',
+                             phone=metainf['number'],
+                             address='200 E. Colfax\nDenver, CO 80203'
+                            )
 
             p.add_source( p_url )
 
