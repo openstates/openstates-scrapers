@@ -28,26 +28,27 @@ class MSCommitteeScraper(CommitteeScraper):
                 chamber = "lower"
             else:
                 chamber = "upper"
-            for mr in root.xpath('//committee'):
-                name = mr.xpath('string(name)')
+            for mr in root.xpath('//COMMITTEE'):
+                name = mr.xpath('string(NAME)')
                 comm = Committee(chamber, name)
 
-                chair = mr.xpath('string(chair)')
+                chair = mr.xpath('string(CHAIR)')
                 chair = chair.replace(", Chairman", "")
                 role = "Chairman"
                 if len(chair) > 0:
                     comm.add_member(chair, role=role)
-                vice_chair = mr.xpath('string(vice_chair)')
+                vice_chair = mr.xpath('string(VICE_CHAIR)')
                 vice_chair = vice_chair.replace(", Vice-Chairman", "")
                 role = "Vice-Chairman"
                 if len(vice_chair) > 0:
                     comm.add_member(vice_chair, role=role)
-                members = mr.xpath('string(members)').split(";")
-                
+                members = mr.xpath('string(MEMBERS)').split(";")
+                if "" in members:
+                    members.remove("")
+
                 for leg in members:
-                    if leg[0] == " ":
-                        comm.add_member(leg[1: len(leg)])
-                    else:
-                        comm.add_member(leg)
+                    leg = leg.strip()
+                    comm.add_member(leg)
+
                 comm.add_source(url)
                 self.save_committee(comm)
