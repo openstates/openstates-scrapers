@@ -43,6 +43,12 @@ class VABillScraper(BillScraper):
 
     link_xpath = '//ul[@class="linkSect"]/li/a'
 
+    def accept_response(self, response):
+        # check for rate limit pages
+        normal = super(VABillScraper, self).accept_response(response)
+        return (normal and
+                'Sorry, your query could not be processed' not in response.text)
+
     def get_page_bills(self, issue_name, href):
         with self.urlopen('http://lis.virginia.gov' + href,
                           retry_on_404=True) as issue_html:
