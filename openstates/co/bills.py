@@ -542,7 +542,7 @@ class COBillScraper(BillScraper):
                     continue
 
                 dot_loc = bill_id.find('.')
-                if dot_loc:
+                if dot_loc != -1:
                     # budget bills are missing the .pdf, don't truncate
                     bill_id = bill_id[:dot_loc]
                 title_and_sponsor = bill[index["title_sponsor"]][0]

@@ -54,7 +54,10 @@ class VTLegislatorScraper(LegislatorScraper):
                                  middle_name=middle_name,
                                  last_name=last_name,
                                  party=party,
-                                 email=email)
+                                 email=email,
+                # closest thing we have to a page for legislators, not ideal
+                url='http://www.leg.state.vt.us/legdir/LegDirMain.cfm'
+                                )
                 leg.add_source(url)
 
                 # 12-16: MailingAddress: 1,2,City,State,ZIP

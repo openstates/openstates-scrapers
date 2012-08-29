@@ -37,7 +37,8 @@ class INCommitteeScraper(CommitteeScraper):
             committee = Committee(chamber, name)
             committee.add_source(url)
 
-            for member in mlist.split(','):
+            # split on periods not preceeded by capital letters
+            for member in re.split('(?<![A-Z])[.,] ', mlist):
                 member = re.sub(r'R\.M\.(M\.)?$', '', member.strip()).strip()
                 if member:
                     committee.add_member(member)
