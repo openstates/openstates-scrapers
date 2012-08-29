@@ -72,7 +72,7 @@ metadata = dict(
         }
 
     },
-    feature_flags=['subjects', 'events', 'transparencydata'],
+    feature_flags=['subjects', 'events', 'influenceexplorer'],
     _ignored_scraped_sessions=['85th Legislature, 2007-2008',
                                '85th Legislature, 2007 1st Special Session',
                                '84th Legislature, 2005-2006',

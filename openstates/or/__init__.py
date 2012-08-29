@@ -29,7 +29,7 @@ metadata = dict(
             'slug': '12reg',
         }
     },
-    feature_flags=['transparencydata'],
+    feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['2010 Special Session (February 1 - February 25)',
                                '2009 Regular Session (January 12 - June 29)',
                                '2008 Special Session (February 4 - February 22)',

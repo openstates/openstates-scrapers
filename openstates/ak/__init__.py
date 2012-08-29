@@ -33,7 +33,7 @@ metadata = dict(
                                'The 20th Legislature (1997-1998)',
                                'The 19th Legislature (1995-1996)',
                                'The 18th Legislature (1993-1994)'],
-    feature_flags=['subjects', 'transparencydata'],
+    feature_flags=['subjects', 'influenceexplorer'],
 )
 
 def session_list():

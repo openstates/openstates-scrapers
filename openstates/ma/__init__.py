@@ -43,7 +43,7 @@ metadata = {
     },
     'legislature_name': 'Massachusetts General Court',
     'lower_chamber_term': 2,
-    'feature_flags': ['events', 'transparencydata'],
+    'feature_flags': ['events', 'influenceexplorer'],
 }
 
 def session_list():

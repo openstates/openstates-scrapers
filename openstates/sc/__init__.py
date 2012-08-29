@@ -25,7 +25,7 @@ metadata = dict(
                 'display_name': '2011-2012 Regular Session'
                },
     },
-    feature_flags=['transparencydata'],
+    feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['118 - (2009-2010)', '117 - (2007-2008)',
                                '116 - (2005-2006)', '115 - (2003-2004)',
                                '114 - (2001-2002)', '113 - (1999-2000)',

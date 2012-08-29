@@ -39,7 +39,7 @@ metadata = dict(
                       '_scraped_name': '2011-2012 Regular Session',
                      },
         },
-    feature_flags=['events', 'transparencydata'],
+    feature_flags=['events', 'influenceexplorer'],
     _ignored_scraped_sessions=[
         '1969-1970 Regular Session',
         '1971-1972 Regular Session',

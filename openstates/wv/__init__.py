@@ -25,7 +25,7 @@ metadata = {
                  '_scraped_name': '2012'
                  },
     },
-    'feature_flags': ['subjects', 'transparencydata'],
+    'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': ['2010', '2009', '2008', '2007', '2006',
                                   '2005', '2004', '2003', '2002', '2001',
                                   '2000', '1999', '1998', '1997', '1996',

@@ -22,7 +22,7 @@ metadata = dict(
                 '_scraped_name': 'GA 146',
                },
     },
-    feature_flags=[ 'events', 'transparencydata' ],
+    feature_flags=[ 'events', 'influenceexplorer' ],
     _ignored_scraped_sessions=['GA 145', 'GA 144', 'GA 143', 'GA 142',
                                'GA 141', 'GA 140', 'GA 139', 'GA 138']
 )

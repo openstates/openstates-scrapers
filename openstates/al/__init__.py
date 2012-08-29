@@ -28,7 +28,7 @@ metadata =  {
          'end_year': 2014,
         }
     ],
-    'feature_flags': ['subjects', 'transparencydata'],
+    'feature_flags': ['subjects', 'influenceexplorer'],
     'session_details':{
         #'Organization Session 2007': {
         #    'start_date': datetime.date(2007, 1, 9),

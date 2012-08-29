@@ -22,7 +22,7 @@ metadata = dict(
         '2011': {'start_date': datetime.date(2011,1,26), 'type': 'primary',
                  'display_name': '2011 Regular Session'},
     },
-    feature_flags=["subjects", 'transparencydata'],
+    feature_flags=["subjects", 'influenceexplorer'],
     _ignored_scraped_sessions = [
         '2011 - 96th General Assembly - 1st Regular Session',
         '2010 - 95th General Assembly - 2nd Regular Session',

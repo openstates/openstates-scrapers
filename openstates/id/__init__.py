@@ -159,7 +159,7 @@ metadata = dict(
             '_scraped_name': '2012 Session Information',
             },
     },
-    feature_flags=['transparencydata'],
+    feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['2010 Session Information',
                                '2009 Session Information',
                                '2008 Session Information',

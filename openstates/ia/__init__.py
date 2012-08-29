@@ -30,7 +30,7 @@ metadata = dict(
                       'end_date': datetime.date(2013,1,13),
                      },
     },
-    feature_flags=['events', 'transparencydata'],
+    feature_flags=['events', 'influenceexplorer'],
     _ignored_scraped_sessions=['General Assembly: 83', 'General Assembly: 82',
                                'General Assembly: 81', 'General Assembly: 80']
 

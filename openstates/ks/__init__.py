@@ -29,7 +29,7 @@ metadata = dict(
             '_scraped_name': 'b2011_12',
         },
     },
-    feature_flags=['transparencydata'],
+    feature_flags=['influenceexplorer'],
 )
 
 def session_list():
