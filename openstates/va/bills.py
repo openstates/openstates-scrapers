@@ -210,7 +210,8 @@ class VABillScraper(BillScraper):
             if len(pieces) <= 2:
                 return []
             else:
-                return [x.strip() for x in re.split('(?<!\.), ', pieces[1])]
+                # lookahead and don't split if comma precedes initials
+                return [x.strip() for x in re.split(', (?!\w\.\w\.)', pieces[1])]
         else:
             return []
 
