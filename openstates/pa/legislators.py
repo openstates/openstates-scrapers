@@ -57,6 +57,7 @@ class PALegislatorScraper(LegislatorScraper):
         contact_bits = list(el.itertext())[5:]
         contact_bits = [x.strip() for x in contact_bits]
         contact_bits = filter(None, contact_bits)[::-1]
+        off = Office(el)
         import pprint; pprint.pprint(contact_bits)
 
         # The legr's full name is the first line in each address.
@@ -107,9 +108,14 @@ class PALegislatorScraper(LegislatorScraper):
             pprint.pprint(office)
 
 
+class Office(object):
+    '''Terrible. That's what PA's offices are.
+    '''
+    def __init__(self, el):
+        self.el = el
+        lines = list(el.itertext())[5:]
+        lines = [x.strip() for x in contact_bits]
+        lines = filter(None, contact_bits)[::-1]
 
-# class Office(object):
-#     '''Terrible. That's what PA's offices are.
-#     '''
-#     def __init__(self, el):
-#         self.data =
+        self.lines = lines
+        import pdb;pdb.set_trace()
