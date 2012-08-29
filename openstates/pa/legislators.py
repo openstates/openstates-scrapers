@@ -1,6 +1,6 @@
 import re
+import itertools
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .utils import legislators_url
 
@@ -54,68 +54,107 @@ class PALegislatorScraper(LegislatorScraper):
 
     def scrape_offices(self, doc, legislator):
         el = doc.xpath('//h4[contains(., "Contact")]/..')[0]
-        contact_bits = list(el.itertext())[5:]
-        contact_bits = [x.strip() for x in contact_bits]
-        contact_bits = filter(None, contact_bits)[::-1]
-        off = Office(el)
-        import pprint; pprint.pprint(contact_bits)
-
-        # The legr's full name is the first line in each address.
-        junk = set('contact district capitol information'.split())
-        while True:
-            break_at = contact_bits.pop()
-
-            # Skip lines that are like "Contact" instead of
-            # the legislator's full name.
-            if junk & set(break_at.lower().split()):
-                self.logger.debug('Skipping line %r due to junk' % break_at)
-                continue
-            else:
-                break
-
-        print break_at
-        contact_bits = contact_bits[::-1]
-        while True:
-            if not contact_bits:
-                break
-
-            office = {}
-            phone = contact_bits.pop()
-            if phone.lower().startswith('fax:'):
-                fax = re.sub(r'\s*fax:\s+', '', phone, flags=re.I)
-                phone = contact_bits.pop()
-                office['fax'] = fax
-            office['phone'] = phone
-
-            address_bits = []
-            line = contact_bits.pop()
-            while contact_bits and line != break_at:
-                address_bits.append(line)
-                line = contact_bits.pop()
-            address = re.sub('\s+', ' ', ', '.join(address_bits))
-            if 'Capitol' in address:
-                name = 'Capital Office'
-                type_ = 'capitol'
-            else:
-                name = 'District Office'
-                type_ = 'district'
-            office['type'] = type_
-            office['name'] = name
-            office['address'] = address
-
+        for office in Offices(el):
             legislator.add_office(**office)
 
-            pprint.pprint(office)
 
-
-class Office(object):
+class Offices(object):
     '''Terrible. That's what PA's offices are.
     '''
     def __init__(self, el):
         self.el = el
         lines = list(el.itertext())[5:]
-        lines = [x.strip() for x in contact_bits]
-        lines = filter(None, contact_bits)[::-1]
-
+        lines = [x.strip() for x in lines]
+        lines = filter(None, lines)
         self.lines = lines
-        import pdb;pdb.set_trace()
+
+    def __iter__(self):
+        for lines in self.offices_lines():
+            yield Office(lines).parsed()
+
+    def break_at(self):
+        '''The first line of the address, usually his/her name.'''
+        lines = self.lines[::-1]
+
+        # The legr's full name is the first line in each address.
+        junk = set('contact district capitol information'.split())
+        while True:
+            break_at = lines.pop()
+
+            # Skip lines that are like "Contact" instead of
+            # the legislator's full name.
+            if junk & set(break_at.lower().split()):
+                continue
+            else:
+                break
+        return break_at
+
+    def offices_lines(self):
+        office = []
+        lines = self.lines
+        break_at = self.break_at()
+        while lines and True:
+            line = lines.pop()
+            if line == break_at:
+                yield office
+                office = []
+            else:
+                office.append(re.sub(r'\s+', ' ', line))
+
+
+class Office(object):
+    '''They're really quite bad.'''
+
+    re_phone = re.compile(r' \d{3}\-\d{4}')
+    re_fax = re.compile(r'^\s*fax:\s*', re.I)
+
+    def __init__(self, lines):
+        junk = ['Capitol', 'District']
+        self.lines = [x for x in lines if x not in junk]
+
+    def phone(self):
+        '''Return the first thing that looks like a phone number.'''
+        lines = filter(self.re_phone.search, self.lines)
+        for line in lines:
+            if not line.strip().lower().startswith('fax:'):
+                return line.strip()
+
+    def fax(self):
+        lines = filter(self.re_fax.search, self.lines)
+        if lines:
+            return self.re_fax.sub('', lines.pop()) or None
+
+    def type_(self):
+        for line in self.lines:
+            if 'capitol' in line.lower():
+                return 'capitol'
+        return 'district'
+
+    def name(self):
+        return self.type_().title() + ' Office'
+
+    def address(self):
+        lines = itertools.ifilterfalse(self.re_phone.search, self.lines)
+        lines = itertools.ifilterfalse(self.re_fax.search, lines)
+        lines = list(lines)
+        for i, line in enumerate(lines):
+            if re.search('PA \d{5}', line):
+                break
+
+        # If address lines are backwards, fix.
+        if i <= 2:
+            lines = lines[::-1]
+
+        # Make extra sure "PA 12345" line is last.
+        while not re.search('PA \d{5}', lines[-1]):
+            lines = lines[-1:] + lines[:-1]
+        address = '\n'.join(lines)
+        return address
+
+    def parsed(self):
+        return dict(
+            phone=self.phone(),
+            fax=self.fax(),
+            address=self.address(),
+            type=self.type_(),
+            name=self.name())
