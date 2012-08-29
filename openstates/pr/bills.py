@@ -16,8 +16,8 @@ class NoSuchBill(Exception):
     pass
 
 _voteChambers = (
-    (u'Aprobado por el Senado en Votac','upper'),
-    (u'Aprobado por C','lower'),
+   (u'Aprobado por el Senado en Votac','upper'),
+   (u'Aprobado por C','lower'),
 )
 _docVersion = (
     ('Entirillado del Informe'),
@@ -35,10 +35,8 @@ _classifiers = (
     ('Enviado al Gobernador', 'governor','governor:received'),
     ('Veto', 'governor','governor:vetoed'),
     ('Veto de Bolsillo','governor','governor:vetoed'),
-    # comissions give a report but sometimes they dont do any amendments and
-    # leave them as they are.
-    # i am not checking if they did or not. but it be easy just read the end and
-    # if it dosnt have amendments it should say 'sin enmiendas'
+    #comissions give a report but sometimes they dont do any amendments and leave them as they are.
+    #i am not checking if they did or not. but it be easy just read the end and if it dosnt have amendments it should say 'sin enmiendas'
     ('1er Informe','committee','amendment:amended'),
     ('2do Informe','committee','amendment:amended'),
     ('Aprobado con enmiendas','','amendment:passed'),
@@ -57,11 +55,11 @@ class PRBillScraper(BillScraper):
 
     bill_types = {
         'P': 'bill',
-        'R': 'resolution',
-        'RK': 'concurrent resolution',
-        'RC': 'joint resolution',
-        #'PR': 'plan de reorganizacion',
-    }
+                  'R': 'resolution',
+                  'RK': 'concurrent resolution',
+                  'RC': 'joint resolution',
+                  #'PR': 'plan de reorganizacion',
+                 }
 
     def clean_name(self, name):
         for ch in ['Sr,','Sr.','Sra.','Rep.','Sen.']:
@@ -86,6 +84,45 @@ class PRBillScraper(BillScraper):
                     self.scrape_bill(chamber, session, bill_id, type)
                 except NoSuchBill:
                     break
+    def parse_action(self,chamber,bill,action,action_url,date):
+        #if action.startswith('Referido'):
+                #committees = action.split(',',1)
+                #multiple committees
+        if action.startswith('Ley N'):
+                action = action[0:42]
+        elif action.startswith('Res. Conj.'):
+                action = action[0:42]
+        action_actor = ''
+        atype = 'other'
+        #check it has a url and is not just text
+        if action_url:
+            action_url = action_url[0]
+            isVersion = False;
+            for text_regex in _docVersion:
+                if re.match(text_regex, action):
+                   isVersion = True;
+            if isVersion:
+                bill.add_version(action, action_url)
+            else:
+                bill.add_document(action, action_url)
+            for pattern, action_actor,atype in _classifiers:
+                if re.match(pattern, action):
+                    break
+                else:
+                    action_actor = ''
+                    atype = 'other'
+        if action_actor == '':
+            if action.find('SENADO') != -1:
+                action_actor = 'upper'
+            elif action.find('CAMARA') != -1:
+                action_actor = 'lower'
+            else:
+                action_actor = chamber
+        #if action.startswith('Referido'):
+            #for comme in committees:
+            #print comme
+        bill.add_action(action_actor, action.replace('.',''),date,type=atype)
+        return atype,action
 
     def parse_action(self,chamber,bill,action,action_url,date):
         #if action.startswith('Referido'):
@@ -187,7 +224,6 @@ class PRBillScraper(BillScraper):
         if t[1]:
             t[1] = t[1][1:]
             return t
-
     def scrape_votes(self, url, motion, date, bill_chamber):
         if isinstance(url,basestring):
             filename1, extension = self.get_filename_parts_from_url(url)
