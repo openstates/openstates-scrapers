@@ -37,5 +37,79 @@ class PALegislatorScraper(LegislatorScraper):
                 legislator = Legislator(term, chamber, district,
                                         full_name, party=party, url=url)
                 legislator.add_source(leg_list_url)
+
+                # Scrape email, offices, photo.
+                page = self.urlopen(url)
+                doc = lxml.html.fromstring(page)
+                doc.make_links_absolute(url)
+
+                self.scrape_email_address(url, page, legislator)
+                self.scrape_offices(doc, legislator)
                 self.save_legislator(legislator)
 
+    def scrape_email_address(self, url, page, legislator):
+        if re.search(r'var \S+\s+= "(\S+)";', page):
+            vals = re.findall(r'var \S+\s+= "(\S+)";', page)
+            legislator['email'] = '%s@%s%s' % tuple(vals)
+
+    def scrape_offices(self, doc, legislator):
+        el = doc.xpath('//h4[contains(., "Contact")]/..')[0]
+        contact_bits = list(el.itertext())[5:]
+        contact_bits = [x.strip() for x in contact_bits]
+        contact_bits = filter(None, contact_bits)[::-1]
+        import pprint; pprint.pprint(contact_bits)
+
+        # The legr's full name is the first line in each address.
+        junk = set('contact district capitol information'.split())
+        while True:
+            break_at = contact_bits.pop()
+
+            # Skip lines that are like "Contact" instead of
+            # the legislator's full name.
+            if junk & set(break_at.lower().split()):
+                self.logger.debug('Skipping line %r due to junk' % break_at)
+                continue
+            else:
+                break
+
+        print break_at
+        contact_bits = contact_bits[::-1]
+        while True:
+            if not contact_bits:
+                break
+
+            office = {}
+            phone = contact_bits.pop()
+            if phone.lower().startswith('fax:'):
+                fax = re.sub(r'\s*fax:\s+', '', phone, flags=re.I)
+                phone = contact_bits.pop()
+                office['fax'] = fax
+            office['phone'] = phone
+
+            address_bits = []
+            line = contact_bits.pop()
+            while contact_bits and line != break_at:
+                address_bits.append(line)
+                line = contact_bits.pop()
+            address = re.sub('\s+', ' ', ', '.join(address_bits))
+            if 'Capitol' in address:
+                name = 'Capital Office'
+                type_ = 'capitol'
+            else:
+                name = 'District Office'
+                type_ = 'district'
+            office['type'] = type_
+            office['name'] = name
+            office['address'] = address
+
+            legislator.add_office(**office)
+
+            pprint.pprint(office)
+
+
+
+# class Office(object):
+#     '''Terrible. That's what PA's offices are.
+#     '''
+#     def __init__(self, el):
+#         self.data =
