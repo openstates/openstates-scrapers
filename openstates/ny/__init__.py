@@ -22,7 +22,7 @@ metadata = dict(
             '_scraped_name': '2011',
         }
     },
-    feature_flags=['subjects', 'events'],
+    feature_flags=['subjects', 'events', 'transparencydata'],
     _ignored_scraped_sessions=['2009'],
 
     requests_per_minute=30,

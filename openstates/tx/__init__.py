@@ -44,7 +44,7 @@ metadata = dict(
                 '_scraped_name': '82(1) - 2011',
                }
     },
-    feature_flags=['events', 'subjects', 'capitol_maps'],
+    feature_flags=['events', 'subjects', 'capitol_maps', 'transparencydata'],
     capitol_maps=[
         {"name": "Capitol Complex",
      "url": 'http://static.openstates.org/capmaps/tx/Map.CapitolComplex.pdf'

@@ -84,7 +84,7 @@ metadata = dict(
             'type': 'primary'
         },
     },
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'transparencydata'],
 
     _ignored_scraped_sessions =  ['2011-2012', '2009-2010', '2007-2008',
                                   '2005-2006', '2003-2004', '2001-2002',

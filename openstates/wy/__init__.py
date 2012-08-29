@@ -25,7 +25,7 @@ metadata = dict(
                  '_scraped_name': '2012 Budget Session'
                 },
     },
-    feature_flags=[],
+    feature_flags=['transparencydata'],
     _ignored_scraped_sessions=['2010 Budget Session', '2009 General Session',
                                '2008 Budget Session', '2007 General Session',
                                '2006 Budget Session', '2005 General Session',

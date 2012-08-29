@@ -80,7 +80,7 @@ metadata = dict(
                              '1990 Special Session', '1989-1990 Session',
                              '1989 Special Session', '1987-1988 Session',
                              '1986 Special Session', '1985-1986 Session'],
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'transparencydata'],
 )
 
 

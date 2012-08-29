@@ -29,7 +29,7 @@ metadata = dict(
              'display_name': '2012 Regular Session',
          },
     },
-    feature_flags=[],
+    feature_flags=['transparencydata'],
     _ignored_scraped_sessions = [
         '2010 Legislative Session',
         '2009 Legislative Session',

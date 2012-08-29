@@ -79,7 +79,7 @@ metadata = {
             '_scraped_name': 'Sept 2011 Special Session',
         },
     },
-    'feature_flags': ['subjects', 'events'],
+    'feature_flags': ['subjects', 'events', 'transparencydata'],
     '_ignored_scraped_sessions': [
         '2007 Regular Session', u'Apr 2008 Special Session',
         u'Mar 2008 Special Session', u'Dec 2007 Special Session',

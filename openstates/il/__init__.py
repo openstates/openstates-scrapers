@@ -25,7 +25,7 @@ metadata = {
         {'name': '97th', 'sessions': ['97th'],
          'start_year': 2011, 'end_year': 2012},
     ],
-    'feature_flags': [ 'events' ],
+    'feature_flags': [ 'events', 'transparencydata' ],
     'session_details': {
         '97th': {'display_name': '97th Regular Session',
                  '_scraped_name': '',

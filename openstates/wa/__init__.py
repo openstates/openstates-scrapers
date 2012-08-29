@@ -27,7 +27,7 @@ metadata = dict(
                       '_scraped_name': '2011-12',
                      },
     },
-    feature_flags = ['events', 'subjects', 'capitol_maps'],
+    feature_flags = ['events', 'subjects', 'capitol_maps', 'transparencydata'],
     capitol_maps=[
         {"name": "Floor 1",
          "url": 'http://static.openstates.org/capmaps/wa/f1.gif'

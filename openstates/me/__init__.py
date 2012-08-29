@@ -23,7 +23,7 @@ metadata = dict(
         '125': {'display_name':  '125th Legislature',
                 '_scraped_name': '125th Legislature'},
     },
-    feature_flags=['subjects'],
+    feature_flags=['subjects', 'transparencydata'],
     _ignored_scraped_sessions=['121st Legislature', '122nd Legislature',
                                '123rd Legislature']
 

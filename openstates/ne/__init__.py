@@ -29,7 +29,7 @@ metadata = dict(
             'end_date': datetime.date(2011, 11, 22)
                  }
         },
-    feature_flags=[],
+    feature_flags=['transparencydata'],
     _ignored_scraped_sessions=['101st Legislature 1st and Second Sessions',
                                '101st Legislature 1st Special Session',
                                '100th Legislature 1st and 2nd Sessions',

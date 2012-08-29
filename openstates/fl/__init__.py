@@ -27,7 +27,7 @@ metadata = dict(
                  '_scraped_name': '2012B',
                 },
     },
-    feature_flags=[],
+    feature_flags=['transparencydata'],
     _ignored_scraped_sessions=['2010O', '2010A', '2012O', '2013'],
 )
 

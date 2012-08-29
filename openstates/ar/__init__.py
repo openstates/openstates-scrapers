@@ -33,7 +33,7 @@ metadata = dict(
                  'slug': '2012F',
                 }
         },
-    feature_flags=[],
+    feature_flags=['transparencydata'],
     _ignored_scraped_sessions=['Regular Session, 2009',
                                'Fiscal Session, 2010',
                                'Regular Session, 2007',

@@ -29,7 +29,7 @@ metadata = dict(
             '_scraped_name': 'b2011_12',
         },
     },
-    feature_flags=[],
+    feature_flags=['transparencydata'],
 )
 
 def session_list():
