@@ -6,6 +6,13 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
 
+JOINT_COMMITTEE_OVERRIDE = [  # without Joint" in the name.
+    "State Controlling Board",
+    "Legislative Service Commission",
+    "Correctional Institution Inspection Committee"
+]
+
+
 class OHLegislatorScraper(LegislatorScraper):
     state = 'oh'
     latest_only = True
@@ -61,6 +68,7 @@ class OHLegislatorScraper(LegislatorScraper):
                     elif party == "R":
                         party = "Republican"
 
+
                     leg = Legislator(term, chamber, str(district),
                                      full_name, party=party, url=rep_url)
                     leg.add_office('capitol',
@@ -69,9 +77,57 @@ class OHLegislatorScraper(LegislatorScraper):
                                     phone=phone,
                                     fax=fax)  # Yet, no email.
 
-                    leg.add_source(rep_url)
+                    committees = page.xpath("//table[@class='billLinks']")[0]
+                    for committee in committees.xpath(".//tr"):
+                        td = committee.xpath(".//td")
+                        if len(td) != 2:
+                            break
 
-                self.save_legislator(leg)
+                        name, role = td
+                        name, role = name.text_content(), role.text_content()
+                        name, role = name.strip(), role.strip()
+                        if name[0] == "|":
+                            continue
+
+                        chmbr = chamber
+                        if "joint" in name.lower():
+                            chmbr = "joint"
+
+                        if name in JOINT_COMMITTEE_OVERRIDE:
+                            chmbr = "joint"
+
+                        leg.add_role('committee member',
+                            term=term,
+                            chamber=chmbr,
+                            committee=name,
+                            position=role
+                        )
+
+                    leg.add_source(rep_url)
+                    self.save_legislator(leg)
+
+    def scrape_senate_committees(self, url):
+        committees = []
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+        for link in page.xpath(
+            "//table[@class='blackGold']//a[contains(@href, 'committees')]"):
+
+            committee = link.text_content()
+            title = "Member"
+
+            if "(" in committee:
+                committee, title = committee.rsplit("(", 1)
+                title, _ = title.split(")", 1)
+                committee, title = committee.strip(), title.strip()
+
+            committees.append({
+                "committee": committee,
+                "title": title
+            })
+        return committees
+
 
     def scrape_senators(self, chamber, term):
         url = 'http://www.ohiosenate.gov/directory.html'
@@ -110,11 +166,26 @@ class OHLegislatorScraper(LegislatorScraper):
                                  party=party, photo_url=photo_url, url=sen_url,
                                  email="")
 
+                committees = self.scrape_senate_committees(sen_url)
+
                 leg.add_office('capitol',
                                'Capitol Office',
                                address=office,
                                phone=office_phone)
 
                 leg.add_source(url)
+                leg.add_source(sen_url)
+
+                for committee in committees:
+                    chmbr = chamber
+                    if "joint" in committee['committee'].lower():
+                        chmbr = "joint"
+
+                    leg.add_role('committee member',
+                        term=term,
+                        chamber=chmbr,
+                        committee=committee['committee'],
+                        position=committee['title']
+                    )
 
                 self.save_legislator(leg)
