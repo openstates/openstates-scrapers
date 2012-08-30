@@ -1,5 +1,4 @@
 from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
 from datetime import datetime
 import lxml.html
 import urllib
@@ -8,10 +7,12 @@ class NEBillScraper(BillScraper):
     state = 'ne'
 
     def scrape(self, session, chambers):
-
         year = self.metadata['session_details'][session]['start_date'].year
-        main_url = 'http://nebraskalegislature.gov/bills/search_by_date.php?SessionDay=%s' % year
+        self.scrape_year(session, year)
+        self.scrape_year(session, year+1)
 
+    def scrape_year(self, session, year):
+        main_url = 'http://nebraskalegislature.gov/bills/search_by_date.php?SessionDay=%s' % year
         with self.urlopen(main_url) as page:
             page = lxml.html.fromstring(page)
 
@@ -62,17 +63,6 @@ class NEBillScraper(BillScraper):
             if 'Date' not in date:
                 date = datetime.strptime(date, '%b %d, %Y')
                 action = actions[1].text
-
-                if '-' in action:
-                    vote_info = action.split()[-1].split('-')
-                    yes_count = int(vote_info[0])
-                    no_count = int(vote_info[1])
-                    abstention_count = int(vote_info[2])
-                    passed = True if ( yes_count > no_count) else False
-
-                    vote = Vote('upper', date, action, passed, yes_count, no_count, abstention_count)
-                    vote.add_source(bill_link)
-                    bill.add_vote(vote)
 
                 if 'Governor' in action:
                     actor = 'Governor'
