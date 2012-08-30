@@ -7,9 +7,11 @@ class NEBillScraper(BillScraper):
     state = 'ne'
 
     def scrape(self, session, chambers):
-        year = self.metadata['session_details'][session]['start_date'].year
-        self.scrape_year(session, year)
-        self.scrape_year(session, year+1)
+        start_year = self.metadata['session_details'][session]['start_date'].year
+        end_year = self.metadata['session_details'][session]['end_date'].year
+        self.scrape_year(session, start_year)
+        if start_year != end_year:
+            self.scrape_year(session, end_year)
 
     def scrape_year(self, session, year):
         main_url = 'http://nebraskalegislature.gov/bills/search_by_date.php?SessionDay=%s' % year
