@@ -44,7 +44,7 @@ class PALegislatorScraper(LegislatorScraper):
                 doc.make_links_absolute(url)
 
                 self.scrape_email_address(url, page, legislator)
-                self.scrape_offices(doc, legislator)
+                self.scrape_offices(url, doc, legislator)
                 self.save_legislator(legislator)
 
     def scrape_email_address(self, url, page, legislator):
@@ -52,25 +52,35 @@ class PALegislatorScraper(LegislatorScraper):
             vals = re.findall(r'var \S+\s+= "(\S+)";', page)
             legislator['email'] = '%s@%s%s' % tuple(vals)
 
-    def scrape_offices(self, doc, legislator):
+    def scrape_offices(self, url, doc, legislator):
         el = doc.xpath('//h4[contains(., "Contact")]/..')[0]
-        for office in Offices(el):
+        for office in Offices(el, self):
             legislator.add_office(**office)
+        legislator.add_source(url)
 
 
 class Offices(object):
     '''Terrible. That's what PA's offices are.
     '''
-    def __init__(self, el):
+
+    class ParseError(Exception):
+        pass
+
+    def __init__(self, el, scraper):
         self.el = el
+        self.scraper = scraper
         lines = list(el.itertext())[5:]
         lines = [x.strip() for x in lines]
         lines = filter(None, lines)
         self.lines = lines
 
     def __iter__(self):
-        for lines in self.offices_lines():
-            yield Office(lines).parsed()
+        try:
+            for lines in self.offices_lines():
+                yield Office(lines).parsed()
+        except self.ParseError:
+            self.scraper.logger.warning("Couldn't parse offices.")
+            return
 
     def break_at(self):
         '''The first line of the address, usually his/her name.'''
@@ -79,7 +89,10 @@ class Offices(object):
         # The legr's full name is the first line in each address.
         junk = set('contact district capitol information'.split())
         while True:
-            break_at = lines.pop()
+            try:
+                break_at = lines.pop()
+            except IndexError:
+                raise self.ParseError
 
             # Skip lines that are like "Contact" instead of
             # the legislator's full name.
@@ -127,6 +140,8 @@ class Office(object):
     def type_(self):
         for line in self.lines:
             if 'capitol' in line.lower():
+                return 'capitol'
+            elif 'east wing' in line.lower():
                 return 'capitol'
         return 'district'
 
