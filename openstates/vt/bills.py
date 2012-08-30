@@ -251,7 +251,11 @@ class VTBillScraper(BillScraper):
             if len(tr.xpath("td")) != 2:
                 continue
 
-            name = tr.xpath("string(td[1])").split(' of')[0]
+            # stop splitting duplicate names: will require modification
+            # whenever new duplicates come to exist
+            if name not in ('Smith', 'Johnson', 'Stevens', 'French', 'Lewis',
+                        'Martin')
+                name = tr.xpath("string(td[1])").split(' of')[0]
 
             type = tr.xpath("string(td[2])").strip()
             if type.startswith('Yea'):
