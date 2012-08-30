@@ -40,6 +40,52 @@ class IALegislatorScraper(LegislatorScraper):
             leg.add_source(url)
 
             leg_page = lxml.html.fromstring(self.urlopen(link.attrib['href']))
+
+            office_data = {
+                "email": "ctl00_cphMainContent_divEmailLegis",
+                "home_phone": "ctl00_cphMainContent_divPhoneHome",
+                "home_addr": "ctl00_cphMainContent_divAddrHome",
+                "office_phone": "ctl00_cphMainContent_divPhoneCapitol",
+            }
+            metainf = {}
+
+            for attr in office_data:
+                path = office_data[attr]
+                info = leg_page.xpath("//div[@id='%s']" % path)
+                if len(info) != 1:
+                    continue
+                info = info[0]
+
+                _, data = [x.text_content() for x in info.xpath("./span")]
+                data = data.strip()
+                if data == "":
+                    continue
+
+                metainf[attr] = data
+
+            if "home_phone" in metainf or "home_addr" in metainf:
+                home_args = {}
+                if "home_phone" in metainf:
+                    home_args['phone'] = metainf['home_phone']
+                if "home_addr" in metainf:
+                    home_args['address'] = metainf['home_addr']
+                leg.add_office('district',
+                               'Home Office',
+                               **home_args)
+
+            if "email" in metainf or "office_phone" in metainf:
+                cap_args = {}
+
+                if "email" in metainf:
+                    cap_args['email'] = metainf['email']
+                if "office_phone" in metainf:
+                    cap_args['phone'] = metainf['office_phone']
+
+                leg.add_office('capitol',
+                               'Capitol Office',
+                               **cap_args)
+
+
             comm_path = "//a[contains(@href, 'committee')]"
             for comm_link in leg_page.xpath(comm_path):
                 comm = comm_link.text.strip()

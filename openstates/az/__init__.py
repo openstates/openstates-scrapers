@@ -522,7 +522,7 @@ metadata = dict(
             'Forty-eighth Legislature - First Regular Session',
             'Forty-eighth Legislature - Second Regular Session',
             'Miscellaneous Legislature - Technical Session',],
-        feature_flags=[ 'events' ],
+        feature_flags=[ 'events', 'influenceexplorer' ],
     )
 
 

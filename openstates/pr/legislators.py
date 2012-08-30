@@ -64,11 +64,14 @@ class PRLegislatorScraper(LegislatorScraper):
                     try:
                         with self.urlopen(picture_filename) as picture_data:  # Checking to see if the file is there
                             leg = Legislator(term, 'upper', district, name,
-                                             party=party, phone=phone, email=email, photo_url=picture_filename)
+                                             party=party, phone=phone,
+                                             email=email, url=url, 
+                                             photo_url=picture_filename)
 
                     except scrapelib.HTTPError:         # If not, leave out the photo_url
                         leg = Legislator(term, 'upper', district, name,
-                                         party=party, phone=phone, email=email)
+                                         party=party, phone=phone, email=email,
+                                         url=url)
 
                     leg.add_source(url)
                     self.save_legislator(leg)

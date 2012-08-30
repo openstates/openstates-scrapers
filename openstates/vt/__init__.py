@@ -29,7 +29,7 @@ metadata = dict(
                                    '_scraped_name': '2011-2012 Session',
                                   },
                      },
-    feature_flags=[],
+    feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['2009 Special Session', '2007-2008 Session',
                                '2005-2006 Session', '2005 Special Session',
                                '2003-2004 Session', '2001-2002 Session',

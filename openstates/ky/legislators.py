@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 
 from billy.scrape.legislators import Legislator, LegislatorScraper
 
@@ -19,8 +20,69 @@ class KYLegislatorScraper(LegislatorScraper):
         with self.urlopen(leg_list_url) as page:
             page = lxml.html.fromstring(page)
 
-        for link in page.xpath('//a[@onmouseout="hideImg();"]'):
+        for link in page.xpath('//a[@onmouseout="hidePicture();"]'):
             self.scrape_member(chamber, year, link.get('href'))
+
+    def scrape_office_info(self, url):
+        ret = {}
+        with self.urlopen(url) as legislator_page:
+            legislator_page = lxml.html.fromstring(legislator_page)
+        legislator_page.make_links_absolute(url)
+        info = legislator_page.xpath("//table//span")
+        for span in info:
+            elements = span.xpath("./*")
+            if len(elements) < 1:
+                continue
+            if elements[0].tag != "b":
+                continue
+            txt = elements[0].text_content().strip()
+
+            if txt == "Bio" or \
+               "committees" in txt.lower() or \
+               "service" in txt.lower() or \
+               txt == "":
+                continue
+
+            def _handle_phone(obj):
+                ret = defaultdict(list)
+                for x in obj.xpath(".//*")[:-1]:
+                    phone = x.tail.strip()
+                    obj = phone.split(":", 1)
+                    if len(obj) != 2:
+                        continue
+                    typ, number = obj
+                    typ, number = typ.strip(), number.strip()
+                    ret[typ].append(number)
+                return ret
+
+            def _handle_address(obj):
+                addr = " ".join([x.tail or "" for x in obj.xpath(".//*")[1:]])
+                return [addr.strip()]
+
+            def _handle_emails(obj):
+                ret = []
+                emails = obj.xpath(".//a[contains(@href, 'mailto')]")
+                if len(emails) < 1:
+                    return []
+                for email in emails:
+                    _, efax = email.attrib['href'].split(":", 1)
+                    ret.append(efax)
+                return ret
+
+            handlers = {
+                "Mailing Address": _handle_address,
+                "Frankfort Address(es)": _handle_address,
+                "Phone Number(s)": _handle_phone,
+                "Email Address(es)": _handle_emails
+            }
+
+            try:
+                handler = handlers[txt]
+                ret[txt] = handler(span)
+            except KeyError:
+                pass
+
+        return ret
 
     def scrape_member(self, chamber, year, member_url):
         with self.urlopen(member_url) as member_page:
@@ -77,6 +139,8 @@ class KYLegislatorScraper(LegislatorScraper):
                                     'Annex:', '').strip()
                                 break
 
+            office_info = self.scrape_office_info(member_url)
+
             leg = Legislator(year, chamber, member['district'],
                              member['full_name'],
                              party=member['party'],
@@ -85,6 +149,21 @@ class KYLegislatorScraper(LegislatorScraper):
                              office_address=member['office_address'],
                              office_phone=member['office_phone'])
             leg.add_source(member_url)
+
+            kwargs = {}
+            if office_info['Email Address(es)'] != []:
+                kwargs['email'] = office_info['Email Address(es)'][0]
+
+            if office_info['Phone Number(s)']['Annex'] != []:
+                kwargs['phone'] = office_info['Phone Number(s)']['Annex'][0]
+
+            if office_info['Frankfort Address(es)'] != []:
+                kwargs['address'] = office_info['Frankfort Address(es)'][0]
+
+            if kwargs != {}:
+                leg.add_office('capitol',
+                               'Annex Office',
+                               **kwargs)
 
             if 'additionalRoles' in member:
                 for role in member['additionalRoles']:

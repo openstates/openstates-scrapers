@@ -25,7 +25,7 @@ metadata = {
                  '_scraped_name': '2012 Session',
                 },
     },
-    'feature_flags': [],
+    'feature_flags': ['influenceexplorer'],
 }
 
 def session_list():

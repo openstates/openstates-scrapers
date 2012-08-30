@@ -31,7 +31,7 @@ metadata = dict(
         },
         # name next session 2013-2014 instead of following pattern
     },
-    feature_flags=['subjects', 'capitol_maps'],
+    feature_flags=['subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
         {"name": "Chamber Floor",
          "url": 'http://static.openstates.org/capmaps/hi/floorchamber.pdf'

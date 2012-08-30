@@ -43,6 +43,12 @@ class VABillScraper(BillScraper):
 
     link_xpath = '//ul[@class="linkSect"]/li/a'
 
+    def accept_response(self, response):
+        # check for rate limit pages
+        normal = super(VABillScraper, self).accept_response(response)
+        return (normal and
+                'Sorry, your query could not be processed' not in response.text)
+
     def get_page_bills(self, issue_name, href):
         with self.urlopen('http://lis.virginia.gov' + href,
                           retry_on_404=True) as issue_html:
@@ -211,7 +217,7 @@ class VABillScraper(BillScraper):
                 return []
             else:
                 # lookahead and don't split if comma precedes initials
-                return [x.strip() for x in re.split(', (?!\w\.\w\.)', pieces[1])]
+                return [x.strip() for x in re.split(', (?!\w\.\w?\.?)', pieces[1])]
         else:
             return []
 

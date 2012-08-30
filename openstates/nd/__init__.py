@@ -29,7 +29,7 @@ metadata = dict(
         #        '_scraped_name': '63rd (2013)',
         #       }
     },
-    feature_flags=[],
+    feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['61st (2009)', '60th (2007)', '59th (2005)',
                                '58th (2003)', '57th (2001)', '56th (1999)',
                                '55th (1997)', '54th (1995)', ]

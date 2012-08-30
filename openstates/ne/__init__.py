@@ -19,6 +19,7 @@ metadata = dict(
     session_details={
         '102': {
             'start_date': datetime.date(2011, 1, 5),
+            'end_date': datetime.date(2012, 4, 18),
             'display_name': '102nd Legislature',
             '_scraped_name': '102nd Legislature 1st and Second Sessions',
                },
@@ -29,7 +30,7 @@ metadata = dict(
             'end_date': datetime.date(2011, 11, 22)
                  }
         },
-    feature_flags=[],
+    feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['101st Legislature 1st and Second Sessions',
                                '101st Legislature 1st Special Session',
                                '100th Legislature 1st and 2nd Sessions',

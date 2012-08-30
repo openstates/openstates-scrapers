@@ -54,7 +54,7 @@ metadata = dict(
                'slug': '76th2011',
               },
     },
-    feature_flags=['subjects', 'capitol_maps'],
+    feature_flags=['subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
         {"name": "Floor 1",
          "url": 'http://static.openstates.org/capmaps/nv/Leg1.gif'

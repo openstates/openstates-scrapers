@@ -31,7 +31,7 @@ metadata = {
                  '_scraped_name': '2012 Regular',
                 },
     },
-    'feature_flags': ['subjects'],
+    'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': ['2010 2nd Special', '2010 Regular',
                                   '2009 1st Special', '2009 Regular',
                                   '2008 2nd Special', '2008 Regular',

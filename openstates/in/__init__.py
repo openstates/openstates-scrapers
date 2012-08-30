@@ -24,7 +24,7 @@ metadata = dict(
         '2012': {'display_name': '2012 Regular Session',
                  '_scraped_name': '2012 Regular Session',},
         },
-    feature_flags=['subjects', 'capitol_maps'],
+    feature_flags=['subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
         {"name": "Floor 1",
          "url": 'http://static.openstates.org/capmaps/in/floor1.gif'

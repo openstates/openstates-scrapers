@@ -23,7 +23,7 @@ metadata = {
                     '_scraped_name': '2011 Special Session',
                    },
     },
-    'feature_flags': [],
+    'feature_flags': ['influenceexplorer'],
     '_ignored_scraped_sessions': ['2009-2010 Regular Session',
                                   '2007-2008 Regular Session',
                                   '2005 Special Session',

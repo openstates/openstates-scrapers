@@ -65,7 +65,7 @@ metadata = {
     },
     "legislature_name": "Louisiana Legislature",
     "lower_chamber_term": 4,
-    'feature_flags': ['subjects', 'events'],
+    'feature_flags': ['subjects', 'events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
         '2012 Organizational Session',
         '2008 Regular Legislative Session',
