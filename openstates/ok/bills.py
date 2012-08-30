@@ -69,7 +69,7 @@ class OKBillScraper(BillScraper):
         for hidden in form_page.xpath("//input[@type='hidden']"):
             values.append((hidden.attrib['name'], hidden.attrib['value']))
 
-        page = self.urlopen(url, "POST", urllib.urlencode(values))
+        page = self.urlopen(url, "POST", values)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -267,7 +267,7 @@ class OKBillScraper(BillScraper):
                       'lbxSubjects': subj, 'lbxTypes': types}
             for hidden in fdoc.xpath("//input[@type='hidden']"):
                 values[hidden.attrib['name']] = hidden.attrib['value']
-            values = urllib.urlencode(values, doseq=True)
+            #values = urllib.urlencode(values, doseq=True)
             page_data = self.urlopen(form_url, 'POST', values)
             page_doc = lxml.html.fromstring(page_data)
 

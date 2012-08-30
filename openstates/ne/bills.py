@@ -23,8 +23,9 @@ class NEBillScraper(BillScraper):
 
                 #POST request for search form
                 post_dict = {'DocumentNumber': bill_abbr, 'Legislature': session}
-                headers = urllib.urlencode(post_dict)
-                bill_page = self.urlopen( 'http://nebraskalegislature.gov/bills/search_by_number.php', method="POST", body=headers)
+                #headers = urllib.urlencode(post_dict)
+                bill_page = self.urlopen( 'http://nebraskalegislature.gov/bills/search_by_number.php',
+                                         method="POST", body=post_dict)
                 bill_link = bill_page.response.url
 
                 #scrapes info from bill page

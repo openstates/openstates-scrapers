@@ -134,7 +134,7 @@ class RIVoteScraper(VoteScraper):
         headers = {
             "votedate" : vote
         }
-        headers = urllib.urlencode( headers )
+        #headers = urllib.urlencode( headers )
         return self.urlopen( url, method="POST", body=headers)
 
     def scrape(self, chamber, session):
