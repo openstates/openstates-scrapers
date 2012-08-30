@@ -7,6 +7,8 @@ from billy.scrape.votes import Vote
 
 import lxml.html
 
+from .utils import DOUBLED_NAMES
+
 
 def parse_exec_date(date_str):
     """
@@ -252,11 +254,9 @@ class VTBillScraper(BillScraper):
                 continue
 
 
-            # avoid splitting duplicate names: will require modification
-            # whenever new duplicates come to exist
-            name = tr.xpath("string(td[1])")
-            if not name.startswith(('Smith', 'Johnson', 'Stevens', 'French',
-                                   'Lewis', 'Martin')):
+            # avoid splitting duplicate names
+            name = tr.xpath("string(td[1])").strip()
+            if not name.startswith(DOUBLED_NAMES):
                 name = name.split(' of')[0]
 
             type = tr.xpath("string(td[2])").strip()

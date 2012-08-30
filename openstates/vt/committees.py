@@ -5,6 +5,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
 
+from .utils import DOUBLED_NAMES
 
 class VTCommitteeScraper(CommitteeScraper):
     state = 'vt'
@@ -50,7 +51,8 @@ class VTCommitteeScraper(CommitteeScraper):
                     else:
                         mtype = 'member'
 
-                    name = re.sub(r'of [\w\s\.]+$', '', name)
+                    if not name.startswith(DOUBLED_NAMES):
+                        name = re.sub(r'of [\w\s\.]+$', '', name)
 
                     comm.add_member(name, mtype)
 
