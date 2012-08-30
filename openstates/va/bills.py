@@ -217,7 +217,7 @@ class VABillScraper(BillScraper):
                 return []
             else:
                 # lookahead and don't split if comma precedes initials
-                return [x.strip() for x in re.split(', (?!\w\.\w\.)', pieces[1])]
+                return [x.strip() for x in re.split(', (?!\w\.\w?\.?)', pieces[1])]
         else:
             return []
 
