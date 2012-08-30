@@ -254,7 +254,7 @@ class VTBillScraper(BillScraper):
             # stop splitting duplicate names: will require modification
             # whenever new duplicates come to exist
             if name not in ('Smith', 'Johnson', 'Stevens', 'French', 'Lewis',
-                        'Martin')
+                            'Martin'):
                 name = tr.xpath("string(td[1])").split(' of')[0]
 
             type = tr.xpath("string(td[2])").strip()
