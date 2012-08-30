@@ -7,6 +7,9 @@ from .utils import clean_committee_name
 
 import scrapelib
 
+CAP_ADDRESS = """P. O. Box 1018
+Jackson, MS 39215"""
+
 class MSLegislatorScraper(LegislatorScraper):
     state = 'ms'
 
@@ -69,6 +72,8 @@ class MSLegislatorScraper(LegislatorScraper):
                 org_info = root.xpath('string(//ORG_INFO)')
                 email_name = root.xpath('string(//EMAIL_ADDRESS)')
                 email = '%s@%s.ms.gov' % (email_name, chamber)
+                cap_room = root.xpath('string(//CAP_ROOM)')
+
                 if party == 'D':
                     party = 'Democratic'
                 else:
@@ -77,13 +82,26 @@ class MSLegislatorScraper(LegislatorScraper):
                 leg = Legislator(term, chamber, district, leg_name,
                                  party=party,
                                  role=role,
-                                 bis_phone=bis_phone,
-                                 capital_phone=capital_phone,
-                                 other_phone=other_phone,
                                  org_info=org_info,
-                                 email=email,
                                  url=url)
                 leg.add_source(url)
+
+                kwargs = {
+                    "email": email
+                }
+
+                if capital_phone != "":
+                    kwargs['phone'] = capital_phone
+
+                if cap_room != "":
+                    kwargs["address"] = "Room %s\n%s" % (cap_room, CAP_ADDRESS)
+                else:
+                    kwargs['address'] = CAP_ADDRESS
+
+                leg.add_office('capitol',
+                               'Capitol Office',
+                               **kwargs)
+
                 self.save_legislator(leg)
         except scrapelib.HTTPError, e:
             self.warning(str(e))
