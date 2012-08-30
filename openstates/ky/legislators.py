@@ -19,8 +19,13 @@ class KYLegislatorScraper(LegislatorScraper):
         with self.urlopen(leg_list_url) as page:
             page = lxml.html.fromstring(page)
 
-        for link in page.xpath('//a[@onmouseout="hideImg();"]'):
+        for link in page.xpath('//a[@onmouseout="hidePicture();"]'):
             self.scrape_member(chamber, year, link.get('href'))
+
+    def scrape_office_info(self, url):
+        with self.urlopen(url) as legislator_page:
+            legislator_page = lxml.html.fromstring(legislator_page)
+        legislator_page.make_links_absolute(url)
 
     def scrape_member(self, chamber, year, member_url):
         with self.urlopen(member_url) as member_page:
@@ -76,6 +81,8 @@ class KYLegislatorScraper(LegislatorScraper):
                                 member['office_phone'] = item.replace(
                                     'Annex:', '').strip()
                                 break
+
+            # office_info = self.scrape_office_info(member_url)
 
             leg = Legislator(year, chamber, member['district'],
                              member['full_name'],
