@@ -153,6 +153,7 @@ class KYLegislatorScraper(LegislatorScraper):
             kwargs = {}
             if office_info['Email Address(es)'] != []:
                 kwargs['email'] = office_info['Email Address(es)'][0]
+                leg['email'] = office_info['Email Address(es)'][0]
 
             if office_info['Phone Number(s)']['Annex'] != []:
                 kwargs['phone'] = office_info['Phone Number(s)']['Annex'][0]
