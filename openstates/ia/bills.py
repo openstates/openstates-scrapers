@@ -46,7 +46,6 @@ class IABillScraper(BillScraper):
             for bill_id in bill_ids:
                 self._subjects[bill_id.replace(' ', '')].append(subject)
 
-
     def scrape(self, chamber, session):
 
         self._build_subject_map(session)
@@ -126,7 +125,6 @@ class IABillScraper(BillScraper):
                 sidebar.xpath('//a[contains(string(.), "PDF")]/@href')[0],
                              mimetype='application/pdf'
                             )
-
 
         sponsors = page.xpath("string(//table[2]/tr[3])").strip()
         sponsor_re = r'[\w-]+(?:, [A-Z]\.)?(?:,|(?: and)|\.$)'
