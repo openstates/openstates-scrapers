@@ -86,13 +86,13 @@ class NEBillScraper(BillScraper):
 
 
         #documents
-        #additional_info
-        for additional_info in bill_page.xpath('//div[@id="content_text"]/div[2]/table/tr[2]/td/a'):
-            document_name = additional_info.text
-            document_url = additional_info.attrib['href']
-            document_url = 'http://nebraskalegislature.gov/' + document_url[3:len(document_url)]
-            if '.pdf' in document_url:
-                bill.add_document(document_name, document_url)
+        # this appear to be same as versions, dropped for now
+        #for additional_info in bill_page.xpath('//div[@id="content_text"]/div[2]/table/tr[2]/td/a'):
+        #    document_name = additional_info.text
+        #    document_url = additional_info.attrib['href']
+        #    document_url = 'http://nebraskalegislature.gov/' + document_url[3:len(document_url)]
+        #    if '.pdf' in document_url:
+        #        bill.add_document(document_name, document_url)
 
         #amendments
         for admendments in bill_page.xpath('//div[@id="content_text"]/div[3]/table/tr[1]/td[2]/table/tr/td/a'):
