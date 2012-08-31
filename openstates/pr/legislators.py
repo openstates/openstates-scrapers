@@ -139,8 +139,12 @@ class PRLegislatorScraper(LegislatorScraper):
                     # capitol_office as provided is junk
                     # things like 'Basement', and '2nd Floor'
 
+                    # urls @ http://www.camaraderepresentantes.org/legs2.asp?r=BOKCADHRTZ
+                    # where random chars are tr's id
+                    leg_url = 'http://www.camaraderepresentantes.org/legs2.asp?r=' + tr.get('id')
+
                     leg = Legislator(term, 'lower', district, name,
-                                     party='unknown', email=email)
+                                     party='unknown', email=email, url=url)
                     leg.add_office('capitol', 'Oficina del Capitolio',
                                    phone=numbers.get('Tel:') or None,
                                    # could also add TTY
