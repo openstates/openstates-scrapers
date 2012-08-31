@@ -101,6 +101,7 @@ class IAVoteScraper(VoteScraper):
             motion, _ = motion.rsplit('(')
             motion = motion.replace('"', '')
             motion = motion.replace(u'“', '')
+            motion = motion.replace(u'\u201d', '')
             motion = motion.replace(u' ,', ',')
             motion = motion.strip()
             motion = re.sub(r'On the question\s*', '', motion, flags=re.I)
