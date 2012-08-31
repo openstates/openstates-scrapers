@@ -380,3 +380,4 @@ http://asmdc.org/members/a79/home-page/rss
 http://asmdc.org/members/a80/home-page/rss
 http://thomneale.com
 http://www.baycitizen.org/feeds/stories/
+http://www.sanluisobispo.com/news/politics/index.rss
