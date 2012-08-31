@@ -164,7 +164,9 @@ class VABillScraper(BillScraper):
                     if vote_url:
                         self.parse_vote(vote, vote_url[0])
                         vote.add_source(BASE_URL + vote_url[0])
-                    vote.validate()
+                    # set other count, it isn't provided
+                    vote['other_count'] = len(vote['other_votes'])
+                    #vote.validate()
                     bill.add_vote(vote)
 
 
@@ -217,7 +219,9 @@ class VABillScraper(BillScraper):
                 return []
             else:
                 # lookahead and don't split if comma precedes initials
-                return [x.strip() for x in re.split(', (?!\w\.\w?\.?)', pieces[1])]
+                # Also, Bell appears as Bell, Richard B. and Bell, Robert P.
+                # and so needs the lookbehind assertion.
+                return [x.strip() for x in re.split('(?<!Bell), (?!\w\.\w?\.?)', pieces[1]) if x.strip()]
         else:
             return []
 
