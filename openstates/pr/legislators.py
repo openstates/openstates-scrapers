@@ -66,8 +66,8 @@ class PRLegislatorScraper(LegislatorScraper):
                     try:
                         with self.urlopen(picture_filename) as picture_data:  # Checking to see if the file is there
                             leg = Legislator(term, 'upper', district, name,
-                                             party=party, phone=phone,
-                                             email=email, url=url, 
+                                             party=party,
+                                             email=email, url=url,
                                              photo_url=picture_filename)
 
                     except scrapelib.HTTPError:         # If not, leave out the photo_url
@@ -75,6 +75,8 @@ class PRLegislatorScraper(LegislatorScraper):
                                          party=party, phone=phone, email=email,
                                          url=url)
 
+                    leg.add_office('capitol', 'Oficina del Capitolio',
+                                   phone=phone)
                     leg.add_source(url)
                     self.save_legislator(leg)
 
@@ -128,6 +130,7 @@ class PRLegislatorScraper(LegislatorScraper):
                     # cleanup is same for both tables
                     name = re.sub('\s+', ' ',
                                   name.text_content().strip().replace(u'\xa0', ' '))
+                    email = email.xpath('.//a/@href')[0].strip('mailto:')
 
                     numbers = {}
                     for b in phone.xpath('b'):
@@ -137,7 +140,7 @@ class PRLegislatorScraper(LegislatorScraper):
                     # things like 'Basement', and '2nd Floor'
 
                     leg = Legislator(term, 'lower', district, name,
-                                     party='unknown')
+                                     party='unknown', email=email)
                     leg.add_office('capitol', 'Oficina del Capitolio',
                                    phone=numbers.get('Tel:') or None,
                                    # could also add TTY
