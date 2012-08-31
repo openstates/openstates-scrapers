@@ -6,6 +6,8 @@ import re
 import unicodedata
 import scrapelib
 
+PHONE_RE = re.compile('\(?\d{3}\)?\s?-?\d{3}-?\d{4}')
+
 class PRLegislatorScraper(LegislatorScraper):
     state = 'pr'
 
@@ -85,31 +87,67 @@ class PRLegislatorScraper(LegislatorScraper):
         with self.urlopen(url) as html:
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
-            tables = doc.xpath('//table[@class="img_news"]')
+            tables = doc.xpath('//table[@width="90%"]')
 
             # first table is district-based, second is at-large
             for table, at_large in zip(tables, [False, True]):
-                # skip last td in each table
-                for td in table.xpath('.//td')[:-1]:
-                    photo_url = td.xpath('.//img/@src')[0]
-                    
-                    # for these we can split names and get district
-                    if not at_large:
-                        name, district = td.xpath('.//b/text()')
-                        first_name, last_name = name.split(u'\xa0 ')
-                        name = '%s %s' % (first_name, last_name)
-                        district = district.rsplit(' ', 1)[-1]
-                    else:
-                        name = td.xpath('.//b/text()')[0]
-                        district = 'At-Large'   #for at large districts
-                        first_name = last_name = ''
 
-                    party = party_map[td.xpath('.//font')[1].text_content()]
+                for tr in table.xpath('.//tr')[1:]:
+                    tds = tr.getchildren()
+                    if not at_large:
+                        # tds: name, district, addr, phone, office, email
+                        name = tds[0]
+                        district = tds[1].text_content().lstrip('0')
+                        capitol_office = tds[2]
+                        phone = tds[3]
+                        email = tds[5]
+                        # district offices
+                        district_office = tds[4]
+                        district_addr = []
+                        district_phone  = None
+                        district_fax = None
+                        pieces = district_office.xpath('.//text()')
+                        for piece in pieces:
+                            if piece.startswith('Tel'):
+                                district_phone = PHONE_RE.findall(piece)[0]
+                            elif piece.startswith('Fax'):
+                                district_fax = PHONE_RE.findall(piece)[0]
+                            else:
+                                district_addr.append(piece)
+                        if district_addr:
+                            district_addr = ' '.join(district_addr)
+                    else:
+                        # name, addr, phone, email
+                        name = tds[0]
+                        district = 'At-Large'
+                        capitol_office = tds[1]
+                        phone = tds[2]
+                        email = tds[3]
+                        district_addr = None
+
+                    # cleanup is same for both tables
+                    name = re.sub('\s+', ' ',
+                                  name.text_content().strip().replace(u'\xa0', ' '))
+
+                    numbers = {}
+                    for b in phone.xpath('b'):
+                        numbers[b.text] = b.tail.strip()
+
+                    # capitol_office as provided is junk
+                    # things like 'Basement', and '2nd Floor'
 
                     leg = Legislator(term, 'lower', district, name,
-                                     first_name=first_name,
-                                     last_name=last_name,
-                                     party=party,
-                                     photo_url=photo_url)
+                                     party='unknown')
+                    leg.add_office('capitol', 'Oficina del Capitolio',
+                                   phone=numbers.get('Tel:') or None,
+                                   # could also add TTY
+                                   #tty=numbers.get('TTY:') or None,
+                                   fax=numbers.get('Fax:') or None)
+                    if district_addr:
+                        leg.add_office('district', 'Oficina de Distrito',
+                                       address=district_addr,
+                                       phone=district_phone,
+                                       fax=district_fax)
+
                     leg.add_source(url)
                     self.save_legislator(leg)
