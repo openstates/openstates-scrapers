@@ -6,6 +6,7 @@ from billy.scrape.votes import VoteScraper, Vote
 from billy.scrape.utils import convert_pdf
 
 BILL_RE = re.compile('^LEGISLATIVE (BILL|RESOLUTION) (\d+C?A?).')
+VETO_BILL_RE = re.compile('MOTION - Override Veto on (\w+)')
 DATE_RE = re.compile('(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER) (\d+), (\d{4})')
 QUESTION_RE = re.compile("(?:the question is, '|The question shall be, ')(.+)")
 QUESTION_MATCH_END = "' \""
@@ -100,6 +101,7 @@ class NEVoteScraper(VoteScraper):
 
             # check the text against our regexes
             bill_match = BILL_RE.match(line)
+            veto_match = VETO_BILL_RE.findall(line)
             question_match = QUESTION_RE.findall(line)
             if bill_match:
                 bill_type, bill_id = bill_match.groups()
@@ -110,6 +112,8 @@ class NEVoteScraper(VoteScraper):
             elif question_match:
                 question = question_match[0]
                 state = 'question_quote'
+            elif veto_match:
+                bill_id = veto_match[0]
 
             # line just finished a question
             if state == 'question_quote' and QUESTION_MATCH_END in question:
@@ -122,7 +126,5 @@ class NEVoteScraper(VoteScraper):
                             date=date, yes_count=0, no_count=0, other_count=0)
                 vote.add_source(url)
                 state = 'pre-yes'
-
-        # save final vote
-        if vote:
-            self.save_vote(vote)
+                # reset bill_id and question
+                bill_id = question = None
