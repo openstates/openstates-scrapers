@@ -47,7 +47,8 @@ class VABillScraper(BillScraper):
         # check for rate limit pages
         normal = super(VABillScraper, self).accept_response(response)
         return (normal and
-                'Sorry, your query could not be processed' not in response.text)
+                'Sorry, your query could not be processed' not in response.text
+                and 'the source database is temporarily unavailable' not in response.text)
 
     def get_page_bills(self, issue_name, href):
         with self.urlopen('http://lis.virginia.gov' + href,
