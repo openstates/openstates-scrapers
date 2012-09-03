@@ -63,7 +63,7 @@ class AZBillScraper(BillScraper):
             #fact sheets and summary
             rows = root.xpath(link_path2 % '/summary/')
             for row in rows:
-                tds = row.cssselect('td')
+                tds = row.xpath('td')
                 fact_sheet = tds[1].text_content().strip()
                 fact_sheet_url = tds[1].xpath('string(font/a/@href)') or \
                                  tds[2].xpath('string(font/a/@href)')
@@ -75,7 +75,7 @@ class AZBillScraper(BillScraper):
             # house or senate?
             rows = root.xpath(link_path % '/agendas')
             for row in rows:
-                tds = row.cssselect('td')
+                tds = row.xpath('td')
                 agenda_committee = tds[0].text_content().strip()
                 agenda_html = tds[7].xpath('string(a/@href)').strip()
                 if agenda_html == '':
@@ -86,7 +86,7 @@ class AZBillScraper(BillScraper):
             # skipping calendar number, modified, date
             rows = root.xpath(link_path % '/calendar/h')
             for row in rows:
-                tds = row.cssselect('td')
+                tds = row.xpath('td')
                 calendar_name = tds[0].text_content().strip()
                 calendar_html = tds[5].xpath('string(a/@href)')
                 bill.add_document(calendar_name, calendar_html,
@@ -95,7 +95,7 @@ class AZBillScraper(BillScraper):
             # skipping calendar number, modified, date
             rows = root.xpath(link_path % '/calendar/s')
             for row in rows:
-                tds = row.cssselect('td')
+                tds = row.xpath('td')
                 calendar_name = tds[0].text_content().strip()
                 calendar_html = tds[5].xpath('string(a/@href)')
                 bill.add_document(calendar_name, calendar_html,
@@ -103,7 +103,7 @@ class AZBillScraper(BillScraper):
             # amendments
             rows = root.xpath(path % 'AMENDMENT:')
             for row in rows:
-                tds = row.cssselect('td')
+                tds = row.xpath('td')
                 amendment_title = tds[1].text_content().strip()
                 amendment_link = tds[2].xpath('string(font/a/@href)')
                 bill.add_document(amendment_title, amendment_link,
@@ -113,7 +113,7 @@ class AZBillScraper(BillScraper):
             # http://azleg.granicus.com/MediaPlayer.php?view_id=13&clip_id=7684
             rows = root.xpath(link_path % '&clip_id')
             for row in rows:
-                tds = row.cssselect('td')
+                tds = row.xpath('td')
                 video_title = tds[1].text_content().strip()
                 video_link = tds[2].xpath('string(a/@href)')
                 video_date = tds[0].text_content().strip()
@@ -183,7 +183,7 @@ class AZBillScraper(BillScraper):
                     rows = table.xpath('tr')[1:]
                     for row in rows:
                         # First add the committee assigned action
-                        meta_tag = row.cssselect('meta')[0]
+                        meta_tag = row.xpath('meta')[0]
                         h_or_s = meta_tag.get('name')[0] # @name is HCOMMITTEE OR SCOMMITTEE
                         committee = meta_tag.get('content') # @content is committee abbrv
                         #actor is house or senate referring the bill to committee
