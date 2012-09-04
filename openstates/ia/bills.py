@@ -158,6 +158,16 @@ class IABillScraper(BillScraper):
             action = tr.xpath("string(td[2])").strip()
             action = re.sub(r'\s+', ' ', action)
 
+            # Capture any amendment links.
+            version_urls = set(version['url'] for version in bill['versions'])
+            if 'amendment' in action.lower():
+                for anchor in tr.xpath('td[2]/a'):
+                    if '-' in anchor.text:
+                        url = anchor.attrib['href']
+                        if url not in version_urls:
+                            bill.add_version(anchor.text, url, mimetype='text/html')
+                            version_urls.add(url)
+
             if 'S.J.' in action or 'SCS' in action:
                 actor = 'upper'
             elif 'H.J.' in action or 'HCS' in action:
