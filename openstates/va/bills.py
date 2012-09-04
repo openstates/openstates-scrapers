@@ -47,7 +47,8 @@ class VABillScraper(BillScraper):
         # check for rate limit pages
         normal = super(VABillScraper, self).accept_response(response)
         return (normal and
-                'Sorry, your query could not be processed' not in response.text)
+                'Sorry, your query could not be processed' not in response.text
+                and 'the source database is temporarily unavailable' not in response.text)
 
     def get_page_bills(self, issue_name, href):
         with self.urlopen('http://lis.virginia.gov' + href,
@@ -164,7 +165,9 @@ class VABillScraper(BillScraper):
                     if vote_url:
                         self.parse_vote(vote, vote_url[0])
                         vote.add_source(BASE_URL + vote_url[0])
-                    vote.validate()
+                    # set other count, it isn't provided
+                    vote['other_count'] = len(vote['other_votes'])
+                    #vote.validate()
                     bill.add_vote(vote)
 
 
@@ -217,7 +220,9 @@ class VABillScraper(BillScraper):
                 return []
             else:
                 # lookahead and don't split if comma precedes initials
-                return [x.strip() for x in re.split(', (?!\w\.\w?\.?)', pieces[1])]
+                # Also, Bell appears as Bell, Richard B. and Bell, Robert P.
+                # and so needs the lookbehind assertion.
+                return [x.strip() for x in re.split('(?<!Bell), (?!\w\.\w?\.?)', pieces[1]) if x.strip()]
         else:
             return []
 
