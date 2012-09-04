@@ -104,6 +104,7 @@ class IAVoteScraper(VoteScraper):
             motion = motion.replace(u'\u201d', '')
             motion = motion.replace(u' ,', ',')
             motion = motion.strip()
+            motion = re.sub(r'[SH].\d+', lambda m: ' %s ' % m.group(), motion)
             motion = re.sub(r'On the question\s*', '', motion, flags=re.I)
 
             for word, letter in (('Senate', 'S'),
@@ -112,6 +113,7 @@ class IAVoteScraper(VoteScraper):
                 bill_id = bill_id.replace(word, letter)
 
             bill_chamber = dict(h='lower', s='upper')[bill_id.lower()[0]]
+            self.current_id = bill_id
             votes = self.parse_votes(lines)
             totals = filter(lambda x: isinstance(x, int), votes.values())
             passed = (1.0 * votes['yes_count'] / sum(totals)) >= 0.5
@@ -135,6 +137,7 @@ class IAVoteScraper(VoteScraper):
             ('Yeas', 'yes'),
             ('Nays', 'no'),
             ('Absent', 'other'),
+            ('Present', 'skip'),
             ('Amendment', DONE),
             ('Resolution', DONE),
             ('Bill', DONE),
@@ -145,9 +148,13 @@ class IAVoteScraper(VoteScraper):
             ('The nays were', 'no'),
             ('Absent or not voting', 'other'),
             ('The bill', DONE),
-            ('The joint resolution', DONE)]
+            ('The committee', DONE),
+            ('The resolution', DONE),
+            ('The motion', DONE),
+            ('The joint resolution', DONE),
+            ('Under the', DONE)]
 
-        def is_boundary(text):
+        def is_boundary(text, patterns={}):
             for blurb, key in boundaries:
                 if text.strip().startswith(blurb):
                     return key
@@ -170,7 +177,8 @@ class IAVoteScraper(VoteScraper):
                     votecount = 0
             else:
                 votecount = int(m.group())
-            counts['%s_count' % key] = votecount
+            if key != 'skip':
+                counts['%s_count' % key] = votecount
 
             # Get the voter names.
             while True:
@@ -187,26 +195,31 @@ class IAVoteScraper(VoteScraper):
         return counts
 
     def split_names(self, text):
+        junk = ['Presiding', 'Mr. Speaker', 'Spkr.', '.']
         text = text.strip()
-        if ' ' not in text:
-            return [text]
-        else:
-            names = []
-            chunks = text.split()[::-1]
-            name = [chunks.pop()]
-            while chunks:
-                chunk = chunks.pop()
-                if len(chunk) < 3:
-                    name.append(chunk)
-                elif name[-1] in ('Mr.', 'Van', 'De'):
-                    name.append(chunk)
-                else:
-                    names.append(' '.join(name))
-                    name = [chunk]
+        chunks = text.split()[::-1]
+        name = [chunks.pop()]
+        names = []
+        while chunks:
+            chunk = chunks.pop()
+            if len(chunk) < 3:
+                name.append(chunk)
+            elif name[-1] in ('Mr.', 'Van', 'De', 'Vander'):
+                name.append(chunk)
+            else:
+                name = ' '.join(name).strip(',')
+                if name and (name not in names) and (name not in junk):
+                    names.append(name)
 
-            name = ' '.join(name)
-            if name and (name not in names):
-                names.append(name)
+                # Seed the next loop.
+                name = [chunk]
+
+        # Similar changes to the final name in the sequence.
+        name = ' '.join(name).strip(',')
+        if names and len(name) < 3:
+            names[-1] += ' %s' % name
+        elif name and (name not in names) and (name not in junk):
+            names.append(name)
         return names
 
 
@@ -233,4 +246,6 @@ def _get_chunks(el, buff=None, until=None):
 
 
 def gettext(el):
-    return ''.join(_get_chunks(el))
+    '''Join the chunks, then split and rejoin to normalize the whitespace.
+    '''
+    return ' '.join(''.join(_get_chunks(el)).split())
