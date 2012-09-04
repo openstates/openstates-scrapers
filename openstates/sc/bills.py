@@ -79,7 +79,7 @@ class SCBillScraper(BillScraper):
         data = self.urlopen(subject_search_url, 'POST',
                             (('GETINDEX','Y'), ('SESSION', session),
                              ('INDEXCODE','0'), ('INDEXTEXT', ''),
-                             ('AORB', 'B'), 'PAGETYPE', '0'))
+                             ('AORB', 'B'), ('PAGETYPE', '0')))
         doc = lxml.html.fromstring(data)
         # skip first two subjects, filler options
         for option in doc.xpath('//option')[2:]:
