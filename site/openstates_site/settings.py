@@ -136,7 +136,12 @@ ACTIVE_STATES = [u'co', u'de', u'ny', u'in', u'tn',
 ACTIVE_STATES=sorted(['ca', 'il', 'la', 'md', 'mn',
                       'nh', 'nj', 'nc', 'tx', 'dc',
                       'wi', 'oh', 'id', 'hi', 'az',
-                      'ut', 'de', 'fl', 'ak', 'mt'])
+                      'ut', 'de', 'fl', 'ak', 'mt',
+                      'ar', 'co', 'in', 'ia', 'ky',
+                      'ma', 'ms', 'ne', 'nm', 'or',
+                      'pa', 'ri', 'tn', 'vt', 'va',
+                      'pr'
+                     ])
 
 ENABLE_ELASTICSEARCH = True
 
