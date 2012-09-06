@@ -36,13 +36,17 @@ _categorizers = (
     ('Signed by Governor, but item veto', 'governor:vetoed:line-item'),
     ('Signed by Governor', 'governor:signed'),
     ('Withdrawn', 'bill:withdrawn'),
+    ('tabled', 'amendment:tabled'),
+    ('widthrawn', 'amendment:withdrawn'),
 )
+
 
 def categorize_action(action):
     for prefix, types in _categorizers:
         if prefix in action:
             return types
     return 'other'
+
 
 def actions_from_table(bill, actions_table):
     action_rows = actions_table.xpath("tr")
@@ -59,6 +63,13 @@ def actions_from_table(bill, actions_table):
         action_date = datetime.datetime.strptime(tds[1].text.strip(),
                                                  '%m/%d/%Y')
         action_type = categorize_action(action_taken)
+
+        # Sometimes passage actions appear in the wrong chamber's column.
+        if action_taken.startswith('Passed H.'):
+            chamber = 'lower'
+        if action_taken.startswith('Passed S.'):
+            chamber = 'upper'
+
         bill.add_action(chamber, action_taken, action_date, action_type)
 
 
@@ -165,7 +176,7 @@ class TNBillScraper(BillScraper):
             if secondary_bill_id:
                 # secondary sponsor
                 secondary_sponsor = page.xpath("//span[@id='lblCoBillSponsor']")[0].text_content().split("by")[-1]
-                secondary_sponsor = secondary_sponsor.replace('*','').replace(')', '').strip()
+                secondary_sponsor = secondary_sponsor.replace('*', '').replace(')', '').strip()
                 bill.add_sponsor('primary', secondary_sponsor)
 
                 # secondary actions
