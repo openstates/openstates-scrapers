@@ -22,9 +22,9 @@ class WILegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(body)
         page.make_links_absolute(url)
 
-        for row in page.cssselect("#ctl00_C_dgLegData tr"):
-            if len(row.cssselect("td a")) > 0:
-                rep_url = list(row)[0].cssselect("a[href]")[0].get("href")
+        for row in page.xpath("//table[@id='ctl00_C_dgLegData']/tr"):
+            if len(row.xpath(".//td/a")) > 0:
+                rep_url = row.xpath(".//a/@href")[0]
                 rep_doc = lxml.html.fromstring(self.urlopen(rep_url))
 
                 rep_doc_large_name = rep_doc.xpath("//h1")[0].text_content()
@@ -85,7 +85,7 @@ class WILegislatorScraper(LegislatorScraper):
             if img:
                 legislator['photo_url'] = img[0]
 
-            cmts = doc.cssselect("#ctl00_C_lblCommInfo a")
+            cmts = doc.xpath("//span[@id='ctl00_C_lblCommInfo']//a")
             for c in cmts:
                 c = c.text_content().split('(')[0].strip()
                 # skip subcommittees -- they are broken
