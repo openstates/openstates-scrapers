@@ -2,6 +2,10 @@ import re
 from collections import defaultdict
 
 from billy.models import db
+import logbook
+
+
+logger = logbook.Logger('bathawk.actions')
 
 
 class Actions(object):
@@ -46,12 +50,14 @@ class Actions(object):
         '''
         meta = db.metadata.find_one(self.abbr)
         session = meta['terms'][-1]['sessions'][-1]
+        msg = 'Retrieving actions for %r session %r'
+        logger.info(msg % (self.abbr, session))
         action_ids = defaultdict(list)
         for bill in db.bills.find({'state': self.abbr, 'session': session},
                                   fields=['actions']):
             for action in bill['actions']:
                 if only_other and action['type'] != ['other']:
-                    yield
+                    continue
                 action_text = action['action']
                 action_ids[action_text].append(bill['_id'])
                 yield action_text
