@@ -1,0 +1,17 @@
+S\.\s+adopted\s+am\.
+Am\. withdrawn
+H\. adopted am\.
+Am\..+?tabled
+
+
+Placed on cal\.
+Action Def\.
+Placed on Regular Calendar
+Placed on Senate Regular Calendar
+Placed on.+?cal\.
+
+Pub\. Ch\. \d+
+Comp\. became Pub. Ch. \d+
+Comp\. became Pr\. Ch\. \d+
+
+Passed H\.Action Def\. in (?P<committee>.+?Committee)
