@@ -30,7 +30,7 @@ class ILLegislatorScraper(LegislatorScraper):
             # inactive legislator, skip them for now
             if name.endswith('*'):
                 name = name.strip('*')
-                #continue
+                continue
 
             leg_html = self.urlopen(leg_url)
             leg_doc = lxml.html.fromstring(leg_html)
