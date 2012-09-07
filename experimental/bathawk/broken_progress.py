@@ -28,7 +28,6 @@ def main(abbr, session=None):
             yield session, len(list(_bills))
 
 
-
 if __name__ == '__main__':
     import sys
 
@@ -68,7 +67,6 @@ if __name__ == '__main__':
 
         raw_input("Press enter to view the offending bills: ")
 
-        import pdb;pdb.set_trace()
         for bill in bills:
             url = 'http://localhost:8000/{state}/bills/{session}/{bill_id}/'.format(**bill)
             print bill['bill_id'], url
