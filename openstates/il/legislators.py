@@ -29,7 +29,8 @@ class ILLegislatorScraper(LegislatorScraper):
 
             # inactive legislator, skip them for now
             if name.endswith('*'):
-                continue
+                name = name.strip('*')
+                #continue
 
             leg_html = self.urlopen(leg_url)
             leg_doc = lxml.html.fromstring(leg_html)
@@ -69,10 +70,11 @@ class ILLegislatorScraper(LegislatorScraper):
                                phone=phone, fax=fax)
 
             # extract both offices from tables
-            table = leg_doc.xpath('//table[contains(string(), "Springfield Office")]')[3]
-            _table_to_office(table, 'capitol',
-                             'Springfield Office')
-            table = leg_doc.xpath('//table[contains(string(), "District Office")]')[3]
-            _table_to_office(table, 'district', 'District Office')
+            table = leg_doc.xpath('//table[contains(string(), "Springfield Office")]')
+            if table:
+                _table_to_office(table[3], 'capitol', 'Springfield Office')
+            table = leg_doc.xpath('//table[contains(string(), "District Office")]')
+            if table:
+                _table_to_office(table[3], 'district', 'District Office')
 
             self.save_legislator(leg)
