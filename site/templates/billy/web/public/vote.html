@@ -58,12 +58,14 @@
                 </ul>
                 {% else %}
                     {% if vote.is_probably_a_voice_vote %}
-                    <p>{% trans '<strong>No vote counts were available for this motion.</strong> This vote appears to be a
+                    <p>{% blocktrans %} <strong>No vote counts were available for this motion.</strong> This vote appears to be a
                         <a href="http://en.wikipedia.org/wiki/Voice_vote">voice vote</a>, a type of vote for
-                        which many states don't record vote counts.</p>' %}
+                        which many states don't record vote counts.</p>'
+                        {% endblocktrans %}
                     {% else %}
-                        {% trans '<p><strong>No vote counts were available for this motion.</strong> This can happen for a couple of reasons. Some legislatures don't record vote counts in the event of a "voice vote," which may
-                        be the case here. This can also happen if a state provides insufficient data on its votes.</p>' %}
+                    <p>{% blocktrans %}
+                    <strong>No vote counts were available for this motion.</strong> This can happen for a couple of reasons. Some legislatures don't record vote counts in the event of a "voice vote," which may
+                    be the case here. This can also happen if a state provides insufficient data on its votes.{% endblocktrans %}</p>
                     {% endif %}
                     {% if vote.sources %}{% squish_whitespace %}
                         {% trans 'You may be able to find out more by visiting the official source' %} (
