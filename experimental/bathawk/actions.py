@@ -15,20 +15,23 @@ class Actions(object):
       * actions_list
     '''
 
-    def __init__(self, abbr, patterns_module):
+    def __init__(self, abbr, patterns_module=None):
         self.abbr = abbr
         self.patterns_module = patterns_module
         self._build()
 
     def _build(self):
 
-        # Compile the patterns.
-        patterns = self.patterns_module.patterns
-        sub_patterns = self.patterns_module.sub_patterns
+        if self.patterns_module:
+            # Compile the patterns.
+            patterns = self.patterns_module.patterns
+            sub_patterns = self.patterns_module.sub_patterns
 
-        # with open('%s.rgx.txt' % self.abbr) as f:
-        #     patterns += filter(None, f.read().splitlines())
-        patterns = [re.compile(p.format(**sub_patterns)) for p in patterns]
+            # with open('%s.rgx.txt' % self.abbr) as f:
+            #     patterns += filter(None, f.read().splitlines())
+            patterns = [re.compile(p.format(**sub_patterns)) for p in patterns]
+        else:
+            patterns = []
         self.patterns = patterns
 
         # Get lists of un/matched actions.
