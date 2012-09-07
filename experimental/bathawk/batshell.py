@@ -149,11 +149,10 @@ class ShellCommands(object):
                 aliases = yellow(', '.join(cmd.aliases))
                 return str('%s (%s):' % (command_name, aliases))
             commands = {cmd: fmt(cmd) for cmd in command_map.values()}
-            just = max(map(len, commands.values()))
             for cmd in commands:
-                line = ''.join([commands[cmd].ljust(just),
-                                cmd.__doc__])
-                puts(line)
+                puts(commands[cmd])
+                with indent(4):
+                    puts(cmd.__doc__)
 
     @command('a')
     def show_actions(self, line):
