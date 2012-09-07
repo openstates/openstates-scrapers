@@ -1,54 +1,160 @@
-from billy.scrape import NoDataForPeriod
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
 import datetime
 import lxml.html
 import re
+from collections import namedtuple
 
-_categorizers = (
-    ('Amendment adopted', 'amendment:passed'),
-    ('Amendment failed', 'amendment:failed'),
-    ('Amendment proposed', 'amendment:introduced'),
-    ('adopted am.', 'amendment:passed'),
-    ('Am. withdrawn', 'amendment:withdrawn'),
-    ('Divided committee report', 'committee:passed'),
-    ('Filed for intro.', ['bill:introduced', 'bill:reading:1']),
-    ('Reported back amended, do not pass', 'committee:passed:unfavorable'),
-    ('Reported back amended, do pass', 'committee:passed:favorable'),
-    ('Rec. For Pass.', 'committee:passed:favorable'),
-    ('Rec. For pass.', 'committee:passed:favorable'),
-    ('Reported back amended, without recommendation', 'committee:passed'),
-    ('Reported back, do not pass', 'committee:passed:unfavorable'),
-    ('w/ recommend', 'committee:passed:favorable'),
-    ('Ref. to', 'committee:referred'),
-    ('ref. to', 'committee:referred'),
-    ('Assigned to', 'committee:referred'),
-    ('Received from House', 'bill:introduced'),
-    ('Received from Senate', 'bill:introduced'),
-    ('Adopted, ', ['bill:passed']),
-    ('Passed H., ', ['bill:passed']),
-    ('Passed S., ', ['bill:passed']),
-    ('Second reading, adopted', ['bill:passed', 'bill:reading:2']),
-    ('Second reading, failed', ['bill:failed', 'bill:reading:2']),
-    ('Second reading, passed', ['bill:passed', 'bill:reading:2']),
-    ('Transmitted to Gov. for action.', 'governor:received'),
-    ('Transmitted to Governor for his action.', 'governor:received'),
-    ('Signed by Governor, but item veto', 'governor:vetoed:line-item'),
-    ('Signed by Governor', 'governor:signed'),
-    ('Withdrawn', 'bill:withdrawn'),
-    ('tabled', 'amendment:tabled'),
-    ('widthrawn', 'amendment:withdrawn'),
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+
+
+class Rule(namedtuple('Rule', 'regex types stop attrs')):
+    '''If ``regex`` matches the action text, the resulting action's
+    types should include ``types``.
+
+    If stop is true, no other rules should be tested after this one;
+    in other words, this rule conclusively determines the action's
+    types and attrs.
+
+    The resulting action should contain ``attrs``, which basically
+    enables overwriting certain attributes, like the chamber if
+    the action was listed in the wrong column.
+    '''
+    def __new__(_cls, regex, types=None, stop=True, **kwargs):
+        'Create new instance of Rule(regex, types, attrs, stop)'
+
+        # Types can be a string or a sequence.
+        if isinstance(types, basestring):
+            types = set([types])
+        types = set(types or [])
+
+        # If no types are associated, assume that the categorizer
+        # should continue looking at other rules.
+        if not types:
+            stop = False
+        return tuple.__new__(_cls, (regex, types, stop, kwargs))
+
+
+# These are regex patterns that map to action categories.
+_categorizer_rules = (
+
+    # Some actions are listed in the wrong chamber column.
+    # Fix the chamber before moving on to the other rules.
+    Rule(r'^H\.\s', stop=False, actor='lower'),
+    Rule(r'^S\.\s', stop=False, actor='upper'),
+    Rule(r'Signed by S\. Speaker', actor='upper'),
+    Rule(r'Signed by H\. Speaker', actor='lower'),
+
+    # Extract the vote counts to help disambiguate chambers later.
+    Rule(r'Ayes\s*(?P<yes_votes>\d+),\s*Nays\s*(?P<no_votes>\d+)', stop=False),
+
+    # Committees
+    Rule(r'(?i)ref\. to (?P<committee>.+?Comm\.)', 'committee:referred'),
+    Rule(r'^Failed In S\.(?P<committee>.+?Comm\.)', 'committee:failed'),
+    Rule(r'^Failed In s/c (?P<committee>.+)', 'committee:failed'),
+    Rule(r'Rcvd\. from H., ref\. to S\. (?P<committee>.+)',
+        'committee:referred', actor='upper'),
+    Rule(r'Placed on cal\. (?P<committee>.+?) for', stop=False),
+    Rule(r'Taken off notice for cal in s/c (?P<committee>.+)'),
+    Rule(r'to be heard in (?P<committee>.+?Comm\.)'),
+    Rule(r'Action Def. in S. (?P<committee>.+?Comm.)',
+         actor='upper'),
+    Rule(r'(?i)Placed on S. (?P<committee>.+?Comm\.) cal. for',
+         actor='upper'),
+    Rule(r'(?i)Assigned to (?P<committee>.+?comm\.)'),
+    Rule(r'(?i)Placed on S. (?P<committee>.+?Comm.) cal.',
+         actor='upper'),
+    Rule(r'(?i)Taken off Notice For cal\. in s/c.+?\sof\s(?P<committee>.+?)'),
+    Rule(r'(?i)Taken off Notice For cal\. in s/c.+?\sof\s(?P<committee>.+?)'),
+    Rule(r'(?i)Taken off Notice For cal\. in[: ]+(?!s/c)(?P<committee>.+)'),
+    Rule(r'(?i)Re-referred To:\s+(?P<committee>.+)', 'committee:referred'),
+    Rule(r'Recalled from S. (?P<committee>.+?Comm.)'),
+
+    # Amendments
+    Rule(r'^Am\..+?tabled', 'amendment:tabled'),
+    Rule('^Am\. withdrawn\.\(Amendment \d+ \- (?P<version>\S+)',
+         'amendment:withdrawn'),
+    Rule(r'^Am\. reconsidered(, withdrawn)?\.\(Amendment \d \- (?P<version>.+?\))',
+        'amendment:withdrawn'),
+    Rule(r'adopted am\.\(Amendment \d+ of \d+ - (?P<version>\S+)\)',
+        'amendment:passed'),
+    Rule(r'refused to concur.+?in.+?am', 'amendment:failed'),
+
+    # Bill passage
+    Rule(r'^Passed H\.', 'bill:passed', actor='lower'),
+    Rule(r'^Passed S\.', 'bill:passed', actor='upper'),
+    Rule(r'^R/S Adopted', 'bill:passed'),
+    Rule(r'R/S Intro., adopted', 'bill:passed'),
+    Rule(r'R/S Concurred', 'bill:passed'),
+
+    # Veto
+    Rule(r'(?i)veto', 'governor:vetoed'),
+
+    # The existing rules for TN categorization:
+    Rule('Amendment adopted', 'amendment:passed'),
+    Rule('Amendment failed', 'amendment:failed'),
+    Rule('Amendment proposed', 'amendment:introduced'),
+    Rule('adopted am.', 'amendment:passed'),
+    Rule('Am. withdrawn', 'amendment:withdrawn'),
+    Rule('Divided committee report', 'committee:passed'),
+    Rule('Filed for intro.', ['bill:introduced', 'bill:reading:1']),
+    Rule('Reported back amended, do not pass', 'committee:passed:unfavorable'),
+    Rule('Reported back amended, do pass', 'committee:passed:favorable'),
+    Rule('Rec. For Pass.', 'committee:passed:favorable'),
+    Rule('Rec. For pass.', 'committee:passed:favorable'),
+    Rule('Reported back amended, without recommendation', 'committee:passed'),
+    Rule('Reported back, do not pass', 'committee:passed:unfavorable'),
+    Rule('w/ recommend', 'committee:passed:favorable'),
+    Rule('Ref. to', 'committee:referred'),
+    Rule('ref. to', 'committee:referred'),
+    Rule('Assigned to', 'committee:referred'),
+    Rule('Received from House', 'bill:introduced'),
+    Rule('Received from Senate', 'bill:introduced'),
+    Rule('Adopted, ', ['bill:passed']),
+    Rule('Concurred, ', ['bill:passed']),
+    Rule('Passed H., ', ['bill:passed']),
+    Rule('Passed S., ', ['bill:passed']),
+    Rule('Second reading, adopted', ['bill:passed', 'bill:reading:2']),
+    Rule('Second reading, failed', ['bill:failed', 'bill:reading:2']),
+    Rule('Second reading, passed', ['bill:passed', 'bill:reading:2']),
+    Rule('Transmitted to Gov. for action.', 'governor:received'),
+    Rule('Transmitted to Governor for his action.', 'governor:received'),
+    Rule('Signed by Governor, but item veto', 'governor:vetoed:line-item'),
+    Rule('Signed by Governor', 'governor:signed'),
+    Rule('Withdrawn', 'bill:withdrawn'),
+    Rule('tabled', 'amendment:tabled'),
+    Rule('widthrawn', 'amendment:withdrawn'),
+    Rule(r'Intro', 'bill:introduced'),
 )
 
 
 def categorize_action(action):
-    for prefix, types in _categorizers:
-        if prefix in action:
-            return types
-    return 'other'
+    types = set()
+    attrs = {}
+
+    for rule in _categorizer_rules:
+
+        # Try to match the regex.
+        m = re.search(rule.regex, action)
+        if m or (rule.regex in action):
+            # If so, apply its associated types to this action.
+            types |= rule.types
+
+            # Also add its specified attrs.
+            attrs.update(m.groupdict())
+            attrs.update(rule.attrs)
+
+            # Break if the rule says so, otherwise continue testing against
+            # other rules.
+            if rule.stop is True:
+                break
+
+    # Returns types, attrs
+    return list(types), attrs
 
 
 def actions_from_table(bill, actions_table):
+    '''
+    '''
     action_rows = actions_table.xpath("tr")
 
     # first row will say "Actions Taken on S|H(B|R|CR)..."
@@ -60,17 +166,25 @@ def actions_from_table(bill, actions_table):
     for ar in action_rows[1:]:
         tds = ar.xpath('td')
         action_taken = tds[0].text
-        action_date = datetime.datetime.strptime(tds[1].text.strip(),
-                                                 '%m/%d/%Y')
-        action_type = categorize_action(action_taken)
+        strptime = datetime.datetime.strptime
+        action_date = strptime(tds[1].text.strip(), '%m/%d/%Y')
+        action_types, attrs = categorize_action(action_taken)
 
-        # Sometimes passage actions appear in the wrong chamber's column.
-        if action_taken.startswith('Passed H.'):
-            chamber = 'lower'
-        if action_taken.startswith('Passed S.'):
-            chamber = 'upper'
 
-        bill.add_action(chamber, action_taken, action_date, action_type)
+        # Overwrite any presumtive fields that are inaccurate, usually chamber.
+        action = dict(action=action_taken, date=action_date,
+                      type=action_types, actor=chamber)
+        action.update(**attrs)
+
+        # Finally, if a vote tally is given, switch the chamber.
+        if set(['yes_votes', 'no_votes']) & set(attrs):
+            total_votes = int(attrs['yes_votes']) + int(attrs['no_votes'])
+            if total_votes > 35:
+                action['actor'] = 'lower'
+            if total_votes <= 35:
+                action['actor'] = 'upper'
+
+        bill.add_action(**action)
 
 
 class TNBillScraper(BillScraper):
