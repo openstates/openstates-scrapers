@@ -13,7 +13,7 @@ metadata = dict(
     upper_chamber_term=4,
     terms=[
         {'name': '2011-2012',
-         'sessions': ['2011A', '2012A'],
+         'sessions': ['2011A', '2012A', '2012B'],
          'start_year': 2011, 'end_year': 2012},
         ],
     session_details={
@@ -27,6 +27,11 @@ metadata = dict(
             'start_date'   : datetime.date(2012,1,11),
             'type'         : 'primary',
              'display_name': '2012 Regular Session',
+         },
+        '2012B': {
+            'start_date'   : datetime.date(2012,5,14),
+            'type'         : 'special',
+             'display_name': '2012 First Extraordinary Session',
          },
     },
     feature_flags=['influenceexplorer'],

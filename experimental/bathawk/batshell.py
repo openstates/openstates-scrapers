@@ -108,7 +108,9 @@ class ShellCommands(object):
         self.printed_matched = matched
         for i, action_groupdict in enumerate(matched):
             action, groupdict = action_groupdict
-            vals = [str(cyan(i)).ljust(5), action.ljust(padding),
+            vals = [str(cyan(i)).ljust(5),
+                    '[%s]' % magenta(self.actions.action_ids[action][-1]),
+                    action.ljust(padding),
                     repr(groupdict)]
             puts(' '.join(vals))
 
@@ -147,7 +149,7 @@ class ShellCommands(object):
             def fmt(cmd):
                 command_name = green(cmd.__name__)
                 aliases = yellow(', '.join(cmd.aliases))
-                return str('%s (%s):' % (command_name, aliases))
+                return str('(%s) %s:' % (aliases, command_name))
             commands = {cmd: fmt(cmd) for cmd in command_map.values()}
             for cmd in commands:
                 puts(commands[cmd])
@@ -229,7 +231,7 @@ class ShellCommands(object):
         '''
         unmatched_len = len(self.actions.unmatched)
         unmatched = colored.red('%d' % unmatched_len)
-        total_len = len(self.actions.matched) + unmatched_len
+        total_len = len(self.actions.list)
         total = colored.cyan('%d' % total_len)
         message = 'There are %s unmatched actions out of %s total actions (%s).'
         percentage = 1.0 * unmatched_len / total_len
@@ -250,6 +252,19 @@ class ShellCommands(object):
         colored_url = cyan(url)
         puts('View this bill: ' + colored_url)
         webbrowser.open(url)
+
+    @command('j')
+    def bill_json(self, line):
+        '''Pretty print the bill's actions json.
+        '''
+        index = int(line)
+        action, groupdict = self.printed_matched[index]
+        _id = self.actions.action_ids[action][-1]
+        bill = db.bills.find_one({'_all_ids': _id})
+        url = 'http:localhost:8000/{state}/bills/{session}/{bill_id}/'.format(**bill)
+        colored_url = cyan(url)
+        puts('View this bill: ' + colored_url)
+        pprint.pprint(bill['actions'])
 
 
 class Shell(InteractiveConsole):
