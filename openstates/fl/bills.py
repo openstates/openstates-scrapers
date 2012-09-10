@@ -42,6 +42,12 @@ class FLBillScraper(BillScraper):
                 except (KeyError, IndexError):
                     break
 
+    def accept_response(self, response):
+        normal = super(FLBillScraper, self).accept_response(response)
+        return (normal and
+                'The page you have requested has encountered an error.' not in response.text)
+
+
     def scrape_bill(self, chamber, session, bill_id, title, sponsor, url):
         with self.urlopen(url) as html:
             page = lxml.html.fromstring(html)
@@ -52,18 +58,24 @@ class FLBillScraper(BillScraper):
 
             bill.add_sponsor('primary', sponsor)
 
+            next_href = page.xpath("//a[@id='optionBillHistory']")[0]
+            next_href = next_href.attrib['href']
+            with self.urlopen(next_href) as html:
+                hist_page = lxml.html.fromstring(html)
+                hist_page.make_links_absolute(url)
+
             try:
-                hist_table = page.xpath(
-                    "//div[@id = 'tabBodyBillHistory']/table")[0]
+                hist_table = hist_page.xpath(
+                    "//div[@id = 'tabBodyBillHistory']//table")[0]
             except IndexError:
                 self.warning('no tabBodyBillHistory in %s, attempting to '
                              'refetch once' % url)
                 html = self.urlopen(url)
-                page = lxml.html.fromstring(html)
-                page.make_links_absolute(url)
+                hist_page = lxml.html.fromstring(next_href)
+                hist_page.make_links_absolute(next_href)
 
-                hist_table = page.xpath(
-                    "//div[@id = 'tabBodyBillHistory']/table")[0]
+                hist_table = hist_page.xpath(
+                    "//div[@id = 'tabBodyBillHistory']//table")[0]
 
             # now try and get second h1
             bill_type_h1 = page.xpath('//h1/text()')[1]
@@ -149,9 +161,19 @@ class FLBillScraper(BillScraper):
             except IndexError:
                 self.log("No analysis table for %s" % bill_id)
 
-            try:
-                vote_table = page.xpath(
-                    "//div[@id = 'tabBodyVoteHistory']/table")[1]
+            next_href = page.xpath("//a[@id='optionVoteHistory']")[0]
+
+            next_href = next_href.attrib['href']
+            with self.urlopen(next_href) as html:
+                vote_page = lxml.html.fromstring(html)
+                vote_page.make_links_absolute(url)
+
+            vote_table = vote_page.xpath(
+                "//div[@id = 'tabBodyVoteHistory']//table")
+
+            if len(vote_table) > 2:
+                vote_table = vote_table[1]
+
                 for tr in vote_table.xpath("tbody/tr"):
                     vote_chamber = tr.xpath("string(td[3])").strip()
                     vote_date = tr.xpath("string(td[2])").strip()
@@ -166,7 +188,7 @@ class FLBillScraper(BillScraper):
                     vote_url = tr.xpath("td[4]/a")[0].attrib['href']
                     self.scrape_vote(bill, vote_chamber, vote_date,
                                      vote_url)
-            except IndexError:
+            else:
                 self.log("No vote table for %s" % bill_id)
 
             self.save_bill(bill)
