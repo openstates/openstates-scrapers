@@ -1,5 +1,4 @@
 import re
-import pdb
 from operator import methodcaller
 
 import lxml.html
@@ -21,7 +20,7 @@ def parse_address(s, split=re.compile(r'[;,]\s{,3}').split):
     while True:
         try:
             res.append((fields.pop(), vals.pop()))
-        except  IndexError:
+        except IndexError:
             break
     res.append(('street', ', '.join(vals)))
     return res
@@ -44,6 +43,8 @@ class CALegislatorScraper(LegislatorScraper):
         parse = self.parse_legislator
         for tr in rows:
             legislator = parse(tr, term, chamber)
+            if legislator['full_name'].startswith('Vacant'):
+                continue
             legislator.add_source(url)
             #pprint.pprint(legislator)
             self.save_legislator(legislator)
@@ -130,4 +131,5 @@ class CALegislatorScraper(LegislatorScraper):
         # Add a source for the url.
         leg = Legislator(term, chamber, **res)
         leg.update(**res)
+
         return leg
