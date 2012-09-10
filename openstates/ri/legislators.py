@@ -22,10 +22,11 @@ class RILegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, term):
         if chamber == 'upper':
-            url = ('http://www.rilin.state.ri.us/Documents/Senators.xls')
+            url = ('http://webserver.rilin.state.ri.us/Documents/Senators.xls')
             rep_type = 'Senator '
         elif chamber == 'lower':
-            url = ('http://www.rilin.state.ri.us/Documents/Representatives.xls')
+            url = (
+             'http://webserver.rilin.state.ri.us/Documents/Representatives.xls')
             rep_type = 'Representative '
 
         self.urlretrieve(url, 'ri_leg.xls')
