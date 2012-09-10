@@ -24,7 +24,8 @@ metadata = {
                 },
     },
     'feature_flags': ['influenceexplorer'],
-    '_ignored_scraped_sessions': ['2009 Regular Session',
+    '_ignored_scraped_sessions': ['2013 Regular Session',
+                                  '2009 Regular Session',
                                   '2007 Special     Session',
                                   '2007 Regular Session',
                                   '2005 Special     Session',
@@ -37,18 +38,20 @@ metadata = {
                                   '1999 Special     Session']
 }
 
+
 def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://leg.mt.gov/css/bills/Default.asp',
         "//td[@id='cont']/ul/li/a/text()")
+
 
 @oyster_text
 def extract_text(oyster_doc, data):
     return text_after_line_numbers(pdfdata_to_text(data))
 
 document_class = dict(
-    AWS_PREFIX = 'documents/mt/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
+    AWS_PREFIX='documents/mt/',
+    update_mins=None,
+    extract_text=extract_text,
+    onchanged=['oyster.ext.elasticsearch.ElasticSearchPush']
 )
