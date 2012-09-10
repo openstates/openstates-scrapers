@@ -29,6 +29,7 @@ $(document).ready(function() {
     fix_images();
 
     /* map js */
+    {% if legislator.active %}
     var map, has_located = false;
     map = new GMaps({
         div: '#map',
@@ -122,6 +123,7 @@ $(document).ready(function() {
             }
         });
     });
+    {% endif %}
 });
     </script>
 {% endblock %}
@@ -171,9 +173,11 @@ $(document).ready(function() {
                     </div>
                 </div>
                 <div class="fourCol colRt">
+                    {% if legislator.active %}
                     <div class="mapBorder">
                         <div id="map" class="withBorder"></div>
                     </div>
+                    {% endif %}
                 </div>
                 <div class="clear"></div>
                 <div class="eightCol clearfix">
