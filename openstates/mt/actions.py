@@ -186,7 +186,7 @@ _categories = {
     # An amendment has been 'laid on the table' (generally
     # preventing further consideration)
     "amendment:tabled": {
-        'rgxs': [],
+        'rgxs': ['Tabled in Committee'],
         },
 
     # The bill has been referred to a committee
@@ -217,7 +217,8 @@ _categories = {
     # The bill has failed to make it out of committee
     "committee:failed": {
         'rgxs': [r'Committee Executive Action--Resolution Not Adopted',
-                 r'Committee Executive Action--Bill Not Passed'],
+                 r'Committee Executive Action--Bill Not Passed',
+                 r'Died in Standing Committee'],
         },
 
     # All other actions will have a type of "other"
