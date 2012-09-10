@@ -7,7 +7,7 @@ import urllib
 import lxml
 import re
 
-RI_URL_BASE = "http://www.rilin.state.ri.us"
+RI_URL_BASE = "http://webserver.rilin.state.ri.us"
 
 class RIVoteScraper(VoteScraper):
     state = 'ri'

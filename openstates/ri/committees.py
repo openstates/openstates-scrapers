@@ -27,7 +27,7 @@ class RICommitteeScraper(CommitteeScraper):
             self.scrape_reps_comm()
 
     def scrape_comm_list(self, ctype):
-        url = 'http://www.rilin.state.ri.us/Sitemap.html'
+        url = 'http://webserver.rilin.state.ri.us/Sitemap.html'
         self.log("looking for "+ctype)
         with self.urlopen(url) as page:
             root = lxml.html.fromstring(page)
@@ -58,7 +58,7 @@ class RICommitteeScraper(CommitteeScraper):
                 comm.add_member(name, appt)
 
     def scrape_reps_comm(self):
-        base = 'http://www.rilin.state.ri.us'
+        base = 'http://webserver.rilin.state.ri.us'
 
         linklist = self.scrape_comm_list('ComMemR')
         if linklist is not None:
@@ -73,7 +73,7 @@ class RICommitteeScraper(CommitteeScraper):
                 self.save_committee(c)
 
     def scrape_senate_comm(self):
-        base = 'http://www.rilin.state.ri.us'
+        base = 'http://webserver.rilin.state.ri.us'
 
         linklist = self.scrape_comm_list('ComMemS')
         if linklist is not None:
@@ -92,7 +92,7 @@ class RICommitteeScraper(CommitteeScraper):
                 self.save_committee(c)
 
     def scrape_joint_comm(self):
-        base = 'http://www.rilin.state.ri.us'
+        base = 'http://webserver.rilin.state.ri.us'
 
         linklist = self.scrape_comm_list('ComMemJ')
         if linklist is not None:
