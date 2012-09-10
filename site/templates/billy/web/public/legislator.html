@@ -161,24 +161,12 @@ $(document).ready(function() {
                             {{legislator.full_name}} {% trans "<b>no longer serves</b> in the" %} {{metadata.legislature_name}}.
                             {% endif %}
                             </dd>
-                            <dt class="clear">{% trans "Available Sessions:" %}</dt>
-                            <dd>
-                            {% if legislator.active %}
-                                <ul>
-                                {% for session in legislator.sessions_served %}
-                                <li>{{session}}</li>
-                               {% endfor %}
-                                </ul>
-                            {% else %}
-                                {% for display_name in legislator.old_sessions_served %}
-                                <ul>
-                                    <li class="clear">
-                                        {{display_name}}
-                                    </li>
-                                </ul>
-                                {% endfor %}
-                            {% endif %}
-                            </dd>
+                            <dt class="clear">{% trans "Available Terms:" %}</dt>
+                            <dd> <ul>
+                            {% for term in legislator.all_terms %}
+                                <li class="clear">{{terms}}</li>
+                            {% endfor %}
+                            </ul> </dd>
                         </dl>
                     </div>
                 </div>
