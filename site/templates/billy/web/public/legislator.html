@@ -29,6 +29,7 @@ $(document).ready(function() {
     fix_images();
 
     /* map js */
+    {% if legislator.active %}
     var map, has_located = false;
     map = new GMaps({
         div: '#map',
@@ -122,6 +123,7 @@ $(document).ready(function() {
             }
         });
     });
+    {% endif %}
 });
     </script>
 {% endblock %}
@@ -161,31 +163,21 @@ $(document).ready(function() {
                             {{legislator.full_name}} {% trans "<b>no longer serves</b> in the" %} {{metadata.legislature_name}}.
                             {% endif %}
                             </dd>
-                            <dt class="clear">{% trans "Available Sessions:" %}</dt>
-                            <dd>
-                            {% if legislator.active %}
-                                <ul>
-                                {% for session in legislator.sessions_served %}
-                                <li>{{session}}</li>
-                               {% endfor %}
-                                </ul>
-                            {% else %}
-                                {% for display_name in legislator.old_sessions_served %}
-                                <ul>
-                                    <li class="clear">
-                                        {{display_name}}
-                                    </li>
-                                </ul>
-                                {% endfor %}
-                            {% endif %}
-                            </dd>
+                            <dt class="clear">{% trans "Available Terms:" %}</dt>
+                            <dd> <ul>
+                            {% for term in legislator.all_terms %}
+                                <li class="clear">{{term}}</li>
+                            {% endfor %}
+                            </ul> </dd>
                         </dl>
                     </div>
                 </div>
                 <div class="fourCol colRt">
+                    {% if legislator.active %}
                     <div class="mapBorder">
                         <div id="map" class="withBorder"></div>
                     </div>
+                    {% endif %}
                 </div>
                 <div class="clear"></div>
                 <div class="eightCol clearfix">

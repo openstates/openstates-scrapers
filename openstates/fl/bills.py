@@ -44,8 +44,14 @@ class FLBillScraper(BillScraper):
 
     def accept_response(self, response):
         normal = super(FLBillScraper, self).accept_response(response)
+        bill_check = True
+        if response.url.startswith("http://flsenate.gov/Session/Bill/20"):
+            bill_check = "tabBodyVoteHistory" in response.text
+
         return (normal and
-                'The page you have requested has encountered an error.' not in response.text)
+                bill_check and
+                'The page you have requested has encountered an error.'
+                not in response.text)
 
 
     def scrape_bill(self, chamber, session, bill_id, title, sponsor, url):
