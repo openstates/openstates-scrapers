@@ -1,6 +1,8 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
 {% load i18n %}
+{% load humanize %}
+{% load customtags %}
 {% load customtags %}
 
 
@@ -70,6 +72,32 @@ $(document).ready(function() {
                     {% endif %}
                 </tr>
             {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="fullWidth module">
+    <h3 class="moduleTitle">{% trans "Events" %}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{% trans "What" %}</th>
+                <th>{% trans "When" %}</th>
+                <th>{% trans "Who" %}</th>
+                <th>{% trans "Where" %}</th>
+                <th>{% trans "Why" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+{% for event in events %}
+            <tr>
+                <td>{{event.description}}</td>
+                <td>{{event.when|naturaltime}}</td>
+                <td>{% for participant in event.participants %}{{participant.participant}}, {% endfor %}</td>
+                <td>{{event.location}}</td>
+                <td>{% for bill in event.related_bills %}{{bill|underscore_field:"scraped_bill_id"}}, {% endfor %}</td>
+            </tr>
+{% endfor %}
         </tbody>
     </table>
 </div>
