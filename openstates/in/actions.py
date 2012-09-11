@@ -91,8 +91,6 @@ class BaseCategorizer(object):
         return_val = self.after_categorize(return_val)
         for func in self._after_funcs:
             return_val = func(*return_val)
-        if not return_val:
-            import pdb;pdb.set_trace()
         return return_val
 
     def before_categorize(self, text):
