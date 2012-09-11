@@ -1,5 +1,4 @@
 import re
-from functools import partial
 
 
 # ----------------------------------------------------------------------------
@@ -17,9 +16,9 @@ _categories = {
     "bill:passed": {
         'rgxs': [u'3rd Reading Passed',
                  u'^Resolution Adopted',
+                 u'3rd Reading Concurred',
                  u'3rd Reading Passed as Amended by Senate',
-                 u'3rd Reading Passed as Amended by House',],
-        'funcs': {},
+                 u'3rd Reading Passed as Amended by House']
         },
 
     # Bill has failed to pass a chamber
@@ -31,7 +30,6 @@ _categories = {
         'funcs': {},
         },
 
-    # ???
     # Bill has been withdrawn from consideration
     "bill:withdrawn": {
         'rgxs': [],
@@ -175,7 +173,7 @@ _categories = {
             u"3rd Reading Governor's Proposed Amendments Adopted",
             u"2nd Reading Governor's Proposed Amendments Adopted",
             u'2nd Reading House Amendments Concurred',
-            u'2nd Reading Senate Amendments Concurred',        
+            u'2nd Reading Senate Amendments Concurred',
             ],
         },
 
@@ -188,7 +186,7 @@ _categories = {
     # An amendment has been 'laid on the table' (generally
     # preventing further consideration)
     "amendment:tabled": {
-        'rgxs': [],
+        'rgxs': ['Tabled in Committee'],
         },
 
     # The bill has been referred to a committee
@@ -199,7 +197,7 @@ _categories = {
 
     # The bill has been passed out of a committee
     "committee:passed": {
-        'rgxs': [r'Committee Executive Action--Bill Passed', 
+        'rgxs': [r'Committee Executive Action--Bill Passed',
                  r'Committee Report--Bill Passed',
                  r'Committee Executive Action--Resolution Adopted',]
         },
@@ -219,7 +217,8 @@ _categories = {
     # The bill has failed to make it out of committee
     "committee:failed": {
         'rgxs': [r'Committee Executive Action--Resolution Not Adopted',
-                 r'Committee Executive Action--Bill Not Passed'],
+                 r'Committee Executive Action--Bill Not Passed',
+                 r'Died in Standing Committee'],
         },
 
     # All other actions will have a type of "other"

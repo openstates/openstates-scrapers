@@ -12,6 +12,8 @@ from billy.conf import settings
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from .models import CABill
+from .actions import CACategorizer
+
 
 SPONSOR_TYPES = {'LEAD_AUTHOR': 'primary',
                  'COAUTHOR': 'cosponsor',
@@ -229,6 +231,8 @@ def get_committee_name_regex():
 class CABillScraper(BillScraper):
     state = 'ca'
 
+    categorizer = CACategorizer()
+
     _tz = pytz.timezone('US/Pacific')
 
     def __init__(self, metadata, host='localhost', user=None, pw=None,
@@ -397,7 +401,6 @@ class CABillScraper(BillScraper):
                                        author.name,
                                        official_type=author.contribution)
 
-            introduced = False
             for action in bill.actions:
                 if not action.action:
                     # NULL action text seems to be an error on CA's part,
@@ -426,58 +429,14 @@ class CABillScraper(BillScraper):
                 act_str = action.action
                 act_str = re.sub(r'\s+', ' ', act_str)
 
-                if act_str.startswith('Introduced'):
-                    introduced = True
-                    type_.append('bill:introduced')
-
-                if 'Read first time.' in act_str:
-                    if not introduced:
-                        type_.append('bill:introduced')
-                        introduced = True
-                    type_.append('bill:reading:1')
-
-                if 'To Com' in act_str or 'referred to' in act_str.lower():
-                    type_.append('committee:referred')
-
-                if 'Read third time.  Passed' in act_str:
-                    type_.append('bill:passed')
-
-                if 'Read third time. Passed' in act_str:
-                    type_.append('bill:passed')
-
-                if 'Read third time, passed' in act_str:
-                    type_.append('bill:passed')
-
-                if re.search(r'Read third time.+?Passed and', act_str):
-                    type_.append('bill:passed')
-
-                if 'Approved by Governor' in act_str:
-                    type_.append('governor:signed')
-
-                if 'Approved by the Governor' in act_str:
-                    type_.append('governor:signed')
-
-                if 'Item veto' in act_str:
-                    type_.append('governor:vetoed:line-item')
-
-                if 'Vetoed by Governor' in act_str:
-                    type_.append('governor:vetoed')
-
-                if 'To Governor' in act_str:
-                    type_.append('governor:received')
-
-                if 'Read second time' in act_str:
-                    type_.append('bill:reading:2')
-
-                if not type_:
-                    type_ = ['other']
+                type_, attrs = self.categorizer.categorize(act_str)
 
                 # Add in the committee strings of the related committees, if any.
-                kwargs = {}
+                kwargs = attrs
                 matched_abbrs = committee_abbr_regex.findall(action.action)
                 if 'Com. on' in action.action and not matched_abbrs:
                     msg = 'Failed to extract committee abbr from %r.'
-                    raise ValueError(action.action)
+                    self.logger.warning(msg % action.action)
                 if matched_abbrs:
 
                     committees = []
@@ -525,7 +484,7 @@ class CABillScraper(BillScraper):
                     kwargs['legislators'] = legislators
 
                 fsbill.add_action(actor, act_str, action.action_date.date(),
-                                  type_=type_, **kwargs)
+                                  type=type_, **kwargs)
 
             for vote in bill.votes:
                 if vote.vote_result == '(PASS)':
@@ -544,7 +503,10 @@ class CABillScraper(BillScraper):
                 else:
                     raise ScrapeError("Bad location: %s" % full_loc)
 
-                motion = vote.motion.motion_text or ''
+                if vote.motion:
+                    motion = vote.motion.motion_text or ''
+                else:
+                    motion = ''
 
                 if "Third Reading" in motion or "3rd Reading" in motion:
                     vtype = 'passage'

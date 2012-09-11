@@ -44,8 +44,20 @@ class FLBillScraper(BillScraper):
 
     def accept_response(self, response):
         normal = super(FLBillScraper, self).accept_response(response)
+        bill_check = True
+        text_check = True
+
+        if not response.url.lower().endswith('pdf'):
+            if response.url.startswith("http://flsenate.gov/Session/Bill/20"):
+                bill_check = "tabBodyVoteHistory" in response.text
+
+            text_check = \
+                    'The page you have requested has encountered an error.' \
+                    not in response.text
+
         return (normal and
-                'The page you have requested has encountered an error.' not in response.text)
+                bill_check and
+                text_check)
 
 
     def scrape_bill(self, chamber, session, bill_id, title, sponsor, url):
@@ -168,20 +180,27 @@ class FLBillScraper(BillScraper):
                 vote_page = lxml.html.fromstring(html)
                 vote_page.make_links_absolute(url)
 
-            vote_table = vote_page.xpath(
+            vote_tables = vote_page.xpath(
                 "//div[@id = 'tabBodyVoteHistory']//table")
 
-            if len(vote_table) > 2:
-                vote_table = vote_table[1]
-
+            for vote_table in vote_tables:
                 for tr in vote_table.xpath("tbody/tr"):
                     vote_chamber = tr.xpath("string(td[3])").strip()
                     vote_date = tr.xpath("string(td[2])").strip()
+                    version = tr.xpath("string(td[1])").strip().split()
+                    version_chamber = version[0]
+
                     # sometimes these are flipped
                     if ' at ' in vote_chamber:
                         vote_date, vote_chamber = vote_chamber, vote_date
-                    vote_chamber = {'Senate': 'upper',
-                                    'House': 'lower'}[vote_chamber]
+                    try:
+                        vote_chamber = {'Senate': 'upper',
+                                        'House': 'lower'}[vote_chamber]
+                    except KeyError:
+                        vote_chamber = {'S': 'upper',
+                                        'H': 'lower',
+                                        'J': 'joint'}[version_chamber]
+
                     vote_date = datetime.datetime.strptime(
                         vote_date, "%m/%d/%Y at %H:%M %p").date()
 
@@ -198,9 +217,16 @@ class FLBillScraper(BillScraper):
         text = convert_pdf(path, 'text')
         os.remove(path)
 
-        motion = text.split('\n')[4].strip()
+        try:
+            motion = text.split('\n')[4].strip()
+        except IndexError:
+            return
 
-        yes_count = int(re.search(r'Yeas - (\d+)', text).group(1))
+        try:
+            yes_count = int(re.search(r'Yeas - (\d+)', text).group(1))
+        except AttributeError:
+            return
+
         no_count = int(re.search(r'Nays - (\d+)', text).group(1))
         other_count = int(re.search(r'Not Voting - (\d+)', text).group(1))
         passed = yes_count > (no_count + other_count)

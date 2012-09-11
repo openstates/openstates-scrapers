@@ -1,13 +1,11 @@
 import os
 import re
-import pdb
 import itertools
 import copy
 import tempfile
 from datetime import datetime
 from urlparse import urljoin
 from collections import defaultdict
-from operator import getitem
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -15,9 +13,10 @@ from billy.scrape.utils import convert_pdf
 from scrapelib import urlopen, HTTPError
 
 import lxml.html
-from lxml.etree import ElementTree
+from lxml.etree import ElementTree, XMLSyntaxError
 
 from . import actions
+
 
 def url2lxml(url):
     html = urlopen(url)
@@ -58,6 +57,7 @@ vote_ambiguous_indicators = [
     'Sponsor List Modified',
     'Tabled',
     'Taken from']
+
 
 class MTBillScraper(BillScraper):
     #must set state attribute as the state's abbreviated name
@@ -105,7 +105,12 @@ class MTBillScraper(BillScraper):
             return
 
         bill = None
-        bill_page = ElementTree(lxml.html.fromstring(self.urlopen(bill_url)))
+        try:
+            doc = lxml.html.fromstring(self.urlopen(bill_url))
+        except XMLSyntaxError as e:
+            self.logger.warning("Got %r while parsing %r" % (e, bill_url))
+            return
+        bill_page = ElementTree(doc)
 
         for anchor in bill_page.findall('//a'):
             if (anchor.text_content().startswith('status of') or
@@ -151,8 +156,8 @@ class MTBillScraper(BillScraper):
         return bill
 
     def _get_tabledata(self, status_page):
-        '''Montana doesn't currently list co/multisponsors on any of the 
-        legislation I've seen. So this function only adds the primary 
+        '''Montana doesn't currently list co/multisponsors on any of the
+        legislation I've seen. So this function only adds the primary
         sponsor.'''
         tabledata = defaultdict(list)
         join = ' '.join
@@ -265,6 +270,8 @@ class MTBillScraper(BillScraper):
             action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y')
             action_type = actions.categorize(action_name)
 
+            if 'by senate' in action_name.lower():
+                actor = 'upper`'
             bill.add_action(actor, action_name, action_date, action_type)
 
     def _versions_dict(self, year):
