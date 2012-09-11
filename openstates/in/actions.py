@@ -1,6 +1,7 @@
 import re
 from functools import partial
 from collections import namedtuple
+from types import MethodType
 
 
 class Rule(namedtuple('Rule', 'regexes types stop attrs')):
@@ -40,12 +41,29 @@ class BaseCategorizer(object):
     '''
     rules = []
 
+    def __init__(self):
+        before_funcs = []
+        after_funcs = []
+        for name in dir(self):
+            attr = getattr(self, name)
+            if isinstance(attr, MethodType):
+                # func = partial(attr, self)
+                func = attr
+                if getattr(attr, 'before', None):
+                    before_funcs.append(func)
+                if getattr(attr, 'after', None):
+                    after_funcs.append(func)
+        self._before_funcs = before_funcs
+        self._after_funcs = after_funcs
+
     def categorize(self, text):
 
         whitespace = partial(re.sub, '\s{1,4}', '\s{,4}')
 
         # Run the before hook.
         text = self.before_categorize(text)
+        for func in self._before_funcs:
+            text = func(text)
 
         types = set()
         attrs = {}
@@ -70,13 +88,42 @@ class BaseCategorizer(object):
 
         # Returns types, attrs
         return_val = (list(types), attrs)
-        return self.after_categorize(return_val)
+        return_val = self.after_categorize(return_val)
+        for func in self._after_funcs:
+            return_val = func(*return_val)
+        if not return_val:
+            import pdb;pdb.set_trace()
+        return return_val
 
     def before_categorize(self, text):
+        '''A precategorization hook. Takes/returns text.
+        '''
         return text
 
     def after_categorize(self, return_val):
+        '''A post-categorization hook. Takes, returns
+        a tuple like (types, attrs), where types is a sequence
+        of categories (e.g., bill:passed), and attrs is a
+        dictionary of addition attributes that can be used to
+        augment the action (or whatever).
+        '''
         return return_val
+
+
+def after_categorize(f):
+    '''A decorator to mark a function to be run
+    before categorization has happened.
+    '''
+    f.after = True
+    return f
+
+
+def before_categorize(f):
+    '''A decorator to mark a function to be run
+    before categorization has happened.
+    '''
+    f.before = True
+    return f
 
 
 # These are regex patterns that map to action categories.
@@ -100,6 +147,7 @@ _categorizer_rules = (
     Rule(r'(?i)^(senator|representative)s?(?P<legislators>.+?)\s+added'),
     Rule(r'(?i)^Senate\s+(advisor|sponsor|conferee)s?.*?:\s+'
          r'(?P<legislators>.+)'),
+    Rule(r'(House|Senate) sponsors:\s+Senators\s+(?P<legislators>.+)'),
 
     # Amendments.
     Rule((r'(?P<version>Amendment \d+)\s+\(\s*(?P<legislators>.+?)\)'
@@ -135,3 +183,13 @@ _categorizer_rules = (
 
 class Categorizer(BaseCategorizer):
     rules = _categorizer_rules
+
+    @after_categorize
+    def split_legislators(self, types, attrs):
+        if 'legislators' in attrs:
+            text = attrs['legislators']
+            rgx = r'(,\s+(?![a-z]\.)|\s+and\s+)'
+            legs = re.split(rgx, text)
+            legs = filter(lambda x: x not in [', ', ' and '], legs)
+            attrs['legislators'] = legs
+        return types, attrs
