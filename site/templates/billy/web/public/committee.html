@@ -109,21 +109,6 @@ $(document).ready(function() {
 </div>
 {% endif %}
 
-{% if committee.events.count %}
-<div class="fullWidth module">
-    <h3 class="moduleTitle" >{% trans "Related Events" %}</h3>
-        <ul>
-            {% for event in committee.events %}
-            <li><a href="{{ event.get_absolute_url }}">
-                {% blocktrans with description=event.description date=event.when|date:"M j, Y" %}
-                {{description}} on {{ date }}
-                {% endblocktrans %}
-            </a><li>
-            {% endfor %}
-        </ul>
-</div>
-{% endif %}
-
 {% sources committee %}
 
 {% endblock %}
