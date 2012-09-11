@@ -11,6 +11,8 @@ from billy.importers.bills import fix_bill_id
 import pytz
 import lxml.html
 
+from .actions import Categorizer
+
 
 def parse_vote_count(s):
     if s == 'NONE':
@@ -36,6 +38,8 @@ def check_vote_counts(vote):
 
 class INBillScraper(BillScraper):
     state = 'in'
+
+    categorizer = Categorizer()
 
     _tz = pytz.timezone('US/Eastern')
 
@@ -208,38 +212,9 @@ class INBillScraper(BillScraper):
                     # sometimes there are blank actions, just skip these
                     continue
 
-                atype = []
+                atype, attrs = self.categorizer.categorize(action)
 
-                if action.startswith('First reading:'):
-                    if not read_yet:
-                        atype.append('bill:introduced')
-                        read_yet = True
-                    atype.append('bill:reading:1')
-                if action.startswith('Second reading:'):
-                    atype.append('bill:reading:2')
-                if action.startswith('Third reading:'):
-                    if action.startswith('Third reading: passed'):
-                        atype.append('bill:passed')
-                    atype.append('bill:reading:3')
-                if 'referred to' in action:
-                    atype.append('committee:referred')
-                if action.startswith('Referred to Committee'):
-                    atype.append('committee:referred')
-                if action.startswith('Reassigned to'):
-                    atype.append('committee:referred')
-                if (action.startswith('Committee report: amend do pass') or
-                    action.startswith('Committee report: do pass')):
-                    atype.append('committee:passed:favorable')
-
-                match = re.match(
-                    r'Amendment \d+ \(.*\), (prevailed|failed)', action)
-                if match:
-                    if match.group(1) == 'prevailed':
-                        atype.append('amendment:passed')
-                    else:
-                        atype.append('amendment:failed')
-
-                bill.add_action(chamber, action, date, type=atype)
+                bill.add_action(chamber, action, date, type=atype, **attrs)
 
     def build_subject_mapping(self, session):
         self.subjects = defaultdict(list)
