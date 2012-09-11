@@ -19,16 +19,9 @@
 
 {% block headblock %}
     <link rel="canonical" href="{{legislator.get_absolute_url}}">
-    <link rel="stylesheet" href="{% static 'maps/leaflet_x.css' %}" />
+    <link rel="stylesheet" href="{% static 'maps/leaflet.css' %}" />
     <!--[if lte IE 8]><link rel="stylesheet" href="{% static 'maps/leaflet.ie.css' %}" /><![endif]-->
-    <script src="{% static "maps/leaflet_x.js" %}"></script>
-
-    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.4.4/leaflet.css" />
-    <!--[if lte IE 8]>
-        <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.4.4/leaflet.ie.css" />
-    <![endif]-->
-    <script src="http://cdn.leafletjs.com/leaflet-0.4.4/leaflet.js"></script>
-
+    <script src="{% static "maps/leaflet.js" %}"></script>
     <script src="{% static "maps/wax.leaf.min.js" %}"></script>
 {% endblock %}
 
@@ -345,16 +338,9 @@
         var layer = new wax.leaf.connector(tilejson);
         map.addLayer(layer);
         $.getJSON('/get_district/{{district_id}}/', function(payload) {
-            var region = payload.region;
-            /* southWest, northEast */
-            var bounds = [
-              [region.center_lat - region.lat_delta*0.7,
-              region.center_lon - region.lon_delta*0.7],
-              [region.center_lat + region.lat_delta*0.7,
-              region.center_lon + region.lon_delta*0.7]];
-            console.log(bounds);
-            map.fitBounds(bounds);
-            new L.Marker([region.center_lat, region.center_lon]).addTo(map);
+            map.fitBounds(payload.bbox);
+            new L.Marker([payload.region.center_lat,
+                          payload.region.center_lon]).addTo(map);
         });
     }
     wax.tilejson(map_url, wax_cb);
