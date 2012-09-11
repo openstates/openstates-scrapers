@@ -89,6 +89,9 @@ class OHLegislatorScraper(LegislatorScraper):
                         if name[0] == "|":
                             continue
 
+                        if name.strip() == "Committee Name":
+                            continue
+
                         chmbr = chamber
                         if "joint" in name.lower():
                             chmbr = "joint"
