@@ -91,7 +91,7 @@ $(document).ready(function() {
         <tbody>
 {% for event in events %}
             <tr>
-                <td>{{event.description}}</td>
+                <td><a href="{% url 'event' abbr event|underscore_field:"id" %}" >{{event.description}}</a></td>
                 <td>{{event.when|naturaltime}}</td>
                 <td>{% for participant in event.participants %}{{participant.participant}}, {% endfor %}</td>
                 <td>{{event.location}}</td>
