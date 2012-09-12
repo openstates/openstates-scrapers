@@ -12,7 +12,7 @@ for e in ids:
         continue
 
     new = e.copy()
-    new['type'] = 'leg'
+    new['type'] = 'legislator'
     db.manual.leg_ids.update(e,
                              new,
                              True)
