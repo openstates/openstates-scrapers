@@ -19,113 +19,10 @@
 
 {% block headblock %}
     <link rel="canonical" href="{{legislator.get_absolute_url}}">
-    <script src="http://maps.google.com/maps/api/js?sensor=true"></script>
-    <script src="{% static "js/gmaps.js" %}"></script>
-    <script>
-$(document).ready(function() {
-    var doc = $(document);
-    doc.bind("keydown", "alt+j", function(){window.location = '{{legislator.get_admin_json_url}}'});
-
-    fix_images();
-
-    /* map js */
-    {% if legislator.active %}
-    var map, has_located = false;
-    map = new GMaps({
-        div: '#map',
-        lat: 38,
-        lng: -97,
-        zoom: 5
-    });
-    GMaps.geolocate({
-        success: function(position) {
-            /* map.drawOverlay({
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-                content: "<div class = 'map-overlay' >You are here</div>"
-            }); */
-            map.addControl({
-                position: 'top_right',
-                text: 'Where am I?',
-                style: {
-                    color:  '#000000;',
-                    margin: '5px',
-                    padding: '1px 6px',
-                    border: 'solid 1px #717B87',
-                    background: '#fff'
-                },
-                events: {
-                    click: function(){
-                        map.setCenter(
-                            position.coords.latitude,
-                            position.coords.longitude
-                        );
-
-                        if ( has_located )
-                            return;
-
-                        map.addMarker({
-                            title: 'Current Position',
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude,
-                            infoWindow: {
-                                content: "<p>You are here</p>"
-                            }
-                        });
-                        has_located = true;
-                    }
-                }
-            });
-        }
-    });
-    $.getJSON('/get_district/{{district_id}}', function(payload) {
-        var data = payload.shape;
-        /* map.setZoom(10); */
-        map.setCenter(
-            payload.region.center_lat,
-            payload.region.center_lon
-        );
-        for ( var n in data ) {
-            for ( var j in data[n] ) {
-                var bak_shape = data[n][j],
-                    shape = [];
-                for ( var node in bak_shape ) {
-                    node = bak_shape[node];
-                    shape.push([node[1], node[0]]);
-                }
-                polygon = map.drawPolygon({
-                    paths:         shape,
-                    strokeColor:   "#c7a7eb",
-                    strokeOpacity: 1,
-                    strokeWeight:  3,
-                    fillColor:     "#7f6a96",
-                    fillOpacity:   0.3
-                });
-            }
-        }
-        map.addControl({
-            position: 'top_right',
-            text: 'District Center',
-            style: {
-                color:  '#000000;',
-                margin: '5px',
-                padding: '1px 6px',
-                border: 'solid 1px #717B87',
-                background: '#fff'
-            },
-            events: {
-                click: function(){
-                    map.setCenter(
-                        payload.region.center_lat,
-                        payload.region.center_lon
-                    );
-                }
-            }
-        });
-    });
-    {% endif %}
-});
-    </script>
+    <link rel="stylesheet" href="{% static 'maps/leaflet.css' %}" />
+    <!--[if lte IE 8]><link rel="stylesheet" href="{% static 'maps/leaflet.ie.css' %}" /><![endif]-->
+    <script src="{% static "maps/leaflet.js" %}"></script>
+    <script src="{% static "maps/wax.leaf.min.js" %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -174,9 +71,7 @@ $(document).ready(function() {
                 </div>
                 <div class="fourCol colRt">
                     {% if legislator.active %}
-                    <div class="mapBorder">
-                        <div id="map" class="withBorder"></div>
-                    </div>
+                    <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 200px"></div>
                     {% endif %}
                 </div>
                 <div class="clear"></div>
@@ -429,4 +324,25 @@ $(document).ready(function() {
         </div>
         {% sources legislator %}
 
+<script>
+    var map_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{legislator.state}}{{legislator.chamber}}.jsonp';
+    var map = new L.Map('mapbox-{{metadata.abbr}}',
+      { attributionControl:true, dragging:false, touchZoom: false,
+        scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false,
+        keyboard: false, zoomControl: false, attributionControl: false
+    });
+    //map.attributionControl.setPrefix('');
+
+    var wax_cb = function(tilejson) {
+        // add to map
+        var layer = new wax.leaf.connector(tilejson);
+        map.addLayer(layer);
+        $.getJSON('/get_district/{{district_id}}/', function(payload) {
+            map.fitBounds(payload.bbox);
+            new L.Marker([payload.region.center_lat,
+                          payload.region.center_lon]).addTo(map);
+        });
+    }
+    wax.tilejson(map_url, wax_cb);
+</script>
 {% endblock %}

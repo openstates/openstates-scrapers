@@ -87,7 +87,7 @@ class BaseCategorizer(object):
 _categorizer_rules = (
 
     Rule((r'\(Ayes (?P<yes_votes>\d+)\.\s+Noes\s+'
-          r'(?P<no_votes>\d+)\.( Page \S+\.)?\)'), stop=False),
+          r'(?P<no_votes>\d+)\.( Page \S+\.)?\)')),
 
     Rule(r'^Introduced', 'bill:introduced'),
 
