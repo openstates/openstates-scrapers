@@ -1,13 +1,12 @@
-'''This is the action categorization code I added to Tennessee,
-factored out into functions that might be reusable.
-'''
 import re
+from functools import partial
 from collections import namedtuple
+from types import MethodType
 
 
-class Rule(namedtuple('Rule', 'regex types stop attrs')):
-    '''If ``regex`` matches the action text, the resulting action's
-    types should include ``types``.
+class Rule(namedtuple('Rule', 'regexes types stop attrs')):
+    '''If anyh of ``regexes`` matches the action text, the resulting
+    action's types should include ``types``.
 
     If stop is true, no other rules should be tested after this one;
     in other words, this rule conclusively determines the action's
@@ -17,41 +16,109 @@ class Rule(namedtuple('Rule', 'regex types stop attrs')):
     enables overwriting certain attributes, like the chamber if
     the action was listed in the wrong column.
     '''
-    def __new__(_cls, regex, types=None, stop=True, **kwargs):
+    def __new__(_cls, regexes, types=None, stop=False, **kwargs):
         'Create new instance of Rule(regex, types, attrs, stop)'
+
+        # Regexes can be a string or a sequence.
+        if isinstance(regexes, basestring):
+            regexes = set([regexes])
+        regexes = set(regexes or [])
 
         # Types can be a string or a sequence.
         if isinstance(types, basestring):
             types = set([types])
         types = set(types or [])
 
-        # If no types are associated, assume that the categorizer
-        # should continue looking at other rules.
-        if not types:
-            stop = False
-        return tuple.__new__(_cls, (regex, types, stop, kwargs))
+        return tuple.__new__(_cls, (regexes, types, stop, kwargs))
 
 
-def categorize_action(action, rules=[]):
-    types = set()
-    attrs = {}
+class BaseCategorizer(object):
+    '''A class that exposes a main categorizer function
+    and before and after hooks, in case a state requires specific
+    steps that make use of action or category info. The return
+    value is a 2-tuple of category types and a dictionary of
+    attributes to overwrite on the target action object.
+    '''
+    rules = []
 
-    for rule in rules:
+    def __init__(self):
+        before_funcs = []
+        after_funcs = []
+        for name in dir(self):
+            attr = getattr(self, name)
+            if isinstance(attr, MethodType):
+                # func = partial(attr, self)
+                func = attr
+                if getattr(attr, 'before', None):
+                    before_funcs.append(func)
+                if getattr(attr, 'after', None):
+                    after_funcs.append(func)
+        self._before_funcs = before_funcs
+        self._after_funcs = after_funcs
 
-        # Try to match the regex.
-        m = re.search(rule.regex, action)
-        if m or (rule.regex in action):
-            # If so, apply its associated types to this action.
-            types |= rule.types
+    def categorize(self, text):
 
-            # Also add its specified attrs.
-            attrs.update(m.groupdict())
-            attrs.update(rule.attrs)
+        whitespace = partial(re.sub, '\s{1,4}', '\s{,4}')
 
-            # Break if the rule says so, otherwise continue testing against
-            # other rules.
-            if rule.stop is True:
-                break
+        # Run the before hook.
+        text = self.before_categorize(text)
+        for func in self._before_funcs:
+            text = func(text)
 
-    # Returns types, attrs
-    return list(types), attrs
+        types = set()
+        attrs = {}
+        for rule in self.rules:
+
+            for regex in rule.regexes:
+
+                # Try to match the regex.
+                m = re.search(whitespace(regex), text)
+                if m or (regex in text):
+                    # If so, apply its associated types to this action.
+                    types |= rule.types
+
+                    # Also add its specified attrs.
+                    attrs.update(m.groupdict())
+                    attrs.update(rule.attrs)
+
+                    # Break if the rule says so, otherwise
+                    # continue testing against other rules.
+                    if rule.stop is True:
+                        break
+
+        # Returns types, attrs
+        return_val = (list(types), attrs)
+        return_val = self.after_categorize(return_val)
+        for func in self._after_funcs:
+            return_val = func(*return_val)
+        return return_val
+
+    def before_categorize(self, text):
+        '''A precategorization hook. Takes/returns text.
+        '''
+        return text
+
+    def after_categorize(self, return_val):
+        '''A post-categorization hook. Takes, returns
+        a tuple like (types, attrs), where types is a sequence
+        of categories (e.g., bill:passed), and attrs is a
+        dictionary of addition attributes that can be used to
+        augment the action (or whatever).
+        '''
+        return return_val
+
+
+def after_categorize(f):
+    '''A decorator to mark a function to be run
+    before categorization has happened.
+    '''
+    f.after = True
+    return f
+
+
+def before_categorize(f):
+    '''A decorator to mark a function to be run
+    before categorization has happened.
+    '''
+    f.before = True
+    return f

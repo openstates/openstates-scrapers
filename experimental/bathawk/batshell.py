@@ -124,10 +124,7 @@ class ShellCommands(object):
     def show_more_matches(self, line):
         '''Show more matches.
         '''
-        start = self.show_matches_start
-        end = self.show
-        self._print_matches(self.matched[start:end])
-        self.show_matches_start = end
+        self._print_matches(self.matched)
 
     @command('s')
     def show(self, line):
