@@ -20,7 +20,7 @@
                 <td class="hidden">{{obj.last_name}}</td>
                 <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
                 <td>{{ obj.district }}</td>
-                <td>{{ obj.party }}</td>
+                <td>{{ obj.party }}</td> {# use adjective #}
                 {% if show_chamber_column %}
                 <td>{{ obj.chamber_name }}</td>
                 {% endif %}

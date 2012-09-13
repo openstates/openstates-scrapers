@@ -37,7 +37,7 @@
                     </a>
                     <ul class="tip noSpace">
                         {% for party, count in chamber.legislators.party_counts.items %}
-                            <li>{{ count }} {{party}}</li>
+                        <li>{{ count }} {{party|party_noun:count}}</li>
                         {% endfor %}
                     </ul>
                  </li>

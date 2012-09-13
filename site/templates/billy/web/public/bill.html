@@ -137,7 +137,7 @@
                             {% if sponsor.leg_id %}
                                 <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                                 {% if sponsor.active %}
-                                    <span class="tip sideNote">({{ sponsor.party }}) Dist. {{ sponsor.district }}</span>
+                                    <span class="tip sideNote">({{ sponsor.party|party_noun }}) Dist. {{ sponsor.district }}</span>
                                 {% endif %}
                             {% else %}
                                 {% if sponsor.committee_id %}
@@ -154,7 +154,7 @@
                     {% for sponsor in bill.sponsors_manager.first_fifteen %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                <span class="tip sponsor-type">({{ sponsor.context_role.party }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
+                                <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
                         {% else %}
                             {% if sponsor.committee_id %}
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
@@ -169,7 +169,7 @@
                         {% for sponsor in remainder %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                <span class="tip sponsor-type">({{ sponsor.context_role.party }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
+                                <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
                         {% else %}
                             {% if sponsor.committee_id %}
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
