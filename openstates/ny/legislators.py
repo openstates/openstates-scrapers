@@ -56,16 +56,24 @@ class NYLegislatorScraper(LegislatorScraper):
                 legislator['email'] = email
 
             dist_str = page.xpath("string(//div[@class = 'district'])")
-            match = re.match(r'\(([A-Za-z,\s]+)\)', dist_str)
+            match = re.findall(r'\(([A-Za-z,\s]+)\)', dist_str)
             if match:
-                party = match.group(1)
+                match = match[0].split(', ')
                 party_map = {'D': 'Democratic', 'R': 'Republican',
                              'WF': 'Working Families',
-                             'C': 'Conservative'}
-                party = ', '.join(
-                    [party_map.get(p.strip(), p.strip())
-                     for p in party.split(',')])
+                             'C': 'Conservative',
+                             'IP': 'Independence',
+                            }
+                parties = [party_map.get(p.strip(), p.strip()) for p in match
+                           if p.strip()]
+                if 'Republican' in parties:
+                    party = 'Republican'
+                    parties.remove('Republican')
+                elif 'Democratic' in parties:
+                    party = 'Democratic'
+                    parties.remove('Democratic')
                 legislator['roles'][0]['party'] = party
+                legislator['roles'][0]['other_parties'] = parties
 
             try:
                 span = page.xpath("//span[. = 'Albany Office']/..")[0]
