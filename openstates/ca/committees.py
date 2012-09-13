@@ -13,7 +13,9 @@ strip = methodcaller('strip')
 
 
 def clean(s):
-    return s.strip(u'\xa0 \n\t').replace(u'\xa0', ' ')
+    s = s.strip(u'\xa0 \n\t').replace(u'\xa0', ' ')
+    s = re.sub(r'[\s+\xa0]', ' ', s)
+    return s.strip()
 
 
 class CACommitteeScraper(CommitteeScraper):
@@ -188,8 +190,11 @@ class CACommitteeScraper(CommitteeScraper):
                 namelists.append(names)
 
         committee_names = doc.xpath('//div[@class="content"]/h3/text()')
-        for _committee, _names in zip(map(clean, committee_names), namelists):
-            cache[_committee] = _names
+        committee_names = filter(None, map(clean, committee_names))
+        for _committee, _names in zip(committee_names, namelists):
+            print _committee
+            if _committee:
+                cache[_committee] = _names
 
         names = cache[committee['subcommittee']]
         return Membernames.scrub(names)
