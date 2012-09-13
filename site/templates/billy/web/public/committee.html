@@ -63,7 +63,7 @@ $(document).ready(function() {
                     <td>{{ obj.role|title }}</td>
                     {% if legislator %}
                           <td>{{ legislator.district }}</td>
-                          <td>{{ legislator.party }}</td>
+                          <td>{{ legislator.party }}</td> {# use adjective form of party here #}
                     {% else %}
                     <td>{% trans "Not available" %}</td>
                     <td>{% trans "Not available" %}</td>
