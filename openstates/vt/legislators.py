@@ -48,6 +48,18 @@ class VTLegislatorScraper(LegislatorScraper):
 
                 party = tr.xpath("string(td[6])")
                 party = re.sub(r'Democrat\b', 'Democratic', party)
+                parties = party.split('/')
+                if 'Republican' in parties:
+                    if 'Democratic' in parties:
+                        pass
+                    else:
+                        party = 'Republican'
+                        parties.remove('Republican')
+                elif 'Democratic' in parties:
+                    party = 'Democratic'
+                    parties.remove('Democratic')
+                else:
+                    party = parties.pop(0)
 
                 leg = Legislator(term, chamber, district, full_name,
                                  first_name=first_name,
@@ -58,6 +70,7 @@ class VTLegislatorScraper(LegislatorScraper):
                 # closest thing we have to a page for legislators, not ideal
                 url='http://www.leg.state.vt.us/legdir/LegDirMain.cfm'
                                 )
+                leg['roles'][0]['other_parties'] = parties
                 leg.add_source(url)
 
                 # 12-16: MailingAddress: 1,2,City,State,ZIP
