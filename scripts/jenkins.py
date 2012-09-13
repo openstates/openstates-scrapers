@@ -76,9 +76,9 @@ states = {
     'wy': 'Wyoming'}
 
 urls = {'data': ('http://jenkins.openstates.org/job/'
-                 '{state}/ws/data/in/*zip*/in.zip'),
+                 '{state}/ws/data/{abbr}/*zip*/in.zip'),
         'cache': ('http://jenkins.openstates.org/job/'
-                 '{state}/ws/cache/in/*zip*/cache.zip')}
+                 '{state}/ws/cache/{abbr}/*zip*/cache.zip')}
 
 # Logging config
 logger = logging.getLogger('janky-import')
