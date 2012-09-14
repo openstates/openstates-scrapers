@@ -10,6 +10,8 @@
 <div class="fullWidth">
     <div class="medModule">
         <h2>{{event.description|trunc}}</h2>
+        <a href="http://www.google.com/calendar/event?{{gcal_string}}"
+            >Add to gcal</a>
         <dl class="inlineList">
             <dt>{% trans "When" %}:</dt>
             <dd>{{event.when|date:"M j, Y"}}</dd>
