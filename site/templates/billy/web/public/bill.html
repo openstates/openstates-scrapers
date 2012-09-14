@@ -282,31 +282,39 @@
                     </tr>
                 </thead>
                 <tbody>
-        {% for event in events %}
-                    <tr>
-                        <td><a href="{% url 'event' abbr event|underscore_field:"id" %}" >{{event.description}}</a></td>
-                        <td>{{event.when|naturaltime}}</td>
-                        <td>{% for participant in event.participants %}
-                                {% if participant.participant_type == 'legislator' %}
-                <a href="{% url 'legislator_noslug' abbr participant.id %}"
-                    >{{participant.participant}}</a>
-                                {% elif participant.participant_type == 'committee' %}
-                <a href="{% url 'committee' abbr participant.id %}"
-                    >{{participant.participant}}</a>
-                                {% endif %}
-                            {% endfor %}</td>
+{% for event in events %}
+            <tr>
+                <td><a href="{% url 'event' abbr event|underscore_field:"id" %}" >{{event.description}}</a></td>
+                <td>{{event.when|naturaltime}}</td>
+                <td>{% for participant in event.participants %}
+                        {% if participant.participant_type == 'legislator' %}
+                            {% if participant.id %}
+<a href="{% url 'legislator_noslug' abbr participant.id %}"
+    >{{participant.participant}}</a>
+                            {% else %}
+                                {{participant.participant}}
+                            {% endif %}
+                        {% elif participant.participant_type == 'committee' %}
+                            {% if participant.id %}
+<a href="{% url 'committee' abbr participant.id %}"
+    >{{participant.participant}}</a>
+                            {% else %}
+                                {{participant.participant}}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}</td>
 
-                        <td>{{event.location}}</td>
-                        <td>{% for bill in event.related_bills %}
-                                {% if bill.bill_id %}
-                                <a href="{% url 'bill_noslug' abbr bill.bill_id %}"
-                                    >{{bill|underscore_field:"scraped_bill_id"}}</a>
-                                {% else %}
-        {{bill|underscore_field:"scraped_bill_id"}}
-                                {% endif %}
-                            {% endfor %}</td>
-                    </tr>
-        {% endfor %}
+                <td>{{event.location}}</td>
+                <td>{% for bill in event.related_bills %}
+                        {% if bill.bill_id %}
+                        <a href="{% url 'bill_noslug' abbr bill.bill_id %}"
+                            >{{bill|underscore_field:"scraped_bill_id"}}</a>
+                        {% else %}
+{{bill|underscore_field:"scraped_bill_id"}}
+                        {% endif %}
+                    {% endfor %}</td>
+            </tr>
+{% endfor %}
                 </tbody>
             </table>
         </div>

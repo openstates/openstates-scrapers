@@ -94,11 +94,19 @@ $(document).ready(function() {
                 <td>{{event.when|naturaltime}}</td>
                 <td>{% for participant in event.participants %}
                         {% if participant.participant_type == 'legislator' %}
-        <a href="{% url 'legislator_noslug' abbr participant.id %}"
-            >{{participant.participant}}</a>
+                            {% if participant.id %}
+<a href="{% url 'legislator_noslug' abbr participant.id %}"
+    >{{participant.participant}}</a>
+                            {% else %}
+                                {{participant.participant}}
+                            {% endif %}
                         {% elif participant.participant_type == 'committee' %}
-        <a href="{% url 'committee' abbr participant.id %}"
-            >{{participant.participant}}</a>
+                            {% if participant.id %}
+<a href="{% url 'committee' abbr participant.id %}"
+    >{{participant.participant}}</a>
+                            {% else %}
+                                {{participant.participant}}
+                            {% endif %}
                         {% endif %}
                     {% endfor %}</td>
 
