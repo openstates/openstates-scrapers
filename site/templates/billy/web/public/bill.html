@@ -269,36 +269,44 @@
             </div>
             <div class="clear"></div>
         </div>
-
-        {% with events=bill.events %}
-            {% if events.count %}
-        <div class="module eightCol colLt">
+        <div class="fullWidth module">
             <h3 class="moduleTitle">{% trans "Events" %}</h3>
-            <table class="normalTable">
+            <table>
                 <thead>
-                    <tr id="titles">
-                        <th>{% trans "Date" %}</th>
+                    <tr>
+                        <th>{% trans "What" %}</th>
+                        <th>{% trans "When" %}</th>
+                        <th>{% trans "Who" %}</th>
                         <th>{% trans "Where" %}</th>
-                        <th>{% trans "Description" %}</th>
-                        <th>{% trans "Committees" %}</th>
+                        <th>{% trans "Why" %}</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for event in bill.events %}
-                    <tr class="odd">
-                        <td class="tip withTipSm"><a href="{{ event.get_absolute_url }}"
-                                >{{ event.when|date:"M j, Y"}}</a></td>
-                        <td>{{ event.location }}</td>
-                        <td>{{ event.description }}</td>
-                        <td>
-                            {% for committee in event.committees %}
-                            <a href="{{ committee.get_absolute_url }}">{{committee.display_name}}</a>
-                            {% endfor %}
-                        </td>
+        {% for event in events %}
+                    <tr>
+                        <td><a href="{% url 'event' abbr event|underscore_field:"id" %}" >{{event.description}}</a></td>
+                        <td>{{event.when|naturaltime}}</td>
+                        <td>{% for participant in event.participants %}
+                                {% if participant.participant_type == 'legislator' %}
+                <a href="{% url 'legislator_noslug' abbr participant.id %}"
+                    >{{participant.participant}}</a>
+                                {% elif participant.participant_type == 'committee' %}
+                <a href="{% url 'committee' abbr participant.id %}"
+                    >{{participant.participant}}</a>
+                                {% endif %}
+                            {% endfor %}</td>
+
+                        <td>{{event.location}}</td>
+                        <td>{% for bill in event.related_bills %}
+                                {% if bill.bill_id %}
+                                <a href="{% url 'bill_noslug' abbr bill.bill_id %}"
+                                    >{{bill|underscore_field:"scraped_bill_id"}}</a>
+                                {% else %}
+        {{bill|underscore_field:"scraped_bill_id"}}
+                                {% endif %}
+                            {% endfor %}</td>
                     </tr>
-                    {% endfor %}
-                    {% endif %}
-                    {% endwith %}
+        {% endfor %}
                 </tbody>
             </table>
         </div>
