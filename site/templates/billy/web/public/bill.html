@@ -16,64 +16,7 @@
     <link rel="canonical" href="{{bill.get_absolute_url}}">
     <script>
     $(document).ready(function(){
-
-        var actions = $('.action').clone();
-        var actions_showing = $('#actions-showing');
-
-        var hide_other_actions = function(){
-
-            // Remove 'other' actions.
-            var actions_table = $('#actions-table tbody');
-            var others = actions_table.find('tr[data-actiontype="other"]');
-            var others_length = others.length
-            if (0 < others_length){
-                $.data(actions_showing, 'count', others_length);
-                }
-            others.remove();
-
-            // Redo zebra striping.
-            var actions = $('.action');
-            actions.removeClass('even odd');
-            actions.filter(':odd').addClass('odd');
-            actions.filter(':even').addClass('even');
-
-            actions_showing.text('Show ' + others_length + ' hidden actions.');
-            actions_showing.unbind('click');
-            actions_showing.click(show_other_actions);
-
-            console.log('Hid ' + others_length + ' other actions.');
-            return false;
-            }
-
-        var show_other_actions = function(){
-
-            // Remove all actions.
-            $('.action').remove();
-
-            // Add in the original actions.
-            var actions_table = $('#actions-table tbody');
-            actions_table.append(actions);
-
-            // Redo zebra striping.
-            actions.removeClass('even odd');
-            actions.filter(':odd').addClass('odd');
-            actions.filter(':even').addClass('even');
-
-            // Update the status text.
-            var others_length = $.data(actions_showing, 'count');
-            actions_showing.text('Hide ' + others_length + ' additional actions.');
-            actions_showing.unbind('click');
-            actions_showing.click(hide_other_actions);
-
-            console.log('Showed ' + others_length + ' other actions.');
-            return false;
-            }
-
-        // Hide the 'other' actions.
-        hide_other_actions();
-
-        var doc = $(document);
-        doc.bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
+        $(document).bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
     });
     </script>
 {% endblock %}
@@ -264,7 +207,6 @@
             <h3 class="moduleTitle">{% trans "Activity" %}</h3>
             <div class="eightCol colLt">
                 <h4>{% trans "Actions" %}</h4>
-                <p><a id="actions-showing" href="#"></a></p>
                 <table class="normalTable" id="actions-table">
                     <thead>
                         <tr id="titles">
