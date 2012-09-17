@@ -89,7 +89,7 @@ $(document).ready(function() {
         </thead>
         <tbody>
 {% for event in events %}
-            <tr>
+            <tr class="{% cycle odd,even %}">
                 <td><a href="{% url 'event' abbr event|underscore_field:"id" %}" >{{event.description}}</a></td>
                 <td>{{event.when|naturaltime}}</td>
                 <td>{% for participant in event.participants %}

@@ -33,7 +33,7 @@
                 <th>{% trans "Role" %}</th>
             </tr>
 {% for participant in event.participants %}
-            <tr>
+            <tr class="{% cycle odd,even %}">
                 {% if participant.id %}
                     {% if participant.participant_type == 'committee' %}
                         <td><a href="{% url 'committee' abbr participant.id %}"
