@@ -13,8 +13,12 @@
         <dl class="inlineList">
             <dt>{% trans "When" %}:</dt>
             <dd>
+                {{event.when|date:"M j, Y"}}
                 <a href="http://www.google.com/calendar/event?{{gcal_string}}"
-                    >{{event.when|date:"M j, Y"}}</a>
+                    >gcal</a>
+                <a href="{% url "event_ical" abbr event|underscore_field:"id" %}"
+                    >ical</a>
+
             </dd>
             <dt>{% trans "Where" %}:</dt>
             <dd>{{ event.location }}</dd>
