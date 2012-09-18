@@ -75,6 +75,7 @@ $(document).ready(function() {
     </table>
 </div>
 
+{% if events|length > 0 %}
 <div class="fullWidth module">
     <h3 class="moduleTitle">{% trans "Events" %}</h3>
     <table>
@@ -124,6 +125,7 @@ $(document).ready(function() {
         </tbody>
     </table>
 </div>
+{% endif %}
 
 {% include "billy/web/public/developer_committee.html" %}
 {% if request.user|is_dev %}

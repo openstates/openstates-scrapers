@@ -269,6 +269,7 @@
             </div>
             <div class="clear"></div>
         </div>
+{% if events|length > 0 %}
         <div class="fullWidth module">
             <h3 class="moduleTitle">{% trans "Events" %}</h3>
             <table>
@@ -318,6 +319,8 @@
                 </tbody>
             </table>
         </div>
+        {% endif %}
+
         {% sources bill %}
         </div>
         <div class="clear"></div>
