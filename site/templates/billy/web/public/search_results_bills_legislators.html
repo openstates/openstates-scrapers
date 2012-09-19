@@ -31,7 +31,6 @@ $(document).ready(function() {
         <div class="fullWidth">
             {% if not bill_results.count %}
                 {% trans "No bills matching" %} "{{search_text}}"
-                </div>
             {% else %}
             <table id="main-table" class="withFilter">
                 <thead>
@@ -101,6 +100,6 @@ $(document).ready(function() {
         {% endif %}
         {% endwith %}
         {% endif %}
-
+        </div>
         {% endblock %}
 
