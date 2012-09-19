@@ -7,6 +7,7 @@ settings = dict(SCRAPELIB_RPM=40)
 metadata = {
     'name': 'Virginia',
     'abbreviation': 'va',
+    'capitol_timezone': 'America/New_York',
     'legislature_name': 'Virginia General Assembly',
     'lower_chamber_name': 'House',
     'upper_chamber_name': 'Senate',

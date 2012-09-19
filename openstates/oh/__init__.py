@@ -5,6 +5,7 @@ from billy.utils.fulltext import oyster_text, text_after_line_numbers
 metadata = dict(
     name='Ohio',
     abbreviation='oh',
+    capitol_timezone='America/New_York',
     legislature_name='Ohio Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

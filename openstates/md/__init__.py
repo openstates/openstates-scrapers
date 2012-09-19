@@ -4,6 +4,7 @@ from billy.utils.fulltext import pdfdata_to_text, oyster_text, text_after_line_n
 metadata = dict(
     name='Maryland',
     abbreviation='md',
+    capitol_timezone='America/New_York',
     legislature_name='Maryland General Assembly',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

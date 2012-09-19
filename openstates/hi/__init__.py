@@ -6,6 +6,7 @@ settings = dict(SCRAPELIB_TIMEOUT=300)
 metadata = dict(
     name='Hawaii',
     abbreviation='hi',
+    capitol_timezone='Pacific/Honolulu',
     legislature_name='Hawaii State Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

@@ -7,6 +7,7 @@ settings = dict(SCRAPELIB_TIMEOUT=240)
 metadata = dict(
     name='Iowa',
     abbreviation='ia',
+    capitol_timezone='America/Chicago',
     legislature_name='Iowa General Assembly',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

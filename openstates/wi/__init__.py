@@ -5,6 +5,7 @@ from billy.utils.fulltext import (pdfdata_to_text, oyster_text,
 metadata = {
     'abbreviation': 'wi',
     'name': 'Wisconsin',
+    'capitol_timezone': 'America/Chicago',
     'legislature_name': 'Wisconsin State Legislature',
     'lower_chamber_name': 'Assembly',
     'upper_chamber_name': 'Senate',

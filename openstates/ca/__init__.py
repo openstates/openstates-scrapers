@@ -7,6 +7,7 @@ settings = dict(SCRAPELIB_RPM=30)
 metadata = dict(
     name='California',
     abbreviation='ca',
+    capitol_timezone='America/Los_Angeles',
     legislature_name='California State Legislature',
     lower_chamber_name='Assembly',
     upper_chamber_name='Senate',

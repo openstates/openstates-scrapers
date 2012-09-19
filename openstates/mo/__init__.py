@@ -5,6 +5,7 @@ metadata = dict(
     name='Missouri',
     abbreviation='mo',
     legislature_name='Missouri General Assembly',
+    capitol_timezone='America/Chicago',
     lower_chamber_name='House',
     upper_chamber_name='Senate',
     lower_chamber_title='Representative',

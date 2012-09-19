@@ -6,6 +6,7 @@ metadata = dict(
     name='Nebraska',
     abbreviation='ne',
     legislature_name='Nebraska Legislature',
+    capitol_timezone='America/Chicago',
 #   lower_chamber_name='n/a',
     upper_chamber_name='The Unicameral',
 #   lower_chamber_title='n/a',

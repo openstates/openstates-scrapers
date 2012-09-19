@@ -5,6 +5,7 @@ import lxml.html
 metadata = dict(
     name='Florida',
     abbreviation='fl',
+    capitol_timezone='America/New_York',
     legislature_name='Florida Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

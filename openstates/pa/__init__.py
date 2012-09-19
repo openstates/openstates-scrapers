@@ -6,6 +6,7 @@ settings = dict(SCRAPELIB_RPM=30)
 metadata = dict(
     name='Pennsylvania',
     abbreviation='pa',
+    capitol_timezone='America/New_York',
     legislature_name='Pennsylvania General Assembly',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

@@ -7,6 +7,7 @@ metadata = dict(
 
     name='Rhode Island',
     abbreviation='ri',
+    capitol_timezone='America/New_York',
     legislature_name='Rhode Island General Assembly',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

@@ -9,6 +9,7 @@ settings = dict(SCRAPELIB_TIMEOUT=600)
 metadata = dict(
     name='Tennessee',
     abbreviation='tn',
+    capitol_timezone='America/Chicago',
     legislature_name='Tennessee General Assembly',
     lower_chamber_name='House',
     upper_chamber_name='Senate',

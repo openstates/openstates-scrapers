@@ -6,6 +6,7 @@ metadata = dict(
     name='Arkansas',
     abbreviation='ar',
     legislature_name='Arkansas General Assembly',
+    capitol_timezone='America/Chicago',
     upper_chamber_name='Senate',
     lower_chamber_name='House',
     upper_chamber_title='Senator',

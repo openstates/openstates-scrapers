@@ -4,6 +4,7 @@ import lxml.html
 metadata = {
     'name': 'Georgia',
     'abbreviation': 'ga',
+    'capitol_timezone': 'America/New_York',
     'legislature_name': 'Georgia General Assembly',
     'upper_chamber_name': 'Senate',
     'lower_chamber_name': 'House',

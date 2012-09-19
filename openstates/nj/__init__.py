@@ -9,6 +9,7 @@ settings = dict(SCRAPELIB_RETRY_ATTEMPTS=0)
 metadata = dict(
     name='New Jersey',
     abbreviation='nj',
+    capitol_timezone='America/New_York',
     legislature_name='New Jersey Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='Assembly',

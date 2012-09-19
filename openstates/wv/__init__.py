@@ -3,6 +3,7 @@ import lxml.html
 
 metadata = {
     'abbreviation': 'wv',
+    'capitol_timezone': 'America/New_York',
     'name': 'West Virginia',
     'legislature_name': 'West Virginia Legislature',
     'lower_chamber_name': 'House',

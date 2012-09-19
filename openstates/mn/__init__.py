@@ -4,6 +4,7 @@ from billy.utils.fulltext import oyster_text
 metadata = dict(
     name='Minnesota',
     abbreviation='mn',
+    capitol_timezone='America/Chicago',
     legislature_name='Minnesota State Legislature',
     lower_chamber_name='House',
     upper_chamber_name='Senate',
