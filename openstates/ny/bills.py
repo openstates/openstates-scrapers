@@ -95,6 +95,7 @@ class NYBillScraper(BillScraper):
 
                     bill_url = ("http://open.nysenate.gov/legislation/"
                                 "bill/%s" % result.attrib['id'])
+
                     self.scrape_bill(bill, bill_url)
                     bill.add_source(bill_url)
 
@@ -307,18 +308,6 @@ class NYBillScraper(BillScraper):
 
             # The page doesn't provide an other_count.
             vote['other_count'] = len(vote['other_votes'])
-
-            print url % bill_id
-            if len(vote['yes_votes']) != vote['yes_count']:
-                print len(vote['yes_votes']), vote['yes_count']
-                import pdb;pdb.set_trace()
-            if len(vote['no_votes']) != vote['no_count']:
-                print len(vote['no_votes']), vote['no_count']
-                import pdb;pdb.set_trace()
-            if len(vote['other_votes']) != vote['other_count']:
-                print len(vote['other_votes']), vote['other_count']
-                import pdb;pdb.set_trace()
-
             bill.add_vote(vote)
 
     def scrape_versions(self, bill, page, url):
