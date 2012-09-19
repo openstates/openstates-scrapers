@@ -210,7 +210,8 @@ class NDBillScraper(BillScraper):
                             assembly_url + '/bill-index',
                             link.attrib['href']
                         )
-                        curr_bill.add_version(link_name, link)
+                        curr_bill.add_version(link_name, link,
+                                              mimetype='application/pdf')
 
                 self.save_bill(curr_bill)
 
