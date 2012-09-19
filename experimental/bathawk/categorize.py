@@ -1,6 +1,6 @@
 import re
 from functools import partial
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from types import MethodType
 
 
@@ -66,7 +66,7 @@ class BaseCategorizer(object):
             text = func(text)
 
         types = set()
-        attrs = {}
+        attrs = defaultdict(set)
         for rule in self.rules:
 
             for regex in rule.regexes:
@@ -78,8 +78,11 @@ class BaseCategorizer(object):
                     types |= rule.types
 
                     # Also add its specified attrs.
-                    attrs.update(m.groupdict())
-                    attrs.update(rule.attrs)
+                    for k, v in m.groupdict().items():
+                        attrs[k].add(v)
+
+                    for k, v in rule.attrs.items():
+                        attrs[k].add(v)
 
                     # Break if the rule says so, otherwise
                     # continue testing against other rules.
@@ -91,7 +94,7 @@ class BaseCategorizer(object):
         return_val = self.after_categorize(return_val)
         for func in self._after_funcs:
             return_val = func(*return_val)
-        return return_val
+        return self.finalize(return_val)
 
     def before_categorize(self, text):
         '''A precategorization hook. Takes/returns text.
@@ -106,6 +109,35 @@ class BaseCategorizer(object):
         augment the action (or whatever).
         '''
         return return_val
+
+    def finalize(self, return_val):
+        '''Before the types and attrs get passed to the
+        importer they need to be altered by converting lists to
+        sets, etc.
+        '''
+        types, attrs = return_val
+        _attrs = {}
+
+        # Get rid of defaultdict.
+        for k, v in attrs.items():
+
+            # Skip empties.
+            if not v:
+                continue
+            else:
+                v = filter(None, v)
+
+            # Get rid of sets.
+            if isinstance(v, set):
+                v = list(v)
+
+            # Some vals should be strings, not seqs.
+            if k == 'actor' and len(v) == 1:
+                v = v.pop()
+
+            _attrs[k] = v
+
+        return types, _attrs
 
 
 def after_categorize(f):
