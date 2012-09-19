@@ -120,7 +120,8 @@ class KYBillScraper(BillScraper):
             bill.add_source(url)
 
             bill.add_version("Most Recent Version",
-                             version_link.attrib['href'])
+                             version_link.attrib['href'],
+                             mimetype='application/msword')
 
             for link in page.xpath("//a[contains(@href, 'legislator/')]"):
                 bill.add_sponsor('primary', link.text.strip())
