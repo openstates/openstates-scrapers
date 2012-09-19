@@ -209,6 +209,13 @@ class NYBillScraper(BillScraper):
 
             bill['subjects'] = subjects
 
+            # If it's an assembly bill, add a document for the sponsor's memo.
+            if bill['bill_id'][0] == 'A':
+                url = ('http://assembly.state.ny.us/leg/?'
+                       'default_fld=&bn=A09044&term=&Memo=Y')
+                bill.add_document("Sponsor's Memorandum", url)
+
+
     def scrape_senate_votes(self, bill, page):
         for b in page.xpath("//div/b[starts-with(., 'VOTE: FLOOR VOTE:')]"):
             date = b.text.split('-')[1].strip()
