@@ -104,7 +104,8 @@ class LABillScraper(BillScraper):
                         "//a[text() = 'Text - Current']")[0]
                     version_url = version_link.attrib['href']
                     bill.add_version("%s Current" % bill_id, version_url,
-                                     on_duplicate="use_old")
+                                     on_duplicate="use_old",
+                                     mimetype='application/pdf')
                 except IndexError:
                     # Some bills don't have any versions :(
                     pass
@@ -245,7 +246,8 @@ class LABillScraper(BillScraper):
                 version_url = a.attrib['href']
                 version = a.text.strip()
 
-                bill.add_version(version, version_url, on_duplicate='use_old')
+                bill.add_version(version, version_url, on_duplicate='use_old',
+                                 mimetype='application/pdf')
 
     def scrape_votes(self, bill, url):
         with self.urlopen(url) as text:

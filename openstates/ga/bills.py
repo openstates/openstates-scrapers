@@ -145,7 +145,8 @@ class GABillScraper(BillScraper):
                 # ex. URL:  legis.ga.gov/Legislation/20112012/108025.pdf
                 # for now we just get HTML
                 description, file_id = version.xpath('*/text()')
-                bill.add_version(description, version_url + file_id)
+                bill.add_version(description, version_url + file_id,
+                                 add_version='text/html')
 
             for action in bxml.xpath('StatusHistory/Status'):
                 date = datetime.datetime.strptime(action.get('StatusDate'),
@@ -178,7 +179,8 @@ class GABillScraper(BillScraper):
             bill = Bill(session, chamberName, number, name)
 
             # Versions
-            bill.add_version('Current', url.replace('/sum/', '/fulltext/'))
+            bill.add_version('Current', url.replace('/sum/', '/fulltext/'),
+                             mimetype='text/html')
 
             # Sponsorships
             rows = page.cssselect('center table tr')
@@ -233,7 +235,8 @@ class GABillScraper(BillScraper):
             bill = Bill(session, chamberName, number, name)
 
             # Versions
-            bill.add_version('Current', url.replace('/sum/', '/fulltext/'))
+            bill.add_version('Current', url.replace('/sum/', '/fulltext/'),
+                             mimetype='text/html')
 
             # Sponsorships
             for a in tables[0].cssselect('a'):
@@ -266,7 +269,8 @@ class GABillScraper(BillScraper):
             bill = Bill(session, chamberName, number, name)
 
             # Versions
-            bill.add_version('Current', url.replace('/sum/', '/fulltext/'))
+            bill.add_version('Current', url.replace('/sum/', '/fulltext/'),
+                             mimetype='text/html')
 
             # Sponsorships
             for a in tables[2].cssselect('a'):
@@ -318,7 +322,8 @@ class GABillScraper(BillScraper):
             # Versions
             for row in center.cssselect('table table')[1].cssselect('a'):
                 bill.add_version(a.text_content(),
-                                 urlparse.urljoin(url, a.get('href')))
+                                 urlparse.urljoin(url, a.get('href')),
+                                 mimetype='text/html')
 
             self.save_bill(bill)
 
@@ -352,6 +357,7 @@ class GABillScraper(BillScraper):
             # Versions
             for row in center.cssselect('table')[-1].cssselect('a'):
                 bill.add_version(a.text_content(),
-                                 urlparse.urljoin(url, a.get('href')))
+                                 urlparse.urljoin(url, a.get('href')),
+                                 mimetype='text/html')
 
             self.save_bill(bill)

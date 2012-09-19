@@ -119,7 +119,8 @@ class IABillScraper(BillScraper):
             for version_name in versions:
                 version_url = '/'.join((version_base, version_name,
                                         version_end))
-                bill.add_version(version_name, version_url)
+                bill.add_version(version_name, version_url,
+                                 mimetype='text/html')
         else:
             bill.add_version('Introduced',
                 sidebar.xpath('//a[contains(string(.), "PDF")]/@href')[0],
