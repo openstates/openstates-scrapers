@@ -208,6 +208,7 @@ _categorizer_rules = (
           r'^Passed on roll call',
           r'^(?i)roll call results passed',
           r'^(?i)roll call.+?passed',
+          r'^Passed',
           r'^(?i)(passed|adopted) in concurrence'], 'bill:passed'),
 
     # Committees.
