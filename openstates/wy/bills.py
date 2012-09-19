@@ -70,7 +70,8 @@ class WYBillScraper(BillScraper):
                 # skip references to other bills
                 if a.text.startswith('See'):
                     continue
-                bill.add_version(a.text, a.get('href'))
+                bill.add_version(a.text, a.get('href'),
+                                 mimetype='application/pdf')
 
             # documents
             fnote = tr.xpath('td[7]//a')

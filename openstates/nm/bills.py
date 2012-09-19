@@ -390,7 +390,8 @@ class NMBillScraper(BillScraper):
 
                 # no suffix = just the bill
                 if suffix == '':
-                    bill.add_version('introduced version', doc_path + fname)
+                    bill.add_version('introduced version', doc_path + fname,
+                                     mimetype='text/html')
 
                 # floor amendments
                 elif re.match('F(S|H)\d', suffix):
@@ -404,7 +405,7 @@ class NMBillScraper(BillScraper):
                 elif suffix.endswith('S'):
                     committee_name = suffix[:-1]
                     bill.add_version('%s substitute' % committee_name,
-                                     doc_path + fname)
+                                     doc_path + fname, mimetype='text/html')
 
                 # votes
                 elif 'SVOTE' in suffix:

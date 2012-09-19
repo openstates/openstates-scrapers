@@ -224,7 +224,8 @@ class ILBillScraper(BillScraper):
             name = link.text
             url = link.get('href')
             if name in VERSION_TYPES:
-                bill.add_version(name, url + '&print=true')
+                bill.add_version(name, url + '&print=true',
+                                 mimetype='text/html')
             elif 'Amendment' in name or name in FULLTEXT_DOCUMENT_TYPES:
                 bill.add_document(name, url)
             elif 'Printer-Friendly' in name:

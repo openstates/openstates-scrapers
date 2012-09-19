@@ -192,12 +192,14 @@ class MNBillScraper(BillScraper):
         # labeled, "Bill Text", on the search results page.
         with self.urlopen(version_list_url) as version_html:
             if 'resolution' in version_html.response.url:
-                bill.add_version('resolution text', version_html.response.url)
+                bill.add_version('resolution text', version_html.response.url,
+                                 mimetype='text/html')
             else:
                 version_doc = lxml.html.fromstring(version_html)
                 for v in version_doc.xpath('//a[starts-with(@href, "/bin/getbill.php")]'):
                     version_url = urlparse.urljoin(VERSION_URL_BASE,
-                                                   v.get('href'))
+                                                   v.get('href'),
+                                                   mimetype='text/html')
                     bill.add_version(v.text.strip(), version_url)
 
         self.save_bill(bill)

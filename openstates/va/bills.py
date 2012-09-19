@@ -145,6 +145,7 @@ class VABillScraper(BillScraper):
                 else:
                     # VA duplicates reprinted bills, lets keep the original name
                     bill.add_version(desc, BASE_URL+link, date=date,
+                                     mimetype='text/html',
                                      on_duplicate='use_old')
 
             # actions
