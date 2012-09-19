@@ -1,4 +1,5 @@
 {% load url from future %}
+{% load markup_tags %}
 {% load i18n %}
 
 <span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_{{chamber.type}}&sort=passed_{{chamber.type}}"></a></span>
@@ -22,7 +23,7 @@
                     {% endif %} {% endwith %}
                 </span>
             </span>
-            <p class="clear">{{ bill.title|truncatewords:50}}</p>
+            <p class="clear">{{ bill.title|truncatewords:50|smallcaps}}</p>
         </li>
     {% endfor %}
     </ul>
