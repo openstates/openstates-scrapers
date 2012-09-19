@@ -5,6 +5,7 @@ settings = dict(SCRAPELIB_TIMEOUT=300)
 metadata = dict(
     name='Puerto Rico',
     abbreviation='pr',
+    capitol_timezone='America/Puerto_Rico',
     legislature_name='Legislative Assembly of Puerto Rico',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

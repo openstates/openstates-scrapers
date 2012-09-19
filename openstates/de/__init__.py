@@ -5,6 +5,7 @@ from billy.utils.fulltext import oyster_text
 metadata = dict(
     name='Delaware',
     abbreviation='de',
+    capitol_timezone='America/New_York',
     legislature_name='Delaware General Assembly',
     upper_chamber_name='Senate',
     lower_chamber_name='House',
