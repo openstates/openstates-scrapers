@@ -52,13 +52,13 @@ class AZBillScraper(BillScraper):
             link_path2 = '//tr[contains(td/font/a/@href, "%s")]'
             # versions
             for href in root.xpath("//a[contains(@href, 'pdf')]"):
-                you_are_el = href.attrib['href']
+                version_url = href.attrib['href']
                 if "bills" in you_are_el.lower():
                     name = list(href.getparent().getparent().getparent())
                     name = name[1].text_content()
-                    bill.add_version(href.text_content(),
-                                     you_are_el,
-                                     on_duplicate='use_old')
+                    bill.add_version(href.text_content(), version_url,
+                                     on_duplicate='use_old',
+                                     mimetype='application/pdf')
 
             #fact sheets and summary
             rows = root.xpath(link_path2 % '/summary/')

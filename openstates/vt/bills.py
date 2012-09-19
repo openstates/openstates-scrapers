@@ -155,7 +155,11 @@ class VTBillScraper(BillScraper):
 
         for link in page.xpath("//b[text()='Bill Text:']/"
                                "following-sibling::blockquote/a"):
-            bill.add_version(link.text, link.attrib['href'])
+            if link.attrib['href'].endswith('pdf'):
+                mimetype = 'application/pdf'
+            elif link.attrib['href'].endswith('htm'):
+                mimetype = 'text/html'
+            bill.add_version(link.text, link.attrib['href'], mimetype=mimetype)
 
         more_sponsor_link = page.xpath("//a[text()='More Sponsors']")
         if page.xpath("//a[text()='More Sponsors']"):

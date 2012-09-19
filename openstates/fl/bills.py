@@ -155,7 +155,11 @@ class FLBillScraper(BillScraper):
                 for tr in version_table.xpath("tbody/tr"):
                     name = tr.xpath("string(td[1])").strip()
                     url = tr.xpath("td/a[1]")[0].attrib['href']
-                    bill.add_version(name, url)
+                    if url.endswith('PDF'):
+                        mimetype = 'application/pdf'
+                    elif url.endswith('HTML'):
+                        mimetype = 'text/html'
+                    bill.add_version(name, url, mimetype=mimetype)
             except IndexError:
                 self.log("No version table for %s" % bill_id)
 
