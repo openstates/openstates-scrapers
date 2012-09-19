@@ -16,64 +16,7 @@
     <link rel="canonical" href="{{bill.get_absolute_url}}">
     <script>
     $(document).ready(function(){
-
-        var actions = $('.action').clone();
-        var actions_showing = $('#actions-showing');
-
-        var hide_other_actions = function(){
-
-            // Remove 'other' actions.
-            var actions_table = $('#actions-table tbody');
-            var others = actions_table.find('tr[data-actiontype="other"]');
-            var others_length = others.length
-            if (0 < others_length){
-                $.data(actions_showing, 'count', others_length);
-                }
-            others.remove();
-
-            // Redo zebra striping.
-            var actions = $('.action');
-            actions.removeClass('even odd');
-            actions.filter(':odd').addClass('odd');
-            actions.filter(':even').addClass('even');
-
-            actions_showing.text('Show ' + others_length + ' hidden actions.');
-            actions_showing.unbind('click');
-            actions_showing.click(show_other_actions);
-
-            console.log('Hid ' + others_length + ' other actions.');
-            return false;
-            }
-
-        var show_other_actions = function(){
-
-            // Remove all actions.
-            $('.action').remove();
-
-            // Add in the original actions.
-            var actions_table = $('#actions-table tbody');
-            actions_table.append(actions);
-
-            // Redo zebra striping.
-            actions.removeClass('even odd');
-            actions.filter(':odd').addClass('odd');
-            actions.filter(':even').addClass('even');
-
-            // Update the status text.
-            var others_length = $.data(actions_showing, 'count');
-            actions_showing.text('Hide ' + others_length + ' additional actions.');
-            actions_showing.unbind('click');
-            actions_showing.click(hide_other_actions);
-
-            console.log('Showed ' + others_length + ' other actions.');
-            return false;
-            }
-
-        // Hide the 'other' actions.
-        hide_other_actions();
-
-        var doc = $(document);
-        doc.bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
+        $(document).bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
     });
     </script>
 {% endblock %}
@@ -137,7 +80,7 @@
                             {% if sponsor.leg_id %}
                                 <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                                 {% if sponsor.active %}
-                                    <span class="tip sideNote">({{ sponsor.party }}) Dist. {{ sponsor.district }}</span>
+                                    <span class="tip sideNote">({{ sponsor.party|party_noun }}) Dist. {{ sponsor.district }}</span>
                                 {% endif %}
                             {% else %}
                                 {% if sponsor.committee_id %}
@@ -154,7 +97,7 @@
                     {% for sponsor in bill.sponsors_manager.first_fifteen %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                <span class="tip sponsor-type">({{ sponsor.context_role.party }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
+                                <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
                         {% else %}
                             {% if sponsor.committee_id %}
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
@@ -169,7 +112,7 @@
                         {% for sponsor in remainder %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                <span class="tip sponsor-type">({{ sponsor.context_role.party }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
+                                <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
                         {% else %}
                             {% if sponsor.committee_id %}
                                 <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
@@ -264,7 +207,6 @@
             <h3 class="moduleTitle">{% trans "Activity" %}</h3>
             <div class="eightCol colLt">
                 <h4>{% trans "Actions" %}</h4>
-                <p><a id="actions-showing" href="#"></a></p>
                 <table class="normalTable" id="actions-table">
                     <thead>
                         <tr id="titles">
@@ -327,39 +269,59 @@
             </div>
             <div class="clear"></div>
         </div>
-
-        {% with events=bill.events %}
-            {% if events.count %}
-        <div class="module eightCol colLt">
+{% if events|length > 0 %}
+        <div class="fullWidth module">
             <h3 class="moduleTitle">{% trans "Events" %}</h3>
-            <table class="normalTable">
+            <table>
                 <thead>
-                    <tr id="titles">
-                        <th>{% trans "Date" %}</th>
+                    <tr>
+                        <th>{% trans "What" %}</th>
+                        <th>{% trans "When" %}</th>
+                        <th>{% trans "Who" %}</th>
                         <th>{% trans "Where" %}</th>
-                        <th>{% trans "Description" %}</th>
-                        <th>{% trans "Committees" %}</th>
+                        <th>{% trans "Why" %}</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for event in bill.events %}
-                    <tr class="odd">
-                        <td class="tip withTipSm"><a href="{{ event.get_absolute_url }}"
-                                >{{ event.when|date:"M j, Y"}}</a></td>
-                        <td>{{ event.location }}</td>
-                        <td>{{ event.description }}</td>
-                        <td>
-                            {% for committee in event.committees %}
-                            <a href="{{ committee.get_absolute_url }}">{{committee.display_name}}</a>
-                            {% endfor %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    {% endif %}
-                    {% endwith %}
+{% for event in events %}
+            <tr class="{% cycle odd,even %}">
+                <td><a href="{% url 'event' abbr event|underscore_field:"id" %}" >{{event.description}}</a></td>
+                <td>{{event.when|naturaltime}}</td>
+                <td>{% for participant in event.participants %}
+                        {% if participant.participant_type == 'legislator' %}
+                            {% if participant.id %}
+<a href="{% url 'legislator_noslug' abbr participant.id %}"
+    >{{participant.participant}}</a>
+                            {% else %}
+                                {{participant.participant}}
+                            {% endif %}
+                        {% elif participant.participant_type == 'committee' %}
+                            {% if participant.id %}
+<a href="{% url 'committee' abbr participant.id %}"
+    >{{participant.participant}}</a>
+                            {% else %}
+                                {{participant.participant}}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}</td>
+
+                <td>{{event.location}}</td>
+                <td>{% for bill in event.related_bills %}
+                        {% if bill.bill_id %}
+                        <a href="{% url 'bill_noslug' abbr bill.bill_id %}"
+                            >{{bill|underscore_field:"scraped_bill_id"}}</a>
+                        {% else %}
+{{bill|underscore_field:"scraped_bill_id"}}
+                        {% endif %}
+                    {% endfor %}</td>
+            </tr>
+{% endfor %}
                 </tbody>
             </table>
-            <div class="clear"></div>
+        </div>
+        {% endif %}
+
         {% sources bill %}
         </div>
+        <div class="clear"></div>
         {% endblock %}

@@ -12,7 +12,14 @@
         <h2>{{event.description|trunc}}</h2>
         <dl class="inlineList">
             <dt>{% trans "When" %}:</dt>
-            <dd>{{event.when|date:"M j, Y"}}</dd>
+            <dd>
+                {{event.when|date:"M j, Y"}}
+                <a href="http://www.google.com/calendar/event?{{gcal_string}}"
+                    >gcal</a>
+                <a href="{% url "event_ical" abbr event|underscore_field:"id" %}"
+                    >ical</a>
+
+            </dd>
             <dt>{% trans "Where" %}:</dt>
             <dd>{{ event.location }}</dd>
         </dl>
@@ -26,7 +33,7 @@
                 <th>{% trans "Role" %}</th>
             </tr>
 {% for participant in event.participants %}
-            <tr>
+            <tr class="{% cycle odd,even %}">
                 {% if participant.id %}
                     {% if participant.participant_type == 'committee' %}
                         <td><a href="{% url 'committee' abbr participant.id %}"
@@ -71,7 +78,8 @@
         {% endfor %}</ul>
     </div>
     {% endif %}
-
+    {% sources event %}
+    <div class="clear"></div>
 </div>
-<div class="clear"></div>
+
 {% endblock %}

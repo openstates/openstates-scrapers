@@ -74,7 +74,8 @@ class NMLegislatorScraper(LegislatorScraper):
             elif '(R)' in properties['party']:
                 properties['party'] = 'Republican'
             elif '(DTS)' in properties['party']:
-                properties['party'] = 'Decline to State'
+                # decline to state = independent
+                properties['party'] = 'Independent'
             else:
                 raise Exception("unknown party encountered")
 

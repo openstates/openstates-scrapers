@@ -1,6 +1,7 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
 {% load i18n %}
+{% load humanize %}
 {% load customtags %}
 
 
@@ -63,7 +64,7 @@ $(document).ready(function() {
                     <td>{{ obj.role|title }}</td>
                     {% if legislator %}
                           <td>{{ legislator.district }}</td>
-                          <td>{{ legislator.party }}</td>
+                          <td>{{ legislator.party }}</td> {# use adjective form of party here #}
                     {% else %}
                     <td>{% trans "Not available" %}</td>
                     <td>{% trans "Not available" %}</td>
@@ -74,25 +75,62 @@ $(document).ready(function() {
     </table>
 </div>
 
+{% if events|length > 0 %}
+<div class="fullWidth module">
+    <h3 class="moduleTitle">{% trans "Events" %}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{% trans "What" %}</th>
+                <th>{% trans "When" %}</th>
+                <th>{% trans "Who" %}</th>
+                <th>{% trans "Where" %}</th>
+                <th>{% trans "Why" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+{% for event in events %}
+            <tr class="{% cycle odd,even %}">
+                <td><a href="{% url 'event' abbr event|underscore_field:"id" %}" >{{event.description}}</a></td>
+                <td>{{event.when|naturaltime}}</td>
+                <td>{% for participant in event.participants %}
+                        {% if participant.participant_type == 'legislator' %}
+                            {% if participant.id %}
+<a href="{% url 'legislator_noslug' abbr participant.id %}"
+    >{{participant.participant}}</a>
+                            {% else %}
+                                {{participant.participant}}
+                            {% endif %}
+                        {% elif participant.participant_type == 'committee' %}
+                            {% if participant.id %}
+<a href="{% url 'committee' abbr participant.id %}"
+    >{{participant.participant}}</a>
+                            {% else %}
+                                {{participant.participant}}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}</td>
+
+                <td>{{event.location}}</td>
+                <td>{% for bill in event.related_bills %}
+                        {% if bill.bill_id %}
+                        <a href="{% url 'bill_noslug' abbr bill.bill_id %}"
+                            >{{bill|underscore_field:"scraped_bill_id"}}</a>
+                        {% else %}
+{{bill|underscore_field:"scraped_bill_id"}}
+                        {% endif %}
+                    {% endfor %}</td>
+            </tr>
+{% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
 {% include "billy/web/public/developer_committee.html" %}
 {% if request.user|is_dev %}
 <div class="fullWidth module">
     <h3 class="moduleTitle">{% trans "Developer ProTips" noop %}</h3>
-</div>
-{% endif %}
-
-{% if committee.events.count %}
-<div class="fullWidth module">
-    <h3 class="moduleTitle" >{% trans "Related Events" %}</h3>
-        <ul>
-            {% for event in committee.events %}
-            <li><a href="{{ event.get_absolute_url }}">
-                {% blocktrans with description=event.description date=event.when|date:"M j, Y" %}
-                {{description}} on {{ date }}
-                {% endblocktrans %}
-            </a><li>
-            {% endfor %}
-        </ul>
 </div>
 {% endif %}
 
