@@ -9,10 +9,14 @@ import scrapelib
 import lxml.html
 import lxml.etree
 
+from .actions import Categorizer
+
 
 class NYBillScraper(BillScraper):
 
     state = 'ny'
+
+    categorizer = Categorizer()
 
     def scrape(self, chamber, session):
 
@@ -163,40 +167,13 @@ class NYBillScraper(BillScraper):
 
                 actions.append((date, action))
 
-            first = True
+            categorizer = self.categorizer
             for date, action in reversed(actions):
                 act_chamber = ('upper' if action.isupper() else 'lower')
-                atype = []
-                if first:
-                    atype.append('bill:introduced')
-                    first = False
 
-                if 'REFERRED TO' in action:
-                    atype.append('committee:referred')
-                elif action == 'ADOPTED':
-                    atype.append('bill:passed')
-                elif action in ('PASSED SENATE', 'PASSED ASSEMBLY'):
-                    atype.append('bill:passed')
-                elif action in ('DELIVERED TO SENATE',
-                                'DELIVERED TO ASSEMBLY'):
-                    first = True
-                    act_chamber = {'upper': 'lower',
-                                   'lower': 'upper'}[act_chamber]
-                elif (action.startswith('AMENDED') or
-                      action.startswith('AMEND (T) AND') or
-                      action.startswith('AMEND AND')):
-                    atype.append('amendment:passed')
-                elif action.startswith('RECOMMIT,'):
-                    atype.append('committee:referred')
-
-                if 'RECOMMIT TO' in action:
-                    atype.append('committee:referred')
-
-                if not atype:
-                    atype = ['other']
-
+                types, attrs = categorizer.categorize(action)
                 bill.add_action(act_chamber, action, date,
-                                type=atype)
+                                type=types)
 
             self.scrape_versions(bill, page, url)
 
