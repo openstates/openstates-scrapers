@@ -3,6 +3,7 @@ from billy.utils.fulltext import oyster_text, worddata_to_text
 metadata = dict(
     name='Kentucky',
     abbreviation='ky',
+    capitol_timezone='America/New_York',
     legislature_name='Kentucky General Assembly',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

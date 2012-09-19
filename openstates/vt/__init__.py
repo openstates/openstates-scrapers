@@ -4,6 +4,7 @@ from billy.utils.fulltext import (pdfdata_to_text, oyster_text,
 metadata = dict(
     name='Vermont',
     abbreviation='vt',
+    capitol_timezone='America/New_York',
     legislature_name='Vermont General Assembly',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

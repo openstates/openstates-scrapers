@@ -7,6 +7,7 @@ settings = dict(SCRAPELIB_TIMEOUT=120)
 metadata = dict(
     name='New York',
     abbreviation='ny',
+    capitol_timezone='America/New_York',
     legislature_name='New York Legislature',
     lower_chamber_name='Assembly',
     upper_chamber_name='Senate',

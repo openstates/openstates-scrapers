@@ -7,6 +7,7 @@ settings = dict(SCRAPELIB_TIMEOUT=300)
 metadata = dict(
     name='South Carolina',
     abbreviation='sc',
+    capitol_timezone='America/New_York',
     legislature_name='South Carolina Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

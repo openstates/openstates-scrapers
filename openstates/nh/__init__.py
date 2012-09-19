@@ -4,6 +4,7 @@ import lxml.html
 metadata = {
     'abbreviation': 'nh',
     'name': 'New Hampshire',
+    'capitol_timezone': 'America/New_York',
     'legislature_name': 'New Hampshire General Court',
     'upper_chamber_name': 'Senate',
     'lower_chamber_name': 'House',

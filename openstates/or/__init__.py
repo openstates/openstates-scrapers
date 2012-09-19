@@ -5,6 +5,7 @@ from billy.utils.fulltext import oyster_text
 metadata = dict(
     name='Oregon',
     abbreviation='or',
+    capitol_timezone='America/Los_Angeles',
     legislature_name='Oregon Legislative Assembly',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

@@ -3,6 +3,7 @@ from billy.utils.fulltext import pdfdata_to_text, oyster_text, text_after_line_n
 
 metadata =  {
     'name': 'Alabama',
+    'capitol_timezone': 'America/Chicago',
     'abbreviation': 'al',
     'legislature_name': 'Alabama Legislature',
     'lower_chamber_name': 'House',

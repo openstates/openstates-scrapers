@@ -5,6 +5,7 @@ settings = dict(SCRAPELIB_RPM = 20)
 
 metadata = dict(
     name='Connecticut',
+    capitol_timezone='America/New_York',
     abbreviation='ct',
     legislature_name='Connecticut General Assembly',
     upper_chamber_name='Senate',

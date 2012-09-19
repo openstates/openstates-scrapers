@@ -5,6 +5,7 @@ from billy.utils.fulltext import oyster_text, text_after_line_numbers
 metadata = dict(
     name='North Carolina',
     abbreviation='nc',
+    capitol_timezone='America/New_York',
     legislature_name='North Carolina General Assembly',
     lower_chamber_name='House',
     upper_chamber_name='Senate',

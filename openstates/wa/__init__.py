@@ -6,6 +6,7 @@ settings = dict(SCRAPELIB_TIMEOUT=300)
 metadata = dict(
     name='Washington',
     abbreviation='wa',
+    capitol_timezone='America/Los_Angeles',
     legislature_name='Washington State Legislature',
     upper_chamber_name='Senate',
     lower_chamber_name='House',

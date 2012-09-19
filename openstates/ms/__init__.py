@@ -5,6 +5,7 @@ metadata = dict(
     name='Mississippi',
     abbreviation='ms',
     legislature_name='Mississippi Legislature',
+    capitol_timezone='America/Chicago',
     upper_chamber_name='Senate',
     lower_chamber_name='House',
     upper_chamber_title='Senator',

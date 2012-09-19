@@ -5,6 +5,7 @@ from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers, oyste
 metadata = dict(
     name='District of Columbia',
     abbreviation='dc',
+    capitol_timezone='America/New_York',
     legislature_name='Council of the District of Columbia',
 #    lower_chamber_name='n/a',
     upper_chamber_name='Council',

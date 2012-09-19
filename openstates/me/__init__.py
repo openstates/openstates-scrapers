@@ -3,6 +3,7 @@ import lxml.html
 
 metadata = dict(
     name='Maine',
+    capitol_timezone='America/New_York',
     abbreviation='me',
     legislature_name='Maine Legislature',
     upper_chamber_name='Senate',

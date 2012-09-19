@@ -5,6 +5,7 @@ settings = dict(SCRAPELIB_TIMEOUT=600)
 
 metadata = dict(
     name='Alaska',
+    capitol_timezone='America/Anchorage',
     abbreviation='ak',
     legislature_name='The Alaska State Legislature',
     lower_chamber_name='House',

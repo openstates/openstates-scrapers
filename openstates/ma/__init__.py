@@ -8,6 +8,7 @@ settings = dict(
 )
 
 metadata = {
+    'capitol_timezone': 'America/New_York',
     'lower_chamber_title': 'Representative',
     'lower_chamber_name': 'House',
     'upper_chamber_title': 'Senator',

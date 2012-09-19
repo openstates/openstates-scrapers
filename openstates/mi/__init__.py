@@ -6,6 +6,7 @@ settings = dict(SCRAPELIB_TIMEOUT=600)
 metadata = {
     'name': 'Michigan',
     'abbreviation': 'mi',
+    'capitol_timezone': 'America/New_York',
     'legislature_name': 'Michigan Legislature',
     'lower_chamber_name': 'House',
     'upper_chamber_name': 'Senate',

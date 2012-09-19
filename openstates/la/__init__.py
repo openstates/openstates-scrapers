@@ -5,6 +5,7 @@ from billy.utils.fulltext import (pdfdata_to_text, oyster_text,
 metadata = {
     "lower_chamber_title": "Representative",
     "lower_chamber_name": "House",
+    "capitol_timezone": 'America/Chicago',
     "upper_chamber_title": "Senator",
     "terms": [
         {
