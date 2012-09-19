@@ -204,7 +204,11 @@ _categorizer_rules = (
 
     # Resolutions.
     Rule([r'^(Read (and|&) )?Adopted',
-          r'Read 3rd time & adopted'], 'bill:passed'),
+          r'Read 3rd time & adopted',
+          r'^Passed on roll call',
+          r'^(?i)roll call results passed',
+          r'^(?i)roll call.+?passed',
+          r'^(?i)(passed|adopted) in concurrence'], 'bill:passed'),
 
     # Committees.
     Rule([r'(?i)referred to (?P<committees>.+)',
