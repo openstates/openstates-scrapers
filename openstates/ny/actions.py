@@ -1,3 +1,7 @@
+'''
+NY needs an @after_categorize function to expand committee names
+and help the importer figure out which committees are being mentioned.
+'''
 import re
 from functools import partial
 from collections import namedtuple, defaultdict
@@ -154,3 +158,43 @@ def before_categorize(f):
     '''
     f.before = True
     return f
+
+
+# These are regex patterns that map to action categories.
+_categorizer_rules = (
+
+    # Senate passage.
+    Rule(r'(?i)^(RE)?PASSED', 'bill:passed'),
+    Rule(r'(?i)^ADOPTED', 'bill:passed'),
+
+    # Amended
+    Rule(r'(?i)AMENDED (?P<bill_id>\d+)', 'amendment:passed'),
+    Rule(r'(?i)AMEND AND RECOMMIT TO (?P<committees>.+)',
+         ['amendment:passed', 'committee:referred']),
+    Rule(r'(?i)amend .+? and recommit to (?P<committees>.+)',
+         ['amendment:passed', 'committee:referred']),
+    Rule(r'(?i)AMENDED ON THIRD READING (\(T\) )?(?P<bill_id>.+)',
+         'amendment:passed'),
+    Rule(r'(?i)print number (?P<bill_id>\d+)', 'amendment:passed'),
+    Rule(r'(?i)tabled', 'amendment:tabled'),
+
+    # Committees
+    Rule(r'(?i)held .+? in (?P<committees>.+)', 'bill:failed'),
+    Rule(r'(?i)REFERRED TO (?P<committees>.+)', 'committee:referred'),
+    Rule(r'(?i)reference changed to (?P<committees>.+)',
+          'committee:referred'),
+    Rule(r'(?i) committed to (?P<committees>.+)', 'committee:referred'),
+    Rule(r'(?i)^reported$'),
+
+    # Governor
+    Rule(r'(?i)signed chap.(?P<session_laws>\d+)', 'governor:signed'),
+    Rule(r'(?i)vetoed memo.(?P<veto_memo>.+)', 'governor:vetoed'),
+    Rule(r'(?i)DELIVERED TO GOVERNOR', 'governor:received'),
+
+    # Random.
+    Rule(r'(?i)substituted by (?P<bill_id>\w\d+)')
+    )
+
+
+class Categorizer(BaseCategorizer):
+    rules = _categorizer_rules

@@ -111,8 +111,11 @@ class ShellCommands(object):
                 return
         self.current_rgx = line
         self.show_matches_start = 0
+
+        total_matches = len(filter(rgx.search, self.actions.list))
+
         with indent(4, quote=' >'):
-            puts('Found ' + colored.red(len(matched)) + ' matches:')
+            puts('Found ' + colored.red(total_matches) + ' matches:')
         self._print_matches(matched[:self.show])
         self.matched = matched
 

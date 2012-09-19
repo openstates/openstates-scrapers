@@ -9,10 +9,14 @@ import scrapelib
 import lxml.html
 import lxml.etree
 
+from .actions import Categorizer
+
 
 class NYBillScraper(BillScraper):
 
     state = 'ny'
+
+    categorizer = Categorizer()
 
     def scrape(self, chamber, session):
 
@@ -95,6 +99,7 @@ class NYBillScraper(BillScraper):
 
                     bill_url = ("http://open.nysenate.gov/legislation/"
                                 "bill/%s" % result.attrib['id'])
+
                     self.scrape_bill(bill, bill_url)
                     bill.add_source(bill_url)
 
@@ -162,40 +167,13 @@ class NYBillScraper(BillScraper):
 
                 actions.append((date, action))
 
-            first = True
+            categorizer = self.categorizer
             for date, action in reversed(actions):
                 act_chamber = ('upper' if action.isupper() else 'lower')
-                atype = []
-                if first:
-                    atype.append('bill:introduced')
-                    first = False
 
-                if 'REFERRED TO' in action:
-                    atype.append('committee:referred')
-                elif action == 'ADOPTED':
-                    atype.append('bill:passed')
-                elif action in ('PASSED SENATE', 'PASSED ASSEMBLY'):
-                    atype.append('bill:passed')
-                elif action in ('DELIVERED TO SENATE',
-                                'DELIVERED TO ASSEMBLY'):
-                    first = True
-                    act_chamber = {'upper': 'lower',
-                                   'lower': 'upper'}[act_chamber]
-                elif (action.startswith('AMENDED') or
-                      action.startswith('AMEND (T) AND') or
-                      action.startswith('AMEND AND')):
-                    atype.append('amendment:passed')
-                elif action.startswith('RECOMMIT,'):
-                    atype.append('committee:referred')
-
-                if 'RECOMMIT TO' in action:
-                    atype.append('committee:referred')
-
-                if not atype:
-                    atype = ['other']
-
+                types, attrs = categorizer.categorize(action)
                 bill.add_action(act_chamber, action, date,
-                                type=atype)
+                                type=types)
 
             self.scrape_versions(bill, page, url)
 
@@ -207,6 +185,13 @@ class NYBillScraper(BillScraper):
                 subjects.append(link.text.strip())
 
             bill['subjects'] = subjects
+
+            # If it's an assembly bill, add a document for the sponsor's memo.
+            if bill['bill_id'][0] == 'A':
+                url = ('http://assembly.state.ny.us/leg/?'
+                       'default_fld=&bn=A09044&term=&Memo=Y')
+                bill.add_document("Sponsor's Memorandum", url)
+
 
     def scrape_senate_votes(self, bill, page):
         for b in page.xpath("//div/b[starts-with(., 'VOTE: FLOOR VOTE:')]"):
@@ -307,18 +292,6 @@ class NYBillScraper(BillScraper):
 
             # The page doesn't provide an other_count.
             vote['other_count'] = len(vote['other_votes'])
-
-            print url % bill_id
-            if len(vote['yes_votes']) != vote['yes_count']:
-                print len(vote['yes_votes']), vote['yes_count']
-                import pdb;pdb.set_trace()
-            if len(vote['no_votes']) != vote['no_count']:
-                print len(vote['no_votes']), vote['no_count']
-                import pdb;pdb.set_trace()
-            if len(vote['other_votes']) != vote['other_count']:
-                print len(vote['other_votes']), vote['other_count']
-                import pdb;pdb.set_trace()
-
             bill.add_vote(vote)
 
     def scrape_versions(self, bill, page, url):

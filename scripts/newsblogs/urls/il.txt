@@ -30,4 +30,6 @@ http://www.senatedem.ilga.gov/index.php/sen-mulroe-home?format=feed&type=rss
 http://www.senatorrezin.com/Home/tabid/59/moduleid/497/RSS.aspx
 http://senatorsandack.com/Home/tabid/59/moduleid/497/RSS.aspx
 http://www.senatedem.ilga.gov/index.php/sen-trotter-home?format=feed&type=rss
-
+http://www.nwherald.com/?rss=lifestyle/news
+http://www.nwherald.com/?rss=news/state
+http://www.nwherald.com/?rss=news/local
