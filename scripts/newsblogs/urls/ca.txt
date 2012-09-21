@@ -258,7 +258,7 @@ http://asmdc.org/members/a53/news-room/news-articles?format=feed
 http://asmdc.org/members/a47/news-room/news-articles?format=feed
 http://asmdc.org/members/a73/news-room/news-articles?format=feed
 http://asmdc.org/members/a80/news-room/news-articles?format=feed
-http://republican.assembly.ca.gov/img/rss.jpg
+http://republican.assembly.ca.gov/img/rss
 http://asmdc.org/members/a01/home-page/rss
 
 http://arc.asm.ca.gov/rss/_default.aspx?m=208
