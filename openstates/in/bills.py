@@ -114,7 +114,16 @@ class INBillScraper(BillScraper):
                 path = version_path % version_type
                 links = page.xpath(path)
                 if links:
-                    bill.add_version(version_type, links[0].attrib['href'])
+
+                    _url = links[0].attrib['href']
+
+                    # Set the mimetype.
+                    if 'pdf' in _url:
+                        mimetype = 'application/pdf'
+                    else:
+                        mimetype = 'text/html'
+
+                    bill.add_version(version_type, _url, mimetype=mimetype)
 
             for vote_link in page.xpath("//a[contains(@href, 'Srollcal')]"):
                 self.scrape_senate_vote(bill, vote_link.attrib['href'])
