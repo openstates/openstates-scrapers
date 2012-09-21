@@ -105,7 +105,7 @@ class WABillScraper(BillScraper):
                            "Htm/Bills/%s %ss/%s.htm" % (chamber_name,
                                                         bill_type.title(),
                                                         bill_num))
-            bill.add_version(bill_id, version_url)
+            bill.add_version(bill_id, version_url, mimetype='text/html')
 
             fake_source = ("http://apps.leg.wa.gov/billinfo/"
                            "summary.aspx?bill=%s&year=%s" % (

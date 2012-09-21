@@ -239,7 +239,11 @@ class NJBillScraper(BillScraper, DBFMixin):
                 doc_name += ' ' + rec['comment']
 
             if rec['doctype'] in self._version_types:
-                bill.add_version(doc_name, htm_url)
+                if htm_url.endswith('HTM'):
+                    mimetype = 'text/html'
+                elif htm_url.endswith('wpd'):
+                    mimetype = 'application/vnd.wordperfect'
+                bill.add_version(doc_name, htm_url, mimetype=mimetype)
             else:
                 bill.add_document(doc_name, htm_url)
 

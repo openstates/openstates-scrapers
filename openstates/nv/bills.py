@@ -108,7 +108,8 @@ class NVBillScraper(BillScraper):
 
                     bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
                     text_url = "http://www.leg.state.nv.us" + bill_text
-                    bill.add_version("Bill Text", text_url)
+                    bill.add_version("Bill Text", text_url,
+                                     mimetype='application/pdf')
 
                     primary, secondary = self.scrape_sponsors(page)
 
@@ -158,7 +159,8 @@ class NVBillScraper(BillScraper):
                     bill['subjects'] = self.subject_mapping[bill_id]
                     bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
                     text_url = "http://www.leg.state.nv.us" + bill_text
-                    bill.add_version("Bill Text", text_url)
+                    bill.add_version("Bill Text", text_url,
+                                     mimetype='application/pdf')
 
                     primary, secondary = self.scrape_sponsors(page)
 

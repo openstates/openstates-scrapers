@@ -39,7 +39,8 @@ class DCBillScraper(BillScraper):
             # get versions
             for link in doc.xpath('//a[starts-with(@id, "DocumentRepeater")]'):
                 try:
-                    bill.add_version(link.text, link.get('href'))
+                    bill.add_version(link.text, link.get('href'),
+                                     mimetype='application/pdf')
                 except ValueError as e:
                     self.warning('duplicate version on %s' % bill_url)
 

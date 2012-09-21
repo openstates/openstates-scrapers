@@ -308,7 +308,7 @@ class WVBillScraper(BillScraper):
         for link in page.xpath("//a[contains(@title, 'WordPerfect')]"):
             name = link.getprevious().getprevious().tail.strip('\r\n -')
             yield {'name': name, 'url': link.get('href'),
-                   'mimetype': 'application/wordperfect'}
+                   'mimetype': 'application/vnd.wordperfect'}
 
     def _scrape_versions_wpd(self, session, chamber, page, bill_id):
         '''This third method scrapes the .wpd document from the legislature's
@@ -330,7 +330,7 @@ class WVBillScraper(BillScraper):
             _url = '/'.join([url, chamber_name, folder, _filename])
 
             yield {'name': filename, 'url': _url,
-                   'mimetype': 'application/wordperfect'}
+                   'mimetype': 'application/vnd.wordperfect'}
 
     def scrape_versions(self, session, chamber, page, bill_id):
         '''

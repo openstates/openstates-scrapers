@@ -90,7 +90,8 @@ class TXBillScraper(BillScraper):
                 bill.add_source(version_url)
                 version_name = version_url.split('/')[-1]
                 version_name = os.path.splitext(version_name)[0]  # omit '.htm'
-                bill.add_version(version_name, version_url, 'text/html')
+                bill.add_version(version_name, version_url,
+                                 mimetype='text/html')
 
             self.save_bill(bill)
 

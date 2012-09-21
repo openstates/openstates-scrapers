@@ -58,7 +58,8 @@ class SDBillScraper(BillScraper):
                 namespaces={'re': regex_ns})
             for link in version_links:
                 bill.add_version(link.xpath('string()').strip(),
-                                 link.attrib['href'])
+                                 link.attrib['href'],
+                                 mimetype='text/html')
 
             sponsor_links = page.xpath(
                 "//td[contains(@id, 'tdSponsors')]/a")

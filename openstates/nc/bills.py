@@ -109,7 +109,8 @@ class NCBillScraper(BillScraper):
                 # but neighboring span with anchor inside has the HTML version
                 version_url = vlink.xpath('./following-sibling::span/a/@href')
                 version_url = 'http://www.ncga.state.nc.us' + version_url[0]
-                bill.add_version(version_name, version_url)
+                bill.add_version(version_name, version_url,
+                                 mimetype='text/html')
 
             # sponsors
             pri_td = doc.xpath('//th[text()="Primary:"]/following-sibling::td')

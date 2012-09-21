@@ -136,11 +136,14 @@ class ALBillScraper(BillScraper):
 
                 # craft bill URLs
                 if intver:
-                    bill.add_version('introduced', self.base_doc_url + intver)
+                    bill.add_version('introduced', self.base_doc_url + intver,
+                                     mimetype='application/pdf')
                 if engver:
-                    bill.add_version('engrossed', self.base_doc_url + engver)
+                    bill.add_version('engrossed', self.base_doc_url + engver,
+                                     mimetype='application/pdf')
                 if enrver:
-                    bill.add_version('enrolled', self.base_doc_url + enrver)
+                    bill.add_version('enrolled', self.base_doc_url + enrver,
+                                     mimetype='application/pdf')
 
                 self.save_bill(bill)
 

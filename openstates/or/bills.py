@@ -242,7 +242,9 @@ class ORBillScraper(BillScraper):
                             self.warning("unknown bill %s" % bill_id)
                             continue
 
-                        self.all_bills[bill_id].add_version(name, html)
+                        self.all_bills[bill_id].add_version(name,
+                                                            html,
+                                                        mimetype='text/html')
 
     def parse_authors(self, url):
         with self.urlopen(url) as html:

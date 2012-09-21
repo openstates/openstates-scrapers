@@ -82,7 +82,8 @@ class NEBillScraper(BillScraper):
             version_url = versions.attrib['href']
             version_url = 'http://nebraskalegislature.gov/' + version_url[3:len(version_url)]
             version_name = versions.text
-            bill.add_version(version_name, version_url)
+            bill.add_version(version_name, version_url,
+                             mimetype='application/pdf')
 
 
         #documents

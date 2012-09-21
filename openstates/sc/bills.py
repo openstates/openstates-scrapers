@@ -215,7 +215,8 @@ class SCBillScraper(BillScraper):
         for version in version_doc.xpath('//a[contains(@href, "/prever/")]'):
             # duplicate versions with same date, use first appearance
             bill.add_version(version.text, version.get('href'),
-                             on_duplicate='use_old')
+                             on_duplicate='use_old',
+                             mimetype='text/html')
 
         # actions
         for row in bill_div.xpath('table/tr'):

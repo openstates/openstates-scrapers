@@ -264,7 +264,8 @@ class TNBillScraper(BillScraper):
 
             # bill text
             btext = page.xpath("//span[@id='lblBillSponsor']/a")[0]
-            bill.add_version('Current Version', btext.get('href'))
+            bill.add_version('Current Version', btext.get('href'),
+                             mimetype='application/pdf')
 
             # documents
             summary = page.xpath('//a[contains(@href, "BillSummaryArchive")]')

@@ -125,7 +125,11 @@ class MIBillScraper(BillScraper):
         for row in doc.xpath('//table[@id="frg_billstatus_DocumentGridTable"]/tr'):
             version = self.parse_doc_row(row)
             if version:
-                bill.add_version(*version)
+                if version['url'].endswith('.pdf'):
+                    mimetype = 'application/pdf'
+                elif version['url'].endswith('.htm'):
+                    mimetype = 'text/html'
+                bill.add_version(*version, mimetype=mimetype)
 
         # documents
         for row in doc.xpath('//table[@id="frg_billstatus_HlaTable"]/tr'):

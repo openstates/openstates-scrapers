@@ -143,7 +143,7 @@ class OKBillScraper(BillScraper):
                 continue
 
             name = link.text.strip()
-            bill.add_version(name, version_url)
+            bill.add_version(name, version_url, mimetype='application/msword')
 
         for link in page.xpath(".//a[contains(@href, '_VOTES')]"):
             self.scrape_votes(bill, urlescape(link.attrib['href']))

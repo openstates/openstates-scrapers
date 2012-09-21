@@ -1,0 +1,65 @@
+{% extends "billy/web/public/base.html" %}
+{% load url from future %}
+{% load i18n %}
+{% load humanize %}
+{% load customtags %}
+
+
+{% block title %}
+ Bill Text - {{bill.bill_id }} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
+{% endblock %}
+
+{% block description %}
+{{metadata.display_name}} {{bill.chamber_name}} {{bill.type_string|title}} {{bill.bill_id}}: {{bill.title}} - {{version.name}}
+{% endblock %}
+
+{% block headblock %}
+<link rel="canonical" href="{{bill.get_absolute_url}}documents/{{version.doc_id}}">
+{% endblock %}
+
+{% block content %}
+    <ul class="breadcrumb floatedList clearfix">
+        <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
+        <li>
+            » <a href="{% url 'bills' abbr %}">{% trans "Bills" %}</a>
+        </li>
+        <li>
+            » <a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a>
+        </li>
+        <li>
+            » <a href="{% url 'bills' abbr %}?session={{bill.session}}&chamber={{bill.chamber}}">{{ bill.chamber_name }}</a>
+        </li>
+        <li>
+            » <a href="{{bill.get_absolute_url}}">{{bill.bill_id}}</a>
+        </li>
+        <li>
+            » {{version.name}}
+        </li>
+    </ul>
+
+    <div class="fullWidth mainModule">
+        <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">{% trans "Receive alerts about" %} {{ bill.bill_id }}</a> {% trans "with Scout." %}
+        </span>
+        <!-- <h5 style="margin-bottom: 0px;">{{ bill.session_details.display_name }}</h5> -->
+        <div class="medModule">
+            <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
+            <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
+            <p>{{ bill.title|capfirst }}</p>
+        </div>
+
+        <h3>{{version.name}}</h3>
+        <a href="{{version.url}}">Original Document</a>
+
+        <iframe src="http://docs.google.com/viewer?embedded=True&url=http://static.openstates.org/documents/{{abbr}}/{{version.doc_id}}" width="90%" height="800px" longdesc="this is the text for the bill"></iframe>
+
+        <h4>Other Versions</h4>
+        <ul>
+            <li><a href="#">Introduced Version</a></li>
+            <li><a href="#">Amended Version</a></li>
+        </ul>
+    </div>
+
+    {% sources bill %}
+    <div class="clear"></div>
+{% endblock %}
+

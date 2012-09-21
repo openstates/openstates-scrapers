@@ -110,7 +110,7 @@ class KSBillScraper(BillScraper):
             title = tds[0].text_content()
             doc_url = get_doc_link(tds[1])
             if doc_url:
-                bill.add_version(title, doc_url)
+                bill.add_version(title, doc_url, mimetype='application/pdf')
             if len(tds) > 2:
                 sn_url = get_doc_link(tds[2])
                 if sn_url:

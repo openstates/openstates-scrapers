@@ -1,4 +1,5 @@
 from django import template
+from django.utils.safestring import mark_safe
 import markdown
 from docutils.core import publish_parts
 
@@ -33,3 +34,11 @@ def do_rest(parser, token):
     nodelist = parser.parse(('endrest',))
     parser.delete_first_token()
     return RestructuredNode(nodelist)
+
+@register.filter
+def smallcaps(string):
+    if string.isupper():
+        return mark_safe('<span style="font-variant: small-caps;">%s</span>' % string.title())
+    else:
+        return string
+

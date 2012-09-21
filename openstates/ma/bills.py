@@ -137,6 +137,11 @@ class MABillScraper(BillScraper):
                     doc.xpath('//a[contains(@href, "Bills/PDF")]/@href')
                 )
                 if bill_text_url:
-                    bill.add_version('Current Text', bill_text_url[0])
+                    if 'PDF' in bill_text_url[0]:
+                        mimetype = 'application/pdf'
+                    else:
+                        mimetype = 'text/html'
+                    bill.add_version('Current Text', bill_text_url[0],
+                                     mimetype=mimetype)
 
                 self.save_bill(bill)

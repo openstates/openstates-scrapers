@@ -317,7 +317,8 @@ class NYBillScraper(BillScraper):
         for version_bill_id in re.findall('\S+', version_text):
             version_bill_id_noyear, _ = version_bill_id.rsplit('-')
             version_url = url_tmpl + version_bill_id
-            bill.add_version(version_bill_id_noyear, version_url)
+            bill.add_version(version_bill_id_noyear, version_url,
+                             mimetype='text/html')
             self.scraped_amendments.add(version_bill_id_noyear)
 
     def add_amendment_data(self, bill, result):

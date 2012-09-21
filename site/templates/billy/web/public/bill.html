@@ -3,6 +3,7 @@
 {% load humanize %}
 {% load i18n %}
 {% load customtags %}
+{% load markup_tags %}
 
 {% block title %}
   {{bill.bill_id }} - {{metadata.display_name}} {{bill.session_details.display_name}} - Open States
@@ -54,7 +55,7 @@
             <div class="medModule">
                 <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
                 <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
-                <p>{{ bill.title|capfirst }}</p>
+                <p>{{ bill.title|capfirst|smallcaps }}</p>
             </div>
 
             <dl class="inlineList">

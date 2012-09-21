@@ -92,7 +92,8 @@ class NHBillScraper(BillScraper):
                                        type=bill_type)
                 version_url = VERSION_URL % (session,
                                              expanded_bill_id.replace(' ', ''))
-                self.bills[lsr].add_version('latest version', version_url)
+                self.bills[lsr].add_version('latest version', version_url,
+                                            mimetype='text/html')
                 self.bills_by_id[bill_id] = self.bills[lsr]
 
         # load legislators

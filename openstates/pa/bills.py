@@ -84,7 +84,7 @@ class PABillScraper(BillScraper):
                 mime_type = 'text/html'
 
             bill.add_version("Printer's No. %s" % printers_number,
-                             href, mime_type, on_duplicate='use_old')
+                             href, mimetype=mime_type, on_duplicate='use_old')
 
     def parse_history(self, bill, url):
         bill.add_source(url)

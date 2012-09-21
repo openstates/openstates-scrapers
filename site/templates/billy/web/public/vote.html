@@ -34,7 +34,7 @@
                     {{ vote.chamber_name }} {% trans "Vote on" %} <a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
                     ({{ vote.date|date:"M j, Y"}})
                 </h1>
-                <p class="tip">{{bill.title}}</p>
+                <p class="tip">{{bill.title|smallcaps}}</p>
             </div>
             <div class="eightCol colLt clear">
                 <h3 class="h4">{{ vote.motion }}</h3>

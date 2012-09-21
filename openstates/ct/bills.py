@@ -272,7 +272,7 @@ class CTBillScraper(BillScraper):
                     continue
 
                 url = versions_url + f.filename
-                bill.add_version(match.group(2), url)
+                bill.add_version(match.group(2), url, mimetype='text/html')
 
     def scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"

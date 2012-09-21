@@ -132,7 +132,9 @@ class MDBillScraper(BillScraper):
         bill_text_b = doc.xpath('//b[contains(text(), "Bill Text")]')[0]
         for sib in bill_text_b.itersiblings():
             if sib.tag == 'a':
-                bill.add_version(sib.text.strip(','), BASE_URL + sib.get('href'))
+                bill.add_version(sib.text.strip(','),
+                                 BASE_URL + sib.get('href'),
+                                 mimetype='application/pdf')
 
         note_b = doc.xpath('//b[contains(text(), "Fiscal and Policy")]')[0]
         for sib in note_b.itersiblings():

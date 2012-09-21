@@ -1,5 +1,6 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
+{% load markup_tags %}
 {% load staticfiles %}
 {% load i18n %}
 {% load humanize %}
@@ -268,7 +269,7 @@
 	                        <time class="published tipSm">{{bill.most_recent_action.date|date:"F d, Y"}}</time>
                             <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
                                 {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
-                            <p class="clear">{{bill.title}}</p>
+                            <p class="clear">{{bill.title|smallcaps}}</p>
                         </li>
                     {% endfor %}
                 </ul>
