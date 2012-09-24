@@ -53,7 +53,7 @@ class AZBillScraper(BillScraper):
             # versions
             for href in root.xpath("//a[contains(@href, 'pdf')]"):
                 version_url = href.attrib['href']
-                if "bills" in you_are_el.lower():
+                if "bills" in version_url.lower():
                     name = list(href.getparent().getparent().getparent())
                     name = name[1].text_content()
                     bill.add_version(href.text_content(), version_url,
