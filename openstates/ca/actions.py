@@ -98,7 +98,8 @@ _categorizer_rules = (
          'committee:referred'),
 
     Rule(r'Read first time\.', 'bill:reading:1'),
-    Rule(r'Read second time and amended', 'bill:reading:2'),
+    Rule(r'Read second time and amended',
+          ['bill:reading:2']),
     Rule(r'Read third time', 'bill:reading:3'),
     Rule(r'Read third time. Refused passage\.',
          'bill:failed'),
@@ -116,6 +117,7 @@ _categorizer_rules = (
     Rule(r'refused to concur in Assembly amendments', 'amendment:failed'),
 
     Rule(r'Failed passage in committee', 'committee:failed'),
+    Rule(r'(?i)From committee', 'committee:passed'),
     Rule(r'(?i)From committee: Do pass', 'committee:passed:favorable'),
     Rule(r'From committee with author\'s amendments', 'committee:passed'),
 
