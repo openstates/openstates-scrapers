@@ -110,8 +110,10 @@ class PRBillScraper(BillScraper):
                     mimetype = 'application/msword'
                 elif action_url.endswith('.rtf'):
                     mimetype = 'application/rtf'
+                elif action_url.endswith('.pdf'):
+                    mimetype = 'application/pdf'
                 else:
-                    mimetype = None
+                    raise Exception('unknown version type: %s' % action_url)
                 bill.add_version(action, action_url, on_duplicate='use_old',
                                  mimetype=mimetype)
             else:
