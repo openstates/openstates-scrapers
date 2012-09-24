@@ -94,9 +94,6 @@ class NYBillScraper(BillScraper):
 
                     bill.add_source(url)
 
-                    # Adding sponsors below.
-                    #bill.add_sponsor('primary', primary_sponsor)
-
                     bill_url = ("http://open.nysenate.gov/legislation/"
                                 "bill/%s" % result.attrib['id'])
 
@@ -152,7 +149,15 @@ class NYBillScraper(BillScraper):
                 name = sib.text_content().replace('(MS)', '').strip()
                 if sponsor_type in ('cosponsor', 'multisponsor'):
                     sponsor_type = 'cosponsor'
-                bill.add_sponsor(sponsor_type, name,
+
+                if "rules" in name.lower():
+                    name = re.sub(r'(?i)^rules (com)?', '', name)
+                    bill.add_sponsor(sponsor_type, 'Rules Committee')
+                    for sponsor in name.split(', '):
+                        bill.add_sponsor(sponsor_type, name,
+                                 official_type=sponsor_type)
+                else:
+                    bill.add_sponsor(sponsor_type, name,
                                  official_type=sponsor_type)
 
             actions = []
@@ -189,9 +194,8 @@ class NYBillScraper(BillScraper):
             # If it's an assembly bill, add a document for the sponsor's memo.
             if bill['bill_id'][0] == 'A':
                 url = ('http://assembly.state.ny.us/leg/?'
-                       'default_fld=&bn=A09044&term=&Memo=Y')
+                       'default_fld=&bn=%s&term=&Memo=Y') % bill['bill_id']
                 bill.add_document("Sponsor's Memorandum", url)
-
 
     def scrape_senate_votes(self, bill, page):
         for b in page.xpath("//div/b[starts-with(., 'VOTE: FLOOR VOTE:')]"):
@@ -249,7 +253,7 @@ class NYBillScraper(BillScraper):
 
         bill_id = bill['bill_id']
         url = ('http://assembly.state.ny.us/leg/?'
-               'default_fld=&bn=%s&term=2011&Votes=Y')
+               'default_fld=&bn=%s&term=&Votes=Y')
         html = self.urlopen(url % bill_id)
         doc = lxml.html.fromstring(html)
 
