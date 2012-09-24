@@ -61,7 +61,7 @@ class NCLegislatorScraper(LegislatorScraper):
             photo_url = ldoc.xpath('//a[contains(@href, "pictures")]/@href')[0]
             phone = get_table_item(ldoc, 'Phone:')
             address = get_table_item(ldoc, 'Legislative Mailing Address:')
-            email = ldoc.xpath('//a[starts-with(@href, "mailto:")]')[0].text
+            email = ldoc.xpath('//a[starts-with(@href, "mailto:")]')[0].text or ''
 
             # save legislator
             legislator = Legislator(term, chamber, district, full_name,
