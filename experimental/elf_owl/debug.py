@@ -71,8 +71,8 @@ class BaseDetectorThingy(object):
         'committee:passed:favorable',
         'committee:passed:unfavorable',
         ])
-
     reported_inferred_types = set([
+        'reading:2:passed'
         'bill:passed',
         ])
 
@@ -103,8 +103,11 @@ class BaseDetectorThingy(object):
 
         bogus_referrals = []
         for action in self.actions:
+            import pdb;pdb.set_trace()
 
-            if action.types & reported_types:
+            if action.types & (reported_types | reported_inferred_types):
+                print 'REPORTED', action['date'], action['action']
+
                 pending = self.pending_referrals()
 
                 # Close the most recent one.
@@ -119,6 +122,7 @@ class BaseDetectorThingy(object):
                     referral['status'] = 'complete'
 
             if action.types & referred_types:
+                print 'REFERRED', action['date'], action['action']
 
                 # Is the committee unambigiuously identified in this action?
                 committee_ids = [obj['id'] for obj in action.related_entities
@@ -136,12 +140,12 @@ class BaseDetectorThingy(object):
                         msg = "Ambiguous referring committee: %r"
                     logger.warning(msg % action.action)
                     bogus_referrals.append(Referral(action))
+                    continue
 
                 # A list of all referrals of this bill to this committee.
                 key = committee_ids.pop(), action['actor']
                 committee_referrals = self.referrals[key]
                 committee_referrals.append(Referral(action))
-
 
         for key, value in self.referrals.items():
             import pprint
