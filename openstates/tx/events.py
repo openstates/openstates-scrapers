@@ -118,10 +118,12 @@ class TXEventScraper(EventScraper):
 
                 replace = {
                     "see below": "",
-                    "See Below": ""
+                    "See Below": "",
+                    "or upon adjournment": "",
+                    "(or 15 minutes after adjournment of the .*)": "",
                 }
                 for rep in replace:
-                    datetime = datetime.replace(rep, replace[rep])
+                    datetime = re.sub(rep, replace[rep], datetime)
                 datetime = datetime.strip()
 
                 try:
