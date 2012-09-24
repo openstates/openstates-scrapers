@@ -146,7 +146,7 @@ class GABillScraper(BillScraper):
                 # for now we just get HTML
                 description, file_id = version.xpath('*/text()')
                 bill.add_version(description, version_url + file_id,
-                                 add_version='text/html')
+                                 mimetype='text/html')
 
             for action in bxml.xpath('StatusHistory/Status'):
                 date = datetime.datetime.strptime(action.get('StatusDate'),

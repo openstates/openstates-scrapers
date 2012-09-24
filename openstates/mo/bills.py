@@ -406,7 +406,8 @@ class MOBillScraper(BillScraper):
                     mimetype = 'text/html'
                 elif text_url.endswith('pdf'):
                     mimetype = 'application/pdf'
-                bill.add_version(version, text_url, pdf_url=pdf_url, on_duplicate='use_new')
+                bill.add_version(version, text_url, pdf_url=pdf_url,
+                                 on_duplicate='use_new', mimetype=mimetype)
         self.save_bill(bill)
 
     def parse_cosponsors_from_bill(self, bill, url):

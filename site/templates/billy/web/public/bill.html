@@ -222,13 +222,13 @@
                             <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
                             <td>{{ action.actor_name }}</td>
                         {% if action.related_votes %}
-                        <td>{{ action.action_display|safe }}
+                        <td>{{ action.action_display|safe|smallcaps }}
                             {% for vote in action.related_votes %}
-                                <a href = '/{{abbr}}/votes/{{vote}}' >Related Vote</a>
+                                - <a href = '/{{abbr}}/votes/{{vote}}' >Related Vote</a>
                             {% endfor %}
                         </td>
                         {% else %}
-                            <td>{{ action.action_display|safe }}</td>
+                            <td>{{ action.action_display|safe|smallcaps }}</td>
                         {% endif %}
                         </tr>
                     {% endfor %}
