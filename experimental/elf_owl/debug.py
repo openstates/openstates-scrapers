@@ -96,33 +96,47 @@ class BaseDetectorThingy(object):
             if not referral['reporting_action']:
                 yield referral
 
+    def check(self):
+        for k, v in self.referrals.items():
+            done = []
+            v = list(v)
+            while v:
+                x = v.pop()
+                if x in done:
+                    import pdb;pdb.set_trace()
+                done.append(x)
+
+
     def get_referrals(self):
         referred_types = self.referred_types
         reported_types = self.reported_types
         reported_inferred_types = self.reported_inferred_types
-
         bogus_referrals = []
         for action in self.actions:
-            import pdb;pdb.set_trace()
+            # self.check()
 
             if action.types & (reported_types | reported_inferred_types):
-                print 'REPORTED', action['date'], action['action']
-
-                pending = self.pending_referrals()
+                logger.debug('REPORTED %r %r' % (action['date'], action['action']))
 
                 # Close the most recent one.
-                recent = next(pending)
-                recent['reporting_action'] = action
+                if self.referrals:
+                    pending = self.pending_referrals()
+                    recent = next(pending)
 
-                # The rest are marked complete without
-                # a reporting action, per the assumption
-                # that a bill can only be referred to one
-                # committe at a time.
-                for referral in pending:
-                    referral['status'] = 'complete'
+                    recent['reporting_action'] = action
+
+                    # The rest are marked complete without
+                    # a reporting action, per the assumption
+                    # that a bill can only be referred to one
+                    # committe at a time.
+                    for referral in pending:
+                        referral['status'] = 'complete'
+
+                else:
+                    logger.warning('No referral: %r' % action['action'])
 
             if action.types & referred_types:
-                print 'REFERRED', action['date'], action['action']
+                logger.debug('REFERRED %r, %r' % (action['date'], action['action']))
 
                 # Is the committee unambigiuously identified in this action?
                 committee_ids = [obj['id'] for obj in action.related_entities
@@ -150,7 +164,7 @@ class BaseDetectorThingy(object):
         for key, value in self.referrals.items():
             import pprint
             pprint.pprint(value)
-            import pdb;pdb.set_trace()
+            # import pdb;pdb.set_trace()
 
 
 def main(abbr, *args):
@@ -160,18 +174,19 @@ def main(abbr, *args):
         'actions.type': 'committee:refereed',
         'actions.type': 'committee:passed'
         })
-    bb = next(bills)
 
-    dt = BaseDetectorThingy(bb)
-    dt.get_referrals()
+    for bb in bills:
+        print '\n\n-------', bb['bill_id'], '------\n\n'
+        dt = BaseDetectorThingy(bb)
+        dt.get_referrals()
 
-    tags = ['committee:referred', 'committee:passed'
-            'committee:passed:favorable',
-            'committee:passed:unfavorable',]
-    acs = filter(lambda a: set(tags) & set(a['type']), bb['actions'])
-    for ac in acs:
-        print 'text: %(action)s, tags: %(type)r' % ac
-    import pdb;pdb.set_trace()
+        tags = ['committee:referred', 'committee:passed'
+                'committee:passed:favorable',
+                'committee:passed:unfavorable',]
+        acs = filter(lambda a: set(tags) & set(a['type']), bb['actions'])
+        for ac in acs:
+            print 'text: %(action)s, tags: %(type)r' % ac
+        import pdb;pdb.set_trace()
 
 
 if __name__ == '__main__':

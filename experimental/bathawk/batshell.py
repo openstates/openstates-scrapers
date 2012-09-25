@@ -46,6 +46,7 @@ class ShellCommands(object):
 
     def __init__(self, actions):
         self.actions = actions
+        self._test_list = actions.unmatched
         self.command_map = self.as_map()
 
         # How many lines to show.
@@ -101,7 +102,7 @@ class ShellCommands(object):
         self.current_rgx = rgx
         puts('Testing ' + colored.green(line))
         matched = []
-        for action in self.actions.unmatched:
+        for action in self._test_list:
             m = re.search(line, action)
             if m:
                 matched.append([action, m.groupdict()])
@@ -123,6 +124,11 @@ class ShellCommands(object):
         if xsel_enabled:
             p = subprocess.Popen(['xsel', '-bi'], stdin=subprocess.PIPE)
             p.communicate(input=line)
+
+    @command('sw')
+    def swtich_test_list(self, line):
+        self._test_list = getattr(self.actions, line)
+        logger.info('Switched regex tester over to %r.' % line)
 
     def _print_matches(self, matched):
         actions = map(itemgetter(0), matched)
