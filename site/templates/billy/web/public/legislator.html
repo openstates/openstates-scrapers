@@ -329,6 +329,7 @@
         </div>
         {% sources legislator %}
 
+{% if legislator.district %}
 <script>
     var map_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox-light,sunlight.{{legislator.state}}{{legislator.chamber}}.jsonp';
     var map = new L.Map('mapbox-{{metadata.abbr}}',
@@ -350,4 +351,5 @@
     }
     wax.tilejson(map_url, wax_cb);
 </script>
+{% endif %}
 {% endblock %}
