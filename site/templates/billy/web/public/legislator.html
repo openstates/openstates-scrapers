@@ -252,7 +252,7 @@
                 {% if 'committee_id' in role %}
                 <a href="{% url 'committee' abbr role.committee_id %}">{{ role.committee_name }}</a>
                 {% else %} {{ role.committee_name }}{% endif %}
-                {% if role.position|lower != "member" %} ({{role.position}}) {% endif %}
+                {% if role.position and role.position|lower != "member" %} ({{role.position}}) {% endif %}
                 </li>
                 {% endif %}
                 {% endfor %}
