@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import re
+import ksapi
 
 data = re.compile(r'^([a-z]+_[a-z]+_[0-9]{3}): (.*) *$')
 comment = re.compile(r'^#')
+empty = re.compile(r'^\s*$')
 variable = re.compile(r'\$([a-z_]+)\$')
 
 voted = re.compile(r'.*\$vote_tally\$.*')
@@ -13,25 +15,47 @@ failed = re.compile(r'.*(failed|not adopted|not passed).*\$vote_tally\$.*', re.I
 voted_codes = []
 passed_codes = []
 failed_codes = []
+unknown_codes = []
 numbers = []
+new_numbers = {}
 
-with open('action_codes') as action_codes:
-	action_codes_str = action_codes.read()
+def parse_action_codes(action_codes) :
+	with open(action_codes) as action_codes:
+		action_codes_str = action_codes.read()
 	for line in action_codes_str.split('\n'):
+		if empty.match(line):
+			continue
+
 		if comment.match(line):
 			continue
 		if data.match(line):
 			match = data.match(line)
 			number = match.group(1)
+			if number not in ksapi.action_codes:
+				print "New number: %s" % number
+				new_numbers[number] ="new"
+
 			numbers.append(number)
 			if voted.match(match.group(2)):
 				voted_codes.append(number)
-			if passed.match(match.group(2)):
+			elif passed.match(match.group(2)):
 				passed_codes.append(number)
-			if failed.match(match.group(2)):
+			elif failed.match(match.group(2)):
 				failed_codes.append(number)
+			else:
+				unknown_codes.append(number)
 
-print("voted = %s" % voted_codes)
-print("passed = %s" % passed_codes)
-print("failed = %s" % failed_codes)
+		else :
+			print "No match %s" % line
 
+def report () :
+	print("voted = %s" % voted_codes)
+	print("passed = %s" % passed_codes)
+	print("failed = %s" % failed_codes)
+	print("new number=%s" % new_numbers)
+	print("unknown codes=%s" % unknown_codes)
+
+
+if __name__ == '__main__':
+	parse_action_codes('action_codes')
+	report ()
