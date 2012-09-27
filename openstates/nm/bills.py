@@ -19,7 +19,7 @@ HOUSE_VOTE_RE = re.compile('([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])')
 
 def convert_sv_text(text):
     """
-    normalize Senate vote text from pdftotext 
+    normalize Senate vote text from pdftotext
 
     senate votes come out of pdftotext with characters shifted in weird way
     convert_sv_text converts that text to a readable format with junk stripped
@@ -81,12 +81,11 @@ def convert_sv_line(line):
 def convert_sv_char(c):
     """ logic for shifting senate vote characters to real ASCII """
     # capital letters shift 64
-    if 65 <= ord(c)-64 <= 90:
-        return chr(ord(c)-64)
+    if 65 <= ord(c) - 64 <= 90:
+        return chr(ord(c) - 64)
     # punctuation shift 128
     else:
-        return chr(ord(c)-128)
-
+        return chr(ord(c) - 128)
 
 
 class NMBillScraper(BillScraper):
@@ -368,6 +367,7 @@ class NMBillScraper(BillScraper):
                                                                   chamber_name)
 
         with self.urlopen(doc_path) as html:
+
             doc = lxml.html.fromstring(html)
 
             # all links but first one
@@ -502,7 +502,6 @@ class NMBillScraper(BillScraper):
     # house totals
     HOUSE_TOTAL_RE = re.compile('\s+Absent:\s+(\d+)\s+Yeas:\s+(\d+)\s+Nays:\s+(\d+)\s+Excused:\s+(\d+)')
 
-
     def parse_house_vote(self, url):
         """ house votes are pdfs that can be converted to text, require some
         nasty regex to get votes out reliably """
@@ -560,4 +559,3 @@ class NMBillScraper(BillScraper):
                         documents.remove(doc)
                     else:
                         resp_set.add(resp)
-
