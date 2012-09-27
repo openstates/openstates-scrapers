@@ -6,9 +6,24 @@ from billy.scrape.votes import Vote
 
 import lxml.html
 import scrapelib
+import logging
+
+logger = logging.getLogger('openstates')
 
 class UTBillScraper(BillScraper):
     state = 'ut'
+
+    def accept_response(self, response):
+        # check for rate limit pages
+        normal = super(UTBillScraper, self).accept_response(response)
+        return (normal and
+                'com.microsoft.jdbc.base.BaseSQLException' not in
+                    response.text and
+                'java.sql.SQLException' not in
+                    response.text)
+        # The UT site has been throwing a lot of transiant DB errors, these
+        # will backoff and retry if their site has an issue. Seems to happen
+        # often enough.
 
     def scrape(self, chamber, session):
         self.validate_session(session)
@@ -193,7 +208,7 @@ class UTBillScraper(BillScraper):
         elif "UTAH STATE LEGISLATURE" in descr:
             return
         else:
-            print descr
+            logger.warning(descr)
             raise NotImplemented("Can't see if we passed or failed")
 
         headings = page.xpath("//b")[1:]
@@ -231,7 +246,7 @@ class UTBillScraper(BillScraper):
         for person in vdict['Absent or not voting']['people']:
             vote.other(person)
 
-        print vote
+        logger.info(vote)
         bill.add_vote(vote)
 
 
