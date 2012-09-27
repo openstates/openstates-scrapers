@@ -8,7 +8,7 @@ from zipfile import ZipFile, BadZipfile
 from os.path import split, join
 from urllib2 import urlopen, Request, HTTPError
 
-from billy.conf import settings
+from billy.core import settings
 
 
 states = {

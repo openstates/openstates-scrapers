@@ -2,7 +2,7 @@ import os
 import re
 from collections import defaultdict
 
-from billy.conf import settings
+from billy.core import settings
 from billy.scrape.events import EventScraper, Event
 from .models import CACommitteeHearing, CALocation
 

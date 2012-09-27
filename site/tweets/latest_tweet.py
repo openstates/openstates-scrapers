@@ -1,7 +1,7 @@
 import json
 import pymongo
 from scrapelib import urlopen
-from billy.conf import settings
+from billy.core import settings
 
 _latest_tweet = None
 

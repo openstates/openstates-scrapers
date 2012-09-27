@@ -8,7 +8,7 @@ import pytz
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-from billy.conf import settings
+from billy.core import settings
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from .models import CABill

@@ -16,7 +16,7 @@ from functools import partial
 
 from billy import db
 from billy.utils import metadata
-from billy.conf import settings
+from billy.core import settings
 
 
 host = settings.MONGO_HOST

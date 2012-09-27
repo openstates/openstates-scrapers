@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from billy.utils import db
-from billy.conf import settings
+from billy.core import settings
 from influenceexplorer import InfluenceExplorer
 
 from urllib2 import HTTPError
