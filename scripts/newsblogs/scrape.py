@@ -14,7 +14,7 @@ from operator import itemgetter
 import pymongo
 from functools import partial
 
-from billy import db
+from billy.core import db
 from billy.utils import metadata
 from billy.conf import settings
 
