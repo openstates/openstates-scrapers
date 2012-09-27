@@ -37,7 +37,7 @@ from collections import namedtuple
 import MySQLdb
 import _mysql_exceptions
 
-from billy import settings
+from billy.core import settings
 
 
 MYSQL_USER = getattr(settings, 'MYSQL_USER', '')
