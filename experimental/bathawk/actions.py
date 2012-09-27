@@ -56,7 +56,9 @@ class Actions(object):
         msg = 'Retrieving actions for %r session %r'
         logger.info(msg % (self.abbr, session))
         action_ids = defaultdict(list)
-        for bill in db.bills.find({'state': self.abbr, 'session': session},
+        for bill in db.bills.find({'state': self.abbr,
+                                   #'session': session
+                                   },
                                   fields=['actions']):
             for action in bill['actions']:
                 if only_other and action['type'] != ['other']:

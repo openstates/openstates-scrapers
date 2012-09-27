@@ -125,8 +125,21 @@ class ShellCommands(object):
             p = subprocess.Popen(['xsel', '-bi'], stdin=subprocess.PIPE)
             p.communicate(input=line)
 
+    @command('i')
+    def inspect(self, line):
+        '''In case you want to look inside the shell's guts.
+        '''
+        import pdb;pdb.set_trace()
+
     @command('sw')
     def swtich_test_list(self, line):
+        '''Switch the regex tester to test against matched,
+        unmatched, or all ('list') actions.
+        '''
+        if not hasattr(self.actions, line):
+            logger.warning("Failure! The argument should be 'matched', "
+                           "'unmatched', or 'list' for all actions.")
+            return
         self._test_list = getattr(self.actions, line)
         logger.info('Switched regex tester over to %r.' % line)
 
@@ -308,6 +321,8 @@ class Shell(InteractiveConsole):
     def push(self, line):
 
         if not line:
+            if not self.last_line:
+                return
             line = self.last_line
         self.last_line = line
 
