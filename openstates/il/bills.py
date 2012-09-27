@@ -164,10 +164,10 @@ class ILBillScraper(BillScraper):
             # add appointments and JSRs as upper chamber, not perfectly
             # accurate but it'll do
             for bill_url in self.get_bill_urls(chamber, session, 'AM'):
-                self.scrape_bill(chamber, session, doc_type, bill_url,
+                self.scrape_bill(chamber, session, 'AM', bill_url,
                                  'appointment')
             for bill_url in self.get_bill_urls(chamber, session, 'JSR'):
-                self.scrape_bill(chamber, session, doc_type, bill_url,
+                self.scrape_bill(chamber, session, 'JSR', bill_url,
                                  'joint session resolution')
             # TODO: also add EO's - they aren't voted upon anyway & we don't 
             # handle governor so they are omitted for now
