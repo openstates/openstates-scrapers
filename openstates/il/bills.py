@@ -120,19 +120,18 @@ def _categorize_action(action):
         if pattern.findall(action):
             kwargs = { "type": atype }
             if "committee:referred" in atype:
-                kwargs['committee'] = pattern.sub("", action).strip()
+                kwargs['committees'] = [pattern.sub("", action).strip()]
             return kwargs
     return { "type": 'other' }
 
 LEGISLATION_URL = ('http://ilga.gov/legislation/grplist.asp')
 
 def build_url_for_legislation_list(metadata, chamber, session, doc_type):
-    base_params = metadata['session_details'][session].get('params',{})
-    base_params['num1'] = '1'
-    base_params['num2'] = '10000'
-    params = dict(base_params)
-    params['DocTypeID'] = '%s%s' % (chamber_slug(chamber),doc_type)
-    return '?'.join([LEGISLATION_URL,urlencode(params)])
+    params = metadata['session_details'][session].get('params',{})
+    params['num1'] = '1'
+    params['num2'] = '10000'
+    params['DocTypeID'] = doc_type
+    return '?'.join([LEGISLATION_URL, urlencode(params)])
 
 def chamber_slug(chamber):
     if chamber == 'lower':
@@ -150,21 +149,35 @@ class ILBillScraper(BillScraper):
         return doc
 
     def get_bill_urls(self, chamber, session, doc_type):
-        url = build_url_for_legislation_list(self.metadata, chamber, session, doc_type)
+        url = build_url_for_legislation_list(self.metadata, chamber, session,
+                                             doc_type)
         doc = self.url_to_doc(url)
         for bill_url in doc.xpath('//li/a/@href'):
             yield bill_url
 
     def scrape(self, chamber, session):
         for doc_type in DOC_TYPES:
+            doc_type = chamber_slug(chamber)+doc_type
             for bill_url in self.get_bill_urls(chamber, session, doc_type):
-                self.scrape_bill(chamber, session, chamber_slug(chamber)+doc_type, bill_url)
+                self.scrape_bill(chamber, session, doc_type, bill_url)
+        if chamber == 'upper':
+            # add appointments and JSRs as upper chamber, not perfectly
+            # accurate but it'll do
+            for bill_url in self.get_bill_urls(chamber, session, 'AM'):
+                self.scrape_bill(chamber, session, doc_type, bill_url,
+                                 'appointment')
+            for bill_url in self.get_bill_urls(chamber, session, 'JSR'):
+                self.scrape_bill(chamber, session, doc_type, bill_url,
+                                 'joint session resolution')
+            # TODO: also add EO's - they aren't voted upon anyway & we don't 
+            # handle governor so they are omitted for now
 
-    def scrape_bill(self, chamber, session, doc_type, url):
+
+    def scrape_bill(self, chamber, session, doc_type, url, bill_type=None):
         doc = self.url_to_doc(url)
         # bill id, title, summary
         bill_num = re.findall('DocNum=(\d+)', url)[0]
-        bill_type = DOC_TYPES[doc_type[1:]]
+        bill_type = bill_type or DOC_TYPES[doc_type[1:]]
         bill_id = doc_type + bill_num
 
         title = doc.xpath('//span[text()="Short Description:"]/following-sibling::span[1]/text()')[0].strip()
