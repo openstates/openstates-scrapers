@@ -60,6 +60,11 @@ class MABillScraper(BillScraper):
                 break
 
             with self.urlopen(bill_url) as html:
+                if 'Unable to find the Bill' in html:
+                    self.warning('skipping %s' % bill_url)
+                    skipped += 1
+                    continue
+
                 # sometimes the site breaks, missing vital data
                 if 'billShortDesc' not in html:
                     self.warning('truncated page on %s' % bill_url)
@@ -95,7 +100,7 @@ class MABillScraper(BillScraper):
                     atype, whom = classify_action(action)
                     kwargs = {}
                     if not whom is None:
-                        kwargs['committee'] = whom
+                        kwargs['committees'] = [whom]
                     bill.add_action(actor, action, date, type=atype, **kwargs)
 
                 # I tried to, as I was finding the sponsors, detect whether a
