@@ -1,4 +1,4 @@
-from billy.conf import settings
+from billy.core import settings
 
 # mongodb
 MONGO_HOST = getattr(settings, 'OYSTER_MONGO_HOST', settings.MONGO_HOST)

@@ -6,7 +6,7 @@ import tempfile
 import subprocess
 
 from billy import db, utils
-from billy.conf import settings
+from billy.core import settings
 
 
 def vote_csv(abbr, session, chamber, out=sys.stdout):

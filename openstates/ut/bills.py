@@ -6,9 +6,24 @@ from billy.scrape.votes import Vote
 
 import lxml.html
 import scrapelib
+import logging
+
+logger = logging.getLogger('openstates')
 
 class UTBillScraper(BillScraper):
     state = 'ut'
+
+    def accept_response(self, response):
+        # check for rate limit pages
+        normal = super(UTBillScraper, self).accept_response(response)
+        return (normal and
+                'com.microsoft.jdbc.base.BaseSQLException' not in
+                    response.text and
+                'java.sql.SQLException' not in
+                    response.text)
+        # The UT site has been throwing a lot of transiant DB errors, these
+        # will backoff and retry if their site has an issue. Seems to happen
+        # often enough.
 
     def scrape(self, chamber, session):
         self.validate_session(session)
@@ -95,10 +110,13 @@ class UTBillScraper(BillScraper):
 
     def parse_status(self, bill, url):
         with self.urlopen(url) as page:
+            bill.add_source(url)
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
+            uniqid = 0
 
             for row in page.xpath('//table/tr')[1:]:
+                uniqid += 1
                 date = row.xpath('string(td[1])')
                 date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
 
@@ -155,22 +173,86 @@ class UTBillScraper(BillScraper):
                 else:
                     type = 'other'
 
-                bill.add_action(actor, action, date, type=type)
+                bill.add_action(actor, action, date, type=type,
+                                _vote_id=uniqid)
 
                 # Check if this action is a vote
-                vote_links = row.xpath('td/font/font/a')
+                vote_links = row.xpath('./td[4]//a')
                 for vote_link in vote_links:
                     vote_url = vote_link.attrib['href']
 
                     # Committee votes are of a different format that
                     # we don't handle yet
                     if not vote_url.endswith('txt'):
-                        continue
+                        self.parse_html_vote(bill, actor, date, action,
+                                             vote_url, uniqid)
+                    else:
+                        self.parse_vote(bill, actor, date, action,
+                                        vote_url, uniqid)
 
-                    self.parse_vote(bill, actor, date, action, vote_url)
-
-    def parse_vote(self, bill, actor, date, motion, url):
+    def parse_html_vote(self, bill, actor, date, motion, url, uniqid):
         with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+        descr = page.xpath("//b")[0].text_content()
+
+        if "on voice vote" in descr:
+            return
+
+        passed = None
+
+        if "Passed" in descr:
+            passed = True
+        elif "Failed" in descr:
+            passed = False
+        elif "UTAH STATE LEGISLATURE" in descr:
+            return
+        else:
+            logger.warning(descr)
+            raise NotImplemented("Can't see if we passed or failed")
+
+        headings = page.xpath("//b")[1:]
+        votes = page.xpath("//table")
+        sets = zip(headings, votes)
+        vdict = {}
+        for (typ, votes) in sets:
+            txt = typ.text_content()
+            arr = [x.strip() for x in txt.split("-", 1)]
+            if len(arr) != 2:
+                continue
+            v_txt, count = arr
+            v_txt = v_txt.strip()
+            count = int(count)
+            people = [x.text_content().strip() for x in votes.xpath(".//a")]
+
+            vdict[v_txt] = {
+                "count": count,
+                "people": people
+            }
+
+        vote = Vote(actor, date,
+                    motion,
+                    passed,
+                    vdict['Yeas']['count'],
+                    vdict['Nays']['count'],
+                    vdict['Absent or not voting']['count'],
+                    _vote_id=uniqid)
+        vote.add_source(url)
+
+        for person in vdict['Yeas']['people']:
+            vote.yes(person)
+        for person in vdict['Nays']['people']:
+            vote.no(person)
+        for person in vdict['Absent or not voting']['people']:
+            vote.other(person)
+
+        logger.info(vote)
+        bill.add_vote(vote)
+
+
+    def parse_vote(self, bill, actor, date, motion, url, uniqid):
+        with self.urlopen(url) as page:
+            bill.add_source(url)
             vote_re = re.compile('YEAS -?\s?(\d+)(.*)NAYS -?\s?(\d+)'
                                  '(.*)ABSENT( OR NOT VOTING)? -?\s?'
                                  '(\d+)(.*)',
@@ -195,7 +277,8 @@ class UTBillScraper(BillScraper):
             vote = Vote(vote_chamber, date,
                         motion, passed, yes_count, no_count,
                         other_count,
-                        location=vote_location)
+                        location=vote_location,
+                        _vote_id=uniqid)
             vote.add_source(url)
 
             yes_votes = re.split('\s{2,}', match.group(2).strip())

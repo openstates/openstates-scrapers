@@ -1,5 +1,5 @@
 from billy import db, utils
-from billy.conf import settings
+from billy.core import settings
 
 import numpy
 
