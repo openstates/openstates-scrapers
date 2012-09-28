@@ -1,3 +1,4 @@
+import datetime
 import re
 import datetime as dt
 
@@ -8,7 +9,8 @@ import lxml.html
 
 url = "http://assembly.state.ny.us/leg/?sh=hear"
 
-class NYEventScraper(EventScraper):
+
+class NYAssemblyEventScraper(EventScraper):
     _tz = pytz.timezone('US/Eastern')
     state = 'ny'
 
@@ -53,11 +55,10 @@ class NYEventScraper(EventScraper):
                     value = re.sub("\s+", " ", value)
                     metainf[key] = value
 
-
             time = metainf['Time:']
             repl = {
-                "A.M." : "AM",
-                "P.M." : "PM",
+                "A.M.": "AM",
+                "P.M.": "PM",
             }
             drepl = {
                 "Sept": "Sep"
@@ -97,8 +98,55 @@ class NYEventScraper(EventScraper):
                                   ctty,
                                   'committee',
                                   chamber=chamber)
+
             self.save_event(event)
 
     def scrape(self, chamber, session):
         if chamber == 'other':
             self.parse_page(url, session)
+
+
+class NYSenateEventScraper(EventScraper):
+    _tz = pytz.timezone('US/Eastern')
+    state = 'ny'
+    crappy = []
+
+    def scrape(self, chamber, session):
+        if chamber != 'upper':
+            return
+
+        url = (r'http://open.nysenate.gov/legislation/2.0/search.json?'
+               r'term=otype:meeting&pageSize=1000&pageIdx=%d')
+        page_index = 1
+        while True:
+            resp = self.urlopen(url % page_index)
+            if not resp.response.json['response']['results']:
+                break
+            for obj in resp.response.json['response']['results']:
+                event = self.scrape_event(chamber, session, obj)
+                if event:
+                    self.save_event(event)
+            page_index += 1
+
+    def scrape_event(self, chamber, session, obj):
+        meeting = obj['data']['meeting']
+        date = int(meeting['meetingDateTime'])
+        date = datetime.datetime.fromtimestamp(date / 1000)
+        if str(date.year) not in session:
+            return
+        description = 'Committee Meeting: ' + meeting['committeeName']
+        event = Event(session, date, 'committee:meeting',
+                      description=description,
+                      location=meeting['location'] or 'No location given.')
+        event.add_source(obj['url'])
+        event.add_participant('chair', meeting['committeeChair'],
+                              'legislator', chamber='upper')
+        event.add_participant('host', meeting['committeeName'],
+                              'committee', chamber='upper')
+
+        for bill in meeting['bills']:
+            bill_id, _ = bill['senateBillNo'].split('-')
+            event.add_related_bill(
+                bill_id, type='bill',
+                description=bill['summary'] or 'No description given.')
+        return event

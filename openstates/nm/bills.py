@@ -19,7 +19,7 @@ HOUSE_VOTE_RE = re.compile('([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])')
 
 def convert_sv_text(text):
     """
-    normalize Senate vote text from pdftotext 
+    normalize Senate vote text from pdftotext
 
     senate votes come out of pdftotext with characters shifted in weird way
     convert_sv_text converts that text to a readable format with junk stripped
@@ -81,12 +81,14 @@ def convert_sv_line(line):
 def convert_sv_char(c):
     """ logic for shifting senate vote characters to real ASCII """
     # capital letters shift 64
-    if 65 <= ord(c)-64 <= 90:
-        return chr(ord(c)-64)
+    if 65 <= ord(c) - 64 <= 90:
+        return chr(ord(c) - 64)
     # punctuation shift 128
     else:
-        return chr(ord(c)-128)
-
+        try:
+            return chr(ord(c) - 128)
+        except ValueError:
+            return c
 
 
 class NMBillScraper(BillScraper):
@@ -108,7 +110,6 @@ class NMBillScraper(BillScraper):
             for date, filename in matches])
         remote_file = ftp_base + matches[-1][1]
 
-
         # all of the data is in this Access DB, download & retrieve it
         mdbfile = '%s.mdb' % fname
 
@@ -120,7 +121,6 @@ class NMBillScraper(BillScraper):
             zf.extract(self.mdbfile)
             os.remove(fname)
 
-
     def access_to_csv(self, table):
         """ using mdbtools, read access tables as CSV """
         commands = ['mdb-export', self.mdbfile, table]
@@ -128,7 +128,6 @@ class NMBillScraper(BillScraper):
                                 close_fds=True).stdout
         csvfile = csv.DictReader(pipe)
         return csvfile
-
 
     def scrape(self, chamber, session):
         chamber_letter = 'S' if chamber == 'upper' else 'H'
@@ -194,6 +193,7 @@ class NMBillScraper(BillScraper):
         self.scrape_documents(session, 'bills', chamber)
         self.scrape_documents(session, 'resolutions', chamber)
         self.scrape_documents(session, 'memorials', chamber)
+        self.scrape_documents(session, 'votes', chamber, chamber_name='')
         self.check_other_documents(session, chamber)
         self.dedupe_docs()
 
@@ -223,9 +223,14 @@ class NMBillScraper(BillScraper):
                     bill_id = bill_type.replace('B', '') + bill_num
                     try:
                         bill = self.bills[bill_id]
-                        bill.add_document(doc_type, url + fname)
                     except KeyError:
                         self.warning('document for unknown bill %s' % fname)
+                    else:
+                        if doc_type == 'Final Version':
+                            bill.add_version(
+                                'Final Version', url + fname, mimetype='text/html')
+                        else:
+                            bill.add_document(doc_type, url + fname)
 
         check_docs(firs_url, 'Fiscal Impact Report')
         check_docs(lesc_url, 'LESC Analysis')
@@ -355,19 +360,20 @@ class NMBillScraper(BillScraper):
             self.bills[bill_key].add_action(actor, action_name, action_date,
                                             type=action_type, day=action_day)
 
-    def scrape_documents(self, session, doctype, chamber):
+    def scrape_documents(self, session, doctype, chamber, chamber_name=None):
         """ most document types (+ Votes)are in this common directory go
         through it and attach them to their related bills """
 
         session_path = self.metadata['session_details'][session]['slug']
 
-        chamber_name = 'house' if chamber == 'lower' else 'senate'
+        if chamber_name != '':
+            chamber_name = 'house' if chamber == 'lower' else 'senate'
 
-        doc_path = 'http://www.nmlegis.gov/Sessions/%s/%s/%s/' % (session_path,
-                                                                  doctype,
-                                                                  chamber_name)
+        doc_path = 'http://www.nmlegis.gov/Sessions/%s/%s/%s/'
+        doc_path = doc_path % (session_path, doctype, chamber_name)
 
         with self.urlopen(doc_path) as html:
+
             doc = lxml.html.fromstring(html)
 
             # all links but first one
@@ -422,14 +428,12 @@ class NMBillScraper(BillScraper):
                     bill.add_document('%s committee report' % committee_name,
                                       doc_path + fname)
 
-
                 # ignore list, mostly typos reuploaded w/ proper name
                 elif suffix in ('HEC', 'HOVTE', 'GUI'):
                     pass
                 else:
                     # warn about unknown suffix
                     self.warning('unknown document suffix %s' % (fname))
-
 
     def parse_senate_vote(self, url):
         """ senate PDFs -> garbled text -> good text -> Vote """
@@ -450,7 +454,7 @@ class NMBillScraper(BillScraper):
                 dmatch = re.search('DATE:(\d{2}-\d{2}-\d{2})', line)
                 if dmatch:
                     date = dmatch.groups()[0]
-                    vote['date'] =  datetime.strptime(date, '%m-%d-%y')
+                    vote['date'] = datetime.strptime(date, '%m-%d-%y')
 
                 if 'YES NO ABS EXC' in line:
                     in_votes = True
@@ -464,8 +468,8 @@ class NMBillScraper(BillScraper):
 
                     # Lt. Governor voted
                     if 'GOVERNOR' in line:
-                        name, spaces, line = re.match(' ([A-Z,.]+)(\s+)X(.*)',
-                                                      line).groups()
+                        rgx = ' ((?:LT\. )?[A-Z,.]+)(\s+)X(.*)'
+                        name, spaces, line = re.match(rgx, line).groups()
                         if len(spaces) == 1:
                             vote.yes(name)
                         else:
@@ -474,7 +478,7 @@ class NMBillScraper(BillScraper):
                     _, yes, no, abs, exc = line.split()
                     vote['yes_count'] = int(yes)
                     vote['no_count'] = int(no)
-                    vote['other_count'] = int(abs)+int(exc)
+                    vote['other_count'] = int(abs) + int(exc)
                     # no longer in votes
                     in_votes = False
                     continue
@@ -502,7 +506,6 @@ class NMBillScraper(BillScraper):
     # house totals
     HOUSE_TOTAL_RE = re.compile('\s+Absent:\s+(\d+)\s+Yeas:\s+(\d+)\s+Nays:\s+(\d+)\s+Excused:\s+(\d+)')
 
-
     def parse_house_vote(self, url):
         """ house votes are pdfs that can be converted to text, require some
         nasty regex to get votes out reliably """
@@ -523,7 +526,7 @@ class NMBillScraper(BillScraper):
 
         # make vote (faked passage indicator)
         vote = Vote('lower', date, 'house passage', int(yea) > int(nay),
-                    int(yea), int(nay), int(absent)+int(exc))
+                    int(yea), int(nay), int(absent) + int(exc))
         vote.add_source(url)
 
         # votes
@@ -560,4 +563,3 @@ class NMBillScraper(BillScraper):
                         documents.remove(doc)
                     else:
                         resp_set.add(resp)
-

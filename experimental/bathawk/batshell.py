@@ -46,6 +46,7 @@ class ShellCommands(object):
 
     def __init__(self, actions):
         self.actions = actions
+        self._test_list = actions.unmatched
         self.command_map = self.as_map()
 
         # How many lines to show.
@@ -101,7 +102,7 @@ class ShellCommands(object):
         self.current_rgx = rgx
         puts('Testing ' + colored.green(line))
         matched = []
-        for action in self.actions.unmatched:
+        for action in self._test_list:
             m = re.search(line, action)
             if m:
                 matched.append([action, m.groupdict()])
@@ -123,6 +124,24 @@ class ShellCommands(object):
         if xsel_enabled:
             p = subprocess.Popen(['xsel', '-bi'], stdin=subprocess.PIPE)
             p.communicate(input=line)
+
+    @command('i')
+    def inspect(self, line):
+        '''In case you want to look inside the shell's guts.
+        '''
+        import pdb;pdb.set_trace()
+
+    @command('sw')
+    def swtich_test_list(self, line):
+        '''Switch the regex tester to test against matched,
+        unmatched, or all ('list') actions.
+        '''
+        if not hasattr(self.actions, line):
+            logger.warning("Failure! The argument should be 'matched', "
+                           "'unmatched', or 'list' for all actions.")
+            return
+        self._test_list = getattr(self.actions, line)
+        logger.info('Switched regex tester over to %r.' % line)
 
     def _print_matches(self, matched):
         actions = map(itemgetter(0), matched)
@@ -206,8 +225,13 @@ class ShellCommands(object):
         try:
             actions = itertools.islice(cache['actions'], 50)
             actions = list(actions)
+            if not actions:
+                actions = iter(self._test_list)
+                cache['actions'] = actions
+                actions = itertools.islice(actions, 50)
+                actions = list(actions)
         except KeyError, StopIteration:
-            actions = iter(self.actions.unmatched)
+            actions = iter(self._test_list)
             cache['actions'] = actions
             actions = itertools.islice(actions, 50)
             actions = list(actions)
@@ -302,6 +326,8 @@ class Shell(InteractiveConsole):
     def push(self, line):
 
         if not line:
+            if not self.last_line:
+                return
             line = self.last_line
         self.last_line = line
 
