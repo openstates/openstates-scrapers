@@ -225,8 +225,13 @@ class ShellCommands(object):
         try:
             actions = itertools.islice(cache['actions'], 50)
             actions = list(actions)
+            if not actions:
+                actions = iter(self._test_list)
+                cache['actions'] = actions
+                actions = itertools.islice(actions, 50)
+                actions = list(actions)
         except KeyError, StopIteration:
-            actions = iter(self.actions.unmatched)
+            actions = iter(self._test_list)
             cache['actions'] = actions
             actions = itertools.islice(actions, 50)
             actions = list(actions)
