@@ -31,7 +31,6 @@ class IndexBuilder(object):
         self.tails = collections.defaultdict(lambda: set())
         self.stemmer = nltk.stem.porter.PorterStemmer()
         self.stopwords = set(nltk.corpus.stopwords.words('english'))
-        self.tokenize = nltk.tokenize.wordpunct_tokenize
         self.stem_word = self.stemmer.stem_word
         self.f = lambda _s: len(_s) > 1
         self.new_id = itertools.count()
