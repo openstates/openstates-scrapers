@@ -1,7 +1,7 @@
 import webbrowser
 import itertools
 import operator
-from billy import db
+from billy.core import db
 
 
 def main(abbr, session=None):
