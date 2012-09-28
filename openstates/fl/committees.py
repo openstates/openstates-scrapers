@@ -85,7 +85,7 @@ class FLCommitteeScraper(CommitteeScraper):
         doc = lxml.html.fromstring(html)
 
         name = doc.xpath('//h1/text()') or doc.xpath('//h2/text()')
-        name = name[0]
+        name = name[0].strip()
 
         comm = Committee('joint', name)
         comm.add_source(url)
