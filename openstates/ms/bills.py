@@ -3,7 +3,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import VoteScraper, Vote
 from billy.scrape.utils import convert_pdf
 from datetime import datetime
-import lxml.etree
+import lxml.html
 import os
 import re
 
@@ -52,7 +52,7 @@ class MSBillScraper(BillScraper):
         url = 'http://billstatus.ls.state.ms.us/%s/pdf/all_measures/allmsrs.xml' % session
 
         with self.urlopen(url) as bill_dir_page:
-            root = lxml.etree.fromstring(bill_dir_page.bytes)
+            root = lxml.html.fromstring(bill_dir_page.bytes)
             for mr in root.xpath('//lastaction/msrgroup'):
                 bill_id = mr.xpath('string(measure)').replace(" ", "")
                 if bill_id[0] == "S":
@@ -72,7 +72,7 @@ class MSBillScraper(BillScraper):
                 main_doc_url = 'http://billstatus.ls.state.ms.us/%s' % main_doc
                 bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf/%s' % (session, link)
                 with self.urlopen(bill_details_url) as details_page:
-                    details_root = lxml.etree.fromstring(details_page.bytes)
+                    details_root = lxml.html.fromstring(details_page.bytes)
                     title = details_root.xpath('string(//shorttitle)')
                     longtitle = details_root.xpath('string(//longtitle)')
 
