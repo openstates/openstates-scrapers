@@ -1,8 +1,9 @@
 import datetime
 import urlparse
-import lxml.html
+import lxml.html, lxml.etree
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 class GABillScraper(BillScraper):
     """
@@ -81,7 +82,7 @@ class GABillScraper(BillScraper):
 
 
     def scrape(self, chamber, session):
-        # for now just go to scrape_xml, but we can add logic to decide
+        self.scrape_all_votes(session)
         self.scrape_xml(chamber, session)
 
 
@@ -132,7 +133,17 @@ class GABillScraper(BillScraper):
 
             bill = Bill(session, chamber, bill_id, title, type=type,
                         summary=summary)
+            bill_url = 'http://www1.legis.ga.gov/legis/%s/sum/%s.htm' % (
+                session, bill_id.lower())
+            bill.add_source(bill_url)
             bill.add_source(summary_url)
+
+            # get votes from ids
+            bhtml = lxml.html.fromstring(self.urlopen(bill_url))
+            vote_links = bhtml.xpath('//a[contains(@href, "/votes/")]/@href')
+            vote_ids = [l.rsplit('/')[-1].split('.')[0] for l in vote_links]
+            for vid in vote_ids:
+                bill.add_vote(self.votes[vid])
 
             for sponsor in bxml.xpath('Sponsor'):
                 sponsor_name, code = sponsor.text.rsplit(' ', 1)
@@ -168,6 +179,52 @@ class GABillScraper(BillScraper):
                 bill.add_action(actor, action.text, date, atype)
 
             self.save_bill(bill)
+
+
+    def scrape_all_votes(self, session):
+        house_url = 'http://www1.legis.ga.gov/legis/%s/list/HouseVotes.xml'
+        senate_url = 'http://www1.legis.ga.gov/legis/%s/list/SenateVotes.xml'
+        self.votes = {}
+        self.scrape_chamber_votes('lower', house_url % session)
+        self.scrape_chamber_votes('upper', senate_url % session)
+
+
+    def scrape_chamber_votes(self, chamber, url):
+        xml = self.urlopen(url)
+        doc = lxml.etree.fromstring(xml)
+
+        for vxml in doc.xpath('//vote'):
+            motion = vxml.get('caption') or 'unknown'
+            timestamp = datetime.datetime.strptime(vxml.get('dateTime'),
+                                                   '%Y-%m-%dT%H:%M:%S')
+
+            # legislaton key is often blank, so we're ignoring it now
+            #legislation = vxml.get('legislation')
+
+            unknown_count = int(vxml.xpath('totals/@unknown')[0])
+            excused_count = int(vxml.xpath('totals/@excused')[0])
+            nv_count = int(vxml.xpath('totals/@not-voting')[0])
+            no_count = int(vxml.xpath('totals/@nays')[0])
+            yes_count = int(vxml.xpath('totals/@yeas')[0])
+            other_count = unknown_count + excused_count + nv_count
+
+            vote = Vote(chamber, timestamp, motion,
+                        passed=yes_count > no_count, yes_count=yes_count,
+                        no_count=no_count, other_count=other_count)
+            vote.add_source(url)
+
+            for m in vxml.xpath('member'):
+                vote_letter = m.get('vote')
+                member = m.get('name')
+                if vote_letter == 'Y':
+                    vote.yes(member)
+                elif vote_letter == 'N':
+                    vote.no(member)
+                else:
+                    vote.other(member)
+
+            # store vote
+            self.votes[vxml.get('id')] = vote
 
 
     # HTML scrapers for 1995-2003 probably still work, disabled for now

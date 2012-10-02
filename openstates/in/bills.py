@@ -221,9 +221,9 @@ class INBillScraper(BillScraper):
                     # sometimes there are blank actions, just skip these
                     continue
 
-                atype, attrs = self.categorizer.categorize(action)
+                attrs = self.categorizer.categorize(action)
 
-                bill.add_action(chamber, action, date, type=atype, **attrs)
+                bill.add_action(chamber, action, date, **attrs)
 
     def build_subject_mapping(self, session):
         self.subjects = defaultdict(list)
