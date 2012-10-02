@@ -75,52 +75,28 @@ class NYBillScraper(BillScraper):
             for result in results:
                 details = self.bill_id_details(result)
                 if details:
-                    letter, number, _ = details[-1]
+                    letter, number, is_amd = details[-1]
                     billdata[letter][number].append(details)
 
-        for letter in billdata:
+        for letter in {
+            'upper': 'SRJB',
+            'lower': 'AEKL'}[chamber]:
+
             for number in billdata[letter]:
-                if number in billdata[letter]:
-                    data = billdata[letter][number]
-                else:
-                    continue
+
+                data = billdata[letter][number]
 
                 # There may have been multiple bill versions with this number.
                 # Taking the last one ignores the previous versions.
+                data.sort(key=lambda t: ord(t[-1][-1]) if t[-1][-1] else 0)
+
+                # Sort from earliest version to most recent.
                 values = data[-1]
 
                 # Create the bill object.
                 bill = self.scrape_bill(session, chamber, *values)
                 if bill:
                     self.save_bill(bill)
-                # if not bill:
-                #     continue
-
-                # # This is where it gets horrible. If the bill has a companion
-                # # (or 'same-as') bill in the other chamber, get its votes and
-                # # add them into this bill.
-                # companions = bill['companions']
-                # if companions:
-                #     scraped_companions = []
-                #     for companion in companions:
-                #         m = re.search(r'(\w+)\s*(\d+)(\w+)?', companion['bill_id'])
-                #         if m:
-                #             _letter, _number, _ = m.groups()
-
-                #         if letter in 'SRJB':
-                #             _chamber = 'upper'
-                #         else:
-                #             _chamber = 'lower'
-
-                #         if _number in billdata[_letter]:
-                #             _values = billdata[_letter][_number][-1]
-                #             _bill = self.scrape_bill(session, _chamber, *_values)
-                #             if _bill:
-                #                 scraped_companions.append(_bill)
-                #     if scraped_companions:
-                #         pass
-                #         # print scraped_companions
-                #         # import pdb;pdb.set_trace()
 
     def bill_id_details(self, result):
 
@@ -152,13 +128,13 @@ class NYBillScraper(BillScraper):
 
         assembly_url = (
             'http://assembly.state.ny.us/leg/?'
-            'default_fld=&bn=%s&term=&Memo=Y') % bill_id
+            'default_fld=&bn=%s&Summary=Y&Actions=Y') % bill_id
 
-        return (senate_url, assembly_url, bill_type, bill_id,
+        return (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
                 title, (letter, number, is_amd))
 
     def scrape_bill(self, session, chamber, senate_url, assembly_url,
-                    bill_type, bill_id, title, bill_id_parts):
+                    bill_chamber, bill_type, bill_id, title, bill_id_parts):
 
         assembly_doc = self.url2lxml(assembly_url)
         if not assembly_doc:
@@ -167,7 +143,7 @@ class NYBillScraper(BillScraper):
             return None
 
         assembly_page = AssemblyBillPage(
-                        self, session, chamber, assembly_url, assembly_doc,
+                        self, session, bill_chamber, assembly_url, assembly_doc,
                         bill_type, bill_id, title, bill_id_parts)
 
         try:
@@ -176,7 +152,7 @@ class NYBillScraper(BillScraper):
             senate_succeeded = False
         else:
             senate_page = SenateBillPage(
-                            self, session, chamber, senate_url, senate_doc,
+                            self, session, bill_chamber, senate_url, senate_doc,
                             bill_type, bill_id, title, bill_id_parts)
             senate_succeeded = True
 
@@ -188,4 +164,13 @@ class NYBillScraper(BillScraper):
             bill['subjects'] = senate_page.bill['subjects']
             bill['documents'].extend(senate_page.bill['documents'])
             bill['sources'].extend(senate_page.bill['sources'])
+            bill['versions'].extend(senate_page.bill['versions'])
+
+        # Dedupe sources.
+        source_urls = set([])
+        for source in bill['sources'][:]:
+            if source['url'] in source_urls:
+                bill['sources'].remove(source)
+            source_urls.add(source['url'])
+
         return bill
