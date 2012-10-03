@@ -38,8 +38,7 @@ class NYBillScraper(BillScraper):
 
         errors = 0
         index = 0
-        # previous_nonamendment_bill = None
-        # self.scraped_amendments = scraped_amendments = set()
+
         billdata = defaultdict(lambda: defaultdict(list))
         while errors < 10:
 
@@ -142,9 +141,13 @@ class NYBillScraper(BillScraper):
             self.logger.warning(msg % (bill_id, assembly_url))
             return None
 
+        # The bill id, minus the trailing amendment letter.
+        bill_id = ''.join(bill_id_parts[:-1])
+
         assembly_page = AssemblyBillPage(
                         self, session, bill_chamber, assembly_url, assembly_doc,
-                        bill_type, bill_id, title, bill_id_parts)
+                        bill_type, bill_id, title,
+                        bill_id_parts)
 
         try:
             senate_doc = self.url2lxml(senate_url)
