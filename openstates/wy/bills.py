@@ -132,6 +132,9 @@ class WYBillScraper(BillScraper):
         thing = []
         pastHeader = False
         for action in actions:
+            action = action.replace(u'\xa0', ' ').replace(u'\xc2', '')
+            # XXX: Fix the above, that's a rowdy mess. -- PRT
+
             if not pastHeader and action_re.match(action):
                 pastHeader = True
             if pastHeader:
