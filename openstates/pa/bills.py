@@ -70,6 +70,12 @@ class PABillScraper(BillScraper):
                 self.parse_votes(bill, vote_url(chamber, session, special,
                                                 type_abbr, bill_num))
 
+            # Dedupe sources.
+            sources = bill['sources']
+            for source in sources:
+                if 1 < sources.count(source):
+                    sources.remove(source)
+
             self.save_bill(bill)
 
     def parse_bill_versions(self, bill, page):
@@ -159,8 +165,8 @@ class PABillScraper(BillScraper):
                 elif caption == 'House':
                     chamber = 'lower'
                 else:
-                    import pdb;pdb.set_trace()
-                    self.parse_committee_votes(
+                    committee = re.findall(r'\t(.+)', caption).pop()
+                    self.parse_committee_votes(committee,
                         chamber, bill, td.xpath('a')[0].attrib['href'])
 
                 self.parse_chamber_votes(chamber, bill,
@@ -172,13 +178,15 @@ class PABillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'rc_view_action2')]"):
+            xpath = "//a[contains(@href, 'rc_view_action2')]"
+            for link in page.xpath(xpath)[::-1]:
                 date_str = link.xpath("../../../td")[0].text.strip()
                 date = datetime.datetime.strptime(date_str, "%m/%d/%Y")
-                vote = self.parse_roll_call(link.attrib['href'], chamber, date)
+                vote = self.parse_roll_call(link, chamber, date)
                 bill.add_vote(vote)
 
-    def parse_roll_call(self, url, chamber, date):
+    def parse_roll_call(self, link, chamber, date):
+        url = link.attrib['href']
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
 
@@ -199,9 +207,7 @@ class PABillScraper(BillScraper):
                 type = 'amendment'
             else:
                 type = 'other'
-
-            if not motion:
-                motion = 'Unknown'
+                motion = link.text_content()
 
             yeas = int(page.xpath("//div[text() = 'YEAS']")[0].getnext().text)
             nays = int(page.xpath("//div[text() = 'NAYS']")[0].getnext().text)
@@ -227,7 +233,7 @@ class PABillScraper(BillScraper):
 
             return vote
 
-    def parse_committee_votes(self, chamber, bill, url):
+    def parse_committee_votes(self, committee, chamber, bill, url):
         bill.add_source(url)
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
@@ -249,7 +255,10 @@ class PABillScraper(BillScraper):
             # Roll call.
             rollcall = self.parse_upper_committee_vote_rollcall(bill, vote_url)
 
-            vote = Vote(chamber, date, motion, type='other', **rollcall)
+            motion = 'Committee vote (%s): %s' % (committee, motion)
+
+            vote = Vote(chamber, date, motion, type='other',
+                        committee=committee, **rollcall)
 
             for voteval in ('yes', 'no', 'other'):
                 for name in rollcall.get(voteval + '_votes', []):
@@ -260,7 +269,7 @@ class PABillScraper(BillScraper):
             bill.add_vote(vote)
 
         for link in doc.xpath("//a[contains(@href, 'listVotes.cfm')]"):
-            self.parse_committee_votes(chamber, bill, link.attrib['href'])
+            self.parse_committee_votes(committee, chamber, bill, link.attrib['href'])
 
     def parse_upper_committee_vote_rollcall(self, bill, url):
         bill.add_source(url)
