@@ -113,7 +113,7 @@ class WABillScraper(BillScraper):
             bill.add_source(fake_source)
 
             self.scrape_sponsors(bill)
-            self.scrape_actions(bill)
+            self.scrape_actions(bill, bill_num)
             self.scrape_votes(bill)
 
             return bill
@@ -132,7 +132,7 @@ class WABillScraper(BillScraper):
             for sponsor in xpath(page, "//wa:Sponsor/wa:Name"):
                 bill.add_sponsor('primary', sponsor.text)
 
-    def scrape_actions(self, bill):
+    def scrape_actions(self, bill, bill_num):
         bill_id = bill['bill_id'].replace(' ', '%20')
         session = bill['session']
         biennium = "%s-%s" % (session[0:4], session[7:9])
@@ -141,51 +141,66 @@ class WABillScraper(BillScraper):
 
         chamber = bill['chamber']
 
-        url = ("%s/GetLegislativeStatusChangesByBillId?billId=%s&"
-               "biennium=%s&beginDate=%s&endDate=%s" % (self._base_url,
-                                                        bill_id,
-                                                        biennium,
-                                                        begin_date,
-                                                        end_date))
+        url = "http://apps.leg.wa.gov/billinfo/summary.aspx?bill=%s&year=%s" % (
+            bill_num,
+            biennium
+        )
+
         with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page.bytes)
+            page = lxml.html.fromstring(page)
+            actions = page.xpath("//table")[6]
+            found_heading = False
+            out = False
+            curchamber = bill['chamber']
+            curday = None
+            curyear = None
 
-            for status in xpath(page, "//wa:LegislativeStatus"):
-                action = xpath(status, "string(wa:HistoryLine)").strip()
-                date = xpath(status, "string(wa:ActionDate)").split("T")[0]
-                date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+            for action in actions.xpath(".//tr"):
+                if out:
+                    continue
 
-                atype = []
+                if not found_heading:
+                    if action.xpath(".//td[@colspan='3']//b") != []:
+                        found_heading = True
+                    else:
+                        continue
 
-                if (action.startswith('Third reading, passed') or
-                    action.startswith('Third reading, adopted')):
+                if action.xpath(".//a[@href='#history']"):
+                    out = True
+                    continue
 
-                    chamber = {'upper': 'lower', 'lower': 'upper'}[chamber]
-                    atype.append('bill:passed')
-                    atype.append('bill:reading:3')
 
-                actor = chamber
+                rows = action.xpath(".//td")
+                rows = rows[1:]
+                if len(rows) == 1:
+                    txt = rows[0].text_content().strip()
 
-                if (action.startswith('First reading') or
-                    action.startswith('Read first time')):
+                    session = re.findall(r"(\d{4}) (.*) SESSION", txt)
+                    chamber = re.findall(r"IN THE (HOUSE|SENATE)", txt)
 
-                    atype.append('bill:introduced')
-                    atype.append('bill:reading:1')
-                elif action.startswith('Introduced'):
-                    atype.append('bill:introduced')
-                elif action.startswith('Governor signed'):
-                    actor = 'executive'
-                    atype.append('governor:signed')
-                elif action == 'Adopted.':
-                    atype.append('bill:passed')
+                    if session != []:
+                        session = session[0]
+                        year, session_type = session
+                        curyear = year
 
-                if 'Floor amendment(s) adopted' in action:
-                    atype.append('amendment:passed')
+                    if chamber != []:
+                        curchamber = {
+                            "SENATE": 'upper',
+                            "HOUSE": 'lower'
+                        }[chamber[0]]
+                else:
+                    _, day, action = [x.text_content().strip() for x in rows]
+                    if day != "":
+                        curday = day
+                    if curday is None or curyear is None:
+                        continue
 
-                if 'referred' in action.lower():
-                    atype.append('committee:referred')
+                    date = "%s %s" % (curyear, curday)
+                    date = datetime.datetime.strptime(date, "%Y %b %d")
+                    bill.add_action(curchamber, action, date,
+                                    type=['other'])
 
-                bill.add_action(actor, action, date, type=atype)
+
 
     def scrape_votes(self, bill):
         session = bill['session']
