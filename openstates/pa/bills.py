@@ -1,5 +1,6 @@
 import re
 import datetime
+import collections
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -9,9 +10,12 @@ from .utils import (bill_abbr, parse_action_date, bill_list_url, history_url,
 import lxml.html
 import urlparse
 
+from .actions import Categorizer
+
 
 class PABillScraper(BillScraper):
     state = 'pa'
+    categorizer = Categorizer()
 
     def scrape(self, chamber, session):
         self.validate_session(session)
@@ -66,13 +70,19 @@ class PABillScraper(BillScraper):
                 self.parse_votes(bill, vote_url(chamber, session, special,
                                                 type_abbr, bill_num))
 
+            # Dedupe sources.
+            sources = bill['sources']
+            for source in sources:
+                if 1 < sources.count(source):
+                    sources.remove(source)
+
             self.save_bill(bill)
 
     def parse_bill_versions(self, bill, page):
         for link in page.xpath(
                 '//div[@class="pn_table"]/descendant::tr/td[2]/a[@class="imgDim"]'):
             href = link.attrib['href']
-            params = urlparse.parse_qs(href[href.find("?")+1:])
+            params = urlparse.parse_qs(href[href.find("?") + 1:])
             printers_number = params['pn'][0]
             version_type = params['txtType'][0]
             mime_type = 'text/html'
@@ -137,54 +147,9 @@ class PABillScraper(BillScraper):
                 continue
 
             action = match.group(1)
-
-            type = []
-            kwargs = {}
-            committee = None
-
-            if action.lower().startswith('introduced'):
-                type.append('bill:introduced')
-            elif re.findall("Referred to (.+)", action) != []:
-                type.append('committee:referred')
-                committee = re.findall("Referred to (.+)", action)[0]  #XXX: Fix?
-            elif re.findall("Re-referred to (.+)", action) != []:
-                type.append('committee:referred')
-                committee = re.findall("Re-referred to (.+)", action)[0]  #XXX: Fix?
-            elif action.startswith('Amended on'):
-                type.append('amendment:passed')
-            elif action.startswith('Approved by the Governor'):
-                type.append('governor:signed')
-            elif action.startswith('Presented to the Governor'):
-                type.append('governor:received')
-            elif action == 'Final passage':
-                type.append('bill:passed')
-            elif action == 'Adopted' and bill['type'] == ['resolution']:
-                type.append('bill:passed')
-            elif action == 'First consideration':
-                type.append('bill:reading:1')
-            elif action.startswith('Second consideration'):
-                type.append('bill:reading:2')
-            elif action.startswith('Third consideration'):
-                type.append('bill:reading:3')
-            elif 'Signed in House' in action:
-                type.append('bill:passed')
-            elif 'Signed in Senate' in action:
-                type.append('bill:passed')
-
-            if re.search('concurred in (House|Senate) amendments', action):
-                if re.search(', as amended by the (House|Senate)', action):
-                    type.append('amendment:amended')
-                type.append('amendment:passed')
-
-            if not type:
-                type = ['other']
-
-            if not committee is None:
-                kwargs['committees'] = committee
-
+            attrs = self.categorizer.categorize(action)
             date = parse_action_date(match.group(2))
-            bill.add_action(chamber, action, date, type=type,
-                            **kwargs)
+            bill.add_action(chamber, action, date, **attrs)
 
     def parse_votes(self, bill, url):
         bill.add_source(url)
@@ -200,7 +165,9 @@ class PABillScraper(BillScraper):
                 elif caption == 'House':
                     chamber = 'lower'
                 else:
-                    continue
+                    committee = re.findall(r'\t(.+)', caption).pop()
+                    self.parse_committee_votes(committee,
+                        chamber, bill, td.xpath('a')[0].attrib['href'])
 
                 self.parse_chamber_votes(chamber, bill,
                                          td.xpath('a')[0].attrib['href'])
@@ -211,13 +178,15 @@ class PABillScraper(BillScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'rc_view_action2')]"):
+            xpath = "//a[contains(@href, 'rc_view_action2')]"
+            for link in page.xpath(xpath)[::-1]:
                 date_str = link.xpath("../../../td")[0].text.strip()
                 date = datetime.datetime.strptime(date_str, "%m/%d/%Y")
-                vote = self.parse_roll_call(link.attrib['href'], chamber, date)
+                vote = self.parse_roll_call(link, chamber, date)
                 bill.add_vote(vote)
 
-    def parse_roll_call(self, url, chamber, date):
+    def parse_roll_call(self, link, chamber, date):
+        url = link.attrib['href']
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
 
@@ -238,9 +207,7 @@ class PABillScraper(BillScraper):
                 type = 'amendment'
             else:
                 type = 'other'
-
-            if not motion:
-                motion = 'Unknown'
+                motion = link.text_content()
 
             yeas = int(page.xpath("//div[text() = 'YEAS']")[0].getnext().text)
             nays = int(page.xpath("//div[text() = 'NAYS']")[0].getnext().text)
@@ -265,3 +232,70 @@ class PABillScraper(BillScraper):
                     vote.other(name)
 
             return vote
+
+    def parse_committee_votes(self, committee, chamber, bill, url):
+        bill.add_source(url)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+
+        for link in doc.xpath("//a[contains(@href, 'listVoteSummary.cfm')]"):
+
+            # Date
+            date = link.xpath('../../td')[0].text_content()
+            date = datetime.datetime.strptime(date, "%m/%d/%Y")
+
+            # Motion
+            motion = link.xpath('..')[0].text_content().strip()
+            _, motion = motion.split('-', 1)
+            motion = motion.strip()
+
+            vote_url = link.attrib['href']
+
+            # Roll call.
+            rollcall = self.parse_upper_committee_vote_rollcall(bill, vote_url)
+
+            motion = 'Committee vote (%s): %s' % (committee, motion)
+
+            vote = Vote(chamber, date, motion, type='other',
+                        committee=committee, **rollcall)
+
+            for voteval in ('yes', 'no', 'other'):
+                for name in rollcall.get(voteval + '_votes', []):
+                    getattr(vote, voteval)(name)
+
+            vote.add_source(url)
+            vote.add_source(vote_url)
+            bill.add_vote(vote)
+
+        for link in doc.xpath("//a[contains(@href, 'listVotes.cfm')]"):
+            self.parse_committee_votes(committee, chamber, bill, link.attrib['href'])
+
+    def parse_upper_committee_vote_rollcall(self, bill, url):
+        bill.add_source(url)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        rollcall = collections.defaultdict(list)
+        for tr in doc.xpath("//*[text() = 'AYE']/..")[0].itersiblings():
+            tr = iter(tr)
+            name_td = tr.next()
+            name = name_td.text_content().strip()
+            if not name:
+                continue
+            tds = zip(['yes', 'no', 'other'], tr)
+            for voteval, td in tds:
+                if list(td):
+                    break
+            rollcall[voteval + '_votes'].append(name)
+
+        for voteval, xpath in (('yes', '//td[text() = "AYES:"]'),
+                               ('no', '//td[text() = "NAYS:"]'),
+                               ('other', '//td[text() = "NV:"]')):
+
+            count = doc.xpath(xpath)[0].itersiblings().next().text_content()
+            rollcall[voteval + '_count'] = int(count)
+
+        rollcall['passed'] = rollcall['yes_count'] > rollcall['no_count']
+        return dict(rollcall)
+

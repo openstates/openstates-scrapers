@@ -18,7 +18,6 @@ class NYBillScraper(BillScraper):
     categorizer = Categorizer()
 
     def url2lxml(self, url, cache={}, xml=False):
-        self.logger.info('getting %r' % url)
         if url in cache:
             return cache[url]
         if xml:
@@ -37,12 +36,10 @@ class NYBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
 
-        self.bills = defaultdict(list)
-
         errors = 0
         index = 0
-        # previous_nonamendment_bill = None
-        # self.scraped_amendments = scraped_amendments = set()
+
+        billdata = defaultdict(lambda: defaultdict(list))
         while errors < 10:
 
             index += 1
@@ -71,64 +68,112 @@ class NYBillScraper(BillScraper):
                 # If the result response is empty, we've hit the end of
                 # the data. Quit.
                 break
-            for result in doc.xpath("//result[@type = 'bill']"):
+            results = doc.xpath("//result[@type = 'bill']")
+            if not results:
+                break
+            for result in results:
+                details = self.bill_id_details(result)
+                if details:
+                    letter, number, is_amd = details[-1]
+                    billdata[letter][number].append(details)
 
-                bill_id = result.attrib['id'].split('-')[0]
+        for letter in {
+            'upper': 'SRJB',
+            'lower': 'AEKL'}[chamber]:
 
-                # Parse the bill_id into beginning letter, number
-                # and any trailing letters indicating its an amendment.
-                bill_id_rgx = r'(^[A-Z])(\d{,6})([A-Z]{,3})'
-                bill_id_base = re.search(bill_id_rgx, bill_id)
-                bill_id_parts = letter, number, is_amd = bill_id_base.groups()
+            for number in billdata[letter]:
 
-                bill_chamber, bill_type = {
-                    'S': ('upper', 'bill'),
-                    'R': ('upper', 'resolution'),
-                    'J': ('upper', 'legislative resolution'),
-                    'B': ('upper', 'concurrent resolution'),
-                    'A': ('lower', 'bill'),
-                    'E': ('lower', 'resolution'),
-                    'K': ('lower', 'legislative resolution'),
-                    'L': ('lower', 'joint resolution')}[letter]
+                data = billdata[letter][number]
 
-                bill_id, year = result.attrib['id'].split('-')
+                # There may have been multiple bill versions with this number.
+                # Taking the last one ignores the previous versions.
+                data.sort(key=lambda t: ord(t[-1][-1]) if t[-1][-1] else 0)
 
-                senate_url = (
-                    "http://open.nysenate.gov/legislation/"
-                    "bill/%s" % result.attrib['id'])
+                # Sort from earliest version to most recent.
+                values = data[-1]
 
-                assembly_url = (
-                    'http://assembly.state.ny.us/leg/?'
-                   'default_fld=&bn=%s&term=&Memo=Y') % bill_id
+                # Create the bill object.
+                bill = self.scrape_bill(session, chamber, *values)
+                if bill:
+                    self.save_bill(bill)
 
-                title = result.attrib['title'].strip()
+    def bill_id_details(self, result):
 
-                bill = self.scrape_bill(
-                    session, chamber, senate_url, assembly_url,
-                    bill_type, bill_id, title, bill_id_parts)
+        api_id = result.attrib['id']
+        title = result.attrib['title'].strip()
+        if not title:
+            return
 
-                bill.add_source(url)
+        # Parse the bill_id into beginning letter, number
+        # and any trailing letters indicating its an amendment.
+        bill_id, year = api_id.split('-')
+        bill_id_rgx = r'(^[A-Z])(\d{,6})([A-Z]{,3})'
+        bill_id_base = re.search(bill_id_rgx, bill_id)
+        letter, number, is_amd = bill_id_base.groups()
 
-                self.bills[(chamber, letter, number)].append(bill)
+        bill_chamber, bill_type = {
+            'S': ('upper', 'bill'),
+            'R': ('upper', 'resolution'),
+            'J': ('upper', 'legislative resolution'),
+            'B': ('upper', 'concurrent resolution'),
+            'A': ('lower', 'bill'),
+            'E': ('lower', 'resolution'),
+            'K': ('lower', 'legislative resolution'),
+            'L': ('lower', 'joint resolution')}[letter]
+
+        senate_url = (
+            "http://open.nysenate.gov/legislation/"
+            "bill/%s" % api_id)
+
+        assembly_url = (
+            'http://assembly.state.ny.us/leg/?'
+            'default_fld=&bn=%s&Summary=Y&Actions=Y') % bill_id
+
+        return (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
+                title, (letter, number, is_amd))
 
     def scrape_bill(self, session, chamber, senate_url, assembly_url,
-                    bill_type, bill_id, title, bill_id_parts):
+                    bill_chamber, bill_type, bill_id, title, bill_id_parts):
 
         assembly_doc = self.url2lxml(assembly_url)
-        assembly_page = AssemblyBillPage(
-                        self, session, chamber, assembly_url, assembly_doc,
-                        bill_type, bill_id, title, bill_id_parts)
+        if not assembly_doc:
+            msg = 'Skipping bill %r dur to XMLSyntaxError at %r'
+            self.logger.warning(msg % (bill_id, assembly_url))
+            return None
 
-        senate_doc = self.url2lxml(senate_url)
-        senate_page = SenateBillPage(
-                        self, session, chamber, senate_url, senate_doc,
-                        bill_type, bill_id, title, bill_id_parts)
+        # The bill id, minus the trailing amendment letter.
+        bill_id = ''.join(bill_id_parts[:-1])
+
+        assembly_page = AssemblyBillPage(
+                        self, session, bill_chamber, assembly_url, assembly_doc,
+                        bill_type, bill_id, title,
+                        bill_id_parts)
+
+        try:
+            senate_doc = self.url2lxml(senate_url)
+        except scrapelib.HTTPError:
+            senate_succeeded = False
+        else:
+            senate_page = SenateBillPage(
+                            self, session, bill_chamber, senate_url, senate_doc,
+                            bill_type, bill_id, title, bill_id_parts)
+            senate_succeeded = True
 
         # Add the senate sources, votes, memo, and
         # subjects onto the assembly bill.
         bill = assembly_page.bill
-        bill['votes'].extend(senate_page.bill['votes'])
-        bill['subjects'] = senate_page.bill['subjects']
-        bill['documents'].extend(senate_page.bill['documents'])
-        bill['sources'].extend(senate_page.bill['sources'])
+        if senate_succeeded:
+            bill['votes'].extend(senate_page.bill['votes'])
+            bill['subjects'] = senate_page.bill['subjects']
+            bill['documents'].extend(senate_page.bill['documents'])
+            bill['sources'].extend(senate_page.bill['sources'])
+            bill['versions'].extend(senate_page.bill['versions'])
+
+        # Dedupe sources.
+        source_urls = set([])
+        for source in bill['sources'][:]:
+            if source['url'] in source_urls:
+                bill['sources'].remove(source)
+            source_urls.add(source['url'])
+
         return bill

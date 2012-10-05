@@ -1,4 +1,3 @@
-import datetime
 import re
 import datetime as dt
 
@@ -131,7 +130,7 @@ class NYSenateEventScraper(EventScraper):
     def scrape_event(self, chamber, session, obj):
         meeting = obj['data']['meeting']
         date = int(meeting['meetingDateTime'])
-        date = datetime.datetime.fromtimestamp(date / 1000)
+        date = dt.datetime.fromtimestamp(date / 1000)
         if str(date.year) not in session:
             return
         description = 'Committee Meeting: ' + meeting['committeeName']

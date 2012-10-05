@@ -357,6 +357,12 @@ class NMBillScraper(BillScraper):
                         for l in action['Referral'].split('/') if l]
                 action_name = action_name % (' & '.join(locs))
 
+            # Fix known quirks related to actor
+            if action_name == 'passed Senate':
+                actor = 'upper'
+            if action_name == 'passed House':
+                actor = 'lower'
+
             self.bills[bill_key].add_action(actor, action_name, action_date,
                                             type=action_type, day=action_day)
 

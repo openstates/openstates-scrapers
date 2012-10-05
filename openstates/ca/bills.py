@@ -429,16 +429,17 @@ class CABillScraper(BillScraper):
                 act_str = action.action
                 act_str = re.sub(r'\s+', ' ', act_str)
 
-                type_, attrs = self.categorizer.categorize(act_str)
+                attrs = self.categorizer.categorize(act_str)
 
                 # Add in the committee strings of the related committees, if any.
                 kwargs = attrs
                 matched_abbrs = committee_abbr_regex.findall(action.action)
+
                 if 'Com. on' in action.action and not matched_abbrs:
                     msg = 'Failed to extract committee abbr from %r.'
                     self.logger.warning(msg % action.action)
-                if matched_abbrs:
 
+                if matched_abbrs:
                     committees = []
                     for abbr in matched_abbrs:
                         try:
@@ -484,7 +485,7 @@ class CABillScraper(BillScraper):
                     kwargs['legislators'] = legislators
 
                 fsbill.add_action(actor, act_str, action.action_date.date(),
-                                  type=type_, **kwargs)
+                                  **kwargs)
 
             for vote in bill.votes:
                 if vote.vote_result == '(PASS)':
