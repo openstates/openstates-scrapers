@@ -114,7 +114,7 @@ class MNBillScraper(BillScraper):
                     if re.match(pattern, action_text):
                         action_type = atype
                         if 'committee:referred' in action_type:
-                            bill_action['committee'] = description
+                            bill_action['committees'] = description
                         break
 
                 if description:
@@ -179,7 +179,7 @@ class MNBillScraper(BillScraper):
             for action in bill_actions:
                 kwargs = {}
                 if 'committee' in action:
-                    kwargs['committee'] = action['committee']
+                    kwargs['committees'] = action['committees']
 
                 bill.add_action(action['action_chamber'],
                                 action['action_text'],
