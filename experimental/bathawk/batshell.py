@@ -1,11 +1,13 @@
-import re
 # -*- coding: utf-8 -*-
+import re
+import pydoc
 import types
 import pprint
 import itertools
 import sre_constants
 import webbrowser
 import subprocess
+import functools
 from code import InteractiveConsole
 from operator import itemgetter
 from os.path import abspath, dirname, join
@@ -20,7 +22,7 @@ from billy.models import db
 
 logger = logbook.Logger('bathawk.batshell')
 HERE = dirname(abspath(__file__))
-
+pager = pydoc.getpager()
 
 try:
     subprocess.check_call("echo 'test' | xsel -pi", shell=True)
@@ -159,13 +161,9 @@ class ShellCommands(object):
     def show_20_matches(self, line):
         '''Show first 20 matches.
         '''
-        self._print_matches(self.matched[:20])
-
-    @command('mm')
-    def show_more_matches(self, line):
-        '''Show more matches.
-        '''
-        self._print_matches(self.matched)
+        search = functools.partial(re.search, self.current_rgx)
+        text = '\n'.join(filter(search, self.actions.list))
+        pager(text)
 
     @command('s')
     def show(self, line):

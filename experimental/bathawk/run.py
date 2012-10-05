@@ -7,10 +7,10 @@ from actions import Actions
 
 
 def main(_, abbr):
-    try:
-        patterns_module = __import__(abbr)
-    except:
-        patterns_module = None
+    # try:
+    #     patterns_module = __import__(abbr)
+    # except:
+    patterns_module = None
     actions = Actions(abbr, patterns_module)
     sys.ps1 = '(batshell) '
     banner = colored.yellow('''
