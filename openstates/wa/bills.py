@@ -2,6 +2,7 @@ import re
 import datetime
 from collections import defaultdict
 
+from .actions import WACategorizer
 from .utils import xpath
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -10,11 +11,11 @@ import lxml.etree
 import lxml.html
 import feedparser
 
+
 class WABillScraper(BillScraper):
     state = 'wa'
-
     _base_url = 'http://wslwebservices.leg.wa.gov/legislationservice.asmx'
-
+    categorizer = WACategorizer()
     _subjects = defaultdict(list)
 
     def build_subject_mapping(self, year):
@@ -195,10 +196,13 @@ class WABillScraper(BillScraper):
                     if curday is None or curyear is None:
                         continue
 
+                    attrs = self.categorizer.categorize(action)
+                    print attrs
+
                     date = "%s %s" % (curyear, curday)
                     date = datetime.datetime.strptime(date, "%Y %b %d")
                     bill.add_action(curchamber, action, date,
-                                    type=['other'])
+                                    **attrs)
 
 
 
