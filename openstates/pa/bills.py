@@ -180,7 +180,7 @@ class PABillScraper(BillScraper):
                 type = ['other']
 
             if not committee is None:
-                kwargs['committee'] = committee
+                kwargs['committees'] = committee
 
             date = parse_action_date(match.group(2))
             bill.add_action(chamber, action, date, type=type,
