@@ -165,12 +165,12 @@ class ShellCommands(object):
         text = '\n'.join(filter(search, self.actions.list))
         pager(text)
 
-    @command('s')
+    @command('#')
     def show(self, line):
         '''How many matches or actions to show at a time.
         '''
         number = int(line)
-        self.show_matches_start = number
+        self.show = number
 
     @command('h')
     def help(self, line=None):
@@ -196,45 +196,16 @@ class ShellCommands(object):
     def show_actions(self, line):
         '''List the first 10 actions.
         '''
-        self.show_actions_start = 0
-        pprint.pprint(list(self.actions.unmatched)[:self.show])
-
-    @command('aa')
-    def show_more_actions(self, line):
-        '''Show more actions.
-        '''
-        start = self.show_actions_start
-        end = start + self.show * 5
-        pprint.pprint(list(self.actions.unmatched)[start:end])
-        self.show_actions_start = end
+        text = '\n'.join(self.actions.unmatched)
+        pager(text)
 
     @command('as')
     def show_actions_sorted(self, line):
         '''Show actions in alphabetical order.
         '''
         self.show_actions_start = 0
-        actions = sorted(list(self.actions.unmatched))
-        pprint.pprint(actions[:self.show])
-
-    @command('aas')
-    def show_more_actions(self, line, cache={}):
-        '''Show more sorted actions.
-        '''
-        try:
-            actions = itertools.islice(cache['actions'], 50)
-            actions = list(actions)
-            if not actions:
-                actions = iter(self._test_list)
-                cache['actions'] = actions
-                actions = itertools.islice(actions, 50)
-                actions = list(actions)
-        except KeyError, StopIteration:
-            actions = iter(self._test_list)
-            cache['actions'] = actions
-            actions = itertools.islice(actions, 50)
-            actions = list(actions)
-        actions = sorted(list(actions))
-        pprint.pprint(actions)
+        text = '\n'.join(sorted(list(self.actions.unmatched)))
+        pager(text)
 
     @command('q')
     def quit(self, line):
