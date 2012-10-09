@@ -280,7 +280,7 @@
                         <th>{% trans "Date" %}</th>
                         <th>{% trans "Attendees" %}</th>
                         <th>{% trans "Location" %}</th>
-                        <th>{% trans "Bills" %}</th>
+                        {#<th>{% trans "Bills" %}</th>#}
                     </tr>
                 </thead>
                 <tbody>
@@ -307,14 +307,14 @@
                     {% endfor %}</td>
 
                 <td>{{event.location}}</td>
-                <td>{% for bill in event.related_bills %}
+                {% comment %}<td>{% for bill in event.related_bills %}
                         {% if bill.bill_id %}
                         <a href="{% url 'bill_noslug' abbr bill.bill_id %}"
                             >{{bill|underscore_field:"scraped_bill_id"}}</a>
                         {% else %}
 {{bill|underscore_field:"scraped_bill_id"}}
                         {% endif %}
-                    {% endfor %}</td>
+                        {% endfor %}</td>{%endcomment %}
             </tr>
 {% endfor %}
                 </tbody>
