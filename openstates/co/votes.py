@@ -2,6 +2,7 @@ from billy.scrape.votes import VoteScraper, Vote
 import subprocess
 import lxml
 import os
+import re
 
 journals = "http://www.leg.state.co.us/CLICS/CLICS%s/csljournals.nsf/jouNav?Openform&%s"
 
@@ -24,12 +25,46 @@ class COVoteScraper(VoteScraper):
         hrefs = page.xpath("//font//a")
         for href in hrefs:
             (path, response) = self.urlretrieve(href.attrib['href'])
-            subprocess.check_call([
-                "pdftotext", "-layout", path
-            ])
+            try:
+                subprocess.check_call([
+                    "pdftotext", "-layout", path
+                ])
+            except subprocess.CalledProcessError:
+                # XXX: log this error
+                continue
+
             txt = "%s.txt" % (path)
+            vote_re = (r"\s*"
+                       "YES\s*(?P<yes_count>\d+)\s*"
+                       "NO\s*(?P<no_count>\d+)\s*"
+                       "EXCUSED\s*(?P<excused_count>\d+)\s*"
+                       "ABSENT\s*(?P<abs_count>\d+).*")
 
+            cur_bill_id = None
+            cur_vote_count = None
 
+            for line in open(txt).readlines():
+                summ = re.findall(vote_re, line)
+                if summ != []:
+                    cur_vote_count = summ[0]
+
+                if line.strip() == "":
+                    continue
+                first = line[0]
+                if first != " ":
+                    if " " not in line:
+                        # wtf
+                        continue
+
+                    bill_id, kruft = line.split(" ", 1)
+                    if len(bill_id) < 3:
+                        continue
+                    if bill_id[0] != "H" and bill_id[0] != "S":
+                        continue
+                    if bill_id[2] not in ['B', 'J', 'R', 'M']:
+                        continue
+
+                    cur_bill_id = bill_id
 
             os.unlink(path)
             os.unlink(txt)
