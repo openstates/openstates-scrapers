@@ -9,7 +9,9 @@ _categorizer_rules = (
     Rule(r"(?i).* substitute bill substituted.*", 'bill:substituted'),
     Rule(r"(?i)chapter (((\d+),?)+) \d{4} laws."),  # XXX: Thom: Code stuff?
     Rule(r"(?i)effective date \d{1,2}/\d{1,2}/\d{4}.*"),
-    Rule(r"(?i)(?P<committees>\w+) - majority; do pass with amendment\(s\) (but without amendments\(s\))?.*\.", "committee:passed:favorable", "committee:passed")
+    Rule(r"(?i)(?P<committees>\w+) - majority; do pass with amendment\(s\) (but without amendments\(s\))?.*\.", "committee:passed:favorable", "committee:passed"),
+    Rule(r"(?i)Executive action taken in the (House|Senate) committee on (?P<committees>.*) (at)? .*\."),
+#    Rule(
 )
 
 
