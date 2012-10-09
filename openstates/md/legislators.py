@@ -22,7 +22,7 @@ class MDLegislatorScraper(LegislatorScraper):
             doc = lxml.html.fromstring(html)
 
             # rest of data on this page is <li>s that have anchor tags
-            for a in doc.cssselect('li a'):
+            for a in doc.xpath('//li/a'):
                 link = a.get('href')
                 # tags don't close so we get the <li> and <a> content and diff them
                 name_text = a.text_content()
