@@ -42,29 +42,55 @@ class COVoteScraper(VoteScraper):
 
             cur_bill_id = None
             cur_vote_count = None
+            in_vote = False
+            cur_vote = {}
 
             for line in open(txt).readlines():
-                summ = re.findall(vote_re, line)
-                if summ != []:
-                    cur_vote_count = summ[0]
+                if not in_vote:
+                    summ = re.findall(vote_re, line)
+                    if summ != []:
+                        cur_vote_count = summ[0]
+                        in_vote = True
 
-                if line.strip() == "":
-                    continue
-                first = line[0]
-                if first != " ":
-                    if " " not in line:
-                        # wtf
+                    if line.strip() == "":
                         continue
+                    first = line[0]
+                    if first != " ":
+                        if " " not in line:
+                            # wtf
+                            continue
 
-                    bill_id, kruft = line.split(" ", 1)
-                    if len(bill_id) < 3:
-                        continue
-                    if bill_id[0] != "H" and bill_id[0] != "S":
-                        continue
-                    if bill_id[2] not in ['B', 'J', 'R', 'M']:
-                        continue
+                        bill_id, kruft = line.split(" ", 1)
+                        if len(bill_id) < 3:
+                            continue
+                        if bill_id[0] != "H" and bill_id[0] != "S":
+                            continue
+                        if bill_id[1] not in ['B', 'J', 'R', 'M']:
+                            continue
 
-                    cur_bill_id = bill_id
+                        cur_bill_id = bill_id
+                else:
+                    line = line.strip()
+                    try:
+                        line, lineno = line.rsplit(" ", 1)
+                    except ValueError:
+                        in_vote = False
+                        #vote = Vote(chamber,
+                        #            'upper',
+                        #            date,
+                        #            motion,
+                        #            passed,
+                        #            yes,
+                        #            no,
+                        #            other)
+
+                        print cur_vote
+                        print cur_bill_id
+                        print cur_vote_count
+                        continue
+                    vals = line.split()
+                    vals = dict(zip(vals[0::2], vals[1::2]))
+                    cur_vote.update(vals)
 
             os.unlink(path)
             os.unlink(txt)
