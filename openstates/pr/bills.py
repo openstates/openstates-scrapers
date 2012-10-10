@@ -106,7 +106,7 @@ class PRBillScraper(BillScraper):
                    isVersion = True;
             if isVersion:
                 # versions are mentioned several times, lets use original name
-                if action_url.lower().endswith(('.doc'):
+                if action_url.lower().endswith('.doc'):
                     mimetype = 'application/msword'
                 elif action_url.lower().endswith('.rtf'):
                     mimetype = 'application/rtf'
