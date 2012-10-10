@@ -196,7 +196,7 @@ class LABillScraper(BillScraper):
                                                    action)[0]
                     if ctty[-1:] == ".":
                         ctty = ctty[:-1]
-                    kwargs['committee'] = ctty
+                    kwargs['committees'] = ctty
 
                 bill.add_action(chamber, action, date, **kwargs)
 

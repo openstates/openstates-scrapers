@@ -1,6 +1,7 @@
 import re
 import datetime
 from itertools import islice
+import collections
 
 from billy.scrape.bills import Bill
 from billy.scrape.votes import Vote
@@ -126,6 +127,7 @@ class AssemblyBillPage(object):
         if pre == no_votes:
             return
 
+        actual_vote = collections.defaultdict(list)
         for table in doc.xpath('//table'):
 
             date = table.xpath('caption/label[contains(., "DATE:")]')
@@ -156,20 +158,22 @@ class AssemblyBillPage(object):
                     vote.no(name)
                 else:
                     vote.other(name)
+                    actual_vote[vote_val].append(name)
 
             # The page doesn't provide an other_count.
             vote['other_count'] = len(vote['other_votes'])
 
-            # if len(vote['yes_votes']) != vote['yes_count']:
-            #     # import pprint; pprint.pprint(vote)
-            #     print len(vote['yes_votes']), vote['yes_count']
-            #     import pdb;pdb.set_trace()
+            if len(vote['yes_votes']) != vote['yes_count']:
+                # import pprint; pprint.pprint(vote)
+                print len(vote['yes_votes']), vote['yes_count']
+                import pdb;pdb.set_trace()
 
-            # if len(vote['no_votes']) != vote['no_count']:
-            #     # import pprint; pprint.pprint(vote)
-            #     print len(vote['no_votes']), vote['no_count']
-            #     import pdb;pdb.set_trace()
+            if len(vote['no_votes']) != vote['no_count']:
+                # import pprint; pprint.pprint(vote)
+                print len(vote['no_votes']), vote['no_count']
+                import pdb;pdb.set_trace()
 
+            vote['actual_vote'] = actual_vote
             self.bill.add_vote(vote)
 
 
@@ -221,6 +225,7 @@ class SenateBillPage(object):
 
             yes_votes, no_votes, other_votes = [], [], []
             yes_count, no_count, other_count = 0, 0, 0
+            actual_vote = collections.defaultdict(list)
 
             vtype = None
             for tag in b.xpath("following-sibling::blockquote/*"):
@@ -250,7 +255,7 @@ class SenateBillPage(object):
                     elif vtype == 'no':
                         no_votes.append(name)
                     elif vtype == 'other':
-                        other_votes.append(name)
+                        other_votes.append((name, tag.text))
 
             passed = yes_count > (no_count + other_count)
 
@@ -261,9 +266,11 @@ class SenateBillPage(object):
                 vote.yes(name)
             for name in no_votes:
                 vote.no(name)
-            for name in other_votes:
+            for name, vote_val in other_votes:
                 vote.other(name)
+                actual_vote[vote_val].append(name)
 
+            vote['actual_vote'] = actual_vote
             self.bill.add_vote(vote)
 
         for b in self.doc.xpath("//div/b[starts-with(., 'VOTE: COMMITTEE VOTE:')]"):

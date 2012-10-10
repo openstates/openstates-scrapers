@@ -200,7 +200,7 @@ class TXBillScraper(BillScraper):
                 ctty = desc
                 for r in repls:
                     ctty = ctty.replace(r, "").strip()
-                extra['committee'] = ctty
+                extra['committees'] = ctty
 
             bill.add_action(actor, action.findtext('description'),
                             act_date, type=atype, **extra)
