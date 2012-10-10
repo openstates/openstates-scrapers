@@ -51,6 +51,7 @@ class COVoteScraper(VoteScraper):
                     if summ != []:
                         cur_vote_count = summ[0]
                         in_vote = True
+                        continue
 
                     if line.strip() == "":
                         continue
