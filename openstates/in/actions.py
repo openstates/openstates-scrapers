@@ -22,13 +22,16 @@ _categorizer_rules = (
     Rule(r'(?i)^(senator|representative)s?(?P<legislators>.+?)\s+added'),
     Rule(r'(?i)^Senate\s+(advisor|sponsor|conferee)s?.*?:\s+'
          r'(?P<legislators>.+)'),
-    Rule(r'(House|Senate) sponsors:\s+Senators\s+(?P<legislators>.+)'),
+    Rule(r'(House|Senate) sponsors?:\s+Senators\s+(?P<legislators>.+)'),
+    Rule(r'Senators (?P<legislators>.+?) added as (?:co)?sponsors'),
+    Rule('(?i)(co)?sponsors: (?P<legislators>.+)'),
 
     # Amendments.
     Rule((r'(?P<version>Amendment \d+)\s+\(\s*(?P<legislators>.+?)\)'
           r'.+?prevailed'), 'amendment:passed'),
     Rule(r'(?i)(house|senate) concurred in (house|senate) amendments',
          'amendment:passed'),
+    Rule(r'Senate sponsors: Senators (?P<legislators>.+)'),
 
     # Readings.
     Rule(r'(?i)^first reading:', ('bill:introduced', 'bill:reading:1')),
@@ -60,10 +63,12 @@ class Categorizer(BaseCategorizer):
     rules = _categorizer_rules
 
     def post_categorize(self, attrs):
+        res = set()
         if 'legislators' in attrs:
-            text = attrs['legislators']
-            rgx = r'(,\s+(?![a-z]\.)|\s+and\s+)'
-            legs = re.split(rgx, text)
-            legs = filter(lambda x: x not in [', ', ' and '], legs)
-            attrs['legislators'] = legs
+            for text in attrs['legislators']:
+                rgx = r'(,\s+(?![a-z]\.)|\s+and\s+)'
+                legs = re.split(rgx, text)
+                legs = filter(lambda x: x not in [', ', ' and '], legs)
+                res |= set(legs)
+        attrs['legislators'] = list(res)
         return attrs
