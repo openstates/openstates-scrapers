@@ -11,7 +11,7 @@ import socket
 import feedparser
 
 import scrapelib
-from billy.scrape import JSONDateEncoder
+from billy.utils import JSONEncoderPlus
 
 
 PATH = dirname(abspath(__file__))
@@ -122,4 +122,4 @@ if __name__ == '__main__':
 
             fn = join(STATE_DATA_RAW, resp.url.replace('/', ','))
             with open(fn, 'w') as f:
-                json.dump(feed['entries'], f, cls=JSONDateEncoder)
+                json.dump(feed['entries'], f, cls=JSONEncoderPlus)

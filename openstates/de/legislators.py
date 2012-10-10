@@ -2,7 +2,6 @@ from collections import defaultdict
 from urlparse import urlunsplit
 from urllib import urlencode
 from operator import methodcaller
-import pdb
 import re
 
 import lxml.html

@@ -37,10 +37,12 @@ class Categorizer(BaseCategorizer):
     rules = _categorizer_rules
 
     def post_categorize(self, attrs):
+        res = set()
         if 'legislators' in attrs:
-            text = attrs['legislators']
-            rgx = r'(,\s+(?![a-z]\.)|\s+and\s+)'
-            legs = re.split(rgx, text)
-            legs = filter(lambda x: x not in [', ', ' and '], legs)
-            attrs['legislators'] = legs
+            for text in attrs['legislators']:
+                rgx = r'(,\s+(?![a-z]\.)|\s+and\s+)'
+                legs = re.split(rgx, text)
+                legs = filter(lambda x: x not in [', ', ' and '], legs)
+                res |= set(legs)
+        attrs['legislators'] = list(res)
         return attrs
