@@ -6,7 +6,7 @@ from billy.core import settings
 from billy.scrape.events import EventScraper, Event
 from .models import CACommitteeHearing, CALocation
 
-from sqlalchemy.orm import sessionmaker, relation, backref
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
 import pytz
@@ -59,11 +59,19 @@ class CAEventScraper(EventScraper):
             bills = ["%s %s" % re.match(r'\d+([^\d]+)(\d+)', bill).groups()
                      for bill in bills]
 
-            desc = 'Committee Meeting\n%s\nDiscussed: %s' % (location,
-                                                             ', '.join(bills))
-
+            desc = 'Committee Meeting'
             event = Event(session, date, 'committee:meeting', desc,
                           location=location)
-            event.add_participant('committee', location, 'committee')
+            for bill_id in bills:
+                if 'B' in bill_id:
+                    type_ = 'bill'
+                else:
+                    type_ = 'resolution'
+                event.add_related_bill(bill_id, type=type_,
+                                       description='consideration')
+
+            event.add_participant('host', location, 'committee',
+                                  chamber=chamber)
+            event.add_source('ftp://www.leginfo.ca.gov/pub/bill/')
 
             self.save_event(event)
