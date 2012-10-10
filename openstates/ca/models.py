@@ -70,7 +70,7 @@ class CABillVersion(Base):
     @property
     def xml(self):
         if not '_xml' in self.__dict__:
-            self._xml = etree.fromstring(self.bill_xml,
+            self._xml = etree.fromstring(self.bill_xml.bytes,
                                          etree.XMLParser(recover=True))
         return self._xml
 
