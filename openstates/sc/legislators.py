@@ -7,7 +7,7 @@ class SCLegislatorScraper(LegislatorScraper):
     state = 'sc'
 
     def scrape(self, chamber, term):
-        # CSS isn't there without this(?!)
+        # CSS isn't there without this, it serves up a mobile version
         self.user_agent = 'Mozilla/5.0'
 
         if chamber == 'lower':
@@ -39,11 +39,15 @@ class SCLegislatorScraper(LegislatorScraper):
             photo_url = leg_doc.xpath('//img[contains(@src,"/members/")]/@src')[0]
 
             # office address / phone
-            addr_div = leg_doc.xpath('//div[@style="float: left; width: 225px; margin: 10px 5px 0 20px; padding: 0;"]')[0]
-            office_addr = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 10px 0; padding: 0;"]')[0].text_content()
+            try:
+                addr_div = leg_doc.xpath('//div[@style="float: left; width: 225px; margin: 10px 5px 0 20px; padding: 0;"]')[0]
+                office_addr = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 10px 0; padding: 0;"]')[0].text_content()
 
-            office_phone = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 0 0; padding: 0;"]/text()')[0]
-            office_phone = office_phone.strip()
+                office_phone = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 0 0; padding: 0;"]/text()')[0]
+                office_phone = office_phone.strip()
+            except IndexError:
+                self.warning('no address for {0}'.format(full_name))
+                office_addr = office_phone = ''
 
             legislator = Legislator(term, chamber, district, full_name,
                                     party=party, photo_url=photo_url,
