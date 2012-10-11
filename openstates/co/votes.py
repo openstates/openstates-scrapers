@@ -43,15 +43,35 @@ class COVoteScraper(VoteScraper):
             cur_bill_id = None
             cur_vote_count = None
             in_vote = False
+            cur_question = None
+            in_question = False
             cur_vote = {}
 
             for line in open(txt).readlines():
+                if in_question:
+                    line = line.strip()
+                    if re.match("\d+", line):
+                        in_question = False
+                        continue
+                    try:
+                        line, _ = line.rsplit(" ", 1)
+                        line += cur_question
+                    except ValueError:
+                        in_question = False
+                        continue
+
+                    cur_question += line
                 if not in_vote:
                     summ = re.findall(vote_re, line)
                     if summ != []:
+                        cur_vote = {}
                         cur_vote_count = summ[0]
                         in_vote = True
                         continue
+
+                    if "The question being " in line:
+                        cur_question, _ = line.strip().rsplit(" ", 1)
+                        in_question = True
 
                     if line.strip() == "":
                         continue
@@ -86,9 +106,14 @@ class COVoteScraper(VoteScraper):
                         #            other)
 
                         print cur_vote
+                        print cur_question
                         print cur_bill_id
                         print cur_vote_count
+
+                        cur_vote, cur_question, cur_vote_count = (
+                            None, None, None)
                         continue
+
                     vals = line.split()
                     vals = dict(zip(vals[0::2], vals[1::2]))
                     cur_vote.update(vals)
