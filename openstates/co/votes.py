@@ -43,6 +43,8 @@ class COVoteScraper(VoteScraper):
             in_vote = False
             cur_vote = {}
             cur_vote_count = None
+            in_question = False
+            cur_question = None
 
             for line in open(txt, 'r').readlines():
                 if re.match("(\s+)?\d+.*", line) is None:
@@ -51,7 +53,21 @@ class COVoteScraper(VoteScraper):
                     _, line = line.strip().split(" ", 1)
                     line = line.strip()
                 except ValueError:
+                    in_vote = False
+                    in_question = False
                     continue
+
+                if in_question:
+                    cur_question += line
+                    continue
+
+                if ("The question being" in line) or \
+                   ("On motion of" in line) or \
+                   ("the following" in line) or \
+                   ("moved that the" in line):
+                    cur_question = line
+                    in_question = True
+
 
                 if in_vote:
                     if line == "":
@@ -65,6 +81,13 @@ class COVoteScraper(VoteScraper):
 
                     if votes == []:
                         in_vote = False
+                        # save vote
+                        print cur_vote
+                        print cur_question
+                        cur_vote = {}
+                        in_question = False
+                        cur_question = None
+                        in_vote = False
 
                 summ = vote_re.findall(line)
                 if summ == []:
@@ -76,6 +99,7 @@ class COVoteScraper(VoteScraper):
                 other = exc + ab
                 cur_vote_count = (yes, no, other)
                 in_vote = True
+                continue
 
             os.unlink(path)
             os.unlink(txt)
