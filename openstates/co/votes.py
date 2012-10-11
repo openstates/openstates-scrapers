@@ -7,8 +7,11 @@ import re
 
 journals = "http://www.leg.state.co.us/CLICS/CLICS%s/csljournals.nsf/jouNav?Openform&%s"
 
-# session - 2012A
-# chamber - last argument, House / Senate
+vote_re = re.compile((r"\s*"
+           "YES\s*(?P<yes_count>\d+)\s*"
+           "NO\s*(?P<no_count>\d+)\s*"
+           "EXCUSED\s*(?P<excused_count>\d+)\s*"
+           "ABSENT\s*(?P<abs_count>\d+).*"))
 
 
 class COVoteScraper(VoteScraper):
@@ -19,6 +22,63 @@ class COVoteScraper(VoteScraper):
             page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
+
+    def scrape_house(self, session):
+        url = journals % (session, 'House')
+        page = self.lxmlize(url)
+        hrefs = page.xpath("//font//a")
+
+        for href in hrefs:
+            (path, response) = self.urlretrieve(href.attrib['href'])
+            txt = "%s.txt" % (path)
+
+            try:
+                subprocess.check_call([
+                    "pdftotext", "-layout", path
+                ])
+            except subprocess.CalledProcessError:
+                # XXX: log this error
+                continue
+
+            in_vote = False
+            cur_vote = {}
+            cur_vote_count = None
+
+            for line in open(txt, 'r').readlines():
+                if re.match("(\s+)?\d+.*", line) is None:
+                    continue
+                try:
+                    _, line = line.strip().split(" ", 1)
+                    line = line.strip()
+                except ValueError:
+                    continue
+
+                if in_vote:
+                    if line == "":
+                        in_vote = False
+                        continue
+
+                    votes = re.findall("(?P<name>\w+)\s+(?P<vote>Y|N|A|E|\*)",
+                                       line)
+                    for person, v in votes:
+                        cur_vote[person] = v
+
+                    if votes == []:
+                        in_vote = False
+
+                summ = vote_re.findall(line)
+                if summ == []:
+                    continue
+                summ = summ[0]
+                yes, no, exc, ab = summ
+                yes, no, exc, ab = \
+                        int(yes), int(no), int(exc), int(ab)
+                other = exc + ab
+                cur_vote_count = (yes, no, other)
+                in_vote = True
+
+            os.unlink(path)
+            os.unlink(txt)
 
     def scrape_senate(self, session):
         url = journals % (session, 'Senate')
@@ -36,11 +96,6 @@ class COVoteScraper(VoteScraper):
                 continue
 
             txt = "%s.txt" % (path)
-            vote_re = re.compile((r"\s*"
-                       "YES\s*(?P<yes_count>\d+)\s*"
-                       "NO\s*(?P<no_count>\d+)\s*"
-                       "EXCUSED\s*(?P<excused_count>\d+)\s*"
-                       "ABSENT\s*(?P<abs_count>\d+).*"))
 
             cur_bill_id = None
             cur_vote_count = None
@@ -113,13 +168,16 @@ class COVoteScraper(VoteScraper):
                         if cur_question is None:
                             continue
 
+                        if cur_bill_id is None:
+                            continue
+
                         # print cur_vote
                         # print cur_question
                         # print cur_bill_id
                         # print cur_vote_count
 
                         yes, no, exc, ab = cur_vote_count
-                        other = exc + ab
+                        other = int(exc) + int(ab)
                         yes, no, other = int(yes), int(no), int(other)
 
                         bc = {'H': 'lower', 'S': 'upper'}[cur_bill_id[0]]
@@ -134,6 +192,15 @@ class COVoteScraper(VoteScraper):
                                     session=session,
                                     bill_id=cur_bill_id,
                                     bill_chamber=bc)
+                        for person in cur_vote:
+                            howvote = cur_vote[person]
+                            howvote = howvote.upper()
+                            if howvote == 'Y':
+                                vote.yes(person)
+                            elif howvote == 'N':
+                                vote.no(person)
+                            else:
+                                vote.other(person)
                         vote.add_source(href.attrib['href'])
                         self.save_vote(vote)
 
@@ -147,9 +214,6 @@ class COVoteScraper(VoteScraper):
 
             os.unlink(path)
             os.unlink(txt)
-
-    def scrape_house(self, session):
-        pass
 
     def scrape(self, chamber, session):
         if chamber == 'upper':
