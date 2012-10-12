@@ -47,7 +47,7 @@ class COVoteScraper(VoteScraper):
             cur_bill_id = None
 
             for line in data.split("\n"):
-                print line
+                # print line
 
                 if known_date is None:
                      dt = date_re.findall(line)
@@ -100,10 +100,10 @@ class COVoteScraper(VoteScraper):
                     if votes == []:
                         in_vote = False
                         # save vote
-                        print cur_vote
-                        print cur_question
-                        print known_date
-                        print cur_bill_id
+                        # print cur_vote
+                        # print cur_question
+                        # print known_date
+                        # print cur_bill_id
                         yes, no, other = cur_vote_count
                         if cur_bill_id is None:
                             continue
