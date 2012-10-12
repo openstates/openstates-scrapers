@@ -1,4 +1,5 @@
 from billy.scrape.votes import VoteScraper, Vote
+from billy.scrape.utils import convert_pdf
 import datetime
 import subprocess
 import lxml
@@ -30,15 +31,7 @@ class COVoteScraper(VoteScraper):
 
         for href in hrefs:
             (path, response) = self.urlretrieve(href.attrib['href'])
-            txt = "%s.txt" % (path)
-
-            try:
-                subprocess.check_call([
-                    "pdftotext", "-layout", path
-                ])
-            except subprocess.CalledProcessError:
-                # XXX: log this error
-                continue
+            data = convert_pdf(path, type='text')
 
             in_vote = False
             cur_vote = {}
@@ -46,7 +39,7 @@ class COVoteScraper(VoteScraper):
             in_question = False
             cur_question = None
 
-            for line in open(txt, 'r').readlines():
+            for line in data.split("\n"):
                 if re.match("(\s+)?\d+.*", line) is None:
                     continue
                 try:
@@ -100,9 +93,7 @@ class COVoteScraper(VoteScraper):
                 cur_vote_count = (yes, no, other)
                 in_vote = True
                 continue
-
             os.unlink(path)
-            os.unlink(txt)
 
     def scrape_senate(self, session):
         url = journals % (session, 'Senate')
@@ -111,15 +102,7 @@ class COVoteScraper(VoteScraper):
 
         for href in hrefs:
             (path, response) = self.urlretrieve(href.attrib['href'])
-            try:
-                subprocess.check_call([
-                    "pdftotext", "-layout", path
-                ])
-            except subprocess.CalledProcessError:
-                # XXX: log this error
-                continue
-
-            txt = "%s.txt" % (path)
+            data = convert_pdf(path, type='text')
 
             cur_bill_id = None
             cur_vote_count = None
@@ -129,8 +112,7 @@ class COVoteScraper(VoteScraper):
             known_date = None
             cur_vote = {}
 
-            for line in open(txt).readlines():
-
+            for line in data.split("\n"):
                 if not known_date:
                     dt = re.findall(r"(?i).*(?P<dt>(monday|tuesday|wednesday|thursday|friday|saturday|sunday).*, \d{4}).*", line)
                     if dt != []:
@@ -235,9 +217,7 @@ class COVoteScraper(VoteScraper):
                     vals = line.split()
                     vals = dict(zip(vals[0::2], vals[1::2]))
                     cur_vote.update(vals)
-
             os.unlink(path)
-            os.unlink(txt)
 
     def scrape(self, chamber, session):
         if chamber == 'upper':
