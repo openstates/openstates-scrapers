@@ -42,9 +42,6 @@ class CTLegislatorScraper(LegislatorScraper):
             if party == 'Democrat':
                 party = 'Democratic'
 
-            office_address = "%s, Room %s\nHartford, CT 06106-1591" % (
-                row['capitol street address'], row['room number'])
-
             leg = Legislator(term, chamber, district,
                              name, first_name=row['first name'],
                              last_name=row['last name'],
@@ -53,8 +50,13 @@ class CTLegislatorScraper(LegislatorScraper):
                              party=party,
                              email=row['email'],
                              url=row['URL'],
-                             office_address=office_address,
                              office_phone=row['capitol phone'])
+
+            office_address = "%s, Room %s\nHartford, CT 06106-1591" % (
+                row['capitol street address'], row['room number'])
+            leg.add_office('capitol', 'Capitol Office',
+                           address=office_address, phone=row['capitol phone'])
+            # skipping home address for now
             leg.add_source(leg_url)
 
             for comm_code in row['committee codes'].split(';'):
