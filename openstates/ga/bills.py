@@ -223,6 +223,12 @@ class GABillScraper(BillScraper):
                 else:
                     vote.other(member)
 
+            # other count is frequently wrong, not sure why they can't count
+            if len(vote['other_votes']) != vote['other_count']:
+                self.warning("vote XML had wrong other count: said %s got %s" %
+                             (len(vote['other_votes']), vote['other_count']))
+                vote['other_count'] = len(vote['other_votes'])
+
             # store vote
             self.votes[vxml.get('id')] = vote
 
