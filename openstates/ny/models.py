@@ -162,17 +162,6 @@ class AssemblyBillPage(object):
 
             # The page doesn't provide an other_count.
             vote['other_count'] = len(vote['other_votes'])
-
-            if len(vote['yes_votes']) != vote['yes_count']:
-                # import pprint; pprint.pprint(vote)
-                print len(vote['yes_votes']), vote['yes_count']
-                import pdb;pdb.set_trace()
-
-            if len(vote['no_votes']) != vote['no_count']:
-                # import pprint; pprint.pprint(vote)
-                print len(vote['no_votes']), vote['no_count']
-                import pdb;pdb.set_trace()
-
             vote['actual_vote'] = actual_vote
             self.bill.add_vote(vote)
 
@@ -271,6 +260,7 @@ class SenateBillPage(object):
                 actual_vote[vote_val].append(name)
 
             vote['actual_vote'] = actual_vote
+            vote.add_source(self.url)
             self.bill.add_vote(vote)
 
         for b in self.doc.xpath("//div/b[starts-with(., 'VOTE: COMMITTEE VOTE:')]"):
@@ -323,10 +313,15 @@ class SenateBillPage(object):
             for name in other_votes:
                 vote.other(name)
 
-            # if vote['yes_count'] != len(vote['yes_votes']) or \
-            #    vote['no_count'] != len(vote['no_votes']):
-            #     import pdb;pdb.set_trace()
+            # for voteval in ['yes', 'no', 'other']:
+            #     count = vote[voteval + '_count']
+            #     votes = vote[voteval + '_votes']
+            #     if count != len(votes):
+            #         msg = 'BAD %s COUNT: %d != %d'
+            #         self.scraper.logger.debug(msg % (voteval, count, len(votes)))
+            #         import pdb;pdb.set_trace()
 
+            vote.add_source(self.url)
             self.bill.add_vote(vote)
 
     def get_versions(self):

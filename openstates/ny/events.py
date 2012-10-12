@@ -143,8 +143,10 @@ class NYSenateEventScraper(EventScraper):
         event.add_participant('host', meeting['committeeName'],
                               'committee', chamber='upper')
 
+        rgx = r'([a-z]+)(\d+)'
         for bill in meeting['bills']:
-            bill_id, _ = bill['senateBillNo'].split('-')
+            raw_id = bill['senateBillNo']
+            bill_id = ' '.join(re.search(rgx, raw_id, re.I).groups())
             event.add_related_bill(
                 bill_id, type='bill',
                 description=bill['summary'] or 'No description given.')

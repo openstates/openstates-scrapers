@@ -39,7 +39,7 @@ class CAEventScraper(EventScraper):
         self.session = self.Session()
 
     def scrape(self, chamber, session):
-        bills_discussed = defaultdict(list)
+        grouped_hearings = defaultdict(list)
 
         for hearing in self.session.query(CACommitteeHearing):
             location = self.session.query(CALocation).filter_by(
@@ -53,13 +53,22 @@ class CAEventScraper(EventScraper):
             if event_chamber != chamber:
                 continue
 
-            bills_discussed[(location, date)].append(hearing.bill_id)
+            grouped_hearings[(location, date)].append(hearing)
 
-        for ((location, date), bills) in bills_discussed.iteritems():
+        for ((location, date), hearings) in grouped_hearings.iteritems():
+
+            # Get list of bill_ids from the database.
+            bill_ids = [hearing.bill_id for hearing in hearings]
             bills = ["%s %s" % re.match(r'\d+([^\d]+)(\d+)', bill).groups()
-                     for bill in bills]
+                     for bill in bill_ids]
 
-            desc = 'Committee Meeting'
+            # Dereference the committee_nr number and get display name.
+            msg = 'More than one committee meeting at (location, date) %r'
+            msg = msg % ((location, date),)
+            assert len(set(hearing.committee_nr for hearing in hearings)) == 1, msg
+            committee_name = _committee_nr[hearings.pop().committee_nr]
+
+            desc = 'Committee Meeting: ' + committee_name
             event = Event(session, date, 'committee:meeting', desc,
                           location=location)
             for bill_id in bills:
@@ -70,8 +79,67 @@ class CAEventScraper(EventScraper):
                 event.add_related_bill(bill_id, type=type_,
                                        description='consideration')
 
-            event.add_participant('host', location, 'committee',
-                                  chamber=chamber)
+            event.add_participant('host', committee_name + ' Committee',
+                                  'committee', chamber=chamber)
             event.add_source('ftp://www.leginfo.ca.gov/pub/bill/')
 
             self.save_event(event)
+
+# A mapping of committee_nr numbers to committee names they
+# (probably) represent, based on direct correlation they bore
+# to hearing locations that resemble committee names.
+_committee_nr = {
+    1L: u'Assembly Agriculture',
+    2L: u'Assembly Accountability and Administrative Review',
+    3L: u'Assembly Education',
+    4L: u'Assembly Elections and Redistricting',
+    5L: u'Assembly Environmental Safety and Toxic Materials',
+    6L: u'Assembly Budget X1',
+    7L: u'Assembly Governmental Organization',
+    8L: u'Assembly Health',
+    9L: u'Assembly Higher Education',
+    10L: u'Assembly Housing and Community Development',
+    11L: u'Assembly Human Services',
+    13L: u'Assembly Judiciary',
+    14L: u'Assembly Labor and Employment',
+    15L: u'Assembly Local Government',
+    16L: u'Assembly Natural Resources',
+    17L: u'Assembly Public Employees, Retirement/Soc Sec',
+    18L: u'Assembly Public Safety',
+    19L: u'Assembly Revenue and Taxation',
+    20L: u'Assembly Rules',
+    22L: u'Assembly Transportation',
+    23L: u'Assembly Utilities and Commerce',
+    24L: u'Assembly Water, Parks and Wildlife',
+    25L: u'Assembly Appropriations',
+    27L: u'Assembly Banking and Finance',
+    28L: u'Assembly Insurance',
+    29L: u'Assembly Budget',
+    31L: u'Assembly Aging and Long Term Care',
+    33L: u'Assembly Business, Professions and Consumer Protection ',
+    34L: u'Assembly Jobs, Economic Development, and the Economy',
+    37L: u'Assembly Arts, Entertainment, Sports, Tourism, and Internet Media',
+    38L: u'Assembly Veterans Affairs',
+    40L: u'Senate Agriculture',
+    42L: u'Senate Business, Professions and Economic Development',
+    44L: u'Senate Education',
+    45L: u'Senate Elections and Constitutional Amendments',
+    48L: u'Senate Governmental Organization',
+    51L: u'Senate Labor and Industrial Relations',
+    53L: u'Senate Judiciary',
+    55L: u'Senate Natural Resources and Water',
+    56L: u'Senate Public Employment and Retirement',
+    58L: u'Senate Rules',
+    59L: u'Senate Transportation and Housing',
+    60L: u'Senate Health',
+    61L: u'Senate Appropriations',
+    62L: u'Senate Budget and Fiscal Review',
+    64L: u'Senate Environmental Quality',
+    66L: u'Senate Veterans Affairs',
+    69L: u'Senate Banking and Financial Institutions',
+    70L: u'Senate Insurance',
+    71L: u'Senate Energy, Utilities and Communications',
+    72L: u'Senate Public Safety',
+    73L: u'Senate Governance and Finance',
+    74L: u'Senate Human Services'
+ }
