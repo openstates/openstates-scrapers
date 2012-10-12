@@ -1,12 +1,18 @@
 from billy.scrape.votes import VoteScraper, Vote
+from billy.scrape.utils import convert_pdf
 import datetime
 import subprocess
 import lxml
 import os
 import re
 
-journals = "http://www.leg.state.co.us/CLICS/CLICS%s/csljournals.nsf/jouNav?Openform&%s"
+journals = "http://www.leg.state.co.us/CLICS/CLICS%s/csljournals.nsf/" \
+    "jouNav?Openform&%s"
 
+date_re = re.compile(
+    r"(?i).*(?P<dt>(monday|tuesday|wednesday|thursday|friday|saturday|sunday)"
+    ".*, \d{4}).*"
+)
 vote_re = re.compile((r"\s*"
            "YES\s*(?P<yes_count>\d+)\s*"
            "NO\s*(?P<no_count>\d+)\s*"
@@ -30,25 +36,37 @@ class COVoteScraper(VoteScraper):
 
         for href in hrefs:
             (path, response) = self.urlretrieve(href.attrib['href'])
-            txt = "%s.txt" % (path)
-
-            try:
-                subprocess.check_call([
-                    "pdftotext", "-layout", path
-                ])
-            except subprocess.CalledProcessError:
-                # XXX: log this error
-                continue
+            data = convert_pdf(path, type='text')
 
             in_vote = False
             cur_vote = {}
+            known_date = None
             cur_vote_count = None
             in_question = False
             cur_question = None
+            cur_bill_id = None
 
-            for line in open(txt, 'r').readlines():
+            for line in data.split("\n"):
+                # print line
+
+                if known_date is None:
+                     dt = date_re.findall(line)
+                     if dt != []:
+                        dt, dow = dt[0]
+                        known_date = datetime.datetime.strptime(dt,
+                            "%A, %B %d, %Y")
+
                 if re.match("(\s+)?\d+.*", line) is None:
                     continue
+
+                found = re.findall(
+                    "(?P<bill_id>(H|S|SJ|HJ)(B|M|R)\d{2}-\d{4})",
+                    line
+                )
+                if found != []:
+                    found = found[0]
+                    cur_bill_id, chamber, typ = found
+
                 try:
                     _, line = line.strip().split(" ", 1)
                     line = line.strip()
@@ -82,12 +100,48 @@ class COVoteScraper(VoteScraper):
                     if votes == []:
                         in_vote = False
                         # save vote
-                        print cur_vote
-                        print cur_question
+                        # print cur_vote
+                        # print cur_question
+                        # print known_date
+                        # print cur_bill_id
+                        yes, no, other = cur_vote_count
+                        if cur_bill_id is None:
+                            continue
+
+                        bc = {
+                            "H": "lower",
+                            "S": "upper",
+                            "J": "joint"
+                        }[cur_bill_id[0].upper()]
+
+                        vote = Vote('upper',
+                                    known_date,
+                                    cur_question,
+                                    (yes > no),
+                                    yes,
+                                    no,
+                                    other,
+                                    session=session,
+                                    bill_id=cur_bill_id,
+                                    bill_chamber=bc)
+                        vote.add_source(url)
+
+                        for person in cur_vote:
+                            vot = cur_vote[person]
+                            if vot == 'Y':
+                                vote.yes(person)
+                            elif vot == 'N':
+                                vote.no(person)
+                            else:
+                                vote.other(person)
+
+                        self.save_vote(vote)
+
                         cur_vote = {}
                         in_question = False
                         cur_question = None
                         in_vote = False
+                        cur_vote_count = None
 
                 summ = vote_re.findall(line)
                 if summ == []:
@@ -100,9 +154,7 @@ class COVoteScraper(VoteScraper):
                 cur_vote_count = (yes, no, other)
                 in_vote = True
                 continue
-
             os.unlink(path)
-            os.unlink(txt)
 
     def scrape_senate(self, session):
         url = journals % (session, 'Senate')
@@ -111,15 +163,7 @@ class COVoteScraper(VoteScraper):
 
         for href in hrefs:
             (path, response) = self.urlretrieve(href.attrib['href'])
-            try:
-                subprocess.check_call([
-                    "pdftotext", "-layout", path
-                ])
-            except subprocess.CalledProcessError:
-                # XXX: log this error
-                continue
-
-            txt = "%s.txt" % (path)
+            data = convert_pdf(path, type='text')
 
             cur_bill_id = None
             cur_vote_count = None
@@ -129,10 +173,9 @@ class COVoteScraper(VoteScraper):
             known_date = None
             cur_vote = {}
 
-            for line in open(txt).readlines():
-
+            for line in data.split("\n"):
                 if not known_date:
-                    dt = re.findall(r"(?i).*(?P<dt>(monday|tuesday|wednesday|thursday|friday|saturday|sunday).*, \d{4}).*", line)
+                    dt = date_re.findall(line)
                     if dt != []:
                         dt, dow = dt[0]
                         known_date = datetime.datetime.strptime(dt,
@@ -235,9 +278,7 @@ class COVoteScraper(VoteScraper):
                     vals = line.split()
                     vals = dict(zip(vals[0::2], vals[1::2]))
                     cur_vote.update(vals)
-
             os.unlink(path)
-            os.unlink(txt)
 
     def scrape(self, chamber, session):
         if chamber == 'upper':
