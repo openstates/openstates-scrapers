@@ -112,24 +112,57 @@ class NYLegislatorScraper(LegislatorScraper):
 
             for link, email in zip(page.xpath("//a[contains(@href, '/mem/')]"),
                                    page.xpath("//a[contains(@href, 'mailto')]")):
+
                 name = link.text.strip()
                 if name == 'Assembly Members':
                     continue
+
                 # empty seats
                 if 'Assembly District' in name:
                     continue
-                leg_url = link.get('href')
 
                 district = link.xpath("string(../following-sibling::"
                                       "div[@class = 'email2'][1])")
                 district = district.rstrip('rthnds')
 
+                leg_url = link.get('href')
                 legislator = Legislator(term, 'lower', district,
                                         name, party="Unknown",
                                         url=leg_url)
                 legislator.add_source(url)
 
+                # Legislator
+                self.scrape_lower_offices(leg_url, legislator)
+
                 email = email.text_content().strip()
                 if email:
                     legislator['email'] = email
                 self.save_legislator(legislator)
+
+    def scrape_lower_offices(self, url, legislator):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        contact = doc.xpath('//div[@id="addrinfo"]')[0]
+        col = 1
+        while True:
+            address_data = contact.xpath('div[@class="addrcol%d"]' % col)
+            col += 1
+            if not address_data:
+                break
+            for data in address_data:
+                data = (data.xpath('div[@class="officehdg"]/text()'),
+                        data.xpath('div[@class="officeaddr"]/text()'))
+                ((office_name,), address) = data
+                if 'district' in office_name:
+                    office_type = 'district'
+                else:
+                    office_type = 'capitol'
+
+                phone = address.pop().strip()
+                office = dict(
+                    name=office_name, type=office_type, phone=phone,
+                    fax=None, email=None,
+                    address=''.join(address))
+
+                legislator.add_office(**office)
