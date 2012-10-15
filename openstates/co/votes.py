@@ -47,7 +47,6 @@ class COVoteScraper(VoteScraper):
             cur_bill_id = None
 
             for line in data.split("\n"):
-                # print line
 
                 if known_date is None:
                      dt = date_re.findall(line)
@@ -57,7 +56,21 @@ class COVoteScraper(VoteScraper):
                             "%A, %B %d, %Y")
 
                 if re.match("(\s+)?\d+.*", line) is None:
-                    continue
+                    l = line.lower().strip()
+                    skip = False
+                    blacklist = [
+                        "house",
+                        "page",
+                        "general assembly",
+                        "state of colorado",
+                        "session",
+                        "legislative day"
+                    ]
+                    for thing in blacklist:
+                        if thing in l:
+                            skip = True
+                    if skip:
+                        continue
 
                 found = re.findall(
                     "(?P<bill_id>(H|S|SJ|HJ)(B|M|R)\d{2}-\d{4})",
@@ -76,7 +89,7 @@ class COVoteScraper(VoteScraper):
                     continue
 
                 if in_question:
-                    cur_question += line
+                    cur_question += " " + line
                     continue
 
                 if ("The question being" in line) or \
@@ -92,9 +105,19 @@ class COVoteScraper(VoteScraper):
                         in_vote = False
                         continue
 
-                    votes = re.findall("(?P<name>\w+)\s+(?P<vote>Y|N|A|E|\*)",
+                    likely_garbage = False
+                    if "co-sponsor" in line.lower():
+                        likely_garbage = False
+
+                    votes = re.findall("(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E)",
                                        line)
-                    for person, v in votes:
+                    if likely_garbage:
+                        votes = []
+
+                    print "XXX: %s" % (line)
+                    print "XXX: %s" % (votes)
+
+                    for person, _, v in votes:
                         cur_vote[person] = v
 
                     if votes == []:
@@ -124,9 +147,14 @@ class COVoteScraper(VoteScraper):
                                     session=session,
                                     bill_id=cur_bill_id,
                                     bill_chamber=bc)
+
+                        vote.add_source(href.attrib['href'])
                         vote.add_source(url)
 
                         for person in cur_vote:
+                            if person is None:
+                                continue
+
                             vot = cur_vote[person]
                             if vot == 'Y':
                                 vote.yes(person)
@@ -142,6 +170,7 @@ class COVoteScraper(VoteScraper):
                         cur_question = None
                         in_vote = False
                         cur_vote_count = None
+                        continue
 
                 summ = vote_re.findall(line)
                 if summ == []:
@@ -260,6 +289,9 @@ class COVoteScraper(VoteScraper):
                                     bill_id=cur_bill_id,
                                     bill_chamber=bc)
                         for person in cur_vote:
+                            if person is None:
+                                continue
+
                             howvote = cur_vote[person]
                             howvote = howvote.upper()
                             if howvote == 'Y':
@@ -275,9 +307,12 @@ class COVoteScraper(VoteScraper):
                             None, None, None)
                         continue
 
-                    vals = line.split()
-                    vals = dict(zip(vals[0::2], vals[1::2]))
-                    cur_vote.update(vals)
+                    votes = re.findall("(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|\*)",
+                                       line)
+                    for person in votes:
+                        name, li, vot = person
+                        cur_vote[name] = vot
+
             os.unlink(path)
 
     def scrape(self, chamber, session):
