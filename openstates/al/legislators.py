@@ -35,10 +35,10 @@ class ALLegislatorScraper(LegislatorScraper):
                     office_address = 'Room %s\n11 S. Union Street\nMontgomery, AL 36130' % office
 
                     leg = Legislator(term, chamber, district, name,
-                                     party=party, office_phone=phone,
-                                     office_address=office_address,
-                                     url=leg_url)
+                                     party=party, url=leg_url)
                     self.get_details(leg, term, leg_url)
+                    leg.add_office('capitol', 'Capitol Office',
+                                   address=office_address, phone=phone)
 
                     leg.add_source(url)
                     self.save_legislator(leg)
@@ -51,6 +51,9 @@ class ALLegislatorScraper(LegislatorScraper):
         photo = doc.xpath('//img[@height="250"]/@src')
         if photo:
             leg['photo_url'] = photo[0]
+        email = doc.xpath('//a[starts-with(@href, "mailto")]/@href')
+        if email:
+            leg['email'] = email[0].strip('mailto:')
         for com in doc.xpath('//ul/li'):
             com = com.text_content()
             if '(' in com:
