@@ -338,14 +338,6 @@ class SenateBillPage(object):
             for name in other_votes:
                 vote.other(name)
 
-            # for voteval in ['yes', 'no', 'other']:
-            #     count = vote[voteval + '_count']
-            #     votes = vote[voteval + '_votes']
-            #     if count != len(votes):
-            #         msg = 'BAD %s COUNT: %d != %d'
-            #         self.scraper.logger.debug(msg % (voteval, count, len(votes)))
-            #         import pdb;pdb.set_trace()
-
             vote.add_source(self.url)
             self.bill.add_vote(vote)
 
