@@ -38,21 +38,22 @@ class SCLegislatorScraper(LegislatorScraper):
 
             photo_url = leg_doc.xpath('//img[contains(@src,"/members/")]/@src')[0]
 
-            # office address / phone
-            try:
-                addr_div = leg_doc.xpath('//div[@style="float: left; width: 225px; margin: 10px 5px 0 20px; padding: 0;"]')[0]
-                office_addr = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 10px 0; padding: 0;"]')[0].text_content()
-
-                office_phone = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 0 0; padding: 0;"]/text()')[0]
-                office_phone = office_phone.strip()
-            except IndexError:
-                self.warning('no address for {0}'.format(full_name))
-                office_addr = office_phone = ''
 
             legislator = Legislator(term, chamber, district, full_name,
                                     party=party, photo_url=photo_url,
-                                    office_address=office_addr,
-                                    office_phone=office_phone, url=leg_url)
+                                    url=leg_url)
+            # office address / phone
+            try:
+                addr_div = leg_doc.xpath('//div[@style="float: left; width: 225px; margin: 10px 5px 0 20px; padding: 0;"]')[0]
+                addr = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 10px 0; padding: 0;"]')[0].text_content()
+
+                phone = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 0 0; padding: 0;"]/text()')[0]
+                phone = phone.strip()
+                legislator.add_office('capitol', 'Columbia Address',
+                                      address=addr, phone=phone)
+            except IndexError:
+                self.warning('no address for {0}'.format(full_name))
+
             legislator.add_source(leg_url)
             legislator.add_source(url)
 
