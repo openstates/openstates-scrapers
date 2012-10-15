@@ -17,7 +17,11 @@ class NYBillScraper(BillScraper):
 
     categorizer = Categorizer()
 
-    def url2lxml(self, url, cache={}, xml=False):
+    def url2lxml(self, url, xml=False):
+
+        cache = getattr(self, '_url_cache', {})
+        self._url_cache = cache
+
         if url in cache:
             return cache[url]
         if xml:
@@ -33,6 +37,9 @@ class NYBillScraper(BillScraper):
             doc.make_links_absolute(url)
         cache[url] = doc
         return doc
+
+    def clear_url_cache(self):
+        self._url_cache = {}
 
     def scrape(self, chamber, session):
 
@@ -96,6 +103,7 @@ class NYBillScraper(BillScraper):
                 bill = self.scrape_bill(session, chamber, *values)
                 if bill:
                     self.save_bill(bill)
+                    self.clear_url_cache()
 
     def bill_id_details(self, result):
 
