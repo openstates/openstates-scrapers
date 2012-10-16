@@ -47,6 +47,7 @@ class COVoteScraper(VoteScraper):
             cur_bill_id = None
 
             for line in data.split("\n"):
+                print "XXX: %s" % (line)
                 if known_date is None:
                      dt = date_re.findall(line)
                      if dt != []:
@@ -109,7 +110,12 @@ class COVoteScraper(VoteScraper):
 
                     likely_garbage = False
                     if "co-sponsor" in line.lower():
-                        likely_garbage = False
+                        likely_garbage = True
+
+                    if 'the speaker' in line.lower():
+                        likely_garbage = True
+                        print line.lower()
+                        votes = []
 
                     votes = re.findall("(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E)",
                                        line)
@@ -162,8 +168,10 @@ class COVoteScraper(VoteScraper):
                                 vote.yes(person)
                             elif vot == 'N':
                                 vote.no(person)
-                            else:
+                            elif vot == 'E' or vot == '-':
                                 vote.other(person)
+                            else:
+                                print "XXX: ERROR %s %s" % (person, vot)
 
                         self.save_vote(vote)
 
@@ -311,6 +319,7 @@ class COVoteScraper(VoteScraper):
 
                     votes = re.findall("(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|\*)",
                                        line)
+
                     for person in votes:
                         name, li, vot = person
                         cur_vote[name] = vot
