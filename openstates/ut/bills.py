@@ -255,6 +255,8 @@ class UTBillScraper(BillScraper):
             for voter in vote_dict[key]['votes']:
                 getattr(vote, key)(voter)
 
+        bill.add_vote(vote)
+
     def parse_html_vote(self, bill, actor, date, motion, url, uniqid):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
