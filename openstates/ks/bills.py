@@ -152,8 +152,13 @@ class KSBillScraper(BillScraper):
 
         vote_doc, resp = self.urlretrieve(vote_url)
 
-        subprocess.check_call('abiword --to=ksvote.txt %s' % vote_doc,
-                              shell=True, cwd='/tmp/')
+        try:
+            subprocess.check_call('timeout 10 abiword --to=ksvote.txt %s' % vote_doc,
+                                  shell=True, cwd='/tmp/')
+        except subprocess.CalledProcessError:
+            # timeout failed, some documents hang abiword
+            self.error('abiword hung for longer than 10s on conversion')
+            return
         vote_lines = open('/tmp/ksvote.txt').readlines()
 
         os.remove(vote_doc)

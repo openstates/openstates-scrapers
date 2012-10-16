@@ -8,6 +8,7 @@ action_codes = {
     'efa_fabc_343': 'bill:passed',
     'efa_fabc_342': 'bill:passed',
     'cref_cref_500': 'committee:referred',
+    'cref_cref_318': 'committee:referred',  # withdrawn and re-referred
     'gov_avm_336': 'bill:veto_override:passed',
     # change sequence
     'mot_cgo_200': 'other', 'mot_cgo_201': 'other', 'mot_cgo_202': 'other',
@@ -25,12 +26,16 @@ action_codes = {
     'ee_enrb_149': 'governor:received',
     'cow_jcow_197': ['bill:passed', 'bill:substituted'],
     'mot_pspn_405': 'other', # postpone - failed
-     # COW actions
+     # other COW actions
     'cow_jcow_211': 'other', 'cow_jcow_210': 'other', 'cow_jcow_214': 'other',
     'cow_jcow_695': 'other', 'cow_jcow_694': 'other', 'cow_jcow_693': 'other',
-    'cow_jcow_692': 'other', 'cow_jcow_690': 'other',
+    'cow_jcow_692': 'other', 'cow_jcow_690': 'other', 'cow_jcow_317': 'other',
+    'cow_jcow_718': 'other', 'cow_jcow_719': 'other', 'cow_jcow_720': 'other',
+    'cow_jcow_681': 'other', 'cow_jcow_682': 'other', 'cow_jcow_683': 'other',
+    'cow_jcow_685': 'other', 'cow_jcow_688': 'other', 'cow_jcow_689': 'other',
      # withdrawn from consent cal.'
     'ccal_rcc_233': 'other',
+    'ccal_faccl_900': 'other',   # consent calendar passed
     'efa_fabc_933': 'bill:passed', # these 3 are 2/3 emergency clause votes...
     'efa_fabc_936': 'bill:failed',
     'efa_fabc_934': 'bill:passed',
@@ -40,6 +45,8 @@ action_codes = {
     'cr_rsc_801': 'committee:passed:unfavorable', # these 3 are appointments..
     'cr_rsc_800': 'committee:passed:favorable',
     'cr_rsc_802': 'committee:passed',
+    'ccr_rel_100': 'other',  # conference committee report available
+    'misc_bs_100': 'other',  # adopting conf committee report
     'gov_mg_150': 'governor:signed',
     'gov_mg_151': 'other', # law w/o signature
     'gov_mg_154': 'governor:vetoed',
@@ -55,6 +62,8 @@ action_codes = {
     'ccac_ccr_860': 'other',
     'efa_fabc_115': 'bill:failed',
     'intro_iopbc_158': 'bill:introduced',
+    'intro_iopbc_681': 'bill:introduced',
+    'intro_iopbc_251': 'bill:passed',
     'cr_rsc_291': 'committee:passed',
     'fa_fabc_116': 'bill:failed',
     'cow_jcow_728': 'amendment:withdrawn',
@@ -104,9 +113,6 @@ action_codes = {
     'cow_jcow_201': 'other', 'cow_jcow_202': 'other', 'cow_jcow_203': 'other',
     'ccac_cc_377': 'other', # conf committee changed member
     'ee_enrb_226': 'other', # Enrolled
-    # COW motions
-    'cow_jcow_681': 'other', 'cow_jcow_682': 'other', 'cow_jcow_683': 'other',
-    'cow_jcow_688': 'other', 'cow_jcow_689': 'other',
     # veto overrides
     'gov_avm_885': 'bill:veto_override:failed',
     'gov_avm_887': 'bill:veto_override:passed',
@@ -182,4 +188,14 @@ action_codes = {
     'cur_con_101': 'other', # concur. failed
     'cur_om_141': 'committee:referred',
     'misc_he_200': 'other', # hearing
+    # Died on Calendar
+    'dead_conf_101': 'other',  # died in conference
+    'dead_cal_201': 'other',
+    'dead_cal_202': 'other',
+    'dead_com_301': 'committee:failed',
+    'dead_com_302': 'committee:failed',
+    'dead_com_303': 'committee:failed',
+    'dead_go_302': 'other', # died on general order
+    'dead_go_401': 'other', # died on general order
+    'dead_go_402': 'other', # died on general order
     }
