@@ -47,7 +47,6 @@ class COVoteScraper(VoteScraper):
             cur_bill_id = None
 
             for line in data.split("\n"):
-
                 if known_date is None:
                      dt = date_re.findall(line)
                      if dt != []:
@@ -55,7 +54,9 @@ class COVoteScraper(VoteScraper):
                         known_date = datetime.datetime.strptime(dt,
                             "%A, %B %d, %Y")
 
+                non_std = False
                 if re.match("(\s+)?\d+.*", line) is None:
+                    non_std = True
                     l = line.lower().strip()
                     skip = False
                     blacklist = [
@@ -81,7 +82,8 @@ class COVoteScraper(VoteScraper):
                     cur_bill_id, chamber, typ = found
 
                 try:
-                    _, line = line.strip().split(" ", 1)
+                    if not non_std:
+                        _, line = line.strip().split(" ", 1)
                     line = line.strip()
                 except ValueError:
                     in_vote = False
