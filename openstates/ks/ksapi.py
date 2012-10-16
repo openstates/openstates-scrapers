@@ -32,7 +32,8 @@ action_codes = {
     'cow_jcow_692': 'other', 'cow_jcow_690': 'other', 'cow_jcow_317': 'other',
     'cow_jcow_718': 'other', 'cow_jcow_719': 'other', 'cow_jcow_720': 'other',
     'cow_jcow_681': 'other', 'cow_jcow_682': 'other', 'cow_jcow_683': 'other',
-    'cow_jcow_685': 'other', 'cow_jcow_688': 'other', 'cow_jcow_689': 'other',
+    'cow_jcow_684': 'other', 'cow_jcow_685': 'other', 'cow_jcow_688': 'other',
+    'cow_jcow_689': 'other',
      # withdrawn from consent cal.'
     'ccal_rcc_233': 'other',
     'ccal_faccl_900': 'other',   # consent calendar passed
@@ -75,6 +76,7 @@ action_codes = {
     'fa_fabc_910': 'bill:failed',
     # suspend rules
     'mot_susp_216': 'other', 'mot_susp_214': 'other', 'mot_susp_215': 'other',
+    'mot_susp_208': 'other', 'mot_susp_209': 'other',
     'cr_rsc_289': 'committee:passed',
     # conference committee
     'ccac_ccr_375': 'other', 'cur_con_337': 'other',
@@ -93,6 +95,7 @@ action_codes = {
     # adjourn/recess
     'ar_adj_625': 'other', 'ar_adj_626': 'other',
     'intro_ires_251': 'bill:passed',
+    'intro_ires_255': 'bill:passed',
     # engrossed/rengrossed
     'ee_eng_225': 'other', 'ee_eng_227': 'other',
     # referred to COW
@@ -192,10 +195,13 @@ action_codes = {
     'dead_conf_101': 'other',  # died in conference
     'dead_cal_201': 'other',
     'dead_cal_202': 'other',
+    'dead_cal_203': 'other',
     'dead_com_301': 'committee:failed',
     'dead_com_302': 'committee:failed',
     'dead_com_303': 'committee:failed',
     'dead_go_302': 'other', # died on general order
     'dead_go_401': 'other', # died on general order
     'dead_go_402': 'other', # died on general order
+    'kill_reso_100': 'bill:failed',
+    'kill_reso_200': 'bill:failed',
     }
