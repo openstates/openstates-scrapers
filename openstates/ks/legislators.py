@@ -48,9 +48,30 @@ class KSLegislatorScraper(LegislatorScraper):
 
             photo = legislator_page.xpath('//img[@class="profile-picture"]/@src')[0]
 
+            room = legislator_page.xpath('//p[contains(text(), "Room: ")]/text()')
+            if room:
+                room = room[0].split('Room: ')[1]
+                if room == 'DSOB':
+                    address = ('Kansas House of Representatives\n'
+                               'Docking State Office Building\n'
+                               '901 SW Harrison Street\n'
+                               'Topeka, KS 66612')
+                else:
+                    address = ('Room %s\n'
+                               'Kansas State Capitol Building\n'
+                               '300 SW 10th St.\n'
+                               'Topeka, KS 66612') % room
+            else:
+                address = None
+
+            if not phone:
+                phone = None
+
             legislator = Legislator(term, chamber, district, full_name,
-                                    party=party, office_phone=phone,
-                                    email=email, url=url, photo_url=photo)
+                                    party=party, email=email, url=url,
+                                    photo_url=photo)
+            legislator.add_office('capitol', 'Capitol Office', phone=phone,
+                                  address=address)
             legislator.add_source(url)
 
             self.save_legislator(legislator)

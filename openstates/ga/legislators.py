@@ -7,7 +7,7 @@ import scrapelib
 class GALegislatorScraper(LegislatorScraper):
     """Let me first start by saying, I'm sorry you have to look at this. In a nutshell, the lower legislator
     websites are a nightmare, they all are pretty much formed by hand it appears and a lot has slight differences.
-    I did the best I could, the senate scrapping is much better to look at :)
+    I did the best I could, the senate scraping is much better to look at :)
 
     You can find me at doug.morgan@gmail.com if you have questions.
     """
@@ -53,6 +53,7 @@ class GALegislatorScraper(LegislatorScraper):
         url: http://www.senate.ga.gov/senators/en-US/SenateMembersList.aspx
         """
         with self.lxml_context(url) as page:
+            page.make_links_absolute(url)
             path = '//div[@style="font-size:13px;"]/span'
             span_tags = page.xpath(path)
 
@@ -66,6 +67,7 @@ class GALegislatorScraper(LegislatorScraper):
 
             for span_tags in span_tag_sets:
                 name_and_party_tag = span_tags[0].text_content()
+                leg_url = span_tags[0].xpath('a/@href')[0]
                 district_tag = span_tags[1].text_content()
                 city_tag = span_tags[2].text_content()
 
@@ -102,9 +104,38 @@ class GALegislatorScraper(LegislatorScraper):
                                         last_name = last_name,
                                         suffix = suffix,
                                         party=party,
-                                        city=city)
+                                        city=city,
+                                        url=leg_url
+                                       )
+
+                # go get photo & address
+                self.scrape_senator_page(legislator, leg_url)
+
                 legislator.add_source(url)
+                legislator.add_source(leg_url)
                 self.save_legislator(legislator)
+
+    def scrape_senator_page(self, legislator, url):
+        doc = html.fromstring(self.urlopen(url))
+        doc.make_links_absolute(url)
+
+        sidebar = doc.xpath('//td[@id="MSOZoneCell_WebPartctl00_SPWebPartManager1_g_420648a8_9036_480b_bcd2_a5e8933f3eb0"]')[0]
+        legislator['photo_url'] = sidebar.xpath('.//img/@src')[0]
+
+        # div after Capitol Office is text broken up by brs
+        contact = sidebar.xpath('.//div[text()="Capitol Office"]/following-sibling::div')[0]
+        address = []
+        phone = None
+        fax = None
+        for piece in contact.xpath('text()'):
+            if piece.startswith('Phone: '):
+                phone = piece.strip('Phone: ')
+            elif piece.startswith('Fax: '):
+                fax = piece.strip('Fax: ')
+            else:
+                address += piece
+        legislator.add_office('capitol', 'Capitol Office', address='\n'.join(address),
+                              phone=phone, fax=fax)
 
     def scrape_lower_house(self, url, chamber, term):
         """Scrape the 'lower' GA House. The representative page contains a list of reps
@@ -175,8 +206,7 @@ class GALegislatorScraper(LegislatorScraper):
                                         district,
                                         '"Coach" Williams',
                                         party="Democratic",
-                                        url=url,
-                                       )
+                                        url=url)
                 legislator.add_source(url)
                 return legislator
 
@@ -263,10 +293,10 @@ class GALegislatorScraper(LegislatorScraper):
                                     email=email,
                                     photo_url=photo_url,
                                     facebook_url=facebook_url,
-                                    address=address,
                                     sworn_in_date=sworn_in,
-                                    office_phone=phone_number,
                                     url = url)
+            legislator.add_office('capitol', 'Capitol Address', address=address_info,
+                                  phone=phone_number)
             legislator.add_source(url)
             return legislator
 

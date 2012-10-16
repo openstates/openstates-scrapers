@@ -206,6 +206,9 @@ class SCBillScraper(BillScraper):
         # sponsors
         for sponsor in doc.xpath('//a[contains(@href, "member.php")]/text()'):
             bill.add_sponsor('primary', sponsor)
+        for sponsor in doc.xpath('//a[contains(@href, "committee.php")]/text()'):
+            sponsor = sponsor.replace(u'\xa0', ' ').strip()
+            bill.add_sponsor('primary', sponsor)
 
         # find versions
         version_url = doc.xpath('//a[text()="View full text"]/@href')[0]

@@ -77,29 +77,44 @@ class NYLegislatorScraper(LegislatorScraper):
 
             try:
                 span = page.xpath("//span[. = 'Albany Office']/..")[0]
-                cap_address = span.xpath("string(div[1])").strip()
-                cap_address += "\nAlbany, NY 12247"
-                legislator['capitol_address'] = cap_address
+                address = span.xpath("string(div[1])").strip()
+                address += "\nAlbany, NY 12247"
 
                 phone = span.xpath("div[@class='tel']/span[@class='value']")[0]
-                legislator['capitol_phone'] = phone.text.strip()
+                phone = phone.text.strip()
+
+                office = dict(
+                        name='Capitol Office',
+                        type='capitol', phone=phone,
+                        fax=None, email=None,
+                        address=address)
+
+                legislator.add_office(**office)
+
             except IndexError:
                 # Sometimes contact pages are just plain broken
                 pass
 
             try:
                 span = page.xpath("//span[. = 'District Office']/..")[0]
-                dist_address = span.xpath("string(div[1])").strip() + "\n"
-                dist_address += span.xpath(
+                address = span.xpath("string(div[1])").strip() + "\n"
+                address += span.xpath(
                     "string(span[@class='locality'])").strip() + ", "
-                dist_address += span.xpath(
+                address += span.xpath(
                     "string(span[@class='region'])").strip() + " "
-                dist_address += span.xpath(
+                address += span.xpath(
                     "string(span[@class='postal-code'])").strip()
-                legislator['district_address'] = dist_address
 
                 phone = span.xpath("div[@class='tel']/span[@class='value']")[0]
-                legislator['district_phone'] = phone.text.strip()
+                phone = phone.text.strip()
+
+                office = dict(
+                        name='District Office',
+                        type='district', phone=phone,
+                        fax=None, email=None,
+                        address=address)
+
+                legislator.add_office(**office)
             except IndexError:
                 # No district office yet?
                 pass
@@ -112,24 +127,57 @@ class NYLegislatorScraper(LegislatorScraper):
 
             for link, email in zip(page.xpath("//a[contains(@href, '/mem/')]"),
                                    page.xpath("//a[contains(@href, 'mailto')]")):
+
                 name = link.text.strip()
                 if name == 'Assembly Members':
                     continue
+
                 # empty seats
                 if 'Assembly District' in name:
                     continue
-                leg_url = link.get('href')
 
                 district = link.xpath("string(../following-sibling::"
                                       "div[@class = 'email2'][1])")
                 district = district.rstrip('rthnds')
 
+                leg_url = link.get('href')
                 legislator = Legislator(term, 'lower', district,
                                         name, party="Unknown",
                                         url=leg_url)
                 legislator.add_source(url)
 
+                # Legislator
+                self.scrape_lower_offices(leg_url, legislator)
+
                 email = email.text_content().strip()
                 if email:
                     legislator['email'] = email
                 self.save_legislator(legislator)
+
+    def scrape_lower_offices(self, url, legislator):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        contact = doc.xpath('//div[@id="addrinfo"]')[0]
+        col = 1
+        while True:
+            address_data = contact.xpath('div[@class="addrcol%d"]' % col)
+            col += 1
+            if not address_data:
+                break
+            for data in address_data:
+                data = (data.xpath('div[@class="officehdg"]/text()'),
+                        data.xpath('div[@class="officeaddr"]/text()'))
+                ((office_name,), address) = data
+                if 'district' in office_name:
+                    office_type = 'district'
+                else:
+                    office_type = 'capitol'
+
+                phone = address.pop().strip()
+                office = dict(
+                    name=office_name, type=office_type, phone=phone,
+                    fax=None, email=None,
+                    address=''.join(address))
+
+                legislator.add_office(**office)

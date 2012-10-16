@@ -112,6 +112,8 @@ class PRBillScraper(BillScraper):
                     mimetype = 'application/rtf'
                 elif action_url.lower().endswith('.pdf'):
                     mimetype = 'application/pdf'
+                elif action_url.lower().endswith('docx'):
+                    mimetype = 'application/octet-stream'
                 else:
                     raise Exception('unknown version type: %s' % action_url)
                 bill.add_version(action, action_url, on_duplicate='use_old',

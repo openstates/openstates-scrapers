@@ -9,10 +9,10 @@ _categorizer_rules = (
 
     Rule(r'^Introduced', 'bill:introduced'),
 
-    Rule(r'(?i)Referred to (?P<committee>.+)', 'committee:referred'),
-    Rule(r'(?i)Referred to (?P<committee>.+?)(\.\s+suspense)',
+    Rule(r'(?i)Referred to (?P<committees>.+)', 'committee:referred'),
+    Rule(r'(?i)Referred to (?P<committees>.+?)(\.\s+suspense)',
          'committee:referred'),
-    Rule(r're-refer to Standing (?P<committee>[^.]+)\.',
+    Rule(r're-refer to Standing (?P<committees>[^.]+)\.',
          'committee:referred'),
 
     Rule(r'Read first time\.', 'bill:reading:1'),

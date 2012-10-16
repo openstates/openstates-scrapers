@@ -183,7 +183,7 @@ class AZBillScraper(BillScraper):
                     rows = table.xpath('tr')[1:]
                     for row in rows:
                         # First add the committee assigned action
-                        meta_tag = row.xpath('meta')[0]
+                        meta_tag = row.xpath('.//meta')[0]
                         h_or_s = meta_tag.get('name')[0] # @name is HCOMMITTEE OR SCOMMITTEE
                         committee = meta_tag.get('content') # @content is committee abbrv
                         #actor is house or senate referring the bill to committee

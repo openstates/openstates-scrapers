@@ -67,10 +67,10 @@ class MDBillScraper(BillScraper):
     state = 'md'
 
     def parse_bill_sponsors(self, doc, bill):
-        sponsor_list = doc.cssselect('a[name=Sponlst]')
+        sponsor_list = doc.xpath('//a[@name="Sponlst"]')
         if sponsor_list:
             # more than one bill sponsor exists
-            elems = sponsor_list[0].getparent().getparent().getparent().cssselect('dd a')
+            elems = sponsor_list[0].xpath('../../..//dd/a')
             for elem in elems:
                 bill.add_sponsor('cosponsor',
                                  _clean_sponsor(elem.text.strip()))
@@ -118,7 +118,7 @@ class MDBillScraper(BillScraper):
                                 "type": atype
                             }
                             if committee is not None:
-                                kwargs['committee'] = committee
+                                kwargs['committees'] = committee
 
                             if atype:
                                 bill.add_action(chamber, act, action_date,
@@ -152,7 +152,7 @@ class MDBillScraper(BillScraper):
             'no_count': None,
             'other_count': None,
         }
-        elems = doc.cssselect('a')
+        elems = doc.xpath('//a')
 
         # MD has a habit of listing votes twice
         seen_votes = set()
@@ -218,7 +218,7 @@ class MDBillScraper(BillScraper):
             vote = Vote(**params)
 
             status = None
-            for row in vote_doc.cssselect('table')[3].cssselect('tr'):
+            for row in vote_doc.xpath('//table')[3].xpath('tr'):
                 text = row.text_content()
                 if text.startswith('Voting Yea'):
                     status = 'yes'
@@ -227,7 +227,7 @@ class MDBillScraper(BillScraper):
                 elif text.startswith('Not Voting') or text.startswith('Excused'):
                     status = 'other'
                 else:
-                    for cell in row.cssselect('a'):
+                    for cell in row.xpath('a'):
                         getattr(vote, status)(cell.text.strip())
         return vote
 
@@ -291,45 +291,52 @@ class MDBillScraper(BillScraper):
         else:
             session_url = session
         url = BILL_URL % (session_url, bill_type, number)
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            # find <a name="Title">, get parent dt, get parent dl, then dd n dl
-            title = doc.xpath('//a[@name="Title"][1]/../../dd[1]/text()')[0].strip()
 
-            summary = doc.xpath('//font[@size="3"]/p/text()')[0].strip()
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        # find <a name="Title">, get parent dt, get parent dl, then dd n dl
+        title = doc.xpath('//a[@name="Title"][1]/../../dd[1]/text()')[0].strip()
 
-            #print "%s %d %s" % (bill_type, number, title)
+        summary = doc.xpath('//font[@size="3"]/p/text()')[0].strip()
 
-            if 'B' in bill_type:
-                _type = ['bill']
-            elif 'J' in bill_type:
-                _type = ['joint resolution']
+        #print "%s %d %s" % (bill_type, number, title)
 
-            bill = Bill(session, chamber, "%s %d" % (bill_type, number), title,
-                        type=_type, summary=summary)
-            bill.add_source(url)
+        if 'B' in bill_type:
+            _type = ['bill']
+        elif 'J' in bill_type:
+            _type = ['joint resolution']
 
-            self.parse_bill_sponsors(doc, bill)     # sponsors
-            self.parse_bill_actions(doc, bill)      # actions
-            self.parse_bill_documents(doc, bill)    # documents and versions
-            self.parse_bill_votes(doc, bill)        # votes
+        bill = Bill(session, chamber, "%s %d" % (bill_type, number), title,
+                    type=_type, summary=summary)
+        bill.add_source(url)
 
-            # subjects
-            subjects = []
-            for subj in doc.xpath('//a[contains(@href, "/subjects/")]'):
-                subjects.append(subj.text.split('-see also-')[0])
-            bill['subjects'] = subjects
+        self.parse_bill_sponsors(doc, bill)     # sponsors
+        self.parse_bill_actions(doc, bill)      # actions
+        self.parse_bill_documents(doc, bill)    # documents and versions
+        self.parse_bill_votes(doc, bill)        # votes
 
-            # add bill to collection
-            self.save_bill(bill)
+        # subjects
+        subjects = []
+        for subj in doc.xpath('//a[contains(@href, "/subjects/")]'):
+            subjects.append(subj.text.split('-see also-')[0])
+        bill['subjects'] = subjects
+
+        # add bill to collection
+        self.save_bill(bill)
 
 
     def scrape(self, chamber, session):
 
         self.validate_session(session)
 
+        start_index = 1
+        if session == '2012s1' and chamber == 'lower':
+            start_index = 1801
+        elif session == '2012s1' and chamber == 'upper':
+            start_index = 1301
+
         for bill_type in CHAMBERS[chamber]:
-            for i in itertools.count(1):
+            for i in itertools.count(start_index):
                 try:
                     self.scrape_bill(chamber, session, bill_type, i)
                 except HTTPError as he:
