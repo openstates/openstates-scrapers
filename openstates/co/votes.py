@@ -117,7 +117,7 @@ class COVoteScraper(VoteScraper):
                         print line.lower()
                         votes = []
 
-                    votes = re.findall("(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E)",
+                    votes = re.findall("(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|-)",
                                        line)
                     if likely_garbage:
                         votes = []
