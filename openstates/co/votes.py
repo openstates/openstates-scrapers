@@ -47,7 +47,6 @@ class COVoteScraper(VoteScraper):
             cur_bill_id = None
 
             for line in data.split("\n"):
-                print "XXX: %s" % (line)
                 if known_date is None:
                      dt = date_re.findall(line)
                      if dt != []:
@@ -114,15 +113,11 @@ class COVoteScraper(VoteScraper):
 
                     if 'the speaker' in line.lower():
                         likely_garbage = True
-                        print line.lower()
                         votes = []
 
                     votes = re.findall(votes_re, line)
                     if likely_garbage:
                         votes = []
-
-                    print "XXX: %s" % (line)
-                    print "XXX: %s" % (votes)
 
                     for person, _, v in votes:
                         cur_vote[person] = v
@@ -130,10 +125,6 @@ class COVoteScraper(VoteScraper):
                     if votes == []:
                         in_vote = False
                         # save vote
-                        # print cur_vote
-                        # print cur_question
-                        # print known_date
-                        # print cur_bill_id
                         yes, no, other = cur_vote_count
                         if cur_bill_id is None:
                             continue
@@ -169,8 +160,6 @@ class COVoteScraper(VoteScraper):
                                 vote.no(person)
                             elif vot == 'E' or vot == '-':
                                 vote.other(person)
-                            else:
-                                print "XXX: ERROR %s %s" % (person, vot)
 
                         self.save_vote(vote)
 
@@ -275,11 +264,6 @@ class COVoteScraper(VoteScraper):
 
                         if cur_bill_id is None:
                             continue
-
-                        # print cur_vote
-                        # print cur_question
-                        # print cur_bill_id
-                        # print cur_vote_count
 
                         yes, no, exc, ab = cur_vote_count
                         other = int(exc) + int(ab)
