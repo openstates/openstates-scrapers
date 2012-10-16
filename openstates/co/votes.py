@@ -18,7 +18,7 @@ vote_re = re.compile((r"\s*"
            "NO\s*(?P<no_count>\d+)\s*"
            "EXCUSED\s*(?P<excused_count>\d+)\s*"
            "ABSENT\s*(?P<abs_count>\d+).*"))
-
+votes_re = r"(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|-)"
 
 class COVoteScraper(VoteScraper):
     state = 'co'
@@ -117,8 +117,7 @@ class COVoteScraper(VoteScraper):
                         print line.lower()
                         votes = []
 
-                    votes = re.findall("(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|-)",
-                                       line)
+                    votes = re.findall(votes_re, line)
                     if likely_garbage:
                         votes = []
 
@@ -317,8 +316,7 @@ class COVoteScraper(VoteScraper):
                             None, None, None)
                         continue
 
-                    votes = re.findall("(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|\*)",
-                                       line)
+                    votes = re.findall(votes_re, line)
 
                     for person in votes:
                         name, li, vot = person
