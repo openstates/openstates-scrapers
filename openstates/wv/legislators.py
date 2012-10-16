@@ -1,6 +1,6 @@
 import re
+from collections import defaultdict
 
-from billy.scrape import NoDataForPeriod
 from billy.utils import urlescape
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
@@ -76,4 +76,34 @@ class WVLegislatorScraper(LegislatorScraper):
                 leg.add_role('committee member', term, committee=comm,
                              chamber=chamber)
 
+        self.scrape_offices(leg, page)
         self.save_legislator(leg)
+
+    def scrape_offices(self, legislator, doc):
+        text = doc.xpath('//b[contains(., "Capitol Address:")]')[0]
+        text = text.getparent().itertext()
+        text = filter(None, [t.strip() for t in text])
+        officedata = defaultdict(list)
+        current = None
+        for chunk in text:
+            if chunk.strip().endswith(':'):
+                current = officedata[chunk.strip()]
+            elif current is not None:
+                current.append(chunk)
+
+        office = dict(
+            name='Capitol Office',
+            type='capitol',
+            phone=officedata['Capitol Phone:'].pop(),
+            fax=None,
+            email=officedata['E-mail:'].pop(),
+            address='\n'.join(officedata['Capitol Address:']))
+
+        legislator.add_office(**office)
+
+        if officedata['Business Phone:']:
+            legislator.add_office(
+                name='Business Office',
+                type='district',
+                phone=officedata['Business Phone:'].pop())
+
