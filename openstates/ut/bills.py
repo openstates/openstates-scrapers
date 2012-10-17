@@ -295,7 +295,8 @@ class UTBillScraper(BillScraper):
             v_txt, count = arr
             v_txt = v_txt.strip()
             count = int(count)
-            people = [x.text_content().strip() for x in votes.xpath(".//a")]
+            people = [x.text_content().strip() for x in
+                      votes.xpath(".//font[@face='Arial']")]
 
             vdict[v_txt] = {
                 "count": count,
