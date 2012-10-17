@@ -99,7 +99,7 @@ class WYBillScraper(BillScraper):
 
         ext_title = doc.xpath('//span[@class="billtitle"]')
         if ext_title:
-            bill['extended_title'] = ext_title[0].text_content().replace(
+            bill['description'] = ext_title[0].text_content().replace(
                 '\r\n', ' ')
 
         sponsor_span = doc.xpath('//span[@class="sponsors"]')
@@ -125,25 +125,22 @@ class WYBillScraper(BillScraper):
         action_re = re.compile('(\d{1,2}/\d{1,2}/\d{4})\s+(H |S )?(.+)')
         vote_total_re = re.compile('(Ayes )?(\d*)(\s*)Nays(\s*)(\d+)(\s*)Excused(\s*)(\d+)(\s*)Absent(\s*)(\d+)(\s*)Conflicts(\s*)(\d+)')
 
-        actions = [x.text_content() for x in
-                   doc.xpath('//*[@class="actions"]')]
-        actions = [x.text_content() for x in
-                   doc.xpath('//p')]
-        thing = []
+        actions_text = [x.text_content() for x in
+                        doc.xpath('//p')]
+        actions = []
         pastHeader = False
-        for action in actions:
+        for action in actions_text:
             action = action.replace(u'\xa0', ' ').replace(u'\xc2', '')
             # XXX: Fix the above, that's a rowdy mess. -- PRT
 
             if not pastHeader and action_re.match(action):
                 pastHeader = True
             if pastHeader:
-                thing.append(action)
-
-        actions = thing
+                actions.append(action)
 
         # initial actor is bill chamber
         actor = bill['chamber']
+
 
         aiter = iter(actions)
         for line in aiter:
@@ -212,12 +209,13 @@ class WYBillScraper(BillScraper):
 
                         for vtype, voters in voters.iteritems():
                             for voter in split_names(voters):
-                                if vtype == 'Ayes':
-                                    vote.yes(voter)
-                                elif vtype == 'Nays':
-                                    vote.no(voter)
-                                else:
-                                    vote.other(voter)
+                                if voter:
+                                    if vtype == 'Ayes':
+                                        vote.yes(voter)
+                                    elif vtype == 'Nays':
+                                        vote.no(voter)
+                                    else:
+                                        vote.other(voter)
                         # done collecting this vote
                         bill.add_vote(vote)
                         break
