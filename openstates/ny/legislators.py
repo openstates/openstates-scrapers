@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import re
+import itertools
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
@@ -39,13 +40,13 @@ class NYLegislatorScraper(LegislatorScraper):
 
                 contact_link = link.xpath("../span[@class = 'contact']/a")[0]
                 contact_url = contact_link.attrib['href']
-                self.scrape_upper_contact_info(legislator, contact_url)
+                self.scrape_upper_offices(legislator, contact_url)
 
                 legislator['url'] = contact_url.replace('/contact', '')
 
                 self.save_legislator(legislator)
 
-    def scrape_upper_contact_info(self, legislator, url):
+    def scrape_upper_offices(self, legislator, url):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
             legislator.add_source(url)
@@ -121,63 +122,93 @@ class NYLegislatorScraper(LegislatorScraper):
 
     def scrape_lower(self, term):
         url = "http://assembly.state.ny.us/mem/?sh=email"
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            for link, email in zip(page.xpath("//a[contains(@href, '/mem/')]"),
-                                   page.xpath("//a[contains(@href, 'mailto')]")):
+        for link, email in zip(page.xpath("//a[contains(@href, '/mem/')]"),
+                               page.xpath("//a[contains(@href, 'mailto')]")):
 
-                name = link.text.strip()
-                if name == 'Assembly Members':
-                    continue
+            name = link.text.strip()
+            if name == 'Assembly Members':
+                continue
 
-                # empty seats
-                if 'Assembly District' in name:
-                    continue
+            # empty seats
+            if 'Assembly District' in name:
+                continue
 
-                district = link.xpath("string(../following-sibling::"
-                                      "div[@class = 'email2'][1])")
-                district = district.rstrip('rthnds')
+            district = link.xpath("string(../following-sibling::"
+                                  "div[@class = 'email2'][1])")
+            district = district.rstrip('rthnds')
 
-                leg_url = link.get('href')
-                legislator = Legislator(term, 'lower', district,
-                                        name, party="Unknown",
-                                        url=leg_url)
-                legislator.add_source(url)
+            leg_url = link.get('href')
+            legislator = Legislator(term, 'lower', district,
+                                    name, party="Unknown",
+                                    url=leg_url)
+            legislator.add_source(url)
 
-                # Legislator
-                self.scrape_lower_offices(leg_url, legislator)
+            # Legislator
+            self.scrape_lower_offices(leg_url, legislator)
 
-                email = email.text_content().strip()
-                if email:
-                    legislator['email'] = email
-                self.save_legislator(legislator)
+            email = email.text_content().strip()
+            if email:
+                legislator['email'] = email
+            self.save_legislator(legislator)
 
     def scrape_lower_offices(self, url, legislator):
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
+
         contact = doc.xpath('//div[@id="addrinfo"]')[0]
-        col = 1
+
+        # Sometimes clsas is "addrcol1", others "addrcola"
+        col_generators = [
+
+            # Try alpha second.
+            iter('abcedef'),
+
+            # Try '' first, then digits.
+            itertools.chain(iter(['']), iter(xrange(1, 5)))
+            ]
+
+        cols = col_generators.pop()
         while True:
-            address_data = contact.xpath('div[@class="addrcol%d"]' % col)
-            col += 1
+
+            # Get the column value.
+            try:
+                col = cols.next()
+            except StopIteration:
+                try:
+                    cols = col_generators.pop()
+                except IndexError:
+                    break
+                else:
+                    continue
+
+            xpath = 'div[@class="addrcol%s"]' % str(col)
+            address_data = contact.xpath(xpath)
             if not address_data:
-                break
+                continue
+
             for data in address_data:
                 data = (data.xpath('div[@class="officehdg"]/text()'),
                         data.xpath('div[@class="officeaddr"]/text()'))
                 ((office_name,), address) = data
+
                 if 'district' in office_name:
                     office_type = 'district'
                 else:
                     office_type = 'capitol'
 
+                # Phone can't be blank.
                 phone = address.pop().strip()
+                if not phone:
+                    phone = None
+
                 office = dict(
                     name=office_name, type=office_type, phone=phone,
                     fax=None, email=None,
-                    address=''.join(address))
+                    address=''.join(address).strip())
 
                 legislator.add_office(**office)

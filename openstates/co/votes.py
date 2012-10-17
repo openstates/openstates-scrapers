@@ -18,7 +18,7 @@ vote_re = re.compile((r"\s*"
            "NO\s*(?P<no_count>\d+)\s*"
            "EXCUSED\s*(?P<excused_count>\d+)\s*"
            "ABSENT\s*(?P<abs_count>\d+).*"))
-
+votes_re = r"(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|-)"
 
 class COVoteScraper(VoteScraper):
     state = 'co'
@@ -47,7 +47,6 @@ class COVoteScraper(VoteScraper):
             cur_bill_id = None
 
             for line in data.split("\n"):
-
                 if known_date is None:
                      dt = date_re.findall(line)
                      if dt != []:
@@ -55,7 +54,9 @@ class COVoteScraper(VoteScraper):
                         known_date = datetime.datetime.strptime(dt,
                             "%A, %B %d, %Y")
 
+                non_std = False
                 if re.match("(\s+)?\d+.*", line) is None:
+                    non_std = True
                     l = line.lower().strip()
                     skip = False
                     blacklist = [
@@ -81,7 +82,8 @@ class COVoteScraper(VoteScraper):
                     cur_bill_id, chamber, typ = found
 
                 try:
-                    _, line = line.strip().split(" ", 1)
+                    if not non_std:
+                        _, line = line.strip().split(" ", 1)
                     line = line.strip()
                 except ValueError:
                     in_vote = False
@@ -107,15 +109,15 @@ class COVoteScraper(VoteScraper):
 
                     likely_garbage = False
                     if "co-sponsor" in line.lower():
-                        likely_garbage = False
+                        likely_garbage = True
 
-                    votes = re.findall("(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E)",
-                                       line)
-                    if likely_garbage:
+                    if 'the speaker' in line.lower():
+                        likely_garbage = True
                         votes = []
 
-                    print "XXX: %s" % (line)
-                    print "XXX: %s" % (votes)
+                    votes = re.findall(votes_re, line)
+                    if likely_garbage:
+                        votes = []
 
                     for person, _, v in votes:
                         cur_vote[person] = v
@@ -123,10 +125,6 @@ class COVoteScraper(VoteScraper):
                     if votes == []:
                         in_vote = False
                         # save vote
-                        # print cur_vote
-                        # print cur_question
-                        # print known_date
-                        # print cur_bill_id
                         yes, no, other = cur_vote_count
                         if cur_bill_id is None:
                             continue
@@ -160,7 +158,7 @@ class COVoteScraper(VoteScraper):
                                 vote.yes(person)
                             elif vot == 'N':
                                 vote.no(person)
-                            else:
+                            elif vot == 'E' or vot == '-':
                                 vote.other(person)
 
                         self.save_vote(vote)
@@ -267,11 +265,6 @@ class COVoteScraper(VoteScraper):
                         if cur_bill_id is None:
                             continue
 
-                        # print cur_vote
-                        # print cur_question
-                        # print cur_bill_id
-                        # print cur_vote_count
-
                         yes, no, exc, ab = cur_vote_count
                         other = int(exc) + int(ab)
                         yes, no, other = int(yes), int(no), int(other)
@@ -307,8 +300,8 @@ class COVoteScraper(VoteScraper):
                             None, None, None)
                         continue
 
-                    votes = re.findall("(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|\*)",
-                                       line)
+                    votes = re.findall(votes_re, line)
+
                     for person in votes:
                         name, li, vot = person
                         cur_vote[name] = vot

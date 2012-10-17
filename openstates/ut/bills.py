@@ -43,6 +43,9 @@ class UTBillScraper(BillScraper):
             page.make_links_absolute(bill_list_url)
 
             for link in page.xpath('//a'):
+                if "href" not in link.attrib:
+                    continue  # XXX: There are some funky <a> tags here.
+
                 if re.search(bill_list_re, link.attrib['href']):
                     self.scrape_bill_list(chamber, session,
                                           link.attrib['href'])
@@ -190,6 +193,70 @@ class UTBillScraper(BillScraper):
                         self.parse_vote(bill, actor, date, action,
                                         vote_url, uniqid)
 
+    def scrape_committee_vote(self, bill, actor, date, motion, url, uniqid):
+        with self.urlopen(url) as page:
+            page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+        committee = page.xpath("//b")[0].text_content()
+        votes = page.xpath("//table")[0]
+        rows = votes.xpath(".//tr")[0]
+        yno = rows.xpath(".//td")
+        if len(yno) < 3:
+            yes = yno[0]
+            no, other = None, None
+        else:
+            yes, no, other = rows.xpath(".//td")
+
+        def proc_block(obj):
+            if obj is None:
+                return {
+                    "type": None,
+                    "count": None,
+                    "votes": []
+                }
+
+            typ = obj.xpath("./b")[0].text_content()
+            count = obj.xpath(".//b")[0].tail.replace("-", "").strip()
+            count = int(count)
+            votes = []
+            for vote in obj.xpath(".//br"):
+                vote = vote.tail
+                if vote:
+                    vote = vote.strip()
+                    votes.append(vote)
+            return {
+                "type": typ,
+                "count": count,
+                "votes": votes
+            }
+
+        vote_dict = {
+            "yes": proc_block(yes),
+            "no": proc_block(no),
+            "other": proc_block(other),
+        }
+
+        yes_count = vote_dict['yes']['count']
+        no_count = vote_dict['no']['count'] or 0
+        other_count = vote_dict['other']['count'] or 0
+
+        vote = Vote(
+            actor,
+            date,
+            motion,
+            (yes_count > no_count),
+            yes_count,
+            no_count,
+            other_count,
+            _vote_id=uniqid)
+        vote.add_source(url)
+
+        for key in vote_dict:
+            for voter in vote_dict[key]['votes']:
+                getattr(vote, key)(voter)
+
+        bill.add_vote(vote)
+
     def parse_html_vote(self, bill, actor, date, motion, url, uniqid):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
@@ -198,6 +265,11 @@ class UTBillScraper(BillScraper):
 
         if "on voice vote" in descr:
             return
+
+        if "committee" in descr.lower():
+            return self.scrape_committee_vote(
+                bill, actor, date, motion, url, uniqid
+            )
 
         passed = None
 
@@ -223,7 +295,8 @@ class UTBillScraper(BillScraper):
             v_txt, count = arr
             v_txt = v_txt.strip()
             count = int(count)
-            people = [x.text_content().strip() for x in votes.xpath(".//a")]
+            people = [x.text_content().strip() for x in
+                      votes.xpath(".//font[@face='Arial']")]
 
             vdict[v_txt] = {
                 "count": count,
