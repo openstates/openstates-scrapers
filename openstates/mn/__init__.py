@@ -65,6 +65,12 @@ metadata = dict(
             'display_name': '2011, 1st Special Session',
             '_scraped_name': '87th Legislature, 2011 1st Special Session',
         },
+        '2012s1': {
+            'site_id': '1872012', 'type': 'special',
+            'votes_url': None,
+            'display_name': '2012, 1st Special Session',
+            '_scraped_name': '87th Legislature, 2012 1st Special Session',
+        },
         '2013-2014': {
             'site_id': '0882013',
             'type': "primary",
