@@ -12,7 +12,7 @@ def split_names(voters):
     voters = voters.split(')',1)[-1]
     # split on comma space as long as it isn't followed by an initial (\w+\.)
     # or split on 'and '
-    voters = [x.strip() for x in re.split('(?:, (?!\w+\.))|(?:and )', voters)]
+    voters = [x.strip() for x in re.split('(?:, (?!\w+(?:\.|$)))|(?:and )', voters)]
     return voters
 
 
@@ -206,6 +206,7 @@ class WYBillScraper(BillScraper):
                                   'Failed' not in action)
                         vote = Vote(actor, date, action, passed, int(ayes),
                                     int(nays), int(exc) + int(abs) + int(con))
+                        vote.add_source(digest_url)
 
                         for vtype, voters in voters.iteritems():
                             for voter in split_names(voters):
@@ -219,3 +220,8 @@ class WYBillScraper(BillScraper):
                         # done collecting this vote
                         bill.add_vote(vote)
                         break
+                    else:
+                        # if it is a stray line within the vote, is is a
+                        # continuation of the voter list
+                        # (sometimes has a newline)
+                        voters[voters_type] += ' ' + nextline
