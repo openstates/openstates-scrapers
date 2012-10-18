@@ -21,6 +21,8 @@ _categorizer_rules = (
     Rule(r"(?i)Governor partially vetoed", 'governor:vetoed:line-item'),
     Rule(r"(?i)Governor vetoed", 'governor:vetoed'),
     Rule(r"(?i)Governor signed", 'governor:signed'),
+    Rule(r"(?i)Passed final passage;", 'bill:passed'),
+    Rule(r"(?i)Failed final passage;", 'bill:failed'),
 #    Rule(r"(?i)"),
 #    Rule(r"(?i)"),
 )
