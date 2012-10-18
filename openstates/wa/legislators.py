@@ -56,25 +56,47 @@ class WALegislatorScraper(LegislatorScraper):
                 else:
                     leg_url = ("http://www.leg.wa.gov/house/"
                                "representatives/Pages/%s.aspx" % last)
+                scraped_offices = []
 
                 try:
                     with self.urlopen(leg_url) as leg_page:
                         leg_page = lxml.html.fromstring(leg_page)
-                        leg_page.make_links_absolute(leg_url)
+                    leg_page.make_links_absolute(leg_url)
 
-                        photo_link = leg_page.xpath(
-                            "//a[contains(@href, 'publishingimages')]")
-                        if photo_link:
-                            photo_url = photo_link[0].attrib['href']
+                    photo_link = leg_page.xpath(
+                        "//a[contains(@href, 'publishingimages')]")
+                    if photo_link:
+                        photo_url = photo_link[0].attrib['href']
+                    offices = leg_page.xpath("//table[@cellspacing='0']/tr/td/b[contains(text(), 'Office')]")
+                    for office in offices:
+                        office_block = office.getparent()
+                        office_name = office.text_content().strip().rstrip(":")
+                        address_lines = [x.tail for x in office_block.xpath(".//br")]
+                        address_lines = filter(lambda a: a is not None, address_lines)
+                        phone = address_lines.pop(len(address_lines) - 1)
+                        address = "\n".join(address_lines)
+                        obj = {
+                            "name": office_name,
+                            "phone": phone
+                        }
+                        if address.strip() != '':
+                            obj['address'] = address
+
+                        scraped_offices.append(obj)
                 except scrapelib.HTTPError:
                     # Sometimes the API and website are out of sync
                     # with respect to legislator resignations/appointments
                     photo_url = ''
 
                 leg = Legislator(term, chamber, district,
-                                 name, '', '', '', party, email=email,
-                                 _code=leg_id, office_phone=phone,
+                                 name, '', '', '', party,
+                                 _code=leg_id,
                                  photo_url=photo_url, url=leg_url)
                 leg.add_source(leg_url)
+
+                for office in scraped_offices:
+                    typ = 'district' if 'District' in office['name'] else 'capitol'
+                    leg.add_office(typ, office.pop('name'),
+                                   **office)
 
                 self.save_legislator(leg)
