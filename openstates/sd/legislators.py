@@ -64,9 +64,16 @@ class SDLegislatorScraper(LegislatorScraper):
                 "string(//span[contains(@id, 'CapitolPhone')])").strip()
 
             legislator = Legislator(term, chamber, district, name,
-                                    party=party, occupation=occupation,
+                                    party=party,
+                                    occupation=occupation,
                                     photo_url=photo_url,
-                                    office_phone=office_phone, url=url)
+                                    url=url)
+            kwargs = {}
+            if office_phone.strip() != "":
+                kwargs['phone'] = office_phone
+
+            legislator.add_office('capitol', 'Capitol Office',
+                                  **kwargs)
             legislator.add_source(url)
 
             comm_url = page.xpath("//a[. = 'Committees']")[0].attrib['href']
