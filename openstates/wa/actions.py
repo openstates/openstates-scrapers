@@ -18,8 +18,11 @@ _categorizer_rules = (
     Rule(r"(?i)Signed by (?P<signed_chamber>(Representatives|Senators)) (?P<members>.*)", "bill:passed"),
     Rule(r"(?i)Referred to (?P<committees>.*)(\.)?"),
     Rule(r"(?i)(?P<from_committee>.*) relieved of further consideration. On motion, referred to (?P<committees>.*)", 'committee:referred'),
-#    Rule(r""),
-#    Rule(r""),
+    Rule(r"(?i)Governor partially vetoed", 'governor:vetoed:line-item'),
+    Rule(r"(?i)Governor vetoed", 'governor:vetoed'),
+    Rule(r"(?i)Governor signed", 'governor:signed'),
+#    Rule(r"(?i)"),
+#    Rule(r"(?i)"),
 )
 
 
