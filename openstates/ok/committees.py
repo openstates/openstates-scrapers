@@ -56,7 +56,8 @@ class OKCommitteeScraper(CommitteeScraper):
             comm = Committee(chamber, name)
         comm.add_source(url)
 
-        for link in page.xpath("//a[contains(@href, 'District')]"):
+        xpath = "//a[contains(@href, 'District')]"
+        for link in page.xpath(xpath):
             member = link.xpath('string()').strip()
             member = re.sub(r'\s+', ' ', member)
 
