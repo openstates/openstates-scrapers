@@ -96,8 +96,11 @@ class MOLegislatorScraper(LegislatorScraper):
                     # TODO This is only true if the href doesn't contain 'mail_form'. If it does,
                     # then there is only a webform. So...no email?
                     # TODO a lot of these have fax numbers. Include?
-                leg['office_phone'] = phone
-                leg['office_address'] = "%s%s" % (address[0],address[1])
+
+                leg.add_office("capitol", "Capitol Office",
+                               address="%s%s" % (address[0],address[1]),
+                               phone=phone)
+
                 leg['photo_url'] = photo_url
                 if email and len(email) > 0 and email[0] != 'mailto:':
                     leg['email'] = email[0].split(':')[1]
@@ -128,16 +131,23 @@ class MOLegislatorScraper(LegislatorScraper):
                 if last_name == 'Vacant':
                     leg = Legislator(term, chamber, district, full_name=full_name,
                                 first_name=first_name, last_name=last_name,
-                                party=party, phone=phone,
-                                office_address=address,
-                                _code=leg_code, url=url)
+                                party=party, _code=leg_code, url=url)
+
+                    leg.add_office('capitol', "Capitol Office",
+                                   address=address,
+                                   phone=phone)
+
                     leg.add_source(url)
                     self.save_vacant_legislator(leg)
                 else:
                     leg = Legislator(term, chamber, district, full_name=full_name,
                               first_name=first_name, last_name=last_name,
-                              party=party, phone=phone, office_address=address,
-                              _code=leg_code, url=url)
+                              party=party, _code=leg_code, url=url)
+
+                    leg.add_office('capitol', 'Capitol Office',
+                                   address=address,
+                                   phone=phone)
+
                     url = (self.rep_details_url % (session,district))
                     leg.add_source(url)
                     with self.urlopen(url) as details_page:
