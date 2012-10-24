@@ -98,17 +98,24 @@ class PABillScraper(BillScraper):
 
     def parse_history(self, bill, url):
         bill.add_source(url)
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
-            self.parse_sponsors(bill, page)
-            self.parse_actions(bill, page)
-            # vote count
-            return len(page.xpath('//a[contains(@href, "rc_view_action1")]/text()'))
+        html = self.urlopen(url)
+        tries = 0
+        while 'There is a problem generating the page you requested.' in html:
+            html = self.urlopen(url)
+            if tries < 2:
+                self.logger.warning('Internal error')
+                return
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        self.parse_sponsors(bill, doc)
+        self.parse_actions(bill, doc)
+        # vote count
+        return len(doc.xpath('//a[contains(@href, "rc_view_action1")]/text()'))
 
     def parse_sponsors(self, bill, page):
         first = True
         sponsor_list = page.xpath("//td[text() = 'Sponsors:']/../td[2]")[0].text_content().strip()
+
         for sponsor in sponsor_list.split(','):
             if first:
                 sponsor_type = 'primary'
