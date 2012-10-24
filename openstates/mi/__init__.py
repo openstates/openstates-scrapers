@@ -1,5 +1,5 @@
 import lxml.html
-from billy.utils.fulltext import oyster_text, text_after_line_numbers
+from billy.utils.fulltext import text_after_line_numbers
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 
@@ -38,15 +38,7 @@ def session_list():
                      'page=LegBasicSearch', '//option/text()')
 
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     text = doc.xpath('//body')[0].text_content()
     return text
-
-document_class = dict(
-    AWS_PREFIX = 'documents/mi/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

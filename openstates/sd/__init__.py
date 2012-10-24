@@ -1,6 +1,5 @@
 import datetime
 import lxml.html
-from billy.utils.fulltext import oyster_text
 
 settings = dict(
     SCRAPELIB_RPM=8,
@@ -66,15 +65,7 @@ def session_list():
     doc = lxml.html.fromstring(html)
     return doc.xpath('//span[@class="link"]/text()')
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     return ' '.join(div.text_content() for div in
                     doc.xpath('//div[@align="full"]'))
-
-document_class = dict(
-    AWS_PREFIX = 'documents/sd/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

@@ -1,4 +1,4 @@
-from billy.utils.fulltext import oyster_text, worddata_to_text
+from billy.utils.fulltext import worddata_to_text
 
 metadata = dict(
     name='Kentucky',
@@ -44,13 +44,5 @@ def session_list():
     return url_xpath('http://www.lrc.ky.gov/legislation.htm',
                      '//a[contains(@href, "record.htm")]/img/@alt')
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     return worddata_to_text(data)
-
-document_class = dict(
-    AWS_PREFIX = 'documents/ky/',
-    update_mins = 7*24*60,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

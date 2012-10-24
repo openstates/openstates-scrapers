@@ -1,6 +1,6 @@
 import re
 import datetime
-from billy.utils.fulltext import oyster_text, pdfdata_to_text
+from billy.utils.fulltext import pdfdata_to_text
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 
@@ -52,14 +52,6 @@ def session_list():
         "//div[@class='col1']/ul/li[@class='show']/text()")
 
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     return ' '.join(line for line in pdfdata_to_text(data).splitlines()
                     if re.findall('[a-z]', line)).decode('utf8')
-
-document_class = dict(
-    AWS_PREFIX='documents/tn/',
-    update_mins=24 * 7 * 60,
-    extract_text=extract_text,
-    onchanged=['oyster.ext.elasticsearch.ElasticSearchPush']
-)

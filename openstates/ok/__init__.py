@@ -1,4 +1,4 @@
-from billy.utils.fulltext import oyster_text, worddata_to_text
+from billy.utils.fulltext import worddata_to_text
 
 settings = dict(SCRAPELIB_TIMEOUT=120)
 
@@ -73,14 +73,5 @@ def session_list():
         "//select[@name='cbxSession']/option/text()")
 
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     return worddata_to_text(data)
-
-
-document_class = dict(
-    AWS_PREFIX='documents/ok/',
-    update_mins=None,
-    extract_text=extract_text,
-    onchanged=['oyster.ext.elasticsearch.ElasticSearchPush']
-    )

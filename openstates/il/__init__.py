@@ -1,4 +1,4 @@
-from billy.utils.fulltext import text_after_line_numbers, oyster_text
+from billy.utils.fulltext import text_after_line_numbers
 import lxml.html
 
 metadata = {
@@ -104,15 +104,7 @@ def session_list():
     return url_xpath('http://ilga.gov/PreviousGA.asp',
                      '//option/text()')
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     text = ' '.join(x.text_content() for x in doc.xpath('//td[@class="xsl"]'))
     return text
-
-document_class = dict(
-    AWS_PREFIX = 'documents/il/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)
