@@ -3,19 +3,48 @@ from billy.scrape.actions import Rule, BaseCategorizer
 
 # These are regex patterns that map to action categories.
 _categorizer_rules = (
-    Rule(r'(?i)(co)?authored by (?P<legislators>.+)'),
-    Rule(r'(?i)Representative\(s\) (?P<legislators>.+)'),
+
     Rule(r'Ayes:\s+(?P<yes_votes>\d+)\s+Nays:\s+(?P<no_votes>\d+)'),
-    Rule(r'(?i)SCs named (?P<legislators>.+)'),
-    Rule(r'(?i)remove as author (?P<legislators>.+);'),
-    # Rule('First Reading', ['bill:introduced', 'bill:reading:1']),
-    # Rule('Sent to Governor', ['governor:received']),
-    # Rule('(?i)referred to', ['committee:referred']),
-    # Rule('Second Reading', ['bill:reading:2']),
-    # Rule('Third Reading', ['bill:reading:3']),
-    # Rule('Reported Do Pass', ['committee:passed']),
-    # Rule('(Signed|Approved) by Governor', ['governor:signed']),
-    # Rule('(?i)measure passed', ['bill:passed']),
+
+    Rule([u'Introduced'], [u'bill:introduced']),
+    Rule([u'Adopted'], [u'bill:passed']),
+    Rule([u'HAs rejected'], [u'amendment:failed']),
+    Rule(u'(?i)Measure.+?passed', 'bill:passed'),
+    Rule(u'(?i)Measure.+?passed', 'bill:passed'),
+    Rule(u'Third Reading, Measure passed',
+         ['bill:passed', 'bill:reading:3']),
+
+    Rule([u'^Amendment withdrawn'], [u'amendment:withdrawn']),
+    Rule([u'^Amended$'], [u'amendment:passed']),
+    Rule([u'^Amendment failed'], [u'amendment:failed']),
+    Rule([u'^Amendment restore'], [u'amendment:passed']),
+
+    Rule('First Reading', 'bill:reading:1'),
+    Rule([u'Second Reading referred to (?P<committees>.+)'],
+         [u'committee:referred', u'bill:reading:2']),
+    Rule([u'Second Reading referred to (?P<committees>.+? Committee)'],
+         [u'committee:referred', u'bill:reading:2']),
+    Rule([u'Second Reading referred to .+? then to (?P<committees>.+)'],
+         [u'committee:referred', u'bill:reading:2']),
+    Rule([u'Second Reading referred to (?P<committees>.+?) then to '],
+         [u'committee:referred', u'bill:reading:2']),
+    Rule([u'Second Reading referred to .+? then to (?P<committees>.+)'],
+         [u'committee:referred', u'bill:reading:2']),
+    Rule([u'(?i)Placed on Third Reading'], [u'bill:reading:3']),
+
+    Rule([u'Do Pass (as amended )?(?P<committees>.+)'], [u'committee:passed']),
+    Rule([u'Failed in Committee - (?P<committees>.+)'], [u'committee:failed']),
+    Rule([u'CR; Do not pass (?P<committees>)'], [u'committee:failed']),
+    Rule([u'rereferred to (?P<committees>.+)'], [u'committee:referred']),
+    Rule([u'Referred to (?P<committees>.+?)'], [u'committee:referred']),
+    Rule([u'Reported Do Pass, amended by committee substitute (?P<committees>.+?);'],
+         [u'committee:passed']),
+    Rule([u'Do pass, amended by committee substitute (?P<committees>)'],
+         [u'committee:passed']),
+
+    Rule([u'Sent to Governor'], [u'governor:received'], actor='governor'),
+    Rule([u'^Approved by Governor'], [u'governor:signed'], actor='governor'),
+    Rule([u'^Vetoed'], [u'governor:vetoed'], actor='governor'),
     )
 
 
