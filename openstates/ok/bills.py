@@ -1,5 +1,4 @@
 import re
-import urllib
 import datetime
 import collections
 
@@ -10,39 +9,16 @@ from billy.scrape.votes import Vote
 import lxml.html
 import scrapelib
 
-
-def action_type(action):
-    atype = []
-
-    if action == 'First Reading':
-        atype.append('bill:introduced')
-        atype.append('bill:reading:1')
-    elif action == 'Sent to Governor':
-        atype.append('governor:received')
-
-    if 'referred to' in action.lower():
-        atype.append('committee:referred')
-
-    if action.startswith('Second Reading'):
-        atype.append('bill:reading:2')
-    elif action.startswith('Third Reading'):
-        atype.append('bill:reading:3')
-    elif action.startswith('Reported Do Pass'):
-        atype.append('committee:passed')
-    elif re.match('(Signed|Approved) by Governor', action):
-        atype.append('governor:signed')
-
-    if 'measure passed' in action.lower():
-        atype.append('bill:passed')
-
-    return atype
+from .actions import Categorizer
 
 
 class OKBillScraper(BillScraper):
-    state = 'ok'
 
+    state = 'ok'
     bill_types = ['B', 'JR', 'CR', 'R']
     subject_map = collections.defaultdict(list)
+
+    categorizer = Categorizer()
 
     def scrape(self, chamber, session, only_bills=None):
         # start by building subject map
@@ -133,8 +109,8 @@ class OKBillScraper(BillScraper):
             elif actor == 'S':
                 actor = 'upper'
 
-            bill.add_action(actor, action, date,
-                            type=action_type(action))
+            attrs = self.categorizer.categorize(action)
+            bill.add_action(actor, action, date, **attrs)
 
         version_table = page.xpath("//table[contains(@id, 'Versions')]")[0]
         for link in version_table.xpath(".//a[contains(@href, '.DOC')]"):
@@ -153,6 +129,9 @@ class OKBillScraper(BillScraper):
         has_no_actions = not bill['actions']
         has_no_versions = not bill['versions']
         has_no_title = (bill['title'] == "Short Title Not Found.")
+        if has_no_title:
+            # If there's no title, this is an empty page. Skip!
+            return
         first_sponsor_is_bogus = bill['sponsors'][0]['name'] = "Author Not Found."
         has_no_sponsors = (len(bill['sponsors']) == 1) and first_sponsor_is_bogus
         if has_no_actions and has_no_versions:
