@@ -1,4 +1,4 @@
-from billy.utils.fulltext import text_after_line_numbers, oyster_text
+from billy.utils.fulltext import text_after_line_numbers
 import lxml.html
 
 
@@ -38,8 +38,7 @@ def session_list():
     return url_xpath('http://flsenate.gov', '//option/text()')
 
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     pre = doc.xpath('//pre')
     if pre:
@@ -47,10 +46,3 @@ def extract_text(oyster_doc, data):
         return text_after_line_numbers(text)
     else:
         return '\n'.join(x.text_content() for x in doc.xpath('//tr/td[2]'))
-
-document_class = dict(
-    AWS_PREFIX = 'documents/fl/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

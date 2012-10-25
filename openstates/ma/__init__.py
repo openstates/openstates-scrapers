@@ -1,6 +1,6 @@
 import datetime
 import lxml.html
-from billy.utils.fulltext import oyster_text, text_after_line_numbers
+from billy.utils.fulltext import text_after_line_numbers
 
 settings = dict(
     SCRAPELIB_TIMEOUT=600,
@@ -58,16 +58,8 @@ def session_list():
     return sessions
 
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     text = ' '.join([x.text_content()
                      for x in doc.xpath('//td[@class="longTextContent"]//p')])
     return text
-
-document_class = dict(
-    AWS_PREFIX = 'documents/ma/',
-    update_mins = 7*24*60,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

@@ -1,5 +1,4 @@
-from billy.utils.fulltext import (pdfdata_to_text, oyster_text,
-                            text_after_line_numbers)
+from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 
 metadata = dict(
     name='Vermont',
@@ -44,13 +43,5 @@ def session_list():
     return url_xpath( 'http://www.leg.state.vt.us/ResearchMain.cfm',
         "//div[@id='ddsidebarmenu01']/ul/li/a/text()")
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     return text_after_line_numbers(pdfdata_to_text(data))
-
-document_class = dict(
-    AWS_PREFIX = 'documents/vt/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

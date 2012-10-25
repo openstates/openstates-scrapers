@@ -1,4 +1,3 @@
-from billy.utils.fulltext import oyster_text
 import lxml.html
 
 metadata = dict(
@@ -38,14 +37,6 @@ def session_list():
     sessions.remove('2001-2002')
     return sessions
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     return doc.xpath('//div[@class="billtextbody"]')[0].text_content()
-
-document_class = dict(
-    AWS_PREFIX = 'documents/me/',
-    update_mins = 7*24*60,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

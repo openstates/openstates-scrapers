@@ -1,6 +1,5 @@
 import datetime
-from billy.utils.fulltext import (pdfdata_to_text, oyster_text,
-                            text_after_line_numbers)
+from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 
 metadata = dict(
     _partial_vote_bill_id=True,
@@ -37,13 +36,5 @@ def session_list():
                      "//select[@name='ctl00$rilinContent$cbYear']/option/text()")
 
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     return text_after_line_numbers(pdfdata_to_text(data))
-
-document_class = dict(
-    AWS_PREFIX='documents/ri/',
-    update_mins=24 * 7 * 60,
-    extract_text=extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

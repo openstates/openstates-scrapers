@@ -1,4 +1,4 @@
-from billy.utils.fulltext import text_after_line_numbers, oyster_text
+from billy.utils.fulltext import text_after_line_numbers
 import lxml.html
 
 metadata = {
@@ -50,8 +50,7 @@ def session_list():
     return sessions
 
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     lines = doc.xpath('//span/text()')
     headers = ('A\r\nRESOLUTION', 'AN\r\nACT')
@@ -64,10 +63,3 @@ def extract_text(oyster_doc, data):
         text = ' '.join(lines)
 
     return text
-
-document_class = dict(
-    AWS_PREFIX = 'documents/ga/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

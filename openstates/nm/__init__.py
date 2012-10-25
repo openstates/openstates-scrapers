@@ -1,5 +1,4 @@
 import lxml.html
-from billy.utils.fulltext import oyster_text
 
 metadata = {
     'abbreviation': 'nm',
@@ -54,15 +53,7 @@ def session_list():
     return url_xpath( 'http://www.nmlegis.gov/lcs/BillFinderNumber.aspx',
         "//select[@name='ctl00$mainCopy$SessionList']/option/text()" )
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     return doc.xpath('//body')[0].text_content().split(
         u'\r\n\xa0\r\n\xa0\r\n\xa0')[-1]
-
-document_class = dict(
-    AWS_PREFIX = 'documents/nm/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

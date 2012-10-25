@@ -1,5 +1,5 @@
 import datetime
-from billy.utils.fulltext import oyster_text, worddata_to_text
+from billy.utils.fulltext import worddata_to_text
 
 metadata = dict(
     name='Colorado',
@@ -78,13 +78,5 @@ def session_list():
 
     return sessions
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     return worddata_to_text(data)
-
-document_class = dict(
-    AWS_PREFIX = 'documents/co/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

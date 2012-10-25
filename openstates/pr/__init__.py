@@ -1,4 +1,4 @@
-from billy.utils.fulltext import oyster_text, worddata_to_text
+from billy.utils.fulltext import worddata_to_text
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
@@ -34,13 +34,5 @@ def session_list():
     return url_xpath('http://www.oslpr.org/legislatura/tl2009/buscar_2009.asp',
                      '//select[@name="URL"]/option/text()')
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     return worddata_to_text(data)
-
-document_class = dict(
-    AWS_PREFIX = 'documents/pr/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

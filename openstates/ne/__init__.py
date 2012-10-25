@@ -1,6 +1,6 @@
 import re
 import datetime
-from billy.utils.fulltext import pdfdata_to_text, oyster_text
+from billy.utils.fulltext import pdfdata_to_text
 
 metadata = dict(
     name='Nebraska',
@@ -45,8 +45,7 @@ def session_list():
     return url_xpath('http://nebraskalegislature.gov/bills/',
                      "//select[@name='Legislature']/option/text()")[:-1]
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     text = pdfdata_to_text(data)
     lines = text.splitlines()
     line_num_re = re.compile('\s*-\d+-')  # number:  -#-
@@ -56,10 +55,3 @@ def extract_text(oyster_doc, data):
     text = ' '.join(line for line in lines[i:]
                     if not line_num_re.match(line))
     return text
-
-document_class = dict(
-    AWS_PREFIX = 'documents/ne/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

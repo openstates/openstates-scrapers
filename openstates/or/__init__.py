@@ -1,6 +1,5 @@
 import re
 import lxml.html
-from billy.utils.fulltext import oyster_text
 
 metadata = dict(
     name='Oregon',
@@ -54,18 +53,9 @@ def session_list():
             url_xpath('http://www.leg.state.or.us/bills_laws/billsinfo.htm',
                      '//a[contains(@href, "measures")]/text()')]
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     lines = doc.xpath('//pre/text()')[0].splitlines()
     text = ' '.join(line for line in lines
                     if not re.findall('Page \d+$', line))
     return text
-
-
-document_class = dict(
-    AWS_PREFIX = 'documents/or/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)
