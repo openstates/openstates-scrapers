@@ -61,7 +61,7 @@
                     {% if vote.is_probably_a_voice_vote %}
                     <p>{% blocktrans %} <strong>No vote counts were available for this motion.</strong> This vote appears to be a
                         <a href="http://en.wikipedia.org/wiki/Voice_vote">voice vote</a>, a type of vote for
-                        which many states don't record vote counts.</p>'
+                        which many states don't record vote counts.</p>
                         {% endblocktrans %}
                     {% else %}
                     <p>{% blocktrans %}
@@ -201,8 +201,7 @@
                 be the case here. This can also happen if a state provides insufficient data on its votes.
                 </p>
             {% endif %}
-            {% if vote.sources %}{% squish_whitespace %}You may be able to find out more by visiting
-                the official source (
+            {% if vote.sources %}{% squish_whitespace %}You may be able to find out more by visiting the official source (
                 {% for source in vote.sources %}
                     {% if not forloop.first %}
                         {% if forloop.last %}and{% else %}, {% endif %}
