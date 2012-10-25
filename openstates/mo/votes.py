@@ -14,6 +14,17 @@ bill_re = r"(H|S)(C|J)?(R|M|B) (\d+)"
 date_re = r"(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)" \
            ", (\w+) (\d+), (\d+)"
 
+
+def _clean_line(obj):
+    patterns = {
+        "\xe2\x80\x94": "-"
+    }
+    for pattern in patterns:
+        obj = obj.replace(pattern, patterns[pattern])
+
+    return obj
+
+
 class MOVoteScraper(VoteScraper):
     state = 'mo'
 
@@ -51,6 +62,11 @@ class MOVoteScraper(VoteScraper):
             cur_motion = ''
             bc = ''
             vote = {}
+            counts = {
+                "yes": 0,
+                "no": 0,
+                "other": 0
+            }
 
             for line in lines:
                 line = line.strip()
@@ -86,8 +102,8 @@ class MOVoteScraper(VoteScraper):
                         in_vote = False
                         # print vote
                         # print cur_motion
-                        yes, no, other = len(vote['yes']), len(vote['no']), \
-                                             len(vote['other'])
+                        yes, no, other = counts['yes'], counts['no'], \
+                                            counts['other']
 
                         v = Vote('upper',
                                   date,
@@ -107,6 +123,11 @@ class MOVoteScraper(VoteScraper):
 
                         self.save_vote(v)
                         vote = {}
+                        counts = {  # XXX: Fix this. Dupe'd.
+                            "yes": 0,
+                            "no": 0,
+                            "other": 0
+                        }
                         continue
                     if "Journal of the Senate" in line:
                         continue
@@ -117,17 +138,37 @@ class MOVoteScraper(VoteScraper):
                         continue
 
                     found = False
+                    rl = None
                     for klass in classes:
                         if line.startswith(klass):
+                            if "Senator" in line and not "Senators" in line:
+                                line = _clean_line(line)
+                                line = line.replace("%s-Senator " % (klass),
+                                                    "")
+                                rl = line
                             vote_type = classes[klass]
                             found = True
-                            vote[vote_type] = []
-                    if found:
+                            if vote_type not in vote:
+                                vote[vote_type] = []
+                    if found and rl is None:
                         continue
+                    elif rl:
+                        line = rl
 
-                    names = line.strip().split()
+                    # print line
+                    names = [_clean_line(x) for x in line.strip().split()]
                     if names == []:
                         continue
+
+                    # print names
+                    lname = names[-1]
+                    lname = lname.rsplit("-", 1)
+                    if len(lname) > 1:
+                        person, count = lname
+                        names.pop(-1)
+                        names.append(person)
+                        counts[vote_type] += int(count)
+                        # print counts
 
                     for name in names:
                         vote[vote_type].append(name)
@@ -141,7 +182,7 @@ class MOVoteScraper(VoteScraper):
             "//span[@id='ContentPlaceHolder1_lblJournalListing']//a")
         for a in journs:
             data = self.get_pdf(a.attrib['href'])
-            print data
+            # print data
 
     def scrape(self, chamber, session):
         if chamber == 'upper':
