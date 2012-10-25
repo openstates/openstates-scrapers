@@ -19,7 +19,7 @@ _categorizer_rules = (
     Rule([u'^Amendment failed'], [u'amendment:failed']),
     Rule([u'^Amendment restore'], [u'amendment:passed']),
 
-    Rule('First Reading', 'bill:reading:1'),
+    Rule('First Reading', ('bill:introduced', 'bill:reading:1')),
     Rule([u'Second Reading referred to (?P<committees>.+)'],
          [u'committee:referred', u'bill:reading:2']),
     Rule([u'Second Reading referred to (?P<committees>.+? Committee)'],
@@ -31,6 +31,7 @@ _categorizer_rules = (
     Rule([u'Second Reading referred to .+? then to (?P<committees>.+)'],
          [u'committee:referred', u'bill:reading:2']),
     Rule([u'(?i)Placed on Third Reading'], [u'bill:reading:3']),
+    Rule([u'^(?i)Third Reading'], [u'bill:reading:3']),
 
     Rule([u'Do Pass (as amended )?(?P<committees>.+)'], [u'committee:passed']),
     Rule([u'Failed in Committee - (?P<committees>.+)'], [u'committee:failed']),
@@ -38,12 +39,12 @@ _categorizer_rules = (
     Rule([u'rereferred to (?P<committees>.+)'], [u'committee:referred']),
     Rule([u'Referred to (?P<committees>.+?)'], [u'committee:referred']),
     Rule([u'Reported Do Pass, amended by committee substitute (?P<committees>.+?);'],
-         [u'committee:passed']),
+    Rule([u'^(?i)Reported Do Pass'], [u'committee:passed']),
     Rule([u'Do pass, amended by committee substitute (?P<committees>)'],
          [u'committee:passed']),
 
     Rule([u'Sent to Governor'], [u'governor:received'], actor='governor'),
-    Rule([u'^Approved by Governor'], [u'governor:signed'], actor='governor'),
+    Rule([u'^(Signed|Approved) by Governor'], [u'governor:signed'], actor='governor'),
     Rule([u'^Vetoed'], [u'governor:vetoed'], actor='governor'),
     )
 
