@@ -78,10 +78,8 @@ class NDLegislatorScraper(LegislatorScraper):
 
         if party == 'Democrat':
             party = 'Democratic'
+
         kwargs = {
-            "full_address": full_address,
-            "phone": phone,
-            "email": email,
             "url": member_url
         }
 
@@ -90,6 +88,11 @@ class NDLegislatorScraper(LegislatorScraper):
 
         leg = Legislator(term, chamber, district, full_name, first_name,
                          last_name, middle_name, party, **kwargs)
+        leg.add_office('district', 'District Office',
+                       address=full_address,
+                       phone=phone,
+                       email=email)
+
         leg.add_source(member_url)
         leg.add_source(main_url)
         self.save_legislator(leg)
