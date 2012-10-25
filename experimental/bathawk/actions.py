@@ -48,7 +48,7 @@ class Actions(object):
         self.matched = matched
         self.list = actions_list
 
-    def _get_list(self, only_other=True):
+    def _get_list(self, only_other=False):
         '''Yield actions currently categorized as 'other'.
         '''
         meta = db.metadata.find_one(self.abbr)
