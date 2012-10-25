@@ -176,13 +176,10 @@ class MOVoteScraper(VoteScraper):
                 #     print line
 
     def scrape_house(self, session):
-        url = HOUSE_URL
-        page = self.lxmlize(url)
-        journs = page.xpath(
-            "//span[@id='ContentPlaceHolder1_lblJournalListing']//a")
-        for a in journs:
-            data = self.get_pdf(a.attrib['href'])
-            # print data
+        pass
+#  Ugh, so, the PDFs are in nasty shape. Scraping them is a mess, with
+#  crazy spacing to break up the names. Most votes aren't on bills, but rather
+#  the agenda of the day.
 
     def scrape(self, chamber, session):
         if chamber == 'upper':
