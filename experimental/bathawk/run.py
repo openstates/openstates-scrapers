@@ -29,7 +29,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ''')
     banner += colored.cyan('\n\nWelcome to bashell. '
                            'Type h for a list of commands.')
-    shell = Shell(actions)
+    shell = Shell(actions, abbr)
     import readline
     puts(banner)
     shell.interact(banner='')

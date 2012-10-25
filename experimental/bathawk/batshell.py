@@ -12,6 +12,7 @@ import functools
 import collections
 import pprint
 import datetime
+import importlib
 from code import InteractiveConsole
 from operator import itemgetter
 from os.path import abspath, dirname, join
@@ -511,8 +512,8 @@ class ShellCommands(object):
         regexes = self.game_state['regexes']
         grouper = self.game_state['types'].get
         for types, regexes in itertools.groupby(regexes, grouper):
-            if types:
-                rules.append((list(regexes), list(types)))
+            rules.append((list(regexes), list(types or [])))
+
         pprint.pprint(rules)
 
     @command('b')
@@ -538,14 +539,32 @@ class ShellCommands(object):
         items = sorted(counts.items(), key=itemgetter(1))
         pager('\n'.join(str(count).ljust(5) + action for (action, count) in items))
 
+    @command('md')
+    def metadata(self, line):
+        return db.metadata.find_one(self.shell.abbr)
+
+    @command()
+    def allcategorized(self, line):
+        ret = []
+        for action in self.game_state._actions:
+            ret.append(self.shell.locals['categorizer'].categorize(action))
+        import pdb;pdb.set_trace()
+
 
 class Shell(InteractiveConsole):
 
-    def __init__(self, actions_object, *args, **kwargs):
+    def __init__(self, actions_object, abbr, *args, **kwargs):
         InteractiveConsole.__init__(self, *args, **kwargs)
+        self.abbr = abbr
+        try:
+            actions = importlib.import_module('openstates.%s.actions' % abbr)
+            self.locals['categorizer'] = actions.Categorizer()
+        except ImportError:
+            pass
         self.last_line = None
         self.actions = actions_object
         commands = ShellCommands(actions_object)
+        commands.shell = self
         command_map = commands.as_map()
         keys = sorted(command_map, key=len, reverse=True)
         self.command_regex = '^(?P<cmd>%s)(\s+(?P<args>.*))?$' % '|'.join(keys)
