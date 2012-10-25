@@ -174,8 +174,9 @@ class OKLegislatorScraper(LegislatorScraper):
         col1 = map(scrub, col1.itertext())
         while True:
             # Throw away anything after the email address.
-            if '@' not in col1[-1]:
-                col1.pop()
+            last = col1[-1]
+            if '@' not in last and not re.search(r'[\d\-\(\) ]{7,}', last):
+                print col1.pop()
             else:
                 break
 
