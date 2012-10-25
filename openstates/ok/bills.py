@@ -109,8 +109,9 @@ class OKBillScraper(BillScraper):
             elif actor == 'S':
                 actor = 'upper'
 
-            attrs = self.categorizer.categorize(action)
-            bill.add_action(actor, action, date, **attrs)
+            attrs = dict(actor=actor, action=action, date=date)
+            attrs.update(**self.categorizer.categorize(action))
+            bill.add_action(**attrs)
 
         version_table = page.xpath("//table[contains(@id, 'Versions')]")[0]
         for link in version_table.xpath(".//a[contains(@href, '.DOC')]"):
@@ -126,19 +127,11 @@ class OKBillScraper(BillScraper):
 
         # # If the bill has no actions and no versions, it's a bogus bill on
         # # their website, which appears to happen occasionally. Skip.
-        has_no_actions = not bill['actions']
-        has_no_versions = not bill['versions']
         has_no_title = (bill['title'] == "Short Title Not Found.")
         if has_no_title:
             # If there's no title, this is an empty page. Skip!
             return
-        first_sponsor_is_bogus = bill['sponsors'][0]['name'] = "Author Not Found."
-        has_no_sponsors = (len(bill['sponsors']) == 1) and first_sponsor_is_bogus
-        if has_no_actions and has_no_versions:
-            if has_no_title or has_no_sponsors:
-                msg = '%r appears to be bogus. Skipping it.' % bill_id
-                self.logger.warning(msg)
-                return
+
         else:
             # Otherwise, save the bills.
             self.save_bill(bill)
