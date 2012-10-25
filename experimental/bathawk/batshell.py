@@ -2,12 +2,16 @@
 import re
 import pydoc
 import types
+import copy
 import pprint
 import itertools
 import sre_constants
 import webbrowser
 import subprocess
 import functools
+import collections
+import pprint
+import datetime
 from code import InteractiveConsole
 from operator import itemgetter
 from os.path import abspath, dirname, join
@@ -15,6 +19,8 @@ from os.path import abspath, dirname, join
 import logbook
 from clint.textui import puts, indent, colored
 from clint.textui.colored import red, green, cyan, magenta, yellow
+
+from pymongo import Connection
 
 from categories import categories
 from billy.models import db
@@ -44,6 +50,89 @@ def command(*aliases):
     return decorator
 
 
+class GameState(dict):
+    '''Keep track of the state of the matching game.
+    '''
+
+    def __init__(self, actions_unmatched):
+
+        self.db = Connection().bathawk
+
+        self['created'] = datetime.datetime.now()
+
+        self['current_rgx'] = None
+
+        # All the regexes added during this game.
+        self['regexes'] = set()
+
+        # Mapping of regexes to matching types.
+        self['types'] = collections.defaultdict(set)
+
+        # Keep track of pattens tested so far.
+        self['tested_regexes'] = set()
+
+        # Keep track of how many actions each regex matched.
+        self['match_counts'] = {}
+
+        # The master actions list for this state.
+        self._actions = actions_unmatched
+
+    def save(self):
+        data = copy.copy(self)
+        data['tested_regexes'] = list(self['tested_regexes'])
+        data['regexes'] = list(self['regexes'])
+        data['types'] = [(k, list(v)) for (k, v) in self['types'].items()]
+        data['match_counts'] = self['match_counts'].items()
+        self.db.games.save(data)
+
+    def load(self, game):
+        self['_id'] = game['_id']
+        self['current_rgx'] = game['current_rgx']
+        self['tested_regexes'] = set(game['tested_regexes'])
+        self['regexes'] = set(game['regexes'])
+        self['match_counts'] = {
+            rgx: len(filter(re.compile(rgx).search, self._actions))
+            for rgx in self['regexes']
+            }
+        types = collections.defaultdict(set)
+        for k, v in game['types']:
+            types[k] = set(v)
+        self['types'] = types
+
+    def reset(self):
+        return GameState(self._actions)
+
+    def matched_actions(self):
+        sre_type = type(re.compile(r''))
+        ret = collections.defaultdict(list)
+        for action in self._actions:
+            for rgx in self['regexes']:
+                if isinstance(rgx, sre_type):
+                    m = rgx.search(action)
+                else:
+                    m = re.search(rgx, action)
+                if m:
+                    ret[rgx].append((action, m))
+        return ret
+
+    def unmatched_actions(self):
+        sre_type = type(re.compile(r''))
+        ret = []
+        rgxs = self['regexes']
+        for action in self._actions:
+            matches = []
+            for rgx in self['regexes']:
+                if isinstance(rgx, sre_type):
+                    m = rgx.search(action)
+                else:
+                    m = re.search(rgx, action)
+                if m:
+                    matches.append(m)
+            if not matches:
+                ret.append(action)
+        return ret
+
+
 class ShellCommands(object):
 
     def __init__(self, actions):
@@ -57,6 +146,8 @@ class ShellCommands(object):
         self.show_matches_start = 0
         self.show_actions_start = 0
 
+        self.game_state = GameState(actions.unmatched)
+
     def as_map(self):
         commands = {}
         for name in dir(self):
@@ -67,28 +158,6 @@ class ShellCommands(object):
                     for alias in getattr(attr, 'aliases', []):
                         commands[alias] = attr
         return commands
-
-    @command('w')
-    def write_regex(self, line):
-        '''Save the specified (or last used) regex to the state's
-        flat file.
-        '''
-        # Which regex to save.
-        if line:
-            rgx = line
-        else:
-            rgx = self.current_rgx
-
-        # Where to save it.
-        filename = '%s.rgx.txt' % self.actions.abbr
-        filename = join(HERE, filename)
-
-        with open(filename, 'a') as f:
-            f.write('\r' + rgx)
-        msg = 'Wrote %s to file: %s'
-        puts(msg % (colored.green(rgx), colored.cyan(filename)))
-
-        # Now filter the existing unmatched actions by this pattern.
 
     @command('r')
     def test_regex(self, line):
@@ -101,7 +170,7 @@ class ShellCommands(object):
             puts(msg)
             print e
             return
-        self.current_rgx = rgx
+
         puts('Testing ' + colored.green(line))
         matched = []
         for action in self._test_list:
@@ -112,10 +181,14 @@ class ShellCommands(object):
             with indent(4, quote=' >'):
                 puts(red('Aw, snap!') + ' ' + cyan('No matches found!'))
                 return
-        self.current_rgx = line
         self.show_matches_start = 0
 
         total_matches = len(filter(rgx.search, self.actions.list))
+
+        # Update game state.
+        self.game_state['current_rgx'] = line
+        self.game_state['tested_regexes'].add(line)
+        self.game_state['match_counts'][line] = total_matches
 
         with indent(4, quote=' >'):
             puts('Found ' + colored.red(total_matches) + ' matches:')
@@ -161,7 +234,7 @@ class ShellCommands(object):
     def show_20_matches(self, line):
         '''Show first 20 matches.
         '''
-        search = functools.partial(re.search, self.current_rgx)
+        search = functools.partial(re.search, self.game_state['current_rgx'])
         text = '\n'.join(filter(search, self.actions.list))
         pager(text)
 
@@ -215,40 +288,15 @@ class ShellCommands(object):
         sys.exit(1)
 
     @command('c')
-    def categories(self, line):
+    def categories(self, line=None):
         '''Print available openstates action categories.
         '''
         padding = max(map(len, map(itemgetter(0), categories)))
         with indent(4, quote=' >'):
-            for category, description in categories:
+            for i, (category, description) in enumerate(categories):
+                i = str(colored.yellow(i)).rjust(5)
                 category = colored.green(category.ljust(padding))
-                puts(category + ' %s' % description)
-
-    @command('pt')
-    def show_patterns(self, line):
-        '''Display the regex patterns found in the patterns module.
-        '''
-        # if line:
-        #     offset = int(line)
-        #     self.test_regex(self.actions.patterns[offset].pattern)
-        #     puts(colore.cyan("Enter 'p 3' to test the third pattern, e.g."))
-
-        for i, rgx in enumerate(self.actions.patterns):
-            tmpl = '%s: %s'
-            puts(tmpl % (str(colored.cyan(i)).rjust(5), colored.green(rgx.pattern)))
-
-    @command('s')
-    def print_summary(self, line):
-        '''Display how many actions are currently matched or not.
-        '''
-        unmatched_len = len(self.actions.unmatched)
-        unmatched = colored.red('%d' % unmatched_len)
-        total_len = len(self.actions.list)
-        total = colored.cyan('%d' % total_len)
-        message = 'There are %s unmatched actions out of %s total actions (%s).'
-        percentage = 1.0 * unmatched_len / total_len
-        percentage = colored.green(percentage)
-        puts(message % (unmatched, total, percentage))
+                puts('(%s) %s %s' % (i, category, description))
 
     @command('o')
     def hyperlink(self, line):
@@ -277,6 +325,218 @@ class ShellCommands(object):
         colored_url = cyan(url)
         puts('View this bill: ' + colored_url)
         pprint.pprint(bill['actions'])
+
+    # -----------------------------------------------------------------------
+    # Game commands.
+    @command('g')
+    def start_mode(self, line):
+        '''Resume a saved game.'''
+        games = list(self.game_state.db.games.find())
+        if games:
+            tmpl = '%s: created %s, # regexes: %s'
+            with indent(4):
+                for i, game in enumerate(games):
+                    created = game['created'].strftime('%m/%d/%Y')
+                    puts(tmpl % (str(colored.yellow(i)).rjust(5),
+                                  colored.green(created),
+                                  colored.cyan(str(len(game['regexes'])))
+                                  ))
+            msg = 'Enter the game number to resume (empty for new game): '
+            index = raw_input(msg)
+            if not index:
+                self.game_state = self.game_state.reset()
+                puts(colored.yellow('New game.'))
+            else:
+                game = games[int(index)]
+                self.game_state.load(game)
+                msg = 'Resumed saved game %r!'
+                puts(colored.yellow(msg % game['created'].strftime('%m/%d/%Y')))
+        else:
+            puts(colored.yellow('No saved games found. New game.'))
+
+    @command('pg')
+    def purge_games(self, line):
+        '''Purge one or more saved games.'''
+        games = list(self.game_state.db.games.find())
+        if games:
+            tmpl = '%s: created %s, # regexes: %s'
+            with indent(4):
+                for i, game in enumerate(games):
+                    created = game['created'].strftime('%m/%d/%Y')
+                    puts(tmpl % (str(colored.yellow(i)).rjust(5),
+                                  colored.green(created),
+                                  colored.cyan(str(len(game['regexes'])))
+                                  ))
+            msg = 'Enter the game number to resume (empty for new game): '
+            indexes = map(int, raw_input(msg).split())
+            for i in indexes:
+                game = games[i]
+                self.game_state.db.games.remove(game)
+                created = game['created'].strftime('%m/%d/%Y')
+                logger.info('removed game %s' % created)
+        else:
+            puts(colore.red('No games to purge.'))
+
+    @command('rt')
+    def show_tested_regexes(self, line):
+        '''Show tested patterns.
+        '''
+        game_state = self.game_state
+        tmpl = '%s: (%s) %s'
+        regexes = sorted(game_state['tested_regexes'], key=hash)
+        sre_type = type(re.compile(r''))
+        for i, rgx in enumerate(regexes):
+            if isinstance(rgx, sre_type):
+                rgx = '%s  ... flags=%d' % (rgx.pattern, rgx.flags)
+            match_count = game_state['match_counts'].get(rgx, '?')
+            puts(tmpl % (str(colored.cyan(i)).rjust(5),
+                         str(colored.red(match_count)).rjust(5),
+                         colored.green(rgx)))
+
+    @command()
+    def save(self, line):
+        '''Manually save the game state'''
+        self.game_state.save()
+
+    @command('rs')
+    def show_added_regexes(self, line):
+        '''Show added patterns.
+        '''
+        matched_count = sum(self.game_state['match_counts'].values())
+        percent = matched_count / float(len(self.game_state._actions))
+        puts(colored.red(percent) + '% matched')
+        game_state = self.game_state
+        tmpl = '%s: (%s) %s'
+        regexes = sorted(game_state['regexes'], key=hash)
+        sre_type = type(re.compile(r''))
+        for i, rgx in enumerate(regexes):
+            if isinstance(rgx, sre_type):
+                rgx = '%s  ... flags=%d' % (rgx.pattern, rgx.flags)
+            match_count = game_state['match_counts'].get(rgx, '?')
+            puts(tmpl % (str(colored.cyan(i)).rjust(5),
+                         str(colored.red(match_count)).rjust(5),
+                         colored.green(rgx)))
+
+    @command('rp')
+    def purge_patterns(self, line):
+        '''Purge regexes from the collections.
+        '''
+        game_state = self.game_state
+        regexes = sorted(game_state['regexes'], key=hash)
+        self.show_added_regexes(line)
+        indexes = raw_input('Enter numbers of regexes to purge: ')
+        indexes = map(int, indexes.split())
+        regexes = map(regexes.__getitem__, indexes)
+        for rgx in regexes:
+            self.game_state['regexes'] -= set([rgx])
+            logger.info('removed regex: %r' % rgx)
+
+    @command('ra')
+    def add_regex(self, line):
+        '''Add a regex to the stored regexes.
+        '''
+        rgx = self.game_state['current_rgx']
+        self.game_state['regexes'].add(rgx)
+        puts(colored.cyan('Added ') + colored.green(rgx))
+        self.game_state.save()
+
+    @command('assoc')
+    def assoc_rgx_with_types(self, line):
+        '''Associate a rgx with action categories.
+        '''
+        if line:
+            index = int(line)
+            regex = sorted(self.game_state['regexes'], key=hash)[index]
+        else:
+            regex = self.game_state['current_rgx']
+        self.categories()
+        types = raw_input('Type numbers of categories to apply: ')
+        types = map(categories.__getitem__, map(int, types.split()))
+        types = set(map(itemgetter(0), types))
+        self.game_state['types'][regex] |= types
+        types = ', '.join(types)
+        puts(colored.green(regex) + ' --> ' + colored.yellow(types))
+
+    @command('s')
+    def print_summary(self, line):
+        '''Display how many actions are currently matched or not.
+        '''
+        pprint.pprint(self.game_state)
+        # unmatched_len = len(self.actions.unmatched)
+        # unmatched = colored.red('%d' % unmatched_len)
+        # total_len = len(self.actions.list)
+        # total = colored.cyan('%d' % total_len)
+        # message = 'There are %s unmatched actions out of %s total actions (%s).'
+        # percentage = 1.0 * unmatched_len / total_len
+        # percentage = colored.green(percentage)
+        # puts(message % (unmatched, total, percentage))
+
+    @command('uu')
+    def show_unmatched_actions_unsorted(self, line):
+        '''List the first 10 actions.
+        '''
+        text = '\n'.join(self.game_state.unmatched_actions())
+        pager(text)
+
+    @command('u')
+    def show_unmatched_actions_sorted(self, line):
+        '''Show actions in alphabetical order.
+        '''
+        self.show_actions_start = 0
+        text = '\n'.join(sorted(list(self.game_state.unmatched_actions())))
+        pager(text)
+
+    @command('im')
+    def import_state_action_rules(self, line):
+        '''Load the rule defs from a state and add them to this
+        game's regexes.
+        '''
+        import importlib
+        actions = importlib.import_module('openstates.%s.actions' % line)
+        for rule in actions.Categorizer.rules:
+            for rgx in rule.regexes:
+                if hasattr(rgx, 'pattern'):
+                    rgx = FlagDecompiler.add_flags_to_regex(rgx)
+                self.game_state['regexes'].add(rgx)
+                self.game_state['types'][rgx] |= rule.types
+        rule_count = len(actions.Categorizer.rules)
+        puts(colored.yellow('Imported %d rule(s).' % rule_count))
+
+    @command('dump')
+    def dump_patterns(self, line):
+        '''Dump the accumulated regexs into acopy/pasteable snippet.
+        '''
+        from billy.scrape.actions import Rule
+        rules = []
+        regexes = self.game_state['regexes']
+        grouper = self.game_state['types'].get
+        for types, regexes in itertools.groupby(regexes, grouper):
+            if types:
+                rules.append((list(regexes), list(types)))
+        pprint.pprint(rules)
+
+    @command('b')
+    def show_breakdown_all(self, line):
+        '''List unmatched actions and show the count for each.
+        '''
+        unmatched = self.game_state.unmatched_actions()
+        counts = collections.Counter(self.game_state._actions)
+        items = sorted(counts.items(), key=itemgetter(1))
+        actions = []
+        for action, count in items:
+            if action in unmatched:
+                action = '[%s]' % action
+            action = str(count).ljust(5) + action
+            actions.append(action)
+        pager('\n'.join(actions))
+
+    @command('bu')
+    def show_breakdown_unmatched(self, line):
+        '''List unmatched actions and show the count for each.
+        '''
+        counts = collections.Counter(self.game_state.unmatched_actions())
+        items = sorted(counts.items(), key=itemgetter(1))
+        pager('\n'.join(str(count).ljust(5) + action for (action, count) in items))
 
 
 class Shell(InteractiveConsole):
@@ -315,3 +575,32 @@ class Shell(InteractiveConsole):
         except ImportError:
             pass
         InteractiveConsole.interact(self, *args, **kwargs)
+
+
+class FlagDecompiler(object):
+    flag_letters = 'IULMXS'
+    flag_vals = [getattr(re, flag) for flag in flag_letters]
+    letter_to_int = dict(zip(flag_letters, flag_vals))
+    int_to_letter = dict(zip(flag_vals, flag_letters.lower()))
+    int_to_letters = {}
+    for r in range(7):
+        for combo in itertools.combinations(flag_vals, r=r):
+            letters = frozenset(map(int_to_letter.get, combo))
+            int_to_letters[sum(combo)] = letters
+
+    @classmethod
+    def add_flags_to_regex(cls, compiled_rgx):
+        # Get existing inline flags.
+        rgx = compiled_rgx.pattern
+        inline_flags = re.search(r'\(\?([iulmxs])\)', rgx)
+        if inline_flags:
+            inline_flags = set(inline_flags.group(1))
+
+        if compiled_rgx.flags:
+            letters = cls.int_to_letters[compiled_rgx.flags]
+            if inline_flags:
+                letters = set(letters) - inline_flags
+                if letters:
+                    return '(?%s)%s' % (''.join(letters), rgx)
+        return rgx
+
