@@ -105,6 +105,11 @@ class ShellCommands(object):
         exec 'print_val = ' + expression in mylocals
         pprint.pprint(mylocals['print_val'])
 
+    def inject(self, **kwargs):
+        '''Inject vars into the shell's local scope.
+        '''
+        self.shell.locals.update(**kwargs)
+
 
 class Shell(InteractiveConsole):
 
