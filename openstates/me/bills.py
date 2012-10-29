@@ -268,24 +268,41 @@ class MEBillScraper(BillScraper):
                 elif chamber == 'House':
                     chamber = 'lower'
 
-                # The action text contains html, and .text_content
-                # does't quite work here, hence these horrific hacks:
-                action = lxml.html.tostring(row.xpath('td')[2])
-
-                # Kill html.
-                action = re.sub(r'[<].+?[>]', ' ', action)
-
-                # Squash whitespace.
-                action = re.sub(r'\s+', ' ', action)
-
-                # Fix period spacing.
-                action = re.sub(r'\s+\.', '.', action)
-
+                action = gettext(row[2])
                 action = unescape(action).strip()
 
-                if action == 'Unfinished Business' or not action:
-                    continue
+                for action in action.splitlines():
+                    action = re.sub(r'\s+', ' ', action)
+                    if action == 'Unfinished Business' or not action:
+                        continue
+                    attrs = dict(actor=chamber, action=action, date=date)
+                    attrs.update(self.categorizer.categorize(action))
+                    bill.add_action(**attrs)
 
-                attrs = dict(actor=chamber, action=action, date=date)
-                attrs.update(self.categorizer.categorize(action))
-                bill.add_action(**attrs)
+
+def _get_chunks(el, buff=None, until=None):
+    tagmap = {'br': '\n'}
+    buff = buff or []
+
+    # Tag, text, tail, recur...
+    yield tagmap.get(el.tag.lower(), '')
+    yield el.text or ''
+    # if el.text == until:
+    #     return
+    for kid in el:
+        for text in _get_chunks(kid):
+            yield text
+            # if text == until:
+            #     return
+    if el.tail:
+        yield el.tail
+        # if el.tail == until:
+        #     return
+    if el.tag == 'text':
+        yield '\n'
+
+
+def gettext(el):
+    '''Join the chunks, then split and rejoin to normalize the whitespace.
+    '''
+    return ''.join(_get_chunks(el))
