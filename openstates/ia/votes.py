@@ -230,7 +230,7 @@ def _get_chunks(el, buff=None, until=None):
     # Tag, text, tail, recur...
     yield tagmap.get(el.tag, '')
     yield el.text or ''
-    if el.text == 'until':
+    if el.text == until:
         return
     for kid in el:
         for text in _get_chunks(kid, until=until):
