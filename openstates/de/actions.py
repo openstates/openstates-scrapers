@@ -7,7 +7,7 @@ rules = (
          r'\s+NO\s+(?P<not_voting>.+?)\s+NOT VOTING\s+(?P<absent>.+?)\s+'
          r'ABSENT\s+(?P<vacant>.+?) VACANT'),
     Rule([u'Amendment (?P<bills>.+?) -\s+Laid On Table'], ['amendment:tabled']),
-    Rule([u'(?i)favorable'], ['committee:passed:favorable']),
+    Rule([u'Favorable'], ['committee:passed:favorable']),
     Rule([u'(?i)Amendment (?P<bills>.+?) defeated'], ['amendment:failed']),
     Rule([u'(?i)introduced and adopted in lieu of (?P<bills>.+)'],
          ['bill:introduced']),
@@ -17,7 +17,8 @@ rules = (
     Rule([u'(?i)Amendment (?P<bills>[\w\s]+?) Introduced'],
          ['amendment:introduced']),
     Rule([u'Amendment (?P<bills>.+?) -  Passed'], ['amendment:passed']),
-    Rule([u'Passed by Senate'], ['bill:passed']),
+    Rule([u'^Passed by'], ['bill:passed']),
+    Rule([u'^Defeated'], ['bill:failed']),
     Rule([u'(?i)unfavorable'], ['committee:passed:unfavorable']),
     Rule([u'Reported Out of Committee \((?P<committees>.+?)\)'],
          ['committee:passed']),
