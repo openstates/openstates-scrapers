@@ -24,6 +24,17 @@ logger = logbook.Logger('batshell')
 HERE = dirname(abspath(__file__))
 pager = pydoc.getpager()
 
+try:
+    subprocess.check_call("echo 'test' | xsel -pi", shell=True)
+except subprocess.CalledProcessError:
+    xsel_enabled = False
+    logger.warning(u'✄ Proceeding without xsel ☹')
+    logger.info('Please install xsel to automatically '
+                'copy tested regexes to the clipboard.')
+else:
+    xsel_enabled = True
+    logger.info(u'✄ xsel is enabled! ☺')
+
 
 def command(*aliases, **kwargs):
     def decorator(f):

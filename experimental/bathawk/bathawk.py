@@ -18,7 +18,7 @@ from operator import itemgetter
 from os.path import abspath, dirname, join
 
 import logbook
-from clint.textui import puts, indent, colored
+from clint.textui import puts, indent
 from clint.textui.colored import red, green, cyan, magenta, yellow
 
 from pymongo import Connection
@@ -27,28 +27,17 @@ from categories import categories
 from billy.models import db
 
 import batshell
-from batshell import command
+from batshell import command, xsel_enabled
 
 logger = logbook.Logger('bathawk.batshell')
 HERE = dirname(abspath(__file__))
-
-try:
-    subprocess.check_call("echo 'test' | xsel -pi", shell=True)
-except subprocess.CalledProcessError:
-    xsel_enabled = False
-    logger.warning(u'✄ Proceeding without xsel ☹')
-    logger.info('Please install xsel to automatically '
-                'copy tested regexes to the clipboard.')
-else:
-    xsel_enabled = True
-    logger.info(u'✄ xsel is enabled! ☺')
 
 
 class BathawkShell(batshell.Shell):
     '''Beware!
     '''
     ps1 = '(batshell) '
-    banner = colored.yellow('''
+    banner = yellow('''
       _==/           i     i           \==_
      /XX/            |\___/|            \XX\\
    /XXXX\            |XXXXX|            /XXXX\\
@@ -62,7 +51,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     \XX\       \X/    \XXX/    \X/       /XX/
        "\       "      \X/      "       /"
 ''')
-    banner += colored.cyan('\n\nWelcome to bashell. '
+    banner += cyan('\n\nWelcome to bashell. '
                        'Type h for a list of commands.')
 
     def __init__(self, actions_object, abbr, *args, **kwargs):
@@ -198,12 +187,12 @@ class BatCommands(batshell.ShellCommands):
             print e
             return
 
-        puts('Testing ' + colored.green(argtext))
+        puts('Testing ' + green(argtext))
         matched = []
         for action in self._test_list:
             m = re.search(argtext, action)
             if m:
-                matched.append([action, m.groupdict()])
+                matched.append([action, m])
         if not matched:
             with indent(4, quote=' >'):
                 puts(red('Aw, snap!') + ' ' + cyan('No matches found!'))
@@ -218,7 +207,7 @@ class BatCommands(batshell.ShellCommands):
         self.game_state['match_counts'][argtext] = total_matches
 
         with indent(4, quote=' >'):
-            puts('Found ' + colored.red(total_matches) + ' matches:')
+            puts('Found ' + red(total_matches) + ' matches:')
         self._print_matches(matched[:self.show])
         self.matched = matched
 
@@ -243,11 +232,14 @@ class BatCommands(batshell.ShellCommands):
         actions = map(itemgetter(0), matched)
         padding = max(map(len, actions))
         self.printed_matched = matched
-        for i, action_groupdict in enumerate(matched):
-            action, groupdict = action_groupdict
+        for i, (action, match) in enumerate(matched):
+            group = match.group()
+            colored_action = action.replace(group, str(green(group)))
+
+            groupdict = match.groupdict()
             vals = [str(cyan(i)).ljust(5),
                     '[%s]' % magenta(self.actions.action_ids[action][-1]),
-                    action.ljust(padding),
+                    colored_action.ljust(padding),
                     repr(groupdict)]
             puts(' '.join(vals))
 
@@ -288,8 +280,8 @@ class BatCommands(batshell.ShellCommands):
         padding = max(map(len, map(itemgetter(0), categories)))
         with indent(4, quote=' >'):
             for i, (category, description) in enumerate(categories):
-                i = str(colored.yellow(i)).rjust(5)
-                category = colored.green(category.ljust(padding))
+                i = str(yellow(i)).rjust(5)
+                category = green(category.ljust(padding))
                 puts('(%s) %s %s' % (i, category, description))
 
     @command('o')
@@ -331,22 +323,22 @@ class BatCommands(batshell.ShellCommands):
             with indent(4):
                 for i, game in enumerate(games):
                     created = game['created'].strftime('%m/%d/%Y')
-                    puts(tmpl % (str(colored.yellow(i)).rjust(5),
-                                  colored.green(created),
-                                  colored.cyan(str(len(game['regexes'])))
+                    puts(tmpl % (str(yellow(i)).rjust(5),
+                                  green(created),
+                                  cyan(str(len(game['regexes'])))
                                   ))
             msg = 'Enter the game number to resume (empty for new game): '
             index = raw_input(msg)
             if not index:
                 self.game_state = self.game_state.reset()
-                puts(colored.yellow('New game.'))
+                puts(yellow('New game.'))
             else:
                 game = games[int(index)]
                 self.game_state.load(game)
                 msg = 'Resumed saved game %r!'
-                puts(colored.yellow(msg % game['created'].strftime('%m/%d/%Y')))
+                puts(yellow(msg % game['created'].strftime('%m/%d/%Y')))
         else:
-            puts(colored.yellow('No saved games found. New game.'))
+            puts(yellow('No saved games found. New game.'))
 
     @command('pg')
     def purge_games(self):
@@ -357,9 +349,9 @@ class BatCommands(batshell.ShellCommands):
             with indent(4):
                 for i, game in enumerate(games):
                     created = game['created'].strftime('%m/%d/%Y')
-                    puts(tmpl % (str(colored.yellow(i)).rjust(5),
-                                  colored.green(created),
-                                  colored.cyan(str(len(game['regexes'])))
+                    puts(tmpl % (str(yellow(i)).rjust(5),
+                                  green(created),
+                                  cyan(str(len(game['regexes'])))
                                   ))
             msg = 'Enter the game number to resume (empty for new game): '
             indexes = map(int, raw_input(msg).split())
@@ -383,9 +375,9 @@ class BatCommands(batshell.ShellCommands):
             if isinstance(rgx, sre_type):
                 rgx = '%s  ... flags=%d' % (rgx.pattern, rgx.flags)
             match_count = game_state['match_counts'].get(rgx, '?')
-            puts(tmpl % (str(colored.cyan(i)).rjust(5),
-                         str(colored.red(match_count)).rjust(5),
-                         colored.green(rgx)))
+            puts(tmpl % (str(cyan(i)).rjust(5),
+                         str(red(match_count)).rjust(5),
+                         green(rgx)))
 
     @command()
     def save(self):
@@ -398,7 +390,7 @@ class BatCommands(batshell.ShellCommands):
         '''
         matched_count = sum(self.game_state['match_counts'].values())
         percent = matched_count / float(len(self.game_state._actions))
-        puts(colored.red(percent) + '% matched')
+        puts(red(percent) + '% matched')
         game_state = self.game_state
         tmpl = '%s: (%s) %s'
         regexes = sorted(game_state['regexes'], key=hash)
@@ -407,9 +399,9 @@ class BatCommands(batshell.ShellCommands):
             if isinstance(rgx, sre_type):
                 rgx = '%s  ... flags=%d' % (rgx.pattern, rgx.flags)
             match_count = game_state['match_counts'].get(rgx, '?')
-            puts(tmpl % (str(colored.cyan(i)).rjust(5),
-                         str(colored.red(match_count)).rjust(5),
-                         colored.green(rgx)))
+            puts(tmpl % (str(cyan(i)).rjust(5),
+                         str(red(match_count)).rjust(5),
+                         green(rgx)))
 
     @command('rp')
     def purge_patterns(self):
@@ -431,14 +423,14 @@ class BatCommands(batshell.ShellCommands):
         '''
         rgx = self.game_state['current_rgx']
         self.game_state['regexes'].add(rgx)
-        puts(colored.cyan('Added ') + colored.green(rgx))
+        puts(cyan('Added ') + green(rgx))
         self.game_state.save()
 
     @command('assoc')
-    def assoc_rgx_with_types(self, index):
+    def assoc_rgx_with_types(self, index=None):
         '''Associate a rgx with action categories.
         '''
-        if index:
+        if index is not None:
             index = int(index)
             regex = sorted(self.game_state['regexes'], key=hash)[index]
         else:
@@ -449,7 +441,7 @@ class BatCommands(batshell.ShellCommands):
         types = set(map(itemgetter(0), types))
         self.game_state['types'][regex] |= types
         types = ', '.join(types)
-        puts(colored.green(regex) + ' --> ' + colored.yellow(types))
+        puts(green(regex) + ' --> ' + yellow(types))
 
     @command('s')
     def print_summary(self):
@@ -457,12 +449,12 @@ class BatCommands(batshell.ShellCommands):
         '''
         pprint.pprint(self.game_state)
         # unmatched_len = len(self.actions.unmatched)
-        # unmatched = colored.red('%d' % unmatched_len)
+        # unmatched = red('%d' % unmatched_len)
         # total_len = len(self.actions.list)
-        # total = colored.cyan('%d' % total_len)
+        # total = cyan('%d' % total_len)
         # message = 'There are %s unmatched actions out of %s total actions (%s).'
         # percentage = 1.0 * unmatched_len / total_len
-        # percentage = colored.green(percentage)
+        # percentage = green(percentage)
         # puts(message % (unmatched, total, percentage))
 
     @command('uu')
@@ -495,7 +487,7 @@ class BatCommands(batshell.ShellCommands):
                 self.game_state['regexes'].add(rgx)
                 self.game_state['types'][rgx] |= rule.types
         rule_count = len(actions.Categorizer.rules)
-        puts(colored.yellow('Imported %d rule(s).' % rule_count))
+        puts(yellow('Imported %d rule(s).' % rule_count))
 
     @command('dump')
     def dump_patterns(self):
