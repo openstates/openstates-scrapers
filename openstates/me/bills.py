@@ -271,10 +271,15 @@ class MEBillScraper(BillScraper):
                 action = gettext(row[2])
                 action = unescape(action).strip()
 
+                actions = []
                 for action in action.splitlines():
                     action = re.sub(r'\s+', ' ', action)
-                    if action == 'Unfinished Business' or not action:
+                    if not action or 'Unfinished Business' in action:
                         continue
+
+                    actions.append(action)
+
+                for action in actions:
                     attrs = dict(actor=chamber, action=action, date=date)
                     attrs.update(self.categorizer.categorize(action))
                     bill.add_action(**attrs)
