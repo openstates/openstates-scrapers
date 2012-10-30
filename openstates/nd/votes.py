@@ -26,8 +26,6 @@ class NDVoteScraper(VoteScraper):
 
 
     def scrape(self, chamber, session):
-        return
-
         if chamber not in PAGES:
             return
 
