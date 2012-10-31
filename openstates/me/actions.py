@@ -31,7 +31,6 @@ rules = (
     )
 
 
-
 class Categorizer(BaseCategorizer):
     rules = rules
 
