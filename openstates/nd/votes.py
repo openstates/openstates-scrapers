@@ -40,6 +40,10 @@ class NDVoteScraper(VoteScraper):
             results = {}
             in_vote = False
             cur_date = None
+            in_motion = False
+            cur_vote = None
+            in_vote = True
+            cur_motion = ""
 
             pdf_url = pdf.attrib['href']
             (path, response) = self.urlretrieve(pdf_url)
@@ -49,13 +53,32 @@ class NDVoteScraper(VoteScraper):
             for line in lines:
                 date = re.findall(date_re, line)
                 if date != [] and not cur_date:
-                    print date
                     date = date[0][0]
                     cur_date = datetime.datetime.strptime(date, "%A, %B %d, %Y")
 
                 if line.strip() == "":
+                    in_motion = False
+                    continue
+
+                if True in [x in line for x in ['VOTES FOR', 'ABSENT']]:
+                    if in_motion:
+                        in_vote = True
+
+                    in_motion = False
+                    continue
+
+                if ":" in line and ";" in line and in_vote:
+                    cur_vote, who = line.split(":", 1)
+                    print cur_vote, who
+
+                if "question being" in line:
+                    cur_motion = line.strip()
+                    in_motion = True
+                    continue
+
+                if in_motion:
+                    cur_motion += line.strip()
                     continue
 
                 if line.strip() == 'ROLL CALL':
                     in_vote = True
-                print cur_date, line
