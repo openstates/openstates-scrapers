@@ -6,7 +6,7 @@ from selenium import webdriver
 from batshell import Shell, ShellCommands, command
 import logbook
 
-from billy.core import mdb
+from billy.core import mdb, db
 
 
 def nth(n, iterable):
@@ -134,6 +134,7 @@ def main():
     shell = BillyShell(commands=commands)
     if metadata is not None:
         shell.metadata = metadata
+    commands.inject(mdb=mdb, db=db)
     shell.interact(banner='')
 
 

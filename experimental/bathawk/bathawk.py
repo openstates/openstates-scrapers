@@ -467,6 +467,8 @@ class BatCommands(batshell.ShellCommands):
     @command('u')
     def show_unmatched_actions_sorted(self):
         '''Show actions in alphabetical order.
+
+        To eliminate actions with types from the view, pass a flag (any text).
         '''
         self.show_actions_start = 0
         text = '\n'.join(sorted(list(self.game_state.unmatched_actions())))
