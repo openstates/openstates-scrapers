@@ -63,13 +63,23 @@ class NDVoteScraper(VoteScraper):
                 if True in [x in line for x in ['VOTES FOR', 'ABSENT']]:
                     if in_motion:
                         in_vote = True
-
                     in_motion = False
+
+                if in_vote:
+                    if cur_vote is None:
+                        continue
+
+                    who = [x.strip() for x in line.split(";")]
+                    for person in who:
+                        results[cur_vote].append(person)
                     continue
 
                 if ":" in line and ";" in line and in_vote:
                     cur_vote, who = line.split(":", 1)
-                    print cur_vote, who
+                    print cur_vote
+                    who = [x.strip() for x in who.split(';')]
+                    results[cur_vote] = who
+                    continue
 
                 if "question being" in line:
                     cur_motion = line.strip()
