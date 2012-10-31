@@ -12,6 +12,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
 
+from .actions import Categorizer
 
 # {spaces}{vote indicator (Y/N/E/ )}{name}{lookahead:2 spaces, space-indicator}
 HOUSE_VOTE_RE = re.compile('([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])')
@@ -93,6 +94,7 @@ def convert_sv_char(c):
 
 class NMBillScraper(BillScraper):
     state = 'nm'
+    categorizer = Categorizer()
 
     def _init_mdb(self, session):
         ftp_base = 'ftp://www.nmlegis.gov/other/'
@@ -334,7 +336,6 @@ class NMBillScraper(BillScraper):
             # timestamp, but this is sometimes off by quite a bit
             # instead lets just use EntryDate and take radical the position
             # something hasn't happened until it is observed
-            action_day = action['Day']
             action_date = datetime.strptime(action['EntryDate'].split()[0],
                                             "%m/%d/%y")
             if action['LocationCode']:
@@ -363,8 +364,14 @@ class NMBillScraper(BillScraper):
             if action_name == 'passed House':
                 actor = 'lower'
 
-            self.bills[bill_key].add_action(actor, action_name, action_date,
-                                            type=action_type, day=action_day)
+            attrs = dict(actor=actor, action=action_name, date=action_date)
+            attrs.update(self.categorizer.categorize(action_name))
+            if action_type not in attrs['type']:
+                if isinstance(action_type, basestring):
+                    attrs['type'].append(action_type)
+                else:
+                    attrs['type'].extend(action_type)
+            self.bills[bill_key].add_action(**attrs)
 
     def scrape_documents(self, session, doctype, chamber, chamber_name=None):
         """ most document types (+ Votes)are in this common directory go
