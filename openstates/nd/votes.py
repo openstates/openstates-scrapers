@@ -51,8 +51,6 @@ class NDVoteScraper(VoteScraper):
             os.unlink(path)
             lines = data.splitlines()
             for line in lines:
-                print line
-
                 date = re.findall(date_re, line)
                 if date != [] and not cur_date:
                     date = date[0][0]
@@ -64,8 +62,80 @@ class NDVoteScraper(VoteScraper):
 
                 if True in [x in line.lower() for x in ['passed', 'lost']] and in_vote:
                     in_vote = False
-                    print results
-                    print "VOTE TAKEN"
+                    bills = re.findall(r"(?i)(H|S|J)(B|R|M) (\d+)", line)
+                    if bills == [] or cur_motion.strip() == "":
+                        bill_id = None
+                        results = {}
+                        in_vote = False
+                        cur_date = None
+                        in_motion = False
+                        cur_vote = None
+                        in_vote = True
+                        cur_motion = ""
+                        continue
+
+                    print "CM: ", cur_motion
+
+                    cur_bill_id = "%s%s %s" % (bills[-1])
+                    keys = {
+                        "YEAS": "yes",
+                        "NAYS": "no",
+                        "ABSENT AND NOT VOTING": "other"
+                    }
+                    res = {}
+                    for key in keys:
+                        if key in results:
+                            res[keys[key]] = filter(lambda a: a != "",
+                                                    results[key])
+                        else:
+                            res[keys[key]] = []
+
+                    # results
+                    results = {}
+                    yes, no, other = len(res['yes']), len(res['no']), \
+                                        len(res['other'])
+                    chambers = {
+                        "H": "lower",
+                        "S": "upper",
+                        "J": "joint"
+                    }
+                    try:
+                        bc = chambers[cur_bill_id[0]]
+                    except KeyError:
+                        bc = 'other'
+
+                    vote = Vote(chamber,
+                                cur_date,
+                                cur_motion,
+                                (yes > no),
+                                yes,
+                                no,
+                                other,
+                                session=session,
+                                bill_id=cur_bill_id,
+                                bill_chamber=bc)
+
+                    vote.add_source(pdf_url)
+                    vote.add_source(url)
+
+                    self.save_vote(vote)
+
+                    for key in res:
+                        obj = getattr(vote, key)
+                        for person in res[key]:
+                            obj(person)
+
+                    bill_id = None
+                    results = {}
+                    in_vote = False
+                    cur_date = None
+                    in_motion = False
+                    cur_vote = None
+                    in_vote = True
+                    cur_motion = ""
+
+                    # print bills
+                    # print "VOTE TAKEN"
 
                 if 'VOTES FOR' in line:
                     in_motion = False
@@ -89,6 +159,7 @@ class NDVoteScraper(VoteScraper):
 
                     who = [x.strip() for x in line.split(";")]
                     for person in who:
+                        # print cur_vote
                         results[cur_vote].append(person)
                     continue
 
