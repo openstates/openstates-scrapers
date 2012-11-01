@@ -88,8 +88,8 @@ class IAVoteScraper(VoteScraper):
                 continue
 
             # Get the bill_id.
-            while True:
-                line = next(lines)
+            bill_id = None
+            for line in lines:
                 text += gettext(line)
                 m = re.search(r'\(\s*([A-Z\.]+\s+\d+)\s*\)',  text)
                 if m:
@@ -98,7 +98,7 @@ class IAVoteScraper(VoteScraper):
 
             motion = text.strip()
             motion = re.sub(r'\s+', ' ', motion)
-            motion, _ = motion.rsplit('(')
+            motion, _ = motion.rsplit('(', 1)
             motion = motion.replace('"', '')
             motion = motion.replace(u'“', '')
             motion = motion.replace(u'\u201d', '')
@@ -110,6 +110,10 @@ class IAVoteScraper(VoteScraper):
             for word, letter in (('Senate', 'S'),
                                  ('House', 'H'),
                                  ('File', 'F')):
+
+                if bill_id is None:
+                    return
+
                 bill_id = bill_id.replace(word, letter)
 
             bill_chamber = dict(h='lower', s='upper')[bill_id.lower()[0]]
