@@ -51,6 +51,8 @@ class NDVoteScraper(VoteScraper):
             os.unlink(path)
             lines = data.splitlines()
             for line in lines:
+                print line
+
                 date = re.findall(date_re, line)
                 if date != [] and not cur_date:
                     date = date[0][0]
@@ -60,10 +62,26 @@ class NDVoteScraper(VoteScraper):
                     in_motion = False
                     continue
 
-                if True in [x in line for x in ['VOTES FOR', 'ABSENT']]:
+                if True in [x in line.lower() for x in ['passed', 'lost']] and in_vote:
+                    in_vote = False
+                    print results
+                    print "VOTE TAKEN"
+
+                if 'VOTES FOR' in line:
+                    in_motion = False
+                    in_vote = False
+                    continue
+
+                if 'ABSET' in line:
                     if in_motion:
                         in_vote = True
                     in_motion = False
+
+                if ":" in line and in_vote:
+                    cur_vote, who = line.split(":", 1)
+                    who = [x.strip() for x in who.split(';')]
+                    results[cur_vote] = who
+                    continue
 
                 if in_vote:
                     if cur_vote is None:
@@ -72,13 +90,6 @@ class NDVoteScraper(VoteScraper):
                     who = [x.strip() for x in line.split(";")]
                     for person in who:
                         results[cur_vote].append(person)
-                    continue
-
-                if ":" in line and ";" in line and in_vote:
-                    cur_vote, who = line.split(":", 1)
-                    print cur_vote
-                    who = [x.strip() for x in who.split(';')]
-                    results[cur_vote] = who
                     continue
 
                 if "question being" in line:
