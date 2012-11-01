@@ -2,7 +2,7 @@ import re
 import datetime
 from collections import defaultdict
 
-from .actions import WACategorizer
+from .actions import Categorizer, committees_abbrs
 from .utils import xpath
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -15,7 +15,7 @@ import feedparser
 class WABillScraper(BillScraper):
     state = 'wa'
     _base_url = 'http://wslwebservices.leg.wa.gov/legislationservice.asmx'
-    categorizer = WACategorizer()
+    categorizer = Categorizer()
     _subjects = defaultdict(list)
 
     def build_subject_mapping(self, year):
@@ -24,20 +24,23 @@ class WABillScraper(BillScraper):
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute('http://apps.leg.wa.gov/billsbytopic/')
             for link in doc.xpath('//a[contains(@href, "ResultsRss")]/@href'):
-                subject = link.rsplit('=',1)[-1]
-                rss = feedparser.parse(self.urlopen(link.replace(' ', '%20')))
+                subject = link.rsplit('=', 1)[-1]
+                link = link.replace(' ', '%20')
+
+                # Strip invalid characters
+                rss = re.sub(r'^[^<]+', '', self.urlopen(link))
+                rss = feedparser.parse(rss)
                 for e in rss['entries']:
                     match = re.match('\w\w \d{4}', e['title'])
                     if match:
                         self._subjects[match.group()].append(subject)
-
 
     def scrape(self, chamber, session):
         bill_id_list = []
         year = int(session[0:4])
 
         # first go through API response and get bill list
-        for y in (year, year+1):
+        for y in (year, year + 1):
             self.build_subject_mapping(y)
             url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
 
@@ -170,7 +173,6 @@ class WABillScraper(BillScraper):
                     out = True
                     continue
 
-
                 rows = action.xpath(".//td")
                 rows = rows[1:]
                 if len(rows) == 1:
@@ -196,15 +198,16 @@ class WABillScraper(BillScraper):
                     if curday is None or curyear is None:
                         continue
 
-                    attrs = self.categorizer.categorize(action)
-                    print attrs
+                    for abbr in re.findall(r'([A-Z]{3,})', action):
+                        if abbr in committees_abbrs:
+                            action = action.replace(
+                                abbr, committees_abbrs[abbr], 1)
 
                     date = "%s %s" % (curyear, curday)
                     date = datetime.datetime.strptime(date, "%Y %b %d")
-                    bill.add_action(curchamber, action, date,
-                                    **attrs)
-
-
+                    attrs = dict(actor=curchamber, date=date, action=action)
+                    attrs.update(self.categorizer.categorize(action))
+                    bill.add_action(**attrs)
 
     def scrape_votes(self, bill):
         session = bill['session']
