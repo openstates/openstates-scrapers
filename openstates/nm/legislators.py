@@ -69,6 +69,9 @@ class NMLegislatorScraper(LegislatorScraper):
             properties['chamber'] = chamber
             properties['term'] = term
             properties['full_name'] = '%(first_name)s %(last_name)s' % properties
+
+            # Senator Pat Woods currently has no party--emailed webmaster
+            # 11/2/12 asking for a fix.
             if '(D)' in properties['party']:
                 properties['party'] = 'Democratic'
             elif '(R)' in properties['party']:
