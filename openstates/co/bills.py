@@ -8,9 +8,12 @@ from urlparse import urlparse
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
+from .actions import Categorizer
+
 
 CO_URL_BASE = "http://www.leg.state.co.us"
 #                     ^^^ Yes, this is actually required
+
 
 class COBillScraper(BillScraper):
     """
@@ -20,6 +23,7 @@ class COBillScraper(BillScraper):
     """
 
     state = 'co'
+    categorizer = Categorizer()
 
     def get_bill_folder( self, session, chamber ):
         """
@@ -285,233 +289,6 @@ class COBillScraper(BillScraper):
 
             return ret
 
-    def add_action_to_bill( self, bill, action ):
-        """
-        We were able to get a bunch of actions, so this method handles
-        mangling the human-readable descriptions in well tagged actions
-        that we put into the DB.
-        """
-        # We have a few inner methods that handle each "type" of description.
-        # This is mostly to keep things as clear as we can, and avoid huge and
-        # unmaintainable chunks of code
-
-        def _parse_house_action():
-            """
-            Parse a string that contains "House". On failure to handle the string,
-            we will return false, and let the fallback handler resolve the string.
-            """
-            actor = "lower"
-            aText = action['action']
-
-            if aText == 'Introduced In House':
-                # Typically, we're also including an assigned ctty
-                bill_assignd_ctty = action['args'][0]
-                assgnd_to = "Assigned to"
-                if bill_assignd_ctty[:len(assgnd_to)] == assgnd_to:
-                    bill_assignd_ctty = bill_assignd_ctty[len(assgnd_to)+1:]
-                bill.add_action( actor, action['orig'], action['date'],
-                    type=[ "bill:introduced", "committee:referred" ],
-                    assigned_ctty=bill_assignd_ctty,
-                    brief_action_name='Introduced'
-                    )
-                return True
-
-            testStr = "House Second Reading Special Order"
-            if aText[:len(testStr)] == testStr:
-                # get the status of the reading next
-                bill_passfail = action['args'][0]
-                normalized_brief = "House Second Reading %s" % ( bill_passfail )
-                bill.add_action( actor, action['orig'],
-                    action['date'], brief_action_name=normalized_brief)
-                return True
-
-            # XXX: mangle this in with the bit above me
-            testStr = "House Third Reading Special Order"
-            if aText[:len(testStr)] == testStr:
-                # get the status of the reading next
-                bill_passfail = action['args'][0]
-                normalized_brief = "House Third Reading %s" % ( bill_passfail )
-                bill.add_action( actor, action['orig'],
-                    action['date'], brief_action_name=normalized_brief)
-                return True
-
-            simple_intro_match = {
-                "House Second Reading Passed"        : [ "bill:reading:2" ],
-                "House Third Reading Passed"         : [ "bill:reading:3" ],
-                "Signed by the Speaker of the House" : [ "other" ],
-                "House Vote to Override Passed"      : \
-                    [ "bill:veto_override:passed" ],
-                "House Vote to Override Failed"      : \
-                    [ "bill:veto_override:failed" ],
-            }
-
-            simple_contain = {
-                "Refer Amended"   : [ "committee:passed" ],
-                "Refer Unamended" : [ "committee:passed" ]
-            }
-
-            for testStr in simple_contain:
-                if testStr in aText:
-                    bill.add_action( actor, action['orig'],
-                        action['date'], brief_action_name=action['orig'],
-                        type=simple_contain[testStr])
-                    return True
-
-            for testStr in simple_intro_match:
-                if aText[:len(testStr)] == testStr:
-                    bill.add_action( actor, action['orig'],
-                        action['date'], brief_action_name=testStr,
-                        type=simple_intro_match[testStr])
-                    return True
-            return False
-
-        def _parse_senate_action():
-            """
-            Parse a string that contains "Senate". On failure to handle the string,
-            we will return false, and let the fallback handler resolve the string.
-            """
-            actor = "upper"
-            aText = action['action']
-
-            testStr = "Senate Second Reading Special Order"
-            if aText[:len(testStr)] == testStr:
-                # get the status of the reading next
-                if len(action['args']) <= 0:
-                    return False
-                bill_passfail = action['args'][0]
-                normalized_brief = "Senate Second Reading %s" % (bill_passfail)
-                bill.add_action( actor, action['orig'],
-                    action['date'], brief_action_name=normalized_brief)
-                return True
-
-            # XXX: mangle this in with the bit above me
-            testStr = "Senate Third Reading Special Order"
-            if aText[:len(testStr)] == testStr:
-                # get the status of the reading next
-                if len(action['args']) == 0:
-                    self.log("XXX: Skipping detailed digestion due to malformed"
-                            " action line")
-                    bill.add_action(actor, action['orig'],
-                                    action['date'])
-                    return True
-
-                bill_passfail = action['args'][0]
-                normalized_brief = "Senate Third Reading %s" % ( bill_passfail )
-                bill.add_action( actor, action['orig'],
-                    action['date'], brief_action_name=normalized_brief)
-                return True
-
-            simple_intro_match = {
-                "Senate Second Reading Passed"          : [ "bill:reading:2" ],
-                "Senate Third Reading Passed"           : [ "bill:reading:3" ],
-                "Signed by the President of the Senate" : [ "other" ],
-                "Senate Vote to Override Passed"        : \
-                    [ "bill:veto_override:passed" ],
-                "Senate Vote to Override Failed"        : \
-                    [ "bill:veto_override:failed" ],
-            }
-
-            simple_contain = {
-                "Refer Amended"   : [ "committee:passed" ],
-                "Refer Unamended" : [ "committee:passed" ]
-            }
-
-            for testStr in simple_contain:
-                if testStr in aText:
-                    bill.add_action( actor, action['orig'],
-                        action['date'], brief_action_name=action['orig'],
-                        type=simple_contain[testStr])
-                    return True
-
-            for testStr in simple_intro_match:
-                if aText[:len(testStr)] == testStr:
-                    bill.add_action( actor, action['orig'],
-                        action['date'], brief_action_name=testStr,
-                        type=simple_intro_match[testStr] )
-                    return True
-
-            if aText == "Introduced In Senate":
-                bill_assignd_ctty = action['args'][0]
-
-                assgnd_to = "Assigned to"
-
-                if bill_assignd_ctty[:len(assgnd_to)] == assgnd_to:
-                    bill_assignd_ctty = bill_assignd_ctty[len(assgnd_to)+1:]
-
-                bill.add_action( actor, action['orig'], action['date'],
-                    type=[ "bill:introduced", "committee:referred" ],
-                    assigned_ctty = bill_assignd_ctty,
-                    brief_action_name="Introduced")
-                return True
-
-            return False
-
-        def _parse_governor_action():
-            """
-            Parse a string that contains "Governor". On failure to handle the string,
-            we will return false, and let the fallback handler resolve the string.
-            """
-            actor = "governor"
-            aText = action['action']
-
-            if aText == "Sent to the Governor":
-                bill.add_action( "joint", action['orig'], action['date'],
-                    brief_action_name=aText, type="governor:received" )
-                return True
-
-            if aText == "Governor Action":
-                action_types = {
-                    "Signed"       : [ "governor:signed" ],
-                    "Partial Veto" : [ "governor:vetoed:line-item" ],
-                    "Vetoed"       : [ "governor:vetoed" ],
-                    "Became Law"   : [ "other" ],
-                }
-                scraped_type = "other"
-                if action['args'][0] in action_types:
-                    scraped_type = action_types[action['args'][0]]
-                else:
-                    self.log(" - gov. fallback handler for %s" % \
-                        action['args'][0])
-
-                bill.add_action( actor, action['orig'], action['date'],
-                    brief_action_name=action['args'][0],
-                    type=scraped_type)
-                return True
-            return False
-
-        def _parse_action_fallback():
-            """
-            This is our fallback handler. If we haven't been able to process the
-            line under other conditions, we will try to mangle this into some sort
-            of useful snippit & include it.
-            """
-            hasHouse  = "House"  in action['action']
-            hasSenate = "Senate" in action['action']
-
-            if hasHouse and hasSenate:
-                actor = 'joint'
-            elif hasHouse:
-                actor = 'lower'
-            else:
-                actor = 'upper'
-
-            bill.add_action( actor, action['orig'],
-                action['date'],
-                brief_action_name=action['action'],
-                type="other")
-
-        translation_routines = {
-            "House"    : _parse_house_action,
-            "Senate"   : _parse_senate_action,
-            "Governor" : _parse_governor_action
-        }
-
-        for t in translation_routines:
-            if t in action['action']:
-                if not translation_routines[t]():
-                    _parse_action_fallback()
-                return
-        _parse_action_fallback()
 
     def scrape_bill_sheet( self, session, chamber ):
         """
@@ -594,7 +371,10 @@ class COBillScraper(BillScraper):
                 b.add_source( bill_history_href )
 
                 for action in history:
-                    self.add_action_to_bill( b, action )
+                    attrs = dict(actor=chamber, action=action['orig'],
+                                 date=action['date'])
+                    attrs.update(self.categorizer.categorize(action['action']))
+                    b.add_action(**attrs)
 
                 for sponsor in sponsors:
                     if sponsor != None and sponsor != "(NONE)" and \
