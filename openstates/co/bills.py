@@ -267,17 +267,7 @@ class COBillScraper(BillScraper):
 
                 date_time = dt.datetime.strptime(date_string, "%m/%d/%Y")
                 action = action[action.find(" ") + 1:]
-
-                action_ids = [a.strip() for a in action.split('-')]
-
-                item_info = {
-                    "action": action_ids[0],
-                    "date": date_time,
-                    "args": action_ids[1:],
-                    "orig": action
-                }
-
-                ret.append(item_info)
+                ret.append((action, date_time))
 
             return ret
 
@@ -361,10 +351,11 @@ class COBillScraper(BillScraper):
                 history = self.parse_history(bill_history_href)
                 b.add_source(bill_history_href)
 
-                for action in history:
-                    attrs = dict(actor=chamber, action=action['orig'],
-                                 date=action['date'])
-                    attrs.update(self.categorizer.categorize(action['action']))
+                chamber_map = dict(Senate='upper', House='lower')
+                for action, date in history:
+                    action_actor = chamber_map.get(chamber, chamber)
+                    attrs = dict(actor=action_actor, action=action, date=date)
+                    attrs.update(self.categorizer.categorize(action))
                     b.add_action(**attrs)
 
                 for sponsor in sponsors:
