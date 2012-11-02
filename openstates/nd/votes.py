@@ -42,7 +42,7 @@ class NDVoteScraper(VoteScraper):
             cur_date = None
             in_motion = False
             cur_vote = None
-            in_vote = True
+            in_vote = False
             cur_motion = ""
 
             pdf_url = pdf.attrib['href']
@@ -67,11 +67,9 @@ class NDVoteScraper(VoteScraper):
                         bill_id = None
                         results = {}
                         in_vote = False
-                        cur_date = None
                         in_motion = False
                         cur_vote = None
-                        in_vote = True
-                        cur_motion = ""
+                        in_vote = False
                         continue
 
                     print "CM: ", cur_motion
@@ -118,20 +116,20 @@ class NDVoteScraper(VoteScraper):
                     vote.add_source(pdf_url)
                     vote.add_source(url)
 
-                    self.save_vote(vote)
-
                     for key in res:
                         obj = getattr(vote, key)
                         for person in res[key]:
                             obj(person)
 
+                    self.save_vote(vote)
+
+
                     bill_id = None
                     results = {}
                     in_vote = False
-                    cur_date = None
                     in_motion = False
                     cur_vote = None
-                    in_vote = True
+                    in_vote = False
                     cur_motion = ""
 
                     # print bills
