@@ -1,8 +1,6 @@
 import datetime as dt
 import re
-from collections import defaultdict
 import lxml.html
-
 from urlparse import urlparse
 
 from billy.scrape.bills import BillScraper, Bill
@@ -25,30 +23,28 @@ class COBillScraper(BillScraper):
     state = 'co'
     categorizer = Categorizer()
 
-    def get_bill_folder( self, session, chamber ):
+    def get_bill_folder(self, session, chamber):
         """
         This returns a URL to the bill "folder" - a list of all the bills for that
         session and chamber. If the URL looks funny, it's because CO has made
         some interesting technical choices.
         """
         chamber_id = "(bf-3)" if chamber == "House" else "(bf-2)"
-        url = CO_URL_BASE + "/CLICS/CLICS" +  session \
+        url = CO_URL_BASE + "/CLICS/CLICS" + session \
             + "/csl.nsf/" + chamber_id + "?OpenView&Count=20000000"
         return url
 
-
-    def read_td( self, td_node ):
+    def read_td(self, td_node):
         return td_node[0].text
         #      ^^^^^^^^^^ font
 
-
-    def parse_all_votes( self, bill_vote_url ):
+    def parse_all_votes(self, bill_vote_url):
         """
         This will parse a vote page, with a list of who voted which way on what
         bill. This is invoked from `parse_votes', and invoking it directly may
         or may not be very useful.
         """
-        ret = { "meta" : {}, 'votes' : {} }
+        ret = {"meta": {}, 'votes': {}}
         ret['meta']['url'] = bill_vote_url
         with self.urlopen(bill_vote_url) as vote_html:
             bill_vote_page = lxml.html.fromstring(vote_html)
@@ -105,14 +101,13 @@ class COBillScraper(BillScraper):
                         ret['result'] = final_score
                     else:
                         # We've got a vote.
-                        person = line[1].text_content() # <div><font>
-                        vote   = line[2].text_content()
+                        person = line[1].text_content()  # <div><font>
+                        vote = line[2].text_content()
                         if person.strip() != "":
                             ret['votes'][person] = vote
         return ret
 
-
-    def parse_votes( self, bill_vote_url ):
+    def parse_votes(self, bill_vote_url):
         """
         This will parse all the votes on a given bill - basically, it looks on the
         page of all votes, and invokes `parse_all_votes' for each href it finds
@@ -126,7 +121,7 @@ class COBillScraper(BillScraper):
             bill_vote_page = lxml.html.fromstring(vote_html)
             nodes = bill_vote_page.xpath('//b/font')
             title = nodes[0].text
-            ret['sanity-check'] = title[title.find("-")+1:].strip()
+            ret['sanity-check'] = title[title.find("-") + 1:].strip()
             ret['votes'] = []
             # Just in case we need to add some sanity checking
             # votes = bill_vote_page.xpath('//table/tr/td/a')
@@ -143,24 +138,23 @@ class COBillScraper(BillScraper):
                 try:
                     ctty = line[0][0][0].text_content()
                     date = line[0][0][1].text_content()
-                except IndexError as e:
+                except IndexError:
                     # We have a vote line for the previous line
                     try:
                         vote_url = line.xpath('a')[0].attrib['href']
                         vote_page = CO_URL_BASE + vote_url
-                        vote_dict = self.parse_all_votes( vote_page )
+                        vote_dict = self.parse_all_votes(vote_page)
 
                         vote_dict['meta']['x-parent-date'] = date
                         vote_dict['meta']['x-parent-ctty'] = ctty
 
-                        ret['votes'].append( vote_dict )
-                    except KeyError as e:
+                        ret['votes'].append(vote_dict)
+                    except KeyError:
                         pass
-                    except IndexError as e:
+                    except IndexError:
                         pass
 
         return ret
-
 
     def get_vote_url(self, billid, session):
         """
@@ -171,7 +165,7 @@ class COBillScraper(BillScraper):
             "/CLICS%5CCLICS" + session + \
             "%5Ccommsumm.nsf/IndSumm?OpenView&StartKey=" + billid + "&Count=4"
 
-    def parse_versions( self, bill_versions_url ):
+    def parse_versions(self, bill_versions_url):
         """
         Parse a bill versions page for all the versions
         """
@@ -179,13 +173,13 @@ class COBillScraper(BillScraper):
             bill_versions_page = lxml.html.fromstring(versions_html)
             trs = bill_versions_page.xpath('//form/table/tr')[3:]
             cols = {
-                "type" : 0,
-                "pdf"  : 1,
-                "wpd"  : 2
+                "type": 0,
+                "pdf": 1,
+                "wpd": 2
             }
             versions = []
             for tr in trs:
-                if len(tr) == 3: # jeezum crackers.
+                if len(tr) == 3:  # jeezum crackers.
                     name = tr[cols["type"]].text_content()
                     if name[-1:] == ":":
                         name = name[:-1]
@@ -202,24 +196,23 @@ class COBillScraper(BillScraper):
                         link = CO_URL_BASE + pdf_link
                         format = "application/pdf"
                         versions.append({
-                            "name"     : name,
-                            "mimetype" : format,
-                            "link"     : link
+                            "name": name,
+                            "mimetype": format,
+                            "link": link
                         })
 
                     if wpd_link.strip() != "" and wpd_text != "":
                         link = CO_URL_BASE + wpd_link
                         format = "application/vnd.wordperfect"
                         versions.append({
-                            "name"     : name,
-                            "mimetype" : format,
-                            "link"     : link
+                            "name": name,
+                            "mimetype": format,
+                            "link": link
                         })
 
             return versions
 
-
-    def parse_history( self, bill_history_url ):
+    def parse_history(self, bill_history_url):
         """
         Parse a bill history page for as much data as we can gleen, such as when
         the bill was introduced (as well as a number of other things)
@@ -231,16 +224,16 @@ class COBillScraper(BillScraper):
         # url[lib|parse] ?
 
         clean_args = {}
-        ret        = []
+        ret = []
 
         for arg in get_info:
             try:
                 key, value = (
                     arg[:arg.index("=")],
-                    arg[arg.index("=")+1:]
+                    arg[arg.index("=") + 1:]
                 )
                 clean_args[key] = value
-            except ValueError as e:
+            except ValueError:
                 pass
 
         # </mess>
@@ -258,7 +251,6 @@ class COBillScraper(BillScraper):
             bill_history_page = lxml.html.fromstring(history_html)
             nodes = bill_history_page.xpath('//form/b/font')
 
-            bill_id = nodes[1].text
             actions = nodes[3].text_content()
 
             for action in actions.split('\n'):
@@ -273,37 +265,36 @@ class COBillScraper(BillScraper):
                 # http://www.leg.state.co.us/clics/clics2012a/csl.nsf/billsummary/C150552896590FA587257961006E7C0B?opendocument
                     continue
 
-                date_time   = dt.datetime.strptime( date_string, "%m/%d/%Y" )
+                date_time = dt.datetime.strptime(date_string, "%m/%d/%Y")
                 action = action[action.find(" ") + 1:]
 
                 action_ids = [a.strip() for a in action.split('-')]
 
                 item_info = {
-                    "action"      : action_ids[0],
-                    "date"        : date_time,
-                    "args"        : action_ids[1:],
-                    "orig"        : action
+                    "action": action_ids[0],
+                    "date": date_time,
+                    "args": action_ids[1:],
+                    "orig": action
                 }
 
-                ret.append( item_info )
+                ret.append(item_info)
 
             return ret
 
-
-    def scrape_bill_sheet( self, session, chamber ):
+    def scrape_bill_sheet(self, session, chamber):
         """
         Scrape the bill sheet (the page full of bills and other small bits of data)
         """
-        sheet_url = self.get_bill_folder( session, chamber )
+        sheet_url = self.get_bill_folder(session, chamber)
 
-        bill_chamber = { "Senate" : "upper", "House" : "lower" }[chamber]
+        bill_chamber = {"Senate": "upper", "House": "lower"}[chamber]
 
         index = {
-            "id"            : 0,
-            "title_sponsor" : 1,
-            "version"       : 2,
-            "history"       : 3,
-            "votes"         : 7
+            "id": 0,
+            "title_sponsor": 1,
+            "version": 2,
+            "history": 3,
+            "votes": 7
         }
 
         with self.urlopen(sheet_url) as sheet_html:
@@ -330,16 +321,16 @@ class COBillScraper(BillScraper):
                     replace(" & ...", "").split("--")
 
                 cats = {
-                    "SB" : "bill",
-                    "HB" : "bill",
-                    "HR" : "resolution",
-                    "SR" : "resolution",
-                    "SCR" : "concurrent resolution",
-                    "HCR" : "concurrent resolution",
-                    "SJR" : "joint resolution",
-                    "HJR" : "joint resolution",
-                    "SM"  : "memorial",
-                    "HM"  : "memorial"
+                    "SB": "bill",
+                    "HB": "bill",
+                    "HR": "resolution",
+                    "SR": "resolution",
+                    "SCR": "concurrent resolution",
+                    "HCR": "concurrent resolution",
+                    "SJR": "joint resolution",
+                    "HJR": "joint resolution",
+                    "SM": "memorial",
+                    "HM": "memorial"
                 }
 
                 bill_type = None
@@ -349,16 +340,16 @@ class COBillScraper(BillScraper):
                         bill_type = cats[cat]
 
                 b = Bill(session, bill_chamber, bill_id, bill_title,
-                    type=bill_type )
+                         type=bill_type)
 
-                b.add_source( sheet_url )
+                b.add_source(sheet_url)
 
                 versions_url = \
                     bill[index["version"]].xpath('font/a')[0].attrib["href"]
                 versions_url = CO_URL_BASE + versions_url
-                versions = self.parse_versions( versions_url )
+                versions = self.parse_versions(versions_url)
                 for version in versions:
-                    b.add_version( version['name'], version['link'],
+                    b.add_version(version['name'], version['link'],
                         mimetype=version['mimetype'])
 
                 bill_history_href = CO_URL_BASE + \
@@ -367,8 +358,8 @@ class COBillScraper(BillScraper):
                     # might want to consider some better rel-path support
                     # XXX: Look at this ^
 
-                history = self.parse_history( bill_history_href )
-                b.add_source( bill_history_href )
+                history = self.parse_history(bill_history_href)
+                b.add_source(bill_history_href)
 
                 for action in history:
                     attrs = dict(actor=chamber, action=action['orig'],
@@ -384,28 +375,28 @@ class COBillScraper(BillScraper):
                 # Now that we have history, let's see if we can't grab some
                 # votes
 
-                bill_vote_href = self.get_vote_url( bill_id, session )
-                votes = self.parse_votes( bill_vote_href )
+                bill_vote_href = self.get_vote_url(bill_id, session)
+                votes = self.parse_votes(bill_vote_href)
 
                 if votes['sanity-check'] != bill_id:
-                    self.warning( "XXX: READ ME! Sanity check failed!" )
-                    self.warning( " -> Scraped ID: " + votes['sanity-check'] )
-                    self.warning( " -> 'Real' ID:  " + bill_id )
+                    self.warning("XXX: READ ME! Sanity check failed!")
+                    self.warning(" -> Scraped ID: " + votes['sanity-check'])
+                    self.warning(" -> 'Real' ID:  " + bill_id)
                     assert votes['sanity-check'] == bill_id
 
                 for vote in votes['votes']:
                     filed_votes = vote['votes']
-                    passage     = vote['meta']
-                    result      = vote['result']
+                    passage = vote['meta']
+                    result = vote['result']
 
                     composite_time = "%s %s" % (
                         passage['x-parent-date'],
                         passage['TIME']
                     )
                     # It's now like: 04/01/2011 02:10:14 PM
-                    pydate = dt.datetime.strptime( composite_time,
-                        "%m/%d/%Y %I:%M:%S %p" )
-                    hasHouse  = "House"  in passage['x-parent-ctty']
+                    pydate = dt.datetime.strptime(composite_time,
+                        "%m/%d/%Y %I:%M:%S %p")
+                    hasHouse = "House" in passage['x-parent-ctty']
                     hasSenate = "Senate" in passage['x-parent-ctty']
 
                     if hasHouse and hasSenate:
@@ -425,33 +416,33 @@ class COBillScraper(BillScraper):
 
                     if local_other != other:
                         self.warning( \
-                            "XXX: !!!WARNING!!! - resetting the 'OTHER' VOTES" )
-                        self.warning( " -> Old: %s // New: %s" % (
+                            "XXX: !!!WARNING!!! - resetting the 'OTHER' VOTES")
+                        self.warning(" -> Old: %s // New: %s" % (
                             other, local_other
-                        ) )
+                        ))
                         other = local_other
 
-                    v = Vote( actor, pydate, passage['MOTION'],
+                    v = Vote(actor, pydate, passage['MOTION'],
                         (result['FINAL_ACTION'] == "PASS"),
                         int(result['YES']), int(result['NO']),
                         other,
                         moved=passage['MOVED'],
-                        seconded=passage['SECONDED'] )
+                        seconded=passage['SECONDED'])
 
-                    v.add_source( vote['meta']['url'] )
+                    v.add_source(vote['meta']['url'])
                     # v.add_source( bill_vote_href )
 
                     # XXX: Add more stuff to kwargs, we have a ton of data
                     for voter in filed_votes:
-                        who  = voter
+                        who = voter
                         vote = filed_votes[who]
                         if vote.lower() == "yes":
-                            v.yes( who )
+                            v.yes(who)
                         elif vote.lower() == "no":
-                            v.no( who )
+                            v.no(who)
                         else:
-                            v.other( who )
-                    b.add_vote( v )
+                            v.other(who)
+                    b.add_vote(v)
                 self.save_bill(b)
 
     def scrape(self, chamber, session):
@@ -459,4 +450,4 @@ class COBillScraper(BillScraper):
         Entry point when invoking this from billy (or really whatever else)
         """
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
-        self.scrape_bill_sheet( session, chamber )
+        self.scrape_bill_sheet(session, chamber)
