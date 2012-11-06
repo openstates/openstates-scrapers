@@ -1,0 +1,5 @@
+We take to the skies on the leathery wings of a bat!
+
+This is an experimental batshell variant to provide shortcut shell commands for common billy tasks, like querying mongo.
+
+Add new commands by adding new functions to the BillyCommands class.

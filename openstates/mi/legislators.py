@@ -48,10 +48,13 @@ class MILegislatorScraper(LegislatorScraper):
                              full_name=name,
                              district=district,
                              party=abbr[party],
-                             office=office,
-                             phone=phone,
-                             email=email,
                              url=leg_url)
+
+            leg.add_office('capitol', 'Capitol Office',
+                           address=office,
+                           phone=phone,
+                           email=email)
+
             leg.add_source(url)
             self.save_legislator(leg)
 
@@ -69,10 +72,16 @@ class MILegislatorScraper(LegislatorScraper):
                 office_fax = row.xpath('td[5]/text()')[0]
                 office_loc = row.xpath('td[6]/text()')[0]
                 leg = Legislator(term=term, chamber=chamber,
-                                 district=district, full_name=name,
-                                 party=party, office_phone=office_phone,
-                                 url=leg_url,
-                                 office_fax=office_fax,
-                                 office_loc=office_loc)
+                                 district=district,
+                                 full_name=name,
+                                 party=party,
+                                 url=leg_url)
+
+                leg.add_office('capitol', 'Capitol Office',
+                               address=office_loc,
+                               fax=office_fax,
+                               phone=office_phone)
+
+
                 leg.add_source(url)
                 self.save_legislator(leg)

@@ -170,7 +170,6 @@ def actions_from_table(bill, actions_table):
         action_date = strptime(tds[1].text.strip(), '%m/%d/%Y')
         action_types, attrs = categorize_action(action_taken)
 
-
         # Overwrite any presumtive fields that are inaccurate, usually chamber.
         action = dict(action=action_taken, date=action_date,
                       type=action_types, actor=chamber)
@@ -197,7 +196,7 @@ class TNBillScraper(BillScraper):
             return
 
         #types of bills
-        abbrs = ['HB', 'HJR', 'HR', 'SB','SJR', 'SR']
+        abbrs = ['HB', 'HJR', 'HR', 'SB', 'SJR', 'SR']
 
         for abbr in abbrs:
 
@@ -243,13 +242,13 @@ class TNBillScraper(BillScraper):
             bill_id = bill_id.replace('*', '').strip()
 
             primary_chamber = 'lower' if 'H' in bill_id else 'upper'
-            secondary_chamber = 'upper' if primary_chamber == 'lower' else 'lower'
+            # secondary_chamber = 'upper' if primary_chamber == 'lower' else 'lower'
 
             title = page.xpath("//span[@id='lblAbstract']")[0].text
 
             # bill subject
             subject_pos = title.find('-')
-            subjects = [s.strip() for s in title[:subject_pos-1].split(',')]
+            subjects = [s.strip() for s in title[:subject_pos - 1].split(',')]
 
             bill = Bill(term, primary_chamber, bill_id, title, type=bill_type,
                         subjects=subjects)
@@ -259,7 +258,7 @@ class TNBillScraper(BillScraper):
 
             # Primary Sponsor
             sponsor = page.xpath("//span[@id='lblBillSponsor']")[0].text_content().split("by")[-1]
-            sponsor = sponsor.replace('*','').strip()
+            sponsor = sponsor.replace('*', '').strip()
             bill.add_sponsor('primary', sponsor)
 
             # bill text
@@ -308,7 +307,6 @@ class TNBillScraper(BillScraper):
 
             bill['actions'].sort(key=lambda a: a['date'])
             self.save_bill(bill)
-
 
     def scrape_votes(self, bill, link):
         with self.urlopen(link) as page:

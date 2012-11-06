@@ -1,10 +1,17 @@
 import re
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.legislators import LegislatorScraper, Legislator
-
 import xlrd
 import lxml.html
+import name_tools
+
+from billy.scrape.legislators import LegislatorScraper, Legislator
+import scrapelib
+
+
+def scrub(text):
+    '''Squish whitespace and kill \xa0.
+    '''
+    return re.sub(r'[\s\xa0]+', ' ', text)
 
 
 class OKLegislatorScraper(LegislatorScraper):
@@ -20,6 +27,7 @@ class OKLegislatorScraper(LegislatorScraper):
     def scrape_lower(self, term):
         url = "http://www.okhouse.gov/Members/Default.aspx"
         page = lxml.html.fromstring(self.urlopen(url))
+        page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, 'District')]")[3:]:
             name = link.text.strip()
@@ -44,7 +52,69 @@ class OKLegislatorScraper(LegislatorScraper):
                              photo_url=photo_url, url=leg_url)
             leg.add_source(url)
             leg.add_source(leg_url)
+
+            # Scrape offices.
+            self.scrape_lower_offices(leg_doc, leg)
+
             self.save_legislator(leg)
+
+    def scrape_lower_offices(self, doc, legislator):
+
+        # Capitol offices:
+        xpath = '//*[contains(text(), "Capitol Address")]'
+        for bold in doc.xpath(xpath):
+
+            # Get the address.
+            address_div = bold.getparent().itersiblings().next()
+
+            # Get the room number.
+            xpath = '//*[contains(@id, "CapitolRoom")]/text()'
+            room = address_div.xpath(xpath).pop()
+
+            parts = map(scrub, list(address_div.itertext()))
+            phone = parts.pop()
+            parts = [parts[0], 'Room ' + room, parts[-1]]
+            address = '\n'.join(parts)
+
+            if not phone:
+                phone = None
+
+            # Set the email on the legislator object.
+            try:
+                xpath = '//a[contains(@href, "mailto")]/@href'
+                email = doc.xpath(xpath)[0][7:]
+            except IndexError:
+                email = None
+
+            legislator['email'] = email
+
+            office = dict(
+                name='Capitol Office', type='capitol', phone=phone,
+                fax=None, email=None, address=address)
+
+            legislator.add_office(**office)
+
+        # District offices:
+        xpath = '//*[contains(text(), "District Address")]'
+        for bold in doc.xpath(xpath):
+
+            # Get the address.
+            parts = []
+            for node in bold.getparent().itersiblings():
+                if node.tag != 'div':
+                    parts.append(node.text)
+                else:
+                    break
+
+            parts = filter(None, parts)
+            parts = map(scrub, parts)
+            phone = parts.pop()
+            address = '\n'.join(parts)
+            office = dict(
+                name='District Office', type='district', phone=phone,
+                fax=None, email=None, address=address)
+
+            legislator.add_office(**office)
 
     def scrape_upper(self, term):
         url = "http://www.oksenate.gov/Senators/directory.xls"
@@ -69,6 +139,69 @@ class OKLegislatorScraper(LegislatorScraper):
             email = str(sheet.cell(rownum, 6).value)
 
             leg = Legislator(term, 'upper', district, name, party=party,
-                             email=email)
+                             email=email, url=url)
             leg.add_source(url)
+            self.scrape_upper_offices(leg)
             self.save_legislator(leg)
+
+    def scrape_upper_offices(self, legislator):
+
+        guessed_url_tmpl = ('http://www.oksenate.gov/Senators/'
+                            'biographies/%s_bio.html')
+        last_name_parts = name_tools.split(legislator['full_name'])
+        last_name = last_name_parts[2].replace(' ', '_')
+
+        guessed_url = guessed_url_tmpl % last_name
+
+        try:
+            html = self.urlopen(guessed_url)
+        except scrapelib.HTTPError:
+            # The name was backwards; retry with first name (i.e., last name)
+            last_name = last_name_parts[1].replace(' ', '_').strip(',')
+            guessed_url = guessed_url_tmpl % last_name
+
+            html = self.urlopen(guessed_url)
+
+        legislator.add_source(guessed_url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(guessed_url)
+
+        xpath = '//h3[contains(., "Office")]'
+        table = doc.xpath(xpath)[0].itersiblings().next()
+        col1, col2 = table.xpath('tr[2]/td')
+
+        # Add the capitol office.
+        col1 = map(scrub, col1.itertext())
+        while True:
+            # Throw away anything after the email address.
+            last = col1[-1]
+            if '@' not in last and not re.search(r'[\d\-\(\) ]{7,}', last):
+                print col1.pop()
+            else:
+                break
+
+        # Set email on the leg object.
+        email = col1.pop()
+        legislator['email'] = email
+
+        # Next line is the phone number.
+        phone = col1.pop()
+        office = dict(
+            name='Capitol Office',
+            type='capitol',
+            address='\n'.join(col1),
+            fax=None, email=None, phone=phone)
+        legislator.add_office(**office)
+
+        col2 = map(scrub, col2.itertext())
+        if len(col2) < 2:
+            return
+
+        office = dict(
+            name='District Office',
+            type='district',
+            address='\n'.join(col2),
+            fax=None, email=None, phone=phone)
+        legislator.add_office(**office)
+
+

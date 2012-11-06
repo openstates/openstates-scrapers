@@ -8,6 +8,8 @@ import lxml.html
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
+from .actions import Categorizer
+
 
 strip = methodcaller('strip')
 
@@ -42,18 +44,9 @@ def unescape(text):
     return re.sub("&#?\w+;", fixup, text)
 
 
-def classify_action(action):
-    # TODO: this likely needs to be retuned after more happens
-    if 'REFERRED to the Committee' in action:
-        return 'committee:referred'
-    elif 'PASSED' in action:
-        return 'bill:passed'
-    else:
-        return 'other'
-
-
 class MEBillScraper(BillScraper):
     state = 'me'
+    categorizer = Categorizer()
 
     def scrape(self, chamber, session):
         if session[-1] == "1":
@@ -247,7 +240,7 @@ class MEBillScraper(BillScraper):
             member_cell = page.xpath("//td[text() = 'Member']")[0]
             for row in member_cell.xpath("../../tr")[1:]:
                 name = row.xpath("string(td[2])")
-                name = name.split(" of ")[0]
+                # name = name.split(" of ")[0]
 
                 vtype = row.xpath("string(td[4])")
                 if vtype == 'Y':
@@ -275,24 +268,46 @@ class MEBillScraper(BillScraper):
                 elif chamber == 'House':
                     chamber = 'lower'
 
-                # The action text contains html, and .text_content
-                # does't quite work here, hence these horrific hacks:
-                action = lxml.html.tostring(row.xpath('td')[2])
-
-                # Kill html.
-                action = re.sub(r'[<].+?[>]', ' ', action)
-
-                # Squash whitespace.
-                action = re.sub(r'\s+', ' ', action)
-
-                # Fix period spacing.
-                action = re.sub(r'\s+\.', '.', action)
-
+                action = gettext(row[2])
                 action = unescape(action).strip()
 
-                if action == 'Unfinished Business' or not action:
-                    continue
+                actions = []
+                for action in action.splitlines():
+                    action = re.sub(r'\s+', ' ', action)
+                    if not action or 'Unfinished Business' in action:
+                        continue
 
-                atype = classify_action(action)
+                    actions.append(action)
 
-                bill.add_action(chamber, action, date, type=atype)
+                for action in actions:
+                    attrs = dict(actor=chamber, action=action, date=date)
+                    attrs.update(self.categorizer.categorize(action))
+                    bill.add_action(**attrs)
+
+
+def _get_chunks(el, buff=None, until=None):
+    tagmap = {'br': '\n'}
+    buff = buff or []
+
+    # Tag, text, tail, recur...
+    yield tagmap.get(el.tag.lower(), '')
+    yield el.text or ''
+    # if el.text == until:
+    #     return
+    for kid in el:
+        for text in _get_chunks(kid):
+            yield text
+            # if text == until:
+            #     return
+    if el.tail:
+        yield el.tail
+        # if el.tail == until:
+        #     return
+    if el.tag == 'text':
+        yield '\n'
+
+
+def gettext(el):
+    '''Join the chunks, then split and rejoin to normalize the whitespace.
+    '''
+    return ''.join(_get_chunks(el))

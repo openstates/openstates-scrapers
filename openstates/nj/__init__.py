@@ -1,7 +1,7 @@
 import datetime
 import lxml.html
 from billy.scrape.utils import url_xpath
-from billy.utils.fulltext import oyster_text, text_after_line_numbers
+from billy.utils.fulltext import text_after_line_numbers
 
 # don't retry- if a file isn't on FTP just let it go
 settings = dict(SCRAPELIB_RETRY_ATTEMPTS=0)
@@ -57,16 +57,7 @@ def session_list():
     return url_xpath('http://www.njleg.state.nj.us/',
                      '//select[@name="DBNAME"]/option/text()')
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     text = doc.xpath('//div[@class="Section3"]')[0].text_content()
     return text
-
-
-document_class = dict(
-    AWS_PREFIX = 'documents/nj/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

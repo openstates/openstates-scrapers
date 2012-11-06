@@ -39,9 +39,28 @@ class WYLegislatorScraper(LegislatorScraper):
                 "//img[contains(@src, 'LegislatorSummary/photos')]")[0]
             photo_url = img.attrib['src']
 
+            office_tds = leg_page.xpath('//table[@id="ctl00_cphContent_tblContact"]/tr/td/text()')
+            address = []
+            phone = None
+            fax = None
+            for td in office_tds:
+                if td.startswith('Home -'):
+                    phone = td.strip('Home - ')
+                # only use cell if home isn't present
+                elif td.startswith('Cell -') and not phone:
+                    phone = td.strip('Cell - ')
+                elif td.startswith('Fax -'):
+                    fax = td.strip('Fax - ')
+                else:
+                    address.append(td)
+
             leg = Legislator(term, chamber, district, name, party=party,
                              email=email_address, photo_url=photo_url,
                              url=leg_url)
+            leg.add_office('district', 'Contact Information',
+                           address=' '.join(address), phone=phone, fax=fax)
+
             leg.add_source(url)
+            leg.add_source(leg_url)
 
             self.save_legislator(leg)

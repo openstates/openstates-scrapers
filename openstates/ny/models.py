@@ -83,6 +83,18 @@ class AssemblyBillPage(object):
         chunks = summary.split('\n\n')
         self.bill['summary'] = chunks[-1]
 
+    def _scrub_name(self, name):
+        junk = [
+            r'^Rules\s+',
+            '\(2nd Vice Chairperson\)',
+            '\(MS\)',
+            'Assemblyman',
+            'Assemblywoman',
+            'Senator']
+        for rgx in junk:
+            name = re.sub(rgx, '', name, re.I)
+        return name.strip('(), ')
+
     def get_sponsors(self):
         summary, _ = self._get_chunks()
         chunks = summary.split('\n\n')
@@ -91,11 +103,23 @@ class AssemblyBillPage(object):
                 if chunk.startswith(sponsor_type):
                     _, data = chunk.split(' ', 1)
                     for sponsor in re.split(r',\s+', data.strip()):
+
                         if not sponsor:
                             continue
+
+                        # If it's a "Rules" bill, add the Rules committee
+                        # as the primary.
+                        if sponsor.startswith('Rules'):
+                            self.bill.add_sponsor('primary', 'Rules Committee',
+                                                  chamber='lower')
+
+                        sponsor = self._scrub_name(sponsor)
+
+                        # Figure out sponsor type.
                         spons_swap = {'SPONSOR': 'primary'}
                         _sponsor_type = spons_swap.get(
                                             sponsor_type, 'cosponsor')
+
                         self.bill.add_sponsor(_sponsor_type, sponsor.strip(),
                                          official_type=sponsor_type)
 
@@ -151,7 +175,8 @@ class AssemblyBillPage(object):
                 except (StopIteration, ValueError):
                     # End of data. Stop.
                     break
-                name = name.strip()
+                name = self._scrub_name(name)
+
                 if vote_val.strip() == 'Y':
                     vote.yes(name)
                 elif vote_val.strip() in ('N', 'NO'):
@@ -312,14 +337,6 @@ class SenateBillPage(object):
                 vote.no(name)
             for name in other_votes:
                 vote.other(name)
-
-            # for voteval in ['yes', 'no', 'other']:
-            #     count = vote[voteval + '_count']
-            #     votes = vote[voteval + '_votes']
-            #     if count != len(votes):
-            #         msg = 'BAD %s COUNT: %d != %d'
-            #         self.scraper.logger.debug(msg % (voteval, count, len(votes)))
-            #         import pdb;pdb.set_trace()
 
             vote.add_source(self.url)
             self.bill.add_vote(vote)

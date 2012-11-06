@@ -1,6 +1,5 @@
 import datetime
-from billy.utils.fulltext import (pdfdata_to_text, oyster_text,
-                            text_after_line_numbers)
+from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 
 metadata = dict(
     name='Arkansas',
@@ -77,14 +76,5 @@ def session_list():
     return [s.text_content() for s in sessions if s.text_content()]
 
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     return text_after_line_numbers(pdfdata_to_text(data))
-
-
-document_class = dict(
-    AWS_PREFIX = 'documents/ar/',
-    update_mins = 7*24*60,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

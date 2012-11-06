@@ -50,6 +50,11 @@ class IAEventScraper(EventScraper):
             else:
                 when = when.split('PM')[0] + " PM"
 
+            junk = ['Reception']
+            for key in junk:
+                when = when.replace(key, '')
+
+            when = re.sub("\s+", " ", when).strip()
             when = datetime.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
 
             event = Event(session, when, 'committee:meeting',

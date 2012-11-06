@@ -1,6 +1,5 @@
 import lxml.html
 import datetime
-from billy.utils.fulltext import oyster_text
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
@@ -45,16 +44,8 @@ def session_list():
     return url_xpath( 'http://www.scstatehouse.gov/billsearch.php',
         "//select[@id='session']/option/text()" )
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     # trim first and last part
     text = ' '.join(p.text_content() for p in doc.xpath('//p')[1:-1])
     return text
-
-document_class = dict(
-    AWS_PREFIX = 'documents/sc/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

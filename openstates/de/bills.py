@@ -99,6 +99,8 @@ class DEBillScraper(BillScraper):
 
     state = 'de'
 
+    categorizer = actions.Categorizer()
+
     legislation_types = {
         'House Bill': 'bill',
         'House Concurrent Resolution': 'concurrent resolution',
@@ -236,7 +238,6 @@ class DEBillScraper(BillScraper):
                     re_amendment=re.compile(r'(^[A-Z]A \d{1,3}) to'),
                     re_substitution=re.compile(r'(^[A-Z]S \d{1,2}) for'),
                     re_digits=re.compile(r'\d{,5}'),
-                    actions_categorize=actions.categorize,
                     actions_get_actor=actions.get_actor):
 
         bill = Bill(**kw)
@@ -323,8 +324,9 @@ class DEBillScraper(BillScraper):
                 date = datetime.strptime(date, '%B %d, %Y')  # XXX: ugh.
 
             actor = actions_get_actor(action, bill['chamber'])
-            type_ = actions_categorize(action)
-            bill.add_action(actor, action, date, type_)
+            attrs = dict(actor=actor, action=action, date=date)
+            attrs.update(**self.categorizer.categorize(action))
+            bill.add_action(**attrs)
 
         #---------------------------------------------------------------------
         # Votes

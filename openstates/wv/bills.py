@@ -13,6 +13,8 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 import scrapelib
 
+from .actions import Categorizer
+
 
 class _Url(object):
     '''A url object that can be compared with other url orbjects
@@ -35,6 +37,7 @@ class _Url(object):
 
 class WVBillScraper(BillScraper):
     state = 'wv'
+    categorizer = Categorizer()
 
     bill_types = {'B': 'bill',
                   'R': 'resolution',
@@ -135,42 +138,9 @@ class WVBillScraper(BillScraper):
 
             action = tds[1].text_content().strip()
 
-            if (action == 'Communicated to Senate' or
-                action.startswith('Senate received') or
-                action.startswith('Ordered to Senate')):
-                actor = 'upper'
-            elif (action == 'Communicated to House' or
-                  action.startswith('House received') or
-                  action.startswith('Ordered to House')):
-                actor = 'lower'
-
-            if action == 'Read 1st time':
-                atype = 'bill:reading:1'
-            elif action == 'Read 2nd time':
-                atype = 'bill:reading:2'
-            elif action == 'Read 3rd time':
-                atype = 'bill:reading:3'
-            elif action == 'Filed for introduction':
-                atype = 'bill:filed'
-            elif action.startswith('To Governor') and 'Journal' not in action:
-                atype = 'governor:received'
-            elif re.match(r'To [A-Z]', action):
-                atype = 'committee:referred'
-            elif action.startswith('Introduced in'):
-                atype = 'bill:introduced'
-            elif (action.startswith('Approved by Governor') and
-                  'Journal' not in action):
-                atype = 'governor:signed'
-            elif (action.startswith('Passed Senate') or
-                  action.startswith('Passed House')):
-                atype = 'bill:passed'
-            elif (action.startswith('Reported do pass') or
-                  action.startswith('With amendment, do pass')):
-                atype = 'committee:passed'
-            else:
-                atype = 'other'
-
-            bill.add_action(actor, action, date, type=atype)
+            attrs = dict(actor=actor, action=action, date=date)
+            attrs.update(self.categorizer.categorize(action))
+            bill.add_action(**attrs)
 
         self.save_bill(bill)
 

@@ -152,17 +152,25 @@ class KSBillScraper(BillScraper):
 
         vote_doc, resp = self.urlretrieve(vote_url)
 
-        subprocess.check_call('abiword --to=ksvote.txt %s' % vote_doc,
-                              shell=True, cwd='/tmp/')
+        try:
+            subprocess.check_call('timeout 10 abiword --to=ksvote.txt %s' % vote_doc,
+                                  shell=True, cwd='/tmp/')
+        except subprocess.CalledProcessError:
+            # timeout failed, some documents hang abiword
+            self.error('abiword hung for longer than 10s on conversion')
+            return
         vote_lines = open('/tmp/ksvote.txt').readlines()
 
         os.remove(vote_doc)
+
+        comma_or_and = re.compile(', |\sand\s')
 
         vote = None
         passed = True
         for line in vote_lines:
             totals = re.findall('Yeas (\d+)[;,] Nays (\d+)[;,] (?:Present but not voting|Present and Passing):? (\d+)[;,] (?:Absent or not voting|Absent or Not Voting):? (\d+)',
                                 line)
+            line = line.strip()
             if totals:
                 totals = totals[0]
                 yeas = int(totals[0])
@@ -170,26 +178,26 @@ class KSBillScraper(BillScraper):
                 nv = int(totals[2])
                 absent = int(totals[3])
                 # default passed to true
-                vote = Vote(vote_chamber, vote_date, vote_status,
+                vote = Vote(vote_chamber, vote_date, vote_status.strip(),
                             True, yeas, nays, nv+absent)
-            elif line.startswith('Yeas:'):
+            elif vote and line.startswith('Yeas:'):
                 line = line.split(':', 1)[1].strip()
-                for member in line.split(', '):
+                for member in comma_or_and.split(line):
                     if member != 'None.':
                         vote.yes(member)
-            elif line.startswith('Nays:'):
+            elif vote and line.startswith('Nays:'):
                 line = line.split(':', 1)[1].strip()
-                for member in line.split(', '):
+                for member in comma_or_and.split(line):
                     if member != 'None.':
                         vote.no(member)
-            elif line.startswith('Present '):
+            elif vote and line.startswith('Present '):
                 line = line.split(':', 1)[1].strip()
-                for member in line.split(', '):
+                for member in comma_or_and.split(line):
                     if member != 'None.':
                         vote.other(member)
-            elif line.startswith('Absent or'):
+            elif vote and line.startswith('Absent or'):
                 line = line.split(':', 1)[1].strip()
-                for member in line.split(', '):
+                for member in comma_or_and.split(line):
                     if member != 'None.':
                         vote.other(member)
             elif 'the motion did not prevail' in line:

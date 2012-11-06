@@ -1,6 +1,5 @@
 import datetime
 import lxml.html
-from billy.utils.fulltext import oyster_text
 
 metadata = dict(
     name='Arizona',
@@ -535,15 +534,7 @@ def session_list():
     return doc.xpath('//session/@session_full_name')
 
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     text = doc.xpath('//div[@class="Section2"]')[0].text_content()
     return text
-
-document_class = dict(
-    AWS_PREFIX = 'documents/az/',
-    update_mins = None,
-    extract_text = extract_text,
-    onchanged = ['oyster.ext.elasticsearch.ElasticSearchPush']
-)

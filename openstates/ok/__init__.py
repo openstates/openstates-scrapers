@@ -1,4 +1,4 @@
-from billy.utils.fulltext import oyster_text, worddata_to_text
+from billy.utils.fulltext import worddata_to_text
 
 settings = dict(SCRAPELIB_TIMEOUT=120)
 
@@ -19,7 +19,7 @@ metadata = dict(
          'end_year': 2012,
          'sessions': ['2011-2012', '2012SS1']},
 
-         
+
         # {'name': '2013-2014',
         #  'start_year': 2013,
         #  'end_year': 2014,
@@ -48,6 +48,10 @@ metadata = dict(
         },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[
+
+        # XXX: Temprarily ignore 2013.
+        '2013 Regular Session',
+
         '2011 Regular Session', '2010 Regular Session',
         '2009 Regular Session', '2008 Regular Session',
         '2007 Regular Session',
@@ -73,14 +77,5 @@ def session_list():
         "//select[@name='cbxSession']/option/text()")
 
 
-@oyster_text
-def extract_text(oyster_doc, data):
+def extract_text(doc, data):
     return worddata_to_text(data)
-
-
-document_class = dict(
-    AWS_PREFIX='documents/ok/',
-    update_mins=None,
-    extract_text=extract_text,
-    onchanged=['oyster.ext.elasticsearch.ElasticSearchPush']
-    )
