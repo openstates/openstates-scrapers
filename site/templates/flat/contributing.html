@@ -68,36 +68,32 @@ When implementing these files be sure to refer to the `scraper documentation <ht
 Running Your Scraper
 ====================
 
-There is an command named ``billy-scrape`` that is used to run scrapers and takes a number of command line options.
+There is an command named ``billy-update`` that is used to run scrapers and takes a number of command line options.
 
 Examples of Common Usage
 ------------------------
 
 Getting all legislators for Vermont from the latest session::
 
-    billy-scrape vt --legislators -v
+    billy-update vt --legislators
 
 Getting all committees and bills for Pennsylvania from the 204th session::
 
-    billy-scrape pa --committees --bills --session 204 -v
+    billy-update pa --committees --bills --session 204
 
 Viewing the Data
 ================
 
-By default data is scraped and stored in JSON files on the local file system (in the data/ directory relative to where you ran billy-scrape)
+By default data is scraped and stored in JSON files on the local file system (in the data/ directory relative to where you ran ``billy-update``)
 
 If you wish to gain a more useful view on your scraped data you may wish to import the data into a local database.  Doing so requires you to install
 `MongoDB <http://mongodb.org>`_ on your system.
 
 If you have MongoDB installed you can run::
 
-    billy-update --import --report pa --alldata
+    billy-update --import --report pa
 
-Which would import all scraped data from Pennsylvania.  The data is then available to be queried in your local MongoDB database or viewed with::
-
-    billy-util serve
-
-Which starts a web server (`Django <http://djangoproject.org>`_ required) at http://127.0.0.1:8000/browse/ that allows you to view the locally scraped data.
+Which would import all scraped data from Pennsylvania.  The data is then available to be queried in your local MongoDB database.
 
 Submitting Your Code
 ====================
