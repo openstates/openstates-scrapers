@@ -130,7 +130,7 @@ class TXLegislatorScraper(LegislatorScraper):
                                  position=mtype)
 
             if type == 'Lt. Gov.':
-                self.save_person(leg)
+                self.save_object(leg)
             else:
                 if district:
                     self.save_legislator(leg)
