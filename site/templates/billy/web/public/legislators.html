@@ -3,7 +3,7 @@
 {% load i18n %}
 {% load customtags %}
 
-{% block title %}{{metadata.name}} {{ chamber_title }} - Open States{% endblock %}
+{% block title %}{{metadata.name}} {{ chamber_title }}{% endblock %}
 
 {% block description %}{{chamber_title}} {% trans "currently serving in" %} {{metadata.name}} {% endblock %}
 
