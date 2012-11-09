@@ -234,7 +234,7 @@
         wax.tilejson(lower_url, wax_cb);
     }
     map.on('click', function(e) {
-        var url = '/find_your_legislator/?state={{metadata.abbr}}&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
+        var url = '/find_your_legislator/?abbr={{metadata.abbr}}&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
         $("#results_table").load(url, fix_images);
 
         // create or move marker

@@ -17,9 +17,9 @@
                         {% trans "Discover politics in your state. Find your legislators, see how they've voted and browse upcoming legislation and events." %}
                         </p>
 
-                {% if active_states %}
+                {% if all_metadata %}
                     <p>{% trans "While Open States is in beta this site is only available for" %}
-                    {% for metadata in active_states %}
+                    {% for metadata in all_metadata %}
                     <a href="{% url 'region' metadata.abbreviation %}"> {{metadata.name}}</a>{% if forloop.revcounter > 2 %},{% elif forloop.revcounter == 2 %} {% trans "and" %}{% endif %}{% endfor %}.
                 {% endif %}
 
