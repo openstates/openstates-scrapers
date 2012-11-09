@@ -25,6 +25,7 @@ PARTY_DETAILS = {
     'Republican/Democratic': {'plural_noun': 'Republican/Democratic'},   # VT
 }
 
+ENABLE_ELASTICSEARCH = True
 
 try:
     from billy_local import *

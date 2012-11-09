@@ -143,8 +143,6 @@ ACTIVE_STATES=sorted(['ca', 'il', 'la', 'md', 'mn',
                       'pr'
                      ])
 
-ENABLE_ELASTICSEARCH = True
-
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login'
 
