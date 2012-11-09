@@ -79,12 +79,12 @@
         {% if abbr and abbr != 'all' %}
         <nav>
             <ul>
-                <li {% if statenav_active == "home" %}class="active"{% endif %}><a href="{% url region abbr %}">{% trans "Home" %}</a></li>
-                <li {% if statenav_active == "legislators" %}class="active"{% endif %}><a href="{% url legislators abbr %}">{% trans "Legislators" %}</a></li>
-                <li {% if statenav_active == "bills" %}class="active"{% endif %}><a href="{% url bills abbr %}">{% trans "Bills" %}</a></li>
-                <li {% if statenav_active == "committees" %}class="active"{% endif %}><a href="{% url committees abbr %}">{% trans "Committees" %}</a></li>
+                <li {% if nav_active == "home" %}class="active"{% endif %}><a href="{% url region abbr %}">{% trans "Home" %}</a></li>
+                <li {% if nav_active == "legislators" %}class="active"{% endif %}><a href="{% url legislators abbr %}">{% trans "Legislators" %}</a></li>
+                <li {% if nav_active == "bills" %}class="active"{% endif %}><a href="{% url bills abbr %}">{% trans "Bills" %}</a></li>
+                <li {% if nav_active == "committees" %}class="active"{% endif %}><a href="{% url committees abbr %}">{% trans "Committees" %}</a></li>
                 {% if "events" in metadata.feature_flags %}
-                    <li {% if statenav_active == "events" %}class="active"{% endif %}><a href="{% url events abbr %}">{% trans "Events" %}</a></li>
+                    <li {% if nav_active == "events" %}class="active"{% endif %}><a href="{% url events abbr %}">{% trans "Events" %}</a></li>
                 {% endif %}
             </ul>
             <div class="clear"></div>
