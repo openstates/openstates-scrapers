@@ -104,9 +104,9 @@ $(document).ready(function(){
                 <table class="withFilter">
                     <thead>
                         <tr id="titles">
-                            {% for header in column_headers %}
-                                <th>{{header}}</th>
-                            {% endfor %}
+                            <td>{% trans "Title" %}</td>
+                            <td>{% trans "Introduced" %}</td>
+                            <td>{% trans "Recent Action" %}</td>
                         </tr>
                     </thead>
                     <tbody>
