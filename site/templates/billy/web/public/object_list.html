@@ -24,11 +24,7 @@ $(document).ready(function() {
             {% if use_table %}
             <table id="main-table" class="withFilter">
                 <thead>
-                    <tr id="titles">
-                        {% for header in column_headers %}
-                            <th>{{header}}</th>
-                        {% endfor %}
-                    </tr>
+                    {% include column_headers_tmplname %}
                 </thead>
                 <tbody>
             {% endif %}

@@ -5,7 +5,7 @@
 {# load funfacts #}
 {% load url from future %}
 
-{% block title %}{{metadata.legislature_name}} - Open States{% endblock %}
+{% block title %}{{metadata.legislature_name}}{% endblock %}
 {% block description %}{{metadata.legislature_name}}: {% trans "Keep up to date with bills, legislators, votes, committees and events." %} {% endblock %}
 
 {% block bodyclass %}{% endblock %}
@@ -234,7 +234,7 @@
         wax.tilejson(lower_url, wax_cb);
     }
     map.on('click', function(e) {
-        var url = '/find_your_legislator/?state={{metadata.abbr}}&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
+        var url = '/find_your_legislator/?abbr={{metadata.abbr}}&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
         $("#results_table").load(url, fix_images);
 
         // create or move marker

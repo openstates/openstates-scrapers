@@ -87,6 +87,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.admin',
+    'django.contrib.sites',
     'billy.web.api',
     'billy.web.admin',
     'billy.web.public',
@@ -142,8 +143,6 @@ ACTIVE_STATES=sorted(['ca', 'il', 'la', 'md', 'mn',
                       'pa', 'ri', 'tn', 'vt', 'va',
                       'pr'
                      ])
-
-ENABLE_ELASTICSEARCH = True
 
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login'

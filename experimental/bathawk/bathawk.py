@@ -67,7 +67,9 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         # Store the state's categorizer in the shell.
         try:
             actions_module = importlib.import_module('openstates.%s.actions' % abbr)
-            self.locals['categorizer'] = actions_module.Categorizer()
+            categorizer = getattr(actions_module, 'Categorizer', None)
+            if categorizer is not None:
+                self.locals['categorizer'] = categorizer()
         except ImportError:
             pass
 
