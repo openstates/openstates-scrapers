@@ -53,6 +53,9 @@
             </ol>
             <!-- <h5 style="margin-bottom: 0px;">{{ bill.session_details.display_name }}</h5> -->
             <div class="medModule">
+
+                {% include "billy/web/public/_favorite.html" %}
+
                 <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
                 <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
                 <p>{{ bill.title|capfirst|smallcaps }}</p>

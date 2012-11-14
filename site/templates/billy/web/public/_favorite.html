@@ -1,0 +1,17 @@
+{% load i18n %}
+                {% if request.user.is_authenticated %}
+                <div id="favorite" data-obj_id="{{ obj_id }}"
+                                   data-obj_type="{{ obj_type }}"
+                                   data-is_favorite="{{ is_favorite|lower }}">
+                    <div id="favorite-message">
+                        {% if is_favorite %}
+                            {% trans "You are tracking this thing." %}
+                        {% else %}
+                            {% trans "Click to favorite this thing." %}
+                        {% endif %}
+                    </div>
+                    <button type="submit" id="favorite-button"/>
+                        <span>{% trans "SignUp" %}</span>
+                    </button>
+                </div>
+                {% endif %}

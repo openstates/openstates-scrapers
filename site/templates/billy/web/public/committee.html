@@ -42,6 +42,7 @@ $(document).ready(function() {
 
 <h2>{{ committee.display_name }} ({{committee.chamber_name}})</h2>
 <div class="fullWidth module">
+    {% include "billy/web/public/_favorite.html" %}
     <h3 class="moduleTitle">{% trans "Members" %}</h3>
     <table id="main-table">
         <thead>
@@ -78,7 +79,7 @@ $(document).ready(function() {
 {% if events|length > 0 %}
 <div class="fullWidth module">
     <h3 class="moduleTitle">{% trans "Events" %}</h3>
-    <table>
+    <table class="table table-striped">
         <thead>
             <tr>
                 <th>{% trans "Description" %}</th>

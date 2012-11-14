@@ -28,6 +28,34 @@ $(document).ready( function() {
         userAction: ua
     };
     gigya.socialize.showShareBarUI(params);
+
+    // Favorite button.
+    var favorite_div = $('#favorite');
+
+    $("#favorite-button").click(function(event){
+        $.ajax({
+          type: 'POST',
+          url: '/favorites',
+          data: favorite_div.data(),
+          dataType: 'json',
+          headers: {'X-CSRFToken': getCookie('csrftoken')},
+          success: function(){
+            console.log("Favorite button got clicked.");
+            console.log(favorite_div.data());
+            if (favorite_div.data('is_favorite')) {
+                $("#favorite-message").text("You broke up with this thing.");
+            } else {
+                $("#favorite-message").text("You are now following this thing.");
+                }
+            // Toggle is_favorite.
+            favorite_div.data('is_favorite', !favorite_div.data('is_favorite'));
+            },
+          error: function(){
+            $("#favorite-message").text("Ack! Something went wrong.");
+        }
+        });
+        event.preventDefault();
+    });
 });
 
 var clickable_rows = function(selector) {
@@ -82,4 +110,20 @@ var pjax_setup = function(){
         });
     });
 };
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
