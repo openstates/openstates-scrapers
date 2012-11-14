@@ -105,7 +105,14 @@ class MOVoteScraper(VoteScraper):
                         continue
                 if in_vote:
                     if (line == line.upper() and line.strip() != "") or \
-                       "The President" in line:
+                       "The President" in line or (
+                           "senator" in line.lower() and
+                           (
+                               "moved" in line.lower() or
+                               "requested" in line.lower()
+                           )
+                       ) or \
+                       "assumed the chair" in line.lower():
                         in_vote = False
                         # print vote
                         # print cur_motion
@@ -148,6 +155,9 @@ class MOVoteScraper(VoteScraper):
                     rl = None
                     for klass in classes:
                         if line.lower().startswith(klass.lower()):
+                            if "none" in line.lower():
+                                continue
+
                             if "Senator" in line and not "Senators" in line:
                                 line = _clean_line(line)
                                 line = line[len(klass):]
@@ -172,6 +182,9 @@ class MOVoteScraper(VoteScraper):
                     lname = lname.rsplit("-", 1)
                     if len(lname) > 1:
                         person, count = lname
+                        if count.lower() == 'none':
+                            continue
+
                         names.pop(-1)
                         names.append(person)
                         counts[vote_type] += int(count)
