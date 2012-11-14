@@ -41,11 +41,18 @@ class MOVoteScraper(VoteScraper):
 
     def scrape_senate(self, session):
         url = SENATE_URL
-        classes = {
+        classes = [
+            "YEAS",
+            "NAYS",
+            "Absent with leave",
+            "Absent",
+            "Vacancies"
+        ]
+        klasses = {
             "YEAS": 'yes',
             "NAYS": 'no',
+            "Absent with leave": 'other',
             "Absent": 'other',
-            "Abset with leave": 'other',
             "Vacancies": 'other'
         }
         page = self.lxmlize(url)
@@ -140,13 +147,13 @@ class MOVoteScraper(VoteScraper):
                     found = False
                     rl = None
                     for klass in classes:
-                        if line.startswith(klass):
+                        if line.lower().startswith(klass.lower()):
                             if "Senator" in line and not "Senators" in line:
                                 line = _clean_line(line)
-                                line = line.replace("%s-Senator " % (klass),
-                                                    "")
+                                line = line[len(klass):]
+                                line = line.replace("-Senator ", "")
                                 rl = line
-                            vote_type = classes[klass]
+                            vote_type = klasses[klass]
                             found = True
                             if vote_type not in vote:
                                 vote[vote_type] = []
