@@ -1,0 +1,194 @@
+{% extends "billy/web/public/base.html" %}
+{% load customtags %}
+{% load staticfiles %}
+{% load humanize %}
+{% load i18n %}
+{% load url from future %}
+
+{% block title %}{% trans "Open States: discover politics in your state" %}{% endblock %}
+{% block description %}{% trans "Follow politics in your state legislature. Find your legislators, see how they've voted, and browse bills, committees and events." %} {% endblock %}
+
+{% block bodyclass %}home{% endblock %}
+
+{% block headblock %}
+{# This is just the js from legislators_list.html copied and pasted. #}
+{# Maybe a subtemplate is in order. #}
+<script src="{% static 'js/datatables.js' %}"></script>
+<script src="{% static 'js/jquery.pjax.min.js' %}"></script>
+<script>
+$(document).ready(function() {
+
+    var _clickable_rows = function(){
+        clickable_rows('#main-table tbody tr');
+        }
+
+    $('img.legImgSmall').error(function() {
+            $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
+                "title", "No Photo Available");
+    });
+
+    var datatable_setup = function(){
+
+        //Kill the html in the table headers.
+        var table = $('#main-table');
+        table.find('th').each(function(){
+            var th = $(this);
+            th.html(th.text());
+        });
+
+        // Convert the table to dataTable.
+        var datatable = table.dataTable({
+            bPaginate: false,
+            bFilter: false,
+            bInfo: false,
+            bDestroy: true,
+            "oLanguage": {
+                "sSearch": "Type in a name, district, party or chamber to filter table below: "
+            },
+            "aoColumnDefs": [
+                    {"iDataSort": 1, "aTargets": [2]},
+                    {"bVisible": false, "aTargets": [1]}
+                ]
+        });
+
+        // Sort it.
+        datatable.fnSort([[2, 'asc']]);
+    }
+
+    // Tell pjax not to jump to the top of the
+    // page after loading.
+    $.pjax.defaults.scrollTo = false;
+
+    var doc = $(this);
+
+    // When the pjax operation is done, re-run pjax_setup to bind
+    // the listeners to the replaced button elements.
+    doc.bind('pjax:complete', {}, pjax_setup);
+
+    // Also fix the image placeholders.
+    doc.bind('pjax:complete', {}, fix_images);
+
+    // Reinitialize the datatable too.
+    doc.bind('pjax:complete', {}, datatable_setup);
+
+    // And re-run clackable_rows.
+    doc.bind('pjax:complete', {}, _clickable_rows);
+
+    var initialize_page = 'pjax:complete'
+    doc.trigger(initialize_page);
+
+    /* Below is the committees js, basically verbatim */
+    var show_chamber_column = true;
+
+    var datatable_setup = function(){
+
+        // Kill the html in the table headers.
+        var table = $("#main-table");
+        table.find('th').each(function(){
+            var th = $(this);
+            th.html(th.text());
+        });
+
+        // Convert the table to dataTable.
+        if (table.find('th').length == 2) {
+            // All 3 columns are displayed.
+            var aoColumns = [
+                    null,
+                    { "bSortable": false },
+                  ];
+        } else {
+            // The chamber column is hidden.
+            var aoColumns = [
+                    null,
+                    null,
+                    { "bSortable": false },
+                  ];
+        }
+
+        table.dataTable({
+            bPaginate: false,
+            bInfo: false,
+            bDestroy: true,
+            aoColumns: aoColumns,
+            "oLanguage": {
+                "sSearch": "Type in a committee or sponsor name to filter the table below: "
+            }
+        });
+    }
+
+});
+</script>
+{% endblock %}
+
+{% block content %}
+    <div id="container">
+        <div class="module">
+            <div class="sixCol colRt">
+                <h1>You're following:</h1>
+                <ul style="padding-left: 25px">
+                    {% for type, objs in favorites.items %}
+                    <li>
+                        <h5>{{objs|length|apnumber|title}}
+                        <a href="#{{type}}">{{type|title}}{{objs|pluralize}}</a></h5></li>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="sixCol colRt">
+                <iframe width="420" height="315" src="http://www.youtube.com/embed/5xbyJGM1iUY" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+
+
+        {% if favorites.bill %}
+        <div class="module">
+            <a name="bill" id="bill"></a>
+            <h3 class="moduleTitle">{% trans "Bills" %}</h3>
+            <table class="withFilter">
+                <thead>
+                    <tr id="titles">
+                        <td>{% trans "Title" %}</td>
+                        <td>{% trans "Introduced" %}</td>
+                        <td>{% trans "Recent Action" %}</td>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for fave in favorites.bill %}
+                    <tr>
+                    {% with obj=fave.obj %}
+                        <td>{{obj.metadata.abbr|upper}}</td>
+                        <td>
+                            <a href="{{ obj.get_absolute_url }}">{{obj.bill_id}}</a>
+                            <p>{{obj.title|truncatewords:25}}</p>
+                        </td>
+                        <td>{{obj.session}}</td>
+                        <td>{{obj.date_introduced|date:"M j, Y"}}</td>
+                        {% with action=obj.most_recent_action %}
+                            <td>{{action.date|date:"M j, Y"}} <span class="tip">{{action.action}}</span></td>
+                        {% endwith %}
+                    {% endwith %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if favorites.legislator %}
+        <div class="module">
+            <a name="legislator" id="legislator"></a>
+            <h3 class="moduleTitle">{% trans "Legislators" %}</h3>
+            {% include 'billy/web/public/legislator_table.html' %}
+        </div>
+        {% endif %}
+
+        {% if favorites.committee %}
+        <div class="module">
+            <a name="committee" id="committee"></a>
+            <h3 class="moduleTitle">{% trans "Committees" %}</h3>
+            {% include "billy/web/public/committees_table.html" %}
+        </div>
+        {% endif %}
+
+    </div>
+{% endblock %}
