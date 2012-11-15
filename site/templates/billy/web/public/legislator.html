@@ -46,7 +46,7 @@
                 <div class="eightCol colLt">
 
                     {% if request.user.is_authenticated %}
-                        {% favorite bill.id "bill" %}
+                        {% favorite bill.id "legislator" %}
                     {% endif %}
 
                     <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
