@@ -45,7 +45,9 @@
             <!-- <div class="medModule"> -->
                 <div class="eightCol colLt">
 
-                    {% include "billy/web/public/_favorite.html" %}
+                    {% if request.user.is_authenticated %}
+                        {% favorite bill.id "bill" %}
+                    {% endif %}
 
                     <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
                     <div class="eightsLg clearfix">
