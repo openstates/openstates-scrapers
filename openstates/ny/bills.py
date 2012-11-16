@@ -92,11 +92,11 @@ class NYBillScraper(BillScraper):
 
                 data = billdata[letter][number]
 
-                # There may have been multiple bill versions with this number.
-                # Taking the last one ignores the previous versions.
+                # Sort from earliest version to most recent.
                 data.sort(key=lambda t: ord(t[-1][-1]) if t[-1][-1] else 0)
 
-                # Sort from earliest version to most recent.
+                # There may have been multiple bill versions with this number.
+                # Taking the last one ignores the previous versions.
                 values = data[-1]
 
                 # Create the bill object.
@@ -145,7 +145,7 @@ class NYBillScraper(BillScraper):
 
         assembly_doc = self.url2lxml(assembly_url)
         if not assembly_doc:
-            msg = 'Skipping bill %r dur to XMLSyntaxError at %r'
+            msg = 'Skipping bill %r due to XMLSyntaxError at %r'
             self.logger.warning(msg % (bill_id, assembly_url))
             return None
 

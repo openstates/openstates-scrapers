@@ -44,6 +44,11 @@
         <div class="fullWidth mainModule legislator">
             <!-- <div class="medModule"> -->
                 <div class="eightCol colLt">
+
+                    {% if request.user.is_authenticated %}
+                        {% favorite legislator.id "legislator" %}
+                    {% endif %}
+
                     <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
                     <div class="eightsLg clearfix">
                         <h2 class="withTipSm">

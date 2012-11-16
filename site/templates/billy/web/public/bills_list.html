@@ -78,6 +78,11 @@ $(document).ready(function(){
             {% else %} <a href="https://scout.sunlightfoundation.com/">{% trans 'Receive bill alerts' %}</a> {% trans 'with Scout.'%}
         {% endif %}
         </span>
+
+        {% if request.GET.search_text and request.user.is_authenticated %}
+            {% favorite bill.id "search" %}
+        {% endif %}
+
         <h2 id="billSearchTitle">{{ description }}</h2>
         {% if long_description %}
         <ul id="billSearchLongDesc" class="clearfix">
