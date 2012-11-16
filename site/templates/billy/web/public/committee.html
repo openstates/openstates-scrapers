@@ -43,7 +43,7 @@ $(document).ready(function() {
 <h2>{{ committee.display_name }} ({{committee.chamber_name}})</h2>
 <div class="fullWidth module">
     {% if request.user.is_authenticated %}
-        {% favorite bill.id "committee" %}
+        {% favorite committee.id "committee" %}
     {% endif %}
     <h3 class="moduleTitle">{% trans "Members" %}</h3>
     <table id="main-table">

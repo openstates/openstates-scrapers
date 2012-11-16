@@ -30,9 +30,11 @@ $(document).ready( function() {
     gigya.socialize.showShareBarUI(params);
 
     // Favorite button.
-    var favorite_div = $('#favorite');
 
-    $("#favorite-button").click(function(event){
+    $(".favorite-button").click(function(event){
+        var favorite_div = $(this).parent(),
+            favorite_msg = $(favorite_div).find('.favorite-message');
+
         $.ajax({
           type: 'POST',
           url: '/favorites',
@@ -43,15 +45,15 @@ $(document).ready( function() {
             console.log("Favorite button got clicked.");
             console.log(favorite_div.data());
             if (favorite_div.data('is_favorite')) {
-                $("#favorite-message").text("You broke up with this thing.");
+                favorite_msg.text("You broke up with this thing.");
             } else {
-                $("#favorite-message").text("You are now following this thing.");
+                favorite_msg.text("You are now following this thing.");
                 }
             // Toggle is_favorite.
             favorite_div.data('is_favorite', !favorite_div.data('is_favorite'));
             },
           error: function(){
-            $("#favorite-message").text("Ack! Something went wrong.");
+            favorite_msg.text("Ack! Something went wrong.");
         }
         });
         event.preventDefault();

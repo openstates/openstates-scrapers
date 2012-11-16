@@ -21,9 +21,9 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-        <h2>{{bill_results.count|apnumber|capfirst}} 
+        <h2>{{bill_results.count|apnumber|capfirst}}
             <a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a>
-            {% trans "bills" %} {{scope_name|default:''}} 
+            {% trans "bills" %} {{scope_name|default:''}}
             {% if found_by_id %} {% trans "found with ids like" %}
             {% else %}{% trans "contained" %}
             {% endif %} <em>"{{search_text}}"</em>
@@ -48,7 +48,7 @@ $(document).ready(function() {
                         {% include rowtemplate_name %}
                     </tr>
                 {% endfor %}
-                </tbody>   
+                </tbody>
             </table>
         </div>
         {% if more_bills_available %}
@@ -77,20 +77,9 @@ $(document).ready(function() {
                 </thead>
                 <tbody>
                 {% for obj in legislators_list %}
-                    <tr class="{% cycle 'even' 'odd' %}">
-                        <td><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></td>
-                        <td>{{obj.metadata.abbr|upper}}</td>
-                        <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
-                        <td>{{ obj.district }}</td>
-                        <td>{{ obj.party }}</td>
-                        {% if show_chamber_column and 'chamber' in obj %}
-                            <td>{{ obj.chamber_name }}</td>
-                        {% else %}
-                            <td>{% trans "inactive" %}</td>
-                        {% endif %}
-                    </tr>
+                    {% include "billy/web/public/legislators_list_row_with_abbr.html" %}
                 {% endfor %}
-                </tbody> 
+                </tbody>
             </table>
         </div>
         {% if more_legislators_available %}

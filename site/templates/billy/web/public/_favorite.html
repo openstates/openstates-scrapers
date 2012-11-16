@@ -1,15 +1,20 @@
 {% load i18n %}
-                <div id="favorite" data-obj_id="{{ obj_id }}"
+{% load customtags %}
+                <div class="favorite" data-obj_id="{{ obj_id }}"
                                    data-obj_type="{{ obj_type }}"
-                                   data-is_favorite="{{ is_favorite|lower }}">
-                    <div id="favorite-message">
+                                   data-is_favorite="{{ is_favorite|lower }}"
+                                   {% if obj_type == "search" %}
+                                   data-search_params='{{params}}'
+                                   data-search_abbr="{{abbr}}"
+                                   {% endif %}>
+                    <div class="favorite-message">
                         {% if is_favorite %}
                             {% trans "You are tracking this thing." %}
                         {% else %}
                             {% trans "Click to favorite this thing." %}
                         {% endif %}
                     </div>
-                    <button type="submit" id="favorite-button"/>
+                    <button type="submit" class="favorite-button"/>
                         <span>{% trans "SignUp" %}</span>
                     </button>
                 </div>
