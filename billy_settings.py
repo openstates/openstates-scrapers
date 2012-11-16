@@ -26,6 +26,7 @@ PARTY_DETAILS = {
 }
 
 ENABLE_ELASTICSEARCH = True
+BOUNDARY_SERVICE_SETS = 'sldl,sldu'
 
 try:
     from billy_local import *
