@@ -1,62 +1,64 @@
-"abbr","chamber","name","num_seats","boundary_id"
-"nv","lower",1,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",2,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",3,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",4,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",5,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",6,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",7,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",8,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",9,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",10,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",11,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",12,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",13,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",14,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",15,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",16,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",17,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",18,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",19,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",20,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",21,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",22,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",23,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",24,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",25,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",26,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",27,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",28,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",29,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",30,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",31,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",32,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",33,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",34,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",35,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",36,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",37,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",38,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",39,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",40,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",41,1,"sldl-nv-assembly-district-%(name)s"
-"nv","lower",42,1,"sldl-nv-assembly-district-%(name)s"
-"nv","upper","Capital Senatorial District",1,"sldu-nv-capital-senatorial-district"
-"nv","upper","Central Nevada Senatorial District",1,"sldu-nv-central-nevada-senatorial-district"
-"nv","upper","Clark County, No. 1",1,"sldu-nv-clark-county-senatorial-district-1"
-"nv","upper","Clark County, No. 10",1,"sldu-nv-clark-county-senatorial-district-10"
-"nv","upper","Clark County, No. 11",1,"sldu-nv-clark-county-senatorial-district-11"
-"nv","upper","Clark County, No. 12",1,"sldu-nv-clark-county-senatorial-district-12"
-"nv","upper","Clark County, No. 2",1,"sldu-nv-clark-county-senatorial-district-2"
-"nv","upper","Clark County, No. 3",1,"sldu-nv-clark-county-senatorial-district-3"
-"nv","upper","Clark County, No. 4",1,"sldu-nv-clark-county-senatorial-district-4"
-"nv","upper","Clark County, No. 5",2,"sldu-nv-clark-county-senatorial-district-5"
-"nv","upper","Clark County, No. 6",1,"sldu-nv-clark-county-senatorial-district-6"
-"nv","upper","Clark County, No. 7",2,"sldu-nv-clark-county-senatorial-district-7"
-"nv","upper","Clark County, No. 8",1,"sldu-nv-clark-county-senatorial-district-8"
-"nv","upper","Clark County, No. 9",1,"sldu-nv-clark-county-senatorial-district-9"
-"nv","upper","Rural Nevada Senatorial District",1,"sldu-nv-rural-nevada-senatorial-district"
-"nv","upper","Washoe County, No. 1",1,"sldu-nv-washoe-county-senatorial-district-1"
-"nv","upper","Washoe County, No. 2",1,"sldu-nv-washoe-county-senatorial-district-2"
-"nv","upper","Washoe County, No. 3",1,"sldu-nv-washoe-county-senatorial-district-3"
-"nv","upper","Washoe County, No. 4",1,"sldu-nv-washoe-county-senatorial-district-4"
+abbr,chamber,name,num_seats,boundary_id
+nv,lower,10,1,sldl/nv-10
+nv,lower,11,1,sldl/nv-11
+nv,lower,1,1,sldl/nv-1
+nv,lower,12,1,sldl/nv-12
+nv,lower,13,1,sldl/nv-13
+nv,lower,14,1,sldl/nv-14
+nv,lower,15,1,sldl/nv-15
+nv,lower,16,1,sldl/nv-16
+nv,lower,17,1,sldl/nv-17
+nv,lower,18,1,sldl/nv-18
+nv,lower,19,1,sldl/nv-19
+nv,lower,20,1,sldl/nv-20
+nv,lower,21,1,sldl/nv-21
+nv,lower,2,1,sldl/nv-2
+nv,lower,22,1,sldl/nv-22
+nv,lower,23,1,sldl/nv-23
+nv,lower,24,1,sldl/nv-24
+nv,lower,25,1,sldl/nv-25
+nv,lower,26,1,sldl/nv-26
+nv,lower,27,1,sldl/nv-27
+nv,lower,28,1,sldl/nv-28
+nv,lower,29,1,sldl/nv-29
+nv,lower,30,1,sldl/nv-30
+nv,lower,31,1,sldl/nv-31
+nv,lower,3,1,sldl/nv-3
+nv,lower,32,1,sldl/nv-32
+nv,lower,33,1,sldl/nv-33
+nv,lower,34,1,sldl/nv-34
+nv,lower,35,1,sldl/nv-35
+nv,lower,36,1,sldl/nv-36
+nv,lower,37,1,sldl/nv-37
+nv,lower,38,1,sldl/nv-38
+nv,lower,39,1,sldl/nv-39
+nv,lower,40,1,sldl/nv-40
+nv,lower,41,1,sldl/nv-41
+nv,lower,4,1,sldl/nv-4
+nv,lower,42,1,sldl/nv-42
+nv,lower,5,1,sldl/nv-5
+nv,lower,6,1,sldl/nv-6
+nv,lower,7,1,sldl/nv-7
+nv,lower,8,1,sldl/nv-8
+nv,lower,9,1,sldl/nv-9
+nv,upper,10,1,sldu/nv-10
+nv,upper,11,1,sldu/nv-11
+nv,upper,1,1,sldu/nv-1
+nv,upper,12,1,sldu/nv-12
+nv,upper,13,1,sldu/nv-13
+nv,upper,14,1,sldu/nv-14
+nv,upper,15,1,sldu/nv-15
+nv,upper,16,1,sldu/nv-16
+nv,upper,17,1,sldu/nv-17
+nv,upper,18,1,sldu/nv-18
+nv,upper,19,1,sldu/nv-19
+nv,upper,20,1,sldu/nv-20
+nv,upper,21,1,sldu/nv-21
+nv,upper,2,1,sldu/nv-2
+nv,upper,3,1,sldu/nv-3
+nv,upper,4,1,sldu/nv-4
+nv,upper,5,1,sldu/nv-5
+nv,upper,6,1,sldu/nv-6
+nv,upper,7,1,sldu/nv-7
+nv,upper,8,1,sldu/nv-8
+nv,upper,9,1,sldu/nv-9

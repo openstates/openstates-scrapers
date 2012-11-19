@@ -1,128 +1,186 @@
-"abbr","chamber","name","num_seats","boundary_id"
-"nh","lower","Belknap 1",1,"sldl-nh-state-house-district-1-belknap-county"
-"nh","lower","Belknap 2",2,"sldl-nh-state-house-district-2-belknap-county"
-"nh","lower","Belknap 3",2,"sldl-nh-state-house-district-3-belknap-county"
-"nh","lower","Belknap 4",5,"sldl-nh-state-house-district-4-belknap-county"
-"nh","lower","Belknap 5",7,"sldl-nh-state-house-district-5-belknap-county"
-"nh","lower","Belknap 6",1,"sldl-nh-state-house-district-6-belknap-county"
-"nh","lower","Carroll 1",4,"sldl-nh-state-house-district-1-carroll-county"
-"nh","lower","Carroll 2",1,"sldl-nh-state-house-district-2-carroll-county"
-"nh","lower","Carroll 3",3,"sldl-nh-state-house-district-3-carroll-county"
-"nh","lower","Carroll 4",4,"sldl-nh-state-house-district-4-carroll-county"
-"nh","lower","Carroll 5",2,"sldl-nh-state-house-district-5-carroll-county"
-"nh","lower","Cheshire 1",1,"sldl-nh-state-house-district-1-cheshire-county"
-"nh","lower","Cheshire 2",3,"sldl-nh-state-house-district-2-cheshire-county"
-"nh","lower","Cheshire 3",7,"sldl-nh-state-house-district-3-cheshire-county"
-"nh","lower","Cheshire 4",4,"sldl-nh-state-house-district-4-cheshire-county"
-"nh","lower","Cheshire 5",1,"sldl-nh-state-house-district-5-cheshire-county"
-"nh","lower","Cheshire 6",4,"sldl-nh-state-house-district-6-cheshire-county"
-"nh","lower","Cheshire 7",4,"sldl-nh-state-house-district-7-cheshire-county"
-"nh","lower","Coos 1",2,"sldl-nh-state-house-district-1-coos-county"
-"nh","lower","Coos 2",4,"sldl-nh-state-house-district-2-coos-county"
-"nh","lower","Coos 3",1,"sldl-nh-state-house-district-3-coos-county"
-"nh","lower","Coos 4",4,"sldl-nh-state-house-district-4-coos-county"
-"nh","lower","Grafton 1",2,"sldl-nh-state-house-district-1-grafton-county"
-"nh","lower","Grafton 2",1,"sldl-nh-state-house-district-2-grafton-county"
-"nh","lower","Grafton 3",2,"sldl-nh-state-house-district-3-grafton-county"
-"nh","lower","Grafton 4",1,"sldl-nh-state-house-district-4-grafton-county"
-"nh","lower","Grafton 5",2,"sldl-nh-state-house-district-5-grafton-county"
-"nh","lower","Grafton 6",2,"sldl-nh-state-house-district-6-grafton-county"
-"nh","lower","Grafton 7",2,"sldl-nh-state-house-district-7-grafton-county"
-"nh","lower","Grafton 8",3,"sldl-nh-state-house-district-8-grafton-county"
-"nh","lower","Grafton 9",4,"sldl-nh-state-house-district-9-grafton-county"
-"nh","lower","Grafton 10",3,"sldl-nh-state-house-district-10-grafton-county"
-"nh","lower","Grafton 11",4,"sldl-nh-state-house-district-11-grafton-county"
-"nh","lower","Hillsborough 1",3,"sldl-nh-state-house-district-1-hillsborough-county"
-"nh","lower","Hillsborough 2",2,"sldl-nh-state-house-district-2-hillsborough-county"
-"nh","lower","Hillsborough 3",4,"sldl-nh-state-house-district-3-hillsborough-county"
-"nh","lower","Hillsborough 4",4,"sldl-nh-state-house-district-4-hillsborough-county"
-"nh","lower","Hillsborough 5",4,"sldl-nh-state-house-district-5-hillsborough-county"
-"nh","lower","Hillsborough 6",8,"sldl-nh-state-house-district-6-hillsborough-county"
-"nh","lower","Hillsborough 7",8,"sldl-nh-state-house-district-7-hillsborough-county"
-"nh","lower","Hillsborough 8",3,"sldl-nh-state-house-district-8-hillsborough-county"
-"nh","lower","Hillsborough 9",3,"sldl-nh-state-house-district-9-hillsborough-county"
-"nh","lower","Hillsborough 10",3,"sldl-nh-state-house-district-10-hillsborough-county"
-"nh","lower","Hillsborough 11",3,"sldl-nh-state-house-district-11-hillsborough-county"
-"nh","lower","Hillsborough 12",3,"sldl-nh-state-house-district-12-hillsborough-county"
-"nh","lower","Hillsborough 13",3,"sldl-nh-state-house-district-13-hillsborough-county"
-"nh","lower","Hillsborough 14",3,"sldl-nh-state-house-district-14-hillsborough-county"
-"nh","lower","Hillsborough 15",3,"sldl-nh-state-house-district-15-hillsborough-county"
-"nh","lower","Hillsborough 16",3,"sldl-nh-state-house-district-16-hillsborough-county"
-"nh","lower","Hillsborough 17",8,"sldl-nh-state-house-district-17-hillsborough-county"
-"nh","lower","Hillsborough 18",6,"sldl-nh-state-house-district-18-hillsborough-county"
-"nh","lower","Hillsborough 19",8,"sldl-nh-state-house-district-19-hillsborough-county"
-"nh","lower","Hillsborough 20",3,"sldl-nh-state-house-district-20-hillsborough-county"
-"nh","lower","Hillsborough 21",3,"sldl-nh-state-house-district-21-hillsborough-county"
-"nh","lower","Hillsborough 22",3,"sldl-nh-state-house-district-22-hillsborough-county"
-"nh","lower","Hillsborough 23",3,"sldl-nh-state-house-district-23-hillsborough-county"
-"nh","lower","Hillsborough 24",3,"sldl-nh-state-house-district-24-hillsborough-county"
-"nh","lower","Hillsborough 25",3,"sldl-nh-state-house-district-25-hillsborough-county"
-"nh","lower","Hillsborough 26",10,"sldl-nh-state-house-district-26-hillsborough-county"
-"nh","lower","Hillsborough 27",13,"sldl-nh-state-house-district-27-hillsborough-county"
-"nh","lower","Merrimack 1",2,"sldl-nh-state-house-district-1-merrimack-county"
-"nh","lower","Merrimack 2",3,"sldl-nh-state-house-district-2-merrimack-county"
-"nh","lower","Merrimack 3",1,"sldl-nh-state-house-district-3-merrimack-county"
-"nh","lower","Merrimack 4",3,"sldl-nh-state-house-district-4-merrimack-county"
-"nh","lower","Merrimack 5",2,"sldl-nh-state-house-district-5-merrimack-county"
-"nh","lower","Merrimack 6",6,"sldl-nh-state-house-district-6-merrimack-county"
-"nh","lower","Merrimack 7",3,"sldl-nh-state-house-district-7-merrimack-county"
-"nh","lower","Merrimack 8",4,"sldl-nh-state-house-district-8-merrimack-county"
-"nh","lower","Merrimack 9",4,"sldl-nh-state-house-district-9-merrimack-county"
-"nh","lower","Merrimack 10",4,"sldl-nh-state-house-district-10-merrimack-county"
-"nh","lower","Merrimack 11",5,"sldl-nh-state-house-district-11-merrimack-county"
-"nh","lower","Merrimack 12",4,"sldl-nh-state-house-district-12-merrimack-county"
-"nh","lower","Merrimack 13",3,"sldl-nh-state-house-district-13-merrimack-county"
-"nh","lower","Rockingham 1",5,"sldl-nh-state-house-district-1-rockingham-county"
-"nh","lower","Rockingham 2",3,"sldl-nh-state-house-district-2-rockingham-county"
-"nh","lower","Rockingham 3",9,"sldl-nh-state-house-district-3-rockingham-county"
-"nh","lower","Rockingham 4",13,"sldl-nh-state-house-district-4-rockingham-county"
-"nh","lower","Rockingham 5",11,"sldl-nh-state-house-district-5-rockingham-county"
-"nh","lower","Rockingham 6",2,"sldl-nh-state-house-district-6-rockingham-county"
-"nh","lower","Rockingham 7",4,"sldl-nh-state-house-district-7-rockingham-county"
-"nh","lower","Rockingham 8",7,"sldl-nh-state-house-district-8-rockingham-county"
-"nh","lower","Rockingham 9",3,"sldl-nh-state-house-district-9-rockingham-county"
-"nh","lower","Rockingham 10",1,"sldl-nh-state-house-district-10-rockingham-county"
-"nh","lower","Rockingham 11",2,"sldl-nh-state-house-district-11-rockingham-county"
-"nh","lower","Rockingham 12",3,"sldl-nh-state-house-district-12-rockingham-county"
-"nh","lower","Rockingham 13",8,"sldl-nh-state-house-district-13-rockingham-county"
-"nh","lower","Rockingham 14",4,"sldl-nh-state-house-district-14-rockingham-county"
-"nh","lower","Rockingham 15",5,"sldl-nh-state-house-district-15-rockingham-county"
-"nh","lower","Rockingham 16",7,"sldl-nh-state-house-district-16-rockingham-county"
-"nh","lower","Rockingham 17",1,"sldl-nh-state-house-district-17-rockingham-county"
-"nh","lower","Rockingham 18",2,"sldl-nh-state-house-district-18-rockingham-county"
-"nh","lower","Strafford 1",9,"sldl-nh-state-house-district-1-strafford-county"
-"nh","lower","Strafford 2",5,"sldl-nh-state-house-district-2-strafford-county"
-"nh","lower","Strafford 3",8,"sldl-nh-state-house-district-3-strafford-county"
-"nh","lower","Strafford 4",3,"sldl-nh-state-house-district-4-strafford-county"
-"nh","lower","Strafford 5",3,"sldl-nh-state-house-district-5-strafford-county"
-"nh","lower","Strafford 6",3,"sldl-nh-state-house-district-6-strafford-county"
-"nh","lower","Strafford 7",6,"sldl-nh-state-house-district-7-strafford-county"
-"nh","lower","Sullivan 1",2,"sldl-nh-state-house-district-1-sullivan-county"
-"nh","lower","Sullivan 2",3,"sldl-nh-state-house-district-2-sullivan-county"
-"nh","lower","Sullivan 3",1,"sldl-nh-state-house-district-3-sullivan-county"
-"nh","lower","Sullivan 4",5,"sldl-nh-state-house-district-4-sullivan-county"
-"nh","lower","Sullivan 5",2,"sldl-nh-state-house-district-5-sullivan-county"
-"nh","upper",1,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",2,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",3,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",4,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",5,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",6,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",7,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",8,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",9,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",10,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",11,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",12,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",13,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",14,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",15,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",16,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",17,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",18,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",19,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",20,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",21,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",22,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",23,1,"sldu-nh-state-senate-district-%(name)s"
-"nh","upper",24,1,"sldu-nh-state-senate-district-%(name)s"
+abbr,chamber,name,num_seats,boundary_id
+nh,lower,belknap-county-no-1,1,sldl/nh-belknap-county-no-1
+nh,lower,belknap-county-no-2,1,sldl/nh-belknap-county-no-2
+nh,lower,belknap-county-no-3,1,sldl/nh-belknap-county-no-3
+nh,lower,belknap-county-no-4,1,sldl/nh-belknap-county-no-4
+nh,lower,belknap-county-no-5,1,sldl/nh-belknap-county-no-5
+nh,lower,belknap-county-no-6,1,sldl/nh-belknap-county-no-6
+nh,lower,belknap-county-no-7,1,sldl/nh-belknap-county-no-7
+nh,lower,carroll-county-no-1,1,sldl/nh-carroll-county-no-1
+nh,lower,carroll-county-no-2,1,sldl/nh-carroll-county-no-2
+nh,lower,carroll-county-no-3,1,sldl/nh-carroll-county-no-3
+nh,lower,carroll-county-no-4,1,sldl/nh-carroll-county-no-4
+nh,lower,carroll-county-no-5,1,sldl/nh-carroll-county-no-5
+nh,lower,carroll-county-no-6,1,sldl/nh-carroll-county-no-6
+nh,lower,cheshire-county-no-10,1,sldl/nh-cheshire-county-no-10
+nh,lower,cheshire-county-no-11,1,sldl/nh-cheshire-county-no-11
+nh,lower,cheshire-county-no-1,1,sldl/nh-cheshire-county-no-1
+nh,lower,cheshire-county-no-12,1,sldl/nh-cheshire-county-no-12
+nh,lower,cheshire-county-no-13,1,sldl/nh-cheshire-county-no-13
+nh,lower,cheshire-county-no-2,1,sldl/nh-cheshire-county-no-2
+nh,lower,cheshire-county-no-3,1,sldl/nh-cheshire-county-no-3
+nh,lower,cheshire-county-no-4,1,sldl/nh-cheshire-county-no-4
+nh,lower,cheshire-county-no-5,1,sldl/nh-cheshire-county-no-5
+nh,lower,cheshire-county-no-6,1,sldl/nh-cheshire-county-no-6
+nh,lower,cheshire-county-no-7,1,sldl/nh-cheshire-county-no-7
+nh,lower,cheshire-county-no-8,1,sldl/nh-cheshire-county-no-8
+nh,lower,cheshire-county-no-9,1,sldl/nh-cheshire-county-no-9
+nh,lower,coos-county-no-1,1,sldl/nh-coos-county-no-1
+nh,lower,coos-county-no-2,1,sldl/nh-coos-county-no-2
+nh,lower,coos-county-no-3,1,sldl/nh-coos-county-no-3
+nh,lower,coos-county-no-4,1,sldl/nh-coos-county-no-4
+nh,lower,coos-county-no-5,1,sldl/nh-coos-county-no-5
+nh,lower,coos-county-no-6,1,sldl/nh-coos-county-no-6
+nh,lower,grafton-county-no-10,1,sldl/nh-grafton-county-no-10
+nh,lower,grafton-county-no-11,1,sldl/nh-grafton-county-no-11
+nh,lower,grafton-county-no-1,1,sldl/nh-grafton-county-no-1
+nh,lower,grafton-county-no-12,1,sldl/nh-grafton-county-no-12
+nh,lower,grafton-county-no-13,1,sldl/nh-grafton-county-no-13
+nh,lower,grafton-county-no-2,1,sldl/nh-grafton-county-no-2
+nh,lower,grafton-county-no-3,1,sldl/nh-grafton-county-no-3
+nh,lower,grafton-county-no-4,1,sldl/nh-grafton-county-no-4
+nh,lower,grafton-county-no-5,1,sldl/nh-grafton-county-no-5
+nh,lower,grafton-county-no-6,1,sldl/nh-grafton-county-no-6
+nh,lower,grafton-county-no-7,1,sldl/nh-grafton-county-no-7
+nh,lower,grafton-county-no-8,1,sldl/nh-grafton-county-no-8
+nh,lower,grafton-county-no-9,1,sldl/nh-grafton-county-no-9
+nh,lower,hillsborough-county-no-10,1,sldl/nh-hillsborough-county-no-10
+nh,lower,hillsborough-county-no-11,1,sldl/nh-hillsborough-county-no-11
+nh,lower,hillsborough-county-no-1,1,sldl/nh-hillsborough-county-no-1
+nh,lower,hillsborough-county-no-12,1,sldl/nh-hillsborough-county-no-12
+nh,lower,hillsborough-county-no-13,1,sldl/nh-hillsborough-county-no-13
+nh,lower,hillsborough-county-no-14,1,sldl/nh-hillsborough-county-no-14
+nh,lower,hillsborough-county-no-15,1,sldl/nh-hillsborough-county-no-15
+nh,lower,hillsborough-county-no-16,1,sldl/nh-hillsborough-county-no-16
+nh,lower,hillsborough-county-no-17,1,sldl/nh-hillsborough-county-no-17
+nh,lower,hillsborough-county-no-18,1,sldl/nh-hillsborough-county-no-18
+nh,lower,hillsborough-county-no-19,1,sldl/nh-hillsborough-county-no-19
+nh,lower,hillsborough-county-no-20,1,sldl/nh-hillsborough-county-no-20
+nh,lower,hillsborough-county-no-21,1,sldl/nh-hillsborough-county-no-21
+nh,lower,hillsborough-county-no-2,1,sldl/nh-hillsborough-county-no-2
+nh,lower,hillsborough-county-no-22,1,sldl/nh-hillsborough-county-no-22
+nh,lower,hillsborough-county-no-23,1,sldl/nh-hillsborough-county-no-23
+nh,lower,hillsborough-county-no-24,1,sldl/nh-hillsborough-county-no-24
+nh,lower,hillsborough-county-no-25,1,sldl/nh-hillsborough-county-no-25
+nh,lower,hillsborough-county-no-26,1,sldl/nh-hillsborough-county-no-26
+nh,lower,hillsborough-county-no-27,1,sldl/nh-hillsborough-county-no-27
+nh,lower,hillsborough-county-no-28,1,sldl/nh-hillsborough-county-no-28
+nh,lower,hillsborough-county-no-29,1,sldl/nh-hillsborough-county-no-29
+nh,lower,hillsborough-county-no-30,1,sldl/nh-hillsborough-county-no-30
+nh,lower,hillsborough-county-no-31,1,sldl/nh-hillsborough-county-no-31
+nh,lower,hillsborough-county-no-3,1,sldl/nh-hillsborough-county-no-3
+nh,lower,hillsborough-county-no-32,1,sldl/nh-hillsborough-county-no-32
+nh,lower,hillsborough-county-no-33,1,sldl/nh-hillsborough-county-no-33
+nh,lower,hillsborough-county-no-34,1,sldl/nh-hillsborough-county-no-34
+nh,lower,hillsborough-county-no-35,1,sldl/nh-hillsborough-county-no-35
+nh,lower,hillsborough-county-no-36,1,sldl/nh-hillsborough-county-no-36
+nh,lower,hillsborough-county-no-37,1,sldl/nh-hillsborough-county-no-37
+nh,lower,hillsborough-county-no-4,1,sldl/nh-hillsborough-county-no-4
+nh,lower,hillsborough-county-no-5,1,sldl/nh-hillsborough-county-no-5
+nh,lower,hillsborough-county-no-6,1,sldl/nh-hillsborough-county-no-6
+nh,lower,hillsborough-county-no-7,1,sldl/nh-hillsborough-county-no-7
+nh,lower,hillsborough-county-no-8,1,sldl/nh-hillsborough-county-no-8
+nh,lower,hillsborough-county-no-9,1,sldl/nh-hillsborough-county-no-9
+nh,lower,merrimack-county-no-10,1,sldl/nh-merrimack-county-no-10
+nh,lower,merrimack-county-no-11,1,sldl/nh-merrimack-county-no-11
+nh,lower,merrimack-county-no-1,1,sldl/nh-merrimack-county-no-1
+nh,lower,merrimack-county-no-12,1,sldl/nh-merrimack-county-no-12
+nh,lower,merrimack-county-no-13,1,sldl/nh-merrimack-county-no-13
+nh,lower,merrimack-county-no-14,1,sldl/nh-merrimack-county-no-14
+nh,lower,merrimack-county-no-15,1,sldl/nh-merrimack-county-no-15
+nh,lower,merrimack-county-no-16,1,sldl/nh-merrimack-county-no-16
+nh,lower,merrimack-county-no-17,1,sldl/nh-merrimack-county-no-17
+nh,lower,merrimack-county-no-18,1,sldl/nh-merrimack-county-no-18
+nh,lower,merrimack-county-no-19,1,sldl/nh-merrimack-county-no-19
+nh,lower,merrimack-county-no-20,1,sldl/nh-merrimack-county-no-20
+nh,lower,merrimack-county-no-21,1,sldl/nh-merrimack-county-no-21
+nh,lower,merrimack-county-no-2,1,sldl/nh-merrimack-county-no-2
+nh,lower,merrimack-county-no-22,1,sldl/nh-merrimack-county-no-22
+nh,lower,merrimack-county-no-23,1,sldl/nh-merrimack-county-no-23
+nh,lower,merrimack-county-no-24,1,sldl/nh-merrimack-county-no-24
+nh,lower,merrimack-county-no-3,1,sldl/nh-merrimack-county-no-3
+nh,lower,merrimack-county-no-4,1,sldl/nh-merrimack-county-no-4
+nh,lower,merrimack-county-no-5,1,sldl/nh-merrimack-county-no-5
+nh,lower,merrimack-county-no-6,1,sldl/nh-merrimack-county-no-6
+nh,lower,merrimack-county-no-7,1,sldl/nh-merrimack-county-no-7
+nh,lower,merrimack-county-no-8,1,sldl/nh-merrimack-county-no-8
+nh,lower,merrimack-county-no-9,1,sldl/nh-merrimack-county-no-9
+nh,lower,rockingham-county-no-10,1,sldl/nh-rockingham-county-no-10
+nh,lower,rockingham-county-no-11,1,sldl/nh-rockingham-county-no-11
+nh,lower,rockingham-county-no-1,1,sldl/nh-rockingham-county-no-1
+nh,lower,rockingham-county-no-12,1,sldl/nh-rockingham-county-no-12
+nh,lower,rockingham-county-no-13,1,sldl/nh-rockingham-county-no-13
+nh,lower,rockingham-county-no-14,1,sldl/nh-rockingham-county-no-14
+nh,lower,rockingham-county-no-15,1,sldl/nh-rockingham-county-no-15
+nh,lower,rockingham-county-no-16,1,sldl/nh-rockingham-county-no-16
+nh,lower,rockingham-county-no-17,1,sldl/nh-rockingham-county-no-17
+nh,lower,rockingham-county-no-18,1,sldl/nh-rockingham-county-no-18
+nh,lower,rockingham-county-no-19,1,sldl/nh-rockingham-county-no-19
+nh,lower,rockingham-county-no-20,1,sldl/nh-rockingham-county-no-20
+nh,lower,rockingham-county-no-21,1,sldl/nh-rockingham-county-no-21
+nh,lower,rockingham-county-no-2,1,sldl/nh-rockingham-county-no-2
+nh,lower,rockingham-county-no-22,1,sldl/nh-rockingham-county-no-22
+nh,lower,rockingham-county-no-23,1,sldl/nh-rockingham-county-no-23
+nh,lower,rockingham-county-no-24,1,sldl/nh-rockingham-county-no-24
+nh,lower,rockingham-county-no-25,1,sldl/nh-rockingham-county-no-25
+nh,lower,rockingham-county-no-26,1,sldl/nh-rockingham-county-no-26
+nh,lower,rockingham-county-no-27,1,sldl/nh-rockingham-county-no-27
+nh,lower,rockingham-county-no-28,1,sldl/nh-rockingham-county-no-28
+nh,lower,rockingham-county-no-29,1,sldl/nh-rockingham-county-no-29
+nh,lower,rockingham-county-no-3,1,sldl/nh-rockingham-county-no-3
+nh,lower,rockingham-county-no-4,1,sldl/nh-rockingham-county-no-4
+nh,lower,rockingham-county-no-5,1,sldl/nh-rockingham-county-no-5
+nh,lower,rockingham-county-no-6,1,sldl/nh-rockingham-county-no-6
+nh,lower,rockingham-county-no-7,1,sldl/nh-rockingham-county-no-7
+nh,lower,rockingham-county-no-8,1,sldl/nh-rockingham-county-no-8
+nh,lower,rockingham-county-no-9,1,sldl/nh-rockingham-county-no-9
+nh,lower,strafford-county-no-10,1,sldl/nh-strafford-county-no-10
+nh,lower,strafford-county-no-11,1,sldl/nh-strafford-county-no-11
+nh,lower,strafford-county-no-1,1,sldl/nh-strafford-county-no-1
+nh,lower,strafford-county-no-12,1,sldl/nh-strafford-county-no-12
+nh,lower,strafford-county-no-13,1,sldl/nh-strafford-county-no-13
+nh,lower,strafford-county-no-14,1,sldl/nh-strafford-county-no-14
+nh,lower,strafford-county-no-15,1,sldl/nh-strafford-county-no-15
+nh,lower,strafford-county-no-16,1,sldl/nh-strafford-county-no-16
+nh,lower,strafford-county-no-17,1,sldl/nh-strafford-county-no-17
+nh,lower,strafford-county-no-18,1,sldl/nh-strafford-county-no-18
+nh,lower,strafford-county-no-2,1,sldl/nh-strafford-county-no-2
+nh,lower,strafford-county-no-3,1,sldl/nh-strafford-county-no-3
+nh,lower,strafford-county-no-4,1,sldl/nh-strafford-county-no-4
+nh,lower,strafford-county-no-5,1,sldl/nh-strafford-county-no-5
+nh,lower,strafford-county-no-6,1,sldl/nh-strafford-county-no-6
+nh,lower,strafford-county-no-7,1,sldl/nh-strafford-county-no-7
+nh,lower,strafford-county-no-8,1,sldl/nh-strafford-county-no-8
+nh,lower,strafford-county-no-9,1,sldl/nh-strafford-county-no-9
+nh,lower,sullivan-county-no-1,1,sldl/nh-sullivan-county-no-1
+nh,lower,sullivan-county-no-2,1,sldl/nh-sullivan-county-no-2
+nh,lower,sullivan-county-no-3,1,sldl/nh-sullivan-county-no-3
+nh,lower,sullivan-county-no-4,1,sldl/nh-sullivan-county-no-4
+nh,lower,sullivan-county-no-5,1,sldl/nh-sullivan-county-no-5
+nh,lower,sullivan-county-no-6,1,sldl/nh-sullivan-county-no-6
+nh,lower,sullivan-county-no-7,1,sldl/nh-sullivan-county-no-7
+nh,lower,sullivan-county-no-8,1,sldl/nh-sullivan-county-no-8
+nh,upper,10,1,sldu/nh-10
+nh,upper,11,1,sldu/nh-11
+nh,upper,1,1,sldu/nh-1
+nh,upper,12,1,sldu/nh-12
+nh,upper,13,1,sldu/nh-13
+nh,upper,14,1,sldu/nh-14
+nh,upper,15,1,sldu/nh-15
+nh,upper,16,1,sldu/nh-16
+nh,upper,17,1,sldu/nh-17
+nh,upper,18,1,sldu/nh-18
+nh,upper,19,1,sldu/nh-19
+nh,upper,20,1,sldu/nh-20
+nh,upper,21,1,sldu/nh-21
+nh,upper,2,1,sldu/nh-2
+nh,upper,22,1,sldu/nh-22
+nh,upper,23,1,sldu/nh-23
+nh,upper,24,1,sldu/nh-24
+nh,upper,3,1,sldu/nh-3
+nh,upper,4,1,sldu/nh-4
+nh,upper,5,1,sldu/nh-5
+nh,upper,6,1,sldu/nh-6
+nh,upper,7,1,sldu/nh-7
+nh,upper,8,1,sldu/nh-8
+nh,upper,9,1,sldu/nh-9
