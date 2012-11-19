@@ -14,8 +14,9 @@
 {% block content %}
     <div id="container">
         <div class="fullWidth mainModule">
-        <h1 class="moduleTitle">You're following:</h1>
             {% if favorites %}
+            <h1 class="moduleTitle">You're following:</h1>
+            <hr/>
             <div class="sixCol colRt">
                 <ul style="padding-left: 25px">
                     {% for type, objs in favorites.items %}
