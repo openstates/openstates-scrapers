@@ -13,19 +13,20 @@
 
 {% block content %}
     <div id="container">
-        <div class="module">
+        <div class="fullWidth mainModule">
+        <h1 class="moduleTitle">You're following:</h1>
             {% if favorites %}
             <div class="sixCol colRt">
-                <h1>You're following:</h1>
                 <ul style="padding-left: 25px">
                     {% for type, objs in favorites.items %}
                     <li>
                         <h5>{{objs|length|apnumber|title}}
                         {% if type != 'search' %}
-                            <a href="#{{type}}">{{type|title}}{{objs|pluralize}}</a></h5></li>
+                            <a href="#{{type}}">{{type|title}}{{objs|pluralize}}</a>
                         {% else %}
-                            <a href="#{{type}}">Searches</a></h5></li>
+                            <a href="#{{type}}">Searches</a>
                         {% endif %}
+                        </h5></li>
                     </li>
                     {% endfor %}
                 </ul>
@@ -38,6 +39,7 @@
             <div class="sixCol colRt">
                 <iframe width="420" height="315" src="http://www.youtube.com/embed/5xbyJGM1iUY" frameborder="0" allowfullscreen></iframe>
             </div>
+            <div class="clear"></div>
         </div>
 
 
@@ -98,7 +100,7 @@
                     {% for obj in legislators %}
                     <tr class="{% cycle 'even' 'odd' %}">
                         <td>{% favorite obj.id 'legislator' obj.metadata.abbr 'is_favorite' %}</td>
-                        <td><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></td>
+                        <td><a href="{{ obj.get_absolute_url }}"><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></a></td>
                         <td>{{obj.metadata.name}}</td>
                         <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
                         <td>{{ obj.district }}</td>
@@ -162,7 +164,7 @@
 
         {% if favorites.has_searches %}
         <div class="module">
-            <a name="bill" id="bill"></a>
+            <a name="search" id="search"></a>
             <h3 class="moduleTitle">{% trans "Searches" %}</h3>
             <table>
                 <thead>

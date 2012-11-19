@@ -7,14 +7,18 @@
                                    data-search_params='{{params}}'
                                    data-search_abbr="{{abbr}}"
                                    {% endif %}>
-                    <div class="favorite-message">
-                        {% if is_favorite %}
-                            {% trans "You are tracking this thing." %}
-                        {% else %}
-                            {% trans "Click to favorite this thing." %}
-                        {% endif %}
-                    </div>
-                    <button type="submit" class="favorite-button"/>
-                        <span>{% trans "SignUp" %}</span>
+
+                    <button type="submit" class="favorite-button" style="text-indent: 0px;"/>
+                      <div class="favorite-message">
+                          {% if is_favorite %}
+                              {% blocktrans %}
+                              Unfollow this {{obj_type}}.
+                              {% endblocktrans %}
+                          {% else %}
+                              {% blocktrans %}
+                              Follow this {{obj_type}}.
+                              {% endblocktrans %}
+                          {% endif %}
+                      </div>
                     </button>
                 </div>

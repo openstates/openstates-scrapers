@@ -45,9 +45,9 @@ $(document).ready( function() {
             console.log("Favorite button got clicked.");
             console.log(favorite_div.data());
             if (favorite_div.data('is_favorite')) {
-                favorite_msg.text("You broke up with this thing.");
+                favorite_msg.text("Follow again");
             } else {
-                favorite_msg.text("You are now following this thing.");
+                favorite_msg.text("Unfollow");
                 }
             // Toggle is_favorite.
             favorite_div.data('is_favorite', !favorite_div.data('is_favorite'));
