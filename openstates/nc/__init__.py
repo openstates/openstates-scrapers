@@ -8,8 +8,8 @@ metadata = dict(
     capitol_timezone='America/New_York',
     legislature_name='North Carolina General Assembly',
     chambers = {
-        'upper': {'name': 'Senate', 'title': 'Senator', 'term': 2},
-        'lower': {'name': 'House', 'title': 'Representative', 'term': 2},
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
     },
     terms=[
         #{'name': '1985-1986',

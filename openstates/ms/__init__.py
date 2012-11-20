@@ -5,12 +5,10 @@ metadata = dict(
     abbreviation='ms',
     legislature_name='Mississippi Legislature',
     capitol_timezone='America/Chicago',
-    upper_chamber_name='Senate',
-    lower_chamber_name='House',
-    upper_chamber_title='Senator',
-    lower_chamber_title='Representative',
-    upper_chamber_term=4,
-    lower_chamber_term=4,
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     terms=[
         {'name': '2008-2011', 'sessions': ['2008', '2009', '20091E', '20092E',
                                            '20093E', '20101E', '20102E',

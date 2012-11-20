@@ -6,12 +6,10 @@ metadata = {
     'abbreviation': 'ga',
     'capitol_timezone': 'America/New_York',
     'legislature_name': 'Georgia General Assembly',
-    'upper_chamber_name': 'Senate',
-    'lower_chamber_name': 'House',
-    'upper_chamber_title': 'Senator',
-    'lower_chamber_title': 'Representative',
-    'upper_chamber_term': 2,
-    'lower_chamber_term': 2,
+    'chambers': {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     'terms': [
         {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
          'sessions': ['2011_12', '2011_ss']}
