@@ -11,12 +11,10 @@ metadata = dict(
     abbreviation='tn',
     capitol_timezone='America/Chicago',
     legislature_name='Tennessee General Assembly',
-    lower_chamber_name='House',
-    upper_chamber_name='Senate',
-    lower_chamber_title='Represenative',
-    upper_chamber_title='Senator',
-    lower_chamber_term=2,
-    upper_chamber_term=4,
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     terms=[
         {'name': '106', 'sessions': ['106'],
             'start_year': 2009, 'end_year': 2010},

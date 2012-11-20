@@ -7,7 +7,7 @@ metadata = dict(
     capitol_timezone='America/Los_Angeles',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'Assembly', 'title': 'Representative'},
+        'lower': {'name': 'Assembly', 'title': 'Assembly Member'},
     },
     terms = [
         #{'name': '2001-2002', 'start_year': 2001, 'end_year': 2002,

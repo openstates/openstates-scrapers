@@ -6,7 +6,7 @@ metadata = {
     'name': 'Illinois',
     'legislature_name': 'The Illinois General Assembly',
     'capitol_timezone': 'America/Chicago',
-    chambers = {
+    'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},
     },

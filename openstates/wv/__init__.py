@@ -5,12 +5,10 @@ metadata = {
     'capitol_timezone': 'America/New_York',
     'name': 'West Virginia',
     'legislature_name': 'West Virginia Legislature',
-    'lower_chamber_name': 'House',
-    'upper_chamber_name': 'Senate',
-    'lower_chamber_title': 'Delegate',
-    'upper_chamber_title': 'Senator',
-    'lower_chamber_term': 2,
-    'upper_chamber_term': 4,
+    'chambers': {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Delegate'},
+    },
     'terms': [
         {'name': '2011-2012',
          'start_year': 2011, 'end_year': 2012,
