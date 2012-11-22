@@ -29,15 +29,14 @@ $(document).ready( function() {
     };
     gigya.socialize.showShareBarUI(params);
 
-    // Favorite button.
-
+    // Favorite buttons.
     $(".favorite-button").click(function(event){
         var favorite_div = $(this).parent(),
             favorite_msg = $(favorite_div).find('.favorite-message');
 
         $.ajax({
           type: 'POST',
-          url: '/favorites',
+          url: '/user/set_favorite',
           data: favorite_div.data(),
           dataType: 'json',
           headers: {'X-CSRFToken': getCookie('csrftoken')},
@@ -58,6 +57,7 @@ $(document).ready( function() {
         });
         event.preventDefault();
     });
+
 });
 
 var clickable_rows = function(selector) {
@@ -129,3 +129,198 @@ function getCookie(name) {
     return cookieValue;
 }
 
+
+// Favorites notificactions.
+function setup_notification_radios() {
+    $('.notification-preference input[type="radio"]').change(function(){
+        var input = $(this),
+            on_off = input.attr('value'),
+            obj_type = input.closest('.notification-preference').data('obj_type');
+
+        $.ajax({
+              type: 'POST',
+              url: '/user/set_notification_preference',
+              data: {'obj_type': obj_type, 'on_off': on_off},
+              dataType: 'json',
+              headers: {'X-CSRFToken': getCookie('csrftoken')},
+              success: function(){
+                var msg = $(".notification-preference .message-" + obj_type);
+                console.log(obj_type + ' notifications ' + on_off);
+                msg.text(obj_type + ' notifications ' + on_off + '.');
+                },
+              error: function(){
+                var msg = $("notification-preference message-" + obj_type);
+                msg.text("Ack! Something went wrong.");
+            }
+            });
+    });
+}
+
+
+// Find your legislator.
+// "<p class = 'find_your_legislator_infobox' >" +
+//                 "Or let us find your legislators based on your " +
+//                 "<a id = 'do_geo_locate' href = '#' >" +
+//                 "current location</a>." +
+//                 "</p>"
+function setup_find_your_legislator(success_append_html) {
+    var map,
+        needs_update = true;
+        overlays   = [],
+        chambers = { /* These colors will be used to fill and outline the
+                        gmap for the districts. */
+            "lower": {
+                "stroke": "#484a02",
+                "fill": "#eff508"
+            },
+            "upper": {
+                "stroke": "#1b261a",
+                "fill": "#94d28c"
+            },
+            "joint": {
+                "stroke": "#072026",
+                "fill": "#24aed1"
+            }
+        };
+    map = new GMaps({
+        div: '#map',
+        lat: 38,
+        lng: -97,
+        zoom: 3
+    });
+    function do_geo_locate(lat, lon) {
+        /* This is invoked when we want to re-draw the map. We get here either
+           from the "submit" button, or clicking on the href with an overloaded
+           click event. */
+        var url = '/find_your_legislator/?lat=' +
+               lat +
+               '&lon=' +
+               lon;
+        /* This is a big operation. Kicking it off, since it's async */
+        $.getJSON(url + "&boundary=y", function(data) {
+            for ( var i in overlays ) {
+                map.removeOverlay(overlays[i]);
+            }
+            overlays = [];
+            for ( var i in data ) {
+                var bdry = data[i],
+                    polygon;
+                for ( var n in bdry.shape ) {
+                    for ( var j in bdry.shape[n] ) {
+                        var bak_shape = bdry.shape[n][j],
+                            shape = [],
+                            lay = chambers[bdry['chamber']];
+                        for ( var node in bak_shape ) {
+                            node = bak_shape[node];
+                            shape.push([node[1], node[0]]);
+                        }
+                        polygon = map.drawPolygon({
+                            paths:         shape,
+                            strokeColor:   lay['stroke'],
+                            strokeOpacity: 1,
+                            strokeWeight:  3,
+                            fillColor:     lay['fill'],
+                            fillOpacity:   0.3
+                            });
+                        overlays.push(polygon);
+                    }
+                }
+            }
+            map.removeMarkers();
+            map.addMarker({
+                lat: lat,
+                lng: lon,
+                draggable: true,
+                fences: overlays,
+                outside: function(marker, fence) {
+                    var latlon = marker.position,
+                           lat = latlon.lat(),
+                           lon = latlon.lng();
+
+                    if ( ! needs_update ) {
+                        needs_update = true;
+                        do_geo_locate(lat, lon);
+                    }
+                },
+                click: function() {
+                    /* If the user clicks, let's recenter kindly. */
+                    map.setCenter(
+                        lat,
+                        lon
+                    );
+                }
+            });
+            needs_update = false;
+        });
+
+        /* Before we dispatch our request, we've already
+           geo-located. Let's center first. */
+        map.setZoom(12);
+        map.setCenter(
+            lat,
+            lon
+        );
+        /* XXX: This is to remove all the other markers. Perhaps one day we
+                can find a way to mark all searched locations w/ results. */
+
+        $("#results_table").html("<center>Loading....</center>");
+        $("#results_table").load(url, function() {
+            for ( var i in chambers ) {
+                /* Colorize the results on the district table - it helps
+                   make who is which district more clear. We need a solution
+                   for more then one legislator for a chamber */
+                var chamber = chambers[i];
+                $(".chamber-" + i).css("background-color", chamber.fill);
+                }
+            // fix images after ajax load
+            fix_images();
+        });
+    }
+    $('#find_your_leg').submit(function(e){
+        e.preventDefault();
+        GMaps.geocode({
+            address: $('#leg_search').val().trim(),
+            callback: function(results, status){
+                if ( status == 'OK' ){
+                    /* We've got a lat/lon, let's call the render */
+                    var  latlng = results[0].geometry.location,
+                            lat = latlng.lat(),
+                            lon = latlng.lng();
+                    do_geo_locate(lat, lon);
+                }
+            }
+        });
+    });
+    GMaps.geolocate({
+        success: function(position) {
+            $("#communicate").append(success_append_html);
+            $("#do_geo_locate").click(function() {
+                do_geo_locate(position.coords.latitude,
+                    position.coords.longitude);
+                return false;
+            });
+        },
+        error: function(error) {
+            /* $("#communicate").append("<p class = 'find_your_legislator_errorbox' >" +
+            "We were not able to guess your location. Please enter in your details."+
+            "</p>"); */
+        }
+    });
+    if ( $("#_request").val().trim() != "" ) {
+        /* Auto-submit if we've got something in there (?q= param) */
+        $('#find_your_leg').submit();
+    }
+}
+
+function toTitleCase(str)
+{
+    return str.replace(/\w\S*/g, function(txt){
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+}
+
+
+// Profile form.
+function user_profile_form(){
+
+}

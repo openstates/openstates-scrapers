@@ -41,6 +41,16 @@ blockquote, q {
 	border-bottom: 1px solid #E5E4DB;
 	}
 
+/* No for real, we actually need a pull_right class that pulls
+things to the right... */
+.pull_right_realsies {
+    float: right;
+}
+
+.pull_left_realsies {
+    float: left;
+}
+
 blockquote:before, blockquote:after,
 q:before, q:after { content:''; content:none; }
 
@@ -741,4 +751,18 @@ pre {
     background-color: #F5F6EF;
     padding:          10px;
     border:           1px solid #E0DEDB;
+}
+
+div.notification-preference {
+    border: 1px solid #e6e6da;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    background-color: #f4f4ee;
+}
+
+#profile_form button {
+    background: url(images/btn_submit.png) top left no-repeat;
+    width: 85px;
+    height: 33px;
+    float: left;
 }
