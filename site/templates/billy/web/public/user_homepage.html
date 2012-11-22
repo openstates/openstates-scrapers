@@ -8,6 +8,14 @@
 {% block title %}{% trans "Open States: discover politics in your state" %}{% endblock %}
 {% block description %}{% trans "Follow politics in your state legislature. Find your legislators, see how they've voted, and browse bills, committees and events." %} {% endblock %}
 
+{% block headblock %}
+<script>
+$(document).ready(function() {
+    setup_notification_radios();
+    });
+</script>
+{% endblock %}
+
 {% block bodyclass %}home{% endblock %}
 
 
@@ -47,6 +55,7 @@
         {% if favorites.has_bills %}
         <div class="module">
             <a name="bill" id="bill"></a>
+            {% notification_preference 'bill' %}
             <h3 class="moduleTitle">{% trans "Bills" %}</h3>
             <table class="withFilter">
                 <thead>
@@ -84,6 +93,7 @@
 
         <div class="module">
             <a name="legislator" id="legislator"></a>
+            {% notification_preference 'legislator' %}
             <h3 class="moduleTitle">{% trans "Legislators" %}</h3>
             <table id="main-table">
                 <thead>
@@ -121,6 +131,7 @@
         {% if favorites.has_committees %}
         <div class="module">
             <a name="committee" id="committee"></a>
+            {% notification_preference 'committee' %}
             <h3 class="moduleTitle">{% trans "Committees" %}</h3>
            <table id="main-table">
               <thead>
@@ -166,6 +177,7 @@
         {% if favorites.has_searches %}
         <div class="module">
             <a name="search" id="search"></a>
+            {% notification_preference 'search' %}
             <h3 class="moduleTitle">{% trans "Searches" %}</h3>
             <table>
                 <thead>
