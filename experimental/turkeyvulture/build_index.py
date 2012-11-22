@@ -1,5 +1,9 @@
+from os.path import join, abspath, dirname
+import json
+
 from jinja2 import Template
 import jsindex
+from operator import itemgetter
 
 
 templates = {
@@ -51,5 +55,26 @@ if __name__ == '__main__':
 
     jd = index.jsondata()
     js = index.as_json(showsizes=True)
-    with open('index.json', 'w') as f:
-        index.dump(f)
+
+    ROOT = 'build/index/'
+
+    # I hate doing this.
+    HERE = dirname(abspath(__file__))
+    index_dir = join(HERE, ROOT)
+
+    for stem, stem_id in index.stem2id.items():
+        import ipdb;ipdb.set_trace()
+        results = index.index[stem_id]
+        second = itemgetter(2)
+        types = map(second, results)
+        bills_count = types.count('B')
+        committees_count = types.count('C')
+        legislators_count = types.count('L')
+        data = dict(
+            bills_count=bills_count,
+            committees_count=committees_count,
+            legislators_count=legislators_count,
+            results=list(results))
+        path = join(index_dir, stem)
+        with open(path, 'w') as f:
+            json.dump(data, f)
