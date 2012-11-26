@@ -17,7 +17,10 @@ class GALegislatorScraper(LegislatorScraper):
 
     def scrape_upper(self, href, chamber, term):
         page = self.lxmlize(href)
-        print page
+        title, name = [
+            x.text_content() for x in page.xpath("//div[@class='senateh3']")
+        ]
+        print name
 
     def scrape_lower(self, href, chamber, term):
         pass
