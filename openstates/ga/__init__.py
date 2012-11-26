@@ -13,10 +13,16 @@ metadata = {
     'upper_chamber_term': 2,
     'lower_chamber_term': 2,
     'terms': [
+        {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
+         'sessions': ['20132014']},
         {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
          'sessions': ['2011_12', '2011_ss']}
      ],
     'session_details': {
+        '20132014': {
+            'display_name': '2013-2014 Regular Session',
+            '_scraped_name': '2013-2014 Regular Session'
+        },
         '2011_12': {'display_name': '2011-2012 Regular Session',
                     '_scraped_name': '2011-2012 Regular Session',
                    },
@@ -33,7 +39,8 @@ metadata = {
                                   '2003-2004 Regular Session',
                                   '2001 2nd Special Session',
                                   '2001 1st Special Session',
-                                  '2001-2002 Regular Session']
+                                  '2001-2002 Regular Session',
+                                  'Previous Sessions']
 }
 
 def session_list():
