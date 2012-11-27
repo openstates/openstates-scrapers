@@ -8,16 +8,29 @@
 {% block title %}{% trans "Open States: discover politics in your state" %}{% endblock %}
 {% block description %}{% trans "Follow politics in your state legislature. Find your legislators, see how they've voted, and browse bills, committees and events." %} {% endblock %}
 
+{% block headblock %}
+<script>
+$(document).ready(function() {
+    setup_notification_radios();
+    });
+</script>
+{% endblock %}
+
 {% block bodyclass %}home{% endblock %}
 
 
 {% block content %}
     <div id="container">
-        <div class="fullWidth mainModule">
-            {% if favorites %}
-            <h1 class="moduleTitle">You're following:</h1>
-            <hr/>
+        <div class="fullWidth module">
             <div class="sixCol colRt">
+                <a href="/profile">Edit your profile</a>
+            </div>
+        </div>
+        <div class="fullWidth mainModule">
+
+            {% if favorites %}
+            <div class="sixCol colLt">
+                <h1 class="moduleTitle">You're following:</h1>
                 <ul style="padding-left: 25px">
                     {% for type, objs in favorites.items %}
                     <li>
@@ -47,6 +60,7 @@
         {% if favorites.has_bills %}
         <div class="module">
             <a name="bill" id="bill"></a>
+            {% notification_preference 'bill' %}
             <h3 class="moduleTitle">{% trans "Bills" %}</h3>
             <table class="withFilter">
                 <thead>
@@ -84,6 +98,7 @@
 
         <div class="module">
             <a name="legislator" id="legislator"></a>
+            {% notification_preference 'legislator' %}
             <h3 class="moduleTitle">{% trans "Legislators" %}</h3>
             <table id="main-table">
                 <thead>
@@ -121,6 +136,7 @@
         {% if favorites.has_committees %}
         <div class="module">
             <a name="committee" id="committee"></a>
+            {% notification_preference 'committee' %}
             <h3 class="moduleTitle">{% trans "Committees" %}</h3>
            <table id="main-table">
               <thead>
@@ -166,6 +182,7 @@
         {% if favorites.has_searches %}
         <div class="module">
             <a name="search" id="search"></a>
+            {% notification_preference 'search' %}
             <h3 class="moduleTitle">{% trans "Searches" %}</h3>
             <table>
                 <thead>

@@ -8,8 +8,8 @@
                                    data-search_abbr="{{abbr}}"
                                    {% endif %}>
 
-                    <button type="submit" class="favorite-button" style="text-indent: 0px;"/>
-                      <div class="favorite-message">
+                    <button type="submit" value="{% trans 'Submit' %}" class="favorite-button" style="text-indent: 0px;"/>
+                      <span class="favorite-message">
                           {% if is_favorite %}
                               {% blocktrans %}
                               Unfollow this {{obj_type}}.
@@ -19,6 +19,6 @@
                               Follow this {{obj_type}}.
                               {% endblocktrans %}
                           {% endif %}
-                      </div>
+                      </span>
                     </button>
                 </div>

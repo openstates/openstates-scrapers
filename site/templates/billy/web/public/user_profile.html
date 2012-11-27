@@ -1,0 +1,98 @@
+{% extends "billy/web/public/base.html" %}
+{% load customtags %}
+{% load staticfiles %}
+{% load humanize %}
+{% load i18n %}
+{% load url from future %}
+
+{% block title %}{% trans "Open States: discover politics in your state" %}{% endblock %}
+{% block description %}{% trans "Follow politics in your state legislature. Find your legislators, see how they've voted, and browse bills, committees and events." %} {% endblock %}
+
+{% block bodyclass %}home{% endblock %}
+
+
+{% block headblock %}
+<script src="http://maps.google.com/maps/api/js?sensor=true"></script>
+<script src="{% static "js/gmaps.js" %}"></script>
+<script>
+$(document).ready(function() {
+    var success_append_html = "<p>" +
+                "To speed things up, have your browser tell " +
+                "us your <a id = 'do_geo_locate' href = '#' >" +
+                "current location</a>." +
+                "</p>";
+    setup_find_your_legislator(success_append_html);
+
+    $("#profile_form").click(user_profile_form_submit);
+
+    function isInt(n) {
+       return typeof n === 'number' && n % 1 == 0;
+    }
+
+    $.getJSON('/get_user_latlong', function(data){
+        var user_lat = data.lat,
+            user_lng = data.lng;
+        map.setZoom(12);
+        if (isInt(user_lat) && isInt(user_lng)){
+            map.setCenter(user_lat, user_lng);
+            }
+        });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+    <div id="container">
+        {% if saved_changes %}
+            Your changes were saved!....Or were they? Hehehehehe!
+        {% endif %}
+        <form id="find_your_leg">
+            <input type="hidden" value="cow" id="_request" />
+            <div class="module">
+            <h3 class="moduleTitle">{% trans "Set Your Location" %}</h3>
+            <input type="text" name="leg_search" id="leg_search"
+                {% if profile.location.text %}
+                    value="{{profile.location.text}}"</input>
+                {% else %}
+                    placeholder="{% trans 'Your address...' %}"></input>
+                {% endif %}
+                    <button type="submit" value="{% trans 'Lookup' %}" style="text-indent: 0px; display: inline;">
+                    <span>{% trans "Lookup" %}</span>
+                </button>
+            </form>
+            <div class="clear"></div>
+            <div id="communicate"></div>
+        </div>
+
+        <div class="sixCol colLt withDash legMap">
+            <div id="map"></div>
+        </div>
+        <div class="clear"></div>
+            </div>
+        </form>
+
+        <form action="/profile" method="POST" id="profile_form">
+            <hr/>
+            {% csrf_token %}
+            <div class="medModule">
+                <h3 class="moduleTitle">{% trans "API Key" %}</h3>
+                <div>
+                <span>Have an API key? Enter it here:</span>
+                {% if profile.api_key %}
+                    <input type="text" name="api_key" value="{{profile.api_key}}"></input>
+                {% else %}
+                    <input type="text" name="api_key" placeholder="{% trans 'Your API key...' %}"></input>
+                {% endif %}
+                </div>
+                <div>
+                    <span>Don't have one and want one? <a href="http://services.sunlightlabs.com/accounts/register/">Get one</a></span>
+                </div>
+
+            </div>
+
+            <button type="submit" value="{% trans 'Submit' %}">
+                <span>{% trans "Submit" %}</span>
+            </button>
+        </form>
+    </div> <!-- container -->
+{% endblock %}

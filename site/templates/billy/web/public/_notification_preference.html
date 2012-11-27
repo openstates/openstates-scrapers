@@ -1,0 +1,16 @@
+<form name="notification-preference">
+    <div class="notification-preference pull_right_realsies" data-obj_type="{{ obj_type }}">
+        <div class="message-{{obj_type}}"
+             class="pull_left_realsies">Turn {{obj_type}} email notifactions on or off:</div>
+        <div>
+            <input type="hidden" value="{{obj_type}}"/>
+            <input id="on-{{obj_type}}" type="radio"
+                   name="group1" value="on"/>
+            <label for="on-{{obj_type}}">On</label><br/>
+
+            <input id="off-{{obj_type}}" type="radio"
+                   name="group1" value="off" checked/>
+            <label for="on-{{obj_type}}">Off</label>
+        </div>
+    </div>
+</form>
