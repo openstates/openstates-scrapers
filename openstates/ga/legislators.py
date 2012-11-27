@@ -47,8 +47,22 @@ class GALegislatorScraper(LegislatorScraper):
             if middle_name:
                 legislator['middle_name'] = middle_name
 
+            ainfo = [
+                member['DistrictAddress'][x] for x in [
+                    'Street', 'City', 'State', 'Zip'
+                ]
+            ]
+            if not None in ainfo:
+                # XXX: Debug this nonsense.
+                ainfo = [x.strip() for x in ainfo]
+                address = " ".join(ainfo)
+                email = member['DistrictAddress']['Email']
+                legislator.add_office('district',
+                                      'District Address',
+                                      address=address,
+                                      email=email)
+
             legislator.add_source(self.ssource)
-            # when I passed this into the instance's constructor
             self.save_legislator(legislator)
 
     def scrape(self, term, chambers):
